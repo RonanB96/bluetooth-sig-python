@@ -1,0 +1,118 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ble_gatt_device"
+version = "0.1.0"
+authors = [
+  { name = "Your Name", email = "your.email@example.com" },
+]
+description = "BLE GATT device integration for Home Assistant"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+keywords = ["bluetooth", "ble", "gatt", "home-assistant", "iot"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Home Automation",
+    "Topic :: System :: Hardware",
+]
+dependencies = [
+    "bleak>=0.22.0",
+    "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/ble_gatt_device"
+Repository = "https://github.com/yourusername/ble_gatt_device.git"
+Issues = "https://github.com/yourusername/ble_gatt_device/issues"
+Documentation = "https://github.com/yourusername/ble_gatt_device#readme"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.20.0",
+    "pylint>=3.0.0",
+    "flake8>=7.0.0",
+    "flake8-pyproject",
+]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = "E203"  # E203: Whitespace before ':' - Black handles this differently
+exclude = ".git,__pycache__,build,dist,.venv,.eggs"
+per-file-ignores = "__init__.py:F401"  # Ignore unused imports in __init__.py files
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.hatch.build]
+exclude = [
+    "tests/*",
+    "scripts/*",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ble_gatt_device"]
+
+[tool.hatch.build.targets.wheel.sources]
+"bluetooth_sig" = "bluetooth_sig"
+
+[tool.pylint.MAIN]
+source-roots = ["src"]
+ignore = ["CVS", ".git", "__pycache__", ".venv"]
+ignore-paths = ["^.git/.*$", "^.venv/.*$"]
+persistent = true
+jobs = 0
+output-format = "colorized"
+msg-template = "{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
+
+[tool.pylint.FORMAT]
+max-line-length = 88
+
+[tool.pylint.MESSAGE_CONTROL]
+# Only globally disable issues that are handled by other tools or are project-wide
+disable = [
+    "C0103",  # invalid-name (Black handles this globally)
+    "W0311",  # bad-indentation (Black handles this globally)
+    "W0511",  # fixme (TODO comments are useful throughout)
+    "C0411",  # wrong-import-order (handled by isort/Black globally)
+    "C0412",  # ungrouped-imports (handled by isort/Black globally)
+    "C0413",  # wrong-import-position (handled by isort/Black globally)
+    "E0611",  # no-name-in-module (editable install issue affects entire project)
+]
+
+# Note: Other issues like broad-exception-caught, too-few-public-methods, 
+# no-member, redefined-outer-name are now handled with targeted inline 
+# disables in specific files where they're needed.
+
+[tool.pylint.BASIC]
+good-names = ["id", "i", "j", "k", "ex", "Run", "_", "fp", "e"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+# A regex preceded with ^/ will apply only to files and directories
+# in the root of the project.
+^/test.*
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88

@@ -1,0 +1,15 @@
+[flake8]
+max-line-length = 88
+ignore = 
+    # line too long (handled by black)
+    E501,
+    # line break before binary operator
+    W503,
+    # line break after binary operator
+    W504
+exclude = 
+    .git,
+    __pycache__,
+    .venv,
+    build,
+    dist
