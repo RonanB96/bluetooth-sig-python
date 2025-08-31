@@ -1,7 +1,6 @@
 """Test cycling power service and characteristics parsing."""
 
 import struct
-from typing import Dict
 
 import pytest
 
@@ -59,11 +58,7 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<Hh", flags, power)
         result = char.parse_value(bytearray(test_data))
 
-        expected = {
-            "flags": 0,
-            "instantaneous_power": 250,
-            "unit": "W"
-        }
+        expected = {"flags": 0, "instantaneous_power": 250, "unit": "W"}
         assert result == expected
         assert char.unit == "W"
         assert char.device_class == "power"
@@ -84,7 +79,7 @@ class TestCyclingPowerParsing:
             "flags": 1,
             "instantaneous_power": 300,
             "unit": "W",
-            "pedal_power_balance": 50.0
+            "pedal_power_balance": 50.0,
         }
         assert result == expected
 
@@ -92,12 +87,8 @@ class TestCyclingPowerParsing:
         balance = 0xFF
         test_data = struct.pack("<HhB", flags, power, balance)
         result = char.parse_value(bytearray(test_data))
-        
-        expected = {
-            "flags": 1,
-            "instantaneous_power": 300,
-            "unit": "W"
-        }
+
+        expected = {"flags": 1, "instantaneous_power": 300, "unit": "W"}
         assert result == expected  # No balance field when unknown
 
     def test_cycling_power_measurement_with_accumulated_energy(self):
@@ -115,7 +106,7 @@ class TestCyclingPowerParsing:
             "flags": 8,
             "instantaneous_power": 280,
             "unit": "W",
-            "accumulated_energy": 150
+            "accumulated_energy": 150,
         }
         assert result == expected
 
@@ -136,7 +127,7 @@ class TestCyclingPowerParsing:
             "instantaneous_power": 320,
             "unit": "W",
             "cumulative_wheel_revolutions": 12345,
-            "last_wheel_event_time": 1.0  # 2048 / 2048 = 1.0 second
+            "last_wheel_event_time": 1.0,  # 2048 / 2048 = 1.0 second
         }
         assert result == expected
 
@@ -157,7 +148,7 @@ class TestCyclingPowerParsing:
             "instantaneous_power": 350,
             "unit": "W",
             "cumulative_crank_revolutions": 5678,
-            "last_crank_event_time": 1.0  # 1024 / 1024 = 1.0 second
+            "last_crank_event_time": 1.0,  # 1024 / 1024 = 1.0 second
         }
         assert result == expected
 
@@ -172,7 +163,9 @@ class TestCyclingPowerParsing:
         energy = 200  # 200 kJ
         crank_revs = 8900
         crank_time = 512  # 0.5 second
-        test_data = struct.pack("<HhBHHH", flags, power, balance, energy, crank_revs, crank_time)
+        test_data = struct.pack(
+            "<HhBHHH", flags, power, balance, energy, crank_revs, crank_time
+        )
         result = char.parse_value(bytearray(test_data))
 
         expected = {
@@ -182,7 +175,7 @@ class TestCyclingPowerParsing:
             "pedal_power_balance": 60.0,
             "accumulated_energy": 200,
             "cumulative_crank_revolutions": 8900,
-            "last_crank_event_time": 0.5
+            "last_crank_event_time": 0.5,
         }
         assert result == expected
 
@@ -214,7 +207,7 @@ class TestCyclingPowerParsing:
             "flags": 0,
             "crank_revolutions": 1234,
             "last_crank_event_time": 1.0,
-            "first_crank_measurement_angle": 0.5
+            "first_crank_measurement_angle": 0.5,
         }
         assert result == expected
         assert char.unit == "N·m"
@@ -231,7 +224,9 @@ class TestCyclingPowerParsing:
         first_angle = 180  # 1.0 degrees
         force1 = 100  # 100 N
         force2 = 150  # 150 N
-        test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, force1, force2)
+        test_data = struct.pack(
+            "<BHHHhh", flags, crank_revs, crank_time, first_angle, force1, force2
+        )
         result = char.parse_value(bytearray(test_data))
 
         expected = {
@@ -239,7 +234,7 @@ class TestCyclingPowerParsing:
             "crank_revolutions": 1234,
             "last_crank_event_time": 1.0,
             "first_crank_measurement_angle": 1.0,
-            "instantaneous_force_magnitudes": [100.0, 150.0]
+            "instantaneous_force_magnitudes": [100.0, 150.0],
         }
         assert result == expected
 
@@ -254,7 +249,9 @@ class TestCyclingPowerParsing:
         first_angle = 360  # 2.0 degrees
         torque1 = 160  # 5.0 Nm (160 / 32)
         torque2 = 192  # 6.0 Nm (192 / 32)
-        test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, torque1, torque2)
+        test_data = struct.pack(
+            "<BHHHhh", flags, crank_revs, crank_time, first_angle, torque1, torque2
+        )
         result = char.parse_value(bytearray(test_data))
 
         expected = {
@@ -262,7 +259,7 @@ class TestCyclingPowerParsing:
             "crank_revolutions": 1234,
             "last_crank_event_time": 1.0,
             "first_crank_measurement_angle": 2.0,
-            "instantaneous_torque_magnitudes": [5.0, 6.0]
+            "instantaneous_torque_magnitudes": [5.0, 6.0],
         }
         assert result == expected
 
@@ -287,10 +284,7 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<B", op_code)
         result = char.parse_value(bytearray(test_data))
 
-        expected = {
-            "op_code": 3,
-            "op_code_name": "Request Supported Sensor Locations"
-        }
+        expected = {"op_code": 3, "op_code_name": "Request Supported Sensor Locations"}
         assert result == expected
 
     def test_cycling_power_control_point_with_parameters(self):
@@ -306,7 +300,7 @@ class TestCyclingPowerParsing:
         expected = {
             "op_code": 1,
             "op_code_name": "Set Cumulative Value",
-            "cumulative_value": 123456
+            "cumulative_value": 123456,
         }
         assert result == expected
 
@@ -319,13 +313,15 @@ class TestCyclingPowerParsing:
         expected = {
             "op_code": 4,
             "op_code_name": "Set Crank Length",
-            "crank_length": 175.0
+            "crank_length": 175.0,
         }
         assert result == expected
 
     def test_cycling_power_control_point_response(self):
         """Test cycling power control point response parsing."""
-        char = CyclingPowerControlPointCharacteristic(uuid="2A66", properties={"indicate"})
+        char = CyclingPowerControlPointCharacteristic(
+            uuid="2A66", properties={"indicate"}
+        )
 
         # Test response code
         op_code = 0x20  # Response Code
@@ -339,7 +335,7 @@ class TestCyclingPowerParsing:
             "op_code_name": "Response Code",
             "request_op_code": 3,
             "response_value": 1,
-            "response_value_name": "Success"
+            "response_value_name": "Success",
         }
         assert result == expected
 
