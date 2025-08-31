@@ -3,11 +3,11 @@
 from dataclasses import dataclass
 from typing import Dict, Type
 
-from .base import BaseGattService
 from ..characteristics.generic_access import (
     AppearanceCharacteristic,
     DeviceNameCharacteristic,
 )
+from .base import BaseGattService
 
 
 @dataclass

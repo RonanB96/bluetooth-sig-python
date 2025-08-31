@@ -3,10 +3,10 @@
 from dataclasses import dataclass
 from typing import Dict, Type
 
-from .base import BaseGattService
-from ..characteristics.temperature import TemperatureCharacteristic
 from ..characteristics.humidity import HumidityCharacteristic
 from ..characteristics.pressure import PressureCharacteristic
+from ..characteristics.temperature import TemperatureCharacteristic
+from .base import BaseGattService
 
 
 @dataclass

@@ -8,9 +8,9 @@ from typing import List, Type
 
 import pytest
 
-from ble_gatt_device.gatt.uuid_registry import uuid_registry
-from ble_gatt_device.gatt.services.base import BaseGattService
 from ble_gatt_device.gatt.characteristics.base import BaseCharacteristic
+from ble_gatt_device.gatt.services.base import BaseGattService
+from ble_gatt_device.gatt.uuid_registry import uuid_registry
 
 
 def discover_service_classes() -> List[Type[BaseGattService]]:
@@ -473,8 +473,9 @@ class TestNameResolutionFallback:
     def test_characteristic_class_name_fallback(self):
         """Test that characteristics without _characteristic_name use class name resolution."""
         # Create a test characteristic class without explicit name
-        from ble_gatt_device.gatt.characteristics.base import BaseCharacteristic
         from dataclasses import dataclass
+
+        from ble_gatt_device.gatt.characteristics.base import BaseCharacteristic
 
         @dataclass
         class TemperatureCharacteristic(BaseCharacteristic):
@@ -558,8 +559,9 @@ class TestNameResolutionFallback:
 
     def test_class_name_parsing_edge_cases(self):
         """Test edge cases in class name parsing."""
-        from ble_gatt_device.gatt.characteristics.base import BaseCharacteristic
         from dataclasses import dataclass
+
+        from ble_gatt_device.gatt.characteristics.base import BaseCharacteristic
 
         # Test characteristic with complex class name
         @dataclass
@@ -592,8 +594,9 @@ class TestNameResolutionFallback:
 
     def test_fallback_failure_handling(self):
         """Test behavior when neither explicit name nor class name resolution works."""
-        from ble_gatt_device.gatt.characteristics.base import BaseCharacteristic
         from dataclasses import dataclass
+
+        from ble_gatt_device.gatt.characteristics.base import BaseCharacteristic
 
         @dataclass
         class UnknownTestCharacteristic(BaseCharacteristic):
@@ -620,11 +623,11 @@ class TestNameResolutionFallback:
     def test_current_services_name_resolution_strategy(self):
         """Test that current services use the expected name resolution strategy."""
         from ble_gatt_device.gatt.services.battery_service import BatteryService
-        from ble_gatt_device.gatt.services.environmental_sensing import (
-            EnvironmentalSensingService,
-        )
         from ble_gatt_device.gatt.services.device_information import (
             DeviceInformationService,
+        )
+        from ble_gatt_device.gatt.services.environmental_sensing import (
+            EnvironmentalSensingService,
         )
         from ble_gatt_device.gatt.services.generic_access import GenericAccessService
 
