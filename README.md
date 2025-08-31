@@ -29,11 +29,6 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
   - Voltage Frequency (0x2B4C)
   - Supported Power Range (0x2A66)
   - Tx Power Level (0x2A07)
-  - High Voltage (0x2B3A)
-  - Voltage Frequency (0x2B4C)
-  - Supported Power Range (0x2A66)
-  - Tx Power Level (0x2A07)
->>>>>>> 7159087 (Changes before error encountered)
 
 - **Battery Service (0x180F)**
   - Battery Level (0x2A19)
