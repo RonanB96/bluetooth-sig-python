@@ -25,7 +25,8 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     def parse_value(self, data: bytearray) -> Dict[str, Any]:
         """Parse body composition measurement data according to Bluetooth specification.
 
-        Format: Flags(2) + Body Fat %(2) + [Timestamp(7)] + [User ID(1)] + [Basal Metabolism(2)] + [Muscle Mass(2)] + [etc...]
+        Format: Flags(2) + Body Fat %(2) + [Timestamp(7)] + [User ID(1)] +
+                [Basal Metabolism(2)] + [Muscle Mass(2)] + [etc...]
 
         Args:
             data: Raw bytearray from BLE characteristic
@@ -37,7 +38,9 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             ValueError: If data format is invalid
         """
         if len(data) < 4:
-            raise ValueError("Body Composition Measurement data must be at least 4 bytes")
+            raise ValueError(
+                "Body Composition Measurement data must be at least 4 bytes"
+            )
 
         # Parse flags (2 bytes)
         flags = struct.unpack("<H", data[:2])[0]
@@ -46,7 +49,6 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         # Parse body fat percentage (uint16 with 0.1% resolution)
         if len(data) < offset + 2:
             raise ValueError("Insufficient data for body fat percentage")
-        
         body_fat_raw = struct.unpack("<H", data[offset:offset + 2])[0]
         offset += 2
 
@@ -97,7 +99,8 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             result["muscle_percentage"] = muscle_percentage_raw * 0.1
             offset += 2
 
-        # Parse optional fat free mass (uint16 with same resolution as weight) if present
+        # Parse optional fat free mass (uint16 with same resolution as weight)
+        # if present
         if (flags & 0x40) and len(data) >= offset + 2:
             fat_free_mass_raw = struct.unpack("<H", data[offset:offset + 2])[0]
             if flags & 0x01:  # Imperial units
@@ -110,7 +113,8 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             result["fat_free_mass_unit"] = mass_unit
             offset += 2
 
-        # Parse optional soft lean mass (uint16 with same resolution as weight) if present
+        # Parse optional soft lean mass (uint16 with same resolution as weight)
+        # if present
         if (flags & 0x80) and len(data) >= offset + 2:
             soft_lean_mass_raw = struct.unpack("<H", data[offset:offset + 2])[0]
             if flags & 0x01:  # Imperial units
@@ -123,7 +127,8 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             result["soft_lean_mass_unit"] = mass_unit
             offset += 2
 
-        # Parse optional body water mass (uint16 with same resolution as weight) if present
+        # Parse optional body water mass (uint16 with same resolution as weight)
+        # if present
         if (flags & 0x100) and len(data) >= offset + 2:
             body_water_mass_raw = struct.unpack("<H", data[offset:offset + 2])[0]
             if flags & 0x01:  # Imperial units

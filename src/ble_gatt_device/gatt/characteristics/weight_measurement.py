@@ -25,7 +25,8 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
     def parse_value(self, data: bytearray) -> Dict[str, Any]:
         """Parse weight measurement data according to Bluetooth specification.
 
-        Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] + [BMI(2)] + [Height(2)]
+        Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +
+                [BMI(2)] + [Height(2)]
 
         Args:
             data: Raw bytearray from BLE characteristic
@@ -45,7 +46,6 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
         # Parse weight value (uint16 with 0.005 kg resolution)
         if len(data) < offset + 2:
             raise ValueError("Insufficient data for weight value")
-        
         weight_raw = struct.unpack("<H", data[offset:offset + 2])[0]
         offset += 2
 

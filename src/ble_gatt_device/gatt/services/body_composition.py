@@ -3,8 +3,12 @@
 from dataclasses import dataclass
 from typing import Dict, Type
 
-from ..characteristics.body_composition_measurement import BodyCompositionMeasurementCharacteristic
-from ..characteristics.body_composition_feature import BodyCompositionFeatureCharacteristic
+from ..characteristics.body_composition_measurement import (
+    BodyCompositionMeasurementCharacteristic,
+)
+from ..characteristics.body_composition_feature import (
+    BodyCompositionFeatureCharacteristic,
+)
 from .base import BaseGattService
 
 

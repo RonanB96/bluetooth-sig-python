@@ -11,8 +11,9 @@ from .base import BaseCharacteristic
 class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
     """Body Composition Feature characteristic (0x2A9B).
 
-    Used to indicate which optional features and measurements are supported by the body composition device.
-    This is a read-only characteristic that describes device capabilities.
+    Used to indicate which optional features and measurements are supported
+    by the body composition device. This is a read-only characteristic that
+    describes device capabilities.
     """
 
     _characteristic_name: str = "Body Composition Feature"
@@ -56,10 +57,10 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
             "impedance_supported": bool(features_raw & 0x100),
             "weight_supported": bool(features_raw & 0x200),
             "height_supported": bool(features_raw & 0x400),
-            
+
             # Mass measurement resolution (bits 11-14)
             "mass_measurement_resolution": self._get_mass_resolution(features_raw),
-            
+
             # Height measurement resolution (bits 15-17)
             "height_measurement_resolution": self._get_height_resolution(features_raw),
         }
@@ -68,15 +69,15 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
 
     def _get_mass_resolution(self, features: int) -> str:
         """Extract mass measurement resolution from features bitmask.
-        
+
         Args:
             features: Raw feature bitmask
-            
+
         Returns:
             String describing mass resolution
         """
         resolution_bits = (features >> 11) & 0x0F  # Bits 11-14
-        
+
         if resolution_bits == 0:
             return "not_specified"
         elif resolution_bits == 1:
@@ -98,15 +99,15 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
 
     def _get_height_resolution(self, features: int) -> str:
         """Extract height measurement resolution from features bitmask.
-        
+
         Args:
             features: Raw feature bitmask
-            
+
         Returns:
             String describing height resolution
         """
         resolution_bits = (features >> 15) & 0x07  # Bits 15-17
-        
+
         if resolution_bits == 0:
             return "not_specified"
         elif resolution_bits == 1:

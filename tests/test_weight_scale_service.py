@@ -23,11 +23,11 @@ class TestWeightMeasurementCharacteristic:
     def test_parse_basic_weight_metric(self):
         """Test parsing basic weight in metric units."""
         char = WeightMeasurementCharacteristic(uuid="", properties=set())
-        
+
         # Flags: 0x00 (metric units), Weight: 14000 (70.00 kg with 0.005 kg resolution)
         data = bytearray([0x00, 0x70, 0x36])  # 0x3670 = 13936
         result = char.parse_value(data)
-        
+
         assert "weight" in result
         assert result["weight"] == pytest.approx(69.68, abs=0.01)  # 13936 * 0.005
         assert result["weight_unit"] == "kg"
@@ -36,11 +36,12 @@ class TestWeightMeasurementCharacteristic:
     def test_parse_basic_weight_imperial(self):
         """Test parsing basic weight in imperial units."""
         char = WeightMeasurementCharacteristic(uuid="", properties=set())
-        
-        # Flags: 0x01 (imperial units), Weight: 15000 (150.00 lb with 0.01 lb resolution)
+
+        # Flags: 0x01 (imperial units), Weight: 15000
+        # (150.00 lb with 0.01 lb resolution)
         data = bytearray([0x01, 0x98, 0x3A])  # 0x3A98 = 15000
         result = char.parse_value(data)
-        
+
         assert "weight" in result
         assert result["weight"] == pytest.approx(150.0, abs=0.01)  # 15000 * 0.01
         assert result["weight_unit"] == "lb"
@@ -49,11 +50,11 @@ class TestWeightMeasurementCharacteristic:
     def test_parse_weight_with_user_id(self):
         """Test parsing weight with user ID."""
         char = WeightMeasurementCharacteristic(uuid="", properties=set())
-        
+
         # Flags: 0x04 (user ID present), Weight: 14000, User ID: 5
         data = bytearray([0x04, 0x70, 0x36, 0x05])
         result = char.parse_value(data)
-        
+
         assert "weight" in result
         assert "user_id" in result
         assert result["user_id"] == 5
@@ -61,7 +62,7 @@ class TestWeightMeasurementCharacteristic:
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""
         char = WeightMeasurementCharacteristic(uuid="", properties=set())
-        
+
         # Too short data
         with pytest.raises(ValueError, match="at least 3 bytes"):
             char.parse_value(bytearray([0x00, 0x70]))
@@ -94,11 +95,12 @@ class TestWeightScaleFeatureCharacteristic:
     def test_parse_basic_features(self):
         """Test parsing basic feature flags."""
         char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
-        
-        # Features: 0x0000000F (timestamp, multiple users, BMI supported, weight resolution 1)
+
+        # Features: 0x0000000F (timestamp, multiple users, BMI supported,
+        # weight resolution 1)
         data = bytearray([0x0F, 0x00, 0x00, 0x00])
         result = char.parse_value(data)
-        
+
         assert result["timestamp_supported"] is True
         assert result["multiple_users_supported"] is True
         assert result["bmi_supported"] is True
@@ -107,11 +109,11 @@ class TestWeightScaleFeatureCharacteristic:
     def test_parse_no_features(self):
         """Test parsing with no features enabled."""
         char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
-        
+
         # Features: 0x00000000 (no features)
         data = bytearray([0x00, 0x00, 0x00, 0x00])
         result = char.parse_value(data)
-        
+
         assert result["timestamp_supported"] is False
         assert result["multiple_users_supported"] is False
         assert result["bmi_supported"] is False
@@ -120,7 +122,7 @@ class TestWeightScaleFeatureCharacteristic:
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""
         char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
-        
+
         # Too short data
         with pytest.raises(ValueError, match="at least 4 bytes"):
             char.parse_value(bytearray([0x00, 0x00, 0x00]))
@@ -142,7 +144,7 @@ class TestWeightScaleService:
     def test_expected_characteristics(self):
         """Test expected characteristics for the service."""
         expected = WeightScaleService.get_expected_characteristics()
-        
+
         assert "Weight Measurement" in expected
         assert "Weight Scale Feature" in expected
         assert expected["Weight Measurement"] == WeightMeasurementCharacteristic
@@ -151,7 +153,7 @@ class TestWeightScaleService:
     def test_required_characteristics(self):
         """Test required characteristics for the service."""
         required = WeightScaleService.get_required_characteristics()
-        
+
         assert "Weight Measurement" in required
         assert required["Weight Measurement"] == WeightMeasurementCharacteristic
         # Weight Scale Feature is not required

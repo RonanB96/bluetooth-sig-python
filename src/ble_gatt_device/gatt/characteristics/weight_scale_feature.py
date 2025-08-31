@@ -55,15 +55,15 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
     def _get_weight_resolution(self, features: int) -> str:
         """Extract weight measurement resolution from features bitmask.
-        
+
         Args:
             features: Raw feature bitmask
-            
+
         Returns:
             String describing weight resolution
         """
         resolution_bits = (features >> 3) & 0x0F  # Bits 3-6
-        
+
         if resolution_bits == 0:
             return "not_specified"
         elif resolution_bits == 1:
@@ -85,15 +85,15 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
     def _get_height_resolution(self, features: int) -> str:
         """Extract height measurement resolution from features bitmask.
-        
+
         Args:
             features: Raw feature bitmask
-            
+
         Returns:
             String describing height resolution
         """
         resolution_bits = (features >> 7) & 0x07  # Bits 7-9
-        
+
         if resolution_bits == 0:
             return "not_specified"
         elif resolution_bits == 1:
