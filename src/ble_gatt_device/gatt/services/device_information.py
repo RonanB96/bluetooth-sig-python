@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from typing import Dict, Type
 
-from .base import BaseGattService
 from ..characteristics.device_info import (
     FirmwareRevisionStringCharacteristic,
     HardwareRevisionStringCharacteristic,
@@ -12,6 +11,7 @@ from ..characteristics.device_info import (
     SerialNumberStringCharacteristic,
     SoftwareRevisionStringCharacteristic,
 )
+from .base import BaseGattService
 
 
 @dataclass

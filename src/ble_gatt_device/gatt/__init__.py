@@ -1,8 +1,8 @@
 """GATT package initialization."""
 
-from .services.base import BaseGattService
 from .characteristics.base import BaseCharacteristic
-from .uuid_registry import UuidRegistry, UuidInfo
+from .services.base import BaseGattService
+from .uuid_registry import UuidInfo, UuidRegistry
 
 __all__ = [
     "BaseGattService",

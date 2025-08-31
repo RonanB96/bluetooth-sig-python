@@ -1,8 +1,9 @@
 """Tests for BLE GATT device functionality."""
 # pylint: disable=redefined-outer-name  # pytest fixtures
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from ble_gatt_device.core import BLEGATTDevice
 
@@ -21,9 +22,8 @@ async def test_connect_success(mock_device):
     with patch("ble_gatt_device.core.BleakClient") as mock_client_class:
         mock_client_instance = AsyncMock()
         mock_client_class.return_value = mock_client_instance
-        
+
         result = await mock_device.connect()
-        
         assert result is True
         mock_client_class.assert_called_once_with(mock_device.address)
         mock_client_instance.connect.assert_called_once()
@@ -53,7 +53,7 @@ async def test_read_characteristics_success(mock_device):
     # Set up the mock client properly
     mock_client = AsyncMock()
     mock_device._client = mock_client
-    
+
     # Mock get_services to return mock services
     mock_services = {
         "service1": {
@@ -64,15 +64,15 @@ async def test_read_characteristics_success(mock_device):
         }
     }
     mock_client.get_services.return_value = mock_services  # pylint: disable=no-member
-    
+
     # Mock read_gatt_char to return test values
     mock_client.read_gatt_char.side_effect = [
         bytes([100, 0]),  # First characteristic
         bytes([75]),      # Second characteristic
     ]
-    
+
     values = await mock_device.read_characteristics()
-    
+
     # Check that some values were returned
     assert isinstance(values, dict)
 
