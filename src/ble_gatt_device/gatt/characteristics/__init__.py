@@ -3,6 +3,7 @@
 from typing import Dict, Optional, Type
 
 from ..uuid_registry import uuid_registry
+from .ammonia_concentration import AmmoniaConcentrationCharacteristic
 from .apparent_wind_direction import ApparentWindDirectionCharacteristic
 from .apparent_wind_speed import ApparentWindSpeedCharacteristic
 from .average_current import AverageCurrentCharacteristic
@@ -12,6 +13,7 @@ from .battery_level import BatteryLevelCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic
 from .body_composition_measurement import BodyCompositionMeasurementCharacteristic
+from .co2_concentration import CO2ConcentrationCharacteristic
 from .csc_measurement import CSCMeasurementCharacteristic
 from .cycling_power_control_point import CyclingPowerControlPointCharacteristic
 from .cycling_power_feature import CyclingPowerFeatureCharacteristic
@@ -39,6 +41,8 @@ from .heat_index import HeatIndexCharacteristic
 from .high_voltage import HighVoltageCharacteristic
 from .humidity import HumidityCharacteristic
 from .illuminance import IlluminanceCharacteristic
+from .nitrogen_dioxide_concentration import NitrogenDioxideConcentrationCharacteristic
+from .pm25_concentration import PM25ConcentrationCharacteristic
 from .pressure import PressureCharacteristic
 from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
 from .rsc_measurement import RSCMeasurementCharacteristic
@@ -48,6 +52,7 @@ from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
 from .true_wind_direction import TrueWindDirectionCharacteristic
 from .true_wind_speed import TrueWindSpeedCharacteristic
+from .tvoc_concentration import TVOCConcentrationCharacteristic
 from .tx_power_level import TxPowerLevelCharacteristic
 from .uv_index import UVIndexCharacteristic
 from .voltage import VoltageCharacteristic
@@ -117,6 +122,12 @@ class CharacteristicRegistry:
         "True Wind Direction": TrueWindDirectionCharacteristic,
         "Apparent Wind Speed": ApparentWindSpeedCharacteristic,
         "Apparent Wind Direction": ApparentWindDirectionCharacteristic,
+        # Gas sensor characteristics for air quality monitoring
+        "CO\\textsubscript{2} Concentration": CO2ConcentrationCharacteristic,
+        "VOC Concentration": TVOCConcentrationCharacteristic,
+        "Ammonia Concentration": AmmoniaConcentrationCharacteristic,
+        "Nitrogen Dioxide Concentration": NitrogenDioxideConcentrationCharacteristic,
+        "Particulate Matter - PM2.5 Concentration": PM25ConcentrationCharacteristic,
     }
 
     @classmethod
