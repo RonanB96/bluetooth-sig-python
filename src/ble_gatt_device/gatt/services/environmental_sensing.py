@@ -3,16 +3,18 @@
 from dataclasses import dataclass
 from typing import Dict, Type
 
+from ..characteristics.apparent_wind_direction import (
+    ApparentWindDirectionCharacteristic,
+)
+from ..characteristics.apparent_wind_speed import ApparentWindSpeedCharacteristic
+from ..characteristics.dew_point import DewPointCharacteristic
+from ..characteristics.heat_index import HeatIndexCharacteristic
 from ..characteristics.humidity import HumidityCharacteristic
 from ..characteristics.pressure import PressureCharacteristic
 from ..characteristics.temperature import TemperatureCharacteristic
-from ..characteristics.dew_point import DewPointCharacteristic
-from ..characteristics.heat_index import HeatIndexCharacteristic
-from ..characteristics.wind_chill import WindChillCharacteristic
-from ..characteristics.true_wind_speed import TrueWindSpeedCharacteristic
 from ..characteristics.true_wind_direction import TrueWindDirectionCharacteristic
-from ..characteristics.apparent_wind_speed import ApparentWindSpeedCharacteristic
-from ..characteristics.apparent_wind_direction import ApparentWindDirectionCharacteristic
+from ..characteristics.true_wind_speed import TrueWindSpeedCharacteristic
+from ..characteristics.wind_chill import WindChillCharacteristic
 from .base import BaseGattService
 
 
