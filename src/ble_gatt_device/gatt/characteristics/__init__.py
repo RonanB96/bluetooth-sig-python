@@ -2,6 +2,7 @@
 
 from typing import Dict, Optional, Type
 
+from ..uuid_registry import uuid_registry
 from .base import BaseCharacteristic
 from .battery_level import BatteryLevelCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
@@ -64,8 +65,6 @@ class CharacteristicRegistry:
         cls, uuid: str
     ) -> Optional[Type[BaseCharacteristic]]:
         """Get the characteristic class for a given UUID by looking up in registry."""
-        from ..uuid_registry import uuid_registry
-
         # Normalize the UUID
         uuid = uuid.replace("-", "").upper()
 

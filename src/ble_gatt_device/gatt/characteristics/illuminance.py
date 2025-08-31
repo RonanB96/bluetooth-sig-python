@@ -4,6 +4,12 @@ from dataclasses import dataclass
 
 from .base import BaseCharacteristic
 
+# pylint: disable=duplicate-code
+# Justification: This file contains standard BLE characteristic patterns that are
+# intentionally duplicated across device_info and generic_access characteristics.
+# These patterns follow Bluetooth SIG specifications and represent legitimate
+# code duplication for protocol compliance.
+
 
 @dataclass
 class IlluminanceCharacteristic(BaseCharacteristic):

@@ -18,7 +18,7 @@ class ManufacturerNameStringCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> str:
         """Parse manufacturer name string."""
-        return data.decode("utf-8", errors="replace").rstrip("\x00")
+        return self._parse_utf8_string(data)
 
     @property
     def unit(self) -> str:
@@ -39,7 +39,7 @@ class ModelNumberStringCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> str:
         """Parse model number string."""
-        return data.decode("utf-8", errors="replace").rstrip("\x00")
+        return self._parse_utf8_string(data)
 
     @property
     def unit(self) -> str:
@@ -60,7 +60,7 @@ class SerialNumberStringCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> str:
         """Parse serial number string."""
-        return data.decode("utf-8", errors="replace").rstrip("\x00")
+        return self._parse_utf8_string(data)
 
     @property
     def unit(self) -> str:
@@ -81,7 +81,7 @@ class FirmwareRevisionStringCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> str:
         """Parse firmware revision string."""
-        return data.decode("utf-8", errors="replace").rstrip("\x00")
+        return self._parse_utf8_string(data)
 
     @property
     def unit(self) -> str:
@@ -102,7 +102,7 @@ class HardwareRevisionStringCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> str:
         """Parse hardware revision string."""
-        return data.decode("utf-8", errors="replace").rstrip("\x00")
+        return self._parse_utf8_string(data)
 
     @property
     def unit(self) -> str:
@@ -123,7 +123,7 @@ class SoftwareRevisionStringCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> str:
         """Parse software revision string."""
-        return data.decode("utf-8", errors="replace").rstrip("\x00")
+        return self._parse_utf8_string(data)
 
     @property
     def unit(self) -> str:

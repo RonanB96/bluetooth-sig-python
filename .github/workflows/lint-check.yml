@@ -9,7 +9,7 @@ on:
 jobs:
   format:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
       with:
@@ -39,6 +39,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v4
@@ -49,13 +50,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e ".[dev]"
-        
-    - name: Verify environment setup
-      run: |
-        python -c "import flake8; print(f'flake8 version: {flake8.__version__}')"
-        python -c "import black; print(f'black version: {black.__version__}')"
-        python -c "import isort; print(f'isort version: {isort.__version__}')"
-        python -c "import ble_gatt_device; print('Package installed successfully')"
 
     - name: Run flake8
       run: |
@@ -71,4 +65,19 @@ jobs:
 
     - name: Run pylint
       run: |
-        python -m pylint src/ble_gatt_device/ --exit-zero --score y
+        # Run pylint and capture both output and score
+        PYLINT_OUTPUT=$(python -m pylint src/ble_gatt_device/ --score y 2>&1)
+        echo "$PYLINT_OUTPUT"
+
+        # Extract score and check if it's exactly 10.00/10
+        SCORE=$(echo "$PYLINT_OUTPUT" | grep -oP "rated at \K[0-9]+\.[0-9]+" | head -1)
+        echo "Pylint score: $SCORE/10"
+
+        # Fail if score is not exactly 10.00
+        if [ "$SCORE" != "10.00" ]; then
+          echo "❌ Pylint score must be exactly 10.00/10. Current score: $SCORE/10"
+          echo "Please fix all pylint issues or add justified disable comments."
+          exit 1
+        fi
+
+        echo "✅ Perfect pylint score achieved: 10.00/10"

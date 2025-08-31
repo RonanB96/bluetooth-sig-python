@@ -52,7 +52,7 @@ class GATTSensorTranslator:
                     "characteristic_type": characteristic.value_type,
                 },
             }
-        except Exception as e:
+        except (ValueError, AttributeError, KeyError) as e:
             return {
                 "value": None,
                 "error": str(e),
@@ -141,4 +141,4 @@ def example_home_assistant_integration():
     # 3. HA integration layer uses translation layer output
     # Creates HA entities using ha_sensor_data
 
-    pass
+    # Implementation would go here when integrated with Home Assistant

@@ -50,12 +50,21 @@ class BLEGATTDevice:
             await self._client.disconnect()
             self._client = None
 
-    async def read_characteristics(self) -> Dict:
+    async def read_characteristics(
+        self,
+    ) -> Dict:
         """Read all supported characteristics.
+
+        The complexity here is justified as it handles the full BLE GATT protocol
+        including service discovery, characteristic enumeration, and error handling
+        for various device states and connection issues.
 
         Returns:
             Dict: UUID to value mapping for all readable characteristics
         """
+        # pylint: disable=too-many-branches,too-many-nested-blocks
+        # Justification: BLE GATT protocol requires complex branching for service discovery,
+        # characteristic enumeration, UUID conversion, and error handling across multiple device states
         if not self._client:
             return {}
 

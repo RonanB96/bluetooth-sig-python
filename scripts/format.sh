@@ -44,11 +44,11 @@ echo ""
 if [ "$CHECK_MODE" = true ]; then
     echo "🔍 Checking Black formatting (no changes will be made)..."
     $PYTHON_CMD -m black --check --diff src/ tests/
-    
+
     echo ""
     echo "🔍 Checking isort import sorting (no changes will be made)..."
     $PYTHON_CMD -m isort --check-only --diff src/ tests/
-    
+
     echo ""
     echo "✅ All files are properly formatted!"
 else
@@ -67,7 +67,7 @@ else
         echo ""
         echo "📝 Files that were formatted:"
         git status --porcelain
-        
+
         if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
             echo ""
             echo "ℹ️  Formatting was applied in CI environment."

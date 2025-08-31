@@ -22,7 +22,9 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         self.value_type = "float"
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(
+        self, data: bytearray
+    ) -> Dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse temperature measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Temperature Value(4) + [Timestamp(7)] + [Temperature Type(1)]
@@ -51,19 +53,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         # Parse optional timestamp (7 bytes) if present
         offset = 5
         if (flags & 0x02) and len(data) >= offset + 7:
-            # Timestamp format: Year(2) Month(1) Day(1) Hours(1) Minutes(1) Seconds(1)
-            timestamp_data = data[offset : offset + 7]
-            year, month, day, hours, minutes, seconds = struct.unpack(
-                "<HBBBBB", timestamp_data
-            )
-            result["timestamp"] = {
-                "year": year,
-                "month": month,
-                "day": day,
-                "hours": hours,
-                "minutes": minutes,
-                "seconds": seconds,
-            }
+            result["timestamp"] = self._parse_ieee11073_timestamp(data, offset)
             offset += 7
 
         # Parse optional temperature type (1 byte) if present

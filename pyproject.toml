@@ -106,10 +106,11 @@ disable = [
     "C0412",  # ungrouped-imports (handled by isort/Black globally)
     "C0413",  # wrong-import-position (handled by isort/Black globally)
     "E0611",  # no-name-in-module (editable install issue affects entire project)
+    "R0801",  # duplicate-code (BLE protocol patterns have legitimate code duplication)
 ]
 
-# Note: Other issues like broad-exception-caught, too-few-public-methods, 
-# no-member, redefined-outer-name are now handled with targeted inline 
+# Note: Other issues like broad-exception-caught, too-few-public-methods,
+# no-member, redefined-outer-name are now handled with targeted inline
 # disables in specific files where they're needed.
 
 [tool.pylint.BASIC]

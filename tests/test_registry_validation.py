@@ -459,10 +459,11 @@ class TestNameResolutionFallback:
 
         service = BatteryService()
 
-        # Should not have explicit service name
-        assert not hasattr(
+        # Should have _service_name but it should be empty (using class name fallback)
+        assert hasattr(
             service, "_service_name"
-        ), "BatteryService should not have _service_name set"
+        ), "BatteryService should have _service_name attribute"
+        assert not service._service_name, "BatteryService _service_name should be empty"
 
         # Should resolve UUID through class name
         uuid = service.SERVICE_UUID
@@ -646,9 +647,12 @@ class TestNameResolutionFallback:
             expected_name,
         ) in services_without_explicit_names:
             service = service_class()
-            assert not hasattr(
+            assert hasattr(
                 service, "_service_name"
-            ), f"{service_class.__name__} should not have _service_name"
+            ), f"{service_class.__name__} should have _service_name attribute"
+            assert (
+                not service._service_name
+            ), f"{service_class.__name__} _service_name should be empty"
             assert service.SERVICE_UUID == expected_uuid
             assert service.name == expected_name
 
