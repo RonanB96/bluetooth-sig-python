@@ -13,6 +13,7 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 
 ## Supported GATT Services
 
+<<<<<<< HEAD
 ### Core Services
 
 - **Automation IO Service (0x181C)**
@@ -29,6 +30,9 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
   - Voltage Frequency (0x2B4C)
   - Supported Power Range (0x2A66)
   - Tx Power Level (0x2A07)
+=======
+### Core Services (5 implemented)
+>>>>>>> e5233ed (Complete Glucose Monitoring Service implementation with comprehensive testing)
 
 - **Battery Service (0x180F)**
   - Battery Level (0x2A19)
@@ -53,6 +57,7 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
   - Device Name (0x2A00)
   - Appearance (0x2A01)
 
+<<<<<<< HEAD
 - **Health Thermometer Service (0x1809)**
   - Temperature Measurement (0x2A1C)
   
@@ -84,6 +89,31 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 ### Registry Coverage
 
 - **Comprehensive characteristics** fully implemented with validation
+=======
+- **Glucose Monitoring Service (0x1808)**
+  - Glucose Measurement (0x2A18) - Core glucose readings with IEEE-11073 SFLOAT
+  - Glucose Measurement Context (0x2A34) - Carbohydrate, exercise, medication data  
+  - Glucose Feature (0x2A51) - Device capabilities bitmap
+
+### Health & Fitness Services (4 implemented)
+
+- **Health Thermometer Service (0x1809)**
+  - Temperature Measurement (0x2A1C)
+
+- **Heart Rate Service (0x180D)**
+  - Heart Rate Measurement (0x2A37)
+
+- **Running Speed and Cadence Service (0x1814)**
+  - RSC Measurement (0x2A53)
+
+- **Cycling Speed and Cadence Service (0x1816)**
+  - CSC Measurement (0x2A5B)
+
+### Registry Coverage
+
+- **24 Characteristics** fully implemented with validation
+- **9 Services** including comprehensive glucose monitoring support
+>>>>>>> e5233ed (Complete Glucose Monitoring Service implementation with comprehensive testing)
 - **Complete Bluetooth SIG compliance** via official UUID registry
 - **Automatic name resolution** with multiple format attempts
 
@@ -106,11 +136,16 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 
 ### Testing Framework
 
+<<<<<<< HEAD
 - **56+ Comprehensive Tests**: Full validation of services, characteristics, and registry
+=======
+- **144+ Comprehensive Tests**: Full validation of services, characteristics, and registry including glucose monitoring
+>>>>>>> e5233ed (Complete Glucose Monitoring Service implementation with comprehensive testing)
 - **Dynamic Discovery**: Automatic detection of all service and characteristic classes  
 - **Real Device Testing**: Scripts for testing with actual BLE hardware (Nordic Thingy:52 validated)
 - **Registry Validation**: Ensures all implementations match Bluetooth SIG standards
 - **Architecture Separation**: Validates clean layer boundaries between GATT and HA
+- **Medical Device Testing**: Comprehensive glucose monitoring test suite with simulated device data
 
 ## Home Assistant Integration Architecture
 
@@ -301,6 +336,7 @@ value = char.parse_value(bytearray([85]))  # 85% battery
 print(f"Battery level: {value}{char.unit}")  # Battery level: 85%
 ```
 
+<<<<<<< HEAD
 ### Health Monitoring Examples
 
 ```python
@@ -359,6 +395,56 @@ csc_data = bytearray([0x03, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC])
 parsed_csc = csc_char.parse_value(csc_data)
 print(f"Wheel revolutions: {parsed_csc['cumulative_wheel_revolutions']}")
 print(f"Crank revolutions: {parsed_csc['cumulative_crank_revolutions']}")
+=======
+### Glucose Monitoring Usage
+
+```python
+from ble_gatt_device.gatt.services.glucose import GlucoseService
+from ble_gatt_device.gatt.characteristics import (
+    GlucoseMeasurementCharacteristic,
+    GlucoseMeasurementContextCharacteristic,
+    GlucoseFeatureCharacteristic
+)
+import struct
+
+# Create glucose service instance
+glucose_service = GlucoseService()
+print(f"Service UUID: {glucose_service.SERVICE_UUID}")  # 1808
+
+# Parse glucose measurement data
+glucose_char = GlucoseMeasurementCharacteristic(uuid="2A18", properties=set())
+
+# Simulate glucose reading: 120 mg/dL at 2024-03-15 14:30:00
+glucose_data = bytearray([
+    0x00,  # flags: mg/dL unit, no optional fields
+    0x2A, 0x00,  # sequence number = 42
+    0xE8, 0x07, 0x03, 0x0F, 0x0E, 0x1E, 0x00,  # timestamp: 2024-03-15 14:30:00
+    0x80, 0x17  # glucose: 120 mg/dL as IEEE-11073 SFLOAT
+])
+
+result = glucose_char.parse_value(glucose_data)
+print(f"Glucose: {result['glucose_concentration']} {result['unit']}")
+print(f"Timestamp: {result['base_time']}")
+print(f"Sequence: {result['sequence_number']}")
+
+# Parse glucose feature capabilities
+feature_char = GlucoseFeatureCharacteristic(uuid="2A51", properties=set())
+feature_data = bytearray([0x03, 0x04])  # Low battery + sensor malfunction + multiple bond
+
+features = feature_char.parse_value(feature_data)
+print(f"Device features: {features['enabled_features']}")
+
+# Parse glucose context data
+context_char = GlucoseMeasurementContextCharacteristic(uuid="2A34", properties=set())
+context_data = bytearray([
+    0x04,  # flags: meal information present
+    0x2A, 0x00,  # sequence number = 42 (matches measurement)
+    0x02  # meal = 2 (Postprandial - after meal)
+])
+
+context = context_char.parse_value(context_data)
+print(f"Meal context: {context['meal_type']}")
+>>>>>>> e5233ed (Complete Glucose Monitoring Service implementation with comprehensive testing)
 ```
 
 ### UUID Registry Usage

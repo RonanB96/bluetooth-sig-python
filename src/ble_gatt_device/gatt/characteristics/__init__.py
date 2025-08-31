@@ -31,6 +31,9 @@ from .electric_current_range import ElectricCurrentRangeCharacteristic
 from .electric_current_specification import ElectricCurrentSpecificationCharacteristic
 from .electric_current_statistics import ElectricCurrentStatisticsCharacteristic
 from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic
+from .glucose_feature import GlucoseFeatureCharacteristic
+from .glucose_measurement import GlucoseMeasurementCharacteristic
+from .glucose_measurement_context import GlucoseMeasurementContextCharacteristic
 from .heart_rate_measurement import HeartRateMeasurementCharacteristic
 from .heat_index import HeatIndexCharacteristic
 from .high_voltage import HighVoltageCharacteristic
@@ -77,6 +80,9 @@ class CharacteristicRegistry:
         "Cycling Power Feature": CyclingPowerFeatureCharacteristic,
         "Cycling Power Vector": CyclingPowerVectorCharacteristic,
         "Cycling Power Control Point": CyclingPowerControlPointCharacteristic,
+        "Glucose Measurement": GlucoseMeasurementCharacteristic,
+        "Glucose Measurement Context": GlucoseMeasurementContextCharacteristic,
+        "Glucose Feature": GlucoseFeatureCharacteristic,
         "Manufacturer Name String": ManufacturerNameStringCharacteristic,
         "Model Number String": ModelNumberStringCharacteristic,
         "Serial Number String": SerialNumberStringCharacteristic,
