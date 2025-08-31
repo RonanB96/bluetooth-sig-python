@@ -13,7 +13,7 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 
 ## Supported GATT Services
 
-### Core Services (8 implemented)
+### Core Services (6 implemented)
 
 - **Battery Service (0x180F)**
   - Battery Level (0x2A19)
@@ -52,9 +52,23 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 - **Cycling Speed and Cadence Service (0x1816)**
   - CSC Measurement (0x2A5B)
 
+- **Cycling Power Service (0x1818)**
+  - Cycling Power Measurement (0x2A63)
+  - Cycling Power Feature (0x2A65)
+  - Cycling Power Vector (0x2A64)
+  - Cycling Power Control Point (0x2A66)
+
+- **Body Composition Service (0x181B)**
+  - Body Composition Measurement (0x2A9C)
+  - Body Composition Feature (0x2A9B)
+
+- **Weight Scale Service (0x181D)**
+  - Weight Measurement (0x2A9D)
+  - Weight Scale Feature (0x2A9E)
+
 ### Registry Coverage
 
-- **20+ Characteristics** fully implemented with validation
+- **29+ Characteristics** fully implemented with validation
 - **Complete Bluetooth SIG compliance** via official UUID registry
 - **Automatic name resolution** with multiple format attempts
 
