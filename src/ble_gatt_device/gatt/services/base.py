@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, Optional, Set, Type
 
-from ..characteristics import BaseCharacteristic
+from ..characteristics import BaseCharacteristic, CharacteristicRegistry
 from ..uuid_registry import uuid_registry
 
 # Type aliases
@@ -20,6 +20,7 @@ class BaseGattService(ABC):
 
     # Instance variables
     characteristics: Dict[str, BaseCharacteristic] = field(default_factory=dict)
+    _service_name: str = ""  # Override in subclasses if needed
 
     @property
     def SERVICE_UUID(self) -> str:
@@ -129,8 +130,6 @@ class BaseGattService(ABC):
         Args:
             characteristics: Dict mapping UUID to characteristic properties
         """
-        from ..characteristics import CharacteristicRegistry
-
         for uuid, props in characteristics.items():
             uuid = uuid.replace("-", "").upper()
             char = CharacteristicRegistry.create_characteristic(

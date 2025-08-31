@@ -2,8 +2,11 @@
 
 from typing import Dict, Optional, Type
 
+from ..uuid_registry import uuid_registry
 from .base import BaseCharacteristic
 from .battery_level import BatteryLevelCharacteristic
+from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
+from .csc_measurement import CSCMeasurementCharacteristic
 from .device_info import (
     FirmwareRevisionStringCharacteristic,
     HardwareRevisionStringCharacteristic,
@@ -13,9 +16,15 @@ from .device_info import (
     SoftwareRevisionStringCharacteristic,
 )
 from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic
+from .heart_rate_measurement import HeartRateMeasurementCharacteristic
 from .humidity import HumidityCharacteristic
+from .illuminance import IlluminanceCharacteristic
 from .pressure import PressureCharacteristic
+from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
+from .rsc_measurement import RSCMeasurementCharacteristic
+from .sound_pressure_level import SoundPressureLevelCharacteristic
 from .temperature import TemperatureCharacteristic
+from .temperature_measurement import TemperatureMeasurementCharacteristic
 from .uv_index import UVIndexCharacteristic
 
 
@@ -25,9 +34,17 @@ class CharacteristicRegistry:
     _characteristics: Dict[str, Type[BaseCharacteristic]] = {
         "Battery Level": BatteryLevelCharacteristic,
         "Temperature": TemperatureCharacteristic,
+        "Temperature Measurement": TemperatureMeasurementCharacteristic,
         "Humidity": HumidityCharacteristic,
         "Pressure": PressureCharacteristic,
         "UV Index": UVIndexCharacteristic,
+        "Illuminance": IlluminanceCharacteristic,
+        "Power Specification": SoundPressureLevelCharacteristic,
+        "Heart Rate Measurement": HeartRateMeasurementCharacteristic,
+        "Blood Pressure Measurement": BloodPressureMeasurementCharacteristic,
+        "PLX Continuous Measurement": PulseOximetryMeasurementCharacteristic,
+        "CSC Measurement": CSCMeasurementCharacteristic,
+        "RSC Measurement": RSCMeasurementCharacteristic,
         "Manufacturer Name String": ManufacturerNameStringCharacteristic,
         "Model Number String": ModelNumberStringCharacteristic,
         "Serial Number String": SerialNumberStringCharacteristic,
@@ -48,8 +65,6 @@ class CharacteristicRegistry:
         cls, uuid: str
     ) -> Optional[Type[BaseCharacteristic]]:
         """Get the characteristic class for a given UUID by looking up in registry."""
-        from ..uuid_registry import uuid_registry
-
         # Normalize the UUID
         uuid = uuid.replace("-", "").upper()
 

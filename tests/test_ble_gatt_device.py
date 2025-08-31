@@ -1,4 +1,5 @@
 """Tests for BLE GATT device functionality."""
+
 # pylint: disable=redefined-outer-name  # pytest fixtures
 
 from unittest.mock import AsyncMock, patch
@@ -68,7 +69,7 @@ async def test_read_characteristics_success(mock_device):
     # Mock read_gatt_char to return test values
     mock_client.read_gatt_char.side_effect = [
         bytes([100, 0]),  # First characteristic
-        bytes([75]),      # Second characteristic
+        bytes([75]),  # Second characteristic
     ]
 
     values = await mock_device.read_characteristics()

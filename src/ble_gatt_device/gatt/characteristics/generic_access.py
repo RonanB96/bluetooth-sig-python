@@ -18,7 +18,7 @@ class DeviceNameCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> str:
         """Parse device name string."""
-        return data.decode("utf-8", errors="replace").rstrip("\x00")
+        return self._parse_utf8_string(data)
 
     @property
     def unit(self) -> str:

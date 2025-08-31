@@ -54,15 +54,17 @@ test = [
 ]
 
 [tool.flake8]
-max-line-length = 88
 extend-ignore = [
     "E203",  # E203: Whitespace before ':' - Black handles this differently
-    "E501",  # line too long (handled by black)
+    "E501",  # line too long (handled by black) - IGNORE LINE LENGTH
+    "E701",  # multiple statements on one line (colon)
+    "E702",  # multiple statements on one line (semicolon)
     "W503",  # line break before binary operator
     "W504",  # line break after binary operator
 ]
 exclude = [".git", "__pycache__", "build", "dist", ".venv", ".eggs"]
 per-file-ignores = ["__init__.py:F401"]  # Ignore unused imports in __init__.py files
+# DO NOT SET max-line-length - let Black handle it
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -90,22 +92,25 @@ output-format = "colorized"
 msg-template = "{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
 
 [tool.pylint.FORMAT]
-max-line-length = 88
+# Line length is handled by Black - DO NOT SET max-line-length
+# This section intentionally left without line length constraints
 
 [tool.pylint.MESSAGE_CONTROL]
 # Only globally disable issues that are handled by other tools or are project-wide
 disable = [
     "C0103",  # invalid-name (Black handles this globally)
+    "C0301",  # line-too-long (Black handles this globally) - IGNORE LINE LENGTH
     "W0311",  # bad-indentation (Black handles this globally)
     "W0511",  # fixme (TODO comments are useful throughout)
     "C0411",  # wrong-import-order (handled by isort/Black globally)
     "C0412",  # ungrouped-imports (handled by isort/Black globally)
     "C0413",  # wrong-import-position (handled by isort/Black globally)
     "E0611",  # no-name-in-module (editable install issue affects entire project)
+    "R0801",  # duplicate-code (BLE protocol patterns have legitimate code duplication)
 ]
 
-# Note: Other issues like broad-exception-caught, too-few-public-methods, 
-# no-member, redefined-outer-name are now handled with targeted inline 
+# Note: Other issues like broad-exception-caught, too-few-public-methods,
+# no-member, redefined-outer-name are now handled with targeted inline
 # disables in specific files where they're needed.
 
 [tool.pylint.BASIC]
@@ -115,11 +120,7 @@ good-names = ["id", "i", "j", "k", "ex", "Run", "_", "fp", "e"]
 line-length = 88
 target-version = ['py311']
 include = '\.pyi?$'
-extend-exclude = '''
-# A regex preceded with ^/ will apply only to files and directories
-# in the root of the project.
-^/test.*
-'''
+# Note: removed extend-exclude that was blocking tests/ directory
 
 [tool.isort]
 profile = "black"

@@ -1,4 +1,5 @@
 """Tests for UUID registry and YAML loading functionality."""
+
 # pylint: disable=redefined-outer-name  # pytest fixtures
 
 from pathlib import Path
@@ -68,9 +69,7 @@ def test_service_class_name_resolution():
     assert battery.name == "Battery", "Wrong Battery Service name"
 
     assert env.SERVICE_UUID == "181A", "Wrong Environmental Service UUID"
-    assert (
-        env.name == "Environmental Sensing"
-    ), "Wrong Environmental Service name"
+    assert env.name == "Environmental Sensing", "Wrong Environmental Service name"
 
 
 def test_characteristic_discovery():
@@ -137,12 +136,7 @@ def test_invalid_uuid_lookup(uuid_registry):
 def test_yaml_file_presence():
     """Test that required YAML files exist."""
     base_path = (
-        (
-            Path(__file__).parent.parent
-            / "bluetooth_sig"
-            / "assigned_numbers"
-            / "uuids"
-        )
+        Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
     )
 
     assert (

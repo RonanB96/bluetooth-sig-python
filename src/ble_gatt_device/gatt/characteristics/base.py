@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import re
+import struct
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Set
+from typing import Any, Dict, Set
 
 from ..uuid_registry import uuid_registry
 
@@ -114,3 +115,96 @@ class BaseCharacteristic(ABC):
     def unit(self) -> str:
         """Get the unit of measurement for this characteristic."""
         return ""
+
+    @property
+    def device_class(self) -> str:
+        """Home Assistant device class for this characteristic."""
+        return ""
+
+    @property
+    def state_class(self) -> str:
+        """Home Assistant state class for this characteristic."""
+        return ""
+
+    def _parse_ieee11073_sfloat(self, sfloat_val: int) -> float:
+        """Convert IEEE-11073 16-bit SFLOAT to Python float.
+
+        This is a common pattern used in health device characteristics
+        like blood pressure, pulse oximetry, and temperature measurements.
+
+        Args:
+            sfloat_val: 16-bit SFLOAT value as integer
+
+        Returns:
+            Converted float value
+        """
+        if sfloat_val == 0x07FF:  # NaN
+            return float("nan")
+        if sfloat_val == 0x0800:  # NRes (Not a valid result)
+            return float("nan")
+        if sfloat_val == 0x07FE:  # +INFINITY
+            return float("inf")
+        if sfloat_val == 0x0802:  # -INFINITY
+            return float("-inf")
+
+        # Extract mantissa and exponent
+        mantissa = sfloat_val & 0x0FFF
+        exponent = (sfloat_val >> 12) & 0x0F
+
+        # Handle negative mantissa
+        if mantissa & 0x0800:
+            mantissa = mantissa - 0x1000
+
+        # Handle negative exponent
+        if exponent & 0x08:
+            exponent = exponent - 0x10
+
+        return mantissa * (10**exponent)
+
+    def _parse_ieee11073_timestamp(
+        self, data: bytearray, offset: int
+    ) -> Dict[str, int]:
+        """Parse IEEE-11073 timestamp format (7 bytes).
+
+        This is a common pattern used in health device characteristics
+        for parsing timestamps.
+
+        Args:
+            data: Raw bytearray containing the timestamp
+            offset: Offset where timestamp starts
+
+        Returns:
+            Dictionary with timestamp components
+
+        Raises:
+            ValueError: If not enough data for timestamp
+        """
+        if len(data) < offset + 7:
+            raise ValueError("Not enough data for timestamp parsing")
+
+        timestamp_data = data[offset : offset + 7]
+        year, month, day, hours, minutes, seconds = struct.unpack(
+            "<HBBBBB", timestamp_data
+        )
+        return {
+            "year": year,
+            "month": month,
+            "day": day,
+            "hours": hours,
+            "minutes": minutes,
+            "seconds": seconds,
+        }
+
+    def _parse_utf8_string(self, data: bytearray) -> str:
+        """Parse UTF-8 string from bytearray.
+
+        This is a common pattern used in device info and generic access
+        characteristics for parsing string values.
+
+        Args:
+            data: Raw bytearray containing string data
+
+        Returns:
+            Decoded UTF-8 string with null bytes stripped
+        """
+        return data.decode("utf-8", errors="replace").rstrip("\x00")
