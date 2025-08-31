@@ -1,6 +1,6 @@
 # AI Coding Agent Instructions for BLE GATT Device
 
-Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
+Reference these instructions as primary guidance while using search and bash commands to complement and verify the information provided here.
 
 ## Project Overview
 
@@ -30,8 +30,8 @@ git submodule init
 git submodule update
 # TIMEOUT WARNING: May take 5+ minutes. NEVER CANCEL.
 # BLOCKING ISSUE: If this fails with "Could not resolve host: bitbucket.org"
-# the entire framework cannot be imported or tested. Document this as a 
-# fundamental limitation requiring network access to bitbucket.org.
+#   the entire framework cannot be imported or tested. Document this as a 
+#   fundamental limitation requiring network access to bitbucket.org.
 ```
 
 3. **Verify submodule initialization (CRITICAL VALIDATION):**
@@ -162,21 +162,13 @@ PYTHONPATH=src python3 -c "import ble_gatt_device; print('✅ Module imports suc
 
 2. **Test UUID registry functionality (requires submodule):**
 ```bash
-PYTHONPATH=src python3 -c "
-from ble_gatt_device.gatt.uuid_registry import UuidRegistry
-registry = UuidRegistry()
-print('✅ UUID Registry initialized')
-"
+PYTHONPATH=src python3 -c "from ble_gatt_device.gatt.uuid_registry import UuidRegistry; registry = UuidRegistry(); print('✅ UUID Registry initialized')"
 # EXPECTED FAILURE: Will fail with FileNotFoundError if bluetooth_sig submodule is missing
 ```
 
 3. **Test service discovery (requires submodule):**
 ```bash
-PYTHONPATH=src python3 -c "
-from ble_gatt_device.gatt.services import discover_service_classes
-services = discover_service_classes()
-print(f'✅ Discovered {len(services)} service classes')
-"
+PYTHONPATH=src python3 -c "from ble_gatt_device.gatt.services import discover_service_classes; services = discover_service_classes(); print(f'✅ Discovered {len(services)} service classes')"
 # EXPECTED FAILURE: Will fail with FileNotFoundError if bluetooth_sig submodule is missing
 ```
 
