@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ble_gatt_device"
-version = "0.2.0"
+version = "0.3.0"
 authors = [
   { name = "RonanB96", email = "ronanbyrne791@gmail.com" },
 ]
