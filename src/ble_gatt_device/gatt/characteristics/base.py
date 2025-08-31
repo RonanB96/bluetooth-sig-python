@@ -114,3 +114,13 @@ class BaseCharacteristic(ABC):
     def unit(self) -> str:
         """Get the unit of measurement for this characteristic."""
         return ""
+
+    @property
+    def device_class(self) -> str:
+        """Home Assistant device class for this characteristic."""
+        return ""
+        
+    @property 
+    def state_class(self) -> str:
+        """Home Assistant state class for this characteristic."""
+        return ""
