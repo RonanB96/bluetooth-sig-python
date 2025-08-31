@@ -6,7 +6,7 @@ This directory contains GitHub Actions workflows for automated testing and code 
 
 ### Test and Coverage (`test-coverage.yml`)
 - **Triggers**: Push to `main`, Pull Requests to `main`
-- **Matrix**: Python 3.9, 3.10, 3.11, 3.12
+- **Matrix**: Python 3.11, 3.12 (Home Assistant compatible versions)
 - **Purpose**: Run comprehensive test suite with coverage reporting
 - **Features**:
   - Automatic git submodule initialization for `bluetooth_sig` dependency

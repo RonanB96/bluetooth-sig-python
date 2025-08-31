@@ -11,20 +11,17 @@ authors = [
 description = "Registry-driven BLE GATT framework with real device integration and Home Assistant compatibility"
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 keywords = ["bluetooth", "ble", "gatt", "home-assistant", "iot", "sensors", "real-device"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Home Automation",
     "Topic :: System :: Hardware",
-    "Topic :: Communications :: Internet :: WWW/HTTP",
 ]
 dependencies = [
     "bleak>=0.22.0",
@@ -110,7 +107,7 @@ good-names = ["id", "i", "j", "k", "ex", "Run", "_", "fp", "e"]
 
 [tool.black]
 line-length = 88
-target-version = ['py39']
+target-version = ['py311']
 include = '\.pyi?$'
 extend-exclude = '''
 # A regex preceded with ^/ will apply only to files and directories
