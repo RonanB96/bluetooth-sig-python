@@ -8,7 +8,7 @@ from .base import BaseCharacteristic
 @dataclass
 class ElectricCurrentCharacteristic(BaseCharacteristic):
     """Electric Current characteristic.
-    
+
     Measures electric current with 0.01 A resolution.
     """
 
@@ -21,13 +21,13 @@ class ElectricCurrentCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> float:
         """Parse electric current data (uint16 in units of 0.01 A).
-        
+
         Args:
             data: Raw bytes from the characteristic read
-            
+
         Returns:
             Current value in Amperes
-            
+
         Raises:
             ValueError: If data is insufficient
         """

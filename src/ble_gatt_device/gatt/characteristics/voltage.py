@@ -8,7 +8,7 @@ from .base import BaseCharacteristic
 @dataclass
 class VoltageCharacteristic(BaseCharacteristic):
     """Voltage characteristic.
-    
+
     Measures voltage with 1/64 V resolution.
     """
 
@@ -21,13 +21,13 @@ class VoltageCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> float:
         """Parse voltage data (uint16 in units of 1/64 V).
-        
+
         Args:
             data: Raw bytes from the characteristic read
-            
+
         Returns:
             Voltage value in Volts
-            
+
         Raises:
             ValueError: If data is insufficient
         """

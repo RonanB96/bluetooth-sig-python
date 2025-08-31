@@ -8,7 +8,7 @@ from .base import BaseCharacteristic
 @dataclass
 class TxPowerLevelCharacteristic(BaseCharacteristic):
     """Tx Power Level characteristic.
-    
+
     Measures transmit power level in dBm.
     """
 
@@ -21,13 +21,13 @@ class TxPowerLevelCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> int:
         """Parse TX power level data (sint8 in dBm).
-        
+
         Args:
             data: Raw bytes from the characteristic read
-            
+
         Returns:
             TX power level in dBm
-            
+
         Raises:
             ValueError: If data is insufficient
         """

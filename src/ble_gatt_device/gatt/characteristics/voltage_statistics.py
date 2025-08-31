@@ -9,7 +9,7 @@ from .base import BaseCharacteristic
 @dataclass
 class VoltageStatisticsCharacteristic(BaseCharacteristic):
     """Voltage Statistics characteristic.
-    
+
     Provides statistical voltage data over time.
     """
 
@@ -22,13 +22,13 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> Dict[str, float]:
         """Parse voltage statistics data (3x uint16 in units of 1/64 V).
-        
+
         Args:
             data: Raw bytes from the characteristic read
-            
+
         Returns:
             Dictionary with 'minimum', 'maximum', and 'average' voltage values in Volts
-            
+
         Raises:
             ValueError: If data is insufficient
         """
@@ -39,11 +39,11 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
         min_voltage_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         max_voltage_raw = int.from_bytes(data[2:4], byteorder="little", signed=False)
         avg_voltage_raw = int.from_bytes(data[4:6], byteorder="little", signed=False)
-        
+
         return {
             "minimum": min_voltage_raw / 64.0,
             "maximum": max_voltage_raw / 64.0,
-            "average": avg_voltage_raw / 64.0
+            "average": avg_voltage_raw / 64.0,
         }
 
     @property

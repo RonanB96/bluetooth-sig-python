@@ -9,7 +9,7 @@ from .base import BaseCharacteristic
 @dataclass
 class VoltageSpecificationCharacteristic(BaseCharacteristic):
     """Voltage Specification characteristic.
-    
+
     Specifies minimum and maximum voltage values for electrical specifications.
     """
 
@@ -22,13 +22,13 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> Dict[str, float]:
         """Parse voltage specification data (2x uint16 in units of 1/64 V).
-        
+
         Args:
             data: Raw bytes from the characteristic read
-            
+
         Returns:
             Dictionary with 'minimum' and 'maximum' voltage specification values in Volts
-            
+
         Raises:
             ValueError: If data is insufficient
         """
@@ -38,11 +38,8 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
         # Convert 2x uint16 (little endian) to voltage specification in Volts
         min_voltage_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         max_voltage_raw = int.from_bytes(data[2:4], byteorder="little", signed=False)
-        
-        return {
-            "minimum": min_voltage_raw / 64.0,
-            "maximum": max_voltage_raw / 64.0
-        }
+
+        return {"minimum": min_voltage_raw / 64.0, "maximum": max_voltage_raw / 64.0}
 
     @property
     def unit(self) -> str:

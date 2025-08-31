@@ -9,7 +9,7 @@ from .base import BaseCharacteristic
 @dataclass
 class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
     """Electric Current Range characteristic.
-    
+
     Specifies lower and upper current bounds (2x uint16).
     """
 
@@ -22,13 +22,13 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> Dict[str, float]:
         """Parse current range data (2x uint16 in units of 0.01 A).
-        
+
         Args:
             data: Raw bytes from the characteristic read
-            
+
         Returns:
             Dictionary with 'min' and 'max' current values in Amperes
-            
+
         Raises:
             ValueError: If data is insufficient
         """
@@ -38,11 +38,8 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
         # Convert 2x uint16 (little endian) to current range in Amperes
         min_current_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         max_current_raw = int.from_bytes(data[2:4], byteorder="little", signed=False)
-        
-        return {
-            "min": min_current_raw * 0.01,
-            "max": max_current_raw * 0.01
-        }
+
+        return {"min": min_current_raw * 0.01, "max": max_current_raw * 0.01}
 
     @property
     def unit(self) -> str:

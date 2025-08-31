@@ -8,7 +8,7 @@ from .base import BaseCharacteristic
 @dataclass
 class AverageVoltageCharacteristic(BaseCharacteristic):
     """Average Voltage characteristic.
-    
+
     Measures average voltage with 1/64 V resolution.
     """
 
@@ -21,13 +21,13 @@ class AverageVoltageCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> float:
         """Parse average voltage data (uint16 in units of 1/64 V).
-        
+
         Args:
             data: Raw bytes from the characteristic read
-            
+
         Returns:
             Average voltage value in Volts
-            
+
         Raises:
             ValueError: If data is insufficient
         """

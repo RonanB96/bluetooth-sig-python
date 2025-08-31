@@ -8,7 +8,7 @@ from .base import BaseCharacteristic
 @dataclass
 class VoltageFrequencyCharacteristic(BaseCharacteristic):
     """Voltage Frequency characteristic.
-    
+
     Measures voltage frequency with 1/256 Hz resolution.
     """
 
@@ -21,13 +21,13 @@ class VoltageFrequencyCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> float:
         """Parse voltage frequency data (uint16 in units of 1/256 Hz).
-        
+
         Args:
             data: Raw bytes from the characteristic read
-            
+
         Returns:
             Frequency value in Hz
-            
+
         Raises:
             ValueError: If data is insufficient
         """
