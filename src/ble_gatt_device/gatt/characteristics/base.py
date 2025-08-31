@@ -119,8 +119,8 @@ class BaseCharacteristic(ABC):
     def device_class(self) -> str:
         """Home Assistant device class for this characteristic."""
         return ""
-        
-    @property 
+
+    @property
     def state_class(self) -> str:
         """Home Assistant state class for this characteristic."""
         return ""

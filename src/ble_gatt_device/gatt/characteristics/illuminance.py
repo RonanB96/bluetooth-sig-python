@@ -1,6 +1,5 @@
 """Illuminance characteristic implementation."""
 
-import struct
 from dataclasses import dataclass
 
 from .base import BaseCharacteristic
@@ -9,7 +8,7 @@ from .base import BaseCharacteristic
 @dataclass
 class IlluminanceCharacteristic(BaseCharacteristic):
     """Illuminance characteristic (0x2AFB).
-    
+
     Measures light intensity in lux (lumens per square meter).
     """
 
@@ -22,12 +21,12 @@ class IlluminanceCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> float:
         """Parse illuminance data.
-        
+
         Format: 3-byte value representing illuminance in 0.01 lux units.
-        
+
         Args:
             data: Raw bytearray from BLE characteristic
-            
+
         Returns:
             Illuminance value in lux
         """
@@ -47,8 +46,8 @@ class IlluminanceCharacteristic(BaseCharacteristic):
     def device_class(self) -> str:
         """Home Assistant device class."""
         return "illuminance"
-        
-    @property 
+
+    @property
     def state_class(self) -> str:
         """Home Assistant state class."""
         return "measurement"

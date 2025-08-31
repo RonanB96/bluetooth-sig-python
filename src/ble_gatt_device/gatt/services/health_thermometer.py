@@ -3,8 +3,10 @@
 from dataclasses import dataclass
 from typing import Dict, Type
 
+from ..characteristics.temperature_measurement import (
+    TemperatureMeasurementCharacteristic,
+)
 from .base import BaseGattService
-from ..characteristics.temperature_measurement import TemperatureMeasurementCharacteristic
 
 
 @dataclass

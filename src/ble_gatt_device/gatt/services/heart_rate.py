@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 from typing import Dict, Type
 
-from .base import BaseGattService
 from ..characteristics.heart_rate_measurement import HeartRateMeasurementCharacteristic
+from .base import BaseGattService
 
 
 @dataclass

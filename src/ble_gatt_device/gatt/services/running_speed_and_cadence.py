@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 from typing import Dict, Type
 
-from .base import BaseGattService
 from ..characteristics.rsc_measurement import RSCMeasurementCharacteristic
+from .base import BaseGattService
 
 
 @dataclass

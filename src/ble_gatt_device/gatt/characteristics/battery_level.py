@@ -33,8 +33,8 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
     def device_class(self) -> str:
         """Home Assistant device class."""
         return "battery"
-        
-    @property 
+
+    @property
     def state_class(self) -> str:
         """Home Assistant state class."""
         return "measurement"

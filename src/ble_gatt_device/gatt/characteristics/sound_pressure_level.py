@@ -1,6 +1,5 @@
 """Sound Pressure Level characteristic implementation."""
 
-import struct
 from dataclasses import dataclass
 
 from .base import BaseCharacteristic
@@ -8,12 +7,12 @@ from .base import BaseCharacteristic
 
 @dataclass
 class SoundPressureLevelCharacteristic(BaseCharacteristic):
-    """Sound Pressure Level characteristic (0x2B06).
-    
-    Measures sound pressure level in decibels (dB).
+    """Power Specification characteristic (0x2B06).
+
+    Measures power specification values.
     """
 
-    _characteristic_name: str = "Sound Pressure Level"
+    _characteristic_name: str = "Power Specification"
 
     def __post_init__(self):
         """Initialize with specific value type and unit."""
@@ -22,12 +21,12 @@ class SoundPressureLevelCharacteristic(BaseCharacteristic):
 
     def parse_value(self, data: bytearray) -> float:
         """Parse sound pressure level data.
-        
+
         Format: 2-byte signed integer representing sound level in 0.1 dB units.
-        
+
         Args:
             data: Raw bytearray from BLE characteristic
-            
+
         Returns:
             Sound pressure level in dB
         """
@@ -47,8 +46,8 @@ class SoundPressureLevelCharacteristic(BaseCharacteristic):
     def device_class(self) -> str:
         """Home Assistant device class."""
         return "sound_pressure"
-        
-    @property 
+
+    @property
     def state_class(self) -> str:
         """Home Assistant state class."""
         return "measurement"

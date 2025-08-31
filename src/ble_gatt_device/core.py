@@ -22,6 +22,14 @@ class BLEGATTDevice:
         self.address = address
         self._client: Optional[BaseBleakClient] = None
 
+    def __str__(self) -> str:
+        """Return string representation of the device.
+
+        Returns:
+            str: String representation including device address
+        """
+        return f"BLEGATTDevice(address={self.address})"
+
     async def connect(self) -> bool:
         """Connect to the BLE device.
 

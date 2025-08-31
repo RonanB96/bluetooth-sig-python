@@ -221,7 +221,9 @@ class TestCharacteristicRegistryValidation:
         """Get all characteristic classes."""
         return discover_characteristic_classes()
 
-    def test_all_characteristics_discovered(self, characteristic_classes: List[BaseCharacteristic]):
+    def test_all_characteristics_discovered(
+        self, characteristic_classes: List[BaseCharacteristic]
+    ):
         """Test that characteristics were discovered."""
         assert (
             len(characteristic_classes) > 0
