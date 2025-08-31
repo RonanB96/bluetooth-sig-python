@@ -22,6 +22,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Home Automation",
     "Topic :: System :: Hardware",
+    "Topic :: Communications",
 ]
 dependencies = [
     "bleak>=0.22.0",
