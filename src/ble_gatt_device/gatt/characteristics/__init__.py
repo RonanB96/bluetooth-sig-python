@@ -4,6 +4,8 @@ from typing import Dict, Optional, Type
 
 from ..uuid_registry import uuid_registry
 from .base import BaseCharacteristic
+from .average_current import AverageCurrentCharacteristic
+from .average_voltage import AverageVoltageCharacteristic
 from .battery_level import BatteryLevelCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic
@@ -21,17 +23,28 @@ from .device_info import (
     SerialNumberStringCharacteristic,
     SoftwareRevisionStringCharacteristic,
 )
+from .electric_current import ElectricCurrentCharacteristic
+from .electric_current_range import ElectricCurrentRangeCharacteristic
+from .electric_current_specification import ElectricCurrentSpecificationCharacteristic
+from .electric_current_statistics import ElectricCurrentStatisticsCharacteristic
 from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic
 from .heart_rate_measurement import HeartRateMeasurementCharacteristic
+from .high_voltage import HighVoltageCharacteristic
 from .humidity import HumidityCharacteristic
 from .illuminance import IlluminanceCharacteristic
 from .pressure import PressureCharacteristic
 from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
 from .rsc_measurement import RSCMeasurementCharacteristic
 from .sound_pressure_level import SoundPressureLevelCharacteristic
+from .supported_power_range import SupportedPowerRangeCharacteristic
 from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
+from .tx_power_level import TxPowerLevelCharacteristic
 from .uv_index import UVIndexCharacteristic
+from .voltage import VoltageCharacteristic
+from .voltage_frequency import VoltageFrequencyCharacteristic
+from .voltage_specification import VoltageSpecificationCharacteristic
+from .voltage_statistics import VoltageStatisticsCharacteristic
 from .weight_measurement import WeightMeasurementCharacteristic
 from .weight_scale_feature import WeightScaleFeatureCharacteristic
 
@@ -69,6 +82,20 @@ class CharacteristicRegistry:
         "Weight Scale Feature": WeightScaleFeatureCharacteristic,
         "Body Composition Measurement": BodyCompositionMeasurementCharacteristic,
         "Body Composition Feature": BodyCompositionFeatureCharacteristic,
+        # Automation IO / Electrical Power Monitoring
+        "Electric Current": ElectricCurrentCharacteristic,
+        "Voltage": VoltageCharacteristic,
+        "Average Current": AverageCurrentCharacteristic,
+        "Average Voltage": AverageVoltageCharacteristic,
+        "Electric Current Range": ElectricCurrentRangeCharacteristic,
+        "Electric Current Specification": ElectricCurrentSpecificationCharacteristic,
+        "Electric Current Statistics": ElectricCurrentStatisticsCharacteristic,
+        "Voltage Specification": VoltageSpecificationCharacteristic,
+        "Voltage Statistics": VoltageStatisticsCharacteristic,
+        "High Voltage": HighVoltageCharacteristic,
+        "Voltage Frequency": VoltageFrequencyCharacteristic,
+        "Supported Power Range": SupportedPowerRangeCharacteristic,
+        "Tx Power Level": TxPowerLevelCharacteristic,
     }
 
     @classmethod
