@@ -4,6 +4,7 @@ from typing import Dict, Optional, Type
 
 from .base import BaseCharacteristic
 from .battery_level import BatteryLevelCharacteristic
+from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .device_info import (
     FirmwareRevisionStringCharacteristic,
     HardwareRevisionStringCharacteristic,
@@ -13,9 +14,14 @@ from .device_info import (
     SoftwareRevisionStringCharacteristic,
 )
 from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic
+from .heart_rate_measurement import HeartRateMeasurementCharacteristic
 from .humidity import HumidityCharacteristic
+from .illuminance import IlluminanceCharacteristic
 from .pressure import PressureCharacteristic
+from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
+from .sound_pressure_level import SoundPressureLevelCharacteristic
 from .temperature import TemperatureCharacteristic
+from .temperature_measurement import TemperatureMeasurementCharacteristic
 from .uv_index import UVIndexCharacteristic
 
 
@@ -25,9 +31,15 @@ class CharacteristicRegistry:
     _characteristics: Dict[str, Type[BaseCharacteristic]] = {
         "Battery Level": BatteryLevelCharacteristic,
         "Temperature": TemperatureCharacteristic,
+        "Temperature Measurement": TemperatureMeasurementCharacteristic,
         "Humidity": HumidityCharacteristic,
         "Pressure": PressureCharacteristic,
         "UV Index": UVIndexCharacteristic,
+        "Illuminance": IlluminanceCharacteristic,
+        "Sound Pressure Level": SoundPressureLevelCharacteristic,
+        "Heart Rate Measurement": HeartRateMeasurementCharacteristic,
+        "Blood Pressure Measurement": BloodPressureMeasurementCharacteristic,
+        "Pulse Oximetry Measurement": PulseOximetryMeasurementCharacteristic,
         "Manufacturer Name String": ManufacturerNameStringCharacteristic,
         "Model Number String": ModelNumberStringCharacteristic,
         "Serial Number String": SerialNumberStringCharacteristic,
