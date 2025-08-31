@@ -3,9 +3,9 @@
 from typing import Dict, Optional, Type
 
 from ..uuid_registry import uuid_registry
-from .base import BaseCharacteristic
 from .average_current import AverageCurrentCharacteristic
 from .average_voltage import AverageVoltageCharacteristic
+from .base import BaseCharacteristic
 from .battery_level import BatteryLevelCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic
