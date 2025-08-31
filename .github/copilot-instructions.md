@@ -6,47 +6,182 @@ Reference these instructions as primary guidance while using search and bash com
 
 BLE GATT Device is a **registry-driven BLE GATT framework** with real device integration and Home Assistant compatibility. This is a Python project with a four-layer architecture: UUID Registry → Base Classes → Implementations → Real Device Integration.
 
-**Current State**: 2 services (Battery, Environmental Sensing) with 13 characteristics (Temperature, Humidity, Pressure, UV Index, Battery Level, and Device Info), comprehensive 80+ test suite, real device testing with Nordic Thingy:52 successfully validated.
+**Current State**: 8 services with 20+ characteristics, comprehensive 128+ test suite covering dynamic discovery, name resolution, and architectural validation. Production-ready framework with perfect pylint score (10.00/10).
 
-**CRITICAL**: This project requires specific network access for Bluetooth SIG data and PyPI packages. Some commands may fail due to network limitations - document failures and provide alternatives.
+**CRITICAL**: This project requires the bluetooth_sig submodule for UUID registry functionality. All framework operations depend on this submodule being properly initialized.
 
-## Essential Development Setup
+## Essential Development Workflow
 
-### Prerequisites and Bootstrap
-
-- Python 3.9+ (tested with 3.9, 3.10, 3.11, 3.12)
-- Git with submodule support
-- Network access to PyPI and Bitbucket (for Bluetooth SIG data)
-
-**CRITICAL DEPENDENCY**: This project REQUIRES the bluetooth_sig submodule to function. Without it, the entire framework fails to import.
+### Virtual Environment Setup (IMPORTANT)
+**Check if virtual environment is already activated first:**
+```bash
+echo $VIRTUAL_ENV
+# If output is empty, then activate it:
+# source .venv/bin/activate
+```
+- **You DO NOT need to source every time** - check first if already active
+- Virtual env indicator should show `(.venv)` in your prompt
 
 ### Core Setup Commands - VALIDATE EACH STEP
 
-1. **Clone and enter repository:**
-
+1. **Initialize Bluetooth SIG submodule (BLOCKING REQUIREMENT):**
 ```bash
-git clone https://github.com/RonanB96/ble_gatt_device.git
-cd ble_gatt_device
+git submodule init && git submodule update
+# CRITICAL: Framework cannot import without this submodule
 ```
 
-2. **Initialize Bluetooth SIG submodule (BLOCKING REQUIREMENT):**
-
+2. **Install dependencies:**
 ```bash
-git submodule init
-git submodule update
-# TIMEOUT WARNING: May take 5+ minutes. NEVER CANCEL.
-# BLOCKING ISSUE: If this fails with "Could not resolve host: bitbucket.org"
-#   the entire framework cannot be imported or tested. Document this as a
-#   fundamental limitation requiring network access to bitbucket.org.
+pip install -e ".[dev]"
 ```
 
-3. **Verify submodule initialization (CRITICAL VALIDATION):**
-
+3. **Verify framework functionality:**
 ```bash
-ls -la bluetooth_sig/assigned_numbers/uuids/
-# Should show service_uuids.yaml and characteristic_uuids.yaml
-# If these files are missing, ALL subsequent commands will fail
+python -c "import ble_gatt_device; print('✅ Framework ready')"
 ```
+
+## Architecture Patterns
+
+### Registry-Driven UUID Resolution
+Classes automatically resolve UUIDs through **intelligent multi-stage name parsing**:
+- `BatteryService` → tries "BatteryService", then "Battery" → finds UUID "180F"
+- `TemperatureCharacteristic` → tries "TemperatureCharacteristic", "Temperature", "Temperature Measurement"
+- Override with `_service_name` or `_characteristic_name` attributes when needed
+
+### Critical Implementation Pattern
+All characteristics MUST follow this pattern:
+
+```python
+@dataclass
+class ExampleCharacteristic(BaseCharacteristic):
+    """Descriptive characteristic purpose."""
+
+    # Optional: Override name resolution if class name doesn't match registry
+    _characteristic_name: str = "Exact Registry Name"
+
+    def __post_init__(self):
+        self.value_type = "float"  # string|int|float|boolean|bytes
+        super().__post_init__()
+
+    def parse_value(self, data: bytearray) -> float:
+        """Parse raw bytes with proper validation."""
+        if len(data) < 2:
+            raise ValueError("Data must be at least 2 bytes")
+        raw_value = int.from_bytes(data[:2], byteorder="little", signed=True)
+        return raw_value * 0.01  # Apply scaling factor
+
+    @property
+    def unit(self) -> str:
+        return "°C"  # Always include units
+
+    @property
+    def device_class(self) -> str:
+        return "temperature"  # HA device class
+```
+
+### Three-Layer HA Architecture
+**STRICT dependency flow: HA → Translation → GATT (never reverse)**
+- GATT layer: No homeassistant imports allowed
+- Translation layer: Converts GATT data to HA metadata
+- HA Integration: Future layer for entity creation
+
+## Testing & Quality Requirements
+
+### Mandatory Quality Gates
+```bash
+# MUST maintain these standards:
+python -m pylint src/ble_gatt_device  # Score: 10.00/10
+python -m flake8 src/ tests/          # Zero violations
+python -m black src/ tests/           # Proper formatting
+python -m pytest tests/ -v           # All tests pass
+```
+
+### Critical Test Command
+```bash
+python -m pytest tests/test_registry_validation.py -v
+# This validates ALL 128+ tests including:
+# - Service/characteristic discovery and registration
+# - UUID resolution with multiple naming strategies
+# - Registry completeness against bluetooth_sig YAML
+# - Architectural boundary validation
+```
+
+## Development Patterns
+
+### BLE Connection Pattern
+**ALWAYS use timeout=10.0 for BLE connections:**
+```python
+async with BleakClient(device, timeout=10.0) as client:
+    # Connection logic - this timeout is critical for reliability
+```
+
+### Data Parsing Standards
+- **Temperature**: sint16, 0.01°C resolution, little endian
+- **Humidity**: uint16, 0.01% resolution, little endian
+- **Pressure**: uint32, 0.1 Pa resolution → convert to hPa
+- **Battery**: uint8, direct percentage value
+- Always validate data length before parsing
+
+### Registration Pattern
+Register new components in respective `__init__.py` files:
+```python
+# In characteristics/__init__.py:
+from .my_characteristic import MyCharacteristic
+
+class CharacteristicRegistry:
+    _characteristics: Dict[str, Type[BaseCharacteristic]] = {
+        "My Sensor Name": MyCharacteristic,  # Must match _characteristic_name
+        # ... existing characteristics
+    }
+```
+
+## Key Reference Files
+
+**UUID Registry & Specifications:**
+- `bluetooth_sig/assigned_numbers/uuids/service_uuids.yaml` - Service UUID definitions
+- `bluetooth_sig/assigned_numbers/uuids/characteristic_uuids.yaml` - Characteristic UUID definitions
+- `bluetooth_sig/gss/org.bluetooth.characteristic.*.yaml` - Detailed specifications
+
+**Architecture Documentation:**
+- `docs/HA_INTEGRATION_ARCHITECTURE.md` - Three-layer architecture details
+- `tests/test_registry_validation.py` - Comprehensive validation examples
+- `src/ble_gatt_device/gatt/uuid_registry.py` - Registry implementation
+
+**Official References:**
+- [Bluetooth SIG Assigned Numbers](https://www.bluetooth.com/specifications/assigned-numbers/)
+- [GATT Services & Characteristics](https://www.bluetooth.com/specifications/specs/)
+
+## Common Workflows
+
+### Adding New Characteristic
+1. Create file in `src/ble_gatt_device/gatt/characteristics/`
+2. Follow implementation pattern above
+3. Register in `characteristics/__init__.py`
+4. Run registry validation tests
+5. Ensure pylint 10.00/10 score maintained
+
+### Debugging UUID Resolution
+```bash
+python -c "from ble_gatt_device.gatt.characteristics import MyCharacteristic;
+           char = MyCharacteristic(uuid='', properties=set());
+           print(f'UUID: {char.CHAR_UUID}')"
+```
+
+### Real Device Testing
+```bash
+# Available in scripts/ directory:
+python scripts/test_real_device.py scan           # Discover devices
+python scripts/test_connection_strategies.py MAC  # Test connection
+```
+
+## Critical Success Factors
+
+1. **Submodule Dependency**: bluetooth_sig must be initialized
+2. **Quality Standards**: Pylint 10.00/10, zero flake8 violations
+3. **Architecture Compliance**: No HA imports in GATT layer
+4. **Registry Validation**: All 128+ tests must pass
+5. **BLE Timeouts**: Always use 10.0s timeout for connections
+6. **Name Resolution**: Follow 4-stage characteristic naming strategy
 
 4. **Create virtual environment:**
 
