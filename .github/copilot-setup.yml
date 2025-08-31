@@ -1,0 +1,124 @@
+name: Setup BLE GATT Device Development Environment
+
+# Setup steps for Copilot Coding Agent
+# This ensures the environment is properly configured before agent operations
+# Reference: https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-environment
+
+steps:
+  - name: Initialize git submodules
+    run: |
+      # Initialize and update the bluetooth_sig submodule required for UUID registry
+      git submodule update --init --recursive
+      echo "✅ Git submodules initialized"
+
+  - name: Install Python dependencies
+    run: |
+      # Upgrade pip and install development dependencies
+      python -m pip install --upgrade pip
+      echo "Attempting to install development dependencies..."
+      if pip install -e ".[dev]"; then
+        echo "✅ Python dependencies installed successfully"
+      else
+        echo "⚠️  Warning: Failed to install some dependencies due to network issues"
+        echo "Attempting to install core dependencies individually..."
+        pip install --no-deps -e . || echo "⚠️  Core package installation failed"
+        pip install pytest pytest-asyncio pyyaml || echo "⚠️  Some core dependencies failed"
+        echo "Environment setup will continue with available tools"
+      fi
+
+  - name: Verify environment setup
+    run: |
+      # Verify all required tools are available and properly configured
+      echo "Checking Python version..."
+      python --version
+      
+      echo "Checking package installation..."
+      if python -c "import ble_gatt_device; print(f'✅ Package installed: {ble_gatt_device.__file__}')" 2>/dev/null; then
+        echo "✅ Core package available"
+      else
+        echo "⚠️  Core package not available - may affect some functionality"
+      fi
+      
+      echo "Checking development tools availability..."
+      for tool in flake8 black isort pytest; do
+        if python -c "import $tool; print(f'✅ $tool version: {$tool.__version__}')" 2>/dev/null; then
+          echo "✅ $tool is available"
+        else
+          echo "⚠️  $tool is not available"
+        fi
+      done
+      
+      echo "Checking UUID registry dependency..."
+      if [ -d "bluetooth_sig" ] && [ -f "bluetooth_sig/assigned_numbers/uuids/service_uuids.yaml" ]; then
+        echo "✅ Bluetooth SIG submodule properly initialized"
+      else
+        echo "❌ Warning: Bluetooth SIG submodule not properly initialized"
+        exit 1
+      fi
+      
+      echo "Checking configuration files..."
+      if [ -f "pyproject.toml" ]; then
+        echo "✅ pyproject.toml configuration file found"
+        if grep -q "tool.flake8" pyproject.toml; then
+          echo "✅ flake8 configuration found in pyproject.toml"
+        else
+          echo "⚠️  flake8 configuration not found in pyproject.toml"
+        fi
+      else
+        echo "❌ Warning: pyproject.toml not found"
+        exit 1
+      fi
+
+  - name: Validate environment with quick tests
+    run: |
+      # Run a subset of tests to ensure environment is working
+      echo "Running environment validation tests..."
+      
+      # Test basic UUID registry functionality
+      echo "Testing UUID registry..."
+      python -c "
+import sys
+import os
+sys.path.insert(0, 'src')
+
+try:
+    from ble_gatt_device.gatt.uuid_registry import uuid_registry
+    info = uuid_registry.get_service_info('Battery')
+    if info is not None:
+        print('✅ UUID registry functional')
+    else:
+        print('⚠️  UUID registry not finding expected services')
+except Exception as e:
+    print(f'⚠️  UUID registry test failed: {e}')
+"
+      
+      # Test if pytest is available and can find tests
+      if command -v pytest >/dev/null 2>&1 || python -c "import pytest" 2>/dev/null; then
+        echo "Testing with pytest..."
+        if [ -d "tests" ]; then
+          python -m pytest tests/ --collect-only -q 2>/dev/null | head -5 || echo "⚠️  Some test files may have import issues"
+        else
+          echo "⚠️  No tests directory found"
+        fi
+      else
+        echo "⚠️  pytest not available for testing"
+      fi
+      
+      echo "✅ Environment validation complete"
+
+# Environment requirements documentation
+requirements:
+  python: ">=3.11"
+  git_submodules: true
+  tools:
+    - flake8 (via flake8-pyproject for pyproject.toml support)
+    - black (code formatting)
+    - isort (import sorting)
+    - pytest (testing framework)
+    - pylint (static analysis)
+  
+# Notes for Copilot Coding Agent:
+# 1. Always use 'python -m tool_name' instead of direct tool commands
+# 2. Git submodules are essential for UUID registry functionality
+# 3. flake8-pyproject allows flake8 to read configuration from pyproject.toml
+# 4. The bluetooth_sig submodule contains official Bluetooth SIG UUID assignments
