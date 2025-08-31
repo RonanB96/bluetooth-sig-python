@@ -4,7 +4,11 @@ from typing import Dict, List, Optional, Type
 
 from .base import BaseGattService
 from .battery_service import BatteryService
+from .cycling_speed_and_cadence import CyclingSpeedAndCadenceService
 from .environmental_sensing import EnvironmentalSensingService
+from .health_thermometer import HealthThermometerService
+from .heart_rate import HeartRateService
+from .running_speed_and_cadence import RunningSpeedAndCadenceService
 
 
 class GattServiceRegistry:
@@ -13,6 +17,10 @@ class GattServiceRegistry:
     _services: List[Type[BaseGattService]] = [
         BatteryService,
         EnvironmentalSensingService,
+        HealthThermometerService,
+        HeartRateService,
+        RunningSpeedAndCadenceService,
+        CyclingSpeedAndCadenceService,
     ]
 
     @classmethod

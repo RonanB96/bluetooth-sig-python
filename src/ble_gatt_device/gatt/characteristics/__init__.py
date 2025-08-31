@@ -5,6 +5,7 @@ from typing import Dict, Optional, Type
 from .base import BaseCharacteristic
 from .battery_level import BatteryLevelCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
+from .csc_measurement import CSCMeasurementCharacteristic
 from .device_info import (
     FirmwareRevisionStringCharacteristic,
     HardwareRevisionStringCharacteristic,
@@ -19,6 +20,7 @@ from .humidity import HumidityCharacteristic
 from .illuminance import IlluminanceCharacteristic
 from .pressure import PressureCharacteristic
 from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
+from .rsc_measurement import RSCMeasurementCharacteristic
 from .sound_pressure_level import SoundPressureLevelCharacteristic
 from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
@@ -40,6 +42,8 @@ class CharacteristicRegistry:
         "Heart Rate Measurement": HeartRateMeasurementCharacteristic,
         "Blood Pressure Measurement": BloodPressureMeasurementCharacteristic,
         "Pulse Oximetry Measurement": PulseOximetryMeasurementCharacteristic,
+        "CSC Measurement": CSCMeasurementCharacteristic,
+        "RSC Measurement": RSCMeasurementCharacteristic,
         "Manufacturer Name String": ManufacturerNameStringCharacteristic,
         "Model Number String": ModelNumberStringCharacteristic,
         "Serial Number String": SerialNumberStringCharacteristic,
