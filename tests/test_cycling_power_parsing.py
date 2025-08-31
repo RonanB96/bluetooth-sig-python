@@ -1,0 +1,352 @@
+"""Test cycling power service and characteristics parsing."""
+
+import struct
+from typing import Dict
+
+import pytest
+
+from ble_gatt_device.gatt.characteristics import (
+    CyclingPowerControlPointCharacteristic,
+    CyclingPowerFeatureCharacteristic,
+    CyclingPowerMeasurementCharacteristic,
+    CyclingPowerVectorCharacteristic,
+)
+
+
+class TestCyclingPowerParsing:
+    """Test cycling power data parsing functionality."""
+
+    def test_cycling_power_feature_parsing(self):
+        """Test cycling power feature characteristic parsing."""
+        char = CyclingPowerFeatureCharacteristic(uuid="2A65", properties={"read"})
+
+        # Test basic feature mask
+        feature_data = struct.pack("<I", 0x0000001F)  # Multiple features enabled
+        result = char.parse_value(bytearray(feature_data))
+        assert result == 31
+        assert char.unit == ""
+        assert char.device_class == ""
+
+        # Test single feature
+        feature_data = struct.pack("<I", 0x00000001)  # Only pedal power balance
+        result = char.parse_value(bytearray(feature_data))
+        assert result == 1
+
+        # Test no features
+        feature_data = struct.pack("<I", 0x00000000)
+        result = char.parse_value(bytearray(feature_data))
+        assert result == 0
+
+    def test_cycling_power_feature_invalid_data(self):
+        """Test cycling power feature with invalid data."""
+        char = CyclingPowerFeatureCharacteristic(uuid="2A65", properties={"read"})
+
+        # Test insufficient data
+        with pytest.raises(ValueError, match="must be at least 4 bytes"):
+            char.parse_value(bytearray([0x01, 0x02]))
+
+        # Test empty data
+        with pytest.raises(ValueError, match="must be at least 4 bytes"):
+            char.parse_value(bytearray())
+
+    def test_cycling_power_measurement_basic(self):
+        """Test basic cycling power measurement parsing."""
+        char = CyclingPowerMeasurementCharacteristic(uuid="2A63", properties={"notify"})
+
+        # Test minimum required data: Flags(2) + Power(2)
+        flags = 0x0000  # No optional fields
+        power = 250  # 250 watts
+        test_data = struct.pack("<Hh", flags, power)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "flags": 0,
+            "instantaneous_power": 250,
+            "unit": "W"
+        }
+        assert result == expected
+        assert char.unit == "W"
+        assert char.device_class == "power"
+        assert char.state_class == "measurement"
+
+    def test_cycling_power_measurement_with_pedal_balance(self):
+        """Test cycling power measurement with pedal power balance."""
+        char = CyclingPowerMeasurementCharacteristic(uuid="2A63", properties={"notify"})
+
+        # Test with pedal power balance
+        flags = 0x0001  # Pedal power balance present
+        power = 300
+        balance = 100  # 50% (100 * 0.5%)
+        test_data = struct.pack("<HhB", flags, power, balance)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "flags": 1,
+            "instantaneous_power": 300,
+            "unit": "W",
+            "pedal_power_balance": 50.0
+        }
+        assert result == expected
+
+        # Test with unknown balance value (0xFF)
+        balance = 0xFF
+        test_data = struct.pack("<HhB", flags, power, balance)
+        result = char.parse_value(bytearray(test_data))
+        
+        expected = {
+            "flags": 1,
+            "instantaneous_power": 300,
+            "unit": "W"
+        }
+        assert result == expected  # No balance field when unknown
+
+    def test_cycling_power_measurement_with_accumulated_energy(self):
+        """Test cycling power measurement with accumulated energy."""
+        char = CyclingPowerMeasurementCharacteristic(uuid="2A63", properties={"notify"})
+
+        # Test with accumulated energy
+        flags = 0x0008  # Accumulated energy present
+        power = 280
+        energy = 150  # 150 kJ
+        test_data = struct.pack("<HhH", flags, power, energy)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "flags": 8,
+            "instantaneous_power": 280,
+            "unit": "W",
+            "accumulated_energy": 150
+        }
+        assert result == expected
+
+    def test_cycling_power_measurement_with_wheel_data(self):
+        """Test cycling power measurement with wheel revolution data."""
+        char = CyclingPowerMeasurementCharacteristic(uuid="2A63", properties={"notify"})
+
+        # Test with wheel revolution data
+        flags = 0x0010  # Wheel revolution data present
+        power = 320
+        wheel_revs = 12345
+        wheel_time = 2048  # 1 second in 1/2048 units
+        test_data = struct.pack("<HhIH", flags, power, wheel_revs, wheel_time)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "flags": 16,
+            "instantaneous_power": 320,
+            "unit": "W",
+            "cumulative_wheel_revolutions": 12345,
+            "last_wheel_event_time": 1.0  # 2048 / 2048 = 1.0 second
+        }
+        assert result == expected
+
+    def test_cycling_power_measurement_with_crank_data(self):
+        """Test cycling power measurement with crank revolution data."""
+        char = CyclingPowerMeasurementCharacteristic(uuid="2A63", properties={"notify"})
+
+        # Test with crank revolution data
+        flags = 0x0020  # Crank revolution data present
+        power = 350
+        crank_revs = 5678
+        crank_time = 1024  # 1 second in 1/1024 units
+        test_data = struct.pack("<HhHH", flags, power, crank_revs, crank_time)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "flags": 32,
+            "instantaneous_power": 350,
+            "unit": "W",
+            "cumulative_crank_revolutions": 5678,
+            "last_crank_event_time": 1.0  # 1024 / 1024 = 1.0 second
+        }
+        assert result == expected
+
+    def test_cycling_power_measurement_combined_fields(self):
+        """Test cycling power measurement with multiple optional fields."""
+        char = CyclingPowerMeasurementCharacteristic(uuid="2A63", properties={"notify"})
+
+        # Test with pedal balance + accumulated energy + crank data
+        flags = 0x0001 | 0x0008 | 0x0020  # Multiple flags
+        power = 400
+        balance = 120  # 60%
+        energy = 200  # 200 kJ
+        crank_revs = 8900
+        crank_time = 512  # 0.5 second
+        test_data = struct.pack("<HhBHHH", flags, power, balance, energy, crank_revs, crank_time)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "flags": 41,  # 0x0001 | 0x0008 | 0x0020 = 1 + 8 + 32 = 41
+            "instantaneous_power": 400,
+            "unit": "W",
+            "pedal_power_balance": 60.0,
+            "accumulated_energy": 200,
+            "cumulative_crank_revolutions": 8900,
+            "last_crank_event_time": 0.5
+        }
+        assert result == expected
+
+    def test_cycling_power_measurement_invalid_data(self):
+        """Test cycling power measurement with invalid data."""
+        char = CyclingPowerMeasurementCharacteristic(uuid="2A63", properties={"notify"})
+
+        # Test insufficient data
+        with pytest.raises(ValueError, match="must be at least 4 bytes"):
+            char.parse_value(bytearray([0x01, 0x02]))
+
+        # Test empty data
+        with pytest.raises(ValueError, match="must be at least 4 bytes"):
+            char.parse_value(bytearray())
+
+    def test_cycling_power_vector_basic(self):
+        """Test basic cycling power vector parsing."""
+        char = CyclingPowerVectorCharacteristic(uuid="2A64", properties={"notify"})
+
+        # Test minimum required data: Flags(1) + Crank Revs(2) + Crank Time(2) + First Angle(2)
+        flags = 0x00  # No optional arrays
+        crank_revs = 1234
+        crank_time = 1024  # 1 second
+        first_angle = 90  # 0.5 degrees (90 / 180)
+        test_data = struct.pack("<BHHH", flags, crank_revs, crank_time, first_angle)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "flags": 0,
+            "crank_revolutions": 1234,
+            "last_crank_event_time": 1.0,
+            "first_crank_measurement_angle": 0.5
+        }
+        assert result == expected
+        assert char.unit == "N·m"
+        assert char.state_class == "measurement"
+
+    def test_cycling_power_vector_with_force_array(self):
+        """Test cycling power vector with force magnitude array."""
+        char = CyclingPowerVectorCharacteristic(uuid="2A64", properties={"notify"})
+
+        # Test with force magnitude array
+        flags = 0x01  # Force magnitudes present
+        crank_revs = 1234
+        crank_time = 1024  # 1 second
+        first_angle = 180  # 1.0 degrees
+        force1 = 100  # 100 N
+        force2 = 150  # 150 N
+        test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, force1, force2)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "flags": 1,
+            "crank_revolutions": 1234,
+            "last_crank_event_time": 1.0,
+            "first_crank_measurement_angle": 1.0,
+            "instantaneous_force_magnitudes": [100.0, 150.0]
+        }
+        assert result == expected
+
+    def test_cycling_power_vector_with_torque_array(self):
+        """Test cycling power vector with torque magnitude array."""
+        char = CyclingPowerVectorCharacteristic(uuid="2A64", properties={"notify"})
+
+        # Test with torque magnitude array
+        flags = 0x02  # Torque magnitudes present
+        crank_revs = 1234
+        crank_time = 1024  # 1 second
+        first_angle = 360  # 2.0 degrees
+        torque1 = 160  # 5.0 Nm (160 / 32)
+        torque2 = 192  # 6.0 Nm (192 / 32)
+        test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, torque1, torque2)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "flags": 2,
+            "crank_revolutions": 1234,
+            "last_crank_event_time": 1.0,
+            "first_crank_measurement_angle": 2.0,
+            "instantaneous_torque_magnitudes": [5.0, 6.0]
+        }
+        assert result == expected
+
+    def test_cycling_power_vector_invalid_data(self):
+        """Test cycling power vector with invalid data."""
+        char = CyclingPowerVectorCharacteristic(uuid="2A64", properties={"notify"})
+
+        # Test insufficient data
+        with pytest.raises(ValueError, match="must be at least 7 bytes"):
+            char.parse_value(bytearray([0x01, 0x02, 0x03]))
+
+        # Test empty data
+        with pytest.raises(ValueError, match="must be at least 7 bytes"):
+            char.parse_value(bytearray())
+
+    def test_cycling_power_control_point_basic(self):
+        """Test basic cycling power control point parsing."""
+        char = CyclingPowerControlPointCharacteristic(uuid="2A66", properties={"write"})
+
+        # Test simple op code without parameters
+        op_code = 0x03  # Request Supported Sensor Locations
+        test_data = struct.pack("<B", op_code)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "op_code": 3,
+            "op_code_name": "Request Supported Sensor Locations"
+        }
+        assert result == expected
+
+    def test_cycling_power_control_point_with_parameters(self):
+        """Test cycling power control point with parameters."""
+        char = CyclingPowerControlPointCharacteristic(uuid="2A66", properties={"write"})
+
+        # Test Set Cumulative Value
+        op_code = 0x01
+        cumulative_value = 123456
+        test_data = struct.pack("<BI", op_code, cumulative_value)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "op_code": 1,
+            "op_code_name": "Set Cumulative Value",
+            "cumulative_value": 123456
+        }
+        assert result == expected
+
+        # Test Set Crank Length
+        op_code = 0x04
+        crank_length = 350  # 175.0 mm (350 * 0.5)
+        test_data = struct.pack("<BH", op_code, crank_length)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "op_code": 4,
+            "op_code_name": "Set Crank Length",
+            "crank_length": 175.0
+        }
+        assert result == expected
+
+    def test_cycling_power_control_point_response(self):
+        """Test cycling power control point response parsing."""
+        char = CyclingPowerControlPointCharacteristic(uuid="2A66", properties={"indicate"})
+
+        # Test response code
+        op_code = 0x20  # Response Code
+        request_op_code = 0x03  # Original request
+        response_value = 0x01  # Success
+        test_data = struct.pack("<BBB", op_code, request_op_code, response_value)
+        result = char.parse_value(bytearray(test_data))
+
+        expected = {
+            "op_code": 32,
+            "op_code_name": "Response Code",
+            "request_op_code": 3,
+            "response_value": 1,
+            "response_value_name": "Success"
+        }
+        assert result == expected
+
+    def test_cycling_power_control_point_invalid_data(self):
+        """Test cycling power control point with invalid data."""
+        char = CyclingPowerControlPointCharacteristic(uuid="2A66", properties={"write"})
+
+        # Test empty data
+        with pytest.raises(ValueError, match="must be at least 1 byte"):
+            char.parse_value(bytearray())

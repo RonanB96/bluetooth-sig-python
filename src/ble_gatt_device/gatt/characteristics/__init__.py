@@ -9,6 +9,10 @@ from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic
 from .body_composition_measurement import BodyCompositionMeasurementCharacteristic
 from .csc_measurement import CSCMeasurementCharacteristic
+from .cycling_power_control_point import CyclingPowerControlPointCharacteristic
+from .cycling_power_feature import CyclingPowerFeatureCharacteristic
+from .cycling_power_measurement import CyclingPowerMeasurementCharacteristic
+from .cycling_power_vector import CyclingPowerVectorCharacteristic
 from .device_info import (
     FirmwareRevisionStringCharacteristic,
     HardwareRevisionStringCharacteristic,
@@ -49,6 +53,10 @@ class CharacteristicRegistry:
         "PLX Continuous Measurement": PulseOximetryMeasurementCharacteristic,
         "CSC Measurement": CSCMeasurementCharacteristic,
         "RSC Measurement": RSCMeasurementCharacteristic,
+        "Cycling Power Measurement": CyclingPowerMeasurementCharacteristic,
+        "Cycling Power Feature": CyclingPowerFeatureCharacteristic,
+        "Cycling Power Vector": CyclingPowerVectorCharacteristic,
+        "Cycling Power Control Point": CyclingPowerControlPointCharacteristic,
         "Manufacturer Name String": ManufacturerNameStringCharacteristic,
         "Model Number String": ModelNumberStringCharacteristic,
         "Serial Number String": SerialNumberStringCharacteristic,

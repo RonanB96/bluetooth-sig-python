@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Type
 from .base import BaseGattService
 from .battery_service import BatteryService
 from .body_composition import BodyCompositionService
+from .cycling_power import CyclingPowerService
 from .cycling_speed_and_cadence import CyclingSpeedAndCadenceService
 from .device_information import DeviceInformationService
 from .environmental_sensing import EnvironmentalSensingService
@@ -21,6 +22,7 @@ class GattServiceRegistry:
     _services: List[Type[BaseGattService]] = [
         BatteryService,
         BodyCompositionService,
+        CyclingPowerService,
         DeviceInformationService,
         EnvironmentalSensingService,
         GenericAccessService,
