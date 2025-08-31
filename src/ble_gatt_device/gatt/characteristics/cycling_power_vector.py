@@ -25,8 +25,8 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
     def parse_value(self, data: bytearray) -> Dict[str, Any]:
         """Parse cycling power vector data according to Bluetooth specification.
 
-        Format: Flags(1) + Crank Revolution Data(2) + Last Crank Event Time(2) + 
-        First Crank Measurement Angle(2) + [Instantaneous Force Magnitude Array] + 
+        Format: Flags(1) + Crank Revolution Data(2) + Last Crank Event Time(2) +
+        First Crank Measurement Angle(2) + [Instantaneous Force Magnitude Array] +
         [Instantaneous Torque Magnitude Array]
 
         Args:
@@ -42,14 +42,14 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
             raise ValueError("Cycling Power Vector data must be at least 7 bytes")
 
         flags = data[0]
-        
+
         # Parse crank revolution data (2 bytes)
         crank_revolutions = struct.unpack("<H", data[1:3])[0]
-        
+
         # Parse last crank event time (2 bytes, 1/1024 second units)
         crank_event_time_raw = struct.unpack("<H", data[3:5])[0]
         crank_event_time = crank_event_time_raw / 1024.0
-        
+
         # Parse first crank measurement angle (2 bytes, 1/180 degree units)
         first_angle_raw = struct.unpack("<H", data[5:7])[0]
         first_angle = first_angle_raw / 180.0  # Convert to degrees
@@ -67,13 +67,15 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
         if (flags & 0x01) and len(data) > offset:
             force_magnitudes: List[float] = []
             # Each force magnitude is 2 bytes (signed 16-bit, 1 N units)
-            while offset + 1 < len(data) and not (flags & 0x02):  # Stop if torque data follows
+            while offset + 1 < len(data) and not (
+                flags & 0x02
+            ):  # Stop if torque data follows
                 if offset + 2 > len(data):
                     break
-                force_raw = struct.unpack("<h", data[offset:offset + 2])[0]
+                force_raw = struct.unpack("<h", data[offset : offset + 2])[0]
                 force_magnitudes.append(float(force_raw))  # Force in Newtons
                 offset += 2
-            
+
             if force_magnitudes:
                 result["instantaneous_force_magnitudes"] = force_magnitudes
 
@@ -84,10 +86,10 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
             while offset + 1 < len(data):
                 if offset + 2 > len(data):
                     break
-                torque_raw = struct.unpack("<h", data[offset:offset + 2])[0]
+                torque_raw = struct.unpack("<h", data[offset : offset + 2])[0]
                 torque_magnitudes.append(torque_raw / 32.0)  # Convert to Nm
                 offset += 2
-            
+
             if torque_magnitudes:
                 result["instantaneous_torque_magnitudes"] = torque_magnitudes
 

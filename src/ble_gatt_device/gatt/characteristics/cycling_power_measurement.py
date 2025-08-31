@@ -25,8 +25,8 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
     def parse_value(self, data: bytearray) -> Dict[str, Any]:
         """Parse cycling power measurement data according to Bluetooth specification.
 
-        Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] + 
-        [Accumulated Energy(2)] + [Wheel Revolutions(4)] + [Last Wheel Event Time(2)] + 
+        Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +
+        [Accumulated Energy(2)] + [Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +
         [Crank Revolutions(2)] + [Last Crank Event Time(2)]
 
         Args:
@@ -43,14 +43,14 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
         # Parse flags (16-bit)
         flags = struct.unpack("<H", data[:2])[0]
-        
+
         # Parse instantaneous power (16-bit signed integer in watts)
         instantaneous_power = struct.unpack("<h", data[2:4])[0]
-        
+
         result = {
             "flags": flags,
             "instantaneous_power": instantaneous_power,
-            "unit": "W"
+            "unit": "W",
         }
 
         offset = 4
@@ -60,39 +60,45 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             pedal_power_balance = data[offset]
             # Value 0xFF indicates unknown, otherwise percentage (0-100)
             if pedal_power_balance != 0xFF:
-                result["pedal_power_balance"] = pedal_power_balance / 2.0  # 0.5% resolution
+                result["pedal_power_balance"] = (
+                    pedal_power_balance / 2.0
+                )  # 0.5% resolution
             offset += 1
 
         # Parse optional accumulated energy (2 bytes) if present
         if (flags & 0x0008) and len(data) >= offset + 2:
-            accumulated_energy = struct.unpack("<H", data[offset:offset + 2])[0]
+            accumulated_energy = struct.unpack("<H", data[offset : offset + 2])[0]
             result["accumulated_energy"] = accumulated_energy  # kJ
             offset += 2
 
         # Parse optional wheel revolution data (6 bytes total) if present
         if (flags & 0x0010) and len(data) >= offset + 6:
-            wheel_revolutions = struct.unpack("<I", data[offset:offset + 4])[0]
-            wheel_event_time_raw = struct.unpack("<H", data[offset + 4:offset + 6])[0]
+            wheel_revolutions = struct.unpack("<I", data[offset : offset + 4])[0]
+            wheel_event_time_raw = struct.unpack("<H", data[offset + 4 : offset + 6])[0]
             # Wheel event time is in 1/2048 second units
             wheel_event_time = wheel_event_time_raw / 2048.0
 
-            result.update({
-                "cumulative_wheel_revolutions": wheel_revolutions,
-                "last_wheel_event_time": wheel_event_time,
-            })
+            result.update(
+                {
+                    "cumulative_wheel_revolutions": wheel_revolutions,
+                    "last_wheel_event_time": wheel_event_time,
+                }
+            )
             offset += 6
 
         # Parse optional crank revolution data (4 bytes total) if present
         if (flags & 0x0020) and len(data) >= offset + 4:
-            crank_revolutions = struct.unpack("<H", data[offset:offset + 2])[0]
-            crank_event_time_raw = struct.unpack("<H", data[offset + 2:offset + 4])[0]
+            crank_revolutions = struct.unpack("<H", data[offset : offset + 2])[0]
+            crank_event_time_raw = struct.unpack("<H", data[offset + 2 : offset + 4])[0]
             # Crank event time is in 1/1024 second units
             crank_event_time = crank_event_time_raw / 1024.0
 
-            result.update({
-                "cumulative_crank_revolutions": crank_revolutions,
-                "last_crank_event_time": crank_event_time,
-            })
+            result.update(
+                {
+                    "cumulative_crank_revolutions": crank_revolutions,
+                    "last_crank_event_time": crank_event_time,
+                }
+            )
             offset += 4
 
         return result

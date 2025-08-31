@@ -3,9 +3,13 @@
 from dataclasses import dataclass
 from typing import Dict, Type
 
-from ..characteristics.cycling_power_control_point import CyclingPowerControlPointCharacteristic
+from ..characteristics.cycling_power_control_point import (
+    CyclingPowerControlPointCharacteristic,
+)
 from ..characteristics.cycling_power_feature import CyclingPowerFeatureCharacteristic
-from ..characteristics.cycling_power_measurement import CyclingPowerMeasurementCharacteristic
+from ..characteristics.cycling_power_measurement import (
+    CyclingPowerMeasurementCharacteristic,
+)
 from ..characteristics.cycling_power_vector import CyclingPowerVectorCharacteristic
 from .base import BaseGattService
 
