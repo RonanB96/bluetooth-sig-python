@@ -1,0 +1,74 @@
+# Dependabot configuration for BLE GATT Device Framework
+# This file configures automatic dependency updates for Python packages and GitHub Actions
+# See: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Python dependencies via pip (pyproject.toml)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    # Group related updates together to reduce PR noise
+    groups:
+      testing:
+        patterns:
+          - "pytest*"
+          - "*coverage*"
+        update-types:
+          - "minor"
+          - "patch"
+      linting:
+        patterns:
+          - "pylint"
+          - "flake8*"
+          - "black"
+          - "isort"
+        update-types:
+          - "minor"
+          - "patch"
+      bluetooth:
+        patterns:
+          - "bleak"
+          - "asyncio-mqtt"
+        update-types:
+          - "minor"
+          - "patch"
+    # Security updates are always applied immediately
+    open-pull-requests-limit: 5
+    reviewers:
+      - "RonanB96"
+    assignees:
+      - "RonanB96"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "UTC"
+    # Group all GitHub Actions updates together
+    groups:
+      actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    open-pull-requests-limit: 2
+    reviewers:
+      - "RonanB96"
+    assignees:
+      - "RonanB96"
+    commit-message:
+      prefix: "ci"
+      include: "scope"

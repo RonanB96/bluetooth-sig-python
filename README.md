@@ -270,6 +270,35 @@ See `.github/copilot-tasks.md` for current development priorities and agent task
 1. Add to appropriate service's expected characteristics
 1. Maintain clean separation: no HA imports in GATT layer
 
+## Dependency Management and Security
+
+### Automated Dependency Updates
+
+This project uses [Dependabot](https://docs.github.com/en/code-security/dependabot) to automatically manage dependency updates:
+
+- **Python dependencies**: Weekly updates on Mondays for packages in `pyproject.toml`
+- **GitHub Actions**: Weekly updates on Mondays for workflow dependencies
+- **Security updates**: Applied immediately when vulnerabilities are detected
+- **Grouped updates**: Related dependencies are updated together to reduce PR noise
+
+### Security Alerts
+
+GitHub security alerts are enabled for this repository to automatically detect known vulnerabilities in dependencies. When a security vulnerability is found:
+
+1. A security alert is created in the repository
+2. Dependabot automatically creates a pull request with the security fix
+3. The maintainers are notified via GitHub notifications
+
+### Enabling Security Features
+
+Repository maintainers can ensure security features are enabled:
+
+1. **Dependabot security updates**: Go to Settings → Security & analysis → Dependabot security updates
+2. **Dependabot alerts**: Go to Settings → Security & analysis → Dependabot alerts  
+3. **Security advisories**: Go to Settings → Security & analysis → Private vulnerability reporting
+
+For more information, see the [GitHub documentation on managing security and analysis settings](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-security-and-analysis-settings-for-your-repository).
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
