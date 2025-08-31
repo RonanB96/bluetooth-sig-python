@@ -47,6 +47,13 @@ from .voltage_specification import VoltageSpecificationCharacteristic
 from .voltage_statistics import VoltageStatisticsCharacteristic
 from .weight_measurement import WeightMeasurementCharacteristic
 from .weight_scale_feature import WeightScaleFeatureCharacteristic
+from .dew_point import DewPointCharacteristic
+from .heat_index import HeatIndexCharacteristic
+from .wind_chill import WindChillCharacteristic
+from .true_wind_speed import TrueWindSpeedCharacteristic
+from .true_wind_direction import TrueWindDirectionCharacteristic
+from .apparent_wind_speed import ApparentWindSpeedCharacteristic
+from .apparent_wind_direction import ApparentWindDirectionCharacteristic
 
 
 class CharacteristicRegistry:
@@ -96,6 +103,14 @@ class CharacteristicRegistry:
         "Voltage Frequency": VoltageFrequencyCharacteristic,
         "Supported Power Range": SupportedPowerRangeCharacteristic,
         "Tx Power Level": TxPowerLevelCharacteristic,
+        # Environmental Sensing Characteristics
+        "Dew Point": DewPointCharacteristic,
+        "Heat Index": HeatIndexCharacteristic,
+        "Wind Chill": WindChillCharacteristic,
+        "True Wind Speed": TrueWindSpeedCharacteristic,
+        "True Wind Direction": TrueWindDirectionCharacteristic,
+        "Apparent Wind Speed": ApparentWindSpeedCharacteristic,
+        "Apparent Wind Direction": ApparentWindDirectionCharacteristic,
     }
 
     @classmethod

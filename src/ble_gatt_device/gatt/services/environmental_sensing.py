@@ -6,6 +6,13 @@ from typing import Dict, Type
 from ..characteristics.humidity import HumidityCharacteristic
 from ..characteristics.pressure import PressureCharacteristic
 from ..characteristics.temperature import TemperatureCharacteristic
+from ..characteristics.dew_point import DewPointCharacteristic
+from ..characteristics.heat_index import HeatIndexCharacteristic
+from ..characteristics.wind_chill import WindChillCharacteristic
+from ..characteristics.true_wind_speed import TrueWindSpeedCharacteristic
+from ..characteristics.true_wind_direction import TrueWindDirectionCharacteristic
+from ..characteristics.apparent_wind_speed import ApparentWindSpeedCharacteristic
+from ..characteristics.apparent_wind_direction import ApparentWindDirectionCharacteristic
 from .base import BaseGattService
 
 
@@ -17,6 +24,13 @@ class EnvironmentalSensingService(BaseGattService):
     - Temperature - Optional
     - Humidity - Optional
     - Pressure - Optional
+    - Dew Point - Optional
+    - Heat Index - Optional
+    - Wind Chill - Optional
+    - True Wind Speed - Optional
+    - True Wind Direction - Optional
+    - Apparent Wind Speed - Optional
+    - Apparent Wind Direction - Optional
     """
 
     @classmethod
@@ -26,6 +40,13 @@ class EnvironmentalSensingService(BaseGattService):
             "Temperature": TemperatureCharacteristic,
             "Humidity": HumidityCharacteristic,
             "Pressure": PressureCharacteristic,
+            "Dew Point": DewPointCharacteristic,
+            "Heat Index": HeatIndexCharacteristic,
+            "Wind Chill": WindChillCharacteristic,
+            "True Wind Speed": TrueWindSpeedCharacteristic,
+            "True Wind Direction": TrueWindDirectionCharacteristic,
+            "Apparent Wind Speed": ApparentWindSpeedCharacteristic,
+            "Apparent Wind Direction": ApparentWindDirectionCharacteristic,
         }
 
     @classmethod
