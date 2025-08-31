@@ -309,7 +309,7 @@ class TestCharacteristicRegistryValidation:
             ), f"Characteristic {char_class.__name__} value_type should not be empty"
 
             # Verify value_type is one of the expected types
-            valid_types = {"string", "int", "float", "boolean", "bytes"}
+            valid_types = {"string", "int", "float", "boolean", "bytes", "dict"}
             assert (
                 char.value_type in valid_types
             ), f"Characteristic {char_class.__name__} value_type '{char.value_type}' should be one of {valid_types}"
