@@ -3,6 +3,8 @@
 from typing import Dict, Optional, Type
 
 from ..uuid_registry import uuid_registry
+from .apparent_wind_direction import ApparentWindDirectionCharacteristic
+from .apparent_wind_speed import ApparentWindSpeedCharacteristic
 from .average_current import AverageCurrentCharacteristic
 from .average_voltage import AverageVoltageCharacteristic
 from .base import BaseCharacteristic
@@ -23,12 +25,14 @@ from .device_info import (
     SerialNumberStringCharacteristic,
     SoftwareRevisionStringCharacteristic,
 )
+from .dew_point import DewPointCharacteristic
 from .electric_current import ElectricCurrentCharacteristic
 from .electric_current_range import ElectricCurrentRangeCharacteristic
 from .electric_current_specification import ElectricCurrentSpecificationCharacteristic
 from .electric_current_statistics import ElectricCurrentStatisticsCharacteristic
 from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic
 from .heart_rate_measurement import HeartRateMeasurementCharacteristic
+from .heat_index import HeatIndexCharacteristic
 from .high_voltage import HighVoltageCharacteristic
 from .humidity import HumidityCharacteristic
 from .illuminance import IlluminanceCharacteristic
@@ -39,6 +43,8 @@ from .sound_pressure_level import SoundPressureLevelCharacteristic
 from .supported_power_range import SupportedPowerRangeCharacteristic
 from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
+from .true_wind_direction import TrueWindDirectionCharacteristic
+from .true_wind_speed import TrueWindSpeedCharacteristic
 from .tx_power_level import TxPowerLevelCharacteristic
 from .uv_index import UVIndexCharacteristic
 from .voltage import VoltageCharacteristic
@@ -47,6 +53,7 @@ from .voltage_specification import VoltageSpecificationCharacteristic
 from .voltage_statistics import VoltageStatisticsCharacteristic
 from .weight_measurement import WeightMeasurementCharacteristic
 from .weight_scale_feature import WeightScaleFeatureCharacteristic
+from .wind_chill import WindChillCharacteristic
 
 
 class CharacteristicRegistry:
@@ -96,6 +103,14 @@ class CharacteristicRegistry:
         "Voltage Frequency": VoltageFrequencyCharacteristic,
         "Supported Power Range": SupportedPowerRangeCharacteristic,
         "Tx Power Level": TxPowerLevelCharacteristic,
+        # Environmental Sensing Characteristics
+        "Dew Point": DewPointCharacteristic,
+        "Heat Index": HeatIndexCharacteristic,
+        "Wind Chill": WindChillCharacteristic,
+        "True Wind Speed": TrueWindSpeedCharacteristic,
+        "True Wind Direction": TrueWindDirectionCharacteristic,
+        "Apparent Wind Speed": ApparentWindSpeedCharacteristic,
+        "Apparent Wind Direction": ApparentWindDirectionCharacteristic,
     }
 
     @classmethod
