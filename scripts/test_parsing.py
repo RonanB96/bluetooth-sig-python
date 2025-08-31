@@ -36,6 +36,12 @@ def test_data_parsing():
                 "00002a6d-0000-1000-8000-00805f9b34fb": {
                     "properties": ["read", "notify"]
                 },  # Pressure
+                "00002afb-0000-1000-8000-00805f9b34fb": {
+                    "properties": ["read", "notify"]
+                },  # Illuminance
+                "00002b28-0000-1000-8000-00805f9b34fb": {
+                    "properties": ["read", "notify"]
+                },  # Sound Pressure Level
             }
         },
         "180A": {  # Device Information Service
@@ -69,6 +75,12 @@ def test_data_parsing():
         "00002a6d-0000-1000-8000-00805f9b34fb": bytearray(
             [0xE2, 0x7F, 0x01, 0x00]
         ),  # little endian
+        # Illuminance: simulated as uint24 = 50000 (500.00 lux)
+        "00002afb-0000-1000-8000-00805f9b34fb": bytearray(
+            [0x50, 0xC3, 0x00]
+        ),  # 50000 little endian
+        # Sound Pressure Level: simulated as uint8 = 65 dBA
+        "00002b28-0000-1000-8000-00805f9b34fb": bytearray([0x41]),  # 65 dBA
         # Device strings
         "00002a24-0000-1000-8000-00805f9b34fb": bytearray(b"Thingy:52"),
         "00002a29-0000-1000-8000-00805f9b34fb": bytearray(b"Nordic Semiconductor"),

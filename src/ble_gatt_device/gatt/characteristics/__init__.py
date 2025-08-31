@@ -17,6 +17,14 @@ from .humidity import HumidityCharacteristic
 from .pressure import PressureCharacteristic
 from .temperature import TemperatureCharacteristic
 from .uv_index import UVIndexCharacteristic
+from .sensors import (
+    IlluminanceCharacteristic, 
+    SoundLevelCharacteristic,
+    CarbonMonoxideConcentrationCharacteristic,
+    PM25ConcentrationCharacteristic,
+    ApparentWindDirectionCharacteristic,
+    ApparentWindSpeedCharacteristic,
+)
 
 
 class CharacteristicRegistry:
@@ -28,6 +36,12 @@ class CharacteristicRegistry:
         "Humidity": HumidityCharacteristic,
         "Pressure": PressureCharacteristic,
         "UV Index": UVIndexCharacteristic,
+        "Illuminance": IlluminanceCharacteristic,
+        "Sound Pressure Level": SoundLevelCharacteristic,
+        "Carbon Monoxide Concentration": CarbonMonoxideConcentrationCharacteristic,
+        "PM2.5 Concentration": PM25ConcentrationCharacteristic,
+        "Apparent Wind Direction": ApparentWindDirectionCharacteristic,
+        "Apparent Wind Speed": ApparentWindSpeedCharacteristic,
         "Manufacturer Name String": ManufacturerNameStringCharacteristic,
         "Model Number String": ModelNumberStringCharacteristic,
         "Serial Number String": SerialNumberStringCharacteristic,
