@@ -55,13 +55,30 @@ assignees: []
 
 ## 🔍 Code Quality Validation
 
-### Linting and Formatting (MANDATORY)
+### Script-Based Formatting and Linting (MANDATORY)
 
-- [ ] Run: `python -m black src/ tests/` (format code)
-- [ ] Run: `python -m flake8 src/ tests/` (style checking)
-- [ ] Run: `python -m pylint src/ble_gatt_device` (code analysis)
-- [ ] **Pylint score must remain 10.00/10**
-- [ ] Zero flake8 violations allowed
+**CRITICAL: These commands MUST be run after implementation and ALL issues fixed:**
+
+- [ ] Run: `./scripts/format.sh --fix` (fix all formatting issues)
+- [ ] Run: `./scripts/format.sh --check` (verify formatting is correct)
+- [ ] Run: `./scripts/lint.sh --all` (run all linting checks)
+- [ ] **ALL linting checks MUST pass: flake8 + pylint 10.00/10 + shellcheck**
+- [ ] **Zero violations allowed in any linting tool**
+
+### Individual Tool Validation (For Debugging)
+
+- [ ] Run: `./scripts/lint.sh --flake8` (style checking)
+- [ ] Run: `./scripts/lint.sh --pylint` (code analysis - MUST score 10.00/10)
+- [ ] Run: `./scripts/lint.sh --shellcheck` (shell script validation)
+- [ ] Run: `./scripts/format.sh --black` (Python code formatting check)
+- [ ] Run: `./scripts/format.sh --isort` (import sorting check)
+
+### Legacy Commands (Deprecated - Use Scripts Above)
+
+- [ ] ~~Run: `python -m black src/ tests/` (format code)~~
+- [ ] ~~Run: `python -m flake8 src/ tests/` (style checking)~~
+- [ ] ~~Run: `python -m pylint src/ble_gatt_device` (code analysis)~~
+- [ ] **Use `./scripts/format.sh` and `./scripts/lint.sh` instead**
 
 ### Manual Validation
 
@@ -87,10 +104,10 @@ Before creating pull request, run these commands:
 # Activate virtual environment
 source .venv/bin/activate
 
-# Format and validate code
-python -m black src/ tests/
-python -m flake8 src/ tests/
-python -m pylint src/ble_gatt_device
+# MANDATORY: Format and validate code using scripts
+./scripts/format.sh --fix           # Fix all formatting issues
+./scripts/format.sh --check         # Verify formatting is correct
+./scripts/lint.sh --all             # Run ALL linting checks (flake8 + pylint + shellcheck)
 
 # Run comprehensive tests
 python -m pytest tests/ -v
@@ -99,6 +116,8 @@ python -m pytest tests/ -v
 find src -name "*.py" -exec python -m py_compile {} \;
 python -c "import ble_gatt_device; print('✅ Framework ready')"
 ```
+
+**CRITICAL: All format and lint scripts must pass with zero issues before creating pull request.**
 
 ## 📁 Files to Modify/Create
 
@@ -126,11 +145,13 @@ python -c "import ble_gatt_device; print('✅ Framework ready')"
 
 ### Quality Gate (ALL MUST PASS)
 
+- [ ] **Script-based format check passes: `./scripts/format.sh --check`**
+- [ ] **Script-based lint check passes: `./scripts/lint.sh --all`**
 - [ ] **Pylint score: 10.00/10**
+- [ ] **Zero flake8 violations**
+- [ ] **Zero shellcheck issues**
 - [ ] **All tests pass: 0 failures**
 - [ ] **All GitHub workflows pass**
-- [ ] **Zero flake8 violations**
-- [ ] **Code is properly formatted with black**
 - [ ] **No import errors or syntax issues**
 
 ### Documentation
@@ -163,13 +184,16 @@ python -c "import ble_gatt_device; print('✅ Framework ready')"
 
 1. All implementation requirements are met
 2. All tests pass with 100% success rate
-3. All code quality checks pass (black, flake8, pylint 10.00/10)
-4. All GitHub workflows are green
-5. Code is properly documented and follows project patterns
-6. No regressions in existing functionality
+3. **MANDATORY: `./scripts/format.sh --check` passes with zero issues**
+4. **MANDATORY: `./scripts/lint.sh --all` passes with zero issues**
+5. All GitHub workflows are green
+6. Code is properly documented and follows project patterns
+7. No regressions in existing functionality
 
 **Note for Copilot:**
 
+- **MANDATORY**: Run `./scripts/format.sh --fix` and `./scripts/lint.sh --all` after implementation
+- **TASK NOT COMPLETE**: Until all script-based quality checks pass with zero issues
 - Follow the BLE GATT Device project's existing patterns and architecture
 - Use the bluetooth_sig submodule for UUID lookups (check YAML files above)
 - Ensure all characteristics implement proper `parse_value()` methods with appropriate data types

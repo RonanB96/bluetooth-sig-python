@@ -1,79 +1,206 @@
 #!/bin/bash
-# Local formatting script that mirrors the CI formatting job
-# Run this to format files locally without Docker containers
 
-set -e
+set -euo pipefail
 
-# Parse command line arguments
-CHECK_MODE=false
-if [ "$1" = "--check" ]; then
-    CHECK_MODE=true
+# Default to running format check if no arguments provided
+if [ $# -eq 0 ]; then
+    set -- --check
 fi
 
-# Ensure we're in the project root
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Check if we're running in CI or local environment
-if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
-    echo "🤖 Running in CI environment..."
-    # In CI, Python and dependencies are already set up
-    PYTHON_CMD="python"
-else
-    echo "💻 Running in local environment..."
-    # Check if virtual environment exists
-    if [ ! -d ".venv" ]; then
-        echo "❌ Virtual environment not found. Please run:"
-        echo "   python3 -m venv .venv"
-        echo "   source .venv/bin/activate"
-        echo "   pip install -e '.[dev]'"
-        exit 1
+# Change to project root
+cd "$PROJECT_ROOT"
+
+# Colours for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Helper functions
+print_header() {
+    echo -e "\n${BLUE}=== $1 ===${NC}"
+}
+
+print_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠️ $1${NC}"
+}
+
+# Check if virtual environment is activated
+check_venv() {
+    if [ -z "$VIRTUAL_ENV" ]; then
+        print_warning "Virtual environment not detected. Consider running: source .venv/bin/activate"
+    else
+        print_success "Virtual environment active: $VIRTUAL_ENV"
     fi
+}
 
-    # Activate virtual environment
-    echo "🔧 Activating virtual environment..."
-    source .venv/bin/activate
-    PYTHON_CMD="python"
-fi
-
-# Verify tools are available
-echo "🔍 Checking formatting tools..."
-$PYTHON_CMD -c "import black; print(f'✅ Black {black.__version__}')" || { echo "❌ Black not installed"; exit 1; }
-$PYTHON_CMD -c "import isort; print(f'✅ isort {isort.__version__}')" || { echo "❌ isort not installed"; exit 1; }
-
-echo ""
-if [ "$CHECK_MODE" = true ]; then
-    echo "🔍 Checking Black formatting (no changes will be made)..."
-    $PYTHON_CMD -m black --check --diff src/ tests/
-
-    echo ""
-    echo "🔍 Checking isort import sorting (no changes will be made)..."
-    $PYTHON_CMD -m isort --check-only --diff src/ tests/
-
-    echo ""
-    echo "✅ All files are properly formatted!"
-else
-    echo "🎨 Running Black formatting..."
-    $PYTHON_CMD -m black src/ tests/
-
-    echo ""
-    echo "📦 Running isort import sorting..."
-    $PYTHON_CMD -m isort src/ tests/
-
-    echo ""
-    echo "✅ Formatting complete!"
-
-    # Show what changed
-    if [ -n "$(git status --porcelain)" ]; then
-        echo ""
-        echo "📝 Files that were formatted:"
-        git status --porcelain
-
-        if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
-            echo ""
-            echo "ℹ️  Formatting was applied in CI environment."
+# Run black formatting
+run_black() {
+    if [ "$1" = "--check" ]; then
+        print_header "Checking black formatting"
+        if python -m black --check --diff src/ tests/; then
+            print_success "black formatting check passed"
+            return 0
+        else
+            print_error "black formatting issues found"
+            echo "Run './scripts/format.sh --fix' to fix formatting"
+            return 1
         fi
     else
-        echo ""
-        echo "✨ No formatting changes needed - all files were already properly formatted!"
+        print_header "Formatting code with black"
+        python -m black src/ tests/
+        print_success "Code formatted with black"
+        return 0
     fi
-fi
+}
+
+# Run isort import sorting
+run_isort() {
+    if [ "$1" = "--check" ]; then
+        print_header "Checking isort import sorting"
+        if python -m isort --check-only --diff src/ tests/; then
+            print_success "isort import sorting check passed"
+            return 0
+        else
+            print_error "isort import sorting issues found"
+            echo "Run './scripts/format.sh --fix' to fix import sorting"
+            return 1
+        fi
+    else
+        print_header "Sorting imports with isort"
+        python -m isort src/ tests/
+        print_success "Imports sorted with isort"
+        return 0
+    fi
+}
+
+# Run all format checks
+run_format_check() {
+    print_header "Running all formatting checks"
+    local exit_code=0
+
+    check_venv
+
+    run_black --check || exit_code=1
+    run_isort --check || exit_code=1
+
+    echo ""
+    if [ $exit_code -eq 0 ]; then
+        print_success "🎨 All formatting checks passed!"
+    else
+        print_error "❌ Some formatting checks failed"
+        echo ""
+        echo "Quick fix command:"
+        echo "  ./scripts/format.sh --fix"
+    fi
+
+    return $exit_code
+}
+
+# Run all format fixes
+run_format_fix() {
+    print_header "Running all formatting fixes"
+
+    check_venv
+
+    run_black
+    run_isort
+
+    echo ""
+    print_success "🎨 All formatting fixes applied!"
+
+    # Show what changed
+    if command -v git >/dev/null 2>&1 && [ -d .git ]; then
+        if [ -n "$(git status --porcelain)" ]; then
+            echo ""
+            echo "📝 Files that were formatted:"
+            git status --porcelain
+        else
+            echo ""
+            echo "✨ No formatting changes needed - all files were already properly formatted!"
+        fi
+    fi
+
+    return 0
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --black)
+            run_black --check
+            exit $?
+            ;;
+        --black-check)
+            run_black --check
+            exit $?
+            ;;
+        --black-fix)
+            run_black
+            exit $?
+            ;;
+        --isort)
+            run_isort --check
+            exit $?
+            ;;
+        --isort-check)
+            run_isort --check
+            exit $?
+            ;;
+        --isort-fix)
+            run_isort
+            exit $?
+            ;;
+        --check)
+            run_format_check
+            exit $?
+            ;;
+        --fix)
+            run_format_fix
+            exit $?
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTION]"
+            echo ""
+            echo "Code formatting script for BLE GATT Device"
+            echo ""
+            echo "OPTIONS:"
+            echo "  --check             Check all formatting (default)"
+            echo "  --fix               Fix all formatting issues"
+            echo ""
+            echo "Individual tools:"
+            echo "  --black             Check black formatting"
+            echo "  --black-check       Check black formatting"
+            echo "  --black-fix         Fix black formatting"
+            echo "  --isort             Check isort import sorting"
+            echo "  --isort-check       Check isort import sorting"
+            echo "  --isort-fix         Fix isort import sorting"
+            echo ""
+            echo "Examples:"
+            echo "  $0                  # Check all formatting"
+            echo "  $0 --check          # Check all formatting"
+            echo "  $0 --fix            # Fix all formatting issues"
+            echo "  $0 --black          # Check only black"
+            echo "  $0 --isort-fix      # Fix only import sorting"
+            echo ""
+            exit 0
+            ;;
+        *)
+            print_error "Unknown option: $1"
+            echo "Use --help for available options"
+            exit 1
+            ;;
+    esac
+done

@@ -2,6 +2,32 @@
 
 Reference these instructions as primary guidance while using search and bash commands to complement and verify the information provided here.
 
+## 🚨 MANDATORY QUALITY REQUIREMENTS
+
+**CRITICAL: After EVERY implementation task, these commands MUST be executed and ALL issues fixed:**
+
+```bash
+./scripts/format.sh --fix         # Fix all formatting issues  
+./scripts/format.sh --check       # Verify formatting is correct
+./scripts/lint.sh --all           # Run ALL linting (flake8 + pylint 10.00/10 + shellcheck)
+```
+
+**⚠️ TASK IS NOT COMPLETE until these scripts pass with ZERO issues.**
+
+**Individual debugging commands:**
+```bash
+./scripts/lint.sh --flake8        # Python style checking only
+./scripts/lint.sh --pylint        # Python code analysis only  
+./scripts/lint.sh --shellcheck    # Shell script validation only
+./scripts/format.sh --black       # Python code formatting only
+./scripts/format.sh --isort       # Import sorting only
+```
+
+**❌ DO NOT use legacy commands** - Use scripts above instead:
+- ~~`python -m black`~~ → Use `./scripts/format.sh`
+- ~~`python -m flake8`~~ → Use `./scripts/lint.sh --flake8`  
+- ~~`python -m pylint`~~ → Use `./scripts/lint.sh --pylint`
+
 ## Project Overview
 
 BLE GATT Device is a **registry-driven BLE GATT framework** with real device integration and Home Assistant compatibility. This is a Python project with a four-layer architecture: UUID Registry → Base Classes → Implementations → Real Device Integration.
@@ -87,12 +113,36 @@ class ExampleCharacteristic(BaseCharacteristic):
 
 ## Testing & Quality Requirements
 
-### Mandatory Quality Gates
+### MANDATORY Script-Based Quality Gates
+
+**CRITICAL: After EVERY task completion, these commands MUST be run and ALL issues fixed:**
+
 ```bash
-# MUST maintain these standards:
-python -m pylint src/ble_gatt_device  # Score: 10.00/10
-python -m flake8 src/ tests/          # Zero violations
-python -m black src/ tests/           # Proper formatting
+# MANDATORY format and lint workflow (USE THESE COMMANDS):
+./scripts/format.sh --fix         # Fix all formatting issues
+./scripts/format.sh --check       # Verify formatting is correct  
+./scripts/lint.sh --all           # Run ALL linting: flake8 + pylint 10.00/10 + shellcheck
+```
+
+**Individual tool execution (for debugging specific issues):**
+```bash
+./scripts/lint.sh --flake8        # Python style checking only
+./scripts/lint.sh --pylint        # Python code analysis only (MUST be 10.00/10)
+./scripts/lint.sh --shellcheck    # Shell script validation only
+./scripts/format.sh --black       # Python code formatting check only
+./scripts/format.sh --isort       # Import sorting check only
+```
+
+### Legacy Commands (DEPRECATED - Do NOT use)
+```bash
+# ❌ DO NOT USE THESE - Use scripts above instead:
+# python -m pylint src/ble_gatt_device  
+# python -m flake8 src/ tests/          
+# python -m black src/ tests/           
+```
+
+### Comprehensive Testing
+```bash
 python -m pytest tests/ -v           # All tests pass
 ```
 
@@ -177,11 +227,12 @@ python scripts/test_connection_strategies.py MAC  # Test connection
 ## Critical Success Factors
 
 1. **Submodule Dependency**: bluetooth_sig must be initialized
-2. **Quality Standards**: Pylint 10.00/10, zero flake8 violations
-3. **Architecture Compliance**: No HA imports in GATT layer
-4. **Registry Validation**: All 128+ tests must pass
-5. **BLE Timeouts**: Always use 10.0s timeout for connections
-6. **Name Resolution**: Follow 4-stage characteristic naming strategy
+2. **MANDATORY Script-Based Quality**: `./scripts/format.sh --check` and `./scripts/lint.sh --all` MUST pass
+3. **Quality Standards**: Pylint 10.00/10, zero flake8 violations, zero shellcheck issues
+4. **Architecture Compliance**: No HA imports in GATT layer
+5. **Registry Validation**: All 128+ tests must pass
+6. **BLE Timeouts**: Always use 10.0s timeout for connections
+7. **Name Resolution**: Follow 4-stage characteristic naming strategy
 
 4. **Create virtual environment:**
 
@@ -505,34 +556,41 @@ class PressureCharacteristic(BaseCharacteristic):
 ### Standard Development Cycle
 
 1. **Make changes to source code**
-2. **Run syntax check:** `find src -name "*.py" -exec python3 -m py_compile {} \;`
-3. **Run core validation:** `python -m pytest tests/test_registry_validation.py -v`
-4. **Test functionality:** Run relevant scripts in `scripts/` directory
-5. **Format and lint (if tools available):** `black src/ && flake8 src/`
+2. **MANDATORY: Fix formatting:** `./scripts/format.sh --fix`
+3. **MANDATORY: Validate quality:** `./scripts/lint.sh --all`
+4. **Run core validation:** `python -m pytest tests/test_registry_validation.py -v`
+5. **Test functionality:** Run relevant scripts in `scripts/` directory
 
 ### Before Committing
 
 **ALWAYS run these validation steps:**
 
-1. **Core registry validation (2-5 minutes):**
+1. **MANDATORY: Script-based quality validation:**
+
+   ```bash
+   ./scripts/format.sh --check      # MUST pass - verify all formatting
+   ./scripts/lint.sh --all          # MUST pass - flake8 + pylint 10.00/10 + shellcheck
+   ```
+
+2. **Core registry validation (2-5 minutes):**
 
    ```bash
    python -m pytest tests/test_registry_validation.py -v
    ```
 
-2. **Python compilation check (30 seconds):**
+3. **Python compilation check (30 seconds):**
 
    ```bash
    find src -name "*.py" -exec python3 -m py_compile {} \;
    ```
 
-3. **Manual import test:**
+4. **Manual import test:**
 
    ```bash
    PYTHONPATH=src python3 -c "import ble_gatt_device; print('✅ Framework imports')"
    ```
 
-4. **Characteristic validation test:**
+5. **Characteristic validation test:**
 
    ```bash
    PYTHONPATH=src python3 -c "from ble_gatt_device.gatt.characteristics import CharacteristicRegistry; print('✅ All characteristics registered')"

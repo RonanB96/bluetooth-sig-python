@@ -42,5 +42,5 @@ jobs:
       - name: Verify environment
         run: |
           python --version
-          python -c "import ble_gatt_device; print('✅ Framework ready')"
+          pip list | grep -E "(black|flake8|pylint|pytest)"
 
