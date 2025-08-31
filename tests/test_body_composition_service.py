@@ -175,12 +175,11 @@ class TestBodyCompositionService:
         assert "Body Composition Measurement" in expected
         assert "Body Composition Feature" in expected
         assert (
-            expected["Body Composition Measurement"] ==
-            BodyCompositionMeasurementCharacteristic
+            expected["Body Composition Measurement"]
+            == BodyCompositionMeasurementCharacteristic
         )
         assert (
-            expected["Body Composition Feature"] ==
-            BodyCompositionFeatureCharacteristic
+            expected["Body Composition Feature"] == BodyCompositionFeatureCharacteristic
         )
 
     def test_required_characteristics(self):
@@ -189,8 +188,8 @@ class TestBodyCompositionService:
 
         assert "Body Composition Measurement" in required
         assert (
-            required["Body Composition Measurement"] == 
-            BodyCompositionMeasurementCharacteristic
+            required["Body Composition Measurement"]
+            == BodyCompositionMeasurementCharacteristic
         )
         # Body Composition Feature is not required
 

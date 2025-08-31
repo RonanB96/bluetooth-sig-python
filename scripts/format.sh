@@ -39,7 +39,7 @@ print_warning() {
 
 # Check if virtual environment is activated
 check_venv() {
-    if [ -z "$VIRTUAL_ENV" ]; then
+    if [ -z "${VIRTUAL_ENV:-}" ]; then
         print_warning "Virtual environment not detected. Consider running: source .venv/bin/activate"
     else
         print_success "Virtual environment active: $VIRTUAL_ENV"

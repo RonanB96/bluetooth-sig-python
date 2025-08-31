@@ -57,10 +57,8 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
             "impedance_supported": bool(features_raw & 0x100),
             "weight_supported": bool(features_raw & 0x200),
             "height_supported": bool(features_raw & 0x400),
-
             # Mass measurement resolution (bits 11-14)
             "mass_measurement_resolution": self._get_mass_resolution(features_raw),
-
             # Height measurement resolution (bits 15-17)
             "height_measurement_resolution": self._get_height_resolution(features_raw),
         }
@@ -78,24 +76,19 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
         """
         resolution_bits = (features >> 11) & 0x0F  # Bits 11-14
 
-        if resolution_bits == 0:
-            return "not_specified"
-        elif resolution_bits == 1:
-            return "0.5_kg_or_1_lb"
-        elif resolution_bits == 2:
-            return "0.2_kg_or_0.5_lb"
-        elif resolution_bits == 3:
-            return "0.1_kg_or_0.2_lb"
-        elif resolution_bits == 4:
-            return "0.05_kg_or_0.1_lb"
-        elif resolution_bits == 5:
-            return "0.02_kg_or_0.05_lb"
-        elif resolution_bits == 6:
-            return "0.01_kg_or_0.02_lb"
-        elif resolution_bits == 7:
-            return "0.005_kg_or_0.01_lb"
-        else:
-            return f"reserved_{resolution_bits}"
+        # Mass resolution lookup table
+        resolution_map = {
+            0: "not_specified",
+            1: "0.5_kg_or_1_lb",
+            2: "0.2_kg_or_0.5_lb",
+            3: "0.1_kg_or_0.2_lb",
+            4: "0.05_kg_or_0.1_lb",
+            5: "0.02_kg_or_0.05_lb",
+            6: "0.01_kg_or_0.02_lb",
+            7: "0.005_kg_or_0.01_lb",
+        }
+
+        return resolution_map.get(resolution_bits, f"reserved_{resolution_bits}")
 
     def _get_height_resolution(self, features: int) -> str:
         """Extract height measurement resolution from features bitmask.
@@ -108,16 +101,15 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
         """
         resolution_bits = (features >> 15) & 0x07  # Bits 15-17
 
-        if resolution_bits == 0:
-            return "not_specified"
-        elif resolution_bits == 1:
-            return "0.01_m_or_1_inch"
-        elif resolution_bits == 2:
-            return "0.005_m_or_0.5_inch"
-        elif resolution_bits == 3:
-            return "0.001_m_or_0.1_inch"
-        else:
-            return f"reserved_{resolution_bits}"
+        # Height resolution lookup table
+        resolution_map = {
+            0: "not_specified",
+            1: "0.01_m_or_1_inch",
+            2: "0.005_m_or_0.5_inch",
+            3: "0.001_m_or_0.1_inch",
+        }
+
+        return resolution_map.get(resolution_bits, f"reserved_{resolution_bits}")
 
     @property
     def unit(self) -> str:

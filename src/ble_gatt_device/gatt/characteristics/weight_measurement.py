@@ -46,7 +46,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
         # Parse weight value (uint16 with 0.005 kg resolution)
         if len(data) < offset + 2:
             raise ValueError("Insufficient data for weight value")
-        weight_raw = struct.unpack("<H", data[offset:offset + 2])[0]
+        weight_raw = struct.unpack("<H", data[offset : offset + 2])[0]
         offset += 2
 
         # Convert to appropriate unit based on flags
@@ -78,13 +78,13 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
 
         # Parse optional BMI (uint16 with 0.1 resolution) if present
         if (flags & 0x08) and len(data) >= offset + 2:
-            bmi_raw = struct.unpack("<H", data[offset:offset + 2])[0]
+            bmi_raw = struct.unpack("<H", data[offset : offset + 2])[0]
             result["bmi"] = bmi_raw * 0.1
             offset += 2
 
         # Parse optional height (uint16 with 0.001m resolution) if present
         if (flags & 0x10) and len(data) >= offset + 2:
-            height_raw = struct.unpack("<H", data[offset:offset + 2])[0]
+            height_raw = struct.unpack("<H", data[offset : offset + 2])[0]
             if flags & 0x01:  # Imperial units (inches)
                 result["height"] = height_raw * 0.1  # 0.1 inch resolution
                 result["height_unit"] = "in"
