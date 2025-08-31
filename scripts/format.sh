@@ -48,7 +48,7 @@ check_venv() {
 
 # Run black formatting
 run_black() {
-    if [ "$1" = "--check" ]; then
+    if [ "${1:-}" = "--check" ]; then
         print_header "Checking black formatting"
         if python -m black --check --diff src/ tests/; then
             print_success "black formatting check passed"
@@ -68,7 +68,7 @@ run_black() {
 
 # Run isort import sorting
 run_isort() {
-    if [ "$1" = "--check" ]; then
+    if [ "${1:-}" = "--check" ]; then
         print_header "Checking isort import sorting"
         if python -m isort --check-only --diff src/ tests/; then
             print_success "isort import sorting check passed"
@@ -137,6 +137,12 @@ run_format_fix() {
 }
 
 # Parse command line arguments
+if [ $# -eq 0 ]; then
+    # Default action when no arguments provided
+    run_format_check
+    exit $?
+fi
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         --black)

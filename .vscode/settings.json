@@ -1,0 +1,9 @@
+{
+    "github-local-actions.actPath": "/usr/local/bin/act",
+    "github-local-actions.actOptions": [],
+    "github-local-actions.workflowsPath": ".github/workflows",
+    "chat.tools.terminal.autoApprove": {
+        "./scripts/format.sh":true,
+        "./scripts/lint.sh":true
+    }
+}

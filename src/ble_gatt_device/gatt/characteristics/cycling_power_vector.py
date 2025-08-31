@@ -1,0 +1,111 @@
+"""Cycling Power Vector characteristic implementation."""
+
+import struct
+from dataclasses import dataclass
+from typing import Any, Dict, List
+
+from .base import BaseCharacteristic
+
+
+@dataclass
+class CyclingPowerVectorCharacteristic(BaseCharacteristic):
+    """Cycling Power Vector characteristic (0x2A64).
+
+    Used to transmit detailed cycling power vector data including force and
+    torque measurements at different crank angles.
+    """
+
+    _characteristic_name: str = "Cycling Power Vector"
+
+    def __post_init__(self):
+        """Initialize with specific value type and unit."""
+        self.value_type = "string"  # JSON string representation
+        super().__post_init__()
+
+    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+        """Parse cycling power vector data according to Bluetooth specification.
+
+        Format: Flags(1) + Crank Revolution Data(2) + Last Crank Event Time(2) +
+        First Crank Measurement Angle(2) + [Instantaneous Force Magnitude Array] +
+        [Instantaneous Torque Magnitude Array]
+
+        Args:
+            data: Raw bytearray from BLE characteristic
+
+        Returns:
+            Dict containing parsed cycling power vector data
+
+        Raises:
+            ValueError: If data format is invalid
+        """
+        if len(data) < 7:
+            raise ValueError("Cycling Power Vector data must be at least 7 bytes")
+
+        flags = data[0]
+
+        # Parse crank revolution data (2 bytes)
+        crank_revolutions = struct.unpack("<H", data[1:3])[0]
+
+        # Parse last crank event time (2 bytes, 1/1024 second units)
+        crank_event_time_raw = struct.unpack("<H", data[3:5])[0]
+        crank_event_time = crank_event_time_raw / 1024.0
+
+        # Parse first crank measurement angle (2 bytes, 1/180 degree units)
+        first_angle_raw = struct.unpack("<H", data[5:7])[0]
+        first_angle = first_angle_raw / 180.0  # Convert to degrees
+
+        result = {
+            "flags": flags,
+            "crank_revolutions": crank_revolutions,
+            "last_crank_event_time": crank_event_time,
+            "first_crank_measurement_angle": first_angle,
+        }
+
+        offset = 7
+
+        # Parse optional instantaneous force magnitude array if present
+        if (flags & 0x01) and len(data) > offset:
+            force_magnitudes: List[float] = []
+            # Each force magnitude is 2 bytes (signed 16-bit, 1 N units)
+            while offset + 1 < len(data) and not (
+                flags & 0x02
+            ):  # Stop if torque data follows
+                if offset + 2 > len(data):
+                    break
+                force_raw = struct.unpack("<h", data[offset : offset + 2])[0]
+                force_magnitudes.append(float(force_raw))  # Force in Newtons
+                offset += 2
+
+            if force_magnitudes:
+                result["instantaneous_force_magnitudes"] = force_magnitudes
+
+        # Parse optional instantaneous torque magnitude array if present
+        if (flags & 0x02) and len(data) > offset:
+            torque_magnitudes: List[float] = []
+            # Each torque magnitude is 2 bytes (signed 16-bit, 1/32 Nm units)
+            while offset + 1 < len(data):
+                if offset + 2 > len(data):
+                    break
+                torque_raw = struct.unpack("<h", data[offset : offset + 2])[0]
+                torque_magnitudes.append(torque_raw / 32.0)  # Convert to Nm
+                offset += 2
+
+            if torque_magnitudes:
+                result["instantaneous_torque_magnitudes"] = torque_magnitudes
+
+        return result
+
+    @property
+    def unit(self) -> str:
+        """Get the unit of measurement."""
+        return "N·m"  # Newton-meters for torque, mixed units
+
+    @property
+    def device_class(self) -> str:
+        """Home Assistant device class."""
+        return ""
+
+    @property
+    def state_class(self) -> str:
+        """Home Assistant state class."""
+        return "measurement"
