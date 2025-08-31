@@ -3,12 +3,14 @@
 import sys
 from pathlib import Path
 
-# Add the src directory to Python path for imports
+# Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from gatt.services.battery_service import BatteryService
-from gatt.services.environmental_sensing import EnvironmentalSensingService
-from gatt.uuid_registry import uuid_registry
+from ble_gatt_device.gatt.services.battery_service import BatteryService
+from ble_gatt_device.gatt.services.environmental_sensing import (
+    EnvironmentalSensingService,
+)
+from ble_gatt_device.gatt.uuid_registry import uuid_registry
 
 
 def test_service_uuid_lookup():

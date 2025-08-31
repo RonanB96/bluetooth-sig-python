@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Dict, Type
 
 from .base import BaseGattService
-from ..characteristics import CharacteristicRegistry
 from ..characteristics.battery_level import BatteryLevelCharacteristic
 
 
@@ -29,13 +28,3 @@ class BatteryService(BaseGattService):
         return {
             "Battery Level": BatteryLevelCharacteristic,
         }
-
-    def process_characteristics(self, characteristics: Dict[str, Dict]) -> None:
-        """Process battery service characteristics."""
-        for uuid, props in characteristics.items():
-            uuid = uuid.replace("-", "").upper()
-            char = CharacteristicRegistry.create_characteristic(
-                uuid=uuid, properties=set(props.get("properties", []))
-            )
-            if char:
-                self.characteristics[uuid] = char

@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from gatt.uuid_registry import UuidRegistry
+from ble_gatt_device.gatt.uuid_registry import UuidRegistry
 
 # Create registry
 registry = UuidRegistry()

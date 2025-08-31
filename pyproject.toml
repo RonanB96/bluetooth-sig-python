@@ -4,17 +4,17 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ble_gatt_device"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
-  { name = "Your Name", email = "your.email@example.com" },
+  { name = "RonanB96", email = "ronanbyrne791@gmail.com" },
 ]
-description = "BLE GATT device integration for Home Assistant"
+description = "Registry-driven BLE GATT framework with real device integration and Home Assistant compatibility"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
-keywords = ["bluetooth", "ble", "gatt", "home-assistant", "iot"]
+keywords = ["bluetooth", "ble", "gatt", "home-assistant", "iot", "sensors", "real-device"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -24,25 +24,35 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Home Automation",
     "Topic :: System :: Hardware",
+    "Topic :: Communications :: Internet :: WWW/HTTP",
 ]
 dependencies = [
     "bleak>=0.22.0",
     "pyyaml>=6.0",
+    "asyncio-mqtt>=0.13.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/ble_gatt_device"
-Repository = "https://github.com/yourusername/ble_gatt_device.git"
-Issues = "https://github.com/yourusername/ble_gatt_device/issues"
-Documentation = "https://github.com/yourusername/ble_gatt_device#readme"
+Homepage = "https://github.com/RonanB96/ble_gatt_device"
+Repository = "https://github.com/RonanB96/ble_gatt_device.git"
+Issues = "https://github.com/RonanB96/ble_gatt_device/issues"
+Documentation = "https://github.com/RonanB96/ble_gatt_device#readme"
 
 [project.optional-dependencies]
-test = [
+dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.20.0",
+    "pytest-cov>=4.0.0",
     "pylint>=3.0.0",
     "flake8>=7.0.0",
     "flake8-pyproject",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+]
+test = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.20.0",
+    "pytest-cov>=4.0.0",
 ]
 
 [tool.flake8]

@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Dict, Type
 
 from .base import BaseGattService
-from ..characteristics import CharacteristicRegistry
 from ..characteristics.generic_access import (
     AppearanceCharacteristic,
     DeviceNameCharacteristic,
@@ -36,13 +35,3 @@ class GenericAccessService(BaseGattService):
         return {
             "Device Name": DeviceNameCharacteristic,
         }
-
-    def process_characteristics(self, characteristics: Dict[str, Dict]) -> None:
-        """Process generic access characteristics."""
-        for uuid, props in characteristics.items():
-            uuid = uuid.replace("-", "").upper()
-            char = CharacteristicRegistry.create_characteristic(
-                uuid=uuid, properties=set(props.get("properties", []))
-            )
-            if char:
-                self.characteristics[uuid] = char

@@ -6,7 +6,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from gatt.uuid_registry import uuid_registry
+from ble_gatt_device.gatt.uuid_registry import uuid_registry
 
 
 def main():

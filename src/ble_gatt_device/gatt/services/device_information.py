@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Dict, Type
 
 from .base import BaseGattService
-from ..characteristics import CharacteristicRegistry
 from ..characteristics.device_info import (
     FirmwareRevisionStringCharacteristic,
     HardwareRevisionStringCharacteristic,
@@ -46,13 +45,3 @@ class DeviceInformationService(BaseGattService):
         return {
             "Manufacturer Name String": ManufacturerNameStringCharacteristic,
         }
-
-    def process_characteristics(self, characteristics: Dict[str, Dict]) -> None:
-        """Process device information characteristics."""
-        for uuid, props in characteristics.items():
-            uuid = uuid.replace("-", "").upper()
-            char = CharacteristicRegistry.create_characteristic(
-                uuid=uuid, properties=set(props.get("properties", []))
-            )
-            if char:
-                self.characteristics[uuid] = char

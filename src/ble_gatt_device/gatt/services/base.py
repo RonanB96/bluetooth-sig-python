@@ -123,15 +123,21 @@ class BaseGattService(ABC):
                 required_uuids.add(char_info.uuid)
         return required_uuids
 
-    @abstractmethod
     def process_characteristics(self, characteristics: Dict[str, Dict]) -> None:
-        """Process the characteristics for this service.
+        """Process the characteristics for this service (default implementation).
 
         Args:
             characteristics: Dict mapping UUID to characteristic properties
         """
-        # Abstract method, to be implemented by subclasses
-        raise NotImplementedError
+        from ..characteristics import CharacteristicRegistry
+
+        for uuid, props in characteristics.items():
+            uuid = uuid.replace("-", "").upper()
+            char = CharacteristicRegistry.create_characteristic(
+                uuid=uuid, properties=set(props.get("properties", []))
+            )
+            if char:
+                self.characteristics[uuid] = char
 
     def get_characteristic(self, uuid: str) -> Optional[GattCharacteristic]:
         """Get a characteristic by UUID."""
