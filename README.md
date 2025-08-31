@@ -8,12 +8,12 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 - **Real Device Integration**: Bleak-based BLE connection with optimized timeouts (10s for reliability)
 - **Data Parsing Framework**: Convert raw BLE data to meaningful sensor values with units
 - **Home Assistant Ready**: Clean separation between GATT and HA integration layers
-- **Comprehensive Testing**: 80+ validation tests covering all services and characteristics
+- **Comprehensive Testing**: 56+ validation tests covering all services and characteristics
 - **Type-Safe Implementation**: Complete type hints and dataclass-based design
 
 ## Supported GATT Services
 
-### Core Services (4 implemented)
+### Core Services (8 implemented)
 
 - **Battery Service (0x180F)**
   - Battery Level (0x2A19)
@@ -31,14 +31,30 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
   - Humidity (0x2A6F)
   - Pressure (0x2A6D)
   - UV Index (0x2A76)
+  - Illuminance (0x2A77)
+  - Sound Pressure Level (Power Specification)
   
 - **Generic Access Profile (0x1800)**
   - Device Name (0x2A00)
   - Appearance (0x2A01)
 
+- **Health Thermometer Service (0x1809)**
+  - Temperature Measurement (0x2A1C)
+  
+- **Heart Rate Service (0x180D)**
+  - Heart Rate Measurement (0x2A37)
+  - Blood Pressure Measurement (0x2A35)
+  - Pulse Oximetry Measurement (PLX Continuous Measurement)
+  
+- **Running Speed and Cadence Service (0x1814)**
+  - RSC Measurement (0x2A53)
+  
+- **Cycling Speed and Cadence Service (0x1816)**
+  - CSC Measurement (0x2A5B)
+
 ### Registry Coverage
 
-- **13 Characteristics** fully implemented with validation
+- **20+ Characteristics** fully implemented with validation
 - **Complete Bluetooth SIG compliance** via official UUID registry
 - **Automatic name resolution** with multiple format attempts
 
@@ -61,11 +77,70 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 
 ### Testing Framework
 
-- **80+ Comprehensive Tests**: Full validation of services, characteristics, and registry
+- **56+ Comprehensive Tests**: Full validation of services, characteristics, and registry
 - **Dynamic Discovery**: Automatic detection of all service and characteristic classes  
 - **Real Device Testing**: Scripts for testing with actual BLE hardware (Nordic Thingy:52 validated)
 - **Registry Validation**: Ensures all implementations match Bluetooth SIG standards
 - **Architecture Separation**: Validates clean layer boundaries between GATT and HA
+
+## Home Assistant Integration Architecture
+
+The framework follows a strict three-layer architecture designed for Home Assistant integration:
+
+### Architecture Layers
+
+```
+Home Assistant Integration Layer (Future)
+            ↓ (calls)
+    Translation Layer (HA Metadata)
+            ↓ (calls)
+       GATT Layer (Pure Bluetooth)
+```
+
+### Layer Responsibilities
+
+1. **GATT Layer** (`src/ble_gatt_device/gatt/`):
+   - Pure Bluetooth functionality with no Home Assistant dependencies
+   - Raw BLE data parsing according to Bluetooth SIG specifications
+   - Metadata properties for translation layer (`device_class`, `state_class`, `unit`)
+   - Characteristic and service implementations with automatic UUID resolution
+
+2. **Translation Layer** (`src/ble_gatt_device/gatt/ha_translation.py`):
+   - Converts GATT data to Home Assistant-compatible format
+   - Maps BLE characteristics to HA entity types
+   - Handles unit conversions and data normalization
+   - Provides HA entity configuration
+
+3. **Home Assistant Integration Layer** (External/Future):
+   - Creates actual HA entities and handles HA-specific logic
+   - Manages device discovery and entity lifecycle
+   - Handles HA configuration and state management
+
+### Key Benefits
+
+- **Clean Separation**: Each layer has a single responsibility
+- **Testability**: Each layer can be tested independently  
+- **Reusability**: GATT layer works without Home Assistant
+- **Maintainability**: Changes in one layer don't affect others
+- **Extensibility**: Easy to add new characteristics or HA features
+
+### Example Implementation
+
+```python
+# GATT Layer - Pure Bluetooth
+from ble_gatt_device.gatt.characteristics.temperature import TemperatureCharacteristic
+
+temp_char = TemperatureCharacteristic()
+raw_value = temp_char.parse_value(bytearray([0x64, 0x09]))  # 24.36°C
+
+# Translation Layer - HA Metadata
+ha_config = {
+    "device_class": temp_char.device_class,  # "temperature"
+    "state_class": temp_char.state_class,    # "measurement"
+    "unit_of_measurement": temp_char.unit,   # "°C"
+    "value": raw_value
+}
+```
 
 ## Real Device Integration
 
@@ -128,7 +203,7 @@ pip install -e ".[dev]"
 # Run all tests
 pytest
 
-# Run core validation tests (80+ tests)
+# Run core validation tests (56+ tests)
 python -m pytest tests/test_registry_validation.py -v
 
 # Quick validation check
@@ -197,6 +272,66 @@ value = char.parse_value(bytearray([85]))  # 85% battery
 print(f"Battery level: {value}{char.unit}")  # Battery level: 85%
 ```
 
+### Health Monitoring Examples
+
+```python
+from ble_gatt_device.gatt.characteristics.heart_rate_measurement import HeartRateMeasurementCharacteristic
+from ble_gatt_device.gatt.characteristics.temperature_measurement import TemperatureMeasurementCharacteristic
+
+# Heart rate measurement with multiple data fields
+hr_char = HeartRateMeasurementCharacteristic()
+hr_data = bytearray([0x16, 0x5A, 0x03, 0xE8])  # Complex HR data
+parsed_hr = hr_char.parse_value(hr_data)
+print(f"Heart rate: {parsed_hr['heart_rate']}{hr_char.unit}")
+print(f"Sensor contact: {parsed_hr['sensor_contact_detected']}")
+
+# Medical-grade temperature measurement (IEEE-11073 format)
+temp_char = TemperatureMeasurementCharacteristic()
+temp_data = bytearray([0x00, 0xFF, 0x54, 0x16, 0x00, 0xFE])  # IEEE-11073 format
+parsed_temp = temp_char.parse_value(temp_data)
+print(f"Body temperature: {parsed_temp['temperature']:.1f}{temp_char.unit}")
+```
+
+### Environmental Sensing Examples
+
+```python
+from ble_gatt_device.gatt.characteristics.illuminance import IlluminanceCharacteristic
+from ble_gatt_device.gatt.characteristics.sound_pressure_level import SoundPressureLevelCharacteristic
+
+# Light level measurement
+light_char = IlluminanceCharacteristic()
+light_data = bytearray([0x10, 0x27])  # 10000 lux
+light_level = light_char.parse_value(light_data)
+print(f"Illuminance: {light_level}{light_char.unit}")
+
+# Sound pressure level
+sound_char = SoundPressureLevelCharacteristic()
+sound_data = bytearray([0x32])  # 50 dB
+sound_level = sound_char.parse_value(sound_data)
+print(f"Sound level: {sound_level}{sound_char.unit}")
+```
+
+### Fitness Tracking Examples
+
+```python
+from ble_gatt_device.gatt.characteristics.rsc_measurement import RSCMeasurementCharacteristic
+from ble_gatt_device.gatt.characteristics.csc_measurement import CSCMeasurementCharacteristic
+
+# Running speed and cadence
+rsc_char = RSCMeasurementCharacteristic()
+rsc_data = bytearray([0x03, 0x32, 0x00, 0x00, 0x96])  # Speed + cadence
+parsed_rsc = rsc_char.parse_value(rsc_data)
+print(f"Running speed: {parsed_rsc['instantaneous_speed']:.1f} m/s")
+print(f"Cadence: {parsed_rsc['instantaneous_cadence']} steps/min")
+
+# Cycling speed and cadence
+csc_char = CSCMeasurementCharacteristic()
+csc_data = bytearray([0x03, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC])
+parsed_csc = csc_char.parse_value(csc_data)
+print(f"Wheel revolutions: {parsed_csc['cumulative_wheel_revolutions']}")
+print(f"Crank revolutions: {parsed_csc['cumulative_crank_revolutions']}")
+```
+
 ### UUID Registry Usage
 
 ```python
@@ -218,18 +353,23 @@ print(f"Name: {char_info.name}, Properties: {char_info.properties}")
 - **Registry-Driven Architecture**: Complete base classes and UUID registry system
 - **Real Device Integration**: Bleak-based BLE connection with working Nordic Thingy:52 support
 - **Data Parsing Framework**: Convert raw bytes to meaningful sensor values with units  
-- **Service Implementation**: 4 major GATT services with 13 characteristics
-- **Testing Framework**: 80+ comprehensive tests with dynamic discovery
+- **Service Implementation**: 8 major GATT services with 20+ characteristics
+- **Health & Fitness Services**: Heart rate, blood pressure, pulse oximetry, temperature measurement
+- **Sports Monitoring**: Running and cycling speed and cadence measurements
+- **Environmental Sensing**: Temperature, humidity, pressure, UV index, illuminance, sound pressure
+- **Home Assistant Integration**: Complete 3-layer architecture (GATT → Translation → HA)
+- **IEEE-11073 Support**: Medical device data format parsing utilities
+- **Testing Framework**: 56+ comprehensive tests with dynamic discovery
 - **Connection Optimization**: 10-second timeout for reliable device compatibility
 
 ### Current Development Tasks 🔄
 
 See `.github/copilot-tasks.md` for detailed agent tasks:
 
-1. **Expand Sensor Characteristics**: Implement missing sensor characteristics from YAML registry
-2. **Add Major Services**: Environmental Sensing Service (ESS), Health services, etc.
-3. **Convert Scripts to Pytest**: Improve test coverage and CI integration
-4. **Home Assistant Architecture**: Clean separation between GATT and HA integration layers
+1. **Additional Health Services**: Weight Scale, Glucose monitoring, Blood Oxygen
+2. **Enhanced HA Integration**: Auto-discovery and entity configuration
+3. **Performance Optimization**: Real-time data streaming and connection pooling
+4. **Extended Environmental Sensors**: Air quality, noise monitoring, light sensors
 
 ### Future Roadmap 🚀
 
