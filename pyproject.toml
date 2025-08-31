@@ -54,9 +54,14 @@ test = [
 
 [tool.flake8]
 max-line-length = 88
-extend-ignore = "E203"  # E203: Whitespace before ':' - Black handles this differently
-exclude = ".git,__pycache__,build,dist,.venv,.eggs"
-per-file-ignores = "__init__.py:F401"  # Ignore unused imports in __init__.py files
+extend-ignore = [
+    "E203",  # E203: Whitespace before ':' - Black handles this differently
+    "E501",  # line too long (handled by black)
+    "W503",  # line break before binary operator
+    "W504",  # line break after binary operator
+]
+exclude = [".git", "__pycache__", "build", "dist", ".venv", ".eggs"]
+per-file-ignores = ["__init__.py:F401"]  # Ignore unused imports in __init__.py files
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
