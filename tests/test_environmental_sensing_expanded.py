@@ -156,11 +156,9 @@ class TestEnvironmentalSensingExpanded:
         """Test that Environmental Sensing Service includes all new characteristics."""
         expected_chars = EnvironmentalSensingService.get_expected_characteristics()
 
-        # Should now have 10 characteristics (original 3 + new 7)
-        assert len(expected_chars) == 10
-
         # Check all new characteristics are present
         new_characteristics = [
+            # Environmental wind characteristics
             "Dew Point",
             "Heat Index",
             "Wind Chill",
@@ -168,7 +166,22 @@ class TestEnvironmentalSensingExpanded:
             "True Wind Direction",
             "Apparent Wind Speed",
             "Apparent Wind Direction",
+            # Gas sensor characteristics for air quality monitoring
+            "CO\\textsubscript{2} Concentration",
+            "VOC Concentration",
+            "Ammonia Concentration",
+            "Methane Concentration",
+            "Nitrogen Dioxide Concentration",
+            "Ozone Concentration",
+            "Particulate Matter - PM1 Concentration",
+            "Particulate Matter - PM2.5 Concentration",
+            "Particulate Matter - PM10 Concentration",
+            "Sulfur Dioxide Concentration",
         ]
+
+        # Verify we have all the expected characteristics
+        # 3 original (Temperature, Humidity, Pressure) + 17 new ones = 20 total
+        assert len(expected_chars) == len(new_characteristics) + 3
 
         for char_name in new_characteristics:
             assert char_name in expected_chars
