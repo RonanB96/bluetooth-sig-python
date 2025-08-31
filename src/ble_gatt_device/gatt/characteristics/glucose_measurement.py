@@ -69,14 +69,16 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
         if len(data) >= offset + 2:
             glucose_raw = struct.unpack("<H", data[offset : offset + 2])[0]
             glucose_value = self._parse_ieee11073_sfloat(glucose_raw)
-            
+
             # Determine unit based on flags
             unit = "mmol/L" if (flags & 0x02) else "mg/dL"  # mmol/L vs mg/dL
-            
-            result.update({
-                "glucose_concentration": glucose_value,
-                "unit": unit,
-            })
+
+            result.update(
+                {
+                    "glucose_concentration": glucose_value,
+                    "unit": unit,
+                }
+            )
             offset += 2
 
         # Parse optional type and sample location (1 byte) if present
@@ -84,10 +86,12 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
             type_sample = data[offset]
             glucose_type = (type_sample >> 4) & 0x0F
             sample_location = type_sample & 0x0F
-            result.update({
-                "glucose_type": glucose_type,
-                "sample_location": sample_location,
-            })
+            result.update(
+                {
+                    "glucose_type": glucose_type,
+                    "sample_location": sample_location,
+                }
+            )
             offset += 1
 
         # Parse optional sensor status annotation (2 bytes) if present

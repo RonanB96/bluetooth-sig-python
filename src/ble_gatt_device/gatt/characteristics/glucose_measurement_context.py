@@ -22,9 +22,9 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # Complex data structure
         super().__post_init__()
 
-    def parse_value(
+    def parse_value(  # pylint: disable=too-many-locals,too-many-branches
         self, data: bytearray
-    ) -> Dict[str, Any]:  # pylint: disable=too-many-locals,too-many-branches
+    ) -> Dict[str, Any]:
         """Parse glucose measurement context data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + [Extended Flags(1)] + [Carbohydrate ID(1) + Carb(2)] +
@@ -41,7 +41,9 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
             ValueError: If data format is invalid
         """
         if len(data) < 3:
-            raise ValueError("Glucose Measurement Context data must be at least 3 bytes")
+            raise ValueError(
+                "Glucose Measurement Context data must be at least 3 bytes"
+            )
 
         flags = data[0]
         offset = 1
@@ -66,20 +68,24 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
             carb_id = data[offset]
             carb_raw = struct.unpack("<H", data[offset + 1 : offset + 3])[0]
             carb_value = self._parse_ieee11073_sfloat(carb_raw)
-            result.update({
-                "carbohydrate_id": carb_id,
-                "carbohydrate_kg": carb_value,
-                "carbohydrate_type": self._get_carbohydrate_type_name(carb_id),
-            })
+            result.update(
+                {
+                    "carbohydrate_id": carb_id,
+                    "carbohydrate_kg": carb_value,
+                    "carbohydrate_type": self._get_carbohydrate_type_name(carb_id),
+                }
+            )
             offset += 3
 
         # Parse optional meal information (1 byte) if present
         if (flags & 0x04) and len(data) >= offset + 1:
             meal = data[offset]
-            result.update({
-                "meal": meal,
-                "meal_type": self._get_meal_type_name(meal),
-            })
+            result.update(
+                {
+                    "meal": meal,
+                    "meal_type": self._get_meal_type_name(meal),
+                }
+            )
             offset += 1
 
         # Parse optional tester and health information (1 byte) if present
@@ -87,22 +93,26 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
             tester_health = data[offset]
             tester = (tester_health >> 4) & 0x0F
             health = tester_health & 0x0F
-            result.update({
-                "tester": tester,
-                "health": health,
-                "tester_type": self._get_tester_type_name(tester),
-                "health_type": self._get_health_type_name(health),
-            })
+            result.update(
+                {
+                    "tester": tester,
+                    "health": health,
+                    "tester_type": self._get_tester_type_name(tester),
+                    "health_type": self._get_health_type_name(health),
+                }
+            )
             offset += 1
 
         # Parse optional exercise information if present
         if (flags & 0x10) and len(data) >= offset + 3:
             exercise_duration = struct.unpack("<H", data[offset : offset + 2])[0]
             exercise_intensity = data[offset + 2]
-            result.update({
-                "exercise_duration_seconds": exercise_duration,
-                "exercise_intensity_percent": exercise_intensity,
-            })
+            result.update(
+                {
+                    "exercise_duration_seconds": exercise_duration,
+                    "exercise_intensity_percent": exercise_intensity,
+                }
+            )
             offset += 3
 
         # Parse optional medication information if present
@@ -110,20 +120,24 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
             medication_id = data[offset]
             medication_raw = struct.unpack("<H", data[offset + 1 : offset + 3])[0]
             medication_value = self._parse_ieee11073_sfloat(medication_raw)
-            result.update({
-                "medication_id": medication_id,
-                "medication_kg": medication_value,
-                "medication_type": self._get_medication_type_name(medication_id),
-            })
+            result.update(
+                {
+                    "medication_id": medication_id,
+                    "medication_kg": medication_value,
+                    "medication_type": self._get_medication_type_name(medication_id),
+                }
+            )
             offset += 3
 
         # Parse optional HbA1c information (2 bytes) if present
         if (flags & 0x40) and len(data) >= offset + 2:
             hba1c_raw = struct.unpack("<H", data[offset : offset + 2])[0]
             hba1c_value = self._parse_ieee11073_sfloat(hba1c_raw)
-            result.update({
-                "hba1c_percent": hba1c_value,
-            })
+            result.update(
+                {
+                    "hba1c_percent": hba1c_value,
+                }
+            )
 
         return result
 
@@ -131,7 +145,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         """Get human-readable carbohydrate type name."""
         types = {
             1: "Breakfast",
-            2: "Lunch", 
+            2: "Lunch",
             3: "Dinner",
             4: "Snack",
             5: "Drink",
@@ -165,7 +179,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         """Get human-readable health type name."""
         types = {
             1: "Minor health issues",
-            2: "Major health issues", 
+            2: "Major health issues",
             3: "During menses",
             4: "Under stress",
             5: "No health issues",

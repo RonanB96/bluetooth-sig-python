@@ -89,10 +89,10 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
 
     def get_feature_description(self, feature_bit: int) -> str:
         """Get description for a specific feature bit.
-        
+
         Args:
             feature_bit: Bit position (0-15)
-            
+
         Returns:
             Human-readable description of the feature
         """
