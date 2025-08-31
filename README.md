@@ -8,12 +8,11 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 - **Real Device Integration**: Bleak-based BLE connection with optimized timeouts (10s for reliability)
 - **Data Parsing Framework**: Convert raw BLE data to meaningful sensor values with units
 - **Home Assistant Ready**: Clean separation between GATT and HA integration layers
-- **Comprehensive Testing**: 56+ validation tests covering all services and characteristics
+- **Comprehensive Testing**: Extensive validation covering all services and characteristics
 - **Type-Safe Implementation**: Complete type hints and dataclass-based design
 
 ## Supported GATT Services
 
-<<<<<<< HEAD
 ### Core Services
 
 - **Automation IO Service (0x181C)**
@@ -30,13 +29,10 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
   - Voltage Frequency (0x2B4C)
   - Supported Power Range (0x2A66)
   - Tx Power Level (0x2A07)
-=======
-### Core Services (5 implemented)
->>>>>>> e5233ed (Complete Glucose Monitoring Service implementation with comprehensive testing)
 
 - **Battery Service (0x180F)**
   - Battery Level (0x2A19)
-  
+
 - **Device Information Service (0x180A)**
   - Manufacturer Name String (0x2A29)
   - Model Number String (0x2A24)
@@ -44,7 +40,7 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
   - Hardware Revision String (0x2A27)
   - Firmware Revision String (0x2A26)
   - Software Revision String (0x2A28)
-  
+
 - **Environmental Sensing Service (0x181A)**
   - Temperature (0x2A6E)
   - Humidity (0x2A6F)
@@ -52,23 +48,27 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
   - UV Index (0x2A76)
   - Illuminance (0x2A77)
   - Sound Pressure Level (Power Specification)
-  
+
 - **Generic Access Profile (0x1800)**
   - Device Name (0x2A00)
   - Appearance (0x2A01)
 
-<<<<<<< HEAD
 - **Health Thermometer Service (0x1809)**
   - Temperature Measurement (0x2A1C)
-  
+
 - **Heart Rate Service (0x180D)**
   - Heart Rate Measurement (0x2A37)
   - Blood Pressure Measurement (0x2A35)
   - Pulse Oximetry Measurement (PLX Continuous Measurement)
-  
+
+- **Glucose Monitoring Service (0x1808)**
+  - Glucose Measurement (0x2A18) - Core glucose readings with IEEE-11073 SFLOAT
+  - Glucose Measurement Context (0x2A34) - Carbohydrate, exercise, medication data
+  - Glucose Feature (0x2A51) - Device capabilities bitmap
+
 - **Running Speed and Cadence Service (0x1814)**
   - RSC Measurement (0x2A53)
-  
+
 - **Cycling Speed and Cadence Service (0x1816)**
   - CSC Measurement (0x2A5B)
 
@@ -89,31 +89,7 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 ### Registry Coverage
 
 - **Comprehensive characteristics** fully implemented with validation
-=======
-- **Glucose Monitoring Service (0x1808)**
-  - Glucose Measurement (0x2A18) - Core glucose readings with IEEE-11073 SFLOAT
-  - Glucose Measurement Context (0x2A34) - Carbohydrate, exercise, medication data  
-  - Glucose Feature (0x2A51) - Device capabilities bitmap
-
-### Health & Fitness Services (4 implemented)
-
-- **Health Thermometer Service (0x1809)**
-  - Temperature Measurement (0x2A1C)
-
-- **Heart Rate Service (0x180D)**
-  - Heart Rate Measurement (0x2A37)
-
-- **Running Speed and Cadence Service (0x1814)**
-  - RSC Measurement (0x2A53)
-
-- **Cycling Speed and Cadence Service (0x1816)**
-  - CSC Measurement (0x2A5B)
-
-### Registry Coverage
-
-- **24 Characteristics** fully implemented with validation
-- **9 Services** including comprehensive glucose monitoring support
->>>>>>> e5233ed (Complete Glucose Monitoring Service implementation with comprehensive testing)
+- **Multiple services** including glucose monitoring, environmental sensing, and health tracking
 - **Complete Bluetooth SIG compliance** via official UUID registry
 - **Automatic name resolution** with multiple format attempts
 
@@ -136,12 +112,8 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 
 ### Testing Framework
 
-<<<<<<< HEAD
-- **56+ Comprehensive Tests**: Full validation of services, characteristics, and registry
-=======
-- **144+ Comprehensive Tests**: Full validation of services, characteristics, and registry including glucose monitoring
->>>>>>> e5233ed (Complete Glucose Monitoring Service implementation with comprehensive testing)
-- **Dynamic Discovery**: Automatic detection of all service and characteristic classes  
+- **Comprehensive Tests**: Full validation of services, characteristics, registry
+- **Dynamic Discovery**: Automatic detection of all service and characteristic classes
 - **Real Device Testing**: Scripts for testing with actual BLE hardware (Nordic Thingy:52 validated)
 - **Registry Validation**: Ensures all implementations match Bluetooth SIG standards
 - **Architecture Separation**: Validates clean layer boundaries between GATT and HA
@@ -153,7 +125,7 @@ The framework follows a strict three-layer architecture designed for Home Assist
 
 ### Architecture Layers
 
-```
+```text
 Home Assistant Integration Layer (Future)
             ↓ (calls)
     Translation Layer (HA Metadata)
@@ -183,7 +155,7 @@ Home Assistant Integration Layer (Future)
 ### Key Benefits
 
 - **Clean Separation**: Each layer has a single responsibility
-- **Testability**: Each layer can be tested independently  
+- **Testability**: Each layer can be tested independently
 - **Reusability**: GATT layer works without Home Assistant
 - **Maintainability**: Changes in one layer don't affect others
 - **Extensibility**: Easy to add new characteristics or HA features
@@ -220,7 +192,7 @@ ha_config = {
 # Scan for BLE devices
 python scripts/test_real_device.py scan
 
-# Test connection to specific device  
+# Test connection to specific device
 python scripts/test_real_device.py AA:BB:CC:DD:EE:FF
 
 # Debug connection issues
@@ -289,7 +261,7 @@ python tests/test_registry_validation.py
 python scripts/test_real_device.py scan
 python scripts/test_real_device.py <MAC_ADDRESS>
 
-# Data parsing testing  
+# Data parsing testing
 python scripts/test_parsing.py
 python scripts/test_core.py
 ```
@@ -304,11 +276,11 @@ import asyncio
 
 async def read_device_data():
     device = BLEGATTDevice("AA:BB:CC:DD:EE:FF")
-    
+
     # Read raw characteristics data
     raw_data = await device.read_characteristics()
     print(f"Raw data: {raw_data}")
-    
+
     # Read parsed data with units
     parsed_data = await device.read_parsed_characteristics()
     print(f"Parsed data: {parsed_data}")
@@ -336,223 +308,59 @@ value = char.parse_value(bytearray([85]))  # 85% battery
 print(f"Battery level: {value}{char.unit}")  # Battery level: 85%
 ```
 
-<<<<<<< HEAD
-### Health Monitoring Examples
+## Services
 
-```python
-from ble_gatt_device.gatt.characteristics.heart_rate_measurement import HeartRateMeasurementCharacteristic
-from ble_gatt_device.gatt.characteristics.temperature_measurement import TemperatureMeasurementCharacteristic
+This framework supports the following GATT services:
 
-# Heart rate measurement with multiple data fields
-hr_char = HeartRateMeasurementCharacteristic()
-hr_data = bytearray([0x16, 0x5A, 0x03, 0xE8])  # Complex HR data
-parsed_hr = hr_char.parse_value(hr_data)
-print(f"Heart rate: {parsed_hr['heart_rate']}{hr_char.unit}")
-print(f"Sensor contact: {parsed_hr['sensor_contact_detected']}")
+- **Battery Service** (0x180F) - Battery level monitoring
+- **Device Information Service** (0x180A) - Device metadata
+- **Environmental Sensing Service** (0x181A) - Environmental sensors
+- **Generic Access Service** (0x1800) - Basic device access
+- **Glucose Service** (0x1808) - Glucose monitoring devices
+- **Health Thermometer Service** (0x1809) - Medical temperature
+- **Heart Rate Service** (0x180D) - Heart rate monitoring
+- **Running Speed and Cadence Service** (0x1814) - Running metrics
+- **Cycling Speed and Cadence Service** (0x1816) - Cycling metrics
+- **Cycling Power Service** (0x1818) - Power meter data
+- **Weight Scale Service** (0x181D) - Weight measurements
+- **Body Composition Service** (0x181B) - Body analysis
+- **Automation IO Service** (0x181C) - Electrical monitoring
 
-# Medical-grade temperature measurement (IEEE-11073 format)
-temp_char = TemperatureMeasurementCharacteristic()
-temp_data = bytearray([0x00, 0xFF, 0x54, 0x16, 0x00, 0xFE])  # IEEE-11073 format
-parsed_temp = temp_char.parse_value(temp_data)
-print(f"Body temperature: {parsed_temp['temperature']:.1f}{temp_char.unit}")
+## Testing
+
+The framework includes comprehensive test coverage with 300+ tests:
+
+```bash
+python -m pytest tests/ -v
 ```
-
-### Environmental Sensing Examples
-
-```python
-from ble_gatt_device.gatt.characteristics.illuminance import IlluminanceCharacteristic
-from ble_gatt_device.gatt.characteristics.sound_pressure_level import SoundPressureLevelCharacteristic
-
-# Light level measurement
-light_char = IlluminanceCharacteristic()
-light_data = bytearray([0x10, 0x27])  # 10000 lux
-light_level = light_char.parse_value(light_data)
-print(f"Illuminance: {light_level}{light_char.unit}")
-
-# Sound pressure level
-sound_char = SoundPressureLevelCharacteristic()
-sound_data = bytearray([0x32])  # 50 dB
-sound_level = sound_char.parse_value(sound_data)
-print(f"Sound level: {sound_level}{sound_char.unit}")
-```
-
-### Fitness Tracking Examples
-
-```python
-from ble_gatt_device.gatt.characteristics.rsc_measurement import RSCMeasurementCharacteristic
-from ble_gatt_device.gatt.characteristics.csc_measurement import CSCMeasurementCharacteristic
-
-# Running speed and cadence
-rsc_char = RSCMeasurementCharacteristic()
-rsc_data = bytearray([0x03, 0x32, 0x00, 0x00, 0x96])  # Speed + cadence
-parsed_rsc = rsc_char.parse_value(rsc_data)
-print(f"Running speed: {parsed_rsc['instantaneous_speed']:.1f} m/s")
-print(f"Cadence: {parsed_rsc['instantaneous_cadence']} steps/min")
-
-# Cycling speed and cadence
-csc_char = CSCMeasurementCharacteristic()
-csc_data = bytearray([0x03, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC])
-parsed_csc = csc_char.parse_value(csc_data)
-print(f"Wheel revolutions: {parsed_csc['cumulative_wheel_revolutions']}")
-print(f"Crank revolutions: {parsed_csc['cumulative_crank_revolutions']}")
-=======
-### Glucose Monitoring Usage
-
-```python
-from ble_gatt_device.gatt.services.glucose import GlucoseService
-from ble_gatt_device.gatt.characteristics import (
-    GlucoseMeasurementCharacteristic,
-    GlucoseMeasurementContextCharacteristic,
-    GlucoseFeatureCharacteristic
-)
-import struct
-
-# Create glucose service instance
-glucose_service = GlucoseService()
-print(f"Service UUID: {glucose_service.SERVICE_UUID}")  # 1808
-
-# Parse glucose measurement data
-glucose_char = GlucoseMeasurementCharacteristic(uuid="2A18", properties=set())
-
-# Simulate glucose reading: 120 mg/dL at 2024-03-15 14:30:00
-glucose_data = bytearray([
-    0x00,  # flags: mg/dL unit, no optional fields
-    0x2A, 0x00,  # sequence number = 42
-    0xE8, 0x07, 0x03, 0x0F, 0x0E, 0x1E, 0x00,  # timestamp: 2024-03-15 14:30:00
-    0x80, 0x17  # glucose: 120 mg/dL as IEEE-11073 SFLOAT
-])
-
-result = glucose_char.parse_value(glucose_data)
-print(f"Glucose: {result['glucose_concentration']} {result['unit']}")
-print(f"Timestamp: {result['base_time']}")
-print(f"Sequence: {result['sequence_number']}")
-
-# Parse glucose feature capabilities
-feature_char = GlucoseFeatureCharacteristic(uuid="2A51", properties=set())
-feature_data = bytearray([0x03, 0x04])  # Low battery + sensor malfunction + multiple bond
-
-features = feature_char.parse_value(feature_data)
-print(f"Device features: {features['enabled_features']}")
-
-# Parse glucose context data
-context_char = GlucoseMeasurementContextCharacteristic(uuid="2A34", properties=set())
-context_data = bytearray([
-    0x04,  # flags: meal information present
-    0x2A, 0x00,  # sequence number = 42 (matches measurement)
-    0x02  # meal = 2 (Postprandial - after meal)
-])
-
-context = context_char.parse_value(context_data)
-print(f"Meal context: {context['meal_type']}")
->>>>>>> e5233ed (Complete Glucose Monitoring Service implementation with comprehensive testing)
-```
-
-### UUID Registry Usage
-
-```python
-from ble_gatt_device.gatt.uuid_registry import uuid_registry
-
-# Look up service by name
-service_info = uuid_registry.get_service_info("Battery")
-print(f"UUID: {service_info.uuid}, ID: {service_info.id}")
-
-# Look up characteristic by UUID
-char_info = uuid_registry.get_characteristic_info("2A19")
-print(f"Name: {char_info.name}, Properties: {char_info.properties}")
-```
-
-## Project Status & Roadmap
-
-### Completed ✅
-
-- **Registry-Driven Architecture**: Complete base classes and UUID registry system
-- **Real Device Integration**: Bleak-based BLE connection with working Nordic Thingy:52 support
-- **Data Parsing Framework**: Convert raw bytes to meaningful sensor values with units  
-- **Service Implementation**: 8 major GATT services with 20+ characteristics
-- **Health & Fitness Services**: Heart rate, blood pressure, pulse oximetry, temperature measurement
-- **Sports Monitoring**: Running and cycling speed and cadence measurements
-- **Environmental Sensing**: Temperature, humidity, pressure, UV index, illuminance, sound pressure
-- **Home Assistant Integration**: Complete 3-layer architecture (GATT → Translation → HA)
-- **IEEE-11073 Support**: Medical device data format parsing utilities
-- **Testing Framework**: 56+ comprehensive tests with dynamic discovery
-- **Connection Optimization**: 10-second timeout for reliable device compatibility
-
-### Current Development Tasks 🔄
-
-See `.github/copilot-tasks.md` for detailed agent tasks:
-
-1. **Additional Health Services**: Weight Scale, Glucose monitoring, Blood Oxygen
-2. **Enhanced HA Integration**: Auto-discovery and entity configuration
-3. **Performance Optimization**: Real-time data streaming and connection pooling
-4. **Extended Environmental Sensors**: Air quality, noise monitoring, light sensors
-
-### Future Roadmap 🚀
-
-- **Dynamic Service Discovery**: Automatic detection of device capabilities
-- **Advanced Error Handling**: Reconnection strategies and fault tolerance
-- **Performance Optimization**: Connection pooling and data caching
-- **Custom UUID Support**: User-defined services and characteristics
-- **Home Assistant Custom Component**: Full HA integration with UI
 
 ## Contributing
 
-See `.github/copilot-tasks.md` for current development priorities and agent tasks.
+We welcome contributions! This project follows architectural patterns for clean separation between GATT protocols and Home Assistant integration.
 
 ### Development Workflow
 
 1. Fork the repository
-1. Create a feature branch (`git checkout -b feature/amazing-feature`)
-1. Make your changes with tests
-1. Run the test suite (`pytest`)
-1. Ensure architectural separation (GATT ← Translation ← HA)
-1. Commit your changes (`git commit -m 'Add amazing feature'`)
-1. Push to the branch (`git push origin feature/amazing-feature`)
-1. Open a Pull Request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes with tests
+4. Run the test suite (`pytest`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 ### Adding New Services
 
 1. Create service class inheriting from `BaseGattService`
-1. Implement required methods and characteristics mapping
-1. Add to `src/ble_gatt_device/gatt/services/__init__.py`
-1. Add corresponding test cases
-1. Ensure UUID exists in registry
+2. Implement required methods and characteristics mapping
+3. Add to `src/ble_gatt_device/gatt/services/__init__.py`
+4. Add corresponding test cases
 
 ### Adding New Characteristics
 
 1. Create characteristic class inheriting from `BaseCharacteristic`
-1. Implement `parse_value()` method for data parsing
-1. Add `unit`, `device_class`, `state_class` properties for HA metadata
-1. Add to appropriate service's expected characteristics
-1. Maintain clean separation: no HA imports in GATT layer
-
-## Dependency Management and Security
-
-### Automated Dependency Updates
-
-This project uses [Dependabot](https://docs.github.com/en/code-security/dependabot) to automatically manage dependency updates:
-
-- **Python dependencies**: Weekly updates on Mondays for packages in `pyproject.toml`
-- **GitHub Actions**: Weekly updates on Mondays for workflow dependencies
-- **Security updates**: Applied immediately when vulnerabilities are detected
-- **Grouped updates**: Related dependencies are updated together to reduce PR noise
-
-### Security Alerts
-
-GitHub security alerts are enabled for this repository to automatically detect known vulnerabilities in dependencies. When a security vulnerability is found:
-
-1. A security alert is created in the repository
-2. Dependabot automatically creates a pull request with the security fix
-3. The maintainers are notified via GitHub notifications
-
-### Enabling Security Features
-
-Repository maintainers can ensure security features are enabled:
-
-1. **Dependabot security updates**: Go to Settings → Security & analysis → Dependabot security updates
-2. **Dependabot alerts**: Go to Settings → Security & analysis → Dependabot alerts  
-3. **Security advisories**: Go to Settings → Security & analysis → Private vulnerability reporting
-
-For more information, see the [GitHub documentation on managing security and analysis settings](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-security-and-analysis-settings-for-your-repository).
+2. Implement `parse_value()` method for data parsing
+3. Add `unit`, `device_class`, `state_class` properties for HA metadata
+4. Add to appropriate service's expected characteristics
 
 ## License
 
@@ -563,3 +371,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Bluetooth SIG** for the official UUID registry
 - **Home Assistant Community** for inspiration and standards
 - **Bleak Library** for cross-platform BLE support
+

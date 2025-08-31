@@ -22,9 +22,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # Complex data structure
         super().__post_init__()
 
-    def parse_value(  # pylint: disable=too-many-locals,too-many-branches
-        self, data: bytearray
-    ) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> Dict[str, Any]:
         """Parse glucose measurement context data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + [Extended Flags(1)] + [Carbohydrate ID(1) + Carb(2)] +
@@ -57,13 +55,31 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
             "flags": flags,
         }
 
-        # Parse optional extended flags (1 byte) if present
+        # Parse all optional fields based on flags
+        offset = self._parse_extended_flags(data, flags, result, offset)
+        offset = self._parse_carbohydrate_info(data, flags, result, offset)
+        offset = self._parse_meal_info(data, flags, result, offset)
+        offset = self._parse_tester_health_info(data, flags, result, offset)
+        offset = self._parse_exercise_info(data, flags, result, offset)
+        offset = self._parse_medication_info(data, flags, result, offset)
+        self._parse_hba1c_info(data, flags, result, offset)
+
+        return result
+
+    def _parse_extended_flags(
+        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+    ) -> int:
+        """Parse optional extended flags field."""
         if (flags & 0x01) and len(data) >= offset + 1:
             extended_flags = data[offset]
             result["extended_flags"] = extended_flags
             offset += 1
+        return offset
 
-        # Parse optional carbohydrate information if present
+    def _parse_carbohydrate_info(
+        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+    ) -> int:
+        """Parse optional carbohydrate information field."""
         if (flags & 0x02) and len(data) >= offset + 3:
             carb_id = data[offset]
             carb_raw = struct.unpack("<H", data[offset + 1 : offset + 3])[0]
@@ -76,8 +92,12 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
                 }
             )
             offset += 3
+        return offset
 
-        # Parse optional meal information (1 byte) if present
+    def _parse_meal_info(
+        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+    ) -> int:
+        """Parse optional meal information field."""
         if (flags & 0x04) and len(data) >= offset + 1:
             meal = data[offset]
             result.update(
@@ -87,8 +107,12 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
                 }
             )
             offset += 1
+        return offset
 
-        # Parse optional tester and health information (1 byte) if present
+    def _parse_tester_health_info(
+        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+    ) -> int:
+        """Parse optional tester and health information field."""
         if (flags & 0x08) and len(data) >= offset + 1:
             tester_health = data[offset]
             tester = (tester_health >> 4) & 0x0F
@@ -102,8 +126,12 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
                 }
             )
             offset += 1
+        return offset
 
-        # Parse optional exercise information if present
+    def _parse_exercise_info(
+        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+    ) -> int:
+        """Parse optional exercise information field."""
         if (flags & 0x10) and len(data) >= offset + 3:
             exercise_duration = struct.unpack("<H", data[offset : offset + 2])[0]
             exercise_intensity = data[offset + 2]
@@ -114,8 +142,12 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
                 }
             )
             offset += 3
+        return offset
 
-        # Parse optional medication information if present
+    def _parse_medication_info(
+        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+    ) -> int:
+        """Parse optional medication information field."""
         if (flags & 0x20) and len(data) >= offset + 3:
             medication_id = data[offset]
             medication_raw = struct.unpack("<H", data[offset + 1 : offset + 3])[0]
@@ -128,8 +160,12 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
                 }
             )
             offset += 3
+        return offset
 
-        # Parse optional HbA1c information (2 bytes) if present
+    def _parse_hba1c_info(
+        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+    ) -> int:
+        """Parse optional HbA1c information field."""
         if (flags & 0x40) and len(data) >= offset + 2:
             hba1c_raw = struct.unpack("<H", data[offset : offset + 2])[0]
             hba1c_value = self._parse_ieee11073_sfloat(hba1c_raw)
@@ -138,8 +174,8 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
                     "hba1c_percent": hba1c_value,
                 }
             )
-
-        return result
+            offset += 2
+        return offset
 
     def _get_carbohydrate_type_name(self, carb_id: int) -> str:
         """Get human-readable carbohydrate type name."""
