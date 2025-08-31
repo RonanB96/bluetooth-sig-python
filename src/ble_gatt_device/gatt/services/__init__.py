@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Optional, Type
 
+from .automation_io import AutomationIOService
 from .base import BaseGattService
 from .battery_service import BatteryService
 from .body_composition import BodyCompositionService
@@ -20,6 +21,7 @@ class GattServiceRegistry:
     """Registry for all supported GATT services."""
 
     _services: List[Type[BaseGattService]] = [
+        AutomationIOService,
         BatteryService,
         BodyCompositionService,
         CyclingPowerService,

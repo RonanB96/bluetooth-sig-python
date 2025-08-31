@@ -82,7 +82,7 @@ class CharacteristicRegistry:
         "Weight Scale Feature": WeightScaleFeatureCharacteristic,
         "Body Composition Measurement": BodyCompositionMeasurementCharacteristic,
         "Body Composition Feature": BodyCompositionFeatureCharacteristic,
-        # Automation IO / Electrical Power Monitoring
+        # Electrical Power Monitoring Characteristics
         "Electric Current": ElectricCurrentCharacteristic,
         "Voltage": VoltageCharacteristic,
         "Average Current": AverageCurrentCharacteristic,

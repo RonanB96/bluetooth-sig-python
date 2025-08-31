@@ -13,7 +13,27 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 
 ## Supported GATT Services
 
-### Core Services (6 implemented)
+### Core Services
+
+- **Automation IO Service (0x181C)**
+  - Electric Current (0x2AEE)
+  - Voltage (0x2B18)
+  - Average Current (0x2AE0)
+  - Average Voltage (0x2AE1)
+  - Electric Current Range (0x2AEF)
+  - Electric Current Specification (0x2AF0)
+  - Electric Current Statistics (0x2AF1)
+  - Voltage Specification (0x2B19)
+  - Voltage Statistics (0x2B1A)
+  - High Voltage (0x2B3A)
+  - Voltage Frequency (0x2B4C)
+  - Supported Power Range (0x2A66)
+  - Tx Power Level (0x2A07)
+  - High Voltage (0x2B3A)
+  - Voltage Frequency (0x2B4C)
+  - Supported Power Range (0x2A66)
+  - Tx Power Level (0x2A07)
+>>>>>>> 7159087 (Changes before error encountered)
 
 - **Battery Service (0x180F)**
   - Battery Level (0x2A19)
@@ -68,7 +88,7 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 
 ### Registry Coverage
 
-- **29+ Characteristics** fully implemented with validation
+- **Comprehensive characteristics** fully implemented with validation
 - **Complete Bluetooth SIG compliance** via official UUID registry
 - **Automatic name resolution** with multiple format attempts
 
