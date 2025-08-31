@@ -6,6 +6,8 @@ from ..uuid_registry import uuid_registry
 from .base import BaseCharacteristic
 from .battery_level import BatteryLevelCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
+from .body_composition_feature import BodyCompositionFeatureCharacteristic
+from .body_composition_measurement import BodyCompositionMeasurementCharacteristic
 from .csc_measurement import CSCMeasurementCharacteristic
 from .device_info import (
     FirmwareRevisionStringCharacteristic,
@@ -26,6 +28,8 @@ from .sound_pressure_level import SoundPressureLevelCharacteristic
 from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
 from .uv_index import UVIndexCharacteristic
+from .weight_measurement import WeightMeasurementCharacteristic
+from .weight_scale_feature import WeightScaleFeatureCharacteristic
 
 
 class CharacteristicRegistry:
@@ -53,6 +57,10 @@ class CharacteristicRegistry:
         "Software Revision String": SoftwareRevisionStringCharacteristic,
         "Device Name": DeviceNameCharacteristic,
         "Appearance": AppearanceCharacteristic,
+        "Weight Measurement": WeightMeasurementCharacteristic,
+        "Weight Scale Feature": WeightScaleFeatureCharacteristic,
+        "Body Composition Measurement": BodyCompositionMeasurementCharacteristic,
+        "Body Composition Feature": BodyCompositionFeatureCharacteristic,
     }
 
     @classmethod
