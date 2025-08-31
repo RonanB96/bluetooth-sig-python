@@ -41,12 +41,17 @@ from .heat_index import HeatIndexCharacteristic
 from .high_voltage import HighVoltageCharacteristic
 from .humidity import HumidityCharacteristic
 from .illuminance import IlluminanceCharacteristic
+from .methane_concentration import MethaneConcentrationCharacteristic
 from .nitrogen_dioxide_concentration import NitrogenDioxideConcentrationCharacteristic
+from .ozone_concentration import OzoneConcentrationCharacteristic
+from .pm1_concentration import PM1ConcentrationCharacteristic
+from .pm10_concentration import PM10ConcentrationCharacteristic
 from .pm25_concentration import PM25ConcentrationCharacteristic
 from .pressure import PressureCharacteristic
 from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
 from .rsc_measurement import RSCMeasurementCharacteristic
 from .sound_pressure_level import SoundPressureLevelCharacteristic
+from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacteristic
 from .supported_power_range import SupportedPowerRangeCharacteristic
 from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
@@ -126,8 +131,13 @@ class CharacteristicRegistry:
         "CO\\textsubscript{2} Concentration": CO2ConcentrationCharacteristic,
         "VOC Concentration": TVOCConcentrationCharacteristic,
         "Ammonia Concentration": AmmoniaConcentrationCharacteristic,
+        "Methane Concentration": MethaneConcentrationCharacteristic,
         "Nitrogen Dioxide Concentration": NitrogenDioxideConcentrationCharacteristic,
+        "Ozone Concentration": OzoneConcentrationCharacteristic,
+        "Particulate Matter - PM1 Concentration": PM1ConcentrationCharacteristic,
         "Particulate Matter - PM2.5 Concentration": PM25ConcentrationCharacteristic,
+        "Particulate Matter - PM10 Concentration": PM10ConcentrationCharacteristic,
+        "Sulfur Dioxide Concentration": SulfurDioxideConcentrationCharacteristic,
     }
 
     @classmethod

@@ -12,9 +12,18 @@ from ..characteristics.co2_concentration import CO2ConcentrationCharacteristic
 from ..characteristics.dew_point import DewPointCharacteristic
 from ..characteristics.heat_index import HeatIndexCharacteristic
 from ..characteristics.humidity import HumidityCharacteristic
-from ..characteristics.nitrogen_dioxide_concentration import NitrogenDioxideConcentrationCharacteristic
+from ..characteristics.methane_concentration import MethaneConcentrationCharacteristic
+from ..characteristics.nitrogen_dioxide_concentration import (
+    NitrogenDioxideConcentrationCharacteristic,
+)
+from ..characteristics.ozone_concentration import OzoneConcentrationCharacteristic
+from ..characteristics.pm1_concentration import PM1ConcentrationCharacteristic
+from ..characteristics.pm10_concentration import PM10ConcentrationCharacteristic
 from ..characteristics.pm25_concentration import PM25ConcentrationCharacteristic
 from ..characteristics.pressure import PressureCharacteristic
+from ..characteristics.sulfur_dioxide_concentration import (
+    SulfurDioxideConcentrationCharacteristic,
+)
 from ..characteristics.temperature import TemperatureCharacteristic
 from ..characteristics.true_wind_direction import TrueWindDirectionCharacteristic
 from ..characteristics.true_wind_speed import TrueWindSpeedCharacteristic
@@ -41,8 +50,13 @@ class EnvironmentalSensingService(BaseGattService):
     - CO\\textsubscript{2} Concentration - Optional
     - TVOC Concentration - Optional
     - Ammonia Concentration - Optional
+    - Methane Concentration - Optional
     - Nitrogen Dioxide Concentration - Optional
+    - Ozone Concentration - Optional
+    - PM1 Concentration - Optional
     - PM2.5 Concentration - Optional
+    - PM10 Concentration - Optional
+    - Sulfur Dioxide Concentration - Optional
     """
 
     @classmethod
@@ -64,8 +78,13 @@ class EnvironmentalSensingService(BaseGattService):
             "CO\\textsubscript{2} Concentration": CO2ConcentrationCharacteristic,
             "VOC Concentration": TVOCConcentrationCharacteristic,
             "Ammonia Concentration": AmmoniaConcentrationCharacteristic,
+            "Methane Concentration": MethaneConcentrationCharacteristic,
             "Nitrogen Dioxide Concentration": NitrogenDioxideConcentrationCharacteristic,
+            "Ozone Concentration": OzoneConcentrationCharacteristic,
+            "Particulate Matter - PM1 Concentration": PM1ConcentrationCharacteristic,
             "Particulate Matter - PM2.5 Concentration": PM25ConcentrationCharacteristic,
+            "Particulate Matter - PM10 Concentration": PM10ConcentrationCharacteristic,
+            "Sulfur Dioxide Concentration": SulfurDioxideConcentrationCharacteristic,
         }
 
     @classmethod
