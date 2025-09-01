@@ -21,17 +21,7 @@ class ElevationCharacteristic(BaseCharacteristic):
         super().__post_init__()
 
     def parse_value(self, data: bytearray) -> float:
-        """Parse elevation data (sint24 in units of 0.01 meters).
-
-        Args:
-            data: Raw bytes from the characteristic read (3 bytes minimum)
-
-        Returns:
-            Elevation in meters
-
-        Raises:
-            ValueError: If data format is invalid
-        """
+        """Parse elevation data (sint24 in units of 0.01 meters)."""
         if len(data) < 3:
             raise ValueError("Elevation data must be at least 3 bytes")
 

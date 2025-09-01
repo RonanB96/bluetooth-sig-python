@@ -31,17 +31,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
         super().__post_init__()
 
     def parse_value(self, data: bytearray) -> Dict[str, Any]:
-        """Parse local time information data (2 bytes: time zone + DST offset).
-
-        Args:
-            data: Raw bytes from the characteristic read (2 bytes minimum)
-
-        Returns:
-            Dictionary containing time zone and DST information
-
-        Raises:
-            ValueError: If data format is invalid
-        """
+        """Parse local time information data (2 bytes: time zone + DST offset)."""
         if len(data) < 2:
             raise ValueError("Local time information data must be at least 2 bytes")
 

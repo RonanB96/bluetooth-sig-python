@@ -20,17 +20,7 @@ class PollenConcentrationCharacteristic(BaseCharacteristic):
         super().__post_init__()
 
     def parse_value(self, data: bytearray) -> int:
-        """Parse pollen concentration data (uint24 in count per cubic meter).
-
-        Args:
-            data: Raw bytes from the characteristic read (3 bytes minimum)
-
-        Returns:
-            Pollen concentration in count/m³
-
-        Raises:
-            ValueError: If data format is invalid
-        """
+        """Parse pollen concentration data (uint24 in count per cubic meter)."""
         if len(data) < 3:
             raise ValueError("Pollen concentration data must be at least 3 bytes")
 

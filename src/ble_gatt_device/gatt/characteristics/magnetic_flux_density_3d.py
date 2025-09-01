@@ -22,17 +22,7 @@ class MagneticFluxDensity3DCharacteristic(BaseCharacteristic):
         super().__post_init__()
 
     def parse_value(self, data: bytearray) -> Dict[str, Any]:
-        """Parse magnetic flux density 3D data (3 x sint16 in units of 10^-7 Tesla).
-
-        Args:
-            data: Raw bytes from the characteristic read (6 bytes minimum)
-
-        Returns:
-            Dictionary containing X, Y, and Z axis flux density values in Tesla
-
-        Raises:
-            ValueError: If data format is invalid
-        """
+        """Parse magnetic flux density 3D data (3 x sint16 in units of 10^-7 Tesla)."""
         if len(data) < 6:
             raise ValueError("Magnetic flux density 3D data must be at least 6 bytes")
 

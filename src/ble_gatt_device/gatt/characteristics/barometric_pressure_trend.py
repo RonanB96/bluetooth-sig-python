@@ -35,17 +35,7 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
         super().__post_init__()
 
     def parse_value(self, data: bytearray) -> str:
-        """Parse barometric pressure trend data (uint8 enumerated value).
-
-        Args:
-            data: Raw bytes from the characteristic read (1 byte minimum)
-
-        Returns:
-            Human-readable trend description
-
-        Raises:
-            ValueError: If data format is invalid
-        """
+        """Parse barometric pressure trend data (uint8 enumerated value)."""
         if len(data) < 1:
             raise ValueError("Barometric pressure trend data must be at least 1 byte")
 

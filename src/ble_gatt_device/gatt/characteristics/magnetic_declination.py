@@ -22,17 +22,7 @@ class MagneticDeclinationCharacteristic(BaseCharacteristic):
         super().__post_init__()
 
     def parse_value(self, data: bytearray) -> float:
-        """Parse magnetic declination data (uint16 in units of 0.01 degrees).
-
-        Args:
-            data: Raw bytes from the characteristic read
-
-        Returns:
-            Magnetic declination in degrees (0-359.99)
-
-        Raises:
-            ValueError: If data format is invalid
-        """
+        """Parse magnetic declination data (uint16 in units of 0.01 degrees)."""
         if len(data) < 2:
             raise ValueError("Magnetic declination data must be at least 2 bytes")
 

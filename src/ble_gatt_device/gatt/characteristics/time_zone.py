@@ -21,17 +21,7 @@ class TimeZoneCharacteristic(BaseCharacteristic):
         super().__post_init__()
 
     def parse_value(self, data: bytearray) -> str:
-        """Parse time zone data (sint8 in 15-minute increments from UTC).
-
-        Args:
-            data: Raw bytes from the characteristic read (1 byte minimum)
-
-        Returns:
-            Human-readable time zone offset description
-
-        Raises:
-            ValueError: If data format is invalid
-        """
+        """Parse time zone data (sint8 in 15-minute increments from UTC)."""
         if len(data) < 1:
             raise ValueError("Time zone data must be at least 1 byte")
 

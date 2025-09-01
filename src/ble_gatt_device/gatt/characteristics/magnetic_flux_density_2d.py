@@ -22,17 +22,7 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
         super().__post_init__()
 
     def parse_value(self, data: bytearray) -> Dict[str, Any]:
-        """Parse magnetic flux density 2D data (2 x sint16 in units of 10^-7 Tesla).
-
-        Args:
-            data: Raw bytes from the characteristic read (4 bytes minimum)
-
-        Returns:
-            Dictionary containing X and Y axis flux density values in Tesla
-
-        Raises:
-            ValueError: If data format is invalid
-        """
+        """Parse magnetic flux density 2D data (2 x sint16 in units of 10^-7 Tesla)."""
         if len(data) < 4:
             raise ValueError("Magnetic flux density 2D data must be at least 4 bytes")
 
