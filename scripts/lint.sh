@@ -57,16 +57,29 @@ run_flake8() {
         return 1
     fi
 
-    # Run flake8 and capture errors
-    local violations
-    violations=$(flake8 src/ tests/ 2>&1 | wc -l)
-    echo "$violations"
+    # Run flake8 and capture output, allowing it to fail
+    local FLAKE8_OUTPUT
+    set +e  # Temporarily disable exit on error
+    FLAKE8_OUTPUT=$(flake8 src/ tests/ 2>&1)
+    local FLAKE8_EXIT_CODE=$?
+    set -e  # Re-enable exit on error
 
-    if [ "$violations" -eq 0 ]; then
+    # Count violations - only count non-empty lines
+    local violations
+    if [ -z "$FLAKE8_OUTPUT" ]; then
+        violations=0
+    else
+        violations=$(echo "$FLAKE8_OUTPUT" | grep -c "." || echo "0")
+    fi
+
+    if [ $FLAKE8_EXIT_CODE -eq 0 ] && [ "$violations" -eq 0 ]; then
+        echo "0"
         print_success "flake8 passed with zero violations"
         return 0
     else
-        flake8 src/ tests/
+        echo "$violations"
+        # Show the actual flake8 output
+        echo "$FLAKE8_OUTPUT"
         print_error "flake8 found $violations violations"
         return 1
     fi
@@ -81,10 +94,15 @@ run_pylint() {
         return 1
     fi
 
-    # Run pylint and capture output
+    # Run pylint and capture output, allowing it to fail
     local PYLINT_OUTPUT
+    set +e  # Temporarily disable exit on error
     PYLINT_OUTPUT=$(pylint src/ble_gatt_device 2>&1)
+    set -e  # Re-enable exit on error
+
+    # Always show the pylint output first
     echo "$PYLINT_OUTPUT"
+    echo ""
 
     # Extract score using sed (compatible with BusyBox)
     SCORE=$(echo "$PYLINT_OUTPUT" | sed -n 's/.*rated at \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
@@ -130,7 +148,14 @@ run_shellcheck() {
     while IFS= read -r script; do
         if [ -n "$script" ]; then
             echo "Checking: $script"
-            if ! shellcheck "$script"; then
+
+            # Run shellcheck, allowing it to fail
+            set +e  # Temporarily disable exit on error
+            shellcheck "$script"
+            local script_exit_code=$?
+            set -e  # Re-enable exit on error
+
+            if [ $script_exit_code -ne 0 ]; then
                 exit_code=1
                 # Count issues for this script
                 local script_issues
