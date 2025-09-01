@@ -8,6 +8,7 @@ from .apparent_wind_direction import ApparentWindDirectionCharacteristic
 from .apparent_wind_speed import ApparentWindSpeedCharacteristic
 from .average_current import AverageCurrentCharacteristic
 from .average_voltage import AverageVoltageCharacteristic
+from .barometric_pressure_trend import BarometricPressureTrendCharacteristic
 from .base import BaseCharacteristic
 from .battery_level import BatteryLevelCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
@@ -32,6 +33,7 @@ from .electric_current import ElectricCurrentCharacteristic
 from .electric_current_range import ElectricCurrentRangeCharacteristic
 from .electric_current_specification import ElectricCurrentSpecificationCharacteristic
 from .electric_current_statistics import ElectricCurrentStatisticsCharacteristic
+from .elevation import ElevationCharacteristic
 from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic
 from .glucose_feature import GlucoseFeatureCharacteristic
 from .glucose_measurement import GlucoseMeasurementCharacteristic
@@ -41,20 +43,27 @@ from .heat_index import HeatIndexCharacteristic
 from .high_voltage import HighVoltageCharacteristic
 from .humidity import HumidityCharacteristic
 from .illuminance import IlluminanceCharacteristic
+from .local_time_information import LocalTimeInformationCharacteristic
+from .magnetic_declination import MagneticDeclinationCharacteristic
+from .magnetic_flux_density_2d import MagneticFluxDensity2DCharacteristic
+from .magnetic_flux_density_3d import MagneticFluxDensity3DCharacteristic
 from .methane_concentration import MethaneConcentrationCharacteristic
 from .nitrogen_dioxide_concentration import NitrogenDioxideConcentrationCharacteristic
 from .ozone_concentration import OzoneConcentrationCharacteristic
 from .pm1_concentration import PM1ConcentrationCharacteristic
 from .pm10_concentration import PM10ConcentrationCharacteristic
 from .pm25_concentration import PM25ConcentrationCharacteristic
+from .pollen_concentration import PollenConcentrationCharacteristic
 from .pressure import PressureCharacteristic
 from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
+from .rainfall import RainfallCharacteristic
 from .rsc_measurement import RSCMeasurementCharacteristic
 from .sound_pressure_level import SoundPressureLevelCharacteristic
 from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacteristic
 from .supported_power_range import SupportedPowerRangeCharacteristic
 from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
+from .time_zone import TimeZoneCharacteristic
 from .true_wind_direction import TrueWindDirectionCharacteristic
 from .true_wind_speed import TrueWindSpeedCharacteristic
 from .tvoc_concentration import TVOCConcentrationCharacteristic
@@ -127,6 +136,18 @@ class CharacteristicRegistry:
         "True Wind Direction": TrueWindDirectionCharacteristic,
         "Apparent Wind Speed": ApparentWindSpeedCharacteristic,
         "Apparent Wind Direction": ApparentWindDirectionCharacteristic,
+        # Navigation and positioning characteristics
+        "Magnetic Declination": MagneticDeclinationCharacteristic,
+        "Magnetic Flux Density - 2D": MagneticFluxDensity2DCharacteristic,
+        "Magnetic Flux Density - 3D": MagneticFluxDensity3DCharacteristic,
+        "Elevation": ElevationCharacteristic,
+        "Barometric Pressure Trend": BarometricPressureTrendCharacteristic,
+        # Time-related characteristics
+        "Time Zone": TimeZoneCharacteristic,
+        "Local Time Information": LocalTimeInformationCharacteristic,
+        # Environmental sensors
+        "Pollen Concentration": PollenConcentrationCharacteristic,
+        "Rainfall": RainfallCharacteristic,
         # Gas sensor characteristics for air quality monitoring
         "CO\\textsubscript{2} Concentration": CO2ConcentrationCharacteristic,
         "VOC Concentration": TVOCConcentrationCharacteristic,
