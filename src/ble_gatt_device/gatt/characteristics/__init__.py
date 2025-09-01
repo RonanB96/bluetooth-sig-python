@@ -10,6 +10,7 @@ from .average_current import AverageCurrentCharacteristic
 from .average_voltage import AverageVoltageCharacteristic
 from .base import BaseCharacteristic
 from .battery_level import BatteryLevelCharacteristic
+from .battery_power_state import BatteryPowerStateCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic
 from .body_composition_measurement import BodyCompositionMeasurementCharacteristic
@@ -74,6 +75,7 @@ class CharacteristicRegistry:
 
     _characteristics: Dict[str, Type[BaseCharacteristic]] = {
         "Battery Level": BatteryLevelCharacteristic,
+        "Battery Power State": BatteryPowerStateCharacteristic,
         "Temperature": TemperatureCharacteristic,
         "Temperature Measurement": TemperatureMeasurementCharacteristic,
         "Humidity": HumidityCharacteristic,

@@ -32,6 +32,7 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 
 - **Battery Service (0x180F)**
   - Battery Level (0x2A19)
+  - Battery Power State (0x2A1A)
 
 - **Device Information Service (0x180A)**
   - Manufacturer Name String (0x2A29)
@@ -325,11 +326,52 @@ value = char.parse_value(bytearray([85]))  # 85% battery
 print(f"Battery level: {value}{char.unit}")  # Battery level: 85%
 ```
 
+### Battery Power State Example
+
+```python
+from ble_gatt_device.gatt.characteristics.battery_power_state import BatteryPowerStateCharacteristic
+
+# Create Battery Power State characteristic
+power_state_char = BatteryPowerStateCharacteristic()
+
+# Example 1: Basic battery state - present, wired power, charging, good level
+# Binary: 11010110 = 0xD6
+data = bytearray([0xD6])
+result = power_state_char.parse_value(data)
+print(f"Battery state: {result}")
+# Output: {
+#   'raw_value': 214,
+#   'battery_present': 'present',
+#   'wired_external_power_connected': True,
+#   'wireless_external_power_connected': False,
+#   'battery_charge_state': 'charging',
+#   'battery_charge_level': 'good',
+#   'battery_charging_type': 'unknown',
+#   'charging_fault_reason': None
+# }
+
+# Example 2: Extended format with charging type
+# First byte: 0xD6 (same as above)
+# Second byte: 0x01 (constant current charging, no fault)
+extended_data = bytearray([0xD6, 0x01])
+extended_result = power_state_char.parse_value(extended_data)
+print(f"Charging type: {extended_result['battery_charging_type']}")  # constant_current
+
+# Example 3: Battery not present
+not_present_data = bytearray([0x01])  # Binary: 00000001
+not_present_result = power_state_char.parse_value(not_present_data)
+print(f"Battery present: {not_present_result['battery_present']}")  # not_present
+
+# Home Assistant integration
+print(f"Device class: {power_state_char.device_class}")  # battery
+print(f"State class: {power_state_char.state_class}")    # (empty for status)
+```
+
 ## Services
 
 This framework supports the following GATT services:
 
-- **Battery Service** (0x180F) - Battery level monitoring
+- **Battery Service** (0x180F) - Comprehensive battery monitoring with level and power state
 - **Device Information Service** (0x180A) - Device metadata
 - **Environmental Sensing Service** (0x181A) - Environmental sensors
 - **Generic Access Service** (0x1800) - Basic device access
