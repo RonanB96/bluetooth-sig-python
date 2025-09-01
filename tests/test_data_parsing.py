@@ -312,7 +312,7 @@ class TestDataParsing:
         self, simulated_nordic_thingy_services, simulated_nordic_thingy_data
     ):
         """Test comprehensive parsing of all characteristics with detailed validation.
-        
+
         This test replicates the functionality from scripts/test_parsing.py
         ensuring that all characteristics can be parsed and validated.
         """
@@ -331,12 +331,12 @@ class TestDataParsing:
             service_name = service.__class__.__name__
             validation_results[service_name] = {
                 "characteristics": {},
-                "total_chars": len(service.characteristics)
+                "total_chars": len(service.characteristics),
             }
 
             for char_uuid, characteristic in service.characteristics.items():
                 char_name = characteristic.__class__.__name__
-                
+
                 # Find corresponding data using UUID matching logic from test_parsing.py
                 found_data = False
                 for data_uuid, raw_data in simulated_nordic_thingy_data.items():
@@ -345,64 +345,96 @@ class TestDataParsing:
                         try:
                             parsed_value = characteristic.parse_value(raw_data)
                             unit = getattr(characteristic, "unit", "")
-                            
-                            validation_results[service_name]["characteristics"][char_name] = {
+
+                            validation_results[service_name]["characteristics"][
+                                char_name
+                            ] = {
                                 "status": "success",
                                 "value": parsed_value,
                                 "unit": unit,
-                                "data_length": len(raw_data)
+                                "data_length": len(raw_data),
                             }
                             parsed_count += 1
-                            
+
                             # Additional validation based on characteristic type
                             if "BatteryLevel" in char_name:
-                                assert isinstance(parsed_value, int), f"Battery level should be int, got {type(parsed_value)}"
-                                assert 0 <= parsed_value <= 100, f"Battery level {parsed_value} out of range"
-                                assert unit == "%", f"Battery level unit should be %, got {unit}"
+                                assert isinstance(
+                                    parsed_value, int
+                                ), f"Battery level should be int, got {type(parsed_value)}"
+                                assert (
+                                    0 <= parsed_value <= 100
+                                ), f"Battery level {parsed_value} out of range"
+                                assert (
+                                    unit == "%"
+                                ), f"Battery level unit should be %, got {unit}"
                             elif "Temperature" in char_name:
-                                assert isinstance(parsed_value, (int, float)), f"Temperature should be numeric, got {type(parsed_value)}"
-                                assert unit == "°C", f"Temperature unit should be °C, got {unit}"
+                                assert isinstance(
+                                    parsed_value, (int, float)
+                                ), f"Temperature should be numeric, got {type(parsed_value)}"
+                                assert (
+                                    unit == "°C"
+                                ), f"Temperature unit should be °C, got {unit}"
                             elif "Humidity" in char_name:
-                                assert isinstance(parsed_value, (int, float)), f"Humidity should be numeric, got {type(parsed_value)}"
-                                assert unit == "%", f"Humidity unit should be %, got {unit}"
+                                assert isinstance(
+                                    parsed_value, (int, float)
+                                ), f"Humidity should be numeric, got {type(parsed_value)}"
+                                assert (
+                                    unit == "%"
+                                ), f"Humidity unit should be %, got {unit}"
                             elif "Pressure" in char_name:
-                                assert isinstance(parsed_value, (int, float)), f"Pressure should be numeric, got {type(parsed_value)}"
-                                assert unit in ["Pa", "hPa", "kPa"], f"Pressure unit should be Pa, hPa, or kPa, got {unit}"
-                                
+                                assert isinstance(
+                                    parsed_value, (int, float)
+                                ), f"Pressure should be numeric, got {type(parsed_value)}"
+                                assert unit in [
+                                    "Pa",
+                                    "hPa",
+                                    "kPa",
+                                ], f"Pressure unit should be Pa, hPa, or kPa, got {unit}"
+
                         except Exception as e:
-                            validation_results[service_name]["characteristics"][char_name] = {
+                            validation_results[service_name]["characteristics"][
+                                char_name
+                            ] = {
                                 "status": "error",
                                 "error": str(e),
-                                "data_length": len(raw_data)
+                                "data_length": len(raw_data),
                             }
                             error_count += 1
                         break
-                
+
                 if not found_data:
                     validation_results[service_name]["characteristics"][char_name] = {
                         "status": "no_data",
-                        "uuid": char_uuid
+                        "uuid": char_uuid,
                     }
                     missing_data_count += 1
 
         # Comprehensive assertions
-        assert parsed_count >= 4, f"Expected to parse at least 4 characteristics, got {parsed_count}"
+        assert (
+            parsed_count >= 4
+        ), f"Expected to parse at least 4 characteristics, got {parsed_count}"
         assert error_count == 0, f"No parsing errors expected, got {error_count} errors"
-        
+
         # Verify specific characteristics were parsed successfully
         expected_characteristics = ["BatteryLevel", "Temperature", "Humidity"]
         found_expected = []
-        
+
         for service_name, service_data in validation_results.items():
             for char_name, char_data in service_data["characteristics"].items():
                 if char_data["status"] == "success":
                     for expected in expected_characteristics:
                         if expected in char_name and expected not in found_expected:
                             found_expected.append(expected)
-        
-        assert len(found_expected) >= 3, f"Expected to find at least 3 key characteristics, found: {found_expected}"
-        
+
+        assert (
+            len(found_expected) >= 3
+        ), f"Expected to find at least 3 key characteristics, found: {found_expected}"
+
         # Verify service recognition
         service_names = list(validation_results.keys())
-        assert any("Battery" in name for name in service_names), "Battery service should be recognized"
-        assert any("Environmental" in name for name in service_names), "Environmental service should be recognized"
+        assert any(
+            "Battery" in name for name in service_names
+        ), "Battery service should be recognized"
+        assert any(
+            "Environmental" in name for name in service_names
+        ), "Environmental service should be recognized"

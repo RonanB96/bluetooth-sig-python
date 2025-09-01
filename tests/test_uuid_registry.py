@@ -149,12 +149,12 @@ def test_yaml_file_presence():
 
 def test_direct_yaml_loading():
     """Test direct loading and parsing of YAML files.
-    
+
     This test replicates functionality from scripts/test_yaml_loading.py
     to ensure YAML files can be loaded and contain expected data.
     """
     import yaml
-    
+
     base_path = (
         Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
     )
@@ -163,62 +163,66 @@ def test_direct_yaml_loading():
     service_file = base_path / "service_uuids.yaml"
     with service_file.open("r") as f:
         service_data = yaml.safe_load(f)
-    
+
     assert "uuids" in service_data, "Service YAML should have 'uuids' key"
     assert isinstance(service_data["uuids"], list), "Service UUIDs should be a list"
-    
+
     # Find specific services
     battery_service = None
     env_service = None
-    
+
     for service in service_data["uuids"]:
         # Handle both string and integer UUID formats
         if isinstance(service["uuid"], str):
             uuid = service["uuid"].replace("0x", "")
         else:
             uuid = hex(service["uuid"])[2:].upper()
-        
+
         if uuid == "180F":  # Battery Service
             battery_service = service
         elif uuid == "181A":  # Environmental Sensing
             env_service = service
-    
+
     assert battery_service is not None, "Failed to find Battery Service in YAML"
     assert env_service is not None, "Failed to find Environmental Service in YAML"
     assert battery_service["name"] == "Battery", "Wrong Battery Service name in YAML"
-    assert env_service["name"] == "Environmental Sensing", "Wrong Environmental Service name in YAML"
-    
+    assert (
+        env_service["name"] == "Environmental Sensing"
+    ), "Wrong Environmental Service name in YAML"
+
     # Test Characteristic UUIDs file loading
     char_file = base_path / "characteristic_uuids.yaml"
     with char_file.open("r") as f:
         char_data = yaml.safe_load(f)
-    
+
     assert "uuids" in char_data, "Characteristic YAML should have 'uuids' key"
     assert isinstance(char_data["uuids"], list), "Characteristic UUIDs should be a list"
-    
+
     # Find specific characteristics
     battery_level = None
     temperature = None
     humidity = None
-    
+
     for char in char_data["uuids"]:
         # Handle both string and integer UUID formats
         if isinstance(char["uuid"], str):
             uuid = char["uuid"].replace("0x", "")
         else:
             uuid = hex(char["uuid"])[2:].upper()
-        
+
         if uuid == "2A19":  # Battery Level
             battery_level = char
         elif uuid == "2A6E":  # Temperature
             temperature = char
         elif uuid == "2A6F":  # Humidity
             humidity = char
-    
-    assert battery_level is not None, "Failed to find Battery Level characteristic in YAML"
+
+    assert (
+        battery_level is not None
+    ), "Failed to find Battery Level characteristic in YAML"
     assert temperature is not None, "Failed to find Temperature characteristic in YAML"
     assert humidity is not None, "Failed to find Humidity characteristic in YAML"
-    
+
     # Verify characteristic names
     assert battery_level["name"] == "Battery Level", "Wrong Battery Level name in YAML"
     assert temperature["name"] == "Temperature", "Wrong Temperature name in YAML"

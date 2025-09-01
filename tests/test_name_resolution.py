@@ -1,7 +1,5 @@
 """Tests for UUID registry name resolution functionality."""
 
-import pytest
-
 from ble_gatt_device.gatt.uuid_registry import uuid_registry
 
 
@@ -21,13 +19,14 @@ class TestNameResolution:
 
         for lookup_key, should_find, expected_uuid in test_cases:
             info = uuid_registry.get_service_info(lookup_key)
-            
+
             if should_find:
                 assert info is not None, f"Should find service with key: {lookup_key}"
                 assert info.uuid == expected_uuid, f"Wrong UUID for key {lookup_key}"
                 assert info.name == "Battery", f"Wrong name for key {lookup_key}"
-                assert info.id == "org.bluetooth.service.battery_service", \
-                    f"Wrong ID for key {lookup_key}"
+                assert (
+                    info.id == "org.bluetooth.service.battery_service"
+                ), f"Wrong ID for key {lookup_key}"
             else:
                 assert info is None, f"Should not find service with key: {lookup_key}"
 
@@ -43,13 +42,16 @@ class TestNameResolution:
 
         for lookup_key, should_find, expected_uuid in test_cases:
             info = uuid_registry.get_service_info(lookup_key)
-            
+
             if should_find:
                 assert info is not None, f"Should find service with key: {lookup_key}"
                 assert info.uuid == expected_uuid, f"Wrong UUID for key {lookup_key}"
-                assert info.name == "Environmental Sensing", f"Wrong name for key {lookup_key}"
-                assert info.id == "org.bluetooth.service.environmental_sensing", \
-                    f"Wrong ID for key {lookup_key}"
+                assert (
+                    info.name == "Environmental Sensing"
+                ), f"Wrong name for key {lookup_key}"
+                assert (
+                    info.id == "org.bluetooth.service.environmental_sensing"
+                ), f"Wrong ID for key {lookup_key}"
             else:
                 assert info is None, f"Should not find service with key: {lookup_key}"
 
@@ -58,7 +60,7 @@ class TestNameResolution:
         # Test various case combinations
         test_keys = [
             "Battery",
-            "battery", 
+            "battery",
             "BATTERY",
             "bAtTeRy",
         ]
@@ -77,7 +79,9 @@ class TestNameResolution:
         assert info.uuid == "180F"
         assert info.name == "Battery"
 
-        info = uuid_registry.get_service_info("org.bluetooth.service.environmental_sensing")
+        info = uuid_registry.get_service_info(
+            "org.bluetooth.service.environmental_sensing"
+        )
         assert info is not None
         assert info.uuid == "181A"
         assert info.name == "Environmental Sensing"
@@ -107,7 +111,9 @@ class TestNameResolution:
 
         for invalid_name in invalid_names:
             info = uuid_registry.get_service_info(invalid_name)
-            assert info is None, f"Should not find service for invalid name: {invalid_name}"
+            assert (
+                info is None
+            ), f"Should not find service for invalid name: {invalid_name}"
 
     def test_characteristic_name_resolution(self):
         """Test characteristic name resolution patterns."""
@@ -134,7 +140,9 @@ class TestNameResolution:
         # Get service info using different methods and ensure consistency
         battery_by_name = uuid_registry.get_service_info("Battery")
         battery_by_uuid = uuid_registry.get_service_info("180F")
-        battery_by_id = uuid_registry.get_service_info("org.bluetooth.service.battery_service")
+        battery_by_id = uuid_registry.get_service_info(
+            "org.bluetooth.service.battery_service"
+        )
 
         assert battery_by_name is not None
         assert battery_by_uuid is not None
