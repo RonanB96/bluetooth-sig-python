@@ -14,7 +14,7 @@ class BatteryService(BaseGattService):
 
     Contains characteristics related to battery information:
     - Battery Level - Required
-    - Battery Power State - Optional
+    - Battery Level Status - Optional
     """
 
     @classmethod
@@ -22,7 +22,7 @@ class BatteryService(BaseGattService):
         """Get the expected characteristics for this service by name and class."""
         return {
             "Battery Level": BatteryLevelCharacteristic,
-            "Battery Power State": BatteryPowerStateCharacteristic,
+            "Battery Level Status": BatteryPowerStateCharacteristic,
         }
 
     @classmethod

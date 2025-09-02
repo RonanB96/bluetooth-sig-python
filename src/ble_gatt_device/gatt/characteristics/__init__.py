@@ -84,7 +84,7 @@ class CharacteristicRegistry:
 
     _characteristics: Dict[str, Type[BaseCharacteristic]] = {
         "Battery Level": BatteryLevelCharacteristic,
-        "Battery Power State": BatteryPowerStateCharacteristic,
+        "Battery Level Status": BatteryPowerStateCharacteristic,
         "Temperature": TemperatureCharacteristic,
         "Temperature Measurement": TemperatureMeasurementCharacteristic,
         "Humidity": HumidityCharacteristic,

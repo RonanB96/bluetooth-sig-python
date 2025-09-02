@@ -13,7 +13,7 @@ class TestBatteryPowerStateCharacteristic:
     def test_characteristic_name(self):
         """Test characteristic name resolution."""
         char = BatteryPowerStateCharacteristic(uuid="", properties=set())
-        assert char._characteristic_name == "Battery Power State"
+        assert char._characteristic_name == "Battery Level Status"
         assert char.value_type == "string"
 
     def test_parse_basic_battery_state(self):
@@ -259,6 +259,6 @@ class TestBatteryPowerStateCharacteristic:
 
     def test_characteristic_uuid_resolution(self):
         """Test characteristic UUID resolution."""
-        char = BatteryPowerStateCharacteristic(uuid="2A1A", properties={"read"})
-        assert char.CHAR_UUID == "2A1A"
-        assert char.name == "Battery Power State"
+        char = BatteryPowerStateCharacteristic(uuid="2BED", properties={"read"})
+        assert char.CHAR_UUID == "2BED"
+        assert char.name == "Battery Level Status"

@@ -1,4 +1,4 @@
-"""Battery Power State characteristic implementation."""
+"""Battery Level Status characteristic implementation."""
 
 from dataclasses import dataclass
 from typing import Any, Dict
@@ -8,13 +8,13 @@ from .base import BaseCharacteristic
 
 @dataclass
 class BatteryPowerStateCharacteristic(BaseCharacteristic):
-    """Battery Power State characteristic (0x2A1A).
+    """Battery Level Status characteristic (0x2BED).
 
     Provides comprehensive battery status information beyond just the level percentage,
     including power sources, charge state, charge level, charging type, and fault information.
     """
 
-    _characteristic_name: str = "Battery Power State"
+    _characteristic_name: str = "Battery Level Status"
 
     def __post_init__(self):
         """Initialize with specific value type."""
@@ -22,9 +22,9 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         super().__post_init__()
 
     def parse_value(self, data: bytearray) -> Dict[str, Any]:
-        """Parse battery power state data according to expected bit field format.
+        """Parse battery level status data according to expected bit field format.
 
-        Format: Battery Power State(1 byte) - bitmask indicating various battery states
+        Format: Battery Level Status(1+ bytes) - bitmask indicating various battery states
 
         Bit field interpretation:
         - Bit 0-1: Battery Present State
@@ -55,7 +55,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             ValueError: If data format is invalid
         """
         if not data:
-            raise ValueError("Battery Power State data must be at least 1 byte")
+            raise ValueError("Battery Level Status data must be at least 1 byte")
 
         state_raw = data[0]
 
