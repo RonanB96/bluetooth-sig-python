@@ -16,13 +16,24 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 # pylint: disable=wrong-import-position
-from bleak import BleakClient, BleakScanner
+try:
+    from bleak import BleakClient, BleakScanner
+    BLEAK_AVAILABLE = True
+except ImportError:
+    print("⚠️  Warning: 'bleak' module not found. Some functionality will be limited.")
+    print("Install with: pip install bleak")
+    BLEAK_AVAILABLE = False
+    
+    # Create mock classes for argument parsing
+    class BleakClient: pass
+    class BleakScanner: pass
 
 try:
     from ble_gatt_device.gatt.gatt_manager import gatt_hierarchy
     from ble_gatt_device.core import BLEGATTDevice
     FRAMEWORK_AVAILABLE = True
 except ImportError:
+    print("⚠️  Warning: BLE GATT framework not available. Framework-specific features disabled.")
     FRAMEWORK_AVAILABLE = False
 
 
@@ -706,6 +717,13 @@ Examples:
 
 async def main() -> int:
     """Main function."""
+    # Check dependencies early
+    if not BLEAK_AVAILABLE:
+        print("\n❌ Required dependency 'bleak' is not installed.")
+        print("Install dependencies with: pip install bleak")
+        print("For full functionality: pip install -e '.[dev]'")
+        return 1
+    
     parser = create_parser()
     args = parser.parse_args()
     

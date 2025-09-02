@@ -16,8 +16,15 @@ sys.path.insert(0, str(script_dir))
 from path_config import configure_for_scripts
 configure_for_scripts()
 
-from ble_gatt_device.core import BLEGATTDevice
-from bleak import BleakScanner
+try:
+    from ble_gatt_device.core import BLEGATTDevice
+    from bleak import BleakScanner
+    DEPENDENCIES_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️  Warning: Required dependencies not available: {e}")
+    print("Install with: pip install bleak")
+    print("For full functionality: pip install -e '.[dev]'")
+    DEPENDENCIES_AVAILABLE = False
 
 
 # Set up logging
@@ -131,6 +138,14 @@ async def scan_devices(timeout: float = 10.0):
 
 async def main():
     """Main function."""
+    if not DEPENDENCIES_AVAILABLE:
+        print("\n❌ Required dependencies are not installed.")
+        print("Install dependencies with: pip install bleak")
+        print("For full functionality: pip install -e '.[dev]'")
+        print("\nFor more advanced debugging capabilities when dependencies are available:")
+        print("python scripts/ble_debug.py --help")
+        return
+        
     if len(sys.argv) > 1:
         if sys.argv[1] == "scan":
             # Check for timeout argument
