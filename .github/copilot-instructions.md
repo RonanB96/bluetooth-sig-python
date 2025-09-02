@@ -294,17 +294,17 @@ python -m pytest tests/test_uuid_registry.py -v
 
 **CRITICAL: ALL scripts require bluetooth_sig submodule to be initialized**
 
-1. **YAML loading test (requires submodule, 30 seconds):**
+1. **YAML and UUID registry test (requires submodule, 30 seconds):**
 
 ```bash
-PYTHONPATH=src python scripts/test_yaml_loading.py
+python -m pytest tests/test_uuid_registry.py::test_direct_yaml_loading -v
 # BLOCKING FAILURE: Will fail with FileNotFoundError if bluetooth_sig submodule is missing
 ```
 
 2. **Core parsing test (requires submodule, 1 minute):**
 
 ```bash
-PYTHONPATH=src python scripts/test_parsing.py
+python -m pytest tests/test_data_parsing.py::test_comprehensive_characteristic_parsing_with_validation -v
 # BLOCKING FAILURE: Cannot import framework without submodule
 ```
 
