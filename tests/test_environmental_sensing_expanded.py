@@ -177,10 +177,15 @@ class TestEnvironmentalSensingExpanded:
             "Particulate Matter - PM2.5 Concentration",
             "Particulate Matter - PM10 Concentration",
             "Sulfur Dioxide Concentration",
+            # Additional environmental characteristics
+            "Elevation",
+            "Barometric Pressure Trend",
+            "Pollen Concentration",
+            "Rainfall",
         ]
 
         # Verify we have all the expected characteristics
-        # 3 original (Temperature, Humidity, Pressure) + 17 new ones = 20 total
+        # 3 original (Temperature, Humidity, Pressure) + 21 new ones = 24 total
         assert len(expected_chars) == len(new_characteristics) + 3
 
         for char_name in new_characteristics:

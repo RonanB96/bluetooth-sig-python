@@ -8,8 +8,12 @@ from ..characteristics.apparent_wind_direction import (
     ApparentWindDirectionCharacteristic,
 )
 from ..characteristics.apparent_wind_speed import ApparentWindSpeedCharacteristic
+from ..characteristics.barometric_pressure_trend import (
+    BarometricPressureTrendCharacteristic,
+)
 from ..characteristics.co2_concentration import CO2ConcentrationCharacteristic
 from ..characteristics.dew_point import DewPointCharacteristic
+from ..characteristics.elevation import ElevationCharacteristic
 from ..characteristics.heat_index import HeatIndexCharacteristic
 from ..characteristics.humidity import HumidityCharacteristic
 from ..characteristics.methane_concentration import MethaneConcentrationCharacteristic
@@ -20,7 +24,9 @@ from ..characteristics.ozone_concentration import OzoneConcentrationCharacterist
 from ..characteristics.pm1_concentration import PM1ConcentrationCharacteristic
 from ..characteristics.pm10_concentration import PM10ConcentrationCharacteristic
 from ..characteristics.pm25_concentration import PM25ConcentrationCharacteristic
+from ..characteristics.pollen_concentration import PollenConcentrationCharacteristic
 from ..characteristics.pressure import PressureCharacteristic
+from ..characteristics.rainfall import RainfallCharacteristic
 from ..characteristics.sulfur_dioxide_concentration import (
     SulfurDioxideConcentrationCharacteristic,
 )
@@ -85,6 +91,11 @@ class EnvironmentalSensingService(BaseGattService):
             "Particulate Matter - PM2.5 Concentration": PM25ConcentrationCharacteristic,
             "Particulate Matter - PM10 Concentration": PM10ConcentrationCharacteristic,
             "Sulfur Dioxide Concentration": SulfurDioxideConcentrationCharacteristic,
+            # Environmental condition characteristics
+            "Elevation": ElevationCharacteristic,
+            "Barometric Pressure Trend": BarometricPressureTrendCharacteristic,
+            "Pollen Concentration": PollenConcentrationCharacteristic,
+            "Rainfall": RainfallCharacteristic,
         }
 
     @classmethod
