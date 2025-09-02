@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
-"""Test script for connecting to a real Bluetooth device using proper Bleak patterns."""
+"""Test script for connecting to a real Bluetooth device using proper Bleak patterns.
+
+This is the main real device testing script that uses the BLE GATT framework
+abstraction layer for device interactions.
+"""
 
 import asyncio
 import logging
 import sys
 from pathlib import Path
 
-# Add src to path before importing our modules
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
+# Configure path for imports
+script_dir = Path(__file__).parent
+sys.path.insert(0, str(script_dir))
+from path_config import configure_for_scripts
+configure_for_scripts()
 
 from ble_gatt_device.core import BLEGATTDevice
+from bleak import BleakScanner
 
 
 # Set up logging
@@ -97,17 +104,43 @@ async def test_device_connection(mac_address: str):
     return True
 
 
-async def scan_devices():
+async def scan_devices(timeout: float = 10.0):
     """Scan for nearby BLE devices."""
-    print("Scanning for BLE devices is not implemented in the backend abstraction yet.")
-    print("Please use a dedicated scan script or extend the backend to support scanning.")
+    print(f"🔍 Scanning for BLE devices (timeout: {timeout}s)...")
+    print("=" * 60)
+    
+    try:
+        devices = await BleakScanner.discover(timeout=timeout)
+        if devices:
+            print(f"Found {len(devices)} devices:")
+            for idx, device in enumerate(devices, 1):
+                name = device.name or "Unknown"
+                rssi_str = f"({device.rssi} dBm)" if hasattr(device, 'rssi') and device.rssi else ""
+                print(f"  {idx:2d}. {device.address} - {name} {rssi_str}")
+        else:
+            print("No devices found")
+            print("\n💡 Troubleshooting tips:")
+            print("   - Ensure devices are powered on and advertising")
+            print("   - Check Bluetooth adapter is enabled")
+            print("   - Try: bluetoothctl scan on")
+            print("   - Restart Bluetooth: sudo systemctl restart bluetooth")
+    except Exception as e:
+        print(f"❌ Scan error: {e}")
+        print("Try running with elevated privileges: sudo python scripts/test_real_device.py scan")
 
 
 async def main():
     """Main function."""
     if len(sys.argv) > 1:
         if sys.argv[1] == "scan":
-            await scan_devices()
+            # Check for timeout argument
+            timeout = 10.0
+            if len(sys.argv) > 2:
+                try:
+                    timeout = float(sys.argv[2])
+                except ValueError:
+                    print("Invalid timeout value, using default 10 seconds")
+            await scan_devices(timeout)
         elif sys.argv[1] == "analyze":
             print_error_analysis()
         else:
@@ -115,13 +148,15 @@ async def main():
             await test_device_connection(mac_address)
     else:
         print("Usage: python test_real_device.py <MAC_ADDRESS>")
-        print("   or: python test_real_device.py scan")
+        print("   or: python test_real_device.py scan [timeout]")
         print("   or: python test_real_device.py analyze")
         print()
         print("Examples:")
         print("  python test_real_device.py AA:BB:CC:DD:EE:FF")
-        print("  python test_real_device.py scan")
-        print("  python test_real_device.py analyze  # Show common BLE error patterns")
+        print("  python test_real_device.py scan 15          # Scan with 15s timeout")
+        print("  python test_real_device.py analyze          # Show common BLE error patterns")
+        print()
+        print("For more advanced debugging, use: python scripts/ble_debug.py --help")
 
 
 def print_error_analysis():

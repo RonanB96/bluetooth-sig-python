@@ -9,8 +9,11 @@ for air quality monitoring.
 import sys
 from pathlib import Path
 
-# Add src to path for standalone execution
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Configure path for imports
+script_dir = Path(__file__).parent
+sys.path.insert(0, str(script_dir))
+from path_config import configure_for_scripts
+configure_for_scripts()
 
 from ble_gatt_device.gatt.characteristics import (
     AmmoniaConcentrationCharacteristic,
