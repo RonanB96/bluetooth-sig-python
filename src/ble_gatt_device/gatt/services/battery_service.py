@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, Type
 
 from ..characteristics.battery_level import BatteryLevelCharacteristic
+from ..characteristics.battery_power_state import BatteryPowerStateCharacteristic
 from .base import BaseGattService
 
 
@@ -13,6 +14,7 @@ class BatteryService(BaseGattService):
 
     Contains characteristics related to battery information:
     - Battery Level - Required
+    - Battery Level Status - Optional
     """
 
     @classmethod
@@ -20,6 +22,7 @@ class BatteryService(BaseGattService):
         """Get the expected characteristics for this service by name and class."""
         return {
             "Battery Level": BatteryLevelCharacteristic,
+            "Battery Level Status": BatteryPowerStateCharacteristic,
         }
 
     @classmethod

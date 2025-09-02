@@ -32,6 +32,7 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 
 - **Battery Service (0x180F)**
   - Battery Level (0x2A19)
+  - Battery Level Status (0x2BED)
 
 - **Device Information Service (0x180A)**
   - Manufacturer Name String (0x2A29)
@@ -324,11 +325,24 @@ value = char.parse_value(bytearray([85]))  # 85% battery
 print(f"Battery level: {value}{char.unit}")  # Battery level: 85%
 ```
 
+### Advanced Characteristic Data
+
+```python
+from ble_gatt_device.gatt.characteristics.battery_power_state import BatteryPowerStateCharacteristic
+
+# Parse comprehensive battery status
+power_state_char = BatteryPowerStateCharacteristic()
+data = bytearray([0xD6])  # Battery present, wired power, charging, good level
+result = power_state_char.parse_value(data)
+print(f"Battery state: {result['battery_charge_state']}")  # charging
+print(f"Power source: {result['wired_external_power_connected']}")  # True
+```
+
 ## Services
 
 This framework supports the following GATT services:
 
-- **Battery Service** (0x180F) - Battery level monitoring
+- **Battery Service (0x180F)** - Comprehensive battery monitoring with level and status
 - **Device Information Service** (0x180A) - Device metadata
 - **Environmental Sensing Service** (0x181A) - Environmental sensors
 - **Generic Access Service** (0x1800) - Basic device access
