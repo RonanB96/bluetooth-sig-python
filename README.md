@@ -217,7 +217,7 @@ python scripts/test_real_device.py AA:BB:CC:DD:EE:FF
 python scripts/test_real_device_debug.py AA:BB:CC:DD:EE:FF
 
 # Test parsing with simulated data
-python scripts/test_parsing.py
+python -m pytest tests/test_data_parsing.py -v
 ```
 
 ## Development Setup
@@ -279,9 +279,8 @@ python tests/test_registry_validation.py
 python scripts/test_real_device.py scan
 python scripts/test_real_device.py <MAC_ADDRESS>
 
-# Data parsing testing
-python scripts/test_parsing.py
-python scripts/test_core.py
+# Data parsing and core functionality testing
+python -m pytest tests/test_data_parsing.py tests/test_core_functionality.py -v
 ```
 
 ## Usage Examples
