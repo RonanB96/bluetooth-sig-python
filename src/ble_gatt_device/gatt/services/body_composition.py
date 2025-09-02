@@ -1,7 +1,6 @@
 """Body Composition Service implementation."""
 
 from dataclasses import dataclass
-from typing import Dict, Type
 
 from ..characteristics.body_composition_feature import (
     BodyCompositionFeatureCharacteristic,
@@ -22,7 +21,7 @@ class BodyCompositionService(BaseGattService):
     """
 
     @classmethod
-    def get_expected_characteristics(cls) -> Dict[str, Type]:
+    def get_expected_characteristics(cls) -> dict[str, type]:
         """Get the expected characteristics for this service by name and class."""
         return {
             "Body Composition Measurement": BodyCompositionMeasurementCharacteristic,
@@ -30,7 +29,7 @@ class BodyCompositionService(BaseGattService):
         }
 
     @classmethod
-    def get_required_characteristics(cls) -> Dict[str, Type]:
+    def get_required_characteristics(cls) -> dict[str, type]:
         """Get the required characteristics for this service by name and class."""
         return {
             "Body Composition Measurement": BodyCompositionMeasurementCharacteristic,

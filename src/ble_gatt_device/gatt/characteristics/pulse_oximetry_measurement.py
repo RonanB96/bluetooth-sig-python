@@ -2,7 +2,7 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -23,7 +23,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
 
     def parse_value(
         self, data: bytearray
-    ) -> Dict[str, Any]:  # pylint: disable=too-many-locals
+    ) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse pulse oximetry measurement data according to Bluetooth specification.
 
         Format: Flags(1) + SpO2(2) + Pulse Rate(2) + [Timestamp(7)] + [Measurement Status(2)] + [Device Status(3)] + [Pulse Amplitude Index(2)]

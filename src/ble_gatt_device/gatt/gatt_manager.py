@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
 from .services import GattServiceRegistry
 from .services.base import BaseGattService
 
@@ -13,9 +11,9 @@ class GattHierarchyManager:
 
     def __init__(self):
         """Initialize the GATT hierarchy manager."""
-        self._services: Dict[str, BaseGattService] = {}
+        self._services: dict[str, BaseGattService] = {}
 
-    def process_services(self, services: Dict[str, Dict[str, Dict]]) -> None:
+    def process_services(self, services: dict[str, dict[str, dict]]) -> None:
         """Process discovered services and their characteristics.
 
         Args:
@@ -28,17 +26,17 @@ class GattHierarchyManager:
             if service:
                 self._services[uuid] = service
 
-    def get_service(self, uuid: str) -> Optional[BaseGattService]:
+    def get_service(self, uuid: str) -> BaseGattService | None:
         """Get a service by UUID."""
         return self._services.get(uuid)
 
     @property
-    def supported_services(self) -> List[str]:
+    def supported_services(self) -> list[str]:
         """Get list of supported service UUIDs."""
         return GattServiceRegistry.supported_services()
 
     @property
-    def discovered_services(self) -> List[BaseGattService]:
+    def discovered_services(self) -> list[BaseGattService]:
         """Get list of discovered services."""
         return list(self._services.values())
 

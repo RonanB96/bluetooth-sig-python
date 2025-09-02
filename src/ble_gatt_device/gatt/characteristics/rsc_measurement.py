@@ -2,7 +2,7 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -21,7 +21,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # JSON string representation
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse RSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Instantaneous Speed(2) + Instantaneous Cadence(1) + [Instantaneous Stride Length(2)] + [Total Distance(4)]

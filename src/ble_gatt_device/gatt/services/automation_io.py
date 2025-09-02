@@ -1,7 +1,6 @@
 """Automation IO Service implementation."""
 
 from dataclasses import dataclass
-from typing import Dict, Type
 
 from .base import BaseGattService
 
@@ -29,12 +28,12 @@ class AutomationIOService(BaseGattService):
     _service_name: str = "Automation IO"
 
     @classmethod
-    def get_expected_characteristics(cls) -> Dict[str, Type]:
+    def get_expected_characteristics(cls) -> dict[str, type]:
         """Get the expected characteristics for this service by name and class."""
         # Will be populated as we implement each characteristic
         return {}
 
     @classmethod
-    def get_required_characteristics(cls) -> Dict[str, Type]:
+    def get_required_characteristics(cls) -> dict[str, type]:
         """Get the required characteristics for this service by name and class."""
         return {}  # All characteristics are optional for this service

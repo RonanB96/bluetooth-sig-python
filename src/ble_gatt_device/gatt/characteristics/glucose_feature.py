@@ -2,7 +2,7 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -22,7 +22,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
         self.value_type = "int"
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse glucose feature data according to Bluetooth specification.
 
         Format: Features(2) - 16-bit bitmap indicating supported features

@@ -1,7 +1,6 @@
 """Supported Power Range characteristic implementation."""
 
 from dataclasses import dataclass
-from typing import Dict
 
 from .base import BaseCharacteristic
 
@@ -20,7 +19,7 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
         self.value_type = "dict"
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, int]:
+    def parse_value(self, data: bytearray) -> dict[str, int]:
         """Parse supported power range data (2x sint16 in watts).
 
         Args:

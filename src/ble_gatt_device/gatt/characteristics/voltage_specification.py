@@ -1,7 +1,6 @@
 """Voltage Specification characteristic implementation."""
 
 from dataclasses import dataclass
-from typing import Dict
 
 from .base import BaseCharacteristic
 
@@ -20,7 +19,7 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
         self.value_type = "dict"
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, float]:
+    def parse_value(self, data: bytearray) -> dict[str, float]:
         """Parse voltage specification data (2x uint16 in units of 1/64 V).
 
         Args:

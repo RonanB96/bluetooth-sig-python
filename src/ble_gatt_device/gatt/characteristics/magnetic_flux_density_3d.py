@@ -1,7 +1,7 @@
 """Magnetic Flux Density 3D characteristic implementation."""
 
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -21,7 +21,7 @@ class MagneticFluxDensity3DCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # JSON string representation
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse magnetic flux density 3D data (3 x sint16 in units of 10^-7 Tesla)."""
         if len(data) < 6:
             raise ValueError("Magnetic flux density 3D data must be at least 6 bytes")

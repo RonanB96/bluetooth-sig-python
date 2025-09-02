@@ -1,7 +1,7 @@
 """BLE device interface for backend abstraction."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Optional
 
 
 class BLEDeviceInterface(ABC):
@@ -26,16 +26,16 @@ class BLEDeviceInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def read_characteristics(self) -> Dict:
+    async def read_characteristics(self) -> dict:
         """Read all supported characteristics."""
         raise NotImplementedError
 
     @abstractmethod
-    async def read_parsed_characteristics(self) -> Dict:
+    async def read_parsed_characteristics(self) -> dict:
         """Read and parse all supported characteristics."""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_device_info(self) -> Dict:
+    async def get_device_info(self) -> dict:
         """Get device information and discovered services."""
         raise NotImplementedError

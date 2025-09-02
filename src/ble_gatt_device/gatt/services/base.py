@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Set, Type
 
 from ..characteristics import BaseCharacteristic, CharacteristicRegistry
 from ..uuid_registry import uuid_registry
@@ -19,7 +18,7 @@ class BaseGattService(ABC):
     """Base class for all GATT services."""
 
     # Instance variables
-    characteristics: Dict[str, BaseCharacteristic] = field(default_factory=dict)
+    characteristics: dict[str, BaseCharacteristic] = field(default_factory=dict)
     _service_name: str = ""  # Override in subclasses if needed
 
     @property
@@ -88,7 +87,7 @@ class BaseGattService(ABC):
 
     @classmethod
     @abstractmethod
-    def get_expected_characteristics(cls) -> Dict[str, Type]:
+    def get_expected_characteristics(cls) -> dict[str, type]:
         """Get the expected characteristics for this service by name and class.
 
         Returns:
@@ -98,7 +97,7 @@ class BaseGattService(ABC):
 
     @classmethod
     @abstractmethod
-    def get_required_characteristics(cls) -> Dict[str, Type]:
+    def get_required_characteristics(cls) -> dict[str, type]:
         """Get the required characteristics for this service by name and class.
 
         Returns:
@@ -106,7 +105,7 @@ class BaseGattService(ABC):
         """
         raise NotImplementedError
 
-    def get_expected_characteristic_uuids(self) -> Set[str]:
+    def get_expected_characteristic_uuids(self) -> set[str]:
         """Get the set of expected characteristic UUIDs for this service."""
         expected_uuids = set()
         for char_name, _ in self.get_expected_characteristics().items():
@@ -115,7 +114,7 @@ class BaseGattService(ABC):
                 expected_uuids.add(char_info.uuid)
         return expected_uuids
 
-    def get_required_characteristic_uuids(self) -> Set[str]:
+    def get_required_characteristic_uuids(self) -> set[str]:
         """Get the set of required characteristic UUIDs for this service."""
         required_uuids = set()
         for char_name, _ in self.get_required_characteristics().items():
@@ -124,7 +123,7 @@ class BaseGattService(ABC):
                 required_uuids.add(char_info.uuid)
         return required_uuids
 
-    def process_characteristics(self, characteristics: Dict[str, Dict]) -> None:
+    def process_characteristics(self, characteristics: dict[str, dict]) -> None:
         """Process the characteristics for this service (default implementation).
 
         Args:
@@ -138,11 +137,11 @@ class BaseGattService(ABC):
             if char:
                 self.characteristics[uuid] = char
 
-    def get_characteristic(self, uuid: str) -> Optional[GattCharacteristic]:
+    def get_characteristic(self, uuid: str) -> GattCharacteristic | None:
         """Get a characteristic by UUID."""
         return self.characteristics.get(uuid.lower())
 
     @property
-    def supported_characteristics(self) -> Set[str]:
+    def supported_characteristics(self) -> set[str]:
         """Get the set of characteristic UUIDs supported by this service."""
         return set(self.characteristics.keys())

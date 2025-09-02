@@ -1,7 +1,7 @@
 """Bleak-based BLE device implementation for backend abstraction."""
 
 import asyncio
-from typing import Dict, Optional
+from typing import Optional
 
 from bleak import BleakClient, BleakScanner
 from bleak.backends.client import BaseBleakClient
@@ -176,7 +176,7 @@ class BleakBLEDevice(BLEDeviceInterface):
                             pass
         return values
 
-    async def read_characteristics(self) -> Dict:
+    async def read_characteristics(self) -> dict:
         if not self._client:
             return {}
         try:
@@ -194,7 +194,7 @@ class BleakBLEDevice(BLEDeviceInterface):
         except Exception:  # pylint: disable=broad-exception-caught
             return {}
 
-    async def read_parsed_characteristics(self) -> Dict:
+    async def read_parsed_characteristics(self) -> dict:
         raw_values = await self.read_characteristics()
         parsed_values = {
             "device_info": {
@@ -222,7 +222,7 @@ class BleakBLEDevice(BLEDeviceInterface):
                         pass
         return parsed_values
 
-    async def get_device_info(self) -> Dict:
+    async def get_device_info(self) -> dict:
         if not self._client:
             return {"connected": False}
         try:

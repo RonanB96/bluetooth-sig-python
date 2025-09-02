@@ -1,7 +1,6 @@
 """Glucose Service implementation."""
 
 from dataclasses import dataclass
-from typing import Dict, Type
 
 from ..characteristics.glucose_feature import GlucoseFeatureCharacteristic
 from ..characteristics.glucose_measurement import GlucoseMeasurementCharacteristic
@@ -21,7 +20,7 @@ class GlucoseService(BaseGattService):
     """
 
     @classmethod
-    def get_expected_characteristics(cls) -> Dict[str, Type]:
+    def get_expected_characteristics(cls) -> dict[str, type]:
         """Get the expected characteristics for this service by name and class."""
         return {
             "Glucose Measurement": GlucoseMeasurementCharacteristic,
@@ -30,7 +29,7 @@ class GlucoseService(BaseGattService):
         }
 
     @classmethod
-    def get_required_characteristics(cls) -> Dict[str, Type]:
+    def get_required_characteristics(cls) -> dict[str, type]:
         """Get the required characteristics for this service by name and class."""
         return {
             "Glucose Measurement": GlucoseMeasurementCharacteristic,

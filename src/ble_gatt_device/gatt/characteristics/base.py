@@ -6,7 +6,7 @@ import re
 import struct
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, Set
+from typing import Any
 
 from ..uuid_registry import uuid_registry
 
@@ -17,7 +17,7 @@ class BaseCharacteristic(ABC):
 
     # Instance variables
     uuid: str
-    properties: Set[str] = field(default_factory=set)
+    properties: set[str] = field(default_factory=set)
     value_type: str = field(default="string")
 
     def __post_init__(self):
@@ -163,7 +163,7 @@ class BaseCharacteristic(ABC):
 
     def _parse_ieee11073_timestamp(
         self, data: bytearray, offset: int
-    ) -> Dict[str, int]:
+    ) -> dict[str, int]:
         """Parse IEEE-11073 timestamp format (7 bytes).
 
         This is a common pattern used in health device characteristics

@@ -2,7 +2,7 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -22,7 +22,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # Complex data structure
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse glucose measurement context data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + [Extended Flags(1)] + [Carbohydrate ID(1) + Carb(2)] +
@@ -67,7 +67,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         return result
 
     def _parse_extended_flags(
-        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+        self, data: bytearray, flags: int, result: dict[str, Any], offset: int
     ) -> int:
         """Parse optional extended flags field."""
         if (flags & 0x01) and len(data) >= offset + 1:
@@ -77,7 +77,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         return offset
 
     def _parse_carbohydrate_info(
-        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+        self, data: bytearray, flags: int, result: dict[str, Any], offset: int
     ) -> int:
         """Parse optional carbohydrate information field."""
         if (flags & 0x02) and len(data) >= offset + 3:
@@ -95,7 +95,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         return offset
 
     def _parse_meal_info(
-        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+        self, data: bytearray, flags: int, result: dict[str, Any], offset: int
     ) -> int:
         """Parse optional meal information field."""
         if (flags & 0x04) and len(data) >= offset + 1:
@@ -110,7 +110,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         return offset
 
     def _parse_tester_health_info(
-        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+        self, data: bytearray, flags: int, result: dict[str, Any], offset: int
     ) -> int:
         """Parse optional tester and health information field."""
         if (flags & 0x08) and len(data) >= offset + 1:
@@ -129,7 +129,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         return offset
 
     def _parse_exercise_info(
-        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+        self, data: bytearray, flags: int, result: dict[str, Any], offset: int
     ) -> int:
         """Parse optional exercise information field."""
         if (flags & 0x10) and len(data) >= offset + 3:
@@ -145,7 +145,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         return offset
 
     def _parse_medication_info(
-        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+        self, data: bytearray, flags: int, result: dict[str, Any], offset: int
     ) -> int:
         """Parse optional medication information field."""
         if (flags & 0x20) and len(data) >= offset + 3:
@@ -163,7 +163,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         return offset
 
     def _parse_hba1c_info(
-        self, data: bytearray, flags: int, result: Dict[str, Any], offset: int
+        self, data: bytearray, flags: int, result: dict[str, Any], offset: int
     ) -> int:
         """Parse optional HbA1c information field."""
         if (flags & 0x40) and len(data) >= offset + 2:

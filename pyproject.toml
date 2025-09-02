@@ -5,14 +5,15 @@ build-backend = "hatchling.build"
 [project]
 name = "ble_gatt_device"
 version = "0.3.0"
-authors = [
-  { name = "RonanB96", email = "ronanbyrne791@gmail.com" },
+authors = [{ name = "RonanB96", email = "RonanB96@users.noreply.github.com" }]
+maintainers = [
+    { name = "RonanB96", email = "RonanB96@users.noreply.github.com" },
 ]
 description = "Registry-driven BLE GATT framework with real device integration and Home Assistant compatibility"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
-keywords = ["bluetooth", "ble", "gatt", "home-assistant", "iot", "sensors", "real-device"]
+keywords = ["bluetooth", "ble", "gatt"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -22,8 +23,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Topic :: Home Automation",
-    "Topic :: System :: Hardware",
     "Topic :: Communications",
 ]
 dependencies = [
@@ -32,21 +31,24 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/RonanB96/ble_gatt_device"
-Repository = "https://github.com/RonanB96/ble_gatt_device.git"
-Issues = "https://github.com/RonanB96/ble_gatt_device/issues"
-Documentation = "https://github.com/RonanB96/ble_gatt_device#readme"
+bugs = "https://github.com/RonanB96/bluetooth_sig_python/issues"
+changelog = "https://github.com/RonanB96/bluetooth_sig_python/blob/master/changelog.md"
+homepage = "https://github.com/RonanB96/bluetooth_sig_python"
 
 [project.optional-dependencies]
 dev = [
-    "pytest==8.4.1",
-    "pytest-asyncio==1.1.0",
-    "pytest-cov==6.2.1",
-    "pylint==3.3.8",
-    "flake8==7.3.0",
+    "pytest~=8.4",
+    "pytest-asyncio~=1.1",
+    "pytest-cov~=6.2",
+    "pylint~=3.3",
+    "flake8~=7.3",
     "flake8-pyproject",
-    "black==25.1.0",
-    "isort==6.0.1",
+    "black~=25.1",
+    "isort~=6.0",
+    "ruff~=0.1",
+    "ty~=0.5",
+    "ipdb~=0.13",
+    "coverage~=7.0",
 ]
 test = [
     "pytest==8.4.1",
@@ -54,17 +56,23 @@ test = [
     "pytest-cov==6.2.1",
 ]
 
+[project.scripts]
+# Note: No CLI scripts for this library package
+# bluetooth_sig_python = "bluetooth_sig_python.cli:app"
+
 [tool.flake8]
 extend-ignore = [
-    "E203",  # E203: Whitespace before ':' - Black handles this differently
-    "E501",  # line too long (handled by black) - IGNORE LINE LENGTH
-    "E701",  # multiple statements on one line (colon)
-    "E702",  # multiple statements on one line (semicolon)
-    "W503",  # line break before binary operator
-    "W504",  # line break after binary operator
+    "E203", # E203: Whitespace before ':' - Black handles this differently
+    "E501", # line too long (handled by black) - IGNORE LINE LENGTH
+    "E701", # multiple statements on one line (colon)
+    "E702", # multiple statements on one line (semicolon)
+    "W503", # line break before binary operator
+    "W504", # line break after binary operator
 ]
 exclude = [".git", "__pycache__", "build", "dist", ".venv", ".eggs"]
-per-file-ignores = ["__init__.py:F401"]  # Ignore unused imports in __init__.py files
+per-file-ignores = [
+    "__init__.py:F401",
+] # Ignore unused imports in __init__.py files
 # DO NOT SET max-line-length - let Black handle it
 
 [tool.pytest.ini_options]
@@ -72,10 +80,7 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [tool.hatch.build]
-exclude = [
-    "tests/*",
-    "scripts/*",
-]
+exclude = ["tests/*", "scripts/*"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ble_gatt_device"]
@@ -99,15 +104,15 @@ msg-template = "{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
 [tool.pylint.MESSAGE_CONTROL]
 # Only globally disable issues that are handled by other tools or are project-wide
 disable = [
-    "C0103",  # invalid-name (Black handles this globally)
-    "C0301",  # line-too-long (Black handles this globally) - IGNORE LINE LENGTH
-    "W0311",  # bad-indentation (Black handles this globally)
-    "W0511",  # fixme (TODO comments are useful throughout)
-    "C0411",  # wrong-import-order (handled by isort/Black globally)
-    "C0412",  # ungrouped-imports (handled by isort/Black globally)
-    "C0413",  # wrong-import-position (handled by isort/Black globally)
-    "E0611",  # no-name-in-module (editable install issue affects entire project)
-    "R0801",  # duplicate-code (BLE protocol patterns have legitimate code duplication)
+    "C0103", # invalid-name (Black handles this globally)
+    "C0301", # line-too-long (Black handles this globally) - IGNORE LINE LENGTH
+    "W0311", # bad-indentation (Black handles this globally)
+    "W0511", # fixme (TODO comments are useful throughout)
+    "C0411", # wrong-import-order (handled by isort/Black globally)
+    "C0412", # ungrouped-imports (handled by isort/Black globally)
+    "C0413", # wrong-import-position (handled by isort/Black globally)
+    "E0611", # no-name-in-module (editable install issue affects entire project)
+    "R0801", # duplicate-code (BLE protocol patterns have legitimate code duplication)
 ]
 
 # Note: Other issues like broad-exception-caught, too-few-public-methods,
@@ -131,3 +136,31 @@ force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
 line_length = 88
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # Pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501", # Line too long - Black handles this
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"] # Ignore unused imports in __init__.py files
+
+[tool.ty]
+# All rules are enabled as "error" by default; no need to specify unless overriding.
+# Example override: relax a rule for the entire project (uncomment if needed).
+# rules.TY015 = "warn"  # For invalid-argument-type, warn instead of error.
+
+[tool.uv]
+package = true

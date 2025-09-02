@@ -5,7 +5,7 @@ The GATT layer provides only Bluetooth functionality + metadata properties.
 This translation layer converts GATT data to Home Assistant-compatible format.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from .characteristics.base import BaseCharacteristic
 
@@ -24,7 +24,7 @@ class GATTSensorTranslator:
     @staticmethod
     def translate_to_ha_sensor(
         characteristic: BaseCharacteristic, raw_data: bytearray
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Translate a GATT characteristic to Home Assistant sensor data.
 
         Args:
@@ -61,7 +61,7 @@ class GATTSensorTranslator:
             }
 
     @staticmethod
-    def get_sensor_configuration(characteristic: BaseCharacteristic) -> Dict[str, Any]:
+    def get_sensor_configuration(characteristic: BaseCharacteristic) -> dict[str, Any]:
         """Get Home Assistant sensor configuration for a GATT characteristic.
 
         Args:
@@ -100,9 +100,9 @@ class GATTSensorTranslator:
 
     @staticmethod
     def batch_translate_characteristics(
-        characteristics: Dict[str, BaseCharacteristic],
-        characteristic_data: Dict[str, bytearray],
-    ) -> Dict[str, Dict[str, Any]]:
+        characteristics: dict[str, BaseCharacteristic],
+        characteristic_data: dict[str, bytearray],
+    ) -> dict[str, dict[str, Any]]:
         """Translate multiple GATT characteristics to HA sensor format.
 
         Args:

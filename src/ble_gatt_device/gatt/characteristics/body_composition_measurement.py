@@ -2,7 +2,7 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -22,7 +22,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # JSON string representation of measurement data
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse body composition measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Body Fat %(2) + [Timestamp(7)] + [User ID(1)] +
@@ -88,7 +88,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         return body_fat_raw * 0.1  # 0.1% resolution
 
     def _parse_optional_fields(
-        self, data: bytearray, flags: int, offset: int, result: Dict[str, Any]
+        self, data: bytearray, flags: int, offset: int, result: dict[str, Any]
     ) -> int:
         """Parse all optional fields based on flags.
 
@@ -128,7 +128,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         return offset
 
     def _parse_mass_fields(
-        self, data: bytearray, flags: int, offset: int, result: Dict[str, Any]
+        self, data: bytearray, flags: int, offset: int, result: dict[str, Any]
     ) -> int:
         """Parse mass-related optional fields.
 
@@ -178,7 +178,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         return offset
 
     def _parse_other_measurements(
-        self, data: bytearray, flags: int, offset: int, result: Dict[str, Any]
+        self, data: bytearray, flags: int, offset: int, result: dict[str, Any]
     ) -> int:
         """Parse impedance, weight, and height measurements.
 

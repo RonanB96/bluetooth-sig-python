@@ -1,9 +1,9 @@
 # Bluetooth SIG Standards Library Architecture
 
-## Repository Structure (Cookiecutter Style)
+## Current Repository Structure (Cookiecutter Style)
 
 ```text
-bluetooth-sig/
+bluetooth-sig-python/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml                       # Continuous Integration
@@ -13,12 +13,17 @@ bluetooth-sig/
 │   │   ├── bug_report.md
 │   │   └── feature_request.md
 │   └── dependabot.yml                   # Dependency updates
+├── .editorconfig                        # Editor configuration
 ├── .gitignore
-├── .pre-commit-config.yaml              # Pre-commit hooks
 ├── pyproject.toml                       # Project configuration
 ├── README.md
 ├── CHANGELOG.md
+├── CODE_OF_CONDUCT.md                   # Community standards
+├── CONTRIBUTING.md                      # Contribution guidelines
+├── HISTORY.md                           # Release history
 ├── LICENSE
+├── MANIFEST.in                          # Package manifest
+├── justfile                             # Modern Makefile alternative
 ├── src/
 │   └── bluetooth_sig/                   # Core SIG Standards Library
 │       ├── __init__.py
@@ -93,8 +98,8 @@ bluetooth-sig/
 │   └── custom_parsers.py                # Extending with custom parsers
 ├── docs/                                # Documentation
 │   ├── index.md
-│   ├── api.md
-│   ├── examples.md
+│   ├── installation.md
+│   ├── usage.md
 │   └── contributing.md
 ├── bluetooth_sig_data/                  # Bluetooth SIG specification data
 │   ├── services/                        # Service specifications

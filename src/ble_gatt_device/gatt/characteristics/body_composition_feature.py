@@ -2,7 +2,7 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -23,7 +23,7 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # JSON string representation of features
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse body composition feature data according to Bluetooth specification.
 
         Format: Features(4 bytes) - bitmask indicating supported measurements

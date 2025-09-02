@@ -1,7 +1,5 @@
 """Test data parsing functionality using pytest framework."""
 
-from typing import Dict
-
 import pytest
 
 from ble_gatt_device.gatt.gatt_manager import gatt_hierarchy
@@ -11,7 +9,7 @@ class TestDataParsing:
     """Test data parsing functionality with simulated device data."""
 
     @pytest.fixture
-    def simulated_nordic_thingy_services(self) -> Dict:
+    def simulated_nordic_thingy_services(self) -> dict:
         """Fixture providing simulated Nordic Thingy:52 services structure."""
         return {
             "180F": {  # Battery Service
@@ -50,7 +48,7 @@ class TestDataParsing:
         }
 
     @pytest.fixture
-    def simulated_nordic_thingy_data(self) -> Dict[str, bytearray]:
+    def simulated_nordic_thingy_data(self) -> dict[str, bytearray]:
         """Fixture providing simulated Nordic Thingy:52 characteristic data."""
         return {
             # Battery Level: 77 (0x4D)
@@ -419,7 +417,7 @@ class TestDataParsing:
         expected_characteristics = ["BatteryLevel", "Temperature", "Humidity"]
         found_expected = []
 
-        for service_name, service_data in validation_results.items():
+        for _service_name, service_data in validation_results.items():
             for char_name, char_data in service_data["characteristics"].items():
                 if char_data["status"] == "success":
                     for expected in expected_characteristics:

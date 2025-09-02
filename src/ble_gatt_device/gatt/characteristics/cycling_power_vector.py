@@ -2,7 +2,7 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -22,7 +22,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # JSON string representation
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse cycling power vector data according to Bluetooth specification.
 
         Format: Flags(1) + Crank Revolution Data(2) + Last Crank Event Time(2) +
@@ -65,7 +65,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
         # Parse optional instantaneous force magnitude array if present
         if (flags & 0x01) and len(data) > offset:
-            force_magnitudes: List[float] = []
+            force_magnitudes: list[float] = []
             # Each force magnitude is 2 bytes (signed 16-bit, 1 N units)
             while offset + 1 < len(data) and not (
                 flags & 0x02
@@ -81,7 +81,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
         # Parse optional instantaneous torque magnitude array if present
         if (flags & 0x02) and len(data) > offset:
-            torque_magnitudes: List[float] = []
+            torque_magnitudes: list[float] = []
             # Each torque magnitude is 2 bytes (signed 16-bit, 1/32 Nm units)
             while offset + 1 < len(data):
                 if offset + 2 > len(data):

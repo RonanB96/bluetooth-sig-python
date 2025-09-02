@@ -1,7 +1,6 @@
 """Device Information Service implementation."""
 
 from dataclasses import dataclass
-from typing import Dict, Type
 
 from ..characteristics.device_info import (
     FirmwareRevisionStringCharacteristic,
@@ -28,7 +27,7 @@ class DeviceInformationService(BaseGattService):
     """
 
     @classmethod
-    def get_expected_characteristics(cls) -> Dict[str, Type]:
+    def get_expected_characteristics(cls) -> dict[str, type]:
         """Get the expected characteristics for this service by name and class."""
         return {
             "Manufacturer Name String": ManufacturerNameStringCharacteristic,
@@ -40,7 +39,7 @@ class DeviceInformationService(BaseGattService):
         }
 
     @classmethod
-    def get_required_characteristics(cls) -> Dict[str, Type]:
+    def get_required_characteristics(cls) -> dict[str, type]:
         """Get the required characteristics for this service by name and class."""
         return {
             "Manufacturer Name String": ManufacturerNameStringCharacteristic,

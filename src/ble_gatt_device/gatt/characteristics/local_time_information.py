@@ -1,7 +1,7 @@
 """Local Time Information characteristic implementation."""
 
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -30,7 +30,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # JSON string representation
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse local time information data (2 bytes: time zone + DST offset)."""
         if len(data) < 2:
             raise ValueError("Local time information data must be at least 2 bytes")

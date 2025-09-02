@@ -4,7 +4,6 @@ import importlib
 import inspect
 import pkgutil
 from pathlib import Path
-from typing import List, Type
 
 import pytest
 
@@ -13,7 +12,7 @@ from ble_gatt_device.gatt.services.base import BaseGattService
 from ble_gatt_device.gatt.uuid_registry import uuid_registry
 
 
-def discover_service_classes() -> List[Type[BaseGattService]]:
+def discover_service_classes() -> list[type[BaseGattService]]:
     """Dynamically discover all service classes."""
     service_classes = []
     services_module = importlib.import_module("ble_gatt_device.gatt.services")
@@ -43,7 +42,7 @@ def discover_service_classes() -> List[Type[BaseGattService]]:
     return service_classes
 
 
-def discover_characteristic_classes() -> List[Type[BaseCharacteristic]]:
+def discover_characteristic_classes() -> list[type[BaseCharacteristic]]:
     """Dynamically discover all characteristic classes."""
     characteristic_classes = []
     characteristics_module = importlib.import_module(
@@ -81,11 +80,11 @@ class TestServiceRegistryValidation:
     """Test all services against the YAML registry."""
 
     @pytest.fixture(scope="class")
-    def service_classes(self) -> List[Type[BaseGattService]]:
+    def service_classes(self) -> list[type[BaseGattService]]:
         """Get all service classes."""
         return discover_service_classes()
 
-    def test_all_services_discovered(self, service_classes: List[BaseGattService]):
+    def test_all_services_discovered(self, service_classes: list[BaseGattService]):
         """Test that services were discovered."""
         assert len(service_classes) > 0, "No service classes were discovered"
 
@@ -217,12 +216,12 @@ class TestCharacteristicRegistryValidation:
     """Test all characteristics against the YAML registry."""
 
     @pytest.fixture(scope="class")
-    def characteristic_classes(self) -> List[Type[BaseCharacteristic]]:
+    def characteristic_classes(self) -> list[type[BaseCharacteristic]]:
         """Get all characteristic classes."""
         return discover_characteristic_classes()
 
     def test_all_characteristics_discovered(
-        self, characteristic_classes: List[BaseCharacteristic]
+        self, characteristic_classes: list[BaseCharacteristic]
     ):
         """Test that characteristics were discovered."""
         assert (

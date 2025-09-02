@@ -1,7 +1,6 @@
 """Running Speed and Cadence Service implementation."""
 
 from dataclasses import dataclass
-from typing import Dict, Type
 
 from ..characteristics.rsc_measurement import RSCMeasurementCharacteristic
 from .base import BaseGattService
@@ -16,14 +15,14 @@ class RunningSpeedAndCadenceService(BaseGattService):
     """
 
     @classmethod
-    def get_expected_characteristics(cls) -> Dict[str, Type]:
+    def get_expected_characteristics(cls) -> dict[str, type]:
         """Get the expected characteristics for this service by name and class."""
         return {
             "RSC Measurement": RSCMeasurementCharacteristic,
         }
 
     @classmethod
-    def get_required_characteristics(cls) -> Dict[str, Type]:
+    def get_required_characteristics(cls) -> dict[str, type]:
         """Get the required characteristics for this service by name and class."""
         return {
             "RSC Measurement": RSCMeasurementCharacteristic,

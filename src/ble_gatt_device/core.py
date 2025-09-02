@@ -1,6 +1,6 @@
 """Core BLE GATT device functionality."""
 
-from typing import Dict, Optional
+from typing import Optional
 
 from ble_gatt_device.interfaces.ble_device_interface import BLEDeviceInterface
 from ble_gatt_device.interfaces.bleak_device import BleakBLEDevice
@@ -32,14 +32,14 @@ class BLEGATTDevice:
         """Get the RSSI of the BLE device using the selected backend."""
         return await self._impl.get_rssi()
 
-    async def read_characteristics(self) -> Dict:
+    async def read_characteristics(self) -> dict:
         """Read all supported characteristics using the selected backend."""
         return await self._impl.read_characteristics()
 
-    async def read_parsed_characteristics(self) -> Dict:
+    async def read_parsed_characteristics(self) -> dict:
         """Read and parse all supported characteristics using the selected backend."""
         return await self._impl.read_parsed_characteristics()
 
-    async def get_device_info(self) -> Dict:
+    async def get_device_info(self) -> dict:
         """Get device information and discovered services using the selected backend."""
         return await self._impl.get_device_info()

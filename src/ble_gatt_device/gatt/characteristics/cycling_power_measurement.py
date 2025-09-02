@@ -2,7 +2,7 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -22,7 +22,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # JSON string representation
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse cycling power measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +

@@ -2,7 +2,7 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -24,7 +24,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
 
     def parse_value(
         self, data: bytearray
-    ) -> Dict[str, Any]:  # pylint: disable=too-many-locals
+    ) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse glucose measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + Base Time(7) + [Time Offset(2)] +

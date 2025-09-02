@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import yaml
 
@@ -24,11 +23,11 @@ class UuidRegistry:
 
     def __init__(self):
         """Initialize the UUID registry."""
-        self._services: Dict[str, UuidInfo] = {}
-        self._characteristics: Dict[str, UuidInfo] = {}
+        self._services: dict[str, UuidInfo] = {}
+        self._characteristics: dict[str, UuidInfo] = {}
         self._load_uuids()
 
-    def _load_yaml(self, file_path: Path) -> List[Dict]:
+    def _load_yaml(self, file_path: Path) -> list[dict]:
         """Load UUIDs from a YAML file."""
         if not file_path.exists():
             return []
@@ -94,7 +93,7 @@ class UuidRegistry:
                 self._characteristics[uuid_info["name"]] = info
                 self._characteristics[uuid_info["id"]] = info
 
-    def get_service_info(self, key: str) -> Optional[UuidInfo]:
+    def get_service_info(self, key: str) -> UuidInfo | None:
         """Get information about a service.
 
         Args:
@@ -130,7 +129,7 @@ class UuidRegistry:
 
         return None
 
-    def get_characteristic_info(self, identifier: str) -> Optional[UuidInfo]:
+    def get_characteristic_info(self, identifier: str) -> UuidInfo | None:
         """Get information about a characteristic UUID or name."""
         # First try direct lookup (for names and IDs)
         if identifier in self._characteristics:

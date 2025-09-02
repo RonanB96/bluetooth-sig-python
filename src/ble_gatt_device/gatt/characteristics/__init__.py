@@ -1,6 +1,6 @@
 """Registry of supported GATT characteristics."""
 
-from typing import Dict, Optional, Type
+from typing import Optional
 
 from ..uuid_registry import uuid_registry
 from .ammonia_concentration import AmmoniaConcentrationCharacteristic
@@ -82,7 +82,7 @@ from .wind_chill import WindChillCharacteristic
 class CharacteristicRegistry:
     """Registry for all supported GATT characteristics."""
 
-    _characteristics: Dict[str, Type[BaseCharacteristic]] = {
+    _characteristics: dict[str, type[BaseCharacteristic]] = {
         "Battery Level": BatteryLevelCharacteristic,
         "Battery Level Status": BatteryPowerStateCharacteristic,
         "Temperature": TemperatureCharacteristic,
@@ -164,14 +164,14 @@ class CharacteristicRegistry:
     }
 
     @classmethod
-    def get_characteristic_class(cls, name: str) -> Optional[Type[BaseCharacteristic]]:
+    def get_characteristic_class(cls, name: str) -> Optional[type[BaseCharacteristic]]:
         """Get the characteristic class for a given name."""
         return cls._characteristics.get(name)
 
     @classmethod
     def get_characteristic_class_by_uuid(
         cls, uuid: str
-    ) -> Optional[Type[BaseCharacteristic]]:
+    ) -> Optional[type[BaseCharacteristic]]:
         """Get the characteristic class for a given UUID by looking up in registry."""
         # Normalize the UUID
         uuid = uuid.replace("-", "").upper()

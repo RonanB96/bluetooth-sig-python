@@ -2,7 +2,7 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -22,7 +22,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # JSON string representation of measurement data
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse weight measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +

@@ -2,7 +2,7 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -22,7 +22,7 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # JSON string representation
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse cycling power control point data.
 
         Format: Op Code(1) + [Request Parameter] or Response Code(1) + [Response Parameter]
@@ -49,7 +49,7 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
         return result
 
     def _parse_op_code_parameters(
-        self, op_code: int, data: bytearray, result: Dict[str, Any]
+        self, op_code: int, data: bytearray, result: dict[str, Any]
     ) -> None:
         """Parse operation code specific parameters.
 
@@ -75,48 +75,48 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
         elif op_code == 0x20:  # Response Code
             self._parse_response_code(data, result)
 
-    def _parse_cumulative_value(self, data: bytearray, result: Dict[str, Any]) -> None:
+    def _parse_cumulative_value(self, data: bytearray, result: dict[str, Any]) -> None:
         """Parse cumulative value parameter."""
         if len(data) >= 5:
             cumulative_value = struct.unpack("<I", data[1:5])[0]
             result["cumulative_value"] = cumulative_value
 
-    def _parse_sensor_location(self, data: bytearray, result: Dict[str, Any]) -> None:
+    def _parse_sensor_location(self, data: bytearray, result: dict[str, Any]) -> None:
         """Parse sensor location parameter."""
         if len(data) >= 2:
             result["sensor_location"] = data[1]
 
-    def _parse_crank_length(self, data: bytearray, result: Dict[str, Any]) -> None:
+    def _parse_crank_length(self, data: bytearray, result: dict[str, Any]) -> None:
         """Parse crank length parameter."""
         if len(data) >= 3:
             crank_length = struct.unpack("<H", data[1:3])[0]
             result["crank_length"] = crank_length / 2.0  # 0.5mm resolution
 
-    def _parse_chain_length(self, data: bytearray, result: Dict[str, Any]) -> None:
+    def _parse_chain_length(self, data: bytearray, result: dict[str, Any]) -> None:
         """Parse chain length parameter."""
         if len(data) >= 3:
             chain_length = struct.unpack("<H", data[1:3])[0]
             result["chain_length"] = chain_length / 10.0  # 0.1mm resolution
 
-    def _parse_chain_weight(self, data: bytearray, result: Dict[str, Any]) -> None:
+    def _parse_chain_weight(self, data: bytearray, result: dict[str, Any]) -> None:
         """Parse chain weight parameter."""
         if len(data) >= 3:
             chain_weight = struct.unpack("<H", data[1:3])[0]
             result["chain_weight"] = chain_weight / 10.0  # 0.1g resolution
 
-    def _parse_span_length(self, data: bytearray, result: Dict[str, Any]) -> None:
+    def _parse_span_length(self, data: bytearray, result: dict[str, Any]) -> None:
         """Parse span length parameter."""
         if len(data) >= 3:
             span_length = struct.unpack("<H", data[1:3])[0]
             result["span_length"] = span_length  # mm
 
-    def _parse_measurement_mask(self, data: bytearray, result: Dict[str, Any]) -> None:
+    def _parse_measurement_mask(self, data: bytearray, result: dict[str, Any]) -> None:
         """Parse measurement mask parameter."""
         if len(data) >= 3:
             mask = struct.unpack("<H", data[1:3])[0]
             result["measurement_mask"] = mask
 
-    def _parse_response_code(self, data: bytearray, result: Dict[str, Any]) -> None:
+    def _parse_response_code(self, data: bytearray, result: dict[str, Any]) -> None:
         """Parse response code parameters."""
         if len(data) >= 3:
             request_op_code = data[1]

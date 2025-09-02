@@ -1,6 +1,6 @@
 """Registry of supported GATT services."""
 
-from typing import Dict, List, Optional, Type
+from typing import Optional
 
 from .automation_io import AutomationIOService
 from .base import BaseGattService
@@ -21,7 +21,7 @@ from .weight_scale import WeightScaleService
 class GattServiceRegistry:
     """Registry for all supported GATT services."""
 
-    _services: List[Type[BaseGattService]] = [
+    _services: list[type[BaseGattService]] = [
         AutomationIOService,
         BatteryService,
         BodyCompositionService,
@@ -38,7 +38,7 @@ class GattServiceRegistry:
     ]
 
     @classmethod
-    def get_service_class(cls, uuid: str) -> Optional[Type[BaseGattService]]:
+    def get_service_class(cls, uuid: str) -> Optional[type[BaseGattService]]:
         """Get the service class for a given UUID."""
         uuid = uuid.replace("-", "").upper()
         for service_class in cls._services:
@@ -48,7 +48,7 @@ class GattServiceRegistry:
 
     @classmethod
     def create_service(
-        cls, uuid: str, characteristics: Dict[str, Dict]
+        cls, uuid: str, characteristics: dict[str, dict]
     ) -> Optional[BaseGattService]:
         """Create a service instance for the given UUID and characteristics."""
         service_class = cls.get_service_class(uuid)
@@ -60,6 +60,6 @@ class GattServiceRegistry:
         return service
 
     @classmethod
-    def supported_services(cls) -> List[str]:
+    def supported_services(cls) -> list[str]:
         """Get a list of supported service UUIDs."""
         return [service.SERVICE_UUID for service in cls._services]

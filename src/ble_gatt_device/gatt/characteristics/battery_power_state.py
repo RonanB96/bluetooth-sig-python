@@ -1,7 +1,7 @@
 """Battery Level Status characteristic implementation."""
 
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -21,7 +21,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         self.value_type = "string"  # Complex data structure
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> Dict[str, Any]:
+    def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse battery level status data according to expected bit field format.
 
         Format: Battery Level Status(1+ bytes) - bitmask indicating various battery states
@@ -71,7 +71,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
 
         return result
 
-    def _parse_basic_state(self, state_raw: int) -> Dict[str, Any]:
+    def _parse_basic_state(self, state_raw: int) -> dict[str, Any]:
         """Parse basic battery state from the first byte.
 
         Args:
@@ -119,7 +119,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             "battery_charge_level": charge_level_map.get(charge_level_raw, "unknown"),
         }
 
-    def _parse_extended_info(self, data: bytearray) -> Dict[str, Any]:
+    def _parse_extended_info(self, data: bytearray) -> dict[str, Any]:
         """Parse extended battery information from additional bytes.
 
         Args:

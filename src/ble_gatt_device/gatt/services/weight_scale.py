@@ -1,7 +1,6 @@
 """Weight Scale Service implementation."""
 
 from dataclasses import dataclass
-from typing import Dict, Type
 
 from ..characteristics.weight_measurement import WeightMeasurementCharacteristic
 from ..characteristics.weight_scale_feature import WeightScaleFeatureCharacteristic
@@ -17,7 +16,7 @@ class WeightScaleService(BaseGattService):
     """
 
     @classmethod
-    def get_expected_characteristics(cls) -> Dict[str, Type]:
+    def get_expected_characteristics(cls) -> dict[str, type]:
         """Get the expected characteristics for this service by name and class."""
         return {
             "Weight Measurement": WeightMeasurementCharacteristic,
@@ -25,7 +24,7 @@ class WeightScaleService(BaseGattService):
         }
 
     @classmethod
-    def get_required_characteristics(cls) -> Dict[str, Type]:
+    def get_required_characteristics(cls) -> dict[str, type]:
         """Get the required characteristics for this service by name and class."""
         return {
             "Weight Measurement": WeightMeasurementCharacteristic,
