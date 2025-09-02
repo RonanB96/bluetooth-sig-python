@@ -2,22 +2,25 @@
 
 Reference these instructions as primary guidance while using search and bash commands to complement and verify the information provided here.
 
-## 🚨 MANDATORY QUALITY REQUIREMENTS
+## 🚨 MANDATORY QUALITY REQUIREMENTS - DO NOT SKIP
 
-**CRITICAL: After EVERY implementation task, these commands MUST be executed and ALL issues fixed:**
+**CRITICAL: You MUST run these commands BEFORE every commit. NO EXCEPTIONS:**
 
 ```bash
-./scripts/format.sh --fix         # Fix all formatting issues  
+./scripts/format.sh --fix         # Fix all formatting issues
 ./scripts/format.sh --check       # Verify formatting is correct
 ./scripts/lint.sh --all           # Run ALL linting (flake8 + pylint 10.00/10 + shellcheck)
+python -m pytest tests/ -v        # Run ALL tests
 ```
 
-**⚠️ TASK IS NOT COMPLETE until these scripts pass with ZERO issues.**
+**🛑 STOP: Do NOT create commits or PRs until ALL commands pass with ZERO issues.**
+**🛑 STOP: Do NOT submit pull requests with failing CI checks.**
+**🛑 STOP: Always run quality validation BEFORE pushing changes.**
 
 **Individual debugging commands:**
 ```bash
 ./scripts/lint.sh --flake8        # Python style checking only
-./scripts/lint.sh --pylint        # Python code analysis only  
+./scripts/lint.sh --pylint        # Python code analysis only
 ./scripts/lint.sh --shellcheck    # Shell script validation only
 ./scripts/format.sh --black       # Python code formatting only
 ./scripts/format.sh --isort       # Import sorting only
@@ -25,7 +28,7 @@ Reference these instructions as primary guidance while using search and bash com
 
 **❌ DO NOT use legacy commands** - Use scripts above instead:
 - ~~`python -m black`~~ → Use `./scripts/format.sh`
-- ~~`python -m flake8`~~ → Use `./scripts/lint.sh --flake8`  
+- ~~`python -m flake8`~~ → Use `./scripts/lint.sh --flake8`
 - ~~`python -m pylint`~~ → Use `./scripts/lint.sh --pylint`
 
 ## Project Overview
@@ -120,7 +123,7 @@ class ExampleCharacteristic(BaseCharacteristic):
 ```bash
 # MANDATORY format and lint workflow (USE THESE COMMANDS):
 ./scripts/format.sh --fix         # Fix all formatting issues
-./scripts/format.sh --check       # Verify formatting is correct  
+./scripts/format.sh --check       # Verify formatting is correct
 ./scripts/lint.sh --all           # Run ALL linting: flake8 + pylint 10.00/10 + shellcheck
 ```
 
@@ -136,10 +139,26 @@ class ExampleCharacteristic(BaseCharacteristic):
 ### Legacy Commands (DEPRECATED - Do NOT use)
 ```bash
 # ❌ DO NOT USE THESE - Use scripts above instead:
-# python -m pylint src/ble_gatt_device  
-# python -m flake8 src/ tests/          
-# python -m black src/ tests/           
+# python -m pylint src/ble_gatt_device
+# python -m flake8 src/ tests/
+# python -m black src/ tests/
 ```
+
+### GitHub CLI Commands (Important: Avoid Manual Scrolling)
+**ALWAYS pipe `gh` commands through `cat` to prevent pager scrolling:**
+```bash
+# ✅ CORRECT - Shows full output without manual scrolling
+gh pr view 35 | cat
+gh pr diff 35 | cat
+gh pr view 35 --comments | cat
+gh issue list | cat
+
+# ❌ WRONG - Requires manual scrolling through pager
+gh pr view 35        # Opens in pager, needs manual navigation
+gh pr diff 35        # May truncate or require scrolling
+```
+
+**Why this matters:** Without `| cat`, gh commands open in a pager that requires manual interaction, making automated AI agent workflows inefficient.
 
 ### Comprehensive Testing
 ```bash
