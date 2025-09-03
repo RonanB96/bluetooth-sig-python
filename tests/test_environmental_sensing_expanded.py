@@ -108,21 +108,15 @@ class TestEnvironmentalSensingExpanded:
         """Test characteristic metadata properties."""
         # Temperature-like characteristics
         dew_point = DewPointCharacteristic(uuid="", properties=set())
-        assert dew_point.device_class == "temperature"
         assert dew_point.unit == "°C"
-        assert dew_point.state_class == "measurement"
 
         # Wind speed characteristics
         wind_speed = TrueWindSpeedCharacteristic(uuid="", properties=set())
-        assert wind_speed.device_class == "wind_speed"
         assert wind_speed.unit == "m/s"
-        assert wind_speed.state_class == "measurement"
 
         # Wind direction characteristics
         wind_direction = TrueWindDirectionCharacteristic(uuid="", properties=set())
-        assert wind_direction.device_class == "direction"
         assert wind_direction.unit == "°"
-        assert wind_direction.state_class == "measurement"
 
     def test_characteristic_uuid_resolution(self):
         """Test that characteristics resolve to correct UUIDs."""

@@ -34,13 +34,3 @@ class MagneticDeclinationCharacteristic(BaseCharacteristic):
     def unit(self) -> str:
         """Get the unit of measurement."""
         return "°"
-
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class."""
-        return ""  # No specific device class for magnetic declination
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class."""
-        return "measurement"

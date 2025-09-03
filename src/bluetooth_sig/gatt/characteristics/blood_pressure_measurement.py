@@ -81,13 +81,3 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
     def unit(self) -> str:
         """Get the unit of measurement."""
         return "mmHg/kPa"  # Unit depends on flags
-
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class."""
-        return "pressure"
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class."""
-        return "measurement"

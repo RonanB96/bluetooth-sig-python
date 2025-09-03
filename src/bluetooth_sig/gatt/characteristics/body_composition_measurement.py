@@ -245,14 +245,4 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
-        return "%"  # Primary unit for body fat percentage
-
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class."""
-        return "body_fat"  # Custom device class for body composition
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class."""
-        return "measurement"
+        return "%"

@@ -72,16 +72,6 @@ class TestWeightMeasurementCharacteristic:
         char = WeightMeasurementCharacteristic(uuid="", properties=set())
         assert char.unit == "kg"
 
-    def test_device_class(self):
-        """Test Home Assistant device class."""
-        char = WeightMeasurementCharacteristic(uuid="", properties=set())
-        assert char.device_class == "weight"
-
-    def test_state_class(self):
-        """Test Home Assistant state class."""
-        char = WeightMeasurementCharacteristic(uuid="", properties=set())
-        assert char.state_class == "measurement"
-
 
 class TestWeightScaleFeatureCharacteristic:
     """Test Weight Scale Feature characteristic implementation."""
@@ -131,11 +121,6 @@ class TestWeightScaleFeatureCharacteristic:
         """Test unit property (should be empty for feature characteristic)."""
         char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
         assert char.unit == ""
-
-    def test_device_class(self):
-        """Test device class (should be empty for feature characteristic)."""
-        char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
-        assert char.device_class == ""
 
 
 class TestWeightScaleService:

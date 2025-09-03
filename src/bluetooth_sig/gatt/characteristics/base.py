@@ -116,16 +116,6 @@ class BaseCharacteristic(ABC):
         """Get the unit of measurement for this characteristic."""
         return ""
 
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class for this characteristic."""
-        return ""
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class for this characteristic."""
-        return ""
-
     def _parse_ieee11073_sfloat(self, sfloat_val: int) -> float:
         """Convert IEEE-11073 16-bit SFLOAT to Python float.
 

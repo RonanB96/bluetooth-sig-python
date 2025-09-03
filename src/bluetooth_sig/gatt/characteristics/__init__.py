@@ -192,6 +192,15 @@ class CharacteristicRegistry:
         return None
 
     @classmethod
+    def get_all_characteristics(cls) -> dict[str, type[BaseCharacteristic]]:
+        """Get all registered characteristics.
+
+        Returns:
+            Dictionary mapping characteristic names to their classes
+        """
+        return cls._characteristics.copy()
+
+    @classmethod
     def create_characteristic(cls, uuid: str, **kwargs) -> Optional[BaseCharacteristic]:
         """Create a characteristic instance for the given UUID."""
         char_class = cls.get_characteristic_class_by_uuid(uuid)

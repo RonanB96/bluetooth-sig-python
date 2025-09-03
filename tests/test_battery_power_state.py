@@ -245,18 +245,6 @@ class TestBatteryPowerStateCharacteristic:
         char = BatteryPowerStateCharacteristic(uuid="", properties=set())
         assert char.unit == ""
 
-    def test_device_class(self):
-        """Test Home Assistant device class."""
-        char = BatteryPowerStateCharacteristic(uuid="", properties=set())
-        assert char.device_class == "battery"
-
-    def test_state_class(self):
-        """Test Home Assistant state class."""
-        char = BatteryPowerStateCharacteristic(uuid="", properties=set())
-        assert (
-            char.state_class == ""
-        )  # Status characteristics don't have measurement state class
-
     def test_characteristic_uuid_resolution(self):
         """Test characteristic UUID resolution."""
         char = BatteryPowerStateCharacteristic(uuid="2BED", properties={"read"})

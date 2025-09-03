@@ -29,7 +29,7 @@ except ImportError:
     class BleakScanner: pass
 
 try:
-    from ble_gatt_device.gatt.gatt_manager import gatt_hierarchy
+    from bluetooth_sig.core import gatt_hierarchy
     from ble_gatt_device.core import BLEGATTDevice
     FRAMEWORK_AVAILABLE = True
 except ImportError:

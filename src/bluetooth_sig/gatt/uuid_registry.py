@@ -5,12 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-try:
-    import yaml
-    YAML_AVAILABLE = True
-except ImportError:
-    YAML_AVAILABLE = False
-    yaml = None
+import yaml
 
 
 @dataclass
@@ -30,16 +25,15 @@ class UuidRegistry:
         """Initialize the UUID registry."""
         self._services: dict[str, UuidInfo] = {}
         self._characteristics: dict[str, UuidInfo] = {}
-        if YAML_AVAILABLE:
-            try:
-                self._load_uuids()
-            except (FileNotFoundError, Exception):
-                # If YAML loading fails, continue with empty registry
-                pass
+        try:
+            self._load_uuids()
+        except (FileNotFoundError, Exception):  # pylint: disable=broad-exception-caught
+            # If YAML loading fails, continue with empty registry
+            pass
 
     def _load_yaml(self, file_path: Path) -> list[dict]:
         """Load UUIDs from a YAML file."""
-        if not YAML_AVAILABLE or not file_path.exists():
+        if not file_path.exists():
             return []
 
         with file_path.open("r") as f:
@@ -48,9 +42,6 @@ class UuidRegistry:
 
     def _load_uuids(self):
         """Load all UUIDs from YAML files."""
-        if not YAML_AVAILABLE:
-            return
-
         # Try development location first (git submodule)
         # From src/bluetooth_sig/gatt/uuid_registry.py, go up 4 levels to project root
         project_root = Path(__file__).parent.parent.parent.parent

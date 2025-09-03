@@ -42,13 +42,3 @@ class VoltageCharacteristic(BaseCharacteristic):
     def unit(self) -> str:
         """Get the unit of measurement."""
         return "V"
-
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class."""
-        return "voltage"
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class."""
-        return "measurement"

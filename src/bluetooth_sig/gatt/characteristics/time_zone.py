@@ -52,14 +52,4 @@ class TimeZoneCharacteristic(BaseCharacteristic):
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
-        return ""  # No unit for time zone offset
-
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class."""
-        return ""  # No specific device class for time zone
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class."""
-        return ""  # No state class for time zone offset
+        return ""  # No unit for time zone offset        return ""  # No state class for time zone offset

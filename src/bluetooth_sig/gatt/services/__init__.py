@@ -65,6 +65,15 @@ class GattServiceRegistry:
         return service
 
     @classmethod
+    def get_all_services(cls) -> list[type[BaseGattService]]:
+        """Get all registered service classes.
+
+        Returns:
+            List of all registered service classes
+        """
+        return cls._services.copy()
+
+    @classmethod
     def supported_services(cls) -> list[str]:
         """Get a list of supported service UUIDs."""
         return [service.SERVICE_UUID for service in cls._services]

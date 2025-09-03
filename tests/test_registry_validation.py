@@ -388,9 +388,7 @@ class TestRegistryConsistency:
                     # Verify the characteristic name matches what the class reports
                     if char_name in char_name_to_class:
                         expected_class = char_name_to_class[char_name]
-                        assert (
-                            char_class == expected_class
-                        ), (
+                        assert char_class == expected_class, (
                             f"Service {service_class.__name__} characteristic name '{char_name}' "
                             f"maps to wrong class. Expected {expected_class.__name__}, "
                             f"got {char_class.__name__}"

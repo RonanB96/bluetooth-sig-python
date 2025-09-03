@@ -28,8 +28,6 @@ class TestGasSensorCharacteristics:
 
         # Test metadata
         assert char.unit == "ppm"
-        assert char.device_class == "carbon_dioxide"
-        assert char.state_class == "measurement"
         assert char.value_type == "int"
 
         # Test normal parsing
@@ -73,8 +71,6 @@ class TestGasSensorCharacteristics:
 
         # Test metadata
         assert char.unit == "ppb"
-        assert char.device_class == "volatile_organic_compounds"
-        assert char.state_class == "measurement"
         assert char.value_type == "int"
 
         # Test normal parsing
@@ -103,8 +99,6 @@ class TestGasSensorCharacteristics:
 
         # Test metadata
         assert char.unit == "ppm"
-        assert char.device_class == "gas"
-        assert char.state_class == "measurement"
 
         # Test normal parsing
         test_data = bytearray([0x64, 0x00])  # 100 ppm little endian
@@ -120,8 +114,6 @@ class TestGasSensorCharacteristics:
 
         # Test metadata
         assert char.unit == "ppb"
-        assert char.device_class == "nitrogen_dioxide"
-        assert char.state_class == "measurement"
 
         # Test normal parsing
         test_data = bytearray([0x32, 0x00])  # 50 ppb little endian
@@ -137,8 +129,6 @@ class TestGasSensorCharacteristics:
 
         # Test metadata
         assert char.unit == "µg/m³"
-        assert char.device_class == "pm25"
-        assert char.state_class == "measurement"
 
         # Test normal parsing
         test_data = bytearray([0x19, 0x00])  # 25 µg/m³ little endian
@@ -171,10 +161,8 @@ class TestGasSensorCharacteristics:
             assert char.unit
 
             # All should have device classes
-            assert char.device_class
 
             # All should have state class "measurement"
-            assert char.state_class == "measurement"
 
             # All should have value type "int"
             assert char.value_type == "int"
@@ -185,31 +173,26 @@ class TestGasSensorCharacteristics:
         methane_char = MethaneConcentrationCharacteristic(uuid="", properties=set())
         assert methane_char.CHAR_UUID == "2BD1"
         assert methane_char.unit == "ppm"
-        assert methane_char.device_class == "gas"
 
         # Test Ozone
         ozone_char = OzoneConcentrationCharacteristic(uuid="", properties=set())
         assert ozone_char.CHAR_UUID == "2BD4"
         assert ozone_char.unit == "ppb"
-        assert ozone_char.device_class == "ozone"
 
         # Test PM1
         pm1_char = PM1ConcentrationCharacteristic(uuid="", properties=set())
         assert pm1_char.CHAR_UUID == "2BD5"
         assert pm1_char.unit == "µg/m³"
-        assert pm1_char.device_class == "pm1"
 
         # Test PM10
         pm10_char = PM10ConcentrationCharacteristic(uuid="", properties=set())
         assert pm10_char.CHAR_UUID == "2BD7"
         assert pm10_char.unit == "µg/m³"
-        assert pm10_char.device_class == "pm10"
 
         # Test SO2
         so2_char = SulfurDioxideConcentrationCharacteristic(uuid="", properties=set())
         assert so2_char.CHAR_UUID == "2BD8"
         assert so2_char.unit == "ppb"
-        assert so2_char.device_class == "sulphur_dioxide"
 
     def test_particulate_matter_parsing(self):
         """Test particulate matter characteristics parsing."""
@@ -227,7 +210,6 @@ class TestGasSensorCharacteristics:
 
             # Test unit and device class
             assert char.unit == "µg/m³", f"{name} unit incorrect"
-            assert char.state_class == "measurement", f"{name} state class incorrect"
 
     def test_gas_concentration_parsing(self):
         """Test gas concentration characteristics parsing."""
@@ -257,4 +239,3 @@ class TestGasSensorCharacteristics:
 
             # Test unit
             assert char.unit == unit, f"{name} unit incorrect"
-            assert char.state_class == "measurement", f"{name} state class incorrect"

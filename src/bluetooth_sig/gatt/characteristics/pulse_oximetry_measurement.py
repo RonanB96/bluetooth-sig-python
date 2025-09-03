@@ -83,13 +83,3 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
     def unit(self) -> str:
         """Get the unit of measurement."""
         return "%"  # SpO2 is in percentage
-
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class."""
-        return "blood_oxygen"
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class."""
-        return "measurement"

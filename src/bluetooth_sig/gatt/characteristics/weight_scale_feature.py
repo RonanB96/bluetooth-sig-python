@@ -102,14 +102,4 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
-        return ""  # Feature characteristic has no unit
-
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class."""
-        return ""  # Feature characteristic is not a sensor
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class."""
-        return ""  # Feature characteristic is not measured
+        return ""  # Feature characteristic has no unit        return ""  # Feature characteristic is not measured

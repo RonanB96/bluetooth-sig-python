@@ -97,7 +97,7 @@ run_pylint() {
     # Run pylint and capture output, allowing it to fail
     local PYLINT_OUTPUT
     set +e  # Temporarily disable exit on error
-    PYLINT_OUTPUT=$(pylint src/ble_gatt_device 2>&1)
+    PYLINT_OUTPUT=$(pylint src/bluetooth_sig 2>&1)
     set -e  # Re-enable exit on error
 
     # Always show the pylint output first

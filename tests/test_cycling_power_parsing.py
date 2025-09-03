@@ -24,7 +24,6 @@ class TestCyclingPowerParsing:
         result = char.parse_value(bytearray(feature_data))
         assert result == 31
         assert char.unit == ""
-        assert char.device_class == ""
 
         # Test single feature
         feature_data = struct.pack("<I", 0x00000001)  # Only pedal power balance
@@ -61,8 +60,6 @@ class TestCyclingPowerParsing:
         expected = {"flags": 0, "instantaneous_power": 250, "unit": "W"}
         assert result == expected
         assert char.unit == "W"
-        assert char.device_class == "power"
-        assert char.state_class == "measurement"
 
     def test_cycling_power_measurement_with_pedal_balance(self):
         """Test cycling power measurement with pedal power balance."""
@@ -211,7 +208,6 @@ class TestCyclingPowerParsing:
         }
         assert result == expected
         assert char.unit == "N·m"
-        assert char.state_class == "measurement"
 
     def test_cycling_power_vector_with_force_array(self):
         """Test cycling power vector with force magnitude array."""

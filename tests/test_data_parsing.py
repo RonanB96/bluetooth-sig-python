@@ -2,7 +2,7 @@
 
 import pytest
 
-from bluetooth_sig.gatt.gatt_manager import gatt_hierarchy
+from bluetooth_sig.core import gatt_hierarchy
 
 
 class TestDataParsing:
@@ -68,7 +68,7 @@ class TestDataParsing:
     def test_gatt_service_recognition(self, simulated_nordic_thingy_services):
         """Test that GATT framework recognizes simulated services."""
         # Reset discovered services
-        gatt_hierarchy._services = {}
+        gatt_hierarchy.clear_services()
 
         # Process services
         gatt_hierarchy.process_services(simulated_nordic_thingy_services)
@@ -88,7 +88,7 @@ class TestDataParsing:
     ):
         """Test battery level characteristic parsing."""
         # Reset and process services
-        gatt_hierarchy._services = {}
+        gatt_hierarchy.clear_services()
         gatt_hierarchy.process_services(simulated_nordic_thingy_services)
 
         # Find battery service
@@ -126,7 +126,7 @@ class TestDataParsing:
     ):
         """Test temperature characteristic parsing."""
         # Reset and process services
-        gatt_hierarchy._services = {}
+        gatt_hierarchy.clear_services()
         gatt_hierarchy.process_services(simulated_nordic_thingy_services)
 
         # Find environmental service
@@ -163,7 +163,7 @@ class TestDataParsing:
     ):
         """Test humidity characteristic parsing."""
         # Reset and process services
-        gatt_hierarchy._services = {}
+        gatt_hierarchy.clear_services()
         gatt_hierarchy.process_services(simulated_nordic_thingy_services)
 
         # Find environmental service
@@ -200,7 +200,7 @@ class TestDataParsing:
     ):
         """Test pressure characteristic parsing."""
         # Reset and process services
-        gatt_hierarchy._services = {}
+        gatt_hierarchy.clear_services()
         gatt_hierarchy.process_services(simulated_nordic_thingy_services)
 
         # Find environmental service
@@ -237,7 +237,7 @@ class TestDataParsing:
     ):
         """Test device information characteristic parsing."""
         # Reset and process services
-        gatt_hierarchy._services = {}
+        gatt_hierarchy.clear_services()
         gatt_hierarchy.process_services(simulated_nordic_thingy_services)
 
         # Find device info service
@@ -278,7 +278,7 @@ class TestDataParsing:
     ):
         """Test that a reasonable number of characteristics can be parsed."""
         # Reset and process services
-        gatt_hierarchy._services = {}
+        gatt_hierarchy.clear_services()
         gatt_hierarchy.process_services(simulated_nordic_thingy_services)
 
         parsed_count = 0
@@ -315,7 +315,7 @@ class TestDataParsing:
         ensuring that all characteristics can be parsed and validated.
         """
         # Reset and process services
-        gatt_hierarchy._services = {}
+        gatt_hierarchy.clear_services()
         gatt_hierarchy.process_services(simulated_nordic_thingy_services)
 
         assert len(gatt_hierarchy.discovered_services) > 0, "No services recognized"

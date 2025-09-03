@@ -97,16 +97,6 @@ class TestBodyCompositionMeasurementCharacteristic:
         char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
         assert char.unit == "%"
 
-    def test_device_class(self):
-        """Test Home Assistant device class."""
-        char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
-        assert char.device_class == "body_fat"
-
-    def test_state_class(self):
-        """Test Home Assistant state class."""
-        char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
-        assert char.state_class == "measurement"
-
 
 class TestBodyCompositionFeatureCharacteristic:
     """Test Body Composition Feature characteristic implementation."""
@@ -158,11 +148,6 @@ class TestBodyCompositionFeatureCharacteristic:
         """Test unit property (should be empty for feature characteristic)."""
         char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
         assert char.unit == ""
-
-    def test_device_class(self):
-        """Test device class (should be empty for feature characteristic)."""
-        char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
-        assert char.device_class == ""
 
 
 class TestBodyCompositionService:

@@ -132,13 +132,3 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
     def unit(self) -> str:
         """Get the unit of measurement."""
         return "mg/dL or mmol/L"  # Unit depends on flags
-
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class."""
-        return None  # No specific device class for glucose
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class."""
-        return "measurement"

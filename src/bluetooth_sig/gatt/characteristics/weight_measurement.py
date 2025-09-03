@@ -99,13 +99,3 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
     def unit(self) -> str:
         """Get the unit of measurement."""
         return "kg"  # Primary unit for weight
-
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class."""
-        return "weight"
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class."""
-        return "measurement"

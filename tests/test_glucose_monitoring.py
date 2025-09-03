@@ -50,7 +50,6 @@ class TestGlucoseMeasurementCharacteristic:
         assert glucose_measurement_char.CHAR_UUID == "2A18"
         assert glucose_measurement_char.value_type == "float"
         assert glucose_measurement_char.unit == "mg/dL or mmol/L"
-        assert glucose_measurement_char.state_class == "measurement"
 
     def test_glucose_measurement_basic_parsing(self, glucose_measurement_char):
         """Test basic glucose measurement data parsing."""

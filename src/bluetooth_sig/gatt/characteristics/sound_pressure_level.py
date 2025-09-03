@@ -41,13 +41,3 @@ class SoundPressureLevelCharacteristic(BaseCharacteristic):
     def unit(self) -> str:
         """Get the unit of measurement."""
         return "dB"
-
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class."""
-        return "sound_pressure"
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class."""
-        return "measurement"

@@ -44,13 +44,3 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
     def unit(self) -> str:
         """Get the unit of measurement."""
         return "A"
-
-    @property
-    def device_class(self) -> str:
-        """Home Assistant device class."""
-        return "current"
-
-    @property
-    def state_class(self) -> str:
-        """Home Assistant state class."""
-        return ""  # Range data doesn't have a standard state class

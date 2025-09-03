@@ -29,7 +29,6 @@ class TestNavigationCharacteristics:
 
         # Test metadata
         assert char.unit == "°"
-        assert char.state_class == "measurement"
         assert char.value_type == "float"
 
         # Test normal parsing: 18000 (in 0.01 degrees) = 180.00 degrees
@@ -61,8 +60,6 @@ class TestNavigationCharacteristics:
 
         # Test metadata
         assert char.unit == "m"
-        assert char.device_class == "distance"
-        assert char.state_class == "measurement"
         assert char.value_type == "float"
 
         # Test normal parsing: 50000 (in 0.01 meters) = 500.00 meters
@@ -92,7 +89,6 @@ class TestNavigationCharacteristics:
 
         # Test metadata
         assert char.unit == "T"
-        assert char.state_class == "measurement"
         assert char.value_type == "string"
 
         # Test normal parsing: X=1000, Y=-500 (in 10^-7 Tesla units)
@@ -112,7 +108,6 @@ class TestNavigationCharacteristics:
 
         # Test metadata
         assert char.unit == "T"
-        assert char.state_class == "measurement"
         assert char.value_type == "string"
 
         # Test normal parsing: X=1000, Y=-500, Z=2000
@@ -137,7 +132,6 @@ class TestEnvironmentalCharacteristics:
 
         # Test metadata
         assert char.unit == ""
-        assert char.device_class == "enum"
         assert char.value_type == "string"
 
         # Test known trend values
@@ -167,8 +161,6 @@ class TestEnvironmentalCharacteristics:
 
         # Test metadata
         assert char.unit == "count/m³"
-        assert char.device_class == "aqi"
-        assert char.state_class == "measurement"
         assert char.value_type == "int"
 
         # Test normal parsing: 123456 count/m³
@@ -185,8 +177,6 @@ class TestEnvironmentalCharacteristics:
 
         # Test metadata
         assert char.unit == "mm"
-        assert char.device_class == "precipitation"
-        assert char.state_class == "total_increasing"
         assert char.value_type == "float"
 
         # Test normal parsing: 1250 mm rainfall
