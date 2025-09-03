@@ -113,7 +113,20 @@ class BaseCharacteristic(ABC):
 
     @property
     def unit(self) -> str:
-        """Get the unit of measurement for this characteristic."""
+        """Get the unit of measurement for this characteristic.
+
+        First tries to get unit from YAML registry, then falls back to manual override.
+        This allows automatic unit parsing while maintaining backward compatibility.
+        """
+        # First try to get unit from YAML registry
+        char_info = uuid_registry.get_characteristic_info(self.CHAR_UUID)
+        if char_info and char_info.unit:
+            return char_info.unit
+
+        # Fallback to manual unit override for backward compatibility
+        if hasattr(self, "_manual_unit"):
+            return self._manual_unit
+
         return ""
 
     def _parse_ieee11073_sfloat(self, sfloat_val: int) -> float:

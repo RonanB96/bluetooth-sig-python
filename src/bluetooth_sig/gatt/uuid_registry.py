@@ -16,6 +16,7 @@ class UuidInfo:
     name: str
     id: str
     summary: str = ""
+    unit: str | None = None
 
 
 class UuidRegistry:
@@ -94,6 +95,140 @@ class UuidRegistry:
                 # Also index by name for characteristic lookup
                 self._characteristics[uuid_info["name"]] = info
                 self._characteristics[uuid_info["id"]] = info
+
+        # Load detailed specifications from GSS YAML files to extract units
+        self._load_gss_specifications()
+
+    def _load_gss_specifications(self):
+        """Load detailed specifications from GSS YAML files to extract unit information."""
+        # From src/bluetooth_sig/gatt/uuid_registry.py, go up 4 levels to project root
+        project_root = Path(__file__).parent.parent.parent.parent
+        gss_path = project_root / "bluetooth_sig" / "gss"
+
+        if not gss_path.exists():
+            # Try installed package location
+            pkg_root = Path(__file__).parent.parent
+            gss_path = pkg_root / "bluetooth_sig" / "gss"
+
+        if not gss_path.exists():
+            # GSS files not available, skip unit loading
+            return
+
+        # Process all characteristic GSS YAML files
+        for yaml_file in gss_path.glob("org.bluetooth.characteristic.*.yaml"):
+            try:
+                with yaml_file.open("r") as f:
+                    data = yaml.safe_load(f)
+
+                if not data or "characteristic" not in data:
+                    continue
+
+                char_data = data["characteristic"]
+                char_name = char_data.get("name")
+                char_id = char_data.get("identifier")
+
+                if not char_name or not char_id:
+                    continue
+
+                # Extract unit from structure fields
+                unit = self._extract_unit_from_gss(char_data)
+
+                if unit:
+                    # Update existing UuidInfo entries with unit information
+                    for key, uuid_info in self._characteristics.items():
+                        if (
+                            uuid_info.name == char_name
+                            or uuid_info.id == char_id
+                            or key == char_name
+                            or key == char_id
+                        ):
+                            # Create new UuidInfo with unit
+                            updated_info = UuidInfo(
+                                uuid=uuid_info.uuid,
+                                name=uuid_info.name,
+                                id=uuid_info.id,
+                                summary=uuid_info.summary,
+                                unit=unit,
+                            )
+                            self._characteristics[key] = updated_info
+
+            except (yaml.YAMLError, OSError, KeyError):
+                # Skip problematic files, continue with others
+                continue
+
+    def _extract_unit_from_gss(self, char_data: dict) -> str | None:
+        """Extract unit from GSS characteristic structure.
+
+        Args:
+            char_data: Dictionary containing characteristic data from GSS YAML
+
+        Returns:
+            Human-readable unit string or None if not found
+        """
+        structure = char_data.get("structure", [])
+        if not structure:
+            return None
+
+        for field in structure:
+            if not isinstance(field, dict):
+                continue
+
+            description = field.get("description", "")
+            if "Base Unit:" in description:
+                # Extract the unit after "Base Unit:"
+                unit_line = None
+                for line in description.split("\n"):
+                    if "Base Unit:" in line:
+                        unit_line = line.strip()
+                        break
+
+                if unit_line:
+                    # Parse "Base Unit: org.bluetooth.unit.X" format
+                    if "org.bluetooth.unit." in unit_line:
+                        unit_spec = unit_line.split("org.bluetooth.unit.")[1].strip()
+                        return self._convert_bluetooth_unit_to_readable(unit_spec)
+
+        return None
+
+    def _convert_bluetooth_unit_to_readable(self, unit_spec: str) -> str:
+        """Convert Bluetooth SIG unit specification to human-readable format.
+
+        Args:
+            unit_spec: Unit specification like "thermodynamic_temperature.degree_celsius"
+
+        Returns:
+            Human-readable unit like "°C"
+        """
+        # Remove trailing dots and clean up
+        unit_spec = unit_spec.rstrip(".").lower()
+
+        # Map common Bluetooth SIG units to readable format
+        unit_mappings = {
+            "percentage": "%",
+            "thermodynamic_temperature.degree_celsius": "°C",
+            "thermodynamic_temperature.degree_fahrenheit": "°F",
+            "thermodynamic_temperature.kelvin": "K",
+            "pressure.pascal": "Pa",
+            "pressure.bar": "bar",
+            "pressure.millimetre_of_mercury": "mmHg",
+            "electric_current.ampere": "A",
+            "electric_potential_difference.volt": "V",
+            "energy.joule": "J",
+            "power.watt": "W",
+            "frequency.hertz": "Hz",
+            "length.metre": "m",
+            "mass.kilogram": "kg",
+            "time.second": "s",
+            "velocity.metre_per_second": "m/s",
+            "acceleration.metre_per_second_squared": "m/s²",
+            "angular_velocity.radian_per_second": "rad/s",
+            "luminous_intensity.candela": "cd",
+            "illuminance.lux": "lux",
+            "concentration.parts_per_million": "ppm",
+            "concentration.parts_per_billion": "ppb",
+        }
+
+        return unit_mappings.get(unit_spec, unit_spec)
 
     def get_service_info(self, key: str) -> UuidInfo | None:
         """Get information about a service.
