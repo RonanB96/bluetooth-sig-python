@@ -34,11 +34,8 @@ class UuidRegistry:
             try:
                 self._load_uuids()
             except (FileNotFoundError, Exception):
-                # If YAML loading fails, use fallback
-                self._load_fallback_uuids()
-        else:
-            # Use fallback UUIDs when YAML not available
-            self._load_fallback_uuids()
+                # If YAML loading fails, continue with empty registry
+                pass
 
     def _load_yaml(self, file_path: Path) -> list[dict]:
         """Load UUIDs from a YAML file."""
@@ -161,97 +158,6 @@ class UuidRegistry:
             return self._characteristics.get(uuid)
 
         return None
-
-    def _load_fallback_uuids(self):
-        """Load essential fallback UUIDs when YAML is not available."""
-        # Common characteristics - essential for basic functionality
-        fallback_characteristics = {
-            # Battery Service
-            "2A19": UuidInfo("2A19", "Battery Level", "org.bluetooth.characteristic.battery_level"),
-            "2A1A": UuidInfo("2A1A", "Battery Power State", "org.bluetooth.characteristic.battery_power_state"),
-            
-            # Environmental Sensing
-            "2A1C": UuidInfo("2A1C", "Temperature Measurement", "org.bluetooth.characteristic.temperature_measurement"),
-            "2A6E": UuidInfo("2A6E", "Temperature", "org.bluetooth.characteristic.temperature"),
-            "2A6F": UuidInfo("2A6F", "Humidity", "org.bluetooth.characteristic.humidity"),
-            "2A6D": UuidInfo("2A6D", "Pressure", "org.bluetooth.characteristic.pressure"),
-            "2A76": UuidInfo("2A76", "UV Index", "org.bluetooth.characteristic.uv_index"),
-            "2A77": UuidInfo("2A77", "Irradiance", "org.bluetooth.characteristic.irradiance"),
-            
-            # Device Information
-            "2A29": UuidInfo("2A29", "Manufacturer Name String", "org.bluetooth.characteristic.manufacturer_name_string"),
-            "2A24": UuidInfo("2A24", "Model Number String", "org.bluetooth.characteristic.model_number_string"),
-            "2A25": UuidInfo("2A25", "Serial Number String", "org.bluetooth.characteristic.serial_number_string"),
-            "2A26": UuidInfo("2A26", "Firmware Revision String", "org.bluetooth.characteristic.firmware_revision_string"),
-            "2A27": UuidInfo("2A27", "Hardware Revision String", "org.bluetooth.characteristic.hardware_revision_string"),
-            "2A28": UuidInfo("2A28", "Software Revision String", "org.bluetooth.characteristic.software_revision_string"),
-            
-            # Generic Access
-            "2A00": UuidInfo("2A00", "Device Name", "org.bluetooth.characteristic.gap.device_name"),
-            "2A01": UuidInfo("2A01", "Appearance", "org.bluetooth.characteristic.gap.appearance"),
-            
-            # Heart Rate
-            "2A37": UuidInfo("2A37", "Heart Rate Measurement", "org.bluetooth.characteristic.heart_rate_measurement"),
-            
-            # Blood Pressure
-            "2A35": UuidInfo("2A35", "Blood Pressure Measurement", "org.bluetooth.characteristic.blood_pressure_measurement"),
-            
-            # Cycling Power
-            "2A63": UuidInfo("2A63", "Cycling Power Measurement", "org.bluetooth.characteristic.cycling_power_measurement"),
-            "2A65": UuidInfo("2A65", "Cycling Power Feature", "org.bluetooth.characteristic.cycling_power_feature"),
-            "2A64": UuidInfo("2A64", "Cycling Power Vector", "org.bluetooth.characteristic.cycling_power_vector"),
-            "2A66": UuidInfo("2A66", "Cycling Power Control Point", "org.bluetooth.characteristic.cycling_power_control_point"),
-            
-            # Cycling Speed and Cadence
-            "2A5B": UuidInfo("2A5B", "CSC Measurement", "org.bluetooth.characteristic.csc_measurement"),
-            
-            # Running Speed and Cadence  
-            "2A53": UuidInfo("2A53", "RSC Measurement", "org.bluetooth.characteristic.rsc_measurement"),
-            
-            # Weight Scale
-            "2A9D": UuidInfo("2A9D", "Weight Measurement", "org.bluetooth.characteristic.weight_measurement"),
-            "2A9E": UuidInfo("2A9E", "Weight Scale Feature", "org.bluetooth.characteristic.weight_scale_feature"),
-            
-            # Body Composition
-            "2A9B": UuidInfo("2A9B", "Body Composition Feature", "org.bluetooth.characteristic.body_composition_feature"),
-            "2A9C": UuidInfo("2A9C", "Body Composition Measurement", "org.bluetooth.characteristic.body_composition_measurement"),
-        }
-        
-        # Load characteristics with multiple key formats
-        for uuid, info in fallback_characteristics.items():
-            self._characteristics[uuid] = info
-            self._characteristics[info.name] = info
-            self._characteristics[info.id] = info
-            # Add common name variations
-            if info.name:
-                self._characteristics[info.name.lower()] = info
-                
-        # Common services
-        fallback_services = {
-            "180F": UuidInfo("180F", "Battery Service", "org.bluetooth.service.battery_service"),
-            "181A": UuidInfo("181A", "Environmental Sensing", "org.bluetooth.service.environmental_sensing"),
-            "180A": UuidInfo("180A", "Device Information", "org.bluetooth.service.device_information"),
-            "1800": UuidInfo("1800", "Generic Access", "org.bluetooth.service.generic_access"),
-            "180D": UuidInfo("180D", "Heart Rate", "org.bluetooth.service.heart_rate"),
-            "1810": UuidInfo("1810", "Blood Pressure", "org.bluetooth.service.blood_pressure"),
-            "1818": UuidInfo("1818", "Cycling Power", "org.bluetooth.service.cycling_power"),
-            "1816": UuidInfo("1816", "Cycling Speed and Cadence", "org.bluetooth.service.cycling_speed_and_cadence"),
-            "1814": UuidInfo("1814", "Running Speed and Cadence", "org.bluetooth.service.running_speed_and_cadence"),
-            "181D": UuidInfo("181D", "Weight Scale", "org.bluetooth.service.weight_scale"),
-            "181B": UuidInfo("181B", "Body Composition", "org.bluetooth.service.body_composition"),
-        }
-        
-        # Load services with multiple key formats
-        for uuid, info in fallback_services.items():
-            self._services[uuid] = info
-            self._services[info.name] = info
-            self._services[info.id] = info
-            # Add common name variations
-            if info.name:
-                self._services[info.name.lower()] = info
-                # Add with "Service" suffix
-                self._services[info.name + " Service"] = info
-                self._services[info.name.lower() + " service"] = info
 
 
 # Global instance
