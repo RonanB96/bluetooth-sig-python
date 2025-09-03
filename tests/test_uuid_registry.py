@@ -104,9 +104,9 @@ def test_characteristic_discovery():
     env = EnvironmentalSensingService()
     env.process_characteristics(mock_env_data)
 
-    assert (
-        len(env.characteristics) == 2
-    ), "Wrong number of environmental characteristics"
+    assert len(env.characteristics) == 2, (
+        "Wrong number of environmental characteristics"
+    )
     chars = list(env.characteristics.values())
     char_names = {c.name for c in chars}
     assert "Temperature" in char_names
@@ -125,12 +125,12 @@ def test_full_uuid_lookup(uuid_registry):
 
 def test_invalid_uuid_lookup(uuid_registry):
     """Test lookup behavior with invalid UUIDs."""
-    assert (
-        uuid_registry.get_service_info("0000") is None
-    ), "Should return None for invalid service"
-    assert (
-        uuid_registry.get_characteristic_info("0000") is None
-    ), "Should return None for invalid characteristic"
+    assert uuid_registry.get_service_info("0000") is None, (
+        "Should return None for invalid service"
+    )
+    assert uuid_registry.get_characteristic_info("0000") is None, (
+        "Should return None for invalid characteristic"
+    )
 
 
 def test_yaml_file_presence():
@@ -139,12 +139,12 @@ def test_yaml_file_presence():
         Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
     )
 
-    assert (
-        base_path / "service_uuids.yaml"
-    ).exists(), "Service UUIDs YAML file missing"
-    assert (
-        base_path / "characteristic_uuids.yaml"
-    ).exists(), "Characteristic UUIDs YAML file missing"
+    assert (base_path / "service_uuids.yaml").exists(), (
+        "Service UUIDs YAML file missing"
+    )
+    assert (base_path / "characteristic_uuids.yaml").exists(), (
+        "Characteristic UUIDs YAML file missing"
+    )
 
 
 def test_direct_yaml_loading():
@@ -186,9 +186,9 @@ def test_direct_yaml_loading():
     assert battery_service is not None, "Failed to find Battery Service in YAML"
     assert env_service is not None, "Failed to find Environmental Service in YAML"
     assert battery_service["name"] == "Battery", "Wrong Battery Service name in YAML"
-    assert (
-        env_service["name"] == "Environmental Sensing"
-    ), "Wrong Environmental Service name in YAML"
+    assert env_service["name"] == "Environmental Sensing", (
+        "Wrong Environmental Service name in YAML"
+    )
 
     # Test Characteristic UUIDs file loading
     char_file = base_path / "characteristic_uuids.yaml"
@@ -217,9 +217,9 @@ def test_direct_yaml_loading():
         elif uuid == "2A6F":  # Humidity
             humidity = char
 
-    assert (
-        battery_level is not None
-    ), "Failed to find Battery Level characteristic in YAML"
+    assert battery_level is not None, (
+        "Failed to find Battery Level characteristic in YAML"
+    )
     assert temperature is not None, "Failed to find Temperature characteristic in YAML"
     assert humidity is not None, "Failed to find Humidity characteristic in YAML"
 

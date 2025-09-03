@@ -48,39 +48,29 @@ check_venv() {
     echo ""
 }
 
-# Run flake8
-run_flake8() {
-    print_header "Running flake8"
+# Run ruff linting (replaces flake8)
+run_ruff() {
+    print_header "Running ruff"
 
-    if ! command -v flake8 >/dev/null 2>&1; then
-        print_error "flake8 not found. Install with: pip install flake8"
+    if ! command -v ruff >/dev/null 2>&1; then
+        print_error "ruff not found. Install with: pip install ruff"
         return 1
     fi
 
-    # Run flake8 and capture output, allowing it to fail
-    local FLAKE8_OUTPUT
+    # Run ruff and capture output, allowing it to fail
+    local RUFF_OUTPUT
     set +e  # Temporarily disable exit on error
-    FLAKE8_OUTPUT=$(flake8 src/ tests/ 2>&1)
-    local FLAKE8_EXIT_CODE=$?
+    RUFF_OUTPUT=$(ruff check src/ tests/ 2>&1)
+    local RUFF_EXIT_CODE=$?
     set -e  # Re-enable exit on error
 
-    # Count violations - only count non-empty lines
-    local violations
-    if [ -z "$FLAKE8_OUTPUT" ]; then
-        violations=0
-    else
-        violations=$(echo "$FLAKE8_OUTPUT" | grep -c "." || echo "0")
-    fi
-
-    if [ $FLAKE8_EXIT_CODE -eq 0 ] && [ "$violations" -eq 0 ]; then
-        echo "0"
-        print_success "flake8 passed with zero violations"
+    if [ $RUFF_EXIT_CODE -eq 0 ]; then
+        print_success "ruff passed with zero violations"
         return 0
     else
-        echo "$violations"
-        # Show the actual flake8 output
-        echo "$FLAKE8_OUTPUT"
-        print_error "flake8 found $violations violations"
+        # Show the actual ruff output
+        echo "$RUFF_OUTPUT"
+        print_error "ruff found violations"
         return 1
     fi
 }
@@ -183,7 +173,7 @@ run_all_checks() {
 
     check_venv
 
-    if ! run_flake8; then
+    if ! run_ruff; then
         exit_code=1
     fi
 
@@ -217,9 +207,9 @@ while [[ $# -gt 0 ]]; do
             run_all_checks
             exit $?
             ;;
-        --flake8)
+        --ruff)
             check_venv
-            run_flake8
+            run_ruff
             exit $?
             ;;
         --pylint)
@@ -240,13 +230,13 @@ while [[ $# -gt 0 ]]; do
             echo "  --all, --check      Run all linting checks (default)"
             echo ""
             echo "Individual tools:"
-            echo "  --flake8            Run flake8 style checking"
+            echo "  --ruff              Run ruff linting (replaces flake8)"
             echo "  --pylint            Run pylint analysis (must score 10.00/10)"
             echo "  --shellcheck        Run shellcheck shell script analysis"
             echo ""
             echo "Examples:"
             echo "  $0                  # Run all linting checks"
-            echo "  $0 --flake8         # Run only flake8"
+            echo "  $0 --ruff           # Run only ruff"
             echo "  $0 --pylint         # Run only pylint"
             echo "  $0 --shellcheck     # Run only shellcheck"
             echo ""

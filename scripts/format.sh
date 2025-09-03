@@ -46,42 +46,42 @@ check_venv() {
     fi
 }
 
-# Run black formatting
-run_black() {
+# Run ruff formatting and import sorting
+run_ruff() {
     if [ "${1:-}" = "--check" ]; then
-        print_header "Checking black formatting"
-        if python -m black --check --diff src/ tests/; then
-            print_success "black formatting check passed"
-            return 0
-        else
-            print_error "black formatting issues found"
+        print_header "Checking ruff formatting and import sorting"
+        local exit_code=0
+        
+        # Check formatting
+        if ! ruff format --check src/ tests/; then
+            print_error "ruff formatting issues found"
             echo "Run './scripts/format.sh --fix' to fix formatting"
-            return 1
-        fi
-    else
-        print_header "Formatting code with black"
-        python -m black src/ tests/
-        print_success "Code formatted with black"
-        return 0
-    fi
-}
-
-# Run isort import sorting
-run_isort() {
-    if [ "${1:-}" = "--check" ]; then
-        print_header "Checking isort import sorting"
-        if python -m isort --check-only --diff src/ tests/; then
-            print_success "isort import sorting check passed"
-            return 0
+            exit_code=1
         else
-            print_error "isort import sorting issues found"
-            echo "Run './scripts/format.sh --fix' to fix import sorting"
-            return 1
+            print_success "ruff formatting check passed"
         fi
+        
+        # Check linting (including import sorting)
+        if ! ruff check src/ tests/; then
+            print_error "ruff linting issues found"
+            echo "Run './scripts/format.sh --fix' to fix issues"
+            exit_code=1
+        else
+            print_success "ruff linting check passed"
+        fi
+        
+        return $exit_code
     else
-        print_header "Sorting imports with isort"
-        python -m isort src/ tests/
-        print_success "Imports sorted with isort"
+        print_header "Formatting code with ruff"
+        
+        # Fix formatting
+        ruff format src/ tests/
+        print_success "Code formatted with ruff"
+        
+        # Fix linting issues (including import sorting)
+        ruff check --fix src/ tests/
+        print_success "Code linting issues fixed with ruff"
+        
         return 0
     fi
 }
@@ -93,8 +93,7 @@ run_format_check() {
 
     check_venv
 
-    run_black --check || exit_code=1
-    run_isort --check || exit_code=1
+    run_ruff --check || exit_code=1
 
     echo ""
     if [ $exit_code -eq 0 ]; then
@@ -115,8 +114,7 @@ run_format_fix() {
 
     check_venv
 
-    run_black
-    run_isort
+    run_ruff
 
     echo ""
     print_success "🎨 All formatting fixes applied!"
@@ -145,28 +143,16 @@ fi
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --black)
-            run_black --check
+        --ruff)
+            run_ruff --check
             exit $?
             ;;
-        --black-check)
-            run_black --check
+        --ruff-check)
+            run_ruff --check
             exit $?
             ;;
-        --black-fix)
-            run_black
-            exit $?
-            ;;
-        --isort)
-            run_isort --check
-            exit $?
-            ;;
-        --isort-check)
-            run_isort --check
-            exit $?
-            ;;
-        --isort-fix)
-            run_isort
+        --ruff-fix)
+            run_ruff
             exit $?
             ;;
         --check)
@@ -186,20 +172,17 @@ while [[ $# -gt 0 ]]; do
             echo "  --check             Check all formatting (default)"
             echo "  --fix               Fix all formatting issues"
             echo ""
-            echo "Individual tools:"
-            echo "  --black             Check black formatting"
-            echo "  --black-check       Check black formatting"
-            echo "  --black-fix         Fix black formatting"
-            echo "  --isort             Check isort import sorting"
-            echo "  --isort-check       Check isort import sorting"
-            echo "  --isort-fix         Fix isort import sorting"
+            echo "Ruff-based tools:"
+            echo "  --ruff              Check ruff formatting and linting"
+            echo "  --ruff-check        Check ruff formatting and linting"
+            echo "  --ruff-fix          Fix ruff formatting and linting"
             echo ""
             echo "Examples:"
             echo "  $0                  # Check all formatting"
             echo "  $0 --check          # Check all formatting"
             echo "  $0 --fix            # Fix all formatting issues"
-            echo "  $0 --black          # Check only black"
-            echo "  $0 --isort-fix      # Fix only import sorting"
+            echo "  $0 --ruff           # Check only ruff"
+            echo "  $0 --ruff-fix       # Fix only ruff issues"
             echo ""
             exit 0
             ;;

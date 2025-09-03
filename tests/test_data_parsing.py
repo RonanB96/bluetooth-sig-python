@@ -74,14 +74,14 @@ class TestDataParsing:
         gatt_hierarchy.process_services(simulated_nordic_thingy_services)
 
         # Verify services were recognized
-        assert (
-            len(gatt_hierarchy.discovered_services) > 0
-        ), "No services were recognized"
+        assert len(gatt_hierarchy.discovered_services) > 0, (
+            "No services were recognized"
+        )
 
         # Verify expected service count (should recognize at least Battery and Environmental)
-        assert (
-            len(gatt_hierarchy.discovered_services) >= 2
-        ), f"Expected at least 2 services, got {len(gatt_hierarchy.discovered_services)}"
+        assert len(gatt_hierarchy.discovered_services) >= 2, (
+            f"Expected at least 2 services, got {len(gatt_hierarchy.discovered_services)}"
+        )
 
     def test_battery_level_parsing(
         self, simulated_nordic_thingy_services, simulated_nordic_thingy_data
@@ -109,12 +109,12 @@ class TestDataParsing:
                 for data_uuid, data in simulated_nordic_thingy_data.items():
                     if data_uuid.replace("-", "").upper() == char_uuid:
                         parsed_value = characteristic.parse_value(data)
-                        assert (
-                            parsed_value == 77
-                        ), f"Expected battery level 77, got {parsed_value}"
-                        assert (
-                            characteristic.unit == "%"
-                        ), f"Expected unit '%', got '{characteristic.unit}'"
+                        assert parsed_value == 77, (
+                            f"Expected battery level 77, got {parsed_value}"
+                        )
+                        assert characteristic.unit == "%", (
+                            f"Expected unit '%', got '{characteristic.unit}'"
+                        )
                         battery_char = characteristic
                         break
                 break
@@ -146,12 +146,12 @@ class TestDataParsing:
                 for data_uuid, data in simulated_nordic_thingy_data.items():
                     if data_uuid.replace("-", "").upper() == char_uuid:
                         parsed_value = characteristic.parse_value(data)
-                        assert (
-                            parsed_value == 23.0
-                        ), f"Expected temperature 23.0°C, got {parsed_value}"
-                        assert (
-                            characteristic.unit == "°C"
-                        ), f"Expected unit '°C', got '{characteristic.unit}'"
+                        assert parsed_value == 23.0, (
+                            f"Expected temperature 23.0°C, got {parsed_value}"
+                        )
+                        assert characteristic.unit == "°C", (
+                            f"Expected unit '°C', got '{characteristic.unit}'"
+                        )
                         temp_char = characteristic
                         break
                 break
@@ -183,12 +183,12 @@ class TestDataParsing:
                 for data_uuid, data in simulated_nordic_thingy_data.items():
                     if data_uuid.replace("-", "").upper() == char_uuid:
                         parsed_value = characteristic.parse_value(data)
-                        assert (
-                            parsed_value == 61.0
-                        ), f"Expected humidity 61.0%, got {parsed_value}"
-                        assert (
-                            characteristic.unit == "%"
-                        ), f"Expected unit '%', got '{characteristic.unit}'"
+                        assert parsed_value == 61.0, (
+                            f"Expected humidity 61.0%, got {parsed_value}"
+                        )
+                        assert characteristic.unit == "%", (
+                            f"Expected unit '%', got '{characteristic.unit}'"
+                        )
                         humidity_char = characteristic
                         break
                 break
@@ -220,12 +220,12 @@ class TestDataParsing:
                 for data_uuid, data in simulated_nordic_thingy_data.items():
                     if data_uuid.replace("-", "").upper() == char_uuid:
                         parsed_value = characteristic.parse_value(data)
-                        assert (
-                            parsed_value == 101.325
-                        ), f"Expected pressure 101.325 kPa, got {parsed_value}"
-                        assert (
-                            characteristic.unit == "kPa"
-                        ), f"Expected unit 'kPa', got '{characteristic.unit}'"
+                        assert parsed_value == 101.325, (
+                            f"Expected pressure 101.325 kPa, got {parsed_value}"
+                        )
+                        assert characteristic.unit == "kPa", (
+                            f"Expected unit 'kPa', got '{characteristic.unit}'"
+                        )
                         pressure_char = characteristic
                         break
                 break
@@ -269,9 +269,9 @@ class TestDataParsing:
                         found_chars += 1
                     break
 
-        assert (
-            found_chars >= 1
-        ), f"Expected to parse at least 1 device info characteristic, got {found_chars}"
+        assert found_chars >= 1, (
+            f"Expected to parse at least 1 device info characteristic, got {found_chars}"
+        )
 
     def test_comprehensive_parsing_count(
         self, simulated_nordic_thingy_services, simulated_nordic_thingy_data
@@ -299,12 +299,12 @@ class TestDataParsing:
                         break
 
         # We should be able to parse at least 4 characteristics (battery, temp, humidity, pressure)
-        assert (
-            parsed_count >= 4
-        ), f"Expected to parse at least 4 characteristics, got {parsed_count}"
-        assert (
-            total_characteristics >= 6
-        ), f"Expected at least 6 total characteristics, got {total_characteristics}"
+        assert parsed_count >= 4, (
+            f"Expected to parse at least 4 characteristics, got {parsed_count}"
+        )
+        assert total_characteristics >= 6, (
+            f"Expected at least 6 total characteristics, got {total_characteristics}"
+        )
 
     def test_comprehensive_characteristic_parsing_with_validation(
         self, simulated_nordic_thingy_services, simulated_nordic_thingy_data
@@ -356,38 +356,40 @@ class TestDataParsing:
 
                             # Additional validation based on characteristic type
                             if "BatteryLevel" in char_name:
-                                assert isinstance(
-                                    parsed_value, int
-                                ), f"Battery level should be int, got {type(parsed_value)}"
-                                assert (
-                                    0 <= parsed_value <= 100
-                                ), f"Battery level {parsed_value} out of range"
-                                assert (
-                                    unit == "%"
-                                ), f"Battery level unit should be %, got {unit}"
+                                assert isinstance(parsed_value, int), (
+                                    f"Battery level should be int, got {type(parsed_value)}"
+                                )
+                                assert 0 <= parsed_value <= 100, (
+                                    f"Battery level {parsed_value} out of range"
+                                )
+                                assert unit == "%", (
+                                    f"Battery level unit should be %, got {unit}"
+                                )
                             elif "Temperature" in char_name:
-                                assert isinstance(
-                                    parsed_value, (int, float)
-                                ), f"Temperature should be numeric, got {type(parsed_value)}"
-                                assert (
-                                    unit == "°C"
-                                ), f"Temperature unit should be °C, got {unit}"
+                                assert isinstance(parsed_value, (int, float)), (
+                                    f"Temperature should be numeric, got {type(parsed_value)}"
+                                )
+                                assert unit == "°C", (
+                                    f"Temperature unit should be °C, got {unit}"
+                                )
                             elif "Humidity" in char_name:
-                                assert isinstance(
-                                    parsed_value, (int, float)
-                                ), f"Humidity should be numeric, got {type(parsed_value)}"
-                                assert (
-                                    unit == "%"
-                                ), f"Humidity unit should be %, got {unit}"
+                                assert isinstance(parsed_value, (int, float)), (
+                                    f"Humidity should be numeric, got {type(parsed_value)}"
+                                )
+                                assert unit == "%", (
+                                    f"Humidity unit should be %, got {unit}"
+                                )
                             elif "Pressure" in char_name:
-                                assert isinstance(
-                                    parsed_value, (int, float)
-                                ), f"Pressure should be numeric, got {type(parsed_value)}"
+                                assert isinstance(parsed_value, (int, float)), (
+                                    f"Pressure should be numeric, got {type(parsed_value)}"
+                                )
                                 assert unit in [
                                     "Pa",
                                     "hPa",
                                     "kPa",
-                                ], f"Pressure unit should be Pa, hPa, or kPa, got {unit}"
+                                ], (
+                                    f"Pressure unit should be Pa, hPa, or kPa, got {unit}"
+                                )
 
                         except Exception as e:
                             validation_results[service_name]["characteristics"][
@@ -408,9 +410,9 @@ class TestDataParsing:
                     missing_data_count += 1
 
         # Comprehensive assertions
-        assert (
-            parsed_count >= 4
-        ), f"Expected to parse at least 4 characteristics, got {parsed_count}"
+        assert parsed_count >= 4, (
+            f"Expected to parse at least 4 characteristics, got {parsed_count}"
+        )
         assert error_count == 0, f"No parsing errors expected, got {error_count} errors"
 
         # Verify specific characteristics were parsed successfully
@@ -424,15 +426,15 @@ class TestDataParsing:
                         if expected in char_name and expected not in found_expected:
                             found_expected.append(expected)
 
-        assert (
-            len(found_expected) >= 3
-        ), f"Expected to find at least 3 key characteristics, found: {found_expected}"
+        assert len(found_expected) >= 3, (
+            f"Expected to find at least 3 key characteristics, found: {found_expected}"
+        )
 
         # Verify service recognition
         service_names = list(validation_results.keys())
-        assert any(
-            "Battery" in name for name in service_names
-        ), "Battery service should be recognized"
-        assert any(
-            "Environmental" in name for name in service_names
-        ), "Environmental service should be recognized"
+        assert any("Battery" in name for name in service_names), (
+            "Battery service should be recognized"
+        )
+        assert any("Environmental" in name for name in service_names), (
+            "Environmental service should be recognized"
+        )

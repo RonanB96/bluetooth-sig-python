@@ -22,9 +22,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
         self.value_type = "float"
         super().__post_init__()
 
-    def parse_value(
-        self, data: bytearray
-    ) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    def parse_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse glucose measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + Base Time(7) + [Time Offset(2)] +

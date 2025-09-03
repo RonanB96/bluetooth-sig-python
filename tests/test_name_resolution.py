@@ -24,9 +24,9 @@ class TestNameResolution:
                 assert info is not None, f"Should find service with key: {lookup_key}"
                 assert info.uuid == expected_uuid, f"Wrong UUID for key {lookup_key}"
                 assert info.name == "Battery", f"Wrong name for key {lookup_key}"
-                assert (
-                    info.id == "org.bluetooth.service.battery_service"
-                ), f"Wrong ID for key {lookup_key}"
+                assert info.id == "org.bluetooth.service.battery_service", (
+                    f"Wrong ID for key {lookup_key}"
+                )
             else:
                 assert info is None, f"Should not find service with key: {lookup_key}"
 
@@ -46,12 +46,12 @@ class TestNameResolution:
             if should_find:
                 assert info is not None, f"Should find service with key: {lookup_key}"
                 assert info.uuid == expected_uuid, f"Wrong UUID for key {lookup_key}"
-                assert (
-                    info.name == "Environmental Sensing"
-                ), f"Wrong name for key {lookup_key}"
-                assert (
-                    info.id == "org.bluetooth.service.environmental_sensing"
-                ), f"Wrong ID for key {lookup_key}"
+                assert info.name == "Environmental Sensing", (
+                    f"Wrong name for key {lookup_key}"
+                )
+                assert info.id == "org.bluetooth.service.environmental_sensing", (
+                    f"Wrong ID for key {lookup_key}"
+                )
             else:
                 assert info is None, f"Should not find service with key: {lookup_key}"
 
@@ -111,9 +111,9 @@ class TestNameResolution:
 
         for invalid_name in invalid_names:
             info = uuid_registry.get_service_info(invalid_name)
-            assert (
-                info is None
-            ), f"Should not find service for invalid name: {invalid_name}"
+            assert info is None, (
+                f"Should not find service for invalid name: {invalid_name}"
+            )
 
     def test_characteristic_name_resolution(self):
         """Test characteristic name resolution patterns."""

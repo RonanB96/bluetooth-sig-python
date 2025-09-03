@@ -21,9 +21,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
         self.value_type = "float"
         super().__post_init__()
 
-    def parse_value(
-        self, data: bytearray
-    ) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    def parse_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse pulse oximetry measurement data according to Bluetooth specification.
 
         Format: Flags(1) + SpO2(2) + Pulse Rate(2) + [Timestamp(7)] +

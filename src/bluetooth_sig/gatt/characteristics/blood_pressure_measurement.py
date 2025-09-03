@@ -21,9 +21,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
         self.value_type = "float"
         super().__post_init__()
 
-    def parse_value(
-        self, data: bytearray
-    ) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    def parse_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse blood pressure measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) + [Timestamp(7)] +
