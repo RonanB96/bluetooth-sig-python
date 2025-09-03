@@ -82,7 +82,7 @@ class BluetoothSIGTranslator:
             return None
             
         try:
-            temp_service = service_class(uuid=uuid)
+            temp_service = service_class()
             return {
                 "name": getattr(temp_service, "_service_name", service_class.__name__),
                 "uuid": temp_service.SERVICE_UUID,
@@ -115,7 +115,7 @@ class BluetoothSIGTranslator:
         result = {}
         for service_class in GattServiceRegistry._services:
             try:
-                temp_service = service_class(uuid="")
+                temp_service = service_class()
                 service_name = getattr(temp_service, "_service_name", service_class.__name__)
                 result[service_name] = temp_service.SERVICE_UUID
             except Exception:

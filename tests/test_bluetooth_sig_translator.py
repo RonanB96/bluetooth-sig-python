@@ -57,8 +57,8 @@ class TestBluetoothSIGTranslator:
         
         for uuid in uuids:
             result = translator.parse_characteristic(uuid, raw_data)
-            # Without YAML, should return raw data
-            assert result == raw_data
+            # With fallback UUIDs, battery level should be parsed correctly
+            assert result == 100  # b'\x64' = 100
 
     def test_get_characteristic_info_fallback(self):
         """Test get_characteristic_info returns None for unknown characteristics."""
@@ -82,7 +82,8 @@ class TestBluetoothSIGTranslator:
         
         characteristics = translator.list_supported_characteristics()
         assert isinstance(characteristics, dict)
-        # Without YAML registry, may be empty but should be a dict
+        # With fallback UUIDs, should have characteristics available
+        assert len(characteristics) > 0
         
     def test_list_supported_services(self):
         """Test listing supported services."""
@@ -90,7 +91,8 @@ class TestBluetoothSIGTranslator:
         
         services = translator.list_supported_services()
         assert isinstance(services, dict)
-        # Without YAML registry, may be empty but should be a dict
+        # With fallback UUIDs, should have services available
+        assert len(services) > 0
 
     def test_pure_sig_translation_pattern(self):
         """Test the pure SIG translation pattern from docs."""
@@ -102,7 +104,7 @@ class TestBluetoothSIGTranslator:
         
         # Test the pattern works
         result = parse_sensor_reading("2A19", b'\x64')
-        assert result == b'\x64'  # Fallback to raw data without YAML
+        assert result == 100  # With fallback UUIDs, battery level is parsed correctly
 
     def test_no_connection_methods(self):
         """Test that translator has no connection-related methods."""
