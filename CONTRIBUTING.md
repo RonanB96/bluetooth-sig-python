@@ -49,12 +49,14 @@ Ready to contribute? Here's how to set up `bluetooth_sig_python` for local devel
    git clone git@github.com:your_name_here/bluetooth_sig_python.git
    ```
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development:
+3. Install your local copy into a virtualenv:
 
    ```sh
-   mkvirtualenv bluetooth_sig_python
    cd bluetooth_sig_python/
-   python setup.py develop
+   python -m venv .venv
+   source .venv/bin/activate  # On Linux/Mac
+   # Windows: .venv\Scripts\activate
+   pip install -e ".[dev]"
    ```
 
 4. Create a branch for local development:
@@ -65,16 +67,13 @@ Ready to contribute? Here's how to set up `bluetooth_sig_python` for local devel
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox:
+5. When you're done making changes, check that your changes pass the quality checks and tests:
 
    ```sh
-   make lint
-   make test
-   # Or
-   make test-all
+   ./scripts/format.sh --fix    # Fix formatting
+   ./scripts/lint.sh --all      # Run all linting
+   python -m pytest tests/     # Run tests
    ```
-
-   To get flake8 and tox, just pip install them into your virtualenv.
 
 6. Commit your changes and push your branch to GitHub:
 
@@ -92,14 +91,14 @@ Before you submit a pull request, check that it meets these guidelines:
 
 1. The pull request should include tests.
 2. If the pull request adds functionality, the docs should be updated. Put your new functionality into a function with a docstring, and add the feature to the list in README.md.
-3. The pull request should work for Python 3.12 and 3.13. Tests run in GitHub Actions on every pull request to the main branch, make sure that the tests pass for all supported Python versions.
+3. The pull request should work for Python 3.9+. Tests run in GitHub Actions on every pull request to the main branch, make sure that the tests pass for all supported Python versions.
 
 ## Tips
 
 To run a subset of tests:
 
 ```sh
-pytest tests.test_bluetooth_sig_python
+python -m pytest tests/test_specific_module.py
 ```
 
 ## Deploying

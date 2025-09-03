@@ -23,14 +23,13 @@ except ImportError:
     print("⚠️  Warning: 'bleak' module not found. Some functionality will be limited.")
     print("Install with: pip install bleak")
     BLEAK_AVAILABLE = False
-    
+
     # Create mock classes for argument parsing
     class BleakClient: pass
     class BleakScanner: pass
 
 try:
-    from bluetooth_sig.core import gatt_hierarchy
-    from ble_gatt_device.core import BLEGATTDevice
+    from bluetooth_sig.core import gatt_hierarchy, BluetoothSIGTranslator
     FRAMEWORK_AVAILABLE = True
 except ImportError:
     print("⚠️  Warning: BLE GATT framework not available. Framework-specific features disabled.")
@@ -47,7 +46,7 @@ async def scan_devices(timeout: float = 10.0, show_details: bool = False) -> Non
     """Scan for nearby BLE devices."""
     print("🔍 Scanning for BLE devices...")
     print("=" * 60)
-    
+
     try:
         devices = await BleakScanner.discover(timeout=timeout)
         if devices:
@@ -56,7 +55,7 @@ async def scan_devices(timeout: float = 10.0, show_details: bool = False) -> Non
                 name = device.name or "Unknown"
                 rssi_str = f"({device.rssi} dBm)" if hasattr(device, 'rssi') and device.rssi else ""
                 print(f"  {idx:2d}. {device.address} - {name} {rssi_str}")
-                
+
                 if show_details:
                     if hasattr(device, "details"):
                         print(f"      Details: {device.details}")
@@ -69,7 +68,7 @@ async def scan_devices(timeout: float = 10.0, show_details: bool = False) -> Non
             print("   - Check Bluetooth adapter is enabled")
             print("   - Try increasing scan timeout")
             print("   - Restart Bluetooth: sudo systemctl restart bluetooth")
-            
+
     except Exception as e:
         print(f"❌ Scan error: {e}")
         traceback.print_exc()
@@ -398,17 +397,17 @@ async def read_device(mac_address: str) -> bool:
             print("Using BLE GATT framework...")
             device = BLEGATTDevice(mac_address)
             connected = await device.connect()
-            
+
             if not connected:
                 print(f"❌ Could not connect to device {mac_address}")
                 return False
-                
+
             print(f"✅ Connected using framework")
 
             # Read characteristics
             print("\n🔍 Reading all readable characteristics...")
             values = await device.read_characteristics()
-            
+
             for uuid, value in values.items():
                 if isinstance(value, (bytes, bytearray)):
                     if len(value) == 0:
@@ -432,7 +431,7 @@ async def read_device(mac_address: str) -> bool:
             print("\n🏗️  Testing GATT framework integration...")
             parsed = await device.read_parsed_characteristics()
             chars = parsed.get("characteristics", {})
-            
+
             if chars:
                 for uuid, entry in chars.items():
                     char_name = entry.get("characteristic", "?")
@@ -444,9 +443,51 @@ async def read_device(mac_address: str) -> bool:
             else:
                 print("\nℹ️  No characteristics were parsed (may need raw data re-reading)")
 
+            # Enhanced SIG translator analysis
+            print("\n🔍 Enhanced SIG Analysis...")
+            translator = BluetoothSIGTranslator()
+
+            # Show supported characteristics summary
+            supported = translator.list_supported_characteristics()
+            print(f"✅ SIG Translator supports {len(supported)} characteristics")
+
+            # Analyze discovered characteristics
+            discovered_uuids = [uuid for uuid in values.keys()]
+            if discovered_uuids:
+                print(f"\n📊 Analyzing {len(discovered_uuids)} discovered "
+                      "characteristics:")
+                char_info = translator.get_characteristics_info(
+                    discovered_uuids)
+
+                for uuid, info in char_info.items():
+                    if info:
+                        name = info.get('name', 'Unknown')
+                        data_type = info.get('data_type', 'unknown')
+                        unit = info.get('unit', '')
+                        unit_str = f" ({unit})" if unit else ""
+                        print(f"  📋 {uuid}: {name} [{data_type}]{unit_str}")
+                    else:
+                        print(f"  ❓ {uuid}: Unknown characteristic")
+
+                # Batch validation if we have raw data
+                print("\n🔍 Validating characteristic data...")
+                valid_count = 0
+                for uuid, data in values.items():
+                    if isinstance(data, (bytes, bytearray)):
+                        is_valid = translator.validate_characteristic_data(
+                            uuid, data)
+                        status = "✅" if is_valid else "⚠️"
+                        validity = 'Valid' if is_valid else 'Invalid/Unknown'
+                        print(f"  {status} {uuid}: {validity}")
+                        if is_valid:
+                            valid_count += 1
+
+                print(f"\n📈 Validation Summary: {valid_count}/"
+                      f"{len(values)} characteristics have valid data format")
+
             await device.disconnect()
             return True
-            
+
         else:
             print("Framework not available, using raw Bleak...")
             device = await BleakScanner.find_device_by_address(mac_address)
@@ -456,7 +497,7 @@ async def read_device(mac_address: str) -> bool:
 
             async with BleakClient(device, timeout=30.0) as client:
                 print(f"✅ Connected to {device.address}")
-                
+
                 readable_chars = []
                 for service in client.services:
                     for char in service.characteristics:
@@ -505,7 +546,7 @@ async def monitor_device(mac_address: str, duration: int = 60) -> bool:
     """Monitor device characteristics continuously."""
     print(f"📡 Monitoring Device: {mac_address} (for {duration} seconds)")
     print("=" * 70)
-    
+
     print("⚠️  Monitor functionality not yet implemented")
     print("This would continuously read characteristics and display changes")
     print(f"Duration: {duration} seconds")
@@ -516,10 +557,10 @@ async def test_device_comprehensive(mac_address: str) -> bool:
     """Run comprehensive test suite on device."""
     print(f"🧪 Comprehensive Test Suite: {mac_address}")
     print("=" * 70)
-    
+
     success_count = 0
     total_tests = 5
-    
+
     # Test 1: Connection
     print("Test 1/5: Connection Testing")
     if await connect_device(mac_address):
@@ -527,9 +568,9 @@ async def test_device_comprehensive(mac_address: str) -> bool:
         print("✅ Connection test passed")
     else:
         print("❌ Connection test failed")
-    
+
     print("\n" + "="*40 + "\n")
-    
+
     # Test 2: Discovery
     print("Test 2/5: Service Discovery")
     if await discover_device(mac_address):
@@ -537,9 +578,9 @@ async def test_device_comprehensive(mac_address: str) -> bool:
         print("✅ Discovery test passed")
     else:
         print("❌ Discovery test failed")
-    
+
     print("\n" + "="*40 + "\n")
-    
+
     # Test 3: Reading
     print("Test 3/5: Characteristic Reading")
     if await read_device(mac_address):
@@ -547,9 +588,9 @@ async def test_device_comprehensive(mac_address: str) -> bool:
         print("✅ Reading test passed")
     else:
         print("❌ Reading test failed")
-    
+
     print("\n" + "="*40 + "\n")
-    
+
     # Test 4: Framework Integration (if available)
     print("Test 4/5: Framework Integration")
     if FRAMEWORK_AVAILABLE:
@@ -568,18 +609,18 @@ async def test_device_comprehensive(mac_address: str) -> bool:
     else:
         print("⚠️  Framework not available - skipping")
         success_count += 1  # Don't penalize if framework not available
-    
+
     print("\n" + "="*40 + "\n")
-    
+
     # Test 5: Error Analysis
     print("Test 5/5: Error Analysis")
     _print_error_analysis("")
     success_count += 1
     print("✅ Error analysis completed")
-    
+
     print("\n" + "="*70)
     print(f"🏁 Test Suite Results: {success_count}/{total_tests} tests passed")
-    
+
     if success_count == total_tests:
         print("🎉 All tests passed!")
         return True
@@ -675,43 +716,43 @@ Examples:
   %(prog)s scan --timeout 30 --details   # Extended scan with details
   %(prog)s connect AA:BB:CC:DD:EE:FF      # Test connection strategies
   %(prog)s discover AA:BB:CC:DD:EE:FF     # Full service discovery
-  %(prog)s read AA:BB:CC:DD:EE:FF         # Read all characteristics  
+  %(prog)s read AA:BB:CC:DD:EE:FF         # Read all characteristics
   %(prog)s monitor AA:BB:CC:DD:EE:FF      # Monitor device (30 sec)
   %(prog)s test AA:BB:CC:DD:EE:FF         # Full diagnostic suite
         """
     )
-    
+
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
-    
+
     # Scan command
     scan_parser = subparsers.add_parser('scan', help='Scan for BLE devices')
-    scan_parser.add_argument('--timeout', type=float, default=10.0, 
+    scan_parser.add_argument('--timeout', type=float, default=10.0,
                            help='Scan timeout in seconds (default: 10)')
     scan_parser.add_argument('--details', action='store_true',
                            help='Show detailed device information')
-    
+
     # Connect command
     connect_parser = subparsers.add_parser('connect', help='Test connection to device')
     connect_parser.add_argument('address', help='Device MAC address (XX:XX:XX:XX:XX:XX)')
-    
+
     # Discover command
     discover_parser = subparsers.add_parser('discover', help='Discover device services and characteristics')
     discover_parser.add_argument('address', help='Device MAC address (XX:XX:XX:XX:XX:XX)')
-    
+
     # Read command
     read_parser = subparsers.add_parser('read', help='Read all readable characteristics')
     read_parser.add_argument('address', help='Device MAC address (XX:XX:XX:XX:XX:XX)')
-    
+
     # Monitor command
     monitor_parser = subparsers.add_parser('monitor', help='Monitor device characteristics')
     monitor_parser.add_argument('address', help='Device MAC address (XX:XX:XX:XX:XX:XX)')
     monitor_parser.add_argument('--duration', type=int, default=30,
                               help='Monitor duration in seconds (default: 30)')
-    
+
     # Test command
     test_parser = subparsers.add_parser('test', help='Run comprehensive test suite')
     test_parser.add_argument('address', help='Device MAC address (XX:XX:XX:XX:XX:XX)')
-    
+
     return parser
 
 
@@ -723,44 +764,44 @@ async def main() -> int:
         print("Install dependencies with: pip install bleak")
         print("For full functionality: pip install -e '.[dev]'")
         return 1
-    
+
     parser = create_parser()
     args = parser.parse_args()
-    
+
     if not args.command:
         parser.print_help()
         return 1
-    
+
     try:
         if args.command == 'scan':
             await scan_devices(timeout=args.timeout, show_details=args.details)
             return 0
-            
+
         elif args.command == 'connect':
             success = await connect_device(args.address.upper())
             return 0 if success else 1
-            
+
         elif args.command == 'discover':
             success = await discover_device(args.address.upper())
             return 0 if success else 1
-            
+
         elif args.command == 'read':
             success = await read_device(args.address.upper())
             return 0 if success else 1
-            
+
         elif args.command == 'monitor':
             success = await monitor_device(args.address.upper(), args.duration)
             return 0 if success else 1
-            
+
         elif args.command == 'test':
             success = await test_device_comprehensive(args.address.upper())
             return 0 if success else 1
-            
+
         else:
             print(f"Unknown command: {args.command}")
             parser.print_help()
             return 1
-            
+
     except KeyboardInterrupt:
         print("\n\n⏹️  Operation cancelled by user")
         return 1

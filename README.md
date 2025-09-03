@@ -1,15 +1,14 @@
-# BLE GATT Device Framework
+# Bluetooth SIG Standards Library
 
-A comprehensive registry-driven BLE GATT framework with real device integration and Home Assistant compatibility. This project provides a robust, extensible architecture for BLE device communication with automatic UUID resolution, data parsing, and clean separation between Bluetooth and application layers.
+A pure Python library for Bluetooth SIG standards interpretation, providing comprehensive GATT characteristic and service parsing with automatic UUID resolution. This project offers a robust, standards-compliant architecture for Bluetooth device communication with type-safe data parsing and clean API design.
 
 ## Features
 
-- **Registry-Driven Architecture**: YAML-based UUID registry with automatic class name resolution
-- **Real Device Integration**: Bleak-based BLE connection with optimized timeouts (10s for reliability)
-- **Data Parsing Framework**: Convert raw BLE data to meaningful sensor values with units
-- **Home Assistant Ready**: Clean separation between GATT and HA integration layers
-- **Comprehensive Testing**: Extensive validation covering all services and characteristics
-- **Type-Safe Implementation**: Complete type hints and dataclass-based design
+- **Standards-Based Architecture**: Official Bluetooth SIG YAML registry with automatic UUID resolution
+- **Type-Safe Data Parsing**: Convert raw Bluetooth data to meaningful sensor values with comprehensive typing
+- **Modern Python API**: Dataclass-based design with Python 3.9+ compatibility
+- **Comprehensive Coverage**: Support for 70+ GATT characteristics across multiple service categories
+- **Production Ready**: Extensive validation, perfect code quality scores, and comprehensive testing
 
 ## Supported GATT Services
 
@@ -113,111 +112,59 @@ A comprehensive registry-driven BLE GATT framework with real device integration 
 
 ## Architecture
 
-### Four-Layer Design
+### Clean API Design
 
-1. **UUID Registry** (`src/ble_gatt_device/gatt/uuid_registry.py`): Loads Bluetooth SIG official UUIDs from YAML files
-2. **Base Classes** (`src/ble_gatt_device/gatt/{services,characteristics}/base.py`): Automatic UUID resolution via class name parsing
-3. **Implementations**: Concrete services/characteristics with data parsing capabilities
-4. **Real Device Integration** (`src/ble_gatt_device/core.py`): Bleak-based BLE connection and data parsing
+1. **UUID Registry** (`src/bluetooth_sig/gatt/uuid_registry.py`): Loads official Bluetooth SIG UUIDs from YAML
+2. **Standards Parser** (`src/bluetooth_sig/core.py`): Type-safe parsing with dataclass returns
+3. **Characteristic Library**: Standards-compliant implementations for 70+ characteristics
+4. **Service Definitions**: Official GATT service specifications with automatic discovery
 
 ### Key Architectural Principles
 
-- **Name-Based UUID Resolution**: `BatteryService` → "Battery" → UUID "180F"
-- **Clean Layer Separation**: GATT ← Translation ← Home Assistant (never reverse)
-- **Data Parsing**: Raw bytes → meaningful values with units
-- **Connection Optimization**: 10-second timeout for reliable device connections
-- **Type Safety**: Complete type hints throughout the framework
+- **Standards Compliance**: Direct interpretation of official Bluetooth SIG specifications
+- **Type Safety**: Rich dataclass returns with comprehensive validation
+- **Modern Python**: Python 3.9+ compatibility with future annotations support
+- **Clean API**: Intuitive method names with consistent return types
 
 ### Testing Framework
 
-- **Comprehensive Tests**: Full validation of services, characteristics, registry
-- **Dynamic Discovery**: Automatic detection of all service and characteristic classes
-- **Real Device Testing**: Scripts for testing with actual BLE hardware (Nordic Thingy:52 validated)
-- **Registry Validation**: Ensures all implementations match Bluetooth SIG standards
-- **Architecture Separation**: Validates clean layer boundaries between GATT and HA
-- **Medical Device Testing**: Comprehensive glucose monitoring test suite with simulated device data
+- **Comprehensive Validation**: Full coverage of standards interpretation and UUID resolution
+- **Type Safety Testing**: Validation of dataclass parsing and return types
+- **Standards Compliance**: Tests ensure correct interpretation of Bluetooth SIG specifications
+- **Quality Metrics**: Perfect pylint scores and comprehensive linting validation
 
-## Home Assistant Integration Architecture
+## API Examples
 
-The framework follows a strict three-layer architecture designed for Home Assistant integration:
-
-### Architecture Layers
-
-```text
-Home Assistant Integration Layer (Future)
-            ↓ (calls)
-    Translation Layer (HA Metadata)
-            ↓ (calls)
-       GATT Layer (Pure Bluetooth)
-```
-
-### Layer Responsibilities
-
-1. **GATT Layer** (`src/ble_gatt_device/gatt/`):
-   - Pure Bluetooth functionality with no Home Assistant dependencies
-   - Raw BLE data parsing according to Bluetooth SIG specifications
-   - Metadata properties for translation layer (`device_class`, `state_class`, `unit`)
-   - Characteristic and service implementations with automatic UUID resolution
-
-2. **Translation Layer** (`src/ble_gatt_device/gatt/ha_translation.py`):
-   - Converts GATT data to Home Assistant-compatible format
-   - Maps BLE characteristics to HA entity types
-   - Handles unit conversions and data normalization
-   - Provides HA entity configuration
-
-3. **Home Assistant Integration Layer** (External/Future):
-   - Creates actual HA entities and handles HA-specific logic
-   - Manages device discovery and entity lifecycle
-   - Handles HA configuration and state management
-
-### Key Benefits
-
-- **Clean Separation**: Each layer has a single responsibility
-- **Testability**: Each layer can be tested independently
-- **Reusability**: GATT layer works without Home Assistant
-- **Maintainability**: Changes in one layer don't affect others
-- **Extensibility**: Easy to add new characteristics or HA features
-
-### Example Implementation
+### Basic UUID Resolution
 
 ```python
-# GATT Layer - Pure Bluetooth
-from ble_gatt_device.gatt.characteristics.temperature import TemperatureCharacteristic
+from bluetooth_sig.core import BluetoothSIGTranslator
 
-temp_char = TemperatureCharacteristic()
-raw_value = temp_char.parse_value(bytearray([0x64, 0x09]))  # 24.36°C
+translator = BluetoothSIGTranslator()
 
-# Translation Layer - HA Metadata
-ha_config = {
-    "device_class": temp_char.device_class,  # "temperature"
-    "state_class": temp_char.state_class,    # "measurement"
-    "unit_of_measurement": temp_char.unit,   # "°C"
-    "value": raw_value
-}
+# Resolve UUIDs to human-readable information
+uuid_info = translator.resolve_uuid("180F")
+print(f"Service: {uuid_info.name}")  # "Battery Service"
+
+char_info = translator.resolve_uuid("2A19")
+print(f"Characteristic: {char_info.name}")  # "Battery Level"
 ```
 
-## Real Device Integration
+### Standards-Based Parsing
 
-### Supported Devices
+```python
+# Parse characteristic data according to Bluetooth SIG standards
+from bluetooth_sig.core import BluetoothSIGTranslator
 
-- **Nordic Thingy:52**: Environmental sensor with battery, temperature, humidity, pressure
-- **Connection Requirements**: 10-second timeout for reliable service discovery
-- **Services Tested**: Battery (180F), Environmental Sensing (181A), Device Information (180A)
+translator = BluetoothSIGTranslator()
 
-### Testing Commands
+# Parse battery level data
+parsed = translator.parse_characteristic_data("2A19", bytearray([85]))
+print(f"Battery: {parsed.value}%")  # "Battery: 85%"
 
-```bash
-# Scan for BLE devices
-python scripts/test_real_device.py scan
-
-# Test connection to specific device
-python scripts/test_real_device.py AA:BB:CC:DD:EE:FF
-
-# Debug connection issues
-python scripts/test_real_device_debug.py AA:BB:CC:DD:EE:FF
-
-# Test parsing with simulated data
-python -m pytest tests/test_data_parsing.py -v
+# Parse temperature data
+parsed = translator.parse_characteristic_data("2A6E", bytearray([0x64, 0x09]))
+print(f"Temperature: {parsed.value}°C")  # "Temperature: 24.36°C"
 ```
 
 ## Development Setup
@@ -232,8 +179,8 @@ python -m pytest tests/test_data_parsing.py -v
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/RonanB96/ble_gatt_device.git
-cd ble_gatt_device
+git clone https://github.com/RonanB96/bluetooth-sig-python.git
+cd bluetooth-sig-python
 ```
 
 1. Create a virtual environment:
@@ -257,108 +204,100 @@ pip install -e ".[dev]"
 # Run all tests
 pytest
 
-# Run core validation tests (56+ tests)
+# Run core validation tests
 python -m pytest tests/test_registry_validation.py -v
 
-# Quick validation check
-python tests/test_registry_validation.py
-
 # Run with coverage
-pytest --cov=src/ble_gatt_device tests/
+pytest --cov=src/bluetooth_sig tests/
 ```
 
 ### Development Scripts
 
-The project includes several utility scripts for development and testing:
+The project includes utility scripts for validation and testing:
 
 ```bash
-# Core framework validation
-python tests/test_registry_validation.py
+# Core validation
+python -m pytest tests/test_registry_validation.py -v
 
-# Real device testing
-python scripts/test_real_device.py scan
-python scripts/test_real_device.py <MAC_ADDRESS>
-
-# Data parsing and core functionality testing
-python -m pytest tests/test_data_parsing.py tests/test_core_functionality.py -v
+# Standards compliance testing
+python -m pytest tests/test_data_parsing.py -v
 ```
 
-## Usage Examples
+## Detailed Usage Examples
 
-### Real Device Connection
+### UUID Information Resolution
 
 ```python
-from ble_gatt_device.core import BLEGATTDevice
-import asyncio
+from bluetooth_sig.core import BluetoothSIGTranslator
 
-async def read_device_data():
-    device = BLEGATTDevice("AA:BB:CC:DD:EE:FF")
+translator = BluetoothSIGTranslator()
 
-    # Read raw characteristics data
-    raw_data = await device.read_characteristics()
-    print(f"Raw data: {raw_data}")
+# Get comprehensive service information
+service_info = translator.resolve_uuid("180F")  # Battery Service
+print(f"Name: {service_info.name}")
+print(f"Type: {service_info.type}")  # "service"
+print(f"UUID: {service_info.uuid}")
 
-    # Read parsed data with units
-    parsed_data = await device.read_parsed_characteristics()
-    print(f"Parsed data: {parsed_data}")
-
-asyncio.run(read_device_data())
+# Get comprehensive characteristic information
+char_info = translator.resolve_uuid("2A19")  # Battery Level
+print(f"Name: {char_info.name}")
+print(f"Type: {char_info.type}")  # "characteristic"
+print(f"UUID: {char_info.uuid}")
 ```
 
-### Basic Service Usage
+### Name-Based UUID Resolution
 
 ```python
-from ble_gatt_device.gatt.services.battery_service import BatteryService
-from ble_gatt_device.gatt.characteristics.battery_level import BatteryLevelCharacteristic
+# Resolve by human-readable names
+battery_service = translator.resolve_name("Battery Service")
+print(f"UUID: {battery_service.uuid}")  # "180F"
 
-# Create service instance
-battery_service = BatteryService()
-print(f"Service UUID: {battery_service.SERVICE_UUID}")  # 180F
-
-# Get expected characteristics
-characteristics = battery_service.get_expected_characteristics()
-print(characteristics)  # {'Battery Level': BatteryLevelCharacteristic}
-
-# Parse characteristic data
-char = BatteryLevelCharacteristic()
-value = char.parse_value(bytearray([85]))  # 85% battery
-print(f"Battery level: {value}{char.unit}")  # Battery level: 85%
+battery_level = translator.resolve_name("Battery Level")
+print(f"UUID: {battery_level.uuid}")  # "2A19"
 ```
 
-### Advanced Characteristic Data
+### Data Parsing with Standards Compliance
 
 ```python
-from ble_gatt_device.gatt.characteristics.battery_power_state import BatteryPowerStateCharacteristic
+# Parse various characteristic data types
+translator = BluetoothSIGTranslator()
 
-# Parse comprehensive battery status
-power_state_char = BatteryPowerStateCharacteristic()
-data = bytearray([0xD6])  # Battery present, wired power, charging, good level
-result = power_state_char.parse_value(data)
-print(f"Battery state: {result['battery_charge_state']}")  # charging
-print(f"Power source: {result['wired_external_power_connected']}")  # True
+# Battery level (uint8 percentage)
+battery_data = translator.parse_characteristic_data("2A19", bytearray([85]))
+print(f"Battery: {battery_data.value}%")
+
+# Temperature (sint16, 0.01°C resolution)
+temp_data = translator.parse_characteristic_data("2A6E", bytearray([0x64, 0x09]))
+print(f"Temperature: {temp_data.value}°C")
+
+# Humidity (uint16, 0.01% resolution)
+humidity_data = translator.parse_characteristic_data("2A6F", bytearray([0x3A, 0x13]))
+print(f"Humidity: {humidity_data.value}%")
 ```
 
-## Services
+## Standards Coverage
 
-This framework supports the following GATT services:
+This library provides comprehensive support for official Bluetooth SIG standards:
 
-- **Battery Service (0x180F)** - Comprehensive battery monitoring with level and status
-- **Device Information Service** (0x180A) - Device metadata
-- **Environmental Sensing Service** (0x181A) - Environmental sensors
-- **Generic Access Service** (0x1800) - Basic device access
-- **Glucose Service** (0x1808) - Glucose monitoring devices
-- **Health Thermometer Service** (0x1809) - Medical temperature
-- **Heart Rate Service** (0x180D) - Heart rate monitoring
-- **Running Speed and Cadence Service** (0x1814) - Running metrics
-- **Cycling Speed and Cadence Service** (0x1816) - Cycling metrics
-- **Cycling Power Service** (0x1818) - Power meter data
-- **Weight Scale Service** (0x181D) - Weight measurements
-- **Body Composition Service** (0x181B) - Body analysis
-- **Automation IO Service** (0x181C) - Electrical monitoring
+### Supported Standards Categories
+
+- **Core Device Information**: Manufacturer, model, firmware details
+- **Battery Management**: Level, power state, and charging status
+- **Environmental Sensors**: Temperature, humidity, pressure, air quality
+- **Health Monitoring**: Heart rate, blood pressure, glucose, body composition
+- **Fitness Tracking**: Running, cycling speed/cadence, power measurement
+- **Device Communication**: Generic access and automation protocols
+
+### Bluetooth SIG Compliance
+
+- **Official Registry**: Direct YAML parsing from Bluetooth SIG assigned numbers
+- **Standards Validation**: Comprehensive testing against official specifications
+- **Type Safety**: Rich dataclass returns with proper validation
+- **Coverage**: Support for 70+ official GATT characteristics across all major categories
 
 ## Testing
 
-The framework includes comprehensive test coverage with 300+ tests:
+The library includes comprehensive test coverage with standards validation:
 
 ```bash
 python -m pytest tests/ -v
@@ -366,7 +305,7 @@ python -m pytest tests/ -v
 
 ## Contributing
 
-We welcome contributions! This project follows architectural patterns for clean separation between GATT protocols and Home Assistant integration.
+We welcome contributions! This project follows Bluetooth SIG standards for consistent specification interpretation.
 
 ### Development Workflow
 
@@ -378,19 +317,12 @@ We welcome contributions! This project follows architectural patterns for clean 
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
 
-### Adding New Services
+### Adding New Standards Support
 
-1. Create service class inheriting from `BaseGattService`
-2. Implement required methods and characteristics mapping
-3. Add to `src/ble_gatt_device/gatt/services/__init__.py`
-4. Add corresponding test cases
-
-### Adding New Characteristics
-
-1. Create characteristic class inheriting from `BaseCharacteristic`
-2. Implement `parse_value()` method for data parsing
-3. Add `unit`, `device_class`, `state_class` properties for HA metadata
-4. Add to appropriate service's expected characteristics
+1. Identify the official Bluetooth SIG specification
+2. Add characteristic parsing logic following existing patterns
+3. Include comprehensive unit tests with official test vectors
+4. Ensure type safety with proper dataclass definitions
 
 ## License
 
@@ -398,7 +330,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- **Bluetooth SIG** for the official UUID registry
-- **Home Assistant Community** for inspiration and standards
-- **Bleak Library** for cross-platform BLE support
+- **Bluetooth SIG** for the official standards and UUID registry
+- **Python Community** for excellent tooling and libraries
 

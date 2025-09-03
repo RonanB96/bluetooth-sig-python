@@ -2,21 +2,21 @@
 
 ## Stable release
 
-To install BLE GATT Device, run this command in your terminal:
+To install Bluetooth SIG Standards Library, run this command in your terminal:
 
 ```sh
-pip install ble-gatt-device
+pip install bluetooth-sig
 ```
 
 Or if you prefer to use `uv`:
 
 ```sh
-uv add ble-gatt-device
+uv add bluetooth-sig
 ```
 
 ## From source
 
-The source files for Bluetooth SIG Python can be downloaded from the [Github repo](https://github.com/RonanB96/bluetooth_sig_python).
+The source files for Bluetooth SIG Python can be downloaded from the [Github repo](https://github.com/RonanB96/bluetooth-sig-python).
 
 You can either clone the public repository:
 

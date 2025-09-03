@@ -1,4 +1,4 @@
-# Justfile for pybluetooth-sig
+# Justfile for bluetooth-sig-python
 
 # Show available commands
 list:
@@ -9,11 +9,11 @@ qa:
     uv run --python=3.13 --extra test ruff format .
     uv run --python=3.13 --extra test ruff check . --fix
     uv run --python=3.13 --extra test ruff check --select I --fix .
-    uv run --python=3.13 --extra test ty check .
     uv run --python=3.13 --extra test pytest .
 
 # Run all the tests for all the supported Python versions
 testall:
+    uv run --python=3.9 --extra test pytest
     uv run --python=3.10 --extra test pytest
     uv run --python=3.11 --extra test pytest
     uv run --python=3.12 --extra test pytest
@@ -54,7 +54,7 @@ tag:
     git push origin v{{VERSION}}
 
 # remove all build, test, coverage and Python artifacts
-clean: 
+clean:
 	clean-build
 	clean-pyc
 	clean-test

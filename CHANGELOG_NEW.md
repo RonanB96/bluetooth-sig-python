@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0] - Previous Release
 
-### Initial Implementation
+### Added
 
 - Initial registry-driven architecture
 - Core standards interpretation functionality

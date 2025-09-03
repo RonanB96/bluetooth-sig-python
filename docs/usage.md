@@ -1,49 +1,41 @@
 # Usage
 
-To use BLE GATT Device in a project:
+To use Bluetooth SIG Standards Library in a project:
 
 ```python
-import ble_gatt_device
+from bluetooth_sig.core import BluetoothSIGTranslator
 
-# Create a BLE GATT device instance
-device = ble_gatt_device.BLEGATTDevice("AA:BB:CC:DD:EE:FF")
+# Create translator instance
+translator = BluetoothSIGTranslator()
 
-# Connect and read characteristics
-await device.connect()
-characteristics = await device.read_parsed_characteristics()
-print(characteristics)
+# Resolve UUIDs to get information
+service_info = translator.resolve_uuid("180F")  # Battery Service
+char_info = translator.resolve_uuid("2A19")    # Battery Level
 
-await device.disconnect()
+print(f"Service: {service_info.name}")
+print(f"Characteristic: {char_info.name}")
 ```
 
 ## Basic Example
 
 ```python
-import asyncio
-from ble_gatt_device import BLEGATTDevice
+from bluetooth_sig.core import BluetoothSIGTranslator
 
-async def main():
-    device = BLEGATTDevice("AA:BB:CC:DD:EE:FF")
-    
-    try:
-        await device.connect()
-        
-        # Read raw characteristic data
-        raw_data = await device.read_characteristics()
-        
-        # Read parsed characteristic data with units
-        parsed_data = await device.read_parsed_characteristics()
-        
-        # Get device information
-        device_info = await device.get_device_info()
-        
-        print("Raw data:", raw_data)
-        print("Parsed data:", parsed_data)
-        print("Device info:", device_info)
-        
-    finally:
-        await device.disconnect()
+def main():
+    translator = BluetoothSIGTranslator()
+
+    # UUID resolution
+    uuid_info = translator.resolve_uuid("180F")
+    print(f"UUID 180F: {uuid_info.name}")
+
+    # Name resolution
+    name_info = translator.resolve_name("Battery Level")
+    print(f"Battery Level UUID: {name_info.uuid}")
+
+    # Data parsing
+    parsed = translator.parse_characteristic_data("2A19", bytearray([85]))
+    print(f"Battery level: {parsed.value}%")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
 ```

@@ -110,7 +110,7 @@ exclude = [".git", "__pycache__", "build", "dist", ".venv", ".eggs"]
 [tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings  
+    "W",   # pycodestyle warnings
     "F",   # Pyflakes
     "I",   # isort
     "B",   # flake8-bugbear

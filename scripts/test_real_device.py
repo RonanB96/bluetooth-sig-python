@@ -18,6 +18,7 @@ configure_for_scripts()
 
 try:
     from ble_gatt_device.core import BLEGATTDevice
+    from bluetooth_sig.core import BluetoothSIGTranslator
     from bleak import BleakScanner
     DEPENDENCIES_AVAILABLE = True
 except ImportError as e:
@@ -102,9 +103,45 @@ async def test_device_connection(mac_address: str):
             unit = entry.get("unit", "")
             unit_str = f" {unit}" if unit else ""
             print(f"  ✅ {char_name}: {value}{unit_str}")
-        print(f"\n✅ Successfully parsed {len(chars)} characteristics using framework")
+        print(f"\n✅ Successfully parsed {len(chars)} characteristics "
+              "using framework")
     else:
-        print("\nℹ️  No characteristics were parsed (may need raw data re-reading)")
+        print("\nℹ️  No characteristics were parsed (may need raw data "
+              "re-reading)")
+
+    # Enhanced SIG translator analysis
+    print("\n🔍 Enhanced SIG Analysis...")
+    translator = BluetoothSIGTranslator()
+
+    if values:
+        discovered_uuids = list(values.keys())
+        print(f"📊 Analyzing {len(discovered_uuids)} discovered "
+              "characteristics:")
+
+        # Batch analysis
+        char_info = translator.get_characteristics_info(discovered_uuids)
+        for uuid, info in char_info.items():
+            if info:
+                name = info.get('name', 'Unknown')
+                data_type = info.get('data_type', 'unknown')
+                print(f"  📋 {uuid}: {name} [{data_type}]")
+            else:
+                print(f"  ❓ {uuid}: Unknown characteristic")
+
+        # Validation analysis
+        print("\n🔍 Data validation:")
+        valid_count = 0
+        for uuid, data in values.items():
+            if isinstance(data, (bytes, bytearray)):
+                is_valid = translator.validate_characteristic_data(uuid, data)
+                status = "✅" if is_valid else "⚠️"
+                validity = 'Valid' if is_valid else 'Unknown format'
+                print(f"  {status} {uuid}: {validity}")
+                if is_valid:
+                    valid_count += 1
+
+        print(f"\n📈 Validation: {valid_count}/{len(values)} "
+              "characteristics have known format")
 
     await device.disconnect()
     print("\n✅ Test completed successfully")
@@ -115,7 +152,7 @@ async def scan_devices(timeout: float = 10.0):
     """Scan for nearby BLE devices."""
     print(f"🔍 Scanning for BLE devices (timeout: {timeout}s)...")
     print("=" * 60)
-    
+
     try:
         devices = await BleakScanner.discover(timeout=timeout)
         if devices:
@@ -145,7 +182,7 @@ async def main():
         print("\nFor more advanced debugging capabilities when dependencies are available:")
         print("python scripts/ble_debug.py --help")
         return
-        
+
     if len(sys.argv) > 1:
         if sys.argv[1] == "scan":
             # Check for timeout argument
