@@ -23,8 +23,3 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
 
         # Convert uint8 to percentage
         return data[0]
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "%"
