@@ -115,17 +115,17 @@ class BaseCharacteristic(ABC):
     def unit(self) -> str:
         """Get the unit of measurement for this characteristic.
 
-        First tries to get unit from YAML registry, then falls back to manual override.
-        This allows automatic unit parsing while maintaining backward compatibility.
+        First tries manual unit override, then falls back to YAML registry.
+        This allows manual overrides to take precedence while using automatic parsing as default.
         """
-        # First try to get unit from YAML registry
+        # First try manual unit override (takes priority)
+        if hasattr(self, "_manual_unit"):
+            return self._manual_unit
+
+        # Fallback to unit from YAML registry for automatic parsing
         char_info = uuid_registry.get_characteristic_info(self.CHAR_UUID)
         if char_info and char_info.unit:
             return char_info.unit
-
-        # Fallback to manual unit override for backward compatibility
-        if hasattr(self, "_manual_unit"):
-            return self._manual_unit
 
         return ""
 

@@ -241,8 +241,3 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             mass = mass_raw * 0.005  # 0.005 kg resolution
             mass_unit = "kg"
         return mass, mass_unit
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "%"

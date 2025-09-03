@@ -26,6 +26,7 @@ class UuidRegistry:
         """Initialize the UUID registry."""
         self._services: dict[str, UuidInfo] = {}
         self._characteristics: dict[str, UuidInfo] = {}
+        self._unit_mappings: dict[str, str] = {}
         try:
             self._load_uuids()
         except (FileNotFoundError, Exception):  # pylint: disable=broad-exception-caught
@@ -96,8 +97,126 @@ class UuidRegistry:
                 self._characteristics[uuid_info["name"]] = info
                 self._characteristics[uuid_info["id"]] = info
 
+        # Load unit mappings from units.yaml
+        self._load_unit_mappings(base_path)
+
         # Load detailed specifications from GSS YAML files to extract units
         self._load_gss_specifications()
+
+    def _load_unit_mappings(self, base_path: Path):
+        """Load unit symbol mappings from units.yaml file."""
+        units_yaml = base_path / "units.yaml"
+        if not units_yaml.exists():
+            return
+
+        try:
+            units_data = self._load_yaml(units_yaml)
+            for unit_info in units_data:
+                unit_id = unit_info.get("id", "")
+                unit_name = unit_info.get("name", "")
+
+                if not unit_id or not unit_name:
+                    continue
+
+                # Extract unit symbol from name
+                unit_symbol = self._extract_unit_symbol_from_name(unit_name)
+                if unit_symbol:
+                    # Map from the ID (e.g., org.bluetooth.unit.percentage) to symbol (%)
+                    # Remove org.bluetooth.unit. prefix for the key
+                    unit_key = unit_id.replace("org.bluetooth.unit.", "").lower()
+                    self._unit_mappings[unit_key] = unit_symbol
+
+        except (yaml.YAMLError, OSError, KeyError):
+            # Skip unit loading if there's an error, continue without units
+            pass
+
+    def _extract_unit_symbol_from_name(self, unit_name: str) -> str | None:
+        """Extract unit symbol from unit name.
+
+        Args:
+            unit_name: Unit name like "percentage" or "Celsius temperature (degree Celsius)"
+
+        Returns:
+            Unit symbol like "%" or "°C", or the unit name if no symbol can be extracted
+        """
+        # Handle common unit names that map to symbols
+        unit_symbol_map = {
+            "percentage": "%",
+            "per mille": "‰",
+            "unitless": "",
+        }
+
+        # Check for direct symbol mapping first
+        if unit_name.lower() in unit_symbol_map:
+            return unit_symbol_map[unit_name.lower()]
+
+        # Extract symbol from parentheses if present (e.g., "pressure (pascal)" -> "Pa")
+        if "(" in unit_name and ")" in unit_name:
+            start = unit_name.find("(") + 1
+            end = unit_name.find(")", start)
+            if 0 < start < end:
+                symbol_candidate = unit_name[start:end].strip()
+
+                # Map common symbols
+                symbol_mapping = {
+                    "degree celsius": "°C",
+                    "degree fahrenheit": "°F",
+                    "kelvin": "K",
+                    "pascal": "Pa",
+                    "bar": "bar",
+                    "millimetre of mercury": "mmHg",
+                    "ampere": "A",
+                    "volt": "V",
+                    "joule": "J",
+                    "watt": "W",
+                    "hertz": "Hz",
+                    "metre": "m",
+                    "kilogram": "kg",
+                    "second": "s",
+                    "metre per second": "m/s",
+                    "metre per second squared": "m/s²",
+                    "radian per second": "rad/s",
+                    "candela": "cd",
+                    "lux": "lux",
+                    "newton": "N",
+                    "coulomb": "C",
+                    "farad": "F",
+                    "ohm": "Ω",
+                    "siemens": "S",
+                    "weber": "Wb",
+                    "tesla": "T",
+                    "henry": "H",
+                    "lumen": "lm",
+                    "becquerel": "Bq",
+                    "gray": "Gy",
+                    "sievert": "Sv",
+                    "katal": "kat",
+                    "degree": "°",
+                    "radian": "rad",
+                    "steradian": "sr",
+                }
+
+                return symbol_mapping.get(symbol_candidate.lower(), symbol_candidate)
+
+        # For units without parentheses, try to map common ones
+        common_units = {
+            "frequency": "Hz",
+            "force": "N",
+            "pressure": "Pa",
+            "energy": "J",
+            "power": "W",
+            "mass": "kg",
+            "length": "m",
+            "time": "s",
+        }
+
+        # Check if unit name starts with a common unit type
+        for unit_type, symbol in common_units.items():
+            if unit_name.lower().startswith(unit_type):
+                return symbol
+
+        # If no symbol extraction is possible, return the name itself
+        return unit_name
 
     def _load_gss_specifications(self):
         """Load detailed specifications from GSS YAML files to extract unit information."""
@@ -202,33 +321,8 @@ class UuidRegistry:
         # Remove trailing dots and clean up
         unit_spec = unit_spec.rstrip(".").lower()
 
-        # Map common Bluetooth SIG units to readable format
-        unit_mappings = {
-            "percentage": "%",
-            "thermodynamic_temperature.degree_celsius": "°C",
-            "thermodynamic_temperature.degree_fahrenheit": "°F",
-            "thermodynamic_temperature.kelvin": "K",
-            "pressure.pascal": "Pa",
-            "pressure.bar": "bar",
-            "pressure.millimetre_of_mercury": "mmHg",
-            "electric_current.ampere": "A",
-            "electric_potential_difference.volt": "V",
-            "energy.joule": "J",
-            "power.watt": "W",
-            "frequency.hertz": "Hz",
-            "length.metre": "m",
-            "mass.kilogram": "kg",
-            "time.second": "s",
-            "velocity.metre_per_second": "m/s",
-            "acceleration.metre_per_second_squared": "m/s²",
-            "angular_velocity.radian_per_second": "rad/s",
-            "luminous_intensity.candela": "cd",
-            "illuminance.lux": "lux",
-            "concentration.parts_per_million": "ppm",
-            "concentration.parts_per_billion": "ppb",
-        }
-
-        return unit_mappings.get(unit_spec, unit_spec)
+        # Use dynamically loaded unit mappings from units.yaml
+        return self._unit_mappings.get(unit_spec, unit_spec)
 
     def get_service_info(self, key: str) -> UuidInfo | None:
         """Get information about a service.

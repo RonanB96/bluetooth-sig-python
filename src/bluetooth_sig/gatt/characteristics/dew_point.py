@@ -24,8 +24,3 @@ class DewPointCharacteristic(BaseCharacteristic):
         # Convert sint8 to temperature in Celsius
         dew_point_raw = int.from_bytes(data[:1], byteorder="little", signed=True)
         return float(dew_point_raw)
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "°C"
