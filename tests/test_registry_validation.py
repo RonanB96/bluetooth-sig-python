@@ -7,15 +7,15 @@ from pathlib import Path
 
 import pytest
 
-from ble_gatt_device.gatt.characteristics.base import BaseCharacteristic
-from ble_gatt_device.gatt.services.base import BaseGattService
-from ble_gatt_device.gatt.uuid_registry import uuid_registry
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.services.base import BaseGattService
+from bluetooth_sig.gatt.uuid_registry import uuid_registry
 
 
 def discover_service_classes() -> list[type[BaseGattService]]:
     """Dynamically discover all service classes."""
     service_classes = []
-    services_module = importlib.import_module("ble_gatt_device.gatt.services")
+    services_module = importlib.import_module("bluetooth_sig.gatt.services")
 
     # Get the services package path
     services_path = Path(services_module.__file__).parent
@@ -25,7 +25,7 @@ def discover_service_classes() -> list[type[BaseGattService]]:
         if module_info.name not in ["__init__", "base"]:
             try:
                 module = importlib.import_module(
-                    f"ble_gatt_device.gatt.services.{module_info.name}"
+                    f"bluetooth_sig.gatt.services.{module_info.name}"
                 )
 
                 # Find all classes that inherit from BaseGattService
@@ -46,7 +46,7 @@ def discover_characteristic_classes() -> list[type[BaseCharacteristic]]:
     """Dynamically discover all characteristic classes."""
     characteristic_classes = []
     characteristics_module = importlib.import_module(
-        "ble_gatt_device.gatt.characteristics"
+        "bluetooth_sig.gatt.characteristics"
     )
 
     # Get the characteristics package path
@@ -57,7 +57,7 @@ def discover_characteristic_classes() -> list[type[BaseCharacteristic]]:
         if module_info.name not in ["__init__", "base"]:
             try:
                 module = importlib.import_module(
-                    f"ble_gatt_device.gatt.characteristics.{module_info.name}"
+                    f"bluetooth_sig.gatt.characteristics.{module_info.name}"
                 )
 
                 # Find all classes that inherit from BaseCharacteristic

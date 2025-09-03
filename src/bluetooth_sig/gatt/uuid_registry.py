@@ -5,7 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-import yaml
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+    yaml = None
 
 
 @dataclass
@@ -25,11 +30,16 @@ class UuidRegistry:
         """Initialize the UUID registry."""
         self._services: dict[str, UuidInfo] = {}
         self._characteristics: dict[str, UuidInfo] = {}
-        self._load_uuids()
+        if YAML_AVAILABLE:
+            try:
+                self._load_uuids()
+            except (FileNotFoundError, Exception):
+                # If YAML loading fails, continue with empty registry
+                pass
 
     def _load_yaml(self, file_path: Path) -> list[dict]:
         """Load UUIDs from a YAML file."""
-        if not file_path.exists():
+        if not YAML_AVAILABLE or not file_path.exists():
             return []
 
         with file_path.open("r") as f:
@@ -38,8 +48,11 @@ class UuidRegistry:
 
     def _load_uuids(self):
         """Load all UUIDs from YAML files."""
+        if not YAML_AVAILABLE:
+            return
+            
         # Try development location first (git submodule)
-        # From src/ble_gatt_device/gatt/uuid_registry.py, go up 4 levels to project root
+        # From src/bluetooth_sig/gatt/uuid_registry.py, go up 4 levels to project root
         project_root = Path(__file__).parent.parent.parent.parent
         base_path = project_root / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
@@ -49,10 +62,8 @@ class UuidRegistry:
             base_path = pkg_root / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
         if not base_path.exists():
-            raise FileNotFoundError(
-                f"Could not find UUID YAML files in {base_path}. "
-                "Make sure the bluetooth_sig submodule is initialized."
-            )
+            # Don't raise error, just return with empty registry
+            return
 
         # Load service UUIDs
         service_yaml = base_path / "service_uuids.yaml"

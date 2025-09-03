@@ -47,6 +47,11 @@ class GattServiceRegistry:
         return None
 
     @classmethod
+    def get_service_class_by_uuid(cls, uuid: str) -> Optional[type[BaseGattService]]:
+        """Get the service class for a given UUID (alias for get_service_class)."""
+        return cls.get_service_class(uuid)
+
+    @classmethod
     def create_service(
         cls, uuid: str, characteristics: dict[str, dict]
     ) -> Optional[BaseGattService]:
