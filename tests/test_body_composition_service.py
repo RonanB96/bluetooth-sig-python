@@ -2,13 +2,13 @@
 
 import pytest
 
-from ble_gatt_device.gatt.characteristics.body_composition_feature import (
+from bluetooth_sig.gatt.characteristics.body_composition_feature import (
     BodyCompositionFeatureCharacteristic,
 )
-from ble_gatt_device.gatt.characteristics.body_composition_measurement import (
+from bluetooth_sig.gatt.characteristics.body_composition_measurement import (
     BodyCompositionMeasurementCharacteristic,
 )
-from ble_gatt_device.gatt.services.body_composition import BodyCompositionService
+from bluetooth_sig.gatt.services.body_composition import BodyCompositionService
 
 
 class TestBodyCompositionMeasurementCharacteristic:

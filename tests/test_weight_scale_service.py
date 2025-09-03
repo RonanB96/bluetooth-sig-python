@@ -2,13 +2,13 @@
 
 import pytest
 
-from ble_gatt_device.gatt.characteristics.weight_measurement import (
+from bluetooth_sig.gatt.characteristics.weight_measurement import (
     WeightMeasurementCharacteristic,
 )
-from ble_gatt_device.gatt.characteristics.weight_scale_feature import (
+from bluetooth_sig.gatt.characteristics.weight_scale_feature import (
     WeightScaleFeatureCharacteristic,
 )
-from ble_gatt_device.gatt.services.weight_scale import WeightScaleService
+from bluetooth_sig.gatt.services.weight_scale import WeightScaleService
 
 
 class TestWeightMeasurementCharacteristic:

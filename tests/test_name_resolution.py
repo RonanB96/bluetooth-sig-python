@@ -1,6 +1,6 @@
 """Tests for UUID registry name resolution functionality."""
 
-from ble_gatt_device.gatt.uuid_registry import uuid_registry
+from bluetooth_sig.gatt.uuid_registry import uuid_registry
 
 
 class TestNameResolution:

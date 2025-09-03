@@ -2,7 +2,7 @@
 
 import pytest
 
-from ble_gatt_device.gatt.gatt_manager import gatt_hierarchy
+from bluetooth_sig.gatt.gatt_manager import gatt_hierarchy
 
 
 class TestDataParsing:

@@ -1,11 +1,11 @@
 """Test Home Assistant translation layer architecture."""
 
-from ble_gatt_device.gatt.characteristics.battery_level import (
+from bluetooth_sig.gatt.characteristics.battery_level import (
     BatteryLevelCharacteristic,
 )
-from ble_gatt_device.gatt.characteristics.illuminance import IlluminanceCharacteristic
-from ble_gatt_device.gatt.characteristics.temperature import TemperatureCharacteristic
-from ble_gatt_device.gatt.ha_translation import GATTSensorTranslator
+from bluetooth_sig.gatt.characteristics.illuminance import IlluminanceCharacteristic
+from bluetooth_sig.gatt.characteristics.temperature import TemperatureCharacteristic
+from bluetooth_sig.gatt.ha_translation import GATTSensorTranslator
 
 
 class TestHATranslationLayer:

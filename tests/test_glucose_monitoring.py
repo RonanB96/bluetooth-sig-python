@@ -2,12 +2,12 @@
 
 import pytest
 
-from ble_gatt_device.gatt.characteristics import (
+from bluetooth_sig.gatt.characteristics import (
     GlucoseFeatureCharacteristic,
     GlucoseMeasurementCharacteristic,
     GlucoseMeasurementContextCharacteristic,
 )
-from ble_gatt_device.gatt.services import GlucoseService
+from bluetooth_sig.gatt.services import GlucoseService
 
 
 class TestGlucoseService:
@@ -395,7 +395,7 @@ class TestGlucoseIntegration:
 
     def test_glucose_service_registration(self):
         """Test that glucose service is properly registered."""
-        from ble_gatt_device.gatt.services import GattServiceRegistry
+        from bluetooth_sig.gatt.services import GattServiceRegistry
 
         # Check that glucose service is in the registry
         service_class = GattServiceRegistry.get_service_class("1808")
@@ -407,7 +407,7 @@ class TestGlucoseIntegration:
 
     def test_glucose_characteristics_registration(self):
         """Test that glucose characteristics are properly registered."""
-        from ble_gatt_device.gatt.characteristics import CharacteristicRegistry
+        from bluetooth_sig.gatt.characteristics import CharacteristicRegistry
 
         # Test Glucose Measurement
         gm_class = CharacteristicRegistry.get_characteristic_class_by_uuid("2A18")
@@ -423,7 +423,7 @@ class TestGlucoseIntegration:
 
     def test_glucose_service_creation(self):
         """Test glucose service creation with characteristics."""
-        from ble_gatt_device.gatt.services import GattServiceRegistry
+        from bluetooth_sig.gatt.services import GattServiceRegistry
 
         # Simulate characteristics data
         characteristics = {

@@ -4,7 +4,7 @@ import struct
 
 import pytest
 
-from ble_gatt_device.gatt.characteristics import (
+from bluetooth_sig.gatt.characteristics import (
     BarometricPressureTrendCharacteristic,
     ElevationCharacteristic,
     LocalTimeInformationCharacteristic,

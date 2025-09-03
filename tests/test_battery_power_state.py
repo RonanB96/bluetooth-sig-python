@@ -2,7 +2,7 @@
 
 import pytest
 
-from ble_gatt_device.gatt.characteristics.battery_power_state import (
+from bluetooth_sig.gatt.characteristics.battery_power_state import (
     BatteryPowerStateCharacteristic,
 )
 

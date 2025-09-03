@@ -2,22 +2,22 @@
 
 import pytest
 
-from ble_gatt_device.gatt.characteristics.apparent_wind_direction import (
+from bluetooth_sig.gatt.characteristics.apparent_wind_direction import (
     ApparentWindDirectionCharacteristic,
 )
-from ble_gatt_device.gatt.characteristics.apparent_wind_speed import (
+from bluetooth_sig.gatt.characteristics.apparent_wind_speed import (
     ApparentWindSpeedCharacteristic,
 )
-from ble_gatt_device.gatt.characteristics.dew_point import DewPointCharacteristic
-from ble_gatt_device.gatt.characteristics.heat_index import HeatIndexCharacteristic
-from ble_gatt_device.gatt.characteristics.true_wind_direction import (
+from bluetooth_sig.gatt.characteristics.dew_point import DewPointCharacteristic
+from bluetooth_sig.gatt.characteristics.heat_index import HeatIndexCharacteristic
+from bluetooth_sig.gatt.characteristics.true_wind_direction import (
     TrueWindDirectionCharacteristic,
 )
-from ble_gatt_device.gatt.characteristics.true_wind_speed import (
+from bluetooth_sig.gatt.characteristics.true_wind_speed import (
     TrueWindSpeedCharacteristic,
 )
-from ble_gatt_device.gatt.characteristics.wind_chill import WindChillCharacteristic
-from ble_gatt_device.gatt.services.environmental_sensing import (
+from bluetooth_sig.gatt.characteristics.wind_chill import WindChillCharacteristic
+from bluetooth_sig.gatt.services.environmental_sensing import (
     EnvironmentalSensingService,
 )
 

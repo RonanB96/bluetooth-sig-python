@@ -454,7 +454,7 @@ class TestNameResolutionFallback:
     def test_service_class_name_fallback(self):
         """Test that services without _service_name use class name resolution."""
         # Test with BatteryService which doesn't have _service_name set
-        from ble_gatt_device.gatt.services.battery_service import BatteryService
+        from bluetooth_sig.gatt.services.battery_service import BatteryService
 
         service = BatteryService()
 
@@ -477,7 +477,7 @@ class TestNameResolutionFallback:
         # Create a test characteristic class without explicit name
         from dataclasses import dataclass
 
-        from ble_gatt_device.gatt.characteristics.base import BaseCharacteristic
+        from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 
         @dataclass
         class TemperatureCharacteristic(BaseCharacteristic):
@@ -513,7 +513,7 @@ class TestNameResolutionFallback:
 
     def test_service_explicit_name_override(self):
         """Test that services with _service_name override class name resolution."""
-        from ble_gatt_device.gatt.services.generic_access import GenericAccessService
+        from bluetooth_sig.gatt.services.generic_access import GenericAccessService
 
         service = GenericAccessService()
 
@@ -537,7 +537,7 @@ class TestNameResolutionFallback:
 
     def test_characteristic_explicit_name_override(self):
         """Test that characteristics with _characteristic_name override class name resolution."""
-        from ble_gatt_device.gatt.characteristics.uv_index import UVIndexCharacteristic
+        from bluetooth_sig.gatt.characteristics.uv_index import UVIndexCharacteristic
 
         char = UVIndexCharacteristic(uuid="test", properties=set())
 
@@ -563,7 +563,7 @@ class TestNameResolutionFallback:
         """Test edge cases in class name parsing."""
         from dataclasses import dataclass
 
-        from ble_gatt_device.gatt.characteristics.base import BaseCharacteristic
+        from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 
         # Test characteristic with complex class name
         @dataclass
@@ -598,7 +598,7 @@ class TestNameResolutionFallback:
         """Test behavior when neither explicit name nor class name resolution works."""
         from dataclasses import dataclass
 
-        from ble_gatt_device.gatt.characteristics.base import BaseCharacteristic
+        from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 
         @dataclass
         class UnknownTestCharacteristic(BaseCharacteristic):
@@ -624,14 +624,14 @@ class TestNameResolutionFallback:
 
     def test_current_services_name_resolution_strategy(self):
         """Test that current services use the expected name resolution strategy."""
-        from ble_gatt_device.gatt.services.battery_service import BatteryService
-        from ble_gatt_device.gatt.services.device_information import (
+        from bluetooth_sig.gatt.services.battery_service import BatteryService
+        from bluetooth_sig.gatt.services.device_information import (
             DeviceInformationService,
         )
-        from ble_gatt_device.gatt.services.environmental_sensing import (
+        from bluetooth_sig.gatt.services.environmental_sensing import (
             EnvironmentalSensingService,
         )
-        from ble_gatt_device.gatt.services.generic_access import GenericAccessService
+        from bluetooth_sig.gatt.services.generic_access import GenericAccessService
 
         # Services without explicit names (should use class name resolution)
         services_without_explicit_names = [
@@ -676,10 +676,10 @@ class TestNameResolutionFallback:
 
     def test_current_characteristics_name_resolution_strategy(self):
         """Test that current characteristics use the expected name resolution strategy."""
-        from ble_gatt_device.gatt.characteristics.battery_level import (
+        from bluetooth_sig.gatt.characteristics.battery_level import (
             BatteryLevelCharacteristic,
         )
-        from ble_gatt_device.gatt.characteristics.uv_index import UVIndexCharacteristic
+        from bluetooth_sig.gatt.characteristics.uv_index import UVIndexCharacteristic
 
         # Characteristics with explicit names (should use explicit name resolution)
         chars_with_explicit_names = [

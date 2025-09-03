@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from ble_gatt_device.gatt.services.battery_service import BatteryService
-from ble_gatt_device.gatt.services.environmental_sensing import (
+from bluetooth_sig.gatt.services.battery_service import BatteryService
+from bluetooth_sig.gatt.services.environmental_sensing import (
     EnvironmentalSensingService,
 )
-from ble_gatt_device.gatt.uuid_registry import UuidRegistry
+from bluetooth_sig.gatt.uuid_registry import UuidRegistry
 
 
 @pytest.fixture
