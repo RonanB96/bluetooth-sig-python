@@ -42,5 +42,5 @@ jobs:
       - name: Verify environment
         run: |
           python --version
-          python -c "import ble_gatt_device; print('✅ Framework ready')"
+          python -c "import bluetooth_sig; print('✅ Framework ready')"
 
