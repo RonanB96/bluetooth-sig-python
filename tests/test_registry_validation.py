@@ -390,7 +390,11 @@ class TestRegistryConsistency:
                         expected_class = char_name_to_class[char_name]
                         assert (
                             char_class == expected_class
-                        ), f"Service {service_class.__name__} characteristic name '{char_name}' maps to wrong class. Expected {expected_class.__name__}, got {char_class.__name__}"
+                        ), (
+                            f"Service {service_class.__name__} characteristic name '{char_name}' "
+                            f"maps to wrong class. Expected {expected_class.__name__}, "
+                            f"got {char_class.__name__}"
+                        )
 
             except Exception as e:
                 pytest.fail(

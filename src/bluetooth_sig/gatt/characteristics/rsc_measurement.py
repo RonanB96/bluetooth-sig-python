@@ -24,7 +24,8 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
     def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse RSC measurement data according to Bluetooth specification.
 
-        Format: Flags(1) + Instantaneous Speed(2) + Instantaneous Cadence(1) + [Instantaneous Stride Length(2)] + [Total Distance(4)]
+        Format: Flags(1) + Instantaneous Speed(2) + Instantaneous Cadence(1) +
+        [Instantaneous Stride Length(2)] + [Total Distance(4)]
 
         Args:
             data: Raw bytearray from BLE characteristic

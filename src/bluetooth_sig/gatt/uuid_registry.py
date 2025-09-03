@@ -50,7 +50,7 @@ class UuidRegistry:
         """Load all UUIDs from YAML files."""
         if not YAML_AVAILABLE:
             return
-            
+
         # Try development location first (git submodule)
         # From src/bluetooth_sig/gatt/uuid_registry.py, go up 4 levels to project root
         project_root = Path(__file__).parent.parent.parent.parent

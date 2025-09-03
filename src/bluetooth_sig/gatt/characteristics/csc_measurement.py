@@ -24,7 +24,8 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
     def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse CSC measurement data according to Bluetooth specification.
 
-        Format: Flags(1) + [Cumulative Wheel Revolutions(4)] + [Last Wheel Event Time(2)] + [Cumulative Crank Revolutions(2)] + [Last Crank Event Time(2)]
+        Format: Flags(1) + [Cumulative Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +
+        [Cumulative Crank Revolutions(2)] + [Last Crank Event Time(2)]
 
         Args:
             data: Raw bytearray from BLE characteristic

@@ -26,7 +26,8 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
     ) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse blood pressure measurement data according to Bluetooth specification.
 
-        Format: Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) + [Timestamp(7)] + [Pulse Rate(2)] + [User ID(1)] + [Measurement Status(2)]
+        Format: Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) + [Timestamp(7)] +
+        [Pulse Rate(2)] + [User ID(1)] + [Measurement Status(2)]
         All pressure values are IEEE-11073 16-bit SFLOAT.
 
         Args:

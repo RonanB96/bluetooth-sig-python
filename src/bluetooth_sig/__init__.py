@@ -13,7 +13,7 @@ __version__ = "0.3.0"
 
 __all__ = [
     "BluetoothSIGTranslator",
-    "BaseCharacteristic", 
+    "BaseCharacteristic",
     "BaseService",
     "CharacteristicRegistry",
     "GattServiceRegistry",

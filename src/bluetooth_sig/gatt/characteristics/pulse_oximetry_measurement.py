@@ -26,7 +26,8 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
     ) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse pulse oximetry measurement data according to Bluetooth specification.
 
-        Format: Flags(1) + SpO2(2) + Pulse Rate(2) + [Timestamp(7)] + [Measurement Status(2)] + [Device Status(3)] + [Pulse Amplitude Index(2)]
+        Format: Flags(1) + SpO2(2) + Pulse Rate(2) + [Timestamp(7)] +
+        [Measurement Status(2)] + [Device Status(3)] + [Pulse Amplitude Index(2)]
         SpO2 and Pulse Rate are IEEE-11073 16-bit SFLOAT.
 
         Args:
