@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -236,7 +237,7 @@ class UuidRegistry:
         # Process all characteristic GSS YAML files
         for yaml_file in gss_path.glob("org.bluetooth.characteristic.*.yaml"):
             try:
-                with yaml_file.open("r") as f:
+                with yaml_file.open("r", encoding="utf-8") as f:
                     data = yaml.safe_load(f)
 
                 if not data or "characteristic" not in data:
@@ -271,8 +272,9 @@ class UuidRegistry:
                             )
                             self._characteristics[key] = updated_info
 
-            except (yaml.YAMLError, OSError, KeyError):
-                # Skip problematic files, continue with others
+            except (yaml.YAMLError, OSError, KeyError) as e:
+                # Log warning for files that fail to parse for debugging
+                logging.warning("Failed to parse GSS YAML file %s: %s", yaml_file, e)
                 continue
 
     def _extract_unit_from_gss(self, char_data: dict) -> str | None:

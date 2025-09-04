@@ -70,17 +70,15 @@ class TestYAMLUnitParsing:
             f"Humidity unit should be % or empty, got {humidity_unit}"
         )
 
-    def test_manual_unit_fallback(self):
-        """Test fallback to manual units when YAML unavailable."""
+    def test_manual_unit_priority(self):
+        """Test that manual units take priority over YAML units."""
         # Create a characteristic with manual unit override
         temp_char = TemperatureCharacteristic(uuid="", properties=set())
         temp_char._manual_unit = "°F"  # Override with manual unit
 
-        # The unit should still be the YAML unit if available, otherwise manual
+        # The unit should be the manual unit if set, regardless of YAML
         unit = temp_char.unit
-        assert unit in ["°C", "°F"], (
-            f"Unit should be either YAML (°C) or manual (°F), got {unit}"
-        )
+        assert unit == "°F", f"Unit should be manual (°F) when set, got {unit}"
 
     def test_unknown_characteristic_unit(self):
         """Test behavior with characteristics not in YAML."""
@@ -123,20 +121,20 @@ class TestYAMLUnitParsing:
         except Exception as e:
             pytest.fail(f"GSS specification loading should not raise exceptions: {e}")
 
-    def test_backward_compatibility(self):
-        """Test that existing manual unit definitions still work."""
+    def test_manual_unit_override_priority(self):
+        """Test that manual unit overrides always take precedence over YAML."""
         # Create characteristics that have manual unit overrides
         temp_char = TemperatureCharacteristic(uuid="", properties=set())
 
-        # Add manual unit (this should be overridden by YAML if available)
+        # Add manual unit (this should take precedence over YAML)
         temp_char._manual_unit = "K"  # Kelvin as manual override
 
-        # The unit property should prefer YAML over manual
+        # The unit property should prefer manual over YAML
         unit_with_manual = temp_char.unit
 
-        # Should be either the YAML unit or the manual unit
-        assert unit_with_manual in ["°C", "K", ""], (
-            f"Unit should be YAML, manual, or empty, got {unit_with_manual}"
+        # Should be the manual unit, since manual takes precedence
+        assert unit_with_manual == "K", (
+            f"Unit should be manual (K) when manual override is set, got {unit_with_manual}"
         )
 
     def test_characteristic_creation_with_yaml_units(self):
