@@ -110,11 +110,11 @@ class TestEnvironmentalSensingExpanded:
         dew_point = DewPointCharacteristic(uuid="", properties=set())
         assert dew_point.unit == "°C"
 
-        # Wind speed characteristics
+        # Wind speed characteristics - now using YAML units
         wind_speed = TrueWindSpeedCharacteristic(uuid="", properties=set())
-        assert wind_speed.unit == "m/s"
+        assert wind_speed.unit == "metres per second"
 
-        # Wind direction characteristics
+        # Wind direction characteristics - still using YAML units
         wind_direction = TrueWindDirectionCharacteristic(uuid="", properties=set())
         assert wind_direction.unit == "°"
 

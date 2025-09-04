@@ -24,8 +24,3 @@ class TrueWindSpeedCharacteristic(BaseCharacteristic):
         # Convert uint16 (little endian) to wind speed in m/s
         wind_speed_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         return wind_speed_raw * 0.01
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "m/s"
