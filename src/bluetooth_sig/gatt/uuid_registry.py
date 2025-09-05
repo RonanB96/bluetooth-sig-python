@@ -18,6 +18,7 @@ class UuidInfo:
     id: str
     summary: str = ""
     unit: str | None = None
+    value_type: str | None = None
 
 
 class UuidRegistry:
@@ -221,81 +222,107 @@ class UuidRegistry:
 
     def _load_gss_specifications(self):
         """Load detailed specifications from GSS YAML files to extract unit information."""
-        # From src/bluetooth_sig/gatt/uuid_registry.py, go up 4 levels to project root
-        project_root = Path(__file__).parent.parent.parent.parent
-        gss_path = project_root / "bluetooth_sig" / "gss"
-
-        if not gss_path.exists():
-            # Try installed package location
-            pkg_root = Path(__file__).parent.parent
-            gss_path = pkg_root / "bluetooth_sig" / "gss"
-
-        if not gss_path.exists():
-            # GSS files not available, skip unit loading
+        gss_path = self._find_gss_path()
+        if not gss_path:
             return
 
         # Process all characteristic GSS YAML files
         for yaml_file in gss_path.glob("org.bluetooth.characteristic.*.yaml"):
-            try:
-                with yaml_file.open("r", encoding="utf-8") as f:
-                    data = yaml.safe_load(f)
+            self._process_gss_file(yaml_file)
 
-                if not data or "characteristic" not in data:
-                    continue
+    def _find_gss_path(self) -> Path | None:
+        """Find the GSS specifications directory."""
+        # From src/bluetooth_sig/gatt/uuid_registry.py, go up 4 levels to project root
+        project_root = Path(__file__).parent.parent.parent.parent
+        gss_path = project_root / "bluetooth_sig" / "gss"
 
-                char_data = data["characteristic"]
-                char_name = char_data.get("name")
-                char_id = char_data.get("identifier")
+        if gss_path.exists():
+            return gss_path
 
-                if not char_name or not char_id:
-                    continue
+        # Try installed package location
+        pkg_root = Path(__file__).parent.parent
+        gss_path = pkg_root / "bluetooth_sig" / "gss"
 
-                # Extract unit from structure fields
-                unit = self._extract_unit_from_gss(char_data)
+        return gss_path if gss_path.exists() else None
 
-                if unit:
-                    # Update existing UuidInfo entries with unit information
-                    for key, uuid_info in self._characteristics.items():
-                        if (
-                            uuid_info.name == char_name
-                            or uuid_info.id == char_id
-                            or key == char_name
-                            or key == char_id
-                        ):
-                            # Create new UuidInfo with unit
-                            updated_info = UuidInfo(
-                                uuid=uuid_info.uuid,
-                                name=uuid_info.name,
-                                id=uuid_info.id,
-                                summary=uuid_info.summary,
-                                unit=unit,
-                            )
-                            self._characteristics[key] = updated_info
+    def _process_gss_file(self, yaml_file: Path):
+        """Process a single GSS YAML file."""
+        try:
+            with yaml_file.open("r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
 
-            except (yaml.YAMLError, OSError, KeyError) as e:
-                # Log warning for files that fail to parse for debugging
-                logging.warning("Failed to parse GSS YAML file %s: %s", yaml_file, e)
-                continue
+            if not data or "characteristic" not in data:
+                return
 
-    def _extract_unit_from_gss(self, char_data: dict) -> str | None:
-        """Extract unit from GSS characteristic structure.
+            char_data = data["characteristic"]
+            char_name = char_data.get("name")
+            char_id = char_data.get("identifier")
+
+            if not char_name or not char_id:
+                return
+
+            # Extract unit and value_type from structure fields
+            unit, value_type = self._extract_info_from_gss(char_data)
+
+            if unit or value_type:
+                self._update_characteristics_with_gss_info(
+                    char_name, char_id, unit, value_type
+                )
+
+        except (yaml.YAMLError, OSError, KeyError) as e:
+            # Log warning for files that fail to parse for debugging
+            logging.warning("Failed to parse GSS YAML file %s: %s", yaml_file, e)
+
+    def _update_characteristics_with_gss_info(
+        self, char_name: str, char_id: str, unit: str | None, value_type: str | None
+    ):
+        """Update existing UuidInfo entries with unit and value_type information."""
+        for key, uuid_info in self._characteristics.items():
+            if (
+                uuid_info.name == char_name
+                or uuid_info.id == char_id
+                or key == char_name
+                or key == char_id
+            ):
+                # Create new UuidInfo with unit and value_type
+                updated_info = UuidInfo(
+                    uuid=uuid_info.uuid,
+                    name=uuid_info.name,
+                    id=uuid_info.id,
+                    summary=uuid_info.summary,
+                    unit=unit or uuid_info.unit,
+                    value_type=value_type or uuid_info.value_type,
+                )
+                self._characteristics[key] = updated_info
+
+    def _extract_info_from_gss(self, char_data: dict) -> tuple[str | None, str | None]:
+        """Extract unit and value_type from GSS characteristic structure.
 
         Args:
             char_data: Dictionary containing characteristic data from GSS YAML
 
         Returns:
-            Human-readable unit string or None if not found
+            Tuple of (unit, value_type) where both may be None if not found
         """
         structure = char_data.get("structure", [])
         if not structure:
-            return None
+            return None, None
+
+        unit = None
+        value_type = None
 
         for field in structure:
             if not isinstance(field, dict):
                 continue
 
+            # Extract value_type from 'type' field
+            if "type" in field and not value_type:
+                yaml_type = field["type"]
+                value_type = self._convert_yaml_type_to_python_type(yaml_type)
+
+            # Extract unit from description
             description = field.get("description", "")
-            if "Base Unit:" in description:
+            if "Base Unit:" in description and not unit:
                 # Extract the unit after "Base Unit:"
                 unit_line = None
                 for line in description.split("\n"):
@@ -307,9 +334,49 @@ class UuidRegistry:
                     # Parse "Base Unit: org.bluetooth.unit.X" format
                     if "org.bluetooth.unit." in unit_line:
                         unit_spec = unit_line.split("org.bluetooth.unit.")[1].strip()
-                        return self._convert_bluetooth_unit_to_readable(unit_spec)
+                        unit = self._convert_bluetooth_unit_to_readable(unit_spec)
 
-        return None
+        return unit, value_type
+
+    def _convert_yaml_type_to_python_type(self, yaml_type: str) -> str:
+        """Convert YAML type to Python type string.
+
+        Args:
+            yaml_type: YAML type like 'uint8', 'sint16', 'uint16', etc.
+
+        Returns:
+            Python type string: 'int', 'float', 'bytes', 'string', 'boolean'
+        """
+        # Map YAML types to Python types
+        type_mapping = {
+            # Integer types
+            "uint8": "int",
+            "uint16": "int",
+            "uint24": "int",
+            "uint32": "int",
+            "uint64": "int",
+            "sint8": "int",
+            "sint16": "int",
+            "sint24": "int",
+            "sint32": "int",
+            "sint64": "int",
+            # Float types
+            "float32": "float",
+            "float64": "float",
+            "sfloat": "float",  # IEEE-11073 16-bit SFLOAT
+            "float": "float",  # IEEE-11073 32-bit FLOAT
+            "medfloat16": "float",  # Medical float 16-bit
+            # String types
+            "utf8s": "string",
+            "utf16s": "string",
+            # Boolean type
+            "boolean": "boolean",
+            # Struct/opaque data
+            "struct": "bytes",
+            "variable": "bytes",
+        }
+
+        return type_mapping.get(yaml_type.lower(), "bytes")
 
     def _convert_bluetooth_unit_to_readable(self, unit_spec: str) -> str:
         """Convert Bluetooth SIG unit specification to human-readable format.

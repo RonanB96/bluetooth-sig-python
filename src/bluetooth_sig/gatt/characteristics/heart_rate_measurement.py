@@ -16,11 +16,6 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Heart Rate Measurement"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "int"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse heart rate measurement data according to Bluetooth specification.
 

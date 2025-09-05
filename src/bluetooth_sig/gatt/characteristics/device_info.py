@@ -11,11 +11,6 @@ class ManufacturerNameStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Manufacturer Name String"
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> str:
         """Parse manufacturer name string."""
         return self._parse_utf8_string(data)
@@ -31,11 +26,6 @@ class ModelNumberStringCharacteristic(BaseCharacteristic):
     """Model Number String characteristic."""
 
     _characteristic_name: str = "Model Number String"
-
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"
-        super().__post_init__()
 
     def parse_value(self, data: bytearray) -> str:
         """Parse model number string."""
@@ -53,11 +43,6 @@ class SerialNumberStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Serial Number String"
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> str:
         """Parse serial number string."""
         return self._parse_utf8_string(data)
@@ -73,11 +58,6 @@ class FirmwareRevisionStringCharacteristic(BaseCharacteristic):
     """Firmware Revision String characteristic."""
 
     _characteristic_name: str = "Firmware Revision String"
-
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"
-        super().__post_init__()
 
     def parse_value(self, data: bytearray) -> str:
         """Parse firmware revision string."""
@@ -95,11 +75,6 @@ class HardwareRevisionStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Hardware Revision String"
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> str:
         """Parse hardware revision string."""
         return self._parse_utf8_string(data)
@@ -115,11 +90,6 @@ class SoftwareRevisionStringCharacteristic(BaseCharacteristic):
     """Software Revision String characteristic."""
 
     _characteristic_name: str = "Software Revision String"
-
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"
-        super().__post_init__()
 
     def parse_value(self, data: bytearray) -> str:
         """Parse software revision string."""

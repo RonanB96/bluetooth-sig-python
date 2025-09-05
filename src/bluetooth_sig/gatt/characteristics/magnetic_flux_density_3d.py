@@ -15,11 +15,9 @@ class MagneticFluxDensity3DCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Magnetic Flux Density - 3D"
-
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"  # JSON string representation
-        super().__post_init__()
+    _manual_value_type: str = (
+        "dict"  # Override YAML int type since parse_value returns dict
+    )
 
     def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse magnetic flux density 3D data (3 x sint16 in units of 10^-7 Tesla)."""

@@ -18,11 +18,6 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Body Composition Feature"
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"  # JSON string representation of features
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse body composition feature data according to Bluetooth specification.
 

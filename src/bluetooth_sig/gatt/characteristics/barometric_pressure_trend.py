@@ -29,11 +29,6 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
         9: "Steady",
     }
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> str:
         """Parse barometric pressure trend data (uint8 enumerated value)."""
         if len(data) < 1:

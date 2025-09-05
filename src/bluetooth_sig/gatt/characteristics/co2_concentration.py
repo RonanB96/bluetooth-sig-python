@@ -15,11 +15,6 @@ class CO2ConcentrationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "CO\\textsubscript{2} Concentration"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "int"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> int:
         """Parse CO2 concentration data (uint16 in units of 1 ppm).
 

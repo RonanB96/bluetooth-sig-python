@@ -14,11 +14,7 @@ class OzoneConcentrationCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Ozone Concentration"
-
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "int"
-        super().__post_init__()
+    _manual_value_type: str = "int"  # Manual override needed as no YAML available
 
     def parse_value(self, data: bytearray) -> int:
         """Parse ozone concentration data (uint16 in units of 1 ppb).

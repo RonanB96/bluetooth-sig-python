@@ -29,7 +29,7 @@ except ImportError:
     class BleakScanner: pass
 
 try:
-    from bluetooth_sig.core import gatt_hierarchy, BluetoothSIGTranslator
+    from bluetooth_sig.core import BluetoothSIG, BluetoothSIGTranslator
     FRAMEWORK_AVAILABLE = True
 except ImportError:
     print("⚠️  Warning: BLE GATT framework not available. Framework-specific features disabled.")

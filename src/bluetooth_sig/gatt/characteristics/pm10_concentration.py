@@ -14,11 +14,7 @@ class PM10ConcentrationCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Particulate Matter - PM10 Concentration"
-
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "int"
-        super().__post_init__()
+    _manual_value_type: str = "int"  # Manual override needed as no YAML available
 
     def parse_value(self, data: bytearray) -> int:
         """Parse PM10 concentration data (uint16 in units of 1 μg/m³).

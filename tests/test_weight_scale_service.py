@@ -18,7 +18,7 @@ class TestWeightMeasurementCharacteristic:
         """Test characteristic name resolution."""
         char = WeightMeasurementCharacteristic(uuid="", properties=set())
         assert char._characteristic_name == "Weight Measurement"
-        assert char.value_type == "string"
+        assert char.value_type == "bytes"
 
     def test_parse_basic_weight_metric(self):
         """Test parsing basic weight in metric units."""
@@ -80,7 +80,7 @@ class TestWeightScaleFeatureCharacteristic:
         """Test characteristic name resolution."""
         char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
         assert char._characteristic_name == "Weight Scale Feature"
-        assert char.value_type == "string"
+        assert char.value_type == "bytes"
 
     def test_parse_basic_features(self):
         """Test parsing basic feature flags."""

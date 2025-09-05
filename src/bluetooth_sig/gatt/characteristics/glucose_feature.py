@@ -17,11 +17,6 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Glucose Feature"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "int"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse glucose feature data according to Bluetooth specification.
 

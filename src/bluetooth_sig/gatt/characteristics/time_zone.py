@@ -15,11 +15,6 @@ class TimeZoneCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Time Zone"
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> str:
         """Parse time zone data (sint8 in 15-minute increments from UTC)."""
         if len(data) < 1:
