@@ -187,6 +187,22 @@ python testing_with_mocks.py --compliance
    pip install bluetooth-sig
    pip install bleak-retry-connector  # Recommended
    ```
+
+### 📦 Installing All Example Dependencies
+
+To install bluetooth_sig with all BLE libraries used in the examples:
+
+```bash
+# Install with all example dependencies (recommended for trying all examples)
+pip install bluetooth-sig[examples]
+
+# Or install individually based on your needs:
+pip install bluetooth-sig bleak                    # Basic async BLE
+pip install bluetooth-sig bleak-retry-connector    # Production-ready with retry logic  
+pip install bluetooth-sig simplebluez              # Linux alternative
+```
+
+**Note:** Some libraries like `simpleble` may not be available on all platforms. The `[examples]` installation will skip unavailable packages gracefully.
 3. **Start with an example** that matches your chosen library
 4. **Adapt the pattern** to your specific use case
 
