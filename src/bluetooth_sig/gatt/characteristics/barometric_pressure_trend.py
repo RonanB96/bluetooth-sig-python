@@ -14,6 +14,8 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Barometric Pressure Trend"
+    # Manual override: YAML indicates uint8->int but we return descriptive strings
+    _manual_value_type: str = "string"
 
     # Trend value mappings
     TREND_VALUES = {
@@ -28,11 +30,6 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
         8: "Rising before a lesser fall",
         9: "Steady",
     }
-
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"
-        super().__post_init__()
 
     def parse_value(self, data: bytearray) -> str:
         """Parse barometric pressure trend data (uint8 enumerated value)."""

@@ -14,11 +14,6 @@ class VoltageFrequencyCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Voltage Frequency"
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "float"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> float:
         """Parse voltage frequency data (uint16 in units of 1/256 Hz).
 

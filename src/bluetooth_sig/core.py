@@ -87,7 +87,7 @@ class BluetoothSIGTranslator:
             try:
                 parsed_value = characteristic.parse_value(bytearray(raw_data))
                 return ParsedData(
-                    uuid=characteristic.CHAR_UUID,
+                    uuid=characteristic.char_uuid,
                     name=getattr(
                         characteristic,
                         "_characteristic_name",
@@ -141,7 +141,7 @@ class BluetoothSIGTranslator:
         try:
             temp_char = char_class(uuid=uuid, properties=set())
             return CharacteristicInfo(
-                uuid=temp_char.CHAR_UUID,
+                uuid=temp_char.char_uuid,
                 name=getattr(temp_char, "_characteristic_name", char_class.__name__),
                 value_type=getattr(temp_char, "value_type", None),
                 unit=temp_char.unit,
@@ -167,7 +167,7 @@ class BluetoothSIGTranslator:
                 try:
                     temp_char = char_class(uuid="", properties=set())
                     return CharacteristicInfo(
-                        uuid=temp_char.CHAR_UUID,
+                        uuid=temp_char.char_uuid,
                         name=getattr(
                             temp_char, "_characteristic_name", char_class.__name__
                         ),
@@ -240,7 +240,7 @@ class BluetoothSIGTranslator:
         ) in CharacteristicRegistry.get_all_characteristics().items():
             try:
                 temp_char = char_class(uuid="", properties=set())
-                result[name] = temp_char.CHAR_UUID
+                result[name] = temp_char.char_uuid
             except Exception:  # pylint: disable=broad-exception-caught
                 continue
         return result
@@ -430,4 +430,4 @@ class BluetoothSIGTranslator:
 
 
 # Global instance for backward compatibility with gatt_manager
-gatt_hierarchy = BluetoothSIGTranslator()
+BluetoothSIG = BluetoothSIGTranslator()

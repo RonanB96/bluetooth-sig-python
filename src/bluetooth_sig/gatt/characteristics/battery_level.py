@@ -11,11 +11,6 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Battery Level"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "int"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> int:
         """Parse battery level data (uint8 in percentage)."""
         if not data:
@@ -23,8 +18,3 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
 
         # Convert uint8 to percentage
         return data[0]
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "%"

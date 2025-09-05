@@ -18,7 +18,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         """Test characteristic name resolution."""
         char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
         assert char._characteristic_name == "Body Composition Measurement"
-        assert char.value_type == "string"
+        assert char.value_type == "bytes"  # Updated to match YAML automatic parsing
 
     def test_parse_basic_body_fat_metric(self):
         """Test parsing basic body fat percentage in metric units."""
@@ -105,7 +105,7 @@ class TestBodyCompositionFeatureCharacteristic:
         """Test characteristic name resolution."""
         char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
         assert char._characteristic_name == "Body Composition Feature"
-        assert char.value_type == "string"
+        assert char.value_type == "bytes"  # Updated to match YAML automatic parsing
 
     def test_parse_basic_features(self):
         """Test parsing basic feature flags."""

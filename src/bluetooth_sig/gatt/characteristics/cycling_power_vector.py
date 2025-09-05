@@ -17,11 +17,6 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Cycling Power Vector"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "string"  # JSON string representation
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse cycling power vector data according to Bluetooth specification.
 

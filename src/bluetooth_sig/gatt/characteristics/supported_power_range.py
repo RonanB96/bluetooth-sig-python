@@ -13,11 +13,9 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Supported Power Range"
-
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "dict"
-        super().__post_init__()
+    _manual_value_type: str = (
+        "dict"  # Override YAML int type since parse_value returns dict
+    )
 
     def parse_value(self, data: bytearray) -> dict[str, int]:
         """Parse supported power range data (2x sint16 in watts).

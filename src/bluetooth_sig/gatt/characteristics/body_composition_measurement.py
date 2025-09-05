@@ -17,11 +17,6 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Body Composition Measurement"
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"  # JSON string representation of measurement data
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse body composition measurement data according to Bluetooth specification.
 
@@ -241,8 +236,3 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             mass = mass_raw * 0.005  # 0.005 kg resolution
             mass_unit = "kg"
         return mass, mass_unit
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "%"

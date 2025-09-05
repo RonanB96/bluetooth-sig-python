@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,6 +17,8 @@ class UuidInfo:
     name: str
     id: str
     summary: str = ""
+    unit: str | None = None
+    value_type: str | None = None
 
 
 class UuidRegistry:
@@ -25,6 +28,7 @@ class UuidRegistry:
         """Initialize the UUID registry."""
         self._services: dict[str, UuidInfo] = {}
         self._characteristics: dict[str, UuidInfo] = {}
+        self._unit_mappings: dict[str, str] = {}
         try:
             self._load_uuids()
         except (FileNotFoundError, Exception):  # pylint: disable=broad-exception-caught
@@ -94,6 +98,300 @@ class UuidRegistry:
                 # Also index by name for characteristic lookup
                 self._characteristics[uuid_info["name"]] = info
                 self._characteristics[uuid_info["id"]] = info
+
+        # Load unit mappings from units.yaml
+        self._load_unit_mappings(base_path)
+
+        # Load detailed specifications from GSS YAML files to extract units
+        self._load_gss_specifications()
+
+    def _load_unit_mappings(self, base_path: Path):
+        """Load unit symbol mappings from units.yaml file."""
+        units_yaml = base_path / "units.yaml"
+        if not units_yaml.exists():
+            return
+
+        try:
+            units_data = self._load_yaml(units_yaml)
+            for unit_info in units_data:
+                unit_id = unit_info.get("id", "")
+                unit_name = unit_info.get("name", "")
+
+                if not unit_id or not unit_name:
+                    continue
+
+                # Extract unit symbol from name
+                unit_symbol = self._extract_unit_symbol_from_name(unit_name)
+                if unit_symbol:
+                    # Map from the ID (e.g., org.bluetooth.unit.percentage) to symbol (%)
+                    # Remove org.bluetooth.unit. prefix for the key
+                    unit_key = unit_id.replace("org.bluetooth.unit.", "").lower()
+                    self._unit_mappings[unit_key] = unit_symbol
+
+        except (yaml.YAMLError, OSError, KeyError):
+            # Skip unit loading if there's an error, continue without units
+            pass
+
+    def _extract_unit_symbol_from_name(self, unit_name: str) -> str | None:
+        """Extract unit symbol from unit name.
+
+        Args:
+            unit_name: Unit name like "percentage" or "Celsius temperature (degree Celsius)"
+
+        Returns:
+            Unit symbol like "%" or "°C", or the unit name if no symbol can be extracted
+        """
+        # Handle common unit names that map to symbols
+        unit_symbol_map = {
+            "percentage": "%",
+            "per mille": "‰",
+            "unitless": "",
+        }
+
+        # Check for direct symbol mapping first
+        if unit_name.lower() in unit_symbol_map:
+            return unit_symbol_map[unit_name.lower()]
+
+        # Extract symbol from parentheses if present (e.g., "pressure (pascal)" -> "Pa")
+        if "(" in unit_name and ")" in unit_name:
+            start = unit_name.find("(") + 1
+            end = unit_name.find(")", start)
+            if 0 < start < end:
+                symbol_candidate = unit_name[start:end].strip()
+
+                # Map common symbols
+                symbol_mapping = {
+                    "degree celsius": "°C",
+                    "degree fahrenheit": "°F",
+                    "kelvin": "K",
+                    "pascal": "Pa",
+                    "bar": "bar",
+                    "millimetre of mercury": "mmHg",
+                    "ampere": "A",
+                    "volt": "V",
+                    "joule": "J",
+                    "watt": "W",
+                    "hertz": "Hz",
+                    "metre": "m",
+                    "kilogram": "kg",
+                    "second": "s",
+                    "metre per second": "m/s",
+                    "metre per second squared": "m/s²",
+                    "radian per second": "rad/s",
+                    "candela": "cd",
+                    "lux": "lux",
+                    "newton": "N",
+                    "coulomb": "C",
+                    "farad": "F",
+                    "ohm": "Ω",
+                    "siemens": "S",
+                    "weber": "Wb",
+                    "tesla": "T",
+                    "henry": "H",
+                    "lumen": "lm",
+                    "becquerel": "Bq",
+                    "gray": "Gy",
+                    "sievert": "Sv",
+                    "katal": "kat",
+                    "degree": "°",
+                    "radian": "rad",
+                    "steradian": "sr",
+                }
+
+                return symbol_mapping.get(symbol_candidate.lower(), symbol_candidate)
+
+        # For units without parentheses, try to map common ones
+        common_units = {
+            "frequency": "Hz",
+            "force": "N",
+            "pressure": "Pa",
+            "energy": "J",
+            "power": "W",
+            "mass": "kg",
+            "length": "m",
+            "time": "s",
+        }
+
+        # Check if unit name starts with a common unit type
+        for unit_type, symbol in common_units.items():
+            if unit_name.lower().startswith(unit_type):
+                return symbol
+
+        # If no symbol extraction is possible, return the name itself
+        return unit_name
+
+    def _load_gss_specifications(self):
+        """Load detailed specifications from GSS YAML files to extract unit information."""
+        gss_path = self._find_gss_path()
+        if not gss_path:
+            return
+
+        # Process all characteristic GSS YAML files
+        for yaml_file in gss_path.glob("org.bluetooth.characteristic.*.yaml"):
+            self._process_gss_file(yaml_file)
+
+    def _find_gss_path(self) -> Path | None:
+        """Find the GSS specifications directory."""
+        # From src/bluetooth_sig/gatt/uuid_registry.py, go up 4 levels to project root
+        project_root = Path(__file__).parent.parent.parent.parent
+        gss_path = project_root / "bluetooth_sig" / "gss"
+
+        if gss_path.exists():
+            return gss_path
+
+        # Try installed package location
+        pkg_root = Path(__file__).parent.parent
+        gss_path = pkg_root / "bluetooth_sig" / "gss"
+
+        return gss_path if gss_path.exists() else None
+
+    def _process_gss_file(self, yaml_file: Path):
+        """Process a single GSS YAML file."""
+        try:
+            with yaml_file.open("r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+
+            if not data or "characteristic" not in data:
+                return
+
+            char_data = data["characteristic"]
+            char_name = char_data.get("name")
+            char_id = char_data.get("identifier")
+
+            if not char_name or not char_id:
+                return
+
+            # Extract unit and value_type from structure fields
+            unit, value_type = self._extract_info_from_gss(char_data)
+
+            if unit or value_type:
+                self._update_characteristics_with_gss_info(
+                    char_name, char_id, unit, value_type
+                )
+
+        except (yaml.YAMLError, OSError, KeyError) as e:
+            # Log warning for files that fail to parse for debugging
+            logging.warning("Failed to parse GSS YAML file %s: %s", yaml_file, e)
+
+    def _update_characteristics_with_gss_info(
+        self, char_name: str, char_id: str, unit: str | None, value_type: str | None
+    ):
+        """Update existing UuidInfo entries with unit and value_type information."""
+        for key, uuid_info in self._characteristics.items():
+            if (
+                uuid_info.name == char_name
+                or uuid_info.id == char_id
+                or key == char_name
+                or key == char_id
+            ):
+                # Create new UuidInfo with unit and value_type
+                updated_info = UuidInfo(
+                    uuid=uuid_info.uuid,
+                    name=uuid_info.name,
+                    id=uuid_info.id,
+                    summary=uuid_info.summary,
+                    unit=unit or uuid_info.unit,
+                    value_type=value_type or uuid_info.value_type,
+                )
+                self._characteristics[key] = updated_info
+
+    def _extract_info_from_gss(self, char_data: dict) -> tuple[str | None, str | None]:
+        """Extract unit and value_type from GSS characteristic structure.
+
+        Args:
+            char_data: Dictionary containing characteristic data from GSS YAML
+
+        Returns:
+            Tuple of (unit, value_type) where both may be None if not found
+        """
+        structure = char_data.get("structure", [])
+        if not structure:
+            return None, None
+
+        unit = None
+        value_type = None
+
+        for field in structure:
+            if not isinstance(field, dict):
+                continue
+
+            # Extract value_type from 'type' field
+            if "type" in field and not value_type:
+                yaml_type = field["type"]
+                value_type = self._convert_yaml_type_to_python_type(yaml_type)
+
+            # Extract unit from description
+            description = field.get("description", "")
+            if "Base Unit:" in description and not unit:
+                # Extract the unit after "Base Unit:"
+                unit_line = None
+                for line in description.split("\n"):
+                    if "Base Unit:" in line:
+                        unit_line = line.strip()
+                        break
+
+                if unit_line:
+                    # Parse "Base Unit: org.bluetooth.unit.X" format
+                    if "org.bluetooth.unit." in unit_line:
+                        unit_spec = unit_line.split("org.bluetooth.unit.")[1].strip()
+                        unit = self._convert_bluetooth_unit_to_readable(unit_spec)
+
+        return unit, value_type
+
+    def _convert_yaml_type_to_python_type(self, yaml_type: str) -> str:
+        """Convert YAML type to Python type string.
+
+        Args:
+            yaml_type: YAML type like 'uint8', 'sint16', 'uint16', etc.
+
+        Returns:
+            Python type string: 'int', 'float', 'bytes', 'string', 'boolean'
+        """
+        # Map YAML types to Python types
+        type_mapping = {
+            # Integer types
+            "uint8": "int",
+            "uint16": "int",
+            "uint24": "int",
+            "uint32": "int",
+            "uint64": "int",
+            "sint8": "int",
+            "sint16": "int",
+            "sint24": "int",
+            "sint32": "int",
+            "sint64": "int",
+            # Float types
+            "float32": "float",
+            "float64": "float",
+            "sfloat": "float",  # IEEE-11073 16-bit SFLOAT
+            "float": "float",  # IEEE-11073 32-bit FLOAT
+            "medfloat16": "float",  # Medical float 16-bit
+            # String types
+            "utf8s": "string",
+            "utf16s": "string",
+            # Boolean type
+            "boolean": "boolean",
+            # Struct/opaque data
+            "struct": "bytes",
+            "variable": "bytes",
+        }
+
+        return type_mapping.get(yaml_type.lower(), "bytes")
+
+    def _convert_bluetooth_unit_to_readable(self, unit_spec: str) -> str:
+        """Convert Bluetooth SIG unit specification to human-readable format.
+
+        Args:
+            unit_spec: Unit specification like "thermodynamic_temperature.degree_celsius"
+
+        Returns:
+            Human-readable unit like "°C"
+        """
+        # Remove trailing dots and clean up
+        unit_spec = unit_spec.rstrip(".").lower()
+
+        # Use dynamically loaded unit mappings from units.yaml
+        return self._unit_mappings.get(unit_spec, unit_spec)
 
     def get_service_info(self, key: str) -> UuidInfo | None:
         """Get information about a service.

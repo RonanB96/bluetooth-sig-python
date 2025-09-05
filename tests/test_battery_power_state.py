@@ -14,7 +14,9 @@ class TestBatteryPowerStateCharacteristic:
         """Test characteristic name resolution."""
         char = BatteryPowerStateCharacteristic(uuid="", properties=set())
         assert char._characteristic_name == "Battery Level Status"
-        assert char.value_type == "string"
+        assert (
+            char.value_type == "string"
+        )  # YAML has boolean[] which maps to string, but parse_value returns dict
 
     def test_parse_basic_battery_state(self):
         """Test parsing basic battery state with all flags."""
@@ -248,5 +250,5 @@ class TestBatteryPowerStateCharacteristic:
     def test_characteristic_uuid_resolution(self):
         """Test characteristic UUID resolution."""
         char = BatteryPowerStateCharacteristic(uuid="2BED", properties={"read"})
-        assert char.CHAR_UUID == "2BED"
+        assert char.char_uuid == "2BED"
         assert char.name == "Battery Level Status"

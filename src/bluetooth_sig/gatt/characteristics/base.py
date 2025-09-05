@@ -13,7 +13,11 @@ from ..uuid_registry import uuid_registry
 
 @dataclass
 class BaseCharacteristic(ABC):
-    """Base class for all GATT characteristics."""
+    """Base class for all GATT characteristics.
+
+    Automatically resolves UUID, unit, and value_type from Bluetooth SIG YAML specifications.
+    Supports manual overrides via _manual_unit and _manual_value_type attributes.
+    """
 
     # Instance variables
     uuid: str
@@ -30,6 +34,9 @@ class BaseCharacteristic(ABC):
                 )
                 if char_info:
                     self._char_uuid = char_info.uuid
+                    # Set value_type from registry if available and not manually overridden
+                    if not hasattr(self, "_manual_value_type") and char_info.value_type:
+                        self.value_type = char_info.value_type
                     return
 
             # Convert class name to standard format and try all possibilities
@@ -63,12 +70,15 @@ class BaseCharacteristic(ABC):
                 char_info = uuid_registry.get_characteristic_info(try_name)
                 if char_info:
                     self._char_uuid = char_info.uuid
+                    # Set value_type from registry if available and not manually overridden
+                    if not hasattr(self, "_manual_value_type") and char_info.value_type:
+                        self.value_type = char_info.value_type
                     break
             else:
                 raise ValueError(f"No UUID found for characteristic: {name}")
 
     @property
-    def CHAR_UUID(self) -> str:
+    def char_uuid(self) -> str:
         """Get the characteristic UUID from registry based on name."""
         return getattr(self, "_char_uuid", "")
 
@@ -77,13 +87,13 @@ class BaseCharacteristic(ABC):
         """Get the characteristic name from UUID registry."""
         if hasattr(self, "_characteristic_name"):
             return self._characteristic_name
-        info = uuid_registry.get_characteristic_info(self.CHAR_UUID)
-        return info.name if info else f"Unknown Characteristic ({self.CHAR_UUID})"
+        info = uuid_registry.get_characteristic_info(self.char_uuid)
+        return info.name if info else f"Unknown Characteristic ({self.char_uuid})"
 
     @property
     def summary(self) -> str:
         """Get the characteristic summary."""
-        info = uuid_registry.get_characteristic_info(self.CHAR_UUID)
+        info = uuid_registry.get_characteristic_info(self.char_uuid)
         return info.summary if info else ""
 
     @classmethod
@@ -92,7 +102,7 @@ class BaseCharacteristic(ABC):
         # Create a temporary instance to get the UUID
         try:
             temp_instance = cls(uuid="", properties=set())
-            return temp_instance.CHAR_UUID.lower() in uuid.lower()
+            return temp_instance.char_uuid.lower() in uuid.lower()
         except (ValueError, AttributeError):
             return False
 
@@ -113,8 +123,40 @@ class BaseCharacteristic(ABC):
 
     @property
     def unit(self) -> str:
-        """Get the unit of measurement for this characteristic."""
+        """Get the unit of measurement for this characteristic.
+
+        First tries manual unit override, then falls back to YAML registry.
+        This allows manual overrides to take precedence while using automatic parsing as default.
+        """
+        # First try manual unit override (takes priority)
+        if hasattr(self, "_manual_unit"):
+            return self._manual_unit
+
+        # Fallback to unit from YAML registry for automatic parsing
+        char_info = uuid_registry.get_characteristic_info(self.char_uuid)
+        if char_info and char_info.unit:
+            return char_info.unit
+
         return ""
+
+    @property
+    def parsed_value_type(self) -> str:
+        """Get the value type for this characteristic.
+
+        First tries manual value_type override, then falls back to YAML registry.
+        This allows manual overrides to take precedence while using automatic parsing as default.
+        """
+        # First try manual value_type override (takes priority)
+        if hasattr(self, "_manual_value_type"):
+            return self._manual_value_type
+
+        # Fallback to value_type from YAML registry for automatic parsing
+        char_info = uuid_registry.get_characteristic_info(self.char_uuid)
+        if char_info and char_info.value_type:
+            return char_info.value_type
+
+        # Final fallback to instance value_type
+        return self.value_type
 
     def _parse_ieee11073_sfloat(self, sfloat_val: int) -> float:
         """Convert IEEE-11073 16-bit SFLOAT to Python float.

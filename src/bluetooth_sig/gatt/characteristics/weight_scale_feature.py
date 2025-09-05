@@ -17,11 +17,6 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Weight Scale Feature"
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"  # JSON string representation of features
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse weight scale feature data according to Bluetooth specification.
 

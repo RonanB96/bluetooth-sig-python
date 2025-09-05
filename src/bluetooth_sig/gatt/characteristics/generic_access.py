@@ -11,11 +11,6 @@ class DeviceNameCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Device Name"
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> str:
         """Parse device name string."""
         return self._parse_utf8_string(data)
@@ -31,11 +26,6 @@ class AppearanceCharacteristic(BaseCharacteristic):
     """Appearance characteristic."""
 
     _characteristic_name: str = "Appearance"
-
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "int"
-        super().__post_init__()
 
     def parse_value(self, data: bytearray) -> int:
         """Parse appearance value (uint16)."""

@@ -25,11 +25,6 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
         255: {"description": "DST offset unknown", "offset_hours": None},
     }
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"  # JSON string representation
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse local time information data (2 bytes: time zone + DST offset)."""
         if len(data) < 2:

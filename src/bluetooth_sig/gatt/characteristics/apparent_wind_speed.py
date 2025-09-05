@@ -11,11 +11,6 @@ class ApparentWindSpeedCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Apparent Wind Speed"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "float"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> float:
         """Parse apparent wind speed data (uint16 in units of 0.01 m/s)."""
         if len(data) < 2:
@@ -24,8 +19,3 @@ class ApparentWindSpeedCharacteristic(BaseCharacteristic):
         # Convert uint16 (little endian) to wind speed in m/s
         wind_speed_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         return wind_speed_raw * 0.01
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "m/s"

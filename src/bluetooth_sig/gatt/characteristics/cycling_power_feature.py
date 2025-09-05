@@ -16,11 +16,6 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Cycling Power Feature"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "int"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> int:
         """Parse cycling power feature data.
 
