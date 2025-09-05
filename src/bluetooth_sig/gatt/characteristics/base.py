@@ -8,14 +8,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
+from ...registry.yaml_cross_reference import yaml_cross_reference
 from ..uuid_registry import uuid_registry
 
-try:
-    from ...registry.yaml_cross_reference import yaml_cross_reference
-
-    _yaml_cross_reference_available = True
-except ImportError:
-    _yaml_cross_reference_available = False
+_yaml_cross_reference_available = yaml_cross_reference is not None
 
 
 @dataclass
@@ -274,7 +270,16 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
         data_type = self.get_yaml_data_type()
         if not data_type:
             return False
-        return data_type.startswith("sint")
+        # Check for signed integer types
+        if data_type.startswith("sint"):
+            return True
+        # Check for IEEE-11073 medical float types (signed)
+        if data_type in ("medfloat16", "medfloat32"):
+            return True
+        # Check for IEEE-754 floating point types (signed)
+        if data_type in ("float32", "float64"):
+            return True
+        return False
 
     def get_byte_order_hint(self) -> str:
         """Get byte order hint (Bluetooth SIG uses little-endian by convention)."""
