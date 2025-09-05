@@ -132,7 +132,7 @@ class TestEnvironmentalSensingExpanded:
 
         for char_class, expected_uuid in characteristics:
             char = char_class(uuid="", properties=set())
-            assert char.CHAR_UUID == expected_uuid
+            assert char.char_uuid == expected_uuid
 
     def test_data_validation(self):
         """Test data validation for insufficient bytes."""

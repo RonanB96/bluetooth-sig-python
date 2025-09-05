@@ -47,8 +47,8 @@ class TestGlucoseMeasurementCharacteristic:
 
     def test_glucose_measurement_instantiation(self, glucose_measurement_char):
         """Test that glucose measurement characteristic can be instantiated."""
-        assert glucose_measurement_char.CHAR_UUID == "2A18"
-        assert glucose_measurement_char.value_type == "float"
+        assert glucose_measurement_char.char_uuid == "2A18"
+        assert glucose_measurement_char.value_type == "bytes"  # YAML struct type
         assert glucose_measurement_char.unit == "mg/dL or mmol/L"
 
     def test_glucose_measurement_basic_parsing(self, glucose_measurement_char):
@@ -224,8 +224,8 @@ class TestGlucoseMeasurementContextCharacteristic:
 
     def test_glucose_context_instantiation(self, glucose_context_char):
         """Test that glucose context characteristic can be instantiated."""
-        assert glucose_context_char.CHAR_UUID == "2A34"
-        assert glucose_context_char.value_type == "string"
+        assert glucose_context_char.char_uuid == "2A34"
+        assert glucose_context_char.value_type == "bytes"  # YAML struct type
         assert glucose_context_char.unit == "various"
 
     def test_glucose_context_basic_parsing(self, glucose_context_char):
@@ -339,8 +339,8 @@ class TestGlucoseFeatureCharacteristic:
 
     def test_glucose_feature_instantiation(self, glucose_feature_char):
         """Test that glucose feature characteristic can be instantiated."""
-        assert glucose_feature_char.CHAR_UUID == "2A51"
-        assert glucose_feature_char.value_type == "int"
+        assert glucose_feature_char.char_uuid == "2A51"
+        assert glucose_feature_char.value_type == "bytes"  # YAML struct type
         assert glucose_feature_char.unit == "bitmap"
 
     def test_glucose_feature_basic_parsing(self, glucose_feature_char):

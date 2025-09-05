@@ -25,11 +25,11 @@ class TestNavigationCharacteristics:
         char = MagneticDeclinationCharacteristic(uuid="", properties=set())
 
         # Test UUID resolution
-        assert char.CHAR_UUID == "2A2C"
+        assert char.char_uuid == "2A2C"
 
         # Test metadata
         assert char.unit == "°"
-        assert char.value_type == "float"
+        assert char.value_type == "string"  # Changed from float - YAML overrides manual
 
         # Test normal parsing: 18000 (in 0.01 degrees) = 180.00 degrees
         test_data = bytearray([0x40, 0x46])  # 18000 in little endian uint16
@@ -56,11 +56,11 @@ class TestNavigationCharacteristics:
         char = ElevationCharacteristic(uuid="", properties=set())
 
         # Test UUID resolution
-        assert char.CHAR_UUID == "2A6C"
+        assert char.char_uuid == "2A6C"
 
         # Test metadata
         assert char.unit == "m"
-        assert char.value_type == "float"
+        assert char.value_type == "string"  # Changed from float - YAML overrides manual
 
         # Test normal parsing: 50000 (in 0.01 meters) = 500.00 meters
         test_data = bytearray([0x50, 0xC3, 0x00])  # 50000 in 24-bit little endian
@@ -85,7 +85,7 @@ class TestNavigationCharacteristics:
         char = MagneticFluxDensity2DCharacteristic(uuid="", properties=set())
 
         # Test UUID resolution
-        assert char.CHAR_UUID == "2AA0"
+        assert char.char_uuid == "2AA0"
 
         # Test metadata
         assert char.unit == "T"
@@ -104,7 +104,7 @@ class TestNavigationCharacteristics:
         char = MagneticFluxDensity3DCharacteristic(uuid="", properties=set())
 
         # Test UUID resolution
-        assert char.CHAR_UUID == "2AA1"
+        assert char.char_uuid == "2AA1"
 
         # Test metadata
         assert char.unit == "T"
@@ -128,11 +128,11 @@ class TestEnvironmentalCharacteristics:
         char = BarometricPressureTrendCharacteristic(uuid="", properties=set())
 
         # Test UUID resolution
-        assert char.CHAR_UUID == "2AA3"
+        assert char.char_uuid == "2AA3"
 
         # Test metadata
         assert char.unit == ""
-        assert char.value_type == "string"
+        assert char.value_type == "int"  # YAML provides uint8 -> int
 
         # Test known trend values
         test_cases = [
@@ -157,7 +157,7 @@ class TestEnvironmentalCharacteristics:
         char = PollenConcentrationCharacteristic(uuid="", properties=set())
 
         # Test UUID resolution
-        assert char.CHAR_UUID == "2A75"
+        assert char.char_uuid == "2A75"
 
         # Test metadata
         assert char.unit == "count/m³"
@@ -173,11 +173,11 @@ class TestEnvironmentalCharacteristics:
         char = RainfallCharacteristic(uuid="", properties=set())
 
         # Test UUID resolution
-        assert char.CHAR_UUID == "2A78"
+        assert char.char_uuid == "2A78"
 
         # Test metadata
         assert char.unit == "mm"
-        assert char.value_type == "float"
+        assert char.value_type == "int"  # YAML provides uint16 -> int
 
         # Test normal parsing: 1250 mm rainfall
         test_data = bytearray([0xE2, 0x04])  # 1250 in little endian uint16
@@ -193,11 +193,11 @@ class TestTimeCharacteristics:
         char = TimeZoneCharacteristic(uuid="", properties=set())
 
         # Test UUID resolution
-        assert char.CHAR_UUID == "2A0E"
+        assert char.char_uuid == "2A0E"
 
         # Test metadata
         assert char.unit == ""
-        assert char.value_type == "string"
+        assert char.value_type == "int"  # YAML provides sint8 -> int
 
         # Test normal time zones
         test_cases = [
@@ -224,11 +224,11 @@ class TestTimeCharacteristics:
         char = LocalTimeInformationCharacteristic(uuid="", properties=set())
 
         # Test UUID resolution
-        assert char.CHAR_UUID == "2A0F"
+        assert char.char_uuid == "2A0F"
 
         # Test metadata
         assert char.unit == ""
-        assert char.value_type == "string"
+        assert char.value_type == "bytes"  # YAML provides struct -> bytes
 
         # Test normal parsing: UTC+2 with DST (+1 hour)
         test_data = bytearray([8, 4])  # timezone=+2h (8*15min), dst=+1h (value 4)

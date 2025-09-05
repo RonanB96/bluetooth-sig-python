@@ -14,11 +14,6 @@ class RainfallCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Rainfall"
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "float"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> float:
         """Parse rainfall data (uint16 in meters with 1mm resolution)."""
         if len(data) < 2:

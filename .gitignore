@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Temporary AI agent test files
+temp_test.py
+agent_test.py
+
 # C extensions
 *.so
 

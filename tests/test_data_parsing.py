@@ -2,7 +2,7 @@
 
 import pytest
 
-from bluetooth_sig.core import gatt_hierarchy
+from bluetooth_sig.core import BluetoothSIG
 
 
 class TestDataParsing:
@@ -68,19 +68,17 @@ class TestDataParsing:
     def test_gatt_service_recognition(self, simulated_nordic_thingy_services):
         """Test that GATT framework recognizes simulated services."""
         # Reset discovered services
-        gatt_hierarchy.clear_services()
+        BluetoothSIG.clear_services()
 
         # Process services
-        gatt_hierarchy.process_services(simulated_nordic_thingy_services)
+        BluetoothSIG.process_services(simulated_nordic_thingy_services)
 
         # Verify services were recognized
-        assert len(gatt_hierarchy.discovered_services) > 0, (
-            "No services were recognized"
-        )
+        assert len(BluetoothSIG.discovered_services) > 0, "No services were recognized"
 
         # Verify expected service count (should recognize at least Battery and Environmental)
-        assert len(gatt_hierarchy.discovered_services) >= 2, (
-            f"Expected at least 2 services, got {len(gatt_hierarchy.discovered_services)}"
+        assert len(BluetoothSIG.discovered_services) >= 2, (
+            f"Expected at least 2 services, got {len(BluetoothSIG.discovered_services)}"
         )
 
     def test_battery_level_parsing(
@@ -88,12 +86,12 @@ class TestDataParsing:
     ):
         """Test battery level characteristic parsing."""
         # Reset and process services
-        gatt_hierarchy.clear_services()
-        gatt_hierarchy.process_services(simulated_nordic_thingy_services)
+        BluetoothSIG.clear_services()
+        BluetoothSIG.process_services(simulated_nordic_thingy_services)
 
         # Find battery service
         battery_service = None
-        for service in gatt_hierarchy.discovered_services:
+        for service in BluetoothSIG.discovered_services:
             if "Battery" in service.__class__.__name__:
                 battery_service = service
                 break
@@ -126,12 +124,12 @@ class TestDataParsing:
     ):
         """Test temperature characteristic parsing."""
         # Reset and process services
-        gatt_hierarchy.clear_services()
-        gatt_hierarchy.process_services(simulated_nordic_thingy_services)
+        BluetoothSIG.clear_services()
+        BluetoothSIG.process_services(simulated_nordic_thingy_services)
 
         # Find environmental service
         env_service = None
-        for service in gatt_hierarchy.discovered_services:
+        for service in BluetoothSIG.discovered_services:
             if "Environmental" in service.__class__.__name__:
                 env_service = service
                 break
@@ -163,12 +161,12 @@ class TestDataParsing:
     ):
         """Test humidity characteristic parsing."""
         # Reset and process services
-        gatt_hierarchy.clear_services()
-        gatt_hierarchy.process_services(simulated_nordic_thingy_services)
+        BluetoothSIG.clear_services()
+        BluetoothSIG.process_services(simulated_nordic_thingy_services)
 
         # Find environmental service
         env_service = None
-        for service in gatt_hierarchy.discovered_services:
+        for service in BluetoothSIG.discovered_services:
             if "Environmental" in service.__class__.__name__:
                 env_service = service
                 break
@@ -200,12 +198,12 @@ class TestDataParsing:
     ):
         """Test pressure characteristic parsing."""
         # Reset and process services
-        gatt_hierarchy.clear_services()
-        gatt_hierarchy.process_services(simulated_nordic_thingy_services)
+        BluetoothSIG.clear_services()
+        BluetoothSIG.process_services(simulated_nordic_thingy_services)
 
         # Find environmental service
         env_service = None
-        for service in gatt_hierarchy.discovered_services:
+        for service in BluetoothSIG.discovered_services:
             if "Environmental" in service.__class__.__name__:
                 env_service = service
                 break
@@ -237,12 +235,12 @@ class TestDataParsing:
     ):
         """Test device information characteristic parsing."""
         # Reset and process services
-        gatt_hierarchy.clear_services()
-        gatt_hierarchy.process_services(simulated_nordic_thingy_services)
+        BluetoothSIG.clear_services()
+        BluetoothSIG.process_services(simulated_nordic_thingy_services)
 
         # Find device info service
         device_service = None
-        for service in gatt_hierarchy.discovered_services:
+        for service in BluetoothSIG.discovered_services:
             if (
                 "Device" in service.__class__.__name__
                 or "Information" in service.__class__.__name__
@@ -278,13 +276,13 @@ class TestDataParsing:
     ):
         """Test that a reasonable number of characteristics can be parsed."""
         # Reset and process services
-        gatt_hierarchy.clear_services()
-        gatt_hierarchy.process_services(simulated_nordic_thingy_services)
+        BluetoothSIG.clear_services()
+        BluetoothSIG.process_services(simulated_nordic_thingy_services)
 
         parsed_count = 0
         total_characteristics = 0
 
-        for service in gatt_hierarchy.discovered_services:
+        for service in BluetoothSIG.discovered_services:
             total_characteristics += len(service.characteristics)
             for char_uuid, characteristic in service.characteristics.items():
                 # Try to find corresponding data
@@ -315,17 +313,17 @@ class TestDataParsing:
         ensuring that all characteristics can be parsed and validated.
         """
         # Reset and process services
-        gatt_hierarchy.clear_services()
-        gatt_hierarchy.process_services(simulated_nordic_thingy_services)
+        BluetoothSIG.clear_services()
+        BluetoothSIG.process_services(simulated_nordic_thingy_services)
 
-        assert len(gatt_hierarchy.discovered_services) > 0, "No services recognized"
+        assert len(BluetoothSIG.discovered_services) > 0, "No services recognized"
 
         parsed_count = 0
         error_count = 0
         missing_data_count = 0
         validation_results = {}
 
-        for service in gatt_hierarchy.discovered_services:
+        for service in BluetoothSIG.discovered_services:
             service_name = service.__class__.__name__
             validation_results[service_name] = {
                 "characteristics": {},

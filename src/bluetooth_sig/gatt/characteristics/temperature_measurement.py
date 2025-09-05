@@ -17,11 +17,6 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Temperature Measurement"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "float"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse temperature measurement data according to Bluetooth specification.
 

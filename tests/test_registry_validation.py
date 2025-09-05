@@ -238,7 +238,7 @@ class TestCharacteristicRegistryValidation:
         try:
             # Create an instance to trigger UUID resolution
             char = char_class(uuid="test", properties=set())
-            uuid = char.CHAR_UUID
+            uuid = char.char_uuid
 
             # Verify UUID is not empty
             assert uuid, f"Characteristic {char_class.__name__} has empty UUID"
@@ -261,7 +261,7 @@ class TestCharacteristicRegistryValidation:
         """Test that each characteristic exists in the YAML registry with correct information."""
         try:
             char = char_class(uuid="test", properties=set())
-            uuid = char.CHAR_UUID
+            uuid = char.char_uuid
             name = char.name
 
             # Check if UUID exists in registry
@@ -424,7 +424,7 @@ class TestRegistryConsistency:
         for char_class in char_classes:
             try:
                 char = char_class(uuid="test", properties=set())
-                uuid = char.CHAR_UUID
+                uuid = char.char_uuid
                 char_info = uuid_registry.get_characteristic_info(uuid)
                 if char_info is None:
                     missing_characteristics.append(
@@ -504,7 +504,7 @@ class TestNameResolutionFallback:
         )
 
         # Should resolve UUID through class name parsing: "TemperatureCharacteristic" -> "Temperature" -> "Temperature"
-        uuid = char.CHAR_UUID
+        uuid = char.char_uuid
         assert uuid == "2A6E", (
             f"TemperatureCharacteristic should resolve to UUID 2A6E, got {uuid}"
         )
@@ -552,7 +552,7 @@ class TestNameResolutionFallback:
         )
 
         # Should resolve UUID through explicit name, not class name parsing
-        uuid = char.CHAR_UUID
+        uuid = char.char_uuid
         assert uuid == "2A76", (
             f"UVIndexCharacteristic should resolve to UUID 2A76, got {uuid}"
         )
@@ -586,7 +586,7 @@ class TestNameResolutionFallback:
         char = ModelNumberStringCharacteristic(uuid="test", properties=set())
 
         # Should resolve "ModelNumberStringCharacteristic" -> "ModelNumberString" -> "Model Number String"
-        uuid = char.CHAR_UUID
+        uuid = char.char_uuid
         assert uuid == "2A24", (
             f"ModelNumberStringCharacteristic should resolve to UUID 2A24, got {uuid}"
         )
@@ -700,7 +700,7 @@ class TestNameResolutionFallback:
                 f"{char_class.__name__} should have _characteristic_name"
             )
             assert char._characteristic_name == explicit_name
-            assert char.CHAR_UUID == expected_uuid
+            assert char.char_uuid == expected_uuid
             assert char.name == expected_name
 
 

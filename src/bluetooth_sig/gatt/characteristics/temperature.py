@@ -11,11 +11,6 @@ class TemperatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Temperature"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "float"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> float:
         """Parse temperature data (sint16 in units of 0.01 degrees Celsius)."""
         if len(data) < 2:

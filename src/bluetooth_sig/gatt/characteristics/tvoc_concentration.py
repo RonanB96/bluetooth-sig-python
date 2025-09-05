@@ -15,11 +15,6 @@ class TVOCConcentrationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "VOC Concentration"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "int"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> int:
         """Parse TVOC concentration data (uint16 in units of 1 ppb).
 

@@ -15,11 +15,6 @@ class PM25ConcentrationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Particulate Matter - PM2.5 Concentration"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "int"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> int:
         """Parse PM2.5 concentration data (uint16 in units of 1 μg/m³).
 

@@ -15,11 +15,9 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Battery Level Status"
-
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "string"  # Complex data structure
-        super().__post_init__()
+    _manual_value_type: str = (
+        "dict"  # Override YAML bytes type since parse_value returns dict
+    )
 
     def parse_value(self, data: bytearray) -> dict[str, Any]:
         """Parse battery level status data according to expected bit field format.

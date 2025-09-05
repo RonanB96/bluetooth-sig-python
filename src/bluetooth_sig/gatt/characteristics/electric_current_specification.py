@@ -14,11 +14,6 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Electric Current Specification"
 
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "dict"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> dict[str, float]:
         """Parse current specification data (2x uint16 in units of 0.01 A).
 

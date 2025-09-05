@@ -15,11 +15,9 @@ class MagneticDeclinationCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Magnetic Declination"
-
-    def __post_init__(self):
-        """Initialize with specific value type."""
-        self.value_type = "float"
-        super().__post_init__()
+    _manual_value_type: str = (
+        "float"  # Override YAML int type since parse_value returns float
+    )
 
     def parse_value(self, data: bytearray) -> float:
         """Parse magnetic declination data (uint16 in units of 0.01 degrees)."""

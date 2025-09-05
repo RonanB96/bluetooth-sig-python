@@ -11,11 +11,6 @@ class TrueWindSpeedCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "True Wind Speed"
 
-    def __post_init__(self):
-        """Initialize with specific value type and unit."""
-        self.value_type = "float"
-        super().__post_init__()
-
     def parse_value(self, data: bytearray) -> float:
         """Parse true wind speed data (uint16 in units of 0.01 m/s)."""
         if len(data) < 2:
