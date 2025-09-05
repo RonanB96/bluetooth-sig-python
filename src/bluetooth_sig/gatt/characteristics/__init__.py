@@ -35,6 +35,7 @@ from .electric_current_range import ElectricCurrentRangeCharacteristic
 from .electric_current_specification import ElectricCurrentSpecificationCharacteristic
 from .electric_current_statistics import ElectricCurrentStatisticsCharacteristic
 from .elevation import ElevationCharacteristic
+from .enhanced_temperature import EnhancedTemperatureCharacteristic
 from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic
 from .glucose_feature import GlucoseFeatureCharacteristic
 from .glucose_measurement import GlucoseMeasurementCharacteristic
@@ -87,6 +88,7 @@ class CharacteristicRegistry:
         "Battery Level Status": BatteryPowerStateCharacteristic,
         "Temperature": TemperatureCharacteristic,
         "Temperature Measurement": TemperatureMeasurementCharacteristic,
+        "Enhanced Temperature": EnhancedTemperatureCharacteristic,  # Demo of Phase 1.2 enhanced YAML automation
         "Humidity": HumidityCharacteristic,
         "Pressure": PressureCharacteristic,
         "UV Index": UVIndexCharacteristic,

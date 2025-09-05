@@ -10,6 +10,13 @@ from typing import Any
 
 from ..uuid_registry import uuid_registry
 
+# Enhanced YAML automation (try import, fallback to basic registry if not available)
+try:
+    from ...registry.yaml_cross_reference import yaml_cross_reference
+    _enhanced_yaml_available = True
+except ImportError:
+    _enhanced_yaml_available = False
+
 
 @dataclass
 class BaseCharacteristic(ABC):
@@ -25,57 +32,131 @@ class BaseCharacteristic(ABC):
     value_type: str = field(default="string")
 
     def __post_init__(self):
-        """Initialize characteristic with UUID from registry based on class name."""
+        """Initialize characteristic with UUID from registry based on class name.
+        
+        Enhanced YAML automation: Automatically resolves metadata from cross-file YAML references
+        including UUIDs, data types, field sizes, unit symbols, and byte order hints.
+        """
         if not hasattr(self, "_char_uuid"):
-            # First try explicit characteristic name if set
-            if hasattr(self, "_characteristic_name") and self._characteristic_name:
-                char_info = uuid_registry.get_characteristic_info(
-                    self._characteristic_name
-                )
-                if char_info:
-                    self._char_uuid = char_info.uuid
-                    # Set value_type from registry if available and not manually overridden
-                    if not hasattr(self, "_manual_value_type") and char_info.value_type:
-                        self.value_type = char_info.value_type
+            # Enhanced YAML automation - try cross-file resolution first
+            if _enhanced_yaml_available:
+                enhanced_spec = self._resolve_enhanced_spec()
+                if enhanced_spec:
+                    self._char_uuid = enhanced_spec.uuid
+                    
+                    # Enhanced automation: Set additional metadata from YAML
+                    if not hasattr(self, "_manual_value_type") and enhanced_spec.data_type:
+                        # Map GSS data types to our value types
+                        type_mapping = {
+                            "sint8": "int", "uint8": "int",
+                            "sint16": "int", "uint16": "int", 
+                            "sint32": "int", "uint32": "int",
+                            "float32": "float", "float64": "float",
+                            "utf8s": "string"
+                        }
+                        self.value_type = type_mapping.get(enhanced_spec.data_type, "bytes")
+                        
+                    # Store enhanced metadata for manual implementation methods
+                    self._enhanced_data_type = enhanced_spec.data_type
+                    self._enhanced_field_size = enhanced_spec.field_size
+                    self._enhanced_unit_symbol = enhanced_spec.unit_symbol
+                    self._enhanced_unit_id = enhanced_spec.unit_id
+                    self._enhanced_resolution_text = enhanced_spec.resolution_text
+                    
                     return
-
-            # Convert class name to standard format and try all possibilities
-            name = self.__class__.__name__
-
-            # Try different name formats like services do:
-            # 1. Full class name (e.g., BatteryLevelCharacteristic)
-            # 2. Without 'Characteristic' suffix (e.g., BatteryLevel)
-            # 3. Space-separated (e.g., Battery Level)
-            char_name = name
-            if name.endswith("Characteristic"):
-                char_name = name[:-14]  # Remove 'Characteristic' suffix
-
-            # Split on camelCase and convert to space-separated
-            words = re.findall("[A-Z][^A-Z]*", char_name)
-            display_name = " ".join(words)
-
-            # Try different name formats
-            org_name = "org.bluetooth.characteristic." + "_".join(
-                word.lower() for word in words
+            
+            # Fallback to original registry resolution
+            self._resolve_from_basic_registry()
+    
+    def _resolve_enhanced_spec(self):
+        """Resolve specification using enhanced YAML cross-reference system."""
+        if not _enhanced_yaml_available:
+            return None
+            
+        # First try explicit characteristic name if set
+        if hasattr(self, "_characteristic_name") and self._characteristic_name:
+            return yaml_cross_reference.resolve_characteristic_spec(self._characteristic_name)
+        
+        # Convert class name to standard format and try all possibilities
+        name = self.__class__.__name__
+        
+        # Try different name formats:
+        # 1. Full class name (e.g., BatteryLevelCharacteristic)
+        # 2. Without 'Characteristic' suffix (e.g., BatteryLevel)
+        # 3. Space-separated (e.g., Battery Level)
+        char_name = name
+        if name.endswith("Characteristic"):
+            char_name = name[:-14]  # Remove 'Characteristic' suffix
+        
+        # Split on camelCase and convert to space-separated
+        words = re.findall("[A-Z][^A-Z]*", char_name)
+        display_name = " ".join(words)
+        
+        names_to_try = [
+            name,  # Full class name (e.g. BatteryLevelCharacteristic)
+            char_name,  # Without 'Characteristic' suffix
+            display_name,  # Space-separated (e.g. Battery Level)
+        ]
+        
+        # Try each name format with enhanced resolution
+        for try_name in names_to_try:
+            spec = yaml_cross_reference.resolve_characteristic_spec(try_name)
+            if spec:
+                return spec
+                
+        return None
+    
+    def _resolve_from_basic_registry(self):
+        """Fallback to basic registry resolution (original behavior)."""
+        # First try explicit characteristic name if set
+        if hasattr(self, "_characteristic_name") and self._characteristic_name:
+            char_info = uuid_registry.get_characteristic_info(
+                self._characteristic_name
             )
-            names_to_try = [
-                name,  # Full class name (e.g. BatteryLevelCharacteristic)
-                char_name,  # Without 'Characteristic' suffix
-                display_name,  # Space-separated (e.g. Battery Level)
-                org_name,  # Characteristic-specific format
-            ]
+            if char_info:
+                self._char_uuid = char_info.uuid
+                # Set value_type from registry if available and not manually overridden
+                if not hasattr(self, "_manual_value_type") and char_info.value_type:
+                    self.value_type = char_info.value_type
+                return
 
-            # Try each name format
-            for try_name in names_to_try:
-                char_info = uuid_registry.get_characteristic_info(try_name)
-                if char_info:
-                    self._char_uuid = char_info.uuid
-                    # Set value_type from registry if available and not manually overridden
-                    if not hasattr(self, "_manual_value_type") and char_info.value_type:
-                        self.value_type = char_info.value_type
-                    break
-            else:
-                raise ValueError(f"No UUID found for characteristic: {name}")
+        # Convert class name to standard format and try all possibilities
+        name = self.__class__.__name__
+
+        # Try different name formats like services do:
+        # 1. Full class name (e.g., BatteryLevelCharacteristic)
+        # 2. Without 'Characteristic' suffix (e.g., BatteryLevel)
+        # 3. Space-separated (e.g., Battery Level)
+        char_name = name
+        if name.endswith("Characteristic"):
+            char_name = name[:-14]  # Remove 'Characteristic' suffix
+
+        # Split on camelCase and convert to space-separated
+        words = re.findall("[A-Z][^A-Z]*", char_name)
+        display_name = " ".join(words)
+
+        # Try different name formats
+        org_name = "org.bluetooth.characteristic." + "_".join(
+            word.lower() for word in words
+        )
+        names_to_try = [
+            name,  # Full class name (e.g. BatteryLevelCharacteristic)
+            char_name,  # Without 'Characteristic' suffix
+            display_name,  # Space-separated (e.g. Battery Level)
+            org_name,  # Characteristic-specific format
+        ]
+
+        # Try each name format
+        for try_name in names_to_try:
+            char_info = uuid_registry.get_characteristic_info(try_name)
+            if char_info:
+                self._char_uuid = char_info.uuid
+                # Set value_type from registry if available and not manually overridden
+                if not hasattr(self, "_manual_value_type") and char_info.value_type:
+                    self.value_type = char_info.value_type
+                break
+        else:
+            raise ValueError(f"No UUID found for characteristic: {name}")
 
     @property
     def char_uuid(self) -> str:
@@ -125,14 +206,19 @@ class BaseCharacteristic(ABC):
     def unit(self) -> str:
         """Get the unit of measurement for this characteristic.
 
-        First tries manual unit override, then falls back to YAML registry.
-        This allows manual overrides to take precedence while using automatic parsing as default.
+        Enhanced YAML automation: First tries manual unit override, then enhanced YAML 
+        cross-reference, then falls back to basic YAML registry.
+        This allows manual overrides to take precedence while using maximum automation as default.
         """
         # First try manual unit override (takes priority)
         if hasattr(self, "_manual_unit"):
             return self._manual_unit
 
-        # Fallback to unit from YAML registry for automatic parsing
+        # Enhanced YAML automation: Try enhanced unit symbol from cross-file references
+        if hasattr(self, "_enhanced_unit_symbol") and self._enhanced_unit_symbol:
+            return self._enhanced_unit_symbol
+
+        # Fallback to unit from basic YAML registry 
         char_info = uuid_registry.get_characteristic_info(self.char_uuid)
         if char_info and char_info.unit:
             return char_info.unit
@@ -157,6 +243,37 @@ class BaseCharacteristic(ABC):
 
         # Final fallback to instance value_type
         return self.value_type
+
+    # Enhanced YAML automation helper methods
+    def get_enhanced_data_type(self) -> str | None:
+        """Get the data type from enhanced YAML automation (e.g., 'sint16', 'uint8')."""
+        return getattr(self, "_enhanced_data_type", None)
+    
+    def get_enhanced_field_size(self) -> int | None:
+        """Get the field size in bytes from enhanced YAML automation."""
+        field_size = getattr(self, "_enhanced_field_size", None)
+        if field_size and isinstance(field_size, str) and field_size.isdigit():
+            return int(field_size)
+        return field_size
+    
+    def get_enhanced_unit_id(self) -> str | None:
+        """Get the Bluetooth SIG unit identifier from enhanced YAML automation."""
+        return getattr(self, "_enhanced_unit_id", None)
+    
+    def get_enhanced_resolution_text(self) -> str | None:
+        """Get the resolution description text from enhanced YAML automation."""
+        return getattr(self, "_enhanced_resolution_text", None)
+    
+    def is_signed_from_enhanced_yaml(self) -> bool:
+        """Determine if the data type is signed based on enhanced YAML automation."""
+        data_type = self.get_enhanced_data_type()
+        if not data_type:
+            return False
+        return data_type.startswith("sint")
+    
+    def get_byte_order_hint(self) -> str:
+        """Get byte order hint (Bluetooth SIG uses little-endian by convention)."""
+        return "little"
 
     def _parse_ieee11073_sfloat(self, sfloat_val: int) -> float:
         """Convert IEEE-11073 16-bit SFLOAT to Python float.
