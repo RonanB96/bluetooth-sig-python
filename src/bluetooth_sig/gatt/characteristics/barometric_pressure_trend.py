@@ -14,6 +14,8 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Barometric Pressure Trend"
+    # Manual override: YAML indicates uint8->int but we return descriptive strings
+    _manual_value_type: str = "string"
 
     # Trend value mappings
     TREND_VALUES = {

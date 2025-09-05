@@ -132,7 +132,9 @@ class TestEnvironmentalCharacteristics:
 
         # Test metadata
         assert char.unit == ""
-        assert char.value_type == "int"  # YAML provides uint8 -> int
+        assert (
+            char.value_type == "string"
+        )  # Manual override: returns descriptive strings
 
         # Test known trend values
         test_cases = [
@@ -197,7 +199,9 @@ class TestTimeCharacteristics:
 
         # Test metadata
         assert char.unit == ""
-        assert char.value_type == "int"  # YAML provides sint8 -> int
+        assert (
+            char.value_type == "string"
+        )  # Manual override: returns descriptive strings
 
         # Test normal time zones
         test_cases = [

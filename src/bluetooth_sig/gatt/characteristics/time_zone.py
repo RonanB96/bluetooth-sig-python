@@ -14,6 +14,8 @@ class TimeZoneCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Time Zone"
+    # Manual override: YAML indicates sint8->int but we return descriptive strings
+    _manual_value_type: str = "string"
 
     def parse_value(self, data: bytearray) -> str:
         """Parse time zone data (sint8 in 15-minute increments from UTC)."""
@@ -47,4 +49,4 @@ class TimeZoneCharacteristic(BaseCharacteristic):
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
-        return ""  # No unit for time zone offset        return ""  # No state class for time zone offset
+        return ""  # No unit for time zone offset
