@@ -33,8 +33,3 @@ class ElevationCharacteristic(BaseCharacteristic):
             elevation_raw = elevation_raw - 0x1000000  # Convert to negative
 
         return elevation_raw * 0.01  # Convert to meters
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "m"

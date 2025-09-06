@@ -62,8 +62,3 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
             result["total_distance"] = total_distance_raw / 10.0  # Convert to meters
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "m/s"  # Primary unit for speed

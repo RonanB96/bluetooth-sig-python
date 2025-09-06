@@ -89,8 +89,3 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
                 result["instantaneous_torque_magnitudes"] = torque_magnitudes
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "N·m"  # Newton-meters for torque, mixed units

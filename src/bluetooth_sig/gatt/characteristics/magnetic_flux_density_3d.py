@@ -37,8 +37,3 @@ class MagneticFluxDensity3DCharacteristic(BaseCharacteristic):
         z_tesla = z_raw * 1e-7  # Convert to Tesla
 
         return {"x_axis": x_tesla, "y_axis": y_tesla, "z_axis": z_tesla, "unit": "T"}
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "T"

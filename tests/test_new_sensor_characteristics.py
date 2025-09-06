@@ -59,7 +59,7 @@ class TestNavigationCharacteristics:
         assert char.char_uuid == "2A6C"
 
         # Test metadata
-        assert char.unit == "m"
+        assert char.unit == "length.meter"
         assert char.value_type == "string"  # Changed from float - YAML overrides manual
 
         # Test normal parsing: 50000 (in 0.01 meters) = 500.00 meters
@@ -88,7 +88,7 @@ class TestNavigationCharacteristics:
         assert char.char_uuid == "2AA0"
 
         # Test metadata
-        assert char.unit == "T"
+        assert char.unit == "tesla"
         assert char.value_type == "string"
 
         # Test normal parsing: X=1000, Y=-500 (in 10^-7 Tesla units)
@@ -107,7 +107,7 @@ class TestNavigationCharacteristics:
         assert char.char_uuid == "2AA1"
 
         # Test metadata
-        assert char.unit == "T"
+        assert char.unit == "tesla"
         assert char.value_type == "string"
 
         # Test normal parsing: X=1000, Y=-500, Z=2000
