@@ -184,6 +184,35 @@ class TestBatteryPowerStateCharacteristic:
         assert result["battery_charging_type"] == "constant_voltage"
         assert result["charging_fault_reason"] is None
 
+    def test_parse_full_flags_power_state_format(self):
+        """Test parsing the full SIG Flags + 2-byte Power State format."""
+        char = BatteryPowerStateCharacteristic(uuid="", properties=set())
+
+        # Device reported payload: 00 a3 00
+        data = bytearray([0x00, 0xA3, 0x00])
+        result = char.parse_value(data)
+
+        expected = {
+            "raw_value": 0x00,
+            "battery_present": "present",
+            "wired_external_power_connected": True,
+            "wireless_external_power_connected": False,
+            "battery_charge_state": "charging",
+            "battery_charge_level": "good",
+            "battery_charging_type": "unknown",
+            "charging_fault_reason": None,
+        }
+        assert result == expected
+
+    def test_flags_identifier_missing_raises(self):
+        """If Flags indicate Identifier present but payload is too short, raise."""
+        char = BatteryPowerStateCharacteristic(uuid="", properties=set())
+
+        # Flags=0x01 indicates Identifier present but no extra bytes follow
+        data = bytearray([0x01, 0xA3, 0x00])
+        with pytest.raises(ValueError, match="Identifier indicated by Flags"):
+            char.parse_value(data)
+
     def test_parse_extended_format_external_power_fault(self):
         """Test parsing with external power fault."""
         char = BatteryPowerStateCharacteristic(uuid="", properties=set())

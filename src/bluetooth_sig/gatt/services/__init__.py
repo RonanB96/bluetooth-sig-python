@@ -11,6 +11,7 @@ from .cycling_speed_and_cadence import CyclingSpeedAndCadenceService
 from .device_information import DeviceInformationService
 from .environmental_sensing import EnvironmentalSensingService
 from .generic_access import GenericAccessService
+from .generic_attribute import GenericAttributeService
 from .glucose import GlucoseService
 from .health_thermometer import HealthThermometerService
 from .heart_rate import HeartRateService
@@ -29,6 +30,7 @@ class GattServiceRegistry:
         DeviceInformationService,
         EnvironmentalSensingService,
         GenericAccessService,
+        GenericAttributeService,
         GlucoseService,
         HealthThermometerService,
         HeartRateService,

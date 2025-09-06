@@ -50,6 +50,12 @@ test = [
     "pytest-asyncio==1.1.0",
     "pytest-cov==6.2.1",
 ]
+examples = [
+    # BLE libraries for example integrations
+    "bleak>=0.21.0",                    # Cross-platform async BLE (recommended)
+    "bleak-retry-connector>=3.5.0",    # Robust BLE with retry logic
+    "simplepyble>=0.10.0",             # Cross-platform BLE (requires commercial license for commercial use)
+]
 
 [project.scripts]
 # Note: No CLI scripts for this library package

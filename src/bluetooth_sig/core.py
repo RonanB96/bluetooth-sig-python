@@ -218,10 +218,10 @@ class BluetoothSIGTranslator:
             return None
 
         try:
-            temp_service = service_class(uuid=uuid)
+            temp_service = service_class()
             return ServiceInfo(
                 uuid=temp_service.SERVICE_UUID,
-                name=getattr(temp_service, "_service_name", service_class.__name__),
+                name=temp_service.name,
                 characteristics=getattr(temp_service, "characteristics", None),
             )
         except Exception:  # pylint: disable=broad-exception-caught
