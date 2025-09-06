@@ -208,7 +208,7 @@ if __name__ == "__main__":
             "The bluetooth_sig library is ready for integration with your BLE library of choice."
         )
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         print(f"\n❌ Demo failed: {e}")
         import traceback
 

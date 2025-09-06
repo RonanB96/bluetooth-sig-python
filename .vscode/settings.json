@@ -36,6 +36,7 @@
         "source .venv/bin/activate": true,
         "python scripts/": true,
         "python examples/": true,
+        ".venv/bin/python3": true,
         // File and directory read commands
         "cp": true,
         "cat": true,

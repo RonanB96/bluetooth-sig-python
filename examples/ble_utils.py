@@ -3,10 +3,11 @@
 
 This module provides common BLE connection and scanning functions that work
 across different BLE libraries, reducing code duplication in examples.
-"""
+"""  # pylint: disable=too-many-lines
 
 from __future__ import annotations
 
+import asyncio
 import sys
 import time
 from pathlib import Path
@@ -35,8 +36,7 @@ except ImportError:
 
 # Check for Bleak-retry-connector
 try:
-    from bleak_retry_connector import BleakClientWithServiceCache, establish_connection
-
+    # bleak_retry_connector not used due to compatibility issues
     AVAILABLE_LIBRARIES["bleak-retry"] = {
         "module": "bleak_retry_connector",
         "async": True,
@@ -126,7 +126,7 @@ async def scan_with_bleak(timeout: float = 10.0) -> list:
     return devices
 
 
-async def read_characteristics_bleak(
+async def read_characteristics_bleak(  # pylint: disable=too-many-locals,import-outside-toplevel
     address: str, target_uuids: list[str] = None, timeout: float = 10.0
 ) -> dict[str, tuple[bytes, float]]:
     """Read characteristics from a BLE device using Bleak.
@@ -152,8 +152,6 @@ async def read_characteristics_bleak(
             print(f"   ⏱️  Connection time: {connection_time:.2f}s")
 
             # Add connection delay for device stability
-            import asyncio
-
             await asyncio.sleep(0.5)
 
             # Discover services to ensure proper connection
@@ -191,11 +189,11 @@ async def read_characteristics_bleak(
                     print(
                         f"   📖 {uuid_key}: {len(raw_data)} bytes in {read_time:.3f}s"
                     )
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     uuid_key = uuid[4:8].upper() if len(uuid) > 8 else uuid.upper()
                     print(f"   ❌ {uuid_key}: {e}")
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"   ❌ Bleak connection failed: {e}")
 
     return results
@@ -204,7 +202,7 @@ async def read_characteristics_bleak(
 async def read_characteristics_bleak_retry(
     address: str, target_uuids: list[str], timeout: float = 10.0, max_attempts: int = 3
 ) -> dict[str, tuple[bytes, float]]:
-    """Read characteristics using Bleak-retry-connector.
+    """Read characteristics using Bleak with manual retry logic.
 
     Args:
         address: Device address
@@ -215,39 +213,44 @@ async def read_characteristics_bleak_retry(
     Returns:
         Dict mapping UUID to (raw_data, read_time)
     """
-    if not BLEAK_RETRY_AVAILABLE:
+    if not BLEAK_AVAILABLE:
         return {}
 
     results = {}
-    print("🔄 Reading with Bleak-Retry-Connector...")
+    print("🔄 Reading with Bleak (with retry logic)...")
 
-    try:
-        start_time = time.time()
-        async with establish_connection(
-            BleakClientWithServiceCache,
-            address,
-            "BLE Device",
-            timeout=timeout,
-            max_attempts=max_attempts,
-        ) as client:
-            connection_time = time.time() - start_time
-            print(f"   ⏱️  Connection time: {connection_time:.2f}s")
+    for attempt in range(max_attempts):
+        try:
+            start_time = time.time()
+            async with BleakClient(address, timeout=timeout) as client:
+                connection_time = time.time() - start_time
+                print(
+                    f"   ⏱️  Connection time: {connection_time:.2f}s (attempt {attempt + 1})"
+                )
 
-            for uuid_short in target_uuids:
-                uuid_full = f"0000{uuid_short}-0000-1000-8000-00805F9B34FB"
-                try:
-                    read_start = time.time()
-                    raw_data = await client.read_gatt_char(uuid_full)
-                    read_time = time.time() - read_start
-                    results[uuid_short] = (raw_data, read_time)
-                    print(
-                        f"   📖 {uuid_short}: {len(raw_data)} bytes in {read_time:.3f}s"
-                    )
-                except Exception as e:
-                    print(f"   ❌ {uuid_short}: {e}")
+                for uuid_short in target_uuids:
+                    uuid_full = f"0000{uuid_short}-0000-1000-8000-00805F9B34FB"
+                    try:
+                        read_start = time.time()
+                        raw_data = await client.read_gatt_char(uuid_full)
+                        read_time = time.time() - read_start
+                        results[uuid_short] = (raw_data, read_time)
+                        print(
+                            f"   📖 {uuid_short}: {len(raw_data)} bytes in {read_time:.3f}s"
+                        )
+                    except Exception as e:  # pylint: disable=broad-exception-caught
+                        print(f"   ❌ {uuid_short}: {e}")
 
-    except Exception as e:
-        print(f"   ❌ Bleak-retry connection failed: {e}")
+                # If we got here, connection was successful
+                break
+
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            print(f"   ❌ Connection attempt {attempt + 1} failed: {e}")
+            if attempt < max_attempts - 1:
+                print("   🔄 Retrying in 2 seconds...")
+                await asyncio.sleep(2)
+            else:
+                print(f"   ❌ All {max_attempts} attempts failed")
 
     return results
 
@@ -288,7 +291,7 @@ async def parse_and_display_results(
             else:
                 print(f"   ❌ {uuid_short}: Parse failed - {result.error_message}")
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"   💥 {uuid_short}: Exception - {e}")
 
     return parsed_results
@@ -325,35 +328,82 @@ async def demo_library_comparison(address: str, target_uuids: list[str] = None) 
     print("🔍 Comparing BLE Libraries with Comprehensive Device Analysis")
     print("=" * 60)
 
-    # Test Bleak with comprehensive analysis
+    # Helper: ensure Bleak can see device by doing an explicit scan first
+    async def _ensure_bleak_sees_device(addr: str, attempts: int = 2) -> bool:
+        for attempt in range(1, attempts + 1):
+            print(f"🔎 Bleak scan attempt {attempt}/{attempts} (timeout={5 * attempt}s)")
+            devices = await scan_with_bleak(timeout=5 * attempt)
+            for dev in devices:
+                name, a, rssi = safe_get_device_info(dev)
+                if str(a).upper() == addr.upper():
+                    print(f"✅ Bleak discovered device {addr} ({name}) on attempt {attempt}")
+                    return True
+            # short backoff
+            if attempt < attempts:
+                await asyncio.sleep(1)
+        print(f"❌ Bleak did not discover device {addr} after {attempts} attempts")
+        return False
+
+    # Test Bleak with comprehensive analysis (perform a pre-scan to improve reliability)
     if BLEAK_AVAILABLE:
-        if target_uuids is None:
-            # Use comprehensive analysis for real device discovery
-            bleak_results = await comprehensive_device_analysis_bleak(address)
-            comparison_results["bleak"] = bleak_results
-        else:
-            # Use targeted reading for specific UUIDs
-            bleak_results = await read_characteristics_bleak(address, target_uuids)
-            comparison_results["bleak"] = await parse_and_display_results(
-                bleak_results, "Bleak"
-            )
+        try:
+            if target_uuids is None:
+                seen = await _ensure_bleak_sees_device(address, attempts=2)
+                if not seen:
+                    print("⚠️  Proceeding with Bleak comprehensive analysis despite missing scan result")
+                bleak_results = await comprehensive_device_analysis_bleak(address)
+                comparison_results["bleak"] = bleak_results
+            else:
+                # Use targeted reading for specific UUIDs
+                bleak_results = await read_characteristics_bleak(address, target_uuids)
+                comparison_results["bleak"] = await parse_and_display_results(
+                    bleak_results, "Bleak"
+                )
+        except Exception as e:
+            print(f"❌ Bleak comprehensive analysis failed: {e}")
+
+    # Small delay to avoid HCI adapter contention between different libraries
+    await asyncio.sleep(1)
 
     # Test Bleak-retry with comprehensive approach
     if BLEAK_RETRY_AVAILABLE:
-        if target_uuids is None:
-            print("\n📋 Bleak-Retry: Using comprehensive analysis approach...")
-            # For now, fallback to basic reading - can be enhanced later
-            retry_results = await read_characteristics_bleak_retry(address, [])
-            comparison_results["bleak-retry"] = await parse_and_display_results(
-                retry_results, "Bleak-Retry"
-            )
-        else:
-            retry_results = await read_characteristics_bleak_retry(
-                address, target_uuids
-            )
-            comparison_results["bleak-retry"] = await parse_and_display_results(
-                retry_results, "Bleak-Retry"
-            )
+        try:
+            if target_uuids is None:
+                print("\n📋 Bleak-Retry: Using comprehensive analysis approach...")
+                retry_results = await read_characteristics_bleak_retry(address, [])
+                comparison_results["bleak-retry"] = await parse_and_display_results(
+                    retry_results, "Bleak-Retry"
+                )
+            else:
+                retry_results = await read_characteristics_bleak_retry(
+                    address, target_uuids
+                )
+                comparison_results["bleak-retry"] = await parse_and_display_results(
+                    retry_results, "Bleak-Retry"
+                )
+        except Exception as e:
+            print(f"❌ Bleak-retry analysis failed: {e}")
+
+    # Small delay before running synchronous SimplePyBLE to avoid adapter conflicts
+    await asyncio.sleep(1)
+
+    # Test SimplePyBLE (synchronous) by running its comprehensive analyzer in a thread
+    if "simplepyble" in AVAILABLE_LIBRARIES:
+        try:
+            print("\n🔁 Running SimplePyBLE comprehensive analysis in background thread...")
+            try:
+                import simplepyble as simpleble_module  # type: ignore
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                print(f"❌ Could not import simplepyble: {e}")
+                simpleble_module = None
+
+            if simpleble_module is not None:
+                simple_results = await asyncio.to_thread(
+                    comprehensive_device_analysis_simpleble, address, simpleble_module
+                )
+                comparison_results["simplepyble"] = simple_results
+        except Exception as e:
+            print(f"❌ SimplePyBLE analysis failed: {e}")
 
     return comparison_results
 
@@ -374,7 +424,7 @@ def get_default_characteristic_uuids() -> list[str]:
     ]
 
 
-async def comprehensive_device_analysis_bleak(
+async def comprehensive_device_analysis_bleak(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-nested-blocks,import-outside-toplevel,protected-access
     address: str, timeout: float = 10.0
 ) -> dict:
     """Comprehensively analyze a BLE device using Bleak - discovers and tests ALL characteristics.
@@ -425,15 +475,13 @@ async def comprehensive_device_analysis_bleak(
             )
 
             # Allow device to settle after connection
-            import asyncio
-
             await asyncio.sleep(0.5)
 
             # Get device information
             device_name = client.address
             try:
                 device_name = getattr(client._device, "name", None) or client.address
-            except Exception:
+            except Exception:  # pylint: disable=broad-exception-caught
                 device_name = client.address
             print(f"📱 Device: {device_name}")
 
@@ -445,19 +493,20 @@ async def comprehensive_device_analysis_bleak(
                 print("⚠️ No services discovered")
                 return results
 
-            results["stats"]["services_discovered"] = len(services)
-            print(f"📋 Found {len(services)} services:")
+            results["stats"]["services_discovered"] = len(list(services))
+            print(f"📋 Found {len(list(services))} services:")
 
             # Analyze each service and characteristic
             for service in services:
                 service_info = translator.get_service_info(service.uuid)
+                service_name = service_info.name if service_info else "Unknown Service"
                 service_data = {
                     "uuid": str(service.uuid),
-                    "name": service_info.name,
+                    "name": service_name,
                     "characteristics": [],
                 }
 
-                print(f"\n🔧 Service: {service_info.name} ({service.uuid})")
+                print(f"\n🔧 Service: {service_name} ({service.uuid})")
 
                 chars = service.characteristics
                 results["stats"]["characteristics_found"] += len(chars)
@@ -517,7 +566,7 @@ async def comprehensive_device_analysis_bleak(
                                     print(
                                         f"  ✅ {characteristic.uuid}: {hex_val} ({len(data)} bytes)"
                                     )
-                        except Exception as e:
+                        except Exception as e:  # pylint: disable=broad-exception-caught
                             print(f"  ❌ Error reading {characteristic.uuid}: {e}")
 
             results["stats"]["characteristics_read"] = chars_read
@@ -545,7 +594,7 @@ async def comprehensive_device_analysis_bleak(
                             "error_message": parsed_data.error_message,
                         }
                         parsed_count += 1
-                except Exception:
+                except Exception:  # pylint: disable=broad-exception-caught
                     # Silently skip unparseable characteristics
                     pass
 
@@ -574,8 +623,8 @@ async def comprehensive_device_analysis_bleak(
                 analysis_results = {}
                 for uuid, info in char_info.items():
                     if info:
-                        name = info.get("name", "Unknown")
-                        data_type = info.get("data_type", "unknown")
+                        name = getattr(info, "name", "Unknown")
+                        data_type = getattr(info, "value_type", "unknown")
                         print(f"  📋 {uuid}: {name} [{data_type}]")
                         analysis_results[uuid] = {
                             "name": name,
@@ -618,54 +667,11 @@ async def comprehensive_device_analysis_bleak(
 
             print("\n✅ Comprehensive analysis completed successfully")
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"❌ Comprehensive analysis failed: {e}")
         results["error"] = str(e)
 
     return results
-
-
-async def discover_all_characteristics_bleak(
-    address: str, timeout: float = 10.0
-) -> list[str]:
-    """Discover all available characteristic UUIDs on a device using Bleak.
-
-    This replaces get_default_characteristic_uuids() with actual device discovery.
-
-    Args:
-        address: BLE device address
-        timeout: Connection timeout
-
-    Returns:
-        List of discovered characteristic UUIDs
-    """
-    if not BLEAK_AVAILABLE:
-        print("❌ Bleak not available for characteristic discovery")
-        return []
-
-    discovered_uuids = []
-    print("🔍 Discovering all device characteristics...")
-
-    try:
-        async with BleakClient(address, timeout=timeout) as client:
-            print(f"✅ Connected to {address}")
-
-            # Allow device to settle
-            import asyncio
-
-            await asyncio.sleep(0.5)
-
-            services = client.services
-            for service in services:
-                for characteristic in service.characteristics:
-                    discovered_uuids.append(str(characteristic.uuid))
-
-            print(f"📋 Discovered {len(discovered_uuids)} characteristics")
-
-    except Exception as e:
-        print(f"❌ Characteristic discovery failed: {e}")
-
-    return discovered_uuids
 
 
 def comprehensive_device_analysis_simpleble(address: str, simpleble_module) -> dict:
@@ -733,7 +739,7 @@ def comprehensive_device_analysis_simpleble(address: str, simpleble_module) -> d
                 if peripheral.identifier() == address:
                     target_peripheral = peripheral
                     break
-            except Exception:
+            except Exception:  # pylint: disable=broad-exception-caught
                 continue
 
         if not target_peripheral:
@@ -758,12 +764,12 @@ def comprehensive_device_analysis_simpleble(address: str, simpleble_module) -> d
         # Discover all services and characteristics
         print("\n🔍 Discovering all services...")
         services = target_peripheral.services()
-        results["stats"]["services_discovered"] = len(services)
+        results["stats"]["services_discovered"] = len(list(services))
 
-        print(f"📋 Found {len(services)} services:")
+        print(f"📋 Found {len(list(services))} services:")
 
-        # Process all services and characteristics
-        _process_simpleble_services(services, translator, results)
+        # Process all services and characteristics (pass connected peripheral for reads)
+        _process_simpleble_services(services, translator, results, target_peripheral)
 
         # Enhanced SIG translator analysis
         _perform_sig_analysis(results, translator)
@@ -773,14 +779,213 @@ def comprehensive_device_analysis_simpleble(address: str, simpleble_module) -> d
         print(f"\n🔌 Disconnected from {address}")
         print("✅ Comprehensive analysis completed")
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"❌ Comprehensive analysis failed: {e}")
         results["error"] = str(e)
 
     return results
 
 
-def _process_simpleble_services(services, translator, results):
+async def discover_services_and_characteristics_bleak(  # pylint: disable=too-many-locals
+    address: str, timeout: float = 10.0
+) -> dict:
+    """Discover all services and characteristics on a BLE device using Bleak.
+
+    Args:
+        address: BLE device address
+        timeout: Connection timeout
+
+    Returns:
+        Dictionary of discovered services and characteristics
+    """
+    if not BLEAK_AVAILABLE:
+        print("❌ Bleak not available for service discovery")
+        return {}
+
+    translator = BluetoothSIGTranslator()
+    discovery_results = {}
+
+    print(f"🔄 Discovering services on {address}...")
+
+    try:
+        async with BleakClient(address, timeout=timeout) as client:
+            print("✅ Connected for service discovery")
+
+            services = client.services
+            await asyncio.sleep(0.5)  # Allow device to settle
+
+            for service in services:
+                service_info = translator.get_service_info(service.uuid)
+                service_name = service_info.name if service_info else "Unknown Service"
+
+                print(f"\n🔧 Service: {service_name} ({service.uuid[:8]}...)")
+
+                service_chars = []
+                for char in service.characteristics:
+                    char_uuid_short = (
+                        char.uuid[4:8].upper()
+                        if len(char.uuid) > 8
+                        else char.uuid.upper()
+                    )
+                    char_info = translator.get_characteristic_info(char_uuid_short)
+                    char_name = char_info.name if char_info else char.description
+
+                    service_chars.append(
+                        {
+                            "uuid": char_uuid_short,
+                            "name": char_name,
+                            "properties": list(char.properties),
+                        }
+                    )
+
+                    print(
+                        f"  📋 {char_name} ({char_uuid_short}) - {', '.join(char.properties)}"
+                    )
+
+                discovery_results[service.uuid] = {
+                    "name": service_name,
+                    "characteristics": service_chars,
+                }
+
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        print(f"❌ Service discovery failed: {e}")
+
+    return discovery_results
+
+
+async def handle_notifications_bleak(
+    address: str, duration: int = 30, timeout: float = 10.0
+) -> int:
+    """Monitor BLE notifications with SIG parsing using Bleak.
+
+    Args:
+        address: BLE device address
+        duration: Duration to monitor notifications in seconds
+        timeout: Connection timeout
+
+    Returns:
+        Number of notifications received
+    """
+    if not BLEAK_AVAILABLE:
+        print("❌ Bleak not available for notifications")
+        return 0
+
+    translator = BluetoothSIGTranslator()
+    notification_count = 0
+
+    def notification_handler(sender, data):
+        nonlocal notification_count
+        notification_count += 1
+
+        # Extract UUID from sender
+        char_uuid = (
+            sender.uuid[4:8].upper() if len(sender.uuid) > 8 else sender.uuid.upper()
+        )
+
+        # Parse with SIG standards
+        result = translator.parse_characteristic(char_uuid, data)
+
+        if result.parse_success:
+            unit_str = f" {result.unit}" if result.unit else ""
+            print(
+                f"🔔 Notification #{notification_count}: {result.name} = {result.value}{unit_str}"
+            )
+        else:
+            print(
+                f"🔔 Notification #{notification_count}: Raw data from {char_uuid}: {data.hex()}"
+            )
+
+    print(f"🔔 Starting notification monitoring for {duration}s...")
+
+    try:
+        async with BleakClient(address, timeout=timeout) as client:
+            print("✅ Connected for notifications")
+
+            # Subscribe to all notifiable characteristics
+            subscribed_count = 0
+            for service in client.services:
+                for char in service.characteristics:
+                    if "notify" in char.properties:
+                        char_name = char.description or f"Char-{char.uuid[4:8]}"
+                        print(f"📡 Subscribing to {char_name} notifications...")
+                        await client.start_notify(char.uuid, notification_handler)
+                        subscribed_count += 1
+
+            if subscribed_count == 0:
+                print("❌ No notifiable characteristics found")
+                return 0
+
+            print(f"📡 Subscribed to {subscribed_count} characteristics")
+
+            # Wait for notifications
+            await asyncio.sleep(duration)
+
+            print(
+                f"\n📊 Monitoring complete. Received {notification_count} notifications."
+            )
+
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        print(f"❌ Notification monitoring failed: {e}")
+
+    return notification_count
+
+
+def _process_single_characteristic(char, translator, results, service_uuid, peripheral):
+    """Process a single SimpleBLE characteristic."""
+    try:
+        char_uuid = char.uuid()
+        char_uuid_short = (
+            char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
+        )
+
+        # Get characteristic info
+        char_info = translator.get_characteristic_info(char_uuid_short)
+        char_name = char_info.name if char_info else f"Char-{char_uuid_short}"
+
+        char_data = {
+            "uuid": char_uuid_short,
+            "name": char_name,
+            "readable": True,  # Assume readable, handle exceptions
+        }
+        results["service_info"][service_uuid]["characteristics"].append(char_data)
+
+        print(f"      └─ {char_name} ({char_uuid_short}) - [read]")
+
+        # Try to read the characteristic using the peripheral read API
+        try:
+            print(f"  📖 Reading {char_uuid_short}...")
+
+            # Use peripheral.read(service, characteristic) as provided by SimplePyBLE
+            raw_data = peripheral.read(service_uuid, char_uuid)
+
+            if raw_data:
+                raw_bytes = _convert_to_bytes(raw_data)
+                results["raw_data"][char_uuid_short] = raw_bytes
+
+                # Display raw data
+                _display_raw_data(char_uuid_short, raw_bytes)
+
+                # Try to parse with bluetooth_sig
+                return _parse_characteristic_data(
+                    char_uuid_short,
+                    raw_bytes,
+                    char_name,
+                    translator,
+                    results,
+                )
+
+            print(f"  ⚠️  {char_uuid_short}: No data read")
+
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            print(f"  ❌ Error reading {char_uuid_short}: {e}")
+
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        print(f"     ❌ Error processing characteristic: {e}")
+
+    return 0
+
+
+def _process_simpleble_services(services, translator, results, peripheral):  # pylint: disable=too-many-locals
     """Process SimpleBLE services and characteristics (helper function)."""
     chars_found = 0
     chars_read = 0
@@ -806,64 +1011,14 @@ def _process_simpleble_services(services, translator, results):
             print(f"   └─ {len(characteristics)} characteristics:")
 
             for char in characteristics:
-                try:
-                    char_uuid = char.uuid()
-                    char_uuid_short = (
-                        char_uuid[4:8].upper()
-                        if len(char_uuid) > 8
-                        else char_uuid.upper()
-                    )
+                parsed_count = _process_single_characteristic(
+                    char, translator, results, service_uuid, peripheral
+                )
+                if parsed_count > 0:
+                    chars_read += 1
+                    chars_parsed += parsed_count
 
-                    # Get characteristic info
-                    char_info = translator.get_characteristic_info(char_uuid_short)
-                    char_name = (
-                        char_info.name if char_info else f"Char-{char_uuid_short}"
-                    )
-
-                    char_data = {
-                        "uuid": char_uuid_short,
-                        "name": char_name,
-                        "readable": True,  # Assume readable, handle exceptions
-                    }
-                    results["service_info"][service_uuid]["characteristics"].append(
-                        char_data
-                    )
-
-                    print(f"      └─ {char_name} ({char_uuid_short}) - [read]")
-
-                    # Try to read the characteristic
-                    try:
-                        print(f"  📖 Reading {char_uuid_short}...")
-                        raw_data = char.read()
-
-                        if raw_data:
-                            chars_read += 1
-                            raw_bytes = _convert_to_bytes(raw_data)
-                            results["raw_data"][char_uuid_short] = raw_bytes
-
-                            # Display raw data
-                            _display_raw_data(char_uuid_short, raw_bytes)
-
-                            # Try to parse with bluetooth_sig
-                            parsed_count = _parse_characteristic_data(
-                                char_uuid_short,
-                                raw_bytes,
-                                char_name,
-                                translator,
-                                results,
-                            )
-                            chars_parsed += parsed_count
-
-                        else:
-                            print(f"  ⚠️  {char_uuid_short}: No data read")
-
-                    except Exception as e:
-                        print(f"  ❌ Error reading {char_uuid_short}: {e}")
-
-                except Exception as e:
-                    print(f"     ❌ Error processing characteristic: {e}")
-
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"  ❌ Error processing service: {e}")
 
     # Update stats
@@ -918,7 +1073,7 @@ def _parse_characteristic_data(
                 "unit": parsed_data.unit,
             }
             return 1
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
         pass  # Silently skip unparseable characteristics
 
     return 0
@@ -935,8 +1090,8 @@ def _perform_sig_analysis(results, translator):
         char_info = translator.get_characteristics_info(discovered_uuids)
         for uuid, info in char_info.items():
             if info:
-                name = info.get("name", "Unknown")
-                data_type = info.get("data_type", "unknown")
+                name = getattr(info, "name", "Unknown")
+                data_type = getattr(info, "value_type", "unknown")
                 print(f"  📋 {uuid}: {name} [{data_type}]")
             else:
                 print(f"  ❓ {uuid}: Unknown characteristic")

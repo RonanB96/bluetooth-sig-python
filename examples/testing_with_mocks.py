@@ -33,7 +33,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from bluetooth_sig import BluetoothSIGTranslator
 
 
-class MockCharacteristicData:
+class MockCharacteristicData:  # pylint: disable=too-few-public-methods
     """Mock characteristic data based on SIG specifications."""
 
     # Test data derived from official Bluetooth SIG specifications
@@ -168,7 +168,7 @@ def run_basic_parsing_tests() -> dict[str, Any]:
                     results["failed"] += 1
                     char_results["valid_failed"] += 1
 
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"   ❌ Exception: {e}")
                 results["failed"] += 1
                 char_results["valid_failed"] += 1
@@ -191,7 +191,7 @@ def run_basic_parsing_tests() -> dict[str, Any]:
                     )
                     results["failed"] += 1
 
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"   ✅ Exception properly raised: {e}")
                 results["passed"] += 1
                 char_results["invalid_handled"] += 1
@@ -234,7 +234,7 @@ def run_edge_case_tests() -> dict[str, Any]:
             _result = translator.parse_characteristic(uuid, data)
             print(f"   ✅ {test_name}: {description}")
             results["passed"] += 1
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"   ❌ {test_name}: Exception - {e}")
             results["failed"] += 1
 
@@ -288,8 +288,8 @@ def run_performance_benchmark() -> dict[str, Any]:
     return results
 
 
-def run_compliance_validation() -> dict[str, Any]:
-    """Validate compliance with SIG specifications."""
+def run_compliance_validation() -> dict[str, Any]:  # pylint: disable=too-many-locals
+    """Run comprehensive compliance validation tests."""
     print("\n📜 SIG Compliance Validation")
     print("=" * 30)
 
@@ -501,9 +501,9 @@ def main():
         print("This demonstrates how to test bluetooth_sig without BLE hardware.")
         print("Perfect for CI/CD pipelines, unit tests, and development validation.")
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"\n❌ Demo failed: {e}")
-        import traceback
+        import traceback  # pylint: disable=import-outside-toplevel
 
         traceback.print_exc()
         sys.exit(1)
