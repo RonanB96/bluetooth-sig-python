@@ -188,8 +188,6 @@ This pattern works with:
 - bleak
 - bleak-retry-connector
 - simplepyble
-- bluepy (Linux)
-- simplebluez (Linux)
 - Any custom BLE implementation
 """)
 

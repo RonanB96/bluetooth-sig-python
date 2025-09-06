@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
-"""SimplePyBLE integration example - cross-platform BLE library with SIG parsing.
+"""SimpleBLE integration example - alternative BLE library with SIG parsing.
 
-This example demonstrates using SimplePyBLE as an alternative BLE library combined
-with bluetooth_sig for standards-compliant data parsing. SimplePyBLE offers a
+This example demonstrates using SimpleBLE as an alternative BLE library combined
+with bluetooth_sig for standards-compliant data parsing. SimpleBLE offers a
 different API design compared to Bleak.
 
 Benefits:
-- Cross-platform BLE library (Windows, macOS, Linux)
-- Synchronous API alternative to async libraries
+- Alternative BLE library choice
+- Cross-platform C++ library with Python bindings
 - Pure SIG standards parsing
 - Demonstrates framework-agnostic design
 
 Requirements:
-    pip install simplepyble  # Cross-platform (requires commercial license for commercial use)
+    pip install simplebluez  # Linux
+    pip install simpleble    # Windows/macOS (if available)
 
-Note: SimplePyBLE requires a commercial license for commercial use since January 2025.
-Free for non-commercial use.
+Note: SimpleBLE availability varies by platform. This example shows the
+integration pattern even if the library is not installed.
 
 Usage:
     python with_simpleble.py --scan
@@ -32,23 +33,34 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-# Import shared BLE utilities
-from ble_utils import (
-    comprehensive_device_analysis_simpleble,
-)
-
 from bluetooth_sig import BluetoothSIGTranslator
 
-# Try to import SimplePyBLE (availability varies by platform)
-try:
-    import simplepyble as simpleble_module
+# Import shared BLE utilities
+from ble_utils import (
+    demo_mock_comparison,
+    get_default_characteristic_uuids,
+)
 
-    print("✅ SimplePyBLE module loaded")
-except ImportError as e:
-    print("❌ SimplePyBLE not available. This example requires SimplePyBLE.")
-    print("Install with: pip install simplepyble")
-    print(f"Error: {e}")
-    sys.exit(1)
+# Try to import SimpleBLE (availability varies by platform)
+SIMPLEBLE_AVAILABLE = False
+SIMPLEBLE_MODULE = None
+
+try:
+    import simpleble as simpleble_module
+    SIMPLEBLE_AVAILABLE = True
+    SIMPLEBLE_MODULE = simpleble_module
+    print("✅ SimpleBLE module loaded")
+except ImportError:
+    try:
+        import simplebluez as simpleble_module
+        SIMPLEBLE_AVAILABLE = True
+        SIMPLEBLE_MODULE = simpleble_module
+        print("✅ SimpleBluez module loaded (Linux alternative)")
+    except ImportError:
+        print("⚠️  SimpleBLE not available. This is a demonstration of the integration pattern.")
+        print("Install options:")
+        print("  Linux: pip install simplebluez")
+        print("  Other: pip install simpleble (if available)")
 
 
 def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict]:
@@ -60,13 +72,17 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict]:
     Returns:
         List of device information dictionaries
     """
+    if not SIMPLEBLE_AVAILABLE:
+        print("❌ SimpleBLE not available for scanning")
+        return []
+
     devices = []
 
     try:
         print(f"🔍 Scanning for BLE devices using SimpleBLE ({timeout}s)...")
 
         # Get available adapters
-        adapters = simpleble_module.Adapter.get_adapters()  # pylint: disable=no-member
+        adapters = SIMPLEBLE_MODULE.Adapter.get_adapters()
         if not adapters:
             print("❌ No BLE adapters found")
             return devices
@@ -86,18 +102,14 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict]:
         for i, peripheral in enumerate(scan_results, 1):
             try:
                 name = peripheral.identifier() or "Unknown"
-                address = (
-                    peripheral.address()
-                    if hasattr(peripheral, "address")
-                    else "Unknown"
-                )
-                rssi = peripheral.rssi() if hasattr(peripheral, "rssi") else "N/A"
+                address = peripheral.address() if hasattr(peripheral, 'address') else "Unknown"
+                rssi = peripheral.rssi() if hasattr(peripheral, 'rssi') else "N/A"
 
                 device_info = {
-                    "name": name,
-                    "address": address,
-                    "rssi": rssi,
-                    "peripheral": peripheral,
+                    'name': name,
+                    'address': address,
+                    'rssi': rssi,
+                    'peripheral': peripheral
                 }
                 devices.append(device_info)
 
@@ -112,25 +124,28 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict]:
     return devices
 
 
-def read_characteristics_simpleble(
-    address: str, target_uuids: list[str] = None
-) -> dict:
+def read_characteristics_simpleble(address: str, target_uuids: list[str] = None) -> dict:
     """Read characteristics from a BLE device using SimpleBLE.
 
     Args:
         address: BLE device address
-        target_uuids: List of characteristic UUIDs to read (if None, reads ALL readable characteristics)
+        target_uuids: List of characteristic UUIDs to read
 
     Returns:
         Dictionary mapping UUID to (raw_data, char_object) tuples
     """
+    if not SIMPLEBLE_AVAILABLE:
+        print("❌ SimpleBLE not available for connections")
+        return {}
+
     results = {}
+    target_uuids = target_uuids or get_default_characteristic_uuids()
 
     print(f"🔵 Connecting to device using SimpleBLE: {address}")
 
     try:
         # Get adapter
-        adapters = simpleble_module.Adapter.get_adapters()  # pylint: disable=no-member
+        adapters = SIMPLEBLE_MODULE.Adapter.get_adapters()
         if not adapters:
             print("❌ No BLE adapters found")
             return results
@@ -148,10 +163,10 @@ def read_characteristics_simpleble(
 
         for peripheral in scan_results:
             try:
-                if hasattr(peripheral, "address") and peripheral.address() == address:
+                if hasattr(peripheral, 'address') and peripheral.address() == address:
                     target_peripheral = peripheral
                     break
-                if peripheral.identifier() == address:
+                elif peripheral.identifier() == address:  # Some implementations use identifier
                     target_peripheral = peripheral
                     break
             except Exception:
@@ -172,16 +187,12 @@ def read_characteristics_simpleble(
         print(f"✅ Connected to {address}")
 
         # Discover services and read characteristics
-        if target_uuids:
-            print(f"\n📊 Reading {len(target_uuids)} specific characteristics...")
-        else:
-            print("\n📊 Reading ALL readable characteristics...")
-
+        print("\n📊 Reading and parsing characteristics...")
         services = target_peripheral.services()
 
         for service in services:
             try:
-                service.uuid()
+                service_uuid = service.uuid()
 
                 # Get characteristics for this service
                 characteristics = service.characteristics()
@@ -210,12 +221,10 @@ def read_characteristics_simpleble(
                             continue
 
                         # Convert to bytes if needed
-                        if hasattr(raw_data, "__iter__") and not isinstance(
-                            raw_data, (str, bytes)
-                        ):
+                        if hasattr(raw_data, '__iter__') and not isinstance(raw_data, (str, bytes)):
                             raw_bytes = bytes(raw_data)
                         elif isinstance(raw_data, str):
-                            raw_bytes = raw_data.encode("utf-8")
+                            raw_bytes = raw_data.encode('utf-8')
                         else:
                             raw_bytes = raw_data
 
@@ -242,18 +251,14 @@ def read_and_parse_with_simpleble(address: str, target_uuids: list[str] = None) 
 
     Args:
         address: BLE device address
-        target_uuids: List of characteristic UUIDs to read (if None, performs comprehensive analysis)
+        target_uuids: List of characteristic UUIDs to read
 
     Returns:
-        Dictionary of parsed characteristic data or comprehensive analysis results
+        Dictionary of parsed characteristic data
     """
-    if target_uuids is None:
-        # Use comprehensive device analysis for real device discovery
-        print("� Using comprehensive device analysis...")
-        return comprehensive_device_analysis_simpleble(address, simpleble_module)
-
-    # Use targeted reading for specific UUIDs (legacy mode)
-    print("📋 Reading specific characteristics...")
+    if not SIMPLEBLE_AVAILABLE:
+        print("❌ SimpleBLE not available for connections")
+        return {}
 
     # Read raw characteristics
     raw_results = read_characteristics_simpleble(address, target_uuids)
@@ -352,22 +357,22 @@ def get_ble_library_and_connect(address: str):
     """)
 
 
+def demonstrate_mock_usage():
+    """Demonstrate the integration pattern even without SimpleBLE."""
+    print("\n🎭 Mock SimpleBLE Integration (No Hardware Required)")
+    print("=" * 55)
+
+    # Use shared demo functionality
+    demo_mock_comparison("SimpleBLE")
+
+
 def main():
     """Main function demonstrating SimpleBLE + bluetooth_sig integration."""
-    parser = argparse.ArgumentParser(
-        description="SimpleBLE + bluetooth_sig integration example"
-    )
+    parser = argparse.ArgumentParser(description="SimpleBLE + bluetooth_sig integration example")
     parser.add_argument("--address", "-a", help="BLE device address to connect to")
     parser.add_argument("--scan", "-s", action="store_true", help="Scan for devices")
-    parser.add_argument(
-        "--timeout", "-t", type=float, default=10.0, help="Scan timeout in seconds"
-    )
-    parser.add_argument(
-        "--uuids",
-        "-u",
-        nargs="+",
-        help="Specific characteristic UUIDs to read (legacy mode). If not specified, performs comprehensive device analysis.",
-    )
+    parser.add_argument("--timeout", "-t", type=float, default=10.0, help="Scan timeout in seconds")
+    parser.add_argument("--uuids", "-u", nargs="+", help="Specific characteristic UUIDs to read")
 
     args = parser.parse_args()
 
@@ -379,12 +384,14 @@ def main():
             # Scan for devices
             devices = scan_for_devices_simpleble(args.timeout)
 
-            if not devices:
+            if not devices and SIMPLEBLE_AVAILABLE:
                 print("\n❌ No devices found")
+            elif not SIMPLEBLE_AVAILABLE:
+                print("📝 Would scan for devices if SimpleBLE was available")
 
             if not args.address:
                 print("\n💡 Use --address with a device address to connect")
-                print("✅ Scan completed successfully")
+                demonstrate_mock_usage()
                 demonstrate_simpleble_patterns()
                 return
 
@@ -394,45 +401,18 @@ def main():
             results = read_and_parse_with_simpleble(args.address, args.uuids)
 
             if results:
-                if "stats" in results:
-                    # Comprehensive analysis results
-                    stats = results["stats"]
-                    print("\n📊 Analysis Summary:")
-                    print(f"  🔗 Connection time: {stats['connection_time']:.2f}s")
-                    print(f"  🔧 Services discovered: {stats['services_discovered']}")
-                    print(
-                        f"  📋 Characteristics found: {stats['characteristics_found']}"
-                    )
-                    print(f"  📖 Characteristics read: {stats['characteristics_read']}")
-                    print(
-                        f"  🏗️  Characteristics parsed: {stats['characteristics_parsed']}"
-                    )
-                    print(
-                        f"  ✅ Characteristics validated: {stats['characteristics_validated']}"
-                    )
-
-                    if results["parsed_data"]:
-                        print("\n📋 Successfully parsed characteristics:")
-                        for _uuid, data in results["parsed_data"].items():
-                            unit_str = f" {data['unit']}" if data["unit"] else ""
-                            print(f"  {data['name']}: {data['value']}{unit_str}")
-
-                    print(
-                        "\n💡 This comprehensive approach discovers ALL device capabilities"
-                    )
-                    print("   instead of testing predefined characteristics.")
-                    print("   Use --uuids for legacy specific characteristic testing.")
-                else:
-                    # Legacy mode results
-                    print("\n📋 Summary of parsed data:")
-                    for _uuid, result in results.items():
-                        # pylint: disable=no-member
-                        if result.parse_success:
-                            unit_str = f" {result.unit}" if result.unit else ""
-                            print(f"  {result.name}: {result.value}{unit_str}")
+                print("\n📋 Summary of parsed data:")
+                for _uuid, result in results.items():
+                    if result.parse_success:
+                        unit_str = f" {result.unit}" if result.unit else ""
+                        print(f"  {result.name}: {result.value}{unit_str}")
 
         # Always show the integration patterns
         demonstrate_simpleble_patterns()
+
+        # Show mock usage if SimpleBLE not available
+        if not SIMPLEBLE_AVAILABLE:
+            demonstrate_mock_usage()
 
         print("\n✅ Demo completed!")
         print("This example shows framework-agnostic SIG parsing with SimpleBLE.")
@@ -440,11 +420,10 @@ def main():
 
     except KeyboardInterrupt:
         print("\n🛑 Demo interrupted by user")
-    except (OSError, RuntimeError, ValueError) as e:
+    except Exception as e:
         print(f"\n❌ Demo failed: {e}")
-        print(
-            "Check that SimplePyBLE is properly installed and BLE adapter is available"
-        )
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":

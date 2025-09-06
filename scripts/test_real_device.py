@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Test script for connecting to a real Bluetooth device using proper Bleak patterns.
 
-This is the main real device testing script that uses the BLE GATT framework
-abstraction layer for device interactions.
+This script tests BLE device connections and demonstrates bluetooth_sig parsing
+with real hardware devices.
 """
 
 import asyncio
@@ -12,14 +12,12 @@ from pathlib import Path
 
 # Configure path for imports
 script_dir = Path(__file__).parent
-sys.path.insert(0, str(script_dir))
-from path_config import configure_for_scripts
-configure_for_scripts()
+sys.path.insert(0, str(script_dir.parent / "src"))
 
 try:
-    from ble_gatt_device.core import BLEGATTDevice
-    from bluetooth_sig.core import BluetoothSIGTranslator
-    from bleak import BleakScanner
+    from bleak import BleakClient, BleakScanner
+    from bluetooth_sig import BluetoothSIGTranslator
+
     DEPENDENCIES_AVAILABLE = True
 except ImportError as e:
     print(f"⚠️  Warning: Required dependencies not available: {e}")
@@ -35,117 +33,144 @@ logging.basicConfig(
 
 
 async def test_device_connection(mac_address: str):
-    """Test connecting to a real BLE device and reading characteristics using the backend abstraction."""
-    print(f"Testing connection to device: {mac_address}")
+    """Test connection to a real device using Bleak."""
+    print(f"\n🔍 Testing connection to device: {mac_address}")
     print("=" * 60)
-    device = BLEGATTDevice(mac_address)
-    connected = await device.connect()
-    if not connected:
-        print(f"❌ Could not connect to device {mac_address}")
-        if hasattr(device._impl, '_scan_rssi') and device._impl._scan_rssi is not None:
-            print(f"📶 Scan RSSI: {device._impl._scan_rssi} dBm ({device._impl._scan_rssi_quality})")
-        else:
-            print("Device not found during scan or out of range.")
-        return False
-    print(f"✅ Successfully connected to {mac_address}")
-    if hasattr(device._impl, '_scan_rssi') and device._impl._scan_rssi is not None:
-        print(f"📶 Scan RSSI: {device._impl._scan_rssi} dBm ({device._impl._scan_rssi_quality})")
-    if hasattr(device._impl, '_connection_rssi') and device._impl._connection_rssi is not None:
-        print(f"📶 Connection RSSI: {device._impl._connection_rssi} dBm ({device._impl._connection_rssi_quality})")
-
-    # Print discovered services and characteristics
-    info = await device.get_device_info()
-    if not info.get("connected"):
-        print("❌ Not connected after info check.")
-        return False
-    services = info.get("services", {})
-    print(f"✅ Found {len(services)} services:")
-    for service_uuid, service in services.items():
-        print(f"\n📋 Service: {service_uuid}")
-        chars = service.get("characteristics", {})
-        print(f"   └─ {len(chars)} characteristics:")
-        for char_uuid, char in chars.items():
-            props = ", ".join(char.get("properties", []))
-            print(f"      └─ {char_uuid} - [{props}]")
-            for desc in char.get("descriptors", []):
-                print(f"         └─ Descriptor: {desc}")
-
-    # Read all characteristics
-    print("\n🔍 Reading all readable characteristics...")
-    values = await device.read_characteristics()
-    for uuid, value in values.items():
-        if isinstance(value, (bytes, bytearray)):
-            if len(value) == 0:
-                print(f"  ⚠️  {uuid}: Empty data (0 bytes)")
-            else:
-                try:
-                    str_val = value.decode("utf-8").strip("\x00")
-                    is_printable = str_val and all(c.isprintable() or c.isspace() for c in str_val)
-                    if is_printable and len(str_val) > 0:
-                        print(f"  ✅ {uuid}: '{str_val}' ({len(value)} bytes)")
-                    else:
-                        hex_val = " ".join(f"{b:02x}" for b in value)
-                        print(f"  ✅ {uuid}: {hex_val} ({len(value)} bytes)")
-                except UnicodeDecodeError:
-                    hex_val = " ".join(f"{b:02x}" for b in value)
-                    print(f"  ✅ {uuid}: {hex_val} ({len(value)} bytes)")
-        else:
-            print(f"  ✅ {uuid}: {value}")
-
-    # Parse with GATT framework
-    print("\n🏗️  Testing GATT framework integration...")
-    parsed = await device.read_parsed_characteristics()
-    chars = parsed.get("characteristics", {})
-    if chars:
-        for uuid, entry in chars.items():
-            char_name = entry.get("characteristic", "?")
-            value = entry.get("value")
-            unit = entry.get("unit", "")
-            unit_str = f" {unit}" if unit else ""
-            print(f"  ✅ {char_name}: {value}{unit_str}")
-        print(f"\n✅ Successfully parsed {len(chars)} characteristics "
-              "using framework")
-    else:
-        print("\nℹ️  No characteristics were parsed (may need raw data "
-              "re-reading)")
-
-    # Enhanced SIG translator analysis
-    print("\n🔍 Enhanced SIG Analysis...")
+    
     translator = BluetoothSIGTranslator()
+    
+    try:
+        async with BleakClient(mac_address) as client:
+            print(f"✅ Connected to {mac_address}")
+            
+            # Allow device to settle after connection
+            await asyncio.sleep(0.5)
+            
+            # Get device information
+            device_name = client.address
+            try:
+                # Try to get device name from advertisement data
+                device_name = getattr(client._device, 'name', None) or client.address
+            except Exception:
+                device_name = client.address
+            
+            print(f"� Device: {device_name}")
+            
+            # Discover services
+            print("🔍 Discovering services...")
+            services = client.services
+            
+            if not services:
+                print("⚠️ No services discovered")
+                return False
+            
+            print(f"📋 Found {len(services)} services:")
+            
+            # Print services and characteristics
+            for service in services:
+                service_info = translator.translate_service(service.uuid)
+                print(f"\n� Service: {service_info.name} ({service.uuid})")
+                
+                chars = service.characteristics
+                print(f"   └─ {len(chars)} characteristics:")
+                for characteristic in chars:
+                    props = ", ".join(characteristic.properties)
+                    print(f"      └─ {characteristic.uuid} - [{props}]")
+                    for descriptor in characteristic.descriptors:
+                        print(f"         └─ Descriptor: {descriptor.uuid}")
 
-    if values:
-        discovered_uuids = list(values.keys())
-        print(f"📊 Analyzing {len(discovered_uuids)} discovered "
-              "characteristics:")
+            # Read all characteristics
+            print("\n🔍 Reading all readable characteristics...")
+            values = {}
+            chars_read = 0
+            
+            for service in services:
+                for characteristic in service.characteristics:
+                    if "read" in characteristic.properties:
+                        try:
+                            data = await client.read_gatt_char(characteristic.uuid)
+                            values[str(characteristic.uuid)] = data
+                            chars_read += 1
+                            
+                            if len(data) == 0:
+                                print(f"  ⚠️  {characteristic.uuid}: Empty data (0 bytes)")
+                            else:
+                                try:
+                                    str_val = data.decode("utf-8").strip("\x00")
+                                    is_printable = str_val and all(c.isprintable() or c.isspace() for c in str_val)
+                                    if is_printable and len(str_val) > 0:
+                                        print(f"  ✅ {characteristic.uuid}: '{str_val}' ({len(data)} bytes)")
+                                    else:
+                                        hex_val = " ".join(f"{b:02x}" for b in data)
+                                        print(f"  ✅ {characteristic.uuid}: {hex_val} ({len(data)} bytes)")
+                                except UnicodeDecodeError:
+                                    hex_val = " ".join(f"{b:02x}" for b in data)
+                                    print(f"  ✅ {characteristic.uuid}: {hex_val} ({len(data)} bytes)")
+                        except Exception as e:
+                            print(f"  ❌ Error reading {characteristic.uuid}: {e}")
 
-        # Batch analysis
-        char_info = translator.get_characteristics_info(discovered_uuids)
-        for uuid, info in char_info.items():
-            if info:
-                name = info.get('name', 'Unknown')
-                data_type = info.get('data_type', 'unknown')
-                print(f"  📋 {uuid}: {name} [{data_type}]")
+            # Parse with bluetooth_sig framework
+            print(f"\n🏗️  Testing bluetooth_sig framework integration... (read {chars_read} characteristics)")
+            parsed_count = 0
+            
+            for char_uuid, data in values.items():
+                try:
+                    # Parse the data using bluetooth_sig
+                    parsed_data = translator.parse_characteristic_data(char_uuid, data)
+                    
+                    if parsed_data.value is not None:
+                        unit_str = f" {parsed_data.unit}" if parsed_data.unit else ""
+                        char_info = translator.translate_characteristic(char_uuid)
+                        print(f"  ✅ {char_info.name}: {parsed_data.value}{unit_str}")
+                        parsed_count += 1
+                except Exception as e:
+                    # Silently skip unparseable characteristics
+                    pass
+            
+            if parsed_count > 0:
+                print(f"\n✅ Successfully parsed {parsed_count} characteristics using framework")
             else:
-                print(f"  ❓ {uuid}: Unknown characteristic")
+                print("\nℹ️  No characteristics were parsed (may need raw data re-reading)")
 
-        # Validation analysis
-        print("\n🔍 Data validation:")
-        valid_count = 0
-        for uuid, data in values.items():
-            if isinstance(data, (bytes, bytearray)):
-                is_valid = translator.validate_characteristic_data(uuid, data)
-                status = "✅" if is_valid else "⚠️"
-                validity = 'Valid' if is_valid else 'Unknown format'
-                print(f"  {status} {uuid}: {validity}")
-                if is_valid:
-                    valid_count += 1
+            # Enhanced SIG translator analysis
+            print("\n🔍 Enhanced SIG Analysis...")
+            
+            if values:
+                discovered_uuids = list(values.keys())
+                print(f"📊 Analyzing {len(discovered_uuids)} discovered "
+                      "characteristics:")
 
-        print(f"\n📈 Validation: {valid_count}/{len(values)} "
-              "characteristics have known format")
+                # Batch analysis
+                char_info = translator.get_characteristics_info(discovered_uuids)
+                for uuid, info in char_info.items():
+                    if info:
+                        name = info.get('name', 'Unknown')
+                        data_type = info.get('data_type', 'unknown')
+                        print(f"  📋 {uuid}: {name} [{data_type}]")
+                    else:
+                        print(f"  ❓ {uuid}: Unknown characteristic")
 
-    await device.disconnect()
-    print("\n✅ Test completed successfully")
-    return True
+                # Validation analysis
+                print("\n🔍 Data validation:")
+                valid_count = 0
+                for uuid, data in values.items():
+                    if isinstance(data, (bytes, bytearray)):
+                        is_valid = translator.validate_characteristic_data(uuid, data)
+                        status = "✅" if is_valid else "⚠️"
+                        validity = 'Valid' if is_valid else 'Unknown format'
+                        print(f"  {status} {uuid}: {validity}")
+                        if is_valid:
+                            valid_count += 1
+
+                print(f"\n📈 Validation: {valid_count}/{len(values)} "
+                      "characteristics have known format")
+
+            print("\n✅ Test completed successfully")
+            return True
+        
+    except Exception as e:
+        print(f"❌ Connection failed: {e}")
+        return False
 
 
 async def scan_devices(timeout: float = 10.0):

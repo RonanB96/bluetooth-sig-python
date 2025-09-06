@@ -96,9 +96,9 @@ pip install bleak-retry-connector bleak
 - Notification handling with robust connections
 
 ### 🔧 [`with_simpleble.py`](with_simpleble.py)
-**Integration with SimpleBLE (Alternative BLE Library)**
+**Integration with SimplePyBLE (Alternative BLE Library)**
 
-Shows integration with SimpleBLE as an alternative to Bleak, demonstrating the framework-agnostic design.
+Shows integration with SimplePyBLE as an alternative to Bleak, demonstrating the framework-agnostic design.
 
 ```bash
 # Scan and connect
@@ -108,16 +108,13 @@ python with_simpleble.py --address 12:34:56:78:9A:BC
 
 **Requirements (Platform Dependent):**
 ```bash
-# Linux
-pip install simplebluez
-
-# Other platforms (if available)
-pip install simpleble
+# Cross-platform
+pip install simplepyble
 ```
 
 **Features:**
 - Alternative BLE library integration
-- Cross-platform C++ library usage
+- Cross-platform sync BLE library usage
 - Same SIG parsing as other examples
 - Mock usage demonstration if library unavailable
 
@@ -172,12 +169,7 @@ python testing_with_mocks.py --compliance
 |---------|----------|-------|--------------|--------|
 | **bleak** | Cross-platform | ✅ | `pip install bleak` | ✅ Recommended |
 | **bleak-retry-connector** | Cross-platform | ✅ | `pip install bleak-retry-connector` | 🏆 **Best for Production** |
-| **SimpleBLE** | Cross-platform | ❌ | `pip install simpleble` | ✅ Alternative |
-| **SimpleBluez** | Linux only | ❌ | `pip install simplebluez` | ✅ Linux Alternative |
-| **pygatt** | Cross-platform | ❌ | `pip install pygatt` | ✅ Compatible* |
-| **bluepy** | Linux only | ❌ | `pip install bluepy` | ✅ Compatible* |
-
-*Compatible means the same integration pattern works, though not demonstrated in these examples.
+| **simplepyble** | Cross-platform | ❌ | `pip install simplepyble` | ✅ Alternative |
 
 ## 🚀 Quick Start
 
@@ -199,10 +191,10 @@ pip install bluetooth-sig[examples]
 # Or install individually based on your needs:
 pip install bluetooth-sig bleak                    # Basic async BLE
 pip install bluetooth-sig bleak-retry-connector    # Production-ready with retry logic  
-pip install bluetooth-sig simplebluez              # Linux alternative
+pip install bluetooth-sig simplepyble              # Cross-platform sync alternative
 ```
 
-**Note:** Some libraries like `simpleble` may not be available on all platforms. The `[examples]` installation will skip unavailable packages gracefully.
+**Note:** The `[examples]` installation includes the main supported BLE libraries for cross-platform development.
 3. **Start with an example** that matches your chosen library
 4. **Adapt the pattern** to your specific use case
 

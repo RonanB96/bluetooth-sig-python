@@ -190,11 +190,9 @@ print(f"Value: {result.value} {result.unit}")
 
 The same parsing code works with all BLE libraries:
 
-- **bleak** - Cross-platform async BLE library
+- **bleak** - Cross-platform async BLE library *(recommended)*
 - **bleak-retry-connector** - Robust connections with retry logic *(recommended for production)*
-- **SimpleBLE** - Cross-platform C++ library
-- **pygatt** - Cross-platform BLE library
-- **bluepy** - Linux BLE library
+- **simplepyble** - Cross-platform sync BLE library
 - **Any custom BLE implementation**
 
 ### Examples

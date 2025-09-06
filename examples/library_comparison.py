@@ -32,6 +32,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 # Import shared BLE utilities
 from ble_utils import (
     AVAILABLE_LIBRARIES,
+    demo_library_comparison,
     get_default_characteristic_uuids,
     parse_and_display_results,
     read_characteristics_bleak,
@@ -41,14 +42,56 @@ from ble_utils import (
 )
 
 
-async def compare_libraries(address: str, target_uuids: list[str] = None):
-    """Compare different BLE libraries with same SIG parsing - REAL CONNECTIONS ONLY."""
+async def compare_libraries(
+    address: str, target_uuids: list[str] = None, use_comprehensive: bool = True
+):
+    """Compare different BLE libraries with comprehensive device analysis or specific UUIDs.
+
+    Args:
+        address: BLE device address
+        target_uuids: Specific UUIDs to test, or None for comprehensive analysis
+        use_comprehensive: If True, use comprehensive device analysis instead of predefined UUIDs
+    """
+
+    if use_comprehensive and target_uuids is None:
+        print(f"\n🔍 Comprehensive BLE Library Comparison for device: {address}")
+        print("=" * 60)
+        print("Discovering and testing ALL device characteristics!")
+
+        # Use the shared comprehensive comparison function
+        results = await demo_library_comparison(address)
+
+        print("\n📊 Comprehensive Analysis Summary")
+        print("=" * 40)
+
+        for library, result in results.items():
+            if "stats" in result:
+                stats = result["stats"]
+                print(f"\n{library.upper()} Library:")
+                print(f"  🔗 Connection time: {stats['connection_time']:.2f}s")
+                print(f"  🔧 Services discovered: {stats['services_discovered']}")
+                print(f"  📋 Characteristics found: {stats['characteristics_found']}")
+                print(f"  📖 Characteristics read: {stats['characteristics_read']}")
+                print(f"  🏗️  Characteristics parsed: {stats['characteristics_parsed']}")
+                print(
+                    f"  ✅ Characteristics validated: {stats['characteristics_validated']}"
+                )
+
+        print("\n💡 This approach discovers actual device capabilities")
+        print("   instead of testing predefined characteristics.")
+
+        return results
+
+    # Legacy mode: test specific UUIDs
     if target_uuids is None:
         target_uuids = get_default_characteristic_uuids()
+        print("⚠️  Using legacy predefined characteristic list:")
+        print(f"   {', '.join(target_uuids)}")
+        print("   💡 Use --comprehensive for real device discovery")
 
-    print(f"\n🔍 Real-World BLE Library Comparison for device: {address}")
+    print(f"\n🔍 Legacy BLE Library Comparison for device: {address}")
     print("=" * 55)
-    print("Testing actual connections - no mock data!")
+    print("Testing predefined characteristics - limited scope!")
 
     # Dictionary to store results from each library
     library_results = {}
@@ -110,8 +153,8 @@ async def compare_libraries(address: str, target_uuids: list[str] = None):
         f"✅ {len(successful_libraries)}/{len(connection_success)} libraries connected successfully"
     )
 
-    for lib_name in connection_success:
-        status = "✅ SUCCESS" if connection_success[lib_name] else "❌ FAILED"
+    for lib_name, success in connection_success.items():
+        status = "✅ SUCCESS" if success else "❌ FAILED"
         timing = library_timings.get(lib_name, 0)
         reads = len(library_results.get(lib_name, {}))
         print(f"   {lib_name}: {status} - {timing:.2f}s, {reads} characteristics read")
@@ -131,12 +174,12 @@ async def compare_libraries(address: str, target_uuids: list[str] = None):
                     values.append(value)
                     print(f"   {lib_name}: {value}")
 
-            if len(values) > 1 and len(set(str(v) for v in values)) == 1:
-                print("   ✅ bluetooth_sig parsing identical across all libraries!")
-            elif len(values) > 1:
-                print("   ⚠️  Different parsed values - unexpected!")
-            else:
-                print("   ℹ️  Only one library read this characteristic")
+        if len(values) > 1 and len(set(str(v) for v in values)) == 1:
+            print("   ✅ bluetooth_sig parsing identical across all libraries!")
+        elif len(values) > 1:
+            print("   ⚠️  Different parsed values - unexpected!")
+        else:
+            print("   ℹ️  Only one library read this characteristic")
 
     elif len(successful_libraries) == 1:
         print(f"\n📊 Only {successful_libraries[0]} connected successfully")
@@ -147,6 +190,8 @@ async def compare_libraries(address: str, target_uuids: list[str] = None):
     print("  • Performance varies between libraries (real-world difference)")
     print("  • bluetooth_sig parsing is identical when connections succeed")
     print("  • Choose BLE library based on reliability/performance for your use case")
+
+    return library_results
 
 
 async def main():
@@ -164,7 +209,20 @@ async def main():
         action="store_true",
         help="Compare all available libraries",
     )
-    parser.add_argument("--uuids", "-u", nargs="+", help="Specific UUIDs to test")
+    parser.add_argument(
+        "--uuids", "-u", nargs="+", help="Specific UUIDs to test (legacy mode)"
+    )
+    parser.add_argument(
+        "--comprehensive",
+        action="store_true",
+        default=True,
+        help="Use comprehensive device analysis (default). Discovers ALL characteristics.",
+    )
+    parser.add_argument(
+        "--legacy",
+        action="store_true",
+        help="Use legacy mode with predefined characteristics only",
+    )
 
     args = parser.parse_args()
 
@@ -202,6 +260,7 @@ async def main():
                 print("  • Powered on and advertising")
                 print("  • In range of your computer")
                 print("  • Not connected to another device")
+            print("✅ Scan completed successfully")
         else:
             print("\n📋 Usage:")
             print("  python library_comparison.py --address <BLE_ADDRESS>")
@@ -216,16 +275,29 @@ async def main():
     print(f"\n🎯 Comparing BLE libraries with device: {args.address}")
     print("=" * 60)
 
+    # Determine analysis mode
+    use_comprehensive = not args.legacy
+    if args.uuids:
+        use_comprehensive = False  # Specific UUIDs override comprehensive mode
+        print("📋 Using specific UUIDs (legacy mode)")
+    elif use_comprehensive:
+        print("🔍 Using comprehensive device analysis (discovers ALL characteristics)")
+    else:
+        print("⚠️  Using legacy mode with predefined characteristics")
+
     try:
-        target_uuids = args.uuids or get_default_characteristic_uuids()
-        await compare_libraries(args.address, target_uuids)
+        await compare_libraries(args.address, args.uuids, use_comprehensive)
 
         print("\n✅ Real-world comparison completed!")
         print("🎯 Key insights:")
         print("  • Library performance differences are real and measurable")
         print("  • Connection reliability varies between libraries")
         print("  • bluetooth_sig parsing is identical regardless of library")
-        print("  • Choose your BLE library based on performance/features, not parsing")
+        if use_comprehensive:
+            print("  • Comprehensive analysis discovers actual device capabilities")
+            print("  • Much more informative than testing predefined characteristics")
+        else:
+            print("  • Consider using --comprehensive for better device analysis")
 
     except KeyboardInterrupt:
         print("\n🛑 Comparison interrupted by user")

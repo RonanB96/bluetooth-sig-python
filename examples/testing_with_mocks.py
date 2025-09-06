@@ -263,9 +263,7 @@ def run_performance_benchmark() -> dict[str, Any]:
         single_times.append(end_time - start_time)
 
     # Benchmark batch operations
-    batch_data = {
-        uuid: raw_data for uuid, raw_data in test_data[:5]
-    }  # Limit batch size
+    batch_data = dict(test_data[:5])  # Limit batch size
 
     start_time = time.perf_counter()
     translator.parse_characteristics(batch_data)
@@ -345,7 +343,7 @@ def run_compliance_validation() -> dict[str, Any]:
         # Use first valid test data for this characteristic
         if uuid in MockCharacteristicData.SIG_COMPLIANT_DATA:
             test_data = MockCharacteristicData.SIG_COMPLIANT_DATA[uuid]["valid"][0]
-            raw_data, expected_value, expected_unit = test_data
+            raw_data, _expected_value, _expected_unit = test_data
 
             result = translator.parse_characteristic(uuid, raw_data)
             if result.parse_success:
