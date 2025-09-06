@@ -10,7 +10,6 @@ class DewPointCharacteristic(BaseCharacteristic):
     """Dew Point measurement characteristic."""
 
     _characteristic_name: str = "Dew Point"
-    _manual_unit: str = "°C"  # Ensure unit is set correctly
 
     def parse_value(self, data: bytearray) -> float:
         """Parse dew point data (sint8 in units of 1 degree Celsius)."""

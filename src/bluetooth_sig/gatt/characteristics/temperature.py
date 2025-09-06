@@ -10,7 +10,6 @@ class TemperatureCharacteristic(BaseCharacteristic):
     """Temperature measurement characteristic."""
 
     _characteristic_name: str = "Temperature"
-    _manual_unit: str = "°C"  # Ensure unit is set correctly
 
     def parse_value(self, data: bytearray) -> float:
         """Parse temperature data (sint16 in units of 0.01 degrees Celsius)."""
