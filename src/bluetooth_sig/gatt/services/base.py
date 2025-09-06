@@ -81,7 +81,18 @@ class BaseGattService(ABC):
     def matches_uuid(cls, uuid: str) -> bool:
         """Check if this service matches the given UUID."""
         try:
-            return cls().SERVICE_UUID.lower() == uuid.lower()
+            service_uuid = cls().SERVICE_UUID.lower()
+            input_uuid = uuid.lower().replace("-", "")
+
+            # If service UUID is short (16-bit), convert to full format for comparison
+            if len(service_uuid) == 4:  # 16-bit UUID
+                service_uuid = f"0000{service_uuid}00001000800000805f9b34fb"
+
+            # If input UUID is short (16-bit), convert to full format for comparison
+            if len(input_uuid) == 4:  # 16-bit UUID
+                input_uuid = f"0000{input_uuid}00001000800000805f9b34fb"
+
+            return service_uuid == input_uuid
         except ValueError:
             return False
 

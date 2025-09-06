@@ -1,0 +1,506 @@
+=== Running against 4D:37:0B:C9:C7:9A ===
+Testing connection to device: 4D:37:0B:C9:C7:9A
+============================================================
+Scanning for device...
+✅ Device found: Unknown
+Attempting connection with optimized strategy...
+✅ Successfully connected to 4D:37:0B:C9:C7:9A
+
+📋 Checking discovered services...
+✅ Found 8 services:
+
+📋 Service: 7905f431-b5ce-4e99-a40f-4b1e122d00d0 (Apple Notification Center Service)
+   └─ 3 characteristics:
+      └─ 22eac6e9-24d6-4bb5-be44-b36ace7c7bfb (Data Source) - [notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 9fbf120d-6301-42d9-8c58-25e699a21dbd (Notification Source) - [notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 69d1d8f3-45e1-49a8-9821-9bbdfdaad9d9 (Control Point) - [write, extended-properties, reliable-write]
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+
+📋 Service: 00001805-0000-1000-8000-00805f9b34fb (Current Time Service)
+   └─ 2 characteristics:
+      └─ 00002a0f-0000-1000-8000-00805f9b34fb (Local Time Information) - [read]
+      └─ 00002a2b-0000-1000-8000-00805f9b34fb (Current Time) - [read, notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: 0000180f-0000-1000-8000-00805f9b34fb (Battery Service)
+   └─ 1 characteristics:
+      └─ 00002a19-0000-1000-8000-00805f9b34fb (Battery Level) - [read, notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: 9fa480e0-4967-4542-9390-d343dc5d04ae (Apple Nearby Service)
+   └─ 1 characteristics:
+      └─ af0badb1-5b99-43cd-917a-a77bc549e3cc (Nearby Characteristic) - [write, notify, extended-properties, reliable-write]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+
+📋 Service: 89d3502b-0f36-433a-8ef4-c502ad55f8dc (Apple Media Service)
+   └─ 3 characteristics:
+      └─ 2f7cabce-808d-411f-9a0c-bb92ba96c102 (Entity Update) - [write, notify, extended-properties, reliable-write]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+      └─ 9b3c81d8-57b1-4a8a-b8df-0e56f7ca51c2 (Remote Command) - [write, notify, extended-properties, reliable-write]
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ c6b2f38c-23ab-46d8-a6ab-a3a870bbd5d7 (Entity Attribute) - [read, write, extended-properties, reliable-write]
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+
+📋 Service: 00001801-0000-1000-8000-00805f9b34fb (Generic Attribute Profile)
+   └─ 1 characteristics:
+      └─ 00002a05-0000-1000-8000-00805f9b34fb (Service Changed) - [indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: d0611e78-bbb4-4591-a5f8-487910ae4366 (Apple Continuity Service)
+   └─ 1 characteristics:
+      └─ 8667556c-9a37-4c91-84ed-54ee27d90049 (Apple Continuity Characteristic) - [write, notify, extended-properties, reliable-write]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+
+📋 Service: 0000180a-0000-1000-8000-00805f9b34fb (Device Information)
+   └─ 2 characteristics:
+      └─ 00002a29-0000-1000-8000-00805f9b34fb (Manufacturer Name String) - [read]
+      └─ 00002a24-0000-1000-8000-00805f9b34fb (Model Number String) - [read]
+
+🔍 Reading 6 readable characteristics...
+  ❌ 00002a0f-0000-1000-8000-00805f9b34fb: Error reading - [org.bluez.Error.Failed] Operation failed with ATT error: 0x0e (Unlikely Error)
+  ❌ 00002a2b-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a19-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ c6b2f38c-23ab-46d8-a6ab-a3a870bbd5d7: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a29-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a24-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+
+🏗️  Testing GATT framework integration...
+❌ GATT framework error: Service Discovery has not been performed yet
+
+✅ Test completed successfully
+
+
+=== Running against 50:FD:D5:58:21:79 ===
+Testing connection to device: 50:FD:D5:58:21:79
+============================================================
+Scanning for device...
+✅ Device found: Dryer
+Attempting connection with optimized strategy...
+✅ Successfully connected to 50:FD:D5:58:21:79
+
+📋 Checking discovered services...
+✅ Found 2 services:
+
+📋 Service: 00001801-0000-1000-8000-00805f9b34fb (Generic Attribute Profile)
+   └─ 1 characteristics:
+      └─ 00002a05-0000-1000-8000-00805f9b34fb (Service Changed) - [indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: ade3d529-c784-4f63-a987-eb69f70ee816 (Unknown)
+   └─ 2 characteristics:
+      └─ ad7b334f-4637-4b86-90b6-9d787f03d218 (Unknown) - [read, write]
+      └─ e9241982-4580-42c4-8831-95048216b256 (Unknown) - [read, indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+🔍 Reading 2 readable characteristics...
+  ✅ ad7b334f-4637-4b86-90b6-9d787f03d218:  (hex)
+  ✅ e9241982-4580-42c4-8831-95048216b256:  (hex)
+
+🏗️  Testing GATT framework integration...
+ℹ️  No services recognized by GATT framework
+
+✅ Test completed successfully
+🔌 Disconnecting from device...
+✅ Disconnected successfully
+
+
+=== Running against D4:36:34:39:54:8D ===
+Testing connection to device: D4:36:34:39:54:8D
+============================================================
+Scanning for device...
+✅ Device found: Govee_H605C_548D
+Attempting connection with optimized strategy...
+✅ Successfully connected to D4:36:34:39:54:8D
+
+📋 Checking discovered services...
+✅ Found 3 services:
+
+📋 Service: 00010203-0405-0607-0809-0a0b0c0d1910 (Unknown)
+   └─ 2 characteristics:
+      └─ 00010203-0405-0607-0809-0a0b0c0d2b11 (Unknown) - [read, write-without-response, write, notify]
+         └─ Descriptor: 00002901-0000-1000-8000-00805f9b34fb (Characteristic User Description)
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 00010203-0405-0607-0809-0a0b0c0d2b10 (Unknown) - [read, notify]
+         └─ Descriptor: 00002901-0000-1000-8000-00805f9b34fb (Characteristic User Description)
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: 00001801-0000-1000-8000-00805f9b34fb (Generic Attribute Profile)
+   └─ 1 characteristics:
+      └─ 00002a05-0000-1000-8000-00805f9b34fb (Service Changed) - [read, indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: 02f00000-0000-0000-0000-00000000fe00 (Unknown)
+   └─ 4 characteristics:
+      └─ 02f00000-0000-0000-0000-00000000ff03 (Unknown) - [read]
+      └─ 02f00000-0000-0000-0000-00000000ff01 (Unknown) - [write-without-response, write]
+      └─ 02f00000-0000-0000-0000-00000000ff02 (Unknown) - [read, notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+         └─ Descriptor: 00002901-0000-1000-8000-00805f9b34fb (Characteristic User Description)
+      └─ 02f00000-0000-0000-0000-00000000ff00 (Unknown) - [read]
+
+🔍 Reading 6 readable characteristics...
+  ✅ 00010203-0405-0607-0809-0a0b0c0d2b11:  (hex)
+  ✅ 00010203-0405-0607-0809-0a0b0c0d2b10:  (hex)
+  ✅ 00002a05-0000-1000-8000-00805f9b34fb: 01 00 ff ff (hex)
+  ✅ 02f00000-0000-0000-0000-00000000ff03:  (hex)
+  ✅ 02f00000-0000-0000-0000-00000000ff02: 'ntf_enable'
+  ✅ 02f00000-0000-0000-0000-00000000ff00:  (hex)
+
+🏗️  Testing GATT framework integration...
+ℹ️  No services recognized by GATT framework
+
+✅ Test completed successfully
+🔌 Disconnecting from device...
+✅ Disconnected successfully
+
+
+=== Running against 34:A6:EF:37:54:25 ===
+Testing connection to device: 34:A6:EF:37:54:25
+============================================================
+Scanning for device...
+✅ Device found: BSD_Outlet
+Attempting connection with optimized strategy...
+✅ Successfully connected to 34:A6:EF:37:54:25
+
+📋 Checking discovered services...
+✅ Found 3 services:
+
+📋 Service: 00001801-0000-1000-8000-00805f9b34fb (Generic Attribute Profile)
+   └─ 3 characteristics:
+      └─ 00002b29-0000-1000-8000-00805f9b34fb (Client Supported Features) - [read, write]
+      └─ 00002b2a-0000-1000-8000-00805f9b34fb (Database Hash) - [read]
+      └─ 00002a05-0000-1000-8000-00805f9b34fb (Service Changed) - [indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: f000ffe0-0451-4000-b000-000000000000 (Unknown)
+   └─ 2 characteristics:
+      └─ f000ffe2-0451-4000-b000-000000000000 (Unknown) - [notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ f000ffe1-0451-4000-b000-000000000000 (Unknown) - [write-without-response, write]
+
+📋 Service: 0000fff0-0000-1000-8000-00805f9b34fb (Vendor specific)
+   └─ 2 characteristics:
+      └─ 0000fff1-0000-1000-8000-00805f9b34fb (Vendor specific) - [notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 0000fff2-0000-1000-8000-00805f9b34fb (Vendor specific) - [write-without-response, write]
+
+🔍 Reading 2 readable characteristics...
+  ✅ 00002b29-0000-1000-8000-00805f9b34fb: 01 (hex)
+  ✅ 00002b2a-0000-1000-8000-00805f9b34fb: 66 53 ec 31 06 09 97 7d 7a 82 63 8f 48 f7 53 e5 (hex)
+
+🏗️  Testing GATT framework integration...
+ℹ️  No services recognized by GATT framework
+
+✅ Test completed successfully
+🔌 Disconnecting from device...
+✅ Disconnected successfully
+
+
+=== Running against 34:A6:EF:37:51:79 ===
+Testing connection to device: 34:A6:EF:37:51:79
+============================================================
+Scanning for device...
+✅ Device found: BSD_Outlet
+Attempting connection with optimized strategy...
+✅ Successfully connected to 34:A6:EF:37:51:79
+
+📋 Checking discovered services...
+✅ Found 3 services:
+
+📋 Service: 0000fff0-0000-1000-8000-00805f9b34fb (Vendor specific)
+   └─ 2 characteristics:
+      └─ 0000fff2-0000-1000-8000-00805f9b34fb (Vendor specific) - [write-without-response, write]
+      └─ 0000fff1-0000-1000-8000-00805f9b34fb (Vendor specific) - [notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: 00001801-0000-1000-8000-00805f9b34fb (Generic Attribute Profile)
+   └─ 3 characteristics:
+      └─ 00002b2a-0000-1000-8000-00805f9b34fb (Database Hash) - [read]
+      └─ 00002b29-0000-1000-8000-00805f9b34fb (Client Supported Features) - [read, write]
+      └─ 00002a05-0000-1000-8000-00805f9b34fb (Service Changed) - [indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: f000ffe0-0451-4000-b000-000000000000 (Unknown)
+   └─ 2 characteristics:
+      └─ f000ffe1-0451-4000-b000-000000000000 (Unknown) - [write-without-response, write]
+      └─ f000ffe2-0451-4000-b000-000000000000 (Unknown) - [notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+🔍 Reading 2 readable characteristics...
+  ✅ 00002b2a-0000-1000-8000-00805f9b34fb: 66 53 ec 31 06 09 97 7d 7a 82 63 8f 48 f7 53 e5 (hex)
+  ✅ 00002b29-0000-1000-8000-00805f9b34fb: 01 (hex)
+
+🏗️  Testing GATT framework integration...
+ℹ️  No services recognized by GATT framework
+
+✅ Test completed successfully
+🔌 Disconnecting from device...
+✅ Disconnected successfully
+
+
+=== Running against 68:FC:CA:CE:DB:91 ===
+Testing connection to device: 68:FC:CA:CE:DB:91
+============================================================
+Scanning for device...
+✅ Device found: Unknown
+Attempting connection with optimized strategy...
+❌ Connection or communication failed: 
+
+
+=== Running against F6:51:E1:61:32:B1 ===
+Testing connection to device: F6:51:E1:61:32:B1
+============================================================
+Scanning for device...
+✅ Device found: T52-9FB79419
+Attempting connection with optimized strategy...
+❌ Connection or communication failed: 
+
+
+=== Running against 50:DE:C5:28:5A:56 ===
+Testing connection to device: 50:DE:C5:28:5A:56
+============================================================
+Scanning for device...
+✅ Device found: Unknown
+Attempting connection with optimized strategy...
+✅ Successfully connected to 50:DE:C5:28:5A:56
+
+📋 Checking discovered services...
+✅ Found 8 services:
+
+📋 Service: 9fa480e0-4967-4542-9390-d343dc5d04ae (Apple Nearby Service)
+   └─ 1 characteristics:
+      └─ af0badb1-5b99-43cd-917a-a77bc549e3cc (Nearby Characteristic) - [write, notify, extended-properties, reliable-write]
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: 89d3502b-0f36-433a-8ef4-c502ad55f8dc (Apple Media Service)
+   └─ 3 characteristics:
+      └─ 2f7cabce-808d-411f-9a0c-bb92ba96c102 (Entity Update) - [write, notify, extended-properties, reliable-write]
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 9b3c81d8-57b1-4a8a-b8df-0e56f7ca51c2 (Remote Command) - [write, notify, extended-properties, reliable-write]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+      └─ c6b2f38c-23ab-46d8-a6ab-a3a870bbd5d7 (Entity Attribute) - [read, write, extended-properties, reliable-write]
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+
+📋 Service: 0000180f-0000-1000-8000-00805f9b34fb (Battery Service)
+   └─ 1 characteristics:
+      └─ 00002a19-0000-1000-8000-00805f9b34fb (Battery Level) - [read, notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: 00001801-0000-1000-8000-00805f9b34fb (Generic Attribute Profile)
+   └─ 1 characteristics:
+      └─ 00002a05-0000-1000-8000-00805f9b34fb (Service Changed) - [indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: d0611e78-bbb4-4591-a5f8-487910ae4366 (Apple Continuity Service)
+   └─ 1 characteristics:
+      └─ 8667556c-9a37-4c91-84ed-54ee27d90049 (Apple Continuity Characteristic) - [write, notify, extended-properties, reliable-write]
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: 0000180a-0000-1000-8000-00805f9b34fb (Device Information)
+   └─ 2 characteristics:
+      └─ 00002a24-0000-1000-8000-00805f9b34fb (Model Number String) - [read]
+      └─ 00002a29-0000-1000-8000-00805f9b34fb (Manufacturer Name String) - [read]
+
+📋 Service: 00001805-0000-1000-8000-00805f9b34fb (Current Time Service)
+   └─ 2 characteristics:
+      └─ 00002a0f-0000-1000-8000-00805f9b34fb (Local Time Information) - [read]
+      └─ 00002a2b-0000-1000-8000-00805f9b34fb (Current Time) - [read, notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: 7905f431-b5ce-4e99-a40f-4b1e122d00d0 (Apple Notification Center Service)
+   └─ 3 characteristics:
+      └─ 22eac6e9-24d6-4bb5-be44-b36ace7c7bfb (Data Source) - [notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 69d1d8f3-45e1-49a8-9821-9bbdfdaad9d9 (Control Point) - [write, extended-properties, reliable-write]
+         └─ Descriptor: 00002900-0000-1000-8000-00805f9b34fb (Characteristic Extended Properties)
+      └─ 9fbf120d-6301-42d9-8c58-25e699a21dbd (Notification Source) - [notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+🔍 Reading 6 readable characteristics...
+  ❌ c6b2f38c-23ab-46d8-a6ab-a3a870bbd5d7: Error reading - [org.bluez.Error.Failed] Operation failed with ATT error: 0x0e (Unlikely Error)
+  ❌ 00002a19-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a24-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a29-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a0f-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a2b-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+
+🏗️  Testing GATT framework integration...
+❌ GATT framework error: Service Discovery has not been performed yet
+
+✅ Test completed successfully
+
+
+=== Running against 43:2A:EF:43:83:34 ===
+Testing connection to device: 43:2A:EF:43:83:34
+============================================================
+Scanning for device...
+❌ Device 43:2A:EF:43:83:34 not found
+Make sure the device is powered on and in range
+
+
+=== Running against 50:FD:D5:FA:DB:EA ===
+Testing connection to device: 50:FD:D5:FA:DB:EA
+============================================================
+Scanning for device...
+✅ Device found: Washer
+Attempting connection with optimized strategy...
+✅ Successfully connected to 50:FD:D5:FA:DB:EA
+
+📋 Checking discovered services...
+✅ Found 2 services:
+
+📋 Service: ade3d529-c784-4f63-a987-eb69f70ee816 (Unknown)
+   └─ 2 characteristics:
+      └─ e9241982-4580-42c4-8831-95048216b256 (Unknown) - [read, indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ ad7b334f-4637-4b86-90b6-9d787f03d218 (Unknown) - [read, write]
+
+📋 Service: 00001801-0000-1000-8000-00805f9b34fb (Generic Attribute Profile)
+   └─ 1 characteristics:
+      └─ 00002a05-0000-1000-8000-00805f9b34fb (Service Changed) - [indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+🔍 Reading 2 readable characteristics...
+  ✅ e9241982-4580-42c4-8831-95048216b256:  (hex)
+  ✅ ad7b334f-4637-4b86-90b6-9d787f03d218:  (hex)
+
+🏗️  Testing GATT framework integration...
+ℹ️  No services recognized by GATT framework
+
+✅ Test completed successfully
+🔌 Disconnecting from device...
+✅ Disconnected successfully
+
+
+=== Running against C4:20:61:31:34:27 ===
+Testing connection to device: C4:20:61:31:34:27
+============================================================
+Scanning for device...
+✅ Device found: Mk
+Attempting connection with optimized strategy...
+✅ Successfully connected to C4:20:61:31:34:27
+
+📋 Checking discovered services...
+✅ Found 4 services:
+
+📋 Service: 0000180a-0000-1000-8000-00805f9b34fb (Device Information)
+   └─ 8 characteristics:
+      └─ 00002a27-0000-1000-8000-00805f9b34fb (Hardware Revision String) - [read]
+      └─ 00002a24-0000-1000-8000-00805f9b34fb (Model Number String) - [read]
+      └─ 00002a26-0000-1000-8000-00805f9b34fb (Firmware Revision String) - [read]
+      └─ 00002a29-0000-1000-8000-00805f9b34fb (Manufacturer Name String) - [read]
+      └─ 00002a2a-0000-1000-8000-00805f9b34fb (IEEE 11073-20601 Regulatory Cert. Data List) - [read]
+      └─ 00002a25-0000-1000-8000-00805f9b34fb (Serial Number String) - [read]
+      └─ 00002a28-0000-1000-8000-00805f9b34fb (Software Revision String) - [read]
+      └─ 00002a23-0000-1000-8000-00805f9b34fb (System ID) - [read]
+
+📋 Service: 3dda0001-957f-7d4a-34a6-74696673696d (Unknown)
+   └─ 6 characteristics:
+      └─ 3dda0005-957f-7d4a-34a6-74696673696d (Unknown) - [write, indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 3dda0002-957f-7d4a-34a6-74696673696d (Unknown) - [write, notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 3dda0006-957f-7d4a-34a6-74696673696d (Unknown) - [write, notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 3dda0004-957f-7d4a-34a6-74696673696d (Unknown) - [write-without-response, notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 3dda0003-957f-7d4a-34a6-74696673696d (Unknown) - [write, indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 3dda0007-957f-7d4a-34a6-74696673696d (Unknown) - [write-without-response, notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: 00001801-0000-1000-8000-00805f9b34fb (Generic Attribute Profile)
+   └─ 1 characteristics:
+      └─ 00002a05-0000-1000-8000-00805f9b34fb (Service Changed) - [indicate]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+📋 Service: 0000180f-0000-1000-8000-00805f9b34fb (Battery Service)
+   └─ 1 characteristics:
+      └─ 00002a19-0000-1000-8000-00805f9b34fb (Battery Level) - [read, notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+
+🔍 Reading 9 readable characteristics...
+  ❌ 00002a27-0000-1000-8000-00805f9b34fb: Error reading - [org.bluez.Error.Failed] Operation failed with ATT error: 0x0e (Unlikely Error)
+  ❌ 00002a24-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a26-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a29-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a2a-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a25-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a28-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a23-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+  ❌ 00002a19-0000-1000-8000-00805f9b34fb: Error reading - Service Discovery has not been performed yet
+
+🏗️  Testing GATT framework integration...
+❌ GATT framework error: Service Discovery has not been performed yet
+
+✅ Test completed successfully
+
+
+=== Running against D2:56:EE:77:80:9D ===
+Testing connection to device: D2:56:EE:77:80:9D
+============================================================
+Scanning for device...
+✅ Device found: Unknown
+Attempting connection with optimized strategy...
+❌ Connection or communication failed: 
+
+
+=== Running against 07:BE:A6:3D:4A:01 ===
+Testing connection to device: 07:BE:A6:3D:4A:01
+============================================================
+Scanning for device...
+❌ Device 07:BE:A6:3D:4A:01 not found
+Make sure the device is powered on and in range
+
+
+=== Running against CD:AC:F1:EC:28:59 ===
+Testing connection to device: CD:AC:F1:EC:28:59
+============================================================
+Scanning for device...
+✅ Device found: Unknown
+Attempting connection with optimized strategy...
+❌ Connection or communication failed: 
+
+
+=== Running against E0:36:F4:69:EA:4A ===
+Testing connection to device: E0:36:F4:69:EA:4A
+============================================================
+Scanning for device...
+✅ Device found: Unknown
+Attempting connection with optimized strategy...
+✅ Successfully connected to E0:36:F4:69:EA:4A
+
+📋 Checking discovered services...
+✅ Found 2 services:
+
+📋 Service: 00001801-0000-1000-8000-00805f9b34fb (Generic Attribute Profile)
+   └─ No characteristics found
+
+📋 Service: 0000feed-0000-1000-8000-00805f9b34fb (Tile: Inc.)
+   └─ 3 characteristics:
+      └─ 9d410018-35d6-f4dd-ba60-e7bd8dc491c0 (Unknown) - [write-without-response]
+      └─ 9d410019-35d6-f4dd-ba60-e7bd8dc491c0 (Unknown) - [notify]
+         └─ Descriptor: 00002902-0000-1000-8000-00805f9b34fb (Client Characteristic Configuration)
+      └─ 9d410007-35d6-f4dd-ba60-e7bd8dc491c0 (Unknown) - [read]
+
+🔍 Reading 1 readable characteristics...
+  ✅ 9d410007-35d6-f4dd-ba60-e7bd8dc491c0: 20 36 f4 69 ea 4a 40 a0 (hex)
+
+🏗️  Testing GATT framework integration...
+ℹ️  No services recognized by GATT framework
+
+✅ Test completed successfully
+🔌 Disconnecting from device...
+✅ Disconnected successfully
+
+

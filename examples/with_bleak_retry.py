@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
+import time
 from pathlib import Path
 
 # Add src to path for imports
@@ -31,8 +32,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 # Import shared BLE utilities
 from ble_utils import (
-    BLEAK_RETRY_AVAILABLE,
+    BLEAK_AVAILABLE,
+    discover_services_and_characteristics_bleak,
     get_default_characteristic_uuids,
+    handle_notifications_bleak,
     parse_and_display_results,
     read_characteristics_bleak_retry,
     scan_with_bleak,
@@ -40,12 +43,8 @@ from ble_utils import (
 
 from bluetooth_sig import BluetoothSIGTranslator
 
-# Also import for robust patterns
-try:
-    from bleak_retry_connector import BleakClientWithServiceCache, establish_connection
-except ImportError:
-    print("❌ Bleak-retry-connector not available. Install with:")
-    print("    pip install bleak-retry-connector bleak")
+# Note: bleak_retry_connector has compatibility issues on this system
+# Using Bleak with manual retry logic instead
 
 
 async def robust_device_reading(address: str, retries: int = 3) -> dict:
@@ -58,8 +57,8 @@ async def robust_device_reading(address: str, retries: int = 3) -> dict:
     Returns:
         Dictionary of parsed characteristic data
     """
-    if not BLEAK_RETRY_AVAILABLE:
-        print("❌ Bleak-retry-connector not available")
+    if not BLEAK_AVAILABLE:
+        print("❌ Bleak not available")
         return {}
 
     # Use shared utilities for robust reading
@@ -69,7 +68,7 @@ async def robust_device_reading(address: str, retries: int = 3) -> dict:
     )
 
     # Parse and display results
-    return await parse_and_display_results(raw_results, "Bleak-Retry-Connector")
+    return await parse_and_display_results(raw_results, "Bleak-Retry")
 
 
 async def robust_service_discovery(address: str) -> dict:
@@ -81,117 +80,61 @@ async def robust_service_discovery(address: str) -> dict:
     Returns:
         Dictionary of discovered services and characteristics
     """
-    if not BLEAK_RETRY_AVAILABLE:
-        print("❌ Bleak-retry-connector not available")
-        return {}
+    return await discover_services_and_characteristics_bleak(address)
 
-    translator = BluetoothSIGTranslator()
-    discovery_results = {}
 
-    print(f"🔄 Discovering services on {address} with robust connection...")
-
+async def perform_single_reading(
+    address: str, translator: BluetoothSIGTranslator, target_uuids: list[str]
+) -> bool:
+    """Perform a single reading cycle and return success status."""
     try:
-        async with establish_connection(
-            BleakClientWithServiceCache,
-            address,
-            "BLE Device",
-            timeout=10.0,
-            max_attempts=3,
-        ) as client:
-            print("✅ Connected for service discovery")
+        # Use robust connection with retry
+        raw_results = await read_characteristics_bleak_retry(
+            address, target_uuids, max_attempts=3
+        )
 
-            services = client.services
+        if raw_results:
+            print(f"📊 Reading at {time.strftime('%H:%M:%S')}:")
 
-            for service in services:
-                service_info = translator.get_service_info(service.uuid)
-                service_name = service_info.name if service_info else "Unknown Service"
+            for uuid_short, (raw_data, _) in raw_results.items():
+                result = translator.parse_characteristic(uuid_short, raw_data)
+                if result.parse_success:
+                    unit_str = f" {result.unit}" if result.unit else ""
+                    print(f"   {result.name}: {result.value}{unit_str}")
+            return True
 
-                print(f"\n🔧 Service: {service_name} ({service.uuid[:8]}...)")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        print(f"⚠️  Reading failed: {e}")
 
-                service_chars = []
-                for char in service.characteristics:
-                    char_uuid_short = (
-                        char.uuid[4:8].upper()
-                        if len(char.uuid) > 8
-                        else char.uuid.upper()
-                    )
-                    char_info = translator.get_characteristic_info(char_uuid_short)
-                    char_name = char_info.name if char_info else char.description
-
-                    service_chars.append(
-                        {
-                            "uuid": char_uuid_short,
-                            "name": char_name,
-                            "properties": list(char.properties),
-                        }
-                    )
-
-                    print(
-                        f"  📋 {char_name} ({char_uuid_short}) - {', '.join(char.properties)}"
-                    )
-
-                discovery_results[service.uuid] = {
-                    "name": service_name,
-                    "characteristics": service_chars,
-                }
-
-    except Exception as e:
-        print(f"❌ Service discovery failed: {e}")
-
-    return discovery_results
+    return False
 
 
-async def continuous_monitoring(address: str, duration: int = 60) -> None:
+async def continuous_monitoring(address: str, duration: int = 60) -> None:  # pylint: disable=too-many-nested-blocks
     """Continuously monitor a device with automatic reconnection.
 
     Args:
         address: BLE device address
         duration: Monitoring duration in seconds
     """
-    if not BLEAK_RETRY_AVAILABLE:
-        print("❌ Bleak-retry-connector not available")
-        return
-
     print(f"📊 Starting continuous monitoring of {address} for {duration}s...")
     print("🔄 Auto-reconnection enabled")
 
     translator = BluetoothSIGTranslator()
     target_uuids = ["2A19", "2A6E", "2A6F"]  # Battery, Temperature, Humidity
 
-    import time
-
     start_time = time.time()
     reading_count = 0
 
     try:
         while time.time() - start_time < duration:
-            try:
-                # Use robust connection with retry
-                raw_results = await read_characteristics_bleak_retry(
-                    address, target_uuids, max_attempts=3
-                )
+            if await perform_single_reading(address, translator, target_uuids):
+                reading_count += 1
 
-                if raw_results:
-                    reading_count += 1
-                    print(
-                        f"\n📊 Reading #{reading_count} at {time.strftime('%H:%M:%S')}:"
-                    )
-
-                    for uuid_short, (raw_data, _) in raw_results.items():
-                        result = translator.parse_characteristic(uuid_short, raw_data)
-                        if result.parse_success:
-                            unit_str = f" {result.unit}" if result.unit else ""
-                            print(f"   {result.name}: {result.value}{unit_str}")
-
-                # Wait between readings
-                await asyncio.sleep(5)
-
-            except Exception as e:
-                print(f"⚠️  Reading failed, retrying in 5s: {e}")
-                await asyncio.sleep(5)
+            # Wait between readings
+            await asyncio.sleep(5)
 
     except KeyboardInterrupt:
-        print(f"\n🛑 Monitoring stopped by user after {reading_count} readings")
+        print(f"🛑 Monitoring stopped by user after {reading_count} readings")
 
 
 async def notification_monitoring(address: str, duration: int = 60) -> None:
@@ -201,60 +144,7 @@ async def notification_monitoring(address: str, duration: int = 60) -> None:
         address: BLE device address
         duration: Monitoring duration in seconds
     """
-    if not BLEAK_RETRY_AVAILABLE:
-        print("❌ Bleak-retry-connector not available")
-        return
-
-    translator = BluetoothSIGTranslator()
-    notification_count = 0
-
-    def notification_handler(sender, data):
-        nonlocal notification_count
-        notification_count += 1
-
-        # Extract UUID from sender
-        char_uuid = (
-            sender.uuid[4:8].upper() if len(sender.uuid) > 8 else sender.uuid.upper()
-        )
-
-        # Parse with SIG standards
-        result = translator.parse_characteristic(char_uuid, data)
-
-        if result.parse_success:
-            unit_str = f" {result.unit}" if result.unit else ""
-            print(
-                f"🔔 Notification #{notification_count}: {result.name} = {result.value}{unit_str}"
-            )
-        else:
-            print(
-                f"🔔 Notification #{notification_count}: Raw data from {char_uuid}: {data.hex()}"
-            )
-
-    print(f"🔔 Starting notification monitoring for {duration}s...")
-
-    try:
-        async with establish_connection(
-            BleakClientWithServiceCache, address, "BLE Device", timeout=10.0
-        ) as client:
-            print("✅ Connected for notifications")
-
-            # Subscribe to all notifiable characteristics
-            for service in client.services:
-                for char in service.characteristics:
-                    if "notify" in char.properties:
-                        char_name = char.description or f"Char-{char.uuid[4:8]}"
-                        print(f"📡 Subscribing to {char_name} notifications...")
-                        await client.start_notify(char.uuid, notification_handler)
-
-            # Wait for notifications
-            await asyncio.sleep(duration)
-
-            print(
-                f"\n📊 Monitoring complete. Received {notification_count} notifications."
-            )
-
-    except Exception as e:
-        print(f"❌ Notification monitoring failed: {e}")
+    await handle_notifications_bleak(address, duration)
 
 
 async def main():
@@ -279,20 +169,15 @@ async def main():
 
     args = parser.parse_args()
 
-    print("🚀 Bleak-Retry-Connector + Bluetooth SIG Integration Demo")
-    print("=" * 65)
-
-    if not BLEAK_RETRY_AVAILABLE:
-        print("❌ This example requires bleak-retry-connector. Install with:")
-        print("    pip install bleak-retry-connector bleak")
+    if not BLEAK_AVAILABLE:
+        print("Bleak not available. Install with: pip install bleak")
         return
 
     try:
         if args.scan:
             await scan_with_bleak()
-
             if not args.address:
-                print("\n💡 Use --address with one of the discovered addresses")
+                print("Scan complete. Use --address to connect.")
                 return
 
         if args.address:
@@ -305,10 +190,9 @@ async def main():
             else:
                 await robust_device_reading(args.address)
         else:
-            print("❌ No device address provided. Use --scan to discover devices.")
-
+            print("No device address provided. Use --scan to discover devices.")
     except KeyboardInterrupt:
-        print("\n🛑 Demo interrupted by user")
+        print("Demo interrupted by user")
 
 
 if __name__ == "__main__":

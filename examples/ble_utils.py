@@ -8,7 +8,6 @@ across different BLE libraries, reducing code duplication in examples.
 from __future__ import annotations
 
 import asyncio
-import importlib.util
 import sys
 import time
 from pathlib import Path
@@ -36,7 +35,8 @@ except ImportError:
     BLEAK_AVAILABLE = False
 
 # Check for Bleak-retry-connector
-if importlib.util.find_spec("bleak_retry_connector") is not None:
+try:
+    # bleak_retry_connector not used due to compatibility issues
     AVAILABLE_LIBRARIES["bleak-retry"] = {
         "module": "bleak_retry_connector",
         "async": True,
@@ -358,16 +358,12 @@ async def demo_library_comparison(address: str, target_uuids: list[str] = None) 
     # Helper: ensure Bleak can see device by doing an explicit scan first
     async def _ensure_bleak_sees_device(addr: str, attempts: int = 2) -> bool:
         for attempt in range(1, attempts + 1):
-            print(
-                f"🔎 Bleak scan attempt {attempt}/{attempts} (timeout={5 * attempt}s)"
-            )
+            print(f"🔎 Bleak scan attempt {attempt}/{attempts} (timeout={5 * attempt}s)")
             devices = await scan_with_bleak(timeout=5 * attempt)
             for dev in devices:
-                name, a, _rssi = safe_get_device_info(dev)
+                name, a, rssi = safe_get_device_info(dev)
                 if str(a).upper() == addr.upper():
-                    print(
-                        f"✅ Bleak discovered device {addr} ({name}) on attempt {attempt}"
-                    )
+                    print(f"✅ Bleak discovered device {addr} ({name}) on attempt {attempt}")
                     return True
             # short backoff
             if attempt < attempts:
@@ -381,9 +377,7 @@ async def demo_library_comparison(address: str, target_uuids: list[str] = None) 
             if target_uuids is None:
                 seen = await _ensure_bleak_sees_device(address, attempts=2)
                 if not seen:
-                    print(
-                        "⚠️  Proceeding with Bleak comprehensive analysis despite missing scan result"
-                    )
+                    print("⚠️  Proceeding with Bleak comprehensive analysis despite missing scan result")
                 bleak_results = await comprehensive_device_analysis_bleak(address)
                 comparison_results["bleak"] = bleak_results
             else:
@@ -392,7 +386,7 @@ async def demo_library_comparison(address: str, target_uuids: list[str] = None) 
                 comparison_results["bleak"] = await parse_and_display_results(
                     bleak_results, "Bleak"
                 )
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        except Exception as e:
             print(f"❌ Bleak comprehensive analysis failed: {e}")
 
     # Small delay to avoid HCI adapter contention between different libraries
@@ -414,28 +408,28 @@ async def demo_library_comparison(address: str, target_uuids: list[str] = None) 
                 comparison_results["bleak-retry"] = await parse_and_display_results(
                     retry_results, "Bleak-Retry"
                 )
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        except Exception as e:
             print(f"❌ Bleak-retry analysis failed: {e}")
 
     # Small delay before running synchronous SimplePyBLE to avoid adapter conflicts
     await asyncio.sleep(1)
 
     # Test SimplePyBLE (synchronous) by running its comprehensive analyzer in a thread
-    if SIMPLEPYBLE_AVAILABLE:
+    if "simplepyble" in AVAILABLE_LIBRARIES:
         try:
-            print(
-                "\n🔁 Running SimplePyBLE comprehensive analysis in background thread..."
-            )
-            if SIMPLEPYBLE_MODULE is None:
-                print("❌ SimplePyBLE module missing at runtime")
-            else:
+            print("\n🔁 Running SimplePyBLE comprehensive analysis in background thread...")
+            try:
+                import simplepyble as simpleble_module  # type: ignore
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                print(f"❌ Could not import simplepyble: {e}")
+                simpleble_module = None
+
+            if simpleble_module is not None:
                 simple_results = await asyncio.to_thread(
-                    comprehensive_device_analysis_simpleble,
-                    address,
-                    SIMPLEPYBLE_MODULE,
+                    comprehensive_device_analysis_simpleble, address, simpleble_module
                 )
                 comparison_results["simplepyble"] = simple_results
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        except Exception as e:
             print(f"❌ SimplePyBLE analysis failed: {e}")
 
     return comparison_results
@@ -966,14 +960,12 @@ async def handle_notifications_bleak(
 
 
 def _process_single_characteristic(char, translator, results, service_uuid, peripheral):
-    """Process a single SimpleBLE characteristic.
-
-    Returns:
-        (read_ok: bool, parsed_count: int)
-    """
+    """Process a single SimpleBLE characteristic."""
     try:
         char_uuid = char.uuid()
-        char_uuid_short = short_uuid(char_uuid)
+        char_uuid_short = (
+            char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
+        )
 
         # Get characteristic info
         char_info = translator.get_characteristic_info(char_uuid_short)
@@ -982,7 +974,7 @@ def _process_single_characteristic(char, translator, results, service_uuid, peri
         char_data = {
             "uuid": char_uuid_short,
             "name": char_name,
-            "readable": False,
+            "readable": True,  # Assume readable, handle exceptions
         }
         results["service_info"][service_uuid]["characteristics"].append(char_data)
 
@@ -992,34 +984,34 @@ def _process_single_characteristic(char, translator, results, service_uuid, peri
         try:
             print(f"  📖 Reading {char_uuid_short}...")
 
+            # Use peripheral.read(service, characteristic) as provided by SimplePyBLE
             raw_data = peripheral.read(service_uuid, char_uuid)
 
             if raw_data:
                 raw_bytes = _convert_to_bytes(raw_data)
                 results["raw_data"][char_uuid_short] = raw_bytes
-                results["service_info"][service_uuid]["characteristics"][-1][
-                    "readable"
-                ] = True
 
                 # Display raw data
                 _display_raw_data(char_uuid_short, raw_bytes)
 
                 # Try to parse with bluetooth_sig
-                parsed = _parse_characteristic_data(
-                    char_uuid_short, raw_bytes, char_name, translator, results
+                return _parse_characteristic_data(
+                    char_uuid_short,
+                    raw_bytes,
+                    char_name,
+                    translator,
+                    results,
                 )
-                return True, parsed
 
             print(f"  ⚠️  {char_uuid_short}: No data read")
-            return False, 0
 
         except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"  ❌ Error reading {char_uuid_short}: {e}")
-            return False, 0
 
     except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"     ❌ Error processing characteristic: {e}")
-    return False, 0
+
+    return 0
 
 
 def _process_simpleble_services(services, translator, results, peripheral):  # pylint: disable=too-many-locals
@@ -1048,12 +1040,11 @@ def _process_simpleble_services(services, translator, results, peripheral):  # p
             print(f"   └─ {len(characteristics)} characteristics:")
 
             for char in characteristics:
-                read_ok, parsed_count = _process_single_characteristic(
+                parsed_count = _process_single_characteristic(
                     char, translator, results, service_uuid, peripheral
                 )
-                if read_ok:
-                    chars_read += 1
                 if parsed_count > 0:
+                    chars_read += 1
                     chars_parsed += parsed_count
 
         except Exception as e:  # pylint: disable=broad-exception-caught

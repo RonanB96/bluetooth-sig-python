@@ -42,7 +42,7 @@ from ble_utils import (
 )
 
 
-async def compare_libraries(
+async def compare_libraries(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     address: str, target_uuids: list[str] = None, use_comprehensive: bool = True
 ):
     """Compare different BLE libraries with comprehensive device analysis or specific UUIDs.
@@ -109,7 +109,7 @@ async def compare_libraries(
                 bleak_data, "Bleak"
             )
             connection_success["bleak"] = len(bleak_data) > 0
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             library_timings["bleak"] = time.time() - start_time
             library_results["bleak"] = {}
             connection_success["bleak"] = False
@@ -126,7 +126,7 @@ async def compare_libraries(
                 retry_data, "Bleak-Retry"
             )
             connection_success["bleak-retry"] = len(retry_data) > 0
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             library_timings["bleak-retry"] = time.time() - start_time
             library_results["bleak-retry"] = {}
             connection_success["bleak-retry"] = False
@@ -209,98 +209,48 @@ async def main():
         action="store_true",
         help="Compare all available libraries",
     )
-    parser.add_argument(
-        "--uuids", "-u", nargs="+", help="Specific UUIDs to test (legacy mode)"
-    )
+    parser.add_argument("--uuids", "-u", nargs="+", help="Specific UUIDs to test")
     parser.add_argument(
         "--comprehensive",
         action="store_true",
         default=True,
-        help="Use comprehensive device analysis (default). Discovers ALL characteristics.",
+        help="Use comprehensive device analysis",
     )
     parser.add_argument(
         "--legacy",
         action="store_true",
-        help="Use legacy mode with predefined characteristics only",
+        help="Use legacy mode with predefined characteristics",
     )
 
     args = parser.parse_args()
 
-    print("🚀 Real-World BLE Library Performance Comparison")
-    print("=" * 70)
-    print("This tool compares actual BLE library performance with real devices.")
-    print("No mock data - real connections or real failures!")
-
-    # Show available libraries
     has_libraries = show_library_availability()
-
     if not has_libraries:
-        print("\n❌ No BLE libraries available for comparison!")
-        print("Install libraries to compare:")
-        print("  pip install bleak")
-        print("  pip install bleak-retry-connector")
+        print("No BLE libraries available. Install bleak or bleak-retry-connector.")
         return
 
     if not args.address:
         if args.scan:
-            print("\n🔍 Scanning for real devices...")
             devices = await scan_with_bleak()
-
             if devices:
-                print(f"\n📱 Found {len(devices)} devices. Choose one with --address:")
-                for i, device in enumerate(devices, 1):
+                print("Found devices:")
+                for device in devices:
                     name = device.name or "Unknown"
-                    print(f"  {i}. {name} ({device.address})")
-                print(
-                    "\nExample: python library_comparison.py --address 12:34:56:78:9A:BC"
-                )
+                    print(f"  {name} ({device.address})")
             else:
-                print("\n📡 No BLE devices found in range.")
-                print("Make sure your BLE device is:")
-                print("  • Powered on and advertising")
-                print("  • In range of your computer")
-                print("  • Not connected to another device")
-            print("✅ Scan completed successfully")
+                print("No devices found.")
         else:
-            print("\n📋 Usage:")
-            print("  python library_comparison.py --address <BLE_ADDRESS>")
-            print("  python library_comparison.py --scan")
-            print(
-                "\nThis tool requires a real BLE device address to compare libraries."
-            )
-            print("Use --scan to find available devices first.")
+            print("Usage: python library_comparison.py --address <BLE_ADDRESS>")
         return
 
-    # Run real comparison with actual device
-    print(f"\n🎯 Comparing BLE libraries with device: {args.address}")
-    print("=" * 60)
-
-    # Determine analysis mode
     use_comprehensive = not args.legacy
     if args.uuids:
-        use_comprehensive = False  # Specific UUIDs override comprehensive mode
-        print("📋 Using specific UUIDs (legacy mode)")
-    elif use_comprehensive:
-        print("🔍 Using comprehensive device analysis (discovers ALL characteristics)")
-    else:
-        print("⚠️  Using legacy mode with predefined characteristics")
+        use_comprehensive = False
 
     try:
         await compare_libraries(args.address, args.uuids, use_comprehensive)
-
-        print("\n✅ Real-world comparison completed!")
-        print("🎯 Key insights:")
-        print("  • Library performance differences are real and measurable")
-        print("  • Connection reliability varies between libraries")
-        print("  • bluetooth_sig parsing is identical regardless of library")
-        if use_comprehensive:
-            print("  • Comprehensive analysis discovers actual device capabilities")
-            print("  • Much more informative than testing predefined characteristics")
-        else:
-            print("  • Consider using --comprehensive for better device analysis")
-
     except KeyboardInterrupt:
-        print("\n🛑 Comparison interrupted by user")
+        print("Comparison interrupted by user")
 
 
 if __name__ == "__main__":

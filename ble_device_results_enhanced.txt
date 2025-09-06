@@ -1,0 +1,11 @@
+=== Running against 34:A6:EF:37:51:79 ===
+Testing connection to device: 34:A6:EF:37:51:79
+============================================================
+Scanning for device...
+✅ Device found: BSD_Outlet
+📶 Signal strength: Not available
+Attempting connection with enhanced strategy...
+❌ Connection or communication failed: failed to discover services, device disconnected
+
+
+=== Running against 50:FD:D5:58:21:79 ===

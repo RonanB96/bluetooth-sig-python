@@ -29,16 +29,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from ble_utils import (
     BLEAK_AVAILABLE,
     comprehensive_device_analysis_bleak,
+    discover_services_and_characteristics_bleak,
+    handle_notifications_bleak,
     parse_and_display_results,
     read_characteristics_bleak,
     scan_with_bleak,
 )
 
-from bluetooth_sig import BluetoothSIGTranslator
-
 # Also import for notification patterns
 try:
-    from bleak import BleakClient
+    pass  # BleakClient not needed as it's imported in ble_utils
 except ImportError:
     print("❌ Bleak not available. Install with: pip install bleak")
 
@@ -77,66 +77,7 @@ async def handle_notifications(address: str, duration: int = 30) -> None:
         address: BLE device address
         duration: Duration to monitor notifications in seconds
     """
-    if not BLEAK_AVAILABLE:
-        print("❌ Bleak not available for notifications")
-        return
-
-    translator = BluetoothSIGTranslator()
-    notification_count = 0
-
-    def notification_handler(sender, data):
-        nonlocal notification_count
-        notification_count += 1
-
-        # Extract UUID from sender
-        char_uuid = (
-            sender.uuid[4:8].upper() if len(sender.uuid) > 8 else sender.uuid.upper()
-        )
-
-        # Parse with SIG standards
-        result = translator.parse_characteristic(char_uuid, data)
-
-        if result.parse_success:
-            unit_str = f" {result.unit}" if result.unit else ""
-            print(
-                f"🔔 Notification #{notification_count}: {result.name} = {result.value}{unit_str}"
-            )
-        else:
-            print(
-                f"🔔 Notification #{notification_count}: Raw data from {char_uuid}: {data.hex()}"
-            )
-
-    print(f"🔔 Starting notification monitoring for {duration}s...")
-
-    try:
-        async with BleakClient(address, timeout=10.0) as client:
-            print("✅ Connected for notifications")
-
-            # Subscribe to all notifiable characteristics
-            subscribed_count = 0
-            for service in client.services:
-                for char in service.characteristics:
-                    if "notify" in char.properties:
-                        char_name = char.description or f"Char-{char.uuid[4:8]}"
-                        print(f"📡 Subscribing to {char_name} notifications...")
-                        await client.start_notify(char.uuid, notification_handler)
-                        subscribed_count += 1
-
-            if subscribed_count == 0:
-                print("❌ No notifiable characteristics found")
-                return
-
-            print(f"📡 Subscribed to {subscribed_count} characteristics")
-
-            # Wait for notifications
-            await asyncio.sleep(duration)
-
-            print(
-                f"\n📊 Monitoring complete. Received {notification_count} notifications."
-            )
-
-    except Exception as e:
-        print(f"❌ Notification monitoring failed: {e}")
+    await handle_notifications_bleak(address, duration)
 
 
 async def demonstrate_bleak_integration_patterns():
@@ -201,61 +142,45 @@ async def discover_services_and_characteristics(address: str) -> dict:
     Returns:
         Dictionary of discovered services and characteristics
     """
-    if not BLEAK_AVAILABLE:
-        print("❌ Bleak not available for service discovery")
-        return {}
-
-    translator = BluetoothSIGTranslator()
-    discovery_results = {}
-
-    print(f"🔄 Discovering services on {address}...")
-
-    try:
-        async with BleakClient(address, timeout=10.0) as client:
-            print("✅ Connected for service discovery")
-
-            services = client.services
-
-            for service in services:
-                service_info = translator.get_service_info(service.uuid)
-                service_name = service_info.name if service_info else "Unknown Service"
-
-                print(f"\n🔧 Service: {service_name} ({service.uuid[:8]}...)")
-
-                service_chars = []
-                for char in service.characteristics:
-                    char_uuid_short = (
-                        char.uuid[4:8].upper()
-                        if len(char.uuid) > 8
-                        else char.uuid.upper()
-                    )
-                    char_info = translator.get_characteristic_info(char_uuid_short)
-                    char_name = char_info.name if char_info else char.description
-
-                    service_chars.append(
-                        {
-                            "uuid": char_uuid_short,
-                            "name": char_name,
-                            "properties": list(char.properties),
-                        }
-                    )
-
-                    print(
-                        f"  📋 {char_name} ({char_uuid_short}) - {', '.join(char.properties)}"
-                    )
-
-                discovery_results[service.uuid] = {
-                    "name": service_name,
-                    "characteristics": service_chars,
-                }
-
-    except Exception as e:
-        print(f"❌ Service discovery failed: {e}")
-
-    return discovery_results
+    return await discover_services_and_characteristics_bleak(address)
 
 
-async def main():
+async def handle_scan_mode(args: argparse.Namespace) -> None:
+    """Handle scan-only mode."""
+    await scan_with_bleak(args.timeout)
+    if not args.address:
+        print("Scan complete. Use --address to connect.")
+
+
+async def handle_device_operations(args: argparse.Namespace) -> None:
+    """Handle device-specific operations."""
+    if args.notifications:
+        await handle_notifications(args.address, args.duration)
+    elif args.discover:
+        await discover_services_and_characteristics(args.address)
+    else:
+        results = await read_and_parse_with_bleak(args.address, args.uuids)
+        if results:
+            display_results(results)
+
+
+def display_results(results: dict) -> None:
+    """Display parsed results in a consistent format."""
+    if isinstance(results, dict) and "parsed_data" in results:
+        for _uuid, data in results["parsed_data"].items():
+            unit_str = f" {data['unit']}" if data["unit"] else ""
+            print(f"{data['name']}: {data['value']}{unit_str}")
+    elif isinstance(results, dict):
+        for _uuid, data in results.items():
+            if isinstance(data, dict) and "name" in data:
+                unit_str = f" {data['unit']}" if data.get("unit") else ""
+                print(f"{data['name']}: {data['value']}{unit_str}")
+            elif hasattr(data, "name"):  # Handle ParsedData/CharacteristicInfo objects
+                unit_str = f" {data.unit}" if data.unit else ""
+                print(f"{data.name}: {getattr(data, 'value', 'N/A')}{unit_str}")
+
+
+async def main():  # pylint: disable=too-many-nested-blocks
     """Main function to demonstrate Bleak + bluetooth_sig integration."""
     parser = argparse.ArgumentParser(
         description="Bleak + bluetooth_sig integration example"
@@ -266,10 +191,7 @@ async def main():
         "--timeout", "-t", type=float, default=10.0, help="Scan timeout in seconds"
     )
     parser.add_argument(
-        "--uuids",
-        "-u",
-        nargs="+",
-        help="Specific characteristic UUIDs to read (legacy mode). If not specified, performs comprehensive device analysis.",
+        "--uuids", "-u", nargs="+", help="Specific characteristic UUIDs to read"
     )
     parser.add_argument(
         "--notifications", "-n", action="store_true", help="Monitor notifications"
@@ -283,97 +205,22 @@ async def main():
 
     args = parser.parse_args()
 
-    print("🚀 Bleak + Bluetooth SIG Integration Demo")
-    print("=" * 50)
-
     if not BLEAK_AVAILABLE:
-        print("\n❌ This example requires Bleak. Install with:")
-        print("    pip install bleak")
+        print("Bleak not available. Install with: pip install bleak")
         return
 
     try:
         if args.scan or not args.address:
-            # Scan for devices
-            await scan_with_bleak(args.timeout)
-
-            if not args.address:
-                print(
-                    "\n💡 Use --address with one of the discovered addresses to connect"
-                )
-                print("✅ Scan completed successfully")
-                return
+            await handle_scan_mode(args)
+            return
 
         if args.address:
-            if args.notifications:
-                await handle_notifications(args.address, args.duration)
-            elif args.discover:
-                await discover_services_and_characteristics(args.address)
-            else:
-                # Connect and perform comprehensive analysis or read specific characteristics
-                print(f"\n🔗 Connecting to {args.address}...")
-
-                if args.uuids:
-                    # Legacy mode: read specific UUIDs
-                    print("📋 Reading specified characteristics...")
-                    results = await read_and_parse_with_bleak(args.address, args.uuids)
-
-                    if results:
-                        print("\n📋 Summary of parsed data:")
-                        for _uuid, result in results.items():
-                            if result.parse_success:
-                                unit_str = f" {result.unit}" if result.unit else ""
-                                print(f"  {result.name}: {result.value}{unit_str}")
-                else:
-                    # New comprehensive approach: discover and analyze ALL characteristics
-                    print("🔍 Performing comprehensive device analysis...")
-                    results = await read_and_parse_with_bleak(args.address)
-
-                    if results and "stats" in results:
-                        stats = results["stats"]
-                        print("\n📊 Analysis Summary:")
-                        print(f"  🔗 Connection time: {stats['connection_time']:.2f}s")
-                        print(
-                            f"  🔧 Services discovered: {stats['services_discovered']}"
-                        )
-                        print(
-                            f"  📋 Characteristics found: {stats['characteristics_found']}"
-                        )
-                        print(
-                            f"  📖 Characteristics read: {stats['characteristics_read']}"
-                        )
-                        print(
-                            f"  🏗️  Characteristics parsed: {stats['characteristics_parsed']}"
-                        )
-                        print(
-                            f"  ✅ Characteristics validated: {stats['characteristics_validated']}"
-                        )
-
-                        if results["parsed_data"]:
-                            print("\n📋 Successfully parsed characteristics:")
-                            for _uuid, data in results["parsed_data"].items():
-                                unit_str = f" {data['unit']}" if data["unit"] else ""
-                                print(f"  {data['name']}: {data['value']}{unit_str}")
-
-                    print(
-                        "\n💡 This comprehensive approach discovers ALL device capabilities"
-                    )
-                    print("   instead of testing predefined characteristics.")
-                    print("   Use --uuids for legacy specific characteristic testing.")
-
-        # Show integration patterns
-        await demonstrate_bleak_integration_patterns()
-
-        print("\n✅ Demo completed!")
-        print("This example shows how bluetooth_sig provides pure SIG parsing")
-        print("while Bleak handles all BLE connection complexity.")
+            await handle_device_operations(args)
 
     except KeyboardInterrupt:
-        print("\n🛑 Demo interrupted by user")
-    except Exception as e:
-        print(f"\n❌ Demo failed: {e}")
-        import traceback
-
-        traceback.print_exc()
+        print("Demo interrupted by user")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        print(f"Demo failed: {e}")
 
 
 if __name__ == "__main__":
