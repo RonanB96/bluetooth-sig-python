@@ -6,9 +6,9 @@
 bluetooth-sig/
 ├── .github/
 │   ├── workflows/
-│   │   ├── lint-check.yml               # Code quality and linting
-│   │   ├── test-coverage.yml            # Testing and coverage reporting
-│   │   └── copilot-setup-steps.yml      # Copilot setup automation
+│   │   ├── ci.yml                       # Continuous Integration
+│   │   ├── coverage.yml                 # Code coverage reporting
+│   │   └── publish.yml                  # PyPI publishing
 │   ├── ISSUE_TEMPLATE/
 │   │   ├── bug_report.md
 │   │   └── feature_request.md
