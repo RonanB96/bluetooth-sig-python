@@ -13,6 +13,7 @@ class HumidityCharacteristic(BaseCharacteristic):
     _manual_value_type: str = (
         "float"  # Override YAML int type since parse_value returns float
     )
+    _manual_unit: str = "%"  # Ensure unit is set correctly
 
     def parse_value(self, data: bytearray) -> float:
         """Parse humidity data (uint16 in units of 0.01 percent)."""

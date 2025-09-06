@@ -218,11 +218,11 @@ class TestDataParsing:
                 for data_uuid, data in simulated_nordic_thingy_data.items():
                     if data_uuid.replace("-", "").upper() == char_uuid:
                         parsed_value = characteristic.parse_value(data)
-                        assert parsed_value == 101.325, (
-                            f"Expected pressure 101.325 kPa, got {parsed_value}"
+                        assert parsed_value == 10132.5, (
+                            f"Expected pressure 10132.5 Pa, got {parsed_value}"
                         )
-                        assert characteristic.unit == "kPa", (
-                            f"Expected unit 'kPa', got '{characteristic.unit}'"
+                        assert characteristic.unit == "Pa", (
+                            f"Expected unit 'Pa', got '{characteristic.unit}'"
                         )
                         pressure_char = characteristic
                         break
