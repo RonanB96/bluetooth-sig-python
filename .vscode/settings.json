@@ -183,5 +183,6 @@
         "git rm": false,
         "git mv": false,
         "/^Remove-Item\\b/i": false
-    }
+    },
+    "python.analysis.typeCheckingMode": "standard"
 }
