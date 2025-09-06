@@ -44,11 +44,13 @@ dev = [
     "ruff~=0.1",
     "ipdb~=0.13",
     "coverage~=7.0",
+    "coveralls~=4.0",
 ]
 test = [
     "pytest==8.4.1",
     "pytest-asyncio==1.1.0",
     "pytest-cov==6.2.1",
+    "coveralls~=4.0",
 ]
 examples = [
     # BLE libraries for example integrations

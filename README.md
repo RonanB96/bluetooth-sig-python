@@ -1,5 +1,7 @@
 # Bluetooth SIG Standards Library
 
+[![Coverage Status](https://coveralls.io/repos/github/RonanB96/bluetooth-sig-python/badge.svg?branch=main)](https://coveralls.io/github/RonanB96/bluetooth-sig-python?branch=main)
+
 A pure Python library for Bluetooth SIG standards interpretation, providing comprehensive GATT characteristic and service parsing with automatic UUID resolution. This project offers a robust, standards-compliant architecture for Bluetooth device communication with type-safe data parsing and clean API design.
 
 ## Features
