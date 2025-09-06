@@ -60,7 +60,7 @@ run_ruff() {
     # Run ruff and capture output, allowing it to fail
     local RUFF_OUTPUT
     set +e  # Temporarily disable exit on error
-    RUFF_OUTPUT=$(ruff check src/ tests/ 2>&1)
+    RUFF_OUTPUT=$(ruff check src/ tests/ examples/ 2>&1)
     local RUFF_EXIT_CODE=$?
     set -e  # Re-enable exit on error
 

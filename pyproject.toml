@@ -52,11 +52,9 @@ test = [
 ]
 examples = [
     # BLE libraries for example integrations
-    "bleak>=0.21.0",                    # Cross-platform async BLE (with_bleak.py)
-    "bleak-retry-connector>=3.5.0",    # Robust BLE with retry logic (with_bleak_retry.py)
-    "simplebluez>=0.2.0",              # Linux SimpleBLE alternative (with_simpleble.py)
-    # Note: simpleble package availability varies by platform
-    # Install manually if needed: pip install simpleble
+    "bleak>=0.21.0",                    # Cross-platform async BLE (recommended)
+    "bleak-retry-connector>=3.5.0",    # Robust BLE with retry logic
+    "simplepyble>=0.10.0",             # Cross-platform BLE (requires commercial license for commercial use)
 ]
 
 [project.scripts]

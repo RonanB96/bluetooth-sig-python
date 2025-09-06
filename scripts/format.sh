@@ -53,7 +53,7 @@ run_ruff() {
         local exit_code=0
         
         # Check formatting
-        if ! ruff format --check src/ tests/; then
+        if ! ruff format --check src/ tests/ examples/; then
             print_error "ruff formatting issues found"
             echo "Run './scripts/format.sh --fix' to fix formatting"
             exit_code=1
@@ -62,7 +62,7 @@ run_ruff() {
         fi
         
         # Check linting (including import sorting)
-        if ! ruff check src/ tests/; then
+        if ! ruff check src/ tests/ examples/; then
             print_error "ruff linting issues found"
             echo "Run './scripts/format.sh --fix' to fix issues"
             exit_code=1
@@ -75,11 +75,11 @@ run_ruff() {
         print_header "Formatting code with ruff"
         
         # Fix formatting
-        ruff format src/ tests/
+        ruff format src/ tests/ examples/
         print_success "Code formatted with ruff"
         
         # Fix linting issues (including import sorting)
-        ruff check --fix src/ tests/
+                ruff check --fix src/ tests/ examples/
         print_success "Code linting issues fixed with ruff"
         
         return 0
