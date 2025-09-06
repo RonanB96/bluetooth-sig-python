@@ -349,12 +349,12 @@ class TestGlucoseFeatureCharacteristic:
         test_data = bytearray([0x03, 0x04])
 
         result = glucose_feature_char.parse_value(test_data)
-        assert result["features_bitmap"] == 0x0403
-        assert result["low_battery_detection"] is True
-        assert result["sensor_malfunction_detection"] is True
-        assert result["multiple_bond_support"] is True
-        assert result["sensor_sample_size"] is False
-        assert len(result["enabled_features"]) == 3
+        assert result.features_bitmap == 0x0403
+        assert result.low_battery_detection is True
+        assert result.sensor_malfunction_detection is True
+        assert result.multiple_bond_support is True
+        assert result.sensor_sample_size is False
+        assert len(result.enabled_features) == 3
 
     def test_glucose_feature_all_features(self, glucose_feature_char):
         """Test glucose feature with all features enabled."""
@@ -362,18 +362,18 @@ class TestGlucoseFeatureCharacteristic:
         test_data = bytearray([0xFF, 0x07])  # All 11 defined feature bits
 
         result = glucose_feature_char.parse_value(test_data)
-        assert result["feature_count"] == 11
-        assert "Low Battery Detection" in result["enabled_features"]
-        assert "Multiple Bond Support" in result["enabled_features"]
+        assert result.feature_count == 11
+        assert "Low Battery Detection" in result.enabled_features
+        assert "Multiple Bond Support" in result.enabled_features
 
     def test_glucose_feature_no_features(self, glucose_feature_char):
         """Test glucose feature with no features enabled."""
         test_data = bytearray([0x00, 0x00])
 
         result = glucose_feature_char.parse_value(test_data)
-        assert result["features_bitmap"] == 0
-        assert result["feature_count"] == 0
-        assert len(result["enabled_features"]) == 0
+        assert result.features_bitmap == 0
+        assert result.feature_count == 0
+        assert len(result.enabled_features) == 0
 
     def test_glucose_feature_descriptions(self, glucose_feature_char):
         """Test feature bit descriptions."""
@@ -387,6 +387,49 @@ class TestGlucoseFeatureCharacteristic:
         """Test glucose feature with invalid data."""
         with pytest.raises(ValueError, match="must be at least 2 bytes"):
             glucose_feature_char.parse_value(bytearray([0x00]))
+
+    def test_glucose_feature_encode_value(self, glucose_feature_char):
+        """Test encoding GlucoseFeatureData back to bytes."""
+        from bluetooth_sig.gatt.characteristics.glucose_feature import GlucoseFeatureData
+        
+        # Create test data
+        test_data = GlucoseFeatureData(
+            features_bitmap=0x0403,
+            low_battery_detection=True,
+            sensor_malfunction_detection=True,
+            sensor_sample_size=False,
+            sensor_strip_insertion_error=False,
+            sensor_strip_type_error=False,
+            sensor_result_high_low=False,
+            sensor_temperature_high_low=False,
+            sensor_read_interrupt=False,
+            general_device_fault=False,
+            time_fault=False,
+            multiple_bond_support=True,
+            enabled_features=["Low Battery Detection", "Sensor Malfunction Detection", "Multiple Bond Support"],
+            feature_count=3,
+        )
+        
+        # Encode the data
+        encoded = glucose_feature_char.encode_value(test_data)
+        
+        # Should produce the correct bytes
+        assert len(encoded) == 2
+        assert encoded == bytearray([0x03, 0x04])  # Little endian 0x0403
+        
+    def test_glucose_feature_round_trip(self, glucose_feature_char):
+        """Test that parsing and encoding preserve data."""
+        # Test with basic features
+        original_data = bytearray([0x03, 0x04])  # Low Battery + Sensor Malfunction + Multiple Bond
+        
+        # Parse the data
+        parsed = glucose_feature_char.parse_value(original_data)
+        
+        # Encode it back
+        encoded = glucose_feature_char.encode_value(parsed)
+        
+        # Should match the original
+        assert encoded == original_data
 
 
 class TestGlucoseIntegration:

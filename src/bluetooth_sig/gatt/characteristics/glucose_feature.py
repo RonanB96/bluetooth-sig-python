@@ -1,10 +1,32 @@
 """Glucose Feature characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
 from typing import Any
 
 from .base import BaseCharacteristic
+
+
+@dataclass
+class GlucoseFeatureData:
+    """Parsed data from Glucose Feature characteristic."""
+    
+    features_bitmap: int
+    low_battery_detection: bool
+    sensor_malfunction_detection: bool
+    sensor_sample_size: bool
+    sensor_strip_insertion_error: bool
+    sensor_strip_type_error: bool
+    sensor_result_high_low: bool
+    sensor_temperature_high_low: bool
+    sensor_read_interrupt: bool
+    general_device_fault: bool
+    time_fault: bool
+    multiple_bond_support: bool
+    enabled_features: list[str]
+    feature_count: int
 
 
 @dataclass
@@ -17,7 +39,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Glucose Feature"
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:
+    def parse_value(self, data: bytearray) -> GlucoseFeatureData:
         """Parse glucose feature data according to Bluetooth specification.
 
         Format: Features(2) - 16-bit bitmap indicating supported features
@@ -37,50 +59,96 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
         features = struct.unpack("<H", data[:2])[0]
 
         # Parse feature bitmap
-        parsed_features = {
-            "features_bitmap": features,
-            "low_battery_detection": bool(features & 0x0001),
-            "sensor_malfunction_detection": bool(features & 0x0002),
-            "sensor_sample_size": bool(features & 0x0004),
-            "sensor_strip_insertion_error": bool(features & 0x0008),
-            "sensor_strip_type_error": bool(features & 0x0010),
-            "sensor_result_high_low": bool(features & 0x0020),
-            "sensor_temperature_high_low": bool(features & 0x0040),
-            "sensor_read_interrupt": bool(features & 0x0080),
-            "general_device_fault": bool(features & 0x0100),
-            "time_fault": bool(features & 0x0200),
-            "multiple_bond_support": bool(features & 0x0400),
-        }
+        low_battery_detection = bool(features & 0x0001)
+        sensor_malfunction_detection = bool(features & 0x0002)
+        sensor_sample_size = bool(features & 0x0004)
+        sensor_strip_insertion_error = bool(features & 0x0008)
+        sensor_strip_type_error = bool(features & 0x0010)
+        sensor_result_high_low = bool(features & 0x0020)
+        sensor_temperature_high_low = bool(features & 0x0040)
+        sensor_read_interrupt = bool(features & 0x0080)
+        general_device_fault = bool(features & 0x0100)
+        time_fault = bool(features & 0x0200)
+        multiple_bond_support = bool(features & 0x0400)
 
         # Create human-readable summary
         enabled_features = []
-        if parsed_features["low_battery_detection"]:
+        if low_battery_detection:
             enabled_features.append("Low Battery Detection")
-        if parsed_features["sensor_malfunction_detection"]:
+        if sensor_malfunction_detection:
             enabled_features.append("Sensor Malfunction Detection")
-        if parsed_features["sensor_sample_size"]:
+        if sensor_sample_size:
             enabled_features.append("Sensor Sample Size")
-        if parsed_features["sensor_strip_insertion_error"]:
+        if sensor_strip_insertion_error:
             enabled_features.append("Sensor Strip Insertion Error")
-        if parsed_features["sensor_strip_type_error"]:
+        if sensor_strip_type_error:
             enabled_features.append("Sensor Strip Type Error")
-        if parsed_features["sensor_result_high_low"]:
+        if sensor_result_high_low:
             enabled_features.append("Sensor Result High-Low Detection")
-        if parsed_features["sensor_temperature_high_low"]:
+        if sensor_temperature_high_low:
             enabled_features.append("Sensor Temperature High-Low Detection")
-        if parsed_features["sensor_read_interrupt"]:
+        if sensor_read_interrupt:
             enabled_features.append("Sensor Read Interrupt Detection")
-        if parsed_features["general_device_fault"]:
+        if general_device_fault:
             enabled_features.append("General Device Fault")
-        if parsed_features["time_fault"]:
+        if time_fault:
             enabled_features.append("Time Fault")
-        if parsed_features["multiple_bond_support"]:
+        if multiple_bond_support:
             enabled_features.append("Multiple Bond Support")
 
-        parsed_features["enabled_features"] = enabled_features
-        parsed_features["feature_count"] = len(enabled_features)
+        return GlucoseFeatureData(
+            features_bitmap=features,
+            low_battery_detection=low_battery_detection,
+            sensor_malfunction_detection=sensor_malfunction_detection,
+            sensor_sample_size=sensor_sample_size,
+            sensor_strip_insertion_error=sensor_strip_insertion_error,
+            sensor_strip_type_error=sensor_strip_type_error,
+            sensor_result_high_low=sensor_result_high_low,
+            sensor_temperature_high_low=sensor_temperature_high_low,
+            sensor_read_interrupt=sensor_read_interrupt,
+            general_device_fault=general_device_fault,
+            time_fault=time_fault,
+            multiple_bond_support=multiple_bond_support,
+            enabled_features=enabled_features,
+            feature_count=len(enabled_features),
+        )
 
-        return parsed_features
+    def encode_value(self, data: GlucoseFeatureData) -> bytearray:
+        """Encode GlucoseFeatureData back to bytes.
+        
+        Args:
+            data: GlucoseFeatureData instance to encode
+            
+        Returns:
+            Encoded bytes representing the glucose features
+        """
+        # Reconstruct the features bitmap from individual flags
+        features_bitmap = 0
+        if data.low_battery_detection:
+            features_bitmap |= 0x0001
+        if data.sensor_malfunction_detection:
+            features_bitmap |= 0x0002
+        if data.sensor_sample_size:
+            features_bitmap |= 0x0004
+        if data.sensor_strip_insertion_error:
+            features_bitmap |= 0x0008
+        if data.sensor_strip_type_error:
+            features_bitmap |= 0x0010
+        if data.sensor_result_high_low:
+            features_bitmap |= 0x0020
+        if data.sensor_temperature_high_low:
+            features_bitmap |= 0x0040
+        if data.sensor_read_interrupt:
+            features_bitmap |= 0x0080
+        if data.general_device_fault:
+            features_bitmap |= 0x0100
+        if data.time_fault:
+            features_bitmap |= 0x0200
+        if data.multiple_bond_support:
+            features_bitmap |= 0x0400
+            
+        # Pack as little-endian 16-bit integer
+        return bytearray(struct.pack("<H", features_bitmap))
 
     def get_feature_description(self, feature_bit: int) -> str:
         """Get description for a specific feature bit.
