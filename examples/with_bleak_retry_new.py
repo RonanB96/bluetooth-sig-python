@@ -29,21 +29,21 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from bluetooth_sig import BluetoothSIGTranslator
-
 # Import shared BLE utilities
 from ble_utils import (
     BLEAK_RETRY_AVAILABLE,
-    scan_with_bleak,
-    read_characteristics_bleak_retry,
-    parse_and_display_results,
     get_default_characteristic_uuids,
+    parse_and_display_results,
+    read_characteristics_bleak_retry,
+    scan_with_bleak,
 )
+
+from bluetooth_sig import BluetoothSIGTranslator
 
 # Also import for robust patterns
 try:
-    from bleak_retry_connector import establish_connection, BleakClientWithServiceCache
     from bleak import BleakClient
+    from bleak_retry_connector import BleakClientWithServiceCache, establish_connection
 except ImportError:
     print("❌ Bleak-retry-connector not available. Install with:")
     print("    pip install bleak-retry-connector bleak")
@@ -93,12 +93,9 @@ async def robust_service_discovery(address: str) -> dict:
 
     try:
         async with establish_connection(
-            BleakClientWithServiceCache,
-            address,
-            timeout=10.0,
-            max_attempts=3
+            BleakClientWithServiceCache, address, timeout=10.0, max_attempts=3
         ) as client:
-            print(f"✅ Connected for service discovery")
+            print("✅ Connected for service discovery")
 
             services = client.services
 
@@ -110,21 +107,29 @@ async def robust_service_discovery(address: str) -> dict:
 
                 service_chars = []
                 for char in service.characteristics:
-                    char_uuid_short = char.uuid[4:8].upper() if len(char.uuid) > 8 else char.uuid.upper()
+                    char_uuid_short = (
+                        char.uuid[4:8].upper()
+                        if len(char.uuid) > 8
+                        else char.uuid.upper()
+                    )
                     char_info = translator.get_characteristic_info(char_uuid_short)
                     char_name = char_info.name if char_info else char.description
 
-                    service_chars.append({
-                        'uuid': char_uuid_short,
-                        'name': char_name,
-                        'properties': list(char.properties)
-                    })
+                    service_chars.append(
+                        {
+                            "uuid": char_uuid_short,
+                            "name": char_name,
+                            "properties": list(char.properties),
+                        }
+                    )
 
-                    print(f"  📋 {char_name} ({char_uuid_short}) - {', '.join(char.properties)}")
+                    print(
+                        f"  📋 {char_name} ({char_uuid_short}) - {', '.join(char.properties)}"
+                    )
 
                 discovery_results[service.uuid] = {
-                    'name': service_name,
-                    'characteristics': service_chars
+                    "name": service_name,
+                    "characteristics": service_chars,
                 }
 
     except Exception as e:
@@ -151,6 +156,7 @@ async def continuous_monitoring(address: str, duration: int = 60) -> None:
     target_uuids = ["2A19", "2A6E", "2A6F"]  # Battery, Temperature, Humidity
 
     import time
+
     start_time = time.time()
     reading_count = 0
 
@@ -164,7 +170,9 @@ async def continuous_monitoring(address: str, duration: int = 60) -> None:
 
                 if raw_results:
                     reading_count += 1
-                    print(f"\n📊 Reading #{reading_count} at {time.strftime('%H:%M:%S')}:")
+                    print(
+                        f"\n📊 Reading #{reading_count} at {time.strftime('%H:%M:%S')}:"
+                    )
 
                     for uuid_short, (raw_data, _) in raw_results.items():
                         result = translator.parse_characteristic(uuid_short, raw_data)
@@ -202,24 +210,28 @@ async def notification_monitoring(address: str, duration: int = 60) -> None:
         notification_count += 1
 
         # Extract UUID from sender
-        char_uuid = sender.uuid[4:8].upper() if len(sender.uuid) > 8 else sender.uuid.upper()
+        char_uuid = (
+            sender.uuid[4:8].upper() if len(sender.uuid) > 8 else sender.uuid.upper()
+        )
 
         # Parse with SIG standards
         result = translator.parse_characteristic(char_uuid, data)
 
         if result.parse_success:
             unit_str = f" {result.unit}" if result.unit else ""
-            print(f"🔔 Notification #{notification_count}: {result.name} = {result.value}{unit_str}")
+            print(
+                f"🔔 Notification #{notification_count}: {result.name} = {result.value}{unit_str}"
+            )
         else:
-            print(f"🔔 Notification #{notification_count}: Raw data from {char_uuid}: {data.hex()}")
+            print(
+                f"🔔 Notification #{notification_count}: Raw data from {char_uuid}: {data.hex()}"
+            )
 
     print(f"🔔 Starting notification monitoring for {duration}s...")
 
     try:
         async with establish_connection(
-            BleakClientWithServiceCache,
-            address,
-            timeout=10.0
+            BleakClientWithServiceCache, address, timeout=10.0
         ) as client:
             print("✅ Connected for notifications")
 
@@ -234,7 +246,9 @@ async def notification_monitoring(address: str, duration: int = 60) -> None:
             # Wait for notifications
             await asyncio.sleep(duration)
 
-            print(f"\n📊 Monitoring complete. Received {notification_count} notifications.")
+            print(
+                f"\n📊 Monitoring complete. Received {notification_count} notifications."
+            )
 
     except Exception as e:
         print(f"❌ Notification monitoring failed: {e}")
@@ -242,13 +256,23 @@ async def notification_monitoring(address: str, duration: int = 60) -> None:
 
 async def main():
     """Main function demonstrating robust BLE patterns."""
-    parser = argparse.ArgumentParser(description="Robust BLE with bleak-retry-connector + SIG parsing")
+    parser = argparse.ArgumentParser(
+        description="Robust BLE with bleak-retry-connector + SIG parsing"
+    )
     parser.add_argument("--address", "-a", help="BLE device address")
     parser.add_argument("--scan", "-s", action="store_true", help="Scan for devices")
-    parser.add_argument("--monitor", "-m", action="store_true", help="Continuous monitoring")
-    parser.add_argument("--notifications", "-n", action="store_true", help="Monitor notifications")
-    parser.add_argument("--discover", "-d", action="store_true", help="Service discovery")
-    parser.add_argument("--duration", "-t", type=int, default=60, help="Duration for monitoring")
+    parser.add_argument(
+        "--monitor", "-m", action="store_true", help="Continuous monitoring"
+    )
+    parser.add_argument(
+        "--notifications", "-n", action="store_true", help="Monitor notifications"
+    )
+    parser.add_argument(
+        "--discover", "-d", action="store_true", help="Service discovery"
+    )
+    parser.add_argument(
+        "--duration", "-t", type=int, default=60, help="Duration for monitoring"
+    )
 
     args = parser.parse_args()
 

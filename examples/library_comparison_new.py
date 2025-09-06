@@ -28,22 +28,23 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from bluetooth_sig import BluetoothSIGTranslator
 
 # Import shared BLE utilities
 from ble_utils import (
     AVAILABLE_LIBRARIES,
-    show_library_availability,
-    scan_with_bleak,
-    read_characteristics_bleak,
-    read_characteristics_bleak_retry,
-    parse_and_display_results,
     demo_mock_comparison,
     get_default_characteristic_uuids,
+    parse_and_display_results,
+    read_characteristics_bleak,
+    read_characteristics_bleak_retry,
+    scan_with_bleak,
+    show_library_availability,
 )
 
 
-def read_with_simpleble(address: str, target_uuids: list[str]) -> dict[str, tuple[bytes, float]]:
+def read_with_simpleble(
+    address: str, target_uuids: list[str]
+) -> dict[str, tuple[bytes, float]]:
     """Read characteristics using SimpleBLE library.
 
     Note: This is a mock implementation since SimpleBLE usage varies by platform.
@@ -75,24 +76,28 @@ async def compare_libraries(address: str, target_uuids: list[str] = None):
     library_timings = {}
 
     # Test with Bleak
-    if 'bleak' in AVAILABLE_LIBRARIES:
+    if "bleak" in AVAILABLE_LIBRARIES:
         start_time = time.time()
         bleak_data = await read_characteristics_bleak(address, target_uuids)
-        library_timings['bleak'] = time.time() - start_time
-        library_results['bleak'] = await parse_and_display_results(bleak_data, "Bleak")
+        library_timings["bleak"] = time.time() - start_time
+        library_results["bleak"] = await parse_and_display_results(bleak_data, "Bleak")
 
     # Test with Bleak-retry-connector
-    if 'bleak-retry' in AVAILABLE_LIBRARIES:
+    if "bleak-retry" in AVAILABLE_LIBRARIES:
         start_time = time.time()
         retry_data = await read_characteristics_bleak_retry(address, target_uuids)
-        library_timings['bleak-retry'] = time.time() - start_time
-        library_results['bleak-retry'] = await parse_and_display_results(retry_data, "Bleak-Retry")
+        library_timings["bleak-retry"] = time.time() - start_time
+        library_results["bleak-retry"] = await parse_and_display_results(
+            retry_data, "Bleak-Retry"
+        )
 
     # Test with SimpleBLE (mock)
     start_time = time.time()
     simpleble_data = read_with_simpleble(address, target_uuids)
-    library_timings['simpleble'] = time.time() - start_time
-    library_results['simpleble'] = await parse_and_display_results(simpleble_data, "SimpleBLE")
+    library_timings["simpleble"] = time.time() - start_time
+    library_results["simpleble"] = await parse_and_display_results(
+        simpleble_data, "SimpleBLE"
+    )
 
     # Compare results across libraries
     print("\n🔍 Cross-Library Result Validation")
@@ -104,7 +109,7 @@ async def compare_libraries(address: str, target_uuids: list[str] = None):
         values = []
         for lib_name, results in library_results.items():
             if uuid_short in results:
-                value = results[uuid_short]['value']
+                value = results[uuid_short]["value"]
                 values.append(value)
                 print(f"   {lib_name}: {value}")
 
@@ -119,15 +124,26 @@ async def compare_libraries(address: str, target_uuids: list[str] = None):
     print("=" * 30)
     for lib_name, total_time in library_timings.items():
         successful_reads = len([r for r in library_results[lib_name].values()])
-        print(f"   {lib_name}: {total_time:.2f}s total, {successful_reads} successful reads")
+        print(
+            f"   {lib_name}: {total_time:.2f}s total, {successful_reads} successful reads"
+        )
 
 
 async def main():
     """Main function for BLE library comparison."""
-    parser = argparse.ArgumentParser(description="BLE library comparison with bluetooth_sig")
+    parser = argparse.ArgumentParser(
+        description="BLE library comparison with bluetooth_sig"
+    )
     parser.add_argument("--address", "-a", help="BLE device address to test")
-    parser.add_argument("--scan", "-s", action="store_true", help="Scan for devices first")
-    parser.add_argument("--compare-all", "-c", action="store_true", help="Compare all available libraries")
+    parser.add_argument(
+        "--scan", "-s", action="store_true", help="Scan for devices first"
+    )
+    parser.add_argument(
+        "--compare-all",
+        "-c",
+        action="store_true",
+        help="Compare all available libraries",
+    )
     parser.add_argument("--uuids", "-u", nargs="+", help="Specific UUIDs to test")
 
     args = parser.parse_args()
@@ -148,7 +164,9 @@ async def main():
             devices = await scan_with_bleak()
 
             if not args.address and devices:
-                print("\n💡 Use --address with one of the discovered addresses to compare")
+                print(
+                    "\n💡 Use --address with one of the discovered addresses to compare"
+                )
                 demo_mock_comparison()
                 return
             elif not devices:
@@ -165,7 +183,9 @@ async def main():
             demo_mock_comparison()
 
         print("\n✅ Demo completed!")
-        print("Key takeaway: bluetooth_sig provides IDENTICAL parsing across all BLE libraries!")
+        print(
+            "Key takeaway: bluetooth_sig provides IDENTICAL parsing across all BLE libraries!"
+        )
         print("Your choice of BLE library doesn't affect SIG standard interpretation.")
 
     except KeyboardInterrupt:

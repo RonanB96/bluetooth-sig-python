@@ -33,13 +33,13 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from bluetooth_sig import BluetoothSIGTranslator
-
 # Import shared BLE utilities
 from ble_utils import (
     demo_mock_comparison,
     get_default_characteristic_uuids,
 )
+
+from bluetooth_sig import BluetoothSIGTranslator
 
 # Try to import SimpleBLE (availability varies by platform)
 SIMPLEBLE_AVAILABLE = False
@@ -47,17 +47,21 @@ SIMPLEBLE_MODULE = None
 
 try:
     import simpleble as simpleble_module
+
     SIMPLEBLE_AVAILABLE = True
     SIMPLEBLE_MODULE = simpleble_module
     print("✅ SimpleBLE module loaded")
 except ImportError:
     try:
         import simplebluez as simpleble_module
+
         SIMPLEBLE_AVAILABLE = True
         SIMPLEBLE_MODULE = simpleble_module
         print("✅ SimpleBluez module loaded (Linux alternative)")
     except ImportError:
-        print("⚠️  SimpleBLE not available. This is a demonstration of the integration pattern.")
+        print(
+            "⚠️  SimpleBLE not available. This is a demonstration of the integration pattern."
+        )
         print("Install options:")
         print("  Linux: pip install simplebluez")
         print("  Other: pip install simpleble (if available)")
@@ -102,14 +106,18 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict]:
         for i, peripheral in enumerate(scan_results, 1):
             try:
                 name = peripheral.identifier() or "Unknown"
-                address = peripheral.address() if hasattr(peripheral, 'address') else "Unknown"
-                rssi = peripheral.rssi() if hasattr(peripheral, 'rssi') else "N/A"
+                address = (
+                    peripheral.address()
+                    if hasattr(peripheral, "address")
+                    else "Unknown"
+                )
+                rssi = peripheral.rssi() if hasattr(peripheral, "rssi") else "N/A"
 
                 device_info = {
-                    'name': name,
-                    'address': address,
-                    'rssi': rssi,
-                    'peripheral': peripheral
+                    "name": name,
+                    "address": address,
+                    "rssi": rssi,
+                    "peripheral": peripheral,
                 }
                 devices.append(device_info)
 
@@ -124,7 +132,9 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict]:
     return devices
 
 
-def read_characteristics_simpleble(address: str, target_uuids: list[str] = None) -> dict:
+def read_characteristics_simpleble(
+    address: str, target_uuids: list[str] = None
+) -> dict:
     """Read characteristics from a BLE device using SimpleBLE.
 
     Args:
@@ -163,10 +173,12 @@ def read_characteristics_simpleble(address: str, target_uuids: list[str] = None)
 
         for peripheral in scan_results:
             try:
-                if hasattr(peripheral, 'address') and peripheral.address() == address:
+                if hasattr(peripheral, "address") and peripheral.address() == address:
                     target_peripheral = peripheral
                     break
-                elif peripheral.identifier() == address:  # Some implementations use identifier
+                elif (
+                    peripheral.identifier() == address
+                ):  # Some implementations use identifier
                     target_peripheral = peripheral
                     break
             except Exception:
@@ -221,10 +233,12 @@ def read_characteristics_simpleble(address: str, target_uuids: list[str] = None)
                             continue
 
                         # Convert to bytes if needed
-                        if hasattr(raw_data, '__iter__') and not isinstance(raw_data, (str, bytes)):
+                        if hasattr(raw_data, "__iter__") and not isinstance(
+                            raw_data, (str, bytes)
+                        ):
                             raw_bytes = bytes(raw_data)
                         elif isinstance(raw_data, str):
-                            raw_bytes = raw_data.encode('utf-8')
+                            raw_bytes = raw_data.encode("utf-8")
                         else:
                             raw_bytes = raw_data
 
@@ -368,11 +382,17 @@ def demonstrate_mock_usage():
 
 def main():
     """Main function demonstrating SimpleBLE + bluetooth_sig integration."""
-    parser = argparse.ArgumentParser(description="SimpleBLE + bluetooth_sig integration example")
+    parser = argparse.ArgumentParser(
+        description="SimpleBLE + bluetooth_sig integration example"
+    )
     parser.add_argument("--address", "-a", help="BLE device address to connect to")
     parser.add_argument("--scan", "-s", action="store_true", help="Scan for devices")
-    parser.add_argument("--timeout", "-t", type=float, default=10.0, help="Scan timeout in seconds")
-    parser.add_argument("--uuids", "-u", nargs="+", help="Specific characteristic UUIDs to read")
+    parser.add_argument(
+        "--timeout", "-t", type=float, default=10.0, help="Scan timeout in seconds"
+    )
+    parser.add_argument(
+        "--uuids", "-u", nargs="+", help="Specific characteristic UUIDs to read"
+    )
 
     args = parser.parse_args()
 
@@ -423,6 +443,7 @@ def main():
     except Exception as e:
         print(f"\n❌ Demo failed: {e}")
         import traceback
+
         traceback.print_exc()
 
 
