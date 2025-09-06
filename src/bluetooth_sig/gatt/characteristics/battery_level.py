@@ -10,6 +10,7 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
     """Battery level characteristic."""
 
     _characteristic_name: str = "Battery Level"
+    _manual_unit: str = "%"  # Ensure unit is set correctly
 
     def parse_value(self, data: bytearray) -> int:
         """Parse battery level data (uint8 in percentage)."""
@@ -18,8 +19,3 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
 
         # Convert uint8 to percentage
         return data[0]
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "%"
