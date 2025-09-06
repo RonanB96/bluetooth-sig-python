@@ -11,18 +11,70 @@ import yaml
 
 
 @dataclass
-class CharacteristicSpec:  # pylint: disable=too-many-instance-attributes
-    """Characteristic specification from cross-file YAML references."""
+class FieldInfo:
+    """Field-related metadata from YAML."""
 
-    uuid: str
-    name: str
     data_type: str | None = None
     field_size: str | None = None
+
+
+@dataclass
+class UnitInfo:
+    """Unit-related metadata from YAML."""
+
     unit_id: str | None = None
     unit_symbol: str | None = None
     base_unit: str | None = None
     resolution_text: str | None = None
+
+
+@dataclass
+class CharacteristicSpec:
+    """Characteristic specification from cross-file YAML references."""
+
+    uuid: str
+    name: str
+    field_info: FieldInfo = None
+    unit_info: UnitInfo = None
     description: str | None = None
+
+    def __post_init__(self):
+        """Initialize sub-dataclasses if not provided."""
+        if self.field_info is None:
+            self.field_info = FieldInfo()
+        if self.unit_info is None:
+            self.unit_info = UnitInfo()
+
+    # Convenience properties for backward compatibility
+    @property
+    def data_type(self) -> str | None:
+        """Get data type from field info."""
+        return self.field_info.data_type
+
+    @property
+    def field_size(self) -> str | None:
+        """Get field size from field info."""
+        return self.field_info.field_size
+
+    @property
+    def unit_id(self) -> str | None:
+        """Get unit ID from unit info."""
+        return self.unit_info.unit_id
+
+    @property
+    def unit_symbol(self) -> str | None:
+        """Get unit symbol from unit info."""
+        return self.unit_info.unit_symbol
+
+    @property
+    def base_unit(self) -> str | None:
+        """Get base unit from unit info."""
+        return self.unit_info.base_unit
+
+    @property
+    def resolution_text(self) -> str | None:
+        """Get resolution text from unit info."""
+        return self.unit_info.resolution_text
 
 
 class YAMLCrossReferenceResolver:
@@ -35,21 +87,31 @@ class YAMLCrossReferenceResolver:
         self._unit_mappings: dict[str, str] = {}
         self._characteristic_uuids: dict[str, str] = {}
 
+        # Lazy loading flags - only load when needed
+        self._characteristic_uuids_loaded = False
+        self._unit_mappings_loaded = False
+        self._gss_specs_loaded = False
+
+        # Load only essential data at startup (characteristics UUIDs)
         try:
-            self._load_all_yaml_data()
+            self._load_characteristic_uuids()
         except (OSError, yaml.YAMLError) as e:
-            logging.warning("YAML cross-reference loading failed: %s", e)
+            logging.warning("YAML characteristic UUID loading failed: %s", e)
 
     def _find_bluetooth_sig_path(self) -> Path:
-        """Find bluetooth_sig submodule path relative to this file."""
-        # From src/bluetooth_sig/registry/yaml_cross_reference.py
-        # Go up to project root and find bluetooth_sig submodule
+        """Find bluetooth_sig submodule path by searching for project root markers."""
+        # Search upward from current file location for project root
         current = Path(__file__).parent
-        for _ in range(4):  # Go up 4 levels to project root
+        while current != current.parent:  # Stop at filesystem root
+            # Look for project root markers
+            if (current / "pyproject.toml").exists() or (current / ".git").exists():
+                bluetooth_sig = current / "bluetooth_sig"
+                if (
+                    bluetooth_sig.exists()
+                    and (bluetooth_sig / "assigned_numbers").exists()
+                ):
+                    return bluetooth_sig
             current = current.parent
-            bluetooth_sig = current / "bluetooth_sig"
-            if bluetooth_sig.exists() and (bluetooth_sig / "assigned_numbers").exists():
-                return bluetooth_sig
 
         # Fallback paths for development/testing
         fallbacks = [
@@ -64,14 +126,34 @@ class YAMLCrossReferenceResolver:
         # Return the first fallback even if it doesn't exist (for error handling)
         return fallbacks[0]
 
-    def _load_all_yaml_data(self):
-        """Load all YAML data for cross-referencing."""
-        self._load_characteristic_uuids()
-        self._load_gss_specifications()
-        self._load_unit_mappings()
+    def _ensure_characteristic_uuids_loaded(self):
+        """Ensure characteristic UUIDs are loaded (already done at startup)."""
+        # UUIDs are loaded at startup, no action needed
+        return
+
+    def _ensure_gss_specs_loaded(self):
+        """Lazy load GSS specifications when first needed."""
+        if not self._gss_specs_loaded:
+            try:
+                self._load_gss_specifications()
+                self._gss_specs_loaded = True
+            except (OSError, yaml.YAMLError) as e:
+                logging.warning("GSS specifications loading failed: %s", e)
+
+    def _ensure_unit_mappings_loaded(self):
+        """Lazy load unit mappings when first needed."""
+        if not self._unit_mappings_loaded:
+            try:
+                self._load_unit_mappings()
+                self._unit_mappings_loaded = True
+            except (OSError, yaml.YAMLError) as e:
+                logging.warning("Unit mappings loading failed: %s", e)
 
     def _load_characteristic_uuids(self):
         """Load characteristic UUID mappings."""
+        if self._characteristic_uuids_loaded:
+            return
+
         uuid_file = (
             self.bluetooth_sig_path
             / "assigned_numbers"
@@ -94,6 +176,7 @@ class YAMLCrossReferenceResolver:
                         else:
                             uuid = str(uuid_raw).replace("0x", "").upper()
                         self._characteristic_uuids[name] = uuid
+                self._characteristic_uuids_loaded = True
         except (OSError, yaml.YAMLError) as e:
             logging.warning("Failed to load characteristic UUIDs: %s", e)
 
@@ -201,12 +284,13 @@ class YAMLCrossReferenceResolver:
         self, characteristic_name: str
     ) -> CharacteristicSpec | None:
         """Characteristic resolution with cross-file YAML references."""
-        # 1. Get UUID from characteristic_uuids.yaml
+        # 1. Get UUID from characteristic_uuids.yaml (already loaded)
         uuid = self._characteristic_uuids.get(characteristic_name)
         if not uuid:
             return None
 
-        # 2. Get specification from GSS YAML files
+        # 2. Lazy load GSS specifications when first needed
+        self._ensure_gss_specs_loaded()
         gss_spec = self._gss_specs.get(characteristic_name)
 
         # 3. Extract metadata from GSS specification
@@ -236,7 +320,8 @@ class YAMLCrossReferenceResolver:
                     base_unit = base_unit_line
                     unit_id = base_unit_line
 
-                    # 4. Cross-reference unit_id with units.yaml to get symbol
+                    # 4. Cross-reference unit_id with units.yaml to get symbol (lazy load)
+                    self._ensure_unit_mappings_loaded()
                     unit_symbol = self._unit_mappings.get(unit_id, "")
 
                 # Extract resolution information
@@ -246,12 +331,13 @@ class YAMLCrossReferenceResolver:
         return CharacteristicSpec(
             uuid=uuid,
             name=characteristic_name,
-            data_type=data_type,
-            field_size=field_size,
-            unit_id=unit_id,
-            unit_symbol=unit_symbol,
-            base_unit=base_unit,
-            resolution_text=resolution_text,
+            field_info=FieldInfo(data_type=data_type, field_size=field_size),
+            unit_info=UnitInfo(
+                unit_id=unit_id,
+                unit_symbol=unit_symbol,
+                base_unit=base_unit,
+                resolution_text=resolution_text,
+            ),
             description=description,
         )
 
@@ -259,7 +345,9 @@ class YAMLCrossReferenceResolver:
         """Determine if data type is signed from GSS data type."""
         if not data_type:
             return False
-        return data_type.startswith("sint")
+        # Comprehensive signed type detection (matches BaseCharacteristic.is_signed_from_yaml)
+        signed_types = {"float32", "float64", "medfloat16", "medfloat32"}
+        return data_type.startswith("sint") or data_type in signed_types
 
     def get_byte_order_hint(self) -> str:
         """Get byte order hint (Bluetooth SIG uses little-endian by convention)."""
