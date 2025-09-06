@@ -4,15 +4,14 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Any
 
 from .base import BaseCharacteristic
 
 
 @dataclass
-class GlucoseFeatureData:
+class GlucoseFeatureData:  # pylint: disable=too-many-instance-attributes
     """Parsed data from Glucose Feature characteristic."""
-    
+
     features_bitmap: int
     low_battery_detection: bool
     sensor_malfunction_detection: bool
@@ -115,10 +114,10 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
 
     def encode_value(self, data: GlucoseFeatureData) -> bytearray:
         """Encode GlucoseFeatureData back to bytes.
-        
+
         Args:
             data: GlucoseFeatureData instance to encode
-            
+
         Returns:
             Encoded bytes representing the glucose features
         """
@@ -146,7 +145,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
             features_bitmap |= 0x0200
         if data.multiple_bond_support:
             features_bitmap |= 0x0400
-            
+
         # Pack as little-endian 16-bit integer
         return bytearray(struct.pack("<H", features_bitmap))
 

@@ -4,15 +4,14 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Any
 
 from .base import BaseCharacteristic
 
 
 @dataclass
-class BodyCompositionFeatureData:
+class BodyCompositionFeatureData:  # pylint: disable=too-many-instance-attributes
     """Parsed data from Body Composition Feature characteristic."""
-    
+
     raw_value: int
     timestamp_supported: bool
     multiple_users_supported: bool
@@ -82,10 +81,10 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
 
     def encode_value(self, data: BodyCompositionFeatureData) -> bytearray:
         """Encode BodyCompositionFeatureData back to bytes.
-        
+
         Args:
             data: BodyCompositionFeatureData instance to encode
-            
+
         Returns:
             Encoded bytes representing the body composition features
         """
@@ -113,11 +112,11 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
             features_bitmap |= 0x200
         if data.height_supported:
             features_bitmap |= 0x400
-        
+
         # Note: For simplicity, we're not encoding the resolution fields back
         # since they require reverse mapping. The raw_value could be used instead
         # for full round-trip compatibility if needed.
-            
+
         # Pack as little-endian 32-bit integer
         return bytearray(struct.pack("<L", features_bitmap))
 

@@ -152,9 +152,11 @@ class TestBodyCompositionFeatureCharacteristic:
     def test_encode_value(self):
         """Test encoding BodyCompositionFeatureData back to bytes."""
         char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
-        
-        from bluetooth_sig.gatt.characteristics.body_composition_feature import BodyCompositionFeatureData
-        
+
+        from bluetooth_sig.gatt.characteristics.body_composition_feature import (
+            BodyCompositionFeatureData,
+        )
+
         # Create test data with basic features enabled
         test_data = BodyCompositionFeatureData(
             raw_value=0x1F,
@@ -172,27 +174,27 @@ class TestBodyCompositionFeatureCharacteristic:
             mass_measurement_resolution="not_specified",
             height_measurement_resolution="not_specified",
         )
-        
+
         # Encode the data
         encoded = char.encode_value(test_data)
-        
+
         # Should produce the correct bytes
         assert len(encoded) == 4
         assert encoded == bytearray([0x1F, 0x00, 0x00, 0x00])
-        
+
     def test_round_trip_basic(self):
         """Test that parsing and encoding preserve basic feature data."""
         char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
-        
+
         # Test with basic features only (no resolution fields to preserve simplicity)
         original_data = bytearray([0x1F, 0x00, 0x00, 0x00])
-        
+
         # Parse the data
         parsed = char.parse_value(original_data)
-        
+
         # Encode it back (note: this will only preserve basic feature flags)
         encoded = char.encode_value(parsed)
-        
+
         # Should preserve the basic feature bits
         assert encoded == original_data
 

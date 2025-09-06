@@ -253,11 +253,13 @@ class TestTimeCharacteristics:
     def test_local_time_information_encode_value(self):
         """Test encoding LocalTimeInformationData back to bytes."""
         char = LocalTimeInformationCharacteristic(uuid="", properties=set())
-        
+
         from bluetooth_sig.gatt.characteristics.local_time_information import (
-            LocalTimeInformationData, TimezoneInfo, DSTOffsetInfo
+            DSTOffsetInfo,
+            LocalTimeInformationData,
+            TimezoneInfo,
         )
-        
+
         # Create test data for UTC+2 with DST
         test_data = LocalTimeInformationData(
             timezone=TimezoneInfo(
@@ -272,26 +274,26 @@ class TestTimeCharacteristics:
             ),
             total_offset_hours=3.0,
         )
-        
+
         # Encode the data
         encoded = char.encode_value(test_data)
-        
+
         # Should produce the correct bytes
         assert len(encoded) == 2
         assert encoded == bytearray([8, 4])
-        
+
     def test_local_time_information_round_trip(self):
         """Test that parsing and encoding preserve data."""
         char = LocalTimeInformationCharacteristic(uuid="", properties=set())
-        
+
         # Test with UTC+2 and DST
         original_data = bytearray([8, 4])
-        
+
         # Parse the data
         parsed = char.parse_value(original_data)
-        
+
         # Encode it back
         encoded = char.encode_value(parsed)
-        
+
         # Should match the original
         assert encoded == original_data

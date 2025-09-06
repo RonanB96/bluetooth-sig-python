@@ -130,8 +130,14 @@ class TestBatteryPowerStateCharacteristic:
         }
         assert result.raw_value == expected["raw_value"]
         assert result.battery_present == expected["battery_present"]
-        assert result.wired_external_power_connected == expected["wired_external_power_connected"]
-        assert result.wireless_external_power_connected == expected["wireless_external_power_connected"]
+        assert (
+            result.wired_external_power_connected
+            == expected["wired_external_power_connected"]
+        )
+        assert (
+            result.wireless_external_power_connected
+            == expected["wireless_external_power_connected"]
+        )
         assert result.battery_charge_state == expected["battery_charge_state"]
         assert result.battery_charge_level == expected["battery_charge_level"]
         assert result.battery_charging_type == expected["battery_charging_type"]
@@ -236,8 +242,14 @@ class TestBatteryPowerStateCharacteristic:
         }
         assert result.raw_value == expected["raw_value"]
         assert result.battery_present == expected["battery_present"]
-        assert result.wired_external_power_connected == expected["wired_external_power_connected"]
-        assert result.wireless_external_power_connected == expected["wireless_external_power_connected"]
+        assert (
+            result.wired_external_power_connected
+            == expected["wired_external_power_connected"]
+        )
+        assert (
+            result.wireless_external_power_connected
+            == expected["wireless_external_power_connected"]
+        )
         assert result.battery_charge_state == expected["battery_charge_state"]
         assert result.battery_charge_level == expected["battery_charge_level"]
         assert result.battery_charging_type == expected["battery_charging_type"]
@@ -280,9 +292,12 @@ class TestBatteryPowerStateCharacteristic:
     def test_encode_value(self):
         """Test encoding BatteryPowerStateData back to bytes."""
         char = BatteryPowerStateCharacteristic(uuid="", properties=set())
-        
+
         # Create test data
-        from bluetooth_sig.gatt.characteristics.battery_power_state import BatteryPowerStateData
+        from bluetooth_sig.gatt.characteristics.battery_power_state import (
+            BatteryPowerStateData,
+        )
+
         test_data = BatteryPowerStateData(
             raw_value=0xD6,
             battery_present="present",
@@ -293,29 +308,29 @@ class TestBatteryPowerStateCharacteristic:
             battery_charging_type="unknown",
             charging_fault_reason=None,
         )
-        
+
         # Encode the data
         encoded = char.encode_value(test_data)
-        
+
         # Should produce the basic single-byte format
         # Battery present (10) + wired power (1<<2) + charging (01<<4) + good (11<<6)
         # = 0b11010110 = 0xD6
         assert len(encoded) == 1
         assert encoded[0] == 0xD6
-        
+
     def test_round_trip_parse_encode(self):
         """Test that parsing and encoding preserve data for basic format."""
         char = BatteryPowerStateCharacteristic(uuid="", properties=set())
-        
+
         # Test with basic single-byte format
         original_data = bytearray([0xD6])
-        
+
         # Parse the data
         parsed = char.parse_value(original_data)
-        
+
         # Encode it back
         encoded = char.encode_value(parsed)
-        
+
         # Should match the original (for basic format)
         assert encoded == original_data
         assert char.name == "Battery Level Status"

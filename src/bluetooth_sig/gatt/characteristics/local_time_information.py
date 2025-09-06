@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -11,7 +10,7 @@ from .base import BaseCharacteristic
 @dataclass
 class TimezoneInfo:
     """Timezone information part of local time data."""
-    
+
     description: str
     offset_hours: float | None
     raw_value: int
@@ -20,7 +19,7 @@ class TimezoneInfo:
 @dataclass
 class DSTOffsetInfo:
     """DST offset information part of local time data."""
-    
+
     description: str
     offset_hours: float | None
     raw_value: int
@@ -29,7 +28,7 @@ class DSTOffsetInfo:
 @dataclass
 class LocalTimeInformationData:
     """Parsed data from Local Time Information characteristic."""
-    
+
     timezone: TimezoneInfo
     dst_offset: DSTOffsetInfo
     total_offset_hours: float | None = None
@@ -54,7 +53,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
         255: {"description": "DST offset unknown", "offset_hours": None},
     }
 
-    def parse_value(self, data: bytearray) -> LocalTimeInformationData:
+    def parse_value(self, data: bytearray) -> LocalTimeInformationData:  # pylint: disable=too-many-locals
         """Parse local time information data (2 bytes: time zone + DST offset)."""
         if len(data) < 2:
             raise ValueError("Local time information data must be at least 2 bytes")
@@ -100,7 +99,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
             offset_hours=timezone_hours,
             raw_value=timezone_raw,
         )
-        
+
         # Create DST offset info
         dst_offset_info = DSTOffsetInfo(
             description=dst_desc,
@@ -121,19 +120,23 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
 
     def encode_value(self, data: LocalTimeInformationData) -> bytearray:
         """Encode LocalTimeInformationData back to bytes.
-        
+
         Args:
             data: LocalTimeInformationData instance to encode
-            
+
         Returns:
             Encoded bytes representing the local time information
         """
         # Encode timezone (use raw value directly)
-        timezone_byte = data.timezone.raw_value.to_bytes(1, byteorder="little", signed=True)
-        
+        timezone_byte = data.timezone.raw_value.to_bytes(
+            1, byteorder="little", signed=True
+        )
+
         # Encode DST offset (use raw value directly)
-        dst_offset_byte = data.dst_offset.raw_value.to_bytes(1, byteorder="little", signed=False)
-        
+        dst_offset_byte = data.dst_offset.raw_value.to_bytes(
+            1, byteorder="little", signed=False
+        )
+
         return bytearray(timezone_byte + dst_offset_byte)
 
     @property

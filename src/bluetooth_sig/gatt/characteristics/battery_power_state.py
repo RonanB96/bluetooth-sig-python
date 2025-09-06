@@ -9,9 +9,9 @@ from .base import BaseCharacteristic
 
 
 @dataclass
-class BatteryPowerStateData:
+class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
     """Parsed data from Battery Power State characteristic."""
-    
+
     raw_value: int
     battery_present: str
     wired_external_power_connected: bool
@@ -20,6 +20,7 @@ class BatteryPowerStateData:
     battery_charge_level: str
     battery_charging_type: str
     charging_fault_reason: str | list[str] | None = None
+
 
 # Module-level maps to keep functions small and satisfy static analysis limits
 _CHARGE_STATE_MAP_16 = {
@@ -111,7 +112,9 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
                 raw_value=int(data[0]),
                 battery_present=parsed["battery_present"],
                 wired_external_power_connected=parsed["wired_external_power_connected"],
-                wireless_external_power_connected=parsed["wireless_external_power_connected"],
+                wireless_external_power_connected=parsed[
+                    "wireless_external_power_connected"
+                ],
                 battery_charge_state=parsed["battery_charge_state"],
                 battery_charge_level=parsed["battery_charge_level"],
                 battery_charging_type=parsed["battery_charging_type"],
@@ -153,7 +156,9 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
                 raw_value=state_raw,
                 battery_present=basic["battery_present"],
                 wired_external_power_connected=basic["wired_external_power_connected"],
-                wireless_external_power_connected=basic["wireless_external_power_connected"],
+                wireless_external_power_connected=basic[
+                    "wireless_external_power_connected"
+                ],
                 battery_charge_state=basic["battery_charge_state"],
                 battery_charge_level=basic["battery_charge_level"],
                 battery_charging_type=battery_charging_type,
@@ -166,7 +171,9 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             raw_value=state_raw,
             battery_present=basic["battery_present"],
             wired_external_power_connected=basic["wired_external_power_connected"],
-            wireless_external_power_connected=basic["wireless_external_power_connected"],
+            wireless_external_power_connected=basic[
+                "wireless_external_power_connected"
+            ],
             battery_charge_state=basic["battery_charge_state"],
             battery_charge_level=basic["battery_charge_level"],
             battery_charging_type="unknown",
@@ -175,19 +182,19 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
 
     def encode_value(self, data: BatteryPowerStateData) -> bytearray:
         """Encode BatteryPowerStateData back to bytes.
-        
+
         Args:
             data: BatteryPowerStateData instance to encode
-            
+
         Returns:
             Encoded bytes representing the battery power state
-            
+
         Raises:
             ValueError: If data contains invalid values
         """
         # For simplicity, we'll encode to the basic single-byte format
         # Future enhancement could support the extended formats
-        
+
         # Map battery_present to bits 0-1
         battery_present_map = {
             "unknown": 0,
@@ -196,7 +203,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             "reserved": 3,
         }
         battery_present_bits = battery_present_map.get(data.battery_present, 0)
-        
+
         # Map charge state to bits 4-5
         charge_state_map = {
             "unknown": 0,
@@ -205,7 +212,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             "not_charging": 3,
         }
         charge_state_bits = charge_state_map.get(data.battery_charge_state, 0)
-        
+
         # Map charge level to bits 6-7
         charge_level_map = {
             "unknown": 0,
@@ -214,16 +221,16 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             "good": 3,
         }
         charge_level_bits = charge_level_map.get(data.battery_charge_level, 0)
-        
+
         # Encode single byte
         encoded_byte = (
-            battery_present_bits |
-            (1 << 2 if data.wired_external_power_connected else 0) |
-            (1 << 3 if data.wireless_external_power_connected else 0) |
-            (charge_state_bits << 4) |
-            (charge_level_bits << 6)
+            battery_present_bits
+            | (1 << 2 if data.wired_external_power_connected else 0)
+            | (1 << 3 if data.wireless_external_power_connected else 0)
+            | (charge_state_bits << 4)
+            | (charge_level_bits << 6)
         )
-        
+
         return bytearray([encoded_byte])
 
     def _parse_power_state_16(self, power_state_raw: int) -> dict[str, Any]:

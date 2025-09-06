@@ -390,8 +390,10 @@ class TestGlucoseFeatureCharacteristic:
 
     def test_glucose_feature_encode_value(self, glucose_feature_char):
         """Test encoding GlucoseFeatureData back to bytes."""
-        from bluetooth_sig.gatt.characteristics.glucose_feature import GlucoseFeatureData
-        
+        from bluetooth_sig.gatt.characteristics.glucose_feature import (
+            GlucoseFeatureData,
+        )
+
         # Create test data
         test_data = GlucoseFeatureData(
             features_bitmap=0x0403,
@@ -406,28 +408,34 @@ class TestGlucoseFeatureCharacteristic:
             general_device_fault=False,
             time_fault=False,
             multiple_bond_support=True,
-            enabled_features=["Low Battery Detection", "Sensor Malfunction Detection", "Multiple Bond Support"],
+            enabled_features=[
+                "Low Battery Detection",
+                "Sensor Malfunction Detection",
+                "Multiple Bond Support",
+            ],
             feature_count=3,
         )
-        
+
         # Encode the data
         encoded = glucose_feature_char.encode_value(test_data)
-        
+
         # Should produce the correct bytes
         assert len(encoded) == 2
         assert encoded == bytearray([0x03, 0x04])  # Little endian 0x0403
-        
+
     def test_glucose_feature_round_trip(self, glucose_feature_char):
         """Test that parsing and encoding preserve data."""
         # Test with basic features
-        original_data = bytearray([0x03, 0x04])  # Low Battery + Sensor Malfunction + Multiple Bond
-        
+        original_data = bytearray(
+            [0x03, 0x04]
+        )  # Low Battery + Sensor Malfunction + Multiple Bond
+
         # Parse the data
         parsed = glucose_feature_char.parse_value(original_data)
-        
+
         # Encode it back
         encoded = glucose_feature_char.encode_value(parsed)
-        
+
         # Should match the original
         assert encoded == original_data
 
