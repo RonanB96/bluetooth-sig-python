@@ -13,7 +13,7 @@ _CHARGE_STATE_MAP_16 = {
     3: "not_charging",
 }
 
-_CHARGE_LEVEL_MAP = {0: "unknown", 1: "good", 2: "low", 3: "critical"}
+_CHARGE_LEVEL_MAP = {0: "unknown", 1: "good", 2: "low", 3: "critically_low"}
 
 _CHARGING_TYPE_MAP = {
     0: "unknown",
@@ -240,7 +240,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         }
         battery_charge_state = charge_state_map.get((state_raw >> 4) & 0x03, "unknown")
 
-        charge_level_map = {0: "unknown", 1: "good", 2: "low", 3: "critical"}
+        charge_level_map = {0: "unknown", 1: "critically_low", 2: "low", 3: "good"}
         battery_charge_level = charge_level_map.get((state_raw >> 6) & 0x03, "unknown")
 
         return {
