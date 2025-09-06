@@ -43,4 +43,8 @@ jobs:
         run: |
           python --version
           python -c "import bluetooth_sig; print('✅ Framework ready')"
+      - name: Read the instructions
+        run: |
+          cat .github/copilot-instructions.md
+          cat .github/copilot-code-review.md
 

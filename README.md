@@ -167,6 +167,47 @@ parsed = translator.parse_characteristic_data("2A6E", bytearray([0x64, 0x09]))
 print(f"Temperature: {parsed.value}°C")  # "Temperature: 24.36°C"
 ```
 
+## Framework-Agnostic BLE Integration
+
+The `bluetooth_sig` library is designed to work with **any BLE connection library**. It provides pure SIG standards parsing while you choose your preferred BLE library for connections.
+
+### Integration Pattern
+
+```python
+# Step 1: Get raw data (using ANY BLE library)
+raw_data = await your_ble_library.read_characteristic(device, uuid)
+
+# Step 2: Parse with bluetooth_sig (connection-agnostic)
+from bluetooth_sig import BluetoothSIGTranslator
+translator = BluetoothSIGTranslator()
+result = translator.parse_characteristic(uuid, raw_data)
+
+# Step 3: Use parsed result
+print(f"Value: {result.value} {result.unit}")
+```
+
+### Supported BLE Libraries
+
+The same parsing code works with all BLE libraries:
+
+- **bleak** - Cross-platform async BLE library *(recommended)*
+- **bleak-retry-connector** - Robust connections with retry logic *(recommended for production)*
+- **simplepyble** - Cross-platform sync BLE library
+- **Any custom BLE implementation**
+
+### Examples
+
+See the [`examples/`](examples/) directory for comprehensive integration examples:
+
+- [`pure_sig_parsing.py`](examples/pure_sig_parsing.py) - Pure SIG parsing without BLE connections
+- [`with_bleak.py`](examples/with_bleak.py) - Integration with Bleak
+- [`with_bleak_retry.py`](examples/with_bleak_retry.py) - Production-ready robust connections
+- [`with_simpleble.py`](examples/with_simpleble.py) - Alternative BLE library integration
+- [`library_comparison.py`](examples/library_comparison.py) - Compare multiple BLE libraries
+- [`testing_with_mocks.py`](examples/testing_with_mocks.py) - Testing without BLE hardware
+
+All examples demonstrate the same core principle: **bluetooth_sig provides pure SIG standards parsing that works identically across all BLE libraries**.
+
 ## Development Setup
 
 ### Prerequisites

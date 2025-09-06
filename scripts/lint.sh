@@ -60,7 +60,7 @@ run_ruff() {
     # Run ruff and capture output, allowing it to fail
     local RUFF_OUTPUT
     set +e  # Temporarily disable exit on error
-    RUFF_OUTPUT=$(ruff check src/ tests/ 2>&1)
+    RUFF_OUTPUT=$(ruff check src/ tests/ examples/ 2>&1)
     local RUFF_EXIT_CODE=$?
     set -e  # Re-enable exit on error
 
@@ -87,7 +87,7 @@ run_pylint() {
     # Run pylint and capture output, allowing it to fail
     local PYLINT_OUTPUT
     set +e  # Temporarily disable exit on error
-    PYLINT_OUTPUT=$(pylint src/bluetooth_sig 2>&1)
+    PYLINT_OUTPUT=$(pylint src/bluetooth_sig examples 2>&1)
     set -e  # Re-enable exit on error
 
     # Always show the pylint output first
