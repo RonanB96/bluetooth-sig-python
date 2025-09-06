@@ -33,46 +33,10 @@ jobs:
       run: |
         python -m pytest tests/ --cov=src/bluetooth_sig --cov-report=html --cov-report=xml --cov-report=term-missing
 
-    - name: Extract coverage percentage
+    - name: Extract coverage percentage and create badge
       if: matrix.python-version == '3.12'
       run: |
-        python3 << 'EOF'
-        import xml.etree.ElementTree as ET
-        import json
-        import os
-        
-        # Parse coverage.xml to extract coverage percentage
-        tree = ET.parse('coverage.xml')
-        root = tree.getroot()
-        
-        # Get line coverage percentage
-        coverage_pct = round(float(root.attrib['line-rate']) * 100, 1)
-        
-        # Determine color based on coverage percentage
-        if coverage_pct >= 80:
-            color = "brightgreen"
-        elif coverage_pct >= 60:
-            color = "yellow"
-        else:
-            color = "red"
-        
-        # Create badge JSON for shields.io endpoint
-        badge_data = {
-            "schemaVersion": 1,
-            "label": "coverage",
-            "message": f"{coverage_pct}%",
-            "color": color
-        }
-        
-        # Ensure htmlcov directory exists
-        os.makedirs('htmlcov', exist_ok=True)
-        
-        # Write badge JSON file
-        with open('htmlcov/coverage-badge.json', 'w') as f:
-            json.dump(badge_data, f, indent=2)
-            
-        print(f"Coverage: {coverage_pct}% (color: {color})")
-        EOF
+        python scripts/extract_coverage_badge.py
 
     - name: Deploy coverage to GitHub Pages
       if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main'
