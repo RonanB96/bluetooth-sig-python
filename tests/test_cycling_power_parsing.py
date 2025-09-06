@@ -207,7 +207,7 @@ class TestCyclingPowerParsing:
             "first_crank_measurement_angle": 0.5,
         }
         assert result == expected
-        assert char.unit == "N·m"
+        assert char.unit == "newton metre"
 
     def test_cycling_power_vector_with_force_array(self):
         """Test cycling power vector with force magnitude array."""

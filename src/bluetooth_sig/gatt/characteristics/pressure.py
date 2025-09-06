@@ -16,11 +16,6 @@ class PressureCharacteristic(BaseCharacteristic):
         if len(data) < 4:
             raise ValueError("Pressure data must be at least 4 bytes")
 
-        # Convert uint32 (little endian) to pressure in hPa
+        # Convert uint32 (little endian) to pressure in Pa
         pressure_raw = int.from_bytes(data[:4], byteorder="little", signed=False)
-        return pressure_raw * 0.001  # Convert Pa to kPa
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "kPa"
+        return pressure_raw * 0.1  # Convert to Pa with 0.1 Pa resolution
