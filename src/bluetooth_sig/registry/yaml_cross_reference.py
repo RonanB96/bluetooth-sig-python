@@ -345,7 +345,9 @@ class YAMLCrossReferenceResolver:
         """Determine if data type is signed from GSS data type."""
         if not data_type:
             return False
-        return data_type.startswith("sint")
+        # Comprehensive signed type detection (matches BaseCharacteristic.is_signed_from_yaml)
+        signed_types = {"float32", "float64", "medfloat16", "medfloat32"}
+        return data_type.startswith("sint") or data_type in signed_types
 
     def get_byte_order_hint(self) -> str:
         """Get byte order hint (Bluetooth SIG uses little-endian by convention)."""
