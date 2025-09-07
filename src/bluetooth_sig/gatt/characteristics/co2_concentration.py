@@ -41,12 +41,22 @@ class CO2ConcentrationCharacteristic(BaseCharacteristic):
 
         return concentration_raw
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: int) -> bytearray:
+        """Encode CO2 concentration value back to bytes.
+
+        Args:
+            data: CO2 concentration in ppm
+
+        Returns:
+            Encoded bytes representing the CO2 concentration (uint16, 1 ppm resolution)
+        """
+        concentration = int(data)
+        
+        # Validate range (realistic CO2 concentration range)
+        if not 0 <= concentration <= 65533:  # Exclude special values 0xFFFE and 0xFFFF
+            raise ValueError(f"CO2 concentration {concentration} ppm is outside valid range (0-65533 ppm)")
+        
+        return bytearray(concentration.to_bytes(2, byteorder="little", signed=False))
 
     @property
     def unit(self) -> str:

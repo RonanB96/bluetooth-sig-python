@@ -20,9 +20,26 @@ class TrueWindDirectionCharacteristic(BaseCharacteristic):
         wind_direction_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         return wind_direction_raw * 0.01
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: float | int) -> bytearray:
+        """Encode true wind direction value back to bytes.
+
+        Args:
+            data: True wind direction in degrees
+
+        Returns:
+            Encoded bytes representing the wind direction (uint16, 0.01 degrees resolution)
+        """
+        wind_direction = float(data) % 360.0  # Normalize to 0-360 degrees
+        
+        # Validate range (0 to 359.99 degrees)
+        if not 0.0 <= wind_direction < 360.0:
+            raise ValueError(f"True wind direction {wind_direction}° is outside valid range (0.0 to 359.99°)")
+        
+        # Convert degrees to raw value (multiply by 100 for 0.01 degree resolution)
+        wind_direction_raw = round(wind_direction * 100)
+        
+        # Ensure it fits in uint16
+        if wind_direction_raw > 65535:
+            wind_direction_raw = 65535
+        
+        return bytearray(wind_direction_raw.to_bytes(2, byteorder="little", signed=False))

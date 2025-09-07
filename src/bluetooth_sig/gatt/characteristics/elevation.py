@@ -34,9 +34,33 @@ class ElevationCharacteristic(BaseCharacteristic):
 
         return elevation_raw * 0.01  # Convert to meters
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: float | int) -> bytearray:
+        """Encode elevation value back to bytes.
+
+        Args:
+            data: Elevation value in meters
+
+        Returns:
+            Encoded bytes representing the elevation (sint24, 0.01 m resolution)
+        """
+        elevation_m = float(data)
+        
+        # Validate range (reasonable elevation range)
+        if not -10000 <= elevation_m <= 10000:  # -10km to 10km 
+            raise ValueError(f"Elevation {elevation_m} m is outside valid range (-10000 to 10000 m)")
+        
+        # Convert meters to raw value (multiply by 100 for 0.01 m resolution)
+        elevation_raw = round(elevation_m * 100)
+        
+        # Ensure it fits in sint24 range (-8388608 to 8388607)
+        if not -8388608 <= elevation_raw <= 8388607:
+            raise ValueError(f"Elevation value {elevation_raw} exceeds sint24 range")
+        
+        # Convert to unsigned representation for encoding
+        if elevation_raw < 0:
+            elevation_unsigned = elevation_raw + 0x1000000  # Convert negative to 24-bit unsigned
+        else:
+            elevation_unsigned = elevation_raw
+        
+        # Encode as 3 bytes (little endian)
+        return bytearray(elevation_unsigned.to_bytes(3, byteorder="little", signed=False))

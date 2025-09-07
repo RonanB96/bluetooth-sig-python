@@ -42,12 +42,22 @@ class PM10ConcentrationCharacteristic(BaseCharacteristic):
 
         return concentration_raw
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: int) -> bytearray:
+        """Encode PM10 concentration value back to bytes.
+
+        Args:
+            data: PM10 concentration in μg/m³
+
+        Returns:
+            Encoded bytes representing the PM10 concentration (uint16, 1 μg/m³ resolution)
+        """
+        concentration = int(data)
+        
+        # Validate range (realistic PM10 concentration range)
+        if not 0 <= concentration <= 65533:  # Exclude special values 0xFFFE and 0xFFFF
+            raise ValueError(f"PM10 concentration {concentration} μg/m³ is outside valid range (0-65533 μg/m³)")
+        
+        return bytearray(concentration.to_bytes(2, byteorder="little", signed=False))
 
     @property
     def unit(self) -> str:
