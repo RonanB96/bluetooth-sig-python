@@ -8,6 +8,24 @@ from .base import BaseCharacteristic
 
 
 @dataclass
+class RSCMeasurementData:
+    """Parsed data from RSC Measurement characteristic."""
+    
+    instantaneous_speed: float  # m/s
+    instantaneous_cadence: int  # steps per minute
+    flags: int
+    instantaneous_stride_length: float | None = None  # meters
+    total_distance: float | None = None  # meters
+
+    def __post_init__(self):
+        """Validate RSC measurement data."""
+        if not 0 <= self.flags <= 255:
+            raise ValueError("Flags must be a uint8 value (0-255)")
+        if not 0 <= self.instantaneous_cadence <= 255:
+            raise ValueError("Cadence must be a uint8 value (0-255)")
+
+
+@dataclass
 class RSCMeasurementCharacteristic(BaseCharacteristic):
     """RSC (Running Speed and Cadence) Measurement characteristic (0x2A53).
 
@@ -16,7 +34,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "RSC Measurement"
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:
+    def parse_value(self, data: bytearray) -> RSCMeasurementData:
         """Parse RSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Instantaneous Speed(2) + Instantaneous Cadence(1) +
@@ -26,7 +44,10 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
             data: Raw bytearray from BLE characteristic
 
         Returns:
-            Dict containing parsed RSC data with metadata
+            RSCMeasurementData containing parsed RSC data
+
+        Raises:
+            ValueError: If data format is invalid
         """
         if len(data) < 4:
             raise ValueError("RSC Measurement data must be at least 4 bytes")
@@ -40,76 +61,73 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
         # Parse instantaneous cadence (uint8, 1/min units)
         cadence = data[3]
 
-        result = {
-            "instantaneous_speed": speed_ms,
-            "instantaneous_cadence": cadence,
-            "flags": flags,
-        }
+        # Initialize optional fields
+        instantaneous_stride_length = None
+        total_distance = None
 
         offset = 4
 
         # Parse optional instantaneous stride length (2 bytes) if present
         if (flags & 0x01) and len(data) >= offset + 2:
             stride_length_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-            result["instantaneous_stride_length"] = (
-                stride_length_raw / 100.0
-            )  # Convert to meters
+            instantaneous_stride_length = stride_length_raw / 100.0  # Convert to meters
             offset += 2
 
         # Parse optional total distance (4 bytes) if present
         if (flags & 0x02) and len(data) >= offset + 4:
             total_distance_raw = struct.unpack("<I", data[offset : offset + 4])[0]
-            result["total_distance"] = total_distance_raw / 10.0  # Convert to meters
+            total_distance = total_distance_raw / 10.0  # Convert to meters
 
-        return result
+        return RSCMeasurementData(
+            instantaneous_speed=speed_ms,
+            instantaneous_cadence=cadence,
+            flags=flags,
+            instantaneous_stride_length=instantaneous_stride_length,
+            total_distance=total_distance,
+        )
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:
+    def encode_value(self, data: RSCMeasurementData) -> bytearray:
         """Encode RSC measurement value back to bytes.
 
         Args:
-            data: Dictionary containing RSC measurement data
+            data: RSCMeasurementData containing RSC measurement data
 
         Returns:
             Encoded bytes representing the RSC measurement
         """
-        if not isinstance(data, dict):
-            raise TypeError("RSC measurement data must be a dictionary")
-
-        # Required fields
-        if "instantaneous_speed" not in data or "instantaneous_cadence" not in data:
-            raise ValueError(
-                "RSC measurement data must contain 'instantaneous_speed' and 'instantaneous_cadence'"
+        if not isinstance(data, RSCMeasurementData):
+            raise TypeError(
+                f"RSC measurement data must be a RSCMeasurementData, "
+                f"got {type(data).__name__}"
             )
 
-        speed_ms = float(data["instantaneous_speed"])
-        cadence = int(data["instantaneous_cadence"])
-
         # Build flags based on available optional data
-        flags = 0
-        has_stride_length = "instantaneous_stride_length" in data
-        has_total_distance = "total_distance" in data
+        flags = data.flags
+        has_stride_length = data.instantaneous_stride_length is not None
+        has_total_distance = data.total_distance is not None
 
+        # Update flags to match available data
         if has_stride_length:
             flags |= 0x01  # Instantaneous stride length present
         if has_total_distance:
             flags |= 0x02  # Total distance present
 
         # Validate required fields
-        speed_raw = round(speed_ms * 256)  # Convert to 1/256 m/s units
+        speed_raw = round(data.instantaneous_speed * 256)  # Convert to 1/256 m/s units
         if not 0 <= speed_raw <= 0xFFFF:
-            raise ValueError(f"Speed {speed_ms} m/s exceeds uint16 range")
+            raise ValueError(f"Speed {data.instantaneous_speed} m/s exceeds uint16 range")
 
-        if not 0 <= cadence <= 255:
-            raise ValueError(f"Cadence {cadence} exceeds uint8 range")
+        if not 0 <= data.instantaneous_cadence <= 255:
+            raise ValueError(f"Cadence {data.instantaneous_cadence} exceeds uint8 range")
 
         # Start with flags, speed, and cadence
         result = bytearray([flags])
         result.extend(struct.pack("<H", speed_raw))
-        result.append(cadence)
+        result.append(data.instantaneous_cadence)
 
         # Add optional stride length if present
         if has_stride_length:
-            stride_length = float(data["instantaneous_stride_length"])
+            stride_length = float(data.instantaneous_stride_length)
             stride_length_raw = round(stride_length * 100)  # Convert to cm units
             if not 0 <= stride_length_raw <= 0xFFFF:
                 raise ValueError(
@@ -119,7 +137,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
         # Add optional total distance if present
         if has_total_distance:
-            total_distance = float(data["total_distance"])
+            total_distance = float(data.total_distance)
             total_distance_raw = round(total_distance * 10)  # Convert to dm units
             if not 0 <= total_distance_raw <= 0xFFFFFFFF:
                 raise ValueError(
