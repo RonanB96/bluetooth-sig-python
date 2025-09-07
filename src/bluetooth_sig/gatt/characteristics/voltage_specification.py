@@ -1,8 +1,37 @@
 """Voltage Specification characteristic implementation."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from .base import BaseCharacteristic
+
+
+@dataclass
+class VoltageSpecificationData:
+    """Data class for voltage specification."""
+
+    minimum: float  # Minimum voltage in Volts
+    maximum: float  # Maximum voltage in Volts
+    unit: str = "V"
+
+    def __post_init__(self):
+        """Validate voltage specification data."""
+        if self.minimum > self.maximum:
+            raise ValueError(
+                f"Minimum voltage {self.minimum} V cannot be greater than maximum {self.maximum} V"
+            )
+
+        # Validate range for uint16 with 1/64 V resolution (0 to ~1024 V)
+        max_voltage_value = 65535 / 64.0  # ~1024 V
+        if not 0.0 <= self.minimum <= max_voltage_value:
+            raise ValueError(
+                f"Minimum voltage {self.minimum} V is outside valid range (0.0 to {max_voltage_value:.2f} V)"
+            )
+        if not 0.0 <= self.maximum <= max_voltage_value:
+            raise ValueError(
+                f"Maximum voltage {self.maximum} V is outside valid range (0.0 to {max_voltage_value:.2f} V)"
+            )
 
 
 @dataclass
@@ -13,15 +42,16 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Voltage Specification"
+    _manual_value_type: str = "string"  # Override since parse_value returns dataclass
 
-    def parse_value(self, data: bytearray) -> dict[str, float]:
+    def parse_value(self, data: bytearray) -> VoltageSpecificationData:
         """Parse voltage specification data (2x uint16 in units of 1/64 V).
 
         Args:
             data: Raw bytes from the characteristic read
 
         Returns:
-            Dictionary with 'minimum' and 'maximum' voltage specification values in Volts
+            VoltageSpecificationData with 'minimum' and 'maximum' voltage specification values in Volts
 
         Raises:
             ValueError: If data is insufficient
@@ -33,7 +63,39 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
         min_voltage_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         max_voltage_raw = int.from_bytes(data[2:4], byteorder="little", signed=False)
 
-        return {"minimum": min_voltage_raw / 64.0, "maximum": max_voltage_raw / 64.0}
+        return VoltageSpecificationData(
+            minimum=min_voltage_raw / 64.0, maximum=max_voltage_raw / 64.0
+        )
+
+    def encode_value(self, data: VoltageSpecificationData) -> bytearray:
+        """Encode voltage specification value back to bytes.
+
+        Args:
+            data: VoltageSpecificationData instance with 'minimum' and 'maximum' voltage values in Volts
+
+        Returns:
+            Encoded bytes representing the voltage specification (2x uint16, 1/64 V resolution)
+        """
+        if not isinstance(data, VoltageSpecificationData):
+            raise TypeError(
+                f"Voltage specification data must be a VoltageSpecificationData, "
+                f"got {type(data).__name__}"
+            )
+            # Convert Volts to raw values (multiply by 64 for 1/64 V resolution)
+        min_voltage_raw = round(data.minimum * 64)
+        max_voltage_raw = round(data.maximum * 64)
+
+        # Validate range for uint16 (0 to 65535)
+        for name, value in [("minimum", min_voltage_raw), ("maximum", max_voltage_raw)]:
+            if not 0 <= value <= 65535:
+                raise ValueError(f"Voltage {name} value {value} exceeds uint16 range")
+
+        # Encode as 2 uint16 values (little endian)
+        result = bytearray()
+        result.extend(min_voltage_raw.to_bytes(2, byteorder="little", signed=False))
+        result.extend(max_voltage_raw.to_bytes(2, byteorder="little", signed=False))
+
+        return result
 
     @property
     def unit(self) -> str:

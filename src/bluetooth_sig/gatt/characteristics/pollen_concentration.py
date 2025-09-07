@@ -25,6 +25,26 @@ class PollenConcentrationCharacteristic(BaseCharacteristic):
 
         return concentration
 
+    def encode_value(self, data: int) -> bytearray:
+        """Encode pollen concentration value back to bytes.
+
+        Args:
+            data: Pollen concentration in count/m³
+
+        Returns:
+            Encoded bytes representing the pollen concentration (uint24, 1 count/m³ resolution)
+        """
+        concentration = int(data)
+
+        # Validate range for uint24 (0 to 16777215)
+        if not 0 <= concentration <= 16777215:
+            raise ValueError(
+                f"Pollen concentration {concentration} count/m³ is outside valid range (0-16777215 count/m³)"
+            )
+
+        # Encode as 3 bytes (little endian)
+        return bytearray(concentration.to_bytes(3, byteorder="little", signed=False))
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

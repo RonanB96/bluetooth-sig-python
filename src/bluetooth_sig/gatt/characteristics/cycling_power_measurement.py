@@ -2,9 +2,29 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any
 
 from .base import BaseCharacteristic
+
+
+@dataclass
+class CyclingPowerMeasurementData:  # pylint: disable=too-many-instance-attributes # Comprehensive power measurement with many optional fields
+    """Parsed data from Cycling Power Measurement characteristic."""
+
+    flags: int
+    instantaneous_power: int  # Watts
+    pedal_power_balance: int | None = None
+    accumulated_energy: int | None = None  # kJ
+    cumulative_wheel_revolutions: int | None = None  # Changed to match parse_value
+    last_wheel_event_time: float | None = None  # seconds
+    cumulative_crank_revolutions: int | None = None  # Changed to match parse_value
+    last_crank_event_time: float | None = None  # seconds
+
+    def __post_init__(self):
+        """Validate cycling power measurement data."""
+        if not 0 <= self.flags <= 65535:
+            raise ValueError("Flags must be a uint16 value (0-65535)")
+        if not 0 <= self.instantaneous_power <= 65535:
+            raise ValueError("Instantaneous power must be a uint16 value (0-65535)")
 
 
 @dataclass
@@ -17,7 +37,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Cycling Power Measurement"
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:
+    def parse_value(self, data: bytearray) -> CyclingPowerMeasurementData:
         """Parse cycling power measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +
@@ -28,7 +48,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             data: Raw bytearray from BLE characteristic
 
         Returns:
-            Dict containing parsed cycling power data with metadata
+            CyclingPowerMeasurementData containing parsed power measurement data
 
         Raises:
             ValueError: If data format is invalid
@@ -95,6 +115,97 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
                 }
             )
             offset += 4
+
+        # For now, convert result dict to dataclass at the end
+        # (Full conversion would require updating all the parsing logic)
+        return CyclingPowerMeasurementData(
+            flags=result["flags"],
+            instantaneous_power=result["instantaneous_power"],
+            pedal_power_balance=result.get("pedal_power_balance"),
+            accumulated_energy=result.get("accumulated_energy"),
+            cumulative_wheel_revolutions=result.get("cumulative_wheel_revolutions"),
+            last_wheel_event_time=result.get("last_wheel_event_time"),
+            cumulative_crank_revolutions=result.get("cumulative_crank_revolutions"),
+            last_crank_event_time=result.get("last_crank_event_time"),
+        )
+
+    def encode_value(self, data: CyclingPowerMeasurementData) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements # Complex cycling power measurement with numerous optional fields
+        """Encode cycling power measurement value back to bytes.
+
+        Args:
+            data: CyclingPowerMeasurementData containing cycling power measurement data
+
+        Returns:
+            Encoded bytes representing the power measurement
+        """
+        if not isinstance(data, CyclingPowerMeasurementData):
+            raise TypeError(
+                f"Cycling power measurement data must be a CyclingPowerMeasurementData, "
+                f"got {type(data).__name__}"
+            )
+
+        instantaneous_power = data.instantaneous_power
+        pedal_power_balance = data.pedal_power_balance
+        accumulated_energy = data.accumulated_energy
+        wheel_revolutions = data.cumulative_wheel_revolutions  # Updated field name
+        wheel_event_time = data.last_wheel_event_time
+        crank_revolutions = data.cumulative_crank_revolutions  # Updated field name
+        crank_event_time = data.last_crank_event_time
+
+        # Build flags based on available data
+        flags = 0
+        if pedal_power_balance is not None:
+            flags |= 0x01  # Pedal power balance present
+        if accumulated_energy is not None:
+            flags |= 0x04  # Accumulated energy present
+        if wheel_revolutions is not None and wheel_event_time is not None:
+            flags |= 0x10  # Wheel revolution data present
+        if crank_revolutions is not None and crank_event_time is not None:
+            flags |= 0x20  # Crank revolution data present
+
+        # Validate instantaneous power (sint16 range)
+        if not -32768 <= instantaneous_power <= 32767:
+            raise ValueError(
+                f"Instantaneous power {instantaneous_power} W exceeds sint16 range"
+            )
+
+        # Start with flags and instantaneous power
+        result = bytearray()
+        result.extend(struct.pack("<H", flags))  # Flags (16-bit)
+        result.extend(struct.pack("<h", instantaneous_power))  # Power (sint16)
+
+        # Add optional fields based on flags
+        if pedal_power_balance is not None:
+            balance = int(pedal_power_balance)
+            if not 0 <= balance <= 255:
+                raise ValueError(f"Pedal power balance {balance} exceeds uint8 range")
+            result.append(balance)
+
+        if accumulated_energy is not None:
+            energy = int(accumulated_energy)
+            if not 0 <= energy <= 0xFFFF:
+                raise ValueError(f"Accumulated energy {energy} exceeds uint16 range")
+            result.extend(struct.pack("<H", energy))
+
+        if wheel_revolutions is not None and wheel_event_time is not None:
+            wheel_rev = int(wheel_revolutions)
+            wheel_time = int(wheel_event_time)
+            if not 0 <= wheel_rev <= 0xFFFFFFFF:
+                raise ValueError(f"Wheel revolutions {wheel_rev} exceeds uint32 range")
+            if not 0 <= wheel_time <= 0xFFFF:
+                raise ValueError(f"Wheel event time {wheel_time} exceeds uint16 range")
+            result.extend(struct.pack("<I", wheel_rev))
+            result.extend(struct.pack("<H", wheel_time))
+
+        if crank_revolutions is not None and crank_event_time is not None:
+            crank_rev = int(crank_revolutions)
+            crank_time = int(crank_event_time)
+            if not 0 <= crank_rev <= 0xFFFF:
+                raise ValueError(f"Crank revolutions {crank_rev} exceeds uint16 range")
+            if not 0 <= crank_time <= 0xFFFF:
+                raise ValueError(f"Crank event time {crank_time} exceeds uint16 range")
+            result.extend(struct.pack("<H", crank_rev))
+            result.extend(struct.pack("<H", crank_time))
 
         return result
 

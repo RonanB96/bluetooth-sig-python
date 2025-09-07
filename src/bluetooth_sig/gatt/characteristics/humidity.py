@@ -1,5 +1,7 @@
 """Humidity characteristic implementation."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from .base import BaseCharacteristic
@@ -20,5 +22,30 @@ class HumidityCharacteristic(BaseCharacteristic):
             raise ValueError("Humidity data must be at least 2 bytes")
 
         # Convert uint16 (little endian) to humidity percentage
-        humidity_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
-        return humidity_raw * 0.01
+        humidity_raw = self._parse_uint16(data, 0)
+        humidity = humidity_raw * 0.01
+
+        # Validate range
+        if not 0.0 <= humidity <= 100.0:
+            raise ValueError(f"Humidity must be 0.0-100.0%, got {humidity}")
+
+        return humidity
+
+    def encode_value(self, data: float | int) -> bytearray:
+        """Encode humidity value back to bytes.
+
+        Args:
+            data: Humidity value as percentage (0.0-100.0)
+
+        Returns:
+            Encoded bytes representing the humidity
+        """
+        humidity = float(data)
+
+        # Validate range
+        if not 0.0 <= humidity <= 100.0:
+            raise ValueError(f"Humidity must be 0.0-100.0%, got {humidity}")
+
+        # Convert percentage to raw value (multiply by 100 for 0.01 resolution)
+        humidity_raw = round(humidity * 100)
+        return self._encode_uint16(humidity_raw)

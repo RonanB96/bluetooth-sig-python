@@ -42,6 +42,25 @@ class MethaneConcentrationCharacteristic(BaseCharacteristic):
 
         return concentration_raw
 
+    def encode_value(self, data: int) -> bytearray:
+        """Encode methane concentration value back to bytes.
+
+        Args:
+            data: Methane concentration in ppm
+
+        Returns:
+            Encoded bytes representing the methane concentration (uint16, 1 ppm resolution)
+        """
+        concentration = int(data)
+
+        # Validate range (realistic methane concentration range)
+        if not 0 <= concentration <= 65533:  # Exclude special values 0xFFFE and 0xFFFF
+            raise ValueError(
+                f"Methane concentration {concentration} ppm is outside valid range (0-65533 ppm)"
+            )
+
+        return bytearray(concentration.to_bytes(2, byteorder="little", signed=False))
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

@@ -57,8 +57,8 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<Hh", flags, power)
         result = char.parse_value(bytearray(test_data))
 
-        expected = {"flags": 0, "instantaneous_power": 250, "unit": "W"}
-        assert result == expected
+        assert result.flags == 0
+        assert result.instantaneous_power == 250
         assert char.unit == "W"
 
     def test_cycling_power_measurement_with_pedal_balance(self):
@@ -72,21 +72,18 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<HhB", flags, power, balance)
         result = char.parse_value(bytearray(test_data))
 
-        expected = {
-            "flags": 1,
-            "instantaneous_power": 300,
-            "unit": "W",
-            "pedal_power_balance": 50.0,
-        }
-        assert result == expected
+        assert result.flags == 1
+        assert result.instantaneous_power == 300
+        assert result.pedal_power_balance == 50.0
 
         # Test with unknown balance value (0xFF)
         balance = 0xFF
         test_data = struct.pack("<HhB", flags, power, balance)
         result = char.parse_value(bytearray(test_data))
 
-        expected = {"flags": 1, "instantaneous_power": 300, "unit": "W"}
-        assert result == expected  # No balance field when unknown
+        assert result.flags == 1
+        assert result.instantaneous_power == 300
+        assert result.pedal_power_balance is None  # No balance when unknown
 
     def test_cycling_power_measurement_with_accumulated_energy(self):
         """Test cycling power measurement with accumulated energy."""
@@ -99,13 +96,9 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<HhH", flags, power, energy)
         result = char.parse_value(bytearray(test_data))
 
-        expected = {
-            "flags": 8,
-            "instantaneous_power": 280,
-            "unit": "W",
-            "accumulated_energy": 150,
-        }
-        assert result == expected
+        assert result.flags == 8
+        assert result.instantaneous_power == 280
+        assert result.accumulated_energy == 150
 
     def test_cycling_power_measurement_with_wheel_data(self):
         """Test cycling power measurement with wheel revolution data."""
@@ -119,14 +112,10 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<HhIH", flags, power, wheel_revs, wheel_time)
         result = char.parse_value(bytearray(test_data))
 
-        expected = {
-            "flags": 16,
-            "instantaneous_power": 320,
-            "unit": "W",
-            "cumulative_wheel_revolutions": 12345,
-            "last_wheel_event_time": 1.0,  # 2048 / 2048 = 1.0 second
-        }
-        assert result == expected
+        assert result.flags == 16
+        assert result.instantaneous_power == 320
+        assert result.cumulative_wheel_revolutions == 12345
+        assert result.last_wheel_event_time == 1.0  # 2048 / 2048 = 1.0 second
 
     def test_cycling_power_measurement_with_crank_data(self):
         """Test cycling power measurement with crank revolution data."""
@@ -140,14 +129,10 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<HhHH", flags, power, crank_revs, crank_time)
         result = char.parse_value(bytearray(test_data))
 
-        expected = {
-            "flags": 32,
-            "instantaneous_power": 350,
-            "unit": "W",
-            "cumulative_crank_revolutions": 5678,
-            "last_crank_event_time": 1.0,  # 1024 / 1024 = 1.0 second
-        }
-        assert result == expected
+        assert result.flags == 32
+        assert result.instantaneous_power == 350
+        assert result.cumulative_crank_revolutions == 5678
+        assert result.last_crank_event_time == 1.0  # 1024 / 1024 = 1.0 second
 
     def test_cycling_power_measurement_combined_fields(self):
         """Test cycling power measurement with multiple optional fields."""
@@ -165,16 +150,12 @@ class TestCyclingPowerParsing:
         )
         result = char.parse_value(bytearray(test_data))
 
-        expected = {
-            "flags": 41,  # 0x0001 | 0x0008 | 0x0020 = 1 + 8 + 32 = 41
-            "instantaneous_power": 400,
-            "unit": "W",
-            "pedal_power_balance": 60.0,
-            "accumulated_energy": 200,
-            "cumulative_crank_revolutions": 8900,
-            "last_crank_event_time": 0.5,
-        }
-        assert result == expected
+        assert result.flags == 41  # 0x0001 | 0x0008 | 0x0020 = 1 + 8 + 32 = 41
+        assert result.instantaneous_power == 400
+        assert result.pedal_power_balance == 60.0
+        assert result.accumulated_energy == 200
+        assert result.cumulative_crank_revolutions == 8900
+        assert result.last_crank_event_time == 0.5
 
     def test_cycling_power_measurement_invalid_data(self):
         """Test cycling power measurement with invalid data."""
@@ -200,13 +181,10 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<BHHH", flags, crank_revs, crank_time, first_angle)
         result = char.parse_value(bytearray(test_data))
 
-        expected = {
-            "flags": 0,
-            "crank_revolutions": 1234,
-            "last_crank_event_time": 1.0,
-            "first_crank_measurement_angle": 0.5,
-        }
-        assert result == expected
+        assert result.flags == 0
+        assert result.crank_revolution_data.crank_revolutions == 1234
+        assert result.crank_revolution_data.last_crank_event_time == 1.0
+        assert result.first_crank_measurement_angle == 0.5
         assert char.unit == "newton metre"
 
     def test_cycling_power_vector_with_force_array(self):
@@ -225,14 +203,11 @@ class TestCyclingPowerParsing:
         )
         result = char.parse_value(bytearray(test_data))
 
-        expected = {
-            "flags": 1,
-            "crank_revolutions": 1234,
-            "last_crank_event_time": 1.0,
-            "first_crank_measurement_angle": 1.0,
-            "instantaneous_force_magnitudes": [100.0, 150.0],
-        }
-        assert result == expected
+        assert result.flags == 1
+        assert result.crank_revolution_data.crank_revolutions == 1234
+        assert result.crank_revolution_data.last_crank_event_time == 1.0
+        assert result.first_crank_measurement_angle == 1.0
+        assert result.instantaneous_force_magnitude_array == [100.0, 150.0]
 
     def test_cycling_power_vector_with_torque_array(self):
         """Test cycling power vector with torque magnitude array."""
@@ -250,14 +225,11 @@ class TestCyclingPowerParsing:
         )
         result = char.parse_value(bytearray(test_data))
 
-        expected = {
-            "flags": 2,
-            "crank_revolutions": 1234,
-            "last_crank_event_time": 1.0,
-            "first_crank_measurement_angle": 2.0,
-            "instantaneous_torque_magnitudes": [5.0, 6.0],
-        }
-        assert result == expected
+        assert result.flags == 2
+        assert result.crank_revolution_data.crank_revolutions == 1234
+        assert result.crank_revolution_data.last_crank_event_time == 1.0
+        assert result.first_crank_measurement_angle == 2.0
+        assert result.instantaneous_torque_magnitude_array == [5.0, 6.0]
 
     def test_cycling_power_vector_invalid_data(self):
         """Test cycling power vector with invalid data."""

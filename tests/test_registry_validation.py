@@ -492,6 +492,10 @@ class TestNameResolutionFallback:
             def parse_value(self, data: bytearray) -> float:
                 return 0.0
 
+            def encode_value(self, data) -> bytearray:
+                """Test implementation."""
+                return bytearray([0, 0])
+
             @property
             def unit(self) -> str:
                 return "°C"
@@ -579,6 +583,10 @@ class TestNameResolutionFallback:
             def parse_value(self, data: bytearray) -> str:
                 return ""
 
+            def encode_value(self, data) -> bytearray:
+                """Test implementation."""
+                return bytearray()
+
             @property
             def unit(self) -> str:
                 return ""
@@ -612,6 +620,10 @@ class TestNameResolutionFallback:
 
             def parse_value(self, data: bytearray) -> str:
                 return ""
+
+            def encode_value(self, data) -> bytearray:
+                """Test implementation."""
+                return bytearray()
 
             @property
             def unit(self) -> str:

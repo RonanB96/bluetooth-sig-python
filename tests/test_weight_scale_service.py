@@ -6,6 +6,7 @@ from bluetooth_sig.gatt.characteristics.weight_measurement import (
     WeightMeasurementCharacteristic,
 )
 from bluetooth_sig.gatt.characteristics.weight_scale_feature import (
+    WeightMeasurementResolution,
     WeightScaleFeatureCharacteristic,
 )
 from bluetooth_sig.gatt.services.weight_scale import WeightScaleService
@@ -91,10 +92,13 @@ class TestWeightScaleFeatureCharacteristic:
         data = bytearray([0x0F, 0x00, 0x00, 0x00])
         result = char.parse_value(data)
 
-        assert result["timestamp_supported"] is True
-        assert result["multiple_users_supported"] is True
-        assert result["bmi_supported"] is True
-        assert result["weight_measurement_resolution"] == "0.5_kg_or_1_lb"
+        assert result.timestamp_supported is True
+        assert result.multiple_users_supported is True
+        assert result.bmi_supported is True
+        assert (
+            result.weight_measurement_resolution
+            == WeightMeasurementResolution.HALF_KG_OR_1_LB
+        )
 
     def test_parse_no_features(self):
         """Test parsing with no features enabled."""
@@ -104,10 +108,13 @@ class TestWeightScaleFeatureCharacteristic:
         data = bytearray([0x00, 0x00, 0x00, 0x00])
         result = char.parse_value(data)
 
-        assert result["timestamp_supported"] is False
-        assert result["multiple_users_supported"] is False
-        assert result["bmi_supported"] is False
-        assert result["weight_measurement_resolution"] == "not_specified"
+        assert result.timestamp_supported is False
+        assert result.multiple_users_supported is False
+        assert result.bmi_supported is False
+        assert (
+            result.weight_measurement_resolution
+            == WeightMeasurementResolution.NOT_SPECIFIED
+        )
 
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""

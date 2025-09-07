@@ -72,6 +72,46 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
 
         return result
 
+    def encode_value(self, data: dict[str, Any]) -> bytearray:
+        """Encode pulse oximetry measurement value back to bytes.
+
+        Args:
+            data: Dictionary containing pulse oximetry measurement data
+
+        Returns:
+            Encoded bytes representing the measurement
+        """
+        if not isinstance(data, dict):
+            raise TypeError("Pulse oximetry measurement data must be a dictionary")
+
+        # Required fields for pulse oximetry
+        required_fields = ["spo2", "pulse_rate"]
+        for field in required_fields:
+            if field not in data:
+                raise ValueError(f"Pulse oximetry data must contain '{field}' key")
+
+        flags = data.get("flags", 0)
+        spo2 = float(data["spo2"])
+        pulse_rate = float(data["pulse_rate"])
+
+        # Convert to IEEE-11073 SFLOAT format (simplified as uint16)
+        spo2_raw = round(spo2 * 10)  # 0.1% resolution
+        pulse_rate_raw = round(pulse_rate)  # 1 bpm resolution
+
+        # Validate ranges
+        if not 0 <= spo2_raw <= 0xFFFF:
+            raise ValueError(f"SpO2 {spo2_raw} exceeds uint16 range")
+        if not 0 <= pulse_rate_raw <= 0xFFFF:
+            raise ValueError(f"Pulse rate {pulse_rate_raw} exceeds uint16 range")
+
+        # Build result
+        result = bytearray([int(flags)])
+        result.extend(struct.pack("<H", spo2_raw))
+        result.extend(struct.pack("<H", pulse_rate_raw))
+
+        # Additional fields based on flags would be added (simplified)
+        return result
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

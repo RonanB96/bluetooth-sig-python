@@ -28,9 +28,9 @@ class TestBodyCompositionMeasurementCharacteristic:
         data = bytearray([0x00, 0x00, 0xFA, 0x00])  # 0x00FA = 250
         result = char.parse_value(data)
 
-        assert "body_fat_percentage" in result
-        assert result["body_fat_percentage"] == pytest.approx(25.0, abs=0.1)
-        assert result["measurement_units"] == "metric"
+        assert hasattr(result, "body_fat_percentage")
+        assert result.body_fat_percentage == pytest.approx(25.0, abs=0.1)
+        assert result.measurement_units == "metric"
 
     def test_parse_body_fat_imperial(self):
         """Test parsing body fat percentage in imperial units."""
@@ -40,9 +40,9 @@ class TestBodyCompositionMeasurementCharacteristic:
         data = bytearray([0x01, 0x00, 0xB4, 0x00])  # 0x00B4 = 180
         result = char.parse_value(data)
 
-        assert "body_fat_percentage" in result
-        assert result["body_fat_percentage"] == pytest.approx(18.0, abs=0.1)
-        assert result["measurement_units"] == "imperial"
+        assert hasattr(result, "body_fat_percentage")
+        assert result.body_fat_percentage == pytest.approx(18.0, abs=0.1)
+        assert result.measurement_units == "imperial"
 
     def test_parse_with_user_id(self):
         """Test parsing with user ID."""
@@ -52,9 +52,9 @@ class TestBodyCompositionMeasurementCharacteristic:
         data = bytearray([0x04, 0x00, 0xFA, 0x00, 0x03])
         result = char.parse_value(data)
 
-        assert "body_fat_percentage" in result
-        assert "user_id" in result
-        assert result["user_id"] == 3
+        assert hasattr(result, "body_fat_percentage")
+        assert hasattr(result, "user_id")
+        assert result.user_id == 3
 
     def test_parse_with_muscle_mass_metric(self):
         """Test parsing with muscle mass in metric units."""
@@ -65,10 +65,10 @@ class TestBodyCompositionMeasurementCharacteristic:
         data = bytearray([0x10, 0x00, 0xFA, 0x00, 0x10, 0x27])  # 0x2710 = 10000
         result = char.parse_value(data)
 
-        assert "body_fat_percentage" in result
-        assert "muscle_mass" in result
-        assert result["muscle_mass"] == pytest.approx(50.0, abs=0.01)  # 10000 * 0.005
-        assert result["muscle_mass_unit"] == "kg"
+        assert hasattr(result, "body_fat_percentage")
+        assert hasattr(result, "muscle_mass")
+        assert result.muscle_mass == pytest.approx(50.0, abs=0.01)  # 10000 * 0.005
+        assert result.muscle_mass_unit == "kg"
 
     def test_parse_with_muscle_mass_imperial(self):
         """Test parsing with muscle mass in imperial units."""
@@ -79,10 +79,10 @@ class TestBodyCompositionMeasurementCharacteristic:
         data = bytearray([0x11, 0x00, 0xFA, 0x00, 0xF8, 0x2A])  # 0x2AF8 = 11000
         result = char.parse_value(data)
 
-        assert "body_fat_percentage" in result
-        assert "muscle_mass" in result
-        assert result["muscle_mass"] == pytest.approx(110.0, abs=0.01)  # 11000 * 0.01
-        assert result["muscle_mass_unit"] == "lb"
+        assert hasattr(result, "body_fat_percentage")
+        assert hasattr(result, "muscle_mass")
+        assert result.muscle_mass == pytest.approx(110.0, abs=0.01)  # 11000 * 0.01
+        assert result.muscle_mass_unit == "lb"
 
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""
@@ -116,11 +116,11 @@ class TestBodyCompositionFeatureCharacteristic:
         data = bytearray([0x1F, 0x00, 0x00, 0x00])
         result = char.parse_value(data)
 
-        assert result["timestamp_supported"] is True
-        assert result["multiple_users_supported"] is True
-        assert result["basal_metabolism_supported"] is True
-        assert result["muscle_mass_supported"] is True
-        assert result["muscle_percentage_supported"] is True
+        assert result.timestamp_supported is True
+        assert result.multiple_users_supported is True
+        assert result.basal_metabolism_supported is True
+        assert result.muscle_mass_supported is True
+        assert result.muscle_percentage_supported is True
 
     def test_parse_no_features(self):
         """Test parsing with no features enabled."""
@@ -130,11 +130,11 @@ class TestBodyCompositionFeatureCharacteristic:
         data = bytearray([0x00, 0x00, 0x00, 0x00])
         result = char.parse_value(data)
 
-        assert result["timestamp_supported"] is False
-        assert result["multiple_users_supported"] is False
-        assert result["basal_metabolism_supported"] is False
-        assert result["muscle_mass_supported"] is False
-        assert result["muscle_percentage_supported"] is False
+        assert result.timestamp_supported is False
+        assert result.multiple_users_supported is False
+        assert result.basal_metabolism_supported is False
+        assert result.muscle_mass_supported is False
+        assert result.muscle_percentage_supported is False
 
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""
@@ -148,6 +148,55 @@ class TestBodyCompositionFeatureCharacteristic:
         """Test unit property (should be empty for feature characteristic)."""
         char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
         assert char.unit == ""
+
+    def test_encode_value(self):
+        """Test encoding BodyCompositionFeatureData back to bytes."""
+        char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
+
+        from bluetooth_sig.gatt.characteristics.body_composition_feature import (
+            BodyCompositionFeatureData,
+        )
+
+        # Create test data with basic features enabled
+        test_data = BodyCompositionFeatureData(
+            raw_value=0x1F,
+            timestamp_supported=True,
+            multiple_users_supported=True,
+            basal_metabolism_supported=True,
+            muscle_mass_supported=True,
+            muscle_percentage_supported=True,
+            fat_free_mass_supported=False,
+            soft_lean_mass_supported=False,
+            body_water_mass_supported=False,
+            impedance_supported=False,
+            weight_supported=False,
+            height_supported=False,
+            mass_measurement_resolution="not_specified",
+            height_measurement_resolution="not_specified",
+        )
+
+        # Encode the data
+        encoded = char.encode_value(test_data)
+
+        # Should produce the correct bytes
+        assert len(encoded) == 4
+        assert encoded == bytearray([0x1F, 0x00, 0x00, 0x00])
+
+    def test_round_trip_basic(self):
+        """Test that parsing and encoding preserve basic feature data."""
+        char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
+
+        # Test with basic features only (no resolution fields to preserve simplicity)
+        original_data = bytearray([0x1F, 0x00, 0x00, 0x00])
+
+        # Parse the data
+        parsed = char.parse_value(original_data)
+
+        # Encode it back (note: this will only preserve basic feature flags)
+        encoded = char.encode_value(parsed)
+
+        # Should preserve the basic feature bits
+        assert encoded == original_data
 
 
 class TestBodyCompositionService:

@@ -94,6 +94,86 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
 
         return result
 
+    def encode_value(self, data: dict[str, Any]) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches # Complex medical data encoding
+        """Encode glucose measurement value back to bytes.
+
+        Args:
+            data: Dictionary containing glucose measurement data
+
+        Returns:
+            Encoded bytes representing the glucose measurement
+        """
+        if not isinstance(data, dict):
+            raise TypeError("Glucose measurement data must be a dictionary")
+
+        required_fields = ["sequence_number", "base_time", "glucose_concentration"]
+        for field in required_fields:
+            if field not in data:
+                raise ValueError(f"Glucose measurement data must contain '{field}' key")
+
+        sequence_number = int(data["sequence_number"])
+        base_time = data["base_time"]
+        glucose_concentration = float(data["glucose_concentration"])
+
+        time_offset = data.get("time_offset")
+        type_sample_location = data.get("type_sample_location")
+        sensor_status = data.get("sensor_status")
+
+        # Build flags based on available data
+        flags = 0
+        if time_offset is not None:
+            flags |= 0x01  # Time offset present
+        if type_sample_location is not None:
+            flags |= 0x02  # Type and sample location present
+        if glucose_concentration >= 0:  # Glucose concentration units
+            flags |= 0x04  # Units flag (simplified)
+        if sensor_status is not None:
+            flags |= 0x08  # Sensor status annunciation present
+
+        # Validate ranges
+        if not 0 <= sequence_number <= 0xFFFF:
+            raise ValueError(f"Sequence number {sequence_number} exceeds uint16 range")
+
+        # Convert glucose concentration to SFLOAT (simplified as uint16)
+        glucose_raw = round(glucose_concentration * 100)  # Simplified conversion
+        if not 0 <= glucose_raw <= 0xFFFF:
+            raise ValueError(
+                f"Glucose concentration {glucose_raw} exceeds uint16 range"
+            )
+
+        # Start with flags, sequence number, and base time
+        result = bytearray([flags])
+        result.extend(struct.pack("<H", sequence_number))
+        result.extend(self._encode_ieee11073_timestamp(base_time))
+
+        # Add optional time offset
+        if time_offset is not None:
+            offset_val = int(time_offset)
+            if not -32768 <= offset_val <= 32767:
+                raise ValueError(f"Time offset {offset_val} exceeds sint16 range")
+            result.extend(struct.pack("<h", offset_val))
+
+        # Add glucose concentration (simplified as uint16)
+        result.extend(struct.pack("<H", glucose_raw))
+
+        # Add optional type and sample location
+        if type_sample_location is not None:
+            type_location = int(type_sample_location)
+            if not 0 <= type_location <= 255:
+                raise ValueError(
+                    f"Type sample location {type_location} exceeds uint8 range"
+                )
+            result.append(type_location)
+
+        # Add optional sensor status
+        if sensor_status is not None:
+            status = int(sensor_status)
+            if not 0 <= status <= 0xFFFF:
+                raise ValueError(f"Sensor status {status} exceeds uint16 range")
+            result.extend(struct.pack("<H", status))
+
+        return result
+
     def _get_glucose_type_name(self, glucose_type: int) -> str:
         """Get human-readable glucose type name."""
         types = {

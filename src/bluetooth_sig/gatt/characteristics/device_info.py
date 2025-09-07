@@ -15,6 +15,19 @@ class ManufacturerNameStringCharacteristic(BaseCharacteristic):
         """Parse manufacturer name string."""
         return self._parse_utf8_string(data)
 
+    def encode_value(self, data: str) -> bytearray:
+        """Encode string back to bytes.
+
+        Args:
+            data: String to encode
+
+        Returns:
+            Encoded UTF-8 bytes representing the manufacturer name
+        """
+        if isinstance(data, str):
+            return bytearray(data.encode("utf-8"))
+        raise TypeError(f"Expected str, got {type(data)}")
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
@@ -30,6 +43,19 @@ class ModelNumberStringCharacteristic(BaseCharacteristic):
     def parse_value(self, data: bytearray) -> str:
         """Parse model number string."""
         return self._parse_utf8_string(data)
+
+    def encode_value(self, data: str) -> bytearray:
+        """Encode string back to bytes.
+
+        Args:
+            data: String to encode
+
+        Returns:
+            Encoded UTF-8 bytes representing the model number
+        """
+        if isinstance(data, str):
+            return bytearray(data.encode("utf-8"))
+        raise TypeError(f"Expected str, got {type(data)}")
 
     @property
     def unit(self) -> str:
@@ -47,6 +73,19 @@ class SerialNumberStringCharacteristic(BaseCharacteristic):
         """Parse serial number string."""
         return self._parse_utf8_string(data)
 
+    def encode_value(self, data: str) -> bytearray:
+        """Encode string back to bytes.
+
+        Args:
+            data: String to encode
+
+        Returns:
+            Encoded UTF-8 bytes representing the serial number
+        """
+        if isinstance(data, str):
+            return bytearray(data.encode("utf-8"))
+        raise TypeError(f"Expected str, got {type(data)}")
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
@@ -62,6 +101,19 @@ class FirmwareRevisionStringCharacteristic(BaseCharacteristic):
     def parse_value(self, data: bytearray) -> str:
         """Parse firmware revision string."""
         return self._parse_utf8_string(data)
+
+    def encode_value(self, data: str) -> bytearray:
+        """Encode string back to bytes.
+
+        Args:
+            data: String to encode
+
+        Returns:
+            Encoded UTF-8 bytes representing the firmware revision
+        """
+        if isinstance(data, str):
+            return bytearray(data.encode("utf-8"))
+        raise TypeError(f"Expected str, got {type(data)}")
 
     @property
     def unit(self) -> str:
@@ -79,6 +131,19 @@ class HardwareRevisionStringCharacteristic(BaseCharacteristic):
         """Parse hardware revision string."""
         return self._parse_utf8_string(data)
 
+    def encode_value(self, data: str) -> bytearray:
+        """Encode string back to bytes.
+
+        Args:
+            data: String to encode
+
+        Returns:
+            Encoded UTF-8 bytes representing the hardware revision
+        """
+        if isinstance(data, str):
+            return bytearray(data.encode("utf-8"))
+        raise TypeError(f"Expected str, got {type(data)}")
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
@@ -94,6 +159,19 @@ class SoftwareRevisionStringCharacteristic(BaseCharacteristic):
     def parse_value(self, data: bytearray) -> str:
         """Parse software revision string."""
         return self._parse_utf8_string(data)
+
+    def encode_value(self, data: str) -> bytearray:
+        """Encode string back to bytes.
+
+        Args:
+            data: String to encode
+
+        Returns:
+            Encoded UTF-8 bytes representing the software revision
+        """
+        if isinstance(data, str):
+            return bytearray(data.encode("utf-8"))
+        raise TypeError(f"Expected str, got {type(data)}")
 
     @property
     def unit(self) -> str:

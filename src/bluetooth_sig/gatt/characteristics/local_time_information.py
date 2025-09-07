@@ -1,9 +1,37 @@
 """Local Time Information characteristic implementation."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any
 
 from .base import BaseCharacteristic
+
+
+@dataclass
+class TimezoneInfo:
+    """Timezone information part of local time data."""
+
+    description: str
+    offset_hours: float | None
+    raw_value: int
+
+
+@dataclass
+class DSTOffsetInfo:
+    """DST offset information part of local time data."""
+
+    description: str
+    offset_hours: float | None
+    raw_value: int
+
+
+@dataclass
+class LocalTimeInformationData:
+    """Parsed data from Local Time Information characteristic."""
+
+    timezone: TimezoneInfo
+    dst_offset: DSTOffsetInfo
+    total_offset_hours: float | None = None
 
 
 @dataclass
@@ -25,7 +53,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
         255: {"description": "DST offset unknown", "offset_hours": None},
     }
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:
+    def parse_value(self, data: bytearray) -> LocalTimeInformationData:  # pylint: disable=too-many-locals
         """Parse local time information data (2 bytes: time zone + DST offset)."""
         if len(data) < 2:
             raise ValueError("Local time information data must be at least 2 bytes")
@@ -65,26 +93,53 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
             dst_desc = f"Reserved (value: {dst_offset_raw})"
             dst_hours = None
 
-        result = {
-            "timezone": {
-                "description": timezone_desc,
-                "offset_hours": timezone_hours,
-                "raw_value": timezone_raw,
-            },
-            "dst_offset": {
-                "description": dst_desc,
-                "offset_hours": dst_hours,
-                "raw_value": dst_offset_raw,
-            },
-        }
+        # Create timezone info
+        timezone_info = TimezoneInfo(
+            description=timezone_desc,
+            offset_hours=timezone_hours,
+            raw_value=timezone_raw,
+        )
+
+        # Create DST offset info
+        dst_offset_info = DSTOffsetInfo(
+            description=dst_desc,
+            offset_hours=dst_hours,
+            raw_value=dst_offset_raw,
+        )
 
         # Calculate total offset if both are known
+        total_offset = None
         if timezone_hours is not None and dst_hours is not None:
-            result["total_offset_hours"] = timezone_hours + dst_hours
+            total_offset = timezone_hours + dst_hours
 
-        return result
+        return LocalTimeInformationData(
+            timezone=timezone_info,
+            dst_offset=dst_offset_info,
+            total_offset_hours=total_offset,
+        )
+
+    def encode_value(self, data: LocalTimeInformationData) -> bytearray:
+        """Encode LocalTimeInformationData back to bytes.
+
+        Args:
+            data: LocalTimeInformationData instance to encode
+
+        Returns:
+            Encoded bytes representing the local time information
+        """
+        # Encode timezone (use raw value directly)
+        timezone_byte = data.timezone.raw_value.to_bytes(
+            1, byteorder="little", signed=True
+        )
+
+        # Encode DST offset (use raw value directly)
+        dst_offset_byte = data.dst_offset.raw_value.to_bytes(
+            1, byteorder="little", signed=False
+        )
+
+        return bytearray(timezone_byte + dst_offset_byte)
 
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
-        return ""  # No unit for time information        return ""  # No state class for time information
+        return ""  # No unit for time information

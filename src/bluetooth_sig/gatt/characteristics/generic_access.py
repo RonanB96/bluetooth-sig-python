@@ -15,6 +15,21 @@ class DeviceNameCharacteristic(BaseCharacteristic):
         """Parse device name string."""
         return self._parse_utf8_string(data)
 
+    def encode_value(self, data: str) -> bytearray:
+        """Encode device name value back to bytes.
+
+        Args:
+            data: Device name as string
+
+        Returns:
+            Encoded bytes representing the device name (UTF-8)
+        """
+        if not isinstance(data, str):
+            raise TypeError("Device name must be a string")
+
+        # Encode as UTF-8 bytes
+        return bytearray(data.encode("utf-8"))
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
@@ -33,6 +48,18 @@ class AppearanceCharacteristic(BaseCharacteristic):
             raise ValueError("Appearance data must be at least 2 bytes")
 
         return int.from_bytes(data[:2], byteorder="little", signed=False)
+
+    def encode_value(self, data) -> bytearray:
+        """Encode appearance value back to bytes.
+
+        Args:
+            data: Appearance value as integer
+
+        Returns:
+            Encoded bytes representing the appearance
+        """
+        appearance = int(data)
+        return self._encode_uint16(appearance)
 
     @property
     def unit(self) -> str:

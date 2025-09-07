@@ -15,6 +15,9 @@ from bluetooth_sig.gatt.characteristics import (
     RainfallCharacteristic,
     TimeZoneCharacteristic,
 )
+from bluetooth_sig.gatt.characteristics.barometric_pressure_trend import (
+    BarometricPressureTrend,
+)
 
 
 class TestNavigationCharacteristics:
@@ -95,9 +98,9 @@ class TestNavigationCharacteristics:
         test_data = bytearray(struct.pack("<hh", 1000, -500))
         parsed = char.parse_value(test_data)
 
-        assert abs(parsed["x_axis"] - 1e-4) < 1e-10  # 1000 * 10^-7 = 1e-4
-        assert abs(parsed["y_axis"] - (-5e-5)) < 1e-10  # -500 * 10^-7 = -5e-5
-        assert parsed["unit"] == "T"
+        assert abs(parsed.x_axis - 1e-4) < 1e-10  # 1000 * 10^-7 = 1e-4
+        assert abs(parsed.y_axis - (-5e-5)) < 1e-10  # -500 * 10^-7 = -5e-5
+        assert parsed.unit == "T"
 
     def test_magnetic_flux_density_3d_parsing(self):
         """Test Magnetic Flux Density 3D characteristic parsing."""
@@ -114,10 +117,10 @@ class TestNavigationCharacteristics:
         test_data = bytearray(struct.pack("<hhh", 1000, -500, 2000))
         parsed = char.parse_value(test_data)
 
-        assert abs(parsed["x_axis"] - 1e-4) < 1e-10
-        assert abs(parsed["y_axis"] - (-5e-5)) < 1e-10
-        assert abs(parsed["z_axis"] - 2e-4) < 1e-10
-        assert parsed["unit"] == "T"
+        assert abs(parsed.x_axis - 1e-4) < 1e-10
+        assert abs(parsed.y_axis - (-5e-5)) < 1e-10
+        assert abs(parsed.z_axis - 2e-4) < 1e-10
+        assert parsed.unit == "T"
 
 
 class TestEnvironmentalCharacteristics:
@@ -133,15 +136,15 @@ class TestEnvironmentalCharacteristics:
         # Test metadata
         assert char.unit == ""
         assert (
-            char.value_type == "string"
-        )  # Manual override: returns descriptive strings
+            char.parsed_value_type == "BarometricPressureTrend"
+        )  # Manual override: returns enum
 
         # Test known trend values
         test_cases = [
-            (0, "Unknown"),
-            (1, "Continuously falling"),
-            (2, "Continuously rising"),
-            (9, "Steady"),
+            (0, BarometricPressureTrend.UNKNOWN),
+            (1, BarometricPressureTrend.CONTINUOUSLY_FALLING),
+            (2, BarometricPressureTrend.CONTINUOUSLY_RISING),
+            (9, BarometricPressureTrend.STEADY),
         ]
 
         for value, expected in test_cases:
@@ -152,7 +155,7 @@ class TestEnvironmentalCharacteristics:
         # Test reserved value
         reserved_data = bytearray([255])
         parsed = char.parse_value(reserved_data)
-        assert parsed == "Reserved (value: 255)"
+        assert parsed == BarometricPressureTrend.UNKNOWN  # Falls back to UNKNOWN
 
     def test_pollen_concentration_parsing(self):
         """Test Pollen Concentration characteristic parsing."""
@@ -238,14 +241,62 @@ class TestTimeCharacteristics:
         test_data = bytearray([8, 4])  # timezone=+2h (8*15min), dst=+1h (value 4)
         parsed = char.parse_value(test_data)
 
-        assert parsed["timezone"]["description"] == "UTC+02:00"
-        assert parsed["timezone"]["offset_hours"] == 2.0
-        assert parsed["dst_offset"]["description"] == "Daylight Time"
-        assert parsed["dst_offset"]["offset_hours"] == 1.0
-        assert parsed["total_offset_hours"] == 3.0
+        assert parsed.timezone.description == "UTC+02:00"
+        assert parsed.timezone.offset_hours == 2.0
+        assert parsed.dst_offset.description == "Daylight Time"
+        assert parsed.dst_offset.offset_hours == 1.0
+        assert parsed.total_offset_hours == 3.0
 
         # Test unknown values
         unknown_data = bytearray([0x80, 0xFF])  # unknown timezone and DST
         parsed_unknown = char.parse_value(unknown_data)
-        assert parsed_unknown["timezone"]["description"] == "Unknown"
-        assert parsed_unknown["dst_offset"]["description"] == "DST offset unknown"
+        assert parsed_unknown.timezone.description == "Unknown"
+        assert parsed_unknown.dst_offset.description == "DST offset unknown"
+
+    def test_local_time_information_encode_value(self):
+        """Test encoding LocalTimeInformationData back to bytes."""
+        char = LocalTimeInformationCharacteristic(uuid="", properties=set())
+
+        from bluetooth_sig.gatt.characteristics.local_time_information import (
+            DSTOffsetInfo,
+            LocalTimeInformationData,
+            TimezoneInfo,
+        )
+
+        # Create test data for UTC+2 with DST
+        test_data = LocalTimeInformationData(
+            timezone=TimezoneInfo(
+                description="UTC+02:00",
+                offset_hours=2.0,
+                raw_value=8,  # 8 * 15min = 120min = 2h
+            ),
+            dst_offset=DSTOffsetInfo(
+                description="Daylight Time",
+                offset_hours=1.0,
+                raw_value=4,  # DST value 4 = +1h
+            ),
+            total_offset_hours=3.0,
+        )
+
+        # Encode the data
+        encoded = char.encode_value(test_data)
+
+        # Should produce the correct bytes
+        assert len(encoded) == 2
+        assert encoded == bytearray([8, 4])
+
+    def test_local_time_information_round_trip(self):
+        """Test that parsing and encoding preserve data."""
+        char = LocalTimeInformationCharacteristic(uuid="", properties=set())
+
+        # Test with UTC+2 and DST
+        original_data = bytearray([8, 4])
+
+        # Parse the data
+        parsed = char.parse_value(original_data)
+
+        # Encode it back
+        encoded = char.encode_value(parsed)
+
+        # Should match the original
+        assert encoded == original_data

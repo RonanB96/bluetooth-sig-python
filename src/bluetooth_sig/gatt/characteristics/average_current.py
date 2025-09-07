@@ -33,6 +33,29 @@ class AverageCurrentCharacteristic(BaseCharacteristic):
         current_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         return current_raw * 0.01
 
+    def encode_value(self, data: float | int) -> bytearray:
+        """Encode average current value back to bytes.
+
+        Args:
+            data: Average electric current value in Amperes
+
+        Returns:
+            Encoded bytes representing the average current (uint16, 0.01 A resolution)
+        """
+        current = float(data)
+
+        # Validate range (reasonable current range for uint16 with 0.01 resolution)
+        max_current = 65535 * 0.01  # 655.35 A
+        if not 0.0 <= current <= max_current:
+            raise ValueError(
+                f"Average electric current {current} A is outside valid range (0.0 to {max_current} A)"
+            )
+
+        # Convert Amperes to raw value (multiply by 100 for 0.01 A resolution)
+        current_raw = round(current * 100)
+
+        return bytearray(current_raw.to_bytes(2, byteorder="little", signed=False))
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

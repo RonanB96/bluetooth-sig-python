@@ -38,6 +38,33 @@ class IlluminanceCharacteristic(BaseCharacteristic):
         illuminance_raw = int.from_bytes(data[:3], byteorder="little", signed=False)
         return illuminance_raw * 0.01
 
+    def encode_value(self, data: float | int) -> bytearray:
+        """Encode illuminance value back to bytes.
+
+        Args:
+            data: Illuminance value in lux
+
+        Returns:
+            Encoded bytes representing the illuminance (uint24, 0.01 lx resolution)
+        """
+        illuminance = float(data)
+
+        # Validate range (reasonable illuminance range)
+        if not 0.0 <= illuminance <= 167772.15:  # Max uint24 * 0.01
+            raise ValueError(
+                f"Illuminance {illuminance} lx is outside valid range (0.0 to 167772.15 lx)"
+            )
+
+        # Convert lux to raw value (multiply by 100 for 0.01 lx resolution)
+        illuminance_raw = round(illuminance * 100)
+
+        # Ensure it fits in uint24
+        if illuminance_raw > 0xFFFFFF:  # pylint: disable=consider-using-min-builtin # Clear intent for range clamping
+            illuminance_raw = 0xFFFFFF
+
+        # Encode as 3 bytes (little endian)
+        return bytearray(illuminance_raw.to_bytes(3, byteorder="little", signed=False))
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

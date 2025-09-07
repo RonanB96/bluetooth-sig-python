@@ -43,6 +43,25 @@ class NitrogenDioxideConcentrationCharacteristic(BaseCharacteristic):
 
         return concentration_raw
 
+    def encode_value(self, data: int) -> bytearray:
+        """Encode nitrogen dioxide concentration value back to bytes.
+
+        Args:
+            data: Nitrogen dioxide concentration in ppb
+
+        Returns:
+            Encoded bytes representing the nitrogen dioxide concentration (uint16, 1 ppb resolution)
+        """
+        concentration = int(data)
+
+        # Validate range (realistic nitrogen dioxide concentration range)
+        if not 0 <= concentration <= 65533:  # Exclude special values 0xFFFE and 0xFFFF
+            raise ValueError(
+                f"Nitrogen dioxide concentration {concentration} ppb is outside valid range (0-65533 ppb)"
+            )
+
+        return bytearray(concentration.to_bytes(2, byteorder="little", signed=False))
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
