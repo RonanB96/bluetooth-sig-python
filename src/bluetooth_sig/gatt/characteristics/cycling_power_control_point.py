@@ -43,12 +43,44 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
 
         return result
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: dict[str, Any] | int) -> bytearray:
+        """Encode cycling power control point value back to bytes.
+
+        Args:
+            data: Dictionary with op_code and optional parameters, or raw op_code integer
+
+        Returns:
+            Encoded bytes representing the control point command
+        """
+        if isinstance(data, int):
+            # Simple op code only
+            op_code = data
+            if not 0 <= op_code <= 255:
+                raise ValueError(f"Op code {op_code} exceeds uint8 range")
+            return bytearray([op_code])
+        
+        elif isinstance(data, dict):
+            if "op_code" not in data:
+                raise ValueError("Control point data must contain 'op_code' key")
+            
+            op_code = int(data["op_code"])
+            if not 0 <= op_code <= 255:
+                raise ValueError(f"Op code {op_code} exceeds uint8 range")
+            
+            result = bytearray([op_code])
+            
+            # Add any additional parameters (simplified implementation)
+            # This would need to be expanded based on specific op code requirements
+            if "parameters" in data and isinstance(data["parameters"], (list, bytes, bytearray)):
+                if isinstance(data["parameters"], list):
+                    result.extend(data["parameters"])
+                else:
+                    result.extend(data["parameters"])
+            
+            return result
+        
+        else:
+            raise TypeError("Control point data must be a dictionary or integer")
 
     def _parse_op_code_parameters(
         self, op_code: int, data: bytearray, result: dict[str, Any]

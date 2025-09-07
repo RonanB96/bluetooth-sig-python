@@ -63,9 +63,62 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
         return result
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: dict[str, Any]) -> bytearray:
+        """Encode RSC measurement value back to bytes.
+
+        Args:
+            data: Dictionary containing RSC measurement data
+
+        Returns:
+            Encoded bytes representing the RSC measurement
+        """
+        if not isinstance(data, dict):
+            raise TypeError("RSC measurement data must be a dictionary")
+        
+        # Required fields
+        if "instantaneous_speed" not in data or "instantaneous_cadence" not in data:
+            raise ValueError("RSC measurement data must contain 'instantaneous_speed' and 'instantaneous_cadence'")
+        
+        speed_ms = float(data["instantaneous_speed"])
+        cadence = int(data["instantaneous_cadence"])
+        
+        # Build flags based on available optional data
+        flags = 0
+        has_stride_length = "instantaneous_stride_length" in data
+        has_total_distance = "total_distance" in data
+        
+        if has_stride_length:
+            flags |= 0x01  # Instantaneous stride length present
+        if has_total_distance:
+            flags |= 0x02  # Total distance present
+        
+        # Validate required fields
+        speed_raw = round(speed_ms * 256)  # Convert to 1/256 m/s units
+        if not 0 <= speed_raw <= 0xFFFF:
+            raise ValueError(f"Speed {speed_ms} m/s exceeds uint16 range")
+        
+        if not 0 <= cadence <= 255:
+            raise ValueError(f"Cadence {cadence} exceeds uint8 range")
+        
+        # Start with flags, speed, and cadence
+        result = bytearray([flags])
+        result.extend(struct.pack("<H", speed_raw))
+        result.append(cadence)
+        
+        # Add optional stride length if present
+        if has_stride_length:
+            stride_length = float(data["instantaneous_stride_length"])
+            stride_length_raw = round(stride_length * 100)  # Convert to cm units
+            if not 0 <= stride_length_raw <= 0xFFFF:
+                raise ValueError(f"Stride length {stride_length} m exceeds uint16 range")
+            result.extend(struct.pack("<H", stride_length_raw))
+        
+        # Add optional total distance if present
+        if has_total_distance:
+            total_distance = float(data["total_distance"])
+            total_distance_raw = round(total_distance * 10)  # Convert to dm units
+            if not 0 <= total_distance_raw <= 0xFFFFFFFF:
+                raise ValueError(f"Total distance {total_distance} m exceeds uint32 range")
+            result.extend(struct.pack("<I", total_distance_raw))
+        
+        return result

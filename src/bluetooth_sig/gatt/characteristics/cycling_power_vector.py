@@ -90,9 +90,64 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
         return result
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: dict[str, Any]) -> bytearray:
+        """Encode cycling power vector value back to bytes.
+
+        Args:
+            data: Dictionary containing cycling power vector data
+
+        Returns:
+            Encoded bytes representing the power vector
+        """
+        if not isinstance(data, dict):
+            raise TypeError("Cycling power vector data must be a dictionary")
+        
+        # Required fields
+        required_fields = ["crank_revolutions", "crank_event_time", "first_crank_measurement_angle"]
+        for field in required_fields:
+            if field not in data:
+                raise ValueError(f"Power vector data must contain '{field}' key")
+        
+        crank_revolutions = int(data["crank_revolutions"])
+        crank_event_time = float(data["crank_event_time"])
+        first_angle = float(data["first_crank_measurement_angle"])
+        
+        # Build basic flags (simplified implementation)
+        flags = 0
+        if "force_magnitude_array" in data:
+            flags |= 0x01  # Force magnitude array present
+        if "torque_magnitude_array" in data:
+            flags |= 0x02  # Torque magnitude array present
+        
+        # Convert values to raw format
+        crank_event_time_raw = round(crank_event_time * 1024)  # 1/1024 second units
+        first_angle_raw = round(first_angle * 180)  # 1/180 degree units
+        
+        # Validate ranges
+        if not 0 <= crank_revolutions <= 0xFFFF:
+            raise ValueError(f"Crank revolutions {crank_revolutions} exceeds uint16 range")
+        if not 0 <= crank_event_time_raw <= 0xFFFF:
+            raise ValueError(f"Crank event time {crank_event_time_raw} exceeds uint16 range")
+        if not 0 <= first_angle_raw <= 0xFFFF:
+            raise ValueError(f"First angle {first_angle_raw} exceeds uint16 range")
+        
+        # Build result
+        result = bytearray([flags])
+        result.extend(struct.pack("<H", crank_revolutions))
+        result.extend(struct.pack("<H", crank_event_time_raw))
+        result.extend(struct.pack("<H", first_angle_raw))
+        
+        # Add arrays if present (simplified implementation)
+        if "force_magnitude_array" in data and isinstance(data["force_magnitude_array"], list):
+            for force in data["force_magnitude_array"]:
+                force_val = int(force)
+                if 0 <= force_val <= 0xFFFF:
+                    result.extend(struct.pack("<H", force_val))
+        
+        if "torque_magnitude_array" in data and isinstance(data["torque_magnitude_array"], list):
+            for torque in data["torque_magnitude_array"]:
+                torque_val = int(torque)
+                if 0 <= torque_val <= 0xFFFF:
+                    result.extend(struct.pack("<H", torque_val))
+        
+        return result

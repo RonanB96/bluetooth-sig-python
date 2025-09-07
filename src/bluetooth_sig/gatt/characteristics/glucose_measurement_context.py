@@ -61,12 +61,35 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
 
         return result
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: dict[str, Any]) -> bytearray:
+        """Encode glucose measurement context value back to bytes.
+
+        Args:
+            data: Dictionary containing glucose measurement context data
+
+        Returns:
+            Encoded bytes representing the measurement context
+        """
+        if not isinstance(data, dict):
+            raise TypeError("Glucose measurement context data must be a dictionary")
+        
+        if "sequence_number" not in data:
+            raise ValueError("Context data must contain 'sequence_number' key")
+        
+        sequence_number = int(data["sequence_number"])
+        if not 0 <= sequence_number <= 0xFFFF:
+            raise ValueError(f"Sequence number {sequence_number} exceeds uint16 range")
+        
+        # Build flags based on available optional data
+        flags = 0
+        extended_flags = 0
+        
+        # Simplified implementation - just encode sequence number with basic flags
+        result = bytearray([flags, extended_flags])
+        result.extend(struct.pack("<H", sequence_number))
+        
+        # Additional context fields would be added based on flags (simplified)
+        return result
 
     def _parse_extended_flags(
         self, data: bytearray, flags: int, result: dict[str, Any], offset: int

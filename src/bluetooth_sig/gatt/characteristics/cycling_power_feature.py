@@ -37,12 +37,22 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
         feature_mask = struct.unpack("<I", data[:4])[0]
         return feature_mask
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: int) -> bytearray:
+        """Encode cycling power feature value back to bytes.
+
+        Args:
+            data: 32-bit feature bitmask as integer
+
+        Returns:
+            Encoded bytes representing the cycling power features (uint32)
+        """
+        feature_mask = int(data)
+        
+        # Validate range for uint32
+        if not 0 <= feature_mask <= 0xFFFFFFFF:
+            raise ValueError(f"Feature mask {feature_mask} exceeds uint32 range")
+        
+        return bytearray(struct.pack("<I", feature_mask))
 
     @property
     def unit(self) -> str:
