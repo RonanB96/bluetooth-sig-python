@@ -63,7 +63,7 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
         elif isinstance(data, dict):
             # Build from feature flags
             features_raw = data.get("raw_value", 0)
-            
+
             # If raw_value not provided, build from individual flags
             if features_raw == 0:
                 if data.get("timestamp_supported", False):
@@ -72,7 +72,7 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
                     features_raw |= 0x02
                 if data.get("bmi_supported", False):
                     features_raw |= 0x04
-                
+
                 # Add weight resolution bits (bits 3-6)
                 weight_res = data.get("weight_measurement_resolution", "not_specified")
                 weight_res_map = {
@@ -86,8 +86,8 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
                     "0.005_kg_or_0.01_lb": 7,
                 }
                 if weight_res in weight_res_map:
-                    features_raw |= (weight_res_map[weight_res] << 3)
-                
+                    features_raw |= weight_res_map[weight_res] << 3
+
                 # Add height resolution bits (bits 7-9)
                 height_res = data.get("height_measurement_resolution", "not_specified")
                 height_res_map = {
@@ -97,14 +97,14 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
                     "0.001_m_or_0.1_inch": 3,
                 }
                 if height_res in height_res_map:
-                    features_raw |= (height_res_map[height_res] << 7)
+                    features_raw |= height_res_map[height_res] << 7
         else:
             raise TypeError("Weight scale feature data must be a dictionary or integer")
-        
+
         # Validate range for uint32
         if not 0 <= features_raw <= 0xFFFFFFFF:
             raise ValueError(f"Features value {features_raw} exceeds uint32 range")
-        
+
         return bytearray(struct.pack("<I", features_raw))
 
     def _get_weight_resolution(self, features: int) -> str:

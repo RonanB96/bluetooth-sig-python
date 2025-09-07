@@ -77,12 +77,16 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
             else:
                 raise ValueError(f"Unknown barometric pressure trend: {data}")
         else:
-            raise TypeError("Barometric pressure trend data must be a string or integer")
-        
+            raise TypeError(
+                "Barometric pressure trend data must be a string or integer"
+            )
+
         # Validate range for uint8 (0 to 255)
         if not 0 <= trend_value <= 255:
-            raise ValueError(f"Trend value {trend_value} is outside valid range (0-255)")
-        
+            raise ValueError(
+                f"Trend value {trend_value} is outside valid range (0-255)"
+            )
+
         return bytearray([trend_value])
 
     @property

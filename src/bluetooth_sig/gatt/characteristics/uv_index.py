@@ -30,11 +30,11 @@ class UVIndexCharacteristic(BaseCharacteristic):
             Encoded bytes representing the UV index (uint8)
         """
         uv_index = int(data)
-        
+
         # Validate range for uint8 (UV index typically 0-11+, but uint8 allows 0-255)
         if not 0 <= uv_index <= 255:
             raise ValueError(f"UV index {uv_index} is outside valid range (0-255)")
-        
+
         return bytearray([uv_index])
 
     @property

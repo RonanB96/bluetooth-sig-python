@@ -45,14 +45,16 @@ class HighVoltageCharacteristic(BaseCharacteristic):
             Encoded bytes representing the high voltage (uint24, 1 V resolution)
         """
         voltage = float(data)
-        
+
         # Validate range for uint24 (0 to 16777215 V)
         if not 0.0 <= voltage <= 16777215.0:
-            raise ValueError(f"High voltage {voltage} V is outside valid range (0.0 to 16777215.0 V)")
-        
+            raise ValueError(
+                f"High voltage {voltage} V is outside valid range (0.0 to 16777215.0 V)"
+            )
+
         # Convert to raw value (already in whole volts)
         voltage_raw = round(voltage)
-        
+
         # Encode as 3 bytes (little endian)
         return bytearray(voltage_raw.to_bytes(3, byteorder="little", signed=False))
 

@@ -30,9 +30,11 @@ class DewPointCharacteristic(BaseCharacteristic):
             Encoded bytes representing the dew point (sint8, 1°C resolution)
         """
         temperature = int(round(float(data)))
-        
+
         # Validate range for sint8 (-128 to 127)
         if not -128 <= temperature <= 127:
-            raise ValueError(f"Dew point {temperature}°C is outside valid range (-128 to 127°C)")
-        
+            raise ValueError(
+                f"Dew point {temperature}°C is outside valid range (-128 to 127°C)"
+            )
+
         return bytearray(temperature.to_bytes(1, byteorder="little", signed=True))

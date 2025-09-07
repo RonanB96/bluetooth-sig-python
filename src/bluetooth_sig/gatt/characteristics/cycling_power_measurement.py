@@ -98,7 +98,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
         return result
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:
+    def encode_value(self, data: dict[str, Any]) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements # Complex cycling power measurement with numerous optional fields
         """Encode cycling power measurement value back to bytes.
 
         Args:
@@ -109,10 +109,12 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
         """
         if not isinstance(data, dict):
             raise TypeError("Cycling power measurement data must be a dictionary")
-        
+
         if "instantaneous_power" not in data:
-            raise ValueError("Power measurement data must contain 'instantaneous_power' key")
-        
+            raise ValueError(
+                "Power measurement data must contain 'instantaneous_power' key"
+            )
+
         instantaneous_power = int(data["instantaneous_power"])
         pedal_power_balance = data.get("pedal_power_balance")
         accumulated_energy = data.get("accumulated_energy")
@@ -120,7 +122,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
         wheel_event_time = data.get("wheel_event_time")
         crank_revolutions = data.get("crank_revolutions")
         crank_event_time = data.get("crank_event_time")
-        
+
         # Build flags based on available data
         flags = 0
         if pedal_power_balance is not None:
@@ -131,29 +133,31 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             flags |= 0x10  # Wheel revolution data present
         if crank_revolutions is not None and crank_event_time is not None:
             flags |= 0x20  # Crank revolution data present
-        
+
         # Validate instantaneous power (sint16 range)
         if not -32768 <= instantaneous_power <= 32767:
-            raise ValueError(f"Instantaneous power {instantaneous_power} W exceeds sint16 range")
-        
+            raise ValueError(
+                f"Instantaneous power {instantaneous_power} W exceeds sint16 range"
+            )
+
         # Start with flags and instantaneous power
         result = bytearray()
         result.extend(struct.pack("<H", flags))  # Flags (16-bit)
         result.extend(struct.pack("<h", instantaneous_power))  # Power (sint16)
-        
+
         # Add optional fields based on flags
         if pedal_power_balance is not None:
             balance = int(pedal_power_balance)
             if not 0 <= balance <= 255:
                 raise ValueError(f"Pedal power balance {balance} exceeds uint8 range")
             result.append(balance)
-        
+
         if accumulated_energy is not None:
             energy = int(accumulated_energy)
             if not 0 <= energy <= 0xFFFF:
                 raise ValueError(f"Accumulated energy {energy} exceeds uint16 range")
             result.extend(struct.pack("<H", energy))
-        
+
         if wheel_revolutions is not None and wheel_event_time is not None:
             wheel_rev = int(wheel_revolutions)
             wheel_time = int(wheel_event_time)
@@ -163,7 +167,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
                 raise ValueError(f"Wheel event time {wheel_time} exceeds uint16 range")
             result.extend(struct.pack("<I", wheel_rev))
             result.extend(struct.pack("<H", wheel_time))
-        
+
         if crank_revolutions is not None and crank_event_time is not None:
             crank_rev = int(crank_revolutions)
             crank_time = int(crank_event_time)
@@ -173,7 +177,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
                 raise ValueError(f"Crank event time {crank_time} exceeds uint16 range")
             result.extend(struct.pack("<H", crank_rev))
             result.extend(struct.pack("<H", crank_time))
-        
+
         return result
 
     @property

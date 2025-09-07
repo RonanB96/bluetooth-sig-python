@@ -67,15 +67,17 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         """
         if not isinstance(data, dict):
             raise TypeError("Temperature measurement data must be a dictionary")
-        
+
         if "temperature" not in data:
-            raise ValueError("Temperature measurement data must contain 'temperature' key")
-        
+            raise ValueError(
+                "Temperature measurement data must contain 'temperature' key"
+            )
+
         temperature = float(data["temperature"])
         unit = data.get("unit", "°C")
         timestamp = data.get("timestamp")
         temp_type = data.get("temperature_type")
-        
+
         # Build flags
         flags = 0
         if unit == "°F":
@@ -84,22 +86,22 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
             flags |= 0x02  # Timestamp present
         if temp_type is not None:
             flags |= 0x04  # Temperature type present
-        
+
         # Start with flags byte
         result = bytearray([flags])
-        
+
         # Add temperature value (IEEE-11073 32-bit float)
         temp_bytes = struct.pack("<f", temperature)
         result.extend(temp_bytes)
-        
+
         # Add optional timestamp (7 bytes) if present
         if timestamp is not None:
             result.extend(self._encode_ieee11073_timestamp(timestamp))
-        
+
         # Add optional temperature type (1 byte) if present
         if temp_type is not None:
             result.append(int(temp_type))
-        
+
         return result
 
     @property

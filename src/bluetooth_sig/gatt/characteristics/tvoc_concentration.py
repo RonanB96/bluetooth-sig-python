@@ -51,11 +51,13 @@ class TVOCConcentrationCharacteristic(BaseCharacteristic):
             Encoded bytes representing the TVOC concentration (uint16, 1 ppb resolution)
         """
         concentration = int(data)
-        
+
         # Validate range (realistic TVOC concentration range)
         if not 0 <= concentration <= 65533:  # Exclude special values 0xFFFE and 0xFFFF
-            raise ValueError(f"TVOC concentration {concentration} ppb is outside valid range (0-65533 ppb)")
-        
+            raise ValueError(
+                f"TVOC concentration {concentration} ppb is outside valid range (0-65533 ppb)"
+            )
+
         return bytearray(concentration.to_bytes(2, byteorder="little", signed=False))
 
     @property

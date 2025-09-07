@@ -47,11 +47,11 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
             Encoded bytes representing the cycling power features (uint32)
         """
         feature_mask = int(data)
-        
+
         # Validate range for uint32
         if not 0 <= feature_mask <= 0xFFFFFFFF:
             raise ValueError(f"Feature mask {feature_mask} exceeds uint32 range")
-        
+
         return bytearray(struct.pack("<I", feature_mask))
 
     @property

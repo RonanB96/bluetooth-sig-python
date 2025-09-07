@@ -30,11 +30,13 @@ class HeatIndexCharacteristic(BaseCharacteristic):
             Encoded bytes representing the heat index (uint8, 1°C resolution)
         """
         temperature = int(round(float(data)))
-        
+
         # Validate range for uint8 (0 to 255)
         if not 0 <= temperature <= 255:
-            raise ValueError(f"Heat index {temperature}°C is outside valid range (0 to 255°C)")
-        
+            raise ValueError(
+                f"Heat index {temperature}°C is outside valid range (0 to 255°C)"
+            )
+
         return bytearray(temperature.to_bytes(1, byteorder="little", signed=False))
 
     @property

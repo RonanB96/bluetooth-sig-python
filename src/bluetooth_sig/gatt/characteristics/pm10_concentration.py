@@ -52,11 +52,13 @@ class PM10ConcentrationCharacteristic(BaseCharacteristic):
             Encoded bytes representing the PM10 concentration (uint16, 1 μg/m³ resolution)
         """
         concentration = int(data)
-        
+
         # Validate range (realistic PM10 concentration range)
         if not 0 <= concentration <= 65533:  # Exclude special values 0xFFFE and 0xFFFF
-            raise ValueError(f"PM10 concentration {concentration} μg/m³ is outside valid range (0-65533 μg/m³)")
-        
+            raise ValueError(
+                f"PM10 concentration {concentration} μg/m³ is outside valid range (0-65533 μg/m³)"
+            )
+
         return bytearray(concentration.to_bytes(2, byteorder="little", signed=False))
 
     @property

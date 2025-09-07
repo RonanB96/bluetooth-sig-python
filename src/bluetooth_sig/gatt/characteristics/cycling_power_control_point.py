@@ -58,27 +58,29 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
             if not 0 <= op_code <= 255:
                 raise ValueError(f"Op code {op_code} exceeds uint8 range")
             return bytearray([op_code])
-        
-        elif isinstance(data, dict):
+
+        if isinstance(data, dict):  # pylint: disable=no-else-return # Clear flow control for different data types
             if "op_code" not in data:
                 raise ValueError("Control point data must contain 'op_code' key")
-            
+
             op_code = int(data["op_code"])
             if not 0 <= op_code <= 255:
                 raise ValueError(f"Op code {op_code} exceeds uint8 range")
-            
+
             result = bytearray([op_code])
-            
+
             # Add any additional parameters (simplified implementation)
             # This would need to be expanded based on specific op code requirements
-            if "parameters" in data and isinstance(data["parameters"], (list, bytes, bytearray)):
+            if "parameters" in data and isinstance(
+                data["parameters"], (list, bytes, bytearray)
+            ):
                 if isinstance(data["parameters"], list):
                     result.extend(data["parameters"])
                 else:
                     result.extend(data["parameters"])
-            
+
             return result
-        
+
         else:
             raise TypeError("Control point data must be a dictionary or integer")
 

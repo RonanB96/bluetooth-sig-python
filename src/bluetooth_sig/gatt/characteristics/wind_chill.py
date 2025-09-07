@@ -30,11 +30,13 @@ class WindChillCharacteristic(BaseCharacteristic):
             Encoded bytes representing the wind chill (sint8, 1°C resolution)
         """
         temperature = int(round(float(data)))
-        
+
         # Validate range for sint8 (-128 to 127)
         if not -128 <= temperature <= 127:
-            raise ValueError(f"Wind chill {temperature}°C is outside valid range (-128 to 127°C)")
-        
+            raise ValueError(
+                f"Wind chill {temperature}°C is outside valid range (-128 to 127°C)"
+            )
+
         return bytearray(temperature.to_bytes(1, byteorder="little", signed=True))
 
     @property

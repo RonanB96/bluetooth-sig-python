@@ -78,52 +78,68 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
         """
         if not isinstance(data, dict):
             raise TypeError("CSC measurement data must be a dictionary")
-        
+
         # Build flags based on available data
         flags = 0
-        has_wheel_data = all(k in data for k in ["cumulative_wheel_revolutions", "last_wheel_event_time"])
-        has_crank_data = all(k in data for k in ["cumulative_crank_revolutions", "last_crank_event_time"])
-        
+        has_wheel_data = all(
+            k in data for k in ["cumulative_wheel_revolutions", "last_wheel_event_time"]
+        )
+        has_crank_data = all(
+            k in data for k in ["cumulative_crank_revolutions", "last_crank_event_time"]
+        )
+
         if has_wheel_data:
             flags |= 0x01  # Wheel revolution data present
         if has_crank_data:
             flags |= 0x02  # Crank revolution data present
-        
+
         # Start with flags byte
         result = bytearray([flags])
-        
+
         # Add wheel revolution data if present
         if has_wheel_data:
             wheel_revolutions = int(data["cumulative_wheel_revolutions"])
             wheel_event_time = float(data["last_wheel_event_time"])
-            
+
             # Validate ranges
             if not 0 <= wheel_revolutions <= 0xFFFFFFFF:
-                raise ValueError(f"Wheel revolutions {wheel_revolutions} exceeds uint32 range")
-            
-            wheel_event_time_raw = round(wheel_event_time * 1024)  # Convert to 1/1024 second units
+                raise ValueError(
+                    f"Wheel revolutions {wheel_revolutions} exceeds uint32 range"
+                )
+
+            wheel_event_time_raw = round(
+                wheel_event_time * 1024
+            )  # Convert to 1/1024 second units
             if not 0 <= wheel_event_time_raw <= 0xFFFF:
-                raise ValueError(f"Wheel event time {wheel_event_time_raw} exceeds uint16 range")
-            
+                raise ValueError(
+                    f"Wheel event time {wheel_event_time_raw} exceeds uint16 range"
+                )
+
             result.extend(struct.pack("<I", wheel_revolutions))
             result.extend(struct.pack("<H", wheel_event_time_raw))
-        
+
         # Add crank revolution data if present
         if has_crank_data:
             crank_revolutions = int(data["cumulative_crank_revolutions"])
             crank_event_time = float(data["last_crank_event_time"])
-            
+
             # Validate ranges
             if not 0 <= crank_revolutions <= 0xFFFF:
-                raise ValueError(f"Crank revolutions {crank_revolutions} exceeds uint16 range")
-            
-            crank_event_time_raw = round(crank_event_time * 1024)  # Convert to 1/1024 second units
+                raise ValueError(
+                    f"Crank revolutions {crank_revolutions} exceeds uint16 range"
+                )
+
+            crank_event_time_raw = round(
+                crank_event_time * 1024
+            )  # Convert to 1/1024 second units
             if not 0 <= crank_event_time_raw <= 0xFFFF:
-                raise ValueError(f"Crank event time {crank_event_time_raw} exceeds uint16 range")
-            
+                raise ValueError(
+                    f"Crank event time {crank_event_time_raw} exceeds uint16 range"
+                )
+
             result.extend(struct.pack("<H", crank_revolutions))
             result.extend(struct.pack("<H", crank_event_time_raw))
-        
+
         return result
 
     @property

@@ -95,9 +95,9 @@ class TestNavigationCharacteristics:
         test_data = bytearray(struct.pack("<hh", 1000, -500))
         parsed = char.parse_value(test_data)
 
-        assert abs(parsed["x_axis"] - 1e-4) < 1e-10  # 1000 * 10^-7 = 1e-4
-        assert abs(parsed["y_axis"] - (-5e-5)) < 1e-10  # -500 * 10^-7 = -5e-5
-        assert parsed["unit"] == "T"
+        assert abs(parsed.x_axis - 1e-4) < 1e-10  # 1000 * 10^-7 = 1e-4
+        assert abs(parsed.y_axis - (-5e-5)) < 1e-10  # -500 * 10^-7 = -5e-5
+        assert parsed.unit == "T"
 
     def test_magnetic_flux_density_3d_parsing(self):
         """Test Magnetic Flux Density 3D characteristic parsing."""
@@ -114,10 +114,10 @@ class TestNavigationCharacteristics:
         test_data = bytearray(struct.pack("<hhh", 1000, -500, 2000))
         parsed = char.parse_value(test_data)
 
-        assert abs(parsed["x_axis"] - 1e-4) < 1e-10
-        assert abs(parsed["y_axis"] - (-5e-5)) < 1e-10
-        assert abs(parsed["z_axis"] - 2e-4) < 1e-10
-        assert parsed["unit"] == "T"
+        assert abs(parsed.x_axis - 1e-4) < 1e-10
+        assert abs(parsed.y_axis - (-5e-5)) < 1e-10
+        assert abs(parsed.z_axis - 2e-4) < 1e-10
+        assert parsed.unit == "T"
 
 
 class TestEnvironmentalCharacteristics:

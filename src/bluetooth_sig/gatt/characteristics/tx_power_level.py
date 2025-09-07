@@ -43,11 +43,13 @@ class TxPowerLevelCharacteristic(BaseCharacteristic):
             Encoded bytes representing the TX power level (sint8)
         """
         power_level = int(data)
-        
+
         # Validate range for sint8 (-128 to 127)
         if not -128 <= power_level <= 127:
-            raise ValueError(f"TX power level {power_level} dBm is outside valid range (-128 to 127 dBm)")
-        
+            raise ValueError(
+                f"TX power level {power_level} dBm is outside valid range (-128 to 127 dBm)"
+            )
+
         return bytearray(power_level.to_bytes(1, byteorder="little", signed=True))
 
     @property

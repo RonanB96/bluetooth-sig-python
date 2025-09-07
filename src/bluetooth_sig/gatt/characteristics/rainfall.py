@@ -35,14 +35,16 @@ class RainfallCharacteristic(BaseCharacteristic):
             Encoded bytes representing the rainfall (uint16, 1 mm resolution)
         """
         rainfall = float(data)
-        
+
         # Validate range (reasonable rainfall range)
         if not 0.0 <= rainfall <= 65535.0:  # Max uint16 for mm
-            raise ValueError(f"Rainfall {rainfall} mm is outside valid range (0.0 to 65535.0 mm)")
-        
+            raise ValueError(
+                f"Rainfall {rainfall} mm is outside valid range (0.0 to 65535.0 mm)"
+            )
+
         # Convert to raw value (already in millimeters)
         rainfall_raw = round(rainfall)
-        
+
         return bytearray(rainfall_raw.to_bytes(2, byteorder="little", signed=False))
 
     @property

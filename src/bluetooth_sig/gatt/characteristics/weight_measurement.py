@@ -90,7 +90,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
 
         return result
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:
+    def encode_value(self, data: dict[str, Any]) -> bytearray:  # pylint: disable=too-many-branches # Complex measurement data with many optional fields
         """Encode weight measurement value back to bytes.
 
         Args:
@@ -101,17 +101,17 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
         """
         if not isinstance(data, dict):
             raise TypeError("Weight measurement data must be a dictionary")
-        
+
         if "weight" not in data:
             raise ValueError("Weight measurement data must contain 'weight' key")
-        
+
         weight = float(data["weight"])
         measurement_units = data.get("measurement_units", "metric")
         timestamp = data.get("timestamp")
         user_id = data.get("user_id")
         bmi = data.get("bmi")
         height = data.get("height")
-        
+
         # Build flags based on available data
         flags = 0
         if measurement_units == "imperial":
@@ -124,45 +124,45 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
             flags |= 0x08  # BMI present
         if height is not None:
             flags |= 0x10  # Height present
-        
+
         # Convert weight to raw value based on units
         if flags & 0x01:  # Imperial units (pounds)
             weight_raw = round(weight / 0.01)  # 0.01 lb resolution
         else:  # SI units (kilograms)
             weight_raw = round(weight / 0.005)  # 0.005 kg resolution
-        
+
         if not 0 <= weight_raw <= 0xFFFF:
             raise ValueError(f"Weight value {weight_raw} exceeds uint16 range")
-        
+
         # Start with flags and weight
         result = bytearray([flags])
         result.extend(struct.pack("<H", weight_raw))
-        
+
         # Add optional fields based on flags
         if timestamp is not None:
             result.extend(self._encode_ieee11073_timestamp(timestamp))
-        
+
         if user_id is not None:
             if not 0 <= user_id <= 255:
                 raise ValueError(f"User ID {user_id} exceeds uint8 range")
             result.append(user_id)
-        
+
         if bmi is not None:
             bmi_raw = round(bmi / 0.1)  # 0.1 resolution
             if not 0 <= bmi_raw <= 0xFFFF:
                 raise ValueError(f"BMI value {bmi_raw} exceeds uint16 range")
             result.extend(struct.pack("<H", bmi_raw))
-        
+
         if height is not None:
             if flags & 0x01:  # Imperial units (inches)
                 height_raw = round(height / 0.1)  # 0.1 inch resolution
             else:  # SI units (meters)
                 height_raw = round(height / 0.001)  # 0.001 m resolution
-            
+
             if not 0 <= height_raw <= 0xFFFF:
                 raise ValueError(f"Height value {height_raw} exceeds uint16 range")
             result.extend(struct.pack("<H", height_raw))
-        
+
         return result
 
     @property

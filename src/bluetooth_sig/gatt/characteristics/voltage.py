@@ -43,15 +43,17 @@ class VoltageCharacteristic(BaseCharacteristic):
             Encoded bytes representing the voltage (uint16, 1/64 V resolution)
         """
         voltage = float(data)
-        
+
         # Validate range (reasonable voltage range for uint16 with 1/64 resolution)
         max_voltage = 65535 / 64.0  # ~1024 V
         if not 0.0 <= voltage <= max_voltage:
-            raise ValueError(f"Voltage {voltage} V is outside valid range (0.0 to {max_voltage:.2f} V)")
-        
+            raise ValueError(
+                f"Voltage {voltage} V is outside valid range (0.0 to {max_voltage:.2f} V)"
+            )
+
         # Convert Volts to raw value (multiply by 64 for 1/64 V resolution)
         voltage_raw = round(voltage * 64)
-        
+
         return bytearray(voltage_raw.to_bytes(2, byteorder="little", signed=False))
 
     @property

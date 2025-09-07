@@ -26,7 +26,7 @@ class DeviceNameCharacteristic(BaseCharacteristic):
         """
         if not isinstance(data, str):
             raise TypeError("Device name must be a string")
-        
+
         # Encode as UTF-8 bytes
         return bytearray(data.encode("utf-8"))
 

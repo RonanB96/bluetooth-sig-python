@@ -64,22 +64,22 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         """
         if not isinstance(data, dict):
             raise TypeError("Body composition measurement data must be a dictionary")
-        
+
         # This is a complex characteristic with many optional fields
         # Implementing a basic version that handles the core data
         flags = data.get("flags", 0)
         body_fat_percentage = data.get("body_fat_percentage", 0.0)
-        
+
         # Build basic result with flags and body fat percentage
         result = bytearray()
         result.extend(struct.pack("<H", int(flags)))  # Flags (16-bit)
-        
+
         # Convert body fat percentage to uint16 with 0.1% resolution
         body_fat_raw = round(body_fat_percentage * 10)
         if not 0 <= body_fat_raw <= 0xFFFF:
             raise ValueError(f"Body fat percentage {body_fat_raw} exceeds uint16 range")
         result.extend(struct.pack("<H", body_fat_raw))
-        
+
         # Additional fields would be added based on flags (simplified)
         return result
 

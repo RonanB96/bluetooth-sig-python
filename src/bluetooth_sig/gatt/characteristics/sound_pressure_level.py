@@ -42,14 +42,16 @@ class SoundPressureLevelCharacteristic(BaseCharacteristic):
             Encoded bytes representing the sound pressure level (sint16, 0.1 dB resolution)
         """
         spl = float(data)
-        
+
         # Validate range for sint16 with 0.1 dB resolution (-3276.8 to 3276.7 dB)
         if not -3276.8 <= spl <= 3276.7:
-            raise ValueError(f"Sound pressure level {spl} dB is outside valid range (-3276.8 to 3276.7 dB)")
-        
+            raise ValueError(
+                f"Sound pressure level {spl} dB is outside valid range (-3276.8 to 3276.7 dB)"
+            )
+
         # Convert dB to raw value (multiply by 10 for 0.1 dB resolution)
         spl_raw = round(spl * 10)
-        
+
         return bytearray(spl_raw.to_bytes(2, byteorder="little", signed=True))
 
     @property

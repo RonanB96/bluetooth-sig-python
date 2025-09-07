@@ -52,11 +52,13 @@ class OzoneConcentrationCharacteristic(BaseCharacteristic):
             Encoded bytes representing the ozone concentration (uint16, 1 ppb resolution)
         """
         concentration = int(data)
-        
+
         # Validate range (realistic ozone concentration range)
         if not 0 <= concentration <= 65533:  # Exclude special values 0xFFFE and 0xFFFF
-            raise ValueError(f"Ozone concentration {concentration} ppb is outside valid range (0-65533 ppb)")
-        
+            raise ValueError(
+                f"Ozone concentration {concentration} ppb is outside valid range (0-65533 ppb)"
+            )
+
         return bytearray(concentration.to_bytes(2, byteorder="little", signed=False))
 
     @property
