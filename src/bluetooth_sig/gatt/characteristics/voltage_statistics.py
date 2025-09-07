@@ -77,35 +77,30 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
             average=avg_voltage_raw / 64.0,
         )
 
-    def encode_value(self, data: VoltageStatisticsData | dict[str, float]) -> bytearray:
+    def encode_value(self, data: VoltageStatisticsData) -> bytearray:
         """Encode voltage statistics value back to bytes.
 
         Args:
-            data: VoltageStatisticsData instance or dict with 'minimum', 'maximum', and 'average' voltage values in Volts
+            data: VoltageStatisticsData instance with 'minimum', 'maximum', and 'average' voltage values in Volts
 
         Returns:
             Encoded bytes representing the voltage statistics (3x uint16, 1/64 V resolution)
         """
-        if isinstance(data, dict):
-            # Convert dict to dataclass for backward compatibility
-            if "minimum" not in data or "maximum" not in data or "average" not in data:
-                raise ValueError(
-                    "Voltage statistics data must contain 'minimum', 'maximum', and 'average' keys"
-                )
-            data = VoltageStatisticsData(
-                minimum=float(data["minimum"]),
-                maximum=float(data["maximum"]),
-                average=float(data["average"]),
-            )
-        elif not isinstance(data, VoltageStatisticsData):
+        if not isinstance(data, VoltageStatisticsData):
             raise TypeError(
-                "Voltage statistics data must be VoltageStatisticsData or dictionary"
+                f"Voltage statistics data must be a VoltageStatisticsData, "
+                f"got {type(data).__name__}"
             )
 
         # Convert Volts to raw values (multiply by 64 for 1/64 V resolution)
         min_voltage_raw = round(data.minimum * 64)
         max_voltage_raw = round(data.maximum * 64)
         avg_voltage_raw = round(data.average * 64)
+
+        # Validate range for uint16 (0 to 65535)
+        for name, value in [("minimum", min_voltage_raw), ("maximum", max_voltage_raw), ("average", avg_voltage_raw)]:
+            if not 0 <= value <= 65535:
+                raise ValueError(f"Voltage {name} value {value} exceeds uint16 range")
 
         # Encode as 3 uint16 values (little endian)
         result = bytearray()

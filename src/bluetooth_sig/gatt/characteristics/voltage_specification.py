@@ -67,34 +67,28 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
             minimum=min_voltage_raw / 64.0, maximum=max_voltage_raw / 64.0
         )
 
-    def encode_value(
-        self, data: VoltageSpecificationData | dict[str, float]
-    ) -> bytearray:
+    def encode_value(self, data: VoltageSpecificationData) -> bytearray:
         """Encode voltage specification value back to bytes.
 
         Args:
-            data: VoltageSpecificationData instance or dict with 'minimum' and 'maximum' voltage values in Volts
+            data: VoltageSpecificationData instance with 'minimum' and 'maximum' voltage values in Volts
 
         Returns:
             Encoded bytes representing the voltage specification (2x uint16, 1/64 V resolution)
         """
-        if isinstance(data, dict):
-            # Convert dict to dataclass for backward compatibility
-            if "minimum" not in data or "maximum" not in data:
-                raise ValueError(
-                    "Voltage specification data must contain 'minimum' and 'maximum' keys"
-                )
-            data = VoltageSpecificationData(
-                minimum=float(data["minimum"]), maximum=float(data["maximum"])
-            )
-        elif not isinstance(data, VoltageSpecificationData):
+        if not isinstance(data, VoltageSpecificationData):
             raise TypeError(
-                "Voltage specification data must be VoltageSpecificationData or dictionary"
+                f"Voltage specification data must be a VoltageSpecificationData, "
+                f"got {type(data).__name__}"
             )
-
-        # Convert Volts to raw values (multiply by 64 for 1/64 V resolution)
+            # Convert Volts to raw values (multiply by 64 for 1/64 V resolution)
         min_voltage_raw = round(data.minimum * 64)
         max_voltage_raw = round(data.maximum * 64)
+
+        # Validate range for uint16 (0 to 65535)
+        for name, value in [("minimum", min_voltage_raw), ("maximum", max_voltage_raw)]:
+            if not 0 <= value <= 65535:
+                raise ValueError(f"Voltage {name} value {value} exceeds uint16 range")
 
         # Encode as 2 uint16 values (little endian)
         result = bytearray()

@@ -67,34 +67,28 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
             min=min_current_raw * 0.01, max=max_current_raw * 0.01
         )
 
-    def encode_value(
-        self, data: ElectricCurrentRangeData | dict[str, float]
-    ) -> bytearray:
+    def encode_value(self, data: ElectricCurrentRangeData) -> bytearray:
         """Encode electric current range value back to bytes.
 
         Args:
-            data: ElectricCurrentRangeData instance or dict with 'min' and 'max' current values in Amperes
+            data: ElectricCurrentRangeData instance with 'min' and 'max' current values in Amperes
 
         Returns:
             Encoded bytes representing the current range (2x uint16, 0.01 A resolution)
         """
-        if isinstance(data, dict):
-            # Convert dict to dataclass for backward compatibility
-            if "min" not in data or "max" not in data:
-                raise ValueError(
-                    "Electric current range data must contain 'min' and 'max' keys"
-                )
-            data = ElectricCurrentRangeData(
-                min=float(data["min"]), max=float(data["max"])
-            )
-        elif not isinstance(data, ElectricCurrentRangeData):
+        if not isinstance(data, ElectricCurrentRangeData):
             raise TypeError(
-                "Electric current range data must be ElectricCurrentRangeData or dictionary"
+                f"Electric current range data must be an ElectricCurrentRangeData, "
+                f"got {type(data).__name__}"
             )
-
-        # Convert Amperes to raw values (multiply by 100 for 0.01 A resolution)
+            # Convert Amperes to raw values (multiply by 100 for 0.01 A resolution)
         min_current_raw = round(data.min * 100)
         max_current_raw = round(data.max * 100)
+
+        # Validate range for uint16 (0 to 65535)
+        for name, value in [("minimum", min_current_raw), ("maximum", max_current_raw)]:
+            if not 0 <= value <= 65535:
+                raise ValueError(f"Current {name} value {value} exceeds uint16 range")
 
         # Encode as 2 uint16 values (little endian)
         result = bytearray()

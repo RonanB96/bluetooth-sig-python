@@ -55,34 +55,28 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
 
         return MagneticFluxDensity2DData(x_axis=x_tesla, y_axis=y_tesla)
 
-    def encode_value(
-        self, data: MagneticFluxDensity2DData | dict[str, Any]
-    ) -> bytearray:
+    def encode_value(self, data: MagneticFluxDensity2DData) -> bytearray:
         """Encode magnetic flux density 2D value back to bytes.
 
         Args:
-            data: MagneticFluxDensity2DData instance or dict with 'x_axis' and 'y_axis' values in Tesla
+            data: MagneticFluxDensity2DData instance with 'x_axis' and 'y_axis' values in Tesla
 
         Returns:
             Encoded bytes representing the magnetic flux density (2 x sint16, 10^-7 Tesla resolution)
         """
-        if isinstance(data, dict):
-            # Convert dict to dataclass for backward compatibility
-            if "x_axis" not in data or "y_axis" not in data:
-                raise ValueError(
-                    "Magnetic flux density 2D data must contain 'x_axis' and 'y_axis' keys"
-                )
-            data = MagneticFluxDensity2DData(
-                x_axis=float(data["x_axis"]), y_axis=float(data["y_axis"])
-            )
-        elif not isinstance(data, MagneticFluxDensity2DData):
+        if not isinstance(data, MagneticFluxDensity2DData):
             raise TypeError(
-                "Magnetic flux density 2D data must be MagneticFluxDensity2DData or dictionary"
+                f"Magnetic flux density 2D data must be a MagneticFluxDensity2DData, "
+                f"got {type(data).__name__}"
             )
-
-        # Convert Tesla to raw values (divide by 1e-7 for 10^-7 Tesla resolution)
+            # Convert Tesla to raw values (divide by 1e-7 for 10^-7 Tesla resolution)
         x_raw = round(data.x_axis / 1e-7)
         y_raw = round(data.y_axis / 1e-7)
+
+        # Validate range for sint16 (-32768 to 32767)
+        for name, value in [("x_axis", x_raw), ("y_axis", y_raw)]:
+            if not -32768 <= value <= 32767:
+                raise ValueError(f"Magnetic flux density {name} value {value} exceeds sint16 range")
 
         # Encode as 2 sint16 values (little endian)
         result = bytearray()

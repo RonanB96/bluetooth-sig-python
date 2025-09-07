@@ -64,29 +64,26 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
 
         return SupportedPowerRangeData(minimum=min_power_raw, maximum=max_power_raw)
 
-    def encode_value(self, data: SupportedPowerRangeData | dict[str, int]) -> bytearray:
+    def encode_value(self, data: SupportedPowerRangeData) -> bytearray:
         """Encode supported power range value back to bytes.
 
         Args:
-            data: SupportedPowerRangeData instance or dict with 'minimum' and 'maximum' power values in Watts
+            data: SupportedPowerRangeData instance with 'minimum' and 'maximum' power values in Watts
 
         Returns:
             Encoded bytes representing the power range (2x sint16)
         """
-        if isinstance(data, dict):
-            # Convert dict to dataclass for backward compatibility
-            if "minimum" not in data or "maximum" not in data:
-                raise ValueError(
-                    "Supported power range data must contain 'minimum' and 'maximum' keys"
-                )
-            data = SupportedPowerRangeData(
-                minimum=int(data["minimum"]), maximum=int(data["maximum"])
-            )
-        elif not isinstance(data, SupportedPowerRangeData):
+        if not isinstance(data, SupportedPowerRangeData):
             raise TypeError(
-                "Supported power range data must be SupportedPowerRangeData or dictionary"
+                f"Supported power range data must be a SupportedPowerRangeData, "
+                f"got {type(data).__name__}"
             )
 
+        # Validate range for sint16 (-32768 to 32767)
+        if not -32768 <= data.minimum <= 32767:
+            raise ValueError(f"Minimum power {data.minimum} exceeds sint16 range")
+        if not -32768 <= data.maximum <= 32767:
+            raise ValueError(f"Maximum power {data.maximum} exceeds sint16 range")
         # Encode as 2 sint16 values (little endian)
         result = bytearray()
         result.extend(data.minimum.to_bytes(2, byteorder="little", signed=True))
