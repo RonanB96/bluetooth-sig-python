@@ -84,35 +84,8 @@ class BluetoothSIGTranslator:
         )
 
         if characteristic:
-            try:
-                parsed_value = characteristic.decode_value(bytearray(raw_data))
-                return ParsedData(
-                    uuid=characteristic.char_uuid,
-                    name=getattr(
-                        characteristic,
-                        "_characteristic_name",
-                        characteristic.__class__.__name__,
-                    ),
-                    value=parsed_value,
-                    unit=characteristic.unit,
-                    value_type=getattr(characteristic, "value_type", None),
-                    raw_data=raw_data,
-                    parse_success=True,
-                )
-            except Exception as e:  # pylint: disable=broad-exception-caught
-                # If parsing fails, return error result
-                return ParsedData(
-                    uuid=uuid,
-                    name=getattr(
-                        characteristic,
-                        "_characteristic_name",
-                        characteristic.__class__.__name__,
-                    ),
-                    value=raw_data,
-                    raw_data=raw_data,
-                    parse_success=False,
-                    error_message=str(e),
-                )
+            # Use the new parse_value method which includes automatic validation
+            return characteristic.parse_value(raw_data)
 
         # No parser found, return fallback result
         return ParsedData(

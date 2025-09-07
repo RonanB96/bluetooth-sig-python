@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import re
+import struct
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ...registry.yaml_cross_reference import yaml_cross_reference
 from ..uuid_registry import uuid_registry
+
+if TYPE_CHECKING:
+    from ...core import ParsedData
 
 _yaml_cross_reference_available = yaml_cross_reference is not None
 
@@ -19,12 +23,67 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
 
     Automatically resolves UUID, unit, and value_type from Bluetooth SIG YAML specifications.
     Supports manual overrides via _manual_unit and _manual_value_type attributes.
+    
+    Validation Attributes (optional class-level declarations):
+        min_value: Minimum allowed value for parsed data
+        max_value: Maximum allowed value for parsed data
+        expected_length: Exact expected data length in bytes
+        min_length: Minimum required data length in bytes
+        max_length: Maximum allowed data length in bytes
+        allow_variable_length: Whether variable length data is acceptable
+        expected_type: Expected Python type for parsed values
+        
+    Example usage in subclasses:
+        @dataclass
+        class ExampleCharacteristic(BaseCharacteristic):
+            \"\"\"Example showing validation attributes usage.\"\"\"
+            
+            # Declare validation constraints as dataclass fields
+            expected_length: int = 2
+            min_value: int = 0
+            max_value: int = 65535
+            expected_type: type = int
+            
+            def decode_value(self, data: bytearray) -> int:
+                # Just parse - validation happens automatically in parse_value
+                return DataParser.parse_uint16(data, 0)
+        
+        # Before: BatteryLevelCharacteristic with hardcoded validation
+        # @dataclass
+        # class BatteryLevelCharacteristic(BaseCharacteristic):
+        #     def decode_value(self, data: bytearray) -> int:
+        #         if not data:
+        #             raise ValueError("Battery level data must be at least 1 byte")
+        #         level = data[0]
+        #         if not 0 <= level <= 100:
+        #             raise ValueError(f"Battery level must be 0-100, got {level}")
+        #         return level
+        
+        # After: BatteryLevelCharacteristic with declarative validation
+        # @dataclass
+        # class BatteryLevelCharacteristic(BaseCharacteristic):
+        #     expected_length: int = 1
+        #     min_value: int = 0
+        #     max_value: int = 100
+        #     expected_type: type = int
+        #     
+        #     def decode_value(self, data: bytearray) -> int:
+        #         return data[0]  # Validation happens automatically
     """
 
     # Instance variables
     uuid: str
     properties: set[str] = field(default_factory=set)
     value_type: str = field(default="string")
+    
+    # Optional validation attributes (can be overridden in subclasses)
+    min_value: int | float | None = field(default=None)
+    max_value: int | float | None = field(default=None)
+    expected_length: int | None = field(default=None)
+    min_length: int | None = field(default=None)
+    max_length: int | None = field(default=None)
+    allow_variable_length: bool = field(default=False)
+    expected_type: type | None = field(default=None)
 
     def __post_init__(self):
         """Initialize characteristic with UUID from registry based on class name.
@@ -202,6 +261,77 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
             NotImplementedError: This is an abstract method
         """
         raise NotImplementedError
+
+    def _validate_range(self, value: Any) -> None:
+        """Validate value is within min/max range."""
+        if self.min_value is not None and value < self.min_value:
+            raise ValueError(f"Value {value} below minimum {self.min_value}")
+        if self.max_value is not None and value > self.max_value:
+            raise ValueError(f"Value {value} exceeds maximum {self.max_value}")
+
+    def _validate_length(self, data: bytes | bytearray) -> None:
+        """Validate data length meets requirements."""
+        length = len(data)
+        if self.expected_length is not None and length != self.expected_length:
+            raise ValueError(f"Expected {self.expected_length} bytes, got {length}")
+        if self.min_length is not None and length < self.min_length:
+            raise ValueError(f"Minimum {self.min_length} bytes required, got {length}")
+        if self.max_length is not None and length > self.max_length:
+            raise ValueError(f"Maximum {self.max_length} bytes allowed, got {length}")
+
+    def _validate_value(self, value: Any) -> None:
+        """Validate parsed value meets all requirements."""
+        if self.expected_type is not None and not isinstance(value, self.expected_type):
+            raise TypeError(f"Expected {self.expected_type.__name__}, got {type(value).__name__}")
+        self._validate_range(value)
+
+    def parse_value(self, data: bytes | bytearray) -> ParsedData:
+        """Parse characteristic data with automatic validation.
+        
+        This method automatically validates input data length and parsed values
+        based on class-level validation attributes, then returns a ParsedData
+        object with rich metadata.
+        
+        Args:
+            data: Raw bytes from the characteristic read
+            
+        Returns:
+            ParsedData object with parsed value and metadata
+        """
+        # Import here to avoid circular imports
+        from ...core import ParsedData
+        
+        # Call subclass implementation with validation
+        try:
+            # Validate input data length
+            self._validate_length(data)
+            
+            parsed_value = self.decode_value(bytearray(data))
+            
+            # Validate parsed value
+            self._validate_value(parsed_value)
+            
+            return ParsedData(
+                uuid=self.char_uuid,
+                name=getattr(self, "_characteristic_name", self.__class__.__name__),
+                value=parsed_value,
+                unit=self.unit,
+                value_type=getattr(self, "value_type", None),
+                raw_data=bytes(data),
+                parse_success=True,
+                error_message=None
+            )
+        except (ValueError, TypeError, struct.error) as e:
+            return ParsedData(
+                uuid=self.char_uuid,
+                name=getattr(self, "_characteristic_name", self.__class__.__name__),
+                value=None,
+                unit=self.unit,
+                value_type=getattr(self, "value_type", None),
+                raw_data=bytes(data),
+                parse_success=False,
+                error_message=str(e)
+            )
 
     @abstractmethod
     def encode_value(self, data: Any) -> bytearray:
