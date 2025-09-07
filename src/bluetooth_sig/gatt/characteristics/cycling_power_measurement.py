@@ -8,6 +8,27 @@ from .base import BaseCharacteristic
 
 
 @dataclass
+class CyclingPowerMeasurementData:
+    """Parsed data from Cycling Power Measurement characteristic."""
+    
+    flags: int
+    instantaneous_power: int  # Watts
+    pedal_power_balance: int | None = None
+    accumulated_energy: int | None = None  # kJ
+    wheel_revolutions: int | None = None
+    last_wheel_event_time: float | None = None  # seconds
+    crank_revolutions: int | None = None
+    last_crank_event_time: float | None = None  # seconds
+
+    def __post_init__(self):
+        """Validate cycling power measurement data."""
+        if not 0 <= self.flags <= 65535:
+            raise ValueError("Flags must be a uint16 value (0-65535)")
+        if not 0 <= self.instantaneous_power <= 65535:
+            raise ValueError("Instantaneous power must be a uint16 value (0-65535)")
+
+
+@dataclass
 class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
     """Cycling Power Measurement characteristic (0x2A63).
 
@@ -17,7 +38,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Cycling Power Measurement"
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:
+    def parse_value(self, data: bytearray) -> CyclingPowerMeasurementData:
         """Parse cycling power measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +
@@ -28,7 +49,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             data: Raw bytearray from BLE characteristic
 
         Returns:
-            Dict containing parsed cycling power data with metadata
+            CyclingPowerMeasurementData containing parsed power measurement data
 
         Raises:
             ValueError: If data format is invalid
@@ -96,32 +117,41 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             )
             offset += 4
 
-        return result
+        # For now, convert result dict to dataclass at the end
+        # (Full conversion would require updating all the parsing logic)
+        return CyclingPowerMeasurementData(
+            flags=result["flags"],
+            instantaneous_power=result["instantaneous_power"],
+            pedal_power_balance=result.get("pedal_power_balance"),
+            accumulated_energy=result.get("accumulated_energy"),
+            wheel_revolutions=result.get("cumulative_wheel_revolutions"),
+            last_wheel_event_time=result.get("last_wheel_event_time"),
+            crank_revolutions=result.get("cumulative_crank_revolutions"),
+            last_crank_event_time=result.get("last_crank_event_time"),
+        )
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements # Complex cycling power measurement with numerous optional fields
+    def encode_value(self, data: CyclingPowerMeasurementData) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements # Complex cycling power measurement with numerous optional fields
         """Encode cycling power measurement value back to bytes.
 
         Args:
-            data: Dictionary containing cycling power measurement data
+            data: CyclingPowerMeasurementData containing cycling power measurement data
 
         Returns:
             Encoded bytes representing the power measurement
         """
-        if not isinstance(data, dict):
-            raise TypeError("Cycling power measurement data must be a dictionary")
-
-        if "instantaneous_power" not in data:
-            raise ValueError(
-                "Power measurement data must contain 'instantaneous_power' key"
+        if not isinstance(data, CyclingPowerMeasurementData):
+            raise TypeError(
+                f"Cycling power measurement data must be a CyclingPowerMeasurementData, "
+                f"got {type(data).__name__}"
             )
 
-        instantaneous_power = int(data["instantaneous_power"])
-        pedal_power_balance = data.get("pedal_power_balance")
-        accumulated_energy = data.get("accumulated_energy")
-        wheel_revolutions = data.get("wheel_revolutions")
-        wheel_event_time = data.get("wheel_event_time")
-        crank_revolutions = data.get("crank_revolutions")
-        crank_event_time = data.get("crank_event_time")
+        instantaneous_power = data.instantaneous_power
+        pedal_power_balance = data.pedal_power_balance
+        accumulated_energy = data.accumulated_energy
+        wheel_revolutions = data.wheel_revolutions
+        wheel_event_time = data.last_wheel_event_time
+        crank_revolutions = data.crank_revolutions
+        crank_event_time = data.last_crank_event_time
 
         # Build flags based on available data
         flags = 0

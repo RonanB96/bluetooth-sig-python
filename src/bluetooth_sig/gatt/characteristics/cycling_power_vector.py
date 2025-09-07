@@ -8,6 +8,23 @@ from .base import BaseCharacteristic
 
 
 @dataclass
+class CyclingPowerVectorData:
+    """Parsed data from Cycling Power Vector characteristic."""
+    
+    flags: int
+    # Will be populated by parsing logic
+    crank_revolution_data: dict | None = None
+    first_crank_measurement_angle: int | None = None
+    instantaneous_force_magnitude_array: list[int] | None = None
+    instantaneous_torque_magnitude_array: list[int] | None = None
+
+    def __post_init__(self):
+        """Validate cycling power vector data."""
+        if not 0 <= self.flags <= 255:
+            raise ValueError("Flags must be a uint8 value (0-255)")
+
+
+@dataclass
 class CyclingPowerVectorCharacteristic(BaseCharacteristic):
     """Cycling Power Vector characteristic (0x2A64).
 
@@ -17,7 +34,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Cycling Power Vector"
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:
+    def parse_value(self, data: bytearray) -> CyclingPowerVectorData:
         """Parse cycling power vector data according to Bluetooth specification.
 
         Format: Flags(1) + Crank Revolution Data(2) + Last Crank Event Time(2) +
@@ -88,19 +105,29 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
             if torque_magnitudes:
                 result["instantaneous_torque_magnitudes"] = torque_magnitudes
 
-        return result
+        # Convert dict to dataclass at the end (simplified conversion)
+        return CyclingPowerVectorData(
+            flags=result["flags"],
+            crank_revolution_data=result.get("crank_revolution_data"),
+            first_crank_measurement_angle=result.get("first_crank_measurement_angle"),
+            instantaneous_force_magnitude_array=result.get("instantaneous_force_magnitudes"),
+            instantaneous_torque_magnitude_array=result.get("instantaneous_torque_magnitudes"),
+        )
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:  # pylint: disable=too-many-branches # Complex cycling power vector with optional fields
+    def encode_value(self, data: CyclingPowerVectorData) -> bytearray:  # pylint: disable=too-many-branches # Complex cycling power vector with optional fields
         """Encode cycling power vector value back to bytes.
 
         Args:
-            data: Dictionary containing cycling power vector data
+            data: CyclingPowerVectorData containing cycling power vector data
 
         Returns:
             Encoded bytes representing the power vector
         """
-        if not isinstance(data, dict):
-            raise TypeError("Cycling power vector data must be a dictionary")
+        if not isinstance(data, CyclingPowerVectorData):
+            raise TypeError(
+                f"Cycling power vector data must be a CyclingPowerVectorData, "
+                f"got {type(data).__name__}"
+            )
 
         # Required fields
         required_fields = [
