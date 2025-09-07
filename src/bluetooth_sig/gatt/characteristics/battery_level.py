@@ -21,6 +21,20 @@ class BatteryLevelData:
         if self.unit != "%":
             raise ValueError(f"Battery level unit must be '%', got {self.unit}")
 
+    def __eq__(self, other) -> bool:
+        """Support comparison with integer values for backward compatibility."""
+        if isinstance(other, int):
+            return self.level == other
+        return super().__eq__(other)
+
+    def __int__(self) -> int:
+        """Support integer conversion for backward compatibility."""
+        return self.level
+
+    def __str__(self) -> str:
+        """String representation showing the level."""
+        return str(self.level)
+
 
 @dataclass
 class BatteryLevelCharacteristic(BaseCharacteristic):

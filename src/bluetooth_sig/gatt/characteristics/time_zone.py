@@ -46,11 +46,13 @@ class TimeZoneCharacteristic(BaseCharacteristic):
             return f"UTC{sign}{hours_abs:02d}:00"
         return f"UTC{sign}{hours_abs:02d}:{minutes:02d}"
 
-
     def encode_value(self, data) -> bytearray:
         """Encode value back to bytes - basic stub implementation."""
         # TODO: Implement proper encoding
-        raise NotImplementedError("encode_value not yet implemented for this characteristic")
+        raise NotImplementedError(
+            "encode_value not yet implemented for this characteristic"
+        )
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

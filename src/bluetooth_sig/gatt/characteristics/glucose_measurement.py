@@ -94,11 +94,13 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
 
         return result
 
-
     def encode_value(self, data) -> bytearray:
         """Encode value back to bytes - basic stub implementation."""
         # TODO: Implement proper encoding
-        raise NotImplementedError("encode_value not yet implemented for this characteristic")
+        raise NotImplementedError(
+            "encode_value not yet implemented for this characteristic"
+        )
+
     def _get_glucose_type_name(self, glucose_type: int) -> str:
         """Get human-readable glucose type name."""
         types = {

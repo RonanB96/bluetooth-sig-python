@@ -33,11 +33,13 @@ class ElectricCurrentCharacteristic(BaseCharacteristic):
         current_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         return current_raw * 0.01
 
-
     def encode_value(self, data) -> bytearray:
         """Encode value back to bytes - basic stub implementation."""
         # TODO: Implement proper encoding
-        raise NotImplementedError("encode_value not yet implemented for this characteristic")
+        raise NotImplementedError(
+            "encode_value not yet implemented for this characteristic"
+        )
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

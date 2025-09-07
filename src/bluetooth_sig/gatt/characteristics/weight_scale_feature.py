@@ -48,11 +48,13 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
         return features
 
-
     def encode_value(self, data) -> bytearray:
         """Encode value back to bytes - basic stub implementation."""
         # TODO: Implement proper encoding
-        raise NotImplementedError("encode_value not yet implemented for this characteristic")
+        raise NotImplementedError(
+            "encode_value not yet implemented for this characteristic"
+        )
+
     def _get_weight_resolution(self, features: int) -> str:
         """Extract weight measurement resolution from features bitmask.
 

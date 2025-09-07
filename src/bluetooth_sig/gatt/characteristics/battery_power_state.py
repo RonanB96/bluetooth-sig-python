@@ -18,12 +18,7 @@ class BatteryPresentState(IntEnum):
     RESERVED = 3
 
     def __str__(self) -> str:
-        return {
-            0: "unknown",
-            1: "not_present",
-            2: "present",
-            3: "reserved"
-        }[self.value]
+        return {0: "unknown", 1: "not_present", 2: "present", 3: "reserved"}[self.value]
 
     def __eq__(self, other) -> bool:
         """Support comparison with string values for backward compatibility."""
@@ -53,12 +48,9 @@ class BatteryChargeState(IntEnum):
     NOT_CHARGING = 3
 
     def __str__(self) -> str:
-        return {
-            0: "unknown",
-            1: "charging",
-            2: "discharging",
-            3: "not_charging"
-        }[self.value]
+        return {0: "unknown", 1: "charging", 2: "discharging", 3: "not_charging"}[
+            self.value
+        ]
 
     def __eq__(self, other) -> bool:
         """Support comparison with string values for backward compatibility."""
@@ -88,12 +80,7 @@ class BatteryChargeLevel(IntEnum):
     CRITICALLY_LOW = 3
 
     def __str__(self) -> str:
-        return {
-            0: "unknown",
-            1: "good",
-            2: "low",
-            3: "critically_low"
-        }[self.value]
+        return {0: "unknown", 1: "good", 2: "low", 3: "critically_low"}[self.value]
 
     def __eq__(self, other) -> bool:
         """Support comparison with string values for backward compatibility."""
@@ -131,7 +118,7 @@ class BatteryChargingType(IntEnum):
             2: "constant_voltage",
             3: "trickle",
             4: "float",
-            5: "constant_power"
+            5: "constant_power",
         }[self.value]
 
     def __eq__(self, other) -> bool:
@@ -170,7 +157,7 @@ class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
         """Validate and convert battery power state data."""
         if not 0 <= self.raw_value <= 255:
             raise ValueError(f"Raw value must be 0-255, got {self.raw_value}")
-        
+
         # Convert string values to enums for type safety
         if isinstance(self.battery_present, str):
             present_map = {
@@ -179,8 +166,10 @@ class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
                 "present": BatteryPresentState.PRESENT,
                 "reserved": BatteryPresentState.RESERVED,
             }
-            self.battery_present = present_map.get(self.battery_present, BatteryPresentState.UNKNOWN)
-        
+            self.battery_present = present_map.get(
+                self.battery_present, BatteryPresentState.UNKNOWN
+            )
+
         if isinstance(self.battery_charge_state, str):
             state_map = {
                 "unknown": BatteryChargeState.UNKNOWN,
@@ -188,8 +177,10 @@ class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
                 "discharging": BatteryChargeState.DISCHARGING,
                 "not_charging": BatteryChargeState.NOT_CHARGING,
             }
-            self.battery_charge_state = state_map.get(self.battery_charge_state, BatteryChargeState.UNKNOWN)
-        
+            self.battery_charge_state = state_map.get(
+                self.battery_charge_state, BatteryChargeState.UNKNOWN
+            )
+
         if isinstance(self.battery_charge_level, str):
             level_map = {
                 "unknown": BatteryChargeLevel.UNKNOWN,
@@ -197,8 +188,10 @@ class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
                 "low": BatteryChargeLevel.LOW,
                 "critically_low": BatteryChargeLevel.CRITICALLY_LOW,
             }
-            self.battery_charge_level = level_map.get(self.battery_charge_level, BatteryChargeLevel.UNKNOWN)
-        
+            self.battery_charge_level = level_map.get(
+                self.battery_charge_level, BatteryChargeLevel.UNKNOWN
+            )
+
         if isinstance(self.battery_charging_type, str):
             type_map = {
                 "unknown": BatteryChargingType.UNKNOWN,
@@ -208,7 +201,9 @@ class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
                 "float": BatteryChargingType.FLOAT,
                 "constant_power": BatteryChargingType.CONSTANT_POWER,
             }
-            self.battery_charging_type = type_map.get(self.battery_charging_type, BatteryChargingType.UNKNOWN)
+            self.battery_charging_type = type_map.get(
+                self.battery_charging_type, BatteryChargingType.UNKNOWN
+            )
 
 
 # Module-level maps to keep functions small and satisfy static analysis limits
@@ -223,7 +218,7 @@ _CHARGE_LEVEL_MAP = {
     0: BatteryChargeLevel.UNKNOWN,
     1: BatteryChargeLevel.GOOD,
     2: BatteryChargeLevel.LOW,
-    3: BatteryChargeLevel.CRITICALLY_LOW
+    3: BatteryChargeLevel.CRITICALLY_LOW,
 }
 
 _CHARGING_TYPE_MAP = {
@@ -317,21 +312,12 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
 
         # Two-byte variant: first byte holds basic state, second byte encodes
         # charging type (bits 0-2) and fault bitmap (bits 3-7)
-        battery_charging_type = "unknown"
         charging_fault_reason: Any = None
 
         if len(data) >= 2:
             basic = self._parse_basic_state(state_raw)
 
             second = int(data[1])
-            charging_type_map = {
-                0: "unknown",
-                1: "constant_current",
-                2: "constant_voltage",
-                3: "trickle",
-                4: "constant_power",
-            }
-            battery_charging_type = charging_type_map.get(second & 0x07, "unknown")
 
             fault_raw = (second >> 3) & 0x1F
             if fault_raw != 0:
@@ -421,7 +407,11 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         Returns a dictionary with keys matching the public parse_value output.
         """
         # battery present (bit 0): 0 = No/Not present, 1 = Present
-        battery_present = BatteryPresentState.PRESENT if (power_state_raw & 0x01) == 1 else BatteryPresentState.NOT_PRESENT
+        battery_present = (
+            BatteryPresentState.PRESENT
+            if (power_state_raw & 0x01) == 1
+            else BatteryPresentState.NOT_PRESENT
+        )
 
         # Wired external power: bits 1-2 (2-bit value: 0=No,1=Yes,2=Unknown,3=RFU)
         wired_external_power_connected = ((power_state_raw >> 1) & 0x03) == 1
@@ -431,11 +421,15 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
 
         # Charge state: bits 5-6
         charge_state_raw = (power_state_raw >> 5) & 0x03
-        battery_charge_state = _CHARGE_STATE_MAP_16.get(charge_state_raw, BatteryChargeState.UNKNOWN)
+        battery_charge_state = _CHARGE_STATE_MAP_16.get(
+            charge_state_raw, BatteryChargeState.UNKNOWN
+        )
 
         # Charge level: bits 7-8
         charge_level_raw = (power_state_raw >> 7) & 0x03
-        battery_charge_level = _CHARGE_LEVEL_MAP.get(charge_level_raw, BatteryChargeLevel.UNKNOWN)
+        battery_charge_level = _CHARGE_LEVEL_MAP.get(
+            charge_level_raw, BatteryChargeLevel.UNKNOWN
+        )
 
         # charging type: bits 9-11
         battery_charging_type = _CHARGING_TYPE_MAP.get(
@@ -475,16 +469,20 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         wireless_external_power_connected = bool((state_raw >> 3) & 0x01)
 
         charge_state_raw = (state_raw >> 4) & 0x03
-        battery_charge_state = _BASIC_CHARGE_STATE_MAP.get(charge_state_raw, BatteryChargeState.UNKNOWN)
+        battery_charge_state = _BASIC_CHARGE_STATE_MAP.get(
+            charge_state_raw, BatteryChargeState.UNKNOWN
+        )
 
         charge_level_raw = (state_raw >> 6) & 0x03
         charge_level_map = {
             0: BatteryChargeLevel.UNKNOWN,
             1: BatteryChargeLevel.CRITICALLY_LOW,
             2: BatteryChargeLevel.LOW,
-            3: BatteryChargeLevel.GOOD
+            3: BatteryChargeLevel.GOOD,
         }
-        battery_charge_level = charge_level_map.get(charge_level_raw, BatteryChargeLevel.UNKNOWN)
+        battery_charge_level = charge_level_map.get(
+            charge_level_raw, BatteryChargeLevel.UNKNOWN
+        )
 
         return {
             "battery_present": battery_present,
