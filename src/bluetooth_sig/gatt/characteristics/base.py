@@ -203,6 +203,22 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def encode_value(self, data: Any) -> bytearray:
+        """Encode the characteristic's value to raw bytes.
+
+        Args:
+            data: Dataclass instance or value to encode
+
+        Returns:
+            Encoded bytes for characteristic write
+
+        Raises:
+            ValueError: If data is invalid for encoding
+            NotImplementedError: Must be implemented by subclasses
+        """
+        raise NotImplementedError
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement for this characteristic.
@@ -367,3 +383,65 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
             Decoded UTF-8 string with null bytes stripped
         """
         return data.decode("utf-8", errors="replace").rstrip("\x00")
+
+    # Reusable helper methods for common parsing/encoding patterns
+
+    def _parse_uint8(self, data: bytearray, offset: int = 0) -> int:
+        """Parse unsigned 8-bit integer."""
+        if len(data) < offset + 1:
+            raise ValueError(f"Insufficient data for uint8 at offset {offset}")
+        return data[offset]
+
+    def _parse_uint16(self, data: bytearray, offset: int = 0) -> int:
+        """Parse unsigned 16-bit integer (little-endian)."""
+        if len(data) < offset + 2:
+            raise ValueError(f"Insufficient data for uint16 at offset {offset}")
+        return int.from_bytes(data[offset:offset + 2], byteorder="little", signed=False)
+
+    def _parse_uint32(self, data: bytearray, offset: int = 0) -> int:
+        """Parse unsigned 32-bit integer (little-endian)."""
+        if len(data) < offset + 4:
+            raise ValueError(f"Insufficient data for uint32 at offset {offset}")
+        return int.from_bytes(data[offset:offset + 4], byteorder="little", signed=False)
+
+    def _parse_sint16(self, data: bytearray, offset: int = 0) -> int:
+        """Parse signed 16-bit integer (little-endian)."""
+        if len(data) < offset + 2:
+            raise ValueError(f"Insufficient data for sint16 at offset {offset}")
+        return int.from_bytes(data[offset:offset + 2], byteorder="little", signed=True)
+
+    def _parse_sint32(self, data: bytearray, offset: int = 0) -> int:
+        """Parse signed 32-bit integer (little-endian)."""
+        if len(data) < offset + 4:
+            raise ValueError(f"Insufficient data for sint32 at offset {offset}")
+        return int.from_bytes(data[offset:offset + 4], byteorder="little", signed=True)
+
+    def _encode_uint8(self, value: int) -> bytearray:
+        """Encode unsigned 8-bit integer."""
+        if not 0 <= value <= 255:
+            raise ValueError(f"Value {value} out of range for uint8 (0-255)")
+        return bytearray([value])
+
+    def _encode_uint16(self, value: int) -> bytearray:
+        """Encode unsigned 16-bit integer (little-endian)."""
+        if not 0 <= value <= 65535:
+            raise ValueError(f"Value {value} out of range for uint16 (0-65535)")
+        return bytearray(value.to_bytes(2, byteorder="little", signed=False))
+
+    def _encode_uint32(self, value: int) -> bytearray:
+        """Encode unsigned 32-bit integer (little-endian)."""
+        if not 0 <= value <= 4294967295:
+            raise ValueError(f"Value {value} out of range for uint32 (0-4294967295)")
+        return bytearray(value.to_bytes(4, byteorder="little", signed=False))
+
+    def _encode_sint16(self, value: int) -> bytearray:
+        """Encode signed 16-bit integer (little-endian)."""
+        if not -32768 <= value <= 32767:
+            raise ValueError(f"Value {value} out of range for sint16 (-32768 to 32767)")
+        return bytearray(value.to_bytes(2, byteorder="little", signed=True))
+
+    def _encode_sint32(self, value: int) -> bytearray:
+        """Encode signed 32-bit integer (little-endian)."""
+        if not -2147483648 <= value <= 2147483647:
+            raise ValueError(f"Value {value} out of range for sint32 (-2147483648 to 2147483647)")
+        return bytearray(value.to_bytes(4, byteorder="little", signed=True))

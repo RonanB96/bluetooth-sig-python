@@ -62,3 +62,9 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
             result["total_distance"] = total_distance_raw / 10.0  # Convert to meters
 
         return result
+
+
+    def encode_value(self, data) -> bytearray:
+        """Encode value back to bytes - basic stub implementation."""
+        # TODO: Implement proper encoding
+        raise NotImplementedError("encode_value not yet implemented for this characteristic")

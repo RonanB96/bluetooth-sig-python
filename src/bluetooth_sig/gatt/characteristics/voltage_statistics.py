@@ -43,6 +43,11 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
             "average": avg_voltage_raw / 64.0,
         }
 
+
+    def encode_value(self, data) -> bytearray:
+        """Encode value back to bytes - basic stub implementation."""
+        # TODO: Implement proper encoding
+        raise NotImplementedError("encode_value not yet implemented for this characteristic")
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

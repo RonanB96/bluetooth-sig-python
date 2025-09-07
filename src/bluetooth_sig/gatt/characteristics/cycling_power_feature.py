@@ -37,6 +37,11 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
         feature_mask = struct.unpack("<I", data[:4])[0]
         return feature_mask
 
+
+    def encode_value(self, data) -> bytearray:
+        """Encode value back to bytes - basic stub implementation."""
+        # TODO: Implement proper encoding
+        raise NotImplementedError("encode_value not yet implemented for this characteristic")
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

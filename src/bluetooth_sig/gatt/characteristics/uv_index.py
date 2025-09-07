@@ -20,6 +20,11 @@ class UVIndexCharacteristic(BaseCharacteristic):
         # UV Index is a uint8 value (0-11+ scale)
         return data[0]
 
+
+    def encode_value(self, data) -> bytearray:
+        """Encode value back to bytes - basic stub implementation."""
+        # TODO: Implement proper encoding
+        raise NotImplementedError("encode_value not yet implemented for this characteristic")
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

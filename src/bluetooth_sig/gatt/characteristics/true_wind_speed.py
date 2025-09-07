@@ -19,3 +19,9 @@ class TrueWindSpeedCharacteristic(BaseCharacteristic):
         # Convert uint16 (little endian) to wind speed in m/s
         wind_speed_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         return wind_speed_raw * 0.01
+
+
+    def encode_value(self, data) -> bytearray:
+        """Encode value back to bytes - basic stub implementation."""
+        # TODO: Implement proper encoding
+        raise NotImplementedError("encode_value not yet implemented for this characteristic")

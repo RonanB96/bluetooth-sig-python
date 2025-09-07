@@ -89,3 +89,9 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
                 result["instantaneous_torque_magnitudes"] = torque_magnitudes
 
         return result
+
+
+    def encode_value(self, data) -> bytearray:
+        """Encode value back to bytes - basic stub implementation."""
+        # TODO: Implement proper encoding
+        raise NotImplementedError("encode_value not yet implemented for this characteristic")

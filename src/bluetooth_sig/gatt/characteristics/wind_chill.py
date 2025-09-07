@@ -20,6 +20,11 @@ class WindChillCharacteristic(BaseCharacteristic):
         wind_chill_raw = int.from_bytes(data[:1], byteorder="little", signed=True)
         return float(wind_chill_raw)
 
+
+    def encode_value(self, data) -> bytearray:
+        """Encode value back to bytes - basic stub implementation."""
+        # TODO: Implement proper encoding
+        raise NotImplementedError("encode_value not yet implemented for this characteristic")
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

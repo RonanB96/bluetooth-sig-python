@@ -33,3 +33,9 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
         y_tesla = y_raw * 1e-7  # Convert to Tesla
 
         return {"x_axis": x_tesla, "y_axis": y_tesla, "unit": "T"}
+
+
+    def encode_value(self, data) -> bytearray:
+        """Encode value back to bytes - basic stub implementation."""
+        # TODO: Implement proper encoding
+        raise NotImplementedError("encode_value not yet implemented for this characteristic")
