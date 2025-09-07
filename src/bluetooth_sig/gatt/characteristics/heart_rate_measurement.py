@@ -31,12 +31,11 @@ class SensorContactState(IntEnum):
     @classmethod
     def from_flags(cls, flags: int) -> SensorContactState:
         """Create enum from heart rate flags."""
-        if not (flags & 0x02):  # Sensor Contact Supported bit not set
+        if not flags & 0x02:  # Sensor Contact Supported bit not set
             return cls.NOT_SUPPORTED
-        elif flags & 0x04:  # Sensor Contact Detected bit set
+        if flags & 0x04:  # Sensor Contact Detected bit set
             return cls.DETECTED
-        else:
-            return cls.NOT_DETECTED
+        return cls.NOT_DETECTED
 
 
 @dataclass
@@ -173,8 +172,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
         for rr_interval in data.rr_intervals:
             # Convert seconds to 1/1024 second units
             rr_raw = round(rr_interval * 1024)
-            if rr_raw > 65535:
-                rr_raw = 65535  # Clamp to max value
+            rr_raw = min(rr_raw, 65535)  # Clamp to max value
             result.extend(self._encode_uint16(rr_raw))
 
         return result

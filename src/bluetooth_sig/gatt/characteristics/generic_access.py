@@ -41,6 +41,18 @@ class AppearanceCharacteristic(BaseCharacteristic):
 
         return int.from_bytes(data[:2], byteorder="little", signed=False)
 
+    def encode_value(self, data) -> bytearray:
+        """Encode appearance value back to bytes.
+
+        Args:
+            data: Appearance value as integer
+
+        Returns:
+            Encoded bytes representing the appearance
+        """
+        appearance = int(data)
+        return self._encode_uint16(appearance)
+
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""

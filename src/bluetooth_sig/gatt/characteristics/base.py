@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 import struct
 from abc import ABC, abstractmethod
@@ -455,3 +456,103 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
                 f"Value {value} out of range for sint32 (-2147483648 to 2147483647)"
             )
         return bytearray(value.to_bytes(4, byteorder="little", signed=True))
+
+    def _encode_ieee11073_sfloat(self, value: float) -> bytearray:
+        """Encode Python float to IEEE-11073 16-bit SFLOAT.
+
+        Args:
+            value: Float value to encode
+
+        Returns:
+            2-byte bytearray containing the SFLOAT representation
+        """
+        if math.isnan(value):
+            return bytearray([0xFF, 0x07])  # NaN
+        if math.isinf(value):
+            if value > 0:
+                return bytearray([0xFE, 0x07])  # +INFINITY
+            return bytearray([0x02, 0x08])  # -INFINITY
+
+        # Find appropriate exponent and mantissa
+        if value == 0:
+            return bytearray([0x00, 0x00])
+
+        # Determine sign
+        sign = -1 if value < 0 else 1
+        abs_value = abs(value)
+
+        # Find exponent
+        exponent = 0
+        mantissa = abs_value
+
+        # Scale to get mantissa in range
+        while mantissa >= 2048 and exponent < 7:  # Max mantissa is 2047
+            mantissa /= 10
+            exponent += 1
+
+        while mantissa < 204.8 and exponent > -8:  # Min mantissa for precision
+            mantissa *= 10
+            exponent -= 1
+
+        # Round mantissa to integer
+        mantissa = round(mantissa) * sign
+
+        # Clamp values to valid ranges
+        if mantissa > 2047:
+            mantissa = 2047
+        elif mantissa < -2048:
+            mantissa = -2048
+
+        if exponent > 7:
+            exponent = 7
+        elif exponent < -8:
+            exponent = -8
+
+        # Encode as 16-bit value
+        if mantissa < 0:
+            mantissa += 4096  # Convert to unsigned representation
+
+        if exponent < 0:
+            exponent += 16  # Convert to unsigned representation
+
+        sfloat_val = (exponent << 12) | (mantissa & 0x0FFF)
+        return bytearray(sfloat_val.to_bytes(2, byteorder="little", signed=False))
+
+    def _encode_ieee11073_timestamp(self, timestamp: dict[str, int]) -> bytearray:
+        """Encode timestamp to IEEE-11073 7-byte format.
+
+        Args:
+            timestamp: Dictionary with keys: year, month, day, hours, minutes, seconds
+
+        Returns:
+            7-byte bytearray containing the timestamp
+        """
+        required_keys = {"year", "month", "day", "hours", "minutes", "seconds"}
+        if not all(key in timestamp for key in required_keys):
+            raise ValueError(f"Timestamp must contain all keys: {required_keys}")
+
+        # Validate ranges
+        if not 1582 <= timestamp["year"] <= 9999:
+            raise ValueError(f"Year {timestamp['year']} out of range (1582-9999)")
+        if not 1 <= timestamp["month"] <= 12:
+            raise ValueError(f"Month {timestamp['month']} out of range (1-12)")
+        if not 1 <= timestamp["day"] <= 31:
+            raise ValueError(f"Day {timestamp['day']} out of range (1-31)")
+        if not 0 <= timestamp["hours"] <= 23:
+            raise ValueError(f"Hours {timestamp['hours']} out of range (0-23)")
+        if not 0 <= timestamp["minutes"] <= 59:
+            raise ValueError(f"Minutes {timestamp['minutes']} out of range (0-59)")
+        if not 0 <= timestamp["seconds"] <= 59:
+            raise ValueError(f"Seconds {timestamp['seconds']} out of range (0-59)")
+
+        return bytearray(
+            struct.pack(
+                "<HBBBBB",
+                timestamp["year"],
+                timestamp["month"],
+                timestamp["day"],
+                timestamp["hours"],
+                timestamp["minutes"],
+                timestamp["seconds"],
+            )
+        )

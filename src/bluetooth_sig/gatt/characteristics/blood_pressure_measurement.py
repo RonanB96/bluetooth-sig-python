@@ -1,10 +1,50 @@
 """Blood Pressure Measurement characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
-from typing import Any
 
 from .base import BaseCharacteristic
+
+
+@dataclass
+class BloodPressureData:  # pylint: disable=too-many-instance-attributes
+    """Parsed data from Blood Pressure Measurement characteristic."""
+
+    systolic: float  # Systolic pressure
+    diastolic: float  # Diastolic pressure
+    mean_arterial_pressure: float  # Mean arterial pressure
+    unit: str  # "mmHg" or "kPa"
+    timestamp: dict[str, int] | None = None  # Optional timestamp
+    pulse_rate: float | None = None  # Optional pulse rate
+    user_id: int | None = None  # Optional user ID
+    measurement_status: int | None = None  # Optional measurement status
+    flags: int = 0  # Raw flags byte for reference
+
+    def __post_init__(self):
+        """Validate blood pressure data."""
+        if self.unit not in ("mmHg", "kPa"):
+            raise ValueError(
+                f"Blood pressure unit must be 'mmHg' or 'kPa', got {self.unit}"
+            )
+
+        # Validate pressure ranges based on unit
+        if self.unit == "mmHg":
+            valid_range = (0, 300)  # Typical medical range for mmHg
+        else:  # kPa
+            valid_range = (0, 40)  # Equivalent range in kPa
+
+        for name, value in [
+            ("systolic", self.systolic),
+            ("diastolic", self.diastolic),
+            ("mean_arterial_pressure", self.mean_arterial_pressure),
+        ]:
+            if not valid_range[0] <= value <= valid_range[1]:
+                raise ValueError(
+                    f"{name} pressure {value} {self.unit} is outside valid range "
+                    f"({valid_range[0]}-{valid_range[1]} {self.unit})"
+                )
 
 
 @dataclass
@@ -16,7 +56,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Blood Pressure Measurement"
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    def parse_value(self, data: bytearray) -> BloodPressureData:  # pylint: disable=too-many-locals
         """Parse blood pressure measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) + [Timestamp(7)] +
@@ -27,7 +67,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
             data: Raw bytearray from BLE characteristic
 
         Returns:
-            Dict containing parsed blood pressure data with metadata
+            BloodPressureData containing parsed blood pressure data with metadata
         """
         if len(data) < 7:
             raise ValueError("Blood Pressure Measurement data must be at least 7 bytes")
@@ -37,45 +77,86 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
         # Parse pressure values using IEEE-11073 SFLOAT format
         systolic_raw, diastolic_raw, map_raw = struct.unpack("<HHH", data[1:7])
 
-        result = {
-            "systolic": self._parse_ieee11073_sfloat(systolic_raw),
-            "diastolic": self._parse_ieee11073_sfloat(diastolic_raw),
-            "mean_arterial_pressure": self._parse_ieee11073_sfloat(map_raw),
-            "unit": "kPa" if flags & 0x01 else "mmHg",  # Units flag
-        }
+        # Create basic result
+        result_data = BloodPressureData(
+            systolic=self._parse_ieee11073_sfloat(systolic_raw),
+            diastolic=self._parse_ieee11073_sfloat(diastolic_raw),
+            mean_arterial_pressure=self._parse_ieee11073_sfloat(map_raw),
+            unit="kPa" if flags & 0x01 else "mmHg",  # Units flag
+            flags=flags,
+        )
 
         offset = 7
 
         # Parse optional timestamp (7 bytes) if present
         if (flags & 0x02) and len(data) >= offset + 7:
-            result["timestamp"] = self._parse_ieee11073_timestamp(data, offset)
+            result_data.timestamp = self._parse_ieee11073_timestamp(data, offset)
             offset += 7
 
         # Parse optional pulse rate (2 bytes) if present
         if (flags & 0x04) and len(data) >= offset + 2:
             pulse_rate_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-            result["pulse_rate"] = self._parse_ieee11073_sfloat(pulse_rate_raw)
+            result_data.pulse_rate = self._parse_ieee11073_sfloat(pulse_rate_raw)
             offset += 2
 
         # Parse optional user ID (1 byte) if present
         if (flags & 0x08) and len(data) >= offset + 1:
-            result["user_id"] = data[offset]
+            result_data.user_id = data[offset]
             offset += 1
 
         # Parse optional measurement status (2 bytes) if present
         if (flags & 0x10) and len(data) >= offset + 2:
-            result["measurement_status"] = struct.unpack(
+            result_data.measurement_status = struct.unpack(
                 "<H", data[offset : offset + 2]
             )[0]
 
-        return result
+        return result_data
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: BloodPressureData) -> bytearray:
+        """Encode BloodPressureData back to bytes.
+
+        Args:
+            data: BloodPressureData instance to encode
+
+        Returns:
+            Encoded bytes representing the blood pressure measurement
+        """
+        result = bytearray()
+
+        # Construct flags based on what data is present
+        flags = 0
+        if data.unit == "kPa":
+            flags |= 0x01  # Units flag
+        if data.timestamp is not None:
+            flags |= 0x02  # Timestamp present
+        if data.pulse_rate is not None:
+            flags |= 0x04  # Pulse rate present
+        if data.user_id is not None:
+            flags |= 0x08  # User ID present
+        if data.measurement_status is not None:
+            flags |= 0x10  # Measurement status present
+
+        result.append(flags)
+
+        # Encode pressure values as IEEE-11073 SFLOAT
+        result.extend(self._encode_ieee11073_sfloat(data.systolic))
+        result.extend(self._encode_ieee11073_sfloat(data.diastolic))
+        result.extend(self._encode_ieee11073_sfloat(data.mean_arterial_pressure))
+
+        # Add optional fields
+        if data.timestamp is not None:
+            result.extend(self._encode_ieee11073_timestamp(data.timestamp))
+
+        if data.pulse_rate is not None:
+            result.extend(self._encode_ieee11073_sfloat(data.pulse_rate))
+
+        if data.user_id is not None:
+            result.append(data.user_id)
+
+        if data.measurement_status is not None:
+            result.extend(self._encode_uint16(data.measurement_status))
+
+        return result
 
     @property
     def unit(self) -> str:
