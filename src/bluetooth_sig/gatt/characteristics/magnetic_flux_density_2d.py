@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -76,7 +75,9 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
         # Validate range for sint16 (-32768 to 32767)
         for name, value in [("x_axis", x_raw), ("y_axis", y_raw)]:
             if not -32768 <= value <= 32767:
-                raise ValueError(f"Magnetic flux density {name} value {value} exceeds sint16 range")
+                raise ValueError(
+                    f"Magnetic flux density {name} value {value} exceeds sint16 range"
+                )
 
         # Encode as 2 sint16 values (little endian)
         result = bytearray()

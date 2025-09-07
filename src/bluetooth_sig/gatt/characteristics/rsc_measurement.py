@@ -2,7 +2,6 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -10,7 +9,7 @@ from .base import BaseCharacteristic
 @dataclass
 class RSCMeasurementData:
     """Parsed data from RSC Measurement characteristic."""
-    
+
     instantaneous_speed: float  # m/s
     instantaneous_cadence: int  # steps per minute
     flags: int
@@ -115,10 +114,14 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
         # Validate required fields
         speed_raw = round(data.instantaneous_speed * 256)  # Convert to 1/256 m/s units
         if not 0 <= speed_raw <= 0xFFFF:
-            raise ValueError(f"Speed {data.instantaneous_speed} m/s exceeds uint16 range")
+            raise ValueError(
+                f"Speed {data.instantaneous_speed} m/s exceeds uint16 range"
+            )
 
         if not 0 <= data.instantaneous_cadence <= 255:
-            raise ValueError(f"Cadence {data.instantaneous_cadence} exceeds uint8 range")
+            raise ValueError(
+                f"Cadence {data.instantaneous_cadence} exceeds uint8 range"
+            )
 
         # Start with flags, speed, and cadence
         result = bytearray([flags])

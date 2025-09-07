@@ -20,10 +20,6 @@ class BatteryPresentState(IntEnum):
     def __str__(self) -> str:
         return {0: "unknown", 1: "not_present", 2: "present", 3: "reserved"}[self.value]
 
-    def __hash__(self) -> int:
-        """Make enum hashable."""
-        return super().__hash__()
-
     @classmethod
     def from_byte(cls, byte_val: int) -> BatteryPresentState:
         """Create enum from byte value with fallback."""
@@ -46,10 +42,6 @@ class BatteryChargeState(IntEnum):
             self.value
         ]
 
-    def __hash__(self) -> int:
-        """Make enum hashable."""
-        return super().__hash__()
-
     @classmethod
     def from_byte(cls, byte_val: int) -> BatteryChargeState:
         """Create enum from byte value with fallback."""
@@ -69,10 +61,6 @@ class BatteryChargeLevel(IntEnum):
 
     def __str__(self) -> str:
         return {0: "unknown", 1: "good", 2: "low", 3: "critically_low"}[self.value]
-
-    def __hash__(self) -> int:
-        """Make enum hashable."""
-        return super().__hash__()
 
     @classmethod
     def from_byte(cls, byte_val: int) -> BatteryChargeLevel:
@@ -103,10 +91,6 @@ class BatteryChargingType(IntEnum):
             5: "constant_power",
         }[self.value]
 
-    def __hash__(self) -> int:
-        """Make enum hashable."""
-        return super().__hash__()
-
     @classmethod
     def from_byte(cls, byte_val: int) -> BatteryChargingType:
         """Create enum from byte value with fallback."""
@@ -133,37 +117,6 @@ class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
         """Validate battery power state data."""
         if not 0 <= self.raw_value <= 255:
             raise ValueError(f"Raw value must be 0-255, got {self.raw_value}")
-
-
-# Module-level maps to keep functions small and satisfy static analysis limits
-_CHARGE_STATE_MAP_16 = {
-    0: BatteryChargeState.UNKNOWN,
-    1: BatteryChargeState.CHARGING,
-    2: BatteryChargeState.DISCHARGING,
-    3: BatteryChargeState.NOT_CHARGING,
-}
-
-_CHARGE_LEVEL_MAP = {
-    0: BatteryChargeLevel.UNKNOWN,
-    1: BatteryChargeLevel.GOOD,
-    2: BatteryChargeLevel.LOW,
-    3: BatteryChargeLevel.CRITICALLY_LOW,
-}
-
-_CHARGING_TYPE_MAP = {
-    0: BatteryChargingType.UNKNOWN,
-    1: BatteryChargingType.CONSTANT_CURRENT,
-    2: BatteryChargingType.CONSTANT_VOLTAGE,
-    3: BatteryChargingType.TRICKLE,
-    4: BatteryChargingType.FLOAT,
-}
-
-_BASIC_CHARGE_STATE_MAP = {
-    0: BatteryChargeState.UNKNOWN,
-    1: BatteryChargeState.CHARGING,
-    2: BatteryChargeState.DISCHARGING,  # discharging_active
-    3: BatteryChargeState.NOT_CHARGING,  # discharging_inactive
-}
 
 
 @dataclass
@@ -354,20 +307,15 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
 
         # Charge state: bits 5-6
         charge_state_raw = (power_state_raw >> 5) & 0x03
-        battery_charge_state = _CHARGE_STATE_MAP_16.get(
-            charge_state_raw, BatteryChargeState.UNKNOWN
-        )
+        battery_charge_state = BatteryChargeState.from_byte(charge_state_raw)
 
         # Charge level: bits 7-8
         charge_level_raw = (power_state_raw >> 7) & 0x03
-        battery_charge_level = _CHARGE_LEVEL_MAP.get(
-            charge_level_raw, BatteryChargeLevel.UNKNOWN
-        )
+        battery_charge_level = BatteryChargeLevel.from_byte(charge_level_raw)
 
         # charging type: bits 9-11
-        battery_charging_type = _CHARGING_TYPE_MAP.get(
-            (power_state_raw >> 9) & 0x07, BatteryChargingType.UNKNOWN
-        )
+        charging_type_raw = (power_state_raw >> 9) & 0x07
+        battery_charging_type = BatteryChargingType.from_byte(charging_type_raw)
 
         # charging faults are a 3-bit flag field at bits 12..14
         fault_bits = (power_state_raw >> 12) & 0x07
@@ -402,20 +350,20 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         wireless_external_power_connected = bool((state_raw >> 3) & 0x01)
 
         charge_state_raw = (state_raw >> 4) & 0x03
-        battery_charge_state = _BASIC_CHARGE_STATE_MAP.get(
-            charge_state_raw, BatteryChargeState.UNKNOWN
-        )
+        battery_charge_state = BatteryChargeState.from_byte(charge_state_raw)
 
         charge_level_raw = (state_raw >> 6) & 0x03
-        charge_level_map = {
-            0: BatteryChargeLevel.UNKNOWN,
-            1: BatteryChargeLevel.CRITICALLY_LOW,
-            2: BatteryChargeLevel.LOW,
-            3: BatteryChargeLevel.GOOD,
-        }
-        battery_charge_level = charge_level_map.get(
-            charge_level_raw, BatteryChargeLevel.UNKNOWN
-        )
+        # For basic format, the charge level mapping is different
+        if charge_level_raw == 0:
+            battery_charge_level = BatteryChargeLevel.UNKNOWN
+        elif charge_level_raw == 1:
+            battery_charge_level = BatteryChargeLevel.CRITICALLY_LOW
+        elif charge_level_raw == 2:
+            battery_charge_level = BatteryChargeLevel.LOW
+        elif charge_level_raw == 3:
+            battery_charge_level = BatteryChargeLevel.GOOD
+        else:
+            battery_charge_level = BatteryChargeLevel.UNKNOWN
 
         return {
             "battery_present": battery_present,

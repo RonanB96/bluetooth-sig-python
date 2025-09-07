@@ -2,7 +2,6 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -10,7 +9,7 @@ from .base import BaseCharacteristic
 @dataclass
 class CSCMeasurementData:
     """Parsed data from CSC Measurement characteristic."""
-    
+
     flags: int
     cumulative_wheel_revolutions: int | None = None
     last_wheel_event_time: float | None = None
@@ -102,12 +101,12 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
         # Build flags based on available data
         flags = data.flags
         has_wheel_data = (
-            data.cumulative_wheel_revolutions is not None and 
-            data.last_wheel_event_time is not None
+            data.cumulative_wheel_revolutions is not None
+            and data.last_wheel_event_time is not None
         )
         has_crank_data = (
-            data.cumulative_crank_revolutions is not None and 
-            data.last_crank_event_time is not None
+            data.cumulative_crank_revolutions is not None
+            and data.last_crank_event_time is not None
         )
 
         # Update flags to match available data

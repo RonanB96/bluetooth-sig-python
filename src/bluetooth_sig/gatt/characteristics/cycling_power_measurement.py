@@ -2,15 +2,14 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any
 
 from .base import BaseCharacteristic
 
 
 @dataclass
-class CyclingPowerMeasurementData:
+class CyclingPowerMeasurementData:  # pylint: disable=too-many-instance-attributes # Comprehensive power measurement with many optional fields
     """Parsed data from Cycling Power Measurement characteristic."""
-    
+
     flags: int
     instantaneous_power: int  # Watts
     pedal_power_balance: int | None = None

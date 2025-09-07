@@ -2,21 +2,65 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any
+from enum import IntEnum
 
 from .base import BaseCharacteristic
 
 
-@dataclass 
+class WeightMeasurementResolution(IntEnum):
+    """Weight measurement resolution enumeration."""
+
+    NOT_SPECIFIED = 0
+    HALF_KG_OR_1_LB = 1
+    POINT_2_KG_OR_HALF_LB = 2
+    POINT_1_KG_OR_POINT_2_LB = 3
+    POINT_05_KG_OR_POINT_1_LB = 4
+    POINT_02_KG_OR_POINT_05_LB = 5
+    POINT_01_KG_OR_POINT_02_LB = 6
+    POINT_005_KG_OR_POINT_01_LB = 7
+
+    def __str__(self) -> str:
+        descriptions = {
+            0: "not_specified",
+            1: "0.5_kg_or_1_lb",
+            2: "0.2_kg_or_0.5_lb",
+            3: "0.1_kg_or_0.2_lb",
+            4: "0.05_kg_or_0.1_lb",
+            5: "0.02_kg_or_0.05_lb",
+            6: "0.01_kg_or_0.02_lb",
+            7: "0.005_kg_or_0.01_lb",
+        }
+        return descriptions.get(self.value, f"reserved_{self.value}")
+
+
+class HeightMeasurementResolution(IntEnum):
+    """Height measurement resolution enumeration."""
+
+    NOT_SPECIFIED = 0
+    POINT_01_M_OR_1_INCH = 1
+    POINT_005_M_OR_HALF_INCH = 2
+    POINT_001_M_OR_POINT_1_INCH = 3
+
+    def __str__(self) -> str:
+        descriptions = {
+            0: "not_specified",
+            1: "0.01_m_or_1_inch",
+            2: "0.005_m_or_0.5_inch",
+            3: "0.001_m_or_0.1_inch",
+        }
+        return descriptions.get(self.value, f"reserved_{self.value}")
+
+
+@dataclass
 class WeightScaleFeatureData:
     """Parsed data from Weight Scale Feature characteristic."""
-    
+
     raw_value: int
     timestamp_supported: bool
     multiple_users_supported: bool
     bmi_supported: bool
-    weight_measurement_resolution: str
-    height_measurement_resolution: str
+    weight_measurement_resolution: WeightMeasurementResolution
+    height_measurement_resolution: HeightMeasurementResolution
 
     def __post_init__(self):
         """Validate weight scale feature data."""
@@ -86,53 +130,37 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
         return bytearray(struct.pack("<I", features_raw))
 
-    def _get_weight_resolution(self, features: int) -> str:
+    def _get_weight_resolution(self, features: int) -> WeightMeasurementResolution:
         """Extract weight measurement resolution from features bitmask.
 
         Args:
             features: Raw feature bitmask
 
         Returns:
-            String describing weight resolution
+            WeightMeasurementResolution enum value
         """
         resolution_bits = (features >> 3) & 0x0F  # Bits 3-6
+        try:
+            return WeightMeasurementResolution(resolution_bits)
+        except ValueError:
+            return WeightMeasurementResolution.NOT_SPECIFIED
 
-        # Weight resolution lookup table
-        resolution_map = {
-            0: "not_specified",
-            1: "0.5_kg_or_1_lb",
-            2: "0.2_kg_or_0.5_lb",
-            3: "0.1_kg_or_0.2_lb",
-            4: "0.05_kg_or_0.1_lb",
-            5: "0.02_kg_or_0.05_lb",
-            6: "0.01_kg_or_0.02_lb",
-            7: "0.005_kg_or_0.01_lb",
-        }
-
-        return resolution_map.get(resolution_bits, f"reserved_{resolution_bits}")
-
-    def _get_height_resolution(self, features: int) -> str:
+    def _get_height_resolution(self, features: int) -> HeightMeasurementResolution:
         """Extract height measurement resolution from features bitmask.
 
         Args:
             features: Raw feature bitmask
 
         Returns:
-            String describing height resolution
+            HeightMeasurementResolution enum value
         """
         resolution_bits = (features >> 7) & 0x07  # Bits 7-9
-
-        # Height resolution lookup table
-        resolution_map = {
-            0: "not_specified",
-            1: "0.01_m_or_1_inch",
-            2: "0.005_m_or_0.5_inch",
-            3: "0.001_m_or_0.1_inch",
-        }
-
-        return resolution_map.get(resolution_bits, f"reserved_{resolution_bits}")
+        try:
+            return HeightMeasurementResolution(resolution_bits)
+        except ValueError:
+            return HeightMeasurementResolution.NOT_SPECIFIED
 
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
-        return ""  # Feature characteristic has no unit        return ""  # Feature characteristic is not measured
+        return ""  # Feature characteristic has no unit

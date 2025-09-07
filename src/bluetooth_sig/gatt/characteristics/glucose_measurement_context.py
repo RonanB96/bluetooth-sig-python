@@ -8,9 +8,12 @@ from .base import BaseCharacteristic
 
 
 @dataclass
-class GlucoseMeasurementContextData:
-    """Parsed data from Glucose Measurement Context characteristic."""
-    
+class GlucoseMeasurementContextData:  # pylint: disable=too-many-instance-attributes # Medical measurement context with many optional fields
+    """Parsed data from Glucose Measurement Context characteristic.
+
+    Used for both parsing and encoding - None values represent optional fields.
+    """
+
     sequence_number: int
     flags: int
     # Optional fields - will be set by parsing methods

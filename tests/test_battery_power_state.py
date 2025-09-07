@@ -3,7 +3,11 @@
 import pytest
 
 from bluetooth_sig.gatt.characteristics.battery_power_state import (
+    BatteryChargeLevel,
+    BatteryChargeState,
+    BatteryChargingType,
     BatteryPowerStateCharacteristic,
+    BatteryPresentState,
 )
 
 
@@ -33,12 +37,12 @@ class TestBatteryPowerStateCharacteristic:
         result = char.parse_value(data)
 
         assert result.raw_value == 0xD6
-        assert result.battery_present == "present"
+        assert result.battery_present == BatteryPresentState.PRESENT
         assert result.wired_external_power_connected is True
         assert result.wireless_external_power_connected is False
-        assert result.battery_charge_state == "charging"
-        assert result.battery_charge_level == "good"
-        assert result.battery_charging_type == "unknown"
+        assert result.battery_charge_state == BatteryChargeState.CHARGING
+        assert result.battery_charge_level == BatteryChargeLevel.GOOD
+        assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason is None
 
     def test_parse_battery_not_present(self):
@@ -53,12 +57,12 @@ class TestBatteryPowerStateCharacteristic:
         result = char.parse_value(data)
 
         assert result.raw_value == 0x01
-        assert result.battery_present == "not_present"
+        assert result.battery_present == BatteryPresentState.NOT_PRESENT
         assert result.wired_external_power_connected is False
         assert result.wireless_external_power_connected is False
-        assert result.battery_charge_state == "unknown"
-        assert result.battery_charge_level == "unknown"
-        assert result.battery_charging_type == "unknown"
+        assert result.battery_charge_state == BatteryChargeState.UNKNOWN
+        assert result.battery_charge_level == BatteryChargeLevel.UNKNOWN
+        assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason is None
 
     def test_parse_wireless_power_discharging(self):
@@ -76,12 +80,12 @@ class TestBatteryPowerStateCharacteristic:
         result = char.parse_value(data)
 
         assert result.raw_value == 0xAA
-        assert result.battery_present == "present"
+        assert result.battery_present == BatteryPresentState.PRESENT
         assert result.wired_external_power_connected is False
         assert result.wireless_external_power_connected is True
-        assert result.battery_charge_state == "discharging"
-        assert result.battery_charge_level == "low"
-        assert result.battery_charging_type == "unknown"
+        assert result.battery_charge_state == BatteryChargeState.DISCHARGING
+        assert result.battery_charge_level == BatteryChargeLevel.LOW
+        assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason is None
 
     def test_parse_critically_low_not_charging(self):
@@ -99,12 +103,12 @@ class TestBatteryPowerStateCharacteristic:
         result = char.parse_value(data)
 
         assert result.raw_value == 0x72
-        assert result.battery_present == "present"
+        assert result.battery_present == BatteryPresentState.PRESENT
         assert result.wired_external_power_connected is False
         assert result.wireless_external_power_connected is False
-        assert result.battery_charge_state == "not_charging"
-        assert result.battery_charge_level == "critically_low"
-        assert result.battery_charging_type == "unknown"
+        assert result.battery_charge_state == BatteryChargeState.NOT_CHARGING
+        assert result.battery_charge_level == BatteryChargeLevel.CRITICALLY_LOW
+        assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason is None
 
     def test_parse_extended_format_with_charging_type(self):
@@ -120,12 +124,12 @@ class TestBatteryPowerStateCharacteristic:
 
         expected = {
             "raw_value": 0xD6,
-            "battery_present": "present",
+            "battery_present": BatteryPresentState.PRESENT,
             "wired_external_power_connected": True,
             "wireless_external_power_connected": False,
-            "battery_charge_state": "charging",
-            "battery_charge_level": "good",
-            "battery_charging_type": "constant_current",
+            "battery_charge_state": BatteryChargeState.CHARGING,
+            "battery_charge_level": BatteryChargeLevel.GOOD,
+            "battery_charging_type": BatteryChargingType.CONSTANT_CURRENT,
             "charging_fault_reason": None,
         }
         assert result.raw_value == expected["raw_value"]
@@ -162,12 +166,12 @@ class TestBatteryPowerStateCharacteristic:
         result = char.parse_value(data)
 
         assert result.raw_value == 0x82
-        assert result.battery_present == "present"
+        assert result.battery_present == BatteryPresentState.PRESENT
         assert result.wired_external_power_connected is False
         assert result.wireless_external_power_connected is False
-        assert result.battery_charge_state == "unknown"
-        assert result.battery_charge_level == "low"
-        assert result.battery_charging_type == "trickle"
+        assert result.battery_charge_state == BatteryChargeState.UNKNOWN
+        assert result.battery_charge_level == BatteryChargeLevel.LOW
+        assert result.battery_charging_type == BatteryChargingType.TRICKLE
         assert result.charging_fault_reason == "battery_fault"
 
     def test_parse_extended_format_constant_voltage(self):
@@ -179,7 +183,7 @@ class TestBatteryPowerStateCharacteristic:
         data = bytearray([0x82, 0x02])
         result = char.parse_value(data)
 
-        assert result.battery_charging_type == "constant_voltage"
+        assert result.battery_charging_type == BatteryChargingType.CONSTANT_VOLTAGE
         assert result.charging_fault_reason is None
 
     def test_parse_full_flags_power_state_format(self):
@@ -191,12 +195,12 @@ class TestBatteryPowerStateCharacteristic:
         result = char.parse_value(data)
 
         assert result.raw_value == 0x00
-        assert result.battery_present == "present"
+        assert result.battery_present == BatteryPresentState.PRESENT
         assert result.wired_external_power_connected is True
         assert result.wireless_external_power_connected is False
-        assert result.battery_charge_state == "charging"
-        assert result.battery_charge_level == "good"
-        assert result.battery_charging_type == "unknown"
+        assert result.battery_charge_state == BatteryChargeState.CHARGING
+        assert result.battery_charge_level == BatteryChargeLevel.GOOD
+        assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason is None
 
     def test_flags_identifier_missing_raises(self):
@@ -219,7 +223,7 @@ class TestBatteryPowerStateCharacteristic:
         data = bytearray([0x82, 0x10])
         result = char.parse_value(data)
 
-        assert result.battery_charging_type == "unknown"
+        assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason == "external_power_fault"
 
     def test_parse_all_unknown_states(self):
@@ -232,12 +236,12 @@ class TestBatteryPowerStateCharacteristic:
 
         expected = {
             "raw_value": 0x00,
-            "battery_present": "unknown",
+            "battery_present": BatteryPresentState.UNKNOWN,
             "wired_external_power_connected": False,
             "wireless_external_power_connected": False,
-            "battery_charge_state": "unknown",
-            "battery_charge_level": "unknown",
-            "battery_charging_type": "unknown",
+            "battery_charge_state": BatteryChargeState.UNKNOWN,
+            "battery_charge_level": BatteryChargeLevel.UNKNOWN,
+            "battery_charging_type": BatteryChargingType.UNKNOWN,
             "charging_fault_reason": None,
         }
         assert result.raw_value == expected["raw_value"]
@@ -265,7 +269,7 @@ class TestBatteryPowerStateCharacteristic:
         data = bytearray([0x03])
         result = char.parse_value(data)
 
-        assert result.battery_present == "reserved"
+        assert result.battery_present == BatteryPresentState.RESERVED
 
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""
@@ -300,12 +304,12 @@ class TestBatteryPowerStateCharacteristic:
 
         test_data = BatteryPowerStateData(
             raw_value=0xD6,
-            battery_present="present",
+            battery_present=BatteryPresentState.PRESENT,
             wired_external_power_connected=True,
             wireless_external_power_connected=False,
-            battery_charge_state="charging",
-            battery_charge_level="good",
-            battery_charging_type="unknown",
+            battery_charge_state=BatteryChargeState.CHARGING,
+            battery_charge_level=BatteryChargeLevel.GOOD,
+            battery_charging_type=BatteryChargingType.UNKNOWN,
             charging_fault_reason=None,
         )
 

@@ -98,7 +98,11 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
         avg_voltage_raw = round(data.average * 64)
 
         # Validate range for uint16 (0 to 65535)
-        for name, value in [("minimum", min_voltage_raw), ("maximum", max_voltage_raw), ("average", avg_voltage_raw)]:
+        for name, value in [
+            ("minimum", min_voltage_raw),
+            ("maximum", max_voltage_raw),
+            ("average", avg_voltage_raw),
+        ]:
             if not 0 <= value <= 65535:
                 raise ValueError(f"Voltage {name} value {value} exceeds uint16 range")
 

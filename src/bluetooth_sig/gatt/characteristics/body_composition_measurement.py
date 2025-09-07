@@ -7,10 +7,10 @@ from typing import Any
 from .base import BaseCharacteristic
 
 
-@dataclass 
-class BodyCompositionMeasurementData:
+@dataclass
+class BodyCompositionMeasurementData:  # pylint: disable=too-many-instance-attributes # Comprehensive medical measurement data with many optional fields
     """Parsed data from Body Composition Measurement characteristic."""
-    
+
     body_fat_percentage: float
     flags: int
     measurement_units: str

@@ -2,26 +2,37 @@
 
 import struct
 from dataclasses import dataclass
-from typing import Any
 
 from .base import BaseCharacteristic
 
 
 @dataclass
+class CrankRevolutionData:
+    """Crank revolution data from cycling power vector."""
+
+    crank_revolutions: int
+    last_crank_event_time: float  # in seconds
+
+
+@dataclass
 class CyclingPowerVectorData:
-    """Parsed data from Cycling Power Vector characteristic."""
-    
+    """Parsed data from Cycling Power Vector characteristic.
+
+    Used for both parsing and encoding - all fields are properly typed.
+    """
+
     flags: int
-    # Will be populated by parsing logic
-    crank_revolution_data: dict | None = None
-    first_crank_measurement_angle: int | None = None
-    instantaneous_force_magnitude_array: list[int] | None = None
-    instantaneous_torque_magnitude_array: list[int] | None = None
+    crank_revolution_data: CrankRevolutionData
+    first_crank_measurement_angle: float
+    instantaneous_force_magnitude_array: list[float] | None = None
+    instantaneous_torque_magnitude_array: list[float] | None = None
 
     def __post_init__(self):
         """Validate cycling power vector data."""
         if not 0 <= self.flags <= 255:
             raise ValueError("Flags must be a uint8 value (0-255)")
+        if not 0 <= self.first_crank_measurement_angle <= 360:
+            raise ValueError("First crank measurement angle must be 0-360 degrees")
 
 
 @dataclass
@@ -45,7 +56,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
             data: Raw bytearray from BLE characteristic
 
         Returns:
-            Dict containing parsed cycling power vector data
+            CyclingPowerVectorData containing parsed cycling power vector data
 
         Raises:
             ValueError: If data format is invalid
@@ -66,18 +77,18 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
         first_angle_raw = struct.unpack("<H", data[5:7])[0]
         first_angle = first_angle_raw / 180.0  # Convert to degrees
 
-        result = {
-            "flags": flags,
-            "crank_revolutions": crank_revolutions,
-            "last_crank_event_time": crank_event_time,
-            "first_crank_measurement_angle": first_angle,
-        }
+        # Create crank revolution data
+        crank_revolution_data = CrankRevolutionData(
+            crank_revolutions=crank_revolutions, last_crank_event_time=crank_event_time
+        )
 
         offset = 7
+        force_magnitudes: list[float] | None = None
+        torque_magnitudes: list[float] | None = None
 
         # Parse optional instantaneous force magnitude array if present
         if (flags & 0x01) and len(data) > offset:
-            force_magnitudes: list[float] = []
+            force_magnitudes = []
             # Each force magnitude is 2 bytes (signed 16-bit, 1 N units)
             while offset + 1 < len(data) and not (
                 flags & 0x02
@@ -88,12 +99,9 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
                 force_magnitudes.append(float(force_raw))  # Force in Newtons
                 offset += 2
 
-            if force_magnitudes:
-                result["instantaneous_force_magnitudes"] = force_magnitudes
-
         # Parse optional instantaneous torque magnitude array if present
         if (flags & 0x02) and len(data) > offset:
-            torque_magnitudes: list[float] = []
+            torque_magnitudes = []
             # Each torque magnitude is 2 bytes (signed 16-bit, 1/32 Nm units)
             while offset + 1 < len(data):
                 if offset + 2 > len(data):
@@ -102,16 +110,12 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
                 torque_magnitudes.append(torque_raw / 32.0)  # Convert to Nm
                 offset += 2
 
-            if torque_magnitudes:
-                result["instantaneous_torque_magnitudes"] = torque_magnitudes
-
-        # Convert dict to dataclass at the end (simplified conversion)
         return CyclingPowerVectorData(
-            flags=result["flags"],
-            crank_revolution_data=result.get("crank_revolution_data"),
-            first_crank_measurement_angle=result.get("first_crank_measurement_angle"),
-            instantaneous_force_magnitude_array=result.get("instantaneous_force_magnitudes"),
-            instantaneous_torque_magnitude_array=result.get("instantaneous_torque_magnitudes"),
+            flags=flags,
+            crank_revolution_data=crank_revolution_data,
+            first_crank_measurement_angle=first_angle,
+            instantaneous_force_magnitude_array=force_magnitudes,
+            instantaneous_torque_magnitude_array=torque_magnitudes,
         )
 
     def encode_value(self, data: CyclingPowerVectorData) -> bytearray:  # pylint: disable=too-many-branches # Complex cycling power vector with optional fields
@@ -129,25 +133,16 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
                 f"got {type(data).__name__}"
             )
 
-        # Required fields
-        required_fields = [
-            "crank_revolutions",
-            "crank_event_time",
-            "first_crank_measurement_angle",
-        ]
-        for field in required_fields:
-            if field not in data:
-                raise ValueError(f"Power vector data must contain '{field}' key")
+        # Extract values from dataclass
+        crank_revolutions = data.crank_revolution_data.crank_revolutions
+        crank_event_time = data.crank_revolution_data.last_crank_event_time
+        first_angle = data.first_crank_measurement_angle
 
-        crank_revolutions = int(data["crank_revolutions"])
-        crank_event_time = float(data["crank_event_time"])
-        first_angle = float(data["first_crank_measurement_angle"])
-
-        # Build basic flags (simplified implementation)
-        flags = 0
-        if "force_magnitude_array" in data:
+        # Build flags based on optional arrays
+        flags = data.flags
+        if data.instantaneous_force_magnitude_array is not None:
             flags |= 0x01  # Force magnitude array present
-        if "torque_magnitude_array" in data:
+        if data.instantaneous_torque_magnitude_array is not None:
             flags |= 0x02  # Torque magnitude array present
 
         # Convert values to raw format
@@ -172,21 +167,18 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
         result.extend(struct.pack("<H", crank_event_time_raw))
         result.extend(struct.pack("<H", first_angle_raw))
 
-        # Add arrays if present (simplified implementation)
-        if "force_magnitude_array" in data and isinstance(
-            data["force_magnitude_array"], list
-        ):
-            for force in data["force_magnitude_array"]:
+        # Add force magnitude array if present
+        if data.instantaneous_force_magnitude_array is not None:
+            for force in data.instantaneous_force_magnitude_array:
                 force_val = int(force)
-                if 0 <= force_val <= 0xFFFF:
-                    result.extend(struct.pack("<H", force_val))
+                if -32768 <= force_val <= 32767:  # signed 16-bit range
+                    result.extend(struct.pack("<h", force_val))
 
-        if "torque_magnitude_array" in data and isinstance(
-            data["torque_magnitude_array"], list
-        ):
-            for torque in data["torque_magnitude_array"]:
-                torque_val = int(torque)
-                if 0 <= torque_val <= 0xFFFF:
-                    result.extend(struct.pack("<H", torque_val))
+        # Add torque magnitude array if present
+        if data.instantaneous_torque_magnitude_array is not None:
+            for torque in data.instantaneous_torque_magnitude_array:
+                torque_val = int(torque * 32)  # Convert back to 1/32 Nm units
+                if -32768 <= torque_val <= 32767:  # signed 16-bit range
+                    result.extend(struct.pack("<h", torque_val))
 
         return result
