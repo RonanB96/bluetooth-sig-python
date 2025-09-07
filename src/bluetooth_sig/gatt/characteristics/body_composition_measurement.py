@@ -7,6 +7,33 @@ from typing import Any
 from .base import BaseCharacteristic
 
 
+@dataclass 
+class BodyCompositionMeasurementData:
+    """Parsed data from Body Composition Measurement characteristic."""
+    
+    body_fat_percentage: float
+    flags: int
+    measurement_units: str
+    timestamp: str | None = None
+    user_id: int | None = None
+    basal_metabolism: int | None = None
+    muscle_mass: float | None = None
+    muscle_percentage: float | None = None
+    fat_free_mass: float | None = None
+    soft_lean_mass: float | None = None
+    body_water_mass: float | None = None
+    impedance: float | None = None
+    weight: float | None = None
+    height: float | None = None
+
+    def __post_init__(self):
+        """Validate body composition measurement data."""
+        if not 0.0 <= self.body_fat_percentage <= 100.0:
+            raise ValueError("Body fat percentage must be between 0-100%")
+        if not 0 <= self.flags <= 0xFFFF:
+            raise ValueError("Flags must be a 16-bit value")
+
+
 @dataclass
 class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     """Body Composition Measurement characteristic (0x2A9C).
@@ -17,7 +44,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Body Composition Measurement"
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:
+    def parse_value(self, data: bytearray) -> BodyCompositionMeasurementData:
         """Parse body composition measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Body Fat %(2) + [Timestamp(7)] + [User ID(1)] +
@@ -27,7 +54,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             data: Raw bytearray from BLE characteristic
 
         Returns:
-            Dict containing parsed body composition data
+            BodyCompositionMeasurementData containing parsed body composition data
 
         Raises:
             ValueError: If data format is invalid
@@ -40,7 +67,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         # Parse flags and required body fat percentage
         flags, offset = self._parse_flags_and_body_fat(data)
 
-        result = {
+        result_data = {
             "body_fat_percentage": self._calculate_body_fat_percentage(
                 data, offset - 2
             ),
@@ -49,26 +76,29 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         }
 
         # Parse optional fields based on flags
-        offset = self._parse_optional_fields(data, flags, offset, result)
+        offset = self._parse_optional_fields(data, flags, offset, result_data)
 
-        return result
+        return BodyCompositionMeasurementData(**result_data)
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:
+    def encode_value(self, data: BodyCompositionMeasurementData) -> bytearray:
         """Encode body composition measurement value back to bytes.
 
         Args:
-            data: Dictionary containing body composition measurement data
+            data: BodyCompositionMeasurementData containing body composition measurement data
 
         Returns:
             Encoded bytes representing the measurement (simplified implementation)
         """
-        if not isinstance(data, dict):
-            raise TypeError("Body composition measurement data must be a dictionary")
+        if not isinstance(data, BodyCompositionMeasurementData):
+            raise TypeError(
+                f"Body composition measurement data must be a BodyCompositionMeasurementData, "
+                f"got {type(data).__name__}"
+            )
 
         # This is a complex characteristic with many optional fields
         # Implementing a basic version that handles the core data
-        flags = data.get("flags", 0)
-        body_fat_percentage = data.get("body_fat_percentage", 0.0)
+        flags = data.flags
+        body_fat_percentage = data.body_fat_percentage
 
         # Build basic result with flags and body fat percentage
         result = bytearray()

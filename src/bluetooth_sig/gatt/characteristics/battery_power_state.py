@@ -20,12 +20,6 @@ class BatteryPresentState(IntEnum):
     def __str__(self) -> str:
         return {0: "unknown", 1: "not_present", 2: "present", 3: "reserved"}[self.value]
 
-    def __eq__(self, other) -> bool:
-        """Support comparison with string values for backward compatibility."""
-        if isinstance(other, str):
-            return str(self) == other
-        return super().__eq__(other)
-
     def __hash__(self) -> int:
         """Make enum hashable."""
         return super().__hash__()
@@ -52,12 +46,6 @@ class BatteryChargeState(IntEnum):
             self.value
         ]
 
-    def __eq__(self, other) -> bool:
-        """Support comparison with string values for backward compatibility."""
-        if isinstance(other, str):
-            return str(self) == other
-        return super().__eq__(other)
-
     def __hash__(self) -> int:
         """Make enum hashable."""
         return super().__hash__()
@@ -81,12 +69,6 @@ class BatteryChargeLevel(IntEnum):
 
     def __str__(self) -> str:
         return {0: "unknown", 1: "good", 2: "low", 3: "critically_low"}[self.value]
-
-    def __eq__(self, other) -> bool:
-        """Support comparison with string values for backward compatibility."""
-        if isinstance(other, str):
-            return str(self) == other
-        return super().__eq__(other)
 
     def __hash__(self) -> int:
         """Make enum hashable."""
@@ -121,12 +103,6 @@ class BatteryChargingType(IntEnum):
             5: "constant_power",
         }[self.value]
 
-    def __eq__(self, other) -> bool:
-        """Support comparison with string values for backward compatibility."""
-        if isinstance(other, str):
-            return str(self) == other
-        return super().__eq__(other)
-
     def __hash__(self) -> int:
         """Make enum hashable."""
         return super().__hash__()
@@ -145,65 +121,18 @@ class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
     """Parsed data from Battery Power State characteristic."""
 
     raw_value: int
-    battery_present: BatteryPresentState | str
+    battery_present: BatteryPresentState
     wired_external_power_connected: bool
     wireless_external_power_connected: bool
-    battery_charge_state: BatteryChargeState | str
-    battery_charge_level: BatteryChargeLevel | str
-    battery_charging_type: BatteryChargingType | str
+    battery_charge_state: BatteryChargeState
+    battery_charge_level: BatteryChargeLevel
+    battery_charging_type: BatteryChargingType
     charging_fault_reason: str | list[str] | None = None
 
     def __post_init__(self):
-        """Validate and convert battery power state data."""
+        """Validate battery power state data."""
         if not 0 <= self.raw_value <= 255:
             raise ValueError(f"Raw value must be 0-255, got {self.raw_value}")
-
-        # Convert string values to enums for type safety
-        if isinstance(self.battery_present, str):
-            present_map = {
-                "unknown": BatteryPresentState.UNKNOWN,
-                "not_present": BatteryPresentState.NOT_PRESENT,
-                "present": BatteryPresentState.PRESENT,
-                "reserved": BatteryPresentState.RESERVED,
-            }
-            self.battery_present = present_map.get(
-                self.battery_present, BatteryPresentState.UNKNOWN
-            )
-
-        if isinstance(self.battery_charge_state, str):
-            state_map = {
-                "unknown": BatteryChargeState.UNKNOWN,
-                "charging": BatteryChargeState.CHARGING,
-                "discharging": BatteryChargeState.DISCHARGING,
-                "not_charging": BatteryChargeState.NOT_CHARGING,
-            }
-            self.battery_charge_state = state_map.get(
-                self.battery_charge_state, BatteryChargeState.UNKNOWN
-            )
-
-        if isinstance(self.battery_charge_level, str):
-            level_map = {
-                "unknown": BatteryChargeLevel.UNKNOWN,
-                "good": BatteryChargeLevel.GOOD,
-                "low": BatteryChargeLevel.LOW,
-                "critically_low": BatteryChargeLevel.CRITICALLY_LOW,
-            }
-            self.battery_charge_level = level_map.get(
-                self.battery_charge_level, BatteryChargeLevel.UNKNOWN
-            )
-
-        if isinstance(self.battery_charging_type, str):
-            type_map = {
-                "unknown": BatteryChargingType.UNKNOWN,
-                "constant_current": BatteryChargingType.CONSTANT_CURRENT,
-                "constant_voltage": BatteryChargingType.CONSTANT_VOLTAGE,
-                "trickle": BatteryChargingType.TRICKLE,
-                "float": BatteryChargingType.FLOAT,
-                "constant_power": BatteryChargingType.CONSTANT_POWER,
-            }
-            self.battery_charging_type = type_map.get(
-                self.battery_charging_type, BatteryChargingType.UNKNOWN
-            )
 
 
 # Module-level maps to keep functions small and satisfy static analysis limits
@@ -382,13 +311,17 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         charge_state_bits = data.battery_charge_state.value
 
         # Map charge level to bits 6-7 (need to adjust mapping for basic format)
-        charge_level_mapping = {
-            BatteryChargeLevel.UNKNOWN: 0,
-            BatteryChargeLevel.CRITICALLY_LOW: 1,
-            BatteryChargeLevel.LOW: 2,
-            BatteryChargeLevel.GOOD: 3,
-        }
-        charge_level_bits = charge_level_mapping.get(data.battery_charge_level, 0)
+        # The basic format uses different ordering than the enum values
+        if data.battery_charge_level == BatteryChargeLevel.UNKNOWN:
+            charge_level_bits = 0
+        elif data.battery_charge_level == BatteryChargeLevel.CRITICALLY_LOW:
+            charge_level_bits = 1
+        elif data.battery_charge_level == BatteryChargeLevel.LOW:
+            charge_level_bits = 2
+        elif data.battery_charge_level == BatteryChargeLevel.GOOD:
+            charge_level_bits = 3
+        else:
+            charge_level_bits = 0
 
         # Encode single byte
         encoded_byte = (
