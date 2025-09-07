@@ -15,12 +15,20 @@ class DeviceNameCharacteristic(BaseCharacteristic):
         """Parse device name string."""
         return self._parse_utf8_string(data)
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: str) -> bytearray:
+        """Encode device name value back to bytes.
+
+        Args:
+            data: Device name as string
+
+        Returns:
+            Encoded bytes representing the device name (UTF-8)
+        """
+        if not isinstance(data, str):
+            raise TypeError("Device name must be a string")
+        
+        # Encode as UTF-8 bytes
+        return bytearray(data.encode("utf-8"))
 
     @property
     def unit(self) -> str:

@@ -38,12 +38,40 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
 
         return {"minimum": min_power_raw, "maximum": max_power_raw}
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: dict[str, int]) -> bytearray:
+        """Encode supported power range value back to bytes.
+
+        Args:
+            data: Dictionary with 'minimum' and 'maximum' power values in Watts
+
+        Returns:
+            Encoded bytes representing the power range (2x sint16)
+        """
+        if not isinstance(data, dict):
+            raise TypeError("Supported power range data must be a dictionary")
+        
+        if "minimum" not in data or "maximum" not in data:
+            raise ValueError("Supported power range data must contain 'minimum' and 'maximum' keys")
+        
+        min_power = int(data["minimum"])
+        max_power = int(data["maximum"])
+        
+        # Validate logical order
+        if min_power > max_power:
+            raise ValueError(f"Minimum power {min_power} W cannot be greater than maximum {max_power} W")
+        
+        # Validate range for sint16 (-32768 to 32767)
+        if not -32768 <= min_power <= 32767:
+            raise ValueError(f"Minimum power {min_power} W is outside valid range (-32768 to 32767 W)")
+        if not -32768 <= max_power <= 32767:
+            raise ValueError(f"Maximum power {max_power} W is outside valid range (-32768 to 32767 W)")
+        
+        # Encode as 2 sint16 values (little endian)
+        result = bytearray()
+        result.extend(min_power.to_bytes(2, byteorder="little", signed=True))
+        result.extend(max_power.to_bytes(2, byteorder="little", signed=True))
+        
+        return result
 
     @property
     def unit(self) -> str:

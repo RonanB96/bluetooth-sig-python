@@ -35,12 +35,26 @@ class HighVoltageCharacteristic(BaseCharacteristic):
         voltage_raw = int.from_bytes(voltage_data, byteorder="little", signed=False)
         return float(voltage_raw)
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: float | int) -> bytearray:
+        """Encode high voltage value back to bytes.
+
+        Args:
+            data: High voltage value in Volts
+
+        Returns:
+            Encoded bytes representing the high voltage (uint24, 1 V resolution)
+        """
+        voltage = float(data)
+        
+        # Validate range for uint24 (0 to 16777215 V)
+        if not 0.0 <= voltage <= 16777215.0:
+            raise ValueError(f"High voltage {voltage} V is outside valid range (0.0 to 16777215.0 V)")
+        
+        # Convert to raw value (already in whole volts)
+        voltage_raw = round(voltage)
+        
+        # Encode as 3 bytes (little endian)
+        return bytearray(voltage_raw.to_bytes(3, byteorder="little", signed=False))
 
     @property
     def unit(self) -> str:

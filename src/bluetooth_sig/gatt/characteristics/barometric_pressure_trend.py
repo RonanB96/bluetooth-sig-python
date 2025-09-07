@@ -45,12 +45,45 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
             return f"Reserved (value: {trend_value})"
         return f"Invalid (value: {trend_value})"
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: str | int) -> bytearray:
+        """Encode barometric pressure trend value back to bytes.
+
+        Args:
+            data: Pressure trend either as string description or as raw uint8 value
+
+        Returns:
+            Encoded bytes representing the trend (uint8 enumerated value)
+        """
+        if isinstance(data, int):
+            # Direct raw value
+            trend_value = data
+        elif isinstance(data, str):
+            # Map string description back to numeric value
+            reverse_map = {v: k for k, v in self.TREND_VALUES.items()}
+            if data in reverse_map:
+                trend_value = reverse_map[data]
+            elif data.startswith("Reserved (value: "):
+                # Parse reserved value format
+                try:
+                    trend_value = int(data.split("value: ")[1].rstrip(")"))
+                except (ValueError, IndexError) as e:
+                    raise ValueError(f"Invalid reserved trend format: {data}") from e
+            elif data.startswith("Invalid (value: "):
+                # Parse invalid value format
+                try:
+                    trend_value = int(data.split("value: ")[1].rstrip(")"))
+                except (ValueError, IndexError) as e:
+                    raise ValueError(f"Invalid trend format: {data}") from e
+            else:
+                raise ValueError(f"Unknown barometric pressure trend: {data}")
+        else:
+            raise TypeError("Barometric pressure trend data must be a string or integer")
+        
+        # Validate range for uint8 (0 to 255)
+        if not 0 <= trend_value <= 255:
+            raise ValueError(f"Trend value {trend_value} is outside valid range (0-255)")
+        
+        return bytearray([trend_value])
 
     @property
     def unit(self) -> str:
