@@ -196,22 +196,31 @@ class IEEE11073Parser:
     """Utility class for IEEE-11073 medical device format support."""
 
     @staticmethod
-    def parse_sfloat(data: bytes | bytearray, offset: int = 0) -> float:
-        """Parse IEEE 11073 16-bit SFLOAT."""
-        if len(data) < offset + 2:
-            raise ValueError(f"Insufficient data for SFLOAT at offset {offset}")
+    def parse_sfloat(data: bytes | bytearray | int, offset: int = 0) -> float:
+        """Parse IEEE 11073 16-bit SFLOAT.
 
-        raw_value = int.from_bytes(data[offset : offset + 2], byteorder="little")
+        Args:
+            data: Either raw bytes/bytearray or an integer value
+            offset: Offset when using bytes/bytearray (ignored for int)
+        """
+        # Handle legacy integer input for backward compatibility
+        if isinstance(data, int):
+            raw_value = data
+        else:
+            # Handle bytes/bytearray input
+            if len(data) < offset + 2:
+                raise ValueError(f"Insufficient data for SFLOAT at offset {offset}")
+            raw_value = int.from_bytes(data[offset : offset + 2], byteorder="little")
 
         # Handle special values
         if raw_value == 0x07FF:
             return float("nan")  # NaN
         elif raw_value == 0x0800:
+            return float("nan")  # NRes (Not a valid result)
+        elif raw_value == 0x07FE:
             return float("inf")  # +INFINITY
-        elif raw_value == 0x0801:
-            return float("-inf")  # -INFINITY
         elif raw_value == 0x0802:
-            return None  # Not a Number (NRes)
+            return float("-inf")  # -INFINITY
 
         # Extract mantissa and exponent
         mantissa = raw_value & 0x0FFF
