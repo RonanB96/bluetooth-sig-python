@@ -19,14 +19,19 @@ class GlucoseMeasurementContextData:  # pylint: disable=too-many-instance-attrib
     # Optional fields - will be set by parsing methods
     carbohydrate_id: str | None = None
     carbohydrate_kg: float | None = None
+    carbohydrate_type: str | None = None  # Added missing field
     meal: str | None = None
+    meal_type: str | None = None  # Added missing field
     tester: str | None = None
     health: str | None = None
     exercise_duration: int | None = None
+    exercise_duration_seconds: int | None = None  # Added missing field
     exercise_intensity: int | None = None
+    exercise_intensity_percent: int | None = None  # Added missing field
     medication_id: str | None = None
     medication_kg: float | None = None
     hba1c: float | None = None
+    hba1c_percent: float | None = None  # Added missing field
 
     def __post_init__(self):
         """Validate glucose measurement context data."""

@@ -18,6 +18,7 @@ class BodyCompositionMeasurementData:  # pylint: disable=too-many-instance-attri
     user_id: int | None = None
     basal_metabolism: int | None = None
     muscle_mass: float | None = None
+    muscle_mass_unit: str | None = None  # Added missing field
     muscle_percentage: float | None = None
     fat_free_mass: float | None = None
     soft_lean_mass: float | None = None

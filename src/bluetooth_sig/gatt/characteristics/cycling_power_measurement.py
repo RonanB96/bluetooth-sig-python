@@ -14,9 +14,9 @@ class CyclingPowerMeasurementData:  # pylint: disable=too-many-instance-attribut
     instantaneous_power: int  # Watts
     pedal_power_balance: int | None = None
     accumulated_energy: int | None = None  # kJ
-    wheel_revolutions: int | None = None
+    cumulative_wheel_revolutions: int | None = None  # Changed to match parse_value
     last_wheel_event_time: float | None = None  # seconds
-    crank_revolutions: int | None = None
+    cumulative_crank_revolutions: int | None = None  # Changed to match parse_value
     last_crank_event_time: float | None = None  # seconds
 
     def __post_init__(self):
@@ -123,9 +123,9 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             instantaneous_power=result["instantaneous_power"],
             pedal_power_balance=result.get("pedal_power_balance"),
             accumulated_energy=result.get("accumulated_energy"),
-            wheel_revolutions=result.get("cumulative_wheel_revolutions"),
+            cumulative_wheel_revolutions=result.get("cumulative_wheel_revolutions"),
             last_wheel_event_time=result.get("last_wheel_event_time"),
-            crank_revolutions=result.get("cumulative_crank_revolutions"),
+            cumulative_crank_revolutions=result.get("cumulative_crank_revolutions"),
             last_crank_event_time=result.get("last_crank_event_time"),
         )
 
@@ -147,9 +147,9 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
         instantaneous_power = data.instantaneous_power
         pedal_power_balance = data.pedal_power_balance
         accumulated_energy = data.accumulated_energy
-        wheel_revolutions = data.wheel_revolutions
+        wheel_revolutions = data.cumulative_wheel_revolutions  # Updated field name
         wheel_event_time = data.last_wheel_event_time
-        crank_revolutions = data.crank_revolutions
+        crank_revolutions = data.cumulative_crank_revolutions  # Updated field name
         crank_event_time = data.last_crank_event_time
 
         # Build flags based on available data

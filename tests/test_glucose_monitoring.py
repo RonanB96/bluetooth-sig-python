@@ -240,8 +240,8 @@ class TestGlucoseMeasurementContextCharacteristic:
         )
 
         result = glucose_context_char.parse_value(test_data)
-        assert result["sequence_number"] == 42
-        assert result["flags"] == 0
+        assert result.sequence_number == 42
+        assert result.flags == 0
 
     def test_glucose_context_with_carbohydrate(self, glucose_context_char):
         """Test glucose context with carbohydrate data."""
@@ -258,8 +258,8 @@ class TestGlucoseMeasurementContextCharacteristic:
         )
 
         result = glucose_context_char.parse_value(test_data)
-        assert result["carbohydrate_id"] == 1
-        assert result["carbohydrate_type"] == "Breakfast"
+        assert result.carbohydrate_id == 1
+        assert result.carbohydrate_type == "Breakfast"
 
     def test_glucose_context_with_meal(self, glucose_context_char):
         """Test glucose context with meal information."""
@@ -274,8 +274,8 @@ class TestGlucoseMeasurementContextCharacteristic:
         )
 
         result = glucose_context_char.parse_value(test_data)
-        assert result["meal"] == 2
-        assert result["meal_type"] == "Postprandial (after meal)"
+        assert result.meal == 2
+        assert result.meal_type == "Postprandial (after meal)"
 
     def test_glucose_context_with_exercise(self, glucose_context_char):
         """Test glucose context with exercise data."""
@@ -292,8 +292,8 @@ class TestGlucoseMeasurementContextCharacteristic:
         )
 
         result = glucose_context_char.parse_value(test_data)
-        assert result["exercise_duration_seconds"] == 600
-        assert result["exercise_intensity_percent"] == 75
+        assert result.exercise_duration_seconds == 600
+        assert result.exercise_intensity_percent == 75
 
     def test_glucose_context_with_hba1c(self, glucose_context_char):
         """Test glucose context with HbA1c data."""
@@ -309,7 +309,7 @@ class TestGlucoseMeasurementContextCharacteristic:
         )
 
         result = glucose_context_char.parse_value(test_data)
-        assert "hba1c_percent" in result
+        assert hasattr(result, "hba1c_percent")
 
     def test_glucose_context_type_names(self, glucose_context_char):
         """Test context type name mappings."""

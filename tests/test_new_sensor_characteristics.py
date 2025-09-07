@@ -15,6 +15,9 @@ from bluetooth_sig.gatt.characteristics import (
     RainfallCharacteristic,
     TimeZoneCharacteristic,
 )
+from bluetooth_sig.gatt.characteristics.barometric_pressure_trend import (
+    BarometricPressureTrend,
+)
 
 
 class TestNavigationCharacteristics:
@@ -133,15 +136,15 @@ class TestEnvironmentalCharacteristics:
         # Test metadata
         assert char.unit == ""
         assert (
-            char.value_type == "string"
-        )  # Manual override: returns descriptive strings
+            char.parsed_value_type == "BarometricPressureTrend"
+        )  # Manual override: returns enum
 
         # Test known trend values
         test_cases = [
-            (0, "Unknown"),
-            (1, "Continuously falling"),
-            (2, "Continuously rising"),
-            (9, "Steady"),
+            (0, BarometricPressureTrend.UNKNOWN),
+            (1, BarometricPressureTrend.CONTINUOUSLY_FALLING),
+            (2, BarometricPressureTrend.CONTINUOUSLY_RISING),
+            (9, BarometricPressureTrend.STEADY),
         ]
 
         for value, expected in test_cases:
@@ -152,7 +155,7 @@ class TestEnvironmentalCharacteristics:
         # Test reserved value
         reserved_data = bytearray([255])
         parsed = char.parse_value(reserved_data)
-        assert parsed == "Reserved (value: 255)"
+        assert parsed == BarometricPressureTrend.UNKNOWN  # Falls back to UNKNOWN
 
     def test_pollen_concentration_parsing(self):
         """Test Pollen Concentration characteristic parsing."""
