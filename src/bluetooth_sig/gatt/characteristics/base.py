@@ -237,6 +237,14 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
         info = uuid_registry.get_characteristic_info(self.char_uuid)
         return info.summary if info else ""
 
+    @property
+    def display_name(self) -> str:
+        """Get the display name for this characteristic.
+
+        Uses explicit _characteristic_name if set, otherwise falls back to class name.
+        """
+        return getattr(self, "_characteristic_name", self.__class__.__name__)
+
     @classmethod
     def matches_uuid(cls, uuid: str) -> bool:
         """Check if this characteristic matches the given UUID."""
@@ -315,7 +323,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
 
             return ParsedData(
                 uuid=self.char_uuid,
-                name=getattr(self, "_characteristic_name", self.__class__.__name__),
+                name=self.display_name,
                 value=parsed_value,
                 unit=self.unit,
                 value_type=getattr(self, "value_type", None),
@@ -326,7 +334,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
         except (ValueError, TypeError, struct.error) as e:
             return ParsedData(
                 uuid=self.char_uuid,
-                name=getattr(self, "_characteristic_name", self.__class__.__name__),
+                name=self.display_name,
                 value=None,
                 unit=self.unit,
                 value_type=getattr(self, "value_type", None),

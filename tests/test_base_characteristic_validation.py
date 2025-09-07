@@ -1,12 +1,6 @@
 """Tests for BaseCharacteristic validation attributes functionality."""
 
-import os
-
-# Add the src directory to the path for testing
-import sys
 from dataclasses import dataclass
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 
