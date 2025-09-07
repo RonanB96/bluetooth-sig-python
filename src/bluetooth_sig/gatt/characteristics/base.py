@@ -23,7 +23,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
 
     Automatically resolves UUID, unit, and value_type from Bluetooth SIG YAML specifications.
     Supports manual overrides via _manual_unit and _manual_value_type attributes.
-    
+
     Validation Attributes (optional class-level declarations):
         min_value: Minimum allowed value for parsed data
         max_value: Maximum allowed value for parsed data
@@ -32,22 +32,22 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
         max_length: Maximum allowed data length in bytes
         allow_variable_length: Whether variable length data is acceptable
         expected_type: Expected Python type for parsed values
-        
+
     Example usage in subclasses:
         @dataclass
         class ExampleCharacteristic(BaseCharacteristic):
             \"\"\"Example showing validation attributes usage.\"\"\"
-            
+
             # Declare validation constraints as dataclass fields
             expected_length: int = 2
             min_value: int = 0
             max_value: int = 65535
             expected_type: type = int
-            
+
             def decode_value(self, data: bytearray) -> int:
                 # Just parse - validation happens automatically in parse_value
                 return DataParser.parse_uint16(data, 0)
-        
+
         # Before: BatteryLevelCharacteristic with hardcoded validation
         # @dataclass
         # class BatteryLevelCharacteristic(BaseCharacteristic):
@@ -58,7 +58,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
         #         if not 0 <= level <= 100:
         #             raise ValueError(f"Battery level must be 0-100, got {level}")
         #         return level
-        
+
         # After: BatteryLevelCharacteristic with declarative validation
         # @dataclass
         # class BatteryLevelCharacteristic(BaseCharacteristic):
@@ -66,7 +66,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
         #     min_value: int = 0
         #     max_value: int = 100
         #     expected_type: type = int
-        #     
+        #
         #     def decode_value(self, data: bytearray) -> int:
         #         return data[0]  # Validation happens automatically
     """
@@ -75,7 +75,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
     uuid: str
     properties: set[str] = field(default_factory=set)
     value_type: str = field(default="string")
-    
+
     # Optional validation attributes (can be overridden in subclasses)
     min_value: int | float | None = field(default=None)
     max_value: int | float | None = field(default=None)
@@ -282,35 +282,37 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
     def _validate_value(self, value: Any) -> None:
         """Validate parsed value meets all requirements."""
         if self.expected_type is not None and not isinstance(value, self.expected_type):
-            raise TypeError(f"Expected {self.expected_type.__name__}, got {type(value).__name__}")
+            raise TypeError(
+                f"Expected {self.expected_type.__name__}, got {type(value).__name__}"
+            )
         self._validate_range(value)
 
     def parse_value(self, data: bytes | bytearray) -> ParsedData:
         """Parse characteristic data with automatic validation.
-        
+
         This method automatically validates input data length and parsed values
         based on class-level validation attributes, then returns a ParsedData
         object with rich metadata.
-        
+
         Args:
             data: Raw bytes from the characteristic read
-            
+
         Returns:
             ParsedData object with parsed value and metadata
         """
         # Import here to avoid circular imports
         from ...core import ParsedData
-        
+
         # Call subclass implementation with validation
         try:
             # Validate input data length
             self._validate_length(data)
-            
+
             parsed_value = self.decode_value(bytearray(data))
-            
+
             # Validate parsed value
             self._validate_value(parsed_value)
-            
+
             return ParsedData(
                 uuid=self.char_uuid,
                 name=getattr(self, "_characteristic_name", self.__class__.__name__),
@@ -319,7 +321,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
                 value_type=getattr(self, "value_type", None),
                 raw_data=bytes(data),
                 parse_success=True,
-                error_message=None
+                error_message=None,
             )
         except (ValueError, TypeError, struct.error) as e:
             return ParsedData(
@@ -330,7 +332,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
                 value_type=getattr(self, "value_type", None),
                 raw_data=bytes(data),
                 parse_success=False,
-                error_message=str(e)
+                error_message=str(e),
             )
 
     @abstractmethod

@@ -136,7 +136,7 @@ class TestEnvironmentalCharacteristics:
         # Test metadata
         assert char.unit == ""
         assert (
-            char.parsed_value_type == "BarometricPressureTrend"
+            char.value_type_resolved == "BarometricPressureTrend"
         )  # Manual override: returns enum
 
         # Test known trend values
