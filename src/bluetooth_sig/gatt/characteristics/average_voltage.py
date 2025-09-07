@@ -33,12 +33,26 @@ class AverageVoltageCharacteristic(BaseCharacteristic):
         voltage_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         return voltage_raw / 64.0
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: float | int) -> bytearray:
+        """Encode average voltage value back to bytes.
+
+        Args:
+            data: Average voltage value in Volts
+
+        Returns:
+            Encoded bytes representing the average voltage (uint16, 1/64 V resolution)
+        """
+        voltage = float(data)
+        
+        # Validate range (reasonable voltage range for uint16 with 1/64 resolution)
+        max_voltage = 65535 / 64.0  # ~1024 V
+        if not 0.0 <= voltage <= max_voltage:
+            raise ValueError(f"Average voltage {voltage} V is outside valid range (0.0 to {max_voltage:.2f} V)")
+        
+        # Convert Volts to raw value (multiply by 64 for 1/64 V resolution)
+        voltage_raw = round(voltage * 64)
+        
+        return bytearray(voltage_raw.to_bytes(2, byteorder="little", signed=False))
 
     @property
     def unit(self) -> str:

@@ -34,9 +34,37 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
 
         return {"x_axis": x_tesla, "y_axis": y_tesla, "unit": "T"}
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: dict[str, Any]) -> bytearray:
+        """Encode magnetic flux density 2D value back to bytes.
+
+        Args:
+            data: Dictionary with 'x_axis' and 'y_axis' values in Tesla
+
+        Returns:
+            Encoded bytes representing the magnetic flux density (2 x sint16, 10^-7 Tesla resolution)
+        """
+        if not isinstance(data, dict):
+            raise TypeError("Magnetic flux density 2D data must be a dictionary")
+        
+        if "x_axis" not in data or "y_axis" not in data:
+            raise ValueError("Magnetic flux density 2D data must contain 'x_axis' and 'y_axis' keys")
+        
+        x_tesla = float(data["x_axis"])
+        y_tesla = float(data["y_axis"])
+        
+        # Convert Tesla to raw values (divide by 1e-7 for 10^-7 Tesla resolution)
+        x_raw = round(x_tesla / 1e-7)
+        y_raw = round(y_tesla / 1e-7)
+        
+        # Validate range for sint16 (-32768 to 32767)
+        if not -32768 <= x_raw <= 32767:
+            raise ValueError(f"X-axis value {x_raw} exceeds sint16 range")
+        if not -32768 <= y_raw <= 32767:
+            raise ValueError(f"Y-axis value {y_raw} exceeds sint16 range")
+        
+        # Encode as 2 sint16 values (little endian)
+        result = bytearray()
+        result.extend(x_raw.to_bytes(2, byteorder="little", signed=True))
+        result.extend(y_raw.to_bytes(2, byteorder="little", signed=True))
+        
+        return result

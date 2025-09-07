@@ -33,12 +33,22 @@ class TxPowerLevelCharacteristic(BaseCharacteristic):
         power_raw = int.from_bytes(data[:1], byteorder="little", signed=True)
         return power_raw
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: int) -> bytearray:
+        """Encode TX power level value back to bytes.
+
+        Args:
+            data: TX power level in dBm
+
+        Returns:
+            Encoded bytes representing the TX power level (sint8)
+        """
+        power_level = int(data)
+        
+        # Validate range for sint8 (-128 to 127)
+        if not -128 <= power_level <= 127:
+            raise ValueError(f"TX power level {power_level} dBm is outside valid range (-128 to 127 dBm)")
+        
+        return bytearray(power_level.to_bytes(1, byteorder="little", signed=True))
 
     @property
     def unit(self) -> str:

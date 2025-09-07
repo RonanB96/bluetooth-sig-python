@@ -25,12 +25,25 @@ class RainfallCharacteristic(BaseCharacteristic):
         rainfall_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         return float(rainfall_raw)  # Already in millimeters
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: float | int) -> bytearray:
+        """Encode rainfall value back to bytes.
+
+        Args:
+            data: Rainfall in millimeters
+
+        Returns:
+            Encoded bytes representing the rainfall (uint16, 1 mm resolution)
+        """
+        rainfall = float(data)
+        
+        # Validate range (reasonable rainfall range)
+        if not 0.0 <= rainfall <= 65535.0:  # Max uint16 for mm
+            raise ValueError(f"Rainfall {rainfall} mm is outside valid range (0.0 to 65535.0 mm)")
+        
+        # Convert to raw value (already in millimeters)
+        rainfall_raw = round(rainfall)
+        
+        return bytearray(rainfall_raw.to_bytes(2, byteorder="little", signed=False))
 
     @property
     def unit(self) -> str:

@@ -32,12 +32,25 @@ class SoundPressureLevelCharacteristic(BaseCharacteristic):
         spl_raw = int.from_bytes(data[:2], byteorder="little", signed=True)
         return spl_raw * 0.1
 
-    def encode_value(self, data) -> bytearray:
-        """Encode value back to bytes - basic stub implementation."""
-        # TODO: Implement proper encoding
-        raise NotImplementedError(
-            "encode_value not yet implemented for this characteristic"
-        )
+    def encode_value(self, data: float | int) -> bytearray:
+        """Encode sound pressure level value back to bytes.
+
+        Args:
+            data: Sound pressure level in dB
+
+        Returns:
+            Encoded bytes representing the sound pressure level (sint16, 0.1 dB resolution)
+        """
+        spl = float(data)
+        
+        # Validate range for sint16 with 0.1 dB resolution (-3276.8 to 3276.7 dB)
+        if not -3276.8 <= spl <= 3276.7:
+            raise ValueError(f"Sound pressure level {spl} dB is outside valid range (-3276.8 to 3276.7 dB)")
+        
+        # Convert dB to raw value (multiply by 10 for 0.1 dB resolution)
+        spl_raw = round(spl * 10)
+        
+        return bytearray(spl_raw.to_bytes(2, byteorder="little", signed=True))
 
     @property
     def unit(self) -> str:
