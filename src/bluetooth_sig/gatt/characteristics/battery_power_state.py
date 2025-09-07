@@ -129,11 +129,11 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Battery Level Status"
     # YAML describes this as boolean[] which maps to 'string' in the registry;
-    # parse_value returns a dict, but tests and registry expect the declared
+    # decode_value returns a dict, but tests and registry expect the declared
     # value_type to be 'string'. Override to keep metadata consistent.
     _manual_value_type: str = "string"
 
-    def parse_value(self, data: bytearray) -> BatteryPowerStateData:
+    def decode_value(self, data: bytearray) -> BatteryPowerStateData:
         """Parse the Battery Level Status value.
 
         The characteristic supports a 1-byte basic format and a 2-byte
@@ -290,7 +290,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
     def _parse_power_state_16(self, power_state_raw: int) -> dict[str, Any]:
         """Parse the 16-bit Power State bitfield into its components.
 
-        Returns a dictionary with keys matching the public parse_value output.
+        Returns a dictionary with keys matching the public decode_value output.
         """
         # battery present (bit 0): 0 = No/Not present, 1 = Present
         battery_present = (

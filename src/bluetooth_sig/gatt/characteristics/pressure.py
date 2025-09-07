@@ -11,7 +11,7 @@ class PressureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Pressure"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse pressure data (uint32 in units of 0.1 Pa)."""
         if len(data) < 4:
             raise ValueError("Pressure data must be at least 4 bytes")

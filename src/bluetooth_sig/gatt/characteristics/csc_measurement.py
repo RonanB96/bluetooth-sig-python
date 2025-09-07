@@ -31,7 +31,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "CSC Measurement"
 
-    def parse_value(self, data: bytearray) -> CSCMeasurementData:
+    def decode_value(self, data: bytearray) -> CSCMeasurementData:
         """Parse CSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + [Cumulative Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +

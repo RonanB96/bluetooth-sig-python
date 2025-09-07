@@ -33,7 +33,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "RSC Measurement"
 
-    def parse_value(self, data: bytearray) -> RSCMeasurementData:
+    def decode_value(self, data: bytearray) -> RSCMeasurementData:
         """Parse RSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Instantaneous Speed(2) + Instantaneous Cadence(1) +

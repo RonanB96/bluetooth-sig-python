@@ -15,10 +15,10 @@ class ElevationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Elevation"
     _manual_value_type: str = (
-        "float"  # Override YAML int type since parse_value returns float
+        "float"  # Override YAML int type since decode_value returns float
     )
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse elevation data (sint24 in units of 0.01 meters)."""
         if len(data) < 3:
             raise ValueError("Elevation data must be at least 3 bytes")

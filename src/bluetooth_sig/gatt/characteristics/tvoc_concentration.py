@@ -15,7 +15,7 @@ class TVOCConcentrationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "VOC Concentration"
 
-    def parse_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray) -> int:
         """Parse TVOC concentration data (uint16 in units of 1 ppb).
 
         Args:

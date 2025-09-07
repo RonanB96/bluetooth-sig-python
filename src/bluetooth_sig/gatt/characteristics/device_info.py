@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 @dataclass
@@ -11,9 +12,9 @@ class ManufacturerNameStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Manufacturer Name String"
 
-    def parse_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray) -> str:
         """Parse manufacturer name string."""
-        return self._parse_utf8_string(data)
+        return DataParser.parse_utf8_string(data)
 
     def encode_value(self, data: str) -> bytearray:
         """Encode string back to bytes.
@@ -40,9 +41,9 @@ class ModelNumberStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Model Number String"
 
-    def parse_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray) -> str:
         """Parse model number string."""
-        return self._parse_utf8_string(data)
+        return DataParser.parse_utf8_string(data)
 
     def encode_value(self, data: str) -> bytearray:
         """Encode string back to bytes.
@@ -69,9 +70,9 @@ class SerialNumberStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Serial Number String"
 
-    def parse_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray) -> str:
         """Parse serial number string."""
-        return self._parse_utf8_string(data)
+        return DataParser.parse_utf8_string(data)
 
     def encode_value(self, data: str) -> bytearray:
         """Encode string back to bytes.
@@ -98,9 +99,9 @@ class FirmwareRevisionStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Firmware Revision String"
 
-    def parse_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray) -> str:
         """Parse firmware revision string."""
-        return self._parse_utf8_string(data)
+        return DataParser.parse_utf8_string(data)
 
     def encode_value(self, data: str) -> bytearray:
         """Encode string back to bytes.
@@ -127,9 +128,9 @@ class HardwareRevisionStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Hardware Revision String"
 
-    def parse_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray) -> str:
         """Parse hardware revision string."""
-        return self._parse_utf8_string(data)
+        return DataParser.parse_utf8_string(data)
 
     def encode_value(self, data: str) -> bytearray:
         """Encode string back to bytes.
@@ -156,9 +157,9 @@ class SoftwareRevisionStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Software Revision String"
 
-    def parse_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray) -> str:
         """Parse software revision string."""
-        return self._parse_utf8_string(data)
+        return DataParser.parse_utf8_string(data)
 
     def encode_value(self, data: str) -> bytearray:
         """Encode string back to bytes.

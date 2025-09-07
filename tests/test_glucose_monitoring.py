@@ -75,7 +75,7 @@ class TestGlucoseMeasurementCharacteristic:
             ]
         )
 
-        result = glucose_measurement_char.parse_value(test_data)
+        result = glucose_measurement_char.decode_value(test_data)
 
         assert result["sequence_number"] == 42
         assert result["unit"] == "mg/dL"
@@ -108,7 +108,7 @@ class TestGlucoseMeasurementCharacteristic:
             ]
         )
 
-        result = glucose_measurement_char.parse_value(test_data)
+        result = glucose_measurement_char.decode_value(test_data)
         assert result["unit"] == "mmol/L"
 
     def test_glucose_measurement_with_time_offset(self, glucose_measurement_char):
@@ -133,7 +133,7 @@ class TestGlucoseMeasurementCharacteristic:
             ]
         )
 
-        result = glucose_measurement_char.parse_value(test_data)
+        result = glucose_measurement_char.decode_value(test_data)
         assert result["time_offset_minutes"] == 15
 
     def test_glucose_measurement_with_type_location(self, glucose_measurement_char):
@@ -157,7 +157,7 @@ class TestGlucoseMeasurementCharacteristic:
             ]
         )
 
-        result = glucose_measurement_char.parse_value(test_data)
+        result = glucose_measurement_char.decode_value(test_data)
         assert result["glucose_type"] == 2
         assert result["sample_location"] == 1
 
@@ -183,14 +183,14 @@ class TestGlucoseMeasurementCharacteristic:
             ]
         )
 
-        result = glucose_measurement_char.parse_value(test_data)
+        result = glucose_measurement_char.decode_value(test_data)
         assert result["sensor_status"] == 1
 
     def test_glucose_measurement_invalid_data(self, glucose_measurement_char):
         """Test glucose measurement with invalid data."""
         # Too short data
         with pytest.raises(ValueError, match="must be at least 12 bytes"):
-            glucose_measurement_char.parse_value(bytearray([0x00, 0x01]))
+            glucose_measurement_char.decode_value(bytearray([0x00, 0x01]))
 
     def test_glucose_type_names(self, glucose_measurement_char):
         """Test glucose type name mapping."""
@@ -239,7 +239,7 @@ class TestGlucoseMeasurementContextCharacteristic:
             ]
         )
 
-        result = glucose_context_char.parse_value(test_data)
+        result = glucose_context_char.decode_value(test_data)
         assert result.sequence_number == 42
         assert result.flags == 0
 
@@ -257,7 +257,7 @@ class TestGlucoseMeasurementContextCharacteristic:
             ]
         )
 
-        result = glucose_context_char.parse_value(test_data)
+        result = glucose_context_char.decode_value(test_data)
         assert result.carbohydrate_id == 1
         assert result.carbohydrate_type == "Breakfast"
 
@@ -273,7 +273,7 @@ class TestGlucoseMeasurementContextCharacteristic:
             ]
         )
 
-        result = glucose_context_char.parse_value(test_data)
+        result = glucose_context_char.decode_value(test_data)
         assert result.meal == 2
         assert result.meal_type == "Postprandial (after meal)"
 
@@ -291,7 +291,7 @@ class TestGlucoseMeasurementContextCharacteristic:
             ]
         )
 
-        result = glucose_context_char.parse_value(test_data)
+        result = glucose_context_char.decode_value(test_data)
         assert result.exercise_duration_seconds == 600
         assert result.exercise_intensity_percent == 75
 
@@ -308,7 +308,7 @@ class TestGlucoseMeasurementContextCharacteristic:
             ]
         )
 
-        result = glucose_context_char.parse_value(test_data)
+        result = glucose_context_char.decode_value(test_data)
         assert hasattr(result, "hba1c_percent")
 
     def test_glucose_context_type_names(self, glucose_context_char):
@@ -326,7 +326,7 @@ class TestGlucoseMeasurementContextCharacteristic:
     def test_glucose_context_invalid_data(self, glucose_context_char):
         """Test glucose context with invalid data."""
         with pytest.raises(ValueError, match="must be at least 3 bytes"):
-            glucose_context_char.parse_value(bytearray([0x00]))
+            glucose_context_char.decode_value(bytearray([0x00]))
 
 
 class TestGlucoseFeatureCharacteristic:
@@ -348,7 +348,7 @@ class TestGlucoseFeatureCharacteristic:
         # Features: 0x0403 = Low Battery + Sensor Malfunction + Multiple Bond
         test_data = bytearray([0x03, 0x04])
 
-        result = glucose_feature_char.parse_value(test_data)
+        result = glucose_feature_char.decode_value(test_data)
         assert result.features_bitmap == 0x0403
         assert result.low_battery_detection is True
         assert result.sensor_malfunction_detection is True
@@ -361,7 +361,7 @@ class TestGlucoseFeatureCharacteristic:
         # All feature bits set
         test_data = bytearray([0xFF, 0x07])  # All 11 defined feature bits
 
-        result = glucose_feature_char.parse_value(test_data)
+        result = glucose_feature_char.decode_value(test_data)
         assert result.feature_count == 11
         assert "Low Battery Detection" in result.enabled_features
         assert "Multiple Bond Support" in result.enabled_features
@@ -370,7 +370,7 @@ class TestGlucoseFeatureCharacteristic:
         """Test glucose feature with no features enabled."""
         test_data = bytearray([0x00, 0x00])
 
-        result = glucose_feature_char.parse_value(test_data)
+        result = glucose_feature_char.decode_value(test_data)
         assert result.features_bitmap == 0
         assert result.feature_count == 0
         assert len(result.enabled_features) == 0
@@ -386,7 +386,7 @@ class TestGlucoseFeatureCharacteristic:
     def test_glucose_feature_invalid_data(self, glucose_feature_char):
         """Test glucose feature with invalid data."""
         with pytest.raises(ValueError, match="must be at least 2 bytes"):
-            glucose_feature_char.parse_value(bytearray([0x00]))
+            glucose_feature_char.decode_value(bytearray([0x00]))
 
     def test_glucose_feature_encode_value(self, glucose_feature_char):
         """Test encoding GlucoseFeatureData back to bytes."""
@@ -431,7 +431,7 @@ class TestGlucoseFeatureCharacteristic:
         )  # Low Battery + Sensor Malfunction + Multiple Bond
 
         # Parse the data
-        parsed = glucose_feature_char.parse_value(original_data)
+        parsed = glucose_feature_char.decode_value(original_data)
 
         # Encode it back
         encoded = glucose_feature_char.encode_value(parsed)

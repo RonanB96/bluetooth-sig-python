@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .base import BaseCharacteristic
+from .utils import IEEE11073Parser
 
 
 @dataclass
@@ -17,7 +18,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Glucose Measurement"
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse glucose measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + Base Time(7) + [Time Offset(2)] +
@@ -43,7 +44,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
         offset += 2
 
         # Parse base time (7 bytes) - IEEE-11073 timestamp
-        base_time = self._parse_ieee11073_timestamp(data, offset)
+        base_time = IEEE11073Parser.parse_timestamp(data, offset)
         offset += 7
 
         result = {
@@ -61,7 +62,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
         # Parse glucose concentration (2 bytes) - IEEE-11073 SFLOAT
         if len(data) >= offset + 2:
             glucose_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-            glucose_value = self._parse_ieee11073_sfloat(glucose_raw)
+            glucose_value = IEEE11073Parser.parse_sfloat(glucose_raw)
 
             # Determine unit based on flags
             unit = "mmol/L" if (flags & 0x02) else "mg/dL"  # mmol/L vs mg/dL
@@ -144,7 +145,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
         # Start with flags, sequence number, and base time
         result = bytearray([flags])
         result.extend(struct.pack("<H", sequence_number))
-        result.extend(self._encode_ieee11073_timestamp(base_time))
+        result.extend(IEEE11073Parser.encode_timestamp(base_time))
 
         # Add optional time offset
         if time_offset is not None:

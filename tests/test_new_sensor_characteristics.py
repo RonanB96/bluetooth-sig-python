@@ -36,15 +36,15 @@ class TestNavigationCharacteristics:
 
         # Test normal parsing: 18000 (in 0.01 degrees) = 180.00 degrees
         test_data = bytearray([0x40, 0x46])  # 18000 in little endian uint16
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
         assert parsed == 179.84
 
         # Test boundary values
         zero_data = bytearray([0x00, 0x00])  # 0 degrees
-        assert char.parse_value(zero_data) == 0.0
+        assert char.decode_value(zero_data) == 0.0
 
         max_data = bytearray([0x9F, 0x8C])  # 35999 = 359.99 degrees
-        assert char.parse_value(max_data) == 359.99
+        assert char.decode_value(max_data) == 359.99
 
     def test_magnetic_declination_error_handling(self):
         """Test Magnetic Declination error handling."""
@@ -52,7 +52,7 @@ class TestNavigationCharacteristics:
 
         # Test insufficient data
         with pytest.raises(ValueError, match="must be at least 2 bytes"):
-            char.parse_value(bytearray([0x12]))
+            char.decode_value(bytearray([0x12]))
 
     def test_elevation_parsing(self):
         """Test Elevation characteristic parsing."""
@@ -67,12 +67,12 @@ class TestNavigationCharacteristics:
 
         # Test normal parsing: 50000 (in 0.01 meters) = 500.00 meters
         test_data = bytearray([0x50, 0xC3, 0x00])  # 50000 in 24-bit little endian
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
         assert parsed == 500.0
 
         # Test negative elevation (below sea level)
         neg_data = bytearray([0xFF, 0xFF, 0xFF])  # -1 in 24-bit signed
-        parsed_neg = char.parse_value(neg_data)
+        parsed_neg = char.decode_value(neg_data)
         assert parsed_neg == -0.01
 
     def test_elevation_error_handling(self):
@@ -81,7 +81,7 @@ class TestNavigationCharacteristics:
 
         # Test insufficient data
         with pytest.raises(ValueError, match="must be at least 3 bytes"):
-            char.parse_value(bytearray([0x12, 0x34]))
+            char.decode_value(bytearray([0x12, 0x34]))
 
     def test_magnetic_flux_density_2d_parsing(self):
         """Test Magnetic Flux Density 2D characteristic parsing."""
@@ -96,7 +96,7 @@ class TestNavigationCharacteristics:
 
         # Test normal parsing: X=1000, Y=-500 (in 10^-7 Tesla units)
         test_data = bytearray(struct.pack("<hh", 1000, -500))
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
 
         assert abs(parsed.x_axis - 1e-4) < 1e-10  # 1000 * 10^-7 = 1e-4
         assert abs(parsed.y_axis - (-5e-5)) < 1e-10  # -500 * 10^-7 = -5e-5
@@ -115,7 +115,7 @@ class TestNavigationCharacteristics:
 
         # Test normal parsing: X=1000, Y=-500, Z=2000
         test_data = bytearray(struct.pack("<hhh", 1000, -500, 2000))
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
 
         assert abs(parsed.x_axis - 1e-4) < 1e-10
         assert abs(parsed.y_axis - (-5e-5)) < 1e-10
@@ -149,12 +149,12 @@ class TestEnvironmentalCharacteristics:
 
         for value, expected in test_cases:
             test_data = bytearray([value])
-            parsed = char.parse_value(test_data)
+            parsed = char.decode_value(test_data)
             assert parsed == expected
 
         # Test reserved value
         reserved_data = bytearray([255])
-        parsed = char.parse_value(reserved_data)
+        parsed = char.decode_value(reserved_data)
         assert parsed == BarometricPressureTrend.UNKNOWN  # Falls back to UNKNOWN
 
     def test_pollen_concentration_parsing(self):
@@ -170,7 +170,7 @@ class TestEnvironmentalCharacteristics:
 
         # Test normal parsing: 123456 count/m³
         test_data = bytearray([0x40, 0xE2, 0x01])  # 123456 in 24-bit little endian
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
         assert parsed == 123456
 
     def test_rainfall_parsing(self):
@@ -186,7 +186,7 @@ class TestEnvironmentalCharacteristics:
 
         # Test normal parsing: 1250 mm rainfall
         test_data = bytearray([0xE2, 0x04])  # 1250 in little endian uint16
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
         assert parsed == 1250.0
 
 
@@ -218,12 +218,12 @@ class TestTimeCharacteristics:
 
         for offset, expected in test_cases:
             test_data = bytearray(struct.pack("b", offset))  # signed byte
-            parsed = char.parse_value(test_data)
+            parsed = char.decode_value(test_data)
             assert parsed == expected
 
         # Test unknown value
         unknown_data = bytearray([0x80])  # -128
-        parsed = char.parse_value(unknown_data)
+        parsed = char.decode_value(unknown_data)
         assert parsed == "Unknown"
 
     def test_local_time_information_parsing(self):
@@ -239,7 +239,7 @@ class TestTimeCharacteristics:
 
         # Test normal parsing: UTC+2 with DST (+1 hour)
         test_data = bytearray([8, 4])  # timezone=+2h (8*15min), dst=+1h (value 4)
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
 
         assert parsed.timezone.description == "UTC+02:00"
         assert parsed.timezone.offset_hours == 2.0
@@ -249,7 +249,7 @@ class TestTimeCharacteristics:
 
         # Test unknown values
         unknown_data = bytearray([0x80, 0xFF])  # unknown timezone and DST
-        parsed_unknown = char.parse_value(unknown_data)
+        parsed_unknown = char.decode_value(unknown_data)
         assert parsed_unknown.timezone.description == "Unknown"
         assert parsed_unknown.dst_offset.description == "DST offset unknown"
 
@@ -293,7 +293,7 @@ class TestTimeCharacteristics:
         original_data = bytearray([8, 4])
 
         # Parse the data
-        parsed = char.parse_value(original_data)
+        parsed = char.decode_value(original_data)
 
         # Encode it back
         encoded = char.encode_value(parsed)

@@ -38,7 +38,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Glucose Feature"
 
-    def parse_value(self, data: bytearray) -> GlucoseFeatureData:
+    def decode_value(self, data: bytearray) -> GlucoseFeatureData:
         """Parse glucose feature data according to Bluetooth specification.
 
         Format: Features(2) - 16-bit bitmap indicating supported features

@@ -14,7 +14,7 @@ class AverageCurrentCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Average Current"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse average current data (uint16 in units of 0.01 A).
 
         Args:

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 class SensorContactState(IntEnum):
@@ -72,7 +73,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Heart Rate Measurement"
 
-    def parse_value(self, data: bytearray) -> HeartRateData:
+    def decode_value(self, data: bytearray) -> HeartRateData:
         """Parse heart rate measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Heart Rate Value(1-2) + [Energy Expended(2)] + [RR-Intervals(2*n)]
@@ -93,10 +94,10 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
         if flags & 0x01:  # 16-bit heart rate value
             if len(data) < offset + 2:
                 raise ValueError("Insufficient data for 16-bit heart rate value")
-            heart_rate = self._parse_uint16(data, offset)
+            heart_rate = DataParser.parse_uint16(data, offset)
             offset += 2
         else:  # 8-bit heart rate value
-            heart_rate = self._parse_uint8(data, offset)
+            heart_rate = DataParser.parse_uint8(data, offset)
             offset += 1
 
         # Determine sensor contact state
@@ -105,14 +106,14 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
         # Parse optional energy expended (2 bytes) if present
         energy_expended = None
         if (flags & 0x08) and len(data) >= offset + 2:
-            energy_expended = self._parse_uint16(data, offset)
+            energy_expended = DataParser.parse_uint16(data, offset)
             offset += 2
 
         # Parse optional RR-Intervals if present
         rr_intervals: list[float] = []
         if (flags & 0x10) and len(data) >= offset + 2:
             while offset + 2 <= len(data):
-                rr_interval_raw = self._parse_uint16(data, offset)
+                rr_interval_raw = DataParser.parse_uint16(data, offset)
                 # RR-Interval is in 1/1024 second units
                 rr_intervals.append(rr_interval_raw / 1024.0)
                 offset += 2
@@ -160,20 +161,20 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
         # Add heart rate value
         if flags & 0x01:  # 16-bit format
-            result.extend(self._encode_uint16(data.heart_rate))
+            result.extend(DataParser.encode_uint16(data.heart_rate))
         else:  # 8-bit format
-            result.extend(self._encode_uint8(data.heart_rate))
+            result.extend(DataParser.encode_uint8(data.heart_rate))
 
         # Add energy expended if present
         if data.energy_expended is not None:
-            result.extend(self._encode_uint16(data.energy_expended))
+            result.extend(DataParser.encode_uint16(data.energy_expended))
 
         # Add RR-Intervals if present
         for rr_interval in data.rr_intervals:
             # Convert seconds to 1/1024 second units
             rr_raw = round(rr_interval * 1024)
             rr_raw = min(rr_raw, 65535)  # Clamp to max value
-            result.extend(self._encode_uint16(rr_raw))
+            result.extend(DataParser.encode_uint16(rr_raw))
 
         return result
 

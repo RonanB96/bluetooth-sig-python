@@ -20,7 +20,7 @@ class IlluminanceCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Illuminance"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse illuminance data.
 
         Format: 3-byte value representing illuminance in 0.01 lux units.

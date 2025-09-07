@@ -78,7 +78,7 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Weight Scale Feature"
 
-    def parse_value(self, data: bytearray) -> WeightScaleFeatureData:
+    def decode_value(self, data: bytearray) -> WeightScaleFeatureData:
         """Parse weight scale feature data according to Bluetooth specification.
 
         Format: Features(4 bytes) - bitmask indicating supported features

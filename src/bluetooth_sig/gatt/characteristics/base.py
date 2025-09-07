@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import math
 import re
-import struct
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
@@ -168,8 +166,9 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
     @property
     def name(self) -> str:
         """Get the characteristic name from UUID registry."""
-        if hasattr(self, "_characteristic_name"):
-            return self._characteristic_name
+        characteristic_name = getattr(self, "_characteristic_name", None)
+        if characteristic_name:
+            return characteristic_name
         info = uuid_registry.get_characteristic_info(self.char_uuid)
         return info.name if info else f"Unknown Characteristic ({self.char_uuid})"
 
@@ -190,7 +189,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
             return False
 
     @abstractmethod
-    def parse_value(self, data: bytearray) -> Any:
+    def decode_value(self, data: bytearray) -> Any:
         """Parse the characteristic's raw value.
 
         Args:
@@ -229,8 +228,9 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
         This allows manual overrides to take precedence while using maximum automation as default.
         """
         # First try manual unit override (takes priority)
-        if hasattr(self, "_manual_unit"):
-            return self._manual_unit
+        manual_unit = getattr(self, "_manual_unit", None)
+        if manual_unit:
+            return manual_unit
 
         # Try unit symbol from cross-file references
         if hasattr(self, "_yaml_unit_symbol") and self._yaml_unit_symbol:
@@ -244,15 +244,38 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
         return ""
 
     @property
-    def parsed_value_type(self) -> str:
+    def size(self) -> int | None:
+        """Get the size in bytes for this characteristic from YAML specifications.
+
+        Returns the field size from YAML automation if available, otherwise None.
+        This is useful for determining the expected data length for parsing and encoding.
+        """
+        # First try manual size override if set
+        if hasattr(self, "_manual_size"):
+            manual_size = getattr(self, "_manual_size", None)
+            if isinstance(manual_size, int):
+                return manual_size
+
+        # Try field size from YAML cross-reference
+        field_size = self.get_yaml_field_size()
+        if field_size is not None:
+            return field_size
+
+        # For characteristics without YAML size info, return None
+        # indicating variable or unknown length
+        return None
+
+    @property
+    def value_type_resolved(self) -> str:
         """Get the value type for this characteristic.
 
         First tries manual value_type override, then falls back to YAML registry.
         This allows manual overrides to take precedence while using automatic parsing as default.
         """
         # First try manual value_type override (takes priority)
-        if hasattr(self, "_manual_value_type"):
-            return self._manual_value_type
+        manual_value_type = getattr(self, "_manual_value_type", None)
+        if manual_value_type:
+            return manual_value_type
 
         # Fallback to value_type from YAML registry for automatic parsing
         char_info = uuid_registry.get_characteristic_info(self.char_uuid)
@@ -272,7 +295,9 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
         field_size = getattr(self, "_yaml_field_size", None)
         if field_size and isinstance(field_size, str) and field_size.isdigit():
             return int(field_size)
-        return field_size
+        if isinstance(field_size, int):
+            return field_size
+        return None
 
     def get_yaml_unit_id(self) -> str | None:
         """Get the Bluetooth SIG unit identifier from YAML automation."""
@@ -302,257 +327,19 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
         """Get byte order hint (Bluetooth SIG uses little-endian by convention)."""
         return "little"
 
-    def _parse_ieee11073_sfloat(self, sfloat_val: int) -> float:
-        """Convert IEEE-11073 16-bit SFLOAT to Python float.
-
-        This is a common pattern used in health device characteristics
-        like blood pressure, pulse oximetry, and temperature measurements.
-
-        Args:
-            sfloat_val: 16-bit SFLOAT value as integer
-
-        Returns:
-            Converted float value
-        """
-        if sfloat_val == 0x07FF:  # NaN
-            return float("nan")
-        if sfloat_val == 0x0800:  # NRes (Not a valid result)
-            return float("nan")
-        if sfloat_val == 0x07FE:  # +INFINITY
-            return float("inf")
-        if sfloat_val == 0x0802:  # -INFINITY
-            return float("-inf")
-
-        # Extract mantissa and exponent
-        mantissa = sfloat_val & 0x0FFF
-        exponent = (sfloat_val >> 12) & 0x0F
-
-        # Handle negative mantissa
-        if mantissa & 0x0800:
-            mantissa = mantissa - 0x1000
-
-        # Handle negative exponent
-        if exponent & 0x08:
-            exponent = exponent - 0x10
-
-        return mantissa * (10**exponent)
-
-    def _parse_ieee11073_timestamp(
-        self, data: bytearray, offset: int
-    ) -> dict[str, int]:
-        """Parse IEEE-11073 timestamp format (7 bytes).
-
-        This is a common pattern used in health device characteristics
-        for parsing timestamps.
+    @classmethod
+    def from_uuid(
+        cls, uuid: str, properties: set[str] | None = None
+    ) -> BaseCharacteristic:
+        """Create a characteristic instance from UUID.
 
         Args:
-            data: Raw bytearray containing the timestamp
-            offset: Offset where timestamp starts
+            uuid: Characteristic UUID
+            properties: Set of GATT properties (optional)
 
         Returns:
-            Dictionary with timestamp components
-
-        Raises:
-            ValueError: If not enough data for timestamp
+            Characteristic instance
         """
-        if len(data) < offset + 7:
-            raise ValueError("Not enough data for timestamp parsing")
-
-        timestamp_data = data[offset : offset + 7]
-        year, month, day, hours, minutes, seconds = struct.unpack(
-            "<HBBBBB", timestamp_data
-        )
-        return {
-            "year": year,
-            "month": month,
-            "day": day,
-            "hours": hours,
-            "minutes": minutes,
-            "seconds": seconds,
-        }
-
-    def _parse_utf8_string(self, data: bytearray) -> str:
-        """Parse UTF-8 string from bytearray.
-
-        This is a common pattern used in device info and generic access
-        characteristics for parsing string values.
-
-        Args:
-            data: Raw bytearray containing string data
-
-        Returns:
-            Decoded UTF-8 string with null bytes stripped
-        """
-        return data.decode("utf-8", errors="replace").rstrip("\x00")
-
-    # Reusable helper methods for common parsing/encoding patterns
-
-    def _parse_uint8(self, data: bytearray, offset: int = 0) -> int:
-        """Parse unsigned 8-bit integer."""
-        if len(data) < offset + 1:
-            raise ValueError(f"Insufficient data for uint8 at offset {offset}")
-        return data[offset]
-
-    def _parse_uint16(self, data: bytearray, offset: int = 0) -> int:
-        """Parse unsigned 16-bit integer (little-endian)."""
-        if len(data) < offset + 2:
-            raise ValueError(f"Insufficient data for uint16 at offset {offset}")
-        return int.from_bytes(
-            data[offset : offset + 2], byteorder="little", signed=False
-        )
-
-    def _parse_uint32(self, data: bytearray, offset: int = 0) -> int:
-        """Parse unsigned 32-bit integer (little-endian)."""
-        if len(data) < offset + 4:
-            raise ValueError(f"Insufficient data for uint32 at offset {offset}")
-        return int.from_bytes(
-            data[offset : offset + 4], byteorder="little", signed=False
-        )
-
-    def _parse_sint16(self, data: bytearray, offset: int = 0) -> int:
-        """Parse signed 16-bit integer (little-endian)."""
-        if len(data) < offset + 2:
-            raise ValueError(f"Insufficient data for sint16 at offset {offset}")
-        return int.from_bytes(
-            data[offset : offset + 2], byteorder="little", signed=True
-        )
-
-    def _parse_sint32(self, data: bytearray, offset: int = 0) -> int:
-        """Parse signed 32-bit integer (little-endian)."""
-        if len(data) < offset + 4:
-            raise ValueError(f"Insufficient data for sint32 at offset {offset}")
-        return int.from_bytes(
-            data[offset : offset + 4], byteorder="little", signed=True
-        )
-
-    def _encode_uint8(self, value: int) -> bytearray:
-        """Encode unsigned 8-bit integer."""
-        if not 0 <= value <= 255:
-            raise ValueError(f"Value {value} out of range for uint8 (0-255)")
-        return bytearray([value])
-
-    def _encode_uint16(self, value: int) -> bytearray:
-        """Encode unsigned 16-bit integer (little-endian)."""
-        if not 0 <= value <= 65535:
-            raise ValueError(f"Value {value} out of range for uint16 (0-65535)")
-        return bytearray(value.to_bytes(2, byteorder="little", signed=False))
-
-    def _encode_uint32(self, value: int) -> bytearray:
-        """Encode unsigned 32-bit integer (little-endian)."""
-        if not 0 <= value <= 4294967295:
-            raise ValueError(f"Value {value} out of range for uint32 (0-4294967295)")
-        return bytearray(value.to_bytes(4, byteorder="little", signed=False))
-
-    def _encode_sint16(self, value: int) -> bytearray:
-        """Encode signed 16-bit integer (little-endian)."""
-        if not -32768 <= value <= 32767:
-            raise ValueError(f"Value {value} out of range for sint16 (-32768 to 32767)")
-        return bytearray(value.to_bytes(2, byteorder="little", signed=True))
-
-    def _encode_sint32(self, value: int) -> bytearray:
-        """Encode signed 32-bit integer (little-endian)."""
-        if not -2147483648 <= value <= 2147483647:
-            raise ValueError(
-                f"Value {value} out of range for sint32 (-2147483648 to 2147483647)"
-            )
-        return bytearray(value.to_bytes(4, byteorder="little", signed=True))
-
-    def _encode_ieee11073_sfloat(self, value: float) -> bytearray:
-        """Encode Python float to IEEE-11073 16-bit SFLOAT.
-
-        Args:
-            value: Float value to encode
-
-        Returns:
-            2-byte bytearray containing the SFLOAT representation
-        """
-        if math.isnan(value):
-            return bytearray([0xFF, 0x07])  # NaN
-        if math.isinf(value):
-            if value > 0:
-                return bytearray([0xFE, 0x07])  # +INFINITY
-            return bytearray([0x02, 0x08])  # -INFINITY
-
-        # Find appropriate exponent and mantissa
-        if value == 0:
-            return bytearray([0x00, 0x00])
-
-        # Determine sign
-        sign = -1 if value < 0 else 1
-        abs_value = abs(value)
-
-        # Find exponent
-        exponent = 0
-        mantissa = abs_value
-
-        # Scale to get mantissa in range
-        while mantissa >= 2048 and exponent < 7:  # Max mantissa is 2047
-            mantissa /= 10
-            exponent += 1
-
-        while mantissa < 204.8 and exponent > -8:  # Min mantissa for precision
-            mantissa *= 10
-            exponent -= 1
-
-        # Round mantissa to integer
-        mantissa = round(mantissa) * sign
-
-        # Clamp values to valid ranges
-        if mantissa > 2047:
-            mantissa = 2047
-        elif mantissa < -2048:
-            mantissa = -2048
-
-        if exponent > 7:
-            exponent = 7
-        elif exponent < -8:
-            exponent = -8
-
-        # Encode as 16-bit value
-        if mantissa < 0:
-            mantissa += 4096  # Convert to unsigned representation
-
-        if exponent < 0:
-            exponent += 16  # Convert to unsigned representation
-
-        sfloat_val = (exponent << 12) | (mantissa & 0x0FFF)
-        return bytearray(sfloat_val.to_bytes(2, byteorder="little", signed=False))
-
-    def _encode_ieee11073_timestamp(self, timestamp: dict[str, int]) -> bytearray:
-        """Encode timestamp to IEEE-11073 7-byte format.
-
-        Args:
-            timestamp: Dictionary with keys: year, month, day, hours, minutes, seconds
-
-        Returns:
-            7-byte bytearray containing the timestamp
-        """
-        required_keys = {"year", "month", "day", "hours", "minutes", "seconds"}
-        if not all(key in timestamp for key in required_keys):
-            raise ValueError(f"Timestamp must contain all keys: {required_keys}")
-
-        # Validate ranges
-        if not 1582 <= timestamp["year"] <= 9999:
-            raise ValueError(f"Year {timestamp['year']} out of range (1582-9999)")
-        if not 1 <= timestamp["month"] <= 12:
-            raise ValueError(f"Month {timestamp['month']} out of range (1-12)")
-        if not 1 <= timestamp["day"] <= 31:
-            raise ValueError(f"Day {timestamp['day']} out of range (1-31)")
-        if not 0 <= timestamp["hours"] <= 23:
-            raise ValueError(f"Hours {timestamp['hours']} out of range (0-23)")
-        if not 0 <= timestamp["minutes"] <= 59:
-            raise ValueError(f"Minutes {timestamp['minutes']} out of range (0-59)")
-        if not 0 <= timestamp["seconds"] <= 59:
-            raise ValueError(f"Seconds {timestamp['seconds']} out of range (0-59)")
-
-        return bytearray(
-            struct.pack(
-                "<HBBBBB",
-                timestamp["year"],
-                timestamp["month"],
-                timestamp["day"],
-                timestamp["hours"],
-                timestamp["minutes"],
-                timestamp["seconds"],
-            )
-        )
+        if properties is None:
+            properties = set()
+        return cls(uuid=uuid, properties=properties)

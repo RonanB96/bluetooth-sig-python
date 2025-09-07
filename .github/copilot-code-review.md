@@ -40,7 +40,7 @@ class GenericAccessService(BaseGattService):
 
 **✅ VALIDATE:**
 - GATT layer classes NEVER import Home Assistant modules
-- Data parsing stays in GATT characteristics (`parse_value()` method)
+- Data parsing stays in GATT characteristics (`decode_value()` method)
 - Home Assistant metadata (`device_class`, `state_class`) stays in GATT layer
 - Clean separation between BLE communication and application logic
 
@@ -56,15 +56,15 @@ from homeassistant.components.sensor import SensorEntity  # In GATT layer
 ```python
 @dataclass
 class MyCharacteristic(BaseCharacteristic):
-    def parse_value(self, data: bytearray) -> float:
+    def encode_value(self, data: bytearray) -> float:
         """Convert raw bytes to meaningful value."""
         return struct.unpack("<f", data)[0]
-    
+
     @property
     def unit(self) -> str:
         """Always include units for sensors."""
         return "°C"
-    
+
     @property
     def device_class(self) -> str:
         """HA device class for sensors."""
@@ -206,9 +206,9 @@ async with BleakClient(device) as client:
 For each PR, verify:
 
 - [ ] **Architecture**: Maintains clean layer separation
-- [ ] **Registry**: Uses UUID registry system consistently  
+- [ ] **Registry**: Uses UUID registry system consistently
 - [ ] **Timeouts**: BLE connections use `timeout=10.0`
-- [ ] **Parsing**: All characteristics implement `parse_value()`
+- [ ] **Parsing**: All characteristics implement `encode_value()`
 - [ ] **Types**: Complete type hints and dataclass usage
 - [ ] **Tests**: Registry validation and parsing tests included
 - [ ] **Documentation**: Clear docstrings and examples
@@ -243,14 +243,14 @@ class NewCharacteristic(BaseCharacteristic):
     def __post_init__(self):
         self.value_type = "float"  # string|int|float|boolean|bytes
         super().__post_init__()
-    
-    def parse_value(self, data: bytearray) -> float:
+
+    def encode_value(self, data: bytearray) -> float:
         return struct.unpack("<f", data)[0]
-    
+
     @property
     def unit(self) -> str:
         return "°C"
-    
+
     @property
     def device_class(self) -> str:
         return "temperature"

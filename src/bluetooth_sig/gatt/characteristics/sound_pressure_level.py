@@ -14,7 +14,7 @@ class SoundPressureLevelCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Power Specification"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse sound pressure level data.
 
         Format: 2-byte signed integer representing sound level in 0.1 dB units.

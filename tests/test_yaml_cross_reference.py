@@ -245,7 +245,7 @@ class TestYAMLCrossReference:
         test_data = bytearray([0x90, 0x01])  # 400 in little-endian
 
         try:
-            parsed_value = temp_char.parse_value(test_data)
+            parsed_value = temp_char.decode_value(test_data)
             assert isinstance(parsed_value, (int, float)), (
                 f"Parsed value should be numeric, got {type(parsed_value)}"
             )

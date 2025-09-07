@@ -6,6 +6,7 @@ import struct
 from dataclasses import dataclass
 
 from .base import BaseCharacteristic
+from .utils import DataParser, IEEE11073Parser
 
 
 @dataclass
@@ -56,7 +57,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Blood Pressure Measurement"
 
-    def parse_value(self, data: bytearray) -> BloodPressureData:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray) -> BloodPressureData:  # pylint: disable=too-many-locals
         """Parse blood pressure measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) + [Timestamp(7)] +
@@ -79,9 +80,9 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
 
         # Create basic result
         result_data = BloodPressureData(
-            systolic=self._parse_ieee11073_sfloat(systolic_raw),
-            diastolic=self._parse_ieee11073_sfloat(diastolic_raw),
-            mean_arterial_pressure=self._parse_ieee11073_sfloat(map_raw),
+            systolic=IEEE11073Parser.parse_sfloat(systolic_raw),
+            diastolic=IEEE11073Parser.parse_sfloat(diastolic_raw),
+            mean_arterial_pressure=IEEE11073Parser.parse_sfloat(map_raw),
             unit="kPa" if flags & 0x01 else "mmHg",  # Units flag
             flags=flags,
         )
@@ -90,13 +91,13 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
 
         # Parse optional timestamp (7 bytes) if present
         if (flags & 0x02) and len(data) >= offset + 7:
-            result_data.timestamp = self._parse_ieee11073_timestamp(data, offset)
+            result_data.timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
         # Parse optional pulse rate (2 bytes) if present
         if (flags & 0x04) and len(data) >= offset + 2:
             pulse_rate_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-            result_data.pulse_rate = self._parse_ieee11073_sfloat(pulse_rate_raw)
+            result_data.pulse_rate = IEEE11073Parser.parse_sfloat(pulse_rate_raw)
             offset += 2
 
         # Parse optional user ID (1 byte) if present
@@ -139,22 +140,22 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
         result.append(flags)
 
         # Encode pressure values as IEEE-11073 SFLOAT
-        result.extend(self._encode_ieee11073_sfloat(data.systolic))
-        result.extend(self._encode_ieee11073_sfloat(data.diastolic))
-        result.extend(self._encode_ieee11073_sfloat(data.mean_arterial_pressure))
+        result.extend(IEEE11073Parser.encode_sfloat(data.systolic))
+        result.extend(IEEE11073Parser.encode_sfloat(data.diastolic))
+        result.extend(IEEE11073Parser.encode_sfloat(data.mean_arterial_pressure))
 
         # Add optional fields
         if data.timestamp is not None:
-            result.extend(self._encode_ieee11073_timestamp(data.timestamp))
+            result.extend(IEEE11073Parser.encode_timestamp(data.timestamp))
 
         if data.pulse_rate is not None:
-            result.extend(self._encode_ieee11073_sfloat(data.pulse_rate))
+            result.extend(IEEE11073Parser.encode_sfloat(data.pulse_rate))
 
         if data.user_id is not None:
             result.append(data.user_id)
 
         if data.measurement_status is not None:
-            result.extend(self._encode_uint16(data.measurement_status))
+            result.extend(DataParser.encode_uint16(data.measurement_status))
 
         return result
 

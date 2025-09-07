@@ -12,7 +12,7 @@ class UVIndexCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "UV Index"
     # YAML provides uint8 -> int, which is correct for UV Index values (0-11+ scale)
 
-    def parse_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray) -> int:
         """Parse UV Index data (uint8)."""
         if len(data) < 1:
             raise ValueError("UV Index data must be at least 1 byte")

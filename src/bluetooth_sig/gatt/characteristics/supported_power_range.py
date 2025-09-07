@@ -41,9 +41,9 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Supported Power Range"
-    _manual_value_type: str = "string"  # Override since parse_value returns dataclass
+    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
 
-    def parse_value(self, data: bytearray) -> SupportedPowerRangeData:
+    def decode_value(self, data: bytearray) -> SupportedPowerRangeData:
         """Parse supported power range data (2x sint16 in watts).
 
         Args:

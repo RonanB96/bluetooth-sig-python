@@ -14,9 +14,9 @@ class CyclingPowerMeasurementData:  # pylint: disable=too-many-instance-attribut
     instantaneous_power: int  # Watts
     pedal_power_balance: int | None = None
     accumulated_energy: int | None = None  # kJ
-    cumulative_wheel_revolutions: int | None = None  # Changed to match parse_value
+    cumulative_wheel_revolutions: int | None = None  # Changed to match decode_value
     last_wheel_event_time: float | None = None  # seconds
-    cumulative_crank_revolutions: int | None = None  # Changed to match parse_value
+    cumulative_crank_revolutions: int | None = None  # Changed to match decode_value
     last_crank_event_time: float | None = None  # seconds
 
     def __post_init__(self):
@@ -37,7 +37,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Cycling Power Measurement"
 
-    def parse_value(self, data: bytearray) -> CyclingPowerMeasurementData:
+    def decode_value(self, data: bytearray) -> CyclingPowerMeasurementData:
         """Parse cycling power measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +

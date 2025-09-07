@@ -123,7 +123,7 @@ from bluetooth_sig.gatt import CharacteristicRegistry, ServiceRegistry
 
 # Parse raw characteristic data
 parser = CharacteristicRegistry.get_parser("2A19")  # Battery Level
-result = parser.parse_value(raw_data)
+result = parser.decode_value(raw_data)
 # Returns: ParsedCharacteristic(value=85, unit="%", device_class="battery")
 
 # Resolve UUIDs by intelligent name matching
@@ -183,7 +183,7 @@ def parse_sensor_reading(char_uuid: str, raw_data: bytes):
     """Pure SIG standard translation - no connection dependencies."""
     parser = CharacteristicRegistry.get_parser(char_uuid)
     if parser:
-        return parser.parse_value(raw_data)
+        return parser.decode_value(raw_data)
     return raw_data  # Fallback to raw data
 ```
 
@@ -198,14 +198,14 @@ async def read_device_sensors(address: str):
     """Read and parse device sensors using proven connection management."""
     async with establish_connection(BleakClient, address, timeout=10.0) as client:
         results = {}
-        
+
         for service in await client.get_services():
             if service_info := ServiceRegistry.get_service_info(service.uuid):
                 for char in service.characteristics:
                     if parser := CharacteristicRegistry.get_parser(char.uuid):
                         raw_data = await client.read_gatt_char(char.uuid)
-                        results[char.uuid] = parser.parse_value(raw_data)
-        
+                        results[char.uuid] = parser.decode_value(raw_data)
+
         return results
 ```
 
@@ -220,7 +220,7 @@ async def simple_characteristic_read(address: str, char_uuid: str):
     async with BleakClient(address, timeout=10.0) as client:
         raw_data = await client.read_gatt_char(char_uuid)
         parser = CharacteristicRegistry.get_parser(char_uuid)
-        return parser.parse_value(raw_data) if parser else raw_data
+        return parser.decode_value(raw_data) if parser else raw_data
 ```
 
 ### Pattern 4: Integration with bluetooth-data-tools
@@ -234,13 +234,13 @@ async def discover_and_interpret_device(advertisement_data):
     """Combine advertisement parsing with SIG interpretation."""
     # Parse raw advertisement
     adv = parse_advertisement_data(advertisement_data)
-    
+
     # Interpret using SIG standards (future functionality)
     interpreted_services = []
     for service_uuid in adv.service_uuids:
         if service_info := ServiceRegistry.get_service_info(service_uuid):
             interpreted_services.append(service_info)
-    
+
     return {
         'device_name': adv.local_name,
         'services': interpreted_services,
@@ -335,23 +335,23 @@ from typing import Dict, Any
 
 class BatteryLevel2A19(BaseCharacteristic):
     """Battery Level - Compiled SIG Standard Implementation."""
-    
+
     UUID = "2A19"
     NAME = "Battery Level"
     UNIT = "%"
     DATA_TYPE = "uint8"
     RANGE_MIN = 0
     RANGE_MAX = 100
-    
-    def parse_value(self, data: bytes) -> Dict[str, Any]:
+
+    def decode_value(self, data: bytes) -> Dict[str, Any]:
         """Parse battery level with compile-time optimized logic."""
         if len(data) != 1:
             raise ValueError("Battery Level requires exactly 1 byte")
-        
+
         value = data[0]
         if value > 100:
             raise ValueError("Battery Level must be 0-100%")
-            
+
         return {
             "value": value,
             "unit": "%",

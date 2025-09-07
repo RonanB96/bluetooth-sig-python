@@ -16,10 +16,10 @@ class MagneticDeclinationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Magnetic Declination"
     _manual_value_type: str = (
-        "float"  # Override YAML int type since parse_value returns float
+        "float"  # Override YAML int type since decode_value returns float
     )
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse magnetic declination data (uint16 in units of 0.01 degrees)."""
         if len(data) < 2:
             raise ValueError("Magnetic declination data must be at least 2 bytes")

@@ -14,7 +14,7 @@ class VoltageCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Voltage"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse voltage data (uint16 in units of 1/64 V).
 
         Args:

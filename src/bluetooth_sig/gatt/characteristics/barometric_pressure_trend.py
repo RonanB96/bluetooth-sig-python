@@ -57,7 +57,7 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
     # Manual override: YAML indicates uint8->int but we return enum
     _manual_value_type: str = "BarometricPressureTrend"
 
-    def parse_value(self, data: bytearray) -> BarometricPressureTrend:
+    def decode_value(self, data: bytearray) -> BarometricPressureTrend:
         """Parse barometric pressure trend data (uint8 enumerated value)."""
         if len(data) < 1:
             raise ValueError("Barometric pressure trend data must be at least 1 byte")

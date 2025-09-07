@@ -15,7 +15,7 @@ class CO2ConcentrationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "CO\\textsubscript{2} Concentration"
 
-    def parse_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray) -> int:
         """Parse CO2 concentration data (uint16 in units of 1 ppm).
 
         Args:

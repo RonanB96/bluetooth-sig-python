@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .base import BaseCharacteristic
+from .utils import IEEE11073Parser
 
 
 @dataclass
@@ -45,7 +46,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Body Composition Measurement"
 
-    def parse_value(self, data: bytearray) -> BodyCompositionMeasurementData:
+    def decode_value(self, data: bytearray) -> BodyCompositionMeasurementData:
         """Parse body composition measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Body Fat %(2) + [Timestamp(7)] + [User ID(1)] +
@@ -159,7 +160,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         """
         # Parse optional timestamp (7 bytes) if present
         if (flags & 0x02) and len(data) >= offset + 7:
-            timestamp = self._parse_ieee11073_timestamp(data, offset)
+            timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             result["timestamp"] = timestamp
             offset += 7
 

@@ -32,15 +32,15 @@ class TestGasSensorCharacteristics:
 
         # Test normal parsing
         test_data = bytearray([0x34, 0x12])  # 4660 ppm little endian
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
         assert parsed == 4660
 
         # Test boundary values
         low_data = bytearray([0x01, 0x00])  # 1 ppm
-        assert char.parse_value(low_data) == 1
+        assert char.decode_value(low_data) == 1
 
         high_data = bytearray([0xFD, 0xFF])  # 65533 ppm
-        assert char.parse_value(high_data) == 65533
+        assert char.decode_value(high_data) == 65533
 
     def test_co2_concentration_special_values(self):
         """Test CO2 concentration special values."""
@@ -48,11 +48,11 @@ class TestGasSensorCharacteristics:
 
         # Test 0xFFFE (value is 65534 or greater)
         with pytest.raises(ValueError, match="65534 ppm or greater"):
-            char.parse_value(bytearray([0xFE, 0xFF]))
+            char.decode_value(bytearray([0xFE, 0xFF]))
 
         # Test 0xFFFF (value is not known)
         with pytest.raises(ValueError, match="not known"):
-            char.parse_value(bytearray([0xFF, 0xFF]))
+            char.decode_value(bytearray([0xFF, 0xFF]))
 
     def test_co2_concentration_invalid_data(self):
         """Test CO2 concentration with invalid data."""
@@ -60,7 +60,7 @@ class TestGasSensorCharacteristics:
 
         # Test insufficient data
         with pytest.raises(ValueError, match="at least 2 bytes"):
-            char.parse_value(bytearray([0x34]))
+            char.decode_value(bytearray([0x34]))
 
     def test_tvoc_concentration_parsing(self):
         """Test TVOC concentration characteristic parsing."""
@@ -75,7 +75,7 @@ class TestGasSensorCharacteristics:
 
         # Test normal parsing
         test_data = bytearray([0xA0, 0x0F])  # 4000 ppb little endian
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
         assert parsed == 4000
 
     def test_tvoc_concentration_special_values(self):
@@ -84,11 +84,11 @@ class TestGasSensorCharacteristics:
 
         # Test 0xFFFE (value is 65534 or greater)
         with pytest.raises(ValueError, match="65534 ppb or greater"):
-            char.parse_value(bytearray([0xFE, 0xFF]))
+            char.decode_value(bytearray([0xFE, 0xFF]))
 
         # Test 0xFFFF (value is not known)
         with pytest.raises(ValueError, match="not known"):
-            char.parse_value(bytearray([0xFF, 0xFF]))
+            char.decode_value(bytearray([0xFF, 0xFF]))
 
     def test_ammonia_concentration_parsing(self):
         """Test ammonia concentration characteristic parsing."""
@@ -102,7 +102,7 @@ class TestGasSensorCharacteristics:
 
         # Test normal parsing
         test_data = bytearray([0x64, 0x00])  # 100 ppm little endian
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
         assert parsed == 100
 
     def test_nitrogen_dioxide_concentration_parsing(self):
@@ -117,7 +117,7 @@ class TestGasSensorCharacteristics:
 
         # Test normal parsing
         test_data = bytearray([0x32, 0x00])  # 50 ppb little endian
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
         assert parsed == 50
 
     def test_pm25_concentration_parsing(self):
@@ -132,7 +132,7 @@ class TestGasSensorCharacteristics:
 
         # Test normal parsing
         test_data = bytearray([0x19, 0x00])  # 25 µg/m³ little endian
-        parsed = char.parse_value(test_data)
+        parsed = char.decode_value(test_data)
         assert parsed == 25
 
     def test_all_characteristics_have_proper_metadata(self):
@@ -193,7 +193,7 @@ class TestGasSensorCharacteristics:
         for char, name in chars:
             # Test normal parsing
             test_data = bytearray([0x32, 0x00])  # 50 µg/m³ little endian
-            parsed = char.parse_value(test_data)
+            parsed = char.decode_value(test_data)
             assert parsed == 50, f"{name} parsing failed"
 
             # Test unit and device class
@@ -222,7 +222,7 @@ class TestGasSensorCharacteristics:
         for char, name, unit in chars:
             # Test normal parsing
             test_data = bytearray([0x64, 0x00])  # 100 in little endian
-            parsed = char.parse_value(test_data)
+            parsed = char.decode_value(test_data)
             assert parsed == 100, f"{name} parsing failed"
 
             # Test unit

@@ -11,7 +11,7 @@ class WindChillCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Wind Chill"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse wind chill data (sint8 in units of 1 degree Celsius)."""
         if len(data) < 1:
             raise ValueError("Wind chill data must be at least 1 byte")

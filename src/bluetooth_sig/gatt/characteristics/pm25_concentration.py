@@ -15,7 +15,7 @@ class PM25ConcentrationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Particulate Matter - PM2.5 Concentration"
 
-    def parse_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray) -> int:
         """Parse PM2.5 concentration data (uint16 in units of 1 μg/m³).
 
         Args:

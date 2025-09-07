@@ -14,7 +14,7 @@ class RainfallCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Rainfall"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse rainfall data (uint16 in meters with 1mm resolution)."""
         if len(data) < 2:
             raise ValueError("Rainfall data must be at least 2 bytes")

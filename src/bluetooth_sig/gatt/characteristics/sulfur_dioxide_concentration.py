@@ -16,7 +16,7 @@ class SulfurDioxideConcentrationCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Sulfur Dioxide Concentration"
     _manual_value_type: str = "int"  # Manual override needed as no YAML available
 
-    def parse_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray) -> int:
         """Parse sulfur dioxide concentration data (uint16 in units of 1 ppb).
 
         Args:

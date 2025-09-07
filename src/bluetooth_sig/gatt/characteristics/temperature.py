@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 @dataclass
@@ -13,13 +14,13 @@ class TemperatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Temperature"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse temperature data (sint16 in units of 0.01 degrees Celsius)."""
         if len(data) < 2:
             raise ValueError("Temperature data must be at least 2 bytes")
 
         # Convert sint16 (little endian) to temperature in Celsius
-        temp_raw = self._parse_sint16(data, 0)
+        temp_raw = DataParser.parse_sint16(data, 0)
         celsius = temp_raw * 0.01
 
         # Validate realistic temperature range for Bluetooth sensors
@@ -49,4 +50,4 @@ class TemperatureCharacteristic(BaseCharacteristic):
 
         # Convert Celsius to raw value (multiply by 100 for 0.01 resolution)
         temp_raw = round(celsius * 100)
-        return self._encode_sint16(temp_raw)
+        return DataParser.encode_sint16(temp_raw)

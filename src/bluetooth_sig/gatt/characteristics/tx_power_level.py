@@ -14,7 +14,7 @@ class TxPowerLevelCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Tx Power Level"
 
-    def parse_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray) -> int:
         """Parse TX power level data (sint8 in dBm).
 
         Args:

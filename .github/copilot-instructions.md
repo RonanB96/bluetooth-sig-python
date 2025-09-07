@@ -103,7 +103,7 @@ class TemperatureCharacteristic(BaseCharacteristic):
         self.value_type = "float"  # string|int|float|boolean|bytes
         super().__post_init__()
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse raw bytes with proper validation."""
         if len(data) < 2:
             raise ValueError("Temperature data must be at least 2 bytes")

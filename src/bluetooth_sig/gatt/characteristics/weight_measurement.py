@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .base import BaseCharacteristic
+from .utils import IEEE11073Parser
 
 
 @dataclass
@@ -17,7 +18,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Weight Measurement"
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:
+    def decode_value(self, data: bytearray) -> dict[str, Any]:
         """Parse weight measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +
@@ -61,7 +62,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
 
         # Parse optional timestamp (7 bytes) if present
         if (flags & 0x02) and len(data) >= offset + 7:
-            timestamp = self._parse_ieee11073_timestamp(data, offset)
+            timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             result["timestamp"] = timestamp
             offset += 7
 
@@ -140,7 +141,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
 
         # Add optional fields based on flags
         if timestamp is not None:
-            result.extend(self._encode_ieee11073_timestamp(timestamp))
+            result.extend(IEEE11073Parser.encode_timestamp(timestamp))
 
         if user_id is not None:
             if not 0 <= user_id <= 255:

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .base import BaseCharacteristic
+from .utils import IEEE11073Parser
 
 
 @dataclass
@@ -51,7 +52,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Glucose Measurement Context"
 
-    def parse_value(self, data: bytearray) -> GlucoseMeasurementContextData:
+    def decode_value(self, data: bytearray) -> GlucoseMeasurementContextData:
         """Parse glucose measurement context data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + [Extended Flags(1)] + [Carbohydrate ID(1) + Carb(2)] +
@@ -143,7 +144,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         if (flags & 0x02) and len(data) >= offset + 3:
             carb_id = data[offset]
             carb_raw = struct.unpack("<H", data[offset + 1 : offset + 3])[0]
-            carb_value = self._parse_ieee11073_sfloat(carb_raw)
+            carb_value = IEEE11073Parser.parse_sfloat(carb_raw)
             result.update(
                 {
                     "carbohydrate_id": carb_id,
@@ -211,7 +212,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         if (flags & 0x20) and len(data) >= offset + 3:
             medication_id = data[offset]
             medication_raw = struct.unpack("<H", data[offset + 1 : offset + 3])[0]
-            medication_value = self._parse_ieee11073_sfloat(medication_raw)
+            medication_value = IEEE11073Parser.parse_sfloat(medication_raw)
             result.update(
                 {
                     "medication_id": medication_id,
@@ -228,7 +229,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         """Parse optional HbA1c information field."""
         if (flags & 0x40) and len(data) >= offset + 2:
             hba1c_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-            hba1c_value = self._parse_ieee11073_sfloat(hba1c_raw)
+            hba1c_value = IEEE11073Parser.parse_sfloat(hba1c_raw)
             result.update(
                 {
                     "hba1c_percent": hba1c_value,

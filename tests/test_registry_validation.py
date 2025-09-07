@@ -313,12 +313,12 @@ class TestCharacteristicRegistryValidation:
                 f"Characteristic {char_class.__name__} value_type '{char.value_type}' should be one of {valid_types}"
             )
 
-            # Verify parse_value method exists
-            assert hasattr(char, "parse_value"), (
-                f"Characteristic {char_class.__name__} should have parse_value method"
+            # Verify decode_value method exists
+            assert hasattr(char, "decode_value"), (
+                f"Characteristic {char_class.__name__} should have decode_value method"
             )
-            assert callable(char.parse_value), (
-                f"Characteristic {char_class.__name__} parse_value should be callable"
+            assert callable(char.decode_value), (
+                f"Characteristic {char_class.__name__} decode_value should be callable"
             )
 
             # Verify unit property exists
@@ -489,7 +489,7 @@ class TestNameResolutionFallback:
                 self.value_type = "float"
                 super().__post_init__()
 
-            def parse_value(self, data: bytearray) -> float:
+            def decode_value(self, data: bytearray) -> float:
                 return 0.0
 
             def encode_value(self, data) -> bytearray:
@@ -580,7 +580,7 @@ class TestNameResolutionFallback:
                 self.value_type = "string"
                 super().__post_init__()
 
-            def parse_value(self, data: bytearray) -> str:
+            def decode_value(self, data: bytearray) -> str:
                 return ""
 
             def encode_value(self, data) -> bytearray:
@@ -618,7 +618,7 @@ class TestNameResolutionFallback:
                 self.value_type = "string"
                 super().__post_init__()
 
-            def parse_value(self, data: bytearray) -> str:
+            def decode_value(self, data: bytearray) -> str:
                 return ""
 
             def encode_value(self, data) -> bytearray:

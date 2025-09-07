@@ -106,7 +106,7 @@ class TestDataParsing:
                 # Find corresponding data
                 for data_uuid, data in simulated_nordic_thingy_data.items():
                     if data_uuid.replace("-", "").upper() == char_uuid:
-                        parsed_value = characteristic.parse_value(data)
+                        parsed_value = characteristic.decode_value(data)
                         assert parsed_value == 77, (
                             f"Expected battery level 77, got {parsed_value}"
                         )
@@ -143,7 +143,7 @@ class TestDataParsing:
                 # Find corresponding data
                 for data_uuid, data in simulated_nordic_thingy_data.items():
                     if data_uuid.replace("-", "").upper() == char_uuid:
-                        parsed_value = characteristic.parse_value(data)
+                        parsed_value = characteristic.decode_value(data)
                         assert parsed_value == 23.0, (
                             f"Expected temperature 23.0°C, got {parsed_value}"
                         )
@@ -180,7 +180,7 @@ class TestDataParsing:
                 # Find corresponding data
                 for data_uuid, data in simulated_nordic_thingy_data.items():
                     if data_uuid.replace("-", "").upper() == char_uuid:
-                        parsed_value = characteristic.parse_value(data)
+                        parsed_value = characteristic.decode_value(data)
                         assert parsed_value == 61.0, (
                             f"Expected humidity 61.0%, got {parsed_value}"
                         )
@@ -217,7 +217,7 @@ class TestDataParsing:
                 # Find corresponding data
                 for data_uuid, data in simulated_nordic_thingy_data.items():
                     if data_uuid.replace("-", "").upper() == char_uuid:
-                        parsed_value = characteristic.parse_value(data)
+                        parsed_value = characteristic.decode_value(data)
                         assert parsed_value == 10132.5, (
                             f"Expected pressure 10132.5 Pa, got {parsed_value}"
                         )
@@ -257,7 +257,7 @@ class TestDataParsing:
             # Find corresponding data
             for data_uuid, data in simulated_nordic_thingy_data.items():
                 if data_uuid.replace("-", "").upper() == char_uuid:
-                    parsed_value = characteristic.parse_value(data)
+                    parsed_value = characteristic.decode_value(data)
                     # Check for expected values
                     if "Model" in char_name and "Thingy:52" in str(parsed_value):
                         found_chars += 1
@@ -289,7 +289,7 @@ class TestDataParsing:
                 for data_uuid, data in simulated_nordic_thingy_data.items():
                     if data_uuid.replace("-", "").upper() == char_uuid:
                         try:
-                            characteristic.parse_value(data)  # Just test parsing
+                            characteristic.decode_value(data)  # Just test parsing
                             parsed_count += 1
                         except Exception:
                             # Some characteristics might fail to parse with test data
@@ -339,7 +339,7 @@ class TestDataParsing:
                     if data_uuid.replace("-", "").upper() == char_uuid:
                         found_data = True
                         try:
-                            parsed_value = characteristic.parse_value(raw_data)
+                            parsed_value = characteristic.decode_value(raw_data)
                             unit = getattr(characteristic, "unit", "")
 
                             validation_results[service_name]["characteristics"][

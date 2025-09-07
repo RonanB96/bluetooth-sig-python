@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 @dataclass
@@ -11,9 +12,9 @@ class DeviceNameCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Device Name"
 
-    def parse_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray) -> str:
         """Parse device name string."""
-        return self._parse_utf8_string(data)
+        return DataParser.parse_utf8_string(data)
 
     def encode_value(self, data: str) -> bytearray:
         """Encode device name value back to bytes.
@@ -42,7 +43,7 @@ class AppearanceCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Appearance"
 
-    def parse_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray) -> int:
         """Parse appearance value (uint16)."""
         if len(data) < 2:
             raise ValueError("Appearance data must be at least 2 bytes")
@@ -59,7 +60,7 @@ class AppearanceCharacteristic(BaseCharacteristic):
             Encoded bytes representing the appearance
         """
         appearance = int(data)
-        return self._encode_uint16(appearance)
+        return DataParser.encode_uint16(appearance)
 
     @property
     def unit(self) -> str:

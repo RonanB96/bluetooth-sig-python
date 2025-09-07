@@ -11,7 +11,7 @@ class TrueWindDirectionCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "True Wind Direction"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse true wind direction data (uint16 in units of 0.01 degrees)."""
         if len(data) < 2:
             raise ValueError("True wind direction data must be at least 2 bytes")

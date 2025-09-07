@@ -17,7 +17,7 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Cycling Power Control Point"
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:
+    def decode_value(self, data: bytearray) -> dict[str, Any]:
         """Parse cycling power control point data.
 
         Format: Op Code(1) + [Request Parameter] or Response Code(1) + [Response Parameter]

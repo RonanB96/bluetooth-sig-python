@@ -11,7 +11,7 @@ class TrueWindSpeedCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "True Wind Speed"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse true wind speed data (uint16 in units of 0.01 m/s)."""
         if len(data) < 2:
             raise ValueError("True wind speed data must be at least 2 bytes")

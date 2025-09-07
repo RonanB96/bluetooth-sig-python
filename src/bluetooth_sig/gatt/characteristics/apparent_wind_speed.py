@@ -11,7 +11,7 @@ class ApparentWindSpeedCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Apparent Wind Speed"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse apparent wind speed data (uint16 in units of 0.01 m/s)."""
         if len(data) < 2:
             raise ValueError("Apparent wind speed data must be at least 2 bytes")

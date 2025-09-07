@@ -20,7 +20,7 @@ class TestBatteryPowerStateCharacteristic:
         assert char._characteristic_name == "Battery Level Status"
         assert (
             char.value_type == "string"
-        )  # YAML has boolean[] which maps to string, but parse_value returns dict
+        )  # YAML has boolean[] which maps to string, but decode_value returns dict
 
     def test_parse_basic_battery_state(self):
         """Test parsing basic battery state with all flags."""
@@ -34,7 +34,7 @@ class TestBatteryPowerStateCharacteristic:
         # Bits 4-5: 01 (charging)
         # Bits 6-7: 11 (good level)
         data = bytearray([0xD6])
-        result = char.parse_value(data)
+        result = char.decode_value(data)
 
         assert result.raw_value == 0xD6
         assert result.battery_present == BatteryPresentState.PRESENT
@@ -54,7 +54,7 @@ class TestBatteryPowerStateCharacteristic:
         # Bits 0-1: 01 (not present)
         # Other bits: 0 (unknown/false)
         data = bytearray([0x01])
-        result = char.parse_value(data)
+        result = char.decode_value(data)
 
         assert result.raw_value == 0x01
         assert result.battery_present == BatteryPresentState.NOT_PRESENT
@@ -77,7 +77,7 @@ class TestBatteryPowerStateCharacteristic:
         # Bits 4-5: 10 (discharging)
         # Bits 6-7: 10 (low level)
         data = bytearray([0xAA])
-        result = char.parse_value(data)
+        result = char.decode_value(data)
 
         assert result.raw_value == 0xAA
         assert result.battery_present == BatteryPresentState.PRESENT
@@ -100,7 +100,7 @@ class TestBatteryPowerStateCharacteristic:
         # Bits 4-5: 11 (not charging)
         # Bits 6-7: 01 (critically low)
         data = bytearray([0x72])
-        result = char.parse_value(data)
+        result = char.decode_value(data)
 
         assert result.raw_value == 0x72
         assert result.battery_present == BatteryPresentState.PRESENT
@@ -120,7 +120,7 @@ class TestBatteryPowerStateCharacteristic:
         # First byte: 11010110 = 0xD6 (same as basic test)
         # Second byte: 00000001 = 0x01 (constant current, no fault)
         data = bytearray([0xD6, 0x01])
-        result = char.parse_value(data)
+        result = char.decode_value(data)
 
         expected = {
             "raw_value": 0xD6,
@@ -163,7 +163,7 @@ class TestBatteryPowerStateCharacteristic:
         # Bits 0-2: 011 (trickle charging)
         # Bits 3-7: 00001 (battery fault)
         data = bytearray([0x82, 0x0B])
-        result = char.parse_value(data)
+        result = char.decode_value(data)
 
         assert result.raw_value == 0x82
         assert result.battery_present == BatteryPresentState.PRESENT
@@ -181,7 +181,7 @@ class TestBatteryPowerStateCharacteristic:
         # Test constant voltage charging
         # Second byte: 00000010 = 0x02 (constant voltage, no fault)
         data = bytearray([0x82, 0x02])
-        result = char.parse_value(data)
+        result = char.decode_value(data)
 
         assert result.battery_charging_type == BatteryChargingType.CONSTANT_VOLTAGE
         assert result.charging_fault_reason is None
@@ -192,7 +192,7 @@ class TestBatteryPowerStateCharacteristic:
 
         # Device reported payload: 00 a3 00
         data = bytearray([0x00, 0xA3, 0x00])
-        result = char.parse_value(data)
+        result = char.decode_value(data)
 
         assert result.raw_value == 0x00
         assert result.battery_present == BatteryPresentState.PRESENT
@@ -210,7 +210,7 @@ class TestBatteryPowerStateCharacteristic:
         # Flags=0x01 indicates Identifier present but no extra bytes follow
         data = bytearray([0x01, 0xA3, 0x00])
         with pytest.raises(ValueError, match="Identifier indicated by Flags"):
-            char.parse_value(data)
+            char.decode_value(data)
 
     def test_parse_extended_format_external_power_fault(self):
         """Test parsing with external power fault."""
@@ -221,7 +221,7 @@ class TestBatteryPowerStateCharacteristic:
         # Bits 0-2: 000 (unknown charging type)
         # Bits 3-7: 00010 (external power fault)
         data = bytearray([0x82, 0x10])
-        result = char.parse_value(data)
+        result = char.decode_value(data)
 
         assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason == "external_power_fault"
@@ -232,7 +232,7 @@ class TestBatteryPowerStateCharacteristic:
 
         # All bits zero = all unknown states
         data = bytearray([0x00])
-        result = char.parse_value(data)
+        result = char.decode_value(data)
 
         expected = {
             "raw_value": 0x00,
@@ -267,7 +267,7 @@ class TestBatteryPowerStateCharacteristic:
         # Binary: 00000011 = 0x03
         # Bits 0-1: 11 (reserved)
         data = bytearray([0x03])
-        result = char.parse_value(data)
+        result = char.decode_value(data)
 
         assert result.battery_present == BatteryPresentState.RESERVED
 
@@ -277,11 +277,11 @@ class TestBatteryPowerStateCharacteristic:
 
         # Test empty data
         with pytest.raises(ValueError, match="must be at least 1 byte"):
-            char.parse_value(bytearray())
+            char.decode_value(bytearray())
 
         # Test None data
         with pytest.raises(ValueError, match="must be at least 1 byte"):
-            char.parse_value(bytearray([]))
+            char.decode_value(bytearray([]))
 
     def test_unit_property(self):
         """Test unit property (should be empty for status characteristic)."""
@@ -330,7 +330,7 @@ class TestBatteryPowerStateCharacteristic:
         original_data = bytearray([0xD6])
 
         # Parse the data
-        parsed = char.parse_value(original_data)
+        parsed = char.decode_value(original_data)
 
         # Encode it back
         encoded = char.encode_value(parsed)

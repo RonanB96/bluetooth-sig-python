@@ -31,18 +31,18 @@ class TestEnvironmentalSensingExpanded:
 
         # Test positive temperature
         data = bytearray([25])  # 25°C
-        assert char.parse_value(data) == 25.0
+        assert char.decode_value(data) == 25.0
 
         # Test negative temperature (sint8)
         data = bytearray([256 - 10])  # -10°C
-        assert char.parse_value(data) == -10.0
+        assert char.decode_value(data) == -10.0
 
         # Test extreme values
         data = bytearray([127])  # Max positive sint8
-        assert char.parse_value(data) == 127.0
+        assert char.decode_value(data) == 127.0
 
         data = bytearray([128])  # Max negative sint8 (-128)
-        assert char.parse_value(data) == -128.0
+        assert char.decode_value(data) == -128.0
 
     def test_heat_index_parsing(self):
         """Test heat index characteristic parsing."""
@@ -50,11 +50,11 @@ class TestEnvironmentalSensingExpanded:
 
         # Test normal temperature
         data = bytearray([35])  # 35°C
-        assert char.parse_value(data) == 35.0
+        assert char.decode_value(data) == 35.0
 
         # Test max uint8
         data = bytearray([255])  # 255°C
-        assert char.parse_value(data) == 255.0
+        assert char.decode_value(data) == 255.0
 
     def test_wind_chill_parsing(self):
         """Test wind chill characteristic parsing."""
@@ -62,11 +62,11 @@ class TestEnvironmentalSensingExpanded:
 
         # Test negative temperature
         data = bytearray([256 - 15])  # -15°C
-        assert char.parse_value(data) == -15.0
+        assert char.decode_value(data) == -15.0
 
         # Test positive temperature
         data = bytearray([5])  # 5°C
-        assert char.parse_value(data) == 5.0
+        assert char.decode_value(data) == 5.0
 
     def test_true_wind_speed_parsing(self):
         """Test true wind speed characteristic parsing."""
@@ -74,11 +74,11 @@ class TestEnvironmentalSensingExpanded:
 
         # Test 10.50 m/s (1050 * 0.01)
         data = bytearray([0x1A, 0x04])  # 1050 in little endian
-        assert char.parse_value(data) == 10.50
+        assert char.decode_value(data) == 10.50
 
         # Test zero wind
         data = bytearray([0x00, 0x00])
-        assert char.parse_value(data) == 0.0
+        assert char.decode_value(data) == 0.0
 
     def test_true_wind_direction_parsing(self):
         """Test true wind direction characteristic parsing."""
@@ -86,11 +86,11 @@ class TestEnvironmentalSensingExpanded:
 
         # Test 180.0° (18000 * 0.01)
         data = bytearray([0x50, 0x46])  # 18000 in little endian
-        assert char.parse_value(data) == 180.0
+        assert char.decode_value(data) == 180.0
 
         # Test 0° (north)
         data = bytearray([0x00, 0x00])
-        assert char.parse_value(data) == 0.0
+        assert char.decode_value(data) == 0.0
 
     def test_apparent_wind_characteristics(self):
         """Test apparent wind speed and direction characteristics."""
@@ -99,10 +99,10 @@ class TestEnvironmentalSensingExpanded:
 
         # Test parsing similar to true wind
         speed_data = bytearray([0x64, 0x00])  # 100 * 0.01 = 1.0 m/s
-        assert speed_char.parse_value(speed_data) == 1.0
+        assert speed_char.decode_value(speed_data) == 1.0
 
         direction_data = bytearray([0x10, 0x27])  # 10000 * 0.01 = 100.0°
-        assert direction_char.parse_value(direction_data) == 100.0
+        assert direction_char.decode_value(direction_data) == 100.0
 
     def test_characteristic_properties(self):
         """Test characteristic metadata properties."""
@@ -139,12 +139,12 @@ class TestEnvironmentalSensingExpanded:
         # Single-byte characteristics
         dew_point = DewPointCharacteristic(uuid="", properties=set())
         with pytest.raises(ValueError, match="must be at least 1 byte"):
-            dew_point.parse_value(bytearray([]))
+            dew_point.decode_value(bytearray([]))
 
         # Two-byte characteristics
         wind_speed = TrueWindSpeedCharacteristic(uuid="", properties=set())
         with pytest.raises(ValueError, match="must be at least 2 bytes"):
-            wind_speed.parse_value(bytearray([0x50]))
+            wind_speed.decode_value(bytearray([0x50]))
 
     def test_environmental_sensing_service_expansion(self):
         """Test that Environmental Sensing Service includes all new characteristics."""

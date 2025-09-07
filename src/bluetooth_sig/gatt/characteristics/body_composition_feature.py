@@ -39,7 +39,7 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Body Composition Feature"
 
-    def parse_value(self, data: bytearray) -> BodyCompositionFeatureData:
+    def decode_value(self, data: bytearray) -> BodyCompositionFeatureData:
         """Parse body composition feature data according to Bluetooth specification.
 
         Format: Features(4 bytes) - bitmask indicating supported measurements

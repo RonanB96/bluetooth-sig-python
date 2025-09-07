@@ -21,18 +21,18 @@ class TestCyclingPowerParsing:
 
         # Test basic feature mask
         feature_data = struct.pack("<I", 0x0000001F)  # Multiple features enabled
-        result = char.parse_value(bytearray(feature_data))
+        result = char.decode_value(bytearray(feature_data))
         assert result == 31
         assert char.unit == ""
 
         # Test single feature
         feature_data = struct.pack("<I", 0x00000001)  # Only pedal power balance
-        result = char.parse_value(bytearray(feature_data))
+        result = char.decode_value(bytearray(feature_data))
         assert result == 1
 
         # Test no features
         feature_data = struct.pack("<I", 0x00000000)
-        result = char.parse_value(bytearray(feature_data))
+        result = char.decode_value(bytearray(feature_data))
         assert result == 0
 
     def test_cycling_power_feature_invalid_data(self):
@@ -41,11 +41,11 @@ class TestCyclingPowerParsing:
 
         # Test insufficient data
         with pytest.raises(ValueError, match="must be at least 4 bytes"):
-            char.parse_value(bytearray([0x01, 0x02]))
+            char.decode_value(bytearray([0x01, 0x02]))
 
         # Test empty data
         with pytest.raises(ValueError, match="must be at least 4 bytes"):
-            char.parse_value(bytearray())
+            char.decode_value(bytearray())
 
     def test_cycling_power_measurement_basic(self):
         """Test basic cycling power measurement parsing."""
@@ -55,7 +55,7 @@ class TestCyclingPowerParsing:
         flags = 0x0000  # No optional fields
         power = 250  # 250 watts
         test_data = struct.pack("<Hh", flags, power)
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 0
         assert result.instantaneous_power == 250
@@ -70,7 +70,7 @@ class TestCyclingPowerParsing:
         power = 300
         balance = 100  # 50% (100 * 0.5%)
         test_data = struct.pack("<HhB", flags, power, balance)
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 1
         assert result.instantaneous_power == 300
@@ -79,7 +79,7 @@ class TestCyclingPowerParsing:
         # Test with unknown balance value (0xFF)
         balance = 0xFF
         test_data = struct.pack("<HhB", flags, power, balance)
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 1
         assert result.instantaneous_power == 300
@@ -94,7 +94,7 @@ class TestCyclingPowerParsing:
         power = 280
         energy = 150  # 150 kJ
         test_data = struct.pack("<HhH", flags, power, energy)
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 8
         assert result.instantaneous_power == 280
@@ -110,7 +110,7 @@ class TestCyclingPowerParsing:
         wheel_revs = 12345
         wheel_time = 2048  # 1 second in 1/2048 units
         test_data = struct.pack("<HhIH", flags, power, wheel_revs, wheel_time)
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 16
         assert result.instantaneous_power == 320
@@ -127,7 +127,7 @@ class TestCyclingPowerParsing:
         crank_revs = 5678
         crank_time = 1024  # 1 second in 1/1024 units
         test_data = struct.pack("<HhHH", flags, power, crank_revs, crank_time)
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 32
         assert result.instantaneous_power == 350
@@ -148,7 +148,7 @@ class TestCyclingPowerParsing:
         test_data = struct.pack(
             "<HhBHHH", flags, power, balance, energy, crank_revs, crank_time
         )
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 41  # 0x0001 | 0x0008 | 0x0020 = 1 + 8 + 32 = 41
         assert result.instantaneous_power == 400
@@ -163,11 +163,11 @@ class TestCyclingPowerParsing:
 
         # Test insufficient data
         with pytest.raises(ValueError, match="must be at least 4 bytes"):
-            char.parse_value(bytearray([0x01, 0x02]))
+            char.decode_value(bytearray([0x01, 0x02]))
 
         # Test empty data
         with pytest.raises(ValueError, match="must be at least 4 bytes"):
-            char.parse_value(bytearray())
+            char.decode_value(bytearray())
 
     def test_cycling_power_vector_basic(self):
         """Test basic cycling power vector parsing."""
@@ -179,7 +179,7 @@ class TestCyclingPowerParsing:
         crank_time = 1024  # 1 second
         first_angle = 90  # 0.5 degrees (90 / 180)
         test_data = struct.pack("<BHHH", flags, crank_revs, crank_time, first_angle)
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 0
         assert result.crank_revolution_data.crank_revolutions == 1234
@@ -201,7 +201,7 @@ class TestCyclingPowerParsing:
         test_data = struct.pack(
             "<BHHHhh", flags, crank_revs, crank_time, first_angle, force1, force2
         )
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 1
         assert result.crank_revolution_data.crank_revolutions == 1234
@@ -223,7 +223,7 @@ class TestCyclingPowerParsing:
         test_data = struct.pack(
             "<BHHHhh", flags, crank_revs, crank_time, first_angle, torque1, torque2
         )
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 2
         assert result.crank_revolution_data.crank_revolutions == 1234
@@ -237,11 +237,11 @@ class TestCyclingPowerParsing:
 
         # Test insufficient data
         with pytest.raises(ValueError, match="must be at least 7 bytes"):
-            char.parse_value(bytearray([0x01, 0x02, 0x03]))
+            char.decode_value(bytearray([0x01, 0x02, 0x03]))
 
         # Test empty data
         with pytest.raises(ValueError, match="must be at least 7 bytes"):
-            char.parse_value(bytearray())
+            char.decode_value(bytearray())
 
     def test_cycling_power_control_point_basic(self):
         """Test basic cycling power control point parsing."""
@@ -250,7 +250,7 @@ class TestCyclingPowerParsing:
         # Test simple op code without parameters
         op_code = 0x03  # Request Supported Sensor Locations
         test_data = struct.pack("<B", op_code)
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         expected = {"op_code": 3, "op_code_name": "Request Supported Sensor Locations"}
         assert result == expected
@@ -263,7 +263,7 @@ class TestCyclingPowerParsing:
         op_code = 0x01
         cumulative_value = 123456
         test_data = struct.pack("<BI", op_code, cumulative_value)
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         expected = {
             "op_code": 1,
@@ -276,7 +276,7 @@ class TestCyclingPowerParsing:
         op_code = 0x04
         crank_length = 350  # 175.0 mm (350 * 0.5)
         test_data = struct.pack("<BH", op_code, crank_length)
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         expected = {
             "op_code": 4,
@@ -296,7 +296,7 @@ class TestCyclingPowerParsing:
         request_op_code = 0x03  # Original request
         response_value = 0x01  # Success
         test_data = struct.pack("<BBB", op_code, request_op_code, response_value)
-        result = char.parse_value(bytearray(test_data))
+        result = char.decode_value(bytearray(test_data))
 
         expected = {
             "op_code": 32,
@@ -313,4 +313,4 @@ class TestCyclingPowerParsing:
 
         # Test empty data
         with pytest.raises(ValueError, match="must be at least 1 byte"):
-            char.parse_value(bytearray())
+            char.decode_value(bytearray())

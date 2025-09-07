@@ -15,7 +15,7 @@ class NitrogenDioxideConcentrationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Nitrogen Dioxide Concentration"
 
-    def parse_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray) -> int:
         """Parse nitrogen dioxide concentration data (uint16 in units of 1 ppb).
 
         Args:

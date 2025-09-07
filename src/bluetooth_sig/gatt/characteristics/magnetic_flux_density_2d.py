@@ -37,9 +37,9 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Magnetic Flux Density - 2D"
-    _manual_value_type: str = "string"  # Override since parse_value returns dataclass
+    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
 
-    def parse_value(self, data: bytearray) -> MagneticFluxDensity2DData:
+    def decode_value(self, data: bytearray) -> MagneticFluxDensity2DData:
         """Parse magnetic flux density 2D data (2 x sint16 in units of 10^-7 Tesla)."""
         if len(data) < 4:
             raise ValueError("Magnetic flux density 2D data must be at least 4 bytes")

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 @dataclass
@@ -13,7 +14,7 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Battery Level"
 
-    def parse_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray) -> int:
         """Parse battery level data (uint8 in percentage)."""
         if not data:
             raise ValueError("Battery level data must be at least 1 byte")
@@ -42,4 +43,4 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
         if not 0 <= level <= 100:
             raise ValueError(f"Battery level must be 0-100, got {level}")
 
-        return self._encode_uint8(level)
+        return DataParser.encode_uint8(level)

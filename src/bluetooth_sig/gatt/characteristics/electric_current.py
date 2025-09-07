@@ -14,7 +14,7 @@ class ElectricCurrentCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Electric Current"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse electric current data (uint16 in units of 0.01 A).
 
         Args:

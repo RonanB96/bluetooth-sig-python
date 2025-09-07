@@ -85,7 +85,7 @@ class BluetoothSIGTranslator:
 
         if characteristic:
             try:
-                parsed_value = characteristic.parse_value(bytearray(raw_data))
+                parsed_value = characteristic.decode_value(bytearray(raw_data))
                 return ParsedData(
                     uuid=characteristic.char_uuid,
                     name=getattr(

@@ -14,7 +14,7 @@ class VoltageFrequencyCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Voltage Frequency"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse voltage frequency data (uint16 in units of 1/256 Hz).
 
         Args:

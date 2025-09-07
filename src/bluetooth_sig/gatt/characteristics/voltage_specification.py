@@ -42,9 +42,9 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Voltage Specification"
-    _manual_value_type: str = "string"  # Override since parse_value returns dataclass
+    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
 
-    def parse_value(self, data: bytearray) -> VoltageSpecificationData:
+    def decode_value(self, data: bytearray) -> VoltageSpecificationData:
         """Parse voltage specification data (2x uint16 in units of 1/64 V).
 
         Args:

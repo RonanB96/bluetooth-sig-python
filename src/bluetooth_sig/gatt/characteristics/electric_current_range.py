@@ -42,9 +42,9 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Electric Current Range"
-    _manual_value_type: str = "string"  # Override since parse_value returns dataclass
+    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
 
-    def parse_value(self, data: bytearray) -> ElectricCurrentRangeData:
+    def decode_value(self, data: bytearray) -> ElectricCurrentRangeData:
         """Parse current range data (2x uint16 in units of 0.01 A).
 
         Args:

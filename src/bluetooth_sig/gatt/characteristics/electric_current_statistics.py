@@ -49,9 +49,9 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Electric Current Statistics"
-    _manual_value_type: str = "string"  # Override since parse_value returns dataclass
+    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
 
-    def parse_value(self, data: bytearray) -> ElectricCurrentStatisticsData:
+    def decode_value(self, data: bytearray) -> ElectricCurrentStatisticsData:
         """Parse current statistics data (3x uint16 in units of 0.01 A).
 
         Args:

@@ -11,7 +11,7 @@ class DewPointCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Dew Point"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse dew point data (sint8 in units of 1 degree Celsius)."""
         if len(data) < 1:
             raise ValueError("Dew point data must be at least 1 byte")

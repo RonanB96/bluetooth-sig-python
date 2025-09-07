@@ -196,7 +196,7 @@ python -c "import ble_gatt_device; print('✅ Framework ready')"
 - **TASK NOT COMPLETE**: Until all script-based quality checks pass with zero issues
 - Follow the BLE GATT Device project's existing patterns and architecture
 - Use the bluetooth_sig submodule for UUID lookups (check YAML files above)
-- Ensure all characteristics implement proper `parse_value()` methods with appropriate data types
+- Ensure all characteristics implement proper `decode_value()` methods with appropriate data types
 - Follow the 4-stage UUID name resolution system
 - Test against real device scenarios when possible
 - Maintain backward compatibility with existing implementations

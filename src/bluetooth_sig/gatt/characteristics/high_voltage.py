@@ -14,7 +14,7 @@ class HighVoltageCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "High Voltage"
 
-    def parse_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray) -> float:
         """Parse high voltage data (uint24 for high voltage systems).
 
         Args:

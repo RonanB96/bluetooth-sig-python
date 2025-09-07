@@ -16,7 +16,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Cycling Power Feature"
 
-    def parse_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray) -> int:
         """Parse cycling power feature data.
 
         Format: 32-bit feature bitmask (little endian)

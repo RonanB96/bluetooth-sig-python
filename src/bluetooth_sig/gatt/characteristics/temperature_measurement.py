@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .base import BaseCharacteristic
+from .utils import IEEE11073Parser
 
 
 @dataclass
@@ -17,7 +18,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Temperature Measurement"
 
-    def parse_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse temperature measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Temperature Value(4) + [Timestamp(7)] + [Temperature Type(1)]
@@ -46,7 +47,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         # Parse optional timestamp (7 bytes) if present
         offset = 5
         if (flags & 0x02) and len(data) >= offset + 7:
-            result["timestamp"] = self._parse_ieee11073_timestamp(data, offset)
+            result["timestamp"] = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
         # Parse optional temperature type (1 byte) if present
@@ -96,7 +97,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
 
         # Add optional timestamp (7 bytes) if present
         if timestamp is not None:
-            result.extend(self._encode_ieee11073_timestamp(timestamp))
+            result.extend(IEEE11073Parser.encode_timestamp(timestamp))
 
         # Add optional temperature type (1 byte) if present
         if temp_type is not None:
