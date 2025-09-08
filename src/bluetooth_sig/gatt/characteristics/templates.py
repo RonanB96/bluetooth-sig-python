@@ -44,11 +44,11 @@ class SimpleUint8Characteristic(BaseCharacteristic):
 
     def decode_value(self, data: bytearray) -> int:
         """Parse single byte as uint8."""
-        return DataParser.parse_uint8(data, 0)
+        return DataParser.parse_int8(data, 0, signed=False)
 
     def encode_value(self, data: int) -> bytearray:
         """Encode uint8 value to bytes."""
-        return DataParser.encode_uint8(data)
+        return DataParser.encode_int8(data, signed=False)
 
 
 @dataclass
@@ -73,11 +73,11 @@ class SimpleUint16Characteristic(BaseCharacteristic):
 
     def decode_value(self, data: bytearray) -> int:
         """Parse 2 bytes as uint16."""
-        return DataParser.parse_uint16(data, 0)
+        return DataParser.parse_int16(data, 0, signed=False)
 
     def encode_value(self, data: int) -> bytearray:
         """Encode uint16 value to bytes."""
-        return DataParser.encode_uint16(data)
+        return DataParser.encode_int16(data, signed=False)
 
 
 @dataclass
@@ -109,13 +109,13 @@ class ConcentrationCharacteristic(BaseCharacteristic):
 
     def decode_value(self, data: bytearray) -> float:
         """Parse concentration with resolution."""
-        raw_value = DataParser.parse_uint16(data, 0)
+        raw_value = DataParser.parse_int16(data, 0, signed=False)
         return raw_value * self.resolution
 
     def encode_value(self, data: float) -> bytearray:
         """Encode concentration value to bytes."""
         raw_value = int(data / self.resolution)
-        return DataParser.encode_uint16(raw_value)
+        return DataParser.encode_int16(raw_value, signed=False)
 
     @property
     def unit(self) -> str:
@@ -145,13 +145,13 @@ class TemperatureCharacteristic(BaseCharacteristic):
 
     def decode_value(self, data: bytearray) -> float:
         """Parse temperature in 0.01°C resolution."""
-        raw_value = DataParser.parse_sint16(data, 0)
+        raw_value = DataParser.parse_int16(data, 0, signed=True)
         return raw_value * 0.01
 
     def encode_value(self, data: float) -> bytearray:
         """Encode temperature to bytes."""
         raw_value = int(data / 0.01)
-        return DataParser.encode_sint16(raw_value)
+        return DataParser.encode_int16(raw_value, signed=True)
 
     @property
     def unit(self) -> str:
@@ -183,9 +183,8 @@ class IEEE11073FloatCharacteristic(BaseCharacteristic):
 
     def decode_value(self, data: bytearray) -> float:
         """Parse IEEE 11073 SFLOAT format."""
-        # Parse first 2 bytes as uint16 for IEEE11073Parser
-        raw_value = DataParser.parse_uint16(data, 0)
-        return IEEE11073Parser.parse_sfloat(raw_value)
+        # IEEE11073Parser.parse_sfloat expects raw bytes/bytearray
+        return IEEE11073Parser.parse_sfloat(data, 0)
 
     def encode_value(self, data: float) -> bytearray:
         """Encode float to IEEE 11073 format."""
@@ -214,11 +213,11 @@ class PercentageCharacteristic(BaseCharacteristic):
 
     def decode_value(self, data: bytearray) -> int:
         """Parse percentage value."""
-        return DataParser.parse_uint8(data, 0)
+        return DataParser.parse_int8(data, 0, signed=False)
 
     def encode_value(self, data: int) -> bytearray:
         """Encode percentage to bytes."""
-        return DataParser.encode_uint8(data)
+        return DataParser.encode_int8(data, signed=False)
 
     @property
     def unit(self) -> str:
