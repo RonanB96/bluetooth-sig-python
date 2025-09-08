@@ -60,7 +60,7 @@ class AppearanceCharacteristic(BaseCharacteristic):
             Encoded bytes representing the appearance
         """
         appearance = int(data)
-        return DataParser.encode_uint16(appearance)
+        return DataParser.encode_int16(appearance, signed=False)
 
     @property
     def unit(self) -> str:

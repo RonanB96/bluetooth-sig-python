@@ -61,8 +61,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
 
         # Parse glucose concentration (2 bytes) - IEEE-11073 SFLOAT
         if len(data) >= offset + 2:
-            glucose_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-            glucose_value = IEEE11073Parser.parse_sfloat(glucose_raw)
+            glucose_value = IEEE11073Parser.parse_sfloat(data, offset)
 
             # Determine unit based on flags
             unit = "mmol/L" if (flags & 0x02) else "mg/dL"  # mmol/L vs mg/dL

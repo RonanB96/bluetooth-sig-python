@@ -76,13 +76,11 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
         flags = data[0]
 
         # Parse pressure values using IEEE-11073 SFLOAT format
-        systolic_raw, diastolic_raw, map_raw = struct.unpack("<HHH", data[1:7])
-
         # Create basic result
         result_data = BloodPressureData(
-            systolic=IEEE11073Parser.parse_sfloat(systolic_raw),
-            diastolic=IEEE11073Parser.parse_sfloat(diastolic_raw),
-            mean_arterial_pressure=IEEE11073Parser.parse_sfloat(map_raw),
+            systolic=IEEE11073Parser.parse_sfloat(data, 1),
+            diastolic=IEEE11073Parser.parse_sfloat(data, 3),
+            mean_arterial_pressure=IEEE11073Parser.parse_sfloat(data, 5),
             unit="kPa" if flags & 0x01 else "mmHg",  # Units flag
             flags=flags,
         )
@@ -96,8 +94,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
 
         # Parse optional pulse rate (2 bytes) if present
         if (flags & 0x04) and len(data) >= offset + 2:
-            pulse_rate_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-            result_data.pulse_rate = IEEE11073Parser.parse_sfloat(pulse_rate_raw)
+            result_data.pulse_rate = IEEE11073Parser.parse_sfloat(data, offset)
             offset += 2
 
         # Parse optional user ID (1 byte) if present
@@ -155,7 +152,9 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
             result.append(data.user_id)
 
         if data.measurement_status is not None:
-            result.extend(DataParser.encode_uint16(data.measurement_status))
+            result.extend(
+                DataParser.encode_int16(data.measurement_status, signed=False)
+            )
 
         return result
 
