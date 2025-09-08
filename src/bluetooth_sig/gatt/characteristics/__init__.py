@@ -64,6 +64,16 @@ from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacterist
 from .supported_power_range import SupportedPowerRangeCharacteristic
 from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
+from .templates import (
+    ConcentrationCharacteristic,
+    IEEE11073FloatCharacteristic,
+    PercentageCharacteristic,
+    SimpleUint8Characteristic,
+    SimpleUint16Characteristic,
+)
+from .templates import (
+    TemperatureCharacteristic as TemplateTemperatureCharacteristic,
+)
 from .time_zone import TimeZoneCharacteristic
 from .true_wind_direction import TrueWindDirectionCharacteristic
 from .true_wind_speed import TrueWindSpeedCharacteristic
