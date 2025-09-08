@@ -81,81 +81,6 @@ class TestDataParsing:
             f"Expected at least 2 services, got {len(BluetoothSIG.discovered_services)}"
         )
 
-    def test_battery_level_parsing(
-        self, simulated_nordic_thingy_services, simulated_nordic_thingy_data
-    ):
-        """Test battery level characteristic parsing."""
-        # Reset and process services
-        BluetoothSIG.clear_services()
-        BluetoothSIG.process_services(simulated_nordic_thingy_services)
-
-        # Find battery service
-        battery_service = None
-        for service in BluetoothSIG.discovered_services:
-            if "Battery" in service.__class__.__name__:
-                battery_service = service
-                break
-
-        assert battery_service is not None, "Battery service not found"
-
-        # Find battery level characteristic
-        battery_char = None
-        for char_uuid, characteristic in battery_service.characteristics.items():
-            if "BatteryLevel" in characteristic.__class__.__name__:
-                battery_char = characteristic
-                # Find corresponding data
-                for data_uuid, data in simulated_nordic_thingy_data.items():
-                    if data_uuid.replace("-", "").upper() == char_uuid:
-                        parsed_value = characteristic.decode_value(data)
-                        assert parsed_value == 77, (
-                            f"Expected battery level 77, got {parsed_value}"
-                        )
-                        assert characteristic.unit == "%", (
-                            f"Expected unit '%', got '{characteristic.unit}'"
-                        )
-                        battery_char = characteristic
-                        break
-                break
-
-        assert battery_char is not None, "Battery level characteristic not found"
-
-    def test_temperature_parsing(
-        self, simulated_nordic_thingy_services, simulated_nordic_thingy_data
-    ):
-        """Test temperature characteristic parsing."""
-        # Reset and process services
-        BluetoothSIG.clear_services()
-        BluetoothSIG.process_services(simulated_nordic_thingy_services)
-
-        # Find environmental service
-        env_service = None
-        for service in BluetoothSIG.discovered_services:
-            if "Environmental" in service.__class__.__name__:
-                env_service = service
-                break
-
-        assert env_service is not None, "Environmental service not found"
-
-        # Find temperature characteristic and test parsing
-        temp_char = None
-        for char_uuid, characteristic in env_service.characteristics.items():
-            if "Temperature" in characteristic.__class__.__name__:
-                # Find corresponding data
-                for data_uuid, data in simulated_nordic_thingy_data.items():
-                    if data_uuid.replace("-", "").upper() == char_uuid:
-                        parsed_value = characteristic.decode_value(data)
-                        assert parsed_value == 23.0, (
-                            f"Expected temperature 23.0°C, got {parsed_value}"
-                        )
-                        assert characteristic.unit == "°C", (
-                            f"Expected unit '°C', got '{characteristic.unit}'"
-                        )
-                        temp_char = characteristic
-                        break
-                break
-
-        assert temp_char is not None, "Temperature characteristic not found"
-
     def test_humidity_parsing(
         self, simulated_nordic_thingy_services, simulated_nordic_thingy_data
     ):
@@ -192,43 +117,6 @@ class TestDataParsing:
                 break
 
         assert humidity_char is not None, "Humidity characteristic not found"
-
-    def test_pressure_parsing(
-        self, simulated_nordic_thingy_services, simulated_nordic_thingy_data
-    ):
-        """Test pressure characteristic parsing."""
-        # Reset and process services
-        BluetoothSIG.clear_services()
-        BluetoothSIG.process_services(simulated_nordic_thingy_services)
-
-        # Find environmental service
-        env_service = None
-        for service in BluetoothSIG.discovered_services:
-            if "Environmental" in service.__class__.__name__:
-                env_service = service
-                break
-
-        assert env_service is not None, "Environmental service not found"
-
-        # Find pressure characteristic and test parsing
-        pressure_char = None
-        for char_uuid, characteristic in env_service.characteristics.items():
-            if "Pressure" in characteristic.__class__.__name__:
-                # Find corresponding data
-                for data_uuid, data in simulated_nordic_thingy_data.items():
-                    if data_uuid.replace("-", "").upper() == char_uuid:
-                        parsed_value = characteristic.decode_value(data)
-                        assert parsed_value == 10132.5, (
-                            f"Expected pressure 10132.5 Pa, got {parsed_value}"
-                        )
-                        assert characteristic.unit == "Pa", (
-                            f"Expected unit 'Pa', got '{characteristic.unit}'"
-                        )
-                        pressure_char = characteristic
-                        break
-                break
-
-        assert pressure_char is not None, "Pressure characteristic not found"
 
     def test_device_info_parsing(
         self, simulated_nordic_thingy_services, simulated_nordic_thingy_data

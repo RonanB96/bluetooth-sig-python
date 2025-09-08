@@ -12,7 +12,7 @@ from ...registry.yaml_cross_reference import yaml_cross_reference
 from ..uuid_registry import uuid_registry
 
 if TYPE_CHECKING:
-    from ...core import ParsedData
+    from ...core import CharacteristicData
 
 _yaml_cross_reference_available = yaml_cross_reference is not None
 
@@ -295,21 +295,23 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
             )
         self._validate_range(value)
 
-    def parse_value(self, data: bytes | bytearray) -> ParsedData:
+    def parse_value(self, data: bytes | bytearray) -> CharacteristicData:
         """Parse characteristic data with automatic validation.
 
         This method automatically validates input data length and parsed values
-        based on class-level validation attributes, then returns a ParsedData
+        based on class-level validation attributes, then returns a CharacteristicData
         object with rich metadata.
 
         Args:
             data: Raw bytes from the characteristic read
 
         Returns:
-            ParsedData object with parsed value and metadata
+            CharacteristicData object with parsed value and metadata
         """
         # Import here to avoid circular imports
-        from ...core import ParsedData  # pylint: disable=import-outside-toplevel
+        from ...core import (
+            CharacteristicData,  # pylint: disable=import-outside-toplevel
+        )
 
         # Call subclass implementation with validation
         try:
@@ -321,7 +323,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
             # Validate parsed value
             self._validate_value(parsed_value)
 
-            return ParsedData(
+            return CharacteristicData(
                 uuid=self.char_uuid,
                 name=self.display_name,
                 value=parsed_value,
@@ -332,7 +334,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
                 error_message=None,
             )
         except (ValueError, TypeError, struct.error) as e:
-            return ParsedData(
+            return CharacteristicData(
                 uuid=self.char_uuid,
                 name=self.display_name,
                 value=None,
