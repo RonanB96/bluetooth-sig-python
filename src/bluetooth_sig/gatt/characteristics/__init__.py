@@ -70,6 +70,8 @@ from .templates import (
     PercentageCharacteristic,
     SimpleUint8Characteristic,
     SimpleUint16Characteristic,
+)
+from .templates import (
     TemperatureCharacteristic as TemplateTemperatureCharacteristic,
 )
 from .time_zone import TimeZoneCharacteristic
