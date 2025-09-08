@@ -15,6 +15,8 @@ from .utils import DataParser, IEEE11073Parser
 # Data type maximum values constants
 UINT8_MAX = (1 << 8) - 1  # 255
 UINT16_MAX = (1 << 16) - 1  # 65535
+SINT8_MAX = (1 << 7) - 1  # 127
+SINT8_MIN = -(1 << 7)  # -128
 SINT16_MAX = (1 << 15) - 1  # 32767
 SINT16_MIN = -(1 << 15)  # -32768
 PERCENTAGE_MAX = 100  # Maximum percentage value
@@ -49,6 +51,44 @@ class SimpleUint8Characteristic(BaseCharacteristic):
     def encode_value(self, data: int) -> bytearray:
         """Encode uint8 value to bytes."""
         return DataParser.encode_int8(data, signed=False)
+
+
+@dataclass
+class SimpleSint8Characteristic(BaseCharacteristic):
+    """Template for simple 1-byte signed integer characteristics.
+
+    This template handles characteristics that store a simple signed 8-bit
+    integer value (-128 to 127).
+
+    Example usage:
+        @dataclass
+        class TxPowerLevelCharacteristic(SimpleSint8Characteristic):
+            '''TX power level in dBm.'''
+            
+            measurement_unit: str = "dBm"
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 1
+    min_value: int = SINT8_MIN  # -128
+    max_value: int = SINT8_MAX  # 127
+    expected_type: type = int
+
+    # Subclasses can override this
+    measurement_unit: str = "units"
+
+    def decode_value(self, data: bytearray) -> int:
+        """Parse single byte as sint8."""
+        return DataParser.parse_int8(data, 0, signed=True)
+
+    def encode_value(self, data: int) -> bytearray:
+        """Encode sint8 value to bytes."""
+        return DataParser.encode_int8(data, signed=True)
+
+    @property
+    def unit(self) -> str:
+        """Return the measurement unit."""
+        return self.measurement_unit
 
 
 @dataclass
@@ -363,6 +403,7 @@ class ScaledUint16Characteristic(BaseCharacteristic):
 
 __all__ = [
     "SimpleUint8Characteristic",
+    "SimpleSint8Characteristic",
     "SimpleUint16Characteristic",
     "ConcentrationCharacteristic",
     "TemperatureCharacteristic",
