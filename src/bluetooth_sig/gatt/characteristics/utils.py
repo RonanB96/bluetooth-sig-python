@@ -468,9 +468,7 @@ class DebugUtils:
     @staticmethod
     def validate_struct_format(data: bytes | bytearray, format_string: str) -> None:
         """Validate data length matches struct format requirements."""
-        import struct as struct_module  # pylint: disable=import-outside-toplevel # Used only for validation
-
-        expected_size = struct_module.calcsize(format_string)
+        expected_size = struct.calcsize(format_string)
         actual_size = len(data)
         if actual_size != expected_size:
             raise ValueError(

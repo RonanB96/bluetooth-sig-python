@@ -309,7 +309,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
             ParsedData object with parsed value and metadata
         """
         # Import here to avoid circular imports
-        from ...core import ParsedData
+        from ...core import ParsedData  # pylint: disable=import-outside-toplevel
 
         # Call subclass implementation with validation
         try:
