@@ -34,11 +34,9 @@ class PulseOximetryContinuousMeasurementCharacteristic(BaseCharacteristic):
         flags = data[0]
 
         # Parse SpO2 and pulse rate using IEEE-11073 SFLOAT format
-        spo2_raw, pulse_rate_raw = struct.unpack("<HH", data[1:5])
-
         result = {
-            "spo2": IEEE11073Parser.parse_sfloat(spo2_raw),
-            "pulse_rate": IEEE11073Parser.parse_sfloat(pulse_rate_raw),
+            "spo2": IEEE11073Parser.parse_sfloat(data, 1),
+            "pulse_rate": IEEE11073Parser.parse_sfloat(data, 3),
             "unit": "%",  # SpO2 is always in percentage
         }
 
@@ -66,8 +64,7 @@ class PulseOximetryContinuousMeasurementCharacteristic(BaseCharacteristic):
 
         # Parse optional pulse amplitude index (2 bytes) if present
         if (flags & 0x08) and len(data) >= offset + 2:
-            pai_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-            result["pulse_amplitude_index"] = IEEE11073Parser.parse_sfloat(pai_raw)
+            result["pulse_amplitude_index"] = IEEE11073Parser.parse_sfloat(data, offset)
 
         return result
 

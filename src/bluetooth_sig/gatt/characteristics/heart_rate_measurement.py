@@ -94,10 +94,10 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
         if flags & 0x01:  # 16-bit heart rate value
             if len(data) < offset + 2:
                 raise ValueError("Insufficient data for 16-bit heart rate value")
-            heart_rate = DataParser.parse_uint16(data, offset)
+            heart_rate = DataParser.parse_int16(data, offset, signed=False)
             offset += 2
         else:  # 8-bit heart rate value
-            heart_rate = DataParser.parse_uint8(data, offset)
+            heart_rate = DataParser.parse_int8(data, offset, signed=False)
             offset += 1
 
         # Determine sensor contact state
@@ -106,14 +106,14 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
         # Parse optional energy expended (2 bytes) if present
         energy_expended = None
         if (flags & 0x08) and len(data) >= offset + 2:
-            energy_expended = DataParser.parse_uint16(data, offset)
+            energy_expended = DataParser.parse_int16(data, offset, signed=False)
             offset += 2
 
         # Parse optional RR-Intervals if present
         rr_intervals: list[float] = []
         if (flags & 0x10) and len(data) >= offset + 2:
             while offset + 2 <= len(data):
-                rr_interval_raw = DataParser.parse_uint16(data, offset)
+                rr_interval_raw = DataParser.parse_int16(data, offset, signed=False)
                 # RR-Interval is in 1/1024 second units
                 rr_intervals.append(rr_interval_raw / 1024.0)
                 offset += 2
@@ -161,20 +161,20 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
         # Add heart rate value
         if flags & 0x01:  # 16-bit format
-            result.extend(DataParser.encode_uint16(data.heart_rate))
+            result.extend(DataParser.encode_int16(data.heart_rate, signed=False))
         else:  # 8-bit format
-            result.extend(DataParser.encode_uint8(data.heart_rate))
+            result.extend(DataParser.encode_int8(data.heart_rate, signed=False))
 
         # Add energy expended if present
         if data.energy_expended is not None:
-            result.extend(DataParser.encode_uint16(data.energy_expended))
+            result.extend(DataParser.encode_int16(data.energy_expended, signed=False))
 
         # Add RR-Intervals if present
         for rr_interval in data.rr_intervals:
             # Convert seconds to 1/1024 second units
             rr_raw = round(rr_interval * 1024)
             rr_raw = min(rr_raw, 65535)  # Clamp to max value
-            result.extend(DataParser.encode_uint16(rr_raw))
+            result.extend(DataParser.encode_int16(rr_raw, signed=False))
 
         return result
 

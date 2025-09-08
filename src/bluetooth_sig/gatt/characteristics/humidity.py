@@ -23,7 +23,7 @@ class HumidityCharacteristic(BaseCharacteristic):
             raise ValueError("Humidity data must be at least 2 bytes")
 
         # Convert uint16 (little endian) to humidity percentage
-        humidity_raw = DataParser.parse_uint16(data, 0)
+        humidity_raw = DataParser.parse_int16(data, 0, signed=False)
         humidity = humidity_raw * 0.01
 
         # Validate range
@@ -49,4 +49,4 @@ class HumidityCharacteristic(BaseCharacteristic):
 
         # Convert percentage to raw value (multiply by 100 for 0.01 resolution)
         humidity_raw = round(humidity * 100)
-        return DataParser.encode_uint16(humidity_raw)
+        return DataParser.encode_int16(humidity_raw, signed=False)

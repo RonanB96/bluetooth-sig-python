@@ -46,7 +46,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
 
             def decode_value(self, data: bytearray) -> int:
                 # Just parse - validation happens automatically in parse_value
-                return DataParser.parse_uint16(data, 0)
+                return DataParser.parse_int16(data, 0, signed=False)
 
         # Before: BatteryLevelCharacteristic with hardcoded validation
         # @dataclass
@@ -309,7 +309,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
             ParsedData object with parsed value and metadata
         """
         # Import here to avoid circular imports
-        from ...core import ParsedData
+        from ...core import ParsedData  # pylint: disable=import-outside-toplevel
 
         # Call subclass implementation with validation
         try:

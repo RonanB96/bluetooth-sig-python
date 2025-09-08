@@ -43,4 +43,4 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
         if not 0 <= level <= 100:
             raise ValueError(f"Battery level must be 0-100, got {level}")
 
-        return DataParser.encode_uint8(level)
+        return DataParser.encode_int8(level, signed=False)
