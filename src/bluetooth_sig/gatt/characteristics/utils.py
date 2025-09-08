@@ -21,7 +21,7 @@ class DataParser:
         data: bytes | bytearray,
         offset: int = 0,
         signed: bool = False,
-        endian: str = "little",
+        endian: str = "little",  # pylint: disable=unused-argument # Reserved for future use
     ) -> int:
         """Parse 8-bit integer with optional signed interpretation."""
         if len(data) < offset + 1:
@@ -58,32 +58,6 @@ class DataParser:
         return int.from_bytes(
             data[offset : offset + 4], byteorder=endian, signed=signed
         )
-
-    # Legacy methods for backward compatibility
-    @staticmethod
-    def parse_uint8(data: bytearray, offset: int = 0) -> int:
-        """Parse unsigned 8-bit integer."""
-        return DataParser.parse_int8(data, offset, signed=False)
-
-    @staticmethod
-    def parse_uint16(data: bytearray, offset: int = 0) -> int:
-        """Parse unsigned 16-bit integer (little-endian)."""
-        return DataParser.parse_int16(data, offset, signed=False)
-
-    @staticmethod
-    def parse_uint32(data: bytearray, offset: int = 0) -> int:
-        """Parse unsigned 32-bit integer (little-endian)."""
-        return DataParser.parse_int32(data, offset, signed=False)
-
-    @staticmethod
-    def parse_sint16(data: bytearray, offset: int = 0) -> int:
-        """Parse signed 16-bit integer (little-endian)."""
-        return DataParser.parse_int16(data, offset, signed=True)
-
-    @staticmethod
-    def parse_sint32(data: bytearray, offset: int = 0) -> int:
-        """Parse signed 32-bit integer (little-endian)."""
-        return DataParser.parse_int32(data, offset, signed=True)
 
     @staticmethod
     def parse_float32(data: bytearray, offset: int = 0) -> float:
@@ -155,32 +129,6 @@ class DataParser:
                 raise ValueError(f"Value {value} out of uint32 range")
         return bytearray(value.to_bytes(4, byteorder=endian, signed=signed))
 
-    # Legacy encoding methods for backward compatibility
-    @staticmethod
-    def encode_uint8(value: int) -> bytearray:
-        """Encode unsigned 8-bit integer."""
-        return DataParser.encode_int8(value, signed=False)
-
-    @staticmethod
-    def encode_uint16(value: int) -> bytearray:
-        """Encode unsigned 16-bit integer (little-endian)."""
-        return DataParser.encode_int16(value, signed=False)
-
-    @staticmethod
-    def encode_uint32(value: int) -> bytearray:
-        """Encode unsigned 32-bit integer (little-endian)."""
-        return DataParser.encode_int32(value, signed=False)
-
-    @staticmethod
-    def encode_sint16(value: int) -> bytearray:
-        """Encode signed 16-bit integer (little-endian)."""
-        return DataParser.encode_int16(value, signed=True)
-
-    @staticmethod
-    def encode_sint32(value: int) -> bytearray:
-        """Encode signed 32-bit integer (little-endian)."""
-        return DataParser.encode_int32(value, signed=True)
-
     @staticmethod
     def encode_float32(value: float) -> bytearray:
         """Encode IEEE-754 32-bit float (little-endian)."""
@@ -196,30 +144,25 @@ class IEEE11073Parser:
     """Utility class for IEEE-11073 medical device format support."""
 
     @staticmethod
-    def parse_sfloat(data: bytes | bytearray | int, offset: int = 0) -> float:
+    def parse_sfloat(data: bytes | bytearray, offset: int = 0) -> float:
         """Parse IEEE 11073 16-bit SFLOAT.
 
         Args:
-            data: Either raw bytes/bytearray or an integer value
-            offset: Offset when using bytes/bytearray (ignored for int)
+            data: Raw bytes/bytearray
+            offset: Offset in the data
         """
-        # Handle legacy integer input for backward compatibility
-        if isinstance(data, int):
-            raw_value = data
-        else:
-            # Handle bytes/bytearray input
-            if len(data) < offset + 2:
-                raise ValueError(f"Insufficient data for SFLOAT at offset {offset}")
-            raw_value = int.from_bytes(data[offset : offset + 2], byteorder="little")
+        if len(data) < offset + 2:
+            raise ValueError(f"Insufficient data for SFLOAT at offset {offset}")
+        raw_value = int.from_bytes(data[offset : offset + 2], byteorder="little")
 
         # Handle special values
         if raw_value == 0x07FF:
             return float("nan")  # NaN
-        elif raw_value == 0x0800:
+        if raw_value == 0x0800:
             return float("nan")  # NRes (Not a valid result)
-        elif raw_value == 0x07FE:
+        if raw_value == 0x07FE:
             return float("inf")  # +INFINITY
-        elif raw_value == 0x0802:
+        if raw_value == 0x0802:
             return float("-inf")  # -INFINITY
 
         # Extract mantissa and exponent
@@ -229,32 +172,6 @@ class IEEE11073Parser:
 
         exponent = (raw_value >> 12) & 0x0F
         if exponent >= 0x08:  # Negative exponent
-            exponent = exponent - 0x10
-
-        return mantissa * (10**exponent)
-
-    @staticmethod
-    def parse_sfloat_legacy(sfloat_val: int) -> float:
-        """Convert IEEE-11073 16-bit SFLOAT to Python float (legacy method)."""
-        if sfloat_val == 0x07FF:  # NaN
-            return float("nan")
-        if sfloat_val == 0x0800:  # NRes (Not a valid result)
-            return float("nan")
-        if sfloat_val == 0x07FE:  # +INFINITY
-            return float("inf")
-        if sfloat_val == 0x0802:  # -INFINITY
-            return float("-inf")
-
-        # Extract mantissa and exponent
-        mantissa = sfloat_val & 0x0FFF
-        exponent = (sfloat_val >> 12) & 0x0F
-
-        # Handle negative mantissa
-        if mantissa & 0x0800:
-            mantissa = mantissa - 0x1000
-
-        # Handle negative exponent
-        if exponent & 0x08:
             exponent = exponent - 0x10
 
         return mantissa * (10**exponent)
@@ -270,11 +187,11 @@ class IEEE11073Parser:
         # Handle special values (similar to SFLOAT but 32-bit)
         if raw_value == 0x007FFFFF:
             return float("nan")
-        elif raw_value == 0x00800000:
+        if raw_value == 0x00800000:
             return float("inf")
-        elif raw_value == 0x00800001:
+        if raw_value == 0x00800001:
             return float("-inf")
-        elif raw_value == 0x00800002:
+        if raw_value == 0x00800002:
             return None  # NRes
 
         # Extract mantissa (24-bit) and exponent (8-bit)
@@ -291,15 +208,13 @@ class IEEE11073Parser:
     @staticmethod
     def encode_sfloat(value: float) -> bytearray:
         """Encode float to IEEE 11073 16-bit SFLOAT."""
-        import math
 
         if math.isnan(value):
             return bytearray([0xFF, 0x07])  # NaN
-        elif math.isinf(value):
+        if math.isinf(value):
             if value > 0:
                 return bytearray([0x00, 0x08])  # +INFINITY
-            else:
-                return bytearray([0x01, 0x08])  # -INFINITY
+            return bytearray([0x01, 0x08])  # -INFINITY
 
         # Find best exponent and mantissa representation
         exponent = 0
@@ -323,61 +238,6 @@ class IEEE11073Parser:
 
         raw_value = (exponent << 12) | (mantissa_int & 0x0FFF)
         return bytearray(raw_value.to_bytes(2, byteorder="little"))
-
-    @staticmethod
-    def encode_sfloat_legacy(value: float) -> bytearray:
-        """Encode Python float to IEEE-11073 16-bit SFLOAT (legacy method)."""
-        if math.isnan(value):
-            return bytearray([0xFF, 0x07])  # NaN
-        if math.isinf(value):
-            if value > 0:
-                return bytearray([0xFE, 0x07])  # +INFINITY
-            return bytearray([0x02, 0x08])  # -INFINITY
-
-        # Find appropriate exponent and mantissa
-        if value == 0:
-            return bytearray([0x00, 0x00])
-
-        # Determine sign
-        sign = -1 if value < 0 else 1
-        abs_value = abs(value)
-
-        # Find exponent
-        exponent = 0
-        mantissa = abs_value
-
-        # Scale to get mantissa in range
-        while mantissa >= 2048 and exponent < 7:  # Max mantissa is 2047
-            mantissa /= 10
-            exponent += 1
-
-        while mantissa < 204.8 and exponent > -8:  # Min mantissa for precision
-            mantissa *= 10
-            exponent -= 1
-
-        # Round mantissa to integer
-        mantissa = round(mantissa) * sign
-
-        # Clamp values to valid ranges
-        if mantissa > 2047:
-            mantissa = 2047
-        elif mantissa < -2048:
-            mantissa = -2048
-
-        if exponent > 7:
-            exponent = 7
-        elif exponent < -8:
-            exponent = -8
-
-        # Encode as 16-bit value
-        if mantissa < 0:
-            mantissa += 4096  # Convert to unsigned representation
-
-        if exponent < 0:
-            exponent += 16  # Convert to unsigned representation
-
-        sfloat_val = (exponent << 12) | (mantissa & 0x0FFF)
-        return bytearray(sfloat_val.to_bytes(2, byteorder="little", signed=False))
 
     @staticmethod
     def parse_timestamp(data: bytearray, offset: int) -> dict[str, int]:
@@ -608,9 +468,9 @@ class DebugUtils:
     @staticmethod
     def validate_struct_format(data: bytes | bytearray, format_string: str) -> None:
         """Validate data length matches struct format requirements."""
-        import struct
+        import struct as struct_module  # pylint: disable=import-outside-toplevel # Used only for validation
 
-        expected_size = struct.calcsize(format_string)
+        expected_size = struct_module.calcsize(format_string)
         actual_size = len(data)
         if actual_size != expected_size:
             raise ValueError(

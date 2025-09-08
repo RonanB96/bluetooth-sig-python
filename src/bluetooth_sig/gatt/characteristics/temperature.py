@@ -20,7 +20,7 @@ class TemperatureCharacteristic(BaseCharacteristic):
             raise ValueError("Temperature data must be at least 2 bytes")
 
         # Convert sint16 (little endian) to temperature in Celsius
-        temp_raw = DataParser.parse_sint16(data, 0)
+        temp_raw = DataParser.parse_int16(data, 0, signed=True)
         celsius = temp_raw * 0.01
 
         # Validate realistic temperature range for Bluetooth sensors
@@ -50,4 +50,4 @@ class TemperatureCharacteristic(BaseCharacteristic):
 
         # Convert Celsius to raw value (multiply by 100 for 0.01 resolution)
         temp_raw = round(celsius * 100)
-        return DataParser.encode_sint16(temp_raw)
+        return DataParser.encode_int16(temp_raw, signed=True)

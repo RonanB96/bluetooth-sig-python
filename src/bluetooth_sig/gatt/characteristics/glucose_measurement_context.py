@@ -143,8 +143,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         """Parse optional carbohydrate information field."""
         if (flags & 0x02) and len(data) >= offset + 3:
             carb_id = data[offset]
-            carb_raw = struct.unpack("<H", data[offset + 1 : offset + 3])[0]
-            carb_value = IEEE11073Parser.parse_sfloat(carb_raw)
+            carb_value = IEEE11073Parser.parse_sfloat(data, offset + 1)
             result.update(
                 {
                     "carbohydrate_id": carb_id,
@@ -211,8 +210,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         """Parse optional medication information field."""
         if (flags & 0x20) and len(data) >= offset + 3:
             medication_id = data[offset]
-            medication_raw = struct.unpack("<H", data[offset + 1 : offset + 3])[0]
-            medication_value = IEEE11073Parser.parse_sfloat(medication_raw)
+            medication_value = IEEE11073Parser.parse_sfloat(data, offset + 1)
             result.update(
                 {
                     "medication_id": medication_id,
@@ -228,8 +226,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     ) -> int:
         """Parse optional HbA1c information field."""
         if (flags & 0x40) and len(data) >= offset + 2:
-            hba1c_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-            hba1c_value = IEEE11073Parser.parse_sfloat(hba1c_raw)
+            hba1c_value = IEEE11073Parser.parse_sfloat(data, offset)
             result.update(
                 {
                     "hba1c_percent": hba1c_value,
