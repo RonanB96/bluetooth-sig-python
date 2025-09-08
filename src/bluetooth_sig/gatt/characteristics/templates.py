@@ -17,6 +17,8 @@ UINT8_MAX = (1 << 8) - 1  # 255
 UINT16_MAX = (1 << 16) - 1  # 65535
 SINT16_MAX = (1 << 15) - 1  # 32767
 SINT16_MIN = -(1 << 15)  # -32768
+PERCENTAGE_MAX = 100  # Maximum percentage value
+ABSOLUTE_ZERO_CELSIUS = -273.15  # Absolute zero temperature in Celsius
 
 
 @dataclass
@@ -137,7 +139,7 @@ class TemperatureCharacteristic(BaseCharacteristic):
 
     _is_template: bool = True  # Mark as template for test exclusion
     expected_length: int = 2
-    min_value: float = -273.15  # Absolute zero in Celsius
+    min_value: float = ABSOLUTE_ZERO_CELSIUS  # Absolute zero in Celsius
     max_value: float = SINT16_MAX * 0.01  # Max sint16 * 0.01
     expected_type: type = float
 
@@ -207,7 +209,7 @@ class PercentageCharacteristic(BaseCharacteristic):
     _is_template: bool = True  # Mark as template for test exclusion
     expected_length: int = 1
     min_value: int = 0
-    max_value: int = 100
+    max_value: int = PERCENTAGE_MAX
     expected_type: type = int
 
     def decode_value(self, data: bytearray) -> int:
