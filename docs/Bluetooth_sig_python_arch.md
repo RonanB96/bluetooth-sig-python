@@ -21,7 +21,7 @@ from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.core import (
     CharacteristicInfo,
     ServiceInfo,
-    ParsedData,
+    CharacteristicData,
     ValidationResult
 )
 
@@ -33,7 +33,7 @@ translator = BluetoothSIGTranslator()
 
 ```python
 # Parse raw characteristic data with rich return types
-result: ParsedData = translator.parse_characteristic("2A19", b"\x64")
+result: CharacteristicData = translator.parse_characteristic("2A19", b"\x64")
 print(f"Value: {result.value}")        # 100
 print(f"Unit: {result.unit}")          # "%"
 print(f"Type: {result.value_type}")    # "int"
@@ -44,7 +44,7 @@ char_data = {
     "2A19": b"\x64",                   # Battery Level: 100%
     "2A6E": bytearray([0x90, 0x01]),   # Temperature: 4.0°C
 }
-results: dict[str, ParsedData] = translator.parse_characteristics(char_data)
+results: dict[str, CharacteristicData] = translator.parse_characteristics(char_data)
 ```
 
 ### 2. SIG Information Lookup (Production Ready)
@@ -136,7 +136,7 @@ class ServiceInfo(SIGInfo):
     characteristics: list[str] | None = None
 
 @dataclass
-class ParsedData(CharacteristicInfo):
+class CharacteristicData(CharacteristicInfo):
     """Result of parsing characteristic data."""
     value: Any | None = None           # Parsed value with proper type
     raw_data: bytes | None = None      # Original raw bytes
@@ -161,7 +161,7 @@ class ValidationResult(SIGInfo):
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 
-def parse_sensor_reading(char_uuid: str, raw_data: bytes) -> ParsedData:
+def parse_sensor_reading(char_uuid: str, raw_data: bytes) -> CharacteristicData:
     """Pure SIG standard translation - no connection dependencies."""
     translator = BluetoothSIGTranslator()
     return translator.parse_characteristic(char_uuid, raw_data)
@@ -178,7 +178,7 @@ from bleak_retry_connector import establish_connection
 from bleak import BleakClient
 from bluetooth_sig import BluetoothSIGTranslator
 
-async def read_device_sensors(address: str) -> dict[str, ParsedData]:
+async def read_device_sensors(address: str) -> dict[str, CharacteristicData]:
     """Read and parse device sensors using proven connection management."""
     translator = BluetoothSIGTranslator()
     results = {}
@@ -203,7 +203,7 @@ async def read_device_sensors(address: str) -> dict[str, ParsedData]:
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 
-async def robust_characteristic_read(client: BleakClient, char_uuid: str) -> ParsedData:
+async def robust_characteristic_read(client: BleakClient, char_uuid: str) -> CharacteristicData:
     """Read characteristic with validation and error handling."""
     translator = BluetoothSIGTranslator()
 

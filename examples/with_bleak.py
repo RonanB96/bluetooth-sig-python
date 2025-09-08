@@ -175,7 +175,9 @@ def display_results(results: dict) -> None:
             if isinstance(data, dict) and "name" in data:
                 unit_str = f" {data['unit']}" if data.get("unit") else ""
                 print(f"{data['name']}: {data['value']}{unit_str}")
-            elif hasattr(data, "name"):  # Handle ParsedData/CharacteristicInfo objects
+            elif hasattr(
+                data, "name"
+            ):  # Handle CharacteristicData/CharacteristicInfo objects
                 unit_str = f" {data.unit}" if data.unit else ""
                 print(f"{data.name}: {getattr(data, 'value', 'N/A')}{unit_str}")
 

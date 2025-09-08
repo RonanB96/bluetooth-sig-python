@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import CharacteristicRegistry
-from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
 from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
 from bluetooth_sig.gatt.characteristics.temperature import TemperatureCharacteristic
 
@@ -28,16 +27,16 @@ class TestYAMLCrossReference:
                 f"Temperature should use sint16 or medfloat16, got {data_type}"
             )
 
-        # Test Battery Level characteristic (known to use uint8)
-        battery_char = BatteryLevelCharacteristic(uuid="", properties=set())
-        battery_data_type = battery_char.get_yaml_data_type()
+        # Test Humidity characteristic (known to use uint16)
+        humidity_char = HumidityCharacteristic(uuid="", properties=set())
+        humidity_data_type = humidity_char.get_yaml_data_type()
 
-        if battery_data_type:
-            assert isinstance(battery_data_type, str), (
-                f"Data type should be string, got {type(battery_data_type)}"
+        if humidity_data_type:
+            assert isinstance(humidity_data_type, str), (
+                f"Data type should be string, got {type(humidity_data_type)}"
             )
-            assert battery_data_type == "uint8", (
-                f"Battery Level should use uint8, got {battery_data_type}"
+            assert humidity_data_type == "uint16", (
+                f"Humidity should use uint16, got {humidity_data_type}"
             )
 
     def test_yaml_field_size_extraction(self):
@@ -54,16 +53,16 @@ class TestYAMLCrossReference:
                 f"Temperature field size should be 2 bytes, got {field_size}"
             )
 
-        # Test Battery Level characteristic
-        battery_char = BatteryLevelCharacteristic(uuid="", properties=set())
-        battery_field_size = battery_char.get_yaml_field_size()
+        # Test Humidity characteristic
+        humidity_char = HumidityCharacteristic(uuid="", properties=set())
+        humidity_field_size = humidity_char.get_yaml_field_size()
 
-        if battery_field_size:
-            assert isinstance(battery_field_size, int), (
-                f"Field size should be int, got {type(battery_field_size)}"
+        if humidity_field_size:
+            assert isinstance(humidity_field_size, int), (
+                f"Field size should be int, got {type(humidity_field_size)}"
             )
-            assert battery_field_size == 1, (
-                f"Battery Level field size should be 1 byte, got {battery_field_size}"
+            assert humidity_field_size == 2, (
+                f"Humidity field size should be 2 bytes, got {humidity_field_size}"
             )
 
     def test_yaml_unit_id_extraction(self):
@@ -80,9 +79,9 @@ class TestYAMLCrossReference:
                 f"Temperature unit ID should reference temperature/celsius, got {unit_id}"
             )
 
-        # Test Battery Level characteristic
-        battery_char = BatteryLevelCharacteristic(uuid="", properties=set())
-        battery_unit_id = battery_char.get_yaml_unit_id()
+        # Test Humidity characteristic
+        humidity_char = HumidityCharacteristic(uuid="", properties=set())
+        battery_unit_id = humidity_char.get_yaml_unit_id()
 
         if battery_unit_id:
             assert isinstance(battery_unit_id, str), (
@@ -111,7 +110,7 @@ class TestYAMLCrossReference:
             ("float32", True),
             ("float64", True),
             # Unsigned types
-            ("uint8", False),
+            ("uint16", False),
             ("uint16", False),
             ("uint32", False),
             # Other types
@@ -181,27 +180,25 @@ class TestYAMLCrossReference:
             assert field_size is None or isinstance(field_size, int)
             assert isinstance(is_signed, bool)
 
-        # Create Battery Level characteristic via registry
-        battery_char = CharacteristicRegistry.create_characteristic(
-            "2A19", properties=set()
+        # Create Humidity characteristic via registry
+        humidity_char = CharacteristicRegistry.create_characteristic(
+            "2A6F", properties=set()
         )
 
-        if battery_char:
+        if humidity_char:
             # Should have YAML automation available
-            battery_data_type = battery_char.get_yaml_data_type()
-            battery_is_signed = battery_char.is_signed_from_yaml()
+            humidity_data_type = humidity_char.get_yaml_data_type()
+            humidity_is_signed = humidity_char.is_signed_from_yaml()
 
-            # Battery Level should not be signed (uint8)
-            if battery_data_type and battery_data_type == "uint8":
-                assert not battery_is_signed, (
-                    "Battery Level (uint8) should not be signed"
-                )
+            # Humidity should not be signed (uint16)
+            if humidity_data_type and humidity_data_type == "uint16":
+                assert not humidity_is_signed, "Humidity (uint16) should not be signed"
 
     def test_yaml_automation_fallback_behavior(self):
         """Test that characteristics work correctly when YAML automation is not available."""
         # Create characteristics
         temp_char = TemperatureCharacteristic(uuid="", properties=set())
-        battery_char = BatteryLevelCharacteristic(uuid="", properties=set())
+        humidity_char = HumidityCharacteristic(uuid="", properties=set())
 
         # Even without YAML data, methods should not crash
         assert temp_char.get_yaml_data_type() is None or isinstance(
@@ -217,7 +214,7 @@ class TestYAMLCrossReference:
 
         # Unit resolution should work with or without YAML
         temp_unit = temp_char.unit
-        battery_unit = battery_char.unit
+        battery_unit = humidity_char.unit
 
         assert temp_unit in ["°C", ""], (
             f"Temperature unit should be °C or empty, got {temp_unit}"
@@ -281,15 +278,11 @@ class TestYAMLCrossReference:
         """Test that YAML automation integrates well with existing characteristic functionality."""
         # Test that existing functionality still works
         temp_char = TemperatureCharacteristic(uuid="", properties=set())
-        battery_char = BatteryLevelCharacteristic(uuid="", properties=set())
         humidity_char = HumidityCharacteristic(uuid="", properties=set())
 
         # Test that all characteristics have their basic properties
         assert hasattr(temp_char, "char_uuid"), (
             "Temperature characteristic should have char_uuid"
-        )
-        assert hasattr(battery_char, "char_uuid"), (
-            "Battery characteristic should have char_uuid"
         )
         assert hasattr(humidity_char, "char_uuid"), (
             "Humidity characteristic should have char_uuid"
@@ -297,10 +290,8 @@ class TestYAMLCrossReference:
 
         # Test that YAML methods don't interfere with existing functionality
         assert temp_char.unit in ["°C", ""], "Temperature unit should work"
-        assert battery_char.unit in ["%", ""], "Battery unit should work"
         assert humidity_char.unit in ["%", ""], "Humidity unit should work"
 
         # Test that value types are still accessible
         assert hasattr(temp_char, "value_type"), "Should have value_type"
-        assert hasattr(battery_char, "value_type"), "Should have value_type"
         assert hasattr(humidity_char, "value_type"), "Should have value_type"

@@ -36,7 +36,7 @@ class ServiceInfo(SIGInfo):
 
 
 @dataclass
-class ParsedData(CharacteristicInfo):
+class CharacteristicData(CharacteristicInfo):
     """Result of parsing characteristic data."""
 
     value: Any | None = None
@@ -67,7 +67,9 @@ class BluetoothSIGTranslator:
         """Return string representation of the translator."""
         return "BluetoothSIGTranslator(pure SIG standards)"
 
-    def parse_characteristic(self, uuid: str, raw_data: bytes, **kwargs) -> ParsedData:
+    def parse_characteristic(
+        self, uuid: str, raw_data: bytes, **kwargs
+    ) -> CharacteristicData:
         """Parse a characteristic's raw data using SIG standards.
 
         Args:
@@ -76,7 +78,7 @@ class BluetoothSIGTranslator:
             **kwargs: Additional parameters for characteristic creation
 
         Returns:
-            ParsedData with parsed value and metadata
+            CharacteristicData with parsed value and metadata
         """
         # Create characteristic instance for parsing
         characteristic = CharacteristicRegistry.create_characteristic(
@@ -88,7 +90,7 @@ class BluetoothSIGTranslator:
             return characteristic.parse_value(raw_data)
 
         # No parser found, return fallback result
-        return ParsedData(
+        return CharacteristicData(
             uuid=uuid,
             name="Unknown",
             value=raw_data,
@@ -317,7 +319,7 @@ class BluetoothSIGTranslator:
 
     def parse_characteristics(
         self, char_data: dict[str, bytes], **kwargs
-    ) -> dict[str, ParsedData]:
+    ) -> dict[str, CharacteristicData]:
         """Parse multiple characteristics at once.
 
         Args:
@@ -325,7 +327,7 @@ class BluetoothSIGTranslator:
             **kwargs: Additional parameters for characteristic creation
 
         Returns:
-            Dictionary mapping UUIDs to ParsedData results
+            Dictionary mapping UUIDs to CharacteristicData results
         """
         results = {}
         for uuid, raw_data in char_data.items():

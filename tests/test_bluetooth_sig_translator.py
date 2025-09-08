@@ -1,7 +1,7 @@
 """Test Bluetooth SIG Translator functionality."""
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.core import ParsedData, ValidationResult
+from bluetooth_sig.core import CharacteristicData, ValidationResult
 
 
 class TestBluetoothSIGTranslator:
@@ -61,8 +61,8 @@ class TestBluetoothSIGTranslator:
         raw_data = b"\x64"  # 100 in binary
         result = translator.parse_characteristic("unknown-uuid", raw_data)
 
-        # Should return ParsedData with fallback info when no parser found
-        assert isinstance(result, ParsedData)
+        # Should return CharacteristicData with fallback info when no parser found
+        assert isinstance(result, CharacteristicData)
         assert result.uuid == "unknown-uuid"
         assert result.name == "Unknown"
         assert result.value == raw_data
@@ -84,7 +84,7 @@ class TestBluetoothSIGTranslator:
         for uuid in uuids:
             result = translator.parse_characteristic(uuid, raw_data)
             # Should parse known battery level characteristic (0x64 = 100%)
-            assert isinstance(result, ParsedData)
+            assert isinstance(result, CharacteristicData)
             assert result.value == 100
             assert result.parse_success is True
 
@@ -130,7 +130,7 @@ class TestBluetoothSIGTranslator:
 
         # Test the pattern works
         result = parse_sensor_reading("2A19", b"\x64")
-        assert isinstance(result, ParsedData)
+        assert isinstance(result, CharacteristicData)
         # Should parse battery level characteristic (0x64 = 100%)
         assert result.value == 100
         assert result.parse_success is True
@@ -202,10 +202,10 @@ class TestBluetoothSIGTranslator:
         results = translator.parse_characteristics(char_data)
 
         assert len(results) == 2
-        # Results are now ParsedData objects
-        assert isinstance(results["2A19"], ParsedData)
+        # Results are now CharacteristicData objects
+        assert isinstance(results["2A19"], CharacteristicData)
         assert results["2A19"].value == 100  # Battery level parsed
-        assert isinstance(results["2A6E"], ParsedData)
+        assert isinstance(results["2A6E"], CharacteristicData)
         # Temperature should be parsed (400 * 0.01 = 4.0)
         assert isinstance(results["2A6E"].value, float)
 
