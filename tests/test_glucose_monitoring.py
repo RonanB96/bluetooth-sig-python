@@ -81,12 +81,12 @@ class TestGlucoseMeasurementCharacteristic:
         assert result["unit"] == "mg/dL"
         assert result["flags"] == 0
         assert "base_time" in result
-        assert result["base_time"]["year"] == 2024
-        assert result["base_time"]["month"] == 3
-        assert result["base_time"]["day"] == 15
-        assert result["base_time"]["hours"] == 14
-        assert result["base_time"]["minutes"] == 30
-        assert result["base_time"]["seconds"] == 45
+        assert result["base_time"].year == 2024
+        assert result["base_time"].month == 3
+        assert result["base_time"].day == 15
+        assert result["base_time"].hour == 14
+        assert result["base_time"].minute == 30
+        assert result["base_time"].second == 45
 
     def test_glucose_measurement_with_mmol_unit(self, glucose_measurement_char):
         """Test glucose measurement with mmol/L unit."""

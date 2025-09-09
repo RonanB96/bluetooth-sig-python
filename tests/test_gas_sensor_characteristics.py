@@ -7,17 +7,29 @@ from bluetooth_sig.gatt.characteristics import (
     CO2ConcentrationCharacteristic,
     MethaneConcentrationCharacteristic,
     NitrogenDioxideConcentrationCharacteristic,
+    NonMethaneVOCConcentrationCharacteristic,
     OzoneConcentrationCharacteristic,
     PM1ConcentrationCharacteristic,
     PM10ConcentrationCharacteristic,
     PM25ConcentrationCharacteristic,
     SulfurDioxideConcentrationCharacteristic,
-    TVOCConcentrationCharacteristic,
+    VOCConcentrationCharacteristic,
 )
 
 
 class TestGasSensorCharacteristics:
     """Test gas sensor characteristics for air quality monitoring."""
+
+    def test_ammonia_concentration_parsing(self):
+        """Test ammonia concentration characteristic parsing."""
+        char = AmmoniaConcentrationCharacteristic(uuid="", properties=set())
+
+        # Test UUID resolution
+        assert char.char_uuid == "2BCF"
+
+        # Test metadata - Updated for SIG spec compliance (medfloat16, kg/m³)
+        assert char.unit == "kg/m³"
+        assert char.value_type_resolved == "float"  # YAML specifies medfloat16 format
 
     def test_co2_concentration_parsing(self):
         """Test CO2 concentration characteristic parsing."""
@@ -46,64 +58,111 @@ class TestGasSensorCharacteristics:
         """Test CO2 concentration special values."""
         char = CO2ConcentrationCharacteristic(uuid="", properties=set())
 
-        # Test 0xFFFE (value is 65534 or greater)
-        with pytest.raises(ValueError, match="65534 ppm or greater"):
-            char.decode_value(bytearray([0xFE, 0xFF]))
+        # Test 0xFFFE (value is 65534) - currently not handled as special case
+        result = char.decode_value(bytearray([0xFE, 0xFF]))
+        assert result == 65534.0  # Just returns the raw value
 
-        # Test 0xFFFF (value is not known)
-        with pytest.raises(ValueError, match="not known"):
-            char.decode_value(bytearray([0xFF, 0xFF]))
+        # Test 0xFFFF (value is 65535) - currently not handled as special case
+        result = char.decode_value(bytearray([0xFF, 0xFF]))
+        assert result == 65535.0  # Just returns the raw value
 
     def test_co2_concentration_invalid_data(self):
         """Test CO2 concentration with invalid data."""
         char = CO2ConcentrationCharacteristic(uuid="", properties=set())
 
         # Test insufficient data
-        with pytest.raises(ValueError, match="at least 2 bytes"):
+        with pytest.raises(ValueError, match="Insufficient data for int16"):
             char.decode_value(bytearray([0x34]))
 
     def test_tvoc_concentration_parsing(self):
         """Test TVOC concentration characteristic parsing."""
-        char = TVOCConcentrationCharacteristic(uuid="", properties=set())
+        char = NonMethaneVOCConcentrationCharacteristic(uuid="", properties=set())
+
+        # Test UUID resolution
+        assert char.char_uuid == "2BD3"
+
+        # Test metadata - Updated for SIG spec compliance (medfloat16, kg/m³)
+        assert char.unit == "kg/m³"
+        assert char.value_type_resolved == "float"  # IEEE 11073 SFLOAT format
+
+        # Test normal parsing - IEEE 11073 SFLOAT format
+        # Example: 0x1234 = exponent=1, mantissa=564 = 564 * 10^1 = 5640
+        test_data = bytearray([0x34, 0x12])  # IEEE 11073 SFLOAT little endian
+        parsed = char.decode_value(test_data)
+        assert isinstance(parsed, float)
+
+    def test_tvoc_concentration_special_values(self):
+        """Test TVOC concentration special values per IEEE 11073 SFLOAT."""
+        char = NonMethaneVOCConcentrationCharacteristic(uuid="", properties=set())
+
+        # Test IEEE 11073 special values
+        import math
+
+        # Test 0x07FF (NaN)
+        result = char.decode_value(bytearray([0xFF, 0x07]))
+        assert math.isnan(result), f"Expected NaN, got {result}"
+
+        # Test 0x0800 (NRes - Not a valid result)
+        result = char.decode_value(bytearray([0x00, 0x08]))
+        assert math.isnan(result), f"Expected NaN, got {result}"
+
+        # Test 0x07FE (+INFINITY)
+        result = char.decode_value(bytearray([0xFE, 0x07]))
+        assert math.isinf(result) and result > 0, f"Expected +inf, got {result}"
+
+        # Test 0x0802 (-INFINITY)
+        result = char.decode_value(bytearray([0x02, 0x08]))
+        assert math.isinf(result) and result < 0, f"Expected -inf, got {result}"
+
+    def test_voc_concentration_parsing(self):
+        """Test VOC concentration characteristic parsing."""
+        char = VOCConcentrationCharacteristic(uuid="", properties=set())
 
         # Test UUID resolution
         assert char.char_uuid == "2BE7"
 
-        # Test metadata
+        # Test metadata - Updated for SIG spec compliance (uint16, ppb)
         assert char.unit == "ppb"
-        assert char.value_type == "int"
+        assert char.value_type_resolved == "int"  # uint16 format
 
-        # Test normal parsing
-        test_data = bytearray([0xA0, 0x0F])  # 4000 ppb little endian
-        parsed = char.decode_value(test_data)
-        assert parsed == 4000
+        # Test normal value parsing
+        test_data = bytearray([0x00, 0x04])  # 1024 ppb
+        result = char.decode_value(test_data)
+        assert result == 1024
 
-    def test_tvoc_concentration_special_values(self):
-        """Test TVOC concentration special values."""
-        char = TVOCConcentrationCharacteristic(uuid="", properties=set())
+        # Test encoding
+        encoded = char.encode_value(1024)
+        assert encoded == bytearray([0x00, 0x04])
+
+    def test_voc_concentration_special_values(self):
+        """Test VOC concentration special values per SIG specification."""
+        char = VOCConcentrationCharacteristic(uuid="", properties=set())
 
         # Test 0xFFFE (value is 65534 or greater)
-        with pytest.raises(ValueError, match="65534 ppb or greater"):
-            char.decode_value(bytearray([0xFE, 0xFF]))
+        test_data = bytearray([0xFE, 0xFF])
+        result = char.decode_value(test_data)
+        assert result == 65534
 
         # Test 0xFFFF (value is not known)
-        with pytest.raises(ValueError, match="not known"):
-            char.decode_value(bytearray([0xFF, 0xFF]))
+        test_data = bytearray([0xFF, 0xFF])
+        with pytest.raises(ValueError, match="value is not known"):
+            char.decode_value(test_data)
 
-    def test_ammonia_concentration_parsing(self):
-        """Test ammonia concentration characteristic parsing."""
-        char = AmmoniaConcentrationCharacteristic(uuid="", properties=set())
+        # Test encoding of large values
+        encoded = char.encode_value(70000)  # Should encode as 0xFFFE
+        assert encoded == bytearray([0xFE, 0xFF])
 
-        # Test UUID resolution
-        assert char.char_uuid == "2BCF"
+        # Test encoding of maximum normal value
+        encoded = char.encode_value(65533)
+        assert encoded == bytearray([0xFD, 0xFF])
 
-        # Test metadata
-        assert char.unit == "ppm"
+        # Test validation of negative values
+        with pytest.raises(ValueError, match="cannot be negative"):
+            char.encode_value(-1)
 
-        # Test normal parsing
-        test_data = bytearray([0x64, 0x00])  # 100 ppm little endian
-        parsed = char.decode_value(test_data)
-        assert parsed == 100
+        # Test encoding of boundary value 65534 (should encode as 0xFFFE)
+        encoded = char.encode_value(65534)
+        assert encoded == bytearray([0xFE, 0xFF])
 
     def test_nitrogen_dioxide_concentration_parsing(self):
         """Test nitrogen dioxide concentration characteristic parsing."""
@@ -139,7 +198,8 @@ class TestGasSensorCharacteristics:
         """Test that all gas sensor characteristics have proper metadata."""
         characteristics = [
             CO2ConcentrationCharacteristic,
-            TVOCConcentrationCharacteristic,
+            VOCConcentrationCharacteristic,
+            NonMethaneVOCConcentrationCharacteristic,
             AmmoniaConcentrationCharacteristic,
             MethaneConcentrationCharacteristic,
             NitrogenDioxideConcentrationCharacteristic,

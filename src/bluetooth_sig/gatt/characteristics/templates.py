@@ -24,6 +24,23 @@ ABSOLUTE_ZERO_CELSIUS = -273.15  # Absolute zero temperature in Celsius
 
 
 @dataclass
+class VectorData:
+    """3D vector measurement data."""
+
+    x_axis: float
+    y_axis: float
+    z_axis: float
+
+
+@dataclass
+class Vector2DData:
+    """2D vector measurement data."""
+
+    x_axis: float
+    y_axis: float
+
+
+@dataclass
 class SimpleUint8Characteristic(BaseCharacteristic):
     """Template for simple 1-byte unsigned integer characteristics.
 
@@ -39,10 +56,10 @@ class SimpleUint8Characteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 1
-    min_value: int = 0
-    max_value: int = UINT8_MAX
-    expected_type: type = int
+    expected_length: int = 1  # type: ignore[assignment]
+    min_value: int = 0  # type: ignore[assignment]
+    max_value: int = UINT8_MAX  # type: ignore[assignment]
+    expected_type: type = int  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> int:
         """Parse single byte as uint8."""
@@ -69,10 +86,10 @@ class SimpleSint8Characteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 1
-    min_value: int = SINT8_MIN  # -128
-    max_value: int = SINT8_MAX  # 127
-    expected_type: type = int
+    expected_length: int = 1  # type: ignore[assignment]
+    min_value: int = SINT8_MIN  # -128 # type: ignore[assignment]
+    max_value: int = SINT8_MAX  # 127 # type: ignore[assignment]
+    expected_type: type = int  # type: ignore[assignment]
 
     # Subclasses can override this
     measurement_unit: str = "units"
@@ -106,10 +123,10 @@ class SimpleUint16Characteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 2
-    min_value: int = 0
-    max_value: int = UINT16_MAX
-    expected_type: type = int
+    expected_length: int = 2  # type: ignore[assignment]
+    min_value: int = 0  # type: ignore[assignment]
+    max_value: int = UINT16_MAX  # type: ignore[assignment]
+    expected_type: type = int  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> int:
         """Parse 2 bytes as uint16."""
@@ -138,11 +155,10 @@ class ConcentrationCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 2
-    min_value: float = 0.0
-    max_value: float = float(UINT16_MAX)
-    expected_type: type = float
-
+    expected_length: int = 2  # type: ignore[assignment]
+    min_value: float = 0.0  # type: ignore[assignment]
+    max_value: float = float(UINT16_MAX)  # type: ignore[assignment]
+    expected_type: type = float  # type: ignore[assignment]
     # Subclasses should override these
     resolution: float = 1.0  # Default resolution
     concentration_unit: str = "ppm"  # Default unit
@@ -178,10 +194,14 @@ class TemperatureCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 2
-    min_value: float = ABSOLUTE_ZERO_CELSIUS  # Absolute zero in Celsius
-    max_value: float = SINT16_MAX * 0.01  # Max sint16 * 0.01
-    expected_type: type = float
+    expected_length: int = 2  # type: ignore[assignment]
+    min_value: float = (  # type: ignore[assignment]
+        ABSOLUTE_ZERO_CELSIUS  # Absolute zero in Celsius
+    )
+    max_value: float = (  # type: ignore[assignment]
+        SINT16_MAX * 0.01
+    )  # Max sint16 * 0.01
+    expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> float:
         """Parse temperature in 0.01°C resolution."""
@@ -196,6 +216,10 @@ class TemperatureCharacteristic(BaseCharacteristic):
     @property
     def unit(self) -> str:
         """Return temperature unit."""
+        # Check for manual unit override first
+        manual_unit = getattr(self, "_manual_unit", None)
+        if manual_unit:
+            return manual_unit
         return "°C"
 
 
@@ -217,8 +241,8 @@ class IEEE11073FloatCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 2
-    expected_type: type = float
+    expected_length: int = 2  # type: ignore[assignment]
+    expected_type: type = float  # type: ignore[assignment]
     allow_variable_length: bool = True  # Some have additional data
 
     def decode_value(self, data: bytearray) -> float:
@@ -246,10 +270,10 @@ class PercentageCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 1
-    min_value: int = 0
-    max_value: int = PERCENTAGE_MAX
-    expected_type: type = int
+    expected_length: int = 1  # type: ignore[assignment]
+    min_value: int = 0  # type: ignore[assignment]
+    max_value: int = PERCENTAGE_MAX  # type: ignore[assignment]
+    expected_type: type = int  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> int:
         """Parse percentage value."""
@@ -275,16 +299,16 @@ class PressureCharacteristic(BaseCharacteristic):
 
     Example usage:
         @dataclass
-        class BarometricPressureCharacteristic(PressureCharacteristic):
-            '''Barometric pressure measurement.'''
+        class BarometricPressureCharacteristic(PressureCharacteristic):  # type: ignore[assignment]
+            '''Barometric pressure measurement.'''  # type: ignore[assignment]
             pass  # Uses standard pressure format
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 4
-    min_value: float = 0.0
-    max_value: float = 429496729.5  # Max uint32 * 0.1 Pa
-    expected_type: type = float
+    expected_length: int = 4  # type: ignore[assignment]
+    min_value: float = 0.0  # type: ignore[assignment]
+    max_value: float = 429496729.5  # Max uint32 * 0.1 Pa  # type: ignore[assignment]
+    expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> float:
         """Parse pressure in 0.1 Pa resolution."""
@@ -303,7 +327,7 @@ class PressureCharacteristic(BaseCharacteristic):
 
 
 @dataclass
-class VectorCharacteristic(BaseCharacteristic):
+class VectorCharacteristic(BaseCharacteristic):  # pylint: disable=too-many-instance-attributes
     """Template for multi-dimensional vector measurements.
 
     This template handles characteristics that measure 3D vectors like
@@ -319,40 +343,46 @@ class VectorCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 6  # 3 components * 2 bytes each
-    min_length: int = 6
+    expected_length: int = 6  # 3 components * 2 bytes each  # type: ignore[assignment]
+    min_length: int = 6  # type: ignore[assignment]
     allow_variable_length: bool = False
-    expected_type: type = dict
+    expected_type: type = VectorData  # type: ignore[assignment]
 
     # Subclasses should override these
     vector_components: list[str] = field(default_factory=lambda: ["x", "y", "z"])
     component_unit: str = "units"
     resolution: float = 0.01  # Default resolution
 
-    def decode_value(self, data: bytearray) -> dict[str, float]:
+    def decode_value(self, data: bytearray) -> VectorData:
         """Parse vector components."""
         if len(data) < self.expected_length:
             raise ValueError(
                 f"Vector data must be at least {self.expected_length} bytes"
             )
 
-        result = {}
-        for i, component in enumerate(self.vector_components):
-            if i * 2 + 2 <= len(data):
-                raw_value = DataParser.parse_int16(data, i * 2, signed=True)
-                result[component] = raw_value * self.resolution
+        # Parse x, y, z components
+        x_raw = DataParser.parse_int16(data, 0, signed=True)
+        y_raw = DataParser.parse_int16(data, 2, signed=True)
+        z_raw = DataParser.parse_int16(data, 4, signed=True)
 
-        return result
+        return VectorData(
+            x_axis=x_raw * self.resolution,
+            y_axis=y_raw * self.resolution,
+            z_axis=z_raw * self.resolution,
+        )
 
-    def encode_value(self, data: dict[str, float]) -> bytearray:
+    def encode_value(self, data: VectorData) -> bytearray:
         """Encode vector components to bytes."""
         result = bytearray()
-        for component in self.vector_components:
-            if component in data:
-                raw_value = int(data[component] / self.resolution)
-                result.extend(DataParser.encode_int16(raw_value, signed=True))
-            else:
-                result.extend(bytearray(2))  # Zero fill missing components
+
+        x_raw = int(data.x_axis / self.resolution)
+        y_raw = int(data.y_axis / self.resolution)
+        z_raw = int(data.z_axis / self.resolution)
+
+        result.extend(DataParser.encode_int16(x_raw, signed=True))
+        result.extend(DataParser.encode_int16(y_raw, signed=True))
+        result.extend(DataParser.encode_int16(z_raw, signed=True))
+
         return result
 
     @property
@@ -378,10 +408,12 @@ class ScaledUint16Characteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 2
-    min_value: float = 0.0
-    max_value: float = 65535.0  # Will be scaled by resolution
-    expected_type: type = float
+    expected_length: int = 2  # type: ignore[assignment]
+    min_value: float = 0.0  # type: ignore[assignment]
+    max_value: float = (  # type: ignore[assignment]
+        65535.0  # Will be scaled by resolution
+    )
+    expected_type: type = float  # type: ignore[assignment]
 
     # Subclasses should override these
     resolution: float = 1.0  # Default resolution
@@ -418,10 +450,10 @@ class TemperatureLikeSint8Characteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 1
-    min_value: int = SINT8_MIN  # -128°C
-    max_value: int = SINT8_MAX  # 127°C
-    expected_type: type = float
+    expected_length: int = 1  # type: ignore[assignment]
+    min_value: int = SINT8_MIN  # -128°C  # type: ignore[assignment]
+    max_value: int = SINT8_MAX  # 127°C  # type: ignore[assignment]
+    expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> float:
         """Parse temperature-like value (sint8, 1°C resolution)."""
@@ -454,10 +486,10 @@ class TemperatureLikeUint8Characteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 1
-    min_value: int = 0  # 0°C
-    max_value: int = UINT8_MAX  # 255°C
-    expected_type: type = float
+    expected_length: int = 1  # type: ignore[assignment]
+    min_value: int = 0  # 0°C  # type: ignore[assignment]
+    max_value: int = UINT8_MAX  # 255°C  # type: ignore[assignment]
+    expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> float:
         """Parse temperature-like value (uint8, 1°C resolution)."""
@@ -492,10 +524,10 @@ class Uint24ScaledCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 3
-    min_value: float = 0.0
-    max_value: float = 16777215.0  # Max uint24, will be scaled by resolution
-    expected_type: type = float
+    expected_length: int = 3  # type: ignore[assignment]
+    min_value: float = 0.0  # type: ignore[assignment]
+    max_value: float = 16777215.0  # Max uint24, will be scaled by resolution  # type: ignore[assignment]
+    expected_type: type = float  # type: ignore[assignment]
 
     # Subclasses should override these
     resolution: float = 1.0  # Default resolution
@@ -512,8 +544,7 @@ class Uint24ScaledCharacteristic(BaseCharacteristic):
     def encode_value(self, data: float) -> bytearray:
         """Encode scaled value to uint24 bytes."""
         raw_value = int(data / self.resolution)
-        if raw_value > 0xFFFFFF:  # Clamp to uint24 max
-            raw_value = 0xFFFFFF
+        raw_value = min(raw_value, 0xFFFFFF)  # Clamp to uint24 max
         return bytearray(raw_value.to_bytes(3, byteorder="little", signed=False))
 
     @property
@@ -539,10 +570,10 @@ class Sint24ScaledCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 3
-    min_value: float = -83886.08  # Min sint24 * 0.01
-    max_value: float = 83886.07  # Max sint24 * 0.01
-    expected_type: type = float
+    expected_length: int = 3  # type: ignore[assignment]
+    min_value: float = -83886.08  # Min sint24 * 0.01  # type: ignore[assignment]
+    max_value: float = 83886.07  # Max sint24 * 0.01  # type: ignore[assignment]
+    expected_type: type = float  # type: ignore[assignment]
 
     # Subclasses should override these
     resolution: float = 1.0  # Default resolution
@@ -586,6 +617,42 @@ class Sint24ScaledCharacteristic(BaseCharacteristic):
 
 
 @dataclass
+class SoundPressureCharacteristic(BaseCharacteristic):
+    """Template for sound pressure level measurements (uint16, 0.1 dB resolution).
+
+    This template handles sound pressure level characteristics following the
+    Bluetooth SIG standard format: unsigned 16-bit integer with 0.1 dB resolution.
+
+    Example usage:
+        @dataclass
+        class SoundPressureLevelCharacteristic(SoundPressureCharacteristic):
+            '''Sound pressure level measurement.'''
+            pass  # Uses standard sound pressure format
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 2  # type: ignore[assignment]
+    min_value: float = 0.0  # type: ignore[assignment]
+    max_value: float = 6553.5  # Max uint16 * 0.1  # type: ignore[assignment]
+    expected_type: type = float  # type: ignore[assignment]
+
+    def decode_value(self, data: bytearray) -> float:
+        """Parse sound pressure level in 0.1 dB resolution."""
+        raw_value = DataParser.parse_int16(data, 0, signed=False)
+        return raw_value * 0.1
+
+    def encode_value(self, data: float) -> bytearray:
+        """Encode sound pressure level to bytes."""
+        raw_value = int(data / 0.1)
+        return DataParser.encode_int16(raw_value, signed=False)
+
+    @property
+    def unit(self) -> str:
+        """Return sound pressure unit."""
+        return "dB"
+
+
+@dataclass
 class WindSpeedCharacteristic(BaseCharacteristic):
     """Template for wind speed measurements (uint16, 0.01 m/s resolution).
 
@@ -600,10 +667,10 @@ class WindSpeedCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 2
-    min_value: float = 0.0
-    max_value: float = 655.35  # Max uint16 * 0.01
-    expected_type: type = float
+    expected_length: int = 2  # type: ignore[assignment]
+    min_value: float = 0.0  # type: ignore[assignment]
+    max_value: float = 655.35  # Max uint16 * 0.01  # type: ignore[assignment]
+    expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> float:
         """Parse wind speed in 0.01 m/s resolution."""
@@ -636,10 +703,10 @@ class WindDirectionCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 2
-    min_value: float = 0.0
-    max_value: float = 359.99  # Almost full circle
-    expected_type: type = float
+    expected_length: int = 2  # type: ignore[assignment]
+    min_value: float = 0.0  # type: ignore[assignment]
+    max_value: float = 359.99  # Almost full circle  # type: ignore[assignment]
+    expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> float:
         """Parse wind direction in 0.01° resolution."""
@@ -662,78 +729,6 @@ class WindDirectionCharacteristic(BaseCharacteristic):
 
 
 @dataclass
-class RainfallCharacteristic(BaseCharacteristic):
-    """Template for rainfall measurements (uint16, 1 mm resolution).
-
-    This template handles rainfall characteristics following the Bluetooth SIG
-    standard format: unsigned 16-bit integer with 1 mm resolution.
-
-    Example usage:
-        @dataclass
-        class RainfallCharacteristic(RainfallCharacteristic):
-            '''Rainfall measurement.'''
-            pass  # Uses standard rainfall format
-    """
-
-    _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 2
-    min_value: float = 0.0
-    max_value: float = 65535.0  # Max uint16 mm
-    expected_type: type = float
-
-    def decode_value(self, data: bytearray) -> float:
-        """Parse rainfall in 1 mm resolution."""
-        raw_value = DataParser.parse_int16(data, 0, signed=False)
-        return float(raw_value)  # Already in millimeters
-
-    def encode_value(self, data: float) -> bytearray:
-        """Encode rainfall to bytes."""
-        raw_value = int(round(data))
-        return DataParser.encode_int16(raw_value, signed=False)
-
-    @property
-    def unit(self) -> str:
-        """Return rainfall unit."""
-        return "mm"
-
-
-@dataclass
-class SoundPressureCharacteristic(BaseCharacteristic):
-    """Template for sound pressure level measurements (uint16, 0.1 dB resolution).
-
-    This template handles sound pressure level characteristics following the
-    Bluetooth SIG standard format: unsigned 16-bit integer with 0.1 dB resolution.
-
-    Example usage:
-        @dataclass
-        class SoundPressureLevelCharacteristic(SoundPressureCharacteristic):
-            '''Sound pressure level measurement.'''
-            pass  # Uses standard sound pressure format
-    """
-
-    _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 2
-    min_value: float = 0.0
-    max_value: float = 6553.5  # Max uint16 * 0.1
-    expected_type: type = float
-
-    def decode_value(self, data: bytearray) -> float:
-        """Parse sound pressure level in 0.1 dB resolution."""
-        raw_value = DataParser.parse_int16(data, 0, signed=False)
-        return raw_value * 0.1
-
-    def encode_value(self, data: float) -> bytearray:
-        """Encode sound pressure level to bytes."""
-        raw_value = int(data / 0.1)
-        return DataParser.encode_int16(raw_value, signed=False)
-
-    @property
-    def unit(self) -> str:
-        """Return sound pressure unit."""
-        return "dB"
-
-
-@dataclass
 class EnumCharacteristic(BaseCharacteristic):
     """Template for enumerated value characteristics (uint8).
 
@@ -749,11 +744,11 @@ class EnumCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 1
-    expected_type: type = object  # Will be enum type
+    expected_length: int = 1  # type: ignore[assignment]
+    expected_type: type = object  # Will be enum type  # type: ignore[assignment]
 
     # Subclasses MUST override this
-    enum_class: type = None
+    enum_class: type = None  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> object:
         """Parse enumerated value."""
@@ -765,21 +760,21 @@ class EnumCharacteristic(BaseCharacteristic):
         # Use from_value method if available for safe conversion
         if hasattr(self.enum_class, "from_value"):
             return self.enum_class.from_value(raw_value)
-        else:
-            try:
-                return self.enum_class(raw_value)
-            except ValueError:
-                # Fallback to raw value if enum doesn't handle it
-                return raw_value
+
+        try:
+            return self.enum_class(raw_value)
+        except ValueError:
+            # Fallback to raw value if enum doesn't handle it
+            return raw_value
 
     def encode_value(self, data: object) -> bytearray:
         """Encode enumerated value to bytes."""
         if hasattr(data, "value"):
             # Enum type
-            raw_value = data.value
+            raw_value = data.value  # type: ignore[attr-defined]
         else:
             # Raw integer
-            raw_value = int(data)
+            raw_value = int(data)  # type: ignore[arg-type]
 
         return DataParser.encode_int8(raw_value, signed=False)
 
@@ -790,7 +785,7 @@ class EnumCharacteristic(BaseCharacteristic):
 
 
 @dataclass
-class Vector2DCharacteristic(BaseCharacteristic):
+class Vector2DCharacteristic(BaseCharacteristic):  # pylint: disable=too-many-instance-attributes
     """Template for 2D vector measurements.
 
     This template handles characteristics that measure 2D vectors like
@@ -807,40 +802,42 @@ class Vector2DCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 4  # 2 components * 2 bytes each
-    min_length: int = 4
+    expected_length: int = 4  # 2 components * 2 bytes each  # type: ignore[assignment]
+    min_length: int = 4  # type: ignore[assignment]
     allow_variable_length: bool = False
-    expected_type: type = dict
+    expected_type: type = Vector2DData  # type: ignore[assignment]
 
     # Subclasses should override these
     vector_components: list[str] = field(default_factory=lambda: ["x", "y"])
     component_unit: str = "units"
     resolution: float = 0.01  # Default resolution
 
-    def decode_value(self, data: bytearray) -> dict[str, float]:
+    def decode_value(self, data: bytearray) -> Vector2DData:
         """Parse 2D vector components."""
         if len(data) < self.expected_length:
             raise ValueError(
                 f"Vector data must be at least {self.expected_length} bytes"
             )
 
-        result = {}
-        for i, component in enumerate(self.vector_components):
-            if i * 2 + 2 <= len(data):
-                raw_value = DataParser.parse_int16(data, i * 2, signed=True)
-                result[component] = raw_value * self.resolution
+        # Parse x, y components
+        x_raw = DataParser.parse_int16(data, 0, signed=True)
+        y_raw = DataParser.parse_int16(data, 2, signed=True)
 
-        return result
+        return Vector2DData(
+            x_axis=x_raw * self.resolution,
+            y_axis=y_raw * self.resolution,
+        )
 
-    def encode_value(self, data: dict[str, float]) -> bytearray:
+    def encode_value(self, data: Vector2DData) -> bytearray:
         """Encode 2D vector components to bytes."""
         result = bytearray()
-        for component in self.vector_components:
-            if component in data:
-                raw_value = int(data[component] / self.resolution)
-                result.extend(DataParser.encode_int16(raw_value, signed=True))
-            else:
-                result.extend(bytearray(2))  # Zero fill missing components
+
+        x_raw = int(data.x_axis / self.resolution)
+        y_raw = int(data.y_axis / self.resolution)
+
+        result.extend(DataParser.encode_int16(x_raw, signed=True))
+        result.extend(DataParser.encode_int16(y_raw, signed=True))
+
         return result
 
     @property
@@ -864,10 +861,10 @@ class SignedSoundPressureCharacteristic(BaseCharacteristic):
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
-    expected_length: int = 2
-    min_value: float = -3276.8  # Min sint16 * 0.1
-    max_value: float = 3276.7  # Max sint16 * 0.1
-    expected_type: type = float
+    expected_length: int = 2  # type: ignore[assignment]
+    min_value: float = -3276.8  # Min sint16 * 0.1  # type: ignore[assignment]
+    max_value: float = 3276.7  # Max sint16 * 0.1  # type: ignore[assignment]
+    expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> float:
         """Parse signed sound pressure level in 0.1 dB resolution."""
@@ -886,6 +883,8 @@ class SignedSoundPressureCharacteristic(BaseCharacteristic):
 
 
 __all__ = [
+    "VectorData",
+    "Vector2DData",
     "SimpleUint8Characteristic",
     "SimpleSint8Characteristic",
     "SimpleUint16Characteristic",
@@ -902,7 +901,6 @@ __all__ = [
     "Sint24ScaledCharacteristic",
     "WindSpeedCharacteristic",
     "WindDirectionCharacteristic",
-    "RainfallCharacteristic",
     "SoundPressureCharacteristic",
     "SignedSoundPressureCharacteristic",
     "EnumCharacteristic",

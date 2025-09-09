@@ -51,7 +51,7 @@ class TestNavigationCharacteristics:
         char = MagneticDeclinationCharacteristic(uuid="", properties=set())
 
         # Test insufficient data
-        with pytest.raises(ValueError, match="must be at least 2 bytes"):
+        with pytest.raises(ValueError, match="Insufficient data for int16"):
             char.decode_value(bytearray([0x12]))
 
     def test_elevation_parsing(self):
@@ -62,7 +62,7 @@ class TestNavigationCharacteristics:
         assert char.char_uuid == "2A6C"
 
         # Test metadata
-        assert char.unit == "length.meter"
+        assert char.unit == "m"
         assert char.value_type == "string"  # Changed from float - YAML overrides manual
 
         # Test normal parsing: 50000 (in 0.01 meters) = 500.00 meters
@@ -91,7 +91,7 @@ class TestNavigationCharacteristics:
         assert char.char_uuid == "2AA0"
 
         # Test metadata
-        assert char.unit == "tesla"
+        assert char.unit == "T"
         assert char.value_type == "string"
 
         # Test normal parsing: X=1000, Y=-500 (in 10^-7 Tesla units)
@@ -100,7 +100,6 @@ class TestNavigationCharacteristics:
 
         assert abs(parsed.x_axis - 1e-4) < 1e-10  # 1000 * 10^-7 = 1e-4
         assert abs(parsed.y_axis - (-5e-5)) < 1e-10  # -500 * 10^-7 = -5e-5
-        assert parsed.unit == "T"
 
     def test_magnetic_flux_density_3d_parsing(self):
         """Test Magnetic Flux Density 3D characteristic parsing."""
@@ -110,7 +109,7 @@ class TestNavigationCharacteristics:
         assert char.char_uuid == "2AA1"
 
         # Test metadata
-        assert char.unit == "tesla"
+        assert char.unit == "T"
         assert char.value_type == "string"
 
         # Test normal parsing: X=1000, Y=-500, Z=2000
@@ -120,7 +119,6 @@ class TestNavigationCharacteristics:
         assert abs(parsed.x_axis - 1e-4) < 1e-10
         assert abs(parsed.y_axis - (-5e-5)) < 1e-10
         assert abs(parsed.z_axis - 2e-4) < 1e-10
-        assert parsed.unit == "T"
 
 
 class TestEnvironmentalCharacteristics:
@@ -165,13 +163,15 @@ class TestEnvironmentalCharacteristics:
         assert char.char_uuid == "2A75"
 
         # Test metadata
-        assert char.unit == "count/m³"
-        assert char.value_type == "int"
+        assert char.unit == "grains/m³"
+        assert (
+            char.value_type_resolved == "float"
+        )  # Manual override since decode_value returns float
 
         # Test normal parsing: 123456 count/m³
         test_data = bytearray([0x40, 0xE2, 0x01])  # 123456 in 24-bit little endian
         parsed = char.decode_value(test_data)
-        assert parsed == 123456
+        assert parsed == 123456.0  # Returns float now
 
     def test_rainfall_parsing(self):
         """Test Rainfall characteristic parsing."""

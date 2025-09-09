@@ -112,7 +112,7 @@ class TestEnvironmentalSensingExpanded:
 
         # Wind speed characteristics - now using YAML units
         wind_speed = TrueWindSpeedCharacteristic(uuid="", properties=set())
-        assert wind_speed.unit == "metres per second"
+        assert wind_speed.unit == "m/s"
 
         # Wind direction characteristics - still using YAML units
         wind_direction = TrueWindDirectionCharacteristic(uuid="", properties=set())
@@ -138,12 +138,12 @@ class TestEnvironmentalSensingExpanded:
         """Test data validation for insufficient bytes."""
         # Single-byte characteristics
         dew_point = DewPointCharacteristic(uuid="", properties=set())
-        with pytest.raises(ValueError, match="must be at least 1 byte"):
+        with pytest.raises(ValueError, match="Insufficient data for int8"):
             dew_point.decode_value(bytearray([]))
 
         # Two-byte characteristics
         wind_speed = TrueWindSpeedCharacteristic(uuid="", properties=set())
-        with pytest.raises(ValueError, match="must be at least 2 bytes"):
+        with pytest.raises(ValueError, match="Insufficient data for int16"):
             wind_speed.decode_value(bytearray([0x50]))
 
     def test_environmental_sensing_service_expansion(self):
@@ -163,6 +163,7 @@ class TestEnvironmentalSensingExpanded:
             # Gas sensor characteristics for air quality monitoring
             "CO\\textsubscript{2} Concentration",
             "VOC Concentration",
+            "Non-Methane Volatile Organic Compounds Concentration",
             "Ammonia Concentration",
             "Methane Concentration",
             "Nitrogen Dioxide Concentration",
@@ -179,7 +180,7 @@ class TestEnvironmentalSensingExpanded:
         ]
 
         # Verify we have all the expected characteristics
-        # 3 original (Temperature, Humidity, Pressure) + 21 new ones = 24 total
+        # 3 original (Temperature, Humidity, Pressure) + 22 new ones = 25 total
         assert len(expected_chars) == len(new_characteristics) + 3
 
         for char_name in new_characteristics:

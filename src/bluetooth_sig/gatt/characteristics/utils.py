@@ -9,8 +9,17 @@ from __future__ import annotations
 
 import math
 import struct
+from dataclasses import dataclass
+from datetime import datetime
 from enum import IntEnum
-from typing import Any
+from typing import Any, Literal
+
+
+@dataclass
+class FlagInfo:
+    """Bit flag information."""
+
+    flags: dict[str, bool]
 
 
 class DataParser:
@@ -21,7 +30,6 @@ class DataParser:
         data: bytes | bytearray,
         offset: int = 0,
         signed: bool = False,
-        endian: str = "little",  # pylint: disable=unused-argument # Reserved for future use
     ) -> int:
         """Parse 8-bit integer with optional signed interpretation."""
         if len(data) < offset + 1:
@@ -36,7 +44,7 @@ class DataParser:
         data: bytes | bytearray,
         offset: int = 0,
         signed: bool = False,
-        endian: str = "little",
+        endian: Literal["little", "big"] = "little",
     ) -> int:
         """Parse 16-bit integer with configurable endianness and signed interpretation."""
         if len(data) < offset + 2:
@@ -50,7 +58,7 @@ class DataParser:
         data: bytes | bytearray,
         offset: int = 0,
         signed: bool = False,
-        endian: str = "little",
+        endian: Literal["little", "big"] = "little",
     ) -> int:
         """Parse 32-bit integer with configurable endianness and signed interpretation."""
         if len(data) < offset + 4:
@@ -91,9 +99,7 @@ class DataParser:
         return bytes(data)
 
     @staticmethod
-    def encode_int8(
-        value: int, signed: bool = False, endian: str = "little"
-    ) -> bytearray:
+    def encode_int8(value: int, signed: bool = False) -> bytearray:
         """Encode 8-bit integer with signed/unsigned validation."""
         if signed:
             if not -128 <= value <= 127:
@@ -101,11 +107,11 @@ class DataParser:
         else:
             if not 0 <= value <= 255:
                 raise ValueError(f"Value {value} out of uint8 range (0-255)")
-        return bytearray(value.to_bytes(1, byteorder=endian, signed=signed))
+        return bytearray(value.to_bytes(1, signed=signed))
 
     @staticmethod
     def encode_int16(
-        value: int, signed: bool = False, endian: str = "little"
+        value: int, signed: bool = False, endian: Literal["little", "big"] = "little"
     ) -> bytearray:
         """Encode 16-bit integer with configurable endianness and signed/unsigned validation."""
         if signed:
@@ -118,7 +124,7 @@ class DataParser:
 
     @staticmethod
     def encode_int32(
-        value: int, signed: bool = False, endian: str = "little"
+        value: int, signed: bool = False, endian: Literal["little", "big"] = "little"
     ) -> bytearray:
         """Encode 32-bit integer with configurable endianness and signed/unsigned validation."""
         if signed:
@@ -174,7 +180,7 @@ class IEEE11073Parser:
         if exponent >= 0x08:  # Negative exponent
             exponent = exponent - 0x10
 
-        return mantissa * (10**exponent)
+        return float(mantissa * (10.0**exponent))
 
     @staticmethod
     def parse_float32(data: bytes | bytearray, offset: int = 0) -> float:
@@ -192,7 +198,7 @@ class IEEE11073Parser:
         if raw_value == 0x00800001:
             return float("-inf")
         if raw_value == 0x00800002:
-            return None  # NRes
+            return float("nan")  # NRes (Not a valid result)
 
         # Extract mantissa (24-bit) and exponent (8-bit)
         mantissa = raw_value & 0x00FFFFFF
@@ -240,7 +246,7 @@ class IEEE11073Parser:
         return bytearray(raw_value.to_bytes(2, byteorder="little"))
 
     @staticmethod
-    def parse_timestamp(data: bytearray, offset: int) -> dict[str, int]:
+    def parse_timestamp(data: bytearray, offset: int) -> datetime:
         """Parse IEEE-11073 timestamp format (7 bytes)."""
         if len(data) < offset + 7:
             raise ValueError("Not enough data for timestamp parsing")
@@ -249,45 +255,34 @@ class IEEE11073Parser:
         year, month, day, hours, minutes, seconds = struct.unpack(
             "<HBBBBB", timestamp_data
         )
-        return {
-            "year": year,
-            "month": month,
-            "day": day,
-            "hours": hours,
-            "minutes": minutes,
-            "seconds": seconds,
-        }
+        return datetime(year, month, day, hours, minutes, seconds)
 
     @staticmethod
-    def encode_timestamp(timestamp: dict[str, int]) -> bytearray:
+    def encode_timestamp(timestamp: datetime) -> bytearray:
         """Encode timestamp to IEEE-11073 7-byte format."""
-        required_keys = {"year", "month", "day", "hours", "minutes", "seconds"}
-        if not all(key in timestamp for key in required_keys):
-            raise ValueError(f"Timestamp must contain all keys: {required_keys}")
-
         # Validate ranges
-        if not 1582 <= timestamp["year"] <= 9999:
-            raise ValueError(f"Year {timestamp['year']} out of range (1582-9999)")
-        if not 1 <= timestamp["month"] <= 12:
-            raise ValueError(f"Month {timestamp['month']} out of range (1-12)")
-        if not 1 <= timestamp["day"] <= 31:
-            raise ValueError(f"Day {timestamp['day']} out of range (1-31)")
-        if not 0 <= timestamp["hours"] <= 23:
-            raise ValueError(f"Hours {timestamp['hours']} out of range (0-23)")
-        if not 0 <= timestamp["minutes"] <= 59:
-            raise ValueError(f"Minutes {timestamp['minutes']} out of range (0-59)")
-        if not 0 <= timestamp["seconds"] <= 59:
-            raise ValueError(f"Seconds {timestamp['seconds']} out of range (0-59)")
+        if not 1582 <= timestamp.year <= 9999:
+            raise ValueError(f"Year {timestamp.year} out of range (1582-9999)")
+        if not 1 <= timestamp.month <= 12:
+            raise ValueError(f"Month {timestamp.month} out of range (1-12)")
+        if not 1 <= timestamp.day <= 31:
+            raise ValueError(f"Day {timestamp.day} out of range (1-31)")
+        if not 0 <= timestamp.hour <= 23:
+            raise ValueError(f"Hours {timestamp.hour} out of range (0-23)")
+        if not 0 <= timestamp.minute <= 59:
+            raise ValueError(f"Minutes {timestamp.minute} out of range (0-59)")
+        if not 0 <= timestamp.second <= 59:
+            raise ValueError(f"Seconds {timestamp.second} out of range (0-59)")
 
         return bytearray(
             struct.pack(
                 "<HBBBBB",
-                timestamp["year"],
-                timestamp["month"],
-                timestamp["day"],
-                timestamp["hours"],
-                timestamp["minutes"],
-                timestamp["seconds"],
+                timestamp.year,
+                timestamp.month,
+                timestamp.day,
+                timestamp.hour,
+                timestamp.minute,
+                timestamp.second,
             )
         )
 
@@ -321,15 +316,16 @@ class BitFieldUtils:
         return value
 
     @staticmethod
-    def parse_flags(value: int, flag_names: list[str]) -> dict[str, bool]:
-        """Parse bit flags into a dictionary."""
-        return {name: bool(value & (1 << i)) for i, name in enumerate(flag_names)}
+    def parse_flags(value: int, flag_names: list[str]) -> FlagInfo:
+        """Parse bit flags into a FlagInfo object."""
+        flags = {name: bool(value & (1 << i)) for i, name in enumerate(flag_names)}
+        return FlagInfo(flags=flags)
 
     @staticmethod
-    def encode_flags(flags: dict[str, bool], flag_positions: dict[str, int]) -> int:
-        """Encode dictionary of flags into an integer."""
+    def encode_flags(flag_info: FlagInfo, flag_positions: dict[str, int]) -> int:
+        """Encode FlagInfo object into an integer."""
         result = 0
-        for flag_name, is_set in flags.items():
+        for flag_name, is_set in flag_info.flags.items():
             if is_set and flag_name in flag_positions:
                 result |= 1 << flag_positions[flag_name]
         return result
