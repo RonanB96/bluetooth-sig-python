@@ -163,8 +163,10 @@ class BluetoothSIGTranslator:
             ServiceInfo if found, None otherwise
         """
         # Use UUID registry for name-based lookup
-        from .gatt.uuid_registry import uuid_registry
-        
+        from .gatt.uuid_registry import (
+            uuid_registry,  # pylint: disable=import-outside-toplevel
+        )
+
         try:
             uuid_info = uuid_registry.get_service_info(name)
             if uuid_info:
@@ -175,7 +177,7 @@ class BluetoothSIGTranslator:
                 )
         except Exception:  # pylint: disable=broad-exception-caught
             pass
-        
+
         return None
 
     def get_service_info(self, uuid: str) -> ServiceInfo | None:
@@ -319,27 +321,27 @@ class BluetoothSIGTranslator:
     # Convenience alias methods for clarity in discovery patterns
     def get_service_info_by_uuid(self, uuid: str) -> ServiceInfo | None:
         """Get service info by UUID (alias for get_service_info).
-        
+
         This method name makes it clear when you're doing UUID-based discovery
         vs name-based lookup for known services.
-        
+
         Args:
             uuid: Service UUID
-            
+
         Returns:
             ServiceInfo if found, None otherwise
         """
         return self.get_service_info(uuid)
-    
+
     def get_characteristic_info_by_uuid(self, uuid: str) -> CharacteristicInfo | None:
         """Get characteristic info by UUID (alias for get_characteristic_info).
-        
+
         This method name makes it clear when you're doing UUID-based discovery
         vs name-based lookup for known characteristics.
-        
+
         Args:
             uuid: Characteristic UUID
-            
+
         Returns:
             CharacteristicInfo if found, None otherwise
         """
