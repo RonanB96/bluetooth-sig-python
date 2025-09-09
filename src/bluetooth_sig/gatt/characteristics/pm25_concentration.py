@@ -14,7 +14,7 @@ class PM25ConcentrationCharacteristic(ConcentrationCharacteristic):
     """
 
     _characteristic_name: str = "Particulate Matter - PM2.5 Concentration"
-    
+
     # Template configuration
     resolution: float = 1.0
     concentration_unit: str = "µg/m³"

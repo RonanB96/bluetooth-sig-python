@@ -13,7 +13,7 @@ class HumidityCharacteristic(ScaledUint16Characteristic):
     _manual_value_type: str = (
         "float"  # Override YAML int type since decode_value returns float
     )
-    
+
     # Template configuration
     resolution: float = 0.01  # 0.01% resolution
     measurement_unit: str = "%"

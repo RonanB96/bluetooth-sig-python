@@ -64,7 +64,7 @@ class SimpleSint8Characteristic(BaseCharacteristic):
         @dataclass
         class TxPowerLevelCharacteristic(SimpleSint8Characteristic):
             '''TX power level in dBm.'''
-            
+
             measurement_unit: str = "dBm"
     """
 
@@ -313,7 +313,7 @@ class VectorCharacteristic(BaseCharacteristic):
         @dataclass
         class MagneticFluxDensity3DCharacteristic(VectorCharacteristic):
             '''3D magnetic flux density measurement.'''
-            
+
             vector_components: list[str] = field(default_factory=lambda: ["x", "y", "z"])
             component_unit: str = "µT"
     """
@@ -332,14 +332,16 @@ class VectorCharacteristic(BaseCharacteristic):
     def decode_value(self, data: bytearray) -> dict[str, float]:
         """Parse vector components."""
         if len(data) < self.expected_length:
-            raise ValueError(f"Vector data must be at least {self.expected_length} bytes")
-        
+            raise ValueError(
+                f"Vector data must be at least {self.expected_length} bytes"
+            )
+
         result = {}
         for i, component in enumerate(self.vector_components):
             if i * 2 + 2 <= len(data):
                 raw_value = DataParser.parse_int16(data, i * 2, signed=True)
                 result[component] = raw_value * self.resolution
-        
+
         return result
 
     def encode_value(self, data: dict[str, float]) -> bytearray:
@@ -370,7 +372,7 @@ class ScaledUint16Characteristic(BaseCharacteristic):
         @dataclass
         class VoltageCharacteristic(ScaledUint16Characteristic):
             '''Voltage measurement with 1/64 V resolution.'''
-            
+
             resolution: float = 1/64
             measurement_unit: str = "V"
     """
@@ -484,7 +486,7 @@ class Uint24ScaledCharacteristic(BaseCharacteristic):
         @dataclass
         class IlluminanceCharacteristic(Uint24ScaledCharacteristic):
             '''Illuminance measurement with 0.01 lx resolution.'''
-            
+
             resolution: float = 0.01
             measurement_unit: str = "lx"
     """
@@ -503,7 +505,7 @@ class Uint24ScaledCharacteristic(BaseCharacteristic):
         """Parse uint24 value with resolution scaling."""
         if len(data) < 3:
             raise ValueError(f"{self.__class__.__name__} data must be at least 3 bytes")
-        
+
         raw_value = int.from_bytes(data[:3], byteorder="little", signed=False)
         return raw_value * self.resolution
 
@@ -531,7 +533,7 @@ class Sint24ScaledCharacteristic(BaseCharacteristic):
         @dataclass
         class ElevationCharacteristic(Sint24ScaledCharacteristic):
             '''Elevation measurement with 0.01 m resolution.'''
-            
+
             resolution: float = 0.01
             measurement_unit: str = "m"
     """
@@ -539,7 +541,7 @@ class Sint24ScaledCharacteristic(BaseCharacteristic):
     _is_template: bool = True  # Mark as template for test exclusion
     expected_length: int = 3
     min_value: float = -83886.08  # Min sint24 * 0.01
-    max_value: float = 83886.07   # Max sint24 * 0.01
+    max_value: float = 83886.07  # Max sint24 * 0.01
     expected_type: type = float
 
     # Subclasses should override these
@@ -550,31 +552,31 @@ class Sint24ScaledCharacteristic(BaseCharacteristic):
         """Parse sint24 value with resolution scaling."""
         if len(data) < 3:
             raise ValueError(f"{self.__class__.__name__} data must be at least 3 bytes")
-        
+
         # Parse sint24 (little endian) - handle 24-bit signed integer
         raw_bytes = data[:3] + b"\x00"  # Pad to 4 bytes
         raw_value = int.from_bytes(raw_bytes, byteorder="little", signed=False)
-        
+
         # Handle sign extension for 24-bit signed value
         if raw_value & 0x800000:  # Check if negative (bit 23 set)
             raw_value = raw_value - 0x1000000  # Convert to negative
-            
+
         return raw_value * self.resolution
 
     def encode_value(self, data: float) -> bytearray:
         """Encode scaled value to sint24 bytes."""
         raw_value = int(data / self.resolution)
-        
+
         # Ensure it fits in sint24 range
         if not -8388608 <= raw_value <= 8388607:
             raise ValueError(f"Value {raw_value} exceeds sint24 range")
-            
+
         # Convert to unsigned representation for encoding
         if raw_value < 0:
             raw_unsigned = raw_value + 0x1000000  # Convert negative to 24-bit unsigned
         else:
             raw_unsigned = raw_value
-            
+
         return bytearray(raw_unsigned.to_bytes(3, byteorder="little", signed=False))
 
     @property
@@ -699,7 +701,7 @@ class RainfallCharacteristic(BaseCharacteristic):
 class SoundPressureCharacteristic(BaseCharacteristic):
     """Template for sound pressure level measurements (uint16, 0.1 dB resolution).
 
-    This template handles sound pressure level characteristics following the 
+    This template handles sound pressure level characteristics following the
     Bluetooth SIG standard format: unsigned 16-bit integer with 0.1 dB resolution.
 
     Example usage:
@@ -742,14 +744,14 @@ class EnumCharacteristic(BaseCharacteristic):
         @dataclass
         class BarometricPressureTrendCharacteristic(EnumCharacteristic):
             '''Barometric pressure trend enumeration.'''
-            
+
             enum_class: type = BarometricPressureTrend  # Must set this
     """
 
     _is_template: bool = True  # Mark as template for test exclusion
     expected_length: int = 1
     expected_type: type = object  # Will be enum type
-    
+
     # Subclasses MUST override this
     enum_class: type = None
 
@@ -757,11 +759,11 @@ class EnumCharacteristic(BaseCharacteristic):
         """Parse enumerated value."""
         if self.enum_class is None:
             raise NotImplementedError("Subclass must set enum_class")
-            
+
         raw_value = DataParser.parse_int8(data, 0, signed=False)
-        
+
         # Use from_value method if available for safe conversion
-        if hasattr(self.enum_class, 'from_value'):
+        if hasattr(self.enum_class, "from_value"):
             return self.enum_class.from_value(raw_value)
         else:
             try:
@@ -772,13 +774,13 @@ class EnumCharacteristic(BaseCharacteristic):
 
     def encode_value(self, data: object) -> bytearray:
         """Encode enumerated value to bytes."""
-        if hasattr(data, 'value'):
+        if hasattr(data, "value"):
             # Enum type
             raw_value = data.value
         else:
             # Raw integer
             raw_value = int(data)
-            
+
         return DataParser.encode_int8(raw_value, signed=False)
 
     @property
@@ -798,7 +800,7 @@ class Vector2DCharacteristic(BaseCharacteristic):
         @dataclass
         class MagneticFluxDensity2DCharacteristic(Vector2DCharacteristic):
             '''2D magnetic flux density measurement.'''
-            
+
             vector_components: list[str] = field(default_factory=lambda: ["x_axis", "y_axis"])
             component_unit: str = "T"
             resolution: float = 1e-7
@@ -818,14 +820,16 @@ class Vector2DCharacteristic(BaseCharacteristic):
     def decode_value(self, data: bytearray) -> dict[str, float]:
         """Parse 2D vector components."""
         if len(data) < self.expected_length:
-            raise ValueError(f"Vector data must be at least {self.expected_length} bytes")
-        
+            raise ValueError(
+                f"Vector data must be at least {self.expected_length} bytes"
+            )
+
         result = {}
         for i, component in enumerate(self.vector_components):
             if i * 2 + 2 <= len(data):
                 raw_value = DataParser.parse_int16(data, i * 2, signed=True)
                 result[component] = raw_value * self.resolution
-        
+
         return result
 
     def encode_value(self, data: dict[str, float]) -> bytearray:
@@ -862,7 +866,7 @@ class SignedSoundPressureCharacteristic(BaseCharacteristic):
     _is_template: bool = True  # Mark as template for test exclusion
     expected_length: int = 2
     min_value: float = -3276.8  # Min sint16 * 0.1
-    max_value: float = 3276.7   # Max sint16 * 0.1
+    max_value: float = 3276.7  # Max sint16 * 0.1
     expected_type: type = float
 
     def decode_value(self, data: bytearray) -> float:

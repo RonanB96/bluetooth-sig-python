@@ -13,5 +13,5 @@ class AverageVoltageCharacteristic(ScaledUint16Characteristic):
     """
 
     _characteristic_name: str = "Average Voltage"
-    resolution: float = 1/64
+    resolution: float = 1 / 64
     measurement_unit: str = "V"

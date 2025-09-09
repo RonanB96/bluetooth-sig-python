@@ -14,7 +14,7 @@ class PollenConcentrationCharacteristic(ConcentrationCharacteristic):
     """
 
     _characteristic_name: str = "Pollen Concentration"
-    
+
     # Template configuration
     resolution: float = 1.0
     concentration_unit: str = "grains/m³"

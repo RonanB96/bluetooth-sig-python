@@ -14,7 +14,7 @@ class NitrogenDioxideConcentrationCharacteristic(ConcentrationCharacteristic):
     """
 
     _characteristic_name: str = "Nitrogen Dioxide Concentration"
-    
+
     # Template configuration
     resolution: float = 1.0
     concentration_unit: str = "ppb"

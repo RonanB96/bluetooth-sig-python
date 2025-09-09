@@ -14,7 +14,7 @@ class CO2ConcentrationCharacteristic(ConcentrationCharacteristic):
     """
 
     _characteristic_name: str = "CO\\textsubscript{2} Concentration"
-    
+
     # Template configuration
     resolution: float = 1.0
     concentration_unit: str = "ppm"

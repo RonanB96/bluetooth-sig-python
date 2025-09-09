@@ -13,6 +13,6 @@ class TxPowerLevelCharacteristic(SimpleSint8Characteristic):
     """
 
     _characteristic_name: str = "Tx Power Level"
-    
+
     # Template configuration
     measurement_unit: str = "dBm"

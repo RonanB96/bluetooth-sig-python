@@ -15,7 +15,7 @@ class PM10ConcentrationCharacteristic(ConcentrationCharacteristic):
 
     _characteristic_name: str = "Particulate Matter - PM10 Concentration"
     _manual_value_type: str = "int"  # Manual override needed as no YAML available
-    
+
     # Template configuration
     resolution: float = 1.0
     concentration_unit: str = "µg/m³"

@@ -14,7 +14,7 @@ class AmmoniaConcentrationCharacteristic(ConcentrationCharacteristic):
     """
 
     _characteristic_name: str = "Ammonia Concentration"
-    
+
     # Template configuration
     resolution: float = 1.0
     concentration_unit: str = "ppm"

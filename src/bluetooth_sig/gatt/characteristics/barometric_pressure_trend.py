@@ -56,5 +56,5 @@ class BarometricPressureTrendCharacteristic(EnumCharacteristic):
     _characteristic_name: str = "Barometric Pressure Trend"
     # Manual override: YAML indicates uint8->int but we return enum
     _manual_value_type: str = "BarometricPressureTrend"
-    
+
     enum_class: type = BarometricPressureTrend

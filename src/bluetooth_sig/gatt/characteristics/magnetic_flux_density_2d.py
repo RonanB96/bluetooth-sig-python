@@ -17,7 +17,7 @@ class MagneticFluxDensity2DCharacteristic(Vector2DCharacteristic):
 
     _characteristic_name: str = "Magnetic Flux Density - 2D"
     _manual_value_type: str = "string"  # Override since decode_value returns dict
-    
+
     vector_components: list[str] = field(default_factory=lambda: ["x_axis", "y_axis"])
     component_unit: str = "T"
     resolution: float = 1e-7
