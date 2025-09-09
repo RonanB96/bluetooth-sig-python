@@ -61,12 +61,12 @@ class SIGIntegrationGuide:
         print("\n📝 Pattern 1: Reading Battery Service")
         print("```python")
         print("# ✅ Good: Use name when you know what you want")
-        print("service_info = translator.get_service_info_by_name('Battery Service')")
+        print("service_info = translator.get_service_info_by_name('Battery')")
         print("char_info = translator.get_characteristic_info_by_name('Battery Level')")
         print("```")
         
         # Demonstrate this pattern
-        service_info = self.translator.get_service_info_by_name("Battery Service")
+        service_info = self.translator.get_service_info_by_name("Battery")
         char_info = self.translator.get_characteristic_info_by_name("Battery Level")
         
         if service_info and char_info:
@@ -135,7 +135,7 @@ class SIGIntegrationGuide:
         print("async def read_battery_level_robust(client, translator):")
         print("    try:")
         print("        # Step 1: Get service info by name")
-        print("        service_info = translator.get_service_info_by_name('Battery Service')")
+        print("        service_info = translator.get_service_info_by_name('Battery')")
         print("        if not service_info:")
         print("            return None  # Service not supported")
         print("")
@@ -322,7 +322,7 @@ async def demonstrate_with_mock_device() -> None:
     mock_device = {
         "services": {
             "180F": {  # Battery Service
-                "name": "Battery Service",
+                "name": "Battery",
                 "characteristics": {
                     "2A19": {  # Battery Level
                         "name": "Battery Level",
@@ -360,7 +360,7 @@ async def demonstrate_with_mock_device() -> None:
     
     # Read battery level by name
     print(f"\n📊 Reading Battery Level by name:")
-    service_info = guide.translator.get_service_info_by_name("Battery Service")
+    service_info = guide.translator.get_service_info_by_name("Battery")
     char_info = guide.translator.get_characteristic_info_by_name("Battery Level")
     
     if service_info and char_info:
@@ -509,7 +509,7 @@ async def run_with_real_device(address: str, timeout: float = 10.0) -> None:
             
             # Try to read battery level if available
             battery_result = await read_characteristic_by_name(
-                client, guide.translator, "Battery Service", "Battery Level"
+                client, guide.translator, "Battery", "Battery Level"
             )
             
             if battery_result:

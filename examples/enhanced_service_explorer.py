@@ -99,7 +99,7 @@ async def demonstrate_targeted_service_reading(client, translator: BluetoothSIGT
     
     # Define services we want to read (by name, not UUID)
     desired_services = [
-        "Battery Service",
+        "Battery",
         "Device Information", 
         "Environmental Sensing",
         "Heart Rate",
@@ -148,7 +148,7 @@ async def read_service_characteristics_by_name(client, translator: BluetoothSIGT
     
     # Define characteristics we typically want from each service
     service_characteristics = {
-        "Battery Service": ["Battery Level"],
+        "Battery": ["Battery Level"],
         "Device Information": [
             "Manufacturer Name String",
             "Model Number String", 
@@ -323,7 +323,7 @@ async def run_mock_demonstration() -> None:
     
     # Mock service data with known characteristics
     mock_services = {
-        "Battery Service": {
+        "Battery": {
             "uuid": "180F",
             "characteristics": {
                 "Battery Level": {"uuid": "2A19", "data": mock_data["2A19"]}

@@ -162,21 +162,20 @@ class BluetoothSIGTranslator:
         Returns:
             ServiceInfo if found, None otherwise
         """
-        # Try to find the service by name in the registry
-        for service_class in GattServiceRegistry.get_all_services():
-            try:
-                temp_service = service_class()
-                service_name = getattr(
-                    temp_service, "_service_name", service_class.__name__
+        # Use UUID registry for name-based lookup
+        from .gatt.uuid_registry import uuid_registry
+        
+        try:
+            uuid_info = uuid_registry.get_service_info(name)
+            if uuid_info:
+                return ServiceInfo(
+                    uuid=uuid_info.uuid,
+                    name=uuid_info.name,
+                    characteristics=[]
                 )
-                if service_name.lower() == name.lower():
-                    return ServiceInfo(
-                        uuid=temp_service.SERVICE_UUID,
-                        name=service_name,
-                        characteristics=getattr(temp_service, "characteristics", None),
-                    )
-            except Exception:  # pylint: disable=broad-exception-caught
-                continue
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass
+        
         return None
 
     def get_service_info(self, uuid: str) -> ServiceInfo | None:
