@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from enum import IntEnum
 
-from .base import BaseCharacteristic
+from .templates import EnumCharacteristic
 
 
 class BarometricPressureTrend(IntEnum):
@@ -46,7 +46,7 @@ class BarometricPressureTrend(IntEnum):
 
 
 @dataclass
-class BarometricPressureTrendCharacteristic(BaseCharacteristic):
+class BarometricPressureTrendCharacteristic(EnumCharacteristic):
     """Barometric pressure trend characteristic.
 
     Represents the trend observed for barometric pressure using
@@ -56,33 +56,5 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Barometric Pressure Trend"
     # Manual override: YAML indicates uint8->int but we return enum
     _manual_value_type: str = "BarometricPressureTrend"
-
-    def decode_value(self, data: bytearray) -> BarometricPressureTrend:
-        """Parse barometric pressure trend data (uint8 enumerated value)."""
-        if len(data) < 1:
-            raise ValueError("Barometric pressure trend data must be at least 1 byte")
-
-        trend_value = data[0]
-        return BarometricPressureTrend.from_value(trend_value)
-
-    def encode_value(self, data: BarometricPressureTrend) -> bytearray:
-        """Encode barometric pressure trend value back to bytes.
-
-        Args:
-            data: BarometricPressureTrend enum value
-
-        Returns:
-            Encoded bytes representing the trend (uint8 enumerated value)
-        """
-        if not isinstance(data, BarometricPressureTrend):
-            raise TypeError(
-                f"Barometric pressure trend data must be a BarometricPressureTrend enum, "
-                f"got {type(data).__name__}"
-            )
-
-        return bytearray([data.value])
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""  # No unit for enumerated values
+    
+    enum_class: type = BarometricPressureTrend

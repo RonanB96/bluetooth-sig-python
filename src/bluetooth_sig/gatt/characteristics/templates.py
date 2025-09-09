@@ -732,6 +732,120 @@ class SoundPressureCharacteristic(BaseCharacteristic):
 
 
 @dataclass
+class EnumCharacteristic(BaseCharacteristic):
+    """Template for enumerated value characteristics (uint8).
+
+    This template handles characteristics that use enumerated values
+    stored as unsigned 8-bit integers.
+
+    Example usage:
+        @dataclass
+        class BarometricPressureTrendCharacteristic(EnumCharacteristic):
+            '''Barometric pressure trend enumeration.'''
+            
+            enum_class: type = BarometricPressureTrend  # Must set this
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 1
+    expected_type: type = object  # Will be enum type
+    
+    # Subclasses MUST override this
+    enum_class: type = None
+
+    def decode_value(self, data: bytearray) -> object:
+        """Parse enumerated value."""
+        if self.enum_class is None:
+            raise NotImplementedError("Subclass must set enum_class")
+            
+        raw_value = DataParser.parse_int8(data, 0, signed=False)
+        
+        # Use from_value method if available for safe conversion
+        if hasattr(self.enum_class, 'from_value'):
+            return self.enum_class.from_value(raw_value)
+        else:
+            try:
+                return self.enum_class(raw_value)
+            except ValueError:
+                # Fallback to raw value if enum doesn't handle it
+                return raw_value
+
+    def encode_value(self, data: object) -> bytearray:
+        """Encode enumerated value to bytes."""
+        if hasattr(data, 'value'):
+            # Enum type
+            raw_value = data.value
+        else:
+            # Raw integer
+            raw_value = int(data)
+            
+        return DataParser.encode_int8(raw_value, signed=False)
+
+    @property
+    def unit(self) -> str:
+        """Return unit (none for enums)."""
+        return ""
+
+
+@dataclass
+class Vector2DCharacteristic(BaseCharacteristic):
+    """Template for 2D vector measurements.
+
+    This template handles characteristics that measure 2D vectors like
+    2D magnetic flux density.
+
+    Example usage:
+        @dataclass
+        class MagneticFluxDensity2DCharacteristic(Vector2DCharacteristic):
+            '''2D magnetic flux density measurement.'''
+            
+            vector_components: list[str] = field(default_factory=lambda: ["x_axis", "y_axis"])
+            component_unit: str = "T"
+            resolution: float = 1e-7
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 4  # 2 components * 2 bytes each
+    min_length: int = 4
+    allow_variable_length: bool = False
+    expected_type: type = dict
+
+    # Subclasses should override these
+    vector_components: list[str] = field(default_factory=lambda: ["x", "y"])
+    component_unit: str = "units"
+    resolution: float = 0.01  # Default resolution
+
+    def decode_value(self, data: bytearray) -> dict[str, float]:
+        """Parse 2D vector components."""
+        if len(data) < self.expected_length:
+            raise ValueError(f"Vector data must be at least {self.expected_length} bytes")
+        
+        result = {}
+        for i, component in enumerate(self.vector_components):
+            if i * 2 + 2 <= len(data):
+                raw_value = DataParser.parse_int16(data, i * 2, signed=True)
+                result[component] = raw_value * self.resolution
+        
+        return result
+
+    def encode_value(self, data: dict[str, float]) -> bytearray:
+        """Encode 2D vector components to bytes."""
+        result = bytearray()
+        for component in self.vector_components:
+            if component in data:
+                raw_value = int(data[component] / self.resolution)
+                result.extend(DataParser.encode_int16(raw_value, signed=True))
+            else:
+                result.extend(bytearray(2))  # Zero fill missing components
+        return result
+
+    @property
+    def unit(self) -> str:
+        """Return component unit."""
+        return self.component_unit
+
+
+@dataclass
 class SignedSoundPressureCharacteristic(BaseCharacteristic):
     """Template for signed sound pressure level measurements (sint16, 0.1 dB resolution).
 
@@ -787,4 +901,6 @@ __all__ = [
     "RainfallCharacteristic",
     "SoundPressureCharacteristic",
     "SignedSoundPressureCharacteristic",
+    "EnumCharacteristic",
+    "Vector2DCharacteristic",
 ]
