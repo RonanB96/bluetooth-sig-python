@@ -318,35 +318,6 @@ class BluetoothSIGTranslator:
 
         return None
 
-    # Convenience alias methods for clarity in discovery patterns
-    def get_service_info_by_uuid(self, uuid: str) -> ServiceInfo | None:
-        """Get service info by UUID (alias for get_service_info).
-
-        This method name makes it clear when you're doing UUID-based discovery
-        vs name-based lookup for known services.
-
-        Args:
-            uuid: Service UUID
-
-        Returns:
-            ServiceInfo if found, None otherwise
-        """
-        return self.get_service_info(uuid)
-
-    def get_characteristic_info_by_uuid(self, uuid: str) -> CharacteristicInfo | None:
-        """Get characteristic info by UUID (alias for get_characteristic_info).
-
-        This method name makes it clear when you're doing UUID-based discovery
-        vs name-based lookup for known characteristics.
-
-        Args:
-            uuid: Characteristic UUID
-
-        Returns:
-            CharacteristicInfo if found, None otherwise
-        """
-        return self.get_characteristic_info(uuid)
-
     def parse_characteristics(
         self, char_data: dict[str, bytes], **kwargs: Any
     ) -> dict[str, CharacteristicData]:

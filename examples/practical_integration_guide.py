@@ -111,7 +111,7 @@ class SIGIntegrationGuide:
         print("```python")
         print("# ✅ Acceptable: Use UUID lookup to identify unknown services")
         print("for service in client.services:")
-        print("    service_info = translator.get_service_info_by_uuid(service.uuid)")
+        print("    service_info = translator.get_service_info(service.uuid)")
         print("    if service_info:")
         print("        print(f'Found known service: {service_info.name}')")
         print("    else:")
@@ -123,7 +123,7 @@ class SIGIntegrationGuide:
 
         print("Results:")
         for uuid in mock_service_uuids:
-            service_info = self.translator.get_service_info_by_uuid(uuid)
+            service_info = self.translator.get_service_info(uuid)
             if service_info:
                 print(f"  ✅ {uuid} -> Known: {service_info.name}")
             else:
@@ -256,7 +256,7 @@ class SIGIntegrationGuide:
         print("def resolve_multiple_characteristics(translator, uuids):")
         print("    results = {}")
         print("    for uuid in uuids:")
-        print("        char_info = translator.get_characteristic_info_by_uuid(uuid)")
+        print("        char_info = translator.get_characteristic_info(uuid)")
         print("        if char_info:")
         print("            results[uuid] = char_info")
         print("    return results")
@@ -417,7 +417,7 @@ async def demonstrate_with_mock_device() -> None:
     print("\n🔍 Discovering unknown services on device:")
     for service_uuid in mock_device["services"]:
         # Use UUID lookup to identify unknown services during discovery
-        service_info = guide.translator.get_service_info_by_uuid(service_uuid)
+        service_info = guide.translator.get_service_info(service_uuid)
 
         if service_info:
             print(f"  ✅ {service_uuid} -> Known SIG service: {service_info.name}")
@@ -425,7 +425,7 @@ async def demonstrate_with_mock_device() -> None:
             # Explore characteristics in this service
             service_data = mock_device["services"][service_uuid]
             for char_uuid in service_data["characteristics"]:
-                char_info = guide.translator.get_characteristic_info_by_uuid(char_uuid)
+                char_info = guide.translator.get_characteristic_info(char_uuid)
                 if char_info:
                     print(
                         f"    📄 {char_uuid} -> Known SIG characteristic: {char_info.name}"
@@ -496,7 +496,7 @@ async def run_with_real_device(address: str, timeout: float = 10.0) -> None:
 
             for service in client.services:
                 # Use UUID lookup to identify services during discovery
-                service_info = guide.translator.get_service_info_by_uuid(service.uuid)
+                service_info = guide.translator.get_service_info(service.uuid)
 
                 if service_info:
                     service_name = service_info.name
@@ -515,9 +515,7 @@ async def run_with_real_device(address: str, timeout: float = 10.0) -> None:
 
                 # Discover characteristics
                 for char in service.characteristics:
-                    char_info = guide.translator.get_characteristic_info_by_uuid(
-                        char.uuid
-                    )
+                    char_info = guide.translator.get_characteristic_info(char.uuid)
 
                     if char_info:
                         char_name = char_info.name
