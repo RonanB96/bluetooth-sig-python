@@ -401,6 +401,372 @@ class ScaledUint16Characteristic(BaseCharacteristic):
         return self.measurement_unit
 
 
+@dataclass
+class TemperatureLikeSint8Characteristic(BaseCharacteristic):
+    """Template for temperature-like measurements using sint8 (1°C resolution).
+
+    This template handles characteristics that measure temperature-like values
+    (dew point, wind chill, etc.) using signed 8-bit integers with 1°C resolution.
+
+    Example usage:
+        @dataclass
+        class DewPointCharacteristic(TemperatureLikeSint8Characteristic):
+            '''Dew point measurement in °C.'''
+            pass  # Uses standard sint8 temperature format
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 1
+    min_value: int = SINT8_MIN  # -128°C
+    max_value: int = SINT8_MAX  # 127°C
+    expected_type: type = float
+
+    def decode_value(self, data: bytearray) -> float:
+        """Parse temperature-like value (sint8, 1°C resolution)."""
+        raw_value = DataParser.parse_int8(data, 0, signed=True)
+        return float(raw_value)
+
+    def encode_value(self, data: float) -> bytearray:
+        """Encode temperature-like value to bytes."""
+        temp_value = int(round(data))
+        return DataParser.encode_int8(temp_value, signed=True)
+
+    @property
+    def unit(self) -> str:
+        """Return temperature unit."""
+        return "°C"
+
+
+@dataclass
+class TemperatureLikeUint8Characteristic(BaseCharacteristic):
+    """Template for temperature-like measurements using uint8 (1°C resolution).
+
+    This template handles characteristics that measure temperature-like values
+    (heat index, etc.) using unsigned 8-bit integers with 1°C resolution.
+
+    Example usage:
+        @dataclass
+        class HeatIndexCharacteristic(TemperatureLikeUint8Characteristic):
+            '''Heat index measurement in °C.'''
+            pass  # Uses standard uint8 temperature format
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 1
+    min_value: int = 0  # 0°C
+    max_value: int = UINT8_MAX  # 255°C
+    expected_type: type = float
+
+    def decode_value(self, data: bytearray) -> float:
+        """Parse temperature-like value (uint8, 1°C resolution)."""
+        raw_value = DataParser.parse_int8(data, 0, signed=False)
+        return float(raw_value)
+
+    def encode_value(self, data: float) -> bytearray:
+        """Encode temperature-like value to bytes."""
+        temp_value = int(round(data))
+        return DataParser.encode_int8(temp_value, signed=False)
+
+    @property
+    def unit(self) -> str:
+        """Return temperature unit."""
+        return "°C"
+
+
+@dataclass
+class Uint24ScaledCharacteristic(BaseCharacteristic):
+    """Template for uint24 characteristics with configurable resolution.
+
+    This template handles characteristics that store 24-bit unsigned values
+    with a specific resolution multiplier (e.g., illuminance with 0.01 lx resolution).
+
+    Example usage:
+        @dataclass
+        class IlluminanceCharacteristic(Uint24ScaledCharacteristic):
+            '''Illuminance measurement with 0.01 lx resolution.'''
+            
+            resolution: float = 0.01
+            measurement_unit: str = "lx"
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 3
+    min_value: float = 0.0
+    max_value: float = 16777215.0  # Max uint24, will be scaled by resolution
+    expected_type: type = float
+
+    # Subclasses should override these
+    resolution: float = 1.0  # Default resolution
+    measurement_unit: str = "units"  # Default unit
+
+    def decode_value(self, data: bytearray) -> float:
+        """Parse uint24 value with resolution scaling."""
+        if len(data) < 3:
+            raise ValueError(f"{self.__class__.__name__} data must be at least 3 bytes")
+        
+        raw_value = int.from_bytes(data[:3], byteorder="little", signed=False)
+        return raw_value * self.resolution
+
+    def encode_value(self, data: float) -> bytearray:
+        """Encode scaled value to uint24 bytes."""
+        raw_value = int(data / self.resolution)
+        if raw_value > 0xFFFFFF:  # Clamp to uint24 max
+            raw_value = 0xFFFFFF
+        return bytearray(raw_value.to_bytes(3, byteorder="little", signed=False))
+
+    @property
+    def unit(self) -> str:
+        """Return the measurement unit."""
+        return self.measurement_unit
+
+
+@dataclass
+class Sint24ScaledCharacteristic(BaseCharacteristic):
+    """Template for sint24 characteristics with configurable resolution.
+
+    This template handles characteristics that store 24-bit signed values
+    with a specific resolution multiplier (e.g., elevation with 0.01 m resolution).
+
+    Example usage:
+        @dataclass
+        class ElevationCharacteristic(Sint24ScaledCharacteristic):
+            '''Elevation measurement with 0.01 m resolution.'''
+            
+            resolution: float = 0.01
+            measurement_unit: str = "m"
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 3
+    min_value: float = -83886.08  # Min sint24 * 0.01
+    max_value: float = 83886.07   # Max sint24 * 0.01
+    expected_type: type = float
+
+    # Subclasses should override these
+    resolution: float = 1.0  # Default resolution
+    measurement_unit: str = "units"  # Default unit
+
+    def decode_value(self, data: bytearray) -> float:
+        """Parse sint24 value with resolution scaling."""
+        if len(data) < 3:
+            raise ValueError(f"{self.__class__.__name__} data must be at least 3 bytes")
+        
+        # Parse sint24 (little endian) - handle 24-bit signed integer
+        raw_bytes = data[:3] + b"\x00"  # Pad to 4 bytes
+        raw_value = int.from_bytes(raw_bytes, byteorder="little", signed=False)
+        
+        # Handle sign extension for 24-bit signed value
+        if raw_value & 0x800000:  # Check if negative (bit 23 set)
+            raw_value = raw_value - 0x1000000  # Convert to negative
+            
+        return raw_value * self.resolution
+
+    def encode_value(self, data: float) -> bytearray:
+        """Encode scaled value to sint24 bytes."""
+        raw_value = int(data / self.resolution)
+        
+        # Ensure it fits in sint24 range
+        if not -8388608 <= raw_value <= 8388607:
+            raise ValueError(f"Value {raw_value} exceeds sint24 range")
+            
+        # Convert to unsigned representation for encoding
+        if raw_value < 0:
+            raw_unsigned = raw_value + 0x1000000  # Convert negative to 24-bit unsigned
+        else:
+            raw_unsigned = raw_value
+            
+        return bytearray(raw_unsigned.to_bytes(3, byteorder="little", signed=False))
+
+    @property
+    def unit(self) -> str:
+        """Return the measurement unit."""
+        return self.measurement_unit
+
+
+@dataclass
+class WindSpeedCharacteristic(BaseCharacteristic):
+    """Template for wind speed measurements (uint16, 0.01 m/s resolution).
+
+    This template handles wind speed characteristics following the Bluetooth SIG
+    standard format: unsigned 16-bit integer with 0.01 m/s resolution.
+
+    Example usage:
+        @dataclass
+        class ApparentWindSpeedCharacteristic(WindSpeedCharacteristic):
+            '''Apparent wind speed measurement.'''
+            pass  # Uses standard wind speed format
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 2
+    min_value: float = 0.0
+    max_value: float = 655.35  # Max uint16 * 0.01
+    expected_type: type = float
+
+    def decode_value(self, data: bytearray) -> float:
+        """Parse wind speed in 0.01 m/s resolution."""
+        raw_value = DataParser.parse_int16(data, 0, signed=False)
+        return raw_value * 0.01
+
+    def encode_value(self, data: float) -> bytearray:
+        """Encode wind speed to bytes."""
+        raw_value = int(data / 0.01)
+        return DataParser.encode_int16(raw_value, signed=False)
+
+    @property
+    def unit(self) -> str:
+        """Return wind speed unit."""
+        return "m/s"
+
+
+@dataclass
+class WindDirectionCharacteristic(BaseCharacteristic):
+    """Template for wind direction measurements (uint16, 0.01° resolution).
+
+    This template handles wind direction characteristics following the Bluetooth SIG
+    standard format: unsigned 16-bit integer with 0.01° resolution.
+
+    Example usage:
+        @dataclass
+        class ApparentWindDirectionCharacteristic(WindDirectionCharacteristic):
+            '''Apparent wind direction measurement.'''
+            pass  # Uses standard wind direction format
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 2
+    min_value: float = 0.0
+    max_value: float = 359.99  # Almost full circle
+    expected_type: type = float
+
+    def decode_value(self, data: bytearray) -> float:
+        """Parse wind direction in 0.01° resolution."""
+        raw_value = DataParser.parse_int16(data, 0, signed=False)
+        direction = raw_value * 0.01
+        # Ensure direction stays within 0-360° range
+        return direction % 360.0
+
+    def encode_value(self, data: float) -> bytearray:
+        """Encode wind direction to bytes."""
+        # Normalize to 0-360° range
+        direction = float(data) % 360.0
+        raw_value = int(direction / 0.01)
+        return DataParser.encode_int16(raw_value, signed=False)
+
+    @property
+    def unit(self) -> str:
+        """Return wind direction unit."""
+        return "°"
+
+
+@dataclass
+class RainfallCharacteristic(BaseCharacteristic):
+    """Template for rainfall measurements (uint16, 1 mm resolution).
+
+    This template handles rainfall characteristics following the Bluetooth SIG
+    standard format: unsigned 16-bit integer with 1 mm resolution.
+
+    Example usage:
+        @dataclass
+        class RainfallCharacteristic(RainfallCharacteristic):
+            '''Rainfall measurement.'''
+            pass  # Uses standard rainfall format
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 2
+    min_value: float = 0.0
+    max_value: float = 65535.0  # Max uint16 mm
+    expected_type: type = float
+
+    def decode_value(self, data: bytearray) -> float:
+        """Parse rainfall in 1 mm resolution."""
+        raw_value = DataParser.parse_int16(data, 0, signed=False)
+        return float(raw_value)  # Already in millimeters
+
+    def encode_value(self, data: float) -> bytearray:
+        """Encode rainfall to bytes."""
+        raw_value = int(round(data))
+        return DataParser.encode_int16(raw_value, signed=False)
+
+    @property
+    def unit(self) -> str:
+        """Return rainfall unit."""
+        return "mm"
+
+
+@dataclass
+class SoundPressureCharacteristic(BaseCharacteristic):
+    """Template for sound pressure level measurements (uint16, 0.1 dB resolution).
+
+    This template handles sound pressure level characteristics following the 
+    Bluetooth SIG standard format: unsigned 16-bit integer with 0.1 dB resolution.
+
+    Example usage:
+        @dataclass
+        class SoundPressureLevelCharacteristic(SoundPressureCharacteristic):
+            '''Sound pressure level measurement.'''
+            pass  # Uses standard sound pressure format
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 2
+    min_value: float = 0.0
+    max_value: float = 6553.5  # Max uint16 * 0.1
+    expected_type: type = float
+
+    def decode_value(self, data: bytearray) -> float:
+        """Parse sound pressure level in 0.1 dB resolution."""
+        raw_value = DataParser.parse_int16(data, 0, signed=False)
+        return raw_value * 0.1
+
+    def encode_value(self, data: float) -> bytearray:
+        """Encode sound pressure level to bytes."""
+        raw_value = int(data / 0.1)
+        return DataParser.encode_int16(raw_value, signed=False)
+
+    @property
+    def unit(self) -> str:
+        """Return sound pressure unit."""
+        return "dB"
+
+
+@dataclass
+class SignedSoundPressureCharacteristic(BaseCharacteristic):
+    """Template for signed sound pressure level measurements (sint16, 0.1 dB resolution).
+
+    This template handles sound pressure level characteristics that can be negative,
+    using signed 16-bit integer with 0.1 dB resolution.
+
+    Example usage:
+        @dataclass
+        class SoundPressureLevelCharacteristic(SignedSoundPressureCharacteristic):
+            '''Sound pressure level measurement with negative values.'''
+            pass  # Uses signed sound pressure format
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_length: int = 2
+    min_value: float = -3276.8  # Min sint16 * 0.1
+    max_value: float = 3276.7   # Max sint16 * 0.1
+    expected_type: type = float
+
+    def decode_value(self, data: bytearray) -> float:
+        """Parse signed sound pressure level in 0.1 dB resolution."""
+        raw_value = DataParser.parse_int16(data, 0, signed=True)
+        return raw_value * 0.1
+
+    def encode_value(self, data: float) -> bytearray:
+        """Encode signed sound pressure level to bytes."""
+        raw_value = int(data / 0.1)
+        return DataParser.encode_int16(raw_value, signed=True)
+
+    @property
+    def unit(self) -> str:
+        """Return sound pressure unit."""
+        return "dB"
+
+
 __all__ = [
     "SimpleUint8Characteristic",
     "SimpleSint8Characteristic",
@@ -412,4 +778,13 @@ __all__ = [
     "PressureCharacteristic",
     "VectorCharacteristic",
     "ScaledUint16Characteristic",
+    "TemperatureLikeSint8Characteristic",
+    "TemperatureLikeUint8Characteristic",
+    "Uint24ScaledCharacteristic",
+    "Sint24ScaledCharacteristic",
+    "WindSpeedCharacteristic",
+    "WindDirectionCharacteristic",
+    "RainfallCharacteristic",
+    "SoundPressureCharacteristic",
+    "SignedSoundPressureCharacteristic",
 ]
