@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import struct
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -17,8 +17,35 @@ if TYPE_CHECKING:
 _yaml_cross_reference_available = yaml_cross_reference is not None
 
 
+class CharacteristicMeta(ABCMeta):
+    """Metaclass to automatically handle template flags for characteristics."""
+
+    def __new__(mcs, name, bases, namespace, **kwargs):
+        # Create the class normally
+        new_class = super().__new__(mcs, name, bases, namespace, **kwargs)
+
+        # Auto-handle template flags
+        if bases:  # Not the base class itself
+            # Check if this class is in templates.py (template) or a concrete implementation
+            module_name = namespace.get("__module__", "")
+            is_in_templates = "templates" in module_name
+
+            # If it's NOT in templates.py and inherits from a template, mark as concrete
+            if not is_in_templates and not namespace.get(
+                "_is_template_override", False
+            ):
+                # Check if any parent has _is_template = True
+                has_template_parent = any(
+                    getattr(base, "_is_template", False) for base in bases
+                )
+                if has_template_parent and "_is_template" not in namespace:
+                    new_class._is_template = False  # type: ignore[attr-defined] # Mark as concrete characteristic
+
+        return new_class
+
+
 @dataclass
-class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
+class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=too-many-instance-attributes
     """Base class for all GATT characteristics.
 
     Automatically resolves UUID, unit, and value_type from Bluetooth SIG YAML specifications.
@@ -309,9 +336,7 @@ class BaseCharacteristic(ABC):  # pylint: disable=too-many-instance-attributes
             CharacteristicData object with parsed value and metadata
         """
         # Import here to avoid circular imports
-        from ...core import (
-            CharacteristicData,  # pylint: disable=import-outside-toplevel
-        )
+        from ...core import CharacteristicData  # pylint: disable=C0415
 
         # Call subclass implementation with validation
         try:

@@ -19,6 +19,9 @@ from ..characteristics.methane_concentration import MethaneConcentrationCharacte
 from ..characteristics.nitrogen_dioxide_concentration import (
     NitrogenDioxideConcentrationCharacteristic,
 )
+from ..characteristics.non_methane_voc_concentration import (
+    NonMethaneVOCConcentrationCharacteristic,
+)
 from ..characteristics.ozone_concentration import OzoneConcentrationCharacteristic
 from ..characteristics.pm1_concentration import PM1ConcentrationCharacteristic
 from ..characteristics.pm10_concentration import PM10ConcentrationCharacteristic
@@ -32,7 +35,7 @@ from ..characteristics.sulfur_dioxide_concentration import (
 from ..characteristics.temperature import TemperatureCharacteristic
 from ..characteristics.true_wind_direction import TrueWindDirectionCharacteristic
 from ..characteristics.true_wind_speed import TrueWindSpeedCharacteristic
-from ..characteristics.tvoc_concentration import TVOCConcentrationCharacteristic
+from ..characteristics.voc_concentration import VOCConcentrationCharacteristic
 from ..characteristics.wind_chill import WindChillCharacteristic
 from .base import BaseGattService
 
@@ -53,7 +56,8 @@ class EnvironmentalSensingService(BaseGattService):
     - Apparent Wind Speed - Optional
     - Apparent Wind Direction - Optional
     - CO\\textsubscript{2} Concentration - Optional
-    - TVOC Concentration - Optional
+    - VOC Concentration - Optional
+    - Non-Methane Volatile Organic Compounds Concentration - Optional
     - Ammonia Concentration - Optional
     - Methane Concentration - Optional
     - Nitrogen Dioxide Concentration - Optional
@@ -81,7 +85,8 @@ class EnvironmentalSensingService(BaseGattService):
             "Apparent Wind Direction": ApparentWindDirectionCharacteristic,
             # Gas sensor characteristics for air quality monitoring
             "CO\\textsubscript{2} Concentration": CO2ConcentrationCharacteristic,
-            "VOC Concentration": TVOCConcentrationCharacteristic,
+            "VOC Concentration": VOCConcentrationCharacteristic,
+            "Non-Methane Volatile Organic Compounds Concentration": NonMethaneVOCConcentrationCharacteristic,
             "Ammonia Concentration": AmmoniaConcentrationCharacteristic,
             "Methane Concentration": MethaneConcentrationCharacteristic,
             "Nitrogen Dioxide Concentration": NitrogenDioxideConcentrationCharacteristic,

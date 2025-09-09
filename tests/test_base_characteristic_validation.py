@@ -6,8 +6,8 @@ from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 
 
 @dataclass
-class TestValidationCharacteristic(BaseCharacteristic):
-    """Test characteristic with validation attributes."""
+class ValidationHelperCharacteristic(BaseCharacteristic):
+    """Helper characteristic with validation attributes."""
 
     _characteristic_name: str = "Test Validation"
 
@@ -55,7 +55,7 @@ class TestBaseCharacteristicValidation:
 
     def test_successful_parse_with_validation(self):
         """Test successful parsing when all validations pass."""
-        char = TestValidationCharacteristic(uuid="TEST", properties=set())
+        char = ValidationHelperCharacteristic(uuid="TEST", properties=set())
         data = bytearray([50, 0])  # 50 in little endian, within range 0-100
 
         result = char.parse_value(data)
@@ -67,9 +67,9 @@ class TestBaseCharacteristicValidation:
         assert result.name == "Test Validation"
 
     def test_length_validation_failure(self):
-        """Test that length validation failures are handled correctly."""
-        char = TestValidationCharacteristic(uuid="TEST", properties=set())
-        data = bytearray([50])  # Only 1 byte, but expected_length is 2
+        """Test parsing failure when length validation fails."""
+        char = ValidationHelperCharacteristic(uuid="TEST", properties=set())
+        data = bytearray([50])  # Only 1 byte, expected 2
 
         result = char.parse_value(data)
 
@@ -78,16 +78,16 @@ class TestBaseCharacteristicValidation:
         assert "Expected 2 bytes, got 1" in result.error_message
         assert result.raw_data == bytes([50])
 
-    def test_range_validation_failure_max(self):
-        """Test that maximum value validation failures are handled correctly."""
-        char = TestValidationCharacteristic(uuid="TEST", properties=set())
-        data = bytearray([200, 0])  # 200 > max_value of 100
+    def test_parse_with_decode_error(self):
+        """Test parsing when decode_value raises an exception."""
+        char = ValidationHelperCharacteristic(uuid="TEST", properties=set())
+        data = bytearray([200, 0])  # 200 is out of range 0-100
 
         result = char.parse_value(data)
 
         assert result.parse_success is False
         assert result.value is None
-        assert "Value 200 exceeds maximum 100" in result.error_message
+        assert "Value 200 exceeds maximum 100" in str(result.error_message)
 
     def test_range_validation_failure_min(self):
         """Test that minimum value validation failures are handled correctly."""

@@ -108,4 +108,8 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
     @property
     def unit(self) -> str:
         """Get the unit of measurement."""
+        # Check for manual unit override first
+        manual_unit = getattr(self, "_manual_unit", None)
+        if manual_unit:
+            return manual_unit
         return "°C/°F"  # Unit depends on flags

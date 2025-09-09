@@ -50,6 +50,7 @@ from .magnetic_flux_density_2d import MagneticFluxDensity2DCharacteristic
 from .magnetic_flux_density_3d import MagneticFluxDensity3DCharacteristic
 from .methane_concentration import MethaneConcentrationCharacteristic
 from .nitrogen_dioxide_concentration import NitrogenDioxideConcentrationCharacteristic
+from .non_methane_voc_concentration import NonMethaneVOCConcentrationCharacteristic
 from .ozone_concentration import OzoneConcentrationCharacteristic
 from .pm1_concentration import PM1ConcentrationCharacteristic
 from .pm10_concentration import PM10ConcentrationCharacteristic
@@ -77,9 +78,9 @@ from .templates import (
 from .time_zone import TimeZoneCharacteristic
 from .true_wind_direction import TrueWindDirectionCharacteristic
 from .true_wind_speed import TrueWindSpeedCharacteristic
-from .tvoc_concentration import TVOCConcentrationCharacteristic
 from .tx_power_level import TxPowerLevelCharacteristic
 from .uv_index import UVIndexCharacteristic
+from .voc_concentration import VOCConcentrationCharacteristic
 from .voltage import VoltageCharacteristic
 from .voltage_frequency import VoltageFrequencyCharacteristic
 from .voltage_specification import VoltageSpecificationCharacteristic
@@ -162,7 +163,8 @@ class CharacteristicRegistry:
         "Rainfall": RainfallCharacteristic,
         # Gas sensor characteristics for air quality monitoring
         "CO\\textsubscript{2} Concentration": CO2ConcentrationCharacteristic,
-        "VOC Concentration": TVOCConcentrationCharacteristic,
+        "VOC Concentration": VOCConcentrationCharacteristic,
+        "Non-Methane Volatile Organic Compounds Concentration": NonMethaneVOCConcentrationCharacteristic,
         "Ammonia Concentration": AmmoniaConcentrationCharacteristic,
         "Methane Concentration": MethaneConcentrationCharacteristic,
         "Nitrogen Dioxide Concentration": NitrogenDioxideConcentrationCharacteristic,
