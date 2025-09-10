@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 from ..characteristics import BaseCharacteristic, CharacteristicRegistry
+from ..exceptions import UUIDResolutionError
 from ..uuid_registry import uuid_registry
 
 # Type aliases
@@ -63,7 +64,7 @@ class BaseGattService(ABC):
             if info:
                 return info.uuid
 
-        raise ValueError(f"No UUID found for service: {name}")
+        raise UUIDResolutionError(name, names_to_try)
 
     @property
     def name(self) -> str:

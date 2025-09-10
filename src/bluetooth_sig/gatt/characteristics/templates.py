@@ -9,18 +9,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from ..constants import (
+    ABSOLUTE_ZERO_CELSIUS,
+    PERCENTAGE_MAX,
+    SINT8_MAX,
+    SINT8_MIN,
+    SINT16_MAX,
+    TEMPERATURE_RESOLUTION,
+    UINT8_MAX,
+    UINT16_MAX,
+)
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
-
-# Data type maximum values constants
-UINT8_MAX = (1 << 8) - 1  # 255
-UINT16_MAX = (1 << 16) - 1  # 65535
-SINT8_MAX = (1 << 7) - 1  # 127
-SINT8_MIN = -(1 << 7)  # -128
-SINT16_MAX = (1 << 15) - 1  # 32767
-SINT16_MIN = -(1 << 15)  # -32768
-PERCENTAGE_MAX = 100  # Maximum percentage value
-ABSOLUTE_ZERO_CELSIUS = -273.15  # Absolute zero temperature in Celsius
 
 
 @dataclass
@@ -199,18 +199,18 @@ class TemperatureCharacteristic(BaseCharacteristic):
         ABSOLUTE_ZERO_CELSIUS  # Absolute zero in Celsius
     )
     max_value: float = (  # type: ignore[assignment]
-        SINT16_MAX * 0.01
-    )  # Max sint16 * 0.01
+        SINT16_MAX * TEMPERATURE_RESOLUTION
+    )  # Max sint16 * resolution
     expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> float:
         """Parse temperature in 0.01°C resolution."""
         raw_value = DataParser.parse_int16(data, 0, signed=True)
-        return raw_value * 0.01
+        return raw_value * TEMPERATURE_RESOLUTION
 
     def encode_value(self, data: float) -> bytearray:
         """Encode temperature to bytes."""
-        raw_value = int(data / 0.01)
+        raw_value = int(data / TEMPERATURE_RESOLUTION)
         return DataParser.encode_int16(raw_value, signed=True)
 
     @property
