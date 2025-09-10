@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from ...registry.yaml_cross_reference import yaml_cross_reference
 from ..exceptions import (
+    BluetoothSIGError,
     InsufficientDataError,
     TypeMismatchError,
     UUIDResolutionError,
@@ -364,7 +365,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 parse_success=True,
                 error_message=None,
             )
-        except (ValueError, TypeError, struct.error) as e:
+        except (ValueError, TypeError, struct.error, BluetoothSIGError) as e:
             return CharacteristicData(
                 uuid=self.char_uuid,
                 name=self.display_name,

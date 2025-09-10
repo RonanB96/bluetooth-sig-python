@@ -10,19 +10,13 @@ from __future__ import annotations
 class BluetoothSIGError(Exception):
     """Base exception for all Bluetooth SIG related errors."""
 
-    pass
-
 
 class CharacteristicError(BluetoothSIGError):
     """Base exception for characteristic-related errors."""
 
-    pass
-
 
 class ServiceError(BluetoothSIGError):
     """Base exception for service-related errors."""
-
-    pass
 
 
 class UUIDResolutionError(BluetoothSIGError):

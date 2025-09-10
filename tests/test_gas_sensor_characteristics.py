@@ -15,6 +15,7 @@ from bluetooth_sig.gatt.characteristics import (
     SulfurDioxideConcentrationCharacteristic,
     VOCConcentrationCharacteristic,
 )
+from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 
 class TestGasSensorCharacteristics:
@@ -71,7 +72,7 @@ class TestGasSensorCharacteristics:
         char = CO2ConcentrationCharacteristic(uuid="", properties=set())
 
         # Test insufficient data
-        with pytest.raises(ValueError, match="Insufficient data for int16"):
+        with pytest.raises(InsufficientDataError):
             char.decode_value(bytearray([0x34]))
 
     def test_tvoc_concentration_parsing(self):

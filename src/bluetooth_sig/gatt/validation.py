@@ -30,7 +30,7 @@ class ValidationRule:
     """Represents a validation rule with optional custom validator."""
 
     field_name: str
-    expected_type: type
+    expected_type: type | tuple[type, ...]  # Allow tuple of types for isinstance
     min_value: int | float | None = None
     max_value: int | float | None = None
     custom_validator: Callable[[Any], bool] | None = None
