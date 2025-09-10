@@ -126,6 +126,7 @@ class TestBluetoothSIGExceptions:
 
         class TestEnum(Enum):  # pylint: disable=too-few-public-methods
             """Test enumeration for validation testing."""
+
             A = 1
             B = 2
 

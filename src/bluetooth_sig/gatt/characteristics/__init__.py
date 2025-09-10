@@ -1,6 +1,6 @@
 """Registry of supported GATT characteristics."""
 
-from typing import Optional
+from typing import Any, Optional
 
 from ..uuid_registry import uuid_registry
 from .ammonia_concentration import AmmoniaConcentrationCharacteristic
@@ -213,10 +213,19 @@ class CharacteristicRegistry:
         return cls._characteristics.copy()
 
     @classmethod
-    def create_characteristic(cls, uuid: str, **kwargs) -> Optional[BaseCharacteristic]:
+    def create_characteristic(
+        cls, uuid: str, **kwargs: Any
+    ) -> Optional[BaseCharacteristic]:
         """Create a characteristic instance for the given UUID."""
         char_class = cls.get_characteristic_class_by_uuid(uuid)
         if not char_class:
             return None
 
         return char_class(uuid=uuid, **kwargs)
+
+
+__all__ = [
+    "BaseCharacteristic",
+    "CharacteristicRegistry",
+    # Add other exports as needed
+]

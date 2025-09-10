@@ -1,5 +1,7 @@
 """RSC Measurement characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
 
@@ -16,7 +18,7 @@ class RSCMeasurementData:
     instantaneous_stride_length: float | None = None  # meters
     total_distance: float | None = None  # meters
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate RSC measurement data."""
         if not 0 <= self.flags <= 255:
             raise ValueError("Flags must be a uint8 value (0-255)")
@@ -130,6 +132,8 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
         # Add optional stride length if present
         if has_stride_length:
+            if data.instantaneous_stride_length is None:
+                raise ValueError("Stride length is required but None")
             stride_length = float(data.instantaneous_stride_length)
             stride_length_raw = round(stride_length * 100)  # Convert to cm units
             if not 0 <= stride_length_raw <= 0xFFFF:
@@ -140,6 +144,8 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
         # Add optional total distance if present
         if has_total_distance:
+            if data.total_distance is None:
+                raise ValueError("Total distance is required but None")
             total_distance = float(data.total_distance)
             total_distance_raw = round(total_distance * 10)  # Convert to dm units
             if not 0 <= total_distance_raw <= 0xFFFFFFFF:

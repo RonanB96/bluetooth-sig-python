@@ -48,10 +48,15 @@ check_venv() {
 
 # Run ruff formatting and import sorting
 run_ruff() {
+    local unsafe_flag=""
+    if [ "${2:-}" = "--unsafe" ]; then
+        unsafe_flag="--unsafe-fixes"
+    fi
+
     if [ "${1:-}" = "--check" ]; then
         print_header "Checking ruff formatting and import sorting"
         local exit_code=0
-        
+
         # Check formatting
         if ! ruff format --check src/ tests/ examples/; then
             print_error "ruff formatting issues found"
@@ -60,7 +65,7 @@ run_ruff() {
         else
             print_success "ruff formatting check passed"
         fi
-        
+
         # Check linting (including import sorting)
         if ! ruff check src/ tests/ examples/; then
             print_error "ruff linting issues found"
@@ -69,19 +74,23 @@ run_ruff() {
         else
             print_success "ruff linting check passed"
         fi
-        
+
         return $exit_code
     else
         print_header "Formatting code with ruff"
-        
+
         # Fix formatting
         ruff format src/ tests/ examples/
         print_success "Code formatted with ruff"
-        
+
         # Fix linting issues (including import sorting)
-                ruff check --fix src/ tests/ examples/
-        print_success "Code linting issues fixed with ruff"
-        
+        ruff check --fix $unsafe_flag src/ tests/ examples/
+        if [ -n "$unsafe_flag" ]; then
+            print_success "Code linting issues fixed with ruff (including unsafe fixes)"
+        else
+            print_success "Code linting issues fixed with ruff"
+        fi
+
         return 0
     fi
 }
@@ -110,14 +119,24 @@ run_format_check() {
 
 # Run all format fixes
 run_format_fix() {
-    print_header "Running all formatting fixes"
+    local unsafe_param=""
+    if [ "${1:-}" = "--unsafe" ]; then
+        unsafe_param="--unsafe"
+        print_header "Running all formatting fixes (including unsafe fixes)"
+    else
+        print_header "Running all formatting fixes"
+    fi
 
     check_venv
 
-    run_ruff
+    run_ruff "" "$unsafe_param"
 
     echo ""
-    print_success "🎨 All formatting fixes applied!"
+    if [ -n "$unsafe_param" ]; then
+        print_success "🎨 All formatting fixes applied (including unsafe fixes)!"
+    else
+        print_success "🎨 All formatting fixes applied!"
+    fi
 
     # Show what changed
     if command -v git >/dev/null 2>&1 && [ -d .git ]; then
@@ -155,12 +174,20 @@ while [[ $# -gt 0 ]]; do
             run_ruff
             exit $?
             ;;
+        --ruff-fix-unsafe)
+            run_ruff "" --unsafe
+            exit $?
+            ;;
         --check)
             run_format_check
             exit $?
             ;;
         --fix)
             run_format_fix
+            exit $?
+            ;;
+        --fix-unsafe)
+            run_format_fix --unsafe
             exit $?
             ;;
         --help|-h)
@@ -171,16 +198,19 @@ while [[ $# -gt 0 ]]; do
             echo "OPTIONS:"
             echo "  --check             Check all formatting (default)"
             echo "  --fix               Fix all formatting issues"
+            echo "  --fix-unsafe        Fix all formatting issues (including unsafe fixes)"
             echo ""
             echo "Ruff-based tools:"
             echo "  --ruff              Check ruff formatting and linting"
             echo "  --ruff-check        Check ruff formatting and linting"
             echo "  --ruff-fix          Fix ruff formatting and linting"
+            echo "  --ruff-fix-unsafe   Fix ruff formatting and linting (including unsafe fixes)"
             echo ""
             echo "Examples:"
             echo "  $0                  # Check all formatting"
             echo "  $0 --check          # Check all formatting"
             echo "  $0 --fix            # Fix all formatting issues"
+            echo "  $0 --fix-unsafe     # Fix all formatting issues (including unsafe)"
             echo "  $0 --ruff           # Check only ruff"
             echo "  $0 --ruff-fix       # Fix only ruff issues"
             echo ""

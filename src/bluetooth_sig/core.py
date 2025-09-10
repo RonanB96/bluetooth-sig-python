@@ -59,7 +59,7 @@ class BluetoothSIGTranslator:
     """Pure Bluetooth SIG standards translator for characteristic and service
     interpretation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the SIG translator."""
         self._services: dict[str, BaseGattService] = {}
 
@@ -68,7 +68,7 @@ class BluetoothSIGTranslator:
         return "BluetoothSIGTranslator(pure SIG standards)"
 
     def parse_characteristic(
-        self, uuid: str, raw_data: bytes, **kwargs
+        self, uuid: str, raw_data: bytes, **kwargs: Any
     ) -> CharacteristicData:
         """Parse a characteristic's raw data using SIG standards.
 
@@ -165,7 +165,7 @@ class BluetoothSIGTranslator:
         # Try to find the service by name in the registry
         for service_class in GattServiceRegistry.get_all_services():
             try:
-                temp_service = service_class(uuid="")
+                temp_service = service_class()
                 service_name = getattr(
                     temp_service, "_service_name", service_class.__name__
                 )
@@ -229,7 +229,7 @@ class BluetoothSIGTranslator:
         result = {}
         for service_class in GattServiceRegistry.get_all_services():
             try:
-                temp_service = service_class(uuid="")
+                temp_service = service_class()
                 service_name = getattr(
                     temp_service, "_service_name", service_class.__name__
                 )
@@ -238,7 +238,7 @@ class BluetoothSIGTranslator:
                 continue
         return result
 
-    def process_services(self, services: dict[str, dict[str, dict]]) -> None:
+    def process_services(self, services: dict[str, dict[str, dict[str, Any]]]) -> None:
         """Process discovered services and their characteristics.
 
         Args:
@@ -318,7 +318,7 @@ class BluetoothSIGTranslator:
         return None
 
     def parse_characteristics(
-        self, char_data: dict[str, bytes], **kwargs
+        self, char_data: dict[str, bytes], **kwargs: Any
     ) -> dict[str, CharacteristicData]:
         """Parse multiple characteristics at once.
 
@@ -395,7 +395,7 @@ class BluetoothSIGTranslator:
             return []
 
         try:
-            temp_service = service_class(uuid=service_uuid)
+            temp_service = service_class()
             required_chars = getattr(temp_service, "get_required_characteristics", None)
             if required_chars and callable(required_chars):
                 return list(required_chars().keys())

@@ -1,6 +1,6 @@
 """Registry of supported GATT services."""
 
-from typing import Optional
+from typing import Any, Optional
 
 from .automation_io import AutomationIOService
 from .base import BaseGattService
@@ -55,7 +55,7 @@ class GattServiceRegistry:
 
     @classmethod
     def create_service(
-        cls, uuid: str, characteristics: dict[str, dict]
+        cls, uuid: str, characteristics: dict[str, dict[str, Any]]
     ) -> Optional[BaseGattService]:
         """Create a service instance for the given UUID and characteristics."""
         service_class = cls.get_service_class(uuid)
@@ -78,4 +78,4 @@ class GattServiceRegistry:
     @classmethod
     def supported_services(cls) -> list[str]:
         """Get a list of supported service UUIDs."""
-        return [service.SERVICE_UUID for service in cls._services]
+        return [service().SERVICE_UUID for service in cls._services]

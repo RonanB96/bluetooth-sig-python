@@ -6,6 +6,15 @@ from dataclasses import dataclass
 
 from .base import BaseCharacteristic
 
+# DST offset mappings - module level constant
+DST_OFFSET_VALUES: dict[int, dict[str, str | float | None]] = {
+    0: {"description": "Standard Time", "offset_hours": 0.0},
+    2: {"description": "Half an hour Daylight Time", "offset_hours": 0.5},
+    4: {"description": "Daylight Time", "offset_hours": 1.0},
+    8: {"description": "Double Daylight Time", "offset_hours": 2.0},
+    255: {"description": "DST offset unknown", "offset_hours": None},
+}
+
 
 @dataclass
 class TimezoneInfo:
@@ -44,15 +53,6 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Local Time Information"
 
-    # DST offset mappings
-    DST_OFFSET_VALUES = {
-        0: {"description": "Standard Time", "offset_hours": 0.0},
-        2: {"description": "Half an hour Daylight Time", "offset_hours": 0.5},
-        4: {"description": "Daylight Time", "offset_hours": 1.0},
-        8: {"description": "Double Daylight Time", "offset_hours": 2.0},
-        255: {"description": "DST offset unknown", "offset_hours": None},
-    }
-
     def decode_value(self, data: bytearray) -> LocalTimeInformationData:  # pylint: disable=too-many-locals
         """Parse local time information data (2 bytes: time zone + DST offset)."""
         if len(data) < 2:
@@ -85,10 +85,10 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
             timezone_hours = None
 
         # Process DST offset
-        if dst_offset_raw in self.DST_OFFSET_VALUES:
-            dst_info = self.DST_OFFSET_VALUES[dst_offset_raw]
-            dst_desc = dst_info["description"]
-            dst_hours = dst_info["offset_hours"]
+        if dst_offset_raw in DST_OFFSET_VALUES:
+            dst_info: dict[str, str | float | None] = DST_OFFSET_VALUES[dst_offset_raw]
+            dst_desc = str(dst_info["description"])
+            dst_hours: float | None = dst_info["offset_hours"]  # type: ignore[assignment]
         else:
             dst_desc = f"Reserved (value: {dst_offset_raw})"
             dst_hours = None

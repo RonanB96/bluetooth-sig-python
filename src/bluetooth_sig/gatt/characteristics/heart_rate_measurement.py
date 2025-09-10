@@ -19,7 +19,7 @@ class SensorContactState(IntEnum):
     def __str__(self) -> str:
         return {0: "not_supported", 1: "not_detected", 2: "detected"}[self.value]
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Support comparison with string values for backward compatibility."""
         if isinstance(other, str):
             return str(self) == other
@@ -49,7 +49,7 @@ class HeartRateData:
     rr_intervals: list[float] = field(default_factory=list)  # R-R intervals in seconds
     flags: int = 0  # Raw flags byte for reference
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate heart rate measurement data."""
         if not 0 <= self.heart_rate <= 65535:
             raise ValueError(f"Heart rate must be 0-65535 bpm, got {self.heart_rate}")

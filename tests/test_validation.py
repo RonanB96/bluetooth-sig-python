@@ -253,6 +253,7 @@ class TestStrictValidator:
 
         class SensorReading:  # pylint: disable=too-few-public-methods
             """Test sensor reading class."""
+
             def __init__(self, temperature, humidity):
                 self.temperature = temperature
                 self.humidity = humidity
@@ -275,6 +276,7 @@ class TestStrictValidator:
 
         class SensorReading:  # pylint: disable=too-few-public-methods
             """Test sensor reading class."""
+
             def __init__(self, temperature):
                 self.temperature = temperature
 
@@ -293,6 +295,7 @@ class TestStrictValidator:
 
         class PartialReading:  # pylint: disable=too-few-public-methods
             """Test partial reading class."""
+
             def __init__(self, temperature):
                 self.temperature = temperature
                 # humidity attribute missing

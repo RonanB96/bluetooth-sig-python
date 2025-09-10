@@ -5,8 +5,9 @@ This directory contains GitHub Actions workflows for automated testing and code 
 ## Workflows
 
 ### Test and Coverage (`test-coverage.yml`)
+
 - **Triggers**: Push to `main`, Pull Requests to `main`
-- **Matrix**: Python 3.11, 3.12 (Home Assistant compatible versions)
+- **Matrix**: Python 3.9, 3.12 (Home Assistant compatible versions)
 - **Purpose**: Run comprehensive test suite with coverage reporting
 - **Features**:
   - Automatic git submodule initialization for `bluetooth_sig` dependency
@@ -15,7 +16,8 @@ This directory contains GitHub Actions workflows for automated testing and code 
   - Uses project configuration from `pyproject.toml`
 
 ### Lint and Code Quality (`lint-check.yml`)
-- **Triggers**: Push to `main`, Pull Requests to `main` 
+
+- **Triggers**: Push to `main`, Pull Requests to `main`
 - **Python**: 3.12 (latest supported)
 - **Purpose**: Ensure code quality and consistent formatting
 - **Tools**:
@@ -49,6 +51,7 @@ python -m pylint src/ble_gatt_device/ --exit-zero --score y
 ## Environment Setup Requirements
 
 ### For Copilot Coding Agent
+
 When testing locally or in agent environments, ensure:
 
 1. **Python 3.11+** is available
@@ -58,6 +61,7 @@ When testing locally or in agent environments, ensure:
 5. **Configuration loading**: flake8-pyproject allows flake8 to read from `pyproject.toml`
 
 ### Key Environment Dependencies
+
 - Git submodule `bluetooth_sig` must be present for UUID registry functionality
 - All linting tools should be run via `python -m` to ensure proper configuration loading
 - Black handles most formatting that would trigger flake8 style errors

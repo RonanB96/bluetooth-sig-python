@@ -6,7 +6,7 @@ that can occur during GATT characteristic and service operations.
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 
 class BluetoothSIGError(Exception):
@@ -24,7 +24,7 @@ class ServiceError(BluetoothSIGError):
 class UUIDResolutionError(BluetoothSIGError):
     """Exception raised when UUID resolution fails."""
 
-    def __init__(self, name: str, attempted_names: Union[list[str], None] = None):
+    def __init__(self, name: str, attempted_names: list[str] | None = None):
         self.name = name
         self.attempted_names = attempted_names or []
         message = f"No UUID found for: {name}"
@@ -36,7 +36,7 @@ class UUIDResolutionError(BluetoothSIGError):
 class DataParsingError(CharacteristicError):
     """Exception raised when characteristic data parsing fails."""
 
-    def __init__(self, characteristic: str, data: Union[bytes, bytearray], reason: str):
+    def __init__(self, characteristic: str, data: bytes | bytearray, reason: str):
         self.characteristic = characteristic
         self.data = data
         self.reason = reason
@@ -70,9 +70,7 @@ class DataValidationError(CharacteristicError):
 class InsufficientDataError(DataParsingError):
     """Exception raised when there is insufficient data for parsing."""
 
-    def __init__(
-        self, characteristic: str, data: Union[bytes, bytearray], required: int
-    ):
+    def __init__(self, characteristic: str, data: bytes | bytearray, required: int):
         self.required = required
         self.actual = len(data)
         reason = f"need {required} bytes, got {self.actual}"
@@ -92,9 +90,7 @@ class ValueRangeError(DataValidationError):
 class TypeMismatchError(DataValidationError):
     """Exception raised when a value has an unexpected type."""
 
-    def __init__(
-        self, field: str, value: Any, expected_type: Union[type, tuple[type, ...]]
-    ):
+    def __init__(self, field: str, value: Any, expected_type: type | tuple[type, ...]):
         self.expected_type = expected_type
         self.actual_type = type(value)
 
@@ -123,7 +119,7 @@ class EnumValueError(DataValidationError):
 class IEEE11073Error(DataParsingError):
     """Exception raised when IEEE 11073 format parsing fails."""
 
-    def __init__(self, data: Union[bytes, bytearray], format_type: str, reason: str):
+    def __init__(self, data: bytes | bytearray, format_type: str, reason: str):
         self.format_type = format_type
         characteristic = f"IEEE 11073 {format_type}"
         super().__init__(characteristic, data, reason)

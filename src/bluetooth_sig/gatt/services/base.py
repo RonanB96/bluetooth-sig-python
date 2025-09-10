@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import Any
 
 from ..characteristics import BaseCharacteristic, CharacteristicRegistry
 from ..exceptions import UUIDResolutionError
@@ -135,7 +136,9 @@ class BaseGattService(ABC):
                 required_uuids.add(char_info.uuid)
         return required_uuids
 
-    def process_characteristics(self, characteristics: dict[str, dict]) -> None:
+    def process_characteristics(
+        self, characteristics: dict[str, dict[str, Any]]
+    ) -> None:
         """Process the characteristics for this service (default implementation).
 
         Args:

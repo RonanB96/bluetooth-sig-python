@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
+from datetime import datetime
 
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
@@ -17,13 +18,13 @@ class BloodPressureData:  # pylint: disable=too-many-instance-attributes
     diastolic: float  # Diastolic pressure
     mean_arterial_pressure: float  # Mean arterial pressure
     unit: str  # "mmHg" or "kPa"
-    timestamp: dict[str, int] | None = None  # Optional timestamp
+    timestamp: datetime | None = None  # Optional timestamp
     pulse_rate: float | None = None  # Optional pulse rate
     user_id: int | None = None  # Optional user ID
     measurement_status: int | None = None  # Optional measurement status
     flags: int = 0  # Raw flags byte for reference
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate blood pressure data."""
         if self.unit not in ("mmHg", "kPa"):
             raise ValueError(

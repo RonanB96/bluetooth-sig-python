@@ -32,6 +32,8 @@
         "*pytest": true,
         "pytest": true,
         "python -m pytest": true,
+        "python -m mypy": true,
+        "python -m py_compile": true,
         "gh act": true,
         "source .venv/bin/activate": true,
         "python scripts/": true,
@@ -184,5 +186,28 @@
         "git mv": false,
         "/^Remove-Item\\b/i": false
     },
-    "python.analysis.typeCheckingMode": "standard"
+    "python.analysis.typeCheckingMode": "strict",
+
+    // Python extension settings to use pyproject.toml
+    "python.defaultInterpreterPath": "./.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+
+    // Ruff extension - uses pyproject.toml automatically
+    "ruff.enable": true,
+    "ruff.organizeImports": true,
+    "ruff.fixAll": true,
+    "ruff.configuration": "pyproject.toml",
+
+    // MyPy extension - uses pyproject.toml automatically
+    "mypy-type-checker.severity": {
+        "error": "Error",
+        "note": "Information"
+    },
+
+    // Pylint - configure to use pyproject.toml
+    "pylint.args": ["--rcfile", "pyproject.toml"],
+
+    // Testing - uses pyproject.toml automatically
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": ["--config-file", "pyproject.toml"],
 }

@@ -16,7 +16,7 @@ class VoltageStatisticsData:
     average: float  # Average voltage in Volts
     unit: str = "V"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate voltage statistics data."""
         # Validate logical order
         if self.minimum > self.maximum:

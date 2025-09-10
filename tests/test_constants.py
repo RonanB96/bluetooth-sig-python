@@ -1,6 +1,5 @@
 """Tests for the constants module."""
 
-
 from bluetooth_sig.gatt.constants import (
     ABSOLUTE_ZERO_CELSIUS,
     # Flag bit positions

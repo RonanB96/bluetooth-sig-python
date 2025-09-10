@@ -1,5 +1,7 @@
 """Body Composition Measurement characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
 from typing import Any
@@ -28,7 +30,7 @@ class BodyCompositionMeasurementData:  # pylint: disable=too-many-instance-attri
     weight: float | None = None
     height: float | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate body composition measurement data."""
         if not 0.0 <= self.body_fat_percentage <= 100.0:
             raise ValueError("Body fat percentage must be between 0-100%")
@@ -69,7 +71,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         # Parse flags and required body fat percentage
         flags, offset = self._parse_flags_and_body_fat(data)
 
-        result_data = {
+        result_data: dict[str, Any] = {
             "body_fat_percentage": self._calculate_body_fat_percentage(
                 data, offset - 2
             ),
@@ -142,7 +144,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             Body fat percentage as float
         """
         body_fat_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-        return body_fat_raw * 0.1  # 0.1% resolution
+        return float(body_fat_raw) * 0.1  # 0.1% resolution
 
     def _parse_optional_fields(
         self, data: bytearray, flags: int, offset: int, result: dict[str, Any]

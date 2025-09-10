@@ -15,7 +15,7 @@ class ElectricCurrentRangeData:
     max: float  # Maximum current in Amperes
     unit: str = "A"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate current range data."""
         if self.min > self.max:
             raise ValueError(

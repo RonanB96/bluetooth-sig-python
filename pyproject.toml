@@ -43,6 +43,7 @@ dev = [
     "pylint~=3.3",
     "ruff~=0.1",
     "mypy~=1.0",
+    "types-PyYAML~=6.0",
     "ipdb~=0.13",
     "coverage~=7.0",
 ]
@@ -148,7 +149,7 @@ force-single-line = false
 
 [tool.mypy]
 # Strict mode configuration for Bluetooth SIG Python library
-python_version = "3.9"
+python_version = "3.10"  # Enable modern union syntax (X | Y)
 strict = true
 
 # Additional strict checks

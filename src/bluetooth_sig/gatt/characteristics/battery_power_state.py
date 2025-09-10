@@ -113,7 +113,7 @@ class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
     battery_charging_type: BatteryChargingType
     charging_fault_reason: str | list[str] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate battery power state data."""
         if not 0 <= self.raw_value <= 255:
             raise ValueError(f"Raw value must be 0-255, got {self.raw_value}")
@@ -265,16 +265,13 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
 
         # Map charge level to bits 6-7 (need to adjust mapping for basic format)
         # The basic format uses different ordering than the enum values
-        if data.battery_charge_level == BatteryChargeLevel.UNKNOWN:
-            charge_level_bits = 0
-        elif data.battery_charge_level == BatteryChargeLevel.CRITICALLY_LOW:
+        charge_level_bits = 0  # Default to UNKNOWN
+        if data.battery_charge_level == BatteryChargeLevel.CRITICALLY_LOW:
             charge_level_bits = 1
         elif data.battery_charge_level == BatteryChargeLevel.LOW:
             charge_level_bits = 2
         elif data.battery_charge_level == BatteryChargeLevel.GOOD:
             charge_level_bits = 3
-        else:
-            charge_level_bits = 0
 
         # Encode single byte
         encoded_byte = (
