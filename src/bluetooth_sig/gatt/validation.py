@@ -7,7 +7,7 @@ focusing on strict type safety and comprehensive data integrity checks.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, Union
 
 from .constants import (
     ABSOLUTE_ZERO_CELSIUS,
@@ -30,11 +30,11 @@ class ValidationRule:
     """Represents a validation rule with optional custom validator."""
 
     field_name: str
-    expected_type: type | tuple[type, ...]  # Allow tuple of types for isinstance
-    min_value: int | float | None = None
-    max_value: int | float | None = None
-    custom_validator: Callable[[Any], bool] | None = None
-    error_message: str | None = None
+    expected_type: Union[type, tuple[type, ...]]  # Allow tuple of types for isinstance
+    min_value: Union[int, float, None] = None
+    max_value: Union[int, float, None] = None
+    custom_validator: Union[Callable[[Any], bool], None] = None
+    error_message: Union[str, None] = None
 
     def validate(self, value: Any) -> None:
         """Apply this validation rule to a value."""
@@ -85,22 +85,22 @@ class CommonValidators:
     """Collection of commonly used validation functions."""
 
     @staticmethod
-    def is_positive(value: int | float) -> bool:
+    def is_positive(value: Union[int, float]) -> bool:
         """Check if value is positive."""
         return value > 0
 
     @staticmethod
-    def is_non_negative(value: int | float) -> bool:
+    def is_non_negative(value: Union[int, float]) -> bool:
         """Check if value is non-negative."""
         return value >= 0
 
     @staticmethod
-    def is_valid_percentage(value: int | float) -> bool:
+    def is_valid_percentage(value: Union[int, float]) -> bool:
         """Check if value is a valid percentage (0-100)."""
         return 0 <= value <= PERCENTAGE_MAX
 
     @staticmethod
-    def is_valid_extended_percentage(value: int | float) -> bool:
+    def is_valid_extended_percentage(value: Union[int, float]) -> bool:
         """Check if value is a valid extended percentage (0-200)."""
         return 0 <= value <= 200
 
@@ -115,7 +115,7 @@ class CommonValidators:
         return 0 <= value <= MAX_CONCENTRATION_PPM
 
     @staticmethod
-    def is_valid_power(value: int | float) -> bool:
+    def is_valid_power(value: Union[int, float]) -> bool:
         """Check if power value is reasonable."""
         return 0 <= value <= MAX_POWER_WATTS
 

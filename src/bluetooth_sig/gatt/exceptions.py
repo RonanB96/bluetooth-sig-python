@@ -6,6 +6,8 @@ that can occur during GATT characteristic and service operations.
 
 from __future__ import annotations
 
+from typing import Any, Union
+
 
 class BluetoothSIGError(Exception):
     """Base exception for all Bluetooth SIG related errors."""
@@ -22,7 +24,7 @@ class ServiceError(BluetoothSIGError):
 class UUIDResolutionError(BluetoothSIGError):
     """Exception raised when UUID resolution fails."""
 
-    def __init__(self, name: str, attempted_names: list[str] | None = None):
+    def __init__(self, name: str, attempted_names: Union[list[str], None] = None):
         self.name = name
         self.attempted_names = attempted_names or []
         message = f"No UUID found for: {name}"
@@ -34,7 +36,7 @@ class UUIDResolutionError(BluetoothSIGError):
 class DataParsingError(CharacteristicError):
     """Exception raised when characteristic data parsing fails."""
 
-    def __init__(self, characteristic: str, data: bytes | bytearray, reason: str):
+    def __init__(self, characteristic: str, data: Union[bytes, bytearray], reason: str):
         self.characteristic = characteristic
         self.data = data
         self.reason = reason
@@ -46,7 +48,7 @@ class DataParsingError(CharacteristicError):
 class DataEncodingError(CharacteristicError):
     """Exception raised when characteristic data encoding fails."""
 
-    def __init__(self, characteristic: str, value: any, reason: str):
+    def __init__(self, characteristic: str, value: Any, reason: str):
         self.characteristic = characteristic
         self.value = value
         self.reason = reason
@@ -57,7 +59,7 @@ class DataEncodingError(CharacteristicError):
 class DataValidationError(CharacteristicError):
     """Exception raised when characteristic data validation fails."""
 
-    def __init__(self, field: str, value: any, expected: str):
+    def __init__(self, field: str, value: Any, expected: str):
         self.field = field
         self.value = value
         self.expected = expected
@@ -68,7 +70,9 @@ class DataValidationError(CharacteristicError):
 class InsufficientDataError(DataParsingError):
     """Exception raised when there is insufficient data for parsing."""
 
-    def __init__(self, characteristic: str, data: bytes | bytearray, required: int):
+    def __init__(
+        self, characteristic: str, data: Union[bytes, bytearray], required: int
+    ):
         self.required = required
         self.actual = len(data)
         reason = f"need {required} bytes, got {self.actual}"
@@ -78,7 +82,7 @@ class InsufficientDataError(DataParsingError):
 class ValueRangeError(DataValidationError):
     """Exception raised when a value is outside the expected range."""
 
-    def __init__(self, field: str, value: any, min_val: any, max_val: any):
+    def __init__(self, field: str, value: Any, min_val: Any, max_val: Any):
         self.min_val = min_val
         self.max_val = max_val
         expected = f"range [{min_val}, {max_val}]"
@@ -88,17 +92,28 @@ class ValueRangeError(DataValidationError):
 class TypeMismatchError(DataValidationError):
     """Exception raised when a value has an unexpected type."""
 
-    def __init__(self, field: str, value: any, expected_type: type):
+    def __init__(
+        self, field: str, value: Any, expected_type: Union[type, tuple[type, ...]]
+    ):
         self.expected_type = expected_type
         self.actual_type = type(value)
-        expected = f"type {expected_type.__name__}, got {self.actual_type.__name__}"
+
+        # Handle tuple of types for display
+        if isinstance(expected_type, tuple):
+            type_names = " or ".join(t.__name__ for t in expected_type)
+            expected = f"type {type_names}, got {self.actual_type.__name__}"
+        else:
+            expected = f"type {expected_type.__name__}, got {self.actual_type.__name__}"
+
         super().__init__(field, value, expected)
 
 
 class EnumValueError(DataValidationError):
     """Exception raised when an enum value is invalid."""
 
-    def __init__(self, field: str, value: any, enum_class: type, valid_values: list):
+    def __init__(
+        self, field: str, value: Any, enum_class: type, valid_values: list[Any]
+    ):
         self.enum_class = enum_class
         self.valid_values = valid_values
         expected = f"{enum_class.__name__} value from {valid_values}"
@@ -108,7 +123,7 @@ class EnumValueError(DataValidationError):
 class IEEE11073Error(DataParsingError):
     """Exception raised when IEEE 11073 format parsing fails."""
 
-    def __init__(self, data: bytes | bytearray, format_type: str, reason: str):
+    def __init__(self, data: Union[bytes, bytearray], format_type: str, reason: str):
         self.format_type = format_type
         characteristic = f"IEEE 11073 {format_type}"
         super().__init__(characteristic, data, reason)

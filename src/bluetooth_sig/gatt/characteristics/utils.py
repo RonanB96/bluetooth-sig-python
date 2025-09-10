@@ -98,14 +98,14 @@ class DataParser:
         """Parse IEEE-754 32-bit float (little-endian)."""
         if len(data) < offset + 4:
             raise InsufficientDataError("float32", data[offset:], 4)
-        return struct.unpack("<f", data[offset : offset + 4])[0]
+        return float(struct.unpack("<f", data[offset : offset + 4])[0])
 
     @staticmethod
     def parse_float64(data: bytearray, offset: int = 0) -> float:
         """Parse IEEE-754 64-bit double (little-endian)."""
         if len(data) < offset + 8:
             raise InsufficientDataError("float64", data[offset:], 8)
-        return struct.unpack("<d", data[offset : offset + 8])[0]
+        return float(struct.unpack("<d", data[offset : offset + 8])[0])
 
     @staticmethod
     def parse_utf8_string(data: bytearray) -> str:
@@ -133,7 +133,7 @@ class DataParser:
         else:
             if not 0 <= value <= UINT8_MAX:
                 raise ValueRangeError("uint8", value, 0, UINT8_MAX)
-        return bytearray(value.to_bytes(1, signed=signed))
+        return bytearray(value.to_bytes(1, byteorder="little", signed=signed))
 
     @staticmethod
     def encode_int16(
@@ -235,7 +235,7 @@ class IEEE11073Parser:
         if exponent >= 0x80:  # Negative exponent
             exponent = exponent - 0x100
 
-        return mantissa * (10**exponent)
+        return float(mantissa * (10**exponent))
 
     @staticmethod
     def encode_sfloat(value: float) -> bytearray:
@@ -452,7 +452,7 @@ class DebugUtils:
         try:
             parsed = characteristic.parse_value(original_data)
             encoded = characteristic.encode_value(parsed)
-            return original_data == encoded
+            return bool(original_data == encoded)
         except Exception:  # pylint: disable=broad-except
             return False
 
