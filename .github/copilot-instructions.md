@@ -173,3 +173,93 @@ Based on SIG specifications:
 3. **Registry Validation**: All tests must pass
 4. **Type Safety**: Use modern `Class | None` union syntax
 5. **SIG Compliance**: Follow official Bluetooth specifications exactly
+
+## Framework-Agnostic Integration Pattern
+
+**CRITICAL**: This library works with ANY BLE connection library. The integration pattern is:
+
+```python
+# Step 1: Get raw data (using ANY BLE library)
+raw_data = await your_ble_library.read_characteristic(device, uuid)
+
+# Step 2: Parse with bluetooth_sig (connection-agnostic)
+from bluetooth_sig import BluetoothSIGTranslator
+translator = BluetoothSIGTranslator()
+result = translator.parse_characteristic(uuid, raw_data)
+
+# Step 3: Use parsed result
+print(f"Value: {result.value} {result.unit}")
+```
+
+**Supported BLE Libraries**: bleak, bleak-retry-connector, simplepyble, or any custom BLE implementation.
+
+## Template System for Common Patterns
+
+Use templates in `characteristics/templates.py` for common characteristic types:
+
+```python
+# For simple uint8 characteristics (battery level, etc.)
+@dataclass
+class SimpleUint8Characteristic(BaseCharacteristic):
+    expected_length: int = 1
+    min_value: int = 0
+    max_value: int = 255
+    expected_type: type = int
+```
+
+## Validation Attributes Pattern
+
+Use declarative validation in characteristic classes:
+
+```python
+@dataclass
+class BatteryLevelCharacteristic(BaseCharacteristic):
+    """Battery level with validation constraints."""
+
+    # Declarative validation (automatically enforced)
+    expected_length: int = 1
+    min_value: int = 0
+    max_value: int = 100
+    expected_type: type = int
+
+    def decode_value(self, data: bytearray) -> int:
+        return data[0]  # Validation happens automatically
+```
+
+## Error Handling Patterns
+
+**Use specific ValueError messages** that reference the characteristic:
+
+```python
+def decode_value(self, data: bytearray) -> float:
+    if len(data) < 2:
+        raise ValueError("Temperature data must be at least 2 bytes")
+    # ... parsing logic
+```
+
+**Handle SIG special values** appropriately:
+- `0x07FF`: Positive infinity
+- `0x0800`: Negative infinity
+- `0x07FE`: NaN (Not a Number)
+
+## Import Organization
+
+**Always follow this import order:**
+1. `from __future__ import annotations` (first line after docstring)
+2. Standard library imports
+3. Third-party imports
+4. Local imports (relative imports)
+
+**Example:**
+```python
+"""Module docstring."""
+
+from __future__ import annotations
+
+import struct
+from dataclasses import dataclass
+from typing import Any
+
+from .base import BaseCharacteristic
+from .utils import IEEE11073Parser
+```

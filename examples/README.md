@@ -163,6 +163,100 @@ python testing_with_mocks.py --compliance
 - CI/CD integration examples
 - Edge case and error condition testing
 
+## 🚀 Enhanced Integration Examples
+
+### 🔍 [`enhanced_service_explorer.py`](enhanced_service_explorer.py)
+**Enhanced Service Explorer - SIG Library Integration Showcase**
+
+Based on Bleak's `service_explorer.py` with comprehensive Bluetooth SIG library integration. Demonstrates the proper discovery pattern:
+
+1. Use name-based lookups when you know what you want
+2. Use UUID-based lookups only for exploring unknown services/characteristics
+3. Parse all readable characteristics with SIG standards compliance
+
+```bash
+# Connect to device and explore with SIG parsing
+python enhanced_service_explorer.py --address 12:34:56:78:9A:BC
+
+# Scan for devices first
+python enhanced_service_explorer.py --scan
+
+# Run with mock data (no hardware required)
+python enhanced_service_explorer.py --mock
+```
+
+**Features:**
+- Demonstrates targeted vs discovery patterns
+- Comprehensive SIG parsing during exploration
+- Shows proper name vs UUID lookup usage
+- Mock data support for testing without hardware
+
+### 🔔 [`enhanced_notifications.py`](enhanced_notifications.py)
+**Enhanced Notifications - SIG Library Integration with Notification Parsing**
+
+Based on Bleak's `enable_notifications.py` with comprehensive Bluetooth SIG library integration for parsing notification data.
+
+```bash
+# Monitor all notifications with SIG parsing
+python enhanced_notifications.py --address 12:34:56:78:9A:BC
+
+# Monitor specific characteristic
+python enhanced_notifications.py --address 12:34:56:78:9A:BC --characteristic "Heart Rate Measurement"
+
+# Simulate notifications with mock data
+python enhanced_notifications.py --mock --duration 10
+```
+
+**Features:**
+- Automatic SIG parsing in notification callbacks
+- Rich data extraction that manual parsing would miss
+- Standards-compliant notification handling
+- Real-time parsing with comprehensive error handling
+
+### ⚖️ [`real_world_comparison.py`](real_world_comparison.py)
+**Real-World Integration Comparison: Manual vs Bluetooth SIG Library**
+
+Direct side-by-side comparison of manual BLE parsing versus using the Bluetooth SIG library, demonstrating code complexity differences, standards compliance gaps, and missing features in manual parsing.
+
+```bash
+# Compare with mock data (no hardware required)
+python real_world_comparison.py --mock
+
+# Performance benchmark
+python real_world_comparison.py --benchmark
+
+# Compare with real device
+python real_world_comparison.py --address 12:34:56:78:9A:BC
+```
+
+**Features:**
+- Side-by-side manual vs SIG library comparison
+- Shows missing features in manual parsing
+- Performance benchmarking
+- Standards compliance analysis
+
+### 📚 [`practical_integration_guide.py`](practical_integration_guide.py)
+**Practical Integration Guide - Bluetooth SIG Library Best Practices**
+
+Comprehensive guide demonstrating recommended patterns for integrating the Bluetooth SIG library with BLE connection libraries.
+
+```bash
+# Show all integration patterns
+python practical_integration_guide.py --demo-patterns
+
+# Demonstrate with mock device
+python practical_integration_guide.py --mock-device
+
+# Real device demonstration
+python practical_integration_guide.py --address 12:34:56:78:9A:BC
+```
+
+**Features:**
+- When to use name-based vs UUID-based lookups
+- Proper service discovery workflows
+- Production-ready error handling patterns
+- Performance optimization techniques
+
 ## 🔗 BLE Library Compatibility
 
 | Library | Platform | Async | Installation | Status |
