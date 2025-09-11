@@ -62,7 +62,7 @@ class WeightScaleFeatureData:
     weight_measurement_resolution: WeightMeasurementResolution
     height_measurement_resolution: HeightMeasurementResolution
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate weight scale feature data."""
         if not 0 <= self.raw_value <= 0xFFFFFFFF:
             raise ValueError("Raw value must be a 32-bit unsigned integer")

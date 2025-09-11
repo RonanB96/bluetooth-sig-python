@@ -75,7 +75,7 @@ class TestBaseCharacteristicValidation:
 
         assert result.parse_success is False
         assert result.value is None
-        assert "Expected 2 bytes, got 1" in result.error_message
+        assert "need 2 bytes, got 1" in result.error_message
         assert result.raw_data == bytes([50])
 
     def test_parse_with_decode_error(self):
@@ -87,7 +87,7 @@ class TestBaseCharacteristicValidation:
 
         assert result.parse_success is False
         assert result.value is None
-        assert "Value 200 exceeds maximum 100" in str(result.error_message)
+        assert "Invalid value: 200" in str(result.error_message)
 
     def test_range_validation_failure_min(self):
         """Test that minimum value validation failures are handled correctly."""
@@ -114,7 +114,7 @@ class TestBaseCharacteristicValidation:
 
         assert result.parse_success is False
         assert result.value is None
-        assert "Value 5 below minimum 10" in result.error_message
+        assert "Invalid value: 5" in result.error_message
 
     def test_type_validation_failure(self):
         """Test that type validation failures are handled correctly."""
@@ -142,7 +142,7 @@ class TestBaseCharacteristicValidation:
 
         assert result.parse_success is False
         assert result.value is None
-        assert "Expected float, got int" in result.error_message
+        assert "expected type float, got int" in result.error_message
 
     def test_no_validation_attributes(self):
         """Test that characteristics without validation attributes work normally."""
@@ -177,7 +177,7 @@ class TestBaseCharacteristicValidation:
         # Test with too short data
         result = char.parse_value(bytearray([1, 2]))  # 2 bytes < min_length 3
         assert result.parse_success is False
-        assert "Minimum 3 bytes required, got 2" in result.error_message
+        assert "need 3 bytes, got 2" in result.error_message
 
         # Test with sufficient data
         result = char.parse_value(bytearray([1, 2, 3, 4]))  # 4 bytes >= min_length 3

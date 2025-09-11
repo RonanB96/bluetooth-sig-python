@@ -1,5 +1,7 @@
 """Temperature Measurement characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
 from typing import Any
@@ -111,5 +113,5 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         # Check for manual unit override first
         manual_unit = getattr(self, "_manual_unit", None)
         if manual_unit:
-            return manual_unit
+            return str(manual_unit)
         return "°C/°F"  # Unit depends on flags

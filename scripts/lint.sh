@@ -109,6 +109,37 @@ run_pylint() {
     return 0
 }
 
+# Run mypy type checking
+run_mypy() {
+    print_header "Running mypy type checking"
+
+    if ! command -v mypy >/dev/null 2>&1; then
+        print_warning "mypy not found. Install with: pip install mypy"
+        print_warning "Skipping type checking"
+        return 0
+    fi
+
+    # Run mypy and capture output, allowing it to fail
+    local MYPY_OUTPUT
+    set +e  # Temporarily disable exit on error
+    MYPY_OUTPUT=$(mypy src/bluetooth_sig 2>&1)
+    local MYPY_EXIT_CODE=$?
+    set -e  # Re-enable exit on error
+
+    if [ $MYPY_EXIT_CODE -eq 0 ]; then
+        print_success "mypy type checking passed"
+        return 0
+    else
+        # Show the actual mypy output
+        echo "$MYPY_OUTPUT"
+        print_error "mypy type checking failed"
+        echo ""
+        echo "Run with --show-error-codes for more details:"
+        echo "  mypy src/bluetooth_sig --show-error-codes"
+        return 1
+    fi
+}
+
 # Run shellcheck
 run_shellcheck() {
     print_header "Running shellcheck"
@@ -185,6 +216,12 @@ run_all_checks() {
 
     echo ""
 
+    if ! run_mypy; then
+        exit_code=1
+    fi
+
+    echo ""
+
     if ! run_shellcheck; then
         exit_code=1
     fi
@@ -217,6 +254,11 @@ while [[ $# -gt 0 ]]; do
             run_pylint
             exit $?
             ;;
+        --mypy)
+            check_venv
+            run_mypy
+            exit $?
+            ;;
         --shellcheck)
             run_shellcheck
             exit $?
@@ -232,12 +274,14 @@ while [[ $# -gt 0 ]]; do
             echo "Individual tools:"
             echo "  --ruff              Run ruff linting (replaces flake8)"
             echo "  --pylint            Run pylint analysis (must score 10.00/10)"
+            echo "  --mypy              Run mypy type checking"
             echo "  --shellcheck        Run shellcheck shell script analysis"
             echo ""
             echo "Examples:"
             echo "  $0                  # Run all linting checks"
             echo "  $0 --ruff           # Run only ruff"
             echo "  $0 --pylint         # Run only pylint"
+            echo "  $0 --mypy           # Run only mypy"
             echo "  $0 --shellcheck     # Run only shellcheck"
             echo ""
             echo "Note: For formatting, use ./scripts/format.sh"

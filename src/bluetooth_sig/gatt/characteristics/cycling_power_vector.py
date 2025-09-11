@@ -1,5 +1,7 @@
 """Cycling Power Vector characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
 
@@ -27,7 +29,7 @@ class CyclingPowerVectorData:
     instantaneous_force_magnitude_array: list[float] | None = None
     instantaneous_torque_magnitude_array: list[float] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate cycling power vector data."""
         if not 0 <= self.flags <= 255:
             raise ValueError("Flags must be a uint8 value (0-255)")

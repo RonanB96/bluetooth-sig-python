@@ -34,7 +34,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
             raise ValueError("Cycling Power Feature data must be at least 4 bytes")
 
         # Parse 32-bit unsigned integer (little endian)
-        feature_mask = struct.unpack("<I", data[:4])[0]
+        feature_mask: int = struct.unpack("<I", data[:4])[0]
         return feature_mask
 
     def encode_value(self, data: int) -> bytearray:

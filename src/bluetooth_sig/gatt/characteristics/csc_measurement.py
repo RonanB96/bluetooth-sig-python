@@ -1,5 +1,7 @@
 """CSC Measurement characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
 
@@ -16,7 +18,7 @@ class CSCMeasurementData:
     cumulative_crank_revolutions: int | None = None
     last_crank_event_time: float | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate CSC measurement data."""
         if not 0 <= self.flags <= 255:
             raise ValueError("Flags must be a uint8 value (0-255)")
@@ -120,8 +122,8 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
         # Add wheel revolution data if present
         if has_wheel_data:
-            wheel_revolutions = int(data.cumulative_wheel_revolutions)
-            wheel_event_time = float(data.last_wheel_event_time)
+            wheel_revolutions = int(data.cumulative_wheel_revolutions)  # type: ignore[arg-type]
+            wheel_event_time = float(data.last_wheel_event_time)  # type: ignore[arg-type]
 
             # Validate ranges
             if not 0 <= wheel_revolutions <= 0xFFFFFFFF:
@@ -142,8 +144,8 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
         # Add crank revolution data if present
         if has_crank_data:
-            crank_revolutions = int(data.cumulative_crank_revolutions)
-            crank_event_time = float(data.last_crank_event_time)
+            crank_revolutions = int(data.cumulative_crank_revolutions)  # type: ignore[arg-type]
+            crank_event_time = float(data.last_crank_event_time)  # type: ignore[arg-type]
 
             # Validate ranges
             if not 0 <= crank_revolutions <= 0xFFFF:

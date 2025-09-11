@@ -1,10 +1,23 @@
 # AI Coding Agent Instructions for Bluetooth SIG Standards Library
 
+## CRITICAL: Research and Documentation Requirements (RTFD!)
+
+**BEFORE starting any work:**
+1. **ALWAYS review relevant online documentation** for the specific technologies, libraries, frameworks, and APIs you are working with
+2. **REFERENCE official documentation sources**:
+   - **Bluetooth SIG specifications**: https://www.bluetooth.com/specifications/assigned-numbers/ for BLE characteristics and services
+   - **Python documentation**: https://docs.python.org/ for language features, standard library, and best practices
+   - **Library-specific docs**: Official documentation for any Python packages, dependencies, or frameworks being used
+3. **VERIFY current standards and syntax** - specifications, APIs, and language features are updated regularly
+4. **ONLY AFTER** reviewing official documentation, then reference these instructions and use search/bash commands for specific implementation details
+
+Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
+
 **bluetooth-sig-python** is a **pure Bluetooth SIG standards library** for parsing characteristic and service data according to official specifications. This is NOT a device integration library - it's a reference implementation for translating raw BLE data using SIG standards.
 
 ## 🚨 MANDATORY QUALITY REQUIREMENTS
 
-**CRITICAL: Run these commands BEFORE every commit:**
+**CRITICAL: Run these commands in sequence BEFORE every commit:**
 
 ```bash
 ./scripts/format.sh --fix         # Fix all formatting issues
@@ -13,16 +26,12 @@
 python -m pytest tests/ -v        # Run ALL tests
 ```
 
-**🛑 STOP: Do NOT create commits or PRs until ALL commands pass with ZERO issues.**
-**🛑 STOP: Do NOT submit pull requests with failing CI checks.**
-**🛑 STOP: Always run quality validation BEFORE pushing changes.**
-
-**Individual debugging commands:**
+**For stubborn formatting issues, use unsafe fixes:**
 ```bash
-./scripts/lint.sh --ruff          # Python style checking only
-./scripts/lint.sh --pylint        # Python code analysis only
-./scripts/format.sh --ruff        # Python code formatting only
+./scripts/format.sh --fix-unsafe  # Fix including unsafe ruff fixes
 ```
+
+**🛑 ALL commands must pass with ZERO issues before creating commits or PRs.**
 
 ## Project Architecture
 
@@ -130,31 +139,18 @@ class CharacteristicRegistry:
 
 ## Testing & Quality
 
-### Core Validation Tests (NEVER skip these)
+### Core Validation (Run these commands in sequence)
 ```bash
-# Registry validation:
-python -m pytest tests/test_registry_validation.py -v
-
-# UUID registry functionality:
-python -m pytest tests/test_uuid_registry.py -v
-
-# Name resolution patterns:
-python -m pytest tests/test_name_resolution.py -v
+./scripts/format.sh --fix         # Fix formatting
+./scripts/format.sh --check       # Verify formatting
+./scripts/lint.sh --all           # Full linting
+python -m pytest tests/ -v        # All tests
 ```
 
-### Manual Framework Validation
+**For stubborn issues:**
 ```bash
-# Test core import:
-python -c "import bluetooth_sig; print('✅ Import successful')"
-
-# Test registry loading:
-python -c "from bluetooth_sig.gatt.uuid_registry import uuid_registry; print(f'✅ Registry loaded with {len(uuid_registry._characteristics)} characteristics')"
-
-# Test characteristic creation:
-python -c "from bluetooth_sig.gatt.characteristics import CharacteristicRegistry; char = CharacteristicRegistry.create_characteristic('2A19', set()); print(f'✅ Created: {char.__class__.__name__}')"
-```
-
-## Key Architecture Files
+./scripts/format.sh --fix-unsafe  # Use ruff unsafe fixes if needed
+```## Key Architecture Files
 
 **Core API**: `src/bluetooth_sig/core.py` - BluetoothSIGTranslator with dataclass returns
 **UUID Registry**: `src/bluetooth_sig/gatt/uuid_registry.py` - Multi-stage name resolution
@@ -173,7 +169,7 @@ Based on SIG specifications:
 ## Critical Success Factors
 
 1. **Submodule Dependency**: `bluetooth_sig/` must be initialized
-2. **Quality Standards**: Pylint 10.00/10, zero ruff violations
-3. **Registry Validation**: All 128+ tests must pass
+2. **Quality Standards**: Run format --fix, --check, lint --all, pytest -v in sequence
+3. **Registry Validation**: All tests must pass
 4. **Type Safety**: Use modern `Class | None` union syntax
 5. **SIG Compliance**: Follow official Bluetooth specifications exactly

@@ -1,5 +1,7 @@
 """Glucose Measurement characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
 from typing import Any

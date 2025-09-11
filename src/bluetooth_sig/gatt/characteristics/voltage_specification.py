@@ -15,7 +15,7 @@ class VoltageSpecificationData:
     maximum: float  # Maximum voltage in Volts
     unit: str = "V"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate voltage specification data."""
         if self.minimum > self.maximum:
             raise ValueError(

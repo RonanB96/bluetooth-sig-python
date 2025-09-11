@@ -14,6 +14,32 @@ from datetime import datetime
 from enum import IntEnum
 from typing import Any, Literal
 
+from ..constants import (
+    IEEE11073_NAN,
+    IEEE11073_NEGATIVE_INFINITY,
+    IEEE11073_NRES,
+    IEEE11073_POSITIVE_INFINITY,
+    MAX_CONCENTRATION_PPM,
+    MAX_POWER_WATTS,
+    MAX_TEMPERATURE_CELSIUS,
+    SINT8_MAX,
+    SINT8_MIN,
+    SINT16_MAX,
+    SINT16_MIN,
+    SINT32_MAX,
+    SINT32_MIN,
+    UINT8_MAX,
+    UINT16_MAX,
+    UINT32_MAX,
+)
+from ..exceptions import (
+    DataValidationError,
+    EnumValueError,
+    InsufficientDataError,
+    TypeMismatchError,
+    ValueRangeError,
+)
+
 
 @dataclass
 class FlagInfo:
@@ -33,7 +59,7 @@ class DataParser:
     ) -> int:
         """Parse 8-bit integer with optional signed interpretation."""
         if len(data) < offset + 1:
-            raise ValueError(f"Insufficient data for int8 at offset {offset}")
+            raise InsufficientDataError("int8", data[offset:], 1)
         value = data[offset]
         if signed and value >= 128:
             return value - 256
@@ -48,7 +74,7 @@ class DataParser:
     ) -> int:
         """Parse 16-bit integer with configurable endianness and signed interpretation."""
         if len(data) < offset + 2:
-            raise ValueError(f"Insufficient data for int16 at offset {offset}")
+            raise InsufficientDataError("int16", data[offset:], 2)
         return int.from_bytes(
             data[offset : offset + 2], byteorder=endian, signed=signed
         )
@@ -62,7 +88,7 @@ class DataParser:
     ) -> int:
         """Parse 32-bit integer with configurable endianness and signed interpretation."""
         if len(data) < offset + 4:
-            raise ValueError(f"Insufficient data for int32 at offset {offset}")
+            raise InsufficientDataError("int32", data[offset:], 4)
         return int.from_bytes(
             data[offset : offset + 4], byteorder=endian, signed=signed
         )
@@ -71,15 +97,15 @@ class DataParser:
     def parse_float32(data: bytearray, offset: int = 0) -> float:
         """Parse IEEE-754 32-bit float (little-endian)."""
         if len(data) < offset + 4:
-            raise ValueError(f"Insufficient data for float32 at offset {offset}")
-        return struct.unpack("<f", data[offset : offset + 4])[0]
+            raise InsufficientDataError("float32", data[offset:], 4)
+        return float(struct.unpack("<f", data[offset : offset + 4])[0])
 
     @staticmethod
     def parse_float64(data: bytearray, offset: int = 0) -> float:
         """Parse IEEE-754 64-bit double (little-endian)."""
         if len(data) < offset + 8:
-            raise ValueError(f"Insufficient data for float64 at offset {offset}")
-        return struct.unpack("<d", data[offset : offset + 8])[0]
+            raise InsufficientDataError("float64", data[offset:], 8)
+        return float(struct.unpack("<d", data[offset : offset + 8])[0])
 
     @staticmethod
     def parse_utf8_string(data: bytearray) -> str:
@@ -102,12 +128,12 @@ class DataParser:
     def encode_int8(value: int, signed: bool = False) -> bytearray:
         """Encode 8-bit integer with signed/unsigned validation."""
         if signed:
-            if not -128 <= value <= 127:
-                raise ValueError(f"Value {value} out of sint8 range (-128 to 127)")
+            if not SINT8_MIN <= value <= SINT8_MAX:
+                raise ValueRangeError("sint8", value, SINT8_MIN, SINT8_MAX)
         else:
-            if not 0 <= value <= 255:
-                raise ValueError(f"Value {value} out of uint8 range (0-255)")
-        return bytearray(value.to_bytes(1, signed=signed))
+            if not 0 <= value <= UINT8_MAX:
+                raise ValueRangeError("uint8", value, 0, UINT8_MAX)
+        return bytearray(value.to_bytes(1, byteorder="little", signed=signed))
 
     @staticmethod
     def encode_int16(
@@ -115,11 +141,11 @@ class DataParser:
     ) -> bytearray:
         """Encode 16-bit integer with configurable endianness and signed/unsigned validation."""
         if signed:
-            if not -32768 <= value <= 32767:
-                raise ValueError(f"Value {value} out of sint16 range (-32768 to 32767)")
+            if not SINT16_MIN <= value <= SINT16_MAX:
+                raise ValueRangeError("sint16", value, SINT16_MIN, SINT16_MAX)
         else:
-            if not 0 <= value <= 65535:
-                raise ValueError(f"Value {value} out of uint16 range (0-65535)")
+            if not 0 <= value <= UINT16_MAX:
+                raise ValueRangeError("uint16", value, 0, UINT16_MAX)
         return bytearray(value.to_bytes(2, byteorder=endian, signed=signed))
 
     @staticmethod
@@ -128,11 +154,11 @@ class DataParser:
     ) -> bytearray:
         """Encode 32-bit integer with configurable endianness and signed/unsigned validation."""
         if signed:
-            if not -2147483648 <= value <= 2147483647:
-                raise ValueError(f"Value {value} out of sint32 range")
+            if not SINT32_MIN <= value <= SINT32_MAX:
+                raise ValueRangeError("sint32", value, SINT32_MIN, SINT32_MAX)
         else:
-            if not 0 <= value <= 4294967295:
-                raise ValueError(f"Value {value} out of uint32 range")
+            if not 0 <= value <= UINT32_MAX:
+                raise ValueRangeError("uint32", value, 0, UINT32_MAX)
         return bytearray(value.to_bytes(4, byteorder=endian, signed=signed))
 
     @staticmethod
@@ -158,17 +184,17 @@ class IEEE11073Parser:
             offset: Offset in the data
         """
         if len(data) < offset + 2:
-            raise ValueError(f"Insufficient data for SFLOAT at offset {offset}")
+            raise InsufficientDataError("IEEE 11073 SFLOAT", data[offset:], 2)
         raw_value = int.from_bytes(data[offset : offset + 2], byteorder="little")
 
         # Handle special values
-        if raw_value == 0x07FF:
+        if raw_value == IEEE11073_NAN:
             return float("nan")  # NaN
-        if raw_value == 0x0800:
+        if raw_value == IEEE11073_NRES:
             return float("nan")  # NRes (Not a valid result)
-        if raw_value == 0x07FE:
+        if raw_value == IEEE11073_POSITIVE_INFINITY:
             return float("inf")  # +INFINITY
-        if raw_value == 0x0802:
+        if raw_value == IEEE11073_NEGATIVE_INFINITY:
             return float("-inf")  # -INFINITY
 
         # Extract mantissa and exponent
@@ -186,7 +212,7 @@ class IEEE11073Parser:
     def parse_float32(data: bytes | bytearray, offset: int = 0) -> float:
         """Parse IEEE 11073 32-bit FLOAT."""
         if len(data) < offset + 4:
-            raise ValueError(f"Insufficient data for FLOAT32 at offset {offset}")
+            raise InsufficientDataError("IEEE 11073 FLOAT32", data[offset:], 4)
 
         raw_value = int.from_bytes(data[offset : offset + 4], byteorder="little")
 
@@ -209,7 +235,7 @@ class IEEE11073Parser:
         if exponent >= 0x80:  # Negative exponent
             exponent = exponent - 0x100
 
-        return mantissa * (10**exponent)
+        return float(mantissa * (10**exponent))
 
     @staticmethod
     def encode_sfloat(value: float) -> bytearray:
@@ -249,7 +275,7 @@ class IEEE11073Parser:
     def parse_timestamp(data: bytearray, offset: int) -> datetime:
         """Parse IEEE-11073 timestamp format (7 bytes)."""
         if len(data) < offset + 7:
-            raise ValueError("Not enough data for timestamp parsing")
+            raise InsufficientDataError("IEEE 11073 timestamp", data[offset:], 7)
 
         timestamp_data = data[offset : offset + 7]
         year, month, day, hours, minutes, seconds = struct.unpack(
@@ -262,17 +288,17 @@ class IEEE11073Parser:
         """Encode timestamp to IEEE-11073 7-byte format."""
         # Validate ranges
         if not 1582 <= timestamp.year <= 9999:
-            raise ValueError(f"Year {timestamp.year} out of range (1582-9999)")
+            raise ValueRangeError("year", timestamp.year, 1582, 9999)
         if not 1 <= timestamp.month <= 12:
-            raise ValueError(f"Month {timestamp.month} out of range (1-12)")
+            raise ValueRangeError("month", timestamp.month, 1, 12)
         if not 1 <= timestamp.day <= 31:
-            raise ValueError(f"Day {timestamp.day} out of range (1-31)")
+            raise ValueRangeError("day", timestamp.day, 1, 31)
         if not 0 <= timestamp.hour <= 23:
-            raise ValueError(f"Hours {timestamp.hour} out of range (0-23)")
+            raise ValueRangeError("hour", timestamp.hour, 0, 23)
         if not 0 <= timestamp.minute <= 59:
-            raise ValueError(f"Minutes {timestamp.minute} out of range (0-59)")
+            raise ValueRangeError("minute", timestamp.minute, 0, 59)
         if not 0 <= timestamp.second <= 59:
-            raise ValueError(f"Seconds {timestamp.second} out of range (0-59)")
+            raise ValueRangeError("second", timestamp.second, 0, 59)
 
         return bytearray(
             struct.pack(
@@ -341,12 +367,10 @@ class DataValidator:
         """Validate data length against expected range."""
         length = len(data)
         if length < expected_min:
-            raise ValueError(
-                f"Data too short: {length} bytes, expected at least {expected_min}"
-            )
+            raise InsufficientDataError("data", data, expected_min)
         if expected_max is not None and length > expected_max:
-            raise ValueError(
-                f"Data too long: {length} bytes, expected at most {expected_max}"
+            raise DataValidationError(
+                "data_length", length, f"at most {expected_max} bytes"
             )
 
     @staticmethod
@@ -355,7 +379,7 @@ class DataValidator:
     ) -> None:
         """Validate that a value is within the specified range."""
         if not min_val <= value <= max_val:
-            raise ValueError(f"Value {value} out of range [{min_val}, {max_val}]")
+            raise ValueRangeError("value", value, min_val, max_val)
 
     @staticmethod
     def validate_enum_value(value: int, enum_class: type[IntEnum]) -> None:
@@ -364,52 +388,54 @@ class DataValidator:
             enum_class(value)
         except ValueError as e:
             valid_values = [member.value for member in enum_class]
-            raise ValueError(
-                f"Invalid {enum_class.__name__} value {value}. Valid values: {valid_values}"
+            raise EnumValueError(
+                enum_class.__name__, value, enum_class, valid_values
             ) from e
 
     @staticmethod
-    def validate_concentration_range(value: float, max_ppm: float = 65535.0) -> None:
+    def validate_concentration_range(
+        value: float, max_ppm: float = MAX_CONCENTRATION_PPM
+    ) -> None:
         """Validate concentration value is in acceptable range."""
         if not isinstance(value, (int, float)):
-            raise TypeError(f"Concentration must be numeric, got {type(value)}")
+            raise TypeMismatchError("concentration", value, float)
         if value < 0:
-            raise ValueError(f"Concentration cannot be negative: {value}")
+            raise ValueRangeError("concentration", value, 0, max_ppm)
         if value > max_ppm:
-            raise ValueError(f"Concentration {value} exceeds maximum {max_ppm} ppm")
+            raise ValueRangeError("concentration", value, 0, max_ppm)
 
     @staticmethod
     def validate_temperature_range(
-        value: float, min_celsius: float = -273.15, max_celsius: float = 1000.0
+        value: float,
+        min_celsius: float = -273.15,
+        max_celsius: float = MAX_TEMPERATURE_CELSIUS,
     ) -> None:
         """Validate temperature is in physically reasonable range."""
         if not isinstance(value, (int, float)):
-            raise TypeError(f"Temperature must be numeric, got {type(value)}")
+            raise TypeMismatchError("temperature", value, float)
         if value < min_celsius:
-            raise ValueError(f"Temperature {value}°C below absolute zero")
+            raise ValueRangeError("temperature", value, min_celsius, max_celsius)
         if value > max_celsius:
-            raise ValueError(f"Temperature {value}°C exceeds maximum {max_celsius}°C")
+            raise ValueRangeError("temperature", value, min_celsius, max_celsius)
 
     @staticmethod
     def validate_percentage(value: int | float, allow_over_100: bool = False) -> None:
         """Validate percentage value (0-100% or 0-200% for some characteristics)."""
         if not isinstance(value, (int, float)):
-            raise TypeError(f"Percentage must be numeric, got {type(value)}")
-        if value < 0:
-            raise ValueError(f"Percentage cannot be negative: {value}")
+            raise TypeMismatchError("percentage", value, float)
         max_value = 200 if allow_over_100 else 100
-        if value > max_value:
-            raise ValueError(f"Percentage {value}% exceeds maximum {max_value}%")
+        if value < 0 or value > max_value:
+            raise ValueRangeError("percentage", value, 0, max_value)
 
     @staticmethod
-    def validate_power_range(value: int | float, max_watts: float = 65535.0) -> None:
+    def validate_power_range(
+        value: int | float, max_watts: float = MAX_POWER_WATTS
+    ) -> None:
         """Validate power measurement range."""
         if not isinstance(value, (int, float)):
-            raise TypeError(f"Power must be numeric, got {type(value)}")
-        if value < 0:
-            raise ValueError(f"Power cannot be negative: {value}")
-        if value > max_watts:
-            raise ValueError(f"Power {value}W exceeds maximum {max_watts}W")
+            raise TypeMismatchError("power", value, float)
+        if value < 0 or value > max_watts:
+            raise ValueRangeError("power", value, 0, max_watts)
 
 
 class DebugUtils:
@@ -426,7 +452,7 @@ class DebugUtils:
         try:
             parsed = characteristic.parse_value(original_data)
             encoded = characteristic.encode_value(parsed)
-            return original_data == encoded
+            return bool(original_data == encoded)
         except Exception:  # pylint: disable=broad-except
             return False
 

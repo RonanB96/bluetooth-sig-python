@@ -1,3 +1,4 @@
+# mypy: warn_unused_ignores=False
 """Template characteristic classes for common patterns.
 
 This module provides reusable template characteristic classes that eliminate
@@ -8,19 +9,20 @@ follows the declarative validation pattern and uses DataParser utilities.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
+from ..constants import (
+    ABSOLUTE_ZERO_CELSIUS,
+    PERCENTAGE_MAX,
+    SINT8_MAX,
+    SINT8_MIN,
+    SINT16_MAX,
+    TEMPERATURE_RESOLUTION,
+    UINT8_MAX,
+    UINT16_MAX,
+)
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
-
-# Data type maximum values constants
-UINT8_MAX = (1 << 8) - 1  # 255
-UINT16_MAX = (1 << 16) - 1  # 65535
-SINT8_MAX = (1 << 7) - 1  # 127
-SINT8_MIN = -(1 << 7)  # -128
-SINT16_MAX = (1 << 15) - 1  # 32767
-SINT16_MIN = -(1 << 15)  # -32768
-PERCENTAGE_MAX = 100  # Maximum percentage value
-ABSOLUTE_ZERO_CELSIUS = -273.15  # Absolute zero temperature in Celsius
 
 
 @dataclass
@@ -199,18 +201,18 @@ class TemperatureCharacteristic(BaseCharacteristic):
         ABSOLUTE_ZERO_CELSIUS  # Absolute zero in Celsius
     )
     max_value: float = (  # type: ignore[assignment]
-        SINT16_MAX * 0.01
-    )  # Max sint16 * 0.01
+        SINT16_MAX * TEMPERATURE_RESOLUTION
+    )  # Max sint16 * resolution
     expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray) -> float:
         """Parse temperature in 0.01°C resolution."""
         raw_value = DataParser.parse_int16(data, 0, signed=True)
-        return raw_value * 0.01
+        return raw_value * TEMPERATURE_RESOLUTION
 
     def encode_value(self, data: float) -> bytearray:
         """Encode temperature to bytes."""
-        raw_value = int(data / 0.01)
+        raw_value = int(data / TEMPERATURE_RESOLUTION)
         return DataParser.encode_int16(raw_value, signed=True)
 
     @property
@@ -219,7 +221,7 @@ class TemperatureCharacteristic(BaseCharacteristic):
         # Check for manual unit override first
         manual_unit = getattr(self, "_manual_unit", None)
         if manual_unit:
-            return manual_unit
+            return str(manual_unit)
         return "°C"
 
 
@@ -748,33 +750,40 @@ class EnumCharacteristic(BaseCharacteristic):
     expected_type: type = object  # Will be enum type  # type: ignore[assignment]
 
     # Subclasses MUST override this
-    enum_class: type = None  # type: ignore[assignment]
+    enum_class: type | None = None
 
     def decode_value(self, data: bytearray) -> object:
         """Parse enumerated value."""
-        if self.enum_class is None:
+        enum_cls = self.enum_class
+        if enum_cls is None:
             raise NotImplementedError("Subclass must set enum_class")
 
-        raw_value = DataParser.parse_int8(data, 0, signed=False)
+        raw_value: int = DataParser.parse_int8(data, 0, signed=False)
 
         # Use from_value method if available for safe conversion
-        if hasattr(self.enum_class, "from_value"):
-            return self.enum_class.from_value(raw_value)
-
+        from_value = getattr(enum_cls, "from_value", None)
+        if from_value is not None and callable(from_value):
+            return from_value(raw_value)  # pylint: disable=not-callable
         try:
-            return self.enum_class(raw_value)
+            return enum_cls(raw_value)
         except ValueError:
             # Fallback to raw value if enum doesn't handle it
             return raw_value
 
-    def encode_value(self, data: object) -> bytearray:
+    def encode_value(self, data: Any) -> bytearray:
         """Encode enumerated value to bytes."""
-        if hasattr(data, "value"):
-            # Enum type
-            raw_value = data.value  # type: ignore[attr-defined]
+        raw_value: int
+        # Enum type: must have .value attribute and be convertible to int
+        if hasattr(data, "value") and isinstance(data.value, int):
+            raw_value = int(data.value)
+        elif isinstance(data, int):
+            raw_value = data
+        elif isinstance(data, float):
+            raw_value = int(data)
         else:
-            # Raw integer
-            raw_value = int(data)  # type: ignore[arg-type]
+            raise TypeError(
+                f"Cannot convert {type(data)} to int for encoding enum value"
+            )
 
         return DataParser.encode_int8(raw_value, signed=False)
 

@@ -8,7 +8,14 @@ from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from ...registry.yaml_cross_reference import yaml_cross_reference
+from ...registry.yaml_cross_reference import CharacteristicSpec, yaml_cross_reference
+from ..exceptions import (
+    BluetoothSIGError,
+    InsufficientDataError,
+    TypeMismatchError,
+    UUIDResolutionError,
+    ValueRangeError,
+)
 from ..uuid_registry import uuid_registry
 
 if TYPE_CHECKING:
@@ -20,7 +27,13 @@ _yaml_cross_reference_available = yaml_cross_reference is not None
 class CharacteristicMeta(ABCMeta):
     """Metaclass to automatically handle template flags for characteristics."""
 
-    def __new__(mcs, name, bases, namespace, **kwargs):
+    def __new__(
+        mcs,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, Any],
+        **kwargs: Any,
+    ) -> type:
         # Create the class normally
         new_class = super().__new__(mcs, name, bases, namespace, **kwargs)
 
@@ -112,7 +125,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     allow_variable_length: bool = field(default=False)
     expected_type: type | None = field(default=None)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize characteristic with UUID from registry based on class name.
 
         Automatically resolves metadata from cross-file YAML references
@@ -154,7 +167,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             # Fallback to original registry resolution
             self._resolve_from_basic_registry()
 
-    def _resolve_yaml_spec(self):
+    def _resolve_yaml_spec(self) -> CharacteristicSpec | None:
         """Resolve specification using YAML cross-reference system."""
         if not _yaml_cross_reference_available:
             return None
@@ -193,7 +206,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         return None
 
-    def _resolve_from_basic_registry(self):
+    def _resolve_from_basic_registry(self) -> None:
         """Fallback to basic registry resolution (original behavior)."""
         # First try explicit characteristic name if set
         characteristic_name = getattr(self, "_characteristic_name", None)
@@ -242,7 +255,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                     self.value_type = char_info.value_type
                 break
         else:
-            raise ValueError(f"No UUID found for characteristic: {name}")
+            raise UUIDResolutionError(name, names_to_try)
 
     @property
     def char_uuid(self) -> str:
@@ -254,9 +267,13 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         """Get the characteristic name from UUID registry."""
         characteristic_name = getattr(self, "_characteristic_name", None)
         if characteristic_name:
-            return characteristic_name
+            return str(characteristic_name)
         info = uuid_registry.get_characteristic_info(self.char_uuid)
-        return info.name if info else f"Unknown Characteristic ({self.char_uuid})"
+        return (
+            str(info.name)
+            if info and info.name
+            else f"Unknown Characteristic ({self.char_uuid})"
+        )
 
     @property
     def summary(self) -> str:
@@ -300,26 +317,26 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def _validate_range(self, value: Any) -> None:
         """Validate value is within min/max range."""
         if self.min_value is not None and value < self.min_value:
-            raise ValueError(f"Value {value} below minimum {self.min_value}")
+            raise ValueRangeError("value", value, self.min_value, self.max_value)
         if self.max_value is not None and value > self.max_value:
-            raise ValueError(f"Value {value} exceeds maximum {self.max_value}")
+            raise ValueRangeError("value", value, self.min_value, self.max_value)
 
     def _validate_length(self, data: bytes | bytearray) -> None:
         """Validate data length meets requirements."""
         length = len(data)
         if self.expected_length is not None and length != self.expected_length:
-            raise ValueError(f"Expected {self.expected_length} bytes, got {length}")
+            raise InsufficientDataError(
+                "characteristic_data", data, self.expected_length
+            )
         if self.min_length is not None and length < self.min_length:
-            raise ValueError(f"Minimum {self.min_length} bytes required, got {length}")
+            raise InsufficientDataError("characteristic_data", data, self.min_length)
         if self.max_length is not None and length > self.max_length:
             raise ValueError(f"Maximum {self.max_length} bytes allowed, got {length}")
 
     def _validate_value(self, value: Any) -> None:
         """Validate parsed value meets all requirements."""
         if self.expected_type is not None and not isinstance(value, self.expected_type):
-            raise TypeError(
-                f"Expected {self.expected_type.__name__}, got {type(value).__name__}"
-            )
+            raise TypeMismatchError("parsed_value", value, self.expected_type)
         self._validate_range(value)
 
     def parse_value(self, data: bytes | bytearray) -> CharacteristicData:
@@ -358,7 +375,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 parse_success=True,
                 error_message=None,
             )
-        except (ValueError, TypeError, struct.error) as e:
+        except (ValueError, TypeError, struct.error, BluetoothSIGError) as e:
             return CharacteristicData(
                 uuid=self.char_uuid,
                 name=self.display_name,
@@ -397,7 +414,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # First try manual unit override (takes priority)
         manual_unit = getattr(self, "_manual_unit", None)
         if manual_unit:
-            return manual_unit
+            return str(manual_unit)
 
         # Try unit symbol from cross-file references
         if hasattr(self, "_yaml_unit_symbol") and self._yaml_unit_symbol:
@@ -406,7 +423,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # Fallback to unit from basic YAML registry
         char_info = uuid_registry.get_characteristic_info(self.char_uuid)
         if char_info and char_info.unit:
-            return char_info.unit
+            return str(char_info.unit)
 
         return ""
 
@@ -442,12 +459,12 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # First try manual value_type override (takes priority)
         manual_value_type = getattr(self, "_manual_value_type", None)
         if manual_value_type:
-            return manual_value_type
+            return str(manual_value_type)
 
         # Fallback to value_type from YAML registry for automatic parsing
         char_info = uuid_registry.get_characteristic_info(self.char_uuid)
         if char_info and char_info.value_type:
-            return char_info.value_type
+            return str(char_info.value_type)
 
         # Final fallback to instance value_type
         return self.value_type

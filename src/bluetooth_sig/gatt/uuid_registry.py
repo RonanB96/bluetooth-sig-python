@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -24,7 +25,7 @@ class UuidInfo:
 class UuidRegistry:
     """Registry for Bluetooth SIG UUIDs."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the UUID registry."""
         self._services: dict[str, UuidInfo] = {}
         self._characteristics: dict[str, UuidInfo] = {}
@@ -35,16 +36,19 @@ class UuidRegistry:
             # If YAML loading fails, continue with empty registry
             pass
 
-    def _load_yaml(self, file_path: Path) -> list[dict]:
+    def _load_yaml(self, file_path: Path) -> list[dict[str, Any]]:
         """Load UUIDs from a YAML file."""
         if not file_path.exists():
             return []
 
         with file_path.open("r") as f:
             data = yaml.safe_load(f)
-            return data.get("uuids", [])
+            if isinstance(data, dict):
+                uuids = data.get("uuids", [])
+                return uuids  # type: ignore[no-any-return]
+            return []
 
-    def _load_uuids(self):
+    def _load_uuids(self) -> None:
         """Load all UUIDs from YAML files."""
         # Try development location first (git submodule)
         # From src/bluetooth_sig/gatt/uuid_registry.py, go up 4 levels to project root
@@ -105,7 +109,7 @@ class UuidRegistry:
         # Load detailed specifications from GSS YAML files to extract units
         self._load_gss_specifications()
 
-    def _load_unit_mappings(self, base_path: Path):
+    def _load_unit_mappings(self, base_path: Path) -> None:
         """Load unit symbol mappings from units.yaml file."""
         units_yaml = base_path / "units.yaml"
         if not units_yaml.exists():
@@ -220,7 +224,7 @@ class UuidRegistry:
         # If no symbol extraction is possible, return the name itself
         return unit_name
 
-    def _load_gss_specifications(self):
+    def _load_gss_specifications(self) -> None:
         """Load detailed specifications from GSS YAML files to extract unit information."""
         gss_path = self._find_gss_path()
         if not gss_path:
@@ -245,7 +249,7 @@ class UuidRegistry:
 
         return gss_path if gss_path.exists() else None
 
-    def _process_gss_file(self, yaml_file: Path):
+    def _process_gss_file(self, yaml_file: Path) -> None:
         """Process a single GSS YAML file."""
         try:
             with yaml_file.open("r", encoding="utf-8") as f:
@@ -275,7 +279,7 @@ class UuidRegistry:
 
     def _update_characteristics_with_gss_info(
         self, char_name: str, char_id: str, unit: str | None, value_type: str | None
-    ):
+    ) -> None:
         """Update existing UuidInfo entries with unit and value_type information."""
         for key, uuid_info in self._characteristics.items():
             if (
@@ -295,7 +299,9 @@ class UuidRegistry:
                 )
                 self._characteristics[key] = updated_info
 
-    def _extract_info_from_gss(self, char_data: dict) -> tuple[str | None, str | None]:
+    def _extract_info_from_gss(
+        self, char_data: dict[str, Any]
+    ) -> tuple[str | None, str | None]:
         """Extract unit and value_type from GSS characteristic structure.
 
         Args:

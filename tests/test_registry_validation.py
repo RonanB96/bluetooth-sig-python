@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.exceptions import UUIDResolutionError
 from bluetooth_sig.gatt.services.base import BaseGattService
 from bluetooth_sig.gatt.uuid_registry import uuid_registry
 
@@ -630,11 +631,8 @@ class TestNameResolutionFallback:
             def unit(self) -> str:
                 return ""
 
-        # Should raise ValueError when no UUID can be found
-        with pytest.raises(
-            ValueError,
-            match="No UUID found for characteristic: UnknownTestCharacteristic",
-        ):
+        # Should raise UUIDResolutionError when no UUID can be found
+        with pytest.raises(UUIDResolutionError):
             UnknownTestCharacteristic(uuid="test", properties=set())
 
     def test_current_services_name_resolution_strategy(self):

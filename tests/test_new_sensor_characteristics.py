@@ -18,6 +18,7 @@ from bluetooth_sig.gatt.characteristics import (
 from bluetooth_sig.gatt.characteristics.barometric_pressure_trend import (
     BarometricPressureTrend,
 )
+from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 
 class TestNavigationCharacteristics:
@@ -51,7 +52,7 @@ class TestNavigationCharacteristics:
         char = MagneticDeclinationCharacteristic(uuid="", properties=set())
 
         # Test insufficient data
-        with pytest.raises(ValueError, match="Insufficient data for int16"):
+        with pytest.raises(InsufficientDataError):
             char.decode_value(bytearray([0x12]))
 
     def test_elevation_parsing(self):

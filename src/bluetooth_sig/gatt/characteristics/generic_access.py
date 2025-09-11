@@ -50,7 +50,7 @@ class AppearanceCharacteristic(BaseCharacteristic):
 
         return int.from_bytes(data[:2], byteorder="little", signed=False)
 
-    def encode_value(self, data) -> bytearray:
+    def encode_value(self, data: int) -> bytearray:
         """Encode appearance value back to bytes.
 
         Args:

@@ -1,5 +1,7 @@
 """Cycling Power Measurement characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
 
@@ -19,7 +21,7 @@ class CyclingPowerMeasurementData:  # pylint: disable=too-many-instance-attribut
     cumulative_crank_revolutions: int | None = None  # Changed to match decode_value
     last_crank_event_time: float | None = None  # seconds
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate cycling power measurement data."""
         if not 0 <= self.flags <= 65535:
             raise ValueError("Flags must be a uint16 value (0-65535)")

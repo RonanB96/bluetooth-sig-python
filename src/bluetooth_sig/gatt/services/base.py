@@ -5,8 +5,10 @@ from __future__ import annotations
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import Any
 
 from ..characteristics import BaseCharacteristic, CharacteristicRegistry
+from ..exceptions import UUIDResolutionError
 from ..uuid_registry import uuid_registry
 
 # Type aliases
@@ -63,7 +65,7 @@ class BaseGattService(ABC):
             if info:
                 return info.uuid
 
-        raise ValueError(f"No UUID found for service: {name}")
+        raise UUIDResolutionError(name, names_to_try)
 
     @property
     def name(self) -> str:
@@ -134,7 +136,9 @@ class BaseGattService(ABC):
                 required_uuids.add(char_info.uuid)
         return required_uuids
 
-    def process_characteristics(self, characteristics: dict[str, dict]) -> None:
+    def process_characteristics(
+        self, characteristics: dict[str, dict[str, Any]]
+    ) -> None:
         """Process the characteristics for this service (default implementation).
 
         Args:

@@ -1,5 +1,7 @@
 """Glucose Measurement Context characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
 from typing import Any
@@ -34,7 +36,7 @@ class GlucoseMeasurementContextData:  # pylint: disable=too-many-instance-attrib
     hba1c: float | None = None
     hba1c_percent: float | None = None  # Added missing field
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate glucose measurement context data."""
         if not 0 <= self.flags <= 255:
             raise ValueError("Flags must be a uint8 value (0-255)")

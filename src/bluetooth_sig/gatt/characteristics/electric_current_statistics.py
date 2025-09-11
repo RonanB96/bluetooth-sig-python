@@ -16,7 +16,7 @@ class ElectricCurrentStatisticsData:
     average: float  # Average current in Amperes
     unit: str = "A"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate current statistics data."""
         # Validate logical order
         if self.minimum > self.maximum:

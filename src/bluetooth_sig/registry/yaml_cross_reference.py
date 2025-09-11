@@ -34,11 +34,11 @@ class CharacteristicSpec:
 
     uuid: str
     name: str
-    field_info: FieldInfo = None
-    unit_info: UnitInfo = None
+    field_info: FieldInfo | None = None
+    unit_info: UnitInfo | None = None
     description: str | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize sub-dataclasses if not provided."""
         if self.field_info is None:
             self.field_info = FieldInfo()
@@ -49,32 +49,32 @@ class CharacteristicSpec:
     @property
     def data_type(self) -> str | None:
         """Get data type from field info."""
-        return self.field_info.data_type
+        return self.field_info.data_type if self.field_info else None
 
     @property
     def field_size(self) -> str | None:
         """Get field size from field info."""
-        return self.field_info.field_size
+        return self.field_info.field_size if self.field_info else None
 
     @property
     def unit_id(self) -> str | None:
         """Get unit ID from unit info."""
-        return self.unit_info.unit_id
+        return self.unit_info.unit_id if self.unit_info else None
 
     @property
     def unit_symbol(self) -> str | None:
         """Get unit symbol from unit info."""
-        return self.unit_info.unit_symbol
+        return self.unit_info.unit_symbol if self.unit_info else None
 
     @property
     def base_unit(self) -> str | None:
         """Get base unit from unit info."""
-        return self.unit_info.base_unit
+        return self.unit_info.base_unit if self.unit_info else None
 
     @property
     def resolution_text(self) -> str | None:
         """Get resolution text from unit info."""
-        return self.unit_info.resolution_text
+        return self.unit_info.resolution_text if self.unit_info else None
 
 
 class YAMLCrossReferenceResolver:
@@ -126,12 +126,12 @@ class YAMLCrossReferenceResolver:
         # Return the first fallback even if it doesn't exist (for error handling)
         return fallbacks[0]
 
-    def _ensure_characteristic_uuids_loaded(self):
+    def _ensure_characteristic_uuids_loaded(self) -> None:
         """Ensure characteristic UUIDs are loaded (already done at startup)."""
         # UUIDs are loaded at startup, no action needed
         return
 
-    def _ensure_gss_specs_loaded(self):
+    def _ensure_gss_specs_loaded(self) -> None:
         """Lazy load GSS specifications when first needed."""
         if not self._gss_specs_loaded:
             try:
@@ -140,7 +140,7 @@ class YAMLCrossReferenceResolver:
             except (OSError, yaml.YAMLError) as e:
                 logging.warning("GSS specifications loading failed: %s", e)
 
-    def _ensure_unit_mappings_loaded(self):
+    def _ensure_unit_mappings_loaded(self) -> None:
         """Lazy load unit mappings when first needed."""
         if not self._unit_mappings_loaded:
             try:
@@ -149,7 +149,7 @@ class YAMLCrossReferenceResolver:
             except (OSError, yaml.YAMLError) as e:
                 logging.warning("Unit mappings loading failed: %s", e)
 
-    def _load_characteristic_uuids(self):
+    def _load_characteristic_uuids(self) -> None:
         """Load characteristic UUID mappings."""
         if self._characteristic_uuids_loaded:
             return
@@ -180,7 +180,7 @@ class YAMLCrossReferenceResolver:
         except (OSError, yaml.YAMLError) as e:
             logging.warning("Failed to load characteristic UUIDs: %s", e)
 
-    def _load_gss_specifications(self):
+    def _load_gss_specifications(self) -> None:
         """Load GSS YAML files for data types, field sizes, and unit references."""
         gss_dir = self.bluetooth_sig_path / "gss"
         if not gss_dir.exists():
@@ -204,7 +204,7 @@ class YAMLCrossReferenceResolver:
             except (OSError, yaml.YAMLError) as e:
                 logging.debug("Failed to load GSS file %s: %s", gss_file, e)
 
-    def _load_unit_mappings(self):
+    def _load_unit_mappings(self) -> None:
         """Load unit symbol mappings from units.yaml."""
         units_file = (
             self.bluetooth_sig_path / "assigned_numbers" / "uuids" / "units.yaml"

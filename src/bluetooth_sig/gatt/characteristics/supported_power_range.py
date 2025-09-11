@@ -15,7 +15,7 @@ class SupportedPowerRangeData:
     maximum: int  # Maximum power in Watts
     unit: str = "W"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate power range data."""
         if self.minimum > self.maximum:
             raise ValueError(
