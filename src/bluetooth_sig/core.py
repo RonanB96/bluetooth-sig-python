@@ -171,9 +171,7 @@ class BluetoothSIGTranslator:
             uuid_info = uuid_registry.get_service_info(name)
             if uuid_info:
                 return ServiceInfo(
-                    uuid=uuid_info.uuid,
-                    name=uuid_info.name,
-                    characteristics=[]
+                    uuid=uuid_info.uuid, name=uuid_info.name, characteristics=[]
                 )
         except Exception:  # pylint: disable=broad-exception-caught
             pass
