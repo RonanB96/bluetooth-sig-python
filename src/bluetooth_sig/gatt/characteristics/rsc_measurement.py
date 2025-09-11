@@ -7,6 +7,10 @@ from dataclasses import dataclass
 
 from .base import BaseCharacteristic
 
+# TODO: Implement CharacteristicContext support
+# This characteristic should access RSC Feature (0x2A54) from ctx.other_characteristics
+# to determine which measurement fields are supported and apply appropriate scaling
+
 
 @dataclass
 class RSCMeasurementData:

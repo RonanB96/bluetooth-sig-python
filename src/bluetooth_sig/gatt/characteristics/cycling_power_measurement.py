@@ -7,6 +7,10 @@ from dataclasses import dataclass
 
 from .base import BaseCharacteristic
 
+# TODO: Implement CharacteristicContext support
+# This characteristic should access Cycling Power Feature (0x2A65) and Cycling Power Vector (0x2A63)
+# from ctx.other_characteristics to provide calibration data and additional power metrics
+
 
 @dataclass
 class CyclingPowerMeasurementData:  # pylint: disable=too-many-instance-attributes # Comprehensive power measurement with many optional fields

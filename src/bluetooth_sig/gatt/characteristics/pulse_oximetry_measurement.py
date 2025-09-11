@@ -6,6 +6,10 @@ from typing import Any
 from .base import BaseCharacteristic
 from .utils import IEEE11073Parser
 
+# TODO: Implement CharacteristicContext support
+# This characteristic should access Pulse Oximetry Control Point (0x2A60) and Pulse Oximetry Features (0x2A61)
+# from ctx.other_characteristics to determine supported measurement types and calibration data
+
 
 class PulseOximetryContinuousMeasurementCharacteristic(BaseCharacteristic):
     """PLX Continuous Measurement characteristic (0x2A5F).

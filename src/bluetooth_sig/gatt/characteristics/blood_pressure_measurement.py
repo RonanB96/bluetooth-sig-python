@@ -9,6 +9,10 @@ from datetime import datetime
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
 
+# TODO: Implement CharacteristicContext support
+# This characteristic should access Blood Pressure Feature (0x2A49) from ctx.other_characteristics
+# to provide calibration factors and device capability information
+
 
 @dataclass
 class BloodPressureData:  # pylint: disable=too-many-instance-attributes

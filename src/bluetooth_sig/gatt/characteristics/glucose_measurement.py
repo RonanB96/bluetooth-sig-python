@@ -9,6 +9,10 @@ from typing import Any
 from .base import BaseCharacteristic
 from .utils import IEEE11073Parser
 
+# TODO: Implement CharacteristicContext support
+# This characteristic should access Glucose Feature (0x2A51) and Glucose Measurement Context (0x2A34)
+# from ctx.other_characteristics to provide calibration factors and additional measurement metadata
+
 
 @dataclass
 class GlucoseMeasurementCharacteristic(BaseCharacteristic):

@@ -8,6 +8,10 @@ from enum import IntEnum
 from .base import BaseCharacteristic
 from .utils import DataParser
 
+# TODO: Implement CharacteristicContext support
+# This characteristic should access Heart Rate Control Point (0x2A39) from ctx.other_characteristics
+# to provide calibration factors and control commands for enhanced heart rate monitoring
+
 
 class SensorContactState(IntEnum):
     """Sensor contact state enumeration."""

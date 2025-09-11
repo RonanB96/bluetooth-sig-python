@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .gatt.characteristics import CharacteristicRegistry
+from .gatt.context import CharacteristicContext
 from .gatt.services import GattServiceRegistry
 from .gatt.services.base import BaseGattService
 
@@ -43,6 +44,8 @@ class CharacteristicData(CharacteristicInfo):
     raw_data: bytes | None = None
     parse_success: bool = True
     error_message: str | None = None
+    # Optional context that produced this parsed result
+    source_context: CharacteristicContext | None = None
 
 
 @dataclass
@@ -68,26 +71,43 @@ class BluetoothSIGTranslator:
         return "BluetoothSIGTranslator(pure SIG standards)"
 
     def parse_characteristic(
-        self, uuid: str, raw_data: bytes, **kwargs: Any
+        self,
+        uuid: str,
+        raw_data: bytes,
+        ctx: CharacteristicContext | None = None,
+        properties: set[str] | None = None,
     ) -> CharacteristicData:
         """Parse a characteristic's raw data using SIG standards.
 
         Args:
             uuid: The characteristic UUID (with or without dashes)
             raw_data: Raw bytes from the characteristic
-            **kwargs: Additional parameters for characteristic creation
+            ctx: Optional `CharacteristicContext` providing device-level info
+                and previously-parsed characteristics to the parser.
+            properties: Optional set of characteristic properties to pass when
+                constructing the characteristic instance.
 
         Returns:
             CharacteristicData with parsed value and metadata
         """
-        # Create characteristic instance for parsing
+        # Create characteristic instance for parsing. Pass explicit properties
+        # rather than arbitrary kwargs to keep the API clear and type-safe.
         characteristic = CharacteristicRegistry.create_characteristic(
-            uuid, properties=set(), **kwargs
+            uuid, properties=properties or set()
         )
 
         if characteristic:
-            # Use the new parse_value method which includes automatic validation
-            return characteristic.parse_value(raw_data)
+            # Use the parse_value method; pass context when provided.
+            try:
+                result = characteristic.parse_value(raw_data, ctx)
+            except TypeError:
+                # Fallback for legacy implementations that don't accept ctx
+                result = characteristic.parse_value(raw_data)
+
+            # Attach context if available and result doesn't already have it
+            if getattr(result, "source_context", None) is None:
+                result.source_context = ctx
+            return result
 
         # No parser found, return fallback result
         return CharacteristicData(
@@ -163,8 +183,8 @@ class BluetoothSIGTranslator:
             ServiceInfo if found, None otherwise
         """
         # Use UUID registry for name-based lookup
-        from .gatt.uuid_registry import (
-            uuid_registry,  # pylint: disable=import-outside-toplevel
+        from .gatt.uuid_registry import (  # pylint: disable=import-outside-toplevel
+            uuid_registry,
         )
 
         try:
@@ -317,20 +337,37 @@ class BluetoothSIGTranslator:
         return None
 
     def parse_characteristics(
-        self, char_data: dict[str, bytes], **kwargs: Any
+        self, char_data: dict[str, bytes], ctx: CharacteristicContext | None = None
     ) -> dict[str, CharacteristicData]:
         """Parse multiple characteristics at once.
 
         Args:
             char_data: Dictionary mapping UUIDs to raw data bytes
-            **kwargs: Additional parameters for characteristic creation
+            ctx: Optional base `CharacteristicContext` used as the starting
+                device-level context for each parsed characteristic.
 
         Returns:
             Dictionary mapping UUIDs to CharacteristicData results
         """
-        results = {}
+        base_ctx = ctx
+
+        results: dict[str, CharacteristicData] = {}
         for uuid, raw_data in char_data.items():
-            results[uuid] = self.parse_characteristic(uuid, raw_data, **kwargs)
+            # Build a context for this parse that shares device-level info
+            # from the base context but provides the current results mapping
+            # so parsers can look up previously-parsed characteristics.
+            if base_ctx is not None:
+                per_call_ctx = CharacteristicContext(
+                    device_info=base_ctx.device_info,
+                    advertisement=base_ctx.advertisement,
+                    other_characteristics=results,
+                    raw_service=base_ctx.raw_service,
+                )
+            else:
+                per_call_ctx = CharacteristicContext(other_characteristics=results)
+
+            results[uuid] = self.parse_characteristic(uuid, raw_data, ctx=per_call_ctx)
+
         return results
 
     def get_characteristics_info(
@@ -396,8 +433,17 @@ class BluetoothSIGTranslator:
         try:
             temp_service = service_class()
             required_chars = getattr(temp_service, "get_required_characteristics", None)
-            if required_chars and callable(required_chars):
-                return list(required_chars().keys())
+            if callable(required_chars):
+                req = required_chars()
+                if isinstance(req, dict):
+                    return list(req.keys())
+                try:
+                    return list(req)
+                except Exception:  # pylint: disable=broad-exception-caught
+                    return []
+            chars = getattr(temp_service, "characteristics", None)
+            if isinstance(chars, (list, tuple)):
+                return list(chars)
             return []
         except Exception:  # pylint: disable=broad-exception-caught
             return []

@@ -339,7 +339,9 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             raise TypeMismatchError("parsed_value", value, self.expected_type)
         self._validate_range(value)
 
-    def parse_value(self, data: bytes | bytearray) -> CharacteristicData:
+    def parse_value(
+        self, data: bytes | bytearray, ctx: Any | None = None
+    ) -> CharacteristicData:
         """Parse characteristic data with automatic validation.
 
         This method automatically validates input data length and parsed values
@@ -348,6 +350,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         Args:
             data: Raw bytes from the characteristic read
+            ctx: Optional context information for parsing
 
         Returns:
             CharacteristicData object with parsed value and metadata

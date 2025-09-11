@@ -9,6 +9,10 @@ from typing import Any
 from .base import BaseCharacteristic
 from .utils import IEEE11073Parser
 
+# TODO: Implement CharacteristicContext support
+# This characteristic should access Body Composition Feature (0x2A9B) from ctx.other_characteristics
+# to determine which optional fields are supported and apply appropriate scaling factors
+
 
 @dataclass
 class BodyCompositionMeasurementData:  # pylint: disable=too-many-instance-attributes # Comprehensive medical measurement data with many optional fields
