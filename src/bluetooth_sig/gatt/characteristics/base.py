@@ -6,9 +6,12 @@ import re
 import struct
 from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from functools import lru_cache
+from typing import Any
 
+from ...core import CharacteristicData
 from ...registry.yaml_cross_reference import CharacteristicSpec, yaml_cross_reference
+from ..context import CharacteristicContext
 from ..exceptions import (
     BluetoothSIGError,
     InsufficientDataError,
@@ -17,11 +20,6 @@ from ..exceptions import (
     ValueRangeError,
 )
 from ..uuid_registry import uuid_registry
-
-if TYPE_CHECKING:
-    from ...core import CharacteristicData
-
-_yaml_cross_reference_available = yaml_cross_reference is not None
 
 
 class CharacteristicMeta(ABCMeta):
@@ -133,45 +131,41 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         """
         if not hasattr(self, "_char_uuid"):
             # Try cross-file resolution first
-            if _yaml_cross_reference_available:
-                yaml_spec = self._resolve_yaml_spec()
-                if yaml_spec:
-                    self._char_uuid = yaml_spec.uuid
+            yaml_spec = self._resolve_yaml_spec()
+            if yaml_spec:
+                self._char_uuid = yaml_spec.uuid
 
-                    # Set additional metadata from YAML
-                    if not hasattr(self, "_manual_value_type") and yaml_spec.data_type:
-                        # Map GSS data types to our value types
-                        type_mapping = {
-                            "sint8": "int",
-                            "uint8": "int",
-                            "sint16": "int",
-                            "uint16": "int",
-                            "uint24": "int",
-                            "sint32": "int",
-                            "uint32": "int",
-                            "float32": "float",
-                            "float64": "float",
-                            "utf8s": "string",
-                        }
-                        self.value_type = type_mapping.get(yaml_spec.data_type, "bytes")
+                # Set additional metadata from YAML
+                if not hasattr(self, "_manual_value_type") and yaml_spec.data_type:
+                    # Map GSS data types to our value types
+                    type_mapping = {
+                        "sint8": "int",
+                        "uint8": "int",
+                        "sint16": "int",
+                        "uint16": "int",
+                        "uint24": "int",
+                        "sint32": "int",
+                        "uint32": "int",
+                        "float32": "float",
+                        "float64": "float",
+                        "utf8s": "string",
+                    }
+                    self.value_type = type_mapping.get(yaml_spec.data_type, "bytes")
 
-                    # Store metadata for implementation methods
-                    self._yaml_data_type = yaml_spec.data_type
-                    self._yaml_field_size = yaml_spec.field_size
-                    self._yaml_unit_symbol = yaml_spec.unit_symbol
-                    self._yaml_unit_id = yaml_spec.unit_id
-                    self._yaml_resolution_text = yaml_spec.resolution_text
+                # Store metadata for implementation methods
+                self._yaml_data_type = yaml_spec.data_type
+                self._yaml_field_size = yaml_spec.field_size
+                self._yaml_unit_symbol = yaml_spec.unit_symbol
+                self._yaml_unit_id = yaml_spec.unit_id
+                self._yaml_resolution_text = yaml_spec.resolution_text
 
-                    return
+                return
 
             # Fallback to original registry resolution
             self._resolve_from_basic_registry()
 
     def _resolve_yaml_spec(self) -> CharacteristicSpec | None:
         """Resolve specification using YAML cross-reference system."""
-        if not _yaml_cross_reference_available:
-            return None
-
         # First try explicit characteristic name if set
         characteristic_name = getattr(self, "_characteristic_name", None)
         if characteristic_name:
@@ -300,11 +294,12 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             return False
 
     @abstractmethod
-    def decode_value(self, data: bytearray) -> Any:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> Any:
         """Parse the characteristic's raw value.
 
         Args:
             data: Raw bytes from the characteristic read
+            ctx: Optional context information for parsing
 
         Returns:
             Parsed value in the appropriate type
@@ -339,6 +334,26 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             raise TypeMismatchError("parsed_value", value, self.expected_type)
         self._validate_range(value)
 
+    @staticmethod
+    @lru_cache(maxsize=32)
+    def _get_characteristic_uuid_by_name(characteristic_name: str) -> str | None:
+        """Get characteristic UUID by name using cached registry lookup."""
+        char_info = uuid_registry.get_characteristic_info(characteristic_name)
+        return char_info.uuid if char_info else None
+
+    def get_context_characteristic(
+        self, ctx: CharacteristicContext | None, characteristic_name: str
+    ) -> Any | None:
+        """Generic utility to find a characteristic in context by name."""
+        if not ctx or not ctx.other_characteristics:
+            return None
+
+        char_uuid = self._get_characteristic_uuid_by_name(characteristic_name)
+        if not char_uuid:
+            return None
+
+        return ctx.other_characteristics.get(char_uuid)
+
     def parse_value(
         self, data: bytes | bytearray, ctx: Any | None = None
     ) -> CharacteristicData:
@@ -363,7 +378,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             # Validate input data length
             self._validate_length(data)
 
-            parsed_value = self.decode_value(bytearray(data))
+            parsed_value = self.decode_value(bytearray(data), ctx)
 
             # Validate parsed value
             self._validate_value(parsed_value)
