@@ -363,8 +363,11 @@ class TestGlucoseFeatureCharacteristic:
 
         result = glucose_feature_char.decode_value(test_data)
         assert result.feature_count == 11
-        assert "Low Battery Detection" in result.enabled_features
-        assert "Multiple Bond Support" in result.enabled_features
+        assert (
+            "Low Battery Detection During Measurement Supported"
+            in result.enabled_features
+        )
+        assert "Multiple Bond Supported" in result.enabled_features
 
     def test_glucose_feature_no_features(self, glucose_feature_char):
         """Test glucose feature with no features enabled."""
@@ -377,11 +380,15 @@ class TestGlucoseFeatureCharacteristic:
 
     def test_glucose_feature_descriptions(self, glucose_feature_char):
         """Test feature bit descriptions."""
-        assert "Low Battery Detection" in glucose_feature_char.get_feature_description(
-            0
+        assert (
+            "Low Battery Detection During Measurement Supported"
+            in glucose_feature_char.get_feature_description(0)
         )
-        assert "Multiple Bond" in glucose_feature_char.get_feature_description(10)
-        assert "Reserved" in glucose_feature_char.get_feature_description(15)
+        assert (
+            "Multiple Bond Supported"
+            in glucose_feature_char.get_feature_description(10)
+        )
+        assert "Unknown feature" in glucose_feature_char.get_feature_description(15)
 
     def test_glucose_feature_invalid_data(self, glucose_feature_char):
         """Test glucose feature with invalid data."""

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -43,7 +44,9 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Supported Power Range"
     _manual_value_type: str = "string"  # Override since decode_value returns dataclass
 
-    def decode_value(self, data: bytearray) -> SupportedPowerRangeData:
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> SupportedPowerRangeData:
         """Parse supported power range data (2x sint16 in watts).
 
         Args:

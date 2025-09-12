@@ -1,7 +1,10 @@
 """Cycling Power Feature characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -16,7 +19,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Cycling Power Feature"
 
-    def decode_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse cycling power feature data.
 
         Format: 32-bit feature bitmask (little endian)

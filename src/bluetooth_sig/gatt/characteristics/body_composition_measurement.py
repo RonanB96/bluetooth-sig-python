@@ -52,7 +52,9 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Body Composition Measurement"
 
-    def decode_value(self, data: bytearray) -> BodyCompositionMeasurementData:
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> BodyCompositionMeasurementData:
         """Parse body composition measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Body Fat %(2) + [Timestamp(7)] + [User ID(1)] +

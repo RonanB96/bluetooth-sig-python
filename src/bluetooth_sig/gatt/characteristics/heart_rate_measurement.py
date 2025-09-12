@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import IntEnum
+from typing import Any
 
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -77,7 +78,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Heart Rate Measurement"
 
-    def decode_value(self, data: bytearray) -> HeartRateData:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> HeartRateData:
         """Parse heart rate measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Heart Rate Value(1-2) + [Energy Expended(2)] + [RR-Intervals(2*n)]

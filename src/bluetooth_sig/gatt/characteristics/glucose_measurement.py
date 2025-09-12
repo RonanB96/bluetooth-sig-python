@@ -24,7 +24,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Glucose Measurement"
 
-    def decode_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse glucose measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + Base Time(7) + [Time Offset(2)] +

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -43,7 +44,9 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Cycling Power Measurement"
 
-    def decode_value(self, data: bytearray) -> CyclingPowerMeasurementData:
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> CyclingPowerMeasurementData:
         """Parse cycling power measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +

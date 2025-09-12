@@ -1,6 +1,9 @@
 """VOC Concentration characteristic implementation."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import Any
 
 from .templates import SimpleUint16Characteristic
 
@@ -23,7 +26,7 @@ class VOCConcentrationCharacteristic(SimpleUint16Characteristic):
         """Return unit as per SIG specification."""
         return "ppb"
 
-    def decode_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse VOC concentration value with special value handling."""
         raw_value = super().decode_value(data)
 

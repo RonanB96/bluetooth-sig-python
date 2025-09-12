@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -19,7 +20,7 @@ class TimeZoneCharacteristic(BaseCharacteristic):
     # Manual override: YAML indicates sint8->int but we return descriptive strings
     _manual_value_type: str = "string"
 
-    def decode_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
         """Parse time zone data (sint8 in 15-minute increments from UTC)."""
         if len(data) < 1:
             raise ValueError("Time zone data must be at least 1 byte")

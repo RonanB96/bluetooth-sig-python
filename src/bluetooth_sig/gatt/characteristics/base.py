@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Any
 
-from ...core import CharacteristicData
+from ...data_types import CharacteristicData
 from ...registry.yaml_cross_reference import CharacteristicSpec, yaml_cross_reference
 from ..context import CharacteristicContext
 from ..exceptions import (
@@ -370,9 +370,6 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Returns:
             CharacteristicData object with parsed value and metadata
         """
-        # Import here to avoid circular imports
-        from ...core import CharacteristicData  # pylint: disable=C0415
-
         # Call subclass implementation with validation
         try:
             # Validate input data length

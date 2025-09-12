@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -44,7 +45,9 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Electric Current Range"
     _manual_value_type: str = "string"  # Override since decode_value returns dataclass
 
-    def decode_value(self, data: bytearray) -> ElectricCurrentRangeData:
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> ElectricCurrentRangeData:
         """Parse current range data (2x uint16 in units of 0.01 A).
 
         Args:
