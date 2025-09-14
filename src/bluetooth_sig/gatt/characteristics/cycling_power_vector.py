@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -47,7 +48,9 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Cycling Power Vector"
 
-    def decode_value(self, data: bytearray) -> CyclingPowerVectorData:
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> CyclingPowerVectorData:
         """Parse cycling power vector data according to Bluetooth specification.
 
         Format: Flags(1) + Crank Revolution Data(2) + Last Crank Event Time(2) +

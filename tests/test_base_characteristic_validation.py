@@ -1,6 +1,9 @@
 """Tests for BaseCharacteristic validation attributes functionality."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import Any
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 
@@ -21,7 +24,7 @@ class ValidationHelperCharacteristic(BaseCharacteristic):
         # Set a dummy UUID to avoid resolution issues
         self._char_uuid = "TEST-UUID"
 
-    def decode_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Simple decode - just parse as uint16."""
         if len(data) < 2:
             raise ValueError("Need at least 2 bytes")
@@ -41,7 +44,7 @@ class NoValidationCharacteristic(BaseCharacteristic):
     def __post_init__(self):
         self._char_uuid = "NO-VALIDATION-UUID"
 
-    def decode_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Simple decode without validation."""
         return 42
 
@@ -101,7 +104,7 @@ class TestBaseCharacteristicValidation:
             def __post_init__(self):
                 self._char_uuid = "MIN-VALUE-UUID"
 
-            def decode_value(self, data: bytearray) -> int:
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 return 5  # Below min_value of 10
 
             def encode_value(self, data: int) -> bytearray:
@@ -128,11 +131,11 @@ class TestBaseCharacteristicValidation:
                 self._char_uuid = "TYPE-UUID"
 
             def decode_value(
-                self, data: bytearray
+                self, data: bytearray, ctx: Any | None = None
             ) -> int:  # Returns int but expects float
                 return 42
 
-            def encode_value(self, data) -> bytearray:
+            def encode_value(self, data: Any) -> bytearray:
                 return bytearray()
 
         char = TypeValidationCharacteristic(uuid="TEST", properties=set())
@@ -166,7 +169,7 @@ class TestBaseCharacteristicValidation:
             def __post_init__(self):
                 self._char_uuid = "MIN-LENGTH-UUID"
 
-            def decode_value(self, data: bytearray) -> int:
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 return len(data)
 
             def encode_value(self, data: int) -> bytearray:
@@ -195,7 +198,7 @@ class TestBaseCharacteristicValidation:
             def __post_init__(self):
                 self._char_uuid = "MAX-LENGTH-UUID"
 
-            def decode_value(self, data: bytearray) -> int:
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 return len(data)
 
             def encode_value(self, data: int) -> bytearray:
@@ -223,7 +226,7 @@ class TestBaseCharacteristicValidation:
             def __post_init__(self):
                 self._char_uuid = "EXCEPTION-UUID"
 
-            def decode_value(self, data: bytearray) -> int:
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 raise ValueError("Custom decode error")
 
             def encode_value(self, data: int) -> bytearray:
@@ -249,7 +252,7 @@ class TestBaseCharacteristicValidation:
             def __post_init__(self):
                 self._char_uuid = "STRUCT-ERROR-UUID"
 
-            def decode_value(self, data: bytearray) -> int:
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 # This will raise struct.error due to insufficient data
                 return struct.unpack("<I", data)[0]  # Needs 4 bytes for uint32
 

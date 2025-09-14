@@ -1,6 +1,9 @@
 """Generic Access Service characteristics."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -12,7 +15,7 @@ class DeviceNameCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Device Name"
 
-    def decode_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
         """Parse device name string."""
         return DataParser.parse_utf8_string(data)
 
@@ -43,7 +46,7 @@ class AppearanceCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Appearance"
 
-    def decode_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse appearance value (uint16)."""
         if len(data) < 2:
             raise ValueError("Appearance data must be at least 2 bytes")

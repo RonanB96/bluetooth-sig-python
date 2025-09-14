@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -37,7 +38,9 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "CSC Measurement"
 
-    def decode_value(self, data: bytearray) -> CSCMeasurementData:
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> CSCMeasurementData:
         """Parse CSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + [Cumulative Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +

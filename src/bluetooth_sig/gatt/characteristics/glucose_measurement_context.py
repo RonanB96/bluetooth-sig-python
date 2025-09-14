@@ -54,7 +54,9 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Glucose Measurement Context"
 
-    def decode_value(self, data: bytearray) -> GlucoseMeasurementContextData:
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> GlucoseMeasurementContextData:
         """Parse glucose measurement context data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + [Extended Flags(1)] + [Carbohydrate ID(1) + Carb(2)] +

@@ -1,5 +1,7 @@
 """Pulse Oximetry Measurement characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from typing import Any
 
@@ -19,7 +21,7 @@ class PulseOximetryContinuousMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "PLX Continuous Measurement"
 
-    def decode_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse pulse oximetry measurement data according to Bluetooth specification.
 
         Format: Flags(1) + SpO2(2) + Pulse Rate(2) + [Timestamp(7)] +

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -53,7 +54,9 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Local Time Information"
 
-    def decode_value(self, data: bytearray) -> LocalTimeInformationData:  # pylint: disable=too-many-locals
+    def decode_value(  # pylint: disable=too-many-locals
+        self, data: bytearray, ctx: Any | None = None
+    ) -> LocalTimeInformationData:
         """Parse local time information data (2 bytes: time zone + DST offset)."""
         if len(data) < 2:
             raise ValueError("Local time information data must be at least 2 bytes")

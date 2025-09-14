@@ -12,6 +12,7 @@ from .barometric_pressure_trend import BarometricPressureTrendCharacteristic
 from .base import BaseCharacteristic
 from .battery_level import BatteryLevelCharacteristic
 from .battery_power_state import BatteryPowerStateCharacteristic
+from .blood_pressure_feature import BloodPressureFeatureCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic
 from .body_composition_measurement import BodyCompositionMeasurementCharacteristic
@@ -105,6 +106,7 @@ class CharacteristicRegistry:
         "Power Specification": SoundPressureLevelCharacteristic,
         "Heart Rate Measurement": HeartRateMeasurementCharacteristic,
         "Blood Pressure Measurement": BloodPressureMeasurementCharacteristic,
+        "Blood Pressure Feature": BloodPressureFeatureCharacteristic,
         "PLX Continuous Measurement": PulseOximetryMeasurementCharacteristic,
         "CSC Measurement": CSCMeasurementCharacteristic,
         "RSC Measurement": RSCMeasurementCharacteristic,
@@ -185,18 +187,15 @@ class CharacteristicRegistry:
         cls, uuid: str
     ) -> Optional[type[BaseCharacteristic]]:
         """Get the characteristic class for a given UUID by looking up in registry."""
-        # Normalize the UUID
         uuid = uuid.replace("-", "").upper()
 
-        # Extract UUID16 from full UUID pattern
-        if len(uuid) == 32:  # Full UUID without dashes
+        if len(uuid) == 32:
             uuid16 = uuid[4:8]
-        elif len(uuid) == 4:  # Already a short UUID
+        elif len(uuid) == 4:
             uuid16 = uuid
         else:
             return None
 
-        # Find the characteristic name by UUID
         char_info = uuid_registry.get_characteristic_info(uuid16)
         if char_info:
             return cls._characteristics.get(char_info.name)
@@ -227,5 +226,4 @@ class CharacteristicRegistry:
 __all__ = [
     "BaseCharacteristic",
     "CharacteristicRegistry",
-    # Add other exports as needed
 ]

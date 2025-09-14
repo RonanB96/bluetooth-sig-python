@@ -20,7 +20,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Temperature Measurement"
 
-    def decode_value(self, data: bytearray) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:  # pylint: disable=too-many-locals
         """Parse temperature measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Temperature Value(4) + [Timestamp(7)] + [Temperature Type(1)]

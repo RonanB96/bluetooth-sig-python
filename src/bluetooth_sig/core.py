@@ -2,60 +2,19 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
+from .data_types import (
+    CharacteristicData,
+    CharacteristicInfo,
+    ServiceInfo,
+    SIGInfo,
+    ValidationResult,
+)
 from .gatt.characteristics import CharacteristicRegistry
 from .gatt.context import CharacteristicContext
 from .gatt.services import GattServiceRegistry
 from .gatt.services.base import BaseGattService
-
-
-@dataclass
-class SIGInfo:
-    """Base information about Bluetooth SIG characteristics or services."""
-
-    uuid: str
-    name: str
-    description: str | None = None
-
-
-@dataclass
-class CharacteristicInfo(SIGInfo):
-    """Information about a Bluetooth characteristic."""
-
-    value_type: str | None = None
-    unit: str | None = None
-    properties: list[str] | None = None
-
-
-@dataclass
-class ServiceInfo(SIGInfo):
-    """Information about a Bluetooth service."""
-
-    characteristics: list[str] | None = None
-
-
-@dataclass
-class CharacteristicData(CharacteristicInfo):
-    """Result of parsing characteristic data."""
-
-    value: Any | None = None
-    raw_data: bytes | None = None
-    parse_success: bool = True
-    error_message: str | None = None
-    # Optional context that produced this parsed result
-    source_context: CharacteristicContext | None = None
-
-
-@dataclass
-class ValidationResult(SIGInfo):
-    """Result of data validation."""
-
-    is_valid: bool = True
-    expected_length: int | None = None
-    actual_length: int | None = None
-    error_message: str | None = None
 
 
 class BluetoothSIGTranslator:
@@ -417,7 +376,7 @@ class BluetoothSIGTranslator:
                 error_message=str(e),
             )
 
-    def get_service_characteristics(self, service_uuid: str) -> list[str]:
+    def get_service_characteristics(self, service_uuid: str) -> list[str]:  # pylint: disable=too-many-return-statements
         """Get the characteristic UUIDs associated with a service.
 
         Args:

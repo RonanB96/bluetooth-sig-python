@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -44,7 +45,9 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Electric Current Specification"
     _manual_value_type: str = "string"  # Override since decode_value returns dataclass
 
-    def decode_value(self, data: bytearray) -> ElectricCurrentSpecificationData:
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> ElectricCurrentSpecificationData:
         """Parse current specification data (2x uint16 in units of 0.01 A).
 
         Args:

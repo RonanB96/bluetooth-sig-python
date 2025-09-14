@@ -1,8 +1,11 @@
 """Weight Scale Feature characteristic implementation."""
 
+from __future__ import annotations
+
 import struct
 from dataclasses import dataclass
 from enum import IntEnum
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -78,7 +81,9 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Weight Scale Feature"
 
-    def decode_value(self, data: bytearray) -> WeightScaleFeatureData:
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> WeightScaleFeatureData:
         """Parse weight scale feature data according to Bluetooth specification.
 
         Format: Features(4 bytes) - bitmask indicating supported features

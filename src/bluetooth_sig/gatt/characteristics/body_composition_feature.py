@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 
@@ -39,7 +40,9 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Body Composition Feature"
 
-    def decode_value(self, data: bytearray) -> BodyCompositionFeatureData:
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> BodyCompositionFeatureData:
         """Parse body composition feature data according to Bluetooth specification.
 
         Format: Features(4 bytes) - bitmask indicating supported measurements

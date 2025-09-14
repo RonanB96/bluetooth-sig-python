@@ -1,6 +1,9 @@
 """Device Information Service characteristics."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import Any
 
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -12,7 +15,7 @@ class ManufacturerNameStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Manufacturer Name String"
 
-    def decode_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
         """Parse manufacturer name string."""
         return DataParser.parse_utf8_string(data)
 
@@ -41,7 +44,7 @@ class ModelNumberStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Model Number String"
 
-    def decode_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
         """Parse model number string."""
         return DataParser.parse_utf8_string(data)
 
@@ -70,7 +73,7 @@ class SerialNumberStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Serial Number String"
 
-    def decode_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
         """Parse serial number string."""
         return DataParser.parse_utf8_string(data)
 
@@ -99,7 +102,7 @@ class FirmwareRevisionStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Firmware Revision String"
 
-    def decode_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
         """Parse firmware revision string."""
         return DataParser.parse_utf8_string(data)
 
@@ -128,7 +131,7 @@ class HardwareRevisionStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Hardware Revision String"
 
-    def decode_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
         """Parse hardware revision string."""
         return DataParser.parse_utf8_string(data)
 
@@ -157,7 +160,7 @@ class SoftwareRevisionStringCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Software Revision String"
 
-    def decode_value(self, data: bytearray) -> str:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
         """Parse software revision string."""
         return DataParser.parse_utf8_string(data)
 

@@ -63,7 +63,7 @@ class SimpleUint8Characteristic(BaseCharacteristic):
     max_value: int = UINT8_MAX  # type: ignore[assignment]
     expected_type: type = int  # type: ignore[assignment]
 
-    def decode_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse single byte as uint8."""
         return DataParser.parse_int8(data, 0, signed=False)
 
@@ -96,7 +96,7 @@ class SimpleSint8Characteristic(BaseCharacteristic):
     # Subclasses can override this
     measurement_unit: str = "units"
 
-    def decode_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse single byte as sint8."""
         return DataParser.parse_int8(data, 0, signed=True)
 
@@ -130,7 +130,7 @@ class SimpleUint16Characteristic(BaseCharacteristic):
     max_value: int = UINT16_MAX  # type: ignore[assignment]
     expected_type: type = int  # type: ignore[assignment]
 
-    def decode_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse 2 bytes as uint16."""
         return DataParser.parse_int16(data, 0, signed=False)
 
@@ -165,7 +165,7 @@ class ConcentrationCharacteristic(BaseCharacteristic):
     resolution: float = 1.0  # Default resolution
     concentration_unit: str = "ppm"  # Default unit
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse concentration with resolution."""
         raw_value = DataParser.parse_int16(data, 0, signed=False)
         return raw_value * self.resolution
@@ -205,7 +205,7 @@ class TemperatureCharacteristic(BaseCharacteristic):
     )  # Max sint16 * resolution
     expected_type: type = float  # type: ignore[assignment]
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse temperature in 0.01°C resolution."""
         raw_value = DataParser.parse_int16(data, 0, signed=True)
         return raw_value * TEMPERATURE_RESOLUTION
@@ -247,7 +247,7 @@ class IEEE11073FloatCharacteristic(BaseCharacteristic):
     expected_type: type = float  # type: ignore[assignment]
     allow_variable_length: bool = True  # Some have additional data
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse IEEE 11073 SFLOAT format."""
         # IEEE11073Parser.parse_sfloat expects raw bytes/bytearray
         return IEEE11073Parser.parse_sfloat(data, 0)
@@ -277,7 +277,7 @@ class PercentageCharacteristic(BaseCharacteristic):
     max_value: int = PERCENTAGE_MAX  # type: ignore[assignment]
     expected_type: type = int  # type: ignore[assignment]
 
-    def decode_value(self, data: bytearray) -> int:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse percentage value."""
         return DataParser.parse_int8(data, 0, signed=False)
 
@@ -312,7 +312,7 @@ class PressureCharacteristic(BaseCharacteristic):
     max_value: float = 429496729.5  # Max uint32 * 0.1 Pa  # type: ignore[assignment]
     expected_type: type = float  # type: ignore[assignment]
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse pressure in 0.1 Pa resolution."""
         raw_value = DataParser.parse_int32(data, 0, signed=False)
         return raw_value * 0.1  # Convert to Pa
@@ -355,7 +355,7 @@ class VectorCharacteristic(BaseCharacteristic):  # pylint: disable=too-many-inst
     component_unit: str = "units"
     resolution: float = 0.01  # Default resolution
 
-    def decode_value(self, data: bytearray) -> VectorData:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> VectorData:
         """Parse vector components."""
         if len(data) < self.expected_length:
             raise ValueError(
@@ -421,7 +421,7 @@ class ScaledUint16Characteristic(BaseCharacteristic):
     resolution: float = 1.0  # Default resolution
     measurement_unit: str = "units"  # Default unit
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse uint16 value with resolution scaling."""
         raw_value = DataParser.parse_int16(data, 0, signed=False)
         return raw_value * self.resolution
@@ -457,7 +457,7 @@ class TemperatureLikeSint8Characteristic(BaseCharacteristic):
     max_value: int = SINT8_MAX  # 127°C  # type: ignore[assignment]
     expected_type: type = float  # type: ignore[assignment]
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse temperature-like value (sint8, 1°C resolution)."""
         raw_value = DataParser.parse_int8(data, 0, signed=True)
         return float(raw_value)
@@ -493,7 +493,7 @@ class TemperatureLikeUint8Characteristic(BaseCharacteristic):
     max_value: int = UINT8_MAX  # 255°C  # type: ignore[assignment]
     expected_type: type = float  # type: ignore[assignment]
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse temperature-like value (uint8, 1°C resolution)."""
         raw_value = DataParser.parse_int8(data, 0, signed=False)
         return float(raw_value)
@@ -535,7 +535,7 @@ class Uint24ScaledCharacteristic(BaseCharacteristic):
     resolution: float = 1.0  # Default resolution
     measurement_unit: str = "units"  # Default unit
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse uint24 value with resolution scaling."""
         if len(data) < 3:
             raise ValueError(f"{self.__class__.__name__} data must be at least 3 bytes")
@@ -581,7 +581,7 @@ class Sint24ScaledCharacteristic(BaseCharacteristic):
     resolution: float = 1.0  # Default resolution
     measurement_unit: str = "units"  # Default unit
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse sint24 value with resolution scaling."""
         if len(data) < 3:
             raise ValueError(f"{self.__class__.__name__} data must be at least 3 bytes")
@@ -638,7 +638,7 @@ class SoundPressureCharacteristic(BaseCharacteristic):
     max_value: float = 6553.5  # Max uint16 * 0.1  # type: ignore[assignment]
     expected_type: type = float  # type: ignore[assignment]
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse sound pressure level in 0.1 dB resolution."""
         raw_value = DataParser.parse_int16(data, 0, signed=False)
         return raw_value * 0.1
@@ -674,7 +674,7 @@ class WindSpeedCharacteristic(BaseCharacteristic):
     max_value: float = 655.35  # Max uint16 * 0.01  # type: ignore[assignment]
     expected_type: type = float  # type: ignore[assignment]
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse wind speed in 0.01 m/s resolution."""
         raw_value = DataParser.parse_int16(data, 0, signed=False)
         return raw_value * 0.01
@@ -710,7 +710,7 @@ class WindDirectionCharacteristic(BaseCharacteristic):
     max_value: float = 359.99  # Almost full circle  # type: ignore[assignment]
     expected_type: type = float  # type: ignore[assignment]
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse wind direction in 0.01° resolution."""
         raw_value = DataParser.parse_int16(data, 0, signed=False)
         direction = raw_value * 0.01
@@ -752,7 +752,7 @@ class EnumCharacteristic(BaseCharacteristic):
     # Subclasses MUST override this
     enum_class: type | None = None
 
-    def decode_value(self, data: bytearray) -> object:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> object:
         """Parse enumerated value."""
         enum_cls = self.enum_class
         if enum_cls is None:
@@ -821,7 +821,7 @@ class Vector2DCharacteristic(BaseCharacteristic):  # pylint: disable=too-many-in
     component_unit: str = "units"
     resolution: float = 0.01  # Default resolution
 
-    def decode_value(self, data: bytearray) -> Vector2DData:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> Vector2DData:
         """Parse 2D vector components."""
         if len(data) < self.expected_length:
             raise ValueError(
@@ -875,7 +875,7 @@ class SignedSoundPressureCharacteristic(BaseCharacteristic):
     max_value: float = 3276.7  # Max sint16 * 0.1  # type: ignore[assignment]
     expected_type: type = float  # type: ignore[assignment]
 
-    def decode_value(self, data: bytearray) -> float:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
         """Parse signed sound pressure level in 0.1 dB resolution."""
         raw_value = DataParser.parse_int16(data, 0, signed=True)
         return raw_value * 0.1

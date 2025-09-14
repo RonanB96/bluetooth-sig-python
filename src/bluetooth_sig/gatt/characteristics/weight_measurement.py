@@ -20,7 +20,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Weight Measurement"
 
-    def decode_value(self, data: bytearray) -> dict[str, Any]:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:
         """Parse weight measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +
