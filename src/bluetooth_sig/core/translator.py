@@ -4,17 +4,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from .data_types import (
+from ..gatt.characteristics import CharacteristicRegistry
+from ..gatt.context import CharacteristicContext
+from ..gatt.services import GattServiceRegistry
+from ..gatt.services.base import BaseGattService
+from ..types import (
     CharacteristicData,
     CharacteristicInfo,
     ServiceInfo,
     SIGInfo,
     ValidationResult,
 )
-from .gatt.characteristics import CharacteristicRegistry
-from .gatt.context import CharacteristicContext
-from .gatt.services import GattServiceRegistry
-from .gatt.services.base import BaseGattService
 
 
 class BluetoothSIGTranslator:
@@ -57,15 +57,10 @@ class BluetoothSIGTranslator:
 
         if characteristic:
             # Use the parse_value method; pass context when provided.
-            try:
-                result = characteristic.parse_value(raw_data, ctx)
-            except TypeError:
-                # Fallback for legacy implementations that don't accept ctx
-                result = characteristic.parse_value(raw_data)
+            result = characteristic.parse_value(raw_data, ctx)
 
             # Attach context if available and result doesn't already have it
-            if getattr(result, "source_context", None) is None:
-                result.source_context = ctx
+            result.source_context = ctx
             return result
 
         # No parser found, return fallback result
@@ -97,7 +92,7 @@ class BluetoothSIGTranslator:
             return CharacteristicInfo(
                 uuid=temp_char.char_uuid,
                 name=getattr(temp_char, "_characteristic_name", char_class.__name__),
-                value_type=getattr(temp_char, "value_type", None),
+                value_type=getattr(temp_char, "value_type", ""),
                 unit=temp_char.unit,
             )
         except Exception:  # pylint: disable=broad-exception-caught
@@ -125,7 +120,7 @@ class BluetoothSIGTranslator:
                         name=getattr(
                             temp_char, "_characteristic_name", char_class.__name__
                         ),
-                        value_type=getattr(temp_char, "value_type", None),
+                        value_type=getattr(temp_char, "value_type", ""),
                         unit=temp_char.unit,
                     )
                 except Exception:  # pylint: disable=broad-exception-caught
@@ -142,7 +137,7 @@ class BluetoothSIGTranslator:
             ServiceInfo if found, None otherwise
         """
         # Use UUID registry for name-based lookup
-        from .gatt.uuid_registry import (  # pylint: disable=import-outside-toplevel
+        from ..gatt.uuid_registry import (  # pylint: disable=import-outside-toplevel
             uuid_registry,
         )
 
@@ -175,7 +170,7 @@ class BluetoothSIGTranslator:
             return ServiceInfo(
                 uuid=temp_service.SERVICE_UUID,
                 name=temp_service.name,
-                characteristics=getattr(temp_service, "characteristics", None),
+                characteristics=getattr(temp_service, "characteristics", []),
             )
         except Exception:  # pylint: disable=broad-exception-caught
             return None

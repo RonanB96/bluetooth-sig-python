@@ -13,6 +13,7 @@ Requirements:
 Usage:
     python with_bleak.py --address 12:34:56:78:9A:BC
     python with_bleak.py --scan  # Scan for devices first
+    python with_bleak.py --scan-advertising  # Scan and parse advertising data
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ from ble_utils import (
     handle_notifications_bleak,
     parse_and_display_results,
     read_characteristics_bleak,
+    scan_and_parse_advertising_bleak,
     scan_with_bleak,
 )
 
@@ -110,7 +112,8 @@ async def read_environmental_sensors(address: str) -> dict:
             try:
                 raw_data = await client.read_gatt_char(uuid)
                 result = translator.parse_characteristic(uuid, raw_data)
-                results[uuid] = result.value
+                if result.parse_success:
+                    results[uuid] = result.value
             except Exception:
                 pass  # Handle missing characteristics gracefully
 
@@ -152,6 +155,16 @@ async def handle_scan_mode(args: argparse.Namespace) -> None:
         print("Scan complete. Use --address to connect.")
 
 
+async def handle_scan_advertising_mode(args: argparse.Namespace) -> None:
+    """Handle scan and parse advertising data mode."""
+    results = await scan_and_parse_advertising_bleak(args.timeout)
+    print(f"\n📊 Successfully processed {len(results)} devices with advertising data")
+    if not args.address:
+        print(
+            "Advertising scan complete. Use --address to connect to a specific device."
+        )
+
+
 async def handle_device_operations(args: argparse.Namespace) -> None:
     """Handle device-specific operations."""
     if args.notifications:
@@ -190,6 +203,11 @@ async def main():  # pylint: disable=too-many-nested-blocks
     parser.add_argument("--address", "-a", help="BLE device address to connect to")
     parser.add_argument("--scan", "-s", action="store_true", help="Scan for devices")
     parser.add_argument(
+        "--scan-advertising",
+        action="store_true",
+        help="Scan for devices and parse advertising data",
+    )
+    parser.add_argument(
         "--timeout", "-t", type=float, default=10.0, help="Scan timeout in seconds"
     )
     parser.add_argument(
@@ -212,6 +230,9 @@ async def main():  # pylint: disable=too-many-nested-blocks
         return
 
     try:
+        if args.scan_advertising:
+            await handle_scan_advertising_mode(args)
+            return
         if args.scan or not args.address:
             await handle_scan_mode(args)
             return

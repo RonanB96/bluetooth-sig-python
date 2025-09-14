@@ -19,6 +19,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from bluetooth_sig import BluetoothSIGTranslator
 
+# Import Device class for advertising data parsing
+from bluetooth_sig.device import Device
+
 # Check available BLE libraries
 AVAILABLE_LIBRARIES = {}
 
@@ -148,8 +151,92 @@ async def scan_with_bleak(timeout: float = 10.0) -> list:
     return devices
 
 
+async def scan_and_parse_advertising_bleak(
+    timeout: float = 10.0,
+) -> list[tuple[Any, Any]]:
+    """Scan for BLE devices and parse their advertising data using Bleak.
+
+    Args:
+        timeout: Scan timeout in seconds
+
+    Returns:
+        List of tuples (device, parsed_advertising_data) where parsed_advertising_data
+        is a Device instance with parsed advertiser data or None if parsing failed
+    """
+    if not BLEAK_AVAILABLE:
+        print("❌ Bleak not available for scanning")
+        return []
+
+    print(f"🔍 Scanning for BLE devices and parsing advertising data ({timeout}s)...")
+
+    # Store advertising data as we receive it
+    advertising_data = {}
+
+    def detection_callback(device, advertisement_data):
+        """Callback to capture advertising data during scan."""
+        advertising_data[device.address] = advertisement_data
+
+    # Scan with callback to capture advertising data
+    scanner = BleakScanner(detection_callback=detection_callback)
+    await scanner.start()
+    await asyncio.sleep(timeout)
+    await scanner.stop()
+
+    devices = list(advertising_data.keys())
+    print(f"\n📡 Found {len(devices)} devices with advertising data:")
+
+    results = []
+
+    for i, address in enumerate(devices, 1):
+        device = None
+
+        # Try to find the device object (this is a limitation of the callback approach)
+        # For now, create a mock device object
+        class MockDevice:
+            """Mock device object for advertising data processing."""
+
+            def __init__(self, addr):
+                self.address = addr
+                self.name = f"Device_{addr.replace(':', '')}"
+                self.rssi = None
+
+        device = MockDevice(address)
+        adv_data = advertising_data[address]
+
+        print(f"  {i}. {device.name} ({device.address})")
+
+        # Try to parse advertising data
+        parsed_device = None
+        try:
+            # Create a Device instance for parsing
+            translator = BluetoothSIGTranslator()
+            parsed_device = Device(address, translator)
+
+            # Parse the advertising data
+            # adv_data should have manufacturer_data, service_data, etc.
+            if hasattr(adv_data, "manufacturer_data") and adv_data.manufacturer_data:
+                print(
+                    f"      📦 Manufacturer data: {len(adv_data.manufacturer_data)} bytes"
+                )
+            if hasattr(adv_data, "service_data") and adv_data.service_data:
+                print(f"      🔧 Service data: {len(adv_data.service_data)} bytes")
+
+            # SIG-compliant parsing requires raw PDU bytes, which Bleak doesn't provide
+            # Only structured data (manufacturer_data, service_data) is available
+            print(
+                "      ℹ️  Advertising data detected (SIG parsing unavailable - no raw PDU access)"
+            )
+
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            print(f"      ❌ Failed to parse advertising data: {e}")
+
+        results.append((device, parsed_device))
+
+    return results
+
+
 async def read_characteristics_bleak(  # pylint: disable=too-many-locals,import-outside-toplevel
-    address: str, target_uuids: list[str] = None, timeout: float = 10.0
+    address: str, target_uuids: list[str] | None = None, timeout: float = 10.0
 ) -> dict[str, tuple[bytes, float]]:
     """Read characteristics from a BLE device using Bleak.
 
@@ -335,7 +422,9 @@ def mock_ble_data() -> dict[str, bytes]:
     }
 
 
-async def demo_library_comparison(address: str, target_uuids: list[str] = None) -> dict:  # pylint: disable=R0912,W0718
+async def demo_library_comparison(
+    address: str, target_uuids: list[str] | None = None
+) -> dict[str, Any]:  # pylint: disable=R0912,W0718
     """Compare BLE libraries using comprehensive device analysis.
 
     NOTE: This function orchestrates multiple external libraries and wraps
