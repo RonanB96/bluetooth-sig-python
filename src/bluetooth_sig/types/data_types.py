@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass, field
+from typing import Any
 
-if TYPE_CHECKING:
-    from .gatt.context import CharacteristicContext
+from ..types.context import CharacteristicContext
 
 
 @dataclass
@@ -15,34 +14,33 @@ class SIGInfo:
 
     uuid: str
     name: str
-    description: str | None = None
+    description: str = ""
 
 
 @dataclass
 class CharacteristicInfo(SIGInfo):
     """Information about a Bluetooth characteristic."""
 
-    value_type: str | None = None
-    unit: str | None = None
-    properties: list[str] | None = None
+    value_type: str = ""
+    unit: str = ""
+    properties: list[str] = field(default_factory=list)
 
 
 @dataclass
 class ServiceInfo(SIGInfo):
     """Information about a Bluetooth service."""
 
-    characteristics: list[str] | None = None
+    characteristics: list[str] = field(default_factory=list)
 
 
 @dataclass
 class CharacteristicData(CharacteristicInfo):
-    """Result of parsing characteristic data."""
+    """Parsed characteristic data with validation results."""
 
     value: Any | None = None
-    raw_data: bytes | None = None
-    parse_success: bool = True
-    error_message: str | None = None
-    # Optional context that produced this parsed result
+    raw_data: bytes = b""
+    parse_success: bool = False
+    error_message: str = ""
     source_context: CharacteristicContext | None = None
 
 
@@ -53,4 +51,4 @@ class ValidationResult(SIGInfo):
     is_valid: bool = True
     expected_length: int | None = None
     actual_length: int | None = None
-    error_message: str | None = None
+    error_message: str = ""

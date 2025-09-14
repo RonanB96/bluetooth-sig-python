@@ -9,8 +9,8 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Any
 
-from ...data_types import CharacteristicData
 from ...registry.yaml_cross_reference import CharacteristicSpec, yaml_cross_reference
+from ...types import CharacteristicData
 from ..context import CharacteristicContext
 from ..exceptions import (
     BluetoothSIGError,
@@ -385,10 +385,10 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 name=self.display_name,
                 value=parsed_value,
                 unit=self.unit,
-                value_type=getattr(self, "value_type", None),
+                value_type=getattr(self, "value_type", ""),
                 raw_data=bytes(data),
                 parse_success=True,
-                error_message=None,
+                error_message="",
             )
         except (ValueError, TypeError, struct.error, BluetoothSIGError) as e:
             return CharacteristicData(
@@ -396,7 +396,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 name=self.display_name,
                 value=None,
                 unit=self.unit,
-                value_type=getattr(self, "value_type", None),
+                value_type=getattr(self, "value_type", ""),
                 raw_data=bytes(data),
                 parse_success=False,
                 error_message=str(e),

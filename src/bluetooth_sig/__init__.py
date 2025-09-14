@@ -5,16 +5,16 @@ including GATT characteristics, services, and UUID resolution.
 """
 
 from .core import BluetoothSIGTranslator
-from .data_types import (
+from .gatt import BaseCharacteristic, BaseService
+from .gatt.characteristics import CharacteristicRegistry
+from .gatt.services import GattServiceRegistry
+from .types import (
     CharacteristicData,
     CharacteristicInfo,
     ServiceInfo,
     SIGInfo,
     ValidationResult,
 )
-from .gatt import BaseCharacteristic, BaseService
-from .gatt.characteristics import CharacteristicRegistry
-from .gatt.services import GattServiceRegistry
 
 __version__ = "0.3.0"
 

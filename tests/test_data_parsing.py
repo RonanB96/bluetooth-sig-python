@@ -2,7 +2,7 @@
 
 import pytest
 
-from bluetooth_sig.core import BluetoothSIG
+from bluetooth_sig.core import BluetoothSIGTranslator
 
 
 class TestDataParsing:
@@ -67,31 +67,35 @@ class TestDataParsing:
 
     def test_gatt_service_recognition(self, simulated_nordic_thingy_services):
         """Test that GATT framework recognizes simulated services."""
+        translator = BluetoothSIGTranslator()
+
         # Reset discovered services
-        BluetoothSIG.clear_services()
+        translator.clear_services()
 
         # Process services
-        BluetoothSIG.process_services(simulated_nordic_thingy_services)
+        translator.process_services(simulated_nordic_thingy_services)
 
         # Verify services were recognized
-        assert len(BluetoothSIG.discovered_services) > 0, "No services were recognized"
+        assert len(translator.discovered_services) > 0, "No services were recognized"
 
         # Verify expected service count (should recognize at least Battery and Environmental)
-        assert len(BluetoothSIG.discovered_services) >= 2, (
-            f"Expected at least 2 services, got {len(BluetoothSIG.discovered_services)}"
+        assert len(translator.discovered_services) >= 2, (
+            f"Expected at least 2 services, got {len(translator.discovered_services)}"
         )
 
     def test_humidity_parsing(
         self, simulated_nordic_thingy_services, simulated_nordic_thingy_data
     ):
         """Test humidity characteristic parsing."""
+        translator = BluetoothSIGTranslator()
+
         # Reset and process services
-        BluetoothSIG.clear_services()
-        BluetoothSIG.process_services(simulated_nordic_thingy_services)
+        translator.clear_services()
+        translator.process_services(simulated_nordic_thingy_services)
 
         # Find environmental service
         env_service = None
-        for service in BluetoothSIG.discovered_services:
+        for service in translator.discovered_services:
             if "Environmental" in service.__class__.__name__:
                 env_service = service
                 break
@@ -122,13 +126,15 @@ class TestDataParsing:
         self, simulated_nordic_thingy_services, simulated_nordic_thingy_data
     ):
         """Test device information characteristic parsing."""
+        translator = BluetoothSIGTranslator()
+
         # Reset and process services
-        BluetoothSIG.clear_services()
-        BluetoothSIG.process_services(simulated_nordic_thingy_services)
+        translator.clear_services()
+        translator.process_services(simulated_nordic_thingy_services)
 
         # Find device info service
         device_service = None
-        for service in BluetoothSIG.discovered_services:
+        for service in translator.discovered_services:
             if (
                 "Device" in service.__class__.__name__
                 or "Information" in service.__class__.__name__
@@ -163,14 +169,16 @@ class TestDataParsing:
         self, simulated_nordic_thingy_services, simulated_nordic_thingy_data
     ):
         """Test that a reasonable number of characteristics can be parsed."""
+        translator = BluetoothSIGTranslator()
+
         # Reset and process services
-        BluetoothSIG.clear_services()
-        BluetoothSIG.process_services(simulated_nordic_thingy_services)
+        translator.clear_services()
+        translator.process_services(simulated_nordic_thingy_services)
 
         parsed_count = 0
         total_characteristics = 0
 
-        for service in BluetoothSIG.discovered_services:
+        for service in translator.discovered_services:
             total_characteristics += len(service.characteristics)
             for char_uuid, characteristic in service.characteristics.items():
                 # Try to find corresponding data
@@ -200,18 +208,20 @@ class TestDataParsing:
         This test replicates the functionality from scripts/test_parsing.py
         ensuring that all characteristics can be parsed and validated.
         """
-        # Reset and process services
-        BluetoothSIG.clear_services()
-        BluetoothSIG.process_services(simulated_nordic_thingy_services)
+        translator = BluetoothSIGTranslator()
 
-        assert len(BluetoothSIG.discovered_services) > 0, "No services recognized"
+        # Reset and process services
+        translator.clear_services()
+        translator.process_services(simulated_nordic_thingy_services)
+
+        assert len(translator.discovered_services) > 0, "No services recognized"
 
         parsed_count = 0
         error_count = 0
         missing_data_count = 0
         validation_results = {}
 
-        for service in BluetoothSIG.discovered_services:
+        for service in translator.discovered_services:
             service_name = service.__class__.__name__
             validation_results[service_name] = {
                 "characteristics": {},

@@ -65,7 +65,7 @@ class TestBaseCharacteristicValidation:
 
         assert result.parse_success is True
         assert result.value == 50
-        assert result.error_message is None
+        assert result.error_message == ""
         assert result.raw_data == bytes([50, 0])
         assert result.name == "Test Validation"
 
@@ -156,7 +156,7 @@ class TestBaseCharacteristicValidation:
 
         assert result.parse_success is True
         assert result.value == 42
-        assert result.error_message is None
+        assert result.error_message == ""
 
     def test_min_length_validation(self):
         """Test minimum length validation."""

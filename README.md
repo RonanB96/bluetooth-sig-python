@@ -169,6 +169,33 @@ parsed = translator.parse_characteristic_data("2A6E", bytearray([0x64, 0x09]))
 print(f"Temperature: {parsed.value}°C")  # "Temperature: 24.36°C"
 ```
 
+### Device Class for Complete Device Representation
+
+```python
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.device import Device
+
+# Create device instance
+translator = BluetoothSIGTranslator()
+device = Device("AA:BB:CC:DD:EE:FF", translator)
+
+# Parse advertisement data
+adv_data = bytes([0x0C, 0x09, 0x54, 0x65, 0x73, 0x74, 0x20, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65])  # "Test Device"
+device.parse_advertiser_data(adv_data)
+print(f"Device: {device.name}")  # "Test Device"
+
+# Add services with characteristics
+device.add_service("180F", {"2A19": b'\x64'})  # Battery Service
+device.add_service("180A", {"2A29": b"TestCorp\x00"})  # Device Info Service
+
+# Access parsed data
+battery = device.get_characteristic_data("180F", "2A19")
+print(f"Battery: {battery.value}%")  # "Battery: 100%"
+
+manufacturer = device.get_characteristic_data("180A", "2A29")
+print(f"Manufacturer: {manufacturer.value}")  # "Manufacturer: TestCorp"
+```
+
 ## Framework-Agnostic BLE Integration
 
 The `bluetooth_sig` library is designed to work with **any BLE connection library**. It provides pure SIG standards parsing while you choose your preferred BLE library for connections.

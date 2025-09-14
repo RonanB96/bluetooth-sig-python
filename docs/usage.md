@@ -39,3 +39,93 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+
+## Device Class
+
+The `Device` class provides a high-level abstraction for grouping BLE device services, characteristics, encryption requirements, and advertiser data. It serves as a pure SIG standards translator, not a BLE connection manager.
+
+### Basic Device Usage
+
+```python
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.device import Device
+
+def main():
+    # Create translator and device
+    translator = BluetoothSIGTranslator()
+    device = Device("AA:BB:CC:DD:EE:FF", translator)
+
+    # Parse advertisement data
+    adv_data = bytes([
+        0x0C, 0x09, 0x54, 0x65, 0x73, 0x74, 0x20, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65,  # Local Name
+    ])
+    device.parse_advertiser_data(adv_data)
+    print(f"Device name: {device.name}")
+
+    # Add services with characteristics
+    battery_service = {
+        "2A19": b'\x64',  # Battery Level: 100%
+    }
+    device.add_service("180F", battery_service)
+
+    # Access parsed characteristic data
+    battery_level = device.get_characteristic_data("180F", "2A19")
+    print(f"Battery level: {battery_level.value}%")
+
+    # Check encryption requirements
+    print(f"Requires encryption: {device.encryption.requires_encryption}")
+    print(f"Requires authentication: {device.encryption.requires_authentication}")
+
+if __name__ == "__main__":
+    main()
+```
+
+### Device with BLE Connection Library
+
+The Device class integrates with any BLE connection library:
+
+```python
+import asyncio
+from bleak import BleakClient
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.device import Device
+
+async def discover_device(device_address):
+    translator = BluetoothSIGTranslator()
+    device = Device(device_address, translator)
+
+    async with BleakClient(device_address) as client:
+        # Get advertisement data (if available from your BLE library)
+        # device.parse_advertiser_data(advertisement_bytes)
+
+        # Discover services
+        services = await client.get_services()
+
+        for service in services:
+            # Collect characteristics for this service
+            char_data = {}
+            for char in service.characteristics:
+                # Read characteristic value
+                value = await client.read_gatt_char(char.uuid)
+                char_data[char.uuid] = value
+
+            # Add service to device
+            device.add_service(service.uuid, char_data)
+
+    # Now you have a complete device representation
+    print(f"Device: {device}")
+    for service_uuid, service_data in device.services.items():
+        print(f"Service {service_uuid}: {len(service_data.characteristics)} characteristics")
+
+    return device
+```
+
+### Device Data Structures
+
+The Device class uses several data structures:
+
+- `DeviceService`: Groups a service with its parsed characteristics
+- `DeviceEncryption`: Tracks encryption and authentication requirements
+- `DeviceAdvertiserData`: Parsed advertisement data including manufacturer info, service UUIDs, etc.
+
+All data structures follow the Bluetooth SIG specifications and provide type-safe access to device information.

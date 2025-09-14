@@ -110,7 +110,8 @@ async def read_environmental_sensors(address: str) -> dict:
             try:
                 raw_data = await client.read_gatt_char(uuid)
                 result = translator.parse_characteristic(uuid, raw_data)
-                results[uuid] = result.value
+                if result.parse_success:
+                    results[uuid] = result.value
             except Exception:
                 pass  # Handle missing characteristics gracefully
 

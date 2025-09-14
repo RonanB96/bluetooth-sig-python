@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from bluetooth_sig.data_types import CharacteristicData
 from bluetooth_sig.gatt.context import CharacteristicContext, DeviceInfo
+from bluetooth_sig.types import CharacteristicData
 
 
 @dataclass

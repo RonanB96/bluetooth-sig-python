@@ -1,7 +1,7 @@
 """Test Bluetooth SIG Translator functionality."""
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.data_types import CharacteristicData, ValidationResult
+from bluetooth_sig.types import CharacteristicData, ValidationResult
 
 
 class TestBluetoothSIGTranslator:
