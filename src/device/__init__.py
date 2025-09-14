@@ -9,13 +9,14 @@ unified view of device state.
 from __future__ import annotations
 
 from abc import abstractmethod
-from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from bluetooth_sig.gatt.context import CharacteristicContext, DeviceInfo
 from bluetooth_sig.gatt.services import GattServiceRegistry
 from bluetooth_sig.gatt.services.base import BaseGattService
 from bluetooth_sig.types import CharacteristicDataProtocol
+from bluetooth_sig.types.advertising import DeviceAdvertiserData
+from bluetooth_sig.types.device_types import DeviceEncryption, DeviceService
 
 
 class SIGTranslatorProtocol(Protocol):
@@ -49,38 +50,6 @@ class UnknownService(BaseGattService):
     def get_required_characteristics(cls) -> dict[str, type]:
         """No required characteristics for unknown services."""
         return {}
-
-
-@dataclass
-class DeviceService:
-    """Represents a service on a device with its characteristics."""
-
-    service: BaseGattService
-    characteristics: dict[str, CharacteristicDataProtocol] = field(default_factory=dict)
-
-
-@dataclass
-class DeviceEncryption:
-    """Encryption requirements and status for the device."""
-
-    requires_authentication: bool = False
-    requires_encryption: bool = False
-    encryption_level: str | None = None
-    security_mode: int | None = None
-    key_size: int | None = None
-
-
-@dataclass
-class DeviceAdvertiserData:
-    """Parsed advertiser data from device discovery."""
-
-    raw_data: bytes
-    local_name: str | None = None
-    manufacturer_data: dict[int, bytes] = field(default_factory=dict)
-    service_uuids: list[str] = field(default_factory=list)
-    tx_power: int | None = None
-    rssi: int | None = None
-    flags: int | None = None
 
 
 class Device:
@@ -135,13 +104,13 @@ class Device:
         # Create device context for parsing
         device_info = DeviceInfo(
             address=self.address,
-            name=self.name,
+            name=self.name or "",
             manufacturer_data=self.advertiser_data.manufacturer_data
             if self.advertiser_data
-            else None,
+            else {},
             service_uuids=self.advertiser_data.service_uuids
             if self.advertiser_data
-            else None,
+            else [],
         )
 
         base_ctx = CharacteristicContext(device_info=device_info)
