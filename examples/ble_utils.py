@@ -3,7 +3,7 @@
 
 This module provides common BLE connection and scanning functions that work
 across different BLE libraries, reducing code duplication in examples.
-"""  # pylint: disable=too-many-lines
+"""  # pylint: disable=too-many-lines,too-many-branches,too-few-public-methods
 
 from __future__ import annotations
 
@@ -192,7 +192,7 @@ async def scan_and_parse_advertising_bleak(
 
         # Try to find the device object (this is a limitation of the callback approach)
         # For now, create a mock device object
-        class MockDevice:
+        class MockDevice:  # pylint: disable=too-few-public-methods
             """Mock device object for advertising data processing."""
 
             def __init__(self, addr):
@@ -422,6 +422,9 @@ def mock_ble_data() -> dict[str, bytes]:
     }
 
 
+# Directly disable the branch-count warning for this demonstration helper
+# The function intentionally serialises many library flows for comparison.
+# pylint: disable=too-many-branches
 async def demo_library_comparison(
     address: str, target_uuids: list[str] | None = None
 ) -> dict[str, Any]:  # pylint: disable=R0912,W0718

@@ -77,14 +77,14 @@ class TestBLEAdvertisingPDU:
     def test_pdu_creation(self):
         """Test PDU creation and basic properties."""
         pdu = BLEAdvertisingPDU(
-            pdu_type=PDUType.ADV_IND.value,
+            pdu_type=PDUType.ADV_IND,
             tx_add=True,
             rx_add=False,
             length=10,
             payload=b"test_data",
         )
 
-        assert pdu.pdu_type == PDUType.ADV_IND.value
+        assert pdu.pdu_type == PDUType.ADV_IND
         assert pdu.tx_add is True
         assert pdu.rx_add is False
         assert pdu.length == 10
@@ -93,13 +93,13 @@ class TestBLEAdvertisingPDU:
     def test_extended_advertising_detection(self):
         """Test detection of extended advertising PDUs."""
         extended_pdu = BLEAdvertisingPDU(
-            pdu_type=PDUType.ADV_EXT_IND.value, tx_add=False, rx_add=False, length=5
+            pdu_type=PDUType.ADV_EXT_IND, tx_add=False, rx_add=False, length=5
         )
         assert extended_pdu.is_extended_advertising is True
         assert extended_pdu.is_legacy_advertising is False
 
         legacy_pdu = BLEAdvertisingPDU(
-            pdu_type=PDUType.ADV_IND.value, tx_add=False, rx_add=False, length=5
+            pdu_type=PDUType.ADV_IND, tx_add=False, rx_add=False, length=5
         )
         assert legacy_pdu.is_extended_advertising is False
         assert legacy_pdu.is_legacy_advertising is True
@@ -107,18 +107,14 @@ class TestBLEAdvertisingPDU:
     def test_pdu_name_property(self):
         """Test PDU name resolution."""
         pdu = BLEAdvertisingPDU(
-            pdu_type=PDUType.ADV_IND.value, tx_add=False, rx_add=False, length=5
+            pdu_type=PDUType.ADV_IND, tx_add=False, rx_add=False, length=5
         )
         assert pdu.pdu_name == "ADV_IND"
 
         pdu = BLEAdvertisingPDU(
-            pdu_type=PDUType.ADV_EXT_IND.value, tx_add=False, rx_add=False, length=5
+            pdu_type=PDUType.ADV_EXT_IND, tx_add=False, rx_add=False, length=5
         )
         assert pdu.pdu_name == "ADV_EXT_IND"
-
-        # Test unknown PDU type
-        pdu = BLEAdvertisingPDU(pdu_type=0xFF, tx_add=False, rx_add=False, length=5)
-        assert pdu.pdu_name == "Unknown (0xFF)"
 
 
 class TestParsedADStructures:

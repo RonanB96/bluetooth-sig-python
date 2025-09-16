@@ -147,7 +147,7 @@ class BaseGattService(ABC):
         for uuid, props in characteristics.items():
             uuid = uuid.replace("-", "").upper()
             char = CharacteristicRegistry.create_characteristic(
-                uuid=uuid, properties=set(props.get("properties", []))
+                uuid_or_name=uuid, properties=set(props.get("properties", []))
             )
             if char:
                 self.characteristics[uuid] = char

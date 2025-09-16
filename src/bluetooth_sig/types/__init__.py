@@ -5,7 +5,11 @@ from .advertising import (
     BLEAdvertisingPDU,
     BLEExtendedHeader,
     DeviceAdvertiserData,
+    ExtendedHeaderMode,
     ParsedADStructures,
+    PDUConstants,
+    PDUFlags,
+    PDUType,
 )
 from .context import CharacteristicContext, DeviceInfo
 from .data_types import (
@@ -30,7 +34,11 @@ __all__ = [
     "CharacteristicInfo",
     "DeviceAdvertiserData",
     "DeviceInfo",
+    "ExtendedHeaderMode",
     "ParsedADStructures",
+    "PDUConstants",
+    "PDUFlags",
+    "PDUType",
     "ServiceInfo",
     "SIGInfo",
     "ValidationResult",

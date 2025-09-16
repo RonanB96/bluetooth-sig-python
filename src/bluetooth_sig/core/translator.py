@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..gatt.characteristics import CharacteristicRegistry
+from ..gatt.characteristics import CharacteristicName, CharacteristicRegistry
 from ..gatt.context import CharacteristicContext
-from ..gatt.services import GattServiceRegistry
+from ..gatt.services import GattServiceRegistry, ServiceName
 from ..gatt.services.base import BaseGattService
 from ..types import (
     CharacteristicData,
@@ -60,7 +60,8 @@ class BluetoothSIGTranslator:
             result = characteristic.parse_value(raw_data, ctx)
 
             # Attach context if available and result doesn't already have it
-            result.source_context = ctx
+            if ctx is not None:
+                result.source_context = ctx
             return result
 
         # No parser found, return fallback result
@@ -98,6 +99,59 @@ class BluetoothSIGTranslator:
         except Exception:  # pylint: disable=broad-exception-caught
             return None
 
+    def get_characteristic_uuid(self, name: str | CharacteristicName) -> str | None:
+        """Get the UUID for a characteristic name or enum.
+
+        Args:
+            name: Characteristic name or enum
+
+        Returns:
+            Characteristic UUID or None if not found
+        """
+        # Handle enum input
+        if isinstance(name, CharacteristicName):
+            char_name: str | CharacteristicName = name
+        else:
+            char_name = name
+
+        # Try to find the characteristic by name in the registry
+        char_class = CharacteristicRegistry.get_characteristic_class(char_name)
+        if char_class:
+            # Create temporary instance to get UUID
+            try:
+                temp_char = char_class(uuid="", properties=set())
+                return temp_char.char_uuid
+            except Exception:  # pylint: disable=broad-exception-caught
+                pass
+
+        return None
+
+    def get_service_uuid(self, name: str | ServiceName) -> str | None:
+        """Get the UUID for a service name or enum.
+
+        Args:
+            name: Service name or enum
+
+        Returns:
+            Service UUID or None if not found
+        """
+        # Handle enum input
+        if isinstance(name, ServiceName):
+            service_name: str | ServiceName = name
+        else:
+            service_name = name
+
+        # Try to find the service by name
+        service_class = GattServiceRegistry.get_service_class_by_name(service_name)
+        if service_class:
+            try:
+                temp_service = service_class()
+                return temp_service.SERVICE_UUID
+            except Exception:  # pylint: disable=broad-exception-caught
+                pass
+
+        return None
+
     def get_characteristic_info_by_name(self, name: str) -> CharacteristicInfo | None:
         """Get characteristic info by name instead of UUID.
 
@@ -108,23 +162,20 @@ class BluetoothSIGTranslator:
             CharacteristicInfo if found, None otherwise
         """
         # Try to find the characteristic by name in the registry
-        for (
-            char_name,
-            char_class,
-        ) in CharacteristicRegistry.get_all_characteristics().items():
-            if char_name.lower() == name.lower():
-                try:
-                    temp_char = char_class(uuid="", properties=set())
-                    return CharacteristicInfo(
-                        uuid=temp_char.char_uuid,
-                        name=getattr(
-                            temp_char, "_characteristic_name", char_class.__name__
-                        ),
-                        value_type=getattr(temp_char, "value_type", ""),
-                        unit=temp_char.unit,
-                    )
-                except Exception:  # pylint: disable=broad-exception-caught
-                    continue
+        char_class = CharacteristicRegistry.get_characteristic_class(name)
+        if char_class:
+            try:
+                temp_char = char_class(uuid="", properties=set())
+                return CharacteristicInfo(
+                    uuid=temp_char.char_uuid,
+                    name=getattr(
+                        temp_char, "_characteristic_name", char_class.__name__
+                    ),
+                    value_type=getattr(temp_char, "value_type", ""),
+                    unit=temp_char.unit,
+                )
+            except Exception:  # pylint: disable=broad-exception-caught
+                pass
         return None
 
     def get_service_info_by_name(self, name: str) -> ServiceInfo | None:
@@ -181,7 +232,7 @@ class BluetoothSIGTranslator:
         Returns:
             Dictionary mapping characteristic names to UUIDs
         """
-        result = {}
+        result: dict[str, str] = {}
         for (
             name,
             char_class,
@@ -199,7 +250,7 @@ class BluetoothSIGTranslator:
         Returns:
             Dictionary mapping service names to UUIDs
         """
-        result = {}
+        result: dict[str, str] = {}
         for service_class in GattServiceRegistry.get_all_services():
             try:
                 temp_service = service_class()
@@ -336,7 +387,7 @@ class BluetoothSIGTranslator:
             Dictionary mapping UUIDs to CharacteristicInfo
             (or None if not found)
         """
-        results = {}
+        results: dict[str, CharacteristicInfo | None] = {}
         for uuid in uuids:
             results[uuid] = self.get_characteristic_info(uuid)
         return results
@@ -390,14 +441,14 @@ class BluetoothSIGTranslator:
             if callable(required_chars):
                 req = required_chars()
                 if isinstance(req, dict):
-                    return list(req.keys())
+                    return [str(k) for k in req]
                 try:
-                    return list(req)
+                    return [str(x) for x in req]
                 except Exception:  # pylint: disable=broad-exception-caught
                     return []
             chars = getattr(temp_service, "characteristics", None)
             if isinstance(chars, (list, tuple)):
-                return list(chars)
+                return [str(x) for x in chars]
             return []
         except Exception:  # pylint: disable=broad-exception-caught
             return []

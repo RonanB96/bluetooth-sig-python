@@ -23,5 +23,5 @@ class DeviceEncryption:
     requires_authentication: bool = False
     requires_encryption: bool = False
     encryption_level: str = ""
-    security_mode: int | None = None
-    key_size: int | None = None
+    security_mode: int = 0
+    key_size: int = 0

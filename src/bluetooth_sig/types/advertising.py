@@ -3,7 +3,90 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import IntEnum, IntFlag
+
+
+class PDUFlags(IntFlag):
+    """BLE PDU parsing bit masks for header operations.
+
+    These masks are pre-positioned to their correct bit locations,
+    eliminating the need for shifts during extraction.
+    """
+
+    TYPE_MASK = 0x0F
+    RFU_BIT_4 = 0x10
+    RFU_BIT_5 = 0x20
+    TX_ADD_MASK = 0x40
+    RX_ADD_MASK = 0x80
+
+    @classmethod
+    def extract_bits(cls, header: int, mask: int) -> int | bool:
+        """Extract bits from header using the specified mask.
+
+        Returns int for multi-bit masks, bool for single-bit masks.
+        """
+        value = header & mask
+        # If mask has multiple bits set, return the raw value
+        # If mask has only one bit set, return boolean
+        if mask & (mask - 1):  # Check if mask has multiple bits set
+            return value
+        return bool(value)
+
+    @classmethod
+    def extract_pdu_type(cls, header: int) -> PDUType:
+        """Extract PDU type from header byte and return as PDUType enum."""
+        raw_type = int(cls.extract_bits(header, cls.TYPE_MASK))
+        try:
+            return PDUType(raw_type)
+        except ValueError as exc:
+            # For unknown PDU types, we could either raise or return a special value
+            raise ValueError(f"Unknown PDU type: 0x{raw_type:02X}") from exc
+
+    @classmethod
+    def extract_tx_add(cls, header: int) -> bool:
+        """Extract TX address type from header."""
+        return bool(cls.extract_bits(header, cls.TX_ADD_MASK))
+
+    @classmethod
+    def extract_rx_add(cls, header: int) -> bool:
+        """Extract RX address type from header."""
+        return bool(cls.extract_bits(header, cls.RX_ADD_MASK))
+
+
+@dataclass(frozen=True)
+class PDUConstants:  # pylint: disable=too-many-instance-attributes
+    """BLE PDU parsing constants for sizes and offsets.
+
+    Following best practices, this uses a dataclass for related constants
+    rather than mixing them with enums/flags.
+    """
+
+    # PDU Size constants
+    BLE_ADDR: int = 6
+    AUX_PTR: int = 3
+    ADV_DATA_INFO: int = 2
+    CTE_INFO: int = 1
+    SYNC_INFO: int = 18
+    TX_POWER: int = 1
+    PDU_HEADER: int = 2
+    MIN_EXTENDED_PDU: int = 3
+    EXT_HEADER_LENGTH: int = 1
+
+    # PDU Offsets
+    EXTENDED_HEADER_START: int = 3
+    ADV_MODE: int = 1
+    ADV_ADDR_OFFSET: int = 2
+    TARGET_ADDR_OFFSET: int = 2
+    CTE_INFO_OFFSET: int = 1
+    ADV_DATA_INFO_OFFSET: int = 2
+    AUX_PTR_OFFSET: int = 3
+    SYNC_INFO_OFFSET: int = 18
+    TX_POWER_OFFSET: int = 1
+    PDU_LENGTH_OFFSET: int = 2
+
+
+# Global instance for easy access
+PDU_CONSTANTS = PDUConstants()
 
 
 class ExtendedHeaderMode(IntEnum):
@@ -107,23 +190,20 @@ class BLEAdvertisementTypes(IntEnum):
 
 
 @dataclass
-class BLEExtendedHeader:
+class BLEExtendedHeader:  # pylint: disable=too-many-instance-attributes
     """Extended Advertising Header fields (BLE 5.0+)."""
 
-    # pylint: disable=too-many-instance-attributes
-
     extended_header_length: int = 0
-    adv_mode: int = 0  # Advertising Mode (bit field)
+    adv_mode: int = 0
 
-    # Optional extended header fields
-    extended_advertiser_address: bytes | None = None
-    extended_target_address: bytes | None = None
-    cte_info: bytes | None = None
-    advertising_data_info: bytes | None = None
-    auxiliary_pointer: bytes | None = None
-    sync_info: bytes | None = None
+    extended_advertiser_address: bytes = b""
+    extended_target_address: bytes = b""
+    cte_info: bytes = b""
+    advertising_data_info: bytes = b""
+    auxiliary_pointer: bytes = b""
+    sync_info: bytes = b""
     tx_power: int | None = None
-    additional_controller_advertising_data: bytes | None = None
+    additional_controller_advertising_data: bytes = b""
 
     @property
     def has_extended_advertiser_address(self) -> bool:
@@ -167,50 +247,38 @@ class BLEExtendedHeader:
 
 
 @dataclass
-class BLEAdvertisingPDU:
+@dataclass
+class BLEAdvertisingPDU:  # pylint: disable=too-many-instance-attributes
     """BLE Advertising PDU structure."""
 
-    # pylint: disable=too-many-instance-attributes
-
-    pdu_type: int
-    tx_add: bool  # TX Address type (0=public, 1=random)
-    rx_add: bool  # RX Address type (0=public, 1=random)
+    pdu_type: PDUType
+    tx_add: bool
+    rx_add: bool
     length: int
-    advertiser_address: bytes | None = None
-    target_address: bytes | None = None
+    advertiser_address: bytes = b""
+    target_address: bytes = b""
     payload: bytes = b""
     extended_header: BLEExtendedHeader | None = None
 
     @property
     def is_extended_advertising(self) -> bool:
         """Check if this is an extended advertising PDU."""
-        try:
-            return PDUType(self.pdu_type).is_extended_advertising
-        except ValueError:
-            return False
+        return self.pdu_type.is_extended_advertising
 
     @property
     def is_legacy_advertising(self) -> bool:
         """Check if this is a legacy advertising PDU."""
-        try:
-            return PDUType(self.pdu_type).is_legacy_advertising
-        except ValueError:
-            return False
+        return self.pdu_type.is_legacy_advertising
 
     @property
     def pdu_name(self) -> str:
         """Get human-readable PDU type name."""
-        try:
-            return PDUType(self.pdu_type).name
-        except ValueError:
-            return f"Unknown (0x{self.pdu_type:02X})"
+        return self.pdu_type.name
 
 
 @dataclass
-class ParsedADStructures:
+class ParsedADStructures:  # pylint: disable=too-many-instance-attributes
     """Parsed Advertising Data structures from advertisement payload."""
-
-    # pylint: disable=too-many-instance-attributes
 
     manufacturer_data: dict[int, bytes] = field(default_factory=dict)
     service_uuids: list[str] = field(default_factory=list)
@@ -220,43 +288,41 @@ class ParsedADStructures:
     appearance: int | None = None
     service_data: dict[str, bytes] = field(default_factory=dict)
     solicited_service_uuids: list[str] = field(default_factory=list)
-    uri: str | None = None
-    indoor_positioning: bytes | None = None
-    transport_discovery_data: bytes | None = None
-    le_supported_features: bytes | None = None
-    encrypted_advertising_data: bytes | None = None
-    periodic_advertising_response_timing: bytes | None = None
-    electronic_shelf_label: bytes | None = None
-    three_d_information: bytes | None = None
-    broadcast_name: str | None = None
-    broadcast_code: bytes | None = None
-    biginfo: bytes | None = None
-    mesh_message: bytes | None = None
-    mesh_beacon: bytes | None = None
+    uri: str = ""
+    indoor_positioning: bytes = b""
+    transport_discovery_data: bytes = b""
+    le_supported_features: bytes = b""
+    encrypted_advertising_data: bytes = b""
+    periodic_advertising_response_timing: bytes = b""
+    electronic_shelf_label: bytes = b""
+    three_d_information: bytes = b""
+    broadcast_name: str = ""
+    broadcast_code: bytes = b""
+    biginfo: bytes = b""
+    mesh_message: bytes = b""
+    mesh_beacon: bytes = b""
     public_target_address: list[str] = field(default_factory=list)
     random_target_address: list[str] = field(default_factory=list)
     advertising_interval: int | None = None
     advertising_interval_long: int | None = None
-    le_bluetooth_device_address: str | None = None
+    le_bluetooth_device_address: str = ""
     le_role: int | None = None
     class_of_device: int | None = None
-    simple_pairing_hash_c: bytes | None = None
-    simple_pairing_randomizer_r: bytes | None = None
-    security_manager_tk_value: bytes | None = None
-    security_manager_out_of_band_flags: bytes | None = None
-    slave_connection_interval_range: bytes | None = None
-    secure_connections_confirmation: bytes | None = None
-    secure_connections_random: bytes | None = None
-    channel_map_update_indication: bytes | None = None
-    pb_adv: bytes | None = None
-    resolvable_set_identifier: bytes | None = None
+    simple_pairing_hash_c: bytes = b""
+    simple_pairing_randomizer_r: bytes = b""
+    security_manager_tk_value: bytes = b""
+    security_manager_out_of_band_flags: bytes = b""
+    slave_connection_interval_range: bytes = b""
+    secure_connections_confirmation: bytes = b""
+    secure_connections_random: bytes = b""
+    channel_map_update_indication: bytes = b""
+    pb_adv: bytes = b""
+    resolvable_set_identifier: bytes = b""
 
 
 @dataclass
-class DeviceAdvertiserData:
+class DeviceAdvertiserData:  # pylint: disable=too-many-instance-attributes
     """Parsed advertiser data from device discovery."""
-
-    # pylint: disable=too-many-instance-attributes
 
     raw_data: bytes
     local_name: str = ""
@@ -266,16 +332,15 @@ class DeviceAdvertiserData:
     rssi: int | None = None
     flags: int | None = None
 
-    # Extended advertising fields
-    extended_payload: bytes | None = None
+    extended_payload: bytes = b""
     auxiliary_packets: list[BLEAdvertisingPDU] = field(default_factory=list)
-    periodic_advertising_data: bytes | None = None
-    broadcast_code: bytes | None = None
+    periodic_advertising_data: bytes = b""
+    broadcast_code: bytes = b""
 
     @property
     def is_extended_advertising(self) -> bool:
         """Check if this advertisement uses extended advertising."""
-        return self.extended_payload is not None or bool(self.auxiliary_packets)
+        return bool(self.extended_payload) or bool(self.auxiliary_packets)
 
     @property
     def total_payload_size(self) -> int:

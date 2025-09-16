@@ -43,8 +43,8 @@ class TestDeviceEncryption:
         assert encryption.requires_authentication is False
         assert encryption.requires_encryption is False
         assert encryption.encryption_level == ""
-        assert encryption.security_mode is None
-        assert encryption.key_size is None
+        assert encryption.security_mode == 0
+        assert encryption.key_size == 0
 
     def test_device_encryption_creation_full(self):
         """Test creation of DeviceEncryption with all parameters."""
@@ -70,4 +70,4 @@ class TestDeviceEncryption:
         assert encryption.requires_encryption is False  # default
         assert encryption.encryption_level == ""  # default
         assert encryption.security_mode == 2
-        assert encryption.key_size is None  # default
+        assert encryption.key_size == 0  # default

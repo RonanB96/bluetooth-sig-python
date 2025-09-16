@@ -41,7 +41,7 @@ class CharacteristicData(CharacteristicInfo):
     raw_data: bytes = b""
     parse_success: bool = False
     error_message: str = ""
-    source_context: CharacteristicContext | None = None
+    source_context: CharacteristicContext = field(default_factory=CharacteristicContext)
 
 
 @dataclass

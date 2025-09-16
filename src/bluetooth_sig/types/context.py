@@ -33,7 +33,6 @@ class CharacteristicContext:
     """
 
     device_info: DeviceInfo | None = None
-    advertisement: bytes | None = None
-    # Mapping from characteristic UUID -> parsed result (minimal protocol).
+    advertisement: bytes = b""
     other_characteristics: Mapping[str, CharacteristicDataProtocol] | None = None
     raw_service: bytes = b""
