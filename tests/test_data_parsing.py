@@ -238,7 +238,7 @@ class TestDataParsing:
                         found_data = True
                         try:
                             parsed_value = characteristic.decode_value(raw_data)
-                            unit = getattr(characteristic, "unit", "")
+                            unit = characteristic.unit
 
                             validation_results[service_name]["characteristics"][
                                 char_name

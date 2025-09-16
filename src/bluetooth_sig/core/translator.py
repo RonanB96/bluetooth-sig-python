@@ -93,7 +93,7 @@ class BluetoothSIGTranslator:
             return CharacteristicInfo(
                 uuid=temp_char.char_uuid,
                 name=getattr(temp_char, "_characteristic_name", char_class.__name__),
-                value_type=getattr(temp_char, "value_type", ""),
+                value_type=temp_char.value_type,
                 unit=temp_char.unit,
             )
         except Exception:  # pylint: disable=broad-exception-caught
@@ -171,7 +171,7 @@ class BluetoothSIGTranslator:
                     name=getattr(
                         temp_char, "_characteristic_name", char_class.__name__
                     ),
-                    value_type=getattr(temp_char, "value_type", ""),
+                    value_type=temp_char.value_type,
                     unit=temp_char.unit,
                 )
             except Exception:  # pylint: disable=broad-exception-caught
@@ -221,7 +221,7 @@ class BluetoothSIGTranslator:
             return ServiceInfo(
                 uuid=temp_service.SERVICE_UUID,
                 name=temp_service.name,
-                characteristics=getattr(temp_service, "characteristics", []),
+                characteristics=list(temp_service.characteristics.keys()),
             )
         except Exception:  # pylint: disable=broad-exception-caught
             return None
@@ -437,19 +437,8 @@ class BluetoothSIGTranslator:
 
         try:
             temp_service = service_class()
-            required_chars = getattr(temp_service, "get_required_characteristics", None)
-            if callable(required_chars):
-                req = required_chars()
-                if isinstance(req, dict):
-                    return [str(k) for k in req]
-                try:
-                    return [str(x) for x in req]
-                except Exception:  # pylint: disable=broad-exception-caught
-                    return []
-            chars = getattr(temp_service, "characteristics", None)
-            if isinstance(chars, (list, tuple)):
-                return [str(x) for x in chars]
-            return []
+            required_chars = temp_service.get_required_characteristics()
+            return [str(k) for k in required_chars]
         except Exception:  # pylint: disable=broad-exception-caught
             return []
 
