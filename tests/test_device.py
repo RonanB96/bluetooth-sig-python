@@ -3,7 +3,42 @@
 from __future__ import annotations
 
 from bluetooth_sig import BluetoothSIGTranslator
-from device import Device, DeviceEncryption
+from bluetooth_sig.device import Device
+from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.types.device_types import DeviceEncryption
+
+
+class MockConnectionManager:
+    """Mock connection manager for testing."""
+
+    def __init__(self, connected: bool = False):
+        self.address = "AA:BB:CC:DD:EE:FF"
+        self._connected = connected
+
+    @property
+    def is_connected(self) -> bool:
+        return self._connected
+
+    async def connect(self) -> None:
+        self._connected = True
+
+    async def disconnect(self) -> None:
+        self._connected = False
+
+    async def read_gatt_char(self, char_uuid: str) -> bytes:
+        return b""
+
+    async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
+        pass
+
+    async def get_services(self):
+        return []
+
+    async def start_notify(self, char_uuid: str, callback) -> None:
+        pass
+
+    async def stop_notify(self, char_uuid: str) -> None:
+        pass
 
 
 class TestDevice:
@@ -19,15 +54,15 @@ class TestDevice:
         """Test Device initialization."""
         assert self.device.address == self.device_address
         assert self.device.translator == self.translator
-        assert self.device.name is None
+        assert self.device.name == ""
         assert self.device.services == {}
         assert isinstance(self.device.encryption, DeviceEncryption)
-        assert self.device.advertiser_data is None
+        assert self.device.advertiser_data is not None
 
     def test_device_string_representation(self):
         """Test Device string representation."""
         expected = (
-            f"Device({self.device_address}, name=None, 0 services, 0 characteristics)"
+            f"Device({self.device_address}, name=, 0 services, 0 characteristics)"
         )
         assert str(self.device) == expected
 
@@ -240,3 +275,150 @@ class TestDevice:
         # Verify service was added and context was used
         assert "180F" in self.device.services
         assert self.device.name == "Test Device"
+
+    def test_is_connected_property(self):
+        """Test is_connected property behavior."""
+        # Test with no connection manager
+        assert self.device.is_connected is False
+
+        # Test with disconnected connection manager
+        mock_manager = MockConnectionManager(connected=False)
+        self.device.attach_connection_manager(mock_manager)
+        assert self.device.is_connected is False
+
+        # Test with connected connection manager
+        mock_manager = MockConnectionManager(connected=True)
+        self.device.attach_connection_manager(mock_manager)
+        assert self.device.is_connected is True
+
+    def test_is_connected_edge_cases(self):
+        """Test is_connected property edge cases."""
+        # Test connection manager state change
+        mock_manager = MockConnectionManager(connected=True)
+        self.device.attach_connection_manager(mock_manager)
+        assert self.device.is_connected is True
+
+        # Change state through manager
+        mock_manager._connected = False
+        assert self.device.is_connected is False
+
+        # Test None return value from manager
+        class NoneManager:
+            def __init__(self):
+                self.address = "AA:BB:CC:DD:EE:FF"
+
+            @property
+            def is_connected(self):
+                return None
+
+        none_manager = NoneManager()
+        self.device.attach_connection_manager(none_manager)
+        result = self.device.is_connected
+        assert result is None
+
+    def test_is_connected_error_handling(self):
+        """Test is_connected property error handling."""
+
+        # Test manager that raises exception
+        class FaultyManager:
+            def __init__(self):
+                self.address = "AA:BB:CC:DD:EE:FF"
+
+            @property
+            def is_connected(self):
+                raise RuntimeError("Connection check failed")
+
+        faulty_manager = FaultyManager()
+        self.device.attach_connection_manager(faulty_manager)
+
+        # Should propagate the exception
+        try:
+            _ = self.device.is_connected
+            raise AssertionError("Should have raised RuntimeError")
+        except RuntimeError as e:
+            assert str(e) == "Connection check failed"
+
+        # Test manager without is_connected property
+        class IncompleteManager:
+            def __init__(self):
+                self.address = "AA:BB:CC:DD:EE:FF"
+
+        incomplete_manager = IncompleteManager()
+        self.device.attach_connection_manager(incomplete_manager)
+
+        # Should raise AttributeError
+        try:
+            _ = self.device.is_connected
+            raise AssertionError("Should have raised AttributeError")
+        except AttributeError as e:
+            assert "is_connected" in str(e)
+
+    def test_connection_manager_protocol_interface(self):
+        """Test that ConnectionManagerProtocol has the is_connected property."""
+        import inspect
+
+        # Check that is_connected is part of the protocol interface
+        members = inspect.getmembers(ConnectionManagerProtocol)
+        protocol_attrs = [name for name, _ in members if not name.startswith("_")]
+
+        # Verify is_connected is in the protocol
+        assert "is_connected" in protocol_attrs
+
+        # Verify other expected methods are also present
+        expected_methods = [
+            "connect",
+            "disconnect",
+            "read_gatt_char",
+            "write_gatt_char",
+            "get_services",
+            "start_notify",
+            "stop_notify",
+            "is_connected",
+        ]
+        for method in expected_methods:
+            assert method in protocol_attrs, f"Method {method} missing from protocol"
+
+    def test_device_info_caching(self):
+        """Test that device info is cached and updated efficiently."""
+        # First access creates cache
+        device_info1 = self.device.device_info
+        assert device_info1.address == self.device.address
+        assert device_info1.name == ""
+
+        # Second access uses same cached object (efficiency test)
+        device_info2 = self.device.device_info
+        assert device_info2 is device_info1
+
+        # Changing name should update the cached object in place for efficiency
+        self.device.name = "Test Device"
+        device_info3 = self.device.device_info
+        assert device_info3 is device_info1  # Same object reused (efficient)
+        assert device_info3.name == "Test Device"  # But data updated
+
+        # Parsing advertiser data should update the same cached object
+        raw_advertising_data = bytes(
+            [
+                0x02,
+                0x01,
+                0x06,  # Flags
+                0x03,
+                0x02,
+                0x0F,
+                0x18,  # Complete list of 16-bit Service UUIDs: Battery Service (180F)
+                0x05,
+                0xFF,
+                0x4C,
+                0x00,
+                0x01,
+                0x02,  # Manufacturer data: Apple (0x004C), data: 01 02
+            ]
+        )
+
+        self.device.parse_advertiser_data(raw_advertising_data)
+        device_info4 = self.device.device_info
+        assert device_info4 is device_info1  # Still same object (efficient)
+        assert (
+            device_info4.name == "Test Device"
+        )  # Name remains (not overwritten by advertiser)
+        assert "180F" in device_info4.service_uuids  # Service UUID from advertiser data
+        assert 76 in device_info4.manufacturer_data  # Manufacturer data from advertiser
