@@ -10,6 +10,17 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# If user provided PROJECT_ROOT override, change to it
+if [ -n "${PROJECT_ROOT_OVERRIDE:-}" ]; then
+    # Resolve to absolute path
+    if [ -d "$PROJECT_ROOT_OVERRIDE" ]; then
+        PROJECT_ROOT="$(cd "$PROJECT_ROOT_OVERRIDE" && pwd)"
+    else
+        print_error "Provided path does not exist: $PROJECT_ROOT_OVERRIDE"
+        exit 1
+    fi
+fi
+
 # Change to project root
 cd "$PROJECT_ROOT"
 
@@ -47,7 +58,11 @@ print_warning() {
 check_venv() {
     if [ -z "${VIRTUAL_ENV:-}" ]; then
         print_warning "No virtual environment detected"
-        print_warning "Consider running: source .venv/bin/activate"
+        if [ -n "${PROJECT_ROOT:-}" ]; then
+            print_warning "Consider running: source $PROJECT_ROOT/.venv/bin/activate"
+        else
+            print_warning "Consider running: source .venv/bin/activate"
+        fi
     else
         print_success "Virtual environment active: $VIRTUAL_ENV"
     fi
@@ -329,6 +344,14 @@ run_all_checks() {
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --path|-p)
+            if [ -z "${2:-}" ]; then
+                print_error "Missing argument for $1"
+                exit 1
+            fi
+            PROJECT_ROOT_OVERRIDE="$2"
+            shift 2
+            ;;
         --all|--check)
             run_all_checks
             exit $?
@@ -359,6 +382,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "OPTIONS:"
             echo "  --all, --check      Run all linting checks (default)"
+            echo "  --path, -p <path>   Run checks in specified project path"
             echo ""
             echo "Individual tools:"
             echo "  --ruff              Run ruff linting (replaces flake8)"

@@ -145,7 +145,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charge_state == expected["battery_charge_state"]
         assert result.battery_charge_level == expected["battery_charge_level"]
         assert result.battery_charging_type == expected["battery_charging_type"]
-        assert result.charging_fault_reason == expected["charging_fault_reason"]
+        assert result.charging_fault_reason is None
 
     def test_parse_extended_format_with_fault(self):
         """Test parsing extended format with charging fault."""
@@ -257,7 +257,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charge_state == expected["battery_charge_state"]
         assert result.battery_charge_level == expected["battery_charge_level"]
         assert result.battery_charging_type == expected["battery_charging_type"]
-        assert result.charging_fault_reason == expected["charging_fault_reason"]
+        assert result.charging_fault_reason is None
 
     def test_parse_reserved_states(self):
         """Test parsing with reserved states."""

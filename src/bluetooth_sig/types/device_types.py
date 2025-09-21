@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import cast
 
 from ..gatt.services.base import BaseGattService
 from .protocols import CharacteristicDataProtocol
@@ -13,7 +14,9 @@ class DeviceService:
     """Represents a service on a device with its characteristics."""
 
     service: BaseGattService
-    characteristics: dict[str, CharacteristicDataProtocol] = field(default_factory=dict)
+    characteristics: dict[str, CharacteristicDataProtocol] = field(
+        default_factory=lambda: cast(dict[str, CharacteristicDataProtocol], {})
+    )
 
 
 @dataclass

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from ..characteristics import BaseCharacteristic, CharacteristicRegistry
 from ..exceptions import UUIDResolutionError
@@ -20,7 +20,9 @@ class BaseGattService(ABC):
     """Base class for all GATT services."""
 
     # Instance variables
-    characteristics: dict[str, BaseCharacteristic] = field(default_factory=dict)
+    characteristics: dict[str, BaseCharacteristic] = field(
+        default_factory=lambda: cast(dict[str, BaseCharacteristic], {})
+    )
     _service_name: str = ""  # Override in subclasses if needed
 
     @property

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from typing import cast
+
+import pytest
+
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
@@ -25,6 +29,13 @@ class MockConnectionManager:
     async def disconnect(self) -> None:
         self._connected = False
 
+    # Synchronous helpers for tests
+    def connect_sync(self) -> None:
+        self._connected = True
+
+    def disconnect_sync(self) -> None:
+        self._connected = False
+
     async def read_gatt_char(self, char_uuid: str) -> bytes:
         return b""
 
@@ -39,6 +50,35 @@ class MockConnectionManager:
 
     async def stop_notify(self, char_uuid: str) -> None:
         pass
+
+
+class FaultyManager:
+    """Manager that raises when checking connection (used in tests)."""
+
+    def __init__(self) -> None:
+        self.address = "AA:BB:CC:DD:EE:FF"
+
+    @property
+    def is_connected(self) -> bool:
+        raise RuntimeError("Connection check failed")
+
+
+class IncompleteManager:
+    """Manager missing protocol methods used to test fallback behavior."""
+
+    def __init__(self) -> None:
+        self.address = "AA:BB:CC:DD:EE:FF"
+
+
+class NoneManager:
+    """Manager that returns False for is_connected (used in tests)."""
+
+    def __init__(self) -> None:
+        self.address = "AA:BB:CC:DD:EE:FF"
+
+    @property
+    def is_connected(self) -> bool:
+        return False
 
 
 class TestDevice:
@@ -298,55 +338,40 @@ class TestDevice:
         self.device.attach_connection_manager(mock_manager)
         assert self.device.is_connected is True
 
-        # Change state through manager
-        mock_manager._connected = False
+        # Change state through manager using provided synchronous helper
+        mock_manager.disconnect_sync()
         assert self.device.is_connected is False
 
-        # Test None return value from manager
-        class NoneManager:
-            def __init__(self):
-                self.address = "AA:BB:CC:DD:EE:FF"
-
-            @property
-            def is_connected(self) -> bool:
-                return False
-
-        none_manager = NoneManager()
-        self.device.attach_connection_manager(none_manager)
-        result = self.device.is_connected
-        assert result is False
+    # Test None return value from manager is handled in separate test
 
     def test_is_connected_error_handling(self):
         """Test is_connected property error handling."""
-
-        # Test manager that raises exception
-        class FaultyManager:
-            def __init__(self):
-                self.address = "AA:BB:CC:DD:EE:FF"
-
-            @property
-            def is_connected(self) -> bool:
-                raise RuntimeError("Connection check failed")
-
+        # Test manager that raises exception - use module-level FaultyManager
         faulty_manager = FaultyManager()
-        self.device.attach_connection_manager(faulty_manager)
+        # cast to ConnectionManagerProtocol to satisfy static type checking
+        self.device.attach_connection_manager(
+            cast(ConnectionManagerProtocol, faulty_manager)
+        )
 
         # Should propagate the exception
-        try:
+        with pytest.raises(RuntimeError, match="Connection check failed"):
             _ = self.device.is_connected
-            raise AssertionError("Should have raised RuntimeError")
-        except RuntimeError as e:
-            assert str(e) == "Connection check failed"
 
-        # Test manager without is_connected property
-        class IncompleteManager:
-            def __init__(self):
-                self.address = "AA:BB:CC:DD:EE:FF"
-
+        # Test manager without is_connected property - use module-level IncompleteManager
         incomplete_manager = IncompleteManager()
-        self.device.attach_connection_manager(incomplete_manager)
+        self.device.attach_connection_manager(
+            cast(ConnectionManagerProtocol, incomplete_manager)
+        )
 
         # Should return False for manager without is_connected property
+        assert self.device.is_connected is False
+
+    def test_is_connected_with_none_manager(self):
+        """Test is_connected returns False when manager's is_connected returns False."""
+        none_manager = NoneManager()
+        self.device.attach_connection_manager(
+            cast(ConnectionManagerProtocol, none_manager)
+        )
         assert self.device.is_connected is False
 
     def test_connection_manager_protocol_interface(self):

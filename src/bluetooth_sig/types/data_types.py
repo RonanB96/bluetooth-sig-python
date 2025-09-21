@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from ..types.context import CharacteristicContext
 
@@ -23,14 +23,14 @@ class CharacteristicInfo(SIGInfo):
 
     value_type: str = ""
     unit: str = ""
-    properties: list[str] = field(default_factory=list)
+    properties: list[str] = field(default_factory=lambda: cast(list[str], []))
 
 
 @dataclass
 class ServiceInfo(SIGInfo):
     """Information about a Bluetooth service."""
 
-    characteristics: list[str] = field(default_factory=list)
+    characteristics: list[str] = field(default_factory=lambda: cast(list[str], []))
 
 
 @dataclass
