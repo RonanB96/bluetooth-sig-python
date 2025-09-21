@@ -27,9 +27,8 @@ jobs:
         python -m pip install --upgrade pip
         # Install system build dependencies to allow building native example libs
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake ninja-build pkg-config \ 
-          libdbus-1-dev libglib2.0-dev libudev-dev python3-dev
-        pip install -e "[dev,test,examples]"
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config libdbus-1-dev libglib2.0-dev libudev-dev python3-dev
+        pip install -e .[dev,test,examples]
 
     - name: 'Check Code Formatting'
       run: ./scripts/format.sh --check
@@ -52,7 +51,7 @@ jobs:
     - name: 'Install Dependencies'
       run: |
         python -m pip install --upgrade pip
-        pip install -e "[dev,test,examples]"
+        pip install -e ".[dev,test,examples]"
 
     - name: 'Install Shellcheck'
       run: |
