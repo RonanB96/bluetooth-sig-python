@@ -19,7 +19,7 @@ from ..types import (
 )
 
 
-class AdvertisingParser:
+class AdvertisingParser:  # pylint: disable=too-few-public-methods
     """Parser for BLE advertising data packets.
 
     Handles both legacy and extended advertising PDU formats,

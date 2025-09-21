@@ -13,15 +13,11 @@ Key Benefits:
 """
 
 import sys
-from pathlib import Path
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from bluetooth_sig import BluetoothSIGTranslator
 
 
-def demonstrate_pure_sig_parsing():
+def demonstrate_pure_sig_parsing() -> None:
     """Demonstrate pure SIG parsing with various characteristic types."""
     print("🔵 Pure Bluetooth SIG Standards Parsing Demo")
     print("=" * 50)
@@ -104,7 +100,7 @@ def demonstrate_pure_sig_parsing():
     return results
 
 
-def demonstrate_uuid_resolution():
+def demonstrate_uuid_resolution() -> None:
     """Demonstrate UUID resolution and characteristic information lookup."""
     print("\n🔍 UUID Resolution and Characteristic Information")
     print("=" * 50)
@@ -137,7 +133,7 @@ def demonstrate_uuid_resolution():
         print()
 
 
-def demonstrate_batch_parsing():
+def demonstrate_batch_parsing() -> None:
     """Demonstrate parsing multiple characteristics at once."""
     print("\n📦 Batch Parsing Multiple Characteristics")
     print("=" * 50)
@@ -166,7 +162,7 @@ def demonstrate_batch_parsing():
             print(f"❌ {char_name}: Parse failed - {result.error_message}")
 
 
-def demonstrate_integration_pattern():
+def demonstrate_integration_pattern() -> None:
     """Show the recommended integration pattern for BLE libraries."""
     print("\n🔧 Integration Pattern for BLE Libraries")
     print("=" * 50)

@@ -20,6 +20,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Folders to format
+RUFF_FOLDERS="src/ tests/ examples/"
+
 # Helper functions
 print_header() {
     echo -e "\n${BLUE}=== $1 ===${NC}"
@@ -58,7 +61,7 @@ run_ruff() {
         local exit_code=0
 
         # Check formatting
-        if ! ruff format --check src/ tests/ examples/; then
+        if ! ruff format --check $RUFF_FOLDERS; then
             print_error "ruff formatting issues found"
             echo "Run './scripts/format.sh --fix' to fix formatting"
             exit_code=1
@@ -67,7 +70,7 @@ run_ruff() {
         fi
 
         # Check linting (including import sorting)
-        if ! ruff check src/ tests/ examples/; then
+        if ! ruff check $RUFF_FOLDERS; then
             print_error "ruff linting issues found"
             echo "Run './scripts/format.sh --fix' to fix issues"
             exit_code=1
@@ -80,11 +83,11 @@ run_ruff() {
         print_header "Formatting code with ruff"
 
         # Fix formatting
-        ruff format src/ tests/ examples/
+        ruff format $RUFF_FOLDERS
         print_success "Code formatted with ruff"
 
         # Fix linting issues (including import sorting)
-        ruff check --fix $unsafe_flag src/ tests/ examples/
+        ruff check --fix $unsafe_flag $RUFF_FOLDERS
         if [ -n "$unsafe_flag" ]; then
             print_success "Code linting issues fixed with ruff (including unsafe fixes)"
         else

@@ -9,6 +9,7 @@ unified view of device state.
 from __future__ import annotations
 
 import logging
+import re
 from abc import abstractmethod
 from typing import Any, Callable, Protocol
 
@@ -17,8 +18,12 @@ from ..gatt.context import CharacteristicContext, DeviceInfo
 from ..gatt.services import GattServiceRegistry, ServiceName
 from ..gatt.services.base import BaseGattService
 from ..types import (
+    BLEAdvertisementTypes,
+    BLEAdvertisingPDU,
     CharacteristicDataProtocol,
     DeviceAdvertiserData,
+    ParsedADStructures,
+    PDUConstants,
 )
 from ..types.data_types import CharacteristicData
 from ..types.device_types import DeviceEncryption, DeviceService
@@ -69,7 +74,14 @@ class UnknownService(BaseGattService):
         return {}
 
 
-class Device:
+def _is_uuid_like(value: str) -> bool:
+    """Check if a string looks like a Bluetooth UUID."""
+    # Remove dashes and check if it's a valid hex string of UUID length
+    clean = value.replace("-", "")
+    return bool(re.match(r"^[0-9A-Fa-f]+$", clean)) and len(clean) in [4, 8, 32]
+
+
+class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """High-level BLE device abstraction."""
 
     def __init__(self, address: str, translator: SIGTranslatorProtocol) -> None:
@@ -85,46 +97,8 @@ class Device:
         # Advertising parser for handling advertising data
         self.advertising_parser = AdvertisingParser()
 
-        # Cached device info - updated when name or advertiser_data changes
-        self._device_info: DeviceInfo | None = None
-        self._device_info_dirty: bool = True
-
-    @property
-    def name(self) -> str:
-        """Get the device name."""
-        return self._name
-
-    @name.setter
-    def name(self, value: str) -> None:
-        """Set the device name and invalidate device info cache if changed."""
-        if self._name != value:
-            self._name = value
-            self._invalidate_device_info_cache()
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Get cached device info, updating only when necessary."""
-        if self._device_info is None:
-            # First time - create new object
-            self._device_info = DeviceInfo(
-                address=self.address,
-                name=self.name,
-                manufacturer_data=self.advertiser_data.manufacturer_data,
-                service_uuids=self.advertiser_data.service_uuids,
-            )
-            self._device_info_dirty = False
-        elif self._device_info_dirty:
-            # Update existing object in place to avoid object allocation
-            self._device_info.address = self.address
-            self._device_info.name = self.name
-            self._device_info.manufacturer_data = self.advertiser_data.manufacturer_data
-            self._device_info.service_uuids = self.advertiser_data.service_uuids
-            self._device_info_dirty = False
-        return self._device_info
-
-    def _invalidate_device_info_cache(self) -> None:
-        """Mark cached device info as dirty when underlying data changes."""
-        self._device_info_dirty = True
+        # Cache for device_info property
+        self._device_info_cache: DeviceInfo | None = None
 
     def __str__(self) -> str:
         service_count = len(self.services)
@@ -142,34 +116,31 @@ class Device:
             service_name: Name or enum of the service to add
             characteristics: Dictionary mapping characteristic UUIDs to raw data
         """
-        # Handle service identification - could be name, enum, or UUID
-        service_uuid = None
-
-        if isinstance(service_name, ServiceName):
-            # It's an enum, get UUID from translator
-            service_uuid = self.translator.get_service_uuid(service_name.value)
-            if not service_uuid:
-                # Enum not recognized - treat enum value as unknown UUID
-                service_uuid = service_name.value
-        else:
-            # It's a string - try as name first, then as UUID
-            service_uuid = self.translator.get_service_uuid(service_name)
-            if not service_uuid:
-                # Try treating it as a UUID directly
-                service_class = GattServiceRegistry.get_service_class(service_name)
-                if service_class:
-                    service_uuid = service_name
-                else:
-                    # Neither translator nor registry recognize it - treat as unknown UUID
-                    service_uuid = service_name
+        # Get the service UUID from the name
+        service_uuid = self.translator.get_service_uuid(service_name)
+        if not service_uuid:
+            # Fallback to unknown service if UUID not found
+            service: BaseGattService = UnknownService()
+            device_service = DeviceService(service=service, characteristics={})
+            self.services[
+                service_name if isinstance(service_name, str) else service_name.value
+            ] = device_service
+            return
 
         service_class = GattServiceRegistry.get_service_class(service_uuid)
         if not service_class:
-            service: BaseGattService = UnknownService()
+            service = UnknownService()
         else:
             service = service_class()
 
-        base_ctx = CharacteristicContext(device_info=self.device_info)
+        device_info = DeviceInfo(
+            address=self.address,
+            name=self.name,
+            manufacturer_data=self.advertiser_data.manufacturer_data,
+            service_uuids=self.advertiser_data.service_uuids,
+        )
+
+        base_ctx = CharacteristicContext(device_info=device_info)
 
         parsed_characteristics = self.translator.parse_characteristics(
             characteristics, ctx=base_ctx
@@ -334,13 +305,9 @@ class Device:
         parsed_data = self.advertising_parser.parse_advertising_data(raw_data)
         self.advertiser_data = parsed_data
 
-        # Invalidate device info cache since advertiser data changed
-        self._invalidate_device_info_cache()
-
         # Update device name if not set
         if parsed_data.local_name and not self.name:
             self.name = parsed_data.local_name
-            # Cache already invalidated above, no need to call again
 
     def get_characteristic_data(
         self, service_name: str | ServiceName, char_uuid: str
@@ -366,19 +333,246 @@ class Device:
         """Update device encryption requirements based on characteristic properties.
 
         Args:
-            char_data: Parsed characteristic data with properties
+            char_data: The parsed characteristic data with properties
         """
-        if hasattr(char_data, "properties") and char_data.properties:
-            if (
-                "encrypt-read" in char_data.properties
-                or "encrypt-write" in char_data.properties
+        properties = char_data.properties
+
+        # Check for encryption requirements
+        if any(
+            prop in properties
+            for prop in ["encrypt-read", "encrypt-write", "encrypt-notify"]
+        ):
+            self.encryption.requires_encryption = True
+
+        # Check for authentication requirements
+        if any(
+            prop in properties for prop in ["auth-read", "auth-write", "auth-notify"]
+        ):
+            self.encryption.requires_authentication = True
+
+    def _parse_auxiliary_packets(self, aux_ptr: bytes) -> list[BLEAdvertisingPDU]:
+        if len(aux_ptr) != PDUConstants.AUX_PTR:
+            return []
+
+        return []
+
+    def _parse_legacy_advertising(self, raw_data: bytes) -> None:
+        manufacturer_data: dict[int, bytes] = {}
+        service_uuids: list[str] = []
+        local_name: str = ""
+        tx_power: int | None = None
+        flags: int | None = None
+
+        i = 0
+        while i < len(raw_data):
+            if i + 1 >= len(raw_data):
+                break
+
+            length = raw_data[i]
+            if length == 0 or i + length + 1 > len(raw_data):
+                break
+
+            ad_type = raw_data[i + 1]
+            ad_data = raw_data[i + 2 : i + length + 1]
+
+            if ad_type == BLEAdvertisementTypes.FLAGS and len(ad_data) >= 1:
+                flags = ad_data[0]
+            elif ad_type in (
+                BLEAdvertisementTypes.INCOMPLETE_16BIT_SERVICE_UUIDS,
+                BLEAdvertisementTypes.COMPLETE_16BIT_SERVICE_UUIDS,
             ):
-                self.encryption.requires_encryption = True
-            if (
-                "auth-read" in char_data.properties
-                or "auth-write" in char_data.properties
+                for j in range(0, len(ad_data), 2):
+                    if j + 1 < len(ad_data):
+                        uuid_short = ad_data[j] | (ad_data[j + 1] << 8)
+                        service_uuids.append(f"{uuid_short:04X}")
+            elif ad_type in (
+                BLEAdvertisementTypes.SHORTENED_LOCAL_NAME,
+                BLEAdvertisementTypes.COMPLETE_LOCAL_NAME,
             ):
-                self.encryption.requires_authentication = True
+                try:
+                    local_name = ad_data.decode("utf-8")
+                except UnicodeDecodeError:
+                    local_name = ad_data.hex()
+            elif ad_type == BLEAdvertisementTypes.TX_POWER_LEVEL and len(ad_data) >= 1:
+                tx_power = int.from_bytes(ad_data[:1], byteorder="little", signed=True)
+            elif (
+                ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA
+                and len(ad_data) >= 2
+            ):
+                company_id = ad_data[0] | (ad_data[1] << 8)
+                manufacturer_data[company_id] = ad_data[2:]
+
+            i += length + 1
+
+        self.advertiser_data = DeviceAdvertiserData(
+            raw_data=raw_data,
+            local_name=local_name,
+            manufacturer_data=manufacturer_data,
+            service_uuids=service_uuids,
+            tx_power=tx_power,
+            flags=flags,
+        )
+
+        if local_name and not self.name:
+            self.name = local_name
+
+    def _parse_ad_structures(self, data: bytes) -> ParsedADStructures:
+        """Parse advertising data structures from raw bytes.
+
+        Args:
+            data: Raw advertising data payload
+
+        Returns:
+            ParsedADStructures object with extracted data
+        """
+        # pylint: disable=too-many-branches,too-many-statements
+        parsed = ParsedADStructures()
+
+        i = 0
+        while i < len(data):
+            if i + 1 >= len(data):
+                break
+
+            length = data[i]
+            if length == 0 or i + length + 1 > len(data):
+                break
+
+            ad_type = data[i + 1]
+            ad_data = data[i + 2 : i + length + 1]
+
+            if ad_type == BLEAdvertisementTypes.FLAGS and len(ad_data) >= 1:
+                parsed.flags = ad_data[0]
+            elif ad_type in (
+                BLEAdvertisementTypes.INCOMPLETE_16BIT_SERVICE_UUIDS,
+                BLEAdvertisementTypes.COMPLETE_16BIT_SERVICE_UUIDS,
+            ):
+                for j in range(0, len(ad_data), 2):
+                    if j + 1 < len(ad_data):
+                        uuid_short = ad_data[j] | (ad_data[j + 1] << 8)
+                        parsed.service_uuids.append(f"{uuid_short:04X}")
+            elif ad_type in (
+                BLEAdvertisementTypes.SHORTENED_LOCAL_NAME,
+                BLEAdvertisementTypes.COMPLETE_LOCAL_NAME,
+            ):
+                try:
+                    parsed.local_name = ad_data.decode("utf-8")
+                except UnicodeDecodeError:
+                    parsed.local_name = ad_data.hex()
+            elif ad_type == BLEAdvertisementTypes.TX_POWER_LEVEL and len(ad_data) >= 1:
+                parsed.tx_power = int.from_bytes(
+                    ad_data[:1], byteorder="little", signed=True
+                )
+            elif (
+                ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA
+                and len(ad_data) >= 2
+            ):
+                company_id = ad_data[0] | (ad_data[1] << 8)
+                parsed.manufacturer_data[company_id] = ad_data[2:]
+            elif ad_type == BLEAdvertisementTypes.APPEARANCE and len(ad_data) >= 2:
+                parsed.appearance = ad_data[0] | (ad_data[1] << 8)
+            elif (
+                ad_type == BLEAdvertisementTypes.SERVICE_DATA_16BIT
+                and len(ad_data) >= 2
+            ):
+                service_uuid = f"{ad_data[0] | (ad_data[1] << 8):04X}"
+                parsed.service_data[service_uuid] = ad_data[2:]
+            elif ad_type == BLEAdvertisementTypes.URI:
+                try:
+                    parsed.uri = ad_data.decode("utf-8")
+                except UnicodeDecodeError:
+                    parsed.uri = ad_data.hex()
+            elif ad_type == BLEAdvertisementTypes.INDOOR_POSITIONING:
+                parsed.indoor_positioning = ad_data
+            elif ad_type == BLEAdvertisementTypes.TRANSPORT_DISCOVERY_DATA:
+                parsed.transport_discovery_data = ad_data
+            elif ad_type == BLEAdvertisementTypes.LE_SUPPORTED_FEATURES:
+                parsed.le_supported_features = ad_data
+            elif ad_type == BLEAdvertisementTypes.ENCRYPTED_ADVERTISING_DATA:
+                parsed.encrypted_advertising_data = ad_data
+            elif (
+                ad_type
+                == BLEAdvertisementTypes.PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION
+            ):
+                parsed.periodic_advertising_response_timing = ad_data
+            elif ad_type == BLEAdvertisementTypes.ELECTRONIC_SHELF_LABEL:
+                parsed.electronic_shelf_label = ad_data
+            elif ad_type == BLEAdvertisementTypes.THREE_D_INFORMATION_DATA:
+                parsed.three_d_information = ad_data
+            elif ad_type == BLEAdvertisementTypes.BROADCAST_NAME:
+                try:
+                    parsed.broadcast_name = ad_data.decode("utf-8")
+                except UnicodeDecodeError:
+                    parsed.broadcast_name = ad_data.hex()
+            elif ad_type == BLEAdvertisementTypes.BROADCAST_CODE:
+                parsed.broadcast_code = ad_data
+            elif ad_type == BLEAdvertisementTypes.BIGINFO:
+                parsed.biginfo = ad_data
+            elif ad_type == BLEAdvertisementTypes.MESH_MESSAGE:
+                parsed.mesh_message = ad_data
+            elif ad_type == BLEAdvertisementTypes.MESH_BEACON:
+                parsed.mesh_beacon = ad_data
+            elif ad_type == BLEAdvertisementTypes.PUBLIC_TARGET_ADDRESS:
+                for j in range(0, len(ad_data), 6):
+                    if j + 5 < len(ad_data):
+                        addr_bytes = ad_data[j : j + 6]
+                        addr_str = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
+                        parsed.public_target_address.append(addr_str)
+            elif ad_type == BLEAdvertisementTypes.RANDOM_TARGET_ADDRESS:
+                for j in range(0, len(ad_data), 6):
+                    if j + 5 < len(ad_data):
+                        addr_bytes = ad_data[j : j + 6]
+                        addr_str = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
+                        parsed.random_target_address.append(addr_str)
+            elif (
+                ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL
+                and len(ad_data) >= 2
+            ):
+                parsed.advertising_interval = ad_data[0] | (ad_data[1] << 8)
+            elif (
+                ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL_LONG
+                and len(ad_data) >= 3
+            ):
+                parsed.advertising_interval_long = (
+                    ad_data[0] | (ad_data[1] << 8) | (ad_data[2] << 16)
+                )
+            elif (
+                ad_type == BLEAdvertisementTypes.LE_BLUETOOTH_DEVICE_ADDRESS
+                and len(ad_data) >= 6
+            ):
+                addr_bytes = ad_data[:6]
+                parsed.le_bluetooth_device_address = ":".join(
+                    f"{b:02X}" for b in addr_bytes[::-1]
+                )
+            elif ad_type == BLEAdvertisementTypes.LE_ROLE and len(ad_data) >= 1:
+                parsed.le_role = ad_data[0]
+            elif ad_type == BLEAdvertisementTypes.CLASS_OF_DEVICE and len(ad_data) >= 3:
+                parsed.class_of_device = (
+                    ad_data[0] | (ad_data[1] << 8) | (ad_data[2] << 16)
+                )
+            elif ad_type == BLEAdvertisementTypes.SIMPLE_PAIRING_HASH_C:
+                parsed.simple_pairing_hash_c = ad_data
+            elif ad_type == BLEAdvertisementTypes.SIMPLE_PAIRING_RANDOMIZER_R:
+                parsed.simple_pairing_randomizer_r = ad_data
+            elif ad_type == BLEAdvertisementTypes.SECURITY_MANAGER_TK_VALUE:
+                parsed.security_manager_tk_value = ad_data
+            elif ad_type == BLEAdvertisementTypes.SECURITY_MANAGER_OUT_OF_BAND_FLAGS:
+                parsed.security_manager_out_of_band_flags = ad_data
+            elif ad_type == BLEAdvertisementTypes.SLAVE_CONNECTION_INTERVAL_RANGE:
+                parsed.slave_connection_interval_range = ad_data
+            elif ad_type == BLEAdvertisementTypes.SECURE_CONNECTIONS_CONFIRMATION_VALUE:
+                parsed.secure_connections_confirmation = ad_data
+            elif ad_type == BLEAdvertisementTypes.SECURE_CONNECTIONS_RANDOM_VALUE:
+                parsed.secure_connections_random = ad_data
+            elif ad_type == BLEAdvertisementTypes.CHANNEL_MAP_UPDATE_INDICATION:
+                parsed.channel_map_update_indication = ad_data
+            elif ad_type == BLEAdvertisementTypes.PB_ADV:
+                parsed.pb_adv = ad_data
+            elif ad_type == BLEAdvertisementTypes.RESOLVABLE_SET_IDENTIFIER:
+                parsed.resolvable_set_identifier = ad_data
+
+            i += length + 1
+
+        return parsed
 
     async def discover_services(self) -> dict[str, Any]:
         """Discover all services and characteristics from the device.
@@ -457,7 +651,7 @@ class Device:
                 value = await self.read(char_name)
                 resolved_uuid = self._resolve_characteristic_name(char_name)
                 results[resolved_uuid] = value
-            except (OSError, ValueError, KeyError) as exc:
+            except Exception as exc:  # pylint: disable=broad-exception-caught
                 resolved_uuid = self._resolve_characteristic_name(char_name)
                 results[resolved_uuid] = None
                 logging.warning("Failed to read characteristic %s: %s", char_name, exc)
@@ -487,12 +681,48 @@ class Device:
                 await self.write(char_name, data)
                 resolved_uuid = self._resolve_characteristic_name(char_name)
                 results[resolved_uuid] = True
-            except (OSError, ValueError, KeyError) as exc:
+            except Exception as exc:  # pylint: disable=broad-exception-caught
                 resolved_uuid = self._resolve_characteristic_name(char_name)
                 results[resolved_uuid] = False
                 logging.warning("Failed to write characteristic %s: %s", char_name, exc)
 
         return results
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Get cached device info object.
+
+        Returns:
+            DeviceInfo with current device metadata
+        """
+        if self._device_info_cache is None:
+            self._device_info_cache = DeviceInfo(
+                address=self.address,
+                name=self.name,
+                manufacturer_data=self.advertiser_data.manufacturer_data,
+                service_uuids=self.advertiser_data.service_uuids,
+            )
+        else:
+            # Update existing cache object with current data
+            self._device_info_cache.name = self.name
+            self._device_info_cache.manufacturer_data = (
+                self.advertiser_data.manufacturer_data
+            )
+            self._device_info_cache.service_uuids = self.advertiser_data.service_uuids
+        return self._device_info_cache
+
+    @property
+    def name(self) -> str:
+        """Get the device name."""
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set the device name and update cached device_info."""
+        self._name = value
+        # Update existing cache object if it exists
+        if self._device_info_cache is not None:
+            self._device_info_cache.name = value
 
     @property
     def is_connected(self) -> bool:
@@ -501,9 +731,10 @@ class Device:
         Returns:
             True if connected, False otherwise
         """
-        if not self.connection_manager:
+        if self.connection_manager is None:
             return False
-        return self.connection_manager.is_connected
+        # Check if the connection manager has an is_connected property
+        return getattr(self.connection_manager, "is_connected", False)
 
     def get_service_by_uuid(self, service_uuid: str) -> DeviceService | None:
         """Get a service by its UUID.

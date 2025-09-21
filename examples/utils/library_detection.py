@@ -6,42 +6,28 @@ This module handles detection and availability checking of different BLE librari
 
 from __future__ import annotations
 
-import importlib.util
+# Direct imports - will fail at runtime if libraries are not installed
+import bleak_retry_connector  # noqa: F401 # Import to test availability
+import simplepyble as simplepyble_module  # noqa: F401 # Import to test availability
 
 # Check available BLE libraries
 AVAILABLE_LIBRARIES: dict[str, dict[str, str | bool]] = {}
 
 # Note: Plain bleak support removed - only bleak-retry-connector supported
-BLEAK_AVAILABLE = False
+bleak_available = False
 
-# Check for Bleak-retry-connector
-if importlib.util.find_spec("bleak_retry_connector") is not None:
-    AVAILABLE_LIBRARIES["bleak-retry"] = {
-        "module": "bleak_retry_connector",
-        "async": True,
-        "description": "Robust BLE connections with retry logic",
-    }
-    BLEAK_RETRY_AVAILABLE = True
-else:
-    BLEAK_RETRY_AVAILABLE = False
+# Set up available libraries based on successful imports
+AVAILABLE_LIBRARIES["bleak-retry"] = {
+    "module": "bleak_retry_connector",
+    "async": True,
+    "description": "Robust BLE connections with retry logic",
+}
 
-# Check for SimplePyBLE (correct package name)
-SIMPLEPYBLE_AVAILABLE = False
-SIMPLEPYBLE_MODULE = None
-if importlib.util.find_spec("simplepyble") is not None:
-    try:
-        # Import at module scope using importlib to avoid unused-import pylint warnings
-        SIMPLEPYBLE_MODULE = importlib.import_module("simplepyble")  # type: ignore
-    except Exception:  # pylint: disable=broad-exception-caught
-        SIMPLEPYBLE_MODULE = None
-        SIMPLEPYBLE_AVAILABLE = False
-    else:
-        SIMPLEPYBLE_AVAILABLE = True
-        AVAILABLE_LIBRARIES["simplepyble"] = {
-            "module": "simplepyble",
-            "async": False,
-            "description": "Cross-platform BLE library (requires commercial license for commercial use)",
-        }
+AVAILABLE_LIBRARIES["simplepyble"] = {
+    "module": "simplepyble",
+    "async": False,
+    "description": "Cross-platform BLE library (requires commercial license for commercial use)",
+}
 
 
 def show_library_availability() -> bool:

@@ -346,12 +346,8 @@ class TestDevice:
         incomplete_manager = IncompleteManager()
         self.device.attach_connection_manager(incomplete_manager)
 
-        # Should raise AttributeError
-        try:
-            _ = self.device.is_connected
-            raise AssertionError("Should have raised AttributeError")
-        except AttributeError as e:
-            assert "is_connected" in str(e)
+        # Should return False for manager without is_connected property
+        assert self.device.is_connected is False
 
     def test_connection_manager_protocol_interface(self):
         """Test that ConnectionManagerProtocol has the is_connected property."""

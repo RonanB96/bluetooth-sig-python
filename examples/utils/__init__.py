@@ -4,6 +4,12 @@ This package contains utilities split by functionality to improve maintainabilit
 and reduce the size of individual modules.
 """
 
+# Set up path for imports from src directory
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+
 from .bleak_retry_integration import (
     discover_services_bleak_retry,
     handle_notifications_bleak_retry,
@@ -22,10 +28,11 @@ from .device_scanning import (
 )
 from .library_detection import (
     AVAILABLE_LIBRARIES,
-    BLEAK_RETRY_AVAILABLE,
-    SIMPLEPYBLE_AVAILABLE,
-    SIMPLEPYBLE_MODULE,
+    bleak_available,
+    bleak_retry_available,
     show_library_availability,
+    simplepyble_available,
+    simplepyble_module,
 )
 from .mock_data import (
     get_default_characteristic_uuids,
@@ -36,9 +43,10 @@ from .mock_data import (
 __all__ = [
     # Library detection
     "AVAILABLE_LIBRARIES",
-    "BLEAK_RETRY_AVAILABLE",
-    "SIMPLEPYBLE_AVAILABLE",
-    "SIMPLEPYBLE_MODULE",
+    "bleak_available",
+    "bleak_retry_available",
+    "simplepyble_available",
+    "simplepyble_module",
     "show_library_availability",
     # Bleak-retry integration
     "discover_services_bleak_retry",

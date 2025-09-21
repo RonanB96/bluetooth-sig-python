@@ -3,16 +3,11 @@
 
 import argparse
 import asyncio
-import sys
-from pathlib import Path
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-from shared_utils import demo_basic_usage
+from .shared_utils import demo_basic_usage
 
 
-async def main():
+async def main() -> None:
     """Main function for basic usage demonstration."""
     parser = argparse.ArgumentParser(description="Basic bluetooth_sig usage")
     parser.add_argument("--address", required=True, help="BLE device address")

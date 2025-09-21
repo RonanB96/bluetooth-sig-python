@@ -25,99 +25,72 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import sys
 import time
-from pathlib import Path
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Import shared BLE utilities
-from ble_utils import (
-    comprehensive_device_analysis_simpleble,
-)
+from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
 
-# Try to import SimplePyBLE (availability varies by platform)
-try:
-    import simplepyble as simpleble_module
+from .utils.library_detection import (
+    simplepyble_available,
+    simplepyble_module,
+)
 
-    SIMPLEPYBLE_AVAILABLE = True
-    print("✅ SimplePyBLE module loaded")
-except ImportError as e:
-    SIMPLEPYBLE_AVAILABLE = False
-    print("❌ SimplePyBLE not available.")
-    print(
-        "SimplePyBLE requires C++ build tools and may not be available on all platforms."
-    )
-    print("Install with: pip install simplepyble")
-    print("Note: Requires commercial license for commercial use since January 2025.")
-    print(f"Error: {e}")
-    simpleble_module = None
+# Import shared BLE utilities
+from .utils.simpleble_integration import (
+    comprehensive_device_analysis_simpleble,
+)
 
 
-def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict]:
+def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:
     """Scan for BLE devices using SimpleBLE.
 
     Args:
         timeout: Scan duration in seconds
 
     Returns:
-        List of device information dictionaries
+        List of device dictionaries with address, name, and RSSI
     """
-    if not SIMPLEPYBLE_AVAILABLE or simpleble_module is None:
-        print("❌ SimplePyBLE not available")
+    print(f"🔍 Scanning for BLE devices ({timeout}s)...")
+
+    # Get available adapters
+    adapters = simpleble_module.Adapter.get_adapters()  # noqa: F821 # pylint: disable=undefined-variable,no-member
+    if not adapters:
+        print("❌ No BLE adapters found")
         return []
 
-    devices = []
+    adapter = adapters[0]  # Use first adapter
+    print(f"📡 Using adapter: {adapter.identifier()}")
 
-    try:
-        print(f"🔍 Scanning for BLE devices using SimpleBLE ({timeout}s)...")
+    # Start scanning
+    adapter.scan_start()
+    time.sleep(timeout)
+    adapter.scan_stop()
 
-        # Get available adapters
-        adapters = simpleble_module.Adapter.get_adapters()  # pylint: disable=no-member
-        if not adapters:
-            print("❌ No BLE adapters found")
-            return devices
+    # Get scan results
+    scan_results = adapter.scan_get_results()
 
-        adapter = adapters[0]  # Use first adapter
-        print(f"📡 Using adapter: {adapter.identifier()}")
+    devices: list[dict[str, Any]] = []
+    print(f"\n📡 Found {len(scan_results)} devices:")
+    for i, peripheral in enumerate(scan_results, 1):
+        try:
+            name = peripheral.identifier() or "Unknown"
+            address = (
+                peripheral.address() if hasattr(peripheral, "address") else "Unknown"
+            )
+            rssi = peripheral.rssi() if hasattr(peripheral, "rssi") else "N/A"
 
-        # Start scanning
-        adapter.scan_start()
-        time.sleep(timeout)
-        adapter.scan_stop()
+            device_info = {
+                "name": name,
+                "address": address,
+                "rssi": rssi,
+                "peripheral": peripheral,
+            }
+            devices.append(device_info)
 
-        # Get scan results
-        scan_results = adapter.scan_get_results()
+            print(f"  {i}. {name} ({address}) - RSSI: {rssi}dBm")
 
-        print(f"\n📡 Found {len(scan_results)} devices:")
-        for i, peripheral in enumerate(scan_results, 1):
-            try:
-                name = peripheral.identifier() or "Unknown"
-                address = (
-                    peripheral.address()
-                    if hasattr(peripheral, "address")
-                    else "Unknown"
-                )
-                rssi = peripheral.rssi() if hasattr(peripheral, "rssi") else "N/A"
-
-                device_info = {
-                    "name": name,
-                    "address": address,
-                    "rssi": rssi,
-                    "peripheral": peripheral,
-                }
-                devices.append(device_info)
-
-                print(f"  {i}. {name} ({address}) - RSSI: {rssi}dBm")
-
-            except Exception as e:  # pylint: disable=broad-exception-caught
-                print(f"  {i}. Error reading device info: {e}")
-
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"❌ Scanning failed: {e}")
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            print(f"  {i}. Error reading device info: {e}")
 
     return devices
 
@@ -134,7 +107,7 @@ def read_characteristics_simpleble(  # pylint: disable=too-many-locals,too-many-
     Returns:
         Dictionary mapping UUID to (raw_data, char_object) tuples
     """
-    if not SIMPLEPYBLE_AVAILABLE or simpleble_module is None:
+    if not simplepyble_available or simplepyble_module is None:
         print("❌ SimplePyBLE not available")
         return {}
 
@@ -144,7 +117,7 @@ def read_characteristics_simpleble(  # pylint: disable=too-many-locals,too-many-
 
     try:
         # Get adapter
-        adapters = simpleble_module.Adapter.get_adapters()  # pylint: disable=no-member
+        adapters = simpleble_module.Adapter.get_adapters()  # noqa: F821 # pylint: disable=undefined-variable,no-member
         if not adapters:
             print("❌ No BLE adapters found")
             return results
@@ -261,14 +234,14 @@ def read_and_parse_with_simpleble(address: str, target_uuids: list[str] = None) 
     Returns:
         Dictionary of parsed characteristic data or comprehensive analysis results
     """
-    if not SIMPLEPYBLE_AVAILABLE or simpleble_module is None:
+    if not simplepyble_available or simplepyble_module is None:
         print("❌ SimplePyBLE not available")
         return {}
 
     if target_uuids is None:
         # Use comprehensive device analysis for real device discovery
         print("🔍 Using comprehensive device analysis...")
-        return comprehensive_device_analysis_simpleble(address, simpleble_module)
+        return comprehensive_device_analysis_simpleble(address, simpleble_module)  # type: ignore[arg-type] # noqa: F821
 
     # Use targeted reading for specific UUIDs (legacy mode)
     print("📋 Reading specific characteristics...")
@@ -344,7 +317,7 @@ def main():  # pylint: disable=too-many-nested-blocks
 
     args = parser.parse_args()
 
-    if not SIMPLEPYBLE_AVAILABLE:
+    if not simplepyble_available:
         print("❌ SimplePyBLE is not available on this system.")
         print("This example requires SimplePyBLE which needs C++ build tools.")
         print("Install with: pip install simplepyble")

@@ -20,6 +20,11 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Folders to lint/format
+RUFF_FOLDERS="src/ tests/ examples/"
+BLUETOOTH_SIG_FOLDERS="src/bluetooth_sig examples"
+TEST_FOLDERS="tests/"
+
 # Print functions
 print_header() {
     echo -e "${BLUE}=== $1 ===${NC}"
@@ -60,7 +65,7 @@ run_ruff() {
     # Run ruff and capture output, allowing it to fail
     local RUFF_OUTPUT
     set +e  # Temporarily disable exit on error
-    RUFF_OUTPUT=$(ruff check src/ tests/ examples/ 2>&1)
+    RUFF_OUTPUT=$(ruff check $RUFF_FOLDERS 2>&1)
     local RUFF_EXIT_CODE=$?
     set -e  # Re-enable exit on error
 
@@ -84,29 +89,62 @@ run_pylint() {
         return 1
     fi
 
-    # Run pylint and capture output, allowing it to fail
-    local PYLINT_OUTPUT
+    local exit_code=0
+
+    # Run pylint on production code (strict requirements)
+    echo "Checking production code..."
+    local PROD_PYLINT_OUTPUT
     set +e  # Temporarily disable exit on error
-    PYLINT_OUTPUT=$(pylint src/bluetooth_sig examples 2>&1)
+    PROD_PYLINT_OUTPUT=$(pylint $BLUETOOTH_SIG_FOLDERS 2>&1)
     set -e  # Re-enable exit on error
 
-    # Always show the pylint output first
-    echo "$PYLINT_OUTPUT"
-    echo ""
+    # Extract production score
+    PROD_SCORE=$(echo "$PROD_PYLINT_OUTPUT" | sed -n 's/.*rated at \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
+    echo "Production pylint score: $PROD_SCORE/10"
 
-    # Extract score using sed (compatible with BusyBox)
-    SCORE=$(echo "$PYLINT_OUTPUT" | sed -n 's/.*rated at \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
-    echo "Pylint score: $SCORE/10"
-
-    # Fail if score is not exactly 10.00
-    if [ "$SCORE" != "10.00" ]; then
-        print_error "Pylint score must be exactly 10.00/10. Current score: $SCORE/10"
-        echo "Please fix all pylint issues or add justified disable comments."
-        return 1
+    # Production code must be perfect
+    if [ "$PROD_SCORE" != "10.00" ]; then
+        print_error "Production pylint score must be exactly 10.00/10. Current score: $PROD_SCORE/10"
+        echo "Please fix all pylint issues in production code or add justified disable comments."
+        exit_code=1
+    else
+        print_success "Production code achieved perfect pylint score: 10.00/10"
     fi
 
-    print_success "Perfect pylint score achieved: 10.00/10"
-    return 0
+    echo ""
+
+    # Run pylint on tests (more lenient requirements)
+    echo "Checking test code..."
+    local TEST_PYLINT_OUTPUT
+    set +e  # Temporarily disable exit on error
+    TEST_PYLINT_OUTPUT=$(pylint $TEST_FOLDERS 2>&1)
+    set -e  # Re-enable exit on error
+
+    # Extract test score
+    TEST_SCORE=$(echo "$TEST_PYLINT_OUTPUT" | sed -n 's/.*rated at \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
+    echo "Test pylint score: $TEST_SCORE/10"
+
+    # Tests need minimum 8.00 score (reasonable but not perfect)
+    local MIN_TEST_SCORE="8.00"
+    if [ "$(echo "$TEST_SCORE < $MIN_TEST_SCORE" | bc -l 2>/dev/null || echo "1")" = "1" ]; then
+        print_error "Test pylint score must be at least $MIN_TEST_SCORE/10. Current score: $TEST_SCORE/10"
+        echo "Please improve test code quality or add justified disable comments."
+        exit_code=1
+    else
+        print_success "Test code achieved acceptable pylint score: $TEST_SCORE/10 (minimum: $MIN_TEST_SCORE/10)"
+    fi
+
+    # Show detailed output if there were issues
+    if [ $exit_code -ne 0 ]; then
+        echo ""
+        echo "Production pylint output:"
+        echo "$PROD_PYLINT_OUTPUT"
+        echo ""
+        echo "Test pylint output:"
+        echo "$TEST_PYLINT_OUTPUT"
+    fi
+
+    return $exit_code
 }
 
 # Run mypy type checking
@@ -119,25 +157,44 @@ run_mypy() {
         return 0
     fi
 
-    # Run mypy and capture output, allowing it to fail
-    local MYPY_OUTPUT
+    local exit_code=0
+
+    # Run mypy on production code (strict)
+    echo "Checking production code types..."
+    local PROD_MYPY_OUTPUT
     set +e  # Temporarily disable exit on error
-    MYPY_OUTPUT=$(mypy src/bluetooth_sig 2>&1)
-    local MYPY_EXIT_CODE=$?
+    PROD_MYPY_OUTPUT=$(mypy $BLUETOOTH_SIG_FOLDERS 2>&1)
+    local PROD_MYPY_EXIT_CODE=$?
     set -e  # Re-enable exit on error
 
-    if [ $MYPY_EXIT_CODE -eq 0 ]; then
-        print_success "mypy type checking passed"
-        return 0
+    if [ $PROD_MYPY_EXIT_CODE -eq 0 ]; then
+        print_success "Production code type checking passed"
     else
-        # Show the actual mypy output
-        echo "$MYPY_OUTPUT"
-        print_error "mypy type checking failed"
-        echo ""
-        echo "Run with --show-error-codes for more details:"
-        echo "  mypy src/bluetooth_sig --show-error-codes"
-        return 1
+        print_error "Production code type checking failed"
+        echo "$PROD_MYPY_OUTPUT"
+        exit_code=1
     fi
+
+    echo ""
+
+    # Run mypy on tests (more lenient - tests often have type issues due to mocking)
+    echo "Checking test code types..."
+    local TEST_MYPY_OUTPUT
+    set +e  # Temporarily disable exit on error
+    TEST_MYPY_OUTPUT=$(mypy $TEST_FOLDERS 2>&1)
+    local TEST_MYPY_EXIT_CODE=$?
+    set -e  # Re-enable exit on error
+
+    if [ $TEST_MYPY_EXIT_CODE -eq 0 ]; then
+        print_success "Test code type checking passed"
+    else
+        print_warning "Test code has type issues (this is common and often acceptable)"
+        echo "Test mypy output (non-blocking):"
+        echo "$TEST_MYPY_OUTPUT"
+        # Don't set exit_code=1 for test type issues - they're often expected
+    fi
+
+    return $exit_code
 }
 
 # Run shellcheck
@@ -273,8 +330,8 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Individual tools:"
             echo "  --ruff              Run ruff linting (replaces flake8)"
-            echo "  --pylint            Run pylint analysis (must score 10.00/10)"
-            echo "  --mypy              Run mypy type checking"
+            echo "  --pylint            Run pylint analysis (production: 10.00/10, tests: ≥8.00/10)"
+            echo "  --mypy              Run mypy type checking (production: strict, tests: lenient)"
             echo "  --shellcheck        Run shellcheck shell script analysis"
             echo ""
             echo "Examples:"

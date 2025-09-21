@@ -1,32 +1,74 @@
-#!/usr/bin/env python3
-"""Bleak-retry-connector integration utilities for BLE examples.
-
-This module provides bleak-retry-connector specific BLE connection and
-characteristic reading functions with robust retry logic.
-"""
+"""Bleak retry connector integration for BLE device communication."""
 
 from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any
+from typing import Any, Callable
 
-# Check for library availability
-try:
-    # We need to import the actual classes for runtime usage
-    import importlib.util
+# Direct imports - will fail fast if libraries not available
+import bleak  # type: ignore[import]  # noqa: F401
+import bleak_retry_connector  # type: ignore[import]  # noqa: F401
+from bleak import BleakClient, BleakScanner
+from bleak.backends.characteristic import BleakGATTCharacteristic
 
-    from bleak import BleakClient, BleakScanner
-    from bleak.backends.characteristic import BleakGATTCharacteristic
+from bluetooth_sig.device.connection import ConnectionManagerProtocol
 
-    bleak_spec = importlib.util.find_spec("bleak")
-    retry_spec = importlib.util.find_spec("bleak_retry_connector")
 
-    BLEAK_RETRY_AVAILABLE = bleak_spec is not None and retry_spec is not None
-except ImportError:
-    BLEAK_RETRY_AVAILABLE = False
-    BleakClient = None  # type: ignore
-    BleakScanner = None  # type: ignore
+class BleakRetryConnectionManager(ConnectionManagerProtocol):
+    """Connection manager using Bleak with retry connector for robust BLE communication."""
+
+    def __init__(self, address: str, timeout: float = 30.0, max_attempts: int = 3):
+        self.address = address
+        self.timeout = timeout
+        self.max_attempts = max_attempts
+        self.client = BleakClient(address, timeout=timeout)
+
+    async def connect(self) -> None:
+        last_exception = None
+        for attempt in range(self.max_attempts):
+            try:
+                await self.client.connect()
+                return
+            except (OSError, TimeoutError) as e:
+                last_exception = e
+                if attempt < self.max_attempts - 1:
+                    await asyncio.sleep(1.0 * (attempt + 1))
+                else:
+                    raise last_exception from None
+
+    async def disconnect(self) -> None:
+        await self.client.disconnect()
+
+    @property
+    def is_connected(self) -> bool:
+        """Check if the BLE client is connected."""
+        return self.client.is_connected
+
+    async def read_gatt_char(self, char_uuid: str) -> bytes:
+        raw_data = await self.client.read_gatt_char(char_uuid)
+        return bytes(raw_data)
+
+    async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
+        await self.client.write_gatt_char(char_uuid, data)
+
+    async def get_services(self) -> Any:
+        return self.client.services
+
+    async def start_notify(
+        self,
+        char_uuid: str,
+        callback: Callable[[str, bytes], None],
+    ) -> None:
+        def adapted_callback(
+            characteristic: BleakGATTCharacteristic, data: bytearray
+        ) -> None:
+            callback(characteristic.uuid, bytes(data))
+
+        await self.client.start_notify(char_uuid, adapted_callback)
+
+    async def stop_notify(self, char_uuid: str) -> None:
+        await self.client.stop_notify(char_uuid)
 
 
 async def read_characteristics_bleak_retry(
@@ -46,13 +88,10 @@ async def read_characteristics_bleak_retry(
     Returns:
         Dict of {uuid: (data, timestamp)} for successful reads
     """
-    if not BLEAK_RETRY_AVAILABLE or BleakClient is None:
-        raise ImportError("bleak-retry-connector not available")
-
     if not uuids:
         uuids = ["2A19", "2A00"]  # Default: Battery Level, Device Name
 
-    results = {}
+    results: dict[str, tuple[bytes, float]] = {}
     print(f"📱 Reading with bleak-retry-connector (max {max_attempts} attempts)...")
 
     try:
@@ -88,8 +127,9 @@ async def read_characteristics_bleak_retry(
 
                 # Read characteristic
                 data = await client.read_gatt_char(full_uuid)
+                data_bytes = bytes(data)
                 timestamp = time.time()
-                results[uuid.upper()] = (data, timestamp)
+                results[uuid.upper()] = (data_bytes, timestamp)
                 print(f"   ✅ Read {uuid.upper()}: {len(data)} bytes")
 
             except Exception as e:  # pylint: disable=broad-exception-caught
@@ -112,10 +152,6 @@ async def scan_with_bleak_retry(timeout: float = 10.0) -> list[Any]:
     Returns:
         List of discovered devices
     """
-    if not BLEAK_RETRY_AVAILABLE or BleakScanner is None:
-        print("❌ bleak-retry-connector not available for scanning")
-        return []
-
     # For scanning, we can use regular BleakScanner since retry logic
     # is mainly for connections, not scanning
 
@@ -151,17 +187,11 @@ async def discover_services_bleak_retry(  # pylint: disable=too-many-locals
     Returns:
         Dict containing service and characteristic information
     """
-    if not BLEAK_RETRY_AVAILABLE or BleakClient is None:
-        raise ImportError("bleak-retry-connector not available")
-
-    results = {
+    results: dict[str, Any] = {
         "services": [],
         "characteristics": {},
         "descriptors": {},
     }
-
-    print(f"🔍 Discovering services on {address}...")
-
     try:
         # Create client and establish connection with retry logic
         client = BleakClient(address, timeout=timeout)
@@ -188,7 +218,7 @@ async def discover_services_bleak_retry(  # pylint: disable=too-many-locals
         print(f"   🔍 Found {len(service_list)} services")
 
         for service in service_list:
-            service_info = {
+            service_info: dict[str, Any] = {
                 "uuid": service.uuid,
                 "description": service.description,
                 "characteristics": [],
@@ -200,7 +230,7 @@ async def discover_services_bleak_retry(  # pylint: disable=too-many-locals
 
             # Get characteristics for this service
             for char in service.characteristics:
-                char_info = {
+                char_info: dict[str, Any] = {
                     "uuid": char.uuid,
                     "description": char.description,
                     "properties": char.properties,
@@ -214,7 +244,7 @@ async def discover_services_bleak_retry(  # pylint: disable=too-many-locals
 
                 # Get descriptors for this characteristic
                 for desc in char.descriptors:
-                    desc_info = {
+                    desc_info: dict[str, str] = {
                         "uuid": desc.uuid,
                         "description": desc.description,
                     }
@@ -256,9 +286,6 @@ async def handle_notifications_bleak_retry(  # pylint: disable=too-many-locals,t
         ImportError: If bleak-retry-connector not available
         Exception: If connection or notification setup fails
     """
-    if not BLEAK_RETRY_AVAILABLE or BleakClient is None:
-        raise ImportError("bleak-retry-connector not available")
-
     print(f"🔔 Setting up notifications from {address}")
     print(f"   📊 Characteristic: {characteristic_uuid}")
     print(f"   ⏱️  Duration: {duration}s")

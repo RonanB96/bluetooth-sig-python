@@ -7,17 +7,12 @@ This module provides demo functions that were previously in ble_utils.py
 from __future__ import annotations
 
 import asyncio
-import sys
-from pathlib import Path
 from typing import Any
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
-
 from .library_detection import (
-    BLEAK_RETRY_AVAILABLE,
-    SIMPLEPYBLE_AVAILABLE,
-    SIMPLEPYBLE_MODULE,
+    bleak_retry_available,
+    simplepyble_available,
+    simplepyble_module,
 )
 from .simpleble_integration import comprehensive_device_analysis_simpleble
 
@@ -42,7 +37,7 @@ async def demo_library_comparison(
     print("=" * 60)
 
     # Test Bleak-retry
-    if BLEAK_RETRY_AVAILABLE:
+    if bleak_retry_available:
         try:
             print("\n🔁 Running Bleak-retry analysis...")
             if target_uuids is None:
@@ -58,13 +53,13 @@ async def demo_library_comparison(
     await asyncio.sleep(1)
 
     # Test SimplePyBLE
-    if SIMPLEPYBLE_AVAILABLE and SIMPLEPYBLE_MODULE:
+    if simplepyble_available and simplepyble_module:
         try:
             print("\n🔁 Running SimplePyBLE analysis...")
             simple_results = await asyncio.to_thread(
                 comprehensive_device_analysis_simpleble,
                 address,
-                SIMPLEPYBLE_MODULE,
+                simplepyble_module,
             )
             comparison_results["simplepyble"] = simple_results
         except Exception as e:  # pylint: disable=broad-exception-caught

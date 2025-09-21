@@ -6,18 +6,94 @@ This module provides SimplePyBLE-specific BLE connection and characteristic read
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
+import asyncio
+import types
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+import simplepyble
 
 from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.device.connection import ConnectionManagerProtocol
+
+
+class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
+    """Connection manager using SimplePyBLE for BLE communication."""
+
+    def __init__(
+        self, address: str, simpleble_module: types.ModuleType, timeout: float = 30.0
+    ) -> None:
+        self.address = address
+        self.timeout = timeout
+        self.simpleble_module = simpleble_module
+        self.adapter: simplepyble.Adapter | None = None
+        self.peripheral: simplepyble.Peripheral | None = None
+        self.executor = ThreadPoolExecutor(max_workers=1)
+
+    async def connect(self) -> None:
+        def _connect() -> None:
+            adapters = self.simpleble_module.Adapter.get_adapters()
+            if not adapters:
+                raise RuntimeError("No BLE adapters found")
+            self.adapter = adapters[0]
+            self.adapter.scan_for(2000)
+            peripherals = self.adapter.scan_get_results()
+            for p in peripherals:
+                if p.address().upper() == self.address.upper():
+                    self.peripheral = p
+                    break
+            if not self.peripheral:
+                raise RuntimeError(f"Device {self.address} not found")
+            self.peripheral.connect()
+
+        await asyncio.get_event_loop().run_in_executor(self.executor, _connect)
+
+    async def disconnect(self) -> None:
+        if self.peripheral:
+            await asyncio.get_event_loop().run_in_executor(
+                self.executor, self.peripheral.disconnect
+            )
+
+    async def read_gatt_char(self, char_uuid: str) -> bytes:
+        def _read() -> bytes:
+            for service in self.peripheral.services():
+                for char in service.characteristics():
+                    if char.uuid().upper() == char_uuid.upper():
+                        return char.read()
+            raise RuntimeError(f"Characteristic {char_uuid} not found")
+
+        return await asyncio.get_event_loop().run_in_executor(self.executor, _read)
+
+    async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
+        def _write() -> None:
+            for service in self.peripheral.services():
+                for char in service.characteristics():
+                    if char.uuid().upper() == char_uuid.upper():
+                        char.write(data)
+                        return
+            raise RuntimeError(f"Characteristic {char_uuid} not found")
+
+        await asyncio.get_event_loop().run_in_executor(self.executor, _write)
+
+    async def get_services(self) -> object:
+        def _get_services() -> object:
+            return self.peripheral.services()
+
+        return await asyncio.get_event_loop().run_in_executor(
+            self.executor, _get_services
+        )
+
+    async def start_notify(self, char_uuid: str, callback: Any) -> None:
+        # Not implemented: SimplePyBLE notification support
+        raise NotImplementedError("Notification not supported in this example")
+
+    async def stop_notify(self, char_uuid: str) -> None:
+        # Not implemented: SimplePyBLE notification support
+        raise NotImplementedError("Notification not supported in this example")
 
 
 def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals
-    address: str, simpleble_module
+    address: str, simpleble_module: types.ModuleType
 ) -> dict[str, Any]:
     """Analyze a BLE device using SimplePyBLE (synchronous).
 
@@ -29,7 +105,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals
         Dict of analysis results
     """
     print("📱 SimplePyBLE Comprehensive Device Analysis...")
-    results = {}
+    results: dict[str, dict[str, Any]] = {}
 
     try:
         # Initialize SimplePyBLE adapter

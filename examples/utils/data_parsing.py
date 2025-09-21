@@ -6,12 +6,7 @@ This module provides common data parsing and display functions for BLE character
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from typing import Any
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from bluetooth_sig import BluetoothSIGTranslator
 
@@ -46,7 +41,7 @@ async def parse_and_display_results(
         Dict of parsed results
     """
     translator = BluetoothSIGTranslator()
-    parsed_results = {}
+    parsed_results: dict[str, Any] = {}
 
     print(f"\n📊 {library_name} Results with SIG Parsing:")
     print("=" * 50)

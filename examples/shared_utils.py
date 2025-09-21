@@ -3,41 +3,27 @@
 
 from __future__ import annotations
 
-import asyncio
-import importlib.util
-import sys
-from pathlib import Path
 from typing import Any
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.device import Device
+
+# Import Device class for advertising data parsing
+# from bluetooth_sig.device import Device
 
 # Check available BLE libraries
 try:
     from bleak import BleakClient, BleakScanner
 
-    BLEAK_AVAILABLE = True
+    bleak_available = True
 except ImportError:
-    BLEAK_AVAILABLE = False
+    bleak_available = False
 
-SIMPLEPYBLE_AVAILABLE = importlib.util.find_spec("simplepyble") is not None
+try:
+    import simplepyble  # type: ignore[import-untyped]  # noqa: F401
 
-
-def setup_library_check() -> dict[str, bool]:
-    """Check which BLE libraries are available."""
-    return {
-        "bleak": BLEAK_AVAILABLE,
-        "simplepyble": SIMPLEPYBLE_AVAILABLE,
-    }
-
-
-def create_device(address: str) -> Device:
-    """Create a configured Device instance."""
-    translator = BluetoothSIGTranslator()
-    return Device(address, translator)
+    simplepyble_available = True
+except ImportError:
+    simplepyble_available = False
 
 
 def short_uuid(uuid: str) -> str:
@@ -52,63 +38,134 @@ def short_uuid(uuid: str) -> str:
     return u.upper()
 
 
-async def scan_devices(timeout: float = 10.0) -> list:
+async def scan_devices(timeout: float = 10.0) -> list[Any]:
     """Scan for BLE devices using available library."""
-    if not BLEAK_AVAILABLE:
+    if not bleak_available:
         print("Bleak not available for scanning")
         return []
 
     print(f"Scanning for BLE devices ({timeout}s)...")
-    scanner = BleakScanner()
-    devices = await scanner.discover(timeout=timeout)
+    devices = await BleakScanner.discover(timeout=timeout)
+
+    print(f"Found {len(devices)} devices:")
+    for i, device in enumerate(devices, 1):
+        name = getattr(device, "name", None) or "Unknown"
+        address = getattr(device, "address", "Unknown")
+        rssi = getattr(device, "rssi", None)
+        if rssi is not None:
+            print(f"  {i}. {name} ({address}) - RSSI: {rssi}dBm")
+        else:
+            print(f"  {i}. {name} ({address})")
+
     return devices
 
 
-async def read_characteristics(
-    address: str, uuids: list[str] = None
-) -> dict[str, bytes]:
+async def read_characteristics(  # pylint: disable=too-many-locals
+    address: str, target_uuids: list[str] | None = None, timeout: float = 10.0
+) -> dict[str, tuple[bytes, float]]:
     """Read characteristics from a BLE device."""
-    if not BLEAK_AVAILABLE:
-        print("Bleak not available")
+    if not bleak_available:
         return {}
 
-    results = {}
+    results: dict[str, tuple[bytes, float]] = {}
+    print("Reading characteristics...")
+
     try:
-        async with BleakClient(address) as client:
-            if not uuids:
-                # Get all readable characteristics
-                for service in client.services:
+        async with BleakClient(address, timeout=timeout) as client:
+            # Discover services
+            services = client.services
+            print(f"Discovered {len(services.services)} services")
+
+            # If no target UUIDs specified, discover all readable characteristics
+            if target_uuids is None:
+                target_uuids = []
+                for service in services:
                     for char in service.characteristics:
                         if "read" in char.properties:
-                            uuids = uuids or []
-                            uuids.append(char.uuid)
+                            target_uuids.append(str(char.uuid))
+                print(f"Found {len(target_uuids)} readable characteristics")
+            else:
+                # Convert short UUIDs to full format
+                expanded_uuids = []
+                for uuid in target_uuids:
+                    if len(uuid) == 4:  # Short UUID
+                        expanded_uuids.append(f"0000{uuid}-0000-1000-8000-00805F9B34FB")
+                    else:
+                        expanded_uuids.append(uuid)
+                target_uuids = expanded_uuids
 
-            for uuid in uuids or []:
+            for uuid in target_uuids:
                 try:
-                    data = await client.read_gatt_char(uuid)
-                    results[uuid] = data
-                except (OSError, ValueError) as e:
-                    print(f"Failed to read {uuid}: {e}")
-    except (OSError, ValueError, ConnectionError) as e:
+                    import time  # pylint: disable=import-outside-toplevel
+
+                    read_start = time.time()
+                    raw_data = await client.read_gatt_char(uuid)
+                    read_time = time.time() - read_start
+
+                    # Convert bytearray to bytes
+                    raw_data_bytes: bytes = bytes(raw_data)
+
+                    # Use short UUID as key
+                    uuid_key = uuid[4:8].upper() if len(uuid) > 8 else uuid.upper()
+                    results[uuid_key] = (raw_data_bytes, read_time)
+                    print(f"  {uuid_key}: {len(raw_data)} bytes")
+                except Exception as e:  # pylint: disable=broad-exception-caught
+                    uuid_key = uuid[4:8].upper() if len(uuid) > 8 else uuid.upper()
+                    print(f"  {uuid_key}: {e}")
+
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"Connection failed: {e}")
 
     return results
 
 
-def parse_results(raw_results: dict[str, bytes]) -> dict[str, Any]:
-    """Parse raw characteristic data using bluetooth_sig."""
+def parse_results(raw_results: dict[str, tuple[bytes, float]]) -> dict[str, Any]:
+    """Parse raw BLE data using bluetooth_sig."""
     translator = BluetoothSIGTranslator()
-    parsed = {}
+    parsed_results: dict[str, Any] = {}
 
-    for uuid, data in raw_results.items():
+    print("Parsing results with SIG library:")
+
+    for uuid_short, (raw_data, read_time) in raw_results.items():
         try:
-            result = translator.parse_characteristic(uuid, data)
-            parsed[uuid] = result
-        except (ValueError, KeyError, OSError) as e:
-            print(f"Failed to parse {uuid}: {e}")
-            parsed[uuid] = None
+            result = translator.parse_characteristic(uuid_short, raw_data)
 
-    return parsed
+            if result.parse_success:
+                unit_str = f" {result.unit}" if result.unit else ""
+                print(f"  {result.name}: {result.value}{unit_str}")
+                parsed_results[uuid_short] = {
+                    "name": result.name,
+                    "value": result.value,
+                    "unit": result.unit,
+                    "read_time": read_time,
+                    "raw_data": raw_data,
+                }
+            else:
+                print(f"  {uuid_short}: Parse failed - {result.error_message}")
+                parsed_results[uuid_short] = {
+                    "error": result.error_message,
+                    "raw_data": raw_data,
+                }
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            print(f"  {uuid_short}: Exception - {e}")
+            parsed_results[uuid_short] = {
+                "error": str(e),
+                "raw_data": raw_data,
+            }
+
+    return parsed_results
+
+
+def mock_ble_data() -> dict[str, bytes]:
+    """Generate mock BLE data for testing."""
+    return {
+        "2A19": b"\x64",  # Battery Level: 100%
+        "2A29": b"HelloWorld Inc.",  # Manufacturer Name
+        "2A24": b"TestModel",  # Model Number
+        "2A25": b"123456789",  # Serial Number
+        "2A6E": b"\x0a\x00",  # Temperature: 10.00°C
+        "2A6F": b"\x64\x00",  # Humidity: 100.00%
+    }
 
 
 async def demo_basic_usage(address: str) -> None:
@@ -125,16 +182,17 @@ async def demo_basic_usage(address: str) -> None:
     # Parse results
     parsed_results = parse_results(raw_results)
 
-    print(f"Successfully parsed {len(parsed_results)} characteristics")
-    for uuid, result in parsed_results.items():
-        if result is not None:
-            print(f"  {short_uuid(uuid)}: {result}")
+    print(f"\nSuccessfully parsed {len(parsed_results)} characteristics")
 
 
 async def demo_service_discovery(address: str) -> None:
     """Demonstrate service discovery using Device class."""
     print(f"Discovering services on device: {address}")
 
+    # translator = BluetoothSIGTranslator()  # Would need connection manager
+
+    # This would require a connection manager in a real implementation
+    # For demo purposes, we'll show the API
     print("Device class methods available:")
     print("- discover_services()")
     print("- read_multiple(uuids)")
@@ -142,40 +200,3 @@ async def demo_service_discovery(address: str) -> None:
     print("- get_service_by_uuid(uuid)")
     print("- list_characteristics()")
     print("- is_connected property")
-
-
-async def demo_advertising_parsing(raw_data: bytes) -> None:
-    """Demonstrate advertising data parsing."""
-    device = create_device("00:00:00:00:00:00")  # Dummy address
-    device.parse_advertiser_data(raw_data)
-
-    ad_data = device.advertiser_data
-    print(f"Device name: {ad_data.local_name}")
-    print(f"Service UUIDs: {ad_data.service_uuids}")
-    print(f"Manufacturer data: {ad_data.manufacturer_data}")
-    print(f"TX Power: {ad_data.tx_power}")
-
-
-async def demo_notifications(address: str, char_uuid: str) -> None:
-    """Demonstrate notification handling."""
-    if not BLEAK_AVAILABLE:
-        print("Bleak not available")
-        return
-
-    def notification_handler(_sender, data):
-        """Handle incoming notification."""
-        translator = BluetoothSIGTranslator()
-        try:
-            parsed = translator.parse_characteristic(char_uuid, data)
-            print(f"Notification from {short_uuid(char_uuid)}: {parsed}")
-        except (ValueError, KeyError, OSError) as e:
-            print(f"Failed to parse notification: {e}")
-
-    try:
-        async with BleakClient(address) as client:
-            await client.start_notify(char_uuid, notification_handler)
-            print(f"Listening for notifications on {short_uuid(char_uuid)}...")
-            await asyncio.sleep(10)  # Listen for 10 seconds
-            await client.stop_notify(char_uuid)
-    except (OSError, ValueError, ConnectionError) as e:
-        print(f"Notification demo failed: {e}")
