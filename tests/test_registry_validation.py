@@ -6,7 +6,7 @@ import importlib
 import inspect
 import pkgutil
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 
@@ -502,7 +502,7 @@ class TestNameResolutionFallback:
                 self.value_type = "float"
                 super().__post_init__()
 
-            def decode_value(self, data: bytearray, ctx: Optional[Any] = None) -> float:
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
                 return 0.0
 
             def encode_value(self, data: bytearray) -> bytearray:
@@ -593,7 +593,7 @@ class TestNameResolutionFallback:
                 self.value_type = "string"
                 super().__post_init__()
 
-            def decode_value(self, data: bytearray, ctx: Optional[Any] = None) -> str:
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
                 return ""
 
             def encode_value(self, data: bytearray) -> bytearray:
@@ -631,7 +631,7 @@ class TestNameResolutionFallback:
                 self.value_type = "string"
                 super().__post_init__()
 
-            def decode_value(self, data: bytearray, ctx: Optional[Any] = None) -> str:
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
                 return ""
 
             def encode_value(self, data: bytearray) -> bytearray:
@@ -641,6 +641,7 @@ class TestNameResolutionFallback:
             @property
             def unit(self) -> str:
                 return ""
+
         # Should raise UUIDResolutionError when no UUID can be found
         with pytest.raises(UUIDResolutionError):
             UnknownTestCharacteristic(uuid="test", properties=set())
