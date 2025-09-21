@@ -7,7 +7,7 @@ from bluetooth_sig.gatt.characteristics import (
     GlucoseMeasurementCharacteristic,
     GlucoseMeasurementContextCharacteristic,
 )
-from bluetooth_sig.gatt.services import GlucoseService
+from bluetooth_sig.gatt.services.glucose import GlucoseService
 
 
 class TestGlucoseService:

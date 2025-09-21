@@ -81,6 +81,24 @@ class GattServiceRegistry:
         WeightScaleService,
     ]
 
+    __all__ = [
+        "AutomationIOService",
+        "BatteryService",
+        "BodyCompositionService",
+        "CyclingPowerService",
+        "CyclingSpeedAndCadenceService",
+        "DeviceInformationService",
+        "EnvironmentalSensingService",
+        "GenericAccessService",
+        "GenericAttributeService",
+        "GlucoseService",
+        "HealthThermometerService",
+        "HeartRateService",
+        "RunningSpeedAndCadenceService",
+        "WeightScaleService",
+        "BaseGattService",
+    ]
+
     @classmethod
     def get_service_class(cls, uuid: str) -> Optional[type[BaseGattService]]:
         """Get the service class for a given UUID."""

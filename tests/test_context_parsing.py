@@ -12,19 +12,19 @@ class DummyCalibration:
 
 
 class CalibrationCharacteristic:
-    def __init__(self, uuid: str = "calib", properties: set[str] | None = None):
+    def __init__(self, uuid: str = "calib", _properties: set[str] | None = None):
         self._char_uuid = uuid
 
-    def decode_value(self, data: bytearray, ctx=None):
+    def decode_value(self, data: bytearray, _ctx: object | None = None) -> int:
         # simple calibration: single uint8
         return int(data[0])
 
-    def encode_value(self, value):
+    def encode_value(self, value: int) -> bytearray:
         return bytearray([int(value)])
 
 
 class MeasurementCharacteristic:
-    def __init__(self, uuid: str = "meas", properties: set[str] | None = None):
+    def __init__(self, uuid: str = "meas", _properties: set[str] | None = None):
         self._char_uuid = uuid
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None):
@@ -36,7 +36,7 @@ class MeasurementCharacteristic:
                 scale = float(calib.value)
         return raw * scale
 
-    def encode_value(self, value):
+    def encode_value(self, value: int) -> bytearray:
         # not used in test
         return bytearray(int(value).to_bytes(2, byteorder="little", signed=True))
 

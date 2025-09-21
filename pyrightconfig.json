@@ -1,0 +1,43 @@
+{
+  "include": [
+    "src",
+    "examples",
+    "tests"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "**/.venv",
+    "**/node_modules"
+  ],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "strict",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "stubPath": "./stubs",
+  "reportImportCycles": "error",
+  "reportUnusedImport": "warning",
+  "reportUnusedClass": "warning",
+  "reportUnusedFunction": "warning",
+  "reportUnusedVariable": "warning",
+  "reportDuplicateImport": "warning",
+  "pythonPlatform": "Linux",
+  "executionEnvironments": [
+    {
+      "root": "src",
+      "pythonVersion": "3.12",
+      "extraPaths": []
+    },
+    {
+      "root": "examples",
+      "pythonVersion": "3.12",
+      "extraPaths": [
+        "../src"
+      ],
+      "reportMissingImports": false
+    },
+    {
+      "root": "stubs",
+      "typeCheckingMode": "off"
+    }
+  ]
+}

@@ -13,8 +13,18 @@ Key Benefits:
 """
 
 import sys
+from typing import TypedDict
 
 from bluetooth_sig import BluetoothSIGTranslator
+
+
+class TestCase(TypedDict):
+    """Test case structure for characteristic parsing."""
+
+    name: str
+    uuid: str
+    data: bytes
+    description: str
 
 
 def demonstrate_pure_sig_parsing() -> None:
@@ -30,7 +40,7 @@ def demonstrate_pure_sig_parsing() -> None:
     translator = BluetoothSIGTranslator()
 
     # Test data from SIG specifications (realistic device data)
-    test_cases = [
+    test_cases: list[TestCase] = [
         {
             "name": "Battery Level",
             "uuid": "2A19",
@@ -96,8 +106,6 @@ def demonstrate_pure_sig_parsing() -> None:
 
         results[test_case["name"]] = result
         print()
-
-    return results
 
 
 def demonstrate_uuid_resolution() -> None:

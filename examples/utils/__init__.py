@@ -28,7 +28,6 @@ from .device_scanning import (
 )
 from .library_detection import (
     AVAILABLE_LIBRARIES,
-    bleak_available,
     bleak_retry_available,
     show_library_availability,
     simplepyble_available,
@@ -43,7 +42,6 @@ from .mock_data import (
 __all__ = [
     # Library detection
     "AVAILABLE_LIBRARIES",
-    "bleak_available",
     "bleak_retry_available",
     "simplepyble_available",
     "simplepyble_module",

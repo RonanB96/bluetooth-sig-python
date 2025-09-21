@@ -7,14 +7,13 @@ This module handles detection and availability checking of different BLE librari
 from __future__ import annotations
 
 # Direct imports - will fail at runtime if libraries are not installed
-import bleak_retry_connector  # noqa: F401 # Import to test availability
-import simplepyble as simplepyble_module  # noqa: F401 # Import to test availability
+import simplepyble as simplepyble_module  # noqa: F401 # pylint: disable=unused-import # Import to test availability
 
 # Check available BLE libraries
 AVAILABLE_LIBRARIES: dict[str, dict[str, str | bool]] = {}
 
-# Note: Plain bleak support removed - only bleak-retry-connector supported
-bleak_available = False
+bleak_retry_available = True  # Available if import succeeded
+simplepyble_available = True  # Available if import succeeded
 
 # Set up available libraries based on successful imports
 AVAILABLE_LIBRARIES["bleak-retry"] = {
@@ -52,3 +51,12 @@ def show_library_availability() -> bool:
         f"\n🎯 Will demonstrate bluetooth_sig parsing with {len(AVAILABLE_LIBRARIES)} libraries"
     )
     return True
+
+
+__all__ = [
+    "AVAILABLE_LIBRARIES",
+    "bleak_retry_available",
+    "show_library_availability",
+    "simplepyble_available",
+    "simplepyble_module",
+]

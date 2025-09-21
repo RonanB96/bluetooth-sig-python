@@ -1,19 +1,13 @@
 #!/usr/bin/env python3
 """Tests for examples that can run without real devices."""
 
-import sys
 import time
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-# Add examples to path
-examples_path = Path(__file__).parent.parent / "examples"
-sys.path.insert(0, str(examples_path))
-
-# Import example modules and utilities
-from utils import (  # noqa: E402
+# Import example modules and utilities via package
+from examples.utils import (
     AVAILABLE_LIBRARIES,
     mock_ble_data,
     parse_and_display_results,
@@ -93,7 +87,7 @@ class TestAdvertisingParsing:
     @pytest.mark.asyncio
     async def test_advertising_parsing_with_mock_data(self, capsys):
         """Test advertising parsing with mock data."""
-        from advertising_parsing import main
+        from examples.advertising_parsing import main
 
         # Mock sys.argv to simulate no --data argument
         with patch("sys.argv", ["advertising_parsing.py"]):
@@ -110,7 +104,7 @@ class TestAdvertisingParsing:
     @pytest.mark.asyncio
     async def test_advertising_parsing_with_hex_data(self, capsys):
         """Test advertising parsing with provided hex data."""
-        from advertising_parsing import main
+        from examples.advertising_parsing import main
 
         # Mock sys.argv to simulate --data argument
         test_hex = "020106030318180f0962543532"
@@ -125,7 +119,7 @@ class TestAdvertisingParsing:
     @pytest.mark.asyncio
     async def test_advertising_parsing_invalid_hex(self, capsys):
         """Test advertising parsing with invalid hex data."""
-        from advertising_parsing import main
+        from examples.advertising_parsing import main
 
         # Mock sys.argv with invalid hex
         with patch("sys.argv", ["advertising_parsing.py", "--data", "invalid_hex"]):
@@ -140,7 +134,7 @@ class TestPureSigParsing:
 
     def test_pure_sig_parsing_demo(self, capsys):
         """Test the pure SIG parsing demonstration."""
-        from pure_sig_parsing import demonstrate_pure_sig_parsing
+        from examples.pure_sig_parsing import demonstrate_pure_sig_parsing
 
         demonstrate_pure_sig_parsing()
         captured = capsys.readouterr()
@@ -152,7 +146,7 @@ class TestPureSigParsing:
 
     def test_pure_sig_parsing_batch_demo(self, capsys):
         """Test the batch parsing demonstration."""
-        from pure_sig_parsing import demonstrate_batch_parsing
+        from examples.pure_sig_parsing import demonstrate_batch_parsing
 
         demonstrate_batch_parsing()
         captured = capsys.readouterr()

@@ -214,9 +214,14 @@ class TestGasSensorCharacteristics:
         for char_class in characteristics:
             char = char_class(uuid="", properties=set())
             # Remove debug output and set correct expectations
-            assert (
-                char.value_type in ["int", "float", "string", "bytes"]
-            )  # Accept current automatic parsing    def test_extended_gas_sensor_characteristics(self):
+            assert char.value_type in [
+                "int",
+                "float",
+                "string",
+                "bytes",
+            ]  # Accept current automatic parsing
+
+    def test_extended_gas_sensor_characteristics(self):
         """Test extended gas sensor characteristics not covered in other tests."""
         # Test Methane
         methane_char = MethaneConcentrationCharacteristic(uuid="", properties=set())

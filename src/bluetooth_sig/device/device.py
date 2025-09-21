@@ -116,8 +116,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             service_name: Name or enum of the service to add
             characteristics: Dictionary mapping characteristic UUIDs to raw data
         """
-        # Get the service UUID from the name
-        service_uuid = self.translator.get_service_uuid(service_name)
+        # Resolve service UUID: accept UUID-like strings directly, else ask translator
+        # service_uuid can be a string or None (translator may return None)
+        service_uuid: str | None
+        if isinstance(service_name, str) and _is_uuid_like(service_name):
+            service_uuid = service_name
+        else:
+            service_uuid = self.translator.get_service_uuid(service_name)
+
         if not service_uuid:
             # Fallback to unknown service if UUID not found
             service: BaseGattService = UnknownService()

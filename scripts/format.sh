@@ -61,6 +61,7 @@ run_ruff() {
         local exit_code=0
 
         # Check formatting
+        # shellcheck disable=SC2086  # RUFF_FOLDERS is intentionally space-separated
         if ! ruff format --check $RUFF_FOLDERS; then
             print_error "ruff formatting issues found"
             echo "Run './scripts/format.sh --fix' to fix formatting"
@@ -70,6 +71,7 @@ run_ruff() {
         fi
 
         # Check linting (including import sorting)
+        # shellcheck disable=SC2086  # RUFF_FOLDERS is intentionally space-separated
         if ! ruff check $RUFF_FOLDERS; then
             print_error "ruff linting issues found"
             echo "Run './scripts/format.sh --fix' to fix issues"
@@ -83,10 +85,12 @@ run_ruff() {
         print_header "Formatting code with ruff"
 
         # Fix formatting
+        # shellcheck disable=SC2086  # RUFF_FOLDERS is intentionally space-separated
         ruff format $RUFF_FOLDERS
         print_success "Code formatted with ruff"
 
         # Fix linting issues (including import sorting)
+        # shellcheck disable=SC2086  # RUFF_FOLDERS is intentionally space-separated
         ruff check --fix $unsafe_flag $RUFF_FOLDERS
         if [ -n "$unsafe_flag" ]; then
             print_success "Code linting issues fixed with ruff (including unsafe fixes)"

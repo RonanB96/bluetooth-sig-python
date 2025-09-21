@@ -188,7 +188,7 @@ result = translator.parse_characteristic(uuid, raw_data)
 print(f"Value: {result.value} {result.unit}")
 ```
 
-**Supported BLE Libraries**: bleak, bleak-retry-connector, simplepyble, or any custom BLE implementation.
+**Supported BLE Libraries**: bleak-retry-connector, simplepyble, or any custom BLE implementation.
 
 ---
 

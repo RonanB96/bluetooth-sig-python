@@ -12,14 +12,14 @@ from bluetooth_sig import BluetoothSIGTranslator
 
 # Check available BLE libraries
 try:
-    from bleak import BleakClient, BleakScanner
+    import importlib.util
 
-    bleak_available = True
+    bleak_available = importlib.util.find_spec("bleak") is not None
 except ImportError:
     bleak_available = False
 
 try:
-    import simplepyble  # type: ignore[import-untyped]  # noqa: F401
+    import simplepyble  # type: ignore[import-untyped]  # noqa: F401 # pylint: disable=unused-import
 
     simplepyble_available = True
 except ImportError:
@@ -44,6 +44,8 @@ async def scan_devices(timeout: float = 10.0) -> list[Any]:
         print("Bleak not available for scanning")
         return []
 
+    from bleak import BleakScanner  # type: ignore[import-untyped]
+
     print(f"Scanning for BLE devices ({timeout}s)...")
     devices = await BleakScanner.discover(timeout=timeout)
 
@@ -67,6 +69,8 @@ async def read_characteristics(  # pylint: disable=too-many-locals
     if not bleak_available:
         return {}
 
+    from bleak import BleakClient  # type: ignore[import-untyped]
+
     results: dict[str, tuple[bytes, float]] = {}
     print("Reading characteristics...")
 
@@ -86,7 +90,7 @@ async def read_characteristics(  # pylint: disable=too-many-locals
                 print(f"Found {len(target_uuids)} readable characteristics")
             else:
                 # Convert short UUIDs to full format
-                expanded_uuids = []
+                expanded_uuids: list[str] = []
                 for uuid in target_uuids:
                     if len(uuid) == 4:  # Short UUID
                         expanded_uuids.append(f"0000{uuid}-0000-1000-8000-00805F9B34FB")

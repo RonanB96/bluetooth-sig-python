@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import types
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
+from typing import Any, cast
 
 import simplepyble
 
@@ -56,7 +56,9 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
 
     async def read_gatt_char(self, char_uuid: str) -> bytes:
         def _read() -> bytes:
-            for service in self.peripheral.services():
+            p = self.peripheral
+            assert p is not None
+            for service in p.services():
                 for char in service.characteristics():
                     if char.uuid().upper() == char_uuid.upper():
                         return char.read()
@@ -66,10 +68,12 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
 
     async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
         def _write() -> None:
-            for service in self.peripheral.services():
+            p = self.peripheral
+            assert p is not None
+            for service in p.services():
                 for char in service.characteristics():
                     if char.uuid().upper() == char_uuid.upper():
-                        char.write(data)
+                        cast(Any, char).write(data)
                         return
             raise RuntimeError(f"Characteristic {char_uuid} not found")
 
@@ -77,7 +81,9 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
 
     async def get_services(self) -> object:
         def _get_services() -> object:
-            return self.peripheral.services()
+            p = self.peripheral
+            assert p is not None
+            return p.services()
 
         return await asyncio.get_event_loop().run_in_executor(
             self.executor, _get_services

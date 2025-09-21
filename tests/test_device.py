@@ -308,13 +308,13 @@ class TestDevice:
                 self.address = "AA:BB:CC:DD:EE:FF"
 
             @property
-            def is_connected(self):
-                return None
+            def is_connected(self) -> bool:
+                return False
 
         none_manager = NoneManager()
         self.device.attach_connection_manager(none_manager)
         result = self.device.is_connected
-        assert result is None
+        assert result is False
 
     def test_is_connected_error_handling(self):
         """Test is_connected property error handling."""
@@ -325,7 +325,7 @@ class TestDevice:
                 self.address = "AA:BB:CC:DD:EE:FF"
 
             @property
-            def is_connected(self):
+            def is_connected(self) -> bool:
                 raise RuntimeError("Connection check failed")
 
         faulty_manager = FaultyManager()

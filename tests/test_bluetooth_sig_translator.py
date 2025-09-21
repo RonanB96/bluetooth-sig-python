@@ -196,7 +196,7 @@ class TestBluetoothSIGTranslator:
         # Test batch parsing
         char_data = {
             "2A19": b"\x64",  # Battery Level: 100%
-            "2A6E": bytearray([0x90, 0x01]),  # Temperature: 4.0°C
+            "2A6E": bytes(bytearray([0x90, 0x01])),  # Temperature: 4.0°C
         }
 
         results = translator.parse_characteristics(char_data)

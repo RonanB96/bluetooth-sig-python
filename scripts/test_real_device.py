@@ -16,6 +16,7 @@ sys.path.insert(0, str(script_dir.parent / "src"))
 
 try:
     from bleak import BleakClient, BleakScanner
+
     from bluetooth_sig import BluetoothSIGTranslator
 
     DEPENDENCIES_AVAILABLE = True
@@ -36,16 +37,16 @@ async def test_device_connection(mac_address: str):
     """Test connection to a real device using Bleak."""
     print(f"\n🔍 Testing connection to device: {mac_address}")
     print("=" * 60)
-    
+
     translator = BluetoothSIGTranslator()
-    
+
     try:
         async with BleakClient(mac_address) as client:
             print(f"✅ Connected to {mac_address}")
-            
+
             # Allow device to settle after connection
             await asyncio.sleep(0.5)
-            
+
             # Get device information
             device_name = client.address
             try:
@@ -53,24 +54,24 @@ async def test_device_connection(mac_address: str):
                 device_name = getattr(client._device, 'name', None) or client.address
             except Exception:
                 device_name = client.address
-            
+
             print(f"� Device: {device_name}")
-            
+
             # Discover services
             print("🔍 Discovering services...")
             services = client.services
-            
+
             if not services:
                 print("⚠️ No services discovered")
                 return False
-            
+
             print(f"📋 Found {len(services)} services:")
-            
+
             # Print services and characteristics
             for service in services:
                 service_info = translator.translate_service(service.uuid)
                 print(f"\n� Service: {service_info.name} ({service.uuid})")
-                
+
                 chars = service.characteristics
                 print(f"   └─ {len(chars)} characteristics:")
                 for characteristic in chars:
@@ -83,7 +84,7 @@ async def test_device_connection(mac_address: str):
             print("\n🔍 Reading all readable characteristics...")
             values = {}
             chars_read = 0
-            
+
             for service in services:
                 for characteristic in service.characteristics:
                     if "read" in characteristic.properties:
@@ -91,7 +92,7 @@ async def test_device_connection(mac_address: str):
                             data = await client.read_gatt_char(characteristic.uuid)
                             values[str(characteristic.uuid)] = data
                             chars_read += 1
-                            
+
                             if len(data) == 0:
                                 print(f"  ⚠️  {characteristic.uuid}: Empty data (0 bytes)")
                             else:
@@ -112,21 +113,21 @@ async def test_device_connection(mac_address: str):
             # Parse with bluetooth_sig framework
             print(f"\n🏗️  Testing bluetooth_sig framework integration... (read {chars_read} characteristics)")
             parsed_count = 0
-            
+
             for char_uuid, data in values.items():
                 try:
                     # Parse the data using bluetooth_sig
                     parsed_data = translator.parse_characteristic_data(char_uuid, data)
-                    
+
                     if parsed_data.value is not None:
                         unit_str = f" {parsed_data.unit}" if parsed_data.unit else ""
                         char_info = translator.translate_characteristic(char_uuid)
                         print(f"  ✅ {char_info.name}: {parsed_data.value}{unit_str}")
                         parsed_count += 1
-                except Exception as e:
+                except Exception:
                     # Silently skip unparseable characteristics
                     pass
-            
+
             if parsed_count > 0:
                 print(f"\n✅ Successfully parsed {parsed_count} characteristics using framework")
             else:
@@ -134,7 +135,7 @@ async def test_device_connection(mac_address: str):
 
             # Enhanced SIG translator analysis
             print("\n🔍 Enhanced SIG Analysis...")
-            
+
             if values:
                 discovered_uuids = list(values.keys())
                 print(f"📊 Analyzing {len(discovered_uuids)} discovered "
@@ -167,7 +168,7 @@ async def test_device_connection(mac_address: str):
 
             print("\n✅ Test completed successfully")
             return True
-        
+
     except Exception as e:
         print(f"❌ Connection failed: {e}")
         return False

@@ -4,6 +4,7 @@ import importlib
 import inspect
 import pkgutil
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -19,7 +20,7 @@ def discover_service_classes() -> list[type[BaseGattService]]:
     services_module = importlib.import_module("bluetooth_sig.gatt.services")
 
     # Get the services package path
-    services_path = Path(services_module.__file__).parent
+    services_path = Path(str(services_module.__file__)).parent
 
     # Iterate through all Python files in the services directory
     for module_info in pkgutil.iter_modules([str(services_path)]):
@@ -51,7 +52,7 @@ def discover_characteristic_classes() -> list[type[BaseCharacteristic]]:
     )
 
     # Get the characteristics package path
-    characteristics_path = Path(characteristics_module.__file__).parent
+    characteristics_path = Path(str(characteristics_module.__file__)).parent
 
     # Iterate through all Python files in the characteristics directory
     for module_info in pkgutil.iter_modules([str(characteristics_path)]):
@@ -86,7 +87,9 @@ class TestServiceRegistryValidation:
         """Get all service classes."""
         return discover_service_classes()
 
-    def test_all_services_discovered(self, service_classes: list[BaseGattService]):
+    def test_all_services_discovered(
+        self, service_classes: list[type[BaseGattService]]
+    ):
         """Test that services were discovered."""
         assert len(service_classes) > 0, "No service classes were discovered"
 
@@ -95,7 +98,7 @@ class TestServiceRegistryValidation:
         print(f"Discovered services: {service_names}")
 
     @pytest.mark.parametrize("service_class", discover_service_classes())
-    def test_service_uuid_resolution(self, service_class: BaseGattService):
+    def test_service_uuid_resolution(self, service_class: type[BaseGattService]):
         """Test that each service can resolve its UUID from the registry."""
         try:
             # Create an instance to trigger UUID resolution
@@ -117,7 +120,7 @@ class TestServiceRegistryValidation:
             pytest.fail(f"Service {service_class.__name__} failed UUID resolution: {e}")
 
     @pytest.mark.parametrize("service_class", discover_service_classes())
-    def test_service_in_yaml_registry(self, service_class: BaseGattService):
+    def test_service_in_yaml_registry(self, service_class: type[BaseGattService]):
         """Test that each service exists in the YAML registry with correct info."""
         try:
             service_instance = service_class()
@@ -150,7 +153,9 @@ class TestServiceRegistryValidation:
             )
 
     @pytest.mark.parametrize("service_class", discover_service_classes())
-    def test_service_expected_characteristics(self, service_class: BaseGattService):
+    def test_service_expected_characteristics(
+        self, service_class: type[BaseGattService]
+    ):
         """Test that all expected characteristics for each service are valid."""
         try:
             service = service_class()
@@ -187,7 +192,9 @@ class TestServiceRegistryValidation:
             )
 
     @pytest.mark.parametrize("service_class", discover_service_classes())
-    def test_service_required_characteristics(self, service_class: BaseGattService):
+    def test_service_required_characteristics(
+        self, service_class: type[BaseGattService]
+    ):
         """Test that all required characteristics for each service are valid."""
         try:
             service = service_class()
@@ -223,7 +230,7 @@ class TestCharacteristicRegistryValidation:
         return discover_characteristic_classes()
 
     def test_all_characteristics_discovered(
-        self, characteristic_classes: list[BaseCharacteristic]
+        self, characteristic_classes: list[type[BaseCharacteristic]]
     ):
         """Test that characteristics were discovered."""
         assert len(characteristic_classes) > 0, (
@@ -235,7 +242,7 @@ class TestCharacteristicRegistryValidation:
         print(f"Discovered characteristics: {char_names}")
 
     @pytest.mark.parametrize("char_class", discover_characteristic_classes())
-    def test_characteristic_uuid_resolution(self, char_class: BaseCharacteristic):
+    def test_characteristic_uuid_resolution(self, char_class: type[BaseCharacteristic]):
         """Test that each characteristic can resolve its UUID from the registry."""
         try:
             # Create an instance to trigger UUID resolution
@@ -259,7 +266,9 @@ class TestCharacteristicRegistryValidation:
             )
 
     @pytest.mark.parametrize("char_class", discover_characteristic_classes())
-    def test_characteristic_in_yaml_registry(self, char_class: BaseCharacteristic):
+    def test_characteristic_in_yaml_registry(
+        self, char_class: type[BaseCharacteristic]
+    ):
         """Test that each characteristic exists in the YAML registry with correct information."""
         try:
             char = char_class(uuid="test", properties=set())
@@ -296,7 +305,7 @@ class TestCharacteristicRegistryValidation:
             )
 
     @pytest.mark.parametrize("char_class", discover_characteristic_classes())
-    def test_characteristic_properties(self, char_class: BaseCharacteristic):
+    def test_characteristic_properties(self, char_class: type[BaseCharacteristic]):
         """Test that each characteristic has valid properties."""
         try:
             char = char_class(uuid="test", properties=set())
@@ -337,7 +346,7 @@ class TestCharacteristicRegistryValidation:
             )
 
     @pytest.mark.parametrize("char_class", discover_characteristic_classes())
-    def test_characteristic_name_resolution(self, char_class: BaseCharacteristic):
+    def test_characteristic_name_resolution(self, char_class: type[BaseCharacteristic]):
         """Test that each characteristic can resolve its name correctly."""
         try:
             char = char_class(uuid="test", properties=set())
@@ -491,10 +500,10 @@ class TestNameResolutionFallback:
                 self.value_type = "float"
                 super().__post_init__()
 
-            def decode_value(self, data: bytearray) -> float:
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
                 return 0.0
 
-            def encode_value(self, data) -> bytearray:
+            def encode_value(self, data: bytearray) -> bytearray:
                 """Test implementation."""
                 return bytearray([0, 0])
 
@@ -582,10 +591,10 @@ class TestNameResolutionFallback:
                 self.value_type = "string"
                 super().__post_init__()
 
-            def decode_value(self, data: bytearray) -> str:
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
                 return ""
 
-            def encode_value(self, data) -> bytearray:
+            def encode_value(self, data: bytearray) -> bytearray:
                 """Test implementation."""
                 return bytearray()
 
@@ -620,10 +629,10 @@ class TestNameResolutionFallback:
                 self.value_type = "string"
                 super().__post_init__()
 
-            def decode_value(self, data: bytearray) -> str:
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
                 return ""
 
-            def encode_value(self, data) -> bytearray:
+            def encode_value(self, data: bytearray) -> bytearray:
                 """Test implementation."""
                 return bytearray()
 

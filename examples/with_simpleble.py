@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SimplePyBLE integration example - cross-platform BLE library with SIG parsing.
+"""SimplePyBLE integration example
 
 This example demonstrates using SimplePyBLE as an alternative BLE library combined
 with bluetooth_sig for standards-compliant data parsing. SimplePyBLE offers a
@@ -28,20 +28,15 @@ import argparse
 import time
 from typing import Any
 
+import simplepyble as simplepyble_module
+
 from bluetooth_sig import BluetoothSIGTranslator
 
-from .utils.library_detection import (
-    simplepyble_available,
-    simplepyble_module,
-)
-
-# Import shared BLE utilities
-from .utils.simpleble_integration import (
-    comprehensive_device_analysis_simpleble,
-)
+from .utils.library_detection import simplepyble_available
+from .utils.simpleble_integration import comprehensive_device_analysis_simpleble
 
 
-def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:
+def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:  # type: ignore
     """Scan for BLE devices using SimpleBLE.
 
     Args:
@@ -50,10 +45,31 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:
     Returns:
         List of device dictionaries with address, name, and RSSI
     """
+    # mypy doesn't understand optional imports, so ignore type checking for this function
+    if not simplepyble_available:  # type: ignore[possibly-unbound]
+        print("❌ SimplePyBLE not available")
+        return []
+
+    # At this point we know simplepyble is available
+    assert simplepyble_module is not None
+
     print(f"🔍 Scanning for BLE devices ({timeout}s)...")
 
     # Get available adapters
-    adapters = simpleble_module.Adapter.get_adapters()  # noqa: F821 # pylint: disable=undefined-variable,no-member
+    adapters: Any
+    if hasattr(simplepyble_module, "Adapter") and hasattr(
+        simplepyble_module.Adapter, "get_adapters"
+    ):
+        adapters = simplepyble_module.Adapter.get_adapters()  # type: ignore[attr-defined]
+    elif hasattr(simplepyble_module, "get_adapters"):
+        adapters = simplepyble_module.get_adapters()  # type: ignore[attr-defined]
+    else:
+        print("❌ SimplePyBLE API for adapter discovery not found")
+        return []
+    if not adapters:
+        print("❌ No BLE adapters found")
+        return []
+    adapter: Any = adapters[0]  # type: ignore[index]
     if not adapters:
         print("❌ No BLE adapters found")
         return []
@@ -95,9 +111,9 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:
     return devices
 
 
-def read_characteristics_simpleble(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-nested-blocks
-    address: str, target_uuids: list[str] = None
-) -> dict:
+def read_characteristics_simpleble(  # type: ignore # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-nested-blocks
+    address: str, target_uuids: list[str] | None = None
+) -> dict[str, Any]:
     """Read characteristics from a BLE device using SimpleBLE.
 
     Args:
@@ -111,13 +127,13 @@ def read_characteristics_simpleble(  # pylint: disable=too-many-locals,too-many-
         print("❌ SimplePyBLE not available")
         return {}
 
-    results = {}
+    results: dict[str, Any] = {}
 
     print(f"🔵 Connecting to device using SimpleBLE: {address}")
 
     try:
         # Get adapter
-        adapters = simpleble_module.Adapter.get_adapters()  # noqa: F821 # pylint: disable=undefined-variable,no-member
+        adapters = simplepyble_module.Adapter.get_adapters()  # noqa: F821 # pylint: disable=undefined-variable,no-member
         if not adapters:
             print("❌ No BLE adapters found")
             return results
@@ -196,15 +212,20 @@ def read_characteristics_simpleble(  # pylint: disable=too-many-locals,too-many-
                             print("     ⚠️  No data read")
                             continue
 
-                        # Convert to bytes if needed
-                        if hasattr(raw_data, "__iter__") and not isinstance(
-                            raw_data, (str, bytes)
+                        # Convert to bytes if needed. Cast to Any to avoid example-only mypy errors
+                        from typing import Any as _Any
+
+                        raw_any: _Any = raw_data
+
+                        if isinstance(raw_any, str):
+                            raw_bytes = raw_any.encode("utf-8")
+                        elif hasattr(raw_any, "__iter__") and not isinstance(
+                            raw_any, bytes
                         ):
-                            raw_bytes = bytes(raw_data)
-                        elif isinstance(raw_data, str):
-                            raw_bytes = raw_data.encode("utf-8")
+                            # raw_any is an iterable of ints (e.g., array-like), convert to bytes
+                            raw_bytes = bytes(raw_any)  # type: ignore[arg-type]
                         else:
-                            raw_bytes = raw_data
+                            raw_bytes = raw_any
 
                         results[char_uuid_short] = (raw_bytes, char)
 
@@ -224,7 +245,9 @@ def read_characteristics_simpleble(  # pylint: disable=too-many-locals,too-many-
     return results
 
 
-def read_and_parse_with_simpleble(address: str, target_uuids: list[str] = None) -> dict:
+def read_and_parse_with_simpleble(
+    address: str, target_uuids: list[str] | None = None
+) -> dict[str, Any]:
     """Read characteristics from a BLE device using SimpleBLE and parse with SIG standards.
 
     Args:
@@ -241,7 +264,7 @@ def read_and_parse_with_simpleble(address: str, target_uuids: list[str] = None) 
     if target_uuids is None:
         # Use comprehensive device analysis for real device discovery
         print("🔍 Using comprehensive device analysis...")
-        return comprehensive_device_analysis_simpleble(address, simpleble_module)  # type: ignore[arg-type] # noqa: F821
+        return comprehensive_device_analysis_simpleble(address, simplepyble_module)  # type: ignore[arg-type] # noqa: F821 # pylint: disable=undefined-variable
 
     # Use targeted reading for specific UUIDs (legacy mode)
     print("📋 Reading specific characteristics...")
@@ -285,7 +308,7 @@ def handle_device_operations_simpleble(args: argparse.Namespace) -> None:
         display_simpleble_results(results)
 
 
-def display_simpleble_results(results: dict) -> None:
+def display_simpleble_results(results: dict[str, Any]) -> None:
     """Display SimpleBLE results in a consistent format."""
     if "stats" in results:
         if results["parsed_data"]:
@@ -301,7 +324,7 @@ def display_simpleble_results(results: dict) -> None:
                 )
 
 
-def main():  # pylint: disable=too-many-nested-blocks
+def main() -> None:  # pylint: disable=too-many-nested-blocks
     """Main function demonstrating SimpleBLE + bluetooth_sig integration."""
     parser = argparse.ArgumentParser(
         description="SimpleBLE + bluetooth_sig integration example"

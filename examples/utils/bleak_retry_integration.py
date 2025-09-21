@@ -7,8 +7,8 @@ import time
 from typing import Any, Callable
 
 # Direct imports - will fail fast if libraries not available
-import bleak  # type: ignore[import]  # noqa: F401
-import bleak_retry_connector  # type: ignore[import]  # noqa: F401
+import bleak  # type: ignore[import]  # noqa: F401 # pylint: disable=unused-import
+import bleak_retry_connector  # type: ignore[import]  # noqa: F401 # pylint: disable=unused-import
 from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
