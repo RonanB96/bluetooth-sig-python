@@ -42,7 +42,7 @@ homepage = "https://github.com/RonanB96/bluetooth_sig_python"
 dev = [
     "pytest~=8.4",
     "pytest-asyncio~=1.1",
-    "pytest-cov~=6.2",
+    "pytest-cov>=6.2,<8",
     "pylint~=3.3",
     "ruff~=0.1",
     "mypy~=1.0",
@@ -53,7 +53,7 @@ dev = [
 test = [
     "pytest==8.4.2",
     "pytest-asyncio==1.1.0",
-    "pytest-cov==7.0.0",
+    "pytest-cov>=6.2,<8",
 ]
 examples = [
     # BLE libraries for example integrations (now required in main dependencies)
