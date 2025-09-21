@@ -33,7 +33,7 @@ async def debug_ble_device(target_address: str) -> None:
     Args:
         target_address: MAC address of the BLE device to debug
     """
-    print(f"=== BLE Device Debugger ===")
+    print("=== BLE Device Debugger ===")
     print(f"Target: {target_address}")
     print()
 

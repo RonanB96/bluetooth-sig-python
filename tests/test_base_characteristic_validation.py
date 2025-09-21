@@ -254,7 +254,7 @@ class TestBaseCharacteristicValidation:
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 # This will raise struct.error due to insufficient data
-                return struct.unpack("<I", data)[0]  # Needs 4 bytes for uint32
+                return int(struct.unpack("<I", data)[0])  # Needs 4 bytes for uint32
 
             def encode_value(self, data: int) -> bytearray:
                 return bytearray()

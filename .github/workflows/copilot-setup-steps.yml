@@ -37,7 +37,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          # Install dev, test and examples extras so local setup has BLE example libraries
+          pip install -e .[dev,test,examples]
 
       - name: Verify environment
         run: |

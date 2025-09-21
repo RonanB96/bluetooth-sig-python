@@ -14,12 +14,12 @@ from bluetooth_sig.gatt.uuid_registry import UuidRegistry
 
 
 @pytest.fixture
-def uuid_registry():
+def uuid_registry() -> UuidRegistry:
     """Create a fresh UUID registry for each test."""
     return UuidRegistry()
 
 
-def test_service_uuid_lookup(uuid_registry):
+def test_service_uuid_lookup(uuid_registry: UuidRegistry):
     """Test that service UUIDs are correctly loaded from YAML files."""
     # Test Battery Service
     info = uuid_registry.get_service_info("180F")
@@ -36,7 +36,7 @@ def test_service_uuid_lookup(uuid_registry):
     assert info.id == "org.bluetooth.service.environmental_sensing"
 
 
-def test_characteristic_uuid_lookup(uuid_registry):
+def test_characteristic_uuid_lookup(uuid_registry: UuidRegistry):
     """Test that characteristic UUIDs are correctly loaded."""
     # Test Battery Level characteristic
     info = uuid_registry.get_characteristic_info("2A19")
@@ -113,7 +113,7 @@ def test_characteristic_discovery():
     assert "Humidity" in char_names
 
 
-def test_full_uuid_lookup(uuid_registry):
+def test_full_uuid_lookup(uuid_registry: UuidRegistry):
     """Test lookup with full 128-bit UUIDs."""
     # Test with full Battery Level UUID
     full_uuid = "00002A19-0000-1000-8000-00805F9B34FB"
@@ -123,7 +123,7 @@ def test_full_uuid_lookup(uuid_registry):
     assert info.name == "Battery Level"
 
 
-def test_invalid_uuid_lookup(uuid_registry):
+def test_invalid_uuid_lookup(uuid_registry: UuidRegistry):
     """Test lookup behavior with invalid UUIDs."""
     assert uuid_registry.get_service_info("0000") is None, (
         "Should return None for invalid service"

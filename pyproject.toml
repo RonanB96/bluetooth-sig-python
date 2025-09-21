@@ -28,6 +28,9 @@ classifiers = [
 ]
 dependencies = [
     "pyyaml~=6.0.0",
+    "bleak>=0.21.0",
+    "bleak-retry-connector>=2.13.1,<3",
+    "simplepyble>=0.10.0",
 ]
 
 [project.urls]
@@ -39,7 +42,7 @@ homepage = "https://github.com/RonanB96/bluetooth_sig_python"
 dev = [
     "pytest~=8.4",
     "pytest-asyncio~=1.1",
-    "pytest-cov~=6.2",
+    "pytest-cov>=6.2,<8",
     "pylint~=3.3",
     "ruff~=0.1",
     "mypy~=1.0",
@@ -50,13 +53,14 @@ dev = [
 test = [
     "pytest==8.4.2",
     "pytest-asyncio==1.1.0",
-    "pytest-cov==7.0.0",
+    "pytest-cov>=6.2,<8",
 ]
 examples = [
-    # BLE libraries for example integrations
-    "bleak>=0.21.0",                    # Cross-platform async BLE (recommended)
-    "bleak-retry-connector>=3.5.0",    # Robust BLE with retry logic
-    "simplepyble>=0.10.0",             # Cross-platform BLE (requires commercial license for commercial use)
+    # BLE libraries for example integrations (now required in main dependencies)
+    # kept here for documentation purposes only
+    # "bleak>=0.21.0",
+    # "bleak-retry-connector>=2.13.1,<3",
+    # "simplepyble>=0.10.0",
 ]
 
 [project.scripts]
@@ -66,6 +70,7 @@ examples = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["src", "."]
 
 [tool.hatch.build]
 exclude = ["tests/*", "scripts/*"]
@@ -152,6 +157,10 @@ force-single-line = false
 python_version = "3.10"  # Enable modern union syntax (X | Y)
 strict = true
 
+# Fix module path conflicts in editable installs
+mypy_path = "src:stubs"
+explicit_package_bases = true
+
 # Additional strict checks
 disallow_any_generics = true
 disallow_any_unimported = true
@@ -165,6 +174,7 @@ warn_return_any = true
 warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
+show_error_codes = true
 
 # Allow some flexibility for certain patterns
 allow_redefinition = true
@@ -172,9 +182,21 @@ check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
-# Allow some flexibility in tests
+# Allow some flexibility in tests - tests often have type issues due to:
+# - Mock objects and fixtures with dynamic attributes
+# - Test-specific patterns that don't follow strict typing
+# - External dependencies that may not be fully typed
+# - Complex test setup that benefits from flexibility
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = "examples.*"
+# Allow some flexibility in examples (demonstration code)
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
 module = "bluetooth_sig.*.yaml_cross_reference"
@@ -186,5 +208,9 @@ module = "pydantic.*"
 # Optional dependency
 ignore_missing_imports = true
 
-[tool.uv]
-package = true
+[[tool.mypy.overrides]]
+module = "simplepyble.*"
+# Force mypy to use included .pyi stubs for the compiled extension
+ignore_missing_imports = false
+# Allow some flexibility for pybind11-generated types
+disallow_any_unimported = false

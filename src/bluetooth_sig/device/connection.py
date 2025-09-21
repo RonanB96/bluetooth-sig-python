@@ -61,5 +61,14 @@ class ConnectionManagerProtocol(Protocol):
         """Stop notifications for `char_uuid`."""
         raise NotImplementedError()
 
+    @property
+    def is_connected(self) -> bool:  # pragma: no cover
+        """Check if the connection is currently active.
+
+        Returns:
+            True if connected to the device, False otherwise
+        """
+        raise NotImplementedError()
+
 
 __all__ = ["ConnectionManagerProtocol"]

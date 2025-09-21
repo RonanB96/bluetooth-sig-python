@@ -90,6 +90,9 @@ class ValueRangeError(DataValidationError):
 class TypeMismatchError(DataValidationError):
     """Exception raised when a value has an unexpected type."""
 
+    expected_type: type | tuple[type, ...]
+    actual_type: type
+
     def __init__(self, field: str, value: Any, expected_type: type | tuple[type, ...]):
         self.expected_type = expected_type
         self.actual_type = type(value)

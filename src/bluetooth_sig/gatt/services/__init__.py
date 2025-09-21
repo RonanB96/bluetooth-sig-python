@@ -1,7 +1,9 @@
 """Registry of supported GATT services."""
 
+from __future__ import annotations
+
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from .automation_io import AutomationIOService
 from .base import BaseGattService
@@ -81,8 +83,26 @@ class GattServiceRegistry:
         WeightScaleService,
     ]
 
+    __all__ = [
+        "AutomationIOService",
+        "BatteryService",
+        "BodyCompositionService",
+        "CyclingPowerService",
+        "CyclingSpeedAndCadenceService",
+        "DeviceInformationService",
+        "EnvironmentalSensingService",
+        "GenericAccessService",
+        "GenericAttributeService",
+        "GlucoseService",
+        "HealthThermometerService",
+        "HeartRateService",
+        "RunningSpeedAndCadenceService",
+        "WeightScaleService",
+        "BaseGattService",
+    ]
+
     @classmethod
-    def get_service_class(cls, uuid: str) -> Optional[type[BaseGattService]]:
+    def get_service_class(cls, uuid: str) -> type[BaseGattService] | None:
         """Get the service class for a given UUID."""
         uuid = uuid.replace("-", "").upper()
         for service_class in cls._services:
@@ -93,21 +113,21 @@ class GattServiceRegistry:
     @classmethod
     def get_service_class_by_name(
         cls, name: str | ServiceName
-    ) -> Optional[type[BaseGattService]]:
+    ) -> type[BaseGattService] | None:
         """Get the service class for a given name or enum."""
         if isinstance(name, ServiceName):
             return SERVICE_CLASS_MAP.get(name)
         return SERVICE_CLASS_MAP_STR.get(name)
 
     @classmethod
-    def get_service_class_by_uuid(cls, uuid: str) -> Optional[type[BaseGattService]]:
+    def get_service_class_by_uuid(cls, uuid: str) -> type[BaseGattService] | None:
         """Get the service class for a given UUID (alias for get_service_class)."""
         return cls.get_service_class(uuid)
 
     @classmethod
     def create_service(
         cls, uuid: str, characteristics: dict[str, dict[str, Any]]
-    ) -> Optional[BaseGattService]:
+    ) -> BaseGattService | None:
         """Create a service instance for the given UUID and characteristics."""
         service_class = cls.get_service_class(uuid)
         if not service_class:
@@ -120,7 +140,7 @@ class GattServiceRegistry:
     @classmethod
     def create_service_by_name(
         cls, name: str | ServiceName, characteristics: dict[str, dict[str, Any]]
-    ) -> Optional[BaseGattService]:
+    ) -> BaseGattService | None:
         """Create a service instance for the given name/enum and characteristics."""
         service_class = cls.get_service_class_by_name(name)
         if not service_class:

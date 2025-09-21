@@ -9,6 +9,7 @@ unified view of device state.
 from __future__ import annotations
 
 import logging
+import re
 from abc import abstractmethod
 from typing import Any, Callable, Protocol
 
@@ -19,16 +20,14 @@ from ..gatt.services.base import BaseGattService
 from ..types import (
     BLEAdvertisementTypes,
     BLEAdvertisingPDU,
-    BLEExtendedHeader,
     CharacteristicDataProtocol,
     DeviceAdvertiserData,
     ParsedADStructures,
     PDUConstants,
-    PDUFlags,
-    PDUType,
 )
 from ..types.data_types import CharacteristicData
 from ..types.device_types import DeviceEncryption, DeviceService
+from .advertising_parser import AdvertisingParser
 from .connection import ConnectionManagerProtocol
 
 
@@ -75,7 +74,14 @@ class UnknownService(BaseGattService):
         return {}
 
 
-class Device:
+def _is_uuid_like(value: str) -> bool:
+    """Check if a string looks like a Bluetooth UUID."""
+    # Remove dashes and check if it's a valid hex string of UUID length
+    clean = value.replace("-", "")
+    return bool(re.match(r"^[0-9A-Fa-f]+$", clean)) and len(clean) in [4, 8, 32]
+
+
+class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """High-level BLE device abstraction."""
 
     def __init__(self, address: str, translator: SIGTranslatorProtocol) -> None:
@@ -83,10 +89,16 @@ class Device:
         self.translator = translator
         # Optional connection manager implementing ConnectionManagerProtocol
         self.connection_manager: ConnectionManagerProtocol | None = None
-        self.name: str = ""
+        self._name: str = ""
         self.services: dict[str, DeviceService] = {}
         self.encryption = DeviceEncryption()
         self.advertiser_data = DeviceAdvertiserData(b"")
+
+        # Advertising parser for handling advertising data
+        self.advertising_parser = AdvertisingParser()
+
+        # Cache for device_info property
+        self._device_info_cache: DeviceInfo | None = None
 
     def __str__(self) -> str:
         service_count = len(self.services)
@@ -104,10 +116,16 @@ class Device:
             service_name: Name or enum of the service to add
             characteristics: Dictionary mapping characteristic UUIDs to raw data
         """
-        # Get the service UUID from the name
-        service_uuid = self.translator.get_service_uuid(service_name)
+        # Resolve service UUID: accept UUID-like strings directly, else ask translator
+        # service_uuid can be a string or None (translator may return None)
+        service_uuid: str | None
+        if isinstance(service_name, str) and _is_uuid_like(service_name):
+            service_uuid = service_name
+        else:
+            service_uuid = self.translator.get_service_uuid(service_name)
+
         if not service_uuid:
-            # Fallback to unknown service if name not found
+            # Fallback to unknown service if UUID not found
             service: BaseGattService = UnknownService()
             device_service = DeviceService(service=service, characteristics={})
             self.services[
@@ -276,13 +294,11 @@ class Device:
         """Stop notifications for a characteristic.
 
         Args:
-            char_name: Name or enum of the characteristic to stop monitoring
-
-        Raises:
-            RuntimeError: If no connection manager is attached
+            char_name: Characteristic name or UUID
         """
         if not self.connection_manager:
-            raise RuntimeError("No connection manager attached to Device")
+            raise RuntimeError("No connection manager attached")
+
         resolved_uuid = self._resolve_characteristic_name(char_name)
         await self.connection_manager.stop_notify(resolved_uuid)
 
@@ -292,186 +308,53 @@ class Device:
         Args:
             raw_data: Raw bytes from BLE advertising packet
         """
-        if self._is_extended_advertising_pdu(raw_data):
-            self._parse_extended_advertising(raw_data)
-        else:
-            self._parse_legacy_advertising(raw_data)
+        parsed_data = self.advertising_parser.parse_advertising_data(raw_data)
+        self.advertiser_data = parsed_data
 
-    def _is_extended_advertising_pdu(self, data: bytes) -> bool:
-        """Check if the advertising data is an extended advertising PDU.
-
-        Args:
-            data: Raw advertising data bytes
-
-        Returns:
-            True if extended advertising PDU, False otherwise
-        """
-        if len(data) < PDUConstants.PDU_HEADER:
-            return False
-
-        pdu_header = data[0]
-        pdu_type = pdu_header & PDUFlags.TYPE_MASK
-
-        return pdu_type in (PDUType.ADV_EXT_IND.value, PDUType.ADV_AUX_IND.value)
-
-    def _parse_extended_advertising(self, raw_data: bytes) -> None:
-        if len(raw_data) < PDUConstants.MIN_EXTENDED_PDU:
-            self._parse_legacy_advertising(raw_data)
-            return
-
-        pdu = self._parse_extended_pdu(raw_data)
-
-        if not pdu:
-            self._parse_legacy_advertising(raw_data)
-            return
-
-        parsed_data = ParsedADStructures()
-
-        if pdu.payload:
-            parsed_data = self._parse_ad_structures(pdu.payload)
-
-        auxiliary_packets: list[BLEAdvertisingPDU] = []
-        if pdu.extended_header and pdu.extended_header.auxiliary_pointer:
-            aux_packets = self._parse_auxiliary_packets(
-                pdu.extended_header.auxiliary_pointer
-            )
-            auxiliary_packets.extend(aux_packets)
-
-        self.advertiser_data = DeviceAdvertiserData(
-            raw_data=raw_data,
-            local_name=parsed_data.local_name,
-            manufacturer_data=parsed_data.manufacturer_data,
-            service_uuids=parsed_data.service_uuids,
-            tx_power=parsed_data.tx_power,
-            flags=parsed_data.flags,
-            extended_payload=pdu.payload,
-            auxiliary_packets=auxiliary_packets,
-        )
-
+        # Update device name if not set
         if parsed_data.local_name and not self.name:
             self.name = parsed_data.local_name
 
-    def _parse_extended_pdu(self, data: bytes) -> BLEAdvertisingPDU | None:
-        if len(data) < PDUConstants.MIN_EXTENDED_PDU:
-            return None
+    def get_characteristic_data(
+        self, service_name: str | ServiceName, char_uuid: str
+    ) -> CharacteristicDataProtocol | None:
+        """Get parsed characteristic data for a specific service and characteristic.
 
-        header = int.from_bytes(data[0 : PDUConstants.PDU_HEADER], byteorder="little")
-        pdu_type = header & PDUFlags.TYPE_MASK
-        tx_add = bool(header & PDUFlags.TX_ADD_MASK)
-        rx_add = bool(header & PDUFlags.RX_ADD_MASK)
+        Args:
+            service_name: Name or enum of the service
+            char_uuid: UUID of the characteristic
 
-        length = data[PDUConstants.PDU_LENGTH_OFFSET]
-
-        if len(data) < PDUConstants.MIN_EXTENDED_PDU + length:
-            return None
-
-        extended_header_start = PDUConstants.EXTENDED_HEADER_START
-
-        extended_header = self._parse_extended_header(data[extended_header_start:])
-
-        if not extended_header:
-            return None
-
-        payload_start = (
-            extended_header_start
-            + extended_header.extended_header_length
-            + PDUConstants.EXT_HEADER_LENGTH
+        Returns:
+            Parsed characteristic data or None if not found
+        """
+        service_key = (
+            service_name if isinstance(service_name, str) else service_name.value
         )
-        payload_length = length - (
-            extended_header.extended_header_length + PDUConstants.EXT_HEADER_LENGTH
-        )
+        service = self.services.get(service_key)
+        if service:
+            return service.characteristics.get(char_uuid)
+        return None
 
-        if payload_start + payload_length > len(data):
-            return None
+    def update_encryption_requirements(self, char_data: CharacteristicData) -> None:
+        """Update device encryption requirements based on characteristic properties.
 
-        payload = data[payload_start : payload_start + payload_length]
+        Args:
+            char_data: The parsed characteristic data with properties
+        """
+        properties = char_data.properties
 
-        adva = extended_header.extended_advertiser_address
-        targeta = extended_header.extended_target_address
+        # Check for encryption requirements
+        if any(
+            prop in properties
+            for prop in ["encrypt-read", "encrypt-write", "encrypt-notify"]
+        ):
+            self.encryption.requires_encryption = True
 
-        return BLEAdvertisingPDU(
-            pdu_type=PDUType(pdu_type),
-            tx_add=tx_add,
-            rx_add=rx_add,
-            length=length,
-            advertiser_address=adva,
-            target_address=targeta,
-            payload=payload,
-            extended_header=extended_header,
-        )
-
-    def _parse_extended_header(self, data: bytes) -> BLEExtendedHeader | None:
-        # pylint: disable=too-many-return-statements,too-many-branches
-        if len(data) < 1:
-            return None
-
-        header = BLEExtendedHeader()
-        header.extended_header_length = data[0]
-
-        if len(data) < header.extended_header_length + 1:
-            return None
-
-        adv_mode = data[1]
-        header.adv_mode = adv_mode
-
-        offset = PDUConstants.ADV_ADDR_OFFSET  # Start after length and mode bytes
-
-        if header.has_extended_advertiser_address:
-            if offset + PDUConstants.BLE_ADDR > len(data):
-                return None
-            header.extended_advertiser_address = data[
-                offset : offset + PDUConstants.BLE_ADDR
-            ]
-            offset += PDUConstants.BLE_ADDR
-
-        if header.has_extended_target_address:
-            if offset + PDUConstants.BLE_ADDR > len(data):
-                return None
-            header.extended_target_address = data[
-                offset : offset + PDUConstants.BLE_ADDR
-            ]
-            offset += PDUConstants.BLE_ADDR
-
-        if header.has_cte_info:
-            if offset + PDUConstants.CTE_INFO > len(data):
-                return None
-            header.cte_info = data[offset : offset + PDUConstants.CTE_INFO]
-            offset += PDUConstants.CTE_INFO
-
-        if header.has_advertising_data_info:
-            if offset + PDUConstants.ADV_DATA_INFO > len(data):
-                return None
-            header.advertising_data_info = data[
-                offset : offset + PDUConstants.ADV_DATA_INFO
-            ]
-            offset += PDUConstants.ADV_DATA_INFO
-
-        if header.has_auxiliary_pointer:
-            if offset + PDUConstants.AUX_PTR > len(data):
-                return None
-            header.auxiliary_pointer = data[offset : offset + PDUConstants.AUX_PTR]
-            offset += PDUConstants.AUX_PTR
-
-        if header.has_sync_info:
-            if offset + PDUConstants.SYNC_INFO > len(data):
-                return None
-            header.sync_info = data[offset : offset + PDUConstants.SYNC_INFO]
-            offset += PDUConstants.SYNC_INFO
-
-        if header.has_tx_power:
-            if offset + PDUConstants.TX_POWER > len(data):
-                return None
-            header.tx_power = int.from_bytes(
-                data[offset : offset + PDUConstants.TX_POWER],
-                byteorder="little",
-                signed=True,
-            )
-            offset += PDUConstants.TX_POWER
-
-        if header.has_additional_controller_data:
-            header.additional_controller_advertising_data = data[offset:]
-
-        return header
+        # Check for authentication requirements
+        if any(
+            prop in properties for prop in ["auth-read", "auth-write", "auth-notify"]
+        ):
+            self.encryption.requires_authentication = True
 
     def _parse_auxiliary_packets(self, aux_ptr: bytes) -> list[BLEAdvertisingPDU]:
         if len(aux_ptr) != PDUConstants.AUX_PTR:
@@ -697,40 +580,215 @@ class Device:
 
         return parsed
 
-    def get_characteristic_data(
-        self, service_name: str | ServiceName, char_uuid: str
-    ) -> CharacteristicDataProtocol | None:
-        """Get parsed characteristic data for a specific service and characteristic.
+    async def discover_services(self) -> dict[str, Any]:
+        """Discover all services and characteristics from the device.
+
+        Returns:
+            Dictionary mapping service UUIDs to service information
+
+        Raises:
+            RuntimeError: If no connection manager is attached
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        services_data = await self.connection_manager.get_services()
+
+        # Store discovered services in our internal structure
+        for service_info in services_data:
+            service_uuid = service_info.uuid
+            if service_uuid not in self.services:
+                # Create a service instance - we'll use UnknownService for undiscovered services
+                service_instance = UnknownService()
+                device_service = DeviceService(
+                    service=service_instance, characteristics={}
+                )
+                self.services[service_uuid] = device_service
+
+            # Add characteristics to the service
+            for char_info in service_info.characteristics:
+                char_uuid = char_info.uuid
+                self.services[service_uuid].characteristics[char_uuid] = char_info
+
+        return dict(self.services)
+
+    async def get_characteristic_info(self, char_uuid: str) -> Any | None:
+        """Get information about a characteristic from the connection manager.
 
         Args:
-            service_name: Name or enum of the service
             char_uuid: UUID of the characteristic
 
         Returns:
-            Parsed characteristic data or None if not found
+            Characteristic information or None if not found
+
+        Raises:
+            RuntimeError: If no connection manager is attached
         """
-        service_key = (
-            service_name if isinstance(service_name, str) else service_name.value
-        )
-        service = self.services.get(service_key)
-        if service:
-            return service.characteristics.get(char_uuid)
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        services_data = await self.connection_manager.get_services()
+        for service_info in services_data:
+            for char_info in service_info.characteristics:
+                if char_info.uuid == char_uuid:
+                    return char_info
         return None
 
-    def update_encryption_requirements(self, char_data: CharacteristicData) -> None:
-        """Update device encryption requirements based on characteristic properties.
+    async def read_multiple(
+        self, char_names: list[str | CharacteristicName]
+    ) -> dict[str, Any | None]:
+        """Read multiple characteristics in batch.
 
         Args:
-            char_data: Parsed characteristic data with properties
+            char_names: List of characteristic names or enums to read
+
+        Returns:
+            Dictionary mapping characteristic UUIDs to parsed values
+
+        Raises:
+            RuntimeError: If no connection manager is attached
         """
-        if hasattr(char_data, "properties") and char_data.properties:
-            if (
-                "encrypt-read" in char_data.properties
-                or "encrypt-write" in char_data.properties
-            ):
-                self.encryption.requires_encryption = True
-            if (
-                "auth-read" in char_data.properties
-                or "auth-write" in char_data.properties
-            ):
-                self.encryption.requires_authentication = True
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        results = {}
+        for char_name in char_names:
+            try:
+                value = await self.read(char_name)
+                resolved_uuid = self._resolve_characteristic_name(char_name)
+                results[resolved_uuid] = value
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                resolved_uuid = self._resolve_characteristic_name(char_name)
+                results[resolved_uuid] = None
+                logging.warning("Failed to read characteristic %s: %s", char_name, exc)
+
+        return results
+
+    async def write_multiple(
+        self, data_map: dict[str | CharacteristicName, bytes]
+    ) -> dict[str, bool]:
+        """Write to multiple characteristics in batch.
+
+        Args:
+            data_map: Dictionary mapping characteristic names/enums to data bytes
+
+        Returns:
+            Dictionary mapping characteristic UUIDs to success status
+
+        Raises:
+            RuntimeError: If no connection manager is attached
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        results = {}
+        for char_name, data in data_map.items():
+            try:
+                await self.write(char_name, data)
+                resolved_uuid = self._resolve_characteristic_name(char_name)
+                results[resolved_uuid] = True
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                resolved_uuid = self._resolve_characteristic_name(char_name)
+                results[resolved_uuid] = False
+                logging.warning("Failed to write characteristic %s: %s", char_name, exc)
+
+        return results
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Get cached device info object.
+
+        Returns:
+            DeviceInfo with current device metadata
+        """
+        if self._device_info_cache is None:
+            self._device_info_cache = DeviceInfo(
+                address=self.address,
+                name=self.name,
+                manufacturer_data=self.advertiser_data.manufacturer_data,
+                service_uuids=self.advertiser_data.service_uuids,
+            )
+        else:
+            # Update existing cache object with current data
+            self._device_info_cache.name = self.name
+            self._device_info_cache.manufacturer_data = (
+                self.advertiser_data.manufacturer_data
+            )
+            self._device_info_cache.service_uuids = self.advertiser_data.service_uuids
+        return self._device_info_cache
+
+    @property
+    def name(self) -> str:
+        """Get the device name."""
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set the device name and update cached device_info."""
+        self._name = value
+        # Update existing cache object if it exists
+        if self._device_info_cache is not None:
+            self._device_info_cache.name = value
+
+    @property
+    def is_connected(self) -> bool:
+        """Check if the device is currently connected.
+
+        Returns:
+            True if connected, False otherwise
+        """
+        if self.connection_manager is None:
+            return False
+        # Check if the connection manager has an is_connected property
+        return getattr(self.connection_manager, "is_connected", False)
+
+    def get_service_by_uuid(self, service_uuid: str) -> DeviceService | None:
+        """Get a service by its UUID.
+
+        Args:
+            service_uuid: UUID of the service
+
+        Returns:
+            DeviceService instance or None if not found
+        """
+        return self.services.get(service_uuid)
+
+    def get_services_by_name(
+        self, service_name: str | ServiceName
+    ) -> list[DeviceService]:
+        """Get services by name.
+
+        Args:
+            service_name: Name or enum of the service
+
+        Returns:
+            List of matching DeviceService instances
+        """
+        service_uuid = self.translator.get_service_uuid(
+            service_name if isinstance(service_name, str) else service_name.value
+        )
+        if service_uuid and service_uuid in self.services:
+            return [self.services[service_uuid]]
+        return []
+
+    def list_characteristics(
+        self, service_uuid: str | None = None
+    ) -> dict[str, list[str]]:
+        """List all characteristics, optionally filtered by service.
+
+        Args:
+            service_uuid: Optional service UUID to filter by
+
+        Returns:
+            Dictionary mapping service UUIDs to lists of characteristic UUIDs
+        """
+        if service_uuid:
+            service = self.services.get(service_uuid)
+            if service:
+                return {service_uuid: list(service.characteristics.keys())}
+            return {}
+
+        return {
+            svc_uuid: list(service.characteristics.keys())
+            for svc_uuid, service in self.services.items()
+        }

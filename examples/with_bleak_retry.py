@@ -23,55 +23,63 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import sys
 import time
-from pathlib import Path
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Import shared BLE utilities
-from ble_utils import (
-    BLEAK_AVAILABLE,
-    discover_services_and_characteristics_bleak,
-    get_default_characteristic_uuids,
-    handle_notifications_bleak,
-    parse_and_display_results,
-    read_characteristics_bleak_retry,
-    scan_with_bleak,
-)
 
 from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.device.device import Device
 
-# Note: bleak_retry_connector has compatibility issues on this system
-# Using Bleak with manual retry logic instead
+from .utils import (
+    bleak_retry_available,
+    get_default_characteristic_uuids,
+    read_characteristics_bleak_retry,
+    scan_with_bleak_retry,
+)
+from .utils.bleak_retry_integration import (
+    BleakRetryConnectionManager,
+)
 
 
-async def robust_device_reading(address: str, retries: int = 3) -> dict:
+async def robust_device_reading(
+    address: str, backend: str = "bleak-retry", retries: int = 3
+) -> dict[str, dict[str, str | None]]:
     """Robust device reading with automatic retry and error recovery.
 
     Args:
         address: BLE device address
+        backend: BLE backend to use (only "bleak-retry" supported)
         retries: Number of connection retry attempts
 
     Returns:
         Dictionary of parsed characteristic data
     """
-    if not BLEAK_AVAILABLE:
-        print("❌ Bleak not available")
+    if backend != "bleak-retry":
+        print(
+            f"❌ Only bleak-retry backend is supported in this example. Got: {backend}"
+        )
         return {}
 
-    # Use shared utilities for robust reading
     target_uuids = get_default_characteristic_uuids()
-    raw_results = await read_characteristics_bleak_retry(
-        address, target_uuids, max_attempts=retries
-    )
+    translator = BluetoothSIGTranslator()
+    device = Device(address, translator)
 
-    # Parse and display results
-    return await parse_and_display_results(raw_results, "Bleak-Retry")
+    manager = BleakRetryConnectionManager(address, max_attempts=retries)
+    device.attach_connection_manager(manager)
+    await device.connect()
+    results = {}
+    for uuid in target_uuids:
+        parsed = await device.read(uuid)
+        if parsed and getattr(parsed, "parse_success", False):
+            results[uuid] = {
+                "name": getattr(parsed, "name", uuid),
+                "value": getattr(parsed, "value", None),
+                "unit": getattr(parsed, "unit", None),
+            }
+    await device.disconnect()
+    print(f"📊 Device results: {results}")
+    return results
 
 
-async def robust_service_discovery(address: str) -> dict:
+async def robust_service_discovery(address: str) -> dict[str, object]:
     """Discover all services and characteristics with robust connection.
 
     Args:
@@ -80,7 +88,8 @@ async def robust_service_discovery(address: str) -> dict:
     Returns:
         Dictionary of discovered services and characteristics
     """
-    return await discover_services_and_characteristics_bleak(address)
+    print(f"🔍 Service discovery with {address} - Feature not yet implemented")
+    return {}
 
 
 async def perform_single_reading(
@@ -144,10 +153,12 @@ async def notification_monitoring(address: str, duration: int = 60) -> None:
         address: BLE device address
         duration: Monitoring duration in seconds
     """
-    await handle_notifications_bleak(address, duration)
+    print(
+        f"🔔 Notification monitoring with {address} for {duration}s - Feature not yet implemented"
+    )
 
 
-async def main():
+async def main() -> None:
     """Main function demonstrating robust BLE patterns."""
     parser = argparse.ArgumentParser(
         description="Robust BLE with bleak-retry-connector + SIG parsing"
@@ -169,13 +180,15 @@ async def main():
 
     args = parser.parse_args()
 
-    if not BLEAK_AVAILABLE:
-        print("Bleak not available. Install with: pip install bleak")
+    if not bleak_retry_available:
+        print(
+            "Bleak-retry not available. Install with: pip install bleak-retry-connector"
+        )
         return
 
     try:
         if args.scan:
-            await scan_with_bleak()
+            await scan_with_bleak_retry()
             if not args.address:
                 print("Scan complete. Use --address to connect.")
                 return

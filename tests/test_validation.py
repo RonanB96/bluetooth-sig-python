@@ -87,7 +87,7 @@ class TestValidationRule:
     def test_custom_validator_success(self):
         """Test successful custom validation."""
 
-        def is_even(value):
+        def is_even(value: int) -> bool:
             return value % 2 == 0
 
         rule = ValidationRule("even_number", int, custom_validator=is_even)
@@ -100,7 +100,7 @@ class TestValidationRule:
     def test_custom_validator_failure(self):
         """Test custom validation failure."""
 
-        def is_even(value):
+        def is_even(value: int) -> bool:
             return value % 2 == 0
 
         rule = ValidationRule("even_number", int, custom_validator=is_even)
@@ -113,7 +113,7 @@ class TestValidationRule:
     def test_custom_error_message(self):
         """Test custom error message."""
 
-        def is_positive(value):
+        def is_positive(value: float) -> bool:
             return value > 0
 
         rule = ValidationRule(
@@ -254,7 +254,10 @@ class TestStrictValidator:
         class SensorReading:  # pylint: disable=too-few-public-methods
             """Test sensor reading class."""
 
-            def __init__(self, temperature, humidity):
+            temperature: float
+            humidity: float
+
+            def __init__(self, temperature: float, humidity: float) -> None:
                 self.temperature = temperature
                 self.humidity = humidity
 
@@ -277,7 +280,9 @@ class TestStrictValidator:
         class SensorReading:  # pylint: disable=too-few-public-methods
             """Test sensor reading class."""
 
-            def __init__(self, temperature):
+            temperature: float
+
+            def __init__(self, temperature: float) -> None:
                 self.temperature = temperature
 
         validator = StrictValidator()
@@ -296,9 +301,12 @@ class TestStrictValidator:
         class PartialReading:  # pylint: disable=too-few-public-methods
             """Test partial reading class."""
 
-            def __init__(self, temperature):
+            temperature: float
+
+            # humidity intentionally omitted to simulate missing attribute
+
+            def __init__(self, temperature: float) -> None:
                 self.temperature = temperature
-                # humidity attribute missing
 
         validator = StrictValidator()
         validator.add_rule(
@@ -321,7 +329,7 @@ class TestValidationIntegration:
         """Test combining multiple validation aspects."""
 
         # Temperature with type, range, and custom validation
-        def not_exactly_zero(value):
+        def not_exactly_zero(value: float) -> bool:
             return value != 0.0
 
         rule = ValidationRule(
