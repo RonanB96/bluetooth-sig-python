@@ -2,7 +2,12 @@
     "github-local-actions.actPath": "/usr/local/bin/act",
     "github-local-actions.actOptions": [],
     "github-local-actions.workflowsPath": ".github/workflows",
+    "python.analysis.extraPaths": [
+        "./src",
+        "./examples"
+    ],
     "chat.tools.terminal.autoApprove": {
+        "python3 examples/with_bleak_retry.py --address": true,
         "./scripts/format.sh": true,
         "./scripts/lint.sh": true,
         "grep": true,
@@ -186,7 +191,6 @@
         "git mv": false,
         "/^Remove-Item\\b/i": false
     },
-    "python.analysis.typeCheckingMode": "strict",
 
     // Python extension settings to use pyproject.toml
     "python.defaultInterpreterPath": "./.venv/bin/python",
