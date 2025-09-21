@@ -1,10 +1,12 @@
 """Comprehensive test to validate all services and characteristics against YAML."""
 
+from __future__ import annotations
+
 import importlib
 import inspect
 import pkgutil
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 
@@ -500,7 +502,7 @@ class TestNameResolutionFallback:
                 self.value_type = "float"
                 super().__post_init__()
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
+            def decode_value(self, data: bytearray, ctx: Optional[Any] = None) -> float:
                 return 0.0
 
             def encode_value(self, data: bytearray) -> bytearray:
@@ -591,7 +593,7 @@ class TestNameResolutionFallback:
                 self.value_type = "string"
                 super().__post_init__()
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
+            def decode_value(self, data: bytearray, ctx: Optional[Any] = None) -> str:
                 return ""
 
             def encode_value(self, data: bytearray) -> bytearray:
@@ -629,7 +631,7 @@ class TestNameResolutionFallback:
                 self.value_type = "string"
                 super().__post_init__()
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
+            def decode_value(self, data: bytearray, ctx: Optional[Any] = None) -> str:
                 return ""
 
             def encode_value(self, data: bytearray) -> bytearray:
@@ -639,7 +641,6 @@ class TestNameResolutionFallback:
             @property
             def unit(self) -> str:
                 return ""
-
         # Should raise UUIDResolutionError when no UUID can be found
         with pytest.raises(UUIDResolutionError):
             UnknownTestCharacteristic(uuid="test", properties=set())

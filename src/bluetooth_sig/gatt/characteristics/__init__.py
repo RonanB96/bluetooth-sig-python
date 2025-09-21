@@ -3,6 +3,8 @@ Provides type-safe, registry-driven lookup for all supported characteristics.
 Now encapsulated in CharacteristicRegistry class for API clarity and extensibility.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 from .ammonia_concentration import AmmoniaConcentrationCharacteristic

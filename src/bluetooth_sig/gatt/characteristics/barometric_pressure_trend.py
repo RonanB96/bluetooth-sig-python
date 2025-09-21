@@ -1,5 +1,7 @@
 """Barometric Pressure Trend characteristic implementation."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import IntEnum
 
@@ -37,7 +39,7 @@ class BarometricPressureTrend(IntEnum):
         return descriptions[self.value]
 
     @classmethod
-    def from_value(cls, value: int) -> "BarometricPressureTrend":
+    def from_value(cls, value: int) -> BarometricPressureTrend:
         """Create enum from integer value with fallback to UNKNOWN."""
         try:
             return cls(value)
