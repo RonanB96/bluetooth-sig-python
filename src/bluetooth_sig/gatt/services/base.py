@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, TypeVar, cast
+from typing import Any, Optional, TypeVar, cast
 
 from ...types import CharacteristicInfo as BaseCharacteristicInfo
 from ...types.gatt_enums import GattProperty
@@ -303,7 +303,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             prop_vals = set(props.get("properties", []))
             char = CharacteristicRegistry.create_characteristic(
                 uuid_or_name=uuid,
-                properties=cast(set[GattProperty] | None, prop_vals),
+                properties=cast(Optional[set[GattProperty]], prop_vals),
             )
             if char:
                 self.characteristics[uuid] = char
@@ -518,7 +518,12 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
     def _find_characteristic_enum(
         self, characteristic_name: str, expected_chars: dict[CharacteristicName, Any]
     ) -> CharacteristicName | None:
-        """Find the enum that matches the characteristic name."""
+        """Find the enum that matches the characteristic name string.
+
+        NOTE: This is an internal helper. Public APIs should accept
+        `CharacteristicName` enums directly; this helper will only be used
+        temporarily by migrating call sites.
+        """
         for enum_char in expected_chars.keys():
             if enum_char.value == characteristic_name:
                 return enum_char
@@ -554,24 +559,25 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         return CharacteristicStatus.MISSING
 
     def get_characteristic_status(
-        self, characteristic_name: str
+        self, characteristic_name: CharacteristicName
     ) -> ServiceCharacteristicInfo | None:
         """Get detailed status of a specific characteristic.
 
         Args:
-            characteristic_name: Name of the characteristic (string)
+            characteristic_name: CharacteristicName enum
 
         Returns:
             CharacteristicInfo if characteristic is expected by this service, None otherwise
         """
         expected_chars = self.get_expected_characteristics()
 
-        # Find the enum that matches the string name
-        char_enum = self._find_characteristic_enum(characteristic_name, expected_chars)
-        if char_enum is None:
+        char_enum = characteristic_name
+
+        # Only return status for characteristics that are expected by this service
+        if char_enum not in expected_chars:
             return None
 
-        char_info = uuid_registry.get_characteristic_info(characteristic_name)
+        char_info = uuid_registry.get_characteristic_info(char_enum.value)
         if not char_info:
             return None
 
@@ -592,7 +598,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         status = self._get_characteristic_status(char_info)
 
         return ServiceCharacteristicInfo(
-            name=characteristic_name,
+            name=characteristic_name.value,
             uuid=char_info.uuid,
             status=status,
             is_required=is_required,

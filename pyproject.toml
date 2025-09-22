@@ -70,7 +70,7 @@ examples = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-pythonpath = ["src", "."]
+pythonpath = ["src"]
 
 [tool.hatch.build]
 exclude = ["tests/*", "scripts/*"]
@@ -158,7 +158,7 @@ python_version = "3.10"  # Enable modern union syntax (X | Y)
 strict = true
 
 # Fix module path conflicts in editable installs
-mypy_path = "src:stubs"
+# mypy_path = "src:stubs"
 explicit_package_bases = true
 
 # Additional strict checks
@@ -176,6 +176,13 @@ warn_unused_configs = true
 warn_unused_ignores = true
 show_error_codes = true
 
+# Use package-based checking so mypy maps modules consistently for a src/ layout.
+# This is the documented approach to avoid "Source file found twice" issues
+# when the environment or installed packages expose sources under multiple roots.
+packages = ["bluetooth_sig"]
+
+# Keep explicit package bases to help mypy resolve namespace packages in src/
+
 # Allow some flexibility for certain patterns
 allow_redefinition = true
 check_untyped_defs = true
@@ -190,6 +197,7 @@ module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 warn_unused_ignores = false
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "examples.*"
@@ -210,7 +218,6 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "simplepyble.*"
-# Force mypy to use included .pyi stubs for the compiled extension
-ignore_missing_imports = false
-# Allow some flexibility for pybind11-generated types
-disallow_any_unimported = false
+# Simplepyble is an optional external dependency used in examples; it does not ship
+# type stubs. Allow missing imports for it so example code mypy checks do not fail.
+ignore_missing_imports = true

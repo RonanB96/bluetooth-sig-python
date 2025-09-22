@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
-from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+from typing import cast
+
+from bluetooth_sig.gatt.characteristics import (
+    BaseCharacteristic,
+    BatteryLevelCharacteristic,
+)
 from bluetooth_sig.gatt.services import (
     BatteryService,
     CharacteristicStatus,
     ServiceHealthStatus,
 )
+from bluetooth_sig.types.gatt_enums import GattProperty
 
 
 class TestServiceValidationEdgeCasesExtended:
@@ -16,9 +22,10 @@ class TestServiceValidationEdgeCasesExtended:
     def test_service_with_unknown_characteristics(self):
         """Test service validation with characteristics not in registry."""
         service = BatteryService()
-
         # Add a characteristic with unknown UUID using BatteryLevelCharacteristic
-        unknown_char = BatteryLevelCharacteristic(uuid="FFFF", properties={"read"})
+        unknown_char = BatteryLevelCharacteristic(
+            uuid="FFFF", properties={GattProperty.READ}
+        )
         service.characteristics["FFFF"] = unknown_char
 
         # Validation should still work
@@ -30,7 +37,9 @@ class TestServiceValidationEdgeCasesExtended:
         service = BatteryService()
 
         # Add all expected characteristics
-        battery_char = BatteryLevelCharacteristic(uuid="2A19", properties={"read"})
+        battery_char = BatteryLevelCharacteristic(
+            uuid="2A19", properties={GattProperty.READ}
+        )
         service.characteristics["2A19"] = battery_char
 
         report = service.get_service_completeness_report()
@@ -43,9 +52,10 @@ class TestServiceValidationEdgeCasesExtended:
     def test_get_characteristic_status_with_partial_match(self):
         """Test getting status of characteristics with partial name matches."""
         service = BatteryService()
+        # Test case-insensitive and partial matching (now enum-only)
+        from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
 
-        # Test case-insensitive and partial matching
-        status = service.get_characteristic_status("battery level")
+        status = service.get_characteristic_status(CharacteristicName.BATTERY_LEVEL)
         if status is not None:  # Depends on implementation
             assert status.status == CharacteristicStatus.MISSING
 
@@ -144,12 +154,24 @@ class TestServiceValidationEdgeCasesExtended:
 
         # If there are optional characteristics, add one
         if optional_chars:
-            _first_optional_name, first_optional_class = next(
+            _first_optional_name, first_optional_spec = next(
                 iter(optional_chars.items())
             )
-            # Try to create the optional characteristic
+            # Try to create the optional characteristic from the spec
             try:
-                optional_char = first_optional_class(uuid="test", properties={"read"})
+                # CharacteristicSpec has attribute 'char_class' in the new format
+                first_optional_class = (
+                    first_optional_spec.char_class
+                    if hasattr(first_optional_spec, "char_class")
+                    else first_optional_spec
+                )
+                # Cast to concrete class type for static type checkers
+                first_optional_class = cast(
+                    type[BaseCharacteristic], first_optional_class
+                )
+                optional_char = first_optional_class(
+                    uuid="test", properties={GattProperty.READ}
+                )
                 service.characteristics["test"] = optional_char
 
                 # Should still not have minimum functionality without required chars
@@ -160,12 +182,21 @@ class TestServiceValidationEdgeCasesExtended:
 
         # With required characteristics
         if required_chars:
-            _first_required_name, first_required_class = next(
+            _first_required_name, first_required_spec = next(
                 iter(required_chars.items())
             )
             try:
+                first_required_class = (
+                    first_required_spec.char_class
+                    if hasattr(first_required_spec, "char_class")
+                    else first_required_spec
+                )
+                # Cast to concrete class type for static type checkers
+                first_required_class = cast(
+                    type[BaseCharacteristic], first_required_class
+                )
                 required_char = first_required_class(
-                    uuid="required", properties={"read"}
+                    uuid="required", properties={GattProperty.READ}
                 )
                 service.characteristics["required"] = required_char
 

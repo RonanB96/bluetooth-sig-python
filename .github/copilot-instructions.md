@@ -27,6 +27,7 @@ Clear, actionable checklist for AI agents working on Bluetooth SIG standards tra
 9. **Import Order:** Always use: future imports, stdlib, third-party, local imports (in that order). format --fix will enforce this.
 10. **Integration:** Library must work with any BLE connection library. Use the documented three-step integration pattern.
 11. **Legacy Support:** Ignore legacy code support until we have an official release, before this, we are still in the development phase.
+12. **No conditional imports** Conditional imports are code smell for bad code structure
 
 ---
 

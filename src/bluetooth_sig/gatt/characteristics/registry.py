@@ -236,20 +236,8 @@ def _get_characteristic_class_map() -> dict[
     return _characteristic_class_map
 
 
-def _get_characteristic_class_map_str() -> dict[str, type[BaseCharacteristic]]:
-    """Get the string-based characteristic class map, building it if necessary."""
-    # pylint: disable=global-statement
-    global _characteristic_class_map_str
-    if _characteristic_class_map_str is None:
-        _characteristic_class_map_str = {
-            e.value: c for e, c in _get_characteristic_class_map().items()
-        }
-    return _characteristic_class_map_str
-
-
-# Public API - backward compatibility globals
+# Public API - enum-keyed map
 CHARACTERISTIC_CLASS_MAP = _get_characteristic_class_map()
-CHARACTERISTIC_CLASS_MAP_STR = _get_characteristic_class_map_str()
 
 
 class CharacteristicRegistry:
@@ -257,32 +245,16 @@ class CharacteristicRegistry:
 
     @staticmethod
     def get_characteristic_class(
-        name: str | CharacteristicName,
+        name: CharacteristicName,
     ) -> type[BaseCharacteristic] | None:
-        """Get the characteristic class for a given name or enum.
+        """Get the characteristic class for a given CharacteristicName enum.
 
-        Args:
-            name: The characteristic name or enum
-
-        Returns:
-            The characteristic class if found, None otherwise.
+        This API is enum-only. Callers must pass a `CharacteristicName`.
         """
-        # If given an enum, return directly
-        if isinstance(name, CharacteristicName):
-            return _get_characteristic_class_map().get(name)
+        return _get_characteristic_class_map().get(name)
 
-        # Try to interpret the string as the enum value (display name)
-        try:
-            enum_name = CharacteristicName(name)
-            return _get_characteristic_class_map().get(enum_name)
-        except ValueError:
-            # Try case-insensitive match to enum value
-            for enum in CharacteristicName:
-                if enum.value.lower() == name.strip().lower():
-                    return _get_characteristic_class_map().get(enum)
-
-        # No match
-        return None
+    @staticmethod
+    # Enum-only registry: string-to-enum helpers removed to eliminate legacy usage.
 
     @staticmethod
     def list_all_characteristic_names() -> list[str]:

@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.bluetooth_sig.gatt.characteristics.battery_power_state import (
+from bluetooth_sig.gatt.characteristics.battery_power_state import (
     BatteryChargeLevel,
     BatteryChargeState,
     BatteryChargingType,
@@ -10,7 +10,7 @@ from src.bluetooth_sig.gatt.characteristics.battery_power_state import (
     BatteryPowerStateData,
     BatteryPresentState,
 )
-from src.bluetooth_sig.types.gatt_enums import ValueType
+from bluetooth_sig.types.gatt_enums import ValueType
 
 
 class TestBatteryPowerStateCharacteristic:
@@ -293,7 +293,7 @@ class TestBatteryPowerStateCharacteristic:
 
     def test_characteristic_uuid_resolution(self):
         """Test characteristic UUID resolution."""
-        from src.bluetooth_sig.types.gatt_enums import GattProperty
+        from bluetooth_sig.types.gatt_enums import GattProperty
 
         char = BatteryPowerStateCharacteristic(
             uuid="2BED", properties={GattProperty.READ}

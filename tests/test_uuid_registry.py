@@ -1,6 +1,7 @@
 """Tests for UUID registry and YAML loading functionality."""
 
 # pylint: disable=redefined-outer-name  # pytest fixtures
+from __future__ import annotations
 
 from pathlib import Path
 
@@ -99,6 +100,7 @@ def test_characteristic_discovery():
     assert char.name == "Battery Level"
     from bluetooth_sig.types.gatt_enums import GattProperty
 
+    assert char.properties is not None
     assert GattProperty.READ in char.properties
     assert GattProperty.NOTIFY in char.properties
 

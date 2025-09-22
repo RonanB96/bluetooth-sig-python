@@ -66,7 +66,6 @@ from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
 from .rainfall import RainfallCharacteristic
 from .registry import (
     CHARACTERISTIC_CLASS_MAP,
-    CHARACTERISTIC_CLASS_MAP_STR,
     CharacteristicName,
     CharacteristicRegistry,
 )
@@ -95,7 +94,6 @@ __all__ = [
     "CharacteristicName",
     "CharacteristicRegistry",
     "CHARACTERISTIC_CLASS_MAP",
-    "CHARACTERISTIC_CLASS_MAP_STR",
     # Base characteristic
     "BaseCharacteristic",
     # Individual characteristic classes (for backward compatibility)

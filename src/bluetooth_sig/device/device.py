@@ -52,15 +52,15 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         """Parse a single characteristic's raw bytes."""
 
     @abstractmethod
-    def get_characteristic_uuid(self, name: str | CharacteristicName) -> str | None:
-        """Get the UUID for a characteristic name or enum."""
+    def get_characteristic_uuid(self, name: CharacteristicName) -> str | None:
+        """Get the UUID for a characteristic name enum (enum-only API)."""
 
     @abstractmethod
     def get_service_uuid(self, name: str | ServiceName) -> str | None:
         """Get the UUID for a service name or enum."""
 
-    def get_characteristic_info_by_name(self, name: str) -> Any | None:
-        """Get characteristic info by name (optional method)."""
+    def get_characteristic_info_by_name(self, name: CharacteristicName) -> Any | None:
+        """Get characteristic info by enum name (optional method)."""
 
 
 class UnknownService(BaseGattService):
@@ -274,15 +274,13 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             ValueError: If the characteristic name cannot be resolved
         """
         if isinstance(identifier, CharacteristicName):
-            name = identifier.value
+            # For enum inputs, ask the translator for the UUID
+            uuid = self.translator.get_characteristic_uuid(identifier)
+            if uuid:
+                return uuid
+            norm = identifier.value.strip()
         else:
-            name = identifier
-
-        uuid = self.translator.get_characteristic_uuid(name)
-        if uuid:
-            return uuid
-
-        norm = name.strip()
+            norm = identifier
         stripped = norm.replace("-", "")
         if len(stripped) in (4, 8, 32) and all(
             c in "0123456789abcdefABCDEF" for c in stripped
@@ -652,7 +650,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
 
-        results = {}
+        results: dict[str, Any | None] = {}
         for char_name in char_names:
             try:
                 value = await self.read(char_name)
@@ -682,7 +680,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
 
-        results = {}
+        results: dict[str, bool] = {}
         for char_name, data in data_map.items():
             try:
                 await self.write(char_name, data)

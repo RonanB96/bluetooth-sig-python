@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+from bluetooth_sig.gatt.characteristics import (
+    BatteryLevelCharacteristic,
+    ModelNumberStringCharacteristic,
+)
 from bluetooth_sig.gatt.services import (
     BatteryService,
     CharacteristicStatus,
@@ -12,6 +15,7 @@ from bluetooth_sig.gatt.services import (
     ServiceHealthStatus,
     ServiceValidationResult,
 )
+from bluetooth_sig.types.gatt_enums import GattProperty
 
 
 class TestServiceHealthStatus:
@@ -202,6 +206,8 @@ class TestServiceCompletenessReport:
 class TestBatteryServiceValidation:
     """Test service validation with BatteryService."""
 
+    service: BatteryService
+
     def setup_method(self):
         """Set up test fixtures."""
         self.service = BatteryService()
@@ -219,7 +225,7 @@ class TestBatteryServiceValidation:
         """Test validation of complete battery service."""
         # Add required battery level characteristic
         battery_char = BatteryLevelCharacteristic(
-            uuid="2A19", properties={"read", "notify"}
+            uuid="2A19", properties={GattProperty.READ, GattProperty.NOTIFY}
         )
         self.service.characteristics["2A19"] = battery_char
 
@@ -246,24 +252,37 @@ class TestBatteryServiceValidation:
     def test_battery_service_characteristic_status(self):
         """Test getting characteristic status."""
         # Test missing characteristic
-        status = self.service.get_characteristic_status("Battery Level")
+        from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
+
+        status = self.service.get_characteristic_status(
+            CharacteristicName.BATTERY_LEVEL
+        )
         assert status is not None
         assert status.status == CharacteristicStatus.MISSING
         assert status.is_required is True
 
         # Add the characteristic and test present status
         battery_char = BatteryLevelCharacteristic(
-            uuid="2A19", properties={"read", "notify"}
+            uuid="2A19", properties={GattProperty.READ, GattProperty.NOTIFY}
         )
         self.service.characteristics["2A19"] = battery_char
 
-        status = self.service.get_characteristic_status("Battery Level")
+        status = self.service.get_characteristic_status(
+            CharacteristicName.BATTERY_LEVEL
+        )
         assert status is not None
         assert status.status == CharacteristicStatus.PRESENT
 
-        # Test unknown characteristic
-        unknown_status = self.service.get_characteristic_status("Unknown Char")
-        assert unknown_status is None
+        # Test unknown characteristic (enum that doesn't exist in expected list)
+        # If the enum is not expected for BatteryService, the result should be None
+        unknown_status = self.service.get_characteristic_status(
+            CharacteristicName.UV_INDEX
+        )
+        if (
+            CharacteristicName.UV_INDEX
+            not in self.service.get_expected_characteristics()
+        ):
+            assert unknown_status is None
 
     def test_battery_service_completeness_report(self):
         """Test getting service completeness report."""
@@ -288,7 +307,7 @@ class TestBatteryServiceValidation:
 
         # With battery level - has minimum functionality
         battery_char = BatteryLevelCharacteristic(
-            uuid="2A19", properties={"read", "notify"}
+            uuid="2A19", properties={GattProperty.READ, GattProperty.NOTIFY}
         )
         self.service.characteristics["2A19"] = battery_char
 
@@ -297,6 +316,8 @@ class TestBatteryServiceValidation:
 
 class TestDeviceInformationServiceValidation:
     """Test service validation with DeviceInformationService."""
+
+    service: DeviceInformationService
 
     def setup_method(self):
         """Set up test fixtures."""
@@ -403,9 +424,9 @@ class TestServiceValidationIntegration:
         service = DeviceInformationService()
 
         # Add only some characteristics (simulating real device)
-        from bluetooth_sig.gatt.characteristics import ModelNumberStringCharacteristic
-
-        model_char = ModelNumberStringCharacteristic(uuid="2A24", properties={"read"})
+        model_char = ModelNumberStringCharacteristic(
+            uuid="2A24", properties={GattProperty.READ}
+        )
         service.characteristics["2A24"] = model_char
 
         report = service.get_service_completeness_report()

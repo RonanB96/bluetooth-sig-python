@@ -1,5 +1,7 @@
 """Test glucose monitoring service and characteristics."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import (
