@@ -1,11 +1,9 @@
 """Generic Access Service implementation."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
-from ..characteristics.generic_access import (
-    AppearanceCharacteristic,
-    DeviceNameCharacteristic,
-)
+from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
@@ -20,17 +18,7 @@ class GenericAccessService(BaseGattService):
 
     _service_name: str = "GAP"
 
-    @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
-        """Get the expected characteristics for this service by name and class."""
-        return {
-            "Device Name": DeviceNameCharacteristic,
-            "Appearance": AppearanceCharacteristic,
-        }
-
-    @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
-        """Get the required characteristics for this service by name and class."""
-        return {
-            "Device Name": DeviceNameCharacteristic,
-        }
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.DEVICE_NAME: True,  # required
+        CharacteristicName.APPEARANCE: False,  # optional
+    }

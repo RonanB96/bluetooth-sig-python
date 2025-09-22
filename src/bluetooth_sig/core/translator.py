@@ -8,6 +8,7 @@ from ..gatt.characteristics import CharacteristicName, CharacteristicRegistry
 from ..gatt.context import CharacteristicContext
 from ..gatt.services import GattServiceRegistry, ServiceName
 from ..gatt.services.base import BaseGattService
+from ..gatt.uuid_registry import uuid_registry
 from ..types import (
     CharacteristicData,
     CharacteristicInfo,
@@ -90,40 +91,36 @@ class BluetoothSIGTranslator:
         # Create temporary instance to get metadata
         try:
             temp_char = char_class(uuid=uuid, properties=set())
+            value_type_str = (
+                temp_char.value_type.value
+                if hasattr(temp_char.value_type, "value")
+                else str(temp_char.value_type)
+            )
             return CharacteristicInfo(
                 uuid=temp_char.char_uuid,
                 name=getattr(temp_char, "_characteristic_name", char_class.__name__),
-                value_type=temp_char.value_type,
+                value_type=value_type_str,
                 unit=temp_char.unit,
             )
         except Exception:  # pylint: disable=broad-exception-caught
             return None
 
-    def get_characteristic_uuid(self, name: str | CharacteristicName) -> str | None:
-        """Get the UUID for a characteristic name or enum.
+    def get_characteristic_uuid(self, name: CharacteristicName) -> str | None:
+        """Get the UUID for a characteristic name enum.
 
         Args:
-            name: Characteristic name or enum
+            name: CharacteristicName enum
 
         Returns:
             Characteristic UUID or None if not found
         """
-        # Handle enum input
-        if isinstance(name, CharacteristicName):
-            char_name: str | CharacteristicName = name
-        else:
-            char_name = name
-
-        # Try to find the characteristic by name in the registry
-        char_class = CharacteristicRegistry.get_characteristic_class(char_name)
+        char_class = CharacteristicRegistry.get_characteristic_class(name)
         if char_class:
-            # Create temporary instance to get UUID
             try:
                 temp_char = char_class(uuid="", properties=set())
                 return temp_char.char_uuid
             except Exception:  # pylint: disable=broad-exception-caught
                 pass
-
         return None
 
     def get_service_uuid(self, name: str | ServiceName) -> str | None:
@@ -152,26 +149,32 @@ class BluetoothSIGTranslator:
 
         return None
 
-    def get_characteristic_info_by_name(self, name: str) -> CharacteristicInfo | None:
-        """Get characteristic info by name instead of UUID.
+    def get_characteristic_info_by_name(
+        self, name: CharacteristicName
+    ) -> CharacteristicInfo | None:
+        """Get characteristic info by enum name.
 
         Args:
-            name: Characteristic name
+            name: CharacteristicName enum
 
         Returns:
             CharacteristicInfo if found, None otherwise
         """
-        # Try to find the characteristic by name in the registry
         char_class = CharacteristicRegistry.get_characteristic_class(name)
         if char_class:
             try:
                 temp_char = char_class(uuid="", properties=set())
+                value_type_str = (
+                    temp_char.value_type.value
+                    if hasattr(temp_char.value_type, "value")
+                    else str(temp_char.value_type)
+                )
                 return CharacteristicInfo(
                     uuid=temp_char.char_uuid,
                     name=getattr(
                         temp_char, "_characteristic_name", char_class.__name__
                     ),
-                    value_type=temp_char.value_type,
+                    value_type=value_type_str,
                     unit=temp_char.unit,
                 )
             except Exception:  # pylint: disable=broad-exception-caught
@@ -188,10 +191,6 @@ class BluetoothSIGTranslator:
             ServiceInfo if found, None otherwise
         """
         # Use UUID registry for name-based lookup
-        from ..gatt.uuid_registry import (  # pylint: disable=import-outside-toplevel
-            uuid_registry,
-        )
-
         try:
             uuid_info = uuid_registry.get_service_info(name)
             if uuid_info:
@@ -308,10 +307,19 @@ class BluetoothSIGTranslator:
         Returns:
             CharacteristicInfo or ServiceInfo if found, None otherwise
         """
-        # Try characteristic first
-        char_info = self.get_characteristic_info_by_name(name)
-        if char_info:
-            return char_info
+        # Use the UUID registry for name-based lookups (string inputs).
+        try:
+            char_info = uuid_registry.get_characteristic_info(name)
+            if char_info:
+                # Build CharacteristicInfo
+                return CharacteristicInfo(
+                    uuid=char_info.uuid,
+                    name=char_info.name,
+                    value_type="",
+                    unit="",
+                )
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass
 
         # Try service
         service_info = self.get_service_info_by_name(name)

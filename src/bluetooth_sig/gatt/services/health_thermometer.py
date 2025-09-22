@@ -1,10 +1,9 @@
 """Health Thermometer Service implementation."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
-from ..characteristics.temperature_measurement import (
-    TemperatureMeasurementCharacteristic,
-)
+from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
@@ -16,16 +15,6 @@ class HealthThermometerService(BaseGattService):
     Contains the Temperature Measurement characteristic for medical-grade temperature readings.
     """
 
-    @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
-        """Get the expected characteristics for this service by name and class."""
-        return {
-            "Temperature Measurement": TemperatureMeasurementCharacteristic,
-        }
-
-    @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
-        """Get the required characteristics for this service by name and class."""
-        return {
-            "Temperature Measurement": TemperatureMeasurementCharacteristic,
-        }
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.TEMPERATURE_MEASUREMENT: True,  # required
+    }

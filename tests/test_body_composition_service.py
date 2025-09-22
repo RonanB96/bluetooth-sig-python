@@ -9,6 +9,7 @@ from bluetooth_sig.gatt.characteristics.body_composition_measurement import (
     BodyCompositionMeasurementCharacteristic,
 )
 from bluetooth_sig.gatt.services.body_composition import BodyCompositionService
+from bluetooth_sig.types.gatt_enums import ValueType
 
 
 class TestBodyCompositionMeasurementCharacteristic:
@@ -18,7 +19,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         """Test characteristic name resolution."""
         char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
         assert char._characteristic_name == "Body Composition Measurement"
-        assert char.value_type == "bytes"  # Updated to match YAML automatic parsing
+        assert char.value_type == ValueType.BYTES
 
     def test_parse_basic_body_fat_metric(self):
         """Test parsing basic body fat percentage in metric units."""
@@ -105,7 +106,7 @@ class TestBodyCompositionFeatureCharacteristic:
         """Test characteristic name resolution."""
         char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
         assert char._characteristic_name == "Body Composition Feature"
-        assert char.value_type == "bytes"  # Updated to match YAML automatic parsing
+        assert char.value_type == ValueType.BYTES
 
     def test_parse_basic_features(self):
         """Test parsing basic feature flags."""
@@ -204,25 +205,30 @@ class TestBodyCompositionService:
 
     def test_expected_characteristics(self):
         """Test expected characteristics for the service."""
+        from bluetooth_sig.types.gatt_enums import CharacteristicName
+
         expected = BodyCompositionService.get_expected_characteristics()
 
-        assert "Body Composition Measurement" in expected
-        assert "Body Composition Feature" in expected
+        assert CharacteristicName.BODY_COMPOSITION_MEASUREMENT in expected
+        assert CharacteristicName.BODY_COMPOSITION_FEATURE in expected
         assert (
-            expected["Body Composition Measurement"]
+            expected[CharacteristicName.BODY_COMPOSITION_MEASUREMENT].char_class
             == BodyCompositionMeasurementCharacteristic
         )
         assert (
-            expected["Body Composition Feature"] == BodyCompositionFeatureCharacteristic
+            expected[CharacteristicName.BODY_COMPOSITION_FEATURE].char_class
+            == BodyCompositionFeatureCharacteristic
         )
 
     def test_required_characteristics(self):
         """Test required characteristics for the service."""
+        from bluetooth_sig.types.gatt_enums import CharacteristicName
+
         required = BodyCompositionService.get_required_characteristics()
 
-        assert "Body Composition Measurement" in required
+        assert CharacteristicName.BODY_COMPOSITION_MEASUREMENT in required
         assert (
-            required["Body Composition Measurement"]
+            required[CharacteristicName.BODY_COMPOSITION_MEASUREMENT].char_class
             == BodyCompositionMeasurementCharacteristic
         )
         # Body Composition Feature is not required

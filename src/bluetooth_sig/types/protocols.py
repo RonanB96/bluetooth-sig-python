@@ -16,3 +16,4 @@ class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-me
     raw_data: bytes
     parse_success: bool
     properties: list[str]
+    name: str

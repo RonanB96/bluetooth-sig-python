@@ -26,8 +26,8 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         self.address = address
         self.timeout = timeout
         self.simpleble_module = simpleble_module
-        self.adapter: simplepyble.Adapter | None = None
-        self.peripheral: simplepyble.Peripheral | None = None
+        self.adapter: simplepyble.Adapter | None = None  # type: ignore[no-any-unimported]
+        self.peripheral: simplepyble.Peripheral | None = None  # type: ignore[no-any-unimported]
         self.executor = ThreadPoolExecutor(max_workers=1)
 
     async def connect(self) -> None:
@@ -61,7 +61,7 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
             for service in p.services():
                 for char in service.characteristics():
                     if char.uuid().upper() == char_uuid.upper():
-                        return char.read()
+                        return cast(bytes, char.read())
             raise RuntimeError(f"Characteristic {char_uuid} not found")
 
         return await asyncio.get_event_loop().run_in_executor(self.executor, _read)

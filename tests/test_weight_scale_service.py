@@ -2,6 +2,7 @@
 
 import pytest
 
+from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
 from bluetooth_sig.gatt.characteristics.weight_measurement import (
     WeightMeasurementCharacteristic,
 )
@@ -10,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.weight_scale_feature import (
     WeightScaleFeatureCharacteristic,
 )
 from bluetooth_sig.gatt.services.weight_scale import WeightScaleService
+from bluetooth_sig.types.gatt_enums import ValueType
 
 
 class TestWeightMeasurementCharacteristic:
@@ -19,7 +21,7 @@ class TestWeightMeasurementCharacteristic:
         """Test characteristic name resolution."""
         char = WeightMeasurementCharacteristic(uuid="", properties=set())
         assert char._characteristic_name == "Weight Measurement"
-        assert char.value_type == "bytes"
+        assert char.value_type == ValueType.BYTES
 
     def test_parse_basic_weight_metric(self):
         """Test parsing basic weight in metric units."""
@@ -81,7 +83,7 @@ class TestWeightScaleFeatureCharacteristic:
         """Test characteristic name resolution."""
         char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
         assert char._characteristic_name == "Weight Scale Feature"
-        assert char.value_type == "bytes"
+        assert char.value_type == ValueType.BYTES
 
     def test_parse_basic_features(self):
         """Test parsing basic feature flags."""
@@ -137,17 +139,26 @@ class TestWeightScaleService:
         """Test expected characteristics for the service."""
         expected = WeightScaleService.get_expected_characteristics()
 
-        assert "Weight Measurement" in expected
-        assert "Weight Scale Feature" in expected
-        assert expected["Weight Measurement"] == WeightMeasurementCharacteristic
-        assert expected["Weight Scale Feature"] == WeightScaleFeatureCharacteristic
+        assert CharacteristicName.WEIGHT_MEASUREMENT in expected
+        assert CharacteristicName.WEIGHT_SCALE_FEATURE in expected
+        assert (
+            expected[CharacteristicName.WEIGHT_MEASUREMENT].char_class
+            == WeightMeasurementCharacteristic
+        )
+        assert (
+            expected[CharacteristicName.WEIGHT_SCALE_FEATURE].char_class
+            == WeightScaleFeatureCharacteristic
+        )
 
     def test_required_characteristics(self):
         """Test required characteristics for the service."""
         required = WeightScaleService.get_required_characteristics()
 
-        assert "Weight Measurement" in required
-        assert required["Weight Measurement"] == WeightMeasurementCharacteristic
+        assert CharacteristicName.WEIGHT_MEASUREMENT in required
+        assert (
+            required[CharacteristicName.WEIGHT_MEASUREMENT].char_class
+            == WeightMeasurementCharacteristic
+        )
         # Weight Scale Feature is not required
 
     def test_service_creation(self):

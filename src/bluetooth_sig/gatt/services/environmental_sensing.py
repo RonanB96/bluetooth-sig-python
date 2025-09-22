@@ -1,50 +1,24 @@
 """Environmental Sensing Service implementation."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
-from ..characteristics.ammonia_concentration import AmmoniaConcentrationCharacteristic
-from ..characteristics.apparent_wind_direction import (
-    ApparentWindDirectionCharacteristic,
-)
-from ..characteristics.apparent_wind_speed import ApparentWindSpeedCharacteristic
-from ..characteristics.barometric_pressure_trend import (
-    BarometricPressureTrendCharacteristic,
-)
-from ..characteristics.co2_concentration import CO2ConcentrationCharacteristic
-from ..characteristics.dew_point import DewPointCharacteristic
-from ..characteristics.elevation import ElevationCharacteristic
-from ..characteristics.heat_index import HeatIndexCharacteristic
-from ..characteristics.humidity import HumidityCharacteristic
-from ..characteristics.methane_concentration import MethaneConcentrationCharacteristic
-from ..characteristics.nitrogen_dioxide_concentration import (
-    NitrogenDioxideConcentrationCharacteristic,
-)
-from ..characteristics.non_methane_voc_concentration import (
-    NonMethaneVOCConcentrationCharacteristic,
-)
-from ..characteristics.ozone_concentration import OzoneConcentrationCharacteristic
-from ..characteristics.pm1_concentration import PM1ConcentrationCharacteristic
-from ..characteristics.pm10_concentration import PM10ConcentrationCharacteristic
-from ..characteristics.pm25_concentration import PM25ConcentrationCharacteristic
-from ..characteristics.pollen_concentration import PollenConcentrationCharacteristic
-from ..characteristics.pressure import PressureCharacteristic
-from ..characteristics.rainfall import RainfallCharacteristic
-from ..characteristics.sulfur_dioxide_concentration import (
-    SulfurDioxideConcentrationCharacteristic,
-)
-from ..characteristics.temperature import TemperatureCharacteristic
-from ..characteristics.true_wind_direction import TrueWindDirectionCharacteristic
-from ..characteristics.true_wind_speed import TrueWindSpeedCharacteristic
-from ..characteristics.voc_concentration import VOCConcentrationCharacteristic
-from ..characteristics.wind_chill import WindChillCharacteristic
+from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
 @dataclass
 class EnvironmentalSensingService(BaseGattService):
-    """Environmental Sensing Service implementation.
+    """Environmental Sensing Service implementation (0x181A).
 
-    Contains characteristics related to environmental and air quality data:
+    Used for environmental monitoring devices including weather stations,
+    air quality sensors, and comprehensive environmental monitoring systems.
+    Supports a wide range of environmental measurements including:
+    - Traditional weather measurements (temperature, humidity, pressure)
+    - Air quality metrics (gas concentrations, particulate matter)
+    - Advanced environmental conditions (wind, elevation, trends)
+
+    Contains comprehensive characteristics for environmental sensing including:
     - Temperature - Optional
     - Humidity - Optional
     - Pressure - Optional
@@ -55,9 +29,9 @@ class EnvironmentalSensingService(BaseGattService):
     - True Wind Direction - Optional
     - Apparent Wind Speed - Optional
     - Apparent Wind Direction - Optional
-    - CO\\textsubscript{2} Concentration - Optional
+    - CO2 Concentration - Optional
     - VOC Concentration - Optional
-    - Non-Methane Volatile Organic Compounds Concentration - Optional
+    - Non-Methane VOC Concentration - Optional
     - Ammonia Concentration - Optional
     - Methane Concentration - Optional
     - Nitrogen Dioxide Concentration - Optional
@@ -66,43 +40,40 @@ class EnvironmentalSensingService(BaseGattService):
     - PM2.5 Concentration - Optional
     - PM10 Concentration - Optional
     - Sulfur Dioxide Concentration - Optional
+    - Elevation - Optional
+    - Barometric Pressure Trend - Optional
+    - Pollen Concentration - Optional
+    - Rainfall - Optional
     """
 
-    @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
-        """Get the expected characteristics for this service by name and class."""
-        return {
-            # Traditional environmental sensors
-            "Temperature": TemperatureCharacteristic,
-            "Humidity": HumidityCharacteristic,
-            "Pressure": PressureCharacteristic,
-            "Dew Point": DewPointCharacteristic,
-            "Heat Index": HeatIndexCharacteristic,
-            "Wind Chill": WindChillCharacteristic,
-            "True Wind Speed": TrueWindSpeedCharacteristic,
-            "True Wind Direction": TrueWindDirectionCharacteristic,
-            "Apparent Wind Speed": ApparentWindSpeedCharacteristic,
-            "Apparent Wind Direction": ApparentWindDirectionCharacteristic,
-            # Gas sensor characteristics for air quality monitoring
-            "CO\\textsubscript{2} Concentration": CO2ConcentrationCharacteristic,
-            "VOC Concentration": VOCConcentrationCharacteristic,
-            "Non-Methane Volatile Organic Compounds Concentration": NonMethaneVOCConcentrationCharacteristic,
-            "Ammonia Concentration": AmmoniaConcentrationCharacteristic,
-            "Methane Concentration": MethaneConcentrationCharacteristic,
-            "Nitrogen Dioxide Concentration": NitrogenDioxideConcentrationCharacteristic,
-            "Ozone Concentration": OzoneConcentrationCharacteristic,
-            "Particulate Matter - PM1 Concentration": PM1ConcentrationCharacteristic,
-            "Particulate Matter - PM2.5 Concentration": PM25ConcentrationCharacteristic,
-            "Particulate Matter - PM10 Concentration": PM10ConcentrationCharacteristic,
-            "Sulfur Dioxide Concentration": SulfurDioxideConcentrationCharacteristic,
-            # Environmental condition characteristics
-            "Elevation": ElevationCharacteristic,
-            "Barometric Pressure Trend": BarometricPressureTrendCharacteristic,
-            "Pollen Concentration": PollenConcentrationCharacteristic,
-            "Rainfall": RainfallCharacteristic,
-        }
-
-    @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
-        """Get the required characteristics for this service by name and class."""
-        return {}  # All characteristics are optional
+    # All characteristics are optional in this service
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        # Traditional environmental sensors
+        CharacteristicName.TEMPERATURE: False,
+        CharacteristicName.HUMIDITY: False,
+        CharacteristicName.PRESSURE: False,
+        CharacteristicName.DEW_POINT: False,
+        CharacteristicName.HEAT_INDEX: False,
+        CharacteristicName.WIND_CHILL: False,
+        CharacteristicName.TRUE_WIND_SPEED: False,
+        CharacteristicName.TRUE_WIND_DIRECTION: False,
+        CharacteristicName.APPARENT_WIND_SPEED: False,
+        CharacteristicName.APPARENT_WIND_DIRECTION: False,
+        # Gas sensor characteristics for air quality monitoring
+        CharacteristicName.CO2_CONCENTRATION: False,
+        CharacteristicName.VOC_CONCENTRATION: False,
+        CharacteristicName.NON_METHANE_VOC_CONCENTRATION: False,
+        CharacteristicName.AMMONIA_CONCENTRATION: False,
+        CharacteristicName.METHANE_CONCENTRATION: False,
+        CharacteristicName.NITROGEN_DIOXIDE_CONCENTRATION: False,
+        CharacteristicName.OZONE_CONCENTRATION: False,
+        CharacteristicName.PM1_CONCENTRATION: False,
+        CharacteristicName.PM25_CONCENTRATION: False,
+        CharacteristicName.PM10_CONCENTRATION: False,
+        CharacteristicName.SULFUR_DIOXIDE_CONCENTRATION: False,
+        # Environmental condition characteristics
+        CharacteristicName.ELEVATION: False,
+        CharacteristicName.BAROMETRIC_PRESSURE_TREND: False,
+        CharacteristicName.POLLEN_CONCENTRATION: False,
+        CharacteristicName.RAINFALL: False,
+    }

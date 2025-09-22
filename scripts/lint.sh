@@ -10,6 +10,17 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# If user provided PROJECT_ROOT override, change to it
+if [ -n "${PROJECT_ROOT_OVERRIDE:-}" ]; then
+    # Resolve to absolute path
+    if [ -d "$PROJECT_ROOT_OVERRIDE" ]; then
+        PROJECT_ROOT="$(cd "$PROJECT_ROOT_OVERRIDE" && pwd)"
+    else
+        print_error "Provided path does not exist: $PROJECT_ROOT_OVERRIDE"
+        exit 1
+    fi
+fi
+
 # Change to project root
 cd "$PROJECT_ROOT"
 
@@ -24,7 +35,7 @@ NC='\033[0m' # No Color
 RUFF_FOLDERS="src/ tests/ examples/"
 BLUETOOTH_SIG_FOLDERS="src/bluetooth_sig"
 EXAMPLES_FOLDERS="examples"
-TEST_FOLDERS="tests/"
+TEST_FOLDERS="tests"
 
 # Print functions
 print_header() {
@@ -47,7 +58,11 @@ print_warning() {
 check_venv() {
     if [ -z "${VIRTUAL_ENV:-}" ]; then
         print_warning "No virtual environment detected"
-        print_warning "Consider running: source .venv/bin/activate"
+        if [ -n "${PROJECT_ROOT:-}" ]; then
+            print_warning "Consider running: source $PROJECT_ROOT/.venv/bin/activate"
+        else
+            print_warning "Consider running: source .venv/bin/activate"
+        fi
     else
         print_success "Virtual environment active: $VIRTUAL_ENV"
     fi
@@ -102,6 +117,7 @@ run_pylint() {
     set -e  # Re-enable exit on error
 
     # Extract production score
+    echo "$PROD_PYLINT_OUTPUT"
     PROD_SCORE=$(echo "$PROD_PYLINT_OUTPUT" | sed -n 's/.*rated at \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
     echo "Production pylint score: $PROD_SCORE/10"
 
@@ -171,12 +187,13 @@ run_mypy() {
 
     local exit_code=0
 
-    # Run mypy on production code (strict)
+    # Run mypy on production code (strict) using package-based invocation and
+    # explicit package bases so mypy maps the `src/` layout consistently and
+    # avoids "source file found twice" errors.
     echo "Checking production code types..."
     local PROD_MYPY_OUTPUT
     set +e  # Temporarily disable exit on error
-    # shellcheck disable=SC2086  # BLUETOOTH_SIG_FOLDERS is intentionally space-separated
-    PROD_MYPY_OUTPUT=$(mypy $BLUETOOTH_SIG_FOLDERS 2>&1)
+    PROD_MYPY_OUTPUT=$(MYPYPATH=src python -m mypy --explicit-package-bases --config-file pyproject.toml 2>&1)
     local PROD_MYPY_EXIT_CODE=$?
     set -e  # Re-enable exit on error
 
@@ -196,7 +213,7 @@ run_mypy() {
     set +e  # Temporarily disable exit on error
     # shellcheck disable=SC2086  # EXAMPLES_FOLDERS is intentionally space-separated
     local EXAMPLES_MYPY_OUTPUT
-    EXAMPLES_MYPY_OUTPUT=$(mypy $EXAMPLES_FOLDERS 2>&1)
+    EXAMPLES_MYPY_OUTPUT=$(MYPYPATH=src python -m mypy --explicit-package-bases --config-file pyproject.toml $EXAMPLES_FOLDERS 2>&1)
     local EXAMPLES_MYPY_EXIT_CODE=$?
     set -e  # Re-enable exit on error
 
@@ -215,7 +232,8 @@ run_mypy() {
     set +e  # Temporarily disable exit on error
     # shellcheck disable=SC2086  # TEST_FOLDERS is intentionally space-separated
     local TEST_MYPY_OUTPUT
-    TEST_MYPY_OUTPUT=$(mypy $TEST_FOLDERS 2>&1)
+    # Use PYTHONPATH="" to avoid duplicate source issues
+    TEST_MYPY_OUTPUT=$(PYTHONPATH="" python -m mypy --config-file pyproject.toml $TEST_FOLDERS 2>&1)
     local TEST_MYPY_EXIT_CODE=$?
     set -e  # Re-enable exit on error
 
@@ -329,6 +347,14 @@ run_all_checks() {
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --path|-p)
+            if [ -z "${2:-}" ]; then
+                print_error "Missing argument for $1"
+                exit 1
+            fi
+            PROJECT_ROOT_OVERRIDE="$2"
+            shift 2
+            ;;
         --all|--check)
             run_all_checks
             exit $?
@@ -359,6 +385,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "OPTIONS:"
             echo "  --all, --check      Run all linting checks (default)"
+            echo "  --path, -p <path>   Run checks in specified project path"
             echo ""
             echo "Individual tools:"
             echo "  --ruff              Run ruff linting (replaces flake8)"

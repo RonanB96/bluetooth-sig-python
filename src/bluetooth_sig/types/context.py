@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from typing import cast
 
 from .protocols import CharacteristicDataProtocol
 
@@ -14,8 +15,10 @@ class DeviceInfo:
 
     address: str = ""
     name: str = ""
-    manufacturer_data: dict[int, bytes] = field(default_factory=dict)
-    service_uuids: list[str] = field(default_factory=list)
+    manufacturer_data: dict[int, bytes] = field(
+        default_factory=lambda: cast(dict[int, bytes], {})
+    )
+    service_uuids: list[str] = field(default_factory=lambda: cast(list[str], []))
 
 
 @dataclass

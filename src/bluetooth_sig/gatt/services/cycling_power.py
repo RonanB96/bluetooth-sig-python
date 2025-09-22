@@ -1,15 +1,9 @@
 """Cycling Power Service implementation."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
-from ..characteristics.cycling_power_control_point import (
-    CyclingPowerControlPointCharacteristic,
-)
-from ..characteristics.cycling_power_feature import CyclingPowerFeatureCharacteristic
-from ..characteristics.cycling_power_measurement import (
-    CyclingPowerMeasurementCharacteristic,
-)
-from ..characteristics.cycling_power_vector import CyclingPowerVectorCharacteristic
+from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
@@ -21,20 +15,9 @@ class CyclingPowerService(BaseGattService):
     Supports instantaneous power, force/torque vectors, and control functions.
     """
 
-    @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
-        """Get the expected characteristics for this service by name and class."""
-        return {
-            "Cycling Power Measurement": CyclingPowerMeasurementCharacteristic,
-            "Cycling Power Feature": CyclingPowerFeatureCharacteristic,
-            "Cycling Power Vector": CyclingPowerVectorCharacteristic,
-            "Cycling Power Control Point": CyclingPowerControlPointCharacteristic,
-        }
-
-    @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
-        """Get the required characteristics for this service by name and class."""
-        return {
-            "Cycling Power Measurement": CyclingPowerMeasurementCharacteristic,
-            "Cycling Power Feature": CyclingPowerFeatureCharacteristic,
-        }
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.CYCLING_POWER_MEASUREMENT: True,  # required
+        CharacteristicName.CYCLING_POWER_FEATURE: True,  # required
+        CharacteristicName.CYCLING_POWER_VECTOR: False,  # optional
+        CharacteristicName.CYCLING_POWER_CONTROL_POINT: False,  # optional
+    }

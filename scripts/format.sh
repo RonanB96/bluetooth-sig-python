@@ -10,6 +10,16 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# Allow overriding the project root with an explicit path
+if [ -n "${PROJECT_ROOT_OVERRIDE:-}" ]; then
+    if [ -d "$PROJECT_ROOT_OVERRIDE" ]; then
+        PROJECT_ROOT="$(cd "$PROJECT_ROOT_OVERRIDE" && pwd)"
+    else
+        print_error "Provided path does not exist: $PROJECT_ROOT_OVERRIDE"
+        exit 1
+    fi
+fi
+
 # Change to project root
 cd "$PROJECT_ROOT"
 
@@ -43,7 +53,12 @@ print_warning() {
 # Check if virtual environment is activated
 check_venv() {
     if [ -z "${VIRTUAL_ENV:-}" ]; then
-        print_warning "Virtual environment not detected. Consider running: source .venv/bin/activate"
+        print_warning "Virtual environment not detected."
+        if [ -n "${PROJECT_ROOT:-}" ]; then
+            print_warning "Consider running: source $PROJECT_ROOT/.venv/bin/activate"
+        else
+            print_warning "Consider running: source .venv/bin/activate"
+        fi
     else
         print_success "Virtual environment active: $VIRTUAL_ENV"
     fi
@@ -169,6 +184,14 @@ fi
 
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --path|-p)
+            if [ -z "${2:-}" ]; then
+                print_error "Missing argument for $1"
+                exit 1
+            fi
+            PROJECT_ROOT_OVERRIDE="$2"
+            shift 2
+            ;;
         --ruff)
             run_ruff --check
             exit $?
@@ -203,6 +226,7 @@ while [[ $# -gt 0 ]]; do
             echo "Code formatting script for BLE GATT Device"
             echo ""
             echo "OPTIONS:"
+            echo "  --path, -p <path>    Run formatting in specified project path"
             echo "  --check             Check all formatting (default)"
             echo "  --fix               Fix all formatting issues"
             echo "  --fix-unsafe        Fix all formatting issues (including unsafe fixes)"

@@ -1,15 +1,9 @@
 """Device Information Service implementation."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
-from ..characteristics.device_info import (
-    FirmwareRevisionStringCharacteristic,
-    HardwareRevisionStringCharacteristic,
-    ManufacturerNameStringCharacteristic,
-    ModelNumberStringCharacteristic,
-    SerialNumberStringCharacteristic,
-    SoftwareRevisionStringCharacteristic,
-)
+from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
@@ -26,21 +20,11 @@ class DeviceInformationService(BaseGattService):
     - Software Revision String - Optional
     """
 
-    @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
-        """Get the expected characteristics for this service by name and class."""
-        return {
-            "Manufacturer Name String": ManufacturerNameStringCharacteristic,
-            "Model Number String": ModelNumberStringCharacteristic,
-            "Serial Number String": SerialNumberStringCharacteristic,
-            "Hardware Revision String": HardwareRevisionStringCharacteristic,
-            "Firmware Revision String": FirmwareRevisionStringCharacteristic,
-            "Software Revision String": SoftwareRevisionStringCharacteristic,
-        }
-
-    @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
-        """Get the required characteristics for this service by name and class."""
-        return {
-            "Manufacturer Name String": ManufacturerNameStringCharacteristic,
-        }
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.MANUFACTURER_NAME_STRING: True,  # required
+        CharacteristicName.MODEL_NUMBER_STRING: False,  # optional
+        CharacteristicName.SERIAL_NUMBER_STRING: False,  # optional
+        CharacteristicName.HARDWARE_REVISION_STRING: False,  # optional
+        CharacteristicName.FIRMWARE_REVISION_STRING: False,  # optional
+        CharacteristicName.SOFTWARE_REVISION_STRING: False,  # optional
+    }

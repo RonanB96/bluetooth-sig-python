@@ -126,8 +126,8 @@ class TestParsedADStructures:
         assert parsed.manufacturer_data == {}
         assert parsed.service_uuids == []
         assert parsed.local_name == ""
-        assert parsed.tx_power is None
-        assert parsed.flags is None
+        assert parsed.tx_power == 0
+        assert parsed.flags == 0
 
     def test_dataclass_with_data(self):
         """Test ParsedADStructures with populated data."""

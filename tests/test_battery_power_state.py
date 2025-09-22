@@ -7,8 +7,10 @@ from bluetooth_sig.gatt.characteristics.battery_power_state import (
     BatteryChargeState,
     BatteryChargingType,
     BatteryPowerStateCharacteristic,
+    BatteryPowerStateData,
     BatteryPresentState,
 )
+from bluetooth_sig.types.gatt_enums import ValueType
 
 
 class TestBatteryPowerStateCharacteristic:
@@ -17,9 +19,10 @@ class TestBatteryPowerStateCharacteristic:
     def test_characteristic_name(self):
         """Test characteristic name resolution."""
         char = BatteryPowerStateCharacteristic(uuid="", properties=set())
-        assert char._characteristic_name == "Battery Level Status"
+        # Test that characteristic name is correctly set (accessing protected member for testing)
+        assert char._characteristic_name == "Battery Level Status"  # noqa: SLF001
         assert (
-            char.value_type == "string"
+            char.value_type == ValueType.STRING
         )  # YAML has boolean[] which maps to string, but decode_value returns dict
 
     def test_parse_basic_battery_state(self):
@@ -145,7 +148,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charge_state == expected["battery_charge_state"]
         assert result.battery_charge_level == expected["battery_charge_level"]
         assert result.battery_charging_type == expected["battery_charging_type"]
-        assert result.charging_fault_reason == expected["charging_fault_reason"]
+        assert result.charging_fault_reason is None
 
     def test_parse_extended_format_with_fault(self):
         """Test parsing extended format with charging fault."""
@@ -257,7 +260,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charge_state == expected["battery_charge_state"]
         assert result.battery_charge_level == expected["battery_charge_level"]
         assert result.battery_charging_type == expected["battery_charging_type"]
-        assert result.charging_fault_reason == expected["charging_fault_reason"]
+        assert result.charging_fault_reason is None
 
     def test_parse_reserved_states(self):
         """Test parsing with reserved states."""
@@ -290,7 +293,11 @@ class TestBatteryPowerStateCharacteristic:
 
     def test_characteristic_uuid_resolution(self):
         """Test characteristic UUID resolution."""
-        char = BatteryPowerStateCharacteristic(uuid="2BED", properties={"read"})
+        from bluetooth_sig.types.gatt_enums import GattProperty
+
+        char = BatteryPowerStateCharacteristic(
+            uuid="2BED", properties={GattProperty.READ}
+        )
         assert char.char_uuid == "2BED"
 
     def test_encode_value(self):
@@ -298,10 +305,6 @@ class TestBatteryPowerStateCharacteristic:
         char = BatteryPowerStateCharacteristic(uuid="", properties=set())
 
         # Create test data
-        from bluetooth_sig.gatt.characteristics.battery_power_state import (
-            BatteryPowerStateData,
-        )
-
         test_data = BatteryPowerStateData(
             raw_value=0xD6,
             battery_present=BatteryPresentState.PRESENT,

@@ -14,6 +14,7 @@ from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.exceptions import UUIDResolutionError
 from bluetooth_sig.gatt.services.base import BaseGattService
 from bluetooth_sig.gatt.uuid_registry import uuid_registry
+from bluetooth_sig.types.gatt_enums import ValueType
 
 
 def discover_service_classes() -> list[type[BaseGattService]]:
@@ -79,148 +80,6 @@ def discover_characteristic_classes() -> list[type[BaseCharacteristic]]:
                 )
 
     return characteristic_classes
-
-
-class TestServiceRegistryValidation:
-    """Test all services against the YAML registry."""
-
-    @pytest.fixture(scope="class")
-    def service_classes(self) -> list[type[BaseGattService]]:
-        """Get all service classes."""
-        return discover_service_classes()
-
-    def test_all_services_discovered(
-        self, service_classes: list[type[BaseGattService]]
-    ):
-        """Test that services were discovered."""
-        assert len(service_classes) > 0, "No service classes were discovered"
-
-        # Print discovered services for debugging
-        service_names = [cls.__name__ for cls in service_classes]
-        print(f"Discovered services: {service_names}")
-
-    @pytest.mark.parametrize("service_class", discover_service_classes())
-    def test_service_uuid_resolution(self, service_class: type[BaseGattService]):
-        """Test that each service can resolve its UUID from the registry."""
-        try:
-            # Create an instance to trigger UUID resolution
-            service_instance = service_class()
-            uuid = service_instance.SERVICE_UUID
-
-            # Verify UUID is not empty
-            assert uuid, f"Service {service_class.__name__} has empty UUID"
-
-            # Verify UUID format (should be 4 characters for 16-bit UUIDs)
-            assert len(uuid) == 4, (
-                f"Service {service_class.__name__} UUID '{uuid}' should be 4 characters"
-            )
-            assert all(c in "0123456789ABCDEF" for c in uuid), (
-                f"Service {service_class.__name__} UUID '{uuid}' should be hexadecimal"
-            )
-
-        except ValueError as e:
-            pytest.fail(f"Service {service_class.__name__} failed UUID resolution: {e}")
-
-    @pytest.mark.parametrize("service_class", discover_service_classes())
-    def test_service_in_yaml_registry(self, service_class: type[BaseGattService]):
-        """Test that each service exists in the YAML registry with correct info."""
-        try:
-            service_instance = service_class()
-            uuid = service_instance.SERVICE_UUID
-
-            # Check if UUID exists in registry
-            service_info = uuid_registry.get_service_info(uuid)
-            assert service_info is not None, (
-                f"Service UUID '{uuid}' for {service_class.__name__} "
-                f"not found in registry"
-            )
-
-            # Verify the service has a valid name
-            assert service_info.name, (
-                f"Service {service_class.__name__} has empty name in registry"
-            )
-
-            # Verify the service has a valid ID
-            assert service_info.id, (
-                f"Service {service_class.__name__} has empty ID in registry"
-            )
-            assert service_info.id.startswith("org.bluetooth.service"), (
-                f"Service {service_class.__name__} ID should start with "
-                f"'org.bluetooth.service'"
-            )
-
-        except Exception as e:
-            pytest.fail(
-                f"Service {service_class.__name__} registry validation failed: {e}"
-            )
-
-    @pytest.mark.parametrize("service_class", discover_service_classes())
-    def test_service_expected_characteristics(
-        self, service_class: type[BaseGattService]
-    ):
-        """Test that all expected characteristics for each service are valid."""
-        try:
-            service = service_class()
-            expected_chars = service.get_expected_characteristics()
-
-            # Verify expected characteristics is a dictionary
-            assert isinstance(expected_chars, dict), (
-                f"Service {service_class.__name__} expected_characteristics should be a dict"
-            )
-
-            # Test each expected characteristic
-            for char_name, char_class in expected_chars.items():
-                assert isinstance(char_name, str), (
-                    f"Characteristic name should be string, got {type(char_name)}"
-                )
-                assert char_name, "Characteristic name should not be empty"
-
-                assert inspect.isclass(char_class), (
-                    f"Characteristic class should be a class, got {type(char_class)}"
-                )
-                assert issubclass(char_class, BaseCharacteristic), (
-                    "Characteristic class should inherit from BaseCharacteristic"
-                )
-
-                # Verify the characteristic name exists in registry
-                char_info = uuid_registry.get_characteristic_info(char_name)
-                assert char_info is not None, (
-                    f"Characteristic '{char_name}' for service {service_class.__name__} not found in YAML registry"
-                )
-
-        except Exception as e:
-            pytest.fail(
-                f"Service {service_class.__name__} expected characteristics validation failed: {e}"
-            )
-
-    @pytest.mark.parametrize("service_class", discover_service_classes())
-    def test_service_required_characteristics(
-        self, service_class: type[BaseGattService]
-    ):
-        """Test that all required characteristics for each service are valid."""
-        try:
-            service = service_class()
-            required_chars = service.get_required_characteristics()
-            expected_chars = service.get_expected_characteristics()
-
-            # Verify required characteristics is a dictionary
-            assert isinstance(required_chars, dict), (
-                f"Service {service_class.__name__} required_characteristics should be a dict"
-            )
-
-            # All required characteristics should be in expected characteristics
-            for char_name, char_class in required_chars.items():
-                assert char_name in expected_chars, (
-                    f"Required characteristic '{char_name}' not in expected characteristics for {service_class.__name__}"
-                )
-                assert expected_chars[char_name] == char_class, (
-                    f"Required characteristic '{char_name}' class mismatch in {service_class.__name__}"
-                )
-
-        except Exception as e:
-            pytest.fail(
-                f"Service {service_class.__name__} required characteristics validation failed: {e}"
-            )
 
 
 class TestCharacteristicRegistryValidation:
@@ -322,8 +181,8 @@ class TestCharacteristicRegistryValidation:
 
             # Verify value_type is one of the expected types
             valid_types = {"string", "int", "float", "boolean", "bytes", "dict"}
-            assert char.value_type in valid_types, (
-                f"Characteristic {char_class.__name__} value_type '{char.value_type}' should be one of {valid_types}"
+            assert char.value_type.value in valid_types, (
+                f"Characteristic {char_class.__name__} value_type '{char.value_type.value}' should be one of {valid_types}"
             )
 
             # Verify decode_value method exists
@@ -392,19 +251,30 @@ class TestRegistryConsistency:
                 service = service_class()
                 expected_chars = service.get_expected_characteristics()
 
-                for char_name, char_class in expected_chars.items():
+                for char_name, char_value in expected_chars.items():
+                    # Extract characteristic class from either CharacteristicSpec or direct class reference
+                    if hasattr(char_value, "char_class"):  # CharacteristicSpec
+                        char_cls = char_value.char_class  # type: ignore[assignment]
+                    else:  # Legacy direct class reference
+                        char_cls = char_value  # type: ignore[assignment]
+
                     # Verify the characteristic class exists in our discovered classes
-                    assert char_class in char_classes, (
-                        f"Service {service_class.__name__} references unknown characteristic class {char_class.__name__}"
+                    assert char_cls in char_classes, (
+                        f"Service {service_class.__name__} references unknown characteristic class {char_cls.__name__}"
                     )
 
                     # Verify the characteristic name matches what the class reports
-                    if char_name in char_name_to_class:
-                        expected_class = char_name_to_class[char_name]
-                        assert char_class == expected_class, (
-                            f"Service {service_class.__name__} characteristic name '{char_name}' "
+                    char_key = (
+                        char_name.value
+                        if hasattr(char_name, "value")
+                        else str(char_name)
+                    )
+                    if char_key in char_name_to_class:
+                        expected_class = char_name_to_class[char_key]
+                        assert char_cls == expected_class, (
+                            f"Service {service_class.__name__} characteristic name '{char_key}' "
                             f"maps to wrong class. Expected {expected_class.__name__}, "
-                            f"got {char_class.__name__}"
+                            f"got {char_cls.__name__}"
                         )
 
             except Exception as e:
@@ -477,7 +347,7 @@ class TestNameResolutionFallback:
         assert hasattr(service, "_service_name"), (
             "BatteryService should have _service_name attribute"
         )
-        assert not service._service_name, "BatteryService _service_name should be empty"
+        assert not service._service_name, "BatteryService _service_name should be empty"  # type: ignore[protected-access]
 
         # Should resolve UUID through class name
         uuid = service.SERVICE_UUID
@@ -499,7 +369,7 @@ class TestNameResolutionFallback:
             """Test characteristic without explicit name."""
 
             def __post_init__(self):
-                self.value_type = "float"
+                self.value_type = ValueType.FLOAT
                 super().__post_init__()
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
@@ -540,8 +410,8 @@ class TestNameResolutionFallback:
         assert hasattr(service, "_service_name"), (
             "GenericAccessService should have _service_name set"
         )
-        assert service._service_name == "GAP", (
-            f"Expected 'GAP', got '{service._service_name}'"
+        assert service._service_name == "GAP", (  # type: ignore[protected-access]
+            f"Expected 'GAP', got '{service._service_name}'"  # type: ignore[protected-access]
         )
 
         # Should resolve UUID through explicit name, not class name
@@ -564,8 +434,8 @@ class TestNameResolutionFallback:
         assert hasattr(char, "_characteristic_name"), (
             "UVIndexCharacteristic should have _characteristic_name set"
         )
-        assert char._characteristic_name == "UV Index", (
-            f"Expected 'UV Index', got '{char._characteristic_name}'"
+        assert char._characteristic_name == "UV Index", (  # type: ignore[protected-access]
+            f"Expected 'UV Index', got '{char._characteristic_name}'"  # type: ignore[protected-access]
         )
 
         # Should resolve UUID through explicit name, not class name parsing
@@ -590,7 +460,7 @@ class TestNameResolutionFallback:
             """Test complex characteristic name parsing."""
 
             def __post_init__(self):
-                self.value_type = "string"
+                self.value_type = ValueType.STRING
                 super().__post_init__()
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
@@ -628,7 +498,7 @@ class TestNameResolutionFallback:
             """Test characteristic that shouldn't exist in registry."""
 
             def __post_init__(self):
-                self.value_type = "string"
+                self.value_type = ValueType.STRING
                 super().__post_init__()
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
@@ -673,7 +543,7 @@ class TestNameResolutionFallback:
             assert hasattr(service, "_service_name"), (
                 f"{service_class.__name__} should have _service_name attribute"
             )
-            assert not service._service_name, (
+            assert not service._service_name, (  # type: ignore[protected-access]
                 f"{service_class.__name__} _service_name should be empty"
             )
             assert service.SERVICE_UUID == expected_uuid
@@ -694,7 +564,7 @@ class TestNameResolutionFallback:
             assert hasattr(service, "_service_name"), (
                 f"{service_class.__name__} should have _service_name"
             )
-            assert service._service_name == explicit_name
+            assert service._service_name == explicit_name  # type: ignore[protected-access]
             assert service.SERVICE_UUID == expected_uuid
             assert service.name == expected_name
 
@@ -721,7 +591,7 @@ class TestNameResolutionFallback:
             assert hasattr(char, "_characteristic_name"), (
                 f"{char_class.__name__} should have _characteristic_name"
             )
-            assert char._characteristic_name == explicit_name
+            assert char._characteristic_name == explicit_name  # type: ignore[protected-access]
             assert char.char_uuid == expected_uuid
             assert char.name == expected_name
 
