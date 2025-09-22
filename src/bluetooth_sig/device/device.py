@@ -27,6 +27,7 @@ from ..types import (
 )
 from ..types.data_types import CharacteristicData
 from ..types.device_types import DeviceEncryption, DeviceService
+from ..types.gatt_services import CharacteristicCollection
 from .advertising_parser import AdvertisingParser
 from .connection import ConnectionManagerProtocol
 
@@ -66,11 +67,11 @@ class UnknownService(BaseGattService):
     """Generic service for unknown/unsupported UUIDs."""
 
     @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
+    def get_expected_characteristics(cls) -> CharacteristicCollection:
         return {}
 
     @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
+    def get_required_characteristics(cls) -> CharacteristicCollection:
         return {}
 
 

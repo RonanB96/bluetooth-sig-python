@@ -1,13 +1,9 @@
 """Body Composition Service implementation."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
-from ..characteristics.body_composition_feature import (
-    BodyCompositionFeatureCharacteristic,
-)
-from ..characteristics.body_composition_measurement import (
-    BodyCompositionMeasurementCharacteristic,
-)
+from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
@@ -20,17 +16,7 @@ class BodyCompositionService(BaseGattService):
     Contains Body Composition Measurement and Body Composition Feature characteristics.
     """
 
-    @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
-        """Get the expected characteristics for this service by name and class."""
-        return {
-            "Body Composition Measurement": BodyCompositionMeasurementCharacteristic,
-            "Body Composition Feature": BodyCompositionFeatureCharacteristic,
-        }
-
-    @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
-        """Get the required characteristics for this service by name and class."""
-        return {
-            "Body Composition Measurement": BodyCompositionMeasurementCharacteristic,
-        }
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.BODY_COMPOSITION_MEASUREMENT: True,  # required
+        CharacteristicName.BODY_COMPOSITION_FEATURE: False,  # optional
+    }

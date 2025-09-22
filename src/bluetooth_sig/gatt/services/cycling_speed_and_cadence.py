@@ -1,8 +1,9 @@
 """Cycling Speed and Cadence Service implementation."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
-from ..characteristics.csc_measurement import CSCMeasurementCharacteristic
+from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
@@ -14,16 +15,6 @@ class CyclingSpeedAndCadenceService(BaseGattService):
     Contains the CSC Measurement characteristic for cycling metrics.
     """
 
-    @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
-        """Get the expected characteristics for this service by name and class."""
-        return {
-            "CSC Measurement": CSCMeasurementCharacteristic,
-        }
-
-    @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
-        """Get the required characteristics for this service by name and class."""
-        return {
-            "CSC Measurement": CSCMeasurementCharacteristic,
-        }
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.CSC_MEASUREMENT: True,  # required
+    }

@@ -9,10 +9,9 @@ __init__.py files lightweight.
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from .base import BaseGattService
+from .base import BaseGattService
 
 
 class ServiceName(Enum):

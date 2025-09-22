@@ -1,8 +1,9 @@
 """Heart Rate Service implementation."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
-from ..characteristics.heart_rate_measurement import HeartRateMeasurementCharacteristic
+from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
@@ -15,16 +16,6 @@ class HeartRateService(BaseGattService):
     RR-intervals and energy expenditure.
     """
 
-    @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
-        """Get the expected characteristics for this service by name and class."""
-        return {
-            "Heart Rate Measurement": HeartRateMeasurementCharacteristic,
-        }
-
-    @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
-        """Get the required characteristics for this service by name and class."""
-        return {
-            "Heart Rate Measurement": HeartRateMeasurementCharacteristic,
-        }
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.HEART_RATE_MEASUREMENT: True,  # required
+    }

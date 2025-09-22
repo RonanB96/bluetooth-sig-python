@@ -2,6 +2,13 @@
 
 # Import individual service classes for backward compatibility
 from .automation_io import AutomationIOService
+from .base import (
+    CharacteristicStatus,
+    ServiceCharacteristicInfo,
+    ServiceCompletenessReport,
+    ServiceHealthStatus,
+    ServiceValidationResult,
+)
 from .battery_service import BatteryService
 from .body_composition import BodyCompositionService
 from .cycling_power import CyclingPowerService
@@ -28,6 +35,12 @@ __all__ = [
     "SERVICE_CLASS_MAP",
     "SERVICE_CLASS_MAP_STR",
     "ServiceName",
+    # Service validation and status classes
+    "ServiceHealthStatus",
+    "CharacteristicStatus",
+    "ServiceValidationResult",
+    "ServiceCharacteristicInfo",
+    "ServiceCompletenessReport",
     # Individual service classes for backward compatibility
     "AutomationIOService",
     "BatteryService",

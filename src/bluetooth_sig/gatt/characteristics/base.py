@@ -11,6 +11,7 @@ from typing import Any
 
 from ...registry.yaml_cross_reference import CharacteristicSpec, yaml_cross_reference
 from ...types import CharacteristicData
+from ...types.gatt_enums import CharacteristicName, GattProperty, ValueType
 from ..context import CharacteristicContext
 from ..exceptions import (
     BluetoothSIGError,
@@ -111,8 +112,9 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     # Instance variables
     uuid: str
-    properties: set[str] = field(default_factory=set)
-    value_type: str = field(default="string")
+
+    properties: set[GattProperty] | None = field(default=None)
+    value_type: ValueType = field(default=ValueType.STRING)
 
     # Optional validation attributes (can be overridden in subclasses)
     min_value: int | float | None = field(default=None)
@@ -129,6 +131,10 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Automatically resolves metadata from cross-file YAML references
         including UUIDs, data types, field sizes, unit symbols, and byte order hints.
         """
+        # Ensure properties is a typed set for static analysis and runtime
+        if self.properties is None:
+            self.properties = set()
+
         if not hasattr(self, "_char_uuid"):
             # Try cross-file resolution first
             yaml_spec = self._resolve_yaml_spec()
@@ -139,20 +145,20 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 if not hasattr(self, "_manual_value_type") and yaml_spec.data_type:
                     # Map GSS data types to our value types
                     type_mapping = {
-                        "sint8": "int",
-                        "uint8": "int",
-                        "sint16": "int",
-                        "uint16": "int",
-                        "uint24": "int",
-                        "sint32": "int",
-                        "uint32": "int",
-                        "float32": "float",
-                        "float64": "float",
-                        "utf8s": "string",
+                        "sint8": ValueType.INT,
+                        "uint8": ValueType.INT,
+                        "sint16": ValueType.INT,
+                        "uint16": ValueType.INT,
+                        "uint24": ValueType.INT,
+                        "sint32": ValueType.INT,
+                        "uint32": ValueType.INT,
+                        "float32": ValueType.FLOAT,
+                        "float64": ValueType.FLOAT,
+                        "utf8s": ValueType.STRING,
                     }
-                    self.value_type = type_mapping.get(yaml_spec.data_type, "bytes")
-
-                # Store metadata for implementation methods
+                    self.value_type = type_mapping.get(
+                        yaml_spec.data_type, ValueType.BYTES
+                    )
                 self._yaml_data_type = yaml_spec.data_type
                 self._yaml_field_size = yaml_spec.field_size
                 self._yaml_unit_symbol = yaml_spec.unit_symbol
@@ -210,7 +216,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 self._char_uuid = char_info.uuid
                 # Set value_type from registry if available and not manually overridden
                 if not hasattr(self, "_manual_value_type") and char_info.value_type:
-                    self.value_type = char_info.value_type
+                    try:
+                        self.value_type = ValueType(char_info.value_type)
+                    except ValueError:
+                        # Fallback to STRING if conversion fails
+                        self.value_type = ValueType.STRING
                 return
 
         # Convert class name to standard format and try all possibilities
@@ -246,7 +256,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 self._char_uuid = char_info.uuid
                 # Set value_type from registry if available and not manually overridden
                 if not hasattr(self, "_manual_value_type") and char_info.value_type:
-                    self.value_type = char_info.value_type
+                    try:
+                        self.value_type = ValueType(char_info.value_type)
+                    except ValueError:
+                        # Fallback to STRING if conversion fails
+                        self.value_type = ValueType.STRING
                 break
         else:
             raise UUIDResolutionError(name, names_to_try)
@@ -336,13 +350,23 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     @staticmethod
     @lru_cache(maxsize=32)
-    def _get_characteristic_uuid_by_name(characteristic_name: str) -> str | None:
+    def _get_characteristic_uuid_by_name(
+        characteristic_name: CharacteristicName | CharacteristicName | str,
+    ) -> str | None:
         """Get characteristic UUID by name using cached registry lookup."""
-        char_info = uuid_registry.get_characteristic_info(characteristic_name)
+        # Convert enum to string value for registry lookup
+        name_str = (
+            characteristic_name.value
+            if isinstance(characteristic_name, CharacteristicName)
+            else characteristic_name
+        )
+        char_info = uuid_registry.get_characteristic_info(name_str)
         return char_info.uuid if char_info else None
 
     def get_context_characteristic(
-        self, ctx: CharacteristicContext | None, characteristic_name: str
+        self,
+        ctx: CharacteristicContext | None,
+        characteristic_name: CharacteristicName | str,
     ) -> Any | None:
         """Generic utility to find a characteristic in context by name."""
         if not ctx or not ctx.other_characteristics:
@@ -385,7 +409,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 name=self.display_name,
                 value=parsed_value,
                 unit=self.unit,
-                value_type=self.value_type,
+                value_type=self.value_type.value,
                 raw_data=bytes(data),
                 parse_success=True,
                 error_message="",
@@ -396,7 +420,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 name=self.display_name,
                 value=None,
                 unit=self.unit,
-                value_type=self.value_type,
+                value_type=self.value_type.value,
                 raw_data=bytes(data),
                 parse_success=False,
                 error_message=str(e),
@@ -465,7 +489,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return None
 
     @property
-    def value_type_resolved(self) -> str:
+    def value_type_resolved(self) -> ValueType:
         """Get the value type for this characteristic.
 
         First tries manual value_type override, then falls back to YAML registry.
@@ -474,12 +498,23 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # First try manual value_type override (takes priority)
         manual_value_type = getattr(self, "_manual_value_type", None)
         if manual_value_type:
-            return str(manual_value_type)
+            if isinstance(manual_value_type, ValueType):
+                return manual_value_type
+            if isinstance(manual_value_type, str):
+                # Convert string to ValueType enum
+                try:
+                    return ValueType(manual_value_type)
+                except ValueError:
+                    pass
 
         # Fallback to value_type from YAML registry for automatic parsing
         char_info = uuid_registry.get_characteristic_info(self.char_uuid)
         if char_info and char_info.value_type:
-            return str(char_info.value_type)
+            # Convert string to ValueType enum
+            try:
+                return ValueType(char_info.value_type)
+            except ValueError:
+                pass
 
         # Final fallback to instance value_type
         return self.value_type
@@ -528,7 +563,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     @classmethod
     def from_uuid(
-        cls, uuid: str, properties: set[str] | None = None
+        cls, uuid: str, properties: set[GattProperty] | None = None
     ) -> BaseCharacteristic:
         """Create a characteristic instance from UUID.
 

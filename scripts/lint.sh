@@ -117,6 +117,7 @@ run_pylint() {
     set -e  # Re-enable exit on error
 
     # Extract production score
+    echo "$PROD_PYLINT_OUTPUT"
     PROD_SCORE=$(echo "$PROD_PYLINT_OUTPUT" | sed -n 's/.*rated at \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
     echo "Production pylint score: $PROD_SCORE/10"
 

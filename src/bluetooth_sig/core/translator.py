@@ -90,10 +90,15 @@ class BluetoothSIGTranslator:
         # Create temporary instance to get metadata
         try:
             temp_char = char_class(uuid=uuid, properties=set())
+            value_type_str = (
+                temp_char.value_type.value
+                if hasattr(temp_char.value_type, "value")
+                else str(temp_char.value_type)
+            )
             return CharacteristicInfo(
                 uuid=temp_char.char_uuid,
                 name=getattr(temp_char, "_characteristic_name", char_class.__name__),
-                value_type=temp_char.value_type,
+                value_type=value_type_str,
                 unit=temp_char.unit,
             )
         except Exception:  # pylint: disable=broad-exception-caught
@@ -166,12 +171,17 @@ class BluetoothSIGTranslator:
         if char_class:
             try:
                 temp_char = char_class(uuid="", properties=set())
+                value_type_str = (
+                    temp_char.value_type.value
+                    if hasattr(temp_char.value_type, "value")
+                    else str(temp_char.value_type)
+                )
                 return CharacteristicInfo(
                     uuid=temp_char.char_uuid,
                     name=getattr(
                         temp_char, "_characteristic_name", char_class.__name__
                     ),
-                    value_type=temp_char.value_type,
+                    value_type=value_type_str,
                     unit=temp_char.unit,
                 )
             except Exception:  # pylint: disable=broad-exception-caught

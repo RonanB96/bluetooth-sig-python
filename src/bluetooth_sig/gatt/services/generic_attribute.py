@@ -1,7 +1,9 @@
 """Generic Attribute Service implementation."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
+from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
@@ -18,14 +20,5 @@ class GenericAttributeService(BaseGattService):
 
     _service_name: str = "GATT"
 
-    @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
-        """Get the expected characteristics for this service by name and class."""
-        return {
-            # Service Changed characteristic is optional
-        }
-
-    @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
-        """Get the required characteristics for this service by name and class."""
-        return {}
+    # This service has no standard characteristics defined yet
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {}

@@ -17,6 +17,7 @@ from bluetooth_sig.gatt.services.base import BaseGattService
 from bluetooth_sig.types import CharacteristicDataProtocol
 from bluetooth_sig.types.advertising import DeviceAdvertiserData
 from bluetooth_sig.types.device_types import DeviceEncryption, DeviceService
+from bluetooth_sig.types.gatt_services import CharacteristicCollection
 
 
 class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
@@ -41,12 +42,12 @@ class UnknownService(BaseGattService):
     """Generic service for unknown/unsupported service UUIDs."""
 
     @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
+    def get_expected_characteristics(cls) -> CharacteristicCollection:
         """No expected characteristics for unknown services."""
         return {}
 
     @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
+    def get_required_characteristics(cls) -> CharacteristicCollection:
         """No required characteristics for unknown services."""
         return {}
 
@@ -189,7 +190,7 @@ class Device:
 
         self.advertiser_data = DeviceAdvertiserData(
             raw_data=raw_data,
-            local_name=local_name,
+            local_name=local_name or "",
             manufacturer_data=manufacturer_data,
             service_uuids=service_uuids,
             tx_power=tx_power,

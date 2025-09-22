@@ -149,43 +149,45 @@ class TestEnvironmentalSensingExpanded:
 
     def test_environmental_sensing_service_expansion(self):
         """Test that Environmental Sensing Service includes all new characteristics."""
+        from bluetooth_sig.types.gatt_enums import CharacteristicName
+
         expected_chars = EnvironmentalSensingService.get_expected_characteristics()
 
         # Check all new characteristics are present
         new_characteristics = [
             # Environmental wind characteristics
-            "Dew Point",
-            "Heat Index",
-            "Wind Chill",
-            "True Wind Speed",
-            "True Wind Direction",
-            "Apparent Wind Speed",
-            "Apparent Wind Direction",
+            CharacteristicName.DEW_POINT,
+            CharacteristicName.HEAT_INDEX,
+            CharacteristicName.WIND_CHILL,
+            CharacteristicName.TRUE_WIND_SPEED,
+            CharacteristicName.TRUE_WIND_DIRECTION,
+            CharacteristicName.APPARENT_WIND_SPEED,
+            CharacteristicName.APPARENT_WIND_DIRECTION,
             # Gas sensor characteristics for air quality monitoring
-            "CO\\textsubscript{2} Concentration",
-            "VOC Concentration",
-            "Non-Methane Volatile Organic Compounds Concentration",
-            "Ammonia Concentration",
-            "Methane Concentration",
-            "Nitrogen Dioxide Concentration",
-            "Ozone Concentration",
-            "Particulate Matter - PM1 Concentration",
-            "Particulate Matter - PM2.5 Concentration",
-            "Particulate Matter - PM10 Concentration",
-            "Sulfur Dioxide Concentration",
+            CharacteristicName.CO2_CONCENTRATION,
+            CharacteristicName.VOC_CONCENTRATION,
+            CharacteristicName.NON_METHANE_VOC_CONCENTRATION,
+            CharacteristicName.AMMONIA_CONCENTRATION,
+            CharacteristicName.METHANE_CONCENTRATION,
+            CharacteristicName.NITROGEN_DIOXIDE_CONCENTRATION,
+            CharacteristicName.OZONE_CONCENTRATION,
+            CharacteristicName.PM1_CONCENTRATION,
+            CharacteristicName.PM25_CONCENTRATION,
+            CharacteristicName.PM10_CONCENTRATION,
+            CharacteristicName.SULFUR_DIOXIDE_CONCENTRATION,
             # Additional environmental characteristics
-            "Elevation",
-            "Barometric Pressure Trend",
-            "Pollen Concentration",
-            "Rainfall",
+            CharacteristicName.ELEVATION,
+            CharacteristicName.BAROMETRIC_PRESSURE_TREND,
+            CharacteristicName.POLLEN_CONCENTRATION,
+            CharacteristicName.RAINFALL,
         ]
 
         # Verify we have all the expected characteristics
         # 3 original (Temperature, Humidity, Pressure) + 22 new ones = 25 total
         assert len(expected_chars) == len(new_characteristics) + 3
 
-        for char_name in new_characteristics:
-            assert char_name in expected_chars
+        for char_enum in new_characteristics:
+            assert char_enum in expected_chars
 
         # Verify all are still optional
         required_chars = EnvironmentalSensingService.get_required_characteristics()

@@ -1,12 +1,9 @@
 """Glucose Service implementation."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
-from ..characteristics.glucose_feature import GlucoseFeatureCharacteristic
-from ..characteristics.glucose_measurement import GlucoseMeasurementCharacteristic
-from ..characteristics.glucose_measurement_context import (
-    GlucoseMeasurementContextCharacteristic,
-)
+from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
@@ -19,19 +16,8 @@ class GlucoseService(BaseGattService):
     with context and device capabilities.
     """
 
-    @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
-        """Get the expected characteristics for this service by name and class."""
-        return {
-            "Glucose Measurement": GlucoseMeasurementCharacteristic,
-            "Glucose Measurement Context": GlucoseMeasurementContextCharacteristic,
-            "Glucose Feature": GlucoseFeatureCharacteristic,
-        }
-
-    @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
-        """Get the required characteristics for this service by name and class."""
-        return {
-            "Glucose Measurement": GlucoseMeasurementCharacteristic,
-            "Glucose Feature": GlucoseFeatureCharacteristic,
-        }
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.GLUCOSE_MEASUREMENT: True,  # required
+        CharacteristicName.GLUCOSE_FEATURE: True,  # required
+        CharacteristicName.GLUCOSE_MEASUREMENT_CONTEXT: False,  # optional
+    }

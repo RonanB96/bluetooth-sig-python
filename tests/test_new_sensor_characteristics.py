@@ -33,7 +33,9 @@ class TestNavigationCharacteristics:
 
         # Test metadata
         assert char.unit == "°"
-        assert char.value_type == "string"  # Changed from float - YAML overrides manual
+        assert (
+            char.value_type.value == "string"
+        )  # Changed from float - YAML overrides manual
 
         # Test normal parsing: 18000 (in 0.01 degrees) = 180.00 degrees
         test_data = bytearray([0x40, 0x46])  # 18000 in little endian uint16
@@ -64,7 +66,9 @@ class TestNavigationCharacteristics:
 
         # Test metadata
         assert char.unit == "m"
-        assert char.value_type == "string"  # Changed from float - YAML overrides manual
+        assert (
+            char.value_type.value == "string"
+        )  # Changed from float - YAML overrides manual
 
         # Test normal parsing: 50000 (in 0.01 meters) = 500.00 meters
         test_data = bytearray([0x50, 0xC3, 0x00])  # 50000 in 24-bit little endian
@@ -93,7 +97,7 @@ class TestNavigationCharacteristics:
 
         # Test metadata
         assert char.unit == "T"
-        assert char.value_type == "string"
+        assert char.value_type.value == "string"
 
         # Test normal parsing: X=1000, Y=-500 (in 10^-7 Tesla units)
         test_data = bytearray(struct.pack("<hh", 1000, -500))
@@ -111,7 +115,7 @@ class TestNavigationCharacteristics:
 
         # Test metadata
         assert char.unit == "T"
-        assert char.value_type == "string"
+        assert char.value_type.value == "string"
 
         # Test normal parsing: X=1000, Y=-500, Z=2000
         test_data = bytearray(struct.pack("<hhh", 1000, -500, 2000))
@@ -135,7 +139,7 @@ class TestEnvironmentalCharacteristics:
         # Test metadata
         assert char.unit == ""
         assert (
-            char.value_type_resolved == "BarometricPressureTrend"
+            char._manual_value_type == "BarometricPressureTrend"
         )  # Manual override: returns enum
 
         # Test known trend values
@@ -166,7 +170,7 @@ class TestEnvironmentalCharacteristics:
         # Test metadata
         assert char.unit == "grains/m³"
         assert (
-            char.value_type_resolved == "float"
+            char.value_type_resolved.value == "float"
         )  # Manual override since decode_value returns float
 
         # Test normal parsing: 123456 count/m³
@@ -183,7 +187,7 @@ class TestEnvironmentalCharacteristics:
 
         # Test metadata
         assert char.unit == "mm"
-        assert char.value_type == "int"  # YAML provides uint16 -> int
+        assert char.value_type.value == "int"  # YAML provides uint16 -> int
 
         # Test normal parsing: 1250 mm rainfall
         test_data = bytearray([0xE2, 0x04])  # 1250 in little endian uint16
@@ -204,7 +208,7 @@ class TestTimeCharacteristics:
         # Test metadata
         assert char.unit == ""
         assert (
-            char.value_type == "string"
+            char.value_type.value == "string"
         )  # Manual override: returns descriptive strings
 
         # Test normal time zones
@@ -236,7 +240,7 @@ class TestTimeCharacteristics:
 
         # Test metadata
         assert char.unit == ""
-        assert char.value_type == "bytes"  # YAML provides struct -> bytes
+        assert char.value_type.value == "bytes"  # YAML provides struct -> bytes
 
         # Test normal parsing: UTC+2 with DST (+1 hour)
         test_data = bytearray([8, 4])  # timezone=+2h (8*15min), dst=+1h (value 4)

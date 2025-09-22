@@ -1,94 +1,18 @@
 """Bluetooth SIG GATT characteristic registry.
 
-This module contains the characteristic registry implementation, including
-the CharacteristicName enum, class mappings, and the CharacteristicRegistry class.
-This was moved from __init__.py to follow Python best practices of keeping
-__init__.py files lightweight.
+This module contains the characteristic registry implementation and class mappings.
+CharacteristicName enum is now centralized in types.gatt_enums to avoid circular imports.
 """
 
 from __future__ import annotations
 
-from enum import Enum
-
+from ...types.gatt_enums import CharacteristicName, GattProperty
 from .base import BaseCharacteristic
 
+# Export for other modules to import
+__all__ = ["CharacteristicName", "CharacteristicRegistry"]
 
-class CharacteristicName(Enum):
-    """Enumeration of all supported GATT characteristic names."""
-
-    BATTERY_LEVEL = "Battery Level"
-    BATTERY_LEVEL_STATUS = "Battery Level Status"
-    TEMPERATURE = "Temperature"
-    TEMPERATURE_MEASUREMENT = "Temperature Measurement"
-    HUMIDITY = "Humidity"
-    PRESSURE = "Pressure"
-    UV_INDEX = "UV Index"
-    ILLUMINANCE = "Illuminance"
-    POWER_SPECIFICATION = "Power Specification"
-    HEART_RATE_MEASUREMENT = "Heart Rate Measurement"
-    BLOOD_PRESSURE_MEASUREMENT = "Blood Pressure Measurement"
-    BLOOD_PRESSURE_FEATURE = "Blood Pressure Feature"
-    CSC_MEASUREMENT = "CSC Measurement"
-    RSC_MEASUREMENT = "RSC Measurement"
-    CYCLING_POWER_MEASUREMENT = "Cycling Power Measurement"
-    CYCLING_POWER_FEATURE = "Cycling Power Feature"
-    CYCLING_POWER_VECTOR = "Cycling Power Vector"
-    CYCLING_POWER_CONTROL_POINT = "Cycling Power Control Point"
-    GLUCOSE_MEASUREMENT = "Glucose Measurement"
-    GLUCOSE_MEASUREMENT_CONTEXT = "Glucose Measurement Context"
-    GLUCOSE_FEATURE = "Glucose Feature"
-    MANUFACTURER_NAME_STRING = "Manufacturer Name String"
-    MODEL_NUMBER_STRING = "Model Number String"
-    SERIAL_NUMBER_STRING = "Serial Number String"
-    FIRMWARE_REVISION_STRING = "Firmware Revision String"
-    HARDWARE_REVISION_STRING = "Hardware Revision String"
-    SOFTWARE_REVISION_STRING = "Software Revision String"
-    DEVICE_NAME = "Device Name"
-    APPEARANCE = "Appearance"
-    WEIGHT_MEASUREMENT = "Weight Measurement"
-    WEIGHT_SCALE_FEATURE = "Weight Scale Feature"
-    BODY_COMPOSITION_MEASUREMENT = "Body Composition Measurement"
-    BODY_COMPOSITION_FEATURE = "Body Composition Feature"
-    ELECTRIC_CURRENT = "Electric Current"
-    VOLTAGE = "Voltage"
-    AVERAGE_CURRENT = "Average Current"
-    AVERAGE_VOLTAGE = "Average Voltage"
-    ELECTRIC_CURRENT_RANGE = "Electric Current Range"
-    ELECTRIC_CURRENT_SPECIFICATION = "Electric Current Specification"
-    ELECTRIC_CURRENT_STATISTICS = "Electric Current Statistics"
-    VOLTAGE_SPECIFICATION = "Voltage Specification"
-    VOLTAGE_STATISTICS = "Voltage Statistics"
-    HIGH_VOLTAGE = "High Voltage"
-    VOLTAGE_FREQUENCY = "Voltage Frequency"
-    SUPPORTED_POWER_RANGE = "Supported Power Range"
-    TX_POWER_LEVEL = "Tx Power Level"
-    DEW_POINT = "Dew Point"
-    HEAT_INDEX = "Heat Index"
-    WIND_CHILL = "Wind Chill"
-    TRUE_WIND_SPEED = "True Wind Speed"
-    TRUE_WIND_DIRECTION = "True Wind Direction"
-    APPARENT_WIND_SPEED = "Apparent Wind Speed"
-    APPARENT_WIND_DIRECTION = "Apparent Wind Direction"
-    MAGNETIC_DECLINATION = "Magnetic Declination"
-    MAGNETIC_FLUX_DENSITY_2D = "Magnetic Flux Density 2D"
-    MAGNETIC_FLUX_DENSITY_3D = "Magnetic Flux Density 3D"
-    ELEVATION = "Elevation"
-    BAROMETRIC_PRESSURE_TREND = "Barometric Pressure Trend"
-    TIME_ZONE = "Time Zone"
-    LOCAL_TIME_INFORMATION = "Local Time Information"
-    POLLEN_CONCENTRATION = "Pollen Concentration"
-    RAINFALL = "Rainfall"
-    CO2_CONCENTRATION = "CO2 Concentration"
-    VOC_CONCENTRATION = "VOC Concentration"
-    NON_METHANE_VOC_CONCENTRATION = "Non Methane VOC Concentration"
-    AMMONIA_CONCENTRATION = "Ammonia Concentration"
-    METHANE_CONCENTRATION = "Methane Concentration"
-    NITROGEN_DIOXIDE_CONCENTRATION = "Nitrogen Dioxide Concentration"
-    OZONE_CONCENTRATION = "Ozone Concentration"
-    PM1_CONCENTRATION = "PM1 Concentration"
-    PM25_CONCENTRATION = "PM25 Concentration"
-    PM10_CONCENTRATION = "PM10 Concentration"
-    SULFUR_DIOXIDE_CONCENTRATION = "Sulfur Dioxide Concentration"
+# Lazy initialization of the class mappings to avoid circular imports
 
 
 # Lazy initialization of the class mappings to avoid circular imports
@@ -96,6 +20,45 @@ _characteristic_class_map: dict[CharacteristicName, type[BaseCharacteristic]] | 
     None
 )
 _characteristic_class_map_str: dict[str, type[BaseCharacteristic]] | None = None
+
+
+def _convert_properties_to_enums(
+    properties: set[str] | set[GattProperty] | None,
+) -> set[GattProperty]:
+    """Convert string properties to GattProperty enums, validating inputs.
+
+    Strings like 'read' or 'notify' will be converted to their GattProperty
+    equivalents. Any unknown string will raise a TypeError to avoid silent
+    acceptance of invalid values.
+    """
+    if not properties:
+        return set()
+
+    result: set[GattProperty] = set()
+    for prop in properties:
+        if isinstance(prop, GattProperty):
+            result.add(prop)
+        elif isinstance(prop, str):
+            normalized = prop.strip().upper().replace("-", "_")
+            # Accept both enum names and values
+            try:
+                # Try to match enum name first
+                result.add(GattProperty[normalized])
+                continue
+            except KeyError:
+                # Try to match enum value (case-insensitive)
+                matched = False
+                for gp in GattProperty:
+                    if gp.value.lower() == prop.strip().lower():
+                        result.add(gp)
+                        matched = True
+                        break
+                if not matched:
+                    raise TypeError(f"Unknown GATT property: {prop}") from None
+        else:
+            raise TypeError("properties must be a set of GattProperty or string names")
+
+    return result
 
 
 def _build_characteristic_class_map() -> dict[
@@ -304,9 +267,22 @@ class CharacteristicRegistry:
         Returns:
             The characteristic class if found, None otherwise.
         """
+        # If given an enum, return directly
         if isinstance(name, CharacteristicName):
             return _get_characteristic_class_map().get(name)
-        return _get_characteristic_class_map_str().get(name)
+
+        # Try to interpret the string as the enum value (display name)
+        try:
+            enum_name = CharacteristicName(name)
+            return _get_characteristic_class_map().get(enum_name)
+        except ValueError:
+            # Try case-insensitive match to enum value
+            for enum in CharacteristicName:
+                if enum.value.lower() == name.strip().lower():
+                    return _get_characteristic_class_map().get(enum)
+
+        # No match
+        return None
 
     @staticmethod
     def list_all_characteristic_names() -> list[str]:
@@ -328,7 +304,8 @@ class CharacteristicRegistry:
 
     @staticmethod
     def create_characteristic(
-        uuid_or_name: str | CharacteristicName, properties: set[str] | None = None
+        uuid_or_name: str | CharacteristicName,
+        properties: set[str] | set[GattProperty] | None = None,
     ) -> BaseCharacteristic | None:
         """Create a characteristic instance from a UUID or enum name.
 
@@ -353,31 +330,28 @@ class CharacteristicRegistry:
         if isinstance(uuid_or_name, CharacteristicName):
             char_cls = _get_characteristic_class_map().get(uuid_or_name)
             if char_cls:
-                try:
-                    return char_cls(uuid="", properties=properties or set())
-                except (ValueError, TypeError, AttributeError):
-                    return None
+                converted_props = _convert_properties_to_enums(properties)
+                return char_cls(uuid="", properties=converted_props)
             return None
 
         # Handle string UUID input (existing logic)
         norm_uuid = uuid_or_name.replace("-", "").upper()
         short_uuid = norm_uuid[4:8] if len(norm_uuid) == 32 else norm_uuid
         for _, char_cls in _get_characteristic_class_map().items():
-            try:
-                instance = char_cls(uuid=norm_uuid, properties=properties or set())
-                char_uuid_norm = instance.char_uuid.replace("-", "").upper()
-                char_uuid_short = (
-                    char_uuid_norm[4:8] if len(char_uuid_norm) == 32 else char_uuid_norm
-                )
-                if char_uuid_norm == norm_uuid or char_uuid_short == short_uuid:
-                    return instance
-            except (ValueError, TypeError, AttributeError):
-                continue
+            converted_props = _convert_properties_to_enums(properties)
+            instance = char_cls(uuid=norm_uuid, properties=converted_props)
+            char_uuid_norm = instance.char_uuid.replace("-", "").upper()
+            char_uuid_short = (
+                char_uuid_norm[4:8] if len(char_uuid_norm) == 32 else char_uuid_norm
+            )
+            if char_uuid_norm == norm_uuid or char_uuid_short == short_uuid:
+                return instance
         return None
 
     @staticmethod
     def create_characteristic_by_name(
-        name: CharacteristicName, properties: set[str] | None = None
+        name: CharacteristicName,
+        properties: set[str] | set[GattProperty] | None = None,
     ) -> BaseCharacteristic | None:
         """Create a characteristic instance by enum name (type-safe).
 
@@ -402,10 +376,8 @@ class CharacteristicRegistry:
         """
         char_cls = _get_characteristic_class_map().get(name)
         if char_cls:
-            try:
-                return char_cls(uuid="", properties=properties or set())
-            except (ValueError, TypeError, AttributeError):
-                return None
+            converted_props = _convert_properties_to_enums(properties)
+            return char_cls(uuid="", properties=converted_props)
         return None
 
     @staticmethod
@@ -420,12 +392,9 @@ class CharacteristicRegistry:
         """
         norm_uuid = uuid.replace("-", "").upper()
         for char_cls in _get_characteristic_class_map().values():
-            try:
-                instance = char_cls(uuid=norm_uuid, properties=set())
-                if instance.char_uuid.replace("-", "").upper() == norm_uuid:
-                    return char_cls
-            except (ValueError, TypeError, AttributeError):
-                continue
+            instance = char_cls(uuid=norm_uuid, properties=set())
+            if instance.char_uuid.replace("-", "").upper() == norm_uuid:
+                return char_cls
         return None
 
     @staticmethod

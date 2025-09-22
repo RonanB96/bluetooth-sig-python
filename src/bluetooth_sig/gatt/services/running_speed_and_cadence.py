@@ -1,8 +1,9 @@
 """Running Speed and Cadence Service implementation."""
 
 from dataclasses import dataclass
+from typing import ClassVar
 
-from ..characteristics.rsc_measurement import RSCMeasurementCharacteristic
+from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
@@ -14,16 +15,6 @@ class RunningSpeedAndCadenceService(BaseGattService):
     Contains the RSC Measurement characteristic for running metrics.
     """
 
-    @classmethod
-    def get_expected_characteristics(cls) -> dict[str, type]:
-        """Get the expected characteristics for this service by name and class."""
-        return {
-            "RSC Measurement": RSCMeasurementCharacteristic,
-        }
-
-    @classmethod
-    def get_required_characteristics(cls) -> dict[str, type]:
-        """Get the required characteristics for this service by name and class."""
-        return {
-            "RSC Measurement": RSCMeasurementCharacteristic,
-        }
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.RSC_MEASUREMENT: True,  # required
+    }

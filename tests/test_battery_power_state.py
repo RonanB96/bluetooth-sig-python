@@ -2,13 +2,15 @@
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.battery_power_state import (
+from src.bluetooth_sig.gatt.characteristics.battery_power_state import (
     BatteryChargeLevel,
     BatteryChargeState,
     BatteryChargingType,
     BatteryPowerStateCharacteristic,
+    BatteryPowerStateData,
     BatteryPresentState,
 )
+from src.bluetooth_sig.types.gatt_enums import ValueType
 
 
 class TestBatteryPowerStateCharacteristic:
@@ -17,9 +19,10 @@ class TestBatteryPowerStateCharacteristic:
     def test_characteristic_name(self):
         """Test characteristic name resolution."""
         char = BatteryPowerStateCharacteristic(uuid="", properties=set())
-        assert char._characteristic_name == "Battery Level Status"
+        # Test that characteristic name is correctly set (accessing protected member for testing)
+        assert char._characteristic_name == "Battery Level Status"  # noqa: SLF001
         assert (
-            char.value_type == "string"
+            char.value_type == ValueType.STRING
         )  # YAML has boolean[] which maps to string, but decode_value returns dict
 
     def test_parse_basic_battery_state(self):
@@ -290,7 +293,11 @@ class TestBatteryPowerStateCharacteristic:
 
     def test_characteristic_uuid_resolution(self):
         """Test characteristic UUID resolution."""
-        char = BatteryPowerStateCharacteristic(uuid="2BED", properties={"read"})
+        from src.bluetooth_sig.types.gatt_enums import GattProperty
+
+        char = BatteryPowerStateCharacteristic(
+            uuid="2BED", properties={GattProperty.READ}
+        )
         assert char.char_uuid == "2BED"
 
     def test_encode_value(self):
@@ -298,10 +305,6 @@ class TestBatteryPowerStateCharacteristic:
         char = BatteryPowerStateCharacteristic(uuid="", properties=set())
 
         # Create test data
-        from bluetooth_sig.gatt.characteristics.battery_power_state import (
-            BatteryPowerStateData,
-        )
-
         test_data = BatteryPowerStateData(
             raw_value=0xD6,
             battery_present=BatteryPresentState.PRESENT,

@@ -30,7 +30,9 @@ class TestGasSensorCharacteristics:
 
         # Test metadata - Updated for SIG spec compliance (medfloat16, kg/m³)
         assert char.unit == "kg/m³"
-        assert char.value_type_resolved == "float"  # YAML specifies medfloat16 format
+        assert (
+            char.value_type_resolved.value == "float"
+        )  # YAML specifies medfloat16 format
 
     def test_co2_concentration_parsing(self):
         """Test CO2 concentration characteristic parsing."""
@@ -41,7 +43,7 @@ class TestGasSensorCharacteristics:
 
         # Test metadata
         assert char.unit == "ppm"
-        assert char.value_type == "int"
+        assert char.value_type.value == "int"
 
         # Test normal parsing
         test_data = bytearray([0x34, 0x12])  # 4660 ppm little endian
@@ -84,7 +86,7 @@ class TestGasSensorCharacteristics:
 
         # Test metadata - Updated for SIG spec compliance (medfloat16, kg/m³)
         assert char.unit == "kg/m³"
-        assert char.value_type_resolved == "float"  # IEEE 11073 SFLOAT format
+        assert char.value_type_resolved.value == "float"  # IEEE 11073 SFLOAT format
 
         # Test normal parsing - IEEE 11073 SFLOAT format
         # Example: 0x1234 = exponent=1, mantissa=564 = 564 * 10^1 = 5640
@@ -124,7 +126,7 @@ class TestGasSensorCharacteristics:
 
         # Test metadata - Updated for SIG spec compliance (uint16, ppb)
         assert char.unit == "ppb"
-        assert char.value_type_resolved == "int"  # uint16 format
+        assert char.value_type_resolved.value == "int"  # uint16 format
 
         # Test normal value parsing
         test_data = bytearray([0x00, 0x04])  # 1024 ppb
@@ -214,7 +216,7 @@ class TestGasSensorCharacteristics:
         for char_class in characteristics:
             char = char_class(uuid="", properties=set())
             # Remove debug output and set correct expectations
-            assert char.value_type in [
+            assert char.value_type.value in [
                 "int",
                 "float",
                 "string",
