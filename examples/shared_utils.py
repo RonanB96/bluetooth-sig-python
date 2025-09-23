@@ -1,11 +1,24 @@
 #!/usr/bin/env python3
-"""Shared utilities for bluetooth-sig examples."""
-
 from __future__ import annotations
+
+# Set up paths for imports
+import sys
+from pathlib import Path
+
+# Add src directory for bluetooth_sig imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+# Add parent directory for examples package imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Add examples directory for utils imports
+sys.path.insert(0, str(Path(__file__).parent))
 
 from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
+
+"""Shared utilities for bluetooth-sig examples."""
 
 # Import Device class for advertising data parsing
 # from bluetooth_sig.device import Device
@@ -193,14 +206,93 @@ async def demo_service_discovery(address: str) -> None:
     """Demonstrate service discovery using Device class."""
     print(f"Discovering services on device: {address}")
 
-    # translator = BluetoothSIGTranslator()  # Would need connection manager
+    from bluetooth_sig import BluetoothSIGTranslator
+    from bluetooth_sig.device.device import Device
+    from examples.utils.bleak_retry_integration import BleakRetryConnectionManager
 
-    # This would require a connection manager in a real implementation
-    # For demo purposes, we'll show the API
-    print("Device class methods available:")
-    print("- discover_services()")
-    print("- read_multiple(uuids)")
-    print("- write_multiple(data_dict)")
-    print("- get_service_by_uuid(uuid)")
-    print("- list_characteristics()")
-    print("- is_connected property")
+    translator = BluetoothSIGTranslator()
+    device = Device(address, translator)
+    connection_manager = BleakRetryConnectionManager(address)
+    device.connection_manager = connection_manager
+
+    try:
+        print("🔍 Discovering services...")
+        print("   Connecting to device...")
+        await connection_manager.connect()
+        print("   ✅ Connected, discovering services...")
+        services = await device.discover_services()
+
+        print(f"✅ Found {len(services)} services:")
+        total_chars = 0
+        parsed_chars = 0
+
+        for service_uuid, service_info in services.items():
+            service_name = translator.get_service_info(service_uuid)
+            if service_name:
+                print(f"  📋 {service_uuid}: {service_name.name}")
+            else:
+                print(f"  📋 {service_uuid}: Unknown service")
+
+            # Show characteristics for this service
+            characteristics = service_info.characteristics
+            if characteristics:
+                print(f"     └─ {len(characteristics)} characteristics:")
+                for char_uuid, _char_info in characteristics.items():
+                    total_chars += 1
+                    # Try to read and parse the characteristic
+                    try:
+                        # Convert full UUID to short form for reading
+                        short_uuid = (
+                            char_uuid[4:8].upper()
+                            if len(char_uuid) > 8
+                            else char_uuid.upper()
+                        )
+                        parsed = await device.read(short_uuid)
+
+                        if parsed and getattr(parsed, "parse_success", False):
+                            parsed_chars += 1
+                            char_name = getattr(parsed, "name", short_uuid)
+                            value = getattr(parsed, "value", "N/A")
+                            unit = getattr(parsed, "unit", "")
+                            print(
+                                f"        ✅ {short_uuid}: {char_name} = {value} {unit}"
+                            )
+                        else:
+                            # Try to get name from translator
+                            char_info_obj = translator.get_characteristic_info(
+                                short_uuid
+                            )
+                            if char_info_obj:
+                                print(
+                                    f"        • {short_uuid}: {char_info_obj.name} (read failed)"
+                                )
+                            else:
+                                print(f"        • {short_uuid}: Unknown characteristic")
+                    except Exception as e:
+                        # Try to get name from translator
+                        short_uuid = (
+                            char_uuid[4:8].upper()
+                            if len(char_uuid) > 8
+                            else char_uuid.upper()
+                        )
+                        char_info_obj = translator.get_characteristic_info(short_uuid)
+                        if char_info_obj:
+                            print(
+                                f"        ❌ {short_uuid}: {char_info_obj.name} (error: {e})"
+                            )
+                        else:
+                            print(
+                                f"        ❌ {short_uuid}: Unknown characteristic (error: {e})"
+                            )
+
+        await connection_manager.disconnect()
+        print("   ✅ Disconnected")
+
+        print(f"\n📊 Device summary: {device}")
+        print(
+            f"📊 Total characteristics: {total_chars}, Successfully parsed: {parsed_chars}"
+        )
+
+    except Exception as e:
+        print(f"❌ Service discovery failed: {e}")
+        print("This may be due to device being unavailable or connection issues.")

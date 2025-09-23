@@ -1,10 +1,23 @@
 #!/usr/bin/env python3
-"""Service discovery example using Device class."""
+# Set up paths for imports
+import sys
+from pathlib import Path
+
+# Add src directory for bluetooth_sig imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+# Add parent directory for examples package imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Add examples directory for utils imports
+sys.path.insert(0, str(Path(__file__).parent))
 
 import argparse
 import asyncio
 
-from .shared_utils import demo_service_discovery
+from examples.shared_utils import demo_service_discovery
+
+"""Service discovery example using Device class."""
 
 
 async def main() -> None:

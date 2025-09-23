@@ -1,10 +1,21 @@
 #!/usr/bin/env python3
-"""Comprehensive test of all BLE examples functionality."""
+# Set up paths for imports
+import sys
+from pathlib import Path
+
+# Add src directory for bluetooth_sig imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+# Add parent directory for examples package imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Add examples directory for utils imports
+sys.path.insert(0, str(Path(__file__).parent))
 
 import asyncio
 import time
 
-from .utils import (
+from examples.utils import (
     bleak_retry_available,
     mock_ble_data,
     parse_and_display_results,
@@ -12,6 +23,8 @@ from .utils import (
     show_library_availability,
     simplepyble_available,
 )
+
+"""Comprehensive test of all BLE examples functionality."""
 
 
 def print_separator(title: str) -> None:

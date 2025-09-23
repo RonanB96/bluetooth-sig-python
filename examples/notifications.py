@@ -1,10 +1,23 @@
 #!/usr/bin/env python3
-"""Notification handling example using bleak-retry integration."""
+# Set up paths for imports
+import sys
+from pathlib import Path
+
+# Add src directory for bluetooth_sig imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+# Add parent directory for examples package imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Add examples directory for utils imports
+sys.path.insert(0, str(Path(__file__).parent))
 
 import argparse
 import asyncio
 
-from .utils.bleak_retry_integration import handle_notifications_bleak_retry
+from examples.utils.bleak_retry_integration import handle_notifications_bleak_retry
+
+"""Notification handling example using bleak-retry integration."""
 
 
 async def main() -> None:

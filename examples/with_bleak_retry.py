@@ -1,4 +1,35 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
+# Set up paths for imports
+import sys
+from pathlib import Path
+
+# Add src directory for bluetooth_sig imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+# Add parent directory for examples package imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Add examples directory for utils imports
+sys.path.insert(0, str(Path(__file__).parent))
+
+import argparse
+import asyncio
+import time
+
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.device.device import Device
+from examples.utils import (
+    bleak_retry_available,
+    get_default_characteristic_uuids,
+    read_characteristics_bleak_retry,
+    scan_with_bleak_retry,
+)
+from examples.utils.bleak_retry_integration import (
+    BleakRetryConnectionManager,
+)
+
 """Bleak-retry-connector integration example - robust BLE connections with SIG parsing.
 
 This example demonstrates using bleak-retry-connector for reliable BLE connections
@@ -18,25 +49,6 @@ Usage:
     python with_bleak_retry.py --address 12:34:56:78:9A:BC
     python with_bleak_retry.py --scan
 """
-
-from __future__ import annotations
-
-import argparse
-import asyncio
-import time
-
-from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.device.device import Device
-
-from .utils import (
-    bleak_retry_available,
-    get_default_characteristic_uuids,
-    read_characteristics_bleak_retry,
-    scan_with_bleak_retry,
-)
-from .utils.bleak_retry_integration import (
-    BleakRetryConnectionManager,
-)
 
 
 async def robust_device_reading(
@@ -65,15 +77,47 @@ async def robust_device_reading(
     manager = BleakRetryConnectionManager(address, max_attempts=retries)
     device.attach_connection_manager(manager)
     await device.connect()
+
+    # First discover what characteristics are actually available
+    print("🔍 Discovering available characteristics...")
+    try:
+        services = await device.discover_services()
+        available_uuids = []
+        for _service_uuid, service_info in services.items():
+            for char_uuid in service_info.characteristics.keys():
+                # Convert full UUID to short form for comparison
+                short_uuid = (
+                    char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
+                )
+                available_uuids.append(short_uuid)
+        print(f"✅ Found {len(available_uuids)} readable characteristics")
+
+        # Filter target UUIDs to only those available on this device
+        target_uuids = [
+            uuid for uuid in target_uuids if uuid.upper() in available_uuids
+        ]
+        print(
+            f"📋 Will read {len(target_uuids)} matching characteristics: {target_uuids}"
+        )
+    except Exception as e:
+        print(f"⚠️ Service discovery failed, trying predefined characteristics: {e}")
+
     results = {}
     for uuid in target_uuids:
-        parsed = await device.read(uuid)
-        if parsed and getattr(parsed, "parse_success", False):
-            results[uuid] = {
-                "name": getattr(parsed, "name", uuid),
-                "value": getattr(parsed, "value", None),
-                "unit": getattr(parsed, "unit", None),
-            }
+        try:
+            parsed = await device.read(uuid)
+            if parsed and getattr(parsed, "parse_success", False):
+                results[uuid] = {
+                    "name": getattr(parsed, "name", uuid),
+                    "value": getattr(parsed, "value", None),
+                    "unit": getattr(parsed, "unit", None),
+                }
+                print(f"✅ {uuid}: {results[uuid]}")
+            else:
+                print(f"⚠️ {uuid}: Parse failed or no data")
+        except Exception as e:
+            print(f"❌ {uuid}: Read failed - {e}")
+
     await device.disconnect()
     print(f"📊 Device results: {results}")
     return results

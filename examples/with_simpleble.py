@@ -1,4 +1,29 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
+# Set up paths for imports
+import sys
+from pathlib import Path
+
+# Add src directory for bluetooth_sig imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+# Add parent directory for examples package imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Add examples directory for utils imports
+sys.path.insert(0, str(Path(__file__).parent))
+
+import argparse
+import time
+from typing import Any
+
+import simplepyble as simplepyble_module
+
+from bluetooth_sig import BluetoothSIGTranslator
+from examples.utils.library_detection import simplepyble_available
+from examples.utils.simpleble_integration import comprehensive_device_analysis_simpleble
+
 """SimplePyBLE integration example
 
 This example demonstrates using SimplePyBLE as an alternative BLE library combined
@@ -21,19 +46,6 @@ Usage:
     python with_simpleble.py --scan
     python with_simpleble.py --address 12:34:56:78:9A:BC
 """
-
-from __future__ import annotations
-
-import argparse
-import time
-from typing import Any
-
-import simplepyble as simplepyble_module
-
-from bluetooth_sig import BluetoothSIGTranslator
-
-from .utils.library_detection import simplepyble_available
-from .utils.simpleble_integration import comprehensive_device_analysis_simpleble
 
 
 def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:  # type: ignore

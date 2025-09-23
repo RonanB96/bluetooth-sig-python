@@ -1,18 +1,31 @@
 #!/usr/bin/env python3
-"""Pure SIG parsing example - demonstrates framework-agnostic SIG standard interpretation.
-
-This example shows how to use the bluetooth_sig library for pure Bluetooth SIG
-standards parsing without any BLE connection dependencies. The library translates
-raw characteristic data according to official SIG specifications.
-
-Key Benefits:
-- No BLE hardware required
-- Works with data from any source (files, network, test data)
-- Framework agnostic - can be integrated with any BLE library
-- Standards compliant parsing according to Bluetooth SIG specifications
-"""
-
+# Set up paths for imports
 import sys
+from pathlib import Path
+
+# Add src directory for bluetooth_sig imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+# Add parent directory for examples package imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Add examples directory for utils imports
+sys.path.insert(0, str(Path(__file__).parent))
+
+
+# Set up paths for imports
+import sys
+from pathlib import Path
+
+# Add src directory for bluetooth_sig imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+# Add parent directory for examples package imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Add examples directory for utils imports
+sys.path.insert(0, str(Path(__file__).parent))
+
 from typing import TypedDict
 
 from bluetooth_sig import BluetoothSIGTranslator
