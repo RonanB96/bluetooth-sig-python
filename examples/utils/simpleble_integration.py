@@ -17,6 +17,24 @@ from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
 
 
+class SimpleCharacteristic:
+    """Simple characteristic object compatible with Device class expectations."""
+
+    def __init__(self, uuid: str, properties: list[str] | None = None):
+        self.uuid = uuid
+        self.properties = properties or []
+
+
+class SimpleService:
+    """Simple service object compatible with Device class expectations."""
+
+    def __init__(
+        self, uuid: str, characteristics: list[SimpleCharacteristic] | None = None
+    ):
+        self.uuid = uuid
+        self.characteristics = characteristics or []
+
+
 class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
     """Connection manager using SimplePyBLE for BLE communication."""
 
@@ -83,7 +101,18 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         def _get_services() -> object:
             p = self.peripheral
             assert p is not None
-            return p.services()
+            # Convert SimplePyBLE services to the format expected by Device class
+            services: list[SimpleService] = []
+            for service in p.services():
+                service_obj = SimpleService(service.uuid())
+
+                for char in service.characteristics():
+                    char_obj = SimpleCharacteristic(char.uuid())
+                    service_obj.characteristics.append(char_obj)
+
+                services.append(service_obj)
+
+            return services
 
         return await asyncio.get_event_loop().run_in_executor(
             self.executor, _get_services
@@ -96,6 +125,11 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
     async def stop_notify(self, char_uuid: str) -> None:
         # Not implemented: SimplePyBLE notification support
         raise NotImplementedError("Notification not supported in this example")
+
+    @property
+    def is_connected(self) -> bool:
+        """Check if the connection is currently active."""
+        return self.peripheral is not None and self.peripheral.is_connected()
 
 
 def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals

@@ -220,8 +220,9 @@ run_mypy() {
     if [ $EXAMPLES_MYPY_EXIT_CODE -eq 0 ]; then
         print_success "Example code type checking passed"
     else
-        print_warning "Example code type checking found issues (allowed for examples)"
+        print_error "Example code type checking found issues"
         echo "$EXAMPLES_MYPY_OUTPUT"
+        exit_code=1
     fi
 
     echo ""
@@ -240,8 +241,9 @@ run_mypy() {
     if [ $TEST_MYPY_EXIT_CODE -eq 0 ]; then
         print_success "Test code type checking passed"
     else
-        print_warning "Test code type checking found issues (allowed for tests)"
+        print_error "Test code type checking found issues"
         echo "$TEST_MYPY_OUTPUT"
+        exit_code=1
     fi
 
     return $exit_code

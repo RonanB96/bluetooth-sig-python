@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.device.connection import ConnectionManagerProtocol
 
 """Shared utilities for bluetooth-sig examples."""
 
@@ -75,60 +76,59 @@ async def scan_devices(timeout: float = 10.0) -> list[Any]:
     return devices
 
 
-async def read_characteristics(  # pylint: disable=too-many-locals
-    address: str, target_uuids: list[str] | None = None, timeout: float = 10.0
+async def read_characteristics_with_manager(
+    connection_manager: ConnectionManagerProtocol,
+    target_uuids: list[str] | None = None,
+    timeout: float = 10.0,
 ) -> dict[str, tuple[bytes, float]]:
-    """Read characteristics from a BLE device."""
-    if not bleak_available:
-        return {}
-
-    from bleak import BleakClient  # type: ignore[import-untyped]
-
+    """Read characteristics from a BLE device using a connection manager."""
     results: dict[str, tuple[bytes, float]] = {}
-    print("Reading characteristics...")
+    print("Reading characteristics with connection manager...")
 
     try:
-        async with BleakClient(address, timeout=timeout) as client:
-            # Discover services
-            services = client.services
-            print(f"Discovered {len(services.services)} services")
+        await connection_manager.connect()
+        print("✅ Connected, reading characteristics...")
 
-            # If no target UUIDs specified, discover all readable characteristics
-            if target_uuids is None:
-                target_uuids = []
-                for service in services:
+        # If no target UUIDs specified, we need to discover services first
+        if target_uuids is None:
+            services = await connection_manager.get_services()
+            target_uuids = []
+            # This depends on the structure returned by get_services()
+            # For now, let's assume it returns an iterable with characteristics
+            for service in services:
+                if hasattr(service, "characteristics"):
                     for char in service.characteristics:
-                        if "read" in char.properties:
+                        if hasattr(char, "properties") and "read" in char.properties:
                             target_uuids.append(str(char.uuid))
-                print(f"Found {len(target_uuids)} readable characteristics")
-            else:
-                # Convert short UUIDs to full format
-                expanded_uuids: list[str] = []
-                for uuid in target_uuids:
-                    if len(uuid) == 4:  # Short UUID
-                        expanded_uuids.append(f"0000{uuid}-0000-1000-8000-00805F9B34FB")
-                    else:
-                        expanded_uuids.append(uuid)
-                target_uuids = expanded_uuids
-
+            print(f"Found {len(target_uuids)} readable characteristics")
+        else:
+            # Convert short UUIDs to full format if needed
+            expanded_uuids: list[str] = []
             for uuid in target_uuids:
-                try:
-                    import time  # pylint: disable=import-outside-toplevel
+                if len(uuid) == 4:  # Short UUID
+                    expanded_uuids.append(f"0000{uuid}-0000-1000-8000-00805F9B34FB")
+                else:
+                    expanded_uuids.append(uuid)
+            target_uuids = expanded_uuids
 
-                    read_start = time.time()
-                    raw_data = await client.read_gatt_char(uuid)
-                    read_time = time.time() - read_start
+        for uuid in target_uuids:
+            try:
+                import time  # pylint: disable=import-outside-toplevel
 
-                    # Convert bytearray to bytes
-                    raw_data_bytes: bytes = bytes(raw_data)
+                read_start = time.time()
+                raw_data = await connection_manager.read_gatt_char(uuid)
+                read_time = time.time() - read_start
 
-                    # Use short UUID as key
-                    uuid_key = uuid[4:8].upper() if len(uuid) > 8 else uuid.upper()
-                    results[uuid_key] = (raw_data_bytes, read_time)
-                    print(f"  {uuid_key}: {len(raw_data)} bytes")
-                except Exception as e:  # pylint: disable=broad-exception-caught
-                    uuid_key = uuid[4:8].upper() if len(uuid) > 8 else uuid.upper()
-                    print(f"  {uuid_key}: {e}")
+                # Use short UUID as key
+                uuid_key = uuid[4:8].upper() if len(uuid) > 8 else uuid.upper()
+                results[uuid_key] = (raw_data, read_time)
+                print(f"  {uuid_key}: {len(raw_data)} bytes")
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                uuid_key = uuid[4:8].upper() if len(uuid) > 8 else uuid.upper()
+                print(f"  {uuid_key}: {e}")
+
+        await connection_manager.disconnect()
+        print("✅ Disconnected")
 
     except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"Connection failed: {e}")
@@ -185,34 +185,65 @@ def mock_ble_data() -> dict[str, bytes]:
     }
 
 
-async def demo_basic_usage(address: str) -> None:
+async def demo_basic_usage(
+    address: str, connection_manager: ConnectionManagerProtocol
+) -> None:
     """Demonstrate basic usage of the bluetooth_sig library."""
     print(f"Connecting to device: {address}")
 
-    # Read characteristics
-    raw_results = await read_characteristics(address)
+    from bluetooth_sig import BluetoothSIGTranslator
+    from bluetooth_sig.device.device import Device
 
-    if not raw_results:
-        print("No data read from device")
-        return
+    translator = BluetoothSIGTranslator()
+    device = Device(address, translator)
+    device.connection_manager = connection_manager
 
-    # Parse results
-    parsed_results = parse_results(raw_results)
+    try:
+        print("🔗 Connecting to device...")
+        await connection_manager.connect()
+        print("✅ Connected, reading characteristics...")
 
-    print(f"\nSuccessfully parsed {len(parsed_results)} characteristics")
+        # Read some common characteristics
+        common_uuids = ["2A00", "2A19", "2A29", "2A24", "2A25", "2A26", "2A27", "2A28"]
+        parsed_results: dict[str, Any] = {}
+
+        for uuid_short in common_uuids:
+            try:
+                result = await device.read(uuid_short)
+                if result and getattr(result, "parse_success", False):
+                    parsed_results[uuid_short] = result
+                    unit_str = (
+                        f" {result.unit}" if getattr(result, "unit", None) else ""
+                    )
+                    print(
+                        f"  ✅ {getattr(result, 'name', uuid_short)}: {getattr(result, 'value', 'N/A')}{unit_str}"
+                    )
+                else:
+                    print(f"  • {uuid_short}: Read failed or parse failed")
+            except Exception as e:
+                print(f"  ❌ {uuid_short}: Error - {e}")
+
+        await connection_manager.disconnect()
+        print("✅ Disconnected")
+
+        print(f"\n📊 Successfully parsed {len(parsed_results)} characteristics")
+
+    except Exception as e:
+        print(f"❌ Basic usage demo failed: {e}")
+        print("This may be due to device being unavailable or connection issues.")
 
 
-async def demo_service_discovery(address: str) -> None:
+async def demo_service_discovery(
+    address: str, connection_manager: ConnectionManagerProtocol
+) -> None:
     """Demonstrate service discovery using Device class."""
     print(f"Discovering services on device: {address}")
 
     from bluetooth_sig import BluetoothSIGTranslator
     from bluetooth_sig.device.device import Device
-    from examples.utils.bleak_retry_integration import BleakRetryConnectionManager
 
     translator = BluetoothSIGTranslator()
     device = Device(address, translator)
-    connection_manager = BleakRetryConnectionManager(address)
     device.connection_manager = connection_manager
 
     try:
