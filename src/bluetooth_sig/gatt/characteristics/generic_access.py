@@ -46,12 +46,13 @@ class AppearanceCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Appearance"
 
+    min_length: int = 2  # Appearance(2) fixed length
+    max_length: int = 2  # Appearance(2) fixed length
+    allow_variable_length: bool = False  # Fixed length
+
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse appearance value (uint16)."""
-        if len(data) < 2:
-            raise ValueError("Appearance data must be at least 2 bytes")
-
-        return int.from_bytes(data[:2], byteorder="little", signed=False)
+        return DataParser.parse_int16(data, 0, signed=False)
 
     def encode_value(self, data: int) -> bytearray:
         """Encode appearance value back to bytes.

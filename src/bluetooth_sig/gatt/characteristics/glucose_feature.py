@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
 from enum import IntFlag
 from typing import Any
 
 from .base import BaseCharacteristic
+from .utils import BitFieldUtils, DataParser
 
 
 class GlucoseFeatures(IntFlag):
@@ -41,7 +41,7 @@ class GlucoseFeatures(IntFlag):
             cls.TIME_FAULT: "Time Fault Supported",
             cls.MULTIPLE_BOND_SUPPORT: "Multiple Bond Supported",
         }
-        return descriptions.get(feature, f"Unknown feature {feature}")
+        return descriptions.get(feature, f"Reserved feature bit {feature.value:04x}")
 
     def get_enabled_features(self) -> list[str]:
         """Get list of human-readable enabled features."""
@@ -82,6 +82,10 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Glucose Feature"
 
+    min_length: int = 2  # Features(2) fixed length
+    max_length: int = 2  # Features(2) fixed length
+    allow_variable_length: bool = False  # Fixed length
+
     def decode_value(  # pylint: disable=too-many-locals
         self, data: bytearray, ctx: Any | None = None
     ) -> GlucoseFeatureData:
@@ -102,7 +106,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
         if len(data) < 2:
             raise ValueError("Glucose Feature data must be at least 2 bytes")
 
-        features_bitmap = struct.unpack("<H", data[:2])[0]
+        features_bitmap = DataParser.parse_int16(data, 0, signed=False)
         features = GlucoseFeatures(features_bitmap)
 
         # Extract individual feature flags using enum
@@ -181,7 +185,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
             features_bitmap |= GlucoseFeatures.MULTIPLE_BOND_SUPPORT
 
         # Pack as little-endian 16-bit integer
-        return bytearray(struct.pack("<H", features_bitmap))
+        return DataParser.encode_int16(features_bitmap, signed=False)
 
     def get_feature_description(self, feature_bit: int) -> str:
         """Get description for a specific feature bit.
@@ -193,7 +197,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
             Human-readable description of the feature
         """
         # Convert bit position to feature flag value
-        feature_value = 1 << feature_bit
+        feature_value = BitFieldUtils.set_bit(0, feature_bit)
         try:
             feature = GlucoseFeatures(feature_value)
             return GlucoseFeatures.get_description(feature)

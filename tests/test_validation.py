@@ -2,6 +2,7 @@
 
 import pytest
 
+from bluetooth_sig.gatt.constants import MAX_CONCENTRATION_PPM, MAX_POWER_WATTS
 from bluetooth_sig.gatt.exceptions import (
     DataValidationError,
     TypeMismatchError,
@@ -196,7 +197,7 @@ class TestCommonValidators:
         """Test concentration validation."""
         assert CommonValidators.is_valid_concentration(0.0)
         assert CommonValidators.is_valid_concentration(1000.0)
-        assert CommonValidators.is_valid_concentration(65535.0)
+        assert CommonValidators.is_valid_concentration(MAX_CONCENTRATION_PPM)
         assert not CommonValidators.is_valid_concentration(-10.0)
         assert not CommonValidators.is_valid_concentration(100000.0)
 
@@ -204,7 +205,7 @@ class TestCommonValidators:
         """Test power validation."""
         assert CommonValidators.is_valid_power(0.0)
         assert CommonValidators.is_valid_power(1000.0)
-        assert CommonValidators.is_valid_power(65535.0)
+        assert CommonValidators.is_valid_power(MAX_POWER_WATTS)
         assert not CommonValidators.is_valid_power(-10.0)
         assert not CommonValidators.is_valid_power(100000.0)
 

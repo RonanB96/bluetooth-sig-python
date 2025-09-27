@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from ..constants import UINT16_MAX
 from .templates import ScaledUint16Characteristic
 
 
@@ -17,4 +18,4 @@ class VoltageCharacteristic(ScaledUint16Characteristic):
     # Template configuration
     resolution: float = 1 / 64  # 1/64 V resolution
     measurement_unit: str = "V"
-    max_value: float = 65535 / 64  # ~1024 V max
+    max_value: float = UINT16_MAX / 64  # ~1024 V max

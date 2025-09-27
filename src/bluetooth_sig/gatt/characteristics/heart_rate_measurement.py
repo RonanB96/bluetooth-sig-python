@@ -3,15 +3,26 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 from typing import Any
 
+from ..constants import UINT8_MAX, UINT16_MAX
 from .base import BaseCharacteristic
 from .utils import DataParser
 
 # TODO: Implement CharacteristicContext support
 # This characteristic should access Heart Rate Control Point (0x2A39) from ctx.other_characteristics
 # to provide calibration factors and control commands for enhanced heart rate monitoring
+
+
+class HeartRateMeasurementFlags(IntFlag):
+    """Heart Rate Measurement flags as per Bluetooth SIG specification."""
+
+    HEART_RATE_VALUE_FORMAT_UINT16 = 0x01
+    SENSOR_CONTACT_SUPPORTED = 0x02
+    SENSOR_CONTACT_DETECTED = 0x04
+    ENERGY_EXPENDED_PRESENT = 0x08
+    RR_INTERVAL_PRESENT = 0x10
 
 
 class SensorContactState(IntEnum):
@@ -37,9 +48,13 @@ class SensorContactState(IntEnum):
     @classmethod
     def from_flags(cls, flags: int) -> SensorContactState:
         """Create enum from heart rate flags."""
-        if not flags & 0x02:  # Sensor Contact Supported bit not set
+        if (
+            not flags & HeartRateMeasurementFlags.SENSOR_CONTACT_SUPPORTED
+        ):  # Sensor Contact Supported bit not set
             return cls.NOT_SUPPORTED
-        if flags & 0x04:  # Sensor Contact Detected bit set
+        if (
+            flags & HeartRateMeasurementFlags.SENSOR_CONTACT_DETECTED
+        ):  # Sensor Contact Detected bit set
             return cls.DETECTED
         return cls.NOT_DETECTED
 
@@ -48,7 +63,7 @@ class SensorContactState(IntEnum):
 class HeartRateData:
     """Parsed data from Heart Rate Measurement characteristic."""
 
-    heart_rate: int  # BPM (0-65535)
+    heart_rate: int  # BPM (0-UINT16_MAX)
     sensor_contact: SensorContactState
     energy_expended: int | None = None  # kJ
     rr_intervals: list[float] = field(default_factory=list)  # R-R intervals in seconds
@@ -56,11 +71,16 @@ class HeartRateData:
 
     def __post_init__(self) -> None:
         """Validate heart rate measurement data."""
-        if not 0 <= self.heart_rate <= 65535:
-            raise ValueError(f"Heart rate must be 0-65535 bpm, got {self.heart_rate}")
-        if self.energy_expended is not None and not 0 <= self.energy_expended <= 65535:
+        if not 0 <= self.heart_rate <= UINT16_MAX:
             raise ValueError(
-                f"Energy expended must be 0-65535 kJ, got {self.energy_expended}"
+                f"Heart rate must be 0-{UINT16_MAX} bpm, got {self.heart_rate}"
+            )
+        if (
+            self.energy_expended is not None
+            and not 0 <= self.energy_expended <= UINT16_MAX
+        ):
+            raise ValueError(
+                f"Energy expended must be 0-{UINT16_MAX} kJ, got {self.energy_expended}"
             )
         for interval in self.rr_intervals:
             if not 0.0 <= interval <= 65.535:  # Max RR interval in seconds
@@ -96,7 +116,9 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
         offset = 1
 
         # Parse heart rate value
-        if flags & 0x01:  # 16-bit heart rate value
+        if (
+            flags & HeartRateMeasurementFlags.HEART_RATE_VALUE_FORMAT_UINT16
+        ):  # 16-bit heart rate value
             if len(data) < offset + 2:
                 raise ValueError("Insufficient data for 16-bit heart rate value")
             heart_rate = DataParser.parse_int16(data, offset, signed=False)
@@ -110,13 +132,17 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
         # Parse optional energy expended (2 bytes) if present
         energy_expended = None
-        if (flags & 0x08) and len(data) >= offset + 2:
+        if (flags & HeartRateMeasurementFlags.ENERGY_EXPENDED_PRESENT) and len(
+            data
+        ) >= offset + 2:
             energy_expended = DataParser.parse_int16(data, offset, signed=False)
             offset += 2
 
         # Parse optional RR-Intervals if present
         rr_intervals: list[float] = []
-        if (flags & 0x10) and len(data) >= offset + 2:
+        if (flags & HeartRateMeasurementFlags.RR_INTERVAL_PRESENT) and len(
+            data
+        ) >= offset + 2:
             while offset + 2 <= len(data):
                 rr_interval_raw = DataParser.parse_int16(data, offset, signed=False)
                 # RR-Interval is in 1/1024 second units
@@ -144,28 +170,40 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
         flags = 0
 
         # Determine if 16-bit heart rate value is needed
-        if data.heart_rate > 255:
-            flags |= 0x01  # 16-bit heart rate format
+        if data.heart_rate > UINT8_MAX:
+            flags |= (
+                HeartRateMeasurementFlags.HEART_RATE_VALUE_FORMAT_UINT16
+            )  # 16-bit heart rate format
 
         # Set sensor contact flags
         if data.sensor_contact != SensorContactState.NOT_SUPPORTED:
-            flags |= 0x02  # Sensor Contact Supported
+            flags |= (
+                HeartRateMeasurementFlags.SENSOR_CONTACT_SUPPORTED
+            )  # Sensor Contact Supported
             if data.sensor_contact == SensorContactState.DETECTED:
-                flags |= 0x04  # Sensor Contact Detected
+                flags |= (
+                    HeartRateMeasurementFlags.SENSOR_CONTACT_DETECTED
+                )  # Sensor Contact Detected
 
         # Set energy expended flag if present
         if data.energy_expended is not None:
-            flags |= 0x08  # Energy Expended Present
+            flags |= (
+                HeartRateMeasurementFlags.ENERGY_EXPENDED_PRESENT
+            )  # Energy Expended Present
 
         # Set RR-Intervals flag if present
         if data.rr_intervals:
-            flags |= 0x10  # RR-Intervals Present
+            flags |= (
+                HeartRateMeasurementFlags.RR_INTERVAL_PRESENT
+            )  # RR-Intervals Present
 
         # Start building the payload
         result = bytearray([flags])
 
         # Add heart rate value
-        if flags & 0x01:  # 16-bit format
+        if (
+            flags & HeartRateMeasurementFlags.HEART_RATE_VALUE_FORMAT_UINT16
+        ):  # 16-bit format
             result.extend(DataParser.encode_int16(data.heart_rate, signed=False))
         else:  # 8-bit format
             result.extend(DataParser.encode_int8(data.heart_rate, signed=False))
@@ -178,7 +216,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
         for rr_interval in data.rr_intervals:
             # Convert seconds to 1/1024 second units
             rr_raw = round(rr_interval * 1024)
-            rr_raw = min(rr_raw, 65535)  # Clamp to max value
+            rr_raw = min(rr_raw, UINT16_MAX)  # Clamp to max value
             result.extend(DataParser.encode_int16(rr_raw, signed=False))
 
         return result

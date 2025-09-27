@@ -17,12 +17,23 @@ from ..constants import (
     SINT8_MAX,
     SINT8_MIN,
     SINT16_MAX,
+    SINT24_MAX,
+    SINT24_MIN,
     TEMPERATURE_RESOLUTION,
     UINT8_MAX,
     UINT16_MAX,
+    UINT24_MAX,
 )
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
+
+
+# Constants for 24-bit signed integer operations
+class Sint24Constants:  # pylint: disable=too-few-public-methods
+    """Constants for 24-bit signed integer operations."""
+
+    SIGN_BIT_MASK = 0x800000  # Bit 23 (sign bit for 24-bit signed)
+    TWO_COMPLEMENT_OFFSET = 0x1000000  # 2^24 for two's complement conversion
 
 
 @dataclass
@@ -47,7 +58,7 @@ class SimpleUint8Characteristic(BaseCharacteristic):
     """Template for simple 1-byte unsigned integer characteristics.
 
     This template handles characteristics that store a simple unsigned 8-bit
-    integer value (0-255). Subclasses can override validation ranges as needed.
+    integer value (0-UINT8_MAX). Subclasses can override validation ranges as needed.
 
     Example usage:
         @dataclass
@@ -77,7 +88,7 @@ class SimpleSint8Characteristic(BaseCharacteristic):
     """Template for simple 1-byte signed integer characteristics.
 
     This template handles characteristics that store a simple signed 8-bit
-    integer value (-128 to 127).
+    integer value (SINT8_MIN to SINT8_MAX).
 
     Example usage:
         @dataclass
@@ -89,8 +100,8 @@ class SimpleSint8Characteristic(BaseCharacteristic):
 
     _is_template: bool = True  # Mark as template for test exclusion
     expected_length: int = 1  # type: ignore[assignment]
-    min_value: int = SINT8_MIN  # -128 # type: ignore[assignment]
-    max_value: int = SINT8_MAX  # 127 # type: ignore[assignment]
+    min_value: int = SINT8_MIN  # SINT8_MIN # type: ignore[assignment]
+    max_value: int = SINT8_MAX  # SINT8_MAX # type: ignore[assignment]
     expected_type: type = int  # type: ignore[assignment]
 
     # Subclasses can override this
@@ -115,12 +126,12 @@ class SimpleUint16Characteristic(BaseCharacteristic):
     """Template for simple 2-byte unsigned integer characteristics.
 
     This template handles characteristics that store a simple unsigned 16-bit
-    integer value (0-65535) in little-endian format.
+    integer value (0-UINT16_MAX) in little-endian format.
 
     Example usage:
         @dataclass
         class SensorValueCharacteristic(SimpleUint16Characteristic):
-            '''Raw sensor value (0-65535).'''
+            '''Raw sensor value (0-UINT16_MAX).'''
             pass  # Uses default uint16 range
     """
 
@@ -413,7 +424,7 @@ class ScaledUint16Characteristic(BaseCharacteristic):
     expected_length: int = 2  # type: ignore[assignment]
     min_value: float = 0.0  # type: ignore[assignment]
     max_value: float = (  # type: ignore[assignment]
-        65535.0  # Will be scaled by resolution
+        UINT16_MAX  # Will be scaled by resolution
     )
     expected_type: type = float  # type: ignore[assignment]
 
@@ -453,8 +464,8 @@ class TemperatureLikeSint8Characteristic(BaseCharacteristic):
 
     _is_template: bool = True  # Mark as template for test exclusion
     expected_length: int = 1  # type: ignore[assignment]
-    min_value: int = SINT8_MIN  # -128°C  # type: ignore[assignment]
-    max_value: int = SINT8_MAX  # 127°C  # type: ignore[assignment]
+    min_value: int = SINT8_MIN  # SINT8_MIN°C  # type: ignore[assignment]
+    max_value: int = SINT8_MAX  # SINT8_MAX°C  # type: ignore[assignment]
     expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
@@ -490,7 +501,7 @@ class TemperatureLikeUint8Characteristic(BaseCharacteristic):
     _is_template: bool = True  # Mark as template for test exclusion
     expected_length: int = 1  # type: ignore[assignment]
     min_value: int = 0  # 0°C  # type: ignore[assignment]
-    max_value: int = UINT8_MAX  # 255°C  # type: ignore[assignment]
+    max_value: int = UINT8_MAX  # UINT8_MAX°C  # type: ignore[assignment]
     expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
@@ -528,7 +539,7 @@ class Uint24ScaledCharacteristic(BaseCharacteristic):
     _is_template: bool = True  # Mark as template for test exclusion
     expected_length: int = 3  # type: ignore[assignment]
     min_value: float = 0.0  # type: ignore[assignment]
-    max_value: float = 16777215.0  # Max uint24, will be scaled by resolution  # type: ignore[assignment]
+    max_value: float = UINT24_MAX  # Max uint24, will be scaled by resolution  # type: ignore[assignment]
     expected_type: type = float  # type: ignore[assignment]
 
     # Subclasses should override these
@@ -591,8 +602,10 @@ class Sint24ScaledCharacteristic(BaseCharacteristic):
         raw_value = int.from_bytes(raw_bytes, byteorder="little", signed=False)
 
         # Handle sign extension for 24-bit signed value
-        if raw_value & 0x800000:  # Check if negative (bit 23 set)
-            raw_value = raw_value - 0x1000000  # Convert to negative
+        if raw_value & Sint24Constants.SIGN_BIT_MASK:  # Check if negative (bit 23 set)
+            raw_value = (
+                raw_value - Sint24Constants.TWO_COMPLEMENT_OFFSET
+            )  # Convert to negative
 
         return raw_value * self.resolution
 
@@ -601,12 +614,14 @@ class Sint24ScaledCharacteristic(BaseCharacteristic):
         raw_value = int(data / self.resolution)
 
         # Ensure it fits in sint24 range
-        if not -8388608 <= raw_value <= 8388607:
+        if not SINT24_MIN <= raw_value <= SINT24_MAX:
             raise ValueError(f"Value {raw_value} exceeds sint24 range")
 
         # Convert to unsigned representation for encoding
         if raw_value < 0:
-            raw_unsigned = raw_value + 0x1000000  # Convert negative to 24-bit unsigned
+            raw_unsigned = (
+                raw_value + Sint24Constants.TWO_COMPLEMENT_OFFSET
+            )  # Convert negative to 24-bit unsigned
         else:
             raw_unsigned = raw_value
 
@@ -891,6 +906,44 @@ class SignedSoundPressureCharacteristic(BaseCharacteristic):
         return "dB"
 
 
+@dataclass
+class StringCharacteristic(BaseCharacteristic):
+    """Template for UTF-8 string characteristics.
+
+    This template handles characteristics that store UTF-8 encoded strings
+    with null termination handling.
+
+    Example usage:
+        @dataclass
+        class ManufacturerNameStringCharacteristic(StringCharacteristic):
+            '''Manufacturer name string characteristic.'''
+            pass  # Uses standard string format
+    """
+
+    _is_template: bool = True  # Mark as template for test exclusion
+    expected_type: type = str  # type: ignore[assignment]
+
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
+        """Parse UTF-8 string from bytearray."""
+        return DataParser.parse_utf8_string(data)
+
+    def encode_value(self, data: str) -> bytearray:
+        """Encode string to UTF-8 bytes.
+
+        Args:
+            data: String to encode
+
+        Returns:
+            Encoded UTF-8 bytes
+        """
+        return bytearray(data.encode("utf-8"))
+
+    @property
+    def unit(self) -> str:
+        """Return unit (none for strings)."""
+        return ""
+
+
 __all__ = [
     "VectorData",
     "Vector2DData",
@@ -914,4 +967,5 @@ __all__ = [
     "SignedSoundPressureCharacteristic",
     "EnumCharacteristic",
     "Vector2DCharacteristic",
+    "StringCharacteristic",
 ]

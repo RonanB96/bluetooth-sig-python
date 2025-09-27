@@ -80,7 +80,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             # Declare validation constraints as dataclass fields
             expected_length: int = 2
             min_value: int = 0
-            max_value: int = 65535
+            max_value: int = UINT16_MAX
             expected_type: type = int
 
             def decode_value(self, data: bytearray) -> int:
@@ -94,7 +94,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         #         if not data:
         #             raise ValueError("Battery level data must be at least 1 byte")
         #         level = data[0]
-        #         if not 0 <= level <= 100:
+        #         if not 0 <= level <= PERCENTAGE_MAX:
         #             raise ValueError(f"Battery level must be 0-100, got {level}")
         #         return level
 
@@ -103,7 +103,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # class BatteryLevelCharacteristic(BaseCharacteristic):
         #     expected_length: int = 1
         #     min_value: int = 0
-        #     max_value: int = 100
+        #     max_value: int = PERCENTAGE_MAX
         #     expected_type: type = int
         #
         #     def decode_value(self, data: bytearray) -> int:

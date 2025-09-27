@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable, TypeVar
 
+from .characteristics.utils.ieee11073_parser import IEEE11073Parser
 from .constants import (
     ABSOLUTE_ZERO_CELSIUS,
     MAX_CONCENTRATION_PPM,
@@ -127,12 +128,17 @@ class CommonValidators:
     @staticmethod
     def is_valid_battery_level(value: int) -> bool:
         """Check if battery level is valid percentage."""
-        return 0 <= value <= 100
+        return 0 <= value <= PERCENTAGE_MAX
 
     @staticmethod
     def is_ieee11073_special_value(value: int) -> bool:
         """Check if value is a valid IEEE 11073 special value."""
-        special_values = {0x07FF, 0x0800, 0x07FE, 0x0802}
+        special_values = {
+            IEEE11073Parser.SFLOAT_NAN,
+            IEEE11073Parser.SFLOAT_NRES,
+            IEEE11073Parser.SFLOAT_POSITIVE_INFINITY,
+            IEEE11073Parser.SFLOAT_NEGATIVE_INFINITY,
+        }
         return value in special_values
 
 
@@ -155,7 +161,7 @@ BATTERY_VALIDATOR.add_rule(
         field_name="battery_level",
         expected_type=int,
         min_value=0,
-        max_value=100,
+        max_value=PERCENTAGE_MAX,
         custom_validator=CommonValidators.is_valid_battery_level,
         error_message="Battery level must be 0-100%",
     )

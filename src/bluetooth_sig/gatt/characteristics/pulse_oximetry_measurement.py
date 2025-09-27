@@ -2,18 +2,42 @@
 
 from __future__ import annotations
 
-import struct
+from dataclasses import dataclass
+from datetime import datetime
+from enum import IntFlag
 from typing import Any
 
 from .base import BaseCharacteristic
-from .utils import IEEE11073Parser
+from .utils import DataParser, IEEE11073Parser
 
 # TODO: Implement CharacteristicContext support
 # This characteristic should access Pulse Oximetry Control Point (0x2A60) and Pulse Oximetry Features (0x2A61)
 # from ctx.other_characteristics to determine supported measurement types and calibration data
 
 
-class PulseOximetryContinuousMeasurementCharacteristic(BaseCharacteristic):
+class PulseOximetryFlags(IntFlag):
+    """Pulse Oximetry measurement flags."""
+
+    TIMESTAMP_PRESENT = 0x01
+    MEASUREMENT_STATUS_PRESENT = 0x02
+    DEVICE_STATUS_PRESENT = 0x04
+    PULSE_AMPLITUDE_INDEX_PRESENT = 0x08
+
+
+@dataclass
+class PulseOximetryData:
+    """Parsed pulse oximetry measurement data."""
+
+    spo2: float
+    pulse_rate: float
+    unit: str = "%"
+    timestamp: datetime | None = None
+    measurement_status: int | None = None
+    device_status: int | None = None
+    pulse_amplitude_index: float | None = None
+
+
+class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
     """PLX Continuous Measurement characteristic (0x2A5F).
 
     Used to transmit SpO2 (blood oxygen saturation) and pulse rate measurements.
@@ -21,7 +45,16 @@ class PulseOximetryContinuousMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "PLX Continuous Measurement"
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    # Declarative validation (automatic)
+    min_length: int = 5  # Flags(1) + SpO2(2) + PulseRate(2) minimum
+    max_length: int = (
+        16  # + Timestamp(7) + MeasurementStatus(2) + DeviceStatus(3) maximum
+    )
+    allow_variable_length: bool = True  # Variable optional fields
+
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> PulseOximetryData:  # pylint: disable=too-many-locals
         """Parse pulse oximetry measurement data according to Bluetooth specification.
 
         Format: Flags(1) + SpO2(2) + Pulse Rate(2) + [Timestamp(7)] +
@@ -32,73 +65,69 @@ class PulseOximetryContinuousMeasurementCharacteristic(BaseCharacteristic):
             data: Raw bytearray from BLE characteristic
 
         Returns:
-            Dict containing parsed pulse oximetry data with metadata
+            PulseOximetryData containing parsed pulse oximetry data
         """
         if len(data) < 5:
             raise ValueError("Pulse Oximetry Measurement data must be at least 5 bytes")
 
-        flags = data[0]
+        flags = PulseOximetryFlags(data[0])
 
         # Parse SpO2 and pulse rate using IEEE-11073 SFLOAT format
-        result = {
-            "spo2": IEEE11073Parser.parse_sfloat(data, 1),
-            "pulse_rate": IEEE11073Parser.parse_sfloat(data, 3),
-            "unit": "%",  # SpO2 is always in percentage
-        }
+        spo2 = IEEE11073Parser.parse_sfloat(data, 1)
+        pulse_rate = IEEE11073Parser.parse_sfloat(data, 3)
+
+        result = PulseOximetryData(spo2=spo2, pulse_rate=pulse_rate)
 
         offset = 5
 
         # Parse optional timestamp (7 bytes) if present
-        if (flags & 0x01) and len(data) >= offset + 7:
-            result["timestamp"] = IEEE11073Parser.parse_timestamp(data, offset)
+        if PulseOximetryFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
+            result.timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
         # Parse optional measurement status (2 bytes) if present
-        if (flags & 0x02) and len(data) >= offset + 2:
-            result["measurement_status"] = struct.unpack(
-                "<H", data[offset : offset + 2]
-            )[0]
+        if (
+            PulseOximetryFlags.MEASUREMENT_STATUS_PRESENT in flags
+            and len(data) >= offset + 2
+        ):
+            result.measurement_status = DataParser.parse_int16(
+                data, offset, signed=False
+            )
             offset += 2
 
         # Parse optional device and sensor status (3 bytes) if present
-        if (flags & 0x04) and len(data) >= offset + 3:
-            device_status = struct.unpack("<I", data[offset : offset + 3] + b"\x00")[
-                0
-            ]  # Pad to 4 bytes
-            result["device_status"] = device_status
+        if (
+            PulseOximetryFlags.DEVICE_STATUS_PRESENT in flags
+            and len(data) >= offset + 3
+        ):
+            device_status = DataParser.parse_int32(
+                data[offset : offset + 3] + b"\x00", 0, signed=False
+            )  # Pad to 4 bytes
+            result.device_status = device_status
             offset += 3
 
         # Parse optional pulse amplitude index (2 bytes) if present
-        if (flags & 0x08) and len(data) >= offset + 2:
-            result["pulse_amplitude_index"] = IEEE11073Parser.parse_sfloat(data, offset)
+        if (
+            PulseOximetryFlags.PULSE_AMPLITUDE_INDEX_PRESENT in flags
+            and len(data) >= offset + 2
+        ):
+            result.pulse_amplitude_index = IEEE11073Parser.parse_sfloat(data, offset)
 
         return result
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:
+    def encode_value(self, data: PulseOximetryData) -> bytearray:
         """Encode pulse oximetry measurement value back to bytes.
 
         Args:
-            data: Dictionary containing pulse oximetry measurement data
+            data: PulseOximetryData instance to encode
 
         Returns:
             Encoded bytes representing the measurement
         """
-        if not isinstance(data, dict):
-            raise TypeError("Pulse oximetry measurement data must be a dictionary")
-
-        # Required fields for pulse oximetry
-        required_fields = ["spo2", "pulse_rate"]
-        for field in required_fields:
-            if field not in data:
-                raise ValueError(f"Pulse oximetry data must contain '{field}' key")
-
-        flags = data.get("flags", 0)
-        spo2 = float(data["spo2"])
-        pulse_rate = float(data["pulse_rate"])
 
         # Convert to IEEE-11073 SFLOAT format (simplified as uint16)
-        spo2_raw = round(spo2 * 10)  # 0.1% resolution
-        pulse_rate_raw = round(pulse_rate)  # 1 bpm resolution
+        spo2_raw = round(data.spo2 * 10)  # 0.1% resolution
+        pulse_rate_raw = round(data.pulse_rate)  # 1 bpm resolution
 
         # Validate ranges
         if not 0 <= spo2_raw <= 0xFFFF:
@@ -106,10 +135,21 @@ class PulseOximetryContinuousMeasurementCharacteristic(BaseCharacteristic):
         if not 0 <= pulse_rate_raw <= 0xFFFF:
             raise ValueError(f"Pulse rate {pulse_rate_raw} exceeds uint16 range")
 
+        # Build flags
+        flags = PulseOximetryFlags(0)
+        if data.timestamp is not None:
+            flags |= PulseOximetryFlags.TIMESTAMP_PRESENT
+        if data.measurement_status is not None:
+            flags |= PulseOximetryFlags.MEASUREMENT_STATUS_PRESENT
+        if data.device_status is not None:
+            flags |= PulseOximetryFlags.DEVICE_STATUS_PRESENT
+        if data.pulse_amplitude_index is not None:
+            flags |= PulseOximetryFlags.PULSE_AMPLITUDE_INDEX_PRESENT
+
         # Build result
         result = bytearray([int(flags)])
-        result.extend(struct.pack("<H", spo2_raw))
-        result.extend(struct.pack("<H", pulse_rate_raw))
+        result.extend(DataParser.encode_int16(spo2_raw, signed=False))
+        result.extend(DataParser.encode_int16(pulse_rate_raw, signed=False))
 
         # Additional fields based on flags would be added (simplified)
         return result
@@ -118,9 +158,3 @@ class PulseOximetryContinuousMeasurementCharacteristic(BaseCharacteristic):
     def unit(self) -> str:
         """Get the unit of measurement."""
         return "%"  # SpO2 is in percentage
-
-
-# Alias for backward compatibility
-PulseOximetryMeasurementCharacteristic = (
-    PulseOximetryContinuousMeasurementCharacteristic
-)

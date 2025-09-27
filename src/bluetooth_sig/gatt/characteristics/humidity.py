@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from ..constants import PERCENTAGE_MAX
 from .templates import ScaledUint16Characteristic
 
 
@@ -17,4 +18,4 @@ class HumidityCharacteristic(ScaledUint16Characteristic):
     # Template configuration
     resolution: float = 0.01  # 0.01% resolution
     measurement_unit: str = "%"
-    max_value: float = 100.0  # Humidity max 100%
+    max_value: float = PERCENTAGE_MAX  # Humidity max 100%

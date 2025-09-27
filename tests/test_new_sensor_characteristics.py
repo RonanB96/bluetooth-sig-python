@@ -18,6 +18,7 @@ from bluetooth_sig.gatt.characteristics import (
 from bluetooth_sig.gatt.characteristics.barometric_pressure_trend import (
     BarometricPressureTrend,
 )
+from bluetooth_sig.gatt.constants import UINT8_MAX
 from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 
@@ -156,7 +157,7 @@ class TestEnvironmentalCharacteristics:
             assert parsed == expected
 
         # Test reserved value
-        reserved_data = bytearray([255])
+        reserved_data = bytearray([UINT8_MAX])
         parsed = char.decode_value(reserved_data)
         assert parsed == BarometricPressureTrend.UNKNOWN  # Falls back to UNKNOWN
 
@@ -227,7 +228,7 @@ class TestTimeCharacteristics:
             assert parsed == expected
 
         # Test unknown value
-        unknown_data = bytearray([0x80])  # -128
+        unknown_data = bytearray([0x80])  # SINT8_MIN
         parsed = char.decode_value(unknown_data)
         assert parsed == "Unknown"
 

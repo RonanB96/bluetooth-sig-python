@@ -2,11 +2,20 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
+from enum import IntFlag
 from typing import Any
 
+from ..constants import SINT16_MAX, SINT16_MIN, UINT8_MAX
 from .base import BaseCharacteristic
+from .utils import DataParser
+
+
+class CyclingPowerVectorFlags(IntFlag):
+    """Cycling Power Vector flags as per Bluetooth SIG specification."""
+
+    INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT = 0x01
+    INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT = 0x02
 
 
 @dataclass
@@ -32,8 +41,8 @@ class CyclingPowerVectorData:
 
     def __post_init__(self) -> None:
         """Validate cycling power vector data."""
-        if not 0 <= self.flags <= 255:
-            raise ValueError("Flags must be a uint8 value (0-255)")
+        if not 0 <= self.flags <= UINT8_MAX:
+            raise ValueError("Flags must be a uint8 value (0-UINT8_MAX)")
         if not 0 <= self.first_crank_measurement_angle <= 360:
             raise ValueError("First crank measurement angle must be 0-360 degrees")
 
@@ -72,14 +81,14 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
         flags = data[0]
 
         # Parse crank revolution data (2 bytes)
-        crank_revolutions = struct.unpack("<H", data[1:3])[0]
+        crank_revolutions = DataParser.parse_int16(data, 1, signed=False)
 
         # Parse last crank event time (2 bytes, 1/1024 second units)
-        crank_event_time_raw = struct.unpack("<H", data[3:5])[0]
+        crank_event_time_raw = DataParser.parse_int16(data, 3, signed=False)
         crank_event_time = crank_event_time_raw / 1024.0
 
         # Parse first crank measurement angle (2 bytes, 1/180 degree units)
-        first_angle_raw = struct.unpack("<H", data[5:7])[0]
+        first_angle_raw = DataParser.parse_int16(data, 5, signed=False)
         first_angle = first_angle_raw / 180.0  # Convert to degrees
 
         # Create crank revolution data
@@ -92,26 +101,31 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
         torque_magnitudes: list[float] | None = None
 
         # Parse optional instantaneous force magnitude array if present
-        if (flags & 0x01) and len(data) > offset:
+        if (
+            flags & CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT
+        ) and len(data) > offset:
             force_magnitudes = []
             # Each force magnitude is 2 bytes (signed 16-bit, 1 N units)
             while offset + 1 < len(data) and not (
-                flags & 0x02
+                flags
+                & CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
             ):  # Stop if torque data follows
                 if offset + 2 > len(data):
                     break
-                force_raw = struct.unpack("<h", data[offset : offset + 2])[0]
+                force_raw = DataParser.parse_int16(data, offset, signed=True)
                 force_magnitudes.append(float(force_raw))  # Force in Newtons
                 offset += 2
 
         # Parse optional instantaneous torque magnitude array if present
-        if (flags & 0x02) and len(data) > offset:
+        if (
+            flags & CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
+        ) and len(data) > offset:
             torque_magnitudes = []
             # Each torque magnitude is 2 bytes (signed 16-bit, 1/32 Nm units)
             while offset + 1 < len(data):
                 if offset + 2 > len(data):
                     break
-                torque_raw = struct.unpack("<h", data[offset : offset + 2])[0]
+                torque_raw = DataParser.parse_int16(data, offset, signed=True)
                 torque_magnitudes.append(torque_raw / 32.0)  # Convert to Nm
                 offset += 2
 
@@ -146,9 +160,13 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
         # Build flags based on optional arrays
         flags = data.flags
         if data.instantaneous_force_magnitude_array is not None:
-            flags |= 0x01  # Force magnitude array present
+            flags |= (
+                CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT
+            )  # Force magnitude array present
         if data.instantaneous_torque_magnitude_array is not None:
-            flags |= 0x02  # Torque magnitude array present
+            flags |= (
+                CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
+            )  # Torque magnitude array present
 
         # Convert values to raw format
         crank_event_time_raw = round(crank_event_time * 1024)  # 1/1024 second units
@@ -168,22 +186,22 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
         # Build result
         result = bytearray([flags])
-        result.extend(struct.pack("<H", crank_revolutions))
-        result.extend(struct.pack("<H", crank_event_time_raw))
-        result.extend(struct.pack("<H", first_angle_raw))
+        result.extend(DataParser.encode_int16(crank_revolutions, signed=False))
+        result.extend(DataParser.encode_int16(crank_event_time_raw, signed=False))
+        result.extend(DataParser.encode_int16(first_angle_raw, signed=False))
 
         # Add force magnitude array if present
         if data.instantaneous_force_magnitude_array is not None:
             for force in data.instantaneous_force_magnitude_array:
                 force_val = int(force)
-                if -32768 <= force_val <= 32767:  # signed 16-bit range
-                    result.extend(struct.pack("<h", force_val))
+                if SINT16_MIN <= force_val <= SINT16_MAX:  # signed 16-bit range
+                    result.extend(DataParser.encode_int16(force_val, signed=True))
 
         # Add torque magnitude array if present
         if data.instantaneous_torque_magnitude_array is not None:
             for torque in data.instantaneous_torque_magnitude_array:
                 torque_val = int(torque * 32)  # Convert back to 1/32 Nm units
-                if -32768 <= torque_val <= 32767:  # signed 16-bit range
-                    result.extend(struct.pack("<h", torque_val))
+                if SINT16_MIN <= torque_val <= SINT16_MAX:  # signed 16-bit range
+                    result.extend(DataParser.encode_int16(torque_val, signed=True))
 
         return result

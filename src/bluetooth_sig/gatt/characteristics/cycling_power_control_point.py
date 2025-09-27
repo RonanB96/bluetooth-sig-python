@@ -2,14 +2,129 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
+from enum import IntEnum
 from typing import Any
 
+from ..constants import UINT8_MAX
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 @dataclass
+class CyclingPowerControlPointData:
+    """Parsed data from Cycling Power Control Point characteristic."""
+
+    op_code: CyclingPowerOpCode
+    # Optional parameters based on op_code
+    cumulative_value: int | None = None
+    sensor_location: int | None = None
+    crank_length: float | None = None  # mm
+    chain_length: float | None = None  # mm
+    chain_weight: float | None = None  # g
+    span_length: int | None = None  # mm
+    measurement_mask: int | None = None
+    request_op_code: CyclingPowerOpCode | None = None
+    response_value: CyclingPowerResponseValue | None = None
+
+    def __post_init__(self) -> None:
+        """Validate cycling power control point data."""
+        if not 0 <= self.op_code <= UINT8_MAX:
+            raise ValueError("Op code must be a uint8 value (0-UINT8_MAX)")
+
+
+class CyclingPowerOpCode(IntEnum):
+    """Cycling Power Control Point operation codes as per Bluetooth SIG specification."""
+
+    # Value 0x00 is Reserved for Future Use
+    SET_CUMULATIVE_VALUE = 0x01
+    UPDATE_SENSOR_LOCATION = 0x02
+    REQUEST_SUPPORTED_SENSOR_LOCATIONS = 0x03
+    SET_CRANK_LENGTH = 0x04
+    REQUEST_CRANK_LENGTH = 0x05
+    SET_CHAIN_LENGTH = 0x06
+    REQUEST_CHAIN_LENGTH = 0x07
+    SET_CHAIN_WEIGHT = 0x08
+    REQUEST_CHAIN_WEIGHT = 0x09
+    SET_SPAN_LENGTH = 0x0A
+    REQUEST_SPAN_LENGTH = 0x0B
+    START_OFFSET_COMPENSATION = 0x0C
+    MASK_CYCLING_POWER_MEASUREMENT = 0x0D
+    REQUEST_SAMPLING_RATE = 0x0E
+    REQUEST_FACTORY_CALIBRATION_DATE = 0x0F
+    # Values 0x10-0x1F are Reserved for Future Use
+    RESPONSE_CODE = 0x20
+    # Values 0x21-0xFF are Reserved for Future Use
+
+    def __str__(self) -> str:
+        """Return human-readable operation code name."""
+        names = {
+            self.SET_CUMULATIVE_VALUE: "Set Cumulative Value",
+            self.UPDATE_SENSOR_LOCATION: "Update Sensor Location",
+            self.REQUEST_SUPPORTED_SENSOR_LOCATIONS: "Request Supported Sensor Locations",
+            self.SET_CRANK_LENGTH: "Set Crank Length",
+            self.REQUEST_CRANK_LENGTH: "Request Crank Length",
+            self.SET_CHAIN_LENGTH: "Set Chain Length",
+            self.REQUEST_CHAIN_LENGTH: "Request Chain Length",
+            self.SET_CHAIN_WEIGHT: "Set Chain Weight",
+            self.REQUEST_CHAIN_WEIGHT: "Request Chain Weight",
+            self.SET_SPAN_LENGTH: "Set Span Length",
+            self.REQUEST_SPAN_LENGTH: "Request Span Length",
+            self.START_OFFSET_COMPENSATION: "Start Offset Compensation",
+            self.MASK_CYCLING_POWER_MEASUREMENT: "Mask Cycling Power Measurement",
+            self.REQUEST_SAMPLING_RATE: "Request Sampling Rate",
+            self.REQUEST_FACTORY_CALIBRATION_DATE: "Request Factory Calibration Date",
+            self.RESPONSE_CODE: "Response Code",
+        }
+        return names[self]
+
+    @classmethod
+    def get_name(cls, op_code: CyclingPowerOpCode) -> str:
+        """Get the name of an operation code."""
+        try:
+            return str(cls(op_code))  # Use __str__ method for formatted names
+        except ValueError:
+            return f"RESERVED_{op_code:02X}"
+
+
+# Constants
+MIN_OP_CODE_LENGTH = 1  # Minimum length for op code data
+
+
+class CyclingPowerResponseValue(IntEnum):
+    """Cycling Power Control Point response values as per Bluetooth SIG specification."""
+
+    # Value 0x00 is Reserved for Future Use
+    SUCCESS = 0x01
+    OP_CODE_NOT_SUPPORTED = 0x02
+    INVALID_PARAMETER = 0x03
+    OPERATION_FAILED = 0x04
+    # Values 0x05-0xFF are Reserved for Future Use
+
+    def __str__(self) -> str:
+        """Return human-readable response value name."""
+        names = {
+            self.SUCCESS: "Success",
+            self.OP_CODE_NOT_SUPPORTED: "Op Code Not Supported",
+            self.INVALID_PARAMETER: "Invalid Parameter",
+            self.OPERATION_FAILED: "Operation Failed",
+        }
+        return names[self]
+
+    @classmethod
+    def get_name(cls, value: CyclingPowerResponseValue) -> str:
+        """Get human-readable response value name with proper Reserved/Invalid handling."""
+        try:
+            return str(cls(value))
+        except ValueError:
+            # Handle per Bluetooth SIG specification
+            if value == 0x00 or (0x05 <= value <= 0xFF):
+                return "Reserved for Future Use"
+            raise ValueError(
+                f"Invalid response value: {value} (valid range: 0x00-0xFF)"
+            ) from None
+
+
 class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
     """Cycling Power Control Point characteristic (0x2A66).
 
@@ -17,9 +132,23 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
     Provides commands for calibration, configuration, and sensor control.
     """
 
+    # Resolution constants for parameter calculations
+    CRANK_LENGTH_RESOLUTION = 2.0  # 0.5mm resolution (value / 2)
+    CHAIN_LENGTH_RESOLUTION = 10.0  # 0.1mm resolution (value / 10)
+    CHAIN_WEIGHT_RESOLUTION = 10.0  # 0.1g resolution (value / 10)
+
+    # Data length constants
+    MIN_OP_CODE_LENGTH = 1
+    CUMULATIVE_VALUE_LENGTH = 5  # op_code(1) + value(4)
+    SENSOR_LOCATION_LENGTH = 2  # op_code(1) + location(1)
+    TWO_BYTE_PARAM_LENGTH = 3  # op_code(1) + param(2)
+    RESPONSE_CODE_LENGTH = 3  # op_code(1) + request(1) + response(1)
+
     _characteristic_name: str = "Cycling Power Control Point"
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> CyclingPowerControlPointData:
         """Parse cycling power control point data.
 
         Format: Op Code(1) + [Request Parameter] or Response Code(1) + [Response Parameter]
@@ -28,16 +157,16 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
             data: Raw bytearray from BLE characteristic
 
         Returns:
-            Dict containing parsed control point data
+            CyclingPowerControlPointData containing parsed control point data
 
         Raises:
             ValueError: If data format is invalid
         """
-        if len(data) < 1:
+        if len(data) < MIN_OP_CODE_LENGTH:
             raise ValueError("Cycling Power Control Point data must be at least 1 byte")
 
         op_code = data[0]
-        result = {"op_code": op_code, "op_code_name": self._get_op_code_name(op_code)}
+        result = CyclingPowerControlPointData(op_code=CyclingPowerOpCode(op_code))
 
         # Parse additional data based on op code
         if len(data) > 1:
@@ -45,11 +174,11 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
 
         return result
 
-    def encode_value(self, data: dict[str, Any] | int) -> bytearray:
+    def encode_value(self, data: CyclingPowerControlPointData | int) -> bytearray:
         """Encode cycling power control point value back to bytes.
 
         Args:
-            data: Dictionary with op_code and optional parameters, or raw op_code integer
+            data: CyclingPowerControlPointData with op_code and optional parameters, or raw op_code integer
 
         Returns:
             Encoded bytes representing the control point command
@@ -57,145 +186,137 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
         if isinstance(data, int):
             # Simple op code only
             op_code = data
-            if not 0 <= op_code <= 255:
+            if not 0 <= op_code <= UINT8_MAX:
                 raise ValueError(f"Op code {op_code} exceeds uint8 range")
             return bytearray([op_code])
 
-        if isinstance(data, dict):  # pylint: disable=no-else-return # Clear flow control for different data types
-            if "op_code" not in data:
-                raise ValueError("Control point data must contain 'op_code' key")
+        # Handle dataclass case
+        op_code = data.op_code
+        result = bytearray([op_code])
 
-            op_code = int(data["op_code"])
-            if not 0 <= op_code <= 255:
-                raise ValueError(f"Op code {op_code} exceeds uint8 range")
+        # Add parameters based on op_code and available data
+        if data.cumulative_value is not None:
+            result.extend(DataParser.encode_int32(data.cumulative_value, signed=False))
+        elif data.sensor_location is not None:
+            result.append(data.sensor_location)
+        elif data.crank_length is not None:
+            result.extend(
+                DataParser.encode_int16(
+                    int(data.crank_length * self.CRANK_LENGTH_RESOLUTION), signed=False
+                )
+            )
+        elif data.chain_length is not None:
+            result.extend(
+                DataParser.encode_int16(
+                    int(data.chain_length * self.CHAIN_LENGTH_RESOLUTION), signed=False
+                )
+            )
+        elif data.chain_weight is not None:
+            result.extend(
+                DataParser.encode_int16(
+                    int(data.chain_weight * self.CHAIN_WEIGHT_RESOLUTION), signed=False
+                )
+            )
+        elif data.span_length is not None:
+            result.extend(DataParser.encode_int16(data.span_length, signed=False))
+        elif data.measurement_mask is not None:
+            result.extend(DataParser.encode_int16(data.measurement_mask, signed=False))
+        elif data.request_op_code is not None and data.response_value is not None:
+            result.extend([data.request_op_code.value, data.response_value.value])
 
-            result = bytearray([op_code])
-
-            # Add any additional parameters (simplified implementation)
-            # This would need to be expanded based on specific op code requirements
-            if "parameters" in data and isinstance(
-                data["parameters"], (list, bytes, bytearray)
-            ):
-                if isinstance(data["parameters"], list):
-                    result.extend(data["parameters"])
-                else:
-                    result.extend(data["parameters"])
-
-            return result
-
-        else:
-            raise TypeError("Control point data must be a dictionary or integer")
+        return result
 
     def _parse_op_code_parameters(
-        self, op_code: int, data: bytearray, result: dict[str, Any]
+        self, op_code: int, data: bytearray, result: CyclingPowerControlPointData
     ) -> None:
         """Parse operation code specific parameters.
 
         Args:
             op_code: Operation code
             data: Raw data
-            result: Result dictionary to update
+            result: Result dataclass to update
         """
-        if op_code == 0x01:  # Set Cumulative Value
+        if op_code == CyclingPowerOpCode.SET_CUMULATIVE_VALUE:
             self._parse_cumulative_value(data, result)
-        elif op_code == 0x02:  # Update Sensor Location
+        elif op_code == CyclingPowerOpCode.UPDATE_SENSOR_LOCATION:
             self._parse_sensor_location(data, result)
-        elif op_code == 0x04:  # Set Crank Length
+        elif op_code == CyclingPowerOpCode.SET_CRANK_LENGTH:
             self._parse_crank_length(data, result)
-        elif op_code == 0x06:  # Set Chain Length
+        elif op_code == CyclingPowerOpCode.SET_CHAIN_LENGTH:
             self._parse_chain_length(data, result)
-        elif op_code == 0x08:  # Set Chain Weight
+        elif op_code == CyclingPowerOpCode.SET_CHAIN_WEIGHT:
             self._parse_chain_weight(data, result)
-        elif op_code == 0x0A:  # Set Span Length
+        elif op_code == CyclingPowerOpCode.SET_SPAN_LENGTH:
             self._parse_span_length(data, result)
-        elif op_code == 0x0D:  # Mask Cycling Power Measurement
+        elif op_code == CyclingPowerOpCode.MASK_CYCLING_POWER_MEASUREMENT:
             self._parse_measurement_mask(data, result)
-        elif op_code == 0x20:  # Response Code
+        elif op_code == CyclingPowerOpCode.RESPONSE_CODE:
             self._parse_response_code(data, result)
 
-    def _parse_cumulative_value(self, data: bytearray, result: dict[str, Any]) -> None:
+    def _parse_cumulative_value(
+        self, data: bytearray, result: CyclingPowerControlPointData
+    ) -> None:
         """Parse cumulative value parameter."""
-        if len(data) >= 5:
-            cumulative_value = struct.unpack("<I", data[1:5])[0]
-            result["cumulative_value"] = cumulative_value
+        if len(data) >= self.CUMULATIVE_VALUE_LENGTH:
+            cumulative_value = DataParser.parse_int32(data, offset=1, signed=False)
+            result.cumulative_value = cumulative_value
 
-    def _parse_sensor_location(self, data: bytearray, result: dict[str, Any]) -> None:
+    def _parse_sensor_location(
+        self, data: bytearray, result: CyclingPowerControlPointData
+    ) -> None:
         """Parse sensor location parameter."""
-        if len(data) >= 2:
-            result["sensor_location"] = data[1]
+        if len(data) >= self.SENSOR_LOCATION_LENGTH:
+            result.sensor_location = data[1]
 
-    def _parse_crank_length(self, data: bytearray, result: dict[str, Any]) -> None:
+    def _parse_crank_length(
+        self, data: bytearray, result: CyclingPowerControlPointData
+    ) -> None:
         """Parse crank length parameter."""
-        if len(data) >= 3:
-            crank_length = struct.unpack("<H", data[1:3])[0]
-            result["crank_length"] = crank_length / 2.0  # 0.5mm resolution
+        if len(data) >= self.TWO_BYTE_PARAM_LENGTH:
+            crank_length = DataParser.parse_int16(data, offset=1, signed=False)
+            result.crank_length = crank_length / self.CRANK_LENGTH_RESOLUTION
 
-    def _parse_chain_length(self, data: bytearray, result: dict[str, Any]) -> None:
+    def _parse_chain_length(
+        self, data: bytearray, result: CyclingPowerControlPointData
+    ) -> None:
         """Parse chain length parameter."""
-        if len(data) >= 3:
-            chain_length = struct.unpack("<H", data[1:3])[0]
-            result["chain_length"] = chain_length / 10.0  # 0.1mm resolution
+        if len(data) >= self.TWO_BYTE_PARAM_LENGTH:
+            chain_length = DataParser.parse_int16(data, offset=1, signed=False)
+            result.chain_length = chain_length / self.CHAIN_LENGTH_RESOLUTION
 
-    def _parse_chain_weight(self, data: bytearray, result: dict[str, Any]) -> None:
+    def _parse_chain_weight(
+        self, data: bytearray, result: CyclingPowerControlPointData
+    ) -> None:
         """Parse chain weight parameter."""
-        if len(data) >= 3:
-            chain_weight = struct.unpack("<H", data[1:3])[0]
-            result["chain_weight"] = chain_weight / 10.0  # 0.1g resolution
+        if len(data) >= self.TWO_BYTE_PARAM_LENGTH:
+            chain_weight = DataParser.parse_int16(data, offset=1, signed=False)
+            result.chain_weight = chain_weight / self.CHAIN_WEIGHT_RESOLUTION
 
-    def _parse_span_length(self, data: bytearray, result: dict[str, Any]) -> None:
+    def _parse_span_length(
+        self, data: bytearray, result: CyclingPowerControlPointData
+    ) -> None:
         """Parse span length parameter."""
-        if len(data) >= 3:
-            span_length = struct.unpack("<H", data[1:3])[0]
-            result["span_length"] = span_length  # mm
+        if len(data) >= self.TWO_BYTE_PARAM_LENGTH:
+            span_length = DataParser.parse_int16(data, offset=1, signed=False)
+            result.span_length = span_length  # mm
 
-    def _parse_measurement_mask(self, data: bytearray, result: dict[str, Any]) -> None:
+    def _parse_measurement_mask(
+        self, data: bytearray, result: CyclingPowerControlPointData
+    ) -> None:
         """Parse measurement mask parameter."""
-        if len(data) >= 3:
-            mask = struct.unpack("<H", data[1:3])[0]
-            result["measurement_mask"] = mask
+        if len(data) >= self.TWO_BYTE_PARAM_LENGTH:
+            mask = DataParser.parse_int16(data, offset=1, signed=False)
+            result.measurement_mask = mask
 
-    def _parse_response_code(self, data: bytearray, result: dict[str, Any]) -> None:
+    def _parse_response_code(
+        self, data: bytearray, result: CyclingPowerControlPointData
+    ) -> None:
         """Parse response code parameters."""
-        if len(data) >= 3:
+        if len(data) >= self.RESPONSE_CODE_LENGTH:
             request_op_code = data[1]
             response_value = data[2]
-            result["request_op_code"] = request_op_code
-            result["response_value"] = response_value
-            result["response_value_name"] = self._get_response_value_name(
-                response_value
-            )
-
-    def _get_op_code_name(self, op_code: int) -> str:
-        """Get human-readable name for operation code."""
-        op_codes = {
-            0x01: "Set Cumulative Value",
-            0x02: "Update Sensor Location",
-            0x03: "Request Supported Sensor Locations",
-            0x04: "Set Crank Length",
-            0x05: "Request Crank Length",
-            0x06: "Set Chain Length",
-            0x07: "Request Chain Length",
-            0x08: "Set Chain Weight",
-            0x09: "Request Chain Weight",
-            0x0A: "Set Span Length",
-            0x0B: "Request Span Length",
-            0x0C: "Start Offset Compensation",
-            0x0D: "Mask Cycling Power Measurement",
-            0x0E: "Request Sampling Rate",
-            0x0F: "Request Factory Calibration Date",
-            0x20: "Response Code",
-        }
-        return op_codes.get(op_code, f"Unknown ({op_code:#04x})")
-
-    def _get_response_value_name(self, response_value: int) -> str:
-        """Get human-readable name for response value."""
-        response_values = {
-            0x01: "Success",
-            0x02: "Op Code Not Supported",
-            0x03: "Invalid Parameter",
-            0x04: "Operation Failed",
-        }
-        return response_values.get(response_value, f"Unknown ({response_value:#04x})")
+            result.request_op_code = CyclingPowerOpCode(request_op_code)
+            result.response_value = CyclingPowerResponseValue(response_value)
 
     @property
     def unit(self) -> str:

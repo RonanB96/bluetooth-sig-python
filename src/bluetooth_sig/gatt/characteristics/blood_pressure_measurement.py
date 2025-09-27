@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
 from datetime import datetime
 from enum import IntFlag
@@ -79,6 +78,12 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Blood Pressure Measurement"
 
+    min_length: int = 7  # Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) minimum
+    max_length: int = (
+        19  # + Timestamp(7) + PulseRate(2) + UserID(1) + MeasurementStatus(2) maximum
+    )
+    allow_variable_length: bool = True  # Variable optional fields
+
     def decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None
     ) -> BloodPressureData:  # pylint: disable=too-many-locals
@@ -125,9 +130,9 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
         if (flags & BloodPressureFlags.MEASUREMENT_STATUS_PRESENT) and len(
             data
         ) >= offset + 2:
-            result_data.measurement_status = struct.unpack(
-                "<H", data[offset : offset + 2]
-            )[0]
+            result_data.measurement_status = DataParser.parse_int16(
+                data, offset, signed=False
+            )
 
         return result_data
 

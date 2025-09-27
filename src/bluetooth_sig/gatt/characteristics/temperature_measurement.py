@@ -2,12 +2,32 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
+from datetime import datetime
+from enum import IntFlag
 from typing import Any
 
 from .base import BaseCharacteristic
 from .utils import IEEE11073Parser
+
+
+class TemperatureMeasurementFlags(IntFlag):
+    """Temperature Measurement flags as per Bluetooth SIG specification."""
+
+    FAHRENHEIT_UNIT = 0x01
+    TIMESTAMP_PRESENT = 0x02
+    TEMPERATURE_TYPE_PRESENT = 0x04
+
+
+@dataclass
+class TemperatureMeasurementData:
+    """Parsed temperature measurement data."""
+
+    temperature: float
+    unit: str
+    flags: int
+    timestamp: datetime | None = None
+    temperature_type: int | None = None
 
 
 @dataclass
@@ -20,7 +40,14 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Temperature Measurement"
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    # Declarative validation attributes
+    min_length: int | None = 5  # Flags(1) + Temperature(4) minimum
+    max_length: int | None = 13  # + Timestamp(7) + TemperatureType(1) maximum
+    allow_variable_length: bool = True  # Variable optional fields
+
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
         """Parse temperature measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Temperature Value(4) + [Timestamp(7)] + [Temperature Type(1)]
@@ -30,80 +57,73 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
             data: Raw bytearray from BLE characteristic
 
         Returns:
-            Dict containing parsed temperature data with metadata
+            TemperatureMeasurementData containing parsed temperature data with metadata
         """
         if len(data) < 5:
             raise ValueError("Temperature Measurement data must be at least 5 bytes")
 
-        flags = data[0]
+        flags = TemperatureMeasurementFlags(data[0])
 
         # Parse temperature value (IEEE-11073 32-bit float)
-        temp_bytes = data[1:5]
-        temp_value = struct.unpack("<f", temp_bytes)[0]
+        temp_value = IEEE11073Parser.parse_float32(data, 1)
 
         # Check temperature unit flag (bit 0)
-        unit = "°F" if (flags & 0x01) else "°C"
+        unit = "°F" if TemperatureMeasurementFlags.FAHRENHEIT_UNIT in flags else "°C"
 
-        result = {"temperature": temp_value, "unit": unit, "flags": flags}
+        result = TemperatureMeasurementData(
+            temperature=temp_value, unit=unit, flags=int(flags)
+        )
 
         # Parse optional timestamp (7 bytes) if present
         offset = 5
-        if (flags & 0x02) and len(data) >= offset + 7:
-            result["timestamp"] = IEEE11073Parser.parse_timestamp(data, offset)
+        if (
+            TemperatureMeasurementFlags.TIMESTAMP_PRESENT in flags
+            and len(data) >= offset + 7
+        ):
+            result.timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
         # Parse optional temperature type (1 byte) if present
-        if (flags & 0x04) and len(data) >= offset + 1:
-            temp_type = data[offset]
-            result["temperature_type"] = temp_type
+        if (
+            TemperatureMeasurementFlags.TEMPERATURE_TYPE_PRESENT in flags
+            and len(data) >= offset + 1
+        ):
+            result.temperature_type = data[offset]
 
         return result
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:
+    def encode_value(self, data: TemperatureMeasurementData) -> bytearray:
         """Encode temperature measurement value back to bytes.
 
         Args:
-            data: Dictionary containing temperature measurement data
+            data: TemperatureMeasurementData containing temperature measurement data
 
         Returns:
             Encoded bytes representing the temperature measurement
         """
-        if not isinstance(data, dict):
-            raise TypeError("Temperature measurement data must be a dictionary")
-
-        if "temperature" not in data:
-            raise ValueError(
-                "Temperature measurement data must contain 'temperature' key"
-            )
-
-        temperature = float(data["temperature"])
-        unit = data.get("unit", "°C")
-        timestamp = data.get("timestamp")
-        temp_type = data.get("temperature_type")
-
         # Build flags
-        flags = 0
-        if unit == "°F":
-            flags |= 0x01  # Temperature unit flag (Fahrenheit)
-        if timestamp is not None:
-            flags |= 0x02  # Timestamp present
-        if temp_type is not None:
-            flags |= 0x04  # Temperature type present
+        flags = TemperatureMeasurementFlags(0)
+        if data.unit == "°F":
+            flags |= TemperatureMeasurementFlags.FAHRENHEIT_UNIT
+        if data.timestamp is not None:
+            flags |= TemperatureMeasurementFlags.TIMESTAMP_PRESENT
+        if data.temperature_type is not None:
+            flags |= TemperatureMeasurementFlags.TEMPERATURE_TYPE_PRESENT
 
         # Start with flags byte
-        result = bytearray([flags])
+        result = bytearray([int(flags)])
 
         # Add temperature value (IEEE-11073 32-bit float)
-        temp_bytes = struct.pack("<f", temperature)
+        temp_bytes = IEEE11073Parser.encode_float32(data.temperature)
         result.extend(temp_bytes)
 
         # Add optional timestamp (7 bytes) if present
-        if timestamp is not None:
-            result.extend(IEEE11073Parser.encode_timestamp(timestamp))
+        if data.timestamp is not None:
+            result.extend(IEEE11073Parser.encode_timestamp(data.timestamp))
 
         # Add optional temperature type (1 byte) if present
-        if temp_type is not None:
-            result.append(int(temp_type))
+        if data.temperature_type is not None:
+            result.append(int(data.temperature_type))
 
         return result
 

@@ -2,16 +2,136 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
+from datetime import datetime
+from enum import IntEnum, IntFlag
 from typing import Any
 
+from ..constants import SINT16_MAX, SINT16_MIN
 from .base import BaseCharacteristic
-from .utils import IEEE11073Parser
+from .utils import BitFieldUtils, DataParser, IEEE11073Parser
+
+
+class GlucoseMeasurementBits:
+    # Glucose Measurement bit field constants
+    GLUCOSE_TYPE_SAMPLE_MASK = 0x0F  # 4-bit mask for type and sample location
+    GLUCOSE_TYPE_START_BIT = 4  # Glucose type in high 4 bits
+    GLUCOSE_TYPE_BIT_WIDTH = 4
+    GLUCOSE_SAMPLE_LOCATION_START_BIT = 0  # Sample location in low 4 bits
+    GLUCOSE_SAMPLE_LOCATION_BIT_WIDTH = 4
+
+
+class GlucoseType(IntEnum):
+    """Glucose sample type enumeration as per Bluetooth SIG specification."""
+
+    CAPILLARY_WHOLE_BLOOD = 1
+    CAPILLARY_PLASMA = 2
+    VENOUS_WHOLE_BLOOD = 3
+    VENOUS_PLASMA = 4
+    ARTERIAL_WHOLE_BLOOD = 5
+    ARTERIAL_PLASMA = 6
+    UNDETERMINED_WHOLE_BLOOD = 7
+    UNDETERMINED_PLASMA = 8
+    INTERSTITIAL_FLUID = 9
+    CONTROL_SOLUTION = 10
+    # Values 11-15 (0xB-0xF) are Reserved for Future Use
+
+    def __str__(self) -> str:
+        """Return human-readable glucose type name."""
+        names = {
+            self.CAPILLARY_WHOLE_BLOOD: "Capillary Whole blood",
+            self.CAPILLARY_PLASMA: "Capillary Plasma",
+            self.VENOUS_WHOLE_BLOOD: "Venous Whole blood",
+            self.VENOUS_PLASMA: "Venous Plasma",
+            self.ARTERIAL_WHOLE_BLOOD: "Arterial Whole blood",
+            self.ARTERIAL_PLASMA: "Arterial Plasma",
+            self.UNDETERMINED_WHOLE_BLOOD: "Undetermined Whole blood",
+            self.UNDETERMINED_PLASMA: "Undetermined Plasma",
+            self.INTERSTITIAL_FLUID: "Interstitial Fluid (ISF)",
+            self.CONTROL_SOLUTION: "Control Solution",
+        }
+        return names[self]
+
+    @classmethod
+    def get_name(cls, value: GlucoseType) -> str:
+        """Get human-readable glucose type name with proper Reserved/Invalid handling."""
+        try:
+            return str(cls(value))
+        except ValueError:
+            # Handle per Bluetooth SIG specification
+            if 11 <= value <= 15:  # 0xB-0xF
+                return "Reserved for Future Use"
+            raise ValueError(
+                f"Invalid glucose type value: {value} (valid range: 1-15)"
+            ) from None
+
+
+class SampleLocation(IntEnum):
+    """Sample location enumeration as per Bluetooth SIG specification."""
+
+    # Value 0 is Reserved for Future Use
+    FINGER = 1
+    ALTERNATE_SITE_TEST = 2
+    EARLOBE = 3
+    CONTROL_SOLUTION = 4
+    # Values 5-14 (0x5-0xE) are Reserved for Future Use
+    NOT_AVAILABLE = 15
+
+    def __str__(self) -> str:
+        """Return human-readable sample location name."""
+        names = {
+            self.FINGER: "Finger",
+            self.ALTERNATE_SITE_TEST: "Alternate Site Test (AST)",
+            self.EARLOBE: "Earlobe",
+            self.CONTROL_SOLUTION: "Control solution",
+            self.NOT_AVAILABLE: "Sample Location value not available",
+        }
+        return names[self]
+
+    @classmethod
+    def get_name(cls, value: SampleLocation) -> str:
+        """Get human-readable sample location name with proper Reserved/Invalid handling."""
+        try:
+            return str(cls(value))
+        except ValueError:
+            # Handle per Bluetooth SIG specification
+            if value == 0 or (5 <= value <= 14):  # Reserved ranges
+                return "Reserved for Future Use"
+            raise ValueError(
+                f"Invalid sample location value: {value} (valid range: 0-15)"
+            ) from None
+
 
 # TODO: Implement CharacteristicContext support
 # This characteristic should access Glucose Feature (0x2A51) and Glucose Measurement Context (0x2A34)
 # from ctx.other_characteristics to provide calibration factors and additional measurement metadata
+
+
+class GlucoseMeasurementFlags(IntFlag):
+    """Glucose Measurement flags as per Bluetooth SIG specification."""
+
+    TIME_OFFSET_PRESENT = 0x01
+    GLUCOSE_CONCENTRATION_UNITS_MMOL_L = 0x02
+    TYPE_SAMPLE_LOCATION_PRESENT = 0x04
+    SENSOR_STATUS_ANNUNCIATION_PRESENT = 0x08
+
+
+@dataclass  # pylint: disable=too-many-instance-attributes
+class GlucoseMeasurementData:
+    """Parsed glucose measurement data."""
+
+    sequence_number: int
+    base_time: datetime
+    glucose_concentration: float
+    unit: str
+    flags: GlucoseMeasurementFlags
+    time_offset_minutes: int | None = None
+    glucose_type: int | None = None
+    sample_location: int | None = None
+    sensor_status: int | None = None
+    # Human-readable names
+    glucose_type_name: str | None = None
+    sample_location_name: str | None = None
 
 
 @dataclass
@@ -24,7 +144,13 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Glucose Measurement"
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:  # pylint: disable=too-many-locals
+    min_length: int = 12  # Flags(1) + Seq(2) + BaseTime(7) + Glucose(2) minimum
+    max_length: int = 17  # + TimeOffset(2) + TypeLoc(1) + SensorStatus(2) maximum
+    allow_variable_length: bool = True  # Variable optional fields
+
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> GlucoseMeasurementData:  # pylint: disable=too-many-locals
         """Parse glucose measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + Base Time(7) + [Time Offset(2)] +
@@ -34,7 +160,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
             data: Raw bytearray from BLE characteristic
 
         Returns:
-            Dict containing parsed glucose measurement data with metadata
+            GlucoseMeasurementData containing parsed glucose measurement data with metadata
 
         Raises:
             ValueError: If data format is invalid
@@ -42,27 +168,34 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
         if len(data) < 12:
             raise ValueError("Glucose Measurement data must be at least 12 bytes")
 
-        flags = data[0]
+        flags = GlucoseMeasurementFlags(data[0])
         offset = 1
 
         # Parse sequence number (2 bytes)
-        sequence_number = struct.unpack("<H", data[offset : offset + 2])[0]
+        sequence_number = DataParser.parse_int16(data, offset, signed=False)
         offset += 2
 
         # Parse base time (7 bytes) - IEEE-11073 timestamp
         base_time = IEEE11073Parser.parse_timestamp(data, offset)
         offset += 7
 
-        result = {
-            "sequence_number": sequence_number,
-            "base_time": base_time,
-            "flags": flags,
-        }
+        # Initialize result object with required fields
+        result = GlucoseMeasurementData(
+            sequence_number=sequence_number,
+            base_time=base_time,
+            glucose_concentration=0.0,  # Will be updated below
+            unit="mg/dL",  # Default, will be updated based on flags
+            flags=flags,
+        )
 
         # Parse optional time offset (2 bytes) if present
-        if (flags & 0x01) and len(data) >= offset + 2:
-            time_offset = struct.unpack("<h", data[offset : offset + 2])[0]  # signed
-            result["time_offset_minutes"] = time_offset
+        if (
+            GlucoseMeasurementFlags.TIME_OFFSET_PRESENT in flags
+            and len(data) >= offset + 2
+        ):
+            result.time_offset_minutes = DataParser.parse_int16(
+                data, offset, signed=True
+            )  # signed
             offset += 2
 
         # Parse glucose concentration (2 bytes) - IEEE-11073 SFLOAT
@@ -70,142 +203,129 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
             glucose_value = IEEE11073Parser.parse_sfloat(data, offset)
 
             # Determine unit based on flags
-            unit = "mmol/L" if (flags & 0x02) else "mg/dL"  # mmol/L vs mg/dL
-
-            result.update(
-                {
-                    "glucose_concentration": glucose_value,
-                    "unit": unit,
-                }
+            unit = (
+                "mmol/L"
+                if GlucoseMeasurementFlags.GLUCOSE_CONCENTRATION_UNITS_MMOL_L in flags
+                else "mg/dL"
             )
+
+            result.glucose_concentration = glucose_value
+            result.unit = unit
             offset += 2
 
         # Parse optional type and sample location (1 byte) if present
-        if (flags & 0x04) and len(data) >= offset + 1:
+        if (
+            GlucoseMeasurementFlags.TYPE_SAMPLE_LOCATION_PRESENT in flags
+            and len(data) >= offset + 1
+        ):
             type_sample = data[offset]
-            glucose_type = (type_sample >> 4) & 0x0F
-            sample_location = type_sample & 0x0F
-            result.update(
-                {
-                    "glucose_type": glucose_type,
-                    "sample_location": sample_location,
-                }
+            glucose_type = BitFieldUtils.extract_bit_field(
+                type_sample,
+                GlucoseMeasurementBits.GLUCOSE_TYPE_START_BIT,
+                GlucoseMeasurementBits.GLUCOSE_TYPE_BIT_WIDTH,
             )
+            sample_location = BitFieldUtils.extract_bit_field(
+                type_sample,
+                GlucoseMeasurementBits.GLUCOSE_SAMPLE_LOCATION_START_BIT,
+                GlucoseMeasurementBits.GLUCOSE_SAMPLE_LOCATION_BIT_WIDTH,
+            )
+
+            result.glucose_type = glucose_type
+            result.sample_location = sample_location
+
+            # Set human-readable names
+            try:
+                result.glucose_type_name = GlucoseType.get_name(glucose_type)
+            except ValueError as e:
+                result.glucose_type_name = f"Invalid ({e})"
+
+            try:
+                result.sample_location_name = SampleLocation.get_name(sample_location)
+            except ValueError as e:
+                result.sample_location_name = f"Invalid ({e})"
+
             offset += 1
 
         # Parse optional sensor status annotation (2 bytes) if present
-        if (flags & 0x08) and len(data) >= offset + 2:
-            sensor_status = struct.unpack("<H", data[offset : offset + 2])[0]
-            result["sensor_status"] = sensor_status
+        if (
+            GlucoseMeasurementFlags.SENSOR_STATUS_ANNUNCIATION_PRESENT in flags
+            and len(data) >= offset + 2
+        ):
+            result.sensor_status = DataParser.parse_int16(data, offset, signed=False)
 
         return result
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches # Complex medical data encoding
+    def encode_value(self, data: GlucoseMeasurementData) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches # Complex medical data encoding
         """Encode glucose measurement value back to bytes.
 
         Args:
-            data: Dictionary containing glucose measurement data
+            data: GlucoseMeasurementData containing glucose measurement data
 
         Returns:
             Encoded bytes representing the glucose measurement
         """
-        if not isinstance(data, dict):
-            raise TypeError("Glucose measurement data must be a dictionary")
-
-        required_fields = ["sequence_number", "base_time", "glucose_concentration"]
-        for field in required_fields:
-            if field not in data:
-                raise ValueError(f"Glucose measurement data must contain '{field}' key")
-
-        sequence_number = int(data["sequence_number"])
-        base_time = data["base_time"]
-        glucose_concentration = float(data["glucose_concentration"])
-
-        time_offset = data.get("time_offset")
-        type_sample_location = data.get("type_sample_location")
-        sensor_status = data.get("sensor_status")
-
         # Build flags based on available data
-        flags = 0
-        if time_offset is not None:
-            flags |= 0x01  # Time offset present
-        if type_sample_location is not None:
-            flags |= 0x02  # Type and sample location present
-        if glucose_concentration >= 0:  # Glucose concentration units
-            flags |= 0x04  # Units flag (simplified)
-        if sensor_status is not None:
-            flags |= 0x08  # Sensor status annunciation present
+        flags = GlucoseMeasurementFlags(0)
+        if data.time_offset_minutes is not None:
+            flags |= GlucoseMeasurementFlags.TIME_OFFSET_PRESENT
+        if data.unit == "mmol/L":
+            flags |= GlucoseMeasurementFlags.GLUCOSE_CONCENTRATION_UNITS_MMOL_L
+        if data.glucose_type is not None or data.sample_location is not None:
+            flags |= GlucoseMeasurementFlags.TYPE_SAMPLE_LOCATION_PRESENT
+        if data.sensor_status is not None:
+            flags |= GlucoseMeasurementFlags.SENSOR_STATUS_ANNUNCIATION_PRESENT
 
         # Validate ranges
-        if not 0 <= sequence_number <= 0xFFFF:
-            raise ValueError(f"Sequence number {sequence_number} exceeds uint16 range")
-
-        # Convert glucose concentration to SFLOAT (simplified as uint16)
-        glucose_raw = round(glucose_concentration * 100)  # Simplified conversion
-        if not 0 <= glucose_raw <= 0xFFFF:
+        if not 0 <= data.sequence_number <= 0xFFFF:
             raise ValueError(
-                f"Glucose concentration {glucose_raw} exceeds uint16 range"
+                f"Sequence number {data.sequence_number} exceeds uint16 range"
             )
 
         # Start with flags, sequence number, and base time
-        result = bytearray([flags])
-        result.extend(struct.pack("<H", sequence_number))
-        result.extend(IEEE11073Parser.encode_timestamp(base_time))
+        result = bytearray([int(flags)])
+        result.extend(DataParser.encode_int16(data.sequence_number, signed=False))
+        result.extend(IEEE11073Parser.encode_timestamp(data.base_time))
 
         # Add optional time offset
-        if time_offset is not None:
-            offset_val = int(time_offset)
-            if not -32768 <= offset_val <= 32767:
-                raise ValueError(f"Time offset {offset_val} exceeds sint16 range")
-            result.extend(struct.pack("<h", offset_val))
+        if data.time_offset_minutes is not None:
+            if not SINT16_MIN <= data.time_offset_minutes <= SINT16_MAX:
+                raise ValueError(
+                    f"Time offset {data.time_offset_minutes} exceeds sint16 range"
+                )
+            result.extend(
+                DataParser.encode_int16(data.time_offset_minutes, signed=True)
+            )
 
-        # Add glucose concentration (simplified as uint16)
-        result.extend(struct.pack("<H", glucose_raw))
+        # Add glucose concentration using IEEE-11073 SFLOAT
+        result.extend(IEEE11073Parser.encode_sfloat(data.glucose_concentration))
 
         # Add optional type and sample location
-        if type_sample_location is not None:
-            type_location = int(type_sample_location)
-            if not 0 <= type_location <= 255:
-                raise ValueError(
-                    f"Type sample location {type_location} exceeds uint8 range"
-                )
-            result.append(type_location)
+        if data.glucose_type is not None or data.sample_location is not None:
+            glucose_type = data.glucose_type or 0
+            sample_location = data.sample_location or 0
+            type_sample = BitFieldUtils.merge_bit_fields(
+                (
+                    glucose_type,
+                    GlucoseMeasurementBits.GLUCOSE_TYPE_START_BIT,
+                    GlucoseMeasurementBits.GLUCOSE_TYPE_BIT_WIDTH,
+                ),
+                (
+                    sample_location,
+                    GlucoseMeasurementBits.GLUCOSE_SAMPLE_LOCATION_START_BIT,
+                    GlucoseMeasurementBits.GLUCOSE_SAMPLE_LOCATION_BIT_WIDTH,
+                ),
+            )
+            result.append(type_sample)
 
         # Add optional sensor status
-        if sensor_status is not None:
-            status = int(sensor_status)
-            if not 0 <= status <= 0xFFFF:
-                raise ValueError(f"Sensor status {status} exceeds uint16 range")
-            result.extend(struct.pack("<H", status))
+        if data.sensor_status is not None:
+            if not 0 <= data.sensor_status <= 0xFFFF:
+                raise ValueError(
+                    f"Sensor status {data.sensor_status} exceeds uint16 range"
+                )
+            result.extend(DataParser.encode_int16(data.sensor_status, signed=False))
 
         return result
-
-    def _get_glucose_type_name(self, glucose_type: int) -> str:
-        """Get human-readable glucose type name."""
-        types = {
-            1: "Capillary Whole blood",
-            2: "Capillary Plasma",
-            3: "Venous Whole blood",
-            4: "Venous Plasma",
-            5: "Arterial Whole blood",
-            6: "Arterial Plasma",
-            7: "Undetermined Whole blood",
-            8: "Undetermined Plasma",
-            9: "Interstitial Fluid (ISF)",
-            10: "Control Solution",
-        }
-        return types.get(glucose_type, "Reserved")
-
-    def _get_sample_location_name(self, sample_location: int) -> str:
-        """Get human-readable sample location name."""
-        locations = {
-            1: "Finger",
-            2: "Alternate Site Test (AST)",
-            3: "Earlobe",
-            4: "Control solution",
-            15: "Sample Location value not available",
-        }
-        return locations.get(sample_location, "Reserved")
 
     @property
     def unit(self) -> str:

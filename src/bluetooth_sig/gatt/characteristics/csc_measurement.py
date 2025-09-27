@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
 from typing import Any
 
+from ..constants import UINT8_MAX
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 # TODO: Implement CharacteristicContext support
 # This characteristic should access CSC Feature (0x2A5C) from ctx.other_characteristics
@@ -25,8 +26,8 @@ class CSCMeasurementData:
 
     def __post_init__(self) -> None:
         """Validate CSC measurement data."""
-        if not 0 <= self.flags <= 255:
-            raise ValueError("Flags must be a uint8 value (0-255)")
+        if not 0 <= self.flags <= UINT8_MAX:
+            raise ValueError("Flags must be a uint8 value (0-UINT8_MAX)")
 
 
 @dataclass
@@ -35,6 +36,15 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
     Used to transmit cycling speed and cadence data.
     """
+
+    # CSC Measurement Flags (per Bluetooth SIG specification)
+    WHEEL_REVOLUTION_DATA_PRESENT = 0x01
+    CRANK_REVOLUTION_DATA_PRESENT = 0x02
+
+    # Time resolution constants
+    CSC_TIME_RESOLUTION = (
+        1024.0  # 1/1024 second resolution for both wheel and crank event times
+    )
 
     _characteristic_name: str = "CSC Measurement"
 
@@ -68,21 +78,25 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
         last_crank_event_time = None
 
         # Parse optional wheel revolution data (6 bytes total) if present
-        if (flags & 0x01) and len(data) >= offset + 6:
-            wheel_revolutions = struct.unpack("<I", data[offset : offset + 4])[0]
-            wheel_event_time_raw = struct.unpack("<H", data[offset + 4 : offset + 6])[0]
-            # Wheel event time is in 1/1024 second units
+        if (flags & self.WHEEL_REVOLUTION_DATA_PRESENT) and len(data) >= offset + 6:
+            wheel_revolutions = DataParser.parse_int32(data, offset, signed=False)
+            wheel_event_time_raw = DataParser.parse_int16(
+                data, offset + 4, signed=False
+            )
+            # Wheel event time is in 1/CSC_TIME_RESOLUTION second units
             cumulative_wheel_revolutions = wheel_revolutions
-            last_wheel_event_time = wheel_event_time_raw / 1024.0
+            last_wheel_event_time = wheel_event_time_raw / self.CSC_TIME_RESOLUTION
             offset += 6
 
         # Parse optional crank revolution data (4 bytes total) if present
-        if (flags & 0x02) and len(data) >= offset + 4:
-            crank_revolutions = struct.unpack("<H", data[offset : offset + 2])[0]
-            crank_event_time_raw = struct.unpack("<H", data[offset + 2 : offset + 4])[0]
-            # Crank event time is in 1/1024 second units
+        if (flags & self.CRANK_REVOLUTION_DATA_PRESENT) and len(data) >= offset + 4:
+            crank_revolutions = DataParser.parse_int16(data, offset, signed=False)
+            crank_event_time_raw = DataParser.parse_int16(
+                data, offset + 2, signed=False
+            )
+            # Crank event time is in 1/CSC_TIME_RESOLUTION second units
             cumulative_crank_revolutions = crank_revolutions
-            last_crank_event_time = crank_event_time_raw / 1024.0
+            last_crank_event_time = crank_event_time_raw / self.CSC_TIME_RESOLUTION
 
         return CSCMeasurementData(
             flags=flags,
@@ -120,9 +134,9 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
         # Update flags to match available data
         if has_wheel_data:
-            flags |= 0x01  # Wheel revolution data present
+            flags |= self.WHEEL_REVOLUTION_DATA_PRESENT  # Wheel revolution data present
         if has_crank_data:
-            flags |= 0x02  # Crank revolution data present
+            flags |= self.CRANK_REVOLUTION_DATA_PRESENT  # Crank revolution data present
 
         # Start with flags byte
         result = bytearray([flags])
@@ -139,15 +153,15 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
                 )
 
             wheel_event_time_raw = round(
-                wheel_event_time * 1024
-            )  # Convert to 1/1024 second units
+                wheel_event_time * self.CSC_TIME_RESOLUTION
+            )  # Convert to 1/CSC_TIME_RESOLUTION second units
             if not 0 <= wheel_event_time_raw <= 0xFFFF:
                 raise ValueError(
                     f"Wheel event time {wheel_event_time_raw} exceeds uint16 range"
                 )
 
-            result.extend(struct.pack("<I", wheel_revolutions))
-            result.extend(struct.pack("<H", wheel_event_time_raw))
+            result.extend(DataParser.encode_int32(wheel_revolutions, signed=False))
+            result.extend(DataParser.encode_int16(wheel_event_time_raw, signed=False))
 
         # Add crank revolution data if present
         if has_crank_data:
@@ -161,15 +175,15 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
                 )
 
             crank_event_time_raw = round(
-                crank_event_time * 1024
-            )  # Convert to 1/1024 second units
+                crank_event_time * self.CSC_TIME_RESOLUTION
+            )  # Convert to 1/CSC_TIME_RESOLUTION second units
             if not 0 <= crank_event_time_raw <= 0xFFFF:
                 raise ValueError(
                     f"Crank event time {crank_event_time_raw} exceeds uint16 range"
                 )
 
-            result.extend(struct.pack("<H", crank_revolutions))
-            result.extend(struct.pack("<H", crank_event_time_raw))
+            result.extend(DataParser.encode_int16(crank_revolutions, signed=False))
+            result.extend(DataParser.encode_int16(crank_event_time_raw, signed=False))
 
         return result
 

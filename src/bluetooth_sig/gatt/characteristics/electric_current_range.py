@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 
 
@@ -24,7 +25,7 @@ class ElectricCurrentRangeData:
             )
 
         # Validate range for uint16 with 0.01 A resolution (0 to 655.35 A)
-        max_current_value = 65535 * 0.01
+        max_current_value = UINT16_MAX * 0.01
         if not 0.0 <= self.min <= max_current_value:
             raise ValueError(
                 f"Minimum current {self.min} A is outside valid range (0.0 to {max_current_value} A)"
@@ -88,9 +89,9 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
         min_current_raw = round(data.min * 100)
         max_current_raw = round(data.max * 100)
 
-        # Validate range for uint16 (0 to 65535)
+        # Validate range for uint16 (0 to UINT16_MAX)
         for name, value in [("minimum", min_current_raw), ("maximum", max_current_raw)]:
-            if not 0 <= value <= 65535:
+            if not 0 <= value <= UINT16_MAX:
                 raise ValueError(f"Current {name} value {value} exceeds uint16 range")
 
         # Encode as 2 uint16 values (little endian)

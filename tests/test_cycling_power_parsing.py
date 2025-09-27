@@ -281,8 +281,10 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<B", op_code)
         result = char.decode_value(bytearray(test_data))
 
-        expected = {"op_code": 3, "op_code_name": "Request Supported Sensor Locations"}
-        assert result == expected
+        assert result.op_code == 3
+        assert result.op_code_name == "Request Supported Sensor Locations"
+        assert result.cumulative_value is None
+        assert result.sensor_location is None
 
     def test_cycling_power_control_point_with_parameters(self):
         """Test cycling power control point with parameters."""
@@ -296,12 +298,9 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<BI", op_code, cumulative_value)
         result = char.decode_value(bytearray(test_data))
 
-        expected = {
-            "op_code": 1,
-            "op_code_name": "Set Cumulative Value",
-            "cumulative_value": 123456,
-        }
-        assert result == expected
+        assert result.op_code == 1
+        assert result.op_code_name == "Set Cumulative Value"
+        assert result.cumulative_value == 123456
 
         # Test Set Crank Length
         op_code = 0x04
@@ -309,12 +308,9 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<BH", op_code, crank_length)
         result = char.decode_value(bytearray(test_data))
 
-        expected = {
-            "op_code": 4,
-            "op_code_name": "Set Crank Length",
-            "crank_length": 175.0,
-        }
-        assert result == expected
+        assert result.op_code == 4
+        assert result.op_code_name == "Set Crank Length"
+        assert result.crank_length == 175.0
 
     def test_cycling_power_control_point_response(self):
         """Test cycling power control point response parsing."""
@@ -329,14 +325,11 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<BBB", op_code, request_op_code, response_value)
         result = char.decode_value(bytearray(test_data))
 
-        expected = {
-            "op_code": 32,
-            "op_code_name": "Response Code",
-            "request_op_code": 3,
-            "response_value": 1,
-            "response_value_name": "Success",
-        }
-        assert result == expected
+        assert result.op_code == 32
+        assert result.op_code_name == "Response Code"
+        assert result.request_op_code == 3
+        assert result.response_value == 1
+        assert result.response_value_name == "Success"
 
     def test_cycling_power_control_point_invalid_data(self):
         """Test cycling power control point with invalid data."""

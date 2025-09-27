@@ -9,6 +9,17 @@ from bluetooth_sig.gatt.characteristics import (
     GlucoseMeasurementCharacteristic,
     GlucoseMeasurementContextCharacteristic,
 )
+from bluetooth_sig.gatt.characteristics.glucose_measurement import (
+    GlucoseType,
+    SampleLocation,
+)
+from bluetooth_sig.gatt.characteristics.glucose_measurement_context import (
+    CarbohydrateType,
+    HealthType,
+    MealType,
+    MedicationType,
+    TesterType,
+)
 from bluetooth_sig.gatt.services.glucose import GlucoseService
 from bluetooth_sig.types.gatt_enums import CharacteristicName
 
@@ -79,16 +90,16 @@ class TestGlucoseMeasurementCharacteristic:
 
         result = glucose_measurement_char.decode_value(test_data)
 
-        assert result["sequence_number"] == 42
-        assert result["unit"] == "mg/dL"
-        assert result["flags"] == 0
-        assert "base_time" in result
-        assert result["base_time"].year == 2024
-        assert result["base_time"].month == 3
-        assert result["base_time"].day == 15
-        assert result["base_time"].hour == 14
-        assert result["base_time"].minute == 30
-        assert result["base_time"].second == 45
+        assert result.sequence_number == 42
+        assert result.unit == "mg/dL"
+        assert result.flags == 0
+        # Test timestamp parsing
+        assert result.base_time.year == 2024
+        assert result.base_time.month == 3
+        assert result.base_time.day == 15
+        assert result.base_time.hour == 14
+        assert result.base_time.minute == 30
+        assert result.base_time.second == 45
 
     def test_glucose_measurement_with_mmol_unit(self, glucose_measurement_char):
         """Test glucose measurement with mmol/L unit."""
@@ -111,7 +122,7 @@ class TestGlucoseMeasurementCharacteristic:
         )
 
         result = glucose_measurement_char.decode_value(test_data)
-        assert result["unit"] == "mmol/L"
+        assert result.unit == "mmol/L"
 
     def test_glucose_measurement_with_time_offset(self, glucose_measurement_char):
         """Test glucose measurement with time offset."""
@@ -136,7 +147,7 @@ class TestGlucoseMeasurementCharacteristic:
         )
 
         result = glucose_measurement_char.decode_value(test_data)
-        assert result["time_offset_minutes"] == 15
+        assert result.time_offset_minutes == 15
 
     def test_glucose_measurement_with_type_location(self, glucose_measurement_char):
         """Test glucose measurement with type and sample location."""
@@ -160,8 +171,8 @@ class TestGlucoseMeasurementCharacteristic:
         )
 
         result = glucose_measurement_char.decode_value(test_data)
-        assert result["glucose_type"] == 2
-        assert result["sample_location"] == 1
+        assert result.glucose_type == 2
+        assert result.sample_location == 1
 
     def test_glucose_measurement_with_sensor_status(self, glucose_measurement_char):
         """Test glucose measurement with sensor status."""
@@ -186,7 +197,7 @@ class TestGlucoseMeasurementCharacteristic:
         )
 
         result = glucose_measurement_char.decode_value(test_data)
-        assert result["sensor_status"] == 1
+        assert result.sensor_status == 1
 
     def test_glucose_measurement_invalid_data(self, glucose_measurement_char):
         """Test glucose measurement with invalid data."""
@@ -196,24 +207,15 @@ class TestGlucoseMeasurementCharacteristic:
 
     def test_glucose_type_names(self, glucose_measurement_char):
         """Test glucose type name mapping."""
-        assert (
-            glucose_measurement_char._get_glucose_type_name(1)
-            == "Capillary Whole blood"
-        )
-        assert (
-            glucose_measurement_char._get_glucose_type_name(9)
-            == "Interstitial Fluid (ISF)"
-        )
-        assert glucose_measurement_char._get_glucose_type_name(99) == "Reserved"
+        assert GlucoseType.get_name(1) == "Capillary Whole blood"
+        assert GlucoseType.get_name(9) == "Interstitial Fluid (ISF)"
+        assert GlucoseType.get_name(12) == "Reserved for Future Use"
 
     def test_sample_location_names(self, glucose_measurement_char):
         """Test sample location name mapping."""
-        assert glucose_measurement_char._get_sample_location_name(1) == "Finger"
-        assert (
-            glucose_measurement_char._get_sample_location_name(2)
-            == "Alternate Site Test (AST)"
-        )
-        assert glucose_measurement_char._get_sample_location_name(99) == "Reserved"
+        assert SampleLocation.get_name(1) == "Finger"
+        assert SampleLocation.get_name(2) == "Alternate Site Test (AST)"
+        assert SampleLocation.get_name(0) == "Reserved for Future Use"
 
 
 class TestGlucoseMeasurementContextCharacteristic:
@@ -315,15 +317,11 @@ class TestGlucoseMeasurementContextCharacteristic:
 
     def test_glucose_context_type_names(self, glucose_context_char):
         """Test context type name mappings."""
-        assert glucose_context_char._get_carbohydrate_type_name(1) == "Breakfast"
-        assert glucose_context_char._get_meal_type_name(3) == "Fasting"
-        assert (
-            glucose_context_char._get_tester_type_name(2) == "Health Care Professional"
-        )
-        assert glucose_context_char._get_health_type_name(5) == "No health issues"
-        assert (
-            glucose_context_char._get_medication_type_name(1) == "Rapid acting insulin"
-        )
+        assert CarbohydrateType.get_name(1) == "Breakfast"
+        assert MealType.get_name(3) == "Fasting"
+        assert TesterType.get_name(2) == "Health Care Professional"
+        assert HealthType.get_name(5) == "No health issues"
+        assert MedicationType.get_name(1) == "Rapid acting insulin"
 
     def test_glucose_context_invalid_data(self, glucose_context_char):
         """Test glucose context with invalid data."""
@@ -390,7 +388,7 @@ class TestGlucoseFeatureCharacteristic:
             "Multiple Bond Supported"
             in glucose_feature_char.get_feature_description(10)
         )
-        assert "Unknown feature" in glucose_feature_char.get_feature_description(15)
+        assert "Reserved feature" in glucose_feature_char.get_feature_description(15)
 
     def test_glucose_feature_invalid_data(self, glucose_feature_char):
         """Test glucose feature with invalid data."""

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ..constants import SINT8_MIN
 from .base import BaseCharacteristic
 
 # DST offset mappings - module level constant
@@ -68,7 +69,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
         dst_offset_raw = data[1]
 
         # Process time zone
-        if timezone_raw == -128:
+        if timezone_raw == SINT8_MIN:
             timezone_desc = "Unknown"
             timezone_hours = None
         elif -48 <= timezone_raw <= 56:

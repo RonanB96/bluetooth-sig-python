@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
 from typing import Any
 
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 @dataclass
@@ -37,7 +37,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
             raise ValueError("Cycling Power Feature data must be at least 4 bytes")
 
         # Parse 32-bit unsigned integer (little endian)
-        feature_mask: int = struct.unpack("<I", data[:4])[0]
+        feature_mask: int = DataParser.parse_int32(data, 0, signed=False)
         return feature_mask
 
     def encode_value(self, data: int) -> bytearray:
@@ -55,7 +55,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
         if not 0 <= feature_mask <= 0xFFFFFFFF:
             raise ValueError(f"Feature mask {feature_mask} exceeds uint32 range")
 
-        return bytearray(struct.pack("<I", feature_mask))
+        return DataParser.encode_int32(feature_mask, signed=False)
 
     @property
     def unit(self) -> str:

@@ -2,12 +2,28 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 from typing import Any
 
 from .base import BaseCharacteristic
+from .utils import BitFieldUtils, DataParser
+
+
+class WeightScaleBits:
+    # Weight Scale Feature bit field constants
+    WEIGHT_RESOLUTION_START_BIT = 3  # Weight measurement resolution starts at bit 3
+    WEIGHT_RESOLUTION_BIT_WIDTH = 4  # Weight measurement resolution uses 4 bits
+    HEIGHT_RESOLUTION_START_BIT = 7  # Height measurement resolution starts at bit 7
+    HEIGHT_RESOLUTION_BIT_WIDTH = 3  # Height measurement resolution uses 3 bits
+
+
+class WeightScaleFeatures(IntFlag):
+    """Weight Scale Feature flags as per Bluetooth SIG specification."""
+
+    TIMESTAMP_SUPPORTED = 0x01
+    MULTIPLE_USERS_SUPPORTED = 0x02
+    BMI_SUPPORTED = 0x04
 
 
 class WeightMeasurementResolution(IntEnum):
@@ -33,7 +49,30 @@ class WeightMeasurementResolution(IntEnum):
             6: "0.01_kg_or_0.02_lb",
             7: "0.005_kg_or_0.01_lb",
         }
-        return descriptions.get(self.value, f"reserved_{self.value}")
+        return descriptions.get(self.value, "Reserved for Future Use")
+
+    @classmethod
+    def get_name(cls, value: WeightMeasurementResolution) -> str:
+        """Get human-readable name for weight measurement resolution value.
+
+        Args:
+            value: Weight measurement resolution value (0-15)
+
+        Returns:
+            Human-readable description
+
+        Raises:
+            ValueError: If value is outside valid range (0-15)
+        """
+        if not 0 <= value <= 15:
+            raise ValueError(
+                f"Weight measurement resolution value {value} is out of valid range (0-15)"
+            )
+
+        if value <= 7:
+            return str(cls(value))
+        # Values 8-15 are reserved per Bluetooth SIG spec
+        return "Reserved for Future Use"
 
 
 class HeightMeasurementResolution(IntEnum):
@@ -51,7 +90,30 @@ class HeightMeasurementResolution(IntEnum):
             2: "0.005_m_or_0.5_inch",
             3: "0.001_m_or_0.1_inch",
         }
-        return descriptions.get(self.value, f"reserved_{self.value}")
+        return descriptions.get(self.value, "Reserved for Future Use")
+
+    @classmethod
+    def get_name(cls, value: HeightMeasurementResolution) -> str:
+        """Get human-readable name for height measurement resolution value.
+
+        Args:
+            value: Height measurement resolution value (0-7)
+
+        Returns:
+            Human-readable description
+
+        Raises:
+            ValueError: If value is outside valid range (0-7)
+        """
+        if not 0 <= value <= 7:
+            raise ValueError(
+                f"Height measurement resolution value {value} is out of valid range (0-7)"
+            )
+
+        if value <= 3:
+            return str(cls(value))
+        # Values 4-7 are reserved per Bluetooth SIG spec
+        return "Reserved for Future Use"
 
 
 @dataclass
@@ -81,6 +143,10 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Weight Scale Feature"
 
+    min_length: int = 4  # Features(4) fixed length
+    max_length: int = 4  # Features(4) fixed length
+    allow_variable_length: bool = False  # Fixed length
+
     def decode_value(
         self, data: bytearray, ctx: Any | None = None
     ) -> WeightScaleFeatureData:
@@ -100,14 +166,18 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
         if len(data) < 4:
             raise ValueError("Weight Scale Feature data must be at least 4 bytes")
 
-        features_raw = struct.unpack("<L", data[:4])[0]
+        features_raw = DataParser.parse_int32(data, 0, signed=False)
 
         # Parse feature flags according to specification
         return WeightScaleFeatureData(
             raw_value=features_raw,
-            timestamp_supported=bool(features_raw & 0x01),
-            multiple_users_supported=bool(features_raw & 0x02),
-            bmi_supported=bool(features_raw & 0x04),
+            timestamp_supported=bool(
+                features_raw & WeightScaleFeatures.TIMESTAMP_SUPPORTED
+            ),
+            multiple_users_supported=bool(
+                features_raw & WeightScaleFeatures.MULTIPLE_USERS_SUPPORTED
+            ),
+            bmi_supported=bool(features_raw & WeightScaleFeatures.BMI_SUPPORTED),
             weight_measurement_resolution=self._get_weight_resolution(features_raw),
             height_measurement_resolution=self._get_height_resolution(features_raw),
         )
@@ -121,19 +191,30 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
         Returns:
             Encoded bytes representing the weight scale features (uint32)
         """
-        if not isinstance(data, WeightScaleFeatureData):
-            raise TypeError(
-                f"Weight scale feature data must be a WeightScaleFeatureData, "
-                f"got {type(data).__name__}"
-            )
+        # Reconstruct the features bitmap from individual flags
+        features_bitmap = 0
+        if data.timestamp_supported:
+            features_bitmap |= WeightScaleFeatures.TIMESTAMP_SUPPORTED
+        if data.multiple_users_supported:
+            features_bitmap |= WeightScaleFeatures.MULTIPLE_USERS_SUPPORTED
+        if data.bmi_supported:
+            features_bitmap |= WeightScaleFeatures.BMI_SUPPORTED
 
-        # Use the raw value from the dataclass
-        features_raw = data.raw_value
-        # Validate range for uint32
-        if not 0 <= features_raw <= 0xFFFFFFFF:
-            raise ValueError(f"Features value {features_raw} exceeds uint32 range")
+        # Add resolution bits using bit field utilities
+        features_bitmap = BitFieldUtils.set_bit_field(
+            features_bitmap,
+            data.weight_measurement_resolution.value,
+            WeightScaleBits.WEIGHT_RESOLUTION_START_BIT,
+            WeightScaleBits.WEIGHT_RESOLUTION_BIT_WIDTH,
+        )
+        features_bitmap = BitFieldUtils.set_bit_field(
+            features_bitmap,
+            data.height_measurement_resolution.value,
+            WeightScaleBits.HEIGHT_RESOLUTION_START_BIT,
+            WeightScaleBits.HEIGHT_RESOLUTION_BIT_WIDTH,
+        )
 
-        return bytearray(struct.pack("<I", features_raw))
+        return bytearray(DataParser.encode_int32(features_bitmap, signed=False))
 
     def _get_weight_resolution(self, features: int) -> WeightMeasurementResolution:
         """Extract weight measurement resolution from features bitmask.
@@ -144,7 +225,11 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
         Returns:
             WeightMeasurementResolution enum value
         """
-        resolution_bits = (features >> 3) & 0x0F  # Bits 3-6
+        resolution_bits = BitFieldUtils.extract_bit_field(
+            features,
+            WeightScaleBits.WEIGHT_RESOLUTION_START_BIT,
+            WeightScaleBits.WEIGHT_RESOLUTION_BIT_WIDTH,
+        )
         try:
             return WeightMeasurementResolution(resolution_bits)
         except ValueError:
@@ -159,7 +244,11 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
         Returns:
             HeightMeasurementResolution enum value
         """
-        resolution_bits = (features >> 7) & 0x07  # Bits 7-9
+        resolution_bits = BitFieldUtils.extract_bit_field(
+            features,
+            WeightScaleBits.HEIGHT_RESOLUTION_START_BIT,
+            WeightScaleBits.HEIGHT_RESOLUTION_BIT_WIDTH,
+        )
         try:
             return HeightMeasurementResolution(resolution_bits)
         except ValueError:

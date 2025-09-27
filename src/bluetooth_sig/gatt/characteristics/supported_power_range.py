@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ..constants import SINT16_MAX, SINT16_MIN
 from .base import BaseCharacteristic
 
 
@@ -23,14 +24,14 @@ class SupportedPowerRangeData:
                 f"Minimum power {self.minimum} W cannot be greater than maximum {self.maximum} W"
             )
 
-        # Validate range for sint16 (-32768 to 32767)
-        if not -32768 <= self.minimum <= 32767:
+        # Validate range for sint16 (SINT16_MIN to SINT16_MAX)
+        if not SINT16_MIN <= self.minimum <= SINT16_MAX:
             raise ValueError(
-                f"Minimum power {self.minimum} W is outside valid range (-32768 to 32767 W)"
+                f"Minimum power {self.minimum} W is outside valid range (SINT16_MIN to SINT16_MAX W)"
             )
-        if not -32768 <= self.maximum <= 32767:
+        if not SINT16_MIN <= self.maximum <= SINT16_MAX:
             raise ValueError(
-                f"Maximum power {self.maximum} W is outside valid range (-32768 to 32767 W)"
+                f"Maximum power {self.maximum} W is outside valid range (SINT16_MIN to SINT16_MAX W)"
             )
 
 
@@ -82,10 +83,10 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
                 f"got {type(data).__name__}"
             )
 
-        # Validate range for sint16 (-32768 to 32767)
-        if not -32768 <= data.minimum <= 32767:
+        # Validate range for sint16 (SINT16_MIN to SINT16_MAX)
+        if not SINT16_MIN <= data.minimum <= SINT16_MAX:
             raise ValueError(f"Minimum power {data.minimum} exceeds sint16 range")
-        if not -32768 <= data.maximum <= 32767:
+        if not SINT16_MIN <= data.maximum <= SINT16_MAX:
             raise ValueError(f"Maximum power {data.maximum} exceeds sint16 range")
         # Encode as 2 sint16 values (little endian)
         result = bytearray()

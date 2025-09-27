@@ -31,10 +31,10 @@ class TestWeightMeasurementCharacteristic:
         data = bytearray([0x00, 0x70, 0x36])  # 0x3670 = 13936
         result = char.decode_value(data)
 
-        assert "weight" in result
-        assert result["weight"] == pytest.approx(69.68, abs=0.01)  # 13936 * 0.005
-        assert result["weight_unit"] == "kg"
-        assert result["measurement_units"] == "metric"
+        assert hasattr(result, "weight")
+        assert result.weight == pytest.approx(69.68, abs=0.01)  # 13936 * 0.005
+        assert result.weight_unit == "kg"
+        assert result.measurement_units == "metric"
 
     def test_parse_basic_weight_imperial(self):
         """Test parsing basic weight in imperial units."""
@@ -45,10 +45,10 @@ class TestWeightMeasurementCharacteristic:
         data = bytearray([0x01, 0x98, 0x3A])  # 0x3A98 = 15000
         result = char.decode_value(data)
 
-        assert "weight" in result
-        assert result["weight"] == pytest.approx(150.0, abs=0.01)  # 15000 * 0.01
-        assert result["weight_unit"] == "lb"
-        assert result["measurement_units"] == "imperial"
+        assert hasattr(result, "weight")
+        assert result.weight == pytest.approx(150.0, abs=0.01)  # 15000 * 0.01
+        assert result.weight_unit == "lb"
+        assert result.measurement_units == "imperial"
 
     def test_parse_weight_with_user_id(self):
         """Test parsing weight with user ID."""
@@ -58,9 +58,9 @@ class TestWeightMeasurementCharacteristic:
         data = bytearray([0x04, 0x70, 0x36, 0x05])
         result = char.decode_value(data)
 
-        assert "weight" in result
-        assert "user_id" in result
-        assert result["user_id"] == 5
+        assert hasattr(result, "weight")
+        assert hasattr(result, "user_id")
+        assert result.user_id == 5
 
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""

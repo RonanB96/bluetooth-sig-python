@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ..constants import SINT8_MIN
 from .base import BaseCharacteristic
 
 
@@ -29,7 +30,7 @@ class TimeZoneCharacteristic(BaseCharacteristic):
         offset_raw = int.from_bytes(data[:1], byteorder="little", signed=True)
 
         # Handle special values
-        if offset_raw == -128:
+        if offset_raw == SINT8_MIN:
             return "Unknown"
 
         # Validate range (-48 to +56 per specification)
@@ -64,7 +65,7 @@ class TimeZoneCharacteristic(BaseCharacteristic):
         elif isinstance(data, str):
             # Parse string format
             if data == "Unknown":
-                offset_raw = -128
+                offset_raw = SINT8_MIN
             elif data.startswith("UTC"):
                 # Parse UTC offset format like "UTC+05:30" or "UTC-03:00"
                 try:
@@ -94,10 +95,10 @@ class TimeZoneCharacteristic(BaseCharacteristic):
         else:
             raise TypeError("Time zone data must be a string or integer")
 
-        # Validate range for sint8 (-128 to 127, but spec says -48 to +56 + special -128)
-        if offset_raw != -128 and not -48 <= offset_raw <= 56:
+        # Validate range for sint8 (SINT8_MIN to SINT8_MAX, but spec says -48 to +56 + special SINT8_MIN)
+        if offset_raw != SINT8_MIN and not -48 <= offset_raw <= 56:
             raise ValueError(
-                f"Time zone offset {offset_raw} is outside valid range (-48 to +56, or -128 for unknown)"
+                f"Time zone offset {offset_raw} is outside valid range (-48 to +56, or SINT8_MIN for unknown)"
             )
 
         return bytearray(offset_raw.to_bytes(1, byteorder="little", signed=True))

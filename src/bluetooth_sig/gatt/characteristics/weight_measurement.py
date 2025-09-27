@@ -2,12 +2,39 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
+from datetime import datetime
+from enum import IntFlag
 from typing import Any
 
+from ..constants import UINT8_MAX
 from .base import BaseCharacteristic
-from .utils import IEEE11073Parser
+from .utils import DataParser, IEEE11073Parser
+
+
+class WeightMeasurementFlags(IntFlag):
+    """Weight Measurement flags as per Bluetooth SIG specification."""
+
+    IMPERIAL_UNITS = 0x01
+    TIMESTAMP_PRESENT = 0x02
+    USER_ID_PRESENT = 0x04
+    BMI_PRESENT = 0x08
+    HEIGHT_PRESENT = 0x10
+
+
+@dataclass
+class WeightMeasurementData:
+    """Parsed weight measurement data."""
+
+    weight: float
+    weight_unit: str
+    measurement_units: str
+    flags: int
+    timestamp: datetime | None = None
+    user_id: int | None = None
+    bmi: float | None = None
+    height: float | None = None
+    height_unit: str | None = None
 
 
 @dataclass
@@ -20,7 +47,13 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Weight Measurement"
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:
+    min_length: int = 3  # Flags(1) + Weight(2) minimum
+    max_length: int = 21  # + Timestamp(7) + UserID(1) + BMI(2) + Height(2) maximum
+    allow_variable_length: bool = True  # Variable optional fields
+
+    def decode_value(
+        self, data: bytearray, ctx: Any | None = None
+    ) -> WeightMeasurementData:
         """Parse weight measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +
@@ -30,7 +63,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
             data: Raw bytearray from BLE characteristic
 
         Returns:
-            Dict containing parsed weight measurement data
+            WeightMeasurementData containing parsed weight measurement data
 
         Raises:
             ValueError: If data format is invalid
@@ -38,133 +71,127 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
         if len(data) < 3:
             raise ValueError("Weight Measurement data must be at least 3 bytes")
 
-        flags = data[0]
+        flags = WeightMeasurementFlags(data[0])
         offset = 1
 
         # Parse weight value (uint16 with 0.005 kg resolution)
         if len(data) < offset + 2:
             raise ValueError("Insufficient data for weight value")
-        weight_raw = struct.unpack("<H", data[offset : offset + 2])[0]
+        weight_raw = DataParser.parse_int16(data, offset, signed=False)
         offset += 2
 
         # Convert to appropriate unit based on flags
-        if flags & 0x01:  # Imperial units (pounds)
+        if WeightMeasurementFlags.IMPERIAL_UNITS in flags:  # Imperial units (pounds)
             weight = weight_raw * 0.01  # 0.01 lb resolution for imperial
             weight_unit = "lb"
+            measurement_units = "imperial"
         else:  # SI units (kilograms)
             weight = weight_raw * 0.005  # 0.005 kg resolution for metric
             weight_unit = "kg"
+            measurement_units = "metric"
 
-        result = {
-            "weight": weight,
-            "weight_unit": weight_unit,
-            "flags": flags,
-            "measurement_units": "imperial" if (flags & 0x01) else "metric",
-        }
+        result = WeightMeasurementData(
+            weight=weight,
+            weight_unit=weight_unit,
+            measurement_units=measurement_units,
+            flags=int(flags),
+        )
 
         # Parse optional timestamp (7 bytes) if present
-        if (flags & 0x02) and len(data) >= offset + 7:
-            timestamp = IEEE11073Parser.parse_timestamp(data, offset)
-            result["timestamp"] = timestamp
+        if (
+            WeightMeasurementFlags.TIMESTAMP_PRESENT in flags
+            and len(data) >= offset + 7
+        ):
+            result.timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
         # Parse optional user ID (1 byte) if present
-        if (flags & 0x04) and len(data) >= offset + 1:
-            user_id = data[offset]
-            result["user_id"] = user_id
+        if WeightMeasurementFlags.USER_ID_PRESENT in flags and len(data) >= offset + 1:
+            result.user_id = data[offset]
             offset += 1
 
         # Parse optional BMI (uint16 with 0.1 resolution) if present
-        if (flags & 0x08) and len(data) >= offset + 2:
-            bmi_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-            result["bmi"] = bmi_raw * 0.1
+        if WeightMeasurementFlags.BMI_PRESENT in flags and len(data) >= offset + 2:
+            bmi_raw = DataParser.parse_int16(data, offset, signed=False)
+            result.bmi = bmi_raw * 0.1
             offset += 2
 
         # Parse optional height (uint16 with 0.001m resolution) if present
-        if (flags & 0x10) and len(data) >= offset + 2:
-            height_raw = struct.unpack("<H", data[offset : offset + 2])[0]
-            if flags & 0x01:  # Imperial units (inches)
-                result["height"] = height_raw * 0.1  # 0.1 inch resolution
-                result["height_unit"] = "in"
+        if WeightMeasurementFlags.HEIGHT_PRESENT in flags and len(data) >= offset + 2:
+            height_raw = DataParser.parse_int16(data, offset, signed=False)
+            if (
+                WeightMeasurementFlags.IMPERIAL_UNITS in flags
+            ):  # Imperial units (inches)
+                result.height = height_raw * 0.1  # 0.1 inch resolution
+                result.height_unit = "in"
             else:  # SI units (meters)
-                result["height"] = height_raw * 0.001  # 0.001 m resolution
-                result["height_unit"] = "m"
+                result.height = height_raw * 0.001  # 0.001 m resolution
+                result.height_unit = "m"
             offset += 2
 
         return result
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:  # pylint: disable=too-many-branches # Complex measurement data with many optional fields
+    def encode_value(self, data: WeightMeasurementData) -> bytearray:  # pylint: disable=too-many-branches # Complex measurement data with many optional fields
         """Encode weight measurement value back to bytes.
 
         Args:
-            data: Dictionary containing weight measurement data
+            data: WeightMeasurementData containing weight measurement data
 
         Returns:
             Encoded bytes representing the weight measurement
         """
-        if not isinstance(data, dict):
-            raise TypeError("Weight measurement data must be a dictionary")
-
-        if "weight" not in data:
-            raise ValueError("Weight measurement data must contain 'weight' key")
-
-        weight = float(data["weight"])
-        measurement_units = data.get("measurement_units", "metric")
-        timestamp = data.get("timestamp")
-        user_id = data.get("user_id")
-        bmi = data.get("bmi")
-        height = data.get("height")
-
         # Build flags based on available data
-        flags = 0
-        if measurement_units == "imperial":
-            flags |= 0x01  # Imperial units flag
-        if timestamp is not None:
-            flags |= 0x02  # Timestamp present
-        if user_id is not None:
-            flags |= 0x04  # User ID present
-        if bmi is not None:
-            flags |= 0x08  # BMI present
-        if height is not None:
-            flags |= 0x10  # Height present
+        flags = WeightMeasurementFlags(0)
+        if data.measurement_units == "imperial":
+            flags |= WeightMeasurementFlags.IMPERIAL_UNITS
+        if data.timestamp is not None:
+            flags |= WeightMeasurementFlags.TIMESTAMP_PRESENT
+        if data.user_id is not None:
+            flags |= WeightMeasurementFlags.USER_ID_PRESENT
+        if data.bmi is not None:
+            flags |= WeightMeasurementFlags.BMI_PRESENT
+        if data.height is not None:
+            flags |= WeightMeasurementFlags.HEIGHT_PRESENT
 
         # Convert weight to raw value based on units
-        if flags & 0x01:  # Imperial units (pounds)
-            weight_raw = round(weight / 0.01)  # 0.01 lb resolution
+        if WeightMeasurementFlags.IMPERIAL_UNITS in flags:  # Imperial units (pounds)
+            weight_raw = round(data.weight / 0.01)  # 0.01 lb resolution
         else:  # SI units (kilograms)
-            weight_raw = round(weight / 0.005)  # 0.005 kg resolution
+            weight_raw = round(data.weight / 0.005)  # 0.005 kg resolution
 
         if not 0 <= weight_raw <= 0xFFFF:
             raise ValueError(f"Weight value {weight_raw} exceeds uint16 range")
 
         # Start with flags and weight
-        result = bytearray([flags])
-        result.extend(struct.pack("<H", weight_raw))
+        result = bytearray([int(flags)])
+        result.extend(DataParser.encode_int16(weight_raw, signed=False))
 
         # Add optional fields based on flags
-        if timestamp is not None:
-            result.extend(IEEE11073Parser.encode_timestamp(timestamp))
+        if data.timestamp is not None:
+            result.extend(IEEE11073Parser.encode_timestamp(data.timestamp))
 
-        if user_id is not None:
-            if not 0 <= user_id <= 255:
-                raise ValueError(f"User ID {user_id} exceeds uint8 range")
-            result.append(user_id)
+        if data.user_id is not None:
+            if not 0 <= data.user_id <= UINT8_MAX:
+                raise ValueError(f"User ID {data.user_id} exceeds uint8 range")
+            result.append(data.user_id)
 
-        if bmi is not None:
-            bmi_raw = round(bmi / 0.1)  # 0.1 resolution
+        if data.bmi is not None:
+            bmi_raw = round(data.bmi / 0.1)  # 0.1 resolution
             if not 0 <= bmi_raw <= 0xFFFF:
                 raise ValueError(f"BMI value {bmi_raw} exceeds uint16 range")
-            result.extend(struct.pack("<H", bmi_raw))
+            result.extend(DataParser.encode_int16(bmi_raw, signed=False))
 
-        if height is not None:
-            if flags & 0x01:  # Imperial units (inches)
-                height_raw = round(height / 0.1)  # 0.1 inch resolution
+        if data.height is not None:
+            if (
+                WeightMeasurementFlags.IMPERIAL_UNITS in flags
+            ):  # Imperial units (inches)
+                height_raw = round(data.height / 0.1)  # 0.1 inch resolution
             else:  # SI units (meters)
-                height_raw = round(height / 0.001)  # 0.001 m resolution
+                height_raw = round(data.height / 0.001)  # 0.001 m resolution
 
             if not 0 <= height_raw <= 0xFFFF:
                 raise ValueError(f"Height value {height_raw} exceeds uint16 range")
-            result.extend(struct.pack("<H", height_raw))
+            result.extend(DataParser.encode_int16(height_raw, signed=False))
 
         return result
 

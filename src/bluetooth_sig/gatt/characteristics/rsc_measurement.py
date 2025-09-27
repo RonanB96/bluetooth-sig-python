@@ -2,15 +2,24 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
+from enum import IntFlag
 from typing import Any
 
+from ..constants import UINT8_MAX
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 # TODO: Implement CharacteristicContext support
 # This characteristic should access RSC Feature (0x2A54) from ctx.other_characteristics
 # to determine which measurement fields are supported and apply appropriate scaling
+
+
+class RSCMeasurementFlags(IntFlag):
+    """RSC Measurement flags as per Bluetooth SIG specification."""
+
+    INSTANTANEOUS_STRIDE_LENGTH_PRESENT = 0x01
+    TOTAL_DISTANCE_PRESENT = 0x02
 
 
 @dataclass
@@ -25,10 +34,10 @@ class RSCMeasurementData:
 
     def __post_init__(self) -> None:
         """Validate RSC measurement data."""
-        if not 0 <= self.flags <= 255:
-            raise ValueError("Flags must be a uint8 value (0-255)")
-        if not 0 <= self.instantaneous_cadence <= 255:
-            raise ValueError("Cadence must be a uint8 value (0-255)")
+        if not 0 <= self.flags <= UINT8_MAX:
+            raise ValueError("Flags must be a uint8 value (0-UINT8_MAX)")
+        if not 0 <= self.instantaneous_cadence <= UINT8_MAX:
+            raise ValueError("Cadence must be a uint8 value (0-UINT8_MAX)")
 
 
 @dataclass
@@ -60,10 +69,10 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
         if len(data) < 4:
             raise ValueError("RSC Measurement data must be at least 4 bytes")
 
-        flags = data[0]
+        flags = RSCMeasurementFlags(data[0])
 
         # Parse instantaneous speed (uint16, 1/256 m/s units)
-        speed_raw = struct.unpack("<H", data[1:3])[0]
+        speed_raw = DataParser.parse_int16(data, 1, signed=False)
         speed_ms = speed_raw / 256.0  # m/s
 
         # Parse instantaneous cadence (uint8, 1/min units)
@@ -76,14 +85,18 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
         offset = 4
 
         # Parse optional instantaneous stride length (2 bytes) if present
-        if (flags & 0x01) and len(data) >= offset + 2:
-            stride_length_raw = struct.unpack("<H", data[offset : offset + 2])[0]
+        if (RSCMeasurementFlags.INSTANTANEOUS_STRIDE_LENGTH_PRESENT in flags) and len(
+            data
+        ) >= offset + 2:
+            stride_length_raw = DataParser.parse_int16(data, offset, signed=False)
             instantaneous_stride_length = stride_length_raw / 100.0  # Convert to meters
             offset += 2
 
         # Parse optional total distance (4 bytes) if present
-        if (flags & 0x02) and len(data) >= offset + 4:
-            total_distance_raw = struct.unpack("<I", data[offset : offset + 4])[0]
+        if (RSCMeasurementFlags.TOTAL_DISTANCE_PRESENT in flags) and len(
+            data
+        ) >= offset + 4:
+            total_distance_raw = DataParser.parse_int32(data, offset, signed=False)
             total_distance = total_distance_raw / 10.0  # Convert to meters
 
         return RSCMeasurementData(
@@ -110,15 +123,15 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
             )
 
         # Build flags based on available optional data
-        flags = data.flags
+        flags = RSCMeasurementFlags(data.flags)
         has_stride_length = data.instantaneous_stride_length is not None
         has_total_distance = data.total_distance is not None
 
         # Update flags to match available data
         if has_stride_length:
-            flags |= 0x01  # Instantaneous stride length present
+            flags |= RSCMeasurementFlags.INSTANTANEOUS_STRIDE_LENGTH_PRESENT
         if has_total_distance:
-            flags |= 0x02  # Total distance present
+            flags |= RSCMeasurementFlags.TOTAL_DISTANCE_PRESENT
 
         # Validate required fields
         speed_raw = round(data.instantaneous_speed * 256)  # Convert to 1/256 m/s units
@@ -127,14 +140,14 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
                 f"Speed {data.instantaneous_speed} m/s exceeds uint16 range"
             )
 
-        if not 0 <= data.instantaneous_cadence <= 255:
+        if not 0 <= data.instantaneous_cadence <= UINT8_MAX:
             raise ValueError(
                 f"Cadence {data.instantaneous_cadence} exceeds uint8 range"
             )
 
         # Start with flags, speed, and cadence
-        result = bytearray([flags])
-        result.extend(struct.pack("<H", speed_raw))
+        result = bytearray([int(flags)])
+        result.extend(DataParser.encode_int16(speed_raw, signed=False))
         result.append(data.instantaneous_cadence)
 
         # Add optional stride length if present
@@ -147,7 +160,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
                 raise ValueError(
                     f"Stride length {stride_length} m exceeds uint16 range"
                 )
-            result.extend(struct.pack("<H", stride_length_raw))
+            result.extend(DataParser.encode_int16(stride_length_raw, signed=False))
 
         # Add optional total distance if present
         if has_total_distance:
@@ -159,6 +172,6 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
                 raise ValueError(
                     f"Total distance {total_distance} m exceeds uint32 range"
                 )
-            result.extend(struct.pack("<I", total_distance_raw))
+            result.extend(DataParser.encode_int32(total_distance_raw, signed=False))
 
         return result

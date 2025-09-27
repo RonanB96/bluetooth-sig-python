@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
 from enum import IntFlag
 from typing import Any
 
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 class BloodPressureFeatures(IntFlag):
@@ -60,7 +60,7 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
         if len(data) < 2:
             raise ValueError("Blood Pressure Feature data must be at least 2 bytes")
 
-        features_bitmap = struct.unpack("<H", data[:2])[0]
+        features_bitmap = DataParser.parse_int16(data, 0, signed=False)
 
         body_movement_detection = bool(
             features_bitmap & BloodPressureFeatures.BODY_MOVEMENT_DETECTION
@@ -100,7 +100,7 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
         Returns:
             Encoded bytes representing the blood pressure features
         """
-        return bytearray(struct.pack("<H", data.features_bitmap))
+        return DataParser.encode_int16(data.features_bitmap, signed=False)
 
     @property
     def unit(self) -> str:

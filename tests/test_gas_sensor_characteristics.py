@@ -15,6 +15,7 @@ from bluetooth_sig.gatt.characteristics import (
     SulfurDioxideConcentrationCharacteristic,
     VOCConcentrationCharacteristic,
 )
+from bluetooth_sig.gatt.constants import MAX_CONCENTRATION_PPM
 from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 
@@ -65,9 +66,9 @@ class TestGasSensorCharacteristics:
         result = char.decode_value(bytearray([0xFE, 0xFF]))
         assert result == 65534.0  # Just returns the raw value
 
-        # Test 0xFFFF (value is 65535) - currently not handled as special case
+        # Test 0xFFFF (value is UINT16_MAX) - currently not handled as special case
         result = char.decode_value(bytearray([0xFF, 0xFF]))
-        assert result == 65535.0  # Just returns the raw value
+        assert result == MAX_CONCENTRATION_PPM  # Just returns the raw value
 
     def test_co2_concentration_invalid_data(self):
         """Test CO2 concentration with invalid data."""

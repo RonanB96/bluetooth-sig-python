@@ -17,6 +17,7 @@ from bluetooth_sig.gatt.characteristics.true_wind_speed import (
     TrueWindSpeedCharacteristic,
 )
 from bluetooth_sig.gatt.characteristics.wind_chill import WindChillCharacteristic
+from bluetooth_sig.gatt.constants import SINT8_MAX, SINT8_MIN, UINT8_MAX
 from bluetooth_sig.gatt.exceptions import InsufficientDataError
 from bluetooth_sig.gatt.services.environmental_sensing import (
     EnvironmentalSensingService,
@@ -39,11 +40,11 @@ class TestEnvironmentalSensingExpanded:
         assert char.decode_value(data) == -10.0
 
         # Test extreme values
-        data = bytearray([127])  # Max positive sint8
-        assert char.decode_value(data) == 127.0
+        data = bytearray([SINT8_MAX])  # Max positive sint8
+        assert char.decode_value(data) == SINT8_MAX
 
-        data = bytearray([128])  # Max negative sint8 (-128)
-        assert char.decode_value(data) == -128.0
+        data = bytearray([SINT8_MIN])  # Max negative sint8 (SINT8_MIN)
+        assert char.decode_value(data) == SINT8_MIN
 
     def test_heat_index_parsing(self):
         """Test heat index characteristic parsing."""
@@ -54,8 +55,8 @@ class TestEnvironmentalSensingExpanded:
         assert char.decode_value(data) == 35.0
 
         # Test max uint8
-        data = bytearray([255])  # 255°C
-        assert char.decode_value(data) == 255.0
+        data = bytearray([UINT8_MAX])  # UINT8_MAX°C
+        assert char.decode_value(data) == UINT8_MAX
 
     def test_wind_chill_parsing(self):
         """Test wind chill characteristic parsing."""

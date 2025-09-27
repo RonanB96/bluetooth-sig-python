@@ -7,6 +7,7 @@ both legacy and extended advertising formats.
 
 from __future__ import annotations
 
+from ..gatt.characteristics.utils import DataParser
 from ..types import (
     BLEAdvertisementTypes,
     BLEAdvertisingPDU,
@@ -283,7 +284,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             ):
                 for j in range(0, len(ad_data), 2):
                     if j + 1 < len(ad_data):
-                        uuid_short = ad_data[j] | (ad_data[j + 1] << 8)
+                        uuid_short = DataParser.parse_int16(ad_data, j, signed=False)
                         service_uuids.append(f"{uuid_short:04X}")
             elif ad_type in (
                 BLEAdvertisementTypes.SHORTENED_LOCAL_NAME,
@@ -299,7 +300,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA
                 and len(ad_data) >= 2
             ):
-                company_id = ad_data[0] | (ad_data[1] << 8)
+                company_id = DataParser.parse_int16(ad_data, 0, signed=False)
                 manufacturer_data[company_id] = ad_data[2:]
 
             i += length + 1
@@ -345,7 +346,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             ):
                 for j in range(0, len(ad_data), 2):
                     if j + 1 < len(ad_data):
-                        uuid_short = ad_data[j] | (ad_data[j + 1] << 8)
+                        uuid_short = DataParser.parse_int16(ad_data, j, signed=False)
                         parsed.service_uuids.append(f"{uuid_short:04X}")
             elif ad_type in (
                 BLEAdvertisementTypes.SHORTENED_LOCAL_NAME,
@@ -363,15 +364,15 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA
                 and len(ad_data) >= 2
             ):
-                company_id = ad_data[0] | (ad_data[1] << 8)
+                company_id = DataParser.parse_int16(ad_data, 0, signed=False)
                 parsed.manufacturer_data[company_id] = ad_data[2:]
             elif ad_type == BLEAdvertisementTypes.APPEARANCE and len(ad_data) >= 2:
-                parsed.appearance = ad_data[0] | (ad_data[1] << 8)
+                parsed.appearance = DataParser.parse_int16(ad_data, 0, signed=False)
             elif (
                 ad_type == BLEAdvertisementTypes.SERVICE_DATA_16BIT
                 and len(ad_data) >= 2
             ):
-                service_uuid = f"{ad_data[0] | (ad_data[1] << 8):04X}"
+                service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
                 parsed.service_data[service_uuid] = ad_data[2:]
             elif ad_type == BLEAdvertisementTypes.URI:
                 try:
@@ -424,13 +425,15 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL
                 and len(ad_data) >= 2
             ):
-                parsed.advertising_interval = ad_data[0] | (ad_data[1] << 8)
+                parsed.advertising_interval = DataParser.parse_int16(
+                    ad_data, 0, signed=False
+                )
             elif (
                 ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL_LONG
                 and len(ad_data) >= 3
             ):
-                parsed.advertising_interval_long = (
-                    ad_data[0] | (ad_data[1] << 8) | (ad_data[2] << 16)
+                parsed.advertising_interval_long = int.from_bytes(
+                    ad_data[:3], byteorder="little", signed=False
                 )
             elif (
                 ad_type == BLEAdvertisementTypes.LE_BLUETOOTH_DEVICE_ADDRESS
@@ -443,8 +446,8 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             elif ad_type == BLEAdvertisementTypes.LE_ROLE and len(ad_data) >= 1:
                 parsed.le_role = ad_data[0]
             elif ad_type == BLEAdvertisementTypes.CLASS_OF_DEVICE and len(ad_data) >= 3:
-                parsed.class_of_device = (
-                    ad_data[0] | (ad_data[1] << 8) | (ad_data[2] << 16)
+                parsed.class_of_device = int.from_bytes(
+                    ad_data[:3], byteorder="little", signed=False
                 )
             elif ad_type == BLEAdvertisementTypes.SIMPLE_PAIRING_HASH_C:
                 parsed.simple_pairing_hash_c = ad_data

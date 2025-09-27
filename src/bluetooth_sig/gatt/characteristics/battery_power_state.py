@@ -6,7 +6,55 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any
 
+from ..constants import UINT8_MAX
 from .base import BaseCharacteristic
+from .utils import BitFieldUtils
+
+
+# Bit position constants for Battery Power State characteristic
+class BatteryPowerStateBits:  # pylint: disable=too-few-public-methods
+    """Bit positions used in Battery Power State characteristic parsing."""
+
+    # Flags byte bit positions
+    IDENTIFIER_PRESENT_BIT = 0
+    BATTERY_LEVEL_PRESENT_BIT = 1
+    ADDITIONAL_INFO_PRESENT_BIT = 2
+
+    # Basic state byte bit positions
+    BATTERY_PRESENT_START_BIT = 0
+    BATTERY_PRESENT_NUM_BITS = 2
+    WIRED_POWER_CONNECTED_BIT = 2
+    WIRELESS_POWER_CONNECTED_BIT = 3
+    CHARGE_STATE_START_BIT = 4
+    CHARGE_STATE_NUM_BITS = 2
+    CHARGE_LEVEL_START_BIT = 6
+    CHARGE_LEVEL_NUM_BITS = 2
+
+    # Extended state (16-bit) bit positions
+    BATTERY_PRESENT_EXT_BIT = 0
+    WIRED_POWER_EXT_START_BIT = 1
+    WIRED_POWER_EXT_NUM_BITS = 2
+    WIRELESS_POWER_EXT_START_BIT = 3
+    WIRELESS_POWER_EXT_NUM_BITS = 2
+    CHARGE_STATE_EXT_START_BIT = 5
+    CHARGE_STATE_EXT_NUM_BITS = 2
+    CHARGE_LEVEL_EXT_START_BIT = 7
+    CHARGE_LEVEL_EXT_NUM_BITS = 2
+    CHARGING_TYPE_START_BIT = 9
+    CHARGING_TYPE_NUM_BITS = 3
+    FAULT_BITS_START_BIT = 12
+    FAULT_BITS_NUM_BITS = 3
+
+    # Fault sub-bits within fault field
+    BATTERY_FAULT_BIT = 0
+    EXTERNAL_POWER_FAULT_BIT = 1
+    OTHER_FAULT_BIT = 2
+
+    # Second byte parsing (charging type + faults)
+    CHARGING_TYPE_BYTE_START_BIT = 0
+    CHARGING_TYPE_BYTE_NUM_BITS = 3
+    FAULT_BYTE_START_BIT = 3
+    FAULT_BYTE_NUM_BITS = 5
 
 
 class BatteryPresentState(IntEnum):
@@ -115,8 +163,21 @@ class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
 
     def __post_init__(self) -> None:
         """Validate battery power state data."""
-        if not 0 <= self.raw_value <= 255:
-            raise ValueError(f"Raw value must be 0-255, got {self.raw_value}")
+        if not 0 <= self.raw_value <= UINT8_MAX:
+            raise ValueError(f"Raw value must be 0-UINT8_MAX, got {self.raw_value}")
+
+
+@dataclass
+class BatteryPowerState:
+    """Parsed battery power state components."""
+
+    battery_present: BatteryPresentState
+    wired_external_power_connected: bool
+    wireless_external_power_connected: bool
+    battery_charge_state: BatteryChargeState
+    battery_charge_level: BatteryChargeLevel
+    battery_charging_type: BatteryChargingType = BatteryChargingType.UNKNOWN
+    charging_fault_reason: str | list[str] | None = None
 
 
 @dataclass
@@ -160,7 +221,9 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             # validate/advance optional fields indicated in Flags
             offset = 3
             # Identifier needs an explicit, specific error message in tests
-            if flags & 0x01:
+            if BitFieldUtils.test_bit(
+                flags, BatteryPowerStateBits.IDENTIFIER_PRESENT_BIT
+            ):
                 if len(data) < offset + 2:
                     raise ValueError(
                         "Identifier indicated by Flags but missing from payload"
@@ -170,9 +233,13 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             # Combine remaining optional field checks into one branch to keep
             # static analysis branch count down.
             remaining_needed = offset
-            if flags & 0x02:
+            if BitFieldUtils.test_bit(
+                flags, BatteryPowerStateBits.BATTERY_LEVEL_PRESENT_BIT
+            ):
                 remaining_needed += 1
-            if flags & 0x04:
+            if BitFieldUtils.test_bit(
+                flags, BatteryPowerStateBits.ADDITIONAL_INFO_PRESENT_BIT
+            ):
                 remaining_needed += 1
             if len(data) < remaining_needed:
                 raise ValueError(
@@ -183,15 +250,13 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
 
             return BatteryPowerStateData(
                 raw_value=int(data[0]),
-                battery_present=parsed["battery_present"],
-                wired_external_power_connected=parsed["wired_external_power_connected"],
-                wireless_external_power_connected=parsed[
-                    "wireless_external_power_connected"
-                ],
-                battery_charge_state=parsed["battery_charge_state"],
-                battery_charge_level=parsed["battery_charge_level"],
-                battery_charging_type=parsed["battery_charging_type"],
-                charging_fault_reason=parsed["charging_fault_reason"],
+                battery_present=parsed.battery_present,
+                wired_external_power_connected=parsed.wired_external_power_connected,
+                wireless_external_power_connected=parsed.wireless_external_power_connected,
+                battery_charge_state=parsed.battery_charge_state,
+                battery_charge_level=parsed.battery_charge_level,
+                battery_charging_type=parsed.battery_charging_type,
+                charging_fault_reason=parsed.charging_fault_reason,
             )
 
         # Two-byte variant: first byte holds basic state, second byte encodes
@@ -203,14 +268,24 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
 
             second = int(data[1])
 
-            fault_raw = (second >> 3) & 0x1F
+            fault_raw = BitFieldUtils.extract_bit_field(
+                second,
+                BatteryPowerStateBits.FAULT_BYTE_START_BIT,
+                BatteryPowerStateBits.FAULT_BYTE_NUM_BITS,
+            )
             if fault_raw != 0:
                 fault_reasons: list[str] = []
-                if fault_raw & 0x01:
+                if BitFieldUtils.test_bit(
+                    fault_raw, BatteryPowerStateBits.BATTERY_FAULT_BIT
+                ):
                     fault_reasons.append("battery_fault")
-                if fault_raw & 0x02:
+                if BitFieldUtils.test_bit(
+                    fault_raw, BatteryPowerStateBits.EXTERNAL_POWER_FAULT_BIT
+                ):
                     fault_reasons.append("external_power_fault")
-                if fault_raw & 0x04:
+                if BitFieldUtils.test_bit(
+                    fault_raw, BatteryPowerStateBits.OTHER_FAULT_BIT
+                ):
                     fault_reasons.append("other_fault")
                 charging_fault_reason = (
                     fault_reasons[0] if len(fault_reasons) == 1 else fault_reasons
@@ -218,14 +293,18 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
 
             return BatteryPowerStateData(
                 raw_value=state_raw,
-                battery_present=basic["battery_present"],
-                wired_external_power_connected=basic["wired_external_power_connected"],
-                wireless_external_power_connected=basic[
-                    "wireless_external_power_connected"
-                ],
-                battery_charge_state=basic["battery_charge_state"],
-                battery_charge_level=basic["battery_charge_level"],
-                battery_charging_type=BatteryChargingType.from_byte(second & 0x07),
+                battery_present=basic.battery_present,
+                wired_external_power_connected=basic.wired_external_power_connected,
+                wireless_external_power_connected=basic.wireless_external_power_connected,
+                battery_charge_state=basic.battery_charge_state,
+                battery_charge_level=basic.battery_charge_level,
+                battery_charging_type=BatteryChargingType.from_byte(
+                    BitFieldUtils.extract_bit_field(
+                        second,
+                        BatteryPowerStateBits.CHARGING_TYPE_BYTE_START_BIT,
+                        BatteryPowerStateBits.CHARGING_TYPE_BYTE_NUM_BITS,
+                    )
+                ),
                 charging_fault_reason=charging_fault_reason,
             )
 
@@ -233,13 +312,11 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         basic = self._parse_basic_state(state_raw)
         return BatteryPowerStateData(
             raw_value=state_raw,
-            battery_present=basic["battery_present"],
-            wired_external_power_connected=basic["wired_external_power_connected"],
-            wireless_external_power_connected=basic[
-                "wireless_external_power_connected"
-            ],
-            battery_charge_state=basic["battery_charge_state"],
-            battery_charge_level=basic["battery_charge_level"],
+            battery_present=basic.battery_present,
+            wired_external_power_connected=basic.wired_external_power_connected,
+            wireless_external_power_connected=basic.wireless_external_power_connected,
+            battery_charge_state=basic.battery_charge_state,
+            battery_charge_level=basic.battery_charge_level,
             battery_charging_type=BatteryChargingType.UNKNOWN,
             charging_fault_reason=None,
         )
@@ -276,82 +353,156 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             charge_level_bits = 3
 
         # Encode single byte
-        encoded_byte = (
-            battery_present_bits
-            | (1 << 2 if data.wired_external_power_connected else 0)
-            | (1 << 3 if data.wireless_external_power_connected else 0)
-            | (charge_state_bits << 4)
-            | (charge_level_bits << 6)
+        encoded_byte = BitFieldUtils.merge_bit_fields(
+            (
+                battery_present_bits,
+                BatteryPowerStateBits.BATTERY_PRESENT_START_BIT,
+                BatteryPowerStateBits.BATTERY_PRESENT_NUM_BITS,
+            ),
+            (
+                1 if data.wired_external_power_connected else 0,
+                BatteryPowerStateBits.WIRED_POWER_CONNECTED_BIT,
+                1,
+            ),
+            (
+                1 if data.wireless_external_power_connected else 0,
+                BatteryPowerStateBits.WIRELESS_POWER_CONNECTED_BIT,
+                1,
+            ),
+            (
+                charge_state_bits,
+                BatteryPowerStateBits.CHARGE_STATE_START_BIT,
+                BatteryPowerStateBits.CHARGE_STATE_NUM_BITS,
+            ),
+            (
+                charge_level_bits,
+                BatteryPowerStateBits.CHARGE_LEVEL_START_BIT,
+                BatteryPowerStateBits.CHARGE_LEVEL_NUM_BITS,
+            ),
         )
 
         return bytearray([encoded_byte])
 
-    def _parse_power_state_16(self, power_state_raw: int) -> dict[str, Any]:
+    def _parse_power_state_16(self, power_state_raw: int) -> BatteryPowerState:
         """Parse the 16-bit Power State bitfield into its components.
 
-        Returns a dictionary with keys matching the public decode_value output.
+        Returns a BatteryPowerState dataclass with the parsed components.
         """
         # battery present (bit 0): 0 = No/Not present, 1 = Present
         battery_present = (
             BatteryPresentState.PRESENT
-            if (power_state_raw & 0x01) == 1
+            if BitFieldUtils.test_bit(
+                power_state_raw, BatteryPowerStateBits.BATTERY_PRESENT_EXT_BIT
+            )
             else BatteryPresentState.NOT_PRESENT
         )
 
         # Wired external power: bits 1-2 (2-bit value: 0=No,1=Yes,2=Unknown,3=RFU)
-        wired_external_power_connected = ((power_state_raw >> 1) & 0x03) == 1
+        wired_external_power_connected = (
+            BitFieldUtils.extract_bit_field(
+                power_state_raw,
+                BatteryPowerStateBits.WIRED_POWER_EXT_START_BIT,
+                BatteryPowerStateBits.WIRED_POWER_EXT_NUM_BITS,
+            )
+            == 1
+        )
 
         # Wireless external power: bits 3-4
-        wireless_external_power_connected = ((power_state_raw >> 3) & 0x03) == 1
+        wireless_external_power_connected = (
+            BitFieldUtils.extract_bit_field(
+                power_state_raw,
+                BatteryPowerStateBits.WIRELESS_POWER_EXT_START_BIT,
+                BatteryPowerStateBits.WIRELESS_POWER_EXT_NUM_BITS,
+            )
+            == 1
+        )
 
         # Charge state: bits 5-6
-        charge_state_raw = (power_state_raw >> 5) & 0x03
+        charge_state_raw = BitFieldUtils.extract_bit_field(
+            power_state_raw,
+            BatteryPowerStateBits.CHARGE_STATE_EXT_START_BIT,
+            BatteryPowerStateBits.CHARGE_STATE_EXT_NUM_BITS,
+        )
         battery_charge_state = BatteryChargeState.from_byte(charge_state_raw)
 
         # Charge level: bits 7-8
-        charge_level_raw = (power_state_raw >> 7) & 0x03
+        charge_level_raw = BitFieldUtils.extract_bit_field(
+            power_state_raw,
+            BatteryPowerStateBits.CHARGE_LEVEL_EXT_START_BIT,
+            BatteryPowerStateBits.CHARGE_LEVEL_EXT_NUM_BITS,
+        )
         battery_charge_level = BatteryChargeLevel.from_byte(charge_level_raw)
 
         # charging type: bits 9-11
-        charging_type_raw = (power_state_raw >> 9) & 0x07
+        charging_type_raw = BitFieldUtils.extract_bit_field(
+            power_state_raw,
+            BatteryPowerStateBits.CHARGING_TYPE_START_BIT,
+            BatteryPowerStateBits.CHARGING_TYPE_NUM_BITS,
+        )
         battery_charging_type = BatteryChargingType.from_byte(charging_type_raw)
 
         # charging faults are a 3-bit flag field at bits 12..14
-        fault_bits = (power_state_raw >> 12) & 0x07
+        fault_bits = BitFieldUtils.extract_bit_field(
+            power_state_raw,
+            BatteryPowerStateBits.FAULT_BITS_START_BIT,
+            BatteryPowerStateBits.FAULT_BITS_NUM_BITS,
+        )
         fault_reasons: list[str] = []
-        if fault_bits & 0x1:
+        if BitFieldUtils.test_bit(fault_bits, BatteryPowerStateBits.BATTERY_FAULT_BIT):
             fault_reasons.append("battery_fault")
-        if fault_bits & 0x2:
+        if BitFieldUtils.test_bit(
+            fault_bits, BatteryPowerStateBits.EXTERNAL_POWER_FAULT_BIT
+        ):
             fault_reasons.append("external_power_fault")
-        if fault_bits & 0x4:
+        if BitFieldUtils.test_bit(fault_bits, BatteryPowerStateBits.OTHER_FAULT_BIT):
             fault_reasons.append("other_fault")
 
         charging_fault_reason = (
             fault_reasons[0] if len(fault_reasons) == 1 else fault_reasons or None
         )
 
-        return {
-            "battery_present": battery_present,
-            "wired_external_power_connected": wired_external_power_connected,
-            "wireless_external_power_connected": wireless_external_power_connected,
-            "battery_charge_state": battery_charge_state,
-            "battery_charge_level": battery_charge_level,
-            "battery_charging_type": battery_charging_type,
-            "charging_fault_reason": charging_fault_reason,
-        }
+        return BatteryPowerState(
+            battery_present=battery_present,
+            wired_external_power_connected=wired_external_power_connected,
+            wireless_external_power_connected=wireless_external_power_connected,
+            battery_charge_state=battery_charge_state,
+            battery_charge_level=battery_charge_level,
+            battery_charging_type=battery_charging_type,
+            charging_fault_reason=charging_fault_reason,
+        )
 
-    def _parse_basic_state(self, state_raw: int) -> dict[str, Any]:
+    def _parse_basic_state(self, state_raw: int) -> BatteryPowerState:
         """Parse the single-byte basic state representation."""
-        battery_present_raw = state_raw & 0x03
+        battery_present_raw = BitFieldUtils.extract_bit_field(
+            state_raw,
+            BatteryPowerStateBits.BATTERY_PRESENT_START_BIT,
+            BatteryPowerStateBits.BATTERY_PRESENT_NUM_BITS,
+        )
         battery_present = BatteryPresentState.from_byte(battery_present_raw)
 
-        wired_external_power_connected = bool((state_raw >> 2) & 0x01)
-        wireless_external_power_connected = bool((state_raw >> 3) & 0x01)
+        wired_external_power_connected = bool(
+            BitFieldUtils.test_bit(
+                state_raw, BatteryPowerStateBits.WIRED_POWER_CONNECTED_BIT
+            )
+        )
+        wireless_external_power_connected = bool(
+            BitFieldUtils.test_bit(
+                state_raw, BatteryPowerStateBits.WIRELESS_POWER_CONNECTED_BIT
+            )
+        )
 
-        charge_state_raw = (state_raw >> 4) & 0x03
+        charge_state_raw = BitFieldUtils.extract_bit_field(
+            state_raw,
+            BatteryPowerStateBits.CHARGE_STATE_START_BIT,
+            BatteryPowerStateBits.CHARGE_STATE_NUM_BITS,
+        )
         battery_charge_state = BatteryChargeState.from_byte(charge_state_raw)
 
-        charge_level_raw = (state_raw >> 6) & 0x03
+        charge_level_raw = BitFieldUtils.extract_bit_field(
+            state_raw,
+            BatteryPowerStateBits.CHARGE_LEVEL_START_BIT,
+            BatteryPowerStateBits.CHARGE_LEVEL_NUM_BITS,
+        )
         # For basic format, the charge level mapping is different
         if charge_level_raw == 0:
             battery_charge_level = BatteryChargeLevel.UNKNOWN
@@ -364,13 +515,13 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         else:
             battery_charge_level = BatteryChargeLevel.UNKNOWN
 
-        return {
-            "battery_present": battery_present,
-            "wired_external_power_connected": wired_external_power_connected,
-            "wireless_external_power_connected": wireless_external_power_connected,
-            "battery_charge_state": battery_charge_state,
-            "battery_charge_level": battery_charge_level,
-        }
+        return BatteryPowerState(
+            battery_present=battery_present,
+            wired_external_power_connected=wired_external_power_connected,
+            wireless_external_power_connected=wireless_external_power_connected,
+            battery_charge_state=battery_charge_state,
+            battery_charge_level=battery_charge_level,
+        )
 
     @property
     def unit(self) -> str:

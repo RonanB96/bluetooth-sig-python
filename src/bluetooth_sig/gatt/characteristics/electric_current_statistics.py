@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 
 
@@ -30,7 +31,7 @@ class ElectricCurrentStatisticsData:
             )
 
         # Validate range for uint16 with 0.01 A resolution (0 to 655.35 A)
-        max_current_value = 65535 * 0.01
+        max_current_value = UINT16_MAX * 0.01
         for name, current in [
             ("minimum", self.minimum),
             ("maximum", self.maximum),

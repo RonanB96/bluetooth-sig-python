@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 
 
@@ -30,7 +31,7 @@ class VoltageStatisticsData:
             )
 
         # Validate range for uint16 with 1/64 V resolution (0 to ~1024 V)
-        max_voltage_value = 65535 / 64.0  # ~1024 V
+        max_voltage_value = UINT16_MAX / 64.0  # ~1024 V
         for name, voltage in [
             ("minimum", self.minimum),
             ("maximum", self.maximum),
@@ -100,13 +101,13 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
         max_voltage_raw = round(data.maximum * 64)
         avg_voltage_raw = round(data.average * 64)
 
-        # Validate range for uint16 (0 to 65535)
+        # Validate range for uint16 (0 to UINT16_MAX)
         for name, value in [
             ("minimum", min_voltage_raw),
             ("maximum", max_voltage_raw),
             ("average", avg_voltage_raw),
         ]:
-            if not 0 <= value <= 65535:
+            if not 0 <= value <= UINT16_MAX:
                 raise ValueError(f"Voltage {name} value {value} exceeds uint16 range")
 
         # Encode as 3 uint16 values (little endian)
