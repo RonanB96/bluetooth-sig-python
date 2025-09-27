@@ -4,6 +4,9 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.body_composition_feature import (
     BodyCompositionFeatureCharacteristic,
+    BodyCompositionFeatures,
+    HeightMeasurementResolution,
+    MassMeasurementResolution,
 )
 from bluetooth_sig.gatt.characteristics.body_composition_measurement import (
     BodyCompositionMeasurementCharacteristic,
@@ -18,7 +21,7 @@ class TestBodyCompositionMeasurementCharacteristic:
     def test_characteristic_name(self):
         """Test characteristic name resolution."""
         char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
-        assert char._characteristic_name == "Body Composition Measurement"
+        assert char.get_characteristic_name() == "Body Composition Measurement"
         assert char.value_type == ValueType.BYTES
 
     def test_parse_basic_body_fat_metric(self):
@@ -105,7 +108,7 @@ class TestBodyCompositionFeatureCharacteristic:
     def test_characteristic_name(self):
         """Test characteristic name resolution."""
         char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
-        assert char._characteristic_name == "Body Composition Feature"
+        assert char.name == "Body Composition Feature"
         assert char.value_type == ValueType.BYTES
 
     def test_parse_basic_features(self):
@@ -160,7 +163,7 @@ class TestBodyCompositionFeatureCharacteristic:
 
         # Create test data with basic features enabled
         test_data = BodyCompositionFeatureData(
-            raw_value=0x1F,
+            features=BodyCompositionFeatures(0x1F),
             timestamp_supported=True,
             multiple_users_supported=True,
             basal_metabolism_supported=True,
@@ -172,8 +175,8 @@ class TestBodyCompositionFeatureCharacteristic:
             impedance_supported=False,
             weight_supported=False,
             height_supported=False,
-            mass_measurement_resolution="not_specified",
-            height_measurement_resolution="not_specified",
+            mass_measurement_resolution=MassMeasurementResolution.NOT_SPECIFIED,
+            height_measurement_resolution=HeightMeasurementResolution.NOT_SPECIFIED,
         )
 
         # Encode the data

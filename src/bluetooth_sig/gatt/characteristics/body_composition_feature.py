@@ -13,6 +13,8 @@ from .utils import BitFieldUtils, DataParser
 class BodyCompositionFeatureBits:
     """Body Composition Feature bit field constants."""
 
+    # pylint: disable=too-few-public-methods
+
     MASS_RESOLUTION_START_BIT = 11  # Mass resolution starts at bit 11
     MASS_RESOLUTION_BIT_WIDTH = 4  # Mass resolution uses 4 bits
     HEIGHT_RESOLUTION_START_BIT = 15  # Height resolution starts at bit 15
@@ -139,7 +141,7 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
 
         # Parse feature flags according to specification
         return BodyCompositionFeatureData(
-            features=features_raw,
+            features=BodyCompositionFeatures(features_raw),
             # Basic features
             timestamp_supported=bool(
                 features_raw & BodyCompositionFeatures.TIMESTAMP_SUPPORTED

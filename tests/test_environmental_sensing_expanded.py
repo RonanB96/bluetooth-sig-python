@@ -43,7 +43,8 @@ class TestEnvironmentalSensingExpanded:
         data = bytearray([SINT8_MAX])  # Max positive sint8
         assert char.decode_value(data) == SINT8_MAX
 
-        data = bytearray([SINT8_MIN])  # Max negative sint8 (SINT8_MIN)
+        # Represent the signed -128 value as its unsigned 8-bit byte (0x80)
+        data = bytearray([SINT8_MIN & 0xFF])  # Max negative sint8 (SINT8_MIN)
         assert char.decode_value(data) == SINT8_MIN
 
     def test_heat_index_parsing(self):

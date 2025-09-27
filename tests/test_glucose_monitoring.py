@@ -6,19 +6,22 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import (
     GlucoseFeatureCharacteristic,
+    GlucoseFeatures,
     GlucoseMeasurementCharacteristic,
     GlucoseMeasurementContextCharacteristic,
 )
 from bluetooth_sig.gatt.characteristics.glucose_measurement import (
+    GlucoseMeasurementData,
     GlucoseType,
     SampleLocation,
 )
 from bluetooth_sig.gatt.characteristics.glucose_measurement_context import (
     CarbohydrateType,
+    GlucoseMeasurementContextFlags,
+    GlucoseTester,
     HealthType,
     MealType,
     MedicationType,
-    TesterType,
 )
 from bluetooth_sig.gatt.services.glucose import GlucoseService
 from bluetooth_sig.types.gatt_enums import CharacteristicName
@@ -58,13 +61,17 @@ class TestGlucoseMeasurementCharacteristic:
         """Fixture providing a glucose measurement characteristic."""
         return GlucoseMeasurementCharacteristic(uuid="2A18", properties=set())
 
-    def test_glucose_measurement_instantiation(self, glucose_measurement_char):
+    def test_glucose_measurement_instantiation(
+        self, glucose_measurement_char: GlucoseMeasurementCharacteristic
+    ):
         """Test that glucose measurement characteristic can be instantiated."""
         assert glucose_measurement_char.char_uuid == "2A18"
         assert glucose_measurement_char.value_type.value == "bytes"  # YAML struct type
         assert glucose_measurement_char.unit == "mg/dL or mmol/L"
 
-    def test_glucose_measurement_basic_parsing(self, glucose_measurement_char):
+    def test_glucose_measurement_basic_parsing(
+        self, glucose_measurement_char: GlucoseMeasurementCharacteristic
+    ):
         """Test basic glucose measurement data parsing."""
         # Create minimal test data: flags(1) + seq_num(2) + timestamp(7) + glucose(2)
         # Flags: 0x00 (no optional fields, mg/dL unit)
@@ -88,7 +95,9 @@ class TestGlucoseMeasurementCharacteristic:
             ]
         )
 
-        result = glucose_measurement_char.decode_value(test_data)
+        result: GlucoseMeasurementData = glucose_measurement_char.decode_value(
+            test_data
+        )
 
         assert result.sequence_number == 42
         assert result.unit == "mg/dL"
@@ -101,7 +110,9 @@ class TestGlucoseMeasurementCharacteristic:
         assert result.base_time.minute == 30
         assert result.base_time.second == 45
 
-    def test_glucose_measurement_with_mmol_unit(self, glucose_measurement_char):
+    def test_glucose_measurement_with_mmol_unit(
+        self, glucose_measurement_char: GlucoseMeasurementCharacteristic
+    ):
         """Test glucose measurement with mmol/L unit."""
         # Flags: 0x02 (mmol/L unit flag set)
         test_data = bytearray(
@@ -124,7 +135,9 @@ class TestGlucoseMeasurementCharacteristic:
         result = glucose_measurement_char.decode_value(test_data)
         assert result.unit == "mmol/L"
 
-    def test_glucose_measurement_with_time_offset(self, glucose_measurement_char):
+    def test_glucose_measurement_with_time_offset(
+        self, glucose_measurement_char: GlucoseMeasurementCharacteristic
+    ):
         """Test glucose measurement with time offset."""
         # Flags: 0x01 (time offset present)
         test_data = bytearray(
@@ -149,7 +162,9 @@ class TestGlucoseMeasurementCharacteristic:
         result = glucose_measurement_char.decode_value(test_data)
         assert result.time_offset_minutes == 15
 
-    def test_glucose_measurement_with_type_location(self, glucose_measurement_char):
+    def test_glucose_measurement_with_type_location(
+        self, glucose_measurement_char: GlucoseMeasurementCharacteristic
+    ):
         """Test glucose measurement with type and sample location."""
         # Flags: 0x04 (type and sample location present)
         test_data = bytearray(
@@ -174,7 +189,9 @@ class TestGlucoseMeasurementCharacteristic:
         assert result.glucose_type == 2
         assert result.sample_location == 1
 
-    def test_glucose_measurement_with_sensor_status(self, glucose_measurement_char):
+    def test_glucose_measurement_with_sensor_status(
+        self, glucose_measurement_char: GlucoseMeasurementCharacteristic
+    ):
         """Test glucose measurement with sensor status."""
         # Flags: 0x08 (sensor status present)
         test_data = bytearray(
@@ -199,23 +216,23 @@ class TestGlucoseMeasurementCharacteristic:
         result = glucose_measurement_char.decode_value(test_data)
         assert result.sensor_status == 1
 
-    def test_glucose_measurement_invalid_data(self, glucose_measurement_char):
+    def test_glucose_measurement_invalid_data(
+        self, glucose_measurement_char: GlucoseMeasurementCharacteristic
+    ):
         """Test glucose measurement with invalid data."""
         # Too short data
         with pytest.raises(ValueError, match="must be at least 12 bytes"):
             glucose_measurement_char.decode_value(bytearray([0x00, 0x01]))
 
-    def test_glucose_type_names(self, glucose_measurement_char):
+    def test_glucose_type_names(self):
         """Test glucose type name mapping."""
-        assert GlucoseType.get_name(1) == "Capillary Whole blood"
-        assert GlucoseType.get_name(9) == "Interstitial Fluid (ISF)"
-        assert GlucoseType.get_name(12) == "Reserved for Future Use"
+        assert str(GlucoseType.CAPILLARY_WHOLE_BLOOD) == "Capillary Whole blood"
+        assert str(GlucoseType.INTERSTITIAL_FLUID) == "Interstitial Fluid (ISF)"
 
-    def test_sample_location_names(self, glucose_measurement_char):
+    def test_sample_location_names(self):
         """Test sample location name mapping."""
-        assert SampleLocation.get_name(1) == "Finger"
-        assert SampleLocation.get_name(2) == "Alternate Site Test (AST)"
-        assert SampleLocation.get_name(0) == "Reserved for Future Use"
+        assert str(SampleLocation.FINGER) == "Finger"
+        assert str(SampleLocation.ALTERNATE_SITE_TEST) == "Alternate Site Test (AST)"
 
 
 class TestGlucoseMeasurementContextCharacteristic:
@@ -226,13 +243,17 @@ class TestGlucoseMeasurementContextCharacteristic:
         """Fixture providing a glucose measurement context characteristic."""
         return GlucoseMeasurementContextCharacteristic(uuid="2A34", properties=set())
 
-    def test_glucose_context_instantiation(self, glucose_context_char):
+    def test_glucose_context_instantiation(
+        self, glucose_context_char: GlucoseMeasurementContextCharacteristic
+    ):
         """Test that glucose context characteristic can be instantiated."""
         assert glucose_context_char.char_uuid == "2A34"
         assert glucose_context_char.value_type.value == "bytes"  # YAML struct type
         assert glucose_context_char.unit == "various"
 
-    def test_glucose_context_basic_parsing(self, glucose_context_char):
+    def test_glucose_context_basic_parsing(
+        self, glucose_context_char: GlucoseMeasurementContextCharacteristic
+    ):
         """Test basic glucose context data parsing."""
         # Create minimal test data: flags(1) + seq_num(2)
         test_data = bytearray(
@@ -245,9 +266,11 @@ class TestGlucoseMeasurementContextCharacteristic:
 
         result = glucose_context_char.decode_value(test_data)
         assert result.sequence_number == 42
-        assert result.flags == 0
+        assert result.flags == GlucoseMeasurementContextFlags(0)
 
-    def test_glucose_context_with_carbohydrate(self, glucose_context_char):
+    def test_glucose_context_with_carbohydrate(
+        self, glucose_context_char: GlucoseMeasurementContextCharacteristic
+    ):
         """Test glucose context with carbohydrate data."""
         # Flags: 0x02 (carbohydrate present)
         test_data = bytearray(
@@ -262,10 +285,13 @@ class TestGlucoseMeasurementContextCharacteristic:
         )
 
         result = glucose_context_char.decode_value(test_data)
-        assert result.carbohydrate_id == 1
-        assert result.carbohydrate_type == "Breakfast"
+        assert result.carbohydrate_id == CarbohydrateType.BREAKFAST
+        # Human-readable name should match the enum's string representation
+        assert str(result.carbohydrate_id) == "Breakfast"
 
-    def test_glucose_context_with_meal(self, glucose_context_char):
+    def test_glucose_context_with_meal(
+        self, glucose_context_char: GlucoseMeasurementContextCharacteristic
+    ):
         """Test glucose context with meal information."""
         # Flags: 0x04 (meal present)
         test_data = bytearray(
@@ -278,10 +304,13 @@ class TestGlucoseMeasurementContextCharacteristic:
         )
 
         result = glucose_context_char.decode_value(test_data)
-        assert result.meal == 2
-        assert result.meal_type == "Postprandial (after meal)"
+        assert result.meal == MealType.POSTPRANDIAL
+        # Human-readable meal name should match the enum's string representation
+        assert str(result.meal) == "Postprandial (after meal)"
 
-    def test_glucose_context_with_exercise(self, glucose_context_char):
+    def test_glucose_context_with_exercise(
+        self, glucose_context_char: GlucoseMeasurementContextCharacteristic
+    ):
         """Test glucose context with exercise data."""
         # Flags: 0x10 (exercise present)
         test_data = bytearray(
@@ -299,7 +328,9 @@ class TestGlucoseMeasurementContextCharacteristic:
         assert result.exercise_duration_seconds == 600
         assert result.exercise_intensity_percent == 75
 
-    def test_glucose_context_with_hba1c(self, glucose_context_char):
+    def test_glucose_context_with_hba1c(
+        self, glucose_context_char: GlucoseMeasurementContextCharacteristic
+    ):
         """Test glucose context with HbA1c data."""
         # Flags: 0x40 (HbA1c present)
         test_data = bytearray(
@@ -307,23 +338,26 @@ class TestGlucoseMeasurementContextCharacteristic:
                 0x40,  # flags: HbA1c present
                 0x01,
                 0x00,  # sequence number = 1
-                0x80,
-                0x18,  # HbA1c: 7.2% as SFLOAT
+                0x48,
+                0xF0,  # HbA1c: 7.2% as SFLOAT
             ]
         )
 
         result = glucose_context_char.decode_value(test_data)
-        assert hasattr(result, "hba1c_percent")
+        assert result.hba1c_percent == 7.2
 
-    def test_glucose_context_type_names(self, glucose_context_char):
+    def test_glucose_context_type_names(self):
         """Test context type name mappings."""
-        assert CarbohydrateType.get_name(1) == "Breakfast"
-        assert MealType.get_name(3) == "Fasting"
-        assert TesterType.get_name(2) == "Health Care Professional"
-        assert HealthType.get_name(5) == "No health issues"
-        assert MedicationType.get_name(1) == "Rapid acting insulin"
+        # Prefer passing the enum members (hard typing)
+        assert str(CarbohydrateType.BREAKFAST) == "Breakfast"
+        assert str(MealType.FASTING) == "Fasting"
+        assert str(GlucoseTester.HEALTH_CARE_PROFESSIONAL) == "Health Care Professional"
+        assert str(HealthType.NO_HEALTH_ISSUES) == "No health issues"
+        assert str(MedicationType.RAPID_ACTING_INSULIN) == "Rapid acting insulin"
 
-    def test_glucose_context_invalid_data(self, glucose_context_char):
+    def test_glucose_context_invalid_data(
+        self, glucose_context_char: GlucoseMeasurementContextCharacteristic
+    ):
         """Test glucose context with invalid data."""
         with pytest.raises(ValueError, match="must be at least 3 bytes"):
             glucose_context_char.decode_value(bytearray([0x00]))
@@ -337,13 +371,17 @@ class TestGlucoseFeatureCharacteristic:
         """Fixture providing a glucose feature characteristic."""
         return GlucoseFeatureCharacteristic(uuid="2A51", properties=set())
 
-    def test_glucose_feature_instantiation(self, glucose_feature_char):
+    def test_glucose_feature_instantiation(
+        self, glucose_feature_char: GlucoseFeatureCharacteristic
+    ):
         """Test that glucose feature characteristic can be instantiated."""
         assert glucose_feature_char.char_uuid == "2A51"
         assert glucose_feature_char.value_type.value == "bytes"  # YAML struct type
         assert glucose_feature_char.unit == "bitmap"
 
-    def test_glucose_feature_basic_parsing(self, glucose_feature_char):
+    def test_glucose_feature_basic_parsing(
+        self, glucose_feature_char: GlucoseFeatureCharacteristic
+    ):
         """Test basic glucose feature parsing."""
         # Features: 0x0403 = Low Battery + Sensor Malfunction + Multiple Bond
         test_data = bytearray([0x03, 0x04])
@@ -356,20 +394,22 @@ class TestGlucoseFeatureCharacteristic:
         assert result.sensor_sample_size is False
         assert len(result.enabled_features) == 3
 
-    def test_glucose_feature_all_features(self, glucose_feature_char):
+    def test_glucose_feature_all_features(
+        self, glucose_feature_char: GlucoseFeatureCharacteristic
+    ):
         """Test glucose feature with all features enabled."""
         # All feature bits set
         test_data = bytearray([0xFF, 0x07])  # All 11 defined feature bits
 
         result = glucose_feature_char.decode_value(test_data)
         assert result.feature_count == 11
-        assert (
-            "Low Battery Detection During Measurement Supported"
-            in result.enabled_features
-        )
-        assert "Multiple Bond Supported" in result.enabled_features
+        # enabled_features is a list of GlucoseFeatures (hard-typed)
+        assert GlucoseFeatures.LOW_BATTERY_DETECTION in result.enabled_features
+        assert GlucoseFeatures.MULTIPLE_BOND_SUPPORT in result.enabled_features
 
-    def test_glucose_feature_no_features(self, glucose_feature_char):
+    def test_glucose_feature_no_features(
+        self, glucose_feature_char: GlucoseFeatureCharacteristic
+    ):
         """Test glucose feature with no features enabled."""
         test_data = bytearray([0x00, 0x00])
 
@@ -378,24 +418,34 @@ class TestGlucoseFeatureCharacteristic:
         assert result.feature_count == 0
         assert len(result.enabled_features) == 0
 
-    def test_glucose_feature_descriptions(self, glucose_feature_char):
+    def test_glucose_feature_descriptions(
+        self, glucose_feature_char: GlucoseFeatureCharacteristic
+    ):
         """Test feature bit descriptions."""
         assert (
             "Low Battery Detection During Measurement Supported"
-            in glucose_feature_char.get_feature_description(0)
+            in glucose_feature_char.get_feature_description(
+                GlucoseFeatures.LOW_BATTERY_DETECTION.value
+            )
         )
         assert (
             "Multiple Bond Supported"
-            in glucose_feature_char.get_feature_description(10)
+            in glucose_feature_char.get_feature_description(
+                GlucoseFeatures.MULTIPLE_BOND_SUPPORT.value
+            )
         )
         assert "Reserved feature" in glucose_feature_char.get_feature_description(15)
 
-    def test_glucose_feature_invalid_data(self, glucose_feature_char):
+    def test_glucose_feature_invalid_data(
+        self, glucose_feature_char: GlucoseFeatureCharacteristic
+    ):
         """Test glucose feature with invalid data."""
         with pytest.raises(ValueError, match="must be at least 2 bytes"):
             glucose_feature_char.decode_value(bytearray([0x00]))
 
-    def test_glucose_feature_encode_value(self, glucose_feature_char):
+    def test_glucose_feature_encode_value(
+        self, glucose_feature_char: GlucoseFeatureCharacteristic
+    ):
         """Test encoding GlucoseFeatureData back to bytes."""
         from bluetooth_sig.gatt.characteristics.glucose_feature import (
             GlucoseFeatureData,
@@ -403,7 +453,7 @@ class TestGlucoseFeatureCharacteristic:
 
         # Create test data
         test_data = GlucoseFeatureData(
-            features_bitmap=0x0403,
+            features_bitmap=GlucoseFeatures(0x0403),
             low_battery_detection=True,
             sensor_malfunction_detection=True,
             sensor_sample_size=False,
@@ -416,9 +466,9 @@ class TestGlucoseFeatureCharacteristic:
             time_fault=False,
             multiple_bond_support=True,
             enabled_features=[
-                "Low Battery Detection",
-                "Sensor Malfunction Detection",
-                "Multiple Bond Support",
+                GlucoseFeatures.LOW_BATTERY_DETECTION,
+                GlucoseFeatures.SENSOR_MALFUNCTION_DETECTION,
+                GlucoseFeatures.MULTIPLE_BOND_SUPPORT,
             ],
             feature_count=3,
         )
@@ -430,7 +480,9 @@ class TestGlucoseFeatureCharacteristic:
         assert len(encoded) == 2
         assert encoded == bytearray([0x03, 0x04])  # Little endian 0x0403
 
-    def test_glucose_feature_round_trip(self, glucose_feature_char):
+    def test_glucose_feature_round_trip(
+        self, glucose_feature_char: GlucoseFeatureCharacteristic
+    ):
         """Test that parsing and encoding preserve data."""
         # Test with basic features
         original_data = bytearray(

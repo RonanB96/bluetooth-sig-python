@@ -23,7 +23,7 @@ class WeightMeasurementFlags(IntFlag):
 
 
 @dataclass
-class WeightMeasurementData:
+class WeightMeasurementData:  # pylint: disable=too-many-instance-attributes
     """Parsed weight measurement data."""
 
     weight: float

@@ -281,8 +281,8 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<B", op_code)
         result = char.decode_value(bytearray(test_data))
 
-        assert result.op_code == 3
-        assert result.op_code_name == "Request Supported Sensor Locations"
+        assert result.op_code.value == 3
+        assert str(result.op_code) == "Request Supported Sensor Locations"
         assert result.cumulative_value is None
         assert result.sensor_location is None
 
@@ -298,8 +298,8 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<BI", op_code, cumulative_value)
         result = char.decode_value(bytearray(test_data))
 
-        assert result.op_code == 1
-        assert result.op_code_name == "Set Cumulative Value"
+        assert result.op_code.value == 1
+        assert str(result.op_code) == "Set Cumulative Value"
         assert result.cumulative_value == 123456
 
         # Test Set Crank Length
@@ -308,8 +308,8 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<BH", op_code, crank_length)
         result = char.decode_value(bytearray(test_data))
 
-        assert result.op_code == 4
-        assert result.op_code_name == "Set Crank Length"
+        assert result.op_code.value == 4
+        assert str(result.op_code) == "Set Crank Length"
         assert result.crank_length == 175.0
 
     def test_cycling_power_control_point_response(self):
@@ -325,11 +325,11 @@ class TestCyclingPowerParsing:
         test_data = struct.pack("<BBB", op_code, request_op_code, response_value)
         result = char.decode_value(bytearray(test_data))
 
-        assert result.op_code == 32
-        assert result.op_code_name == "Response Code"
-        assert result.request_op_code == 3
-        assert result.response_value == 1
-        assert result.response_value_name == "Success"
+        assert result.op_code.value == 32
+        assert str(result.op_code) == "Response Code"
+        assert result.request_op_code and result.request_op_code.value == 3
+        assert result.response_value and result.response_value.value == 1
+        assert str(result.response_value) == "Success"
 
     def test_cycling_power_control_point_invalid_data(self):
         """Test cycling power control point with invalid data."""

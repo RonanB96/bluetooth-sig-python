@@ -13,6 +13,8 @@ from .utils import BitFieldUtils, DataParser, IEEE11073Parser
 
 
 class GlucoseMeasurementBits:
+    # pylint: disable=missing-class-docstring,too-few-public-methods
+
     # Glucose Measurement bit field constants
     GLUCOSE_TYPE_SAMPLE_MASK = 0x0F  # 4-bit mask for type and sample location
     GLUCOSE_TYPE_START_BIT = 4  # Glucose type in high 4 bits
@@ -52,19 +54,6 @@ class GlucoseType(IntEnum):
         }
         return names[self]
 
-    @classmethod
-    def get_name(cls, value: GlucoseType) -> str:
-        """Get human-readable glucose type name with proper Reserved/Invalid handling."""
-        try:
-            return str(cls(value))
-        except ValueError:
-            # Handle per Bluetooth SIG specification
-            if 11 <= value <= 15:  # 0xB-0xF
-                return "Reserved for Future Use"
-            raise ValueError(
-                f"Invalid glucose type value: {value} (valid range: 1-15)"
-            ) from None
-
 
 class SampleLocation(IntEnum):
     """Sample location enumeration as per Bluetooth SIG specification."""
@@ -88,19 +77,6 @@ class SampleLocation(IntEnum):
         }
         return names[self]
 
-    @classmethod
-    def get_name(cls, value: SampleLocation) -> str:
-        """Get human-readable sample location name with proper Reserved/Invalid handling."""
-        try:
-            return str(cls(value))
-        except ValueError:
-            # Handle per Bluetooth SIG specification
-            if value == 0 or (5 <= value <= 14):  # Reserved ranges
-                return "Reserved for Future Use"
-            raise ValueError(
-                f"Invalid sample location value: {value} (valid range: 0-15)"
-            ) from None
-
 
 # TODO: Implement CharacteristicContext support
 # This characteristic should access Glucose Feature (0x2A51) and Glucose Measurement Context (0x2A34)
@@ -116,8 +92,8 @@ class GlucoseMeasurementFlags(IntFlag):
     SENSOR_STATUS_ANNUNCIATION_PRESENT = 0x08
 
 
-@dataclass  # pylint: disable=too-many-instance-attributes
-class GlucoseMeasurementData:
+@dataclass
+class GlucoseMeasurementData:  # pylint: disable=too-many-instance-attributes
     """Parsed glucose measurement data."""
 
     sequence_number: int
@@ -126,12 +102,17 @@ class GlucoseMeasurementData:
     unit: str
     flags: GlucoseMeasurementFlags
     time_offset_minutes: int | None = None
-    glucose_type: int | None = None
-    sample_location: int | None = None
+    glucose_type: GlucoseType | None = None
+    sample_location: SampleLocation | None = None
     sensor_status: int | None = None
-    # Human-readable names
-    glucose_type_name: str | None = None
-    sample_location_name: str | None = None
+
+    min_length: int = 12  # Aligned with GlucoseMeasurementCharacteristic
+    max_length: int = 17  # Aligned with GlucoseMeasurementCharacteristic
+
+    @staticmethod
+    def is_reserved_range(value: int) -> bool:
+        """Check if glucose type or sample location is in reserved range."""
+        return value in {0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
 
 
 @dataclass
@@ -144,8 +125,8 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Glucose Measurement"
 
-    min_length: int = 12  # Flags(1) + Seq(2) + BaseTime(7) + Glucose(2) minimum
-    max_length: int = 17  # + TimeOffset(2) + TypeLoc(1) + SensorStatus(2) maximum
+    min_length: int = 12  # Ensured consistency with GlucoseMeasurementData
+    max_length: int = 17  # Ensured consistency with GlucoseMeasurementData
     allow_variable_length: bool = True  # Variable optional fields
 
     def decode_value(
@@ -230,19 +211,8 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
                 GlucoseMeasurementBits.GLUCOSE_SAMPLE_LOCATION_BIT_WIDTH,
             )
 
-            result.glucose_type = glucose_type
-            result.sample_location = sample_location
-
-            # Set human-readable names
-            try:
-                result.glucose_type_name = GlucoseType.get_name(glucose_type)
-            except ValueError as e:
-                result.glucose_type_name = f"Invalid ({e})"
-
-            try:
-                result.sample_location_name = SampleLocation.get_name(sample_location)
-            except ValueError as e:
-                result.sample_location_name = f"Invalid ({e})"
+            result.glucose_type = GlucoseType(glucose_type)
+            result.sample_location = SampleLocation(sample_location)
 
             offset += 1
 

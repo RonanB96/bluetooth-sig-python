@@ -12,7 +12,7 @@ from .utils import DataParser
 
 
 @dataclass
-class CyclingPowerControlPointData:
+class CyclingPowerControlPointData:  # pylint: disable=too-many-instance-attributes
     """Parsed data from Cycling Power Control Point characteristic."""
 
     op_code: CyclingPowerOpCode
@@ -78,14 +78,6 @@ class CyclingPowerOpCode(IntEnum):
         }
         return names[self]
 
-    @classmethod
-    def get_name(cls, op_code: CyclingPowerOpCode) -> str:
-        """Get the name of an operation code."""
-        try:
-            return str(cls(op_code))  # Use __str__ method for formatted names
-        except ValueError:
-            return f"RESERVED_{op_code:02X}"
-
 
 # Constants
 MIN_OP_CODE_LENGTH = 1  # Minimum length for op code data
@@ -110,19 +102,6 @@ class CyclingPowerResponseValue(IntEnum):
             self.OPERATION_FAILED: "Operation Failed",
         }
         return names[self]
-
-    @classmethod
-    def get_name(cls, value: CyclingPowerResponseValue) -> str:
-        """Get human-readable response value name with proper Reserved/Invalid handling."""
-        try:
-            return str(cls(value))
-        except ValueError:
-            # Handle per Bluetooth SIG specification
-            if value == 0x00 or (0x05 <= value <= 0xFF):
-                return "Reserved for Future Use"
-            raise ValueError(
-                f"Invalid response value: {value} (valid range: 0x00-0xFF)"
-            ) from None
 
 
 class CyclingPowerControlPointCharacteristic(BaseCharacteristic):

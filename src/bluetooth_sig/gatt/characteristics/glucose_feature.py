@@ -7,7 +7,7 @@ from enum import IntFlag
 from typing import Any
 
 from .base import BaseCharacteristic
-from .utils import BitFieldUtils, DataParser
+from .utils import DataParser
 
 
 class GlucoseFeatures(IntFlag):
@@ -25,30 +25,29 @@ class GlucoseFeatures(IntFlag):
     TIME_FAULT = 0x0200
     MULTIPLE_BOND_SUPPORT = 0x0400
 
-    @classmethod
-    def get_description(cls, feature: GlucoseFeatures) -> str:
+    def __str__(self) -> str:
         """Get human-readable description for a feature."""
         descriptions = {
-            cls.LOW_BATTERY_DETECTION: "Low Battery Detection During Measurement Supported",
-            cls.SENSOR_MALFUNCTION_DETECTION: "Sensor Malfunction Detection Supported",
-            cls.SENSOR_SAMPLE_SIZE: "Sensor Sample Size Supported",
-            cls.SENSOR_STRIP_INSERTION_ERROR: "Sensor Strip Insertion Error Detection Supported",
-            cls.SENSOR_STRIP_TYPE_ERROR: "Sensor Strip Type Error Detection Supported",
-            cls.SENSOR_RESULT_HIGH_LOW: "Sensor Result High-Low Detection Supported",
-            cls.SENSOR_TEMPERATURE_HIGH_LOW: "Sensor Temperature High-Low Detection Supported",
-            cls.SENSOR_READ_INTERRUPT: "Sensor Read Interrupt Detection Supported",
-            cls.GENERAL_DEVICE_FAULT: "General Device Fault Supported",
-            cls.TIME_FAULT: "Time Fault Supported",
-            cls.MULTIPLE_BOND_SUPPORT: "Multiple Bond Supported",
+            self.LOW_BATTERY_DETECTION.value: "Low Battery Detection During Measurement Supported",
+            self.SENSOR_MALFUNCTION_DETECTION.value: "Sensor Malfunction Detection Supported",
+            self.SENSOR_SAMPLE_SIZE.value: "Sensor Sample Size Supported",
+            self.SENSOR_STRIP_INSERTION_ERROR.value: "Sensor Strip Insertion Error Detection Supported",
+            self.SENSOR_STRIP_TYPE_ERROR.value: "Sensor Strip Type Error Detection Supported",
+            self.SENSOR_RESULT_HIGH_LOW.value: "Sensor Result High-Low Detection Supported",
+            self.SENSOR_TEMPERATURE_HIGH_LOW.value: "Sensor Temperature High-Low Detection Supported",
+            self.SENSOR_READ_INTERRUPT.value: "Sensor Read Interrupt Detection Supported",
+            self.GENERAL_DEVICE_FAULT.value: "General Device Fault Supported",
+            self.TIME_FAULT.value: "Time Fault Supported",
+            self.MULTIPLE_BOND_SUPPORT.value: "Multiple Bond Supported",
         }
-        return descriptions.get(feature, f"Reserved feature bit {feature.value:04x}")
+        return descriptions.get(self.value, f"Reserved feature bit {self.value:04x}")
 
-    def get_enabled_features(self) -> list[str]:
+    def get_enabled_features(self) -> list[GlucoseFeatures]:
         """Get list of human-readable enabled features."""
-        enabled = []
+        enabled = list[GlucoseFeatures]()
         for feature in GlucoseFeatures:
             if self & feature:
-                enabled.append(self.get_description(feature))
+                enabled.append(feature)
         return enabled
 
 
@@ -56,7 +55,7 @@ class GlucoseFeatures(IntFlag):
 class GlucoseFeatureData:  # pylint: disable=too-many-instance-attributes
     """Parsed data from Glucose Feature characteristic."""
 
-    features_bitmap: int
+    features_bitmap: GlucoseFeatures
     low_battery_detection: bool
     sensor_malfunction_detection: bool
     sensor_sample_size: bool
@@ -68,7 +67,7 @@ class GlucoseFeatureData:  # pylint: disable=too-many-instance-attributes
     general_device_fault: bool
     time_fault: bool
     multiple_bond_support: bool
-    enabled_features: list[str]
+    enabled_features: list[GlucoseFeatures]
     feature_count: int
 
 
@@ -134,7 +133,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
         enabled_features = features.get_enabled_features()
 
         return GlucoseFeatureData(
-            features_bitmap=features_bitmap,
+            features_bitmap=features,
             low_battery_detection=low_battery_detection,
             sensor_malfunction_detection=sensor_malfunction_detection,
             sensor_sample_size=sensor_sample_size,
@@ -196,11 +195,20 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
         Returns:
             Human-readable description of the feature
         """
-        # Convert bit position to feature flag value
-        feature_value = BitFieldUtils.set_bit(0, feature_bit)
+        # Accept either a flag value (power-of-two) or a bit index
+        if feature_bit <= 0:
+            return f"Reserved feature bit {feature_bit}"
+
+        # If caller passed a power-of-two flag value (e.g., 0x0001), use it
+        if feature_bit & (feature_bit - 1) == 0:
+            feature_value = feature_bit
+        else:
+            # Otherwise treat as bit index (0..15)
+            feature_value = 1 << feature_bit
+
         try:
             feature = GlucoseFeatures(feature_value)
-            return GlucoseFeatures.get_description(feature)
+            return str(feature)
         except ValueError:
             return f"Reserved feature bit {feature_bit}"
 

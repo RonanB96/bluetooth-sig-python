@@ -58,10 +58,23 @@ print_warning() {
 check_venv() {
     if [ -z "${VIRTUAL_ENV:-}" ]; then
         print_warning "No virtual environment detected"
-        if [ -n "${PROJECT_ROOT:-}" ]; then
-            print_warning "Consider running: source $PROJECT_ROOT/.venv/bin/activate"
+        # If the project has a local .venv, try to activate it automatically
+        if [ -n "${PROJECT_ROOT:-}" ] && [ -f "$PROJECT_ROOT/.venv/bin/activate" ]; then
+            print_header "Attempting to activate project virtualenv: $PROJECT_ROOT/.venv"
+            # shellcheck disable=SC1091
+            # shellcheck source=/dev/null
+            if source "$PROJECT_ROOT/.venv/bin/activate"; then
+                print_success "Activated virtual environment: $VIRTUAL_ENV"
+            else
+                print_warning "Failed to activate virtualenv at $PROJECT_ROOT/.venv/bin/activate"
+                print_warning "Consider running: source $PROJECT_ROOT/.venv/bin/activate"
+            fi
         else
-            print_warning "Consider running: source .venv/bin/activate"
+            if [ -n "${PROJECT_ROOT:-}" ]; then
+                print_warning "Consider running: source $PROJECT_ROOT/.venv/bin/activate"
+            else
+                print_warning "Consider running: source .venv/bin/activate"
+            fi
         fi
     else
         print_success "Virtual environment active: $VIRTUAL_ENV"
@@ -254,8 +267,9 @@ run_shellcheck() {
     print_header "Running shellcheck"
 
     if ! command -v shellcheck >/dev/null 2>&1; then
-        print_error "shellcheck not found. Install with: apt-get install shellcheck or brew install shellcheck"
-        return 1
+        print_warning "shellcheck not found. Install with: apt-get install shellcheck or brew install shellcheck"
+        print_warning "Skipping shellcheck checks (not installed on this machine)"
+        return 0
     fi
 
     # Find all shell scripts in the project

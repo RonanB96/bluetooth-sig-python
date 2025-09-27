@@ -11,6 +11,8 @@ from .utils import BitFieldUtils, DataParser
 
 
 class WeightScaleBits:
+    # pylint: disable=missing-class-docstring,too-few-public-methods
+
     # Weight Scale Feature bit field constants
     WEIGHT_RESOLUTION_START_BIT = 3  # Weight measurement resolution starts at bit 3
     WEIGHT_RESOLUTION_BIT_WIDTH = 4  # Weight measurement resolution uses 4 bits
@@ -51,29 +53,6 @@ class WeightMeasurementResolution(IntEnum):
         }
         return descriptions.get(self.value, "Reserved for Future Use")
 
-    @classmethod
-    def get_name(cls, value: WeightMeasurementResolution) -> str:
-        """Get human-readable name for weight measurement resolution value.
-
-        Args:
-            value: Weight measurement resolution value (0-15)
-
-        Returns:
-            Human-readable description
-
-        Raises:
-            ValueError: If value is outside valid range (0-15)
-        """
-        if not 0 <= value <= 15:
-            raise ValueError(
-                f"Weight measurement resolution value {value} is out of valid range (0-15)"
-            )
-
-        if value <= 7:
-            return str(cls(value))
-        # Values 8-15 are reserved per Bluetooth SIG spec
-        return "Reserved for Future Use"
-
 
 class HeightMeasurementResolution(IntEnum):
     """Height measurement resolution enumeration."""
@@ -91,29 +70,6 @@ class HeightMeasurementResolution(IntEnum):
             3: "0.001_m_or_0.1_inch",
         }
         return descriptions.get(self.value, "Reserved for Future Use")
-
-    @classmethod
-    def get_name(cls, value: HeightMeasurementResolution) -> str:
-        """Get human-readable name for height measurement resolution value.
-
-        Args:
-            value: Height measurement resolution value (0-7)
-
-        Returns:
-            Human-readable description
-
-        Raises:
-            ValueError: If value is outside valid range (0-7)
-        """
-        if not 0 <= value <= 7:
-            raise ValueError(
-                f"Height measurement resolution value {value} is out of valid range (0-7)"
-            )
-
-        if value <= 3:
-            return str(cls(value))
-        # Values 4-7 are reserved per Bluetooth SIG spec
-        return "Reserved for Future Use"
 
 
 @dataclass

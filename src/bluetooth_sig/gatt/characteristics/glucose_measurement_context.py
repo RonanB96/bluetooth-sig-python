@@ -14,6 +14,8 @@ from .utils import BitFieldUtils, DataParser, IEEE11073Parser
 class GlucoseMeasurementContextBits:
     """Glucose Measurement Context bit field constants."""
 
+    # pylint: disable=too-few-public-methods
+
     TESTER_START_BIT = 4  # Tester value starts at bit 4
     TESTER_BIT_WIDTH = 4  # Tester value uses 4 bits
     HEALTH_START_BIT = 0  # Health value starts at bit 0
@@ -44,30 +46,6 @@ class CarbohydrateType(IntEnum):
         }
         return names.get(self, "Reserved for Future Use")
 
-    @classmethod
-    def get_name(cls, value: CarbohydrateType) -> str:
-        """Get human-readable name for carbohydrate type value.
-
-        Args:
-            value: Carbohydrate type value
-
-        Returns:
-            Human-readable description
-
-        Raises:
-            ValueError: If value is outside valid range
-        """
-        if not 0 <= value <= UINT8_MAX:
-            raise ValueError(
-                f"Carbohydrate type value {value} is out of valid range (0-UINT8_MAX)"
-            )
-
-        try:
-            return str(cls(value))
-        except ValueError:
-            # Values not in enum are reserved per Bluetooth SIG spec
-            return "Reserved for Future Use"
-
 
 class MealType(IntEnum):
     """Meal type enumeration as per Bluetooth SIG specification."""
@@ -89,33 +67,9 @@ class MealType(IntEnum):
         }
         return names.get(self, "Reserved for Future Use")
 
-    @classmethod
-    def get_name(cls, value: MealType) -> str:
-        """Get human-readable name for meal type value.
 
-        Args:
-            value: Meal type value
-
-        Returns:
-            Human-readable description
-
-        Raises:
-            ValueError: If value is outside valid range
-        """
-        if not 0 <= value <= UINT8_MAX:
-            raise ValueError(
-                f"Meal type value {value} is out of valid range (0-UINT8_MAX)"
-            )
-
-        try:
-            return str(cls(value))
-        except ValueError:
-            # Values not in enum are reserved per Bluetooth SIG spec
-            return "Reserved for Future Use"
-
-
-class TesterType(IntEnum):
-    """Tester type enumeration as per Bluetooth SIG specification."""
+class GlucoseTester(IntEnum):
+    """Glucose tester type enumeration as per Bluetooth SIG specification."""
 
     SELF = 1
     HEALTH_CARE_PROFESSIONAL = 2
@@ -131,30 +85,6 @@ class TesterType(IntEnum):
             self.NOT_AVAILABLE: "Tester value not available",
         }
         return names.get(self, "Reserved for Future Use")
-
-    @classmethod
-    def get_name(cls, value: TesterType) -> str:
-        """Get human-readable name for tester type value.
-
-        Args:
-            value: Tester type value
-
-        Returns:
-            Human-readable description
-
-        Raises:
-            ValueError: If value is outside valid range
-        """
-        if not 0 <= value <= UINT8_MAX:
-            raise ValueError(
-                f"Tester type value {value} is out of valid range (0-UINT8_MAX)"
-            )
-
-        try:
-            return str(cls(value))
-        except ValueError:
-            # Values not in enum are reserved per Bluetooth SIG spec
-            return "Reserved for Future Use"
 
 
 class HealthType(IntEnum):
@@ -179,30 +109,6 @@ class HealthType(IntEnum):
         }
         return names.get(self, "Reserved for Future Use")
 
-    @classmethod
-    def get_name(cls, value: HealthType) -> str:
-        """Get human-readable name for health type value.
-
-        Args:
-            value: Health type value
-
-        Returns:
-            Human-readable description
-
-        Raises:
-            ValueError: If value is outside valid range
-        """
-        if not 0 <= value <= UINT8_MAX:
-            raise ValueError(
-                f"Health type value {value} is out of valid range (0-UINT8_MAX)"
-            )
-
-        try:
-            return str(cls(value))
-        except ValueError:
-            # Values not in enum are reserved per Bluetooth SIG spec
-            return "Reserved for Future Use"
-
 
 class MedicationType(IntEnum):
     """Medication type enumeration as per Bluetooth SIG specification."""
@@ -224,36 +130,14 @@ class MedicationType(IntEnum):
         }
         return names.get(self, "Reserved for Future Use")
 
-    @classmethod
-    def get_name(cls, value: MedicationType) -> str:
-        """Get human-readable name for medication type value.
 
-        Args:
-            value: Medication type value
-
-        Returns:
-            Human-readable description
-
-        Raises:
-            ValueError: If value is outside valid range
-        """
-        if not 0 <= value <= UINT8_MAX:
-            raise ValueError(
-                f"Medication type value {value} is out of valid range (0-UINT8_MAX)"
-            )
-
-        try:
-            return str(cls(value))
-        except ValueError:
-            # Values not in enum are reserved per Bluetooth SIG spec
-            return "Reserved for Future Use"
-
-
-class GlucoseMeasurementContextExtendedFlags:
+class GlucoseMeasurementContextExtendedFlags(IntEnum):
     """Glucose Measurement Context Extended Flags constants as per Bluetooth SIG specification.
 
     Currently all bits are reserved for future use.
     """
+
+    # pylint: disable=too-few-public-methods
 
     RESERVED_BIT_0 = 0x01
     RESERVED_BIT_1 = 0x02
@@ -314,13 +198,13 @@ class GlucoseMeasurementContextData:  # pylint: disable=too-many-instance-attrib
     carbohydrate_id: CarbohydrateType | None = None
     carbohydrate_kg: float | None = None
     meal: MealType | None = None
-    tester: TesterType | None = None
+    tester: GlucoseTester | None = None
     health: HealthType | None = None
-    exercise_duration: int | None = None
-    exercise_intensity: int | None = None
+    exercise_duration_seconds: int | None = None
+    exercise_intensity_percent: int | None = None
     medication_id: MedicationType | None = None
     medication_kg: float | None = None
-    hba1c: float | None = None
+    hba1c_percent: float | None = None
 
     def __post_init__(self) -> None:
         """Validate glucose measurement context data."""
@@ -493,7 +377,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
                 GlucoseMeasurementContextBits.HEALTH_START_BIT,
                 GlucoseMeasurementContextBits.HEALTH_BIT_WIDTH,
             )  # Bits 0-3 (4 bits)
-            result.tester = TesterType(tester)
+            result.tester = GlucoseTester(tester)
             result.health = HealthType(health)
             offset += 1
         return offset
@@ -512,8 +396,8 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         ):
             exercise_duration = DataParser.parse_int16(data, offset, signed=False)
             exercise_intensity = data[offset + 2]
-            result.exercise_duration = exercise_duration
-            result.exercise_intensity = exercise_intensity
+            result.exercise_duration_seconds = exercise_duration
+            result.exercise_intensity_percent = exercise_intensity
             offset += 3
         return offset
 
@@ -549,7 +433,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
             and len(data) >= offset + 2
         ):
             hba1c_value = IEEE11073Parser.parse_sfloat(data, offset)
-            result.hba1c = hba1c_value
+            result.hba1c_percent = hba1c_value
             offset += 2
         return offset
 
