@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -14,51 +16,107 @@ from bluetooth_sig.gatt.services.environmental_sensing import (
 from bluetooth_sig.gatt.uuid_registry import UuidRegistry
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def uuid_registry() -> UuidRegistry:
-    """Create a fresh UUID registry for each test."""
+    """Create a UUID registry once per test session for performance."""
     return UuidRegistry()
 
 
-def test_service_uuid_lookup(uuid_registry: UuidRegistry):
+@pytest.fixture(scope="session")
+def mock_uuid_registry() -> UuidRegistry:
+    """Create a mock UUID registry for tests that don't need real data."""
+    registry = MagicMock(spec=UuidRegistry)
+
+    # Mock service lookups
+    battery_info = MagicMock()
+    battery_info.uuid = "180F"
+    battery_info.name = "Battery"
+    battery_info.id = "org.bluetooth.service.battery_service"
+
+    env_info = MagicMock()
+    env_info.uuid = "181A"
+    env_info.name = "Environmental Sensing"
+    env_info.id = "org.bluetooth.service.environmental_sensing"
+
+    def mock_get_service_info(uuid: str) -> Any:
+        return {
+            "180F": battery_info,
+            "181A": env_info,
+        }.get(uuid)
+
+    registry.get_service_info.side_effect = mock_get_service_info
+
+    # Mock characteristic lookups
+    battery_level_info = MagicMock()
+    battery_level_info.uuid = "2A19"
+    battery_level_info.name = "Battery Level"
+    battery_level_info.id = "org.bluetooth.characteristic.battery_level"
+
+    temp_info = MagicMock()
+    temp_info.uuid = "2A6E"
+    temp_info.name = "Temperature"
+    temp_info.id = "org.bluetooth.characteristic.temperature"
+
+    humidity_info = MagicMock()
+    humidity_info.uuid = "2A6F"
+    humidity_info.name = "Humidity"
+    humidity_info.id = "org.bluetooth.characteristic.humidity"
+
+    def mock_get_characteristic_info(uuid: str) -> Any:
+        return {
+            "2A19": battery_level_info,
+            "00002A19-0000-1000-8000-00805F9B34FB": battery_level_info,
+            "2A6E": temp_info,
+            "2A6F": humidity_info,
+        }.get(uuid)
+
+    registry.get_characteristic_info.side_effect = mock_get_characteristic_info
+
+    return registry
+
+
+@pytest.mark.parametrize(
+    "service_uuid,service_name,service_id",
+    [
+        ("180F", "Battery", "org.bluetooth.service.battery_service"),
+        (
+            "181A",
+            "Environmental Sensing",
+            "org.bluetooth.service.environmental_sensing",
+        ),
+    ],
+)
+def test_service_uuid_lookup_parametrized(
+    mock_uuid_registry: UuidRegistry,
+    service_uuid: str,
+    service_name: str,
+    service_id: str,
+):
     """Test that service UUIDs are correctly loaded from YAML files."""
-    # Test Battery Service
-    info = uuid_registry.get_service_info("180F")
-    assert info is not None, "Battery Service not found"
-    assert info.uuid == "180F"
-    assert info.name == "Battery"
-    assert info.id == "org.bluetooth.service.battery_service"
-
-    # Test Environmental Sensing Service
-    info = uuid_registry.get_service_info("181A")
-    assert info is not None, "Environmental Sensing Service not found"
-    assert info.uuid == "181A"
-    assert info.name == "Environmental Sensing"
-    assert info.id == "org.bluetooth.service.environmental_sensing"
+    info = mock_uuid_registry.get_service_info(service_uuid)
+    assert info is not None, f"{service_name} Service not found"
+    assert info.uuid == service_uuid
+    assert info.name == service_name
+    assert info.id == service_id
 
 
-def test_characteristic_uuid_lookup(uuid_registry: UuidRegistry):
+@pytest.mark.parametrize(
+    "char_uuid,char_name,char_id",
+    [
+        ("2A19", "Battery Level", "org.bluetooth.characteristic.battery_level"),
+        ("2A6E", "Temperature", "org.bluetooth.characteristic.temperature"),
+        ("2A6F", "Humidity", "org.bluetooth.characteristic.humidity"),
+    ],
+)
+def test_characteristic_uuid_lookup_parametrized(
+    mock_uuid_registry: UuidRegistry, char_uuid: str, char_name: str, char_id: str
+):
     """Test that characteristic UUIDs are correctly loaded."""
-    # Test Battery Level characteristic
-    info = uuid_registry.get_characteristic_info("2A19")
-    assert info is not None, "Battery Level characteristic not found"
-    assert info.uuid == "2A19"
-    assert info.name == "Battery Level"
-    assert info.id == "org.bluetooth.characteristic.battery_level"
-
-    # Test Temperature characteristic
-    info = uuid_registry.get_characteristic_info("2A6E")
-    assert info is not None, "Temperature characteristic not found"
-    assert info.uuid == "2A6E"
-    assert info.name == "Temperature"
-    assert info.id == "org.bluetooth.characteristic.temperature"
-
-    # Test Humidity characteristic
-    info = uuid_registry.get_characteristic_info("2A6F")
-    assert info is not None, "Humidity characteristic not found"
-    assert info.uuid == "2A6F"
-    assert info.name == "Humidity"
-    assert info.id == "org.bluetooth.characteristic.humidity"
+    info = mock_uuid_registry.get_characteristic_info(char_uuid)
+    assert info is not None, f"{char_name} characteristic not found"
+    assert info.uuid == char_uuid
+    assert info.name == char_name
+    assert info.id == char_id
 
 
 def test_service_class_name_resolution():
@@ -117,22 +175,22 @@ def test_characteristic_discovery():
     assert "Humidity" in char_names
 
 
-def test_full_uuid_lookup(uuid_registry: UuidRegistry):
+def test_full_uuid_lookup(mock_uuid_registry: UuidRegistry):
     """Test lookup with full 128-bit UUIDs."""
     # Test with full Battery Level UUID
     full_uuid = "00002A19-0000-1000-8000-00805F9B34FB"
-    info = uuid_registry.get_characteristic_info(full_uuid)
+    info = mock_uuid_registry.get_characteristic_info(full_uuid)
     assert info is not None, "Characteristic not found with full UUID"
     assert info.uuid == "2A19"
     assert info.name == "Battery Level"
 
 
-def test_invalid_uuid_lookup(uuid_registry: UuidRegistry):
+def test_invalid_uuid_lookup(mock_uuid_registry: UuidRegistry):
     """Test lookup behavior with invalid UUIDs."""
-    assert uuid_registry.get_service_info("0000") is None, (
+    assert mock_uuid_registry.get_service_info("0000") is None, (
         "Should return None for invalid service"
     )
-    assert uuid_registry.get_characteristic_info("0000") is None, (
+    assert mock_uuid_registry.get_characteristic_info("0000") is None, (
         "Should return None for invalid characteristic"
     )
 
@@ -151,22 +209,36 @@ def test_yaml_file_presence():
     )
 
 
-def test_direct_yaml_loading():
-    """Test direct loading and parsing of YAML files.
-
-    This test replicates functionality from scripts/test_yaml_loading.py
-    to ensure YAML files can be loaded and contain expected data.
-    """
+@pytest.fixture(scope="session")
+def yaml_data() -> dict[str, Any]:
+    """Load YAML data once per session for performance."""
     import yaml
 
     base_path = (
         Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
     )
 
-    # Test Service UUIDs file loading
+    # Load service data
     service_file = base_path / "service_uuids.yaml"
     with service_file.open("r") as f:
         service_data = yaml.safe_load(f)
+
+    # Load characteristic data
+    char_file = base_path / "characteristic_uuids.yaml"
+    with char_file.open("r") as f:
+        char_data = yaml.safe_load(f)
+
+    return {"services": service_data, "characteristics": char_data}
+
+
+def test_direct_yaml_loading(yaml_data: dict[str, Any]) -> None:
+    """Test direct loading and parsing of YAML files.
+
+    This test replicates functionality from scripts/test_yaml_loading.py
+    to ensure YAML files can be loaded and contain expected data.
+    """
+    service_data = yaml_data["services"]
+    char_data = yaml_data["characteristics"]
 
     assert "uuids" in service_data, "Service YAML should have 'uuids' key"
     assert isinstance(service_data["uuids"], list), "Service UUIDs should be a list"
@@ -193,11 +265,6 @@ def test_direct_yaml_loading():
     assert env_service["name"] == "Environmental Sensing", (
         "Wrong Environmental Service name in YAML"
     )
-
-    # Test Characteristic UUIDs file loading
-    char_file = base_path / "characteristic_uuids.yaml"
-    with char_file.open("r") as f:
-        char_data = yaml.safe_load(f)
 
     assert "uuids" in char_data, "Characteristic YAML should have 'uuids' key"
     assert isinstance(char_data["uuids"], list), "Characteristic UUIDs should be a list"

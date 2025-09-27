@@ -21,7 +21,7 @@ class TestBodyCompositionMeasurementCharacteristic:
     def test_characteristic_name(self):
         """Test characteristic name resolution."""
         char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
-        assert char.get_characteristic_name() == "Body Composition Measurement"
+        assert char.name == "Body Composition Measurement"
         assert char.value_type == ValueType.BYTES
 
     def test_parse_basic_body_fat_metric(self):

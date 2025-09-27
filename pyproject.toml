@@ -100,13 +100,13 @@ msg-template = "{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
 [tool.pylint.MESSAGE_CONTROL]
 # Only globally disable issues that are handled by other tools or are project-wide
 disable = [
-    "C0103", # invalid-name (Black handles this globally)
-    "C0301", # line-too-long (Black handles this globally) - IGNORE LINE LENGTH
-    "W0311", # bad-indentation (Black handles this globally)
+    "C0103", # invalid-name (project uses some non-snake_case names for SIG constants)
+    "C0301", # line-too-long (formatting handled by ruff)
+    "W0311", # bad-indentation (formatting handled by ruff)
     "W0511", # fixme (TODO comments are useful throughout)
-    "C0411", # wrong-import-order (handled by isort/Black globally)
-    "C0412", # ungrouped-imports (handled by isort/Black globally)
-    "C0413", # wrong-import-position (handled by isort/Black globally)
+    "C0411", # wrong-import-order (handled by ruff import sorting)
+    "C0412", # ungrouped-imports (handled by ruff import sorting)
+    "C0413", # wrong-import-position (handled by ruff import sorting)
     "E0611", # no-name-in-module (editable install issue affects entire project)
     "R0801", # duplicate-code (BLE protocol patterns have legitimate code duplication)
 ]
@@ -134,7 +134,8 @@ select = [
 ]
 ignore = [
     "E203", # Whitespace before ':' - conflicts with black
-    "E501", # Line too long - handled by formatter
+    "E203", # Whitespace before ':' - conflicts with black
+    # Note: do not ignore E501 here; ruff will enforce line length per tool.ruff.format.line-length
     "E701", # Multiple statements on one line (colon)
     "E702", # Multiple statements on one line (semicolon)
     "N802", # Function name should be lowercase (our UUID properties use CAPS)
