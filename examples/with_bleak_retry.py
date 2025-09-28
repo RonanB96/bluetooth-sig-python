@@ -65,9 +65,7 @@ async def robust_device_reading(
         Dictionary of parsed characteristic data
     """
     if backend != "bleak-retry":
-        print(
-            f"❌ Only bleak-retry backend is supported in this example. Got: {backend}"
-        )
+        print(f"❌ Only bleak-retry backend is supported in this example. Got: {backend}")
         return {}
 
     target_uuids = get_default_characteristic_uuids()
@@ -86,19 +84,13 @@ async def robust_device_reading(
         for _service_uuid, service_info in services.items():
             for char_uuid in service_info.characteristics.keys():
                 # Convert full UUID to short form for comparison
-                short_uuid = (
-                    char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
-                )
+                short_uuid = char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
                 available_uuids.append(short_uuid)
         print(f"✅ Found {len(available_uuids)} readable characteristics")
 
         # Filter target UUIDs to only those available on this device
-        target_uuids = [
-            uuid for uuid in target_uuids if uuid.upper() in available_uuids
-        ]
-        print(
-            f"📋 Will read {len(target_uuids)} matching characteristics: {target_uuids}"
-        )
+        target_uuids = [uuid for uuid in target_uuids if uuid.upper() in available_uuids]
+        print(f"📋 Will read {len(target_uuids)} matching characteristics: {target_uuids}")
     except Exception as e:
         print(f"⚠️ Service discovery failed, trying predefined characteristics: {e}")
 
@@ -136,15 +128,11 @@ async def robust_service_discovery(address: str) -> dict[str, object]:
     return {}
 
 
-async def perform_single_reading(
-    address: str, translator: BluetoothSIGTranslator, target_uuids: list[str]
-) -> bool:
+async def perform_single_reading(address: str, translator: BluetoothSIGTranslator, target_uuids: list[str]) -> bool:
     """Perform a single reading cycle and return success status."""
     try:
         # Use robust connection with retry
-        raw_results = await read_characteristics_bleak_retry(
-            address, target_uuids, max_attempts=3
-        )
+        raw_results = await read_characteristics_bleak_retry(address, target_uuids, max_attempts=3)
 
         if raw_results:
             print(f"📊 Reading at {time.strftime('%H:%M:%S')}:")
@@ -197,37 +185,23 @@ async def notification_monitoring(address: str, duration: int = 60) -> None:
         address: BLE device address
         duration: Monitoring duration in seconds
     """
-    print(
-        f"🔔 Notification monitoring with {address} for {duration}s - Feature not yet implemented"
-    )
+    print(f"🔔 Notification monitoring with {address} for {duration}s - Feature not yet implemented")
 
 
 async def main() -> None:
     """Main function demonstrating robust BLE patterns."""
-    parser = argparse.ArgumentParser(
-        description="Robust BLE with bleak-retry-connector + SIG parsing"
-    )
+    parser = argparse.ArgumentParser(description="Robust BLE with bleak-retry-connector + SIG parsing")
     parser.add_argument("--address", "-a", help="BLE device address")
     parser.add_argument("--scan", "-s", action="store_true", help="Scan for devices")
-    parser.add_argument(
-        "--monitor", "-m", action="store_true", help="Continuous monitoring"
-    )
-    parser.add_argument(
-        "--notifications", "-n", action="store_true", help="Monitor notifications"
-    )
-    parser.add_argument(
-        "--discover", "-d", action="store_true", help="Service discovery"
-    )
-    parser.add_argument(
-        "--duration", "-t", type=int, default=60, help="Duration for monitoring"
-    )
+    parser.add_argument("--monitor", "-m", action="store_true", help="Continuous monitoring")
+    parser.add_argument("--notifications", "-n", action="store_true", help="Monitor notifications")
+    parser.add_argument("--discover", "-d", action="store_true", help="Service discovery")
+    parser.add_argument("--duration", "-t", type=int, default=60, help="Duration for monitoring")
 
     args = parser.parse_args()
 
     if not bleak_retry_available:
-        print(
-            "Bleak-retry not available. Install with: pip install bleak-retry-connector"
-        )
+        print("Bleak-retry not available. Install with: pip install bleak-retry-connector")
         return
 
     try:

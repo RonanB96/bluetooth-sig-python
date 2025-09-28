@@ -8,8 +8,8 @@ from typing import Any, Protocol
 class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-methods
     """Minimal protocol describing the attributes used by parsers.
 
-    This avoids importing the full `CharacteristicData` type here and gives
-    callers a useful static type for `other_characteristics`.
+    This avoids importing the full `CharacteristicData` type here and
+    gives callers a useful static type for `other_characteristics`.
     """
 
     value: Any

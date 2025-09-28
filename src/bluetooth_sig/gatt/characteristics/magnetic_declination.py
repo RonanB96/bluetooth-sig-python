@@ -15,9 +15,7 @@ class MagneticDeclinationCharacteristic(ScaledUint16Characteristic):
     """
 
     _characteristic_name: str = "Magnetic Declination"
-    _manual_value_type: str = (
-        "float"  # Override YAML int type since decode_value returns float
-    )
+    _manual_value_type: str = "float"  # Override YAML int type since decode_value returns float
 
     # Template configuration
     resolution: float = 0.01  # 0.01 degree resolution

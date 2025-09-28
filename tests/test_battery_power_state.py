@@ -137,14 +137,8 @@ class TestBatteryPowerStateCharacteristic:
         }
         assert result.raw_value == expected["raw_value"]
         assert result.battery_present == expected["battery_present"]
-        assert (
-            result.wired_external_power_connected
-            == expected["wired_external_power_connected"]
-        )
-        assert (
-            result.wireless_external_power_connected
-            == expected["wireless_external_power_connected"]
-        )
+        assert result.wired_external_power_connected == expected["wired_external_power_connected"]
+        assert result.wireless_external_power_connected == expected["wireless_external_power_connected"]
         assert result.battery_charge_state == expected["battery_charge_state"]
         assert result.battery_charge_level == expected["battery_charge_level"]
         assert result.battery_charging_type == expected["battery_charging_type"]
@@ -207,7 +201,8 @@ class TestBatteryPowerStateCharacteristic:
         assert result.charging_fault_reason is None
 
     def test_flags_identifier_missing_raises(self):
-        """If Flags indicate Identifier present but payload is too short, raise."""
+        """If Flags indicate Identifier present but payload is too short,
+        raise."""
         char = BatteryPowerStateCharacteristic(uuid="", properties=set())
 
         # Flags=0x01 indicates Identifier present but no extra bytes follow
@@ -249,14 +244,8 @@ class TestBatteryPowerStateCharacteristic:
         }
         assert result.raw_value == expected["raw_value"]
         assert result.battery_present == expected["battery_present"]
-        assert (
-            result.wired_external_power_connected
-            == expected["wired_external_power_connected"]
-        )
-        assert (
-            result.wireless_external_power_connected
-            == expected["wireless_external_power_connected"]
-        )
+        assert result.wired_external_power_connected == expected["wired_external_power_connected"]
+        assert result.wireless_external_power_connected == expected["wireless_external_power_connected"]
         assert result.battery_charge_state == expected["battery_charge_state"]
         assert result.battery_charge_level == expected["battery_charge_level"]
         assert result.battery_charging_type == expected["battery_charging_type"]
@@ -295,9 +284,7 @@ class TestBatteryPowerStateCharacteristic:
         """Test characteristic UUID resolution."""
         from bluetooth_sig.types.gatt_enums import GattProperty
 
-        char = BatteryPowerStateCharacteristic(
-            uuid="2BED", properties={GattProperty.READ}
-        )
+        char = BatteryPowerStateCharacteristic(uuid="2BED", properties={GattProperty.READ})
         assert char.char_uuid == "2BED"
 
     def test_encode_value(self):

@@ -1,9 +1,10 @@
 # mypy: warn_unused_ignores=False
 """Template characteristic classes for common patterns.
 
-This module provides reusable template characteristic classes that eliminate
-code duplication across the 138+ characteristic implementations. Each template
-follows the declarative validation pattern and uses DataParser utilities.
+This module provides reusable template characteristic classes that
+eliminate code duplication across the 138+ characteristic
+implementations. Each template follows the declarative validation
+pattern and uses DataParser utilities.
 """
 
 from __future__ import annotations
@@ -208,12 +209,8 @@ class TemperatureCharacteristic(BaseCharacteristic):
 
     _is_template: bool = True  # Mark as template for test exclusion
     expected_length: int = 2  # type: ignore[assignment]
-    min_value: float = (  # type: ignore[assignment]
-        ABSOLUTE_ZERO_CELSIUS  # Absolute zero in Celsius
-    )
-    max_value: float = (  # type: ignore[assignment]
-        SINT16_MAX * TEMPERATURE_RESOLUTION
-    )  # Max sint16 * resolution
+    min_value: float = ABSOLUTE_ZERO_CELSIUS  # type: ignore[assignment]  # Absolute zero in Celsius
+    max_value: float = SINT16_MAX * TEMPERATURE_RESOLUTION  # type: ignore[assignment]  # Max sint16 * resolution
     expected_type: type = float  # type: ignore[assignment]
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> float:
@@ -369,9 +366,7 @@ class VectorCharacteristic(BaseCharacteristic):  # pylint: disable=too-many-inst
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> VectorData:
         """Parse vector components."""
         if len(data) < self.expected_length:
-            raise ValueError(
-                f"Vector data must be at least {self.expected_length} bytes"
-            )
+            raise ValueError(f"Vector data must be at least {self.expected_length} bytes")
 
         # Parse x, y, z components
         x_raw = DataParser.parse_int16(data, 0, signed=True)
@@ -423,9 +418,7 @@ class ScaledUint16Characteristic(BaseCharacteristic):
     _is_template: bool = True  # Mark as template for test exclusion
     expected_length: int = 2  # type: ignore[assignment]
     min_value: float = 0.0  # type: ignore[assignment]
-    max_value: float = (  # type: ignore[assignment]
-        UINT16_MAX  # Will be scaled by resolution
-    )
+    max_value: float = UINT16_MAX  # type: ignore[assignment]  # Will be scaled by resolution
     expected_type: type = float  # type: ignore[assignment]
 
     # Subclasses should override these
@@ -603,9 +596,7 @@ class Sint24ScaledCharacteristic(BaseCharacteristic):
 
         # Handle sign extension for 24-bit signed value
         if raw_value & Sint24Constants.SIGN_BIT_MASK:  # Check if negative (bit 23 set)
-            raw_value = (
-                raw_value - Sint24Constants.TWO_COMPLEMENT_OFFSET
-            )  # Convert to negative
+            raw_value = raw_value - Sint24Constants.TWO_COMPLEMENT_OFFSET  # Convert to negative
 
         return raw_value * self.resolution
 
@@ -619,9 +610,7 @@ class Sint24ScaledCharacteristic(BaseCharacteristic):
 
         # Convert to unsigned representation for encoding
         if raw_value < 0:
-            raw_unsigned = (
-                raw_value + Sint24Constants.TWO_COMPLEMENT_OFFSET
-            )  # Convert negative to 24-bit unsigned
+            raw_unsigned = raw_value + Sint24Constants.TWO_COMPLEMENT_OFFSET  # Convert negative to 24-bit unsigned
         else:
             raw_unsigned = raw_value
 
@@ -635,7 +624,8 @@ class Sint24ScaledCharacteristic(BaseCharacteristic):
 
 @dataclass
 class SoundPressureCharacteristic(BaseCharacteristic):
-    """Template for sound pressure level measurements (uint16, 0.1 dB resolution).
+    """Template for sound pressure level measurements (uint16, 0.1 dB
+    resolution).
 
     This template handles sound pressure level characteristics following the
     Bluetooth SIG standard format: unsigned 16-bit integer with 0.1 dB resolution.
@@ -796,9 +786,7 @@ class EnumCharacteristic(BaseCharacteristic):
         elif isinstance(data, float):
             raw_value = int(data)
         else:
-            raise TypeError(
-                f"Cannot convert {type(data)} to int for encoding enum value"
-            )
+            raise TypeError(f"Cannot convert {type(data)} to int for encoding enum value")
 
         return DataParser.encode_int8(raw_value, signed=False)
 
@@ -839,9 +827,7 @@ class Vector2DCharacteristic(BaseCharacteristic):  # pylint: disable=too-many-in
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> Vector2DData:
         """Parse 2D vector components."""
         if len(data) < self.expected_length:
-            raise ValueError(
-                f"Vector data must be at least {self.expected_length} bytes"
-            )
+            raise ValueError(f"Vector data must be at least {self.expected_length} bytes")
 
         # Parse x, y components
         x_raw = DataParser.parse_int16(data, 0, signed=True)
@@ -872,7 +858,8 @@ class Vector2DCharacteristic(BaseCharacteristic):  # pylint: disable=too-many-in
 
 @dataclass
 class SignedSoundPressureCharacteristic(BaseCharacteristic):
-    """Template for signed sound pressure level measurements (sint16, 0.1 dB resolution).
+    """Template for signed sound pressure level measurements (sint16, 0.1 dB
+    resolution).
 
     This template handles sound pressure level characteristics that can be negative,
     using signed 16-bit integer with 0.1 dB resolution.

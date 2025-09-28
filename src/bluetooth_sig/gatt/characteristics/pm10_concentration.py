@@ -9,8 +9,8 @@ from .templates import ConcentrationCharacteristic
 class PM10ConcentrationCharacteristic(ConcentrationCharacteristic):
     """PM10 particulate matter concentration characteristic (0x2BD7).
 
-    Represents particulate matter PM10 concentration in micrograms per cubic meter
-    with a resolution of 1 μg/m³.
+    Represents particulate matter PM10 concentration in micrograms per
+    cubic meter with a resolution of 1 μg/m³.
     """
 
     _characteristic_name: str = "Particulate Matter - PM10 Concentration"

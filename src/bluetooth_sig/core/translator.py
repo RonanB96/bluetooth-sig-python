@@ -52,9 +52,7 @@ class BluetoothSIGTranslator:
         """
         # Create characteristic instance for parsing. Pass explicit properties
         # rather than arbitrary kwargs to keep the API clear and type-safe.
-        characteristic = CharacteristicRegistry.create_characteristic(
-            uuid, properties=properties or set()
-        )
+        characteristic = CharacteristicRegistry.create_characteristic(uuid, properties=properties or set())
 
         if characteristic:
             # Use the parse_value method; pass context when provided.
@@ -92,9 +90,7 @@ class BluetoothSIGTranslator:
         try:
             temp_char = char_class(uuid=uuid, properties=set())
             value_type_str = (
-                temp_char.value_type.value
-                if hasattr(temp_char.value_type, "value")
-                else str(temp_char.value_type)
+                temp_char.value_type.value if hasattr(temp_char.value_type, "value") else str(temp_char.value_type)
             )
             return CharacteristicInfo(
                 uuid=temp_char.char_uuid,
@@ -149,9 +145,7 @@ class BluetoothSIGTranslator:
 
         return None
 
-    def get_characteristic_info_by_name(
-        self, name: CharacteristicName
-    ) -> CharacteristicInfo | None:
+    def get_characteristic_info_by_name(self, name: CharacteristicName) -> CharacteristicInfo | None:
         """Get characteristic info by enum name.
 
         Args:
@@ -165,15 +159,11 @@ class BluetoothSIGTranslator:
             try:
                 temp_char = char_class(uuid="", properties=set())
                 value_type_str = (
-                    temp_char.value_type.value
-                    if hasattr(temp_char.value_type, "value")
-                    else str(temp_char.value_type)
+                    temp_char.value_type.value if hasattr(temp_char.value_type, "value") else str(temp_char.value_type)
                 )
                 return CharacteristicInfo(
                     uuid=temp_char.char_uuid,
-                    name=getattr(
-                        temp_char, "_characteristic_name", char_class.__name__
-                    ),
+                    name=getattr(temp_char, "_characteristic_name", char_class.__name__),
                     value_type=value_type_str,
                     unit=temp_char.unit,
                 )
@@ -194,9 +184,7 @@ class BluetoothSIGTranslator:
         try:
             uuid_info = uuid_registry.get_service_info(name)
             if uuid_info:
-                return ServiceInfo(
-                    uuid=uuid_info.uuid, name=uuid_info.name, characteristics=[]
-                )
+                return ServiceInfo(uuid=uuid_info.uuid, name=uuid_info.name, characteristics=[])
         except Exception:  # pylint: disable=broad-exception-caught
             pass
 
@@ -253,9 +241,7 @@ class BluetoothSIGTranslator:
         for service_class in GattServiceRegistry.get_all_services():
             try:
                 temp_service = service_class()
-                service_name = getattr(
-                    temp_service, "_service_name", service_class.__name__
-                )
+                service_name = getattr(temp_service, "_service_name", service_class.__name__)
                 result[service_name] = temp_service.SERVICE_UUID
             except Exception:  # pylint: disable=broad-exception-caught
                 continue
@@ -268,9 +254,7 @@ class BluetoothSIGTranslator:
             services: Dictionary of service UUIDs to their characteristics
         """
         for uuid, service_data in services.items():
-            service = GattServiceRegistry.create_service(
-                uuid, service_data.get("characteristics", {})
-            )
+            service = GattServiceRegistry.create_service(uuid, service_data.get("characteristics", {}))
             if service:
                 self._services[uuid] = service
 
@@ -383,9 +367,7 @@ class BluetoothSIGTranslator:
 
         return results
 
-    def get_characteristics_info(
-        self, uuids: list[str]
-    ) -> dict[str, CharacteristicInfo | None]:
+    def get_characteristics_info(self, uuids: list[str]) -> dict[str, CharacteristicInfo | None]:
         """Get information about multiple characteristics by UUID.
 
         Args:

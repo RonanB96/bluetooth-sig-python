@@ -40,22 +40,20 @@ class PulseOximetryData:
 class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
     """PLX Continuous Measurement characteristic (0x2A5F).
 
-    Used to transmit SpO2 (blood oxygen saturation) and pulse rate measurements.
+    Used to transmit SpO2 (blood oxygen saturation) and pulse rate
+    measurements.
     """
 
     _characteristic_name: str = "PLX Continuous Measurement"
 
     # Declarative validation (automatic)
     min_length: int = 5  # Flags(1) + SpO2(2) + PulseRate(2) minimum
-    max_length: int = (
-        16  # + Timestamp(7) + MeasurementStatus(2) + DeviceStatus(3) maximum
-    )
+    max_length: int = 16  # + Timestamp(7) + MeasurementStatus(2) + DeviceStatus(3) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> PulseOximetryData:  # pylint: disable=too-many-locals
-        """Parse pulse oximetry measurement data according to Bluetooth specification.
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> PulseOximetryData:  # pylint: disable=too-many-locals
+        """Parse pulse oximetry measurement data according to Bluetooth
+        specification.
 
         Format: Flags(1) + SpO2(2) + Pulse Rate(2) + [Timestamp(7)] +
         [Measurement Status(2)] + [Device Status(3)] + [Pulse Amplitude Index(2)]
@@ -86,20 +84,12 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
             offset += 7
 
         # Parse optional measurement status (2 bytes) if present
-        if (
-            PulseOximetryFlags.MEASUREMENT_STATUS_PRESENT in flags
-            and len(data) >= offset + 2
-        ):
-            result.measurement_status = DataParser.parse_int16(
-                data, offset, signed=False
-            )
+        if PulseOximetryFlags.MEASUREMENT_STATUS_PRESENT in flags and len(data) >= offset + 2:
+            result.measurement_status = DataParser.parse_int16(data, offset, signed=False)
             offset += 2
 
         # Parse optional device and sensor status (3 bytes) if present
-        if (
-            PulseOximetryFlags.DEVICE_STATUS_PRESENT in flags
-            and len(data) >= offset + 3
-        ):
+        if PulseOximetryFlags.DEVICE_STATUS_PRESENT in flags and len(data) >= offset + 3:
             device_status = DataParser.parse_int32(
                 data[offset : offset + 3] + b"\x00", 0, signed=False
             )  # Pad to 4 bytes
@@ -107,10 +97,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
             offset += 3
 
         # Parse optional pulse amplitude index (2 bytes) if present
-        if (
-            PulseOximetryFlags.PULSE_AMPLITUDE_INDEX_PRESENT in flags
-            and len(data) >= offset + 2
-        ):
+        if PulseOximetryFlags.PULSE_AMPLITUDE_INDEX_PRESENT in flags and len(data) >= offset + 2:
             result.pulse_amplitude_index = IEEE11073Parser.parse_sfloat(data, offset)
 
         return result
@@ -124,7 +111,6 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
         Returns:
             Encoded bytes representing the measurement
         """
-
         # Convert to IEEE-11073 SFLOAT format (simplified as uint16)
         spo2_raw = round(data.spo2 * 10)  # 0.1% resolution
         pulse_rate_raw = round(data.pulse_rate)  # 1 bpm resolution

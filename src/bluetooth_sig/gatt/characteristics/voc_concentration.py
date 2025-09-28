@@ -10,7 +10,8 @@ from .templates import SimpleUint16Characteristic
 
 # Special value constants for VOC Concentration characteristic
 class VOCConcentrationValues:  # pylint: disable=too-few-public-methods
-    """Special values for VOC Concentration characteristic per Bluetooth SIG specification."""
+    """Special values for VOC Concentration characteristic per Bluetooth SIG
+    specification."""
 
     VALUE_65534_OR_GREATER = 0xFFFE  # Indicates value is 65534 or greater
     VALUE_UNKNOWN = 0xFFFF  # Indicates value is not known
@@ -22,7 +23,9 @@ class VOCConcentrationCharacteristic(SimpleUint16Characteristic):
 
     Uses uint16 format as per SIG specification.
     Unit: ppb (parts per billion)
-    Range: 0-65533 (VOCConcentrationValues.VALUE_65534_OR_GREATER = ≥65534, VOCConcentrationValues.VALUE_UNKNOWN = unknown)
+    Range: 0-65533
+    (VOCConcentrationValues.VALUE_65534_OR_GREATER = ≥65534,
+     VOCConcentrationValues.VALUE_UNKNOWN = unknown)
     """
 
     _characteristic_name: str = "VOC Concentration"

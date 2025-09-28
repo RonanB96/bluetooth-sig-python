@@ -1,9 +1,10 @@
-"""Device class for grouping BLE device services, characteristics, encryption, and advertiser data.
+"""Device class for grouping BLE device services, characteristics, encryption,
+and advertiser data.
 
-This module provides a high-level Device abstraction that groups all services,
-characteristics, encryption requirements, and advertiser data for a BLE device.
-It integrates with the BluetoothSIGTranslator for parsing while providing a
-unified view of device state.
+This module provides a high-level Device abstraction that groups all
+services, characteristics, encryption requirements, and advertiser data
+for a BLE device. It integrates with the BluetoothSIGTranslator for
+parsing while providing a unified view of device state.
 """
 
 from __future__ import annotations
@@ -103,14 +104,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def __str__(self) -> str:
         service_count = len(self.services)
-        char_count = sum(
-            len(service.characteristics) for service in self.services.values()
-        )
+        char_count = sum(len(service.characteristics) for service in self.services.values())
         return f"Device({self.address}, name={self.name}, {service_count} services, {char_count} characteristics)"
 
-    def add_service(
-        self, service_name: str | ServiceName, characteristics: dict[str, bytes]
-    ) -> None:
+    def add_service(self, service_name: str | ServiceName, characteristics: dict[str, bytes]) -> None:
         """Add a service to the device with its characteristics.
 
         Args:
@@ -129,9 +126,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             # Fallback to unknown service if UUID not found
             service: BaseGattService = UnknownService()
             device_service = DeviceService(service=service, characteristics={})
-            self.services[
-                service_name if isinstance(service_name, str) else service_name.value
-            ] = device_service
+            self.services[service_name if isinstance(service_name, str) else service_name.value] = device_service
             return
 
         service_class = GattServiceRegistry.get_service_class(service_uuid)
@@ -149,20 +144,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         base_ctx = CharacteristicContext(device_info=device_info)
 
-        parsed_characteristics = self.translator.parse_characteristics(
-            characteristics, ctx=base_ctx
-        )
+        parsed_characteristics = self.translator.parse_characteristics(characteristics, ctx=base_ctx)
 
         for char_data in parsed_characteristics.values():
             self.update_encryption_requirements(char_data)
 
-        device_service = DeviceService(
-            service=service, characteristics=parsed_characteristics
-        )
+        device_service = DeviceService(service=service, characteristics=parsed_characteristics)
 
-        service_key = (
-            service_name if isinstance(service_name, str) else service_name.value
-        )
+        service_key = service_name if isinstance(service_name, str) else service_name.value
         self.services[service_key] = device_service
 
     def attach_connection_manager(self, manager: ConnectionManagerProtocol) -> None:
@@ -174,7 +163,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.connection_manager = manager
 
     async def detach_connection_manager(self) -> None:
-        """Detach the current connection manager and disconnect if connected."""
+        """Detach the current connection manager and disconnect if
+        connected."""
         if self.connection_manager:
             await self.disconnect()
         self.connection_manager = None
@@ -235,9 +225,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         resolved_uuid = self._resolve_characteristic_name(char_name)
         await self.connection_manager.write_gatt_char(resolved_uuid, data)
 
-    async def start_notify(
-        self, char_name: str | CharacteristicName, callback: Callable[[Any], None]
-    ) -> None:
+    async def start_notify(self, char_name: str | CharacteristicName, callback: Callable[[Any], None]) -> None:
         """Start notifications for a characteristic.
 
         Args:
@@ -282,9 +270,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         else:
             norm = identifier
         stripped = norm.replace("-", "")
-        if len(stripped) in (4, 8, 32) and all(
-            c in "0123456789abcdefABCDEF" for c in stripped
-        ):
+        if len(stripped) in (4, 8, 32) and all(c in "0123456789abcdefABCDEF" for c in stripped):
             return norm
 
         raise ValueError(f"Unknown characteristic name: '{identifier}'")
@@ -317,7 +303,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     def get_characteristic_data(
         self, service_name: str | ServiceName, char_uuid: str
     ) -> CharacteristicDataProtocol | None:
-        """Get parsed characteristic data for a specific service and characteristic.
+        """Get parsed characteristic data for a specific service and
+        characteristic.
 
         Args:
             service_name: Name or enum of the service
@@ -326,16 +313,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns:
             Parsed characteristic data or None if not found
         """
-        service_key = (
-            service_name if isinstance(service_name, str) else service_name.value
-        )
+        service_key = service_name if isinstance(service_name, str) else service_name.value
         service = self.services.get(service_key)
         if service:
             return service.characteristics.get(char_uuid)
         return None
 
     def update_encryption_requirements(self, char_data: CharacteristicData) -> None:
-        """Update device encryption requirements based on characteristic properties.
+        """Update device encryption requirements based on characteristic
+        properties.
 
         Args:
             char_data: The parsed characteristic data with properties
@@ -343,16 +329,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         properties = char_data.properties
 
         # Check for encryption requirements
-        if any(
-            prop in properties
-            for prop in ["encrypt-read", "encrypt-write", "encrypt-notify"]
-        ):
+        if any(prop in properties for prop in ["encrypt-read", "encrypt-write", "encrypt-notify"]):
             self.encryption.requires_encryption = True
 
         # Check for authentication requirements
-        if any(
-            prop in properties for prop in ["auth-read", "auth-write", "auth-notify"]
-        ):
+        if any(prop in properties for prop in ["auth-read", "auth-write", "auth-notify"]):
             self.encryption.requires_authentication = True
 
     def _parse_auxiliary_packets(self, aux_ptr: bytes) -> list[BLEAdvertisingPDU]:
@@ -400,10 +381,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     local_name = ad_data.hex()
             elif ad_type == BLEAdvertisementTypes.TX_POWER_LEVEL and len(ad_data) >= 1:
                 tx_power = int.from_bytes(ad_data[:1], byteorder="little", signed=True)
-            elif (
-                ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA
-                and len(ad_data) >= 2
-            ):
+            elif ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA and len(ad_data) >= 2:
                 company_id = ad_data[0] | (ad_data[1] << 8)
                 manufacturer_data[company_id] = ad_data[2:]
 
@@ -464,21 +442,13 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 except UnicodeDecodeError:
                     parsed.local_name = ad_data.hex()
             elif ad_type == BLEAdvertisementTypes.TX_POWER_LEVEL and len(ad_data) >= 1:
-                parsed.tx_power = int.from_bytes(
-                    ad_data[:1], byteorder="little", signed=True
-                )
-            elif (
-                ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA
-                and len(ad_data) >= 2
-            ):
+                parsed.tx_power = int.from_bytes(ad_data[:1], byteorder="little", signed=True)
+            elif ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA and len(ad_data) >= 2:
                 company_id = ad_data[0] | (ad_data[1] << 8)
                 parsed.manufacturer_data[company_id] = ad_data[2:]
             elif ad_type == BLEAdvertisementTypes.APPEARANCE and len(ad_data) >= 2:
                 parsed.appearance = ad_data[0] | (ad_data[1] << 8)
-            elif (
-                ad_type == BLEAdvertisementTypes.SERVICE_DATA_16BIT
-                and len(ad_data) >= 2
-            ):
+            elif ad_type == BLEAdvertisementTypes.SERVICE_DATA_16BIT and len(ad_data) >= 2:
                 service_uuid = f"{ad_data[0] | (ad_data[1] << 8):04X}"
                 parsed.service_data[service_uuid] = ad_data[2:]
             elif ad_type == BLEAdvertisementTypes.URI:
@@ -494,10 +464,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 parsed.le_supported_features = ad_data
             elif ad_type == BLEAdvertisementTypes.ENCRYPTED_ADVERTISING_DATA:
                 parsed.encrypted_advertising_data = ad_data
-            elif (
-                ad_type
-                == BLEAdvertisementTypes.PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION
-            ):
+            elif ad_type == BLEAdvertisementTypes.PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION:
                 parsed.periodic_advertising_response_timing = ad_data
             elif ad_type == BLEAdvertisementTypes.ELECTRONIC_SHELF_LABEL:
                 parsed.electronic_shelf_label = ad_data
@@ -528,32 +495,17 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                         addr_bytes = ad_data[j : j + 6]
                         addr_str = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
                         parsed.random_target_address.append(addr_str)
-            elif (
-                ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL
-                and len(ad_data) >= 2
-            ):
+            elif ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL and len(ad_data) >= 2:
                 parsed.advertising_interval = ad_data[0] | (ad_data[1] << 8)
-            elif (
-                ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL_LONG
-                and len(ad_data) >= 3
-            ):
-                parsed.advertising_interval_long = (
-                    ad_data[0] | (ad_data[1] << 8) | (ad_data[2] << 16)
-                )
-            elif (
-                ad_type == BLEAdvertisementTypes.LE_BLUETOOTH_DEVICE_ADDRESS
-                and len(ad_data) >= 6
-            ):
+            elif ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL_LONG and len(ad_data) >= 3:
+                parsed.advertising_interval_long = ad_data[0] | (ad_data[1] << 8) | (ad_data[2] << 16)
+            elif ad_type == BLEAdvertisementTypes.LE_BLUETOOTH_DEVICE_ADDRESS and len(ad_data) >= 6:
                 addr_bytes = ad_data[:6]
-                parsed.le_bluetooth_device_address = ":".join(
-                    f"{b:02X}" for b in addr_bytes[::-1]
-                )
+                parsed.le_bluetooth_device_address = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
             elif ad_type == BLEAdvertisementTypes.LE_ROLE and len(ad_data) >= 1:
                 parsed.le_role = ad_data[0]
             elif ad_type == BLEAdvertisementTypes.CLASS_OF_DEVICE and len(ad_data) >= 3:
-                parsed.class_of_device = (
-                    ad_data[0] | (ad_data[1] << 8) | (ad_data[2] << 16)
-                )
+                parsed.class_of_device = ad_data[0] | (ad_data[1] << 8) | (ad_data[2] << 16)
             elif ad_type == BLEAdvertisementTypes.SIMPLE_PAIRING_HASH_C:
                 parsed.simple_pairing_hash_c = ad_data
             elif ad_type == BLEAdvertisementTypes.SIMPLE_PAIRING_RANDOMIZER_R:
@@ -599,9 +551,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             if service_uuid not in self.services:
                 # Create a service instance - we'll use UnknownService for undiscovered services
                 service_instance = UnknownService()
-                device_service = DeviceService(
-                    service=service_instance, characteristics={}
-                )
+                device_service = DeviceService(service=service_instance, characteristics={})
                 self.services[service_uuid] = device_service
 
             # Add characteristics to the service
@@ -633,9 +583,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     return char_info
         return None
 
-    async def read_multiple(
-        self, char_names: list[str | CharacteristicName]
-    ) -> dict[str, Any | None]:
+    async def read_multiple(self, char_names: list[str | CharacteristicName]) -> dict[str, Any | None]:
         """Read multiple characteristics in batch.
 
         Args:
@@ -663,9 +611,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return results
 
-    async def write_multiple(
-        self, data_map: dict[str | CharacteristicName, bytes]
-    ) -> dict[str, bool]:
+    async def write_multiple(self, data_map: dict[str | CharacteristicName, bytes]) -> dict[str, bool]:
         """Write to multiple characteristics in batch.
 
         Args:
@@ -710,9 +656,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         else:
             # Update existing cache object with current data
             self._device_info_cache.name = self.name
-            self._device_info_cache.manufacturer_data = (
-                self.advertiser_data.manufacturer_data
-            )
+            self._device_info_cache.manufacturer_data = self.advertiser_data.manufacturer_data
             self._device_info_cache.service_uuids = self.advertiser_data.service_uuids
         return self._device_info_cache
 
@@ -752,9 +696,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.services.get(service_uuid)
 
-    def get_services_by_name(
-        self, service_name: str | ServiceName
-    ) -> list[DeviceService]:
+    def get_services_by_name(self, service_name: str | ServiceName) -> list[DeviceService]:
         """Get services by name.
 
         Args:
@@ -770,9 +712,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return [self.services[service_uuid]]
         return []
 
-    def list_characteristics(
-        self, service_uuid: str | None = None
-    ) -> dict[str, list[str]]:
+    def list_characteristics(self, service_uuid: str | None = None) -> dict[str, list[str]]:
         """List all characteristics, optionally filtered by service.
 
         Args:
@@ -787,7 +727,4 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 return {service_uuid: list(service.characteristics.keys())}
             return {}
 
-        return {
-            svc_uuid: list(service.characteristics.keys())
-            for svc_uuid, service in self.services.items()
-        }
+        return {svc_uuid: list(service.characteristics.keys()) for svc_uuid, service in self.services.items()}

@@ -51,16 +51,15 @@ class CyclingPowerVectorData:
 class CyclingPowerVectorCharacteristic(BaseCharacteristic):
     """Cycling Power Vector characteristic (0x2A64).
 
-    Used to transmit detailed cycling power vector data including force and
-    torque measurements at different crank angles.
+    Used to transmit detailed cycling power vector data including force
+    and torque measurements at different crank angles.
     """
 
     _characteristic_name: str = "Cycling Power Vector"
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> CyclingPowerVectorData:
-        """Parse cycling power vector data according to Bluetooth specification.
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> CyclingPowerVectorData:
+        """Parse cycling power vector data according to Bluetooth
+        specification.
 
         Format: Flags(1) + Crank Revolution Data(2) + Last Crank Event Time(2) +
         First Crank Measurement Angle(2) + [Instantaneous Force Magnitude Array] +
@@ -101,14 +100,11 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
         torque_magnitudes: list[float] | None = None
 
         # Parse optional instantaneous force magnitude array if present
-        if (
-            flags & CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT
-        ) and len(data) > offset:
+        if (flags & CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT) and len(data) > offset:
             force_magnitudes = []
             # Each force magnitude is 2 bytes (signed 16-bit, 1 N units)
             while offset + 1 < len(data) and not (
-                flags
-                & CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
+                flags & CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
             ):  # Stop if torque data follows
                 if offset + 2 > len(data):
                     break
@@ -117,9 +113,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
                 offset += 2
 
         # Parse optional instantaneous torque magnitude array if present
-        if (
-            flags & CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
-        ) and len(data) > offset:
+        if (flags & CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT) and len(data) > offset:
             torque_magnitudes = []
             # Each torque magnitude is 2 bytes (signed 16-bit, 1/32 Nm units)
             while offset + 1 < len(data):
@@ -147,10 +141,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
             Encoded bytes representing the power vector
         """
         if not isinstance(data, CyclingPowerVectorData):
-            raise TypeError(
-                f"Cycling power vector data must be a CyclingPowerVectorData, "
-                f"got {type(data).__name__}"
-            )
+            raise TypeError(f"Cycling power vector data must be a CyclingPowerVectorData, got {type(data).__name__}")
 
         # Extract values from dataclass
         crank_revolutions = data.crank_revolution_data.crank_revolutions
@@ -174,13 +165,9 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
         # Validate ranges
         if not 0 <= crank_revolutions <= 0xFFFF:
-            raise ValueError(
-                f"Crank revolutions {crank_revolutions} exceeds uint16 range"
-            )
+            raise ValueError(f"Crank revolutions {crank_revolutions} exceeds uint16 range")
         if not 0 <= crank_event_time_raw <= 0xFFFF:
-            raise ValueError(
-                f"Crank event time {crank_event_time_raw} exceeds uint16 range"
-            )
+            raise ValueError(f"Crank event time {crank_event_time_raw} exceeds uint16 range")
         if not 0 <= first_angle_raw <= 0xFFFF:
             raise ValueError(f"First angle {first_angle_raw} exceeds uint16 range")
 

@@ -1,7 +1,8 @@
 """Core GATT enumerations for strong typing.
 
-Defines enums for GATT properties, value types, characteristic names, and other core BLE concepts
-to replace string usage with type-safe alternatives.
+Defines enums for GATT properties, value types, characteristic names,
+and other core BLE concepts to replace string usage with type-safe
+alternatives.
 """
 
 from __future__ import annotations
@@ -116,9 +117,7 @@ class CharacteristicName(Enum):
     CO2_CONCENTRATION = "Carbon Dioxide Concentration"
     METHANE_CONCENTRATION = "Methane Concentration"
     NITROGEN_DIOXIDE_CONCENTRATION = "Nitrogen Dioxide Concentration"
-    NON_METHANE_VOC_CONCENTRATION = (
-        "Non-Methane Volatile Organic Compounds Concentration"
-    )
+    NON_METHANE_VOC_CONCENTRATION = "Non-Methane Volatile Organic Compounds Concentration"
     OZONE_CONCENTRATION = "Ozone Concentration"
     PM1_CONCENTRATION = "Particulate Matter - PM1 Concentration"
     PM10_CONCENTRATION = "Particulate Matter - PM10 Concentration"

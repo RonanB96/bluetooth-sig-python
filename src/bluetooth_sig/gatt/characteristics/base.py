@@ -43,13 +43,9 @@ class CharacteristicMeta(ABCMeta):
             is_in_templates = "templates" in module_name
 
             # If it's NOT in templates.py and inherits from a template, mark as concrete
-            if not is_in_templates and not namespace.get(
-                "_is_template_override", False
-            ):
+            if not is_in_templates and not namespace.get("_is_template_override", False):
                 # Check if any parent has _is_template = True
-                has_template_parent = any(
-                    getattr(base, "_is_template", False) for base in bases
-                )
+                has_template_parent = any(getattr(base, "_is_template", False) for base in bases)
                 if has_template_parent and "_is_template" not in namespace:
                     new_class._is_template = False  # type: ignore[attr-defined] # Mark as concrete characteristic
 
@@ -126,10 +122,12 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     expected_type: type | None = field(default=None)
 
     def __post_init__(self) -> None:
-        """Initialize characteristic with UUID from registry based on class name.
+        """Initialize characteristic with UUID from registry based on class
+        name.
 
         Automatically resolves metadata from cross-file YAML references
-        including UUIDs, data types, field sizes, unit symbols, and byte order hints.
+        including UUIDs, data types, field sizes, unit symbols, and byte
+        order hints.
         """
         # Ensure properties is a typed set for static analysis and runtime
         if self.properties is None:
@@ -156,9 +154,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                         "float64": ValueType.FLOAT,
                         "utf8s": ValueType.STRING,
                     }
-                    self.value_type = type_mapping.get(
-                        yaml_spec.data_type, ValueType.BYTES
-                    )
+                    self.value_type = type_mapping.get(yaml_spec.data_type, ValueType.BYTES)
                 self._yaml_data_type = yaml_spec.data_type
                 self._yaml_field_size = yaml_spec.field_size
                 self._yaml_unit_symbol = yaml_spec.unit_symbol
@@ -239,9 +235,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         display_name = " ".join(words)
 
         # Try different name formats
-        org_name = "org.bluetooth.characteristic." + "_".join(
-            word.lower() for word in words
-        )
+        org_name = "org.bluetooth.characteristic." + "_".join(word.lower() for word in words)
         names_to_try = [
             name,  # Full class name (e.g. BatteryLevelCharacteristic)
             char_name,  # Without 'Characteristic' suffix
@@ -277,11 +271,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         if characteristic_name:
             return str(characteristic_name)
         info = uuid_registry.get_characteristic_info(self.char_uuid)
-        return (
-            str(info.name)
-            if info and info.name
-            else f"Unknown Characteristic ({self.char_uuid})"
-        )
+        return str(info.name) if info and info.name else f"Unknown Characteristic ({self.char_uuid})"
 
     @property
     def summary(self) -> str:
@@ -293,7 +283,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def display_name(self) -> str:
         """Get the display name for this characteristic.
 
-        Uses explicit _characteristic_name if set, otherwise falls back to class name.
+        Uses explicit _characteristic_name if set, otherwise falls back
+        to class name.
         """
         return getattr(self, "_characteristic_name", self.__class__.__name__)
 
@@ -334,9 +325,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         """Validate data length meets requirements."""
         length = len(data)
         if self.expected_length is not None and length != self.expected_length:
-            raise InsufficientDataError(
-                "characteristic_data", data, self.expected_length
-            )
+            raise InsufficientDataError("characteristic_data", data, self.expected_length)
         if self.min_length is not None and length < self.min_length:
             raise InsufficientDataError("characteristic_data", data, self.min_length)
         if self.max_length is not None and length > self.max_length:
@@ -356,9 +345,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         """Get characteristic UUID by name using cached registry lookup."""
         # Convert enum to string value for registry lookup
         name_str = (
-            characteristic_name.value
-            if isinstance(characteristic_name, CharacteristicName)
-            else characteristic_name
+            characteristic_name.value if isinstance(characteristic_name, CharacteristicName) else characteristic_name
         )
         char_info = uuid_registry.get_characteristic_info(name_str)
         return char_info.uuid if char_info else None
@@ -378,9 +365,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         return ctx.other_characteristics.get(char_uuid)
 
-    def parse_value(
-        self, data: bytes | bytearray, ctx: Any | None = None
-    ) -> CharacteristicData:
+    def parse_value(self, data: bytes | bytearray, ctx: Any | None = None) -> CharacteristicData:
         """Parse characteristic data with automatic validation.
 
         This method automatically validates input data length and parsed values
@@ -447,8 +432,9 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         """Get the unit of measurement for this characteristic.
 
         First tries manual unit override, then YAML cross-reference,
-        then falls back to basic YAML registry.
-        This allows manual overrides to take precedence while using maximum automation as default.
+        then falls back to basic YAML registry. This allows manual
+        overrides to take precedence while using maximum automation as
+        default.
         """
         # First try manual unit override (takes priority)
         manual_unit = getattr(self, "_manual_unit", None)
@@ -468,10 +454,12 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     @property
     def size(self) -> int | None:
-        """Get the size in bytes for this characteristic from YAML specifications.
+        """Get the size in bytes for this characteristic from YAML
+        specifications.
 
-        Returns the field size from YAML automation if available, otherwise None.
-        This is useful for determining the expected data length for parsing and encoding.
+        Returns the field size from YAML automation if available,
+        otherwise None. This is useful for determining the expected data
+        length for parsing and encoding.
         """
         # First try manual size override if set
         if hasattr(self, "_manual_size"):
@@ -492,8 +480,9 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def value_type_resolved(self) -> ValueType:
         """Get the value type for this characteristic.
 
-        First tries manual value_type override, then falls back to YAML registry.
-        This allows manual overrides to take precedence while using automatic parsing as default.
+        First tries manual value_type override, then falls back to YAML
+        registry. This allows manual overrides to take precedence while
+        using automatic parsing as default.
         """
         # First try manual value_type override (takes priority)
         manual_value_type = getattr(self, "_manual_value_type", None)
@@ -558,13 +547,12 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return False
 
     def get_byte_order_hint(self) -> str:
-        """Get byte order hint (Bluetooth SIG uses little-endian by convention)."""
+        """Get byte order hint (Bluetooth SIG uses little-endian by
+        convention)."""
         return "little"
 
     @classmethod
-    def from_uuid(
-        cls, uuid: str, properties: set[GattProperty] | None = None
-    ) -> BaseCharacteristic:
+    def from_uuid(cls, uuid: str, properties: set[GattProperty] | None = None) -> BaseCharacteristic:
         """Create a characteristic instance from UUID.
 
         Args:

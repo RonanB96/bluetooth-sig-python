@@ -1,8 +1,8 @@
 """Advertising data parser for BLE devices.
 
-This module provides a dedicated parser for BLE advertising data packets,
-extracting device information, manufacturer data, and service UUIDs from
-both legacy and extended advertising formats.
+This module provides a dedicated parser for BLE advertising data
+packets, extracting device information, manufacturer data, and service
+UUIDs from both legacy and extended advertising formats.
 """
 
 from __future__ import annotations
@@ -23,8 +23,8 @@ from ..types import (
 class AdvertisingParser:  # pylint: disable=too-few-public-methods
     """Parser for BLE advertising data packets.
 
-    Handles both legacy and extended advertising PDU formats,
-    extracting device information, manufacturer data, and service UUIDs.
+    Handles both legacy and extended advertising PDU formats, extracting
+    device information, manufacturer data, and service UUIDs.
     """
 
     def parse_advertising_data(self, raw_data: bytes) -> DeviceAdvertiserData:
@@ -81,9 +81,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
 
         auxiliary_packets: list[BLEAdvertisingPDU] = []
         if pdu.extended_header and pdu.extended_header.auxiliary_pointer:
-            aux_packets = self._parse_auxiliary_packets(
-                pdu.extended_header.auxiliary_pointer
-            )
+            aux_packets = self._parse_auxiliary_packets(pdu.extended_header.auxiliary_pointer)
             auxiliary_packets.extend(aux_packets)
 
         return DeviceAdvertiserData(
@@ -126,14 +124,8 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
         if not extended_header:
             return None
 
-        payload_start = (
-            extended_header_start
-            + extended_header.extended_header_length
-            + PDUConstants.EXT_HEADER_LENGTH
-        )
-        payload_length = length - (
-            extended_header.extended_header_length + PDUConstants.EXT_HEADER_LENGTH
-        )
+        payload_start = extended_header_start + extended_header.extended_header_length + PDUConstants.EXT_HEADER_LENGTH
+        payload_length = length - (extended_header.extended_header_length + PDUConstants.EXT_HEADER_LENGTH)
 
         if payload_start + payload_length > len(data):
             return None
@@ -181,17 +173,13 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
         if header.has_extended_advertiser_address:
             if offset + PDUConstants.BLE_ADDR > len(data):
                 return None
-            header.extended_advertiser_address = data[
-                offset : offset + PDUConstants.BLE_ADDR
-            ]
+            header.extended_advertiser_address = data[offset : offset + PDUConstants.BLE_ADDR]
             offset += PDUConstants.BLE_ADDR
 
         if header.has_extended_target_address:
             if offset + PDUConstants.BLE_ADDR > len(data):
                 return None
-            header.extended_target_address = data[
-                offset : offset + PDUConstants.BLE_ADDR
-            ]
+            header.extended_target_address = data[offset : offset + PDUConstants.BLE_ADDR]
             offset += PDUConstants.BLE_ADDR
 
         if header.has_cte_info:
@@ -203,9 +191,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
         if header.has_advertising_data_info:
             if offset + PDUConstants.ADV_DATA_INFO > len(data):
                 return None
-            header.advertising_data_info = data[
-                offset : offset + PDUConstants.ADV_DATA_INFO
-            ]
+            header.advertising_data_info = data[offset : offset + PDUConstants.ADV_DATA_INFO]
             offset += PDUConstants.ADV_DATA_INFO
 
         if header.has_auxiliary_pointer:
@@ -296,10 +282,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                     local_name = ad_data.hex()
             elif ad_type == BLEAdvertisementTypes.TX_POWER_LEVEL and len(ad_data) >= 1:
                 tx_power = int.from_bytes(ad_data[:1], byteorder="little", signed=True)
-            elif (
-                ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA
-                and len(ad_data) >= 2
-            ):
+            elif ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA and len(ad_data) >= 2:
                 company_id = DataParser.parse_int16(ad_data, 0, signed=False)
                 manufacturer_data[company_id] = ad_data[2:]
 
@@ -357,21 +340,13 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 except UnicodeDecodeError:
                     parsed.local_name = ad_data.hex()
             elif ad_type == BLEAdvertisementTypes.TX_POWER_LEVEL and len(ad_data) >= 1:
-                parsed.tx_power = int.from_bytes(
-                    ad_data[:1], byteorder="little", signed=True
-                )
-            elif (
-                ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA
-                and len(ad_data) >= 2
-            ):
+                parsed.tx_power = int.from_bytes(ad_data[:1], byteorder="little", signed=True)
+            elif ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA and len(ad_data) >= 2:
                 company_id = DataParser.parse_int16(ad_data, 0, signed=False)
                 parsed.manufacturer_data[company_id] = ad_data[2:]
             elif ad_type == BLEAdvertisementTypes.APPEARANCE and len(ad_data) >= 2:
                 parsed.appearance = DataParser.parse_int16(ad_data, 0, signed=False)
-            elif (
-                ad_type == BLEAdvertisementTypes.SERVICE_DATA_16BIT
-                and len(ad_data) >= 2
-            ):
+            elif ad_type == BLEAdvertisementTypes.SERVICE_DATA_16BIT and len(ad_data) >= 2:
                 service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
                 parsed.service_data[service_uuid] = ad_data[2:]
             elif ad_type == BLEAdvertisementTypes.URI:
@@ -387,10 +362,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 parsed.le_supported_features = ad_data
             elif ad_type == BLEAdvertisementTypes.ENCRYPTED_ADVERTISING_DATA:
                 parsed.encrypted_advertising_data = ad_data
-            elif (
-                ad_type
-                == BLEAdvertisementTypes.PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION
-            ):
+            elif ad_type == BLEAdvertisementTypes.PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION:
                 parsed.periodic_advertising_response_timing = ad_data
             elif ad_type == BLEAdvertisementTypes.ELECTRONIC_SHELF_LABEL:
                 parsed.electronic_shelf_label = ad_data
@@ -421,34 +393,17 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                         addr_bytes = ad_data[j : j + 6]
                         addr_str = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
                         parsed.random_target_address.append(addr_str)
-            elif (
-                ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL
-                and len(ad_data) >= 2
-            ):
-                parsed.advertising_interval = DataParser.parse_int16(
-                    ad_data, 0, signed=False
-                )
-            elif (
-                ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL_LONG
-                and len(ad_data) >= 3
-            ):
-                parsed.advertising_interval_long = int.from_bytes(
-                    ad_data[:3], byteorder="little", signed=False
-                )
-            elif (
-                ad_type == BLEAdvertisementTypes.LE_BLUETOOTH_DEVICE_ADDRESS
-                and len(ad_data) >= 6
-            ):
+            elif ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL and len(ad_data) >= 2:
+                parsed.advertising_interval = DataParser.parse_int16(ad_data, 0, signed=False)
+            elif ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL_LONG and len(ad_data) >= 3:
+                parsed.advertising_interval_long = int.from_bytes(ad_data[:3], byteorder="little", signed=False)
+            elif ad_type == BLEAdvertisementTypes.LE_BLUETOOTH_DEVICE_ADDRESS and len(ad_data) >= 6:
                 addr_bytes = ad_data[:6]
-                parsed.le_bluetooth_device_address = ":".join(
-                    f"{b:02X}" for b in addr_bytes[::-1]
-                )
+                parsed.le_bluetooth_device_address = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
             elif ad_type == BLEAdvertisementTypes.LE_ROLE and len(ad_data) >= 1:
                 parsed.le_role = ad_data[0]
             elif ad_type == BLEAdvertisementTypes.CLASS_OF_DEVICE and len(ad_data) >= 3:
-                parsed.class_of_device = int.from_bytes(
-                    ad_data[:3], byteorder="little", signed=False
-                )
+                parsed.class_of_device = int.from_bytes(ad_data[:3], byteorder="little", signed=False)
             elif ad_type == BLEAdvertisementTypes.SIMPLE_PAIRING_HASH_C:
                 parsed.simple_pairing_hash_c = ad_data
             elif ad_type == BLEAdvertisementTypes.SIMPLE_PAIRING_RANDOMIZER_R:

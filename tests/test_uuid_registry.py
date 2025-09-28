@@ -134,19 +134,11 @@ def test_service_class_name_resolution():
 def test_characteristic_discovery():
     """Test discovery and creation of characteristics from device data."""
     # Mock device data
-    mock_battery_data = {
-        "00002A19-0000-1000-8000-00805F9B34FB": {  # Battery Level
-            "properties": ["read", "notify"]
-        }
-    }
+    mock_battery_data = {"00002A19-0000-1000-8000-00805F9B34FB": {"properties": ["read", "notify"]}}  # Battery Level
 
     mock_env_data = {
-        "00002A6E-0000-1000-8000-00805F9B34FB": {  # Temperature
-            "properties": ["read", "notify"]
-        },
-        "00002A6F-0000-1000-8000-00805F9B34FB": {  # Humidity
-            "properties": ["read", "notify"]
-        },
+        "00002A6E-0000-1000-8000-00805F9B34FB": {"properties": ["read", "notify"]},  # Temperature
+        "00002A6F-0000-1000-8000-00805F9B34FB": {"properties": ["read", "notify"]},  # Humidity
     }
 
     # Test Battery Service characteristic discovery
@@ -166,9 +158,7 @@ def test_characteristic_discovery():
     env = EnvironmentalSensingService()
     env.process_characteristics(mock_env_data)
 
-    assert len(env.characteristics) == 2, (
-        "Wrong number of environmental characteristics"
-    )
+    assert len(env.characteristics) == 2, "Wrong number of environmental characteristics"
     chars = list(env.characteristics.values())
     char_names = {c.name for c in chars}
     assert "Temperature" in char_names
@@ -187,26 +177,16 @@ def test_full_uuid_lookup(mock_uuid_registry: UuidRegistry):
 
 def test_invalid_uuid_lookup(mock_uuid_registry: UuidRegistry):
     """Test lookup behavior with invalid UUIDs."""
-    assert mock_uuid_registry.get_service_info("0000") is None, (
-        "Should return None for invalid service"
-    )
-    assert mock_uuid_registry.get_characteristic_info("0000") is None, (
-        "Should return None for invalid characteristic"
-    )
+    assert mock_uuid_registry.get_service_info("0000") is None, "Should return None for invalid service"
+    assert mock_uuid_registry.get_characteristic_info("0000") is None, "Should return None for invalid characteristic"
 
 
 def test_yaml_file_presence():
     """Test that required YAML files exist."""
-    base_path = (
-        Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
-    )
+    base_path = Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
-    assert (base_path / "service_uuids.yaml").exists(), (
-        "Service UUIDs YAML file missing"
-    )
-    assert (base_path / "characteristic_uuids.yaml").exists(), (
-        "Characteristic UUIDs YAML file missing"
-    )
+    assert (base_path / "service_uuids.yaml").exists(), "Service UUIDs YAML file missing"
+    assert (base_path / "characteristic_uuids.yaml").exists(), "Characteristic UUIDs YAML file missing"
 
 
 @pytest.fixture(scope="session")
@@ -214,9 +194,7 @@ def yaml_data() -> dict[str, Any]:
     """Load YAML data once per session for performance."""
     import yaml
 
-    base_path = (
-        Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
-    )
+    base_path = Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
     # Load service data
     service_file = base_path / "service_uuids.yaml"
@@ -262,9 +240,7 @@ def test_direct_yaml_loading(yaml_data: dict[str, Any]) -> None:
     assert battery_service is not None, "Failed to find Battery Service in YAML"
     assert env_service is not None, "Failed to find Environmental Service in YAML"
     assert battery_service["name"] == "Battery", "Wrong Battery Service name in YAML"
-    assert env_service["name"] == "Environmental Sensing", (
-        "Wrong Environmental Service name in YAML"
-    )
+    assert env_service["name"] == "Environmental Sensing", "Wrong Environmental Service name in YAML"
 
     assert "uuids" in char_data, "Characteristic YAML should have 'uuids' key"
     assert isinstance(char_data["uuids"], list), "Characteristic UUIDs should be a list"
@@ -288,9 +264,7 @@ def test_direct_yaml_loading(yaml_data: dict[str, Any]) -> None:
         elif uuid == "2A6F":  # Humidity
             humidity = char
 
-    assert battery_level is not None, (
-        "Failed to find Battery Level characteristic in YAML"
-    )
+    assert battery_level is not None, "Failed to find Battery Level characteristic in YAML"
     assert temperature is not None, "Failed to find Temperature characteristic in YAML"
     assert humidity is not None, "Failed to find Humidity characteristic in YAML"
 

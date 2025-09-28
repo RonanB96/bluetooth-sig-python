@@ -14,7 +14,8 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
     """Cycling Power Feature characteristic (0x2A65).
 
     Used to expose the supported features of a cycling power sensor.
-    Contains a 32-bit bitmask indicating supported measurement capabilities.
+    Contains a 32-bit bitmask indicating supported measurement
+    capabilities.
     """
 
     _characteristic_name: str = "Cycling Power Feature"

@@ -9,8 +9,8 @@ from .templates import ConcentrationCharacteristic
 class SulfurDioxideConcentrationCharacteristic(ConcentrationCharacteristic):
     """Sulfur dioxide concentration measurement characteristic (0x2BD8).
 
-    Represents sulfur dioxide (SO2) concentration in parts per billion (ppb)
-    with a resolution of 1 ppb.
+    Represents sulfur dioxide (SO2) concentration in parts per billion
+    (ppb) with a resolution of 1 ppb.
     """
 
     _characteristic_name: str = "Sulfur Dioxide Concentration"

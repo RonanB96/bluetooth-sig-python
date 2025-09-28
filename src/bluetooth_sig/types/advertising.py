@@ -58,8 +58,8 @@ class PDUFlags(IntFlag):
 class PDUConstants:  # pylint: disable=too-many-instance-attributes
     """BLE PDU parsing constants for sizes and offsets.
 
-    Following best practices, this uses a dataclass for related constants
-    rather than mixing them with enums/flags.
+    Following best practices, this uses a dataclass for related
+    constants rather than mixing them with enums/flags.
     """
 
     # PDU Size constants
@@ -136,7 +136,8 @@ class PDUType(IntEnum):
 
 
 class BLEAdvertisementTypes(IntEnum):
-    """BLE Advertisement Data Types (AD Types) as defined in Bluetooth Core Specification."""
+    """BLE Advertisement Data Types (AD Types) as defined in Bluetooth Core
+    Specification."""
 
     # Legacy Advertising AD Types
     FLAGS = 0x01
@@ -280,20 +281,14 @@ class BLEAdvertisingPDU:  # pylint: disable=too-many-instance-attributes
 class ParsedADStructures:  # pylint: disable=too-many-instance-attributes
     """Parsed Advertising Data structures from advertisement payload."""
 
-    manufacturer_data: dict[int, bytes] = field(
-        default_factory=lambda: cast(dict[int, bytes], {})
-    )
+    manufacturer_data: dict[int, bytes] = field(default_factory=lambda: cast(dict[int, bytes], {}))
     service_uuids: list[str] = field(default_factory=lambda: cast(list[str], []))
     local_name: str = ""
     tx_power: int = 0
     flags: int = 0
     appearance: int | None = None
-    service_data: dict[str, bytes] = field(
-        default_factory=lambda: cast(dict[str, bytes], {})
-    )
-    solicited_service_uuids: list[str] = field(
-        default_factory=lambda: cast(list[str], [])
-    )
+    service_data: dict[str, bytes] = field(default_factory=lambda: cast(dict[str, bytes], {}))
+    solicited_service_uuids: list[str] = field(default_factory=lambda: cast(list[str], []))
     uri: str = ""
     indoor_positioning: bytes = b""
     transport_discovery_data: bytes = b""
@@ -307,12 +302,8 @@ class ParsedADStructures:  # pylint: disable=too-many-instance-attributes
     biginfo: bytes = b""
     mesh_message: bytes = b""
     mesh_beacon: bytes = b""
-    public_target_address: list[str] = field(
-        default_factory=lambda: cast(list[str], [])
-    )
-    random_target_address: list[str] = field(
-        default_factory=lambda: cast(list[str], [])
-    )
+    public_target_address: list[str] = field(default_factory=lambda: cast(list[str], []))
+    random_target_address: list[str] = field(default_factory=lambda: cast(list[str], []))
     advertising_interval: int | None = None
     advertising_interval_long: int | None = None
     le_bluetooth_device_address: str = ""
@@ -336,18 +327,14 @@ class DeviceAdvertiserData:  # pylint: disable=too-many-instance-attributes
 
     raw_data: bytes
     local_name: str = ""
-    manufacturer_data: dict[int, bytes] = field(
-        default_factory=lambda: cast(dict[int, bytes], {})
-    )
+    manufacturer_data: dict[int, bytes] = field(default_factory=lambda: cast(dict[int, bytes], {}))
     service_uuids: list[str] = field(default_factory=lambda: cast(list[str], []))
     tx_power: int | None = None
     rssi: int | None = None
     flags: int | None = None
 
     extended_payload: bytes = b""
-    auxiliary_packets: list[BLEAdvertisingPDU] = field(
-        default_factory=lambda: cast(list[BLEAdvertisingPDU], [])
-    )
+    auxiliary_packets: list[BLEAdvertisingPDU] = field(default_factory=lambda: cast(list[BLEAdvertisingPDU], []))
     periodic_advertising_data: bytes = b""
     broadcast_code: bytes = b""
 

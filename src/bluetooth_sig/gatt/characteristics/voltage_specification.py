@@ -20,9 +20,7 @@ class VoltageSpecificationData:
     def __post_init__(self) -> None:
         """Validate voltage specification data."""
         if self.minimum > self.maximum:
-            raise ValueError(
-                f"Minimum voltage {self.minimum} V cannot be greater than maximum {self.maximum} V"
-            )
+            raise ValueError(f"Minimum voltage {self.minimum} V cannot be greater than maximum {self.maximum} V")
 
         # Validate range for uint16 with 1/64 V resolution (0 to ~1024 V)
         max_voltage_value = UINT16_MAX / 64.0  # ~1024 V
@@ -40,15 +38,14 @@ class VoltageSpecificationData:
 class VoltageSpecificationCharacteristic(BaseCharacteristic):
     """Voltage Specification characteristic.
 
-    Specifies minimum and maximum voltage values for electrical specifications.
+    Specifies minimum and maximum voltage values for electrical
+    specifications.
     """
 
     _characteristic_name: str = "Voltage Specification"
     _manual_value_type: str = "string"  # Override since decode_value returns dataclass
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> VoltageSpecificationData:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> VoltageSpecificationData:
         """Parse voltage specification data (2x uint16 in units of 1/64 V).
 
         Args:
@@ -67,9 +64,7 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
         min_voltage_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         max_voltage_raw = int.from_bytes(data[2:4], byteorder="little", signed=False)
 
-        return VoltageSpecificationData(
-            minimum=min_voltage_raw / 64.0, maximum=max_voltage_raw / 64.0
-        )
+        return VoltageSpecificationData(minimum=min_voltage_raw / 64.0, maximum=max_voltage_raw / 64.0)
 
     def encode_value(self, data: VoltageSpecificationData) -> bytearray:
         """Encode voltage specification value back to bytes.
@@ -81,10 +76,7 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
             Encoded bytes representing the voltage specification (2x uint16, 1/64 V resolution)
         """
         if not isinstance(data, VoltageSpecificationData):
-            raise TypeError(
-                f"Voltage specification data must be a VoltageSpecificationData, "
-                f"got {type(data).__name__}"
-            )
+            raise TypeError(f"Voltage specification data must be a VoltageSpecificationData, got {type(data).__name__}")
             # Convert Volts to raw values (multiply by 64 for 1/64 V resolution)
         min_voltage_raw = round(data.minimum * 64)
         max_voltage_raw = round(data.maximum * 64)

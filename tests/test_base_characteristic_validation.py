@@ -93,7 +93,8 @@ class TestBaseCharacteristicValidation:
         assert "Invalid value: 200" in str(result.error_message)
 
     def test_range_validation_failure_min(self):
-        """Test that minimum value validation failures are handled correctly."""
+        """Test that minimum value validation failures are handled
+        correctly."""
 
         @dataclass
         class MinValueCharacteristic(BaseCharacteristic):
@@ -130,9 +131,7 @@ class TestBaseCharacteristicValidation:
             def __post_init__(self):
                 self._char_uuid = "TYPE-UUID"
 
-            def decode_value(
-                self, data: bytearray, ctx: Any | None = None
-            ) -> int:  # Returns int but expects float
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:  # Returns int but expects float
                 return 42
 
             def encode_value(self, data: Any) -> bytearray:
@@ -148,7 +147,8 @@ class TestBaseCharacteristicValidation:
         assert "expected type float, got int" in result.error_message
 
     def test_no_validation_attributes(self):
-        """Test that characteristics without validation attributes work normally."""
+        """Test that characteristics without validation attributes work
+        normally."""
         char = NoValidationCharacteristic(uuid="TEST", properties=set())
         data = bytearray([1, 2, 3, 4, 5])  # Any length should work
 

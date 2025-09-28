@@ -48,9 +48,7 @@ def demo_advertising_parsing() -> None:
     print(f"  Local name: {mock_advertising_data['local_name']}")
     print(f"  Service UUIDs: {mock_advertising_data['service_uuids']}")
 
-    manufacturer_data = cast(
-        dict[int, bytes], mock_advertising_data["manufacturer_data"]
-    )
+    manufacturer_data = cast(dict[int, bytes], mock_advertising_data["manufacturer_data"])
     if manufacturer_data:
         for company_id, data in manufacturer_data.items():
             print(f"  Manufacturer data (0x{company_id:04X}): {data.hex()}")

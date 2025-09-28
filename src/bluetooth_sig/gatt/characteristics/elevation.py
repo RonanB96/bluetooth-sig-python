@@ -14,8 +14,6 @@ class ElevationCharacteristic(Sint24ScaledCharacteristic):
     """
 
     _characteristic_name: str = "Elevation"
-    _manual_value_type: str = (
-        "float"  # Override YAML int type since decode_value returns float
-    )
+    _manual_value_type: str = "float"  # Override YAML int type since decode_value returns float
     resolution: float = 0.01
     measurement_unit: str = "m"

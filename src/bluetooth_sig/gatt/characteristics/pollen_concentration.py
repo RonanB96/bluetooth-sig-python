@@ -14,9 +14,7 @@ class PollenConcentrationCharacteristic(Uint24ScaledCharacteristic):
     """
 
     _characteristic_name: str = "Pollen Concentration"
-    _manual_value_type: str = (
-        "float"  # Override YAML spec since decode_value returns float
-    )
+    _manual_value_type: str = "float"  # Override YAML spec since decode_value returns float
 
     # SIG specification configuration
     resolution: float = 1.0

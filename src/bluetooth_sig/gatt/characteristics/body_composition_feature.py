@@ -107,9 +107,9 @@ class BodyCompositionFeatureData:  # pylint: disable=too-many-instance-attribute
 class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
     """Body Composition Feature characteristic (0x2A9B).
 
-    Used to indicate which optional features and measurements are supported
-    by the body composition device. This is a read-only characteristic that
-    describes device capabilities.
+    Used to indicate which optional features and measurements are
+    supported by the body composition device. This is a read-only
+    characteristic that describes device capabilities.
     """
 
     _characteristic_name: str = "Body Composition Feature"
@@ -118,10 +118,9 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
     max_length: int = 4  # Features(4) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> BodyCompositionFeatureData:
-        """Parse body composition feature data according to Bluetooth specification.
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> BodyCompositionFeatureData:
+        """Parse body composition feature data according to Bluetooth
+        specification.
 
         Format: Features(4 bytes) - bitmask indicating supported measurements
 
@@ -143,39 +142,17 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
         return BodyCompositionFeatureData(
             features=BodyCompositionFeatures(features_raw),
             # Basic features
-            timestamp_supported=bool(
-                features_raw & BodyCompositionFeatures.TIMESTAMP_SUPPORTED
-            ),
-            multiple_users_supported=bool(
-                features_raw & BodyCompositionFeatures.MULTIPLE_USERS_SUPPORTED
-            ),
-            basal_metabolism_supported=bool(
-                features_raw & BodyCompositionFeatures.BASAL_METABOLISM_SUPPORTED
-            ),
-            muscle_mass_supported=bool(
-                features_raw & BodyCompositionFeatures.MUSCLE_MASS_SUPPORTED
-            ),
-            muscle_percentage_supported=bool(
-                features_raw & BodyCompositionFeatures.MUSCLE_PERCENTAGE_SUPPORTED
-            ),
-            fat_free_mass_supported=bool(
-                features_raw & BodyCompositionFeatures.FAT_FREE_MASS_SUPPORTED
-            ),
-            soft_lean_mass_supported=bool(
-                features_raw & BodyCompositionFeatures.SOFT_LEAN_MASS_SUPPORTED
-            ),
-            body_water_mass_supported=bool(
-                features_raw & BodyCompositionFeatures.BODY_WATER_MASS_SUPPORTED
-            ),
-            impedance_supported=bool(
-                features_raw & BodyCompositionFeatures.IMPEDANCE_SUPPORTED
-            ),
-            weight_supported=bool(
-                features_raw & BodyCompositionFeatures.WEIGHT_SUPPORTED
-            ),
-            height_supported=bool(
-                features_raw & BodyCompositionFeatures.HEIGHT_SUPPORTED
-            ),
+            timestamp_supported=bool(features_raw & BodyCompositionFeatures.TIMESTAMP_SUPPORTED),
+            multiple_users_supported=bool(features_raw & BodyCompositionFeatures.MULTIPLE_USERS_SUPPORTED),
+            basal_metabolism_supported=bool(features_raw & BodyCompositionFeatures.BASAL_METABOLISM_SUPPORTED),
+            muscle_mass_supported=bool(features_raw & BodyCompositionFeatures.MUSCLE_MASS_SUPPORTED),
+            muscle_percentage_supported=bool(features_raw & BodyCompositionFeatures.MUSCLE_PERCENTAGE_SUPPORTED),
+            fat_free_mass_supported=bool(features_raw & BodyCompositionFeatures.FAT_FREE_MASS_SUPPORTED),
+            soft_lean_mass_supported=bool(features_raw & BodyCompositionFeatures.SOFT_LEAN_MASS_SUPPORTED),
+            body_water_mass_supported=bool(features_raw & BodyCompositionFeatures.BODY_WATER_MASS_SUPPORTED),
+            impedance_supported=bool(features_raw & BodyCompositionFeatures.IMPEDANCE_SUPPORTED),
+            weight_supported=bool(features_raw & BodyCompositionFeatures.WEIGHT_SUPPORTED),
+            height_supported=bool(features_raw & BodyCompositionFeatures.HEIGHT_SUPPORTED),
             # Mass measurement resolution (bits 11-14)
             mass_measurement_resolution=self._get_mass_resolution(features_raw),
             # Height measurement resolution (bits 15-17)

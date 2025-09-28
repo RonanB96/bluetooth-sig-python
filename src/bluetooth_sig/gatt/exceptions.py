@@ -1,7 +1,7 @@
 """Custom exceptions for Bluetooth SIG GATT operations.
 
-This module provides specialized exceptions for different types of errors
-that can occur during GATT characteristic and service operations.
+This module provides specialized exceptions for different types of
+errors that can occur during GATT characteristic and service operations.
 """
 
 from __future__ import annotations
@@ -110,9 +110,7 @@ class TypeMismatchError(DataValidationError):
 class EnumValueError(DataValidationError):
     """Exception raised when an enum value is invalid."""
 
-    def __init__(
-        self, field: str, value: Any, enum_class: type, valid_values: list[Any]
-    ):
+    def __init__(self, field: str, value: Any, enum_class: type, valid_values: list[Any]):
         self.enum_class = enum_class
         self.valid_values = valid_values
         expected = f"{enum_class.__name__} value from {valid_values}"
@@ -139,7 +137,8 @@ class YAMLResolutionError(BluetoothSIGError):
 
 
 class ServiceCharacteristicMismatchError(ServiceError):
-    """Exception raised when expected characteristics are not found in a service."""
+    """Exception raised when expected characteristics are not found in a
+    service."""
 
     def __init__(self, service: str, missing_characteristics: list[str]):
         self.service = service

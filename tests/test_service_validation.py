@@ -91,9 +91,7 @@ class TestServiceValidationResult:
         assert result.has_errors is False
 
         # Has errors
-        result_with_errors = ServiceValidationResult(
-            status=ServiceHealthStatus.INCOMPLETE, errors=["Some error"]
-        )
+        result_with_errors = ServiceValidationResult(status=ServiceHealthStatus.INCOMPLETE, errors=["Some error"])
         assert result_with_errors.has_errors is True
 
         # Has missing required
@@ -172,7 +170,8 @@ class TestServiceCompletenessReport:
         assert len(report.missing_details) == 0
 
     def test_service_completeness_report_with_missing_details(self):
-        """Test ServiceCompletenessReport with missing characteristic details."""
+        """Test ServiceCompletenessReport with missing characteristic
+        details."""
         missing_char = ServiceCharacteristicInfo(
             uuid="2A29",
             name="Manufacturer Name",
@@ -224,9 +223,7 @@ class TestBatteryServiceValidation:
     def test_complete_battery_service_validation(self):
         """Test validation of complete battery service."""
         # Add required battery level characteristic
-        battery_char = BatteryLevelCharacteristic(
-            uuid="2A19", properties={GattProperty.READ, GattProperty.NOTIFY}
-        )
+        battery_char = BatteryLevelCharacteristic(uuid="2A19", properties={GattProperty.READ, GattProperty.NOTIFY})
         self.service.characteristics["2A19"] = battery_char
 
         result = self.service.validate_service()
@@ -254,34 +251,23 @@ class TestBatteryServiceValidation:
         # Test missing characteristic
         from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
 
-        status = self.service.get_characteristic_status(
-            CharacteristicName.BATTERY_LEVEL
-        )
+        status = self.service.get_characteristic_status(CharacteristicName.BATTERY_LEVEL)
         assert status is not None
         assert status.status == CharacteristicStatus.MISSING
         assert status.is_required is True
 
         # Add the characteristic and test present status
-        battery_char = BatteryLevelCharacteristic(
-            uuid="2A19", properties={GattProperty.READ, GattProperty.NOTIFY}
-        )
+        battery_char = BatteryLevelCharacteristic(uuid="2A19", properties={GattProperty.READ, GattProperty.NOTIFY})
         self.service.characteristics["2A19"] = battery_char
 
-        status = self.service.get_characteristic_status(
-            CharacteristicName.BATTERY_LEVEL
-        )
+        status = self.service.get_characteristic_status(CharacteristicName.BATTERY_LEVEL)
         assert status is not None
         assert status.status == CharacteristicStatus.PRESENT
 
         # Test unknown characteristic (enum that doesn't exist in expected list)
         # If the enum is not expected for BatteryService, the result should be None
-        unknown_status = self.service.get_characteristic_status(
-            CharacteristicName.UV_INDEX
-        )
-        if (
-            CharacteristicName.UV_INDEX
-            not in self.service.get_expected_characteristics()
-        ):
+        unknown_status = self.service.get_characteristic_status(CharacteristicName.UV_INDEX)
+        if CharacteristicName.UV_INDEX not in self.service.get_expected_characteristics():
             assert unknown_status is None
 
     def test_battery_service_completeness_report(self):
@@ -306,9 +292,7 @@ class TestBatteryServiceValidation:
         assert self.service.has_minimum_functionality() is False
 
         # With battery level - has minimum functionality
-        battery_char = BatteryLevelCharacteristic(
-            uuid="2A19", properties={GattProperty.READ, GattProperty.NOTIFY}
-        )
+        battery_char = BatteryLevelCharacteristic(uuid="2A19", properties={GattProperty.READ, GattProperty.NOTIFY})
         self.service.characteristics["2A19"] = battery_char
 
         assert self.service.has_minimum_functionality() is True
@@ -361,11 +345,7 @@ class TestDeviceInformationServiceValidation:
 
         # At least some of these should be in expected characteristics
         expected_service_chars = self.service.get_expected_characteristics()
-        common_chars = [
-            char_enum
-            for char_enum in expected_char_enums
-            if char_enum in expected_service_chars
-        ]
+        common_chars = [char_enum for char_enum in expected_char_enums if char_enum in expected_service_chars]
 
         if common_chars:
             # If we have common characteristics, they should be missing
@@ -424,9 +404,7 @@ class TestServiceValidationIntegration:
         service = DeviceInformationService()
 
         # Add only some characteristics (simulating real device)
-        model_char = ModelNumberStringCharacteristic(
-            uuid="2A24", properties={GattProperty.READ}
-        )
+        model_char = ModelNumberStringCharacteristic(uuid="2A24", properties={GattProperty.READ})
         service.characteristics["2A24"] = model_char
 
         report = service.get_service_completeness_report()

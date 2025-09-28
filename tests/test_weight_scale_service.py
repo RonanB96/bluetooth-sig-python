@@ -97,10 +97,7 @@ class TestWeightScaleFeatureCharacteristic:
         assert result.timestamp_supported is True
         assert result.multiple_users_supported is True
         assert result.bmi_supported is True
-        assert (
-            result.weight_measurement_resolution
-            == WeightMeasurementResolution.HALF_KG_OR_1_LB
-        )
+        assert result.weight_measurement_resolution == WeightMeasurementResolution.HALF_KG_OR_1_LB
 
     def test_parse_no_features(self):
         """Test parsing with no features enabled."""
@@ -113,10 +110,7 @@ class TestWeightScaleFeatureCharacteristic:
         assert result.timestamp_supported is False
         assert result.multiple_users_supported is False
         assert result.bmi_supported is False
-        assert (
-            result.weight_measurement_resolution
-            == WeightMeasurementResolution.NOT_SPECIFIED
-        )
+        assert result.weight_measurement_resolution == WeightMeasurementResolution.NOT_SPECIFIED
 
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""
@@ -141,24 +135,15 @@ class TestWeightScaleService:
 
         assert CharacteristicName.WEIGHT_MEASUREMENT in expected
         assert CharacteristicName.WEIGHT_SCALE_FEATURE in expected
-        assert (
-            expected[CharacteristicName.WEIGHT_MEASUREMENT].char_class
-            == WeightMeasurementCharacteristic
-        )
-        assert (
-            expected[CharacteristicName.WEIGHT_SCALE_FEATURE].char_class
-            == WeightScaleFeatureCharacteristic
-        )
+        assert expected[CharacteristicName.WEIGHT_MEASUREMENT].char_class == WeightMeasurementCharacteristic
+        assert expected[CharacteristicName.WEIGHT_SCALE_FEATURE].char_class == WeightScaleFeatureCharacteristic
 
     def test_required_characteristics(self):
         """Test required characteristics for the service."""
         required = WeightScaleService.get_required_characteristics()
 
         assert CharacteristicName.WEIGHT_MEASUREMENT in required
-        assert (
-            required[CharacteristicName.WEIGHT_MEASUREMENT].char_class
-            == WeightMeasurementCharacteristic
-        )
+        assert required[CharacteristicName.WEIGHT_MEASUREMENT].char_class == WeightMeasurementCharacteristic
         # Weight Scale Feature is not required
 
     def test_service_creation(self):

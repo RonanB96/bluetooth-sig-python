@@ -185,9 +185,7 @@ def mock_ble_data() -> dict[str, bytes]:
     }
 
 
-async def demo_basic_usage(
-    address: str, connection_manager: ConnectionManagerProtocol
-) -> None:
+async def demo_basic_usage(address: str, connection_manager: ConnectionManagerProtocol) -> None:
     """Demonstrate basic usage of the bluetooth_sig library."""
     print(f"Connecting to device: {address}")
 
@@ -212,12 +210,8 @@ async def demo_basic_usage(
                 result = await device.read(uuid_short)
                 if result and getattr(result, "parse_success", False):
                     parsed_results[uuid_short] = result
-                    unit_str = (
-                        f" {result.unit}" if getattr(result, "unit", None) else ""
-                    )
-                    print(
-                        f"  ✅ {getattr(result, 'name', uuid_short)}: {getattr(result, 'value', 'N/A')}{unit_str}"
-                    )
+                    unit_str = f" {result.unit}" if getattr(result, "unit", None) else ""
+                    print(f"  ✅ {getattr(result, 'name', uuid_short)}: {getattr(result, 'value', 'N/A')}{unit_str}")
                 else:
                     print(f"  • {uuid_short}: Read failed or parse failed")
             except Exception as e:
@@ -233,9 +227,7 @@ async def demo_basic_usage(
         print("This may be due to device being unavailable or connection issues.")
 
 
-async def demo_service_discovery(
-    address: str, connection_manager: ConnectionManagerProtocol
-) -> None:
+async def demo_service_discovery(address: str, connection_manager: ConnectionManagerProtocol) -> None:
     """Demonstrate service discovery using Device class."""
     print(f"Discovering services on device: {address}")
 
@@ -273,11 +265,7 @@ async def demo_service_discovery(
                     # Try to read and parse the characteristic
                     try:
                         # Convert full UUID to short form for reading
-                        short_uuid = (
-                            char_uuid[4:8].upper()
-                            if len(char_uuid) > 8
-                            else char_uuid.upper()
-                        )
+                        short_uuid = char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
                         parsed = await device.read(short_uuid)
 
                         if parsed and getattr(parsed, "parse_success", False):
@@ -285,44 +273,28 @@ async def demo_service_discovery(
                             char_name = getattr(parsed, "name", short_uuid)
                             value = getattr(parsed, "value", "N/A")
                             unit = getattr(parsed, "unit", "")
-                            print(
-                                f"        ✅ {short_uuid}: {char_name} = {value} {unit}"
-                            )
+                            print(f"        ✅ {short_uuid}: {char_name} = {value} {unit}")
                         else:
                             # Try to get name from translator
-                            char_info_obj = translator.get_characteristic_info(
-                                short_uuid
-                            )
+                            char_info_obj = translator.get_characteristic_info(short_uuid)
                             if char_info_obj:
-                                print(
-                                    f"        • {short_uuid}: {char_info_obj.name} (read failed)"
-                                )
+                                print(f"        • {short_uuid}: {char_info_obj.name} (read failed)")
                             else:
                                 print(f"        • {short_uuid}: Unknown characteristic")
                     except Exception as e:
                         # Try to get name from translator
-                        short_uuid = (
-                            char_uuid[4:8].upper()
-                            if len(char_uuid) > 8
-                            else char_uuid.upper()
-                        )
+                        short_uuid = char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
                         char_info_obj = translator.get_characteristic_info(short_uuid)
                         if char_info_obj:
-                            print(
-                                f"        ❌ {short_uuid}: {char_info_obj.name} (error: {e})"
-                            )
+                            print(f"        ❌ {short_uuid}: {char_info_obj.name} (error: {e})")
                         else:
-                            print(
-                                f"        ❌ {short_uuid}: Unknown characteristic (error: {e})"
-                            )
+                            print(f"        ❌ {short_uuid}: Unknown characteristic (error: {e})")
 
         await connection_manager.disconnect()
         print("   ✅ Disconnected")
 
         print(f"\n📊 Device summary: {device}")
-        print(
-            f"📊 Total characteristics: {total_chars}, Successfully parsed: {parsed_chars}"
-        )
+        print(f"📊 Total characteristics: {total_chars}, Successfully parsed: {parsed_chars}")
 
     except Exception as e:
         print(f"❌ Service discovery failed: {e}")

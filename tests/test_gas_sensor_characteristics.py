@@ -31,9 +31,7 @@ class TestGasSensorCharacteristics:
 
         # Test metadata - Updated for SIG spec compliance (medfloat16, kg/m³)
         assert char.unit == "kg/m³"
-        assert (
-            char.value_type_resolved.value == "float"
-        )  # YAML specifies medfloat16 format
+        assert char.value_type_resolved.value == "float"  # YAML specifies medfloat16 format
 
     def test_co2_concentration_parsing(self):
         """Test CO2 concentration characteristic parsing."""
@@ -225,7 +223,8 @@ class TestGasSensorCharacteristics:
             ]  # Accept current automatic parsing
 
     def test_extended_gas_sensor_characteristics(self):
-        """Test extended gas sensor characteristics not covered in other tests."""
+        """Test extended gas sensor characteristics not covered in other
+        tests."""
         # Test Methane
         methane_char = MethaneConcentrationCharacteristic(uuid="", properties=set())
         assert methane_char.char_uuid == "2BD1"

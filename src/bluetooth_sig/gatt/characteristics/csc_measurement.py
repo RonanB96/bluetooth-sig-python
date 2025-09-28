@@ -42,15 +42,11 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
     CRANK_REVOLUTION_DATA_PRESENT = 0x02
 
     # Time resolution constants
-    CSC_TIME_RESOLUTION = (
-        1024.0  # 1/1024 second resolution for both wheel and crank event times
-    )
+    CSC_TIME_RESOLUTION = 1024.0  # 1/1024 second resolution for both wheel and crank event times
 
     _characteristic_name: str = "CSC Measurement"
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> CSCMeasurementData:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> CSCMeasurementData:
         """Parse CSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + [Cumulative Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +
@@ -80,9 +76,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
         # Parse optional wheel revolution data (6 bytes total) if present
         if (flags & self.WHEEL_REVOLUTION_DATA_PRESENT) and len(data) >= offset + 6:
             wheel_revolutions = DataParser.parse_int32(data, offset, signed=False)
-            wheel_event_time_raw = DataParser.parse_int16(
-                data, offset + 4, signed=False
-            )
+            wheel_event_time_raw = DataParser.parse_int16(data, offset + 4, signed=False)
             # Wheel event time is in 1/CSC_TIME_RESOLUTION second units
             cumulative_wheel_revolutions = wheel_revolutions
             last_wheel_event_time = wheel_event_time_raw / self.CSC_TIME_RESOLUTION
@@ -91,9 +85,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
         # Parse optional crank revolution data (4 bytes total) if present
         if (flags & self.CRANK_REVOLUTION_DATA_PRESENT) and len(data) >= offset + 4:
             crank_revolutions = DataParser.parse_int16(data, offset, signed=False)
-            crank_event_time_raw = DataParser.parse_int16(
-                data, offset + 2, signed=False
-            )
+            crank_event_time_raw = DataParser.parse_int16(data, offset + 2, signed=False)
             # Crank event time is in 1/CSC_TIME_RESOLUTION second units
             cumulative_crank_revolutions = crank_revolutions
             last_crank_event_time = crank_event_time_raw / self.CSC_TIME_RESOLUTION
@@ -116,21 +108,12 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
             Encoded bytes representing the CSC measurement
         """
         if not isinstance(data, CSCMeasurementData):
-            raise TypeError(
-                f"CSC measurement data must be a CSCMeasurementData, "
-                f"got {type(data).__name__}"
-            )
+            raise TypeError(f"CSC measurement data must be a CSCMeasurementData, got {type(data).__name__}")
 
         # Build flags based on available data
         flags = data.flags
-        has_wheel_data = (
-            data.cumulative_wheel_revolutions is not None
-            and data.last_wheel_event_time is not None
-        )
-        has_crank_data = (
-            data.cumulative_crank_revolutions is not None
-            and data.last_crank_event_time is not None
-        )
+        has_wheel_data = data.cumulative_wheel_revolutions is not None and data.last_wheel_event_time is not None
+        has_crank_data = data.cumulative_crank_revolutions is not None and data.last_crank_event_time is not None
 
         # Update flags to match available data
         if has_wheel_data:
@@ -148,17 +131,13 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
             # Validate ranges
             if not 0 <= wheel_revolutions <= 0xFFFFFFFF:
-                raise ValueError(
-                    f"Wheel revolutions {wheel_revolutions} exceeds uint32 range"
-                )
+                raise ValueError(f"Wheel revolutions {wheel_revolutions} exceeds uint32 range")
 
             wheel_event_time_raw = round(
                 wheel_event_time * self.CSC_TIME_RESOLUTION
             )  # Convert to 1/CSC_TIME_RESOLUTION second units
             if not 0 <= wheel_event_time_raw <= 0xFFFF:
-                raise ValueError(
-                    f"Wheel event time {wheel_event_time_raw} exceeds uint16 range"
-                )
+                raise ValueError(f"Wheel event time {wheel_event_time_raw} exceeds uint16 range")
 
             result.extend(DataParser.encode_int32(wheel_revolutions, signed=False))
             result.extend(DataParser.encode_int16(wheel_event_time_raw, signed=False))
@@ -170,17 +149,13 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
             # Validate ranges
             if not 0 <= crank_revolutions <= 0xFFFF:
-                raise ValueError(
-                    f"Crank revolutions {crank_revolutions} exceeds uint16 range"
-                )
+                raise ValueError(f"Crank revolutions {crank_revolutions} exceeds uint16 range")
 
             crank_event_time_raw = round(
                 crank_event_time * self.CSC_TIME_RESOLUTION
             )  # Convert to 1/CSC_TIME_RESOLUTION second units
             if not 0 <= crank_event_time_raw <= 0xFFFF:
-                raise ValueError(
-                    f"Crank event time {crank_event_time_raw} exceeds uint16 range"
-                )
+                raise ValueError(f"Crank event time {crank_event_time_raw} exceeds uint16 range")
 
             result.extend(DataParser.encode_int16(crank_revolutions, signed=False))
             result.extend(DataParser.encode_int16(crank_event_time_raw, signed=False))

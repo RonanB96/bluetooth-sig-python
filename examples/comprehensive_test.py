@@ -54,9 +54,7 @@ async def main() -> None:
         print(f"🔗 Testing connection to {device_address}")
 
         try:
-            results = await read_characteristics_bleak_retry(
-                device_address, ["2A00", "2A29"], max_attempts=2
-            )
+            results = await read_characteristics_bleak_retry(device_address, ["2A00", "2A29"], max_attempts=2)
             if results:
                 print("✅ Real device connection successful!")
                 await parse_and_display_results(results, "Real Device")

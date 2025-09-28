@@ -1,6 +1,8 @@
 """Bluetooth SIG GATT characteristic registry.
-Provides type-safe, registry-driven lookup for all supported characteristics.
-Now encapsulated in CharacteristicRegistry class for API clarity and extensibility.
+
+Provides type-safe, registry-driven lookup for all supported
+characteristics. Now encapsulated in CharacteristicRegistry class for
+API clarity and extensibility.
 """
 
 # Import the registry components from the dedicated registry module

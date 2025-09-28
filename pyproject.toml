@@ -41,7 +41,7 @@ dev = [
     "pytest-asyncio~=1.1",
     "pytest-cov>=6.2,<8",
     "pylint~=3.3",
-    "ruff~=0.1",
+    "ruff~=0.19",
     "mypy~=1.0",
     "types-PyYAML~=6.0",
     "ipdb~=0.13",
@@ -119,9 +119,9 @@ disable = [
 good-names = ["id", "i", "j", "k", "ex", "Run", "_", "fp", "e"]
 
 [tool.ruff]
-line-length = 88
+line-length = 120
 target-version = "py39"
-exclude = [".git", "__pycache__", "build", "dist", ".venv", ".eggs"]
+exclude = [".git", "__pycache__", "build", "dist", ".venv", ".venv*", ".eggs"]
 
 [tool.ruff.lint]
 select = [
@@ -133,12 +133,8 @@ select = [
     "UP",  # pyupgrade
 ]
 ignore = [
-    "E203", # Whitespace before ':' - conflicts with black
-    "E203", # Whitespace before ':' - conflicts with black
-    # Note: do not ignore E501 here; ruff will enforce line length per tool.ruff.format.line-length
     "E701", # Multiple statements on one line (colon)
     "E702", # Multiple statements on one line (semicolon)
-    "N802", # Function name should be lowercase (our UUID properties use CAPS)
     "C901", # Function is too complex (we have some complex parsing functions)
 ]
 

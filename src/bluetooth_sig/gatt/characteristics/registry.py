@@ -1,7 +1,8 @@
 """Bluetooth SIG GATT characteristic registry.
 
-This module contains the characteristic registry implementation and class mappings.
-CharacteristicName enum is now centralized in types.gatt_enums to avoid circular imports.
+This module contains the characteristic registry implementation and
+class mappings. CharacteristicName enum is now centralized in
+types.gatt_enums to avoid circular imports.
 """
 
 from __future__ import annotations
@@ -16,9 +17,7 @@ __all__ = ["CharacteristicName", "CharacteristicRegistry"]
 
 
 # Lazy initialization of the class mappings to avoid circular imports
-_characteristic_class_map: dict[CharacteristicName, type[BaseCharacteristic]] | None = (
-    None
-)
+_characteristic_class_map: dict[CharacteristicName, type[BaseCharacteristic]] | None = None
 _characteristic_class_map_str: dict[str, type[BaseCharacteristic]] | None = None
 
 
@@ -27,9 +26,9 @@ def _convert_properties_to_enums(
 ) -> set[GattProperty]:
     """Convert string properties to GattProperty enums, validating inputs.
 
-    Strings like 'read' or 'notify' will be converted to their GattProperty
-    equivalents. Any unknown string will raise a TypeError to avoid silent
-    acceptance of invalid values.
+    Strings like 'read' or 'notify' will be converted to their
+    GattProperty equivalents. Any unknown string will raise a TypeError
+    to avoid silent acceptance of invalid values.
     """
     if not properties:
         return set()
@@ -61,9 +60,7 @@ def _convert_properties_to_enums(
     return result
 
 
-def _build_characteristic_class_map() -> dict[
-    CharacteristicName, type[BaseCharacteristic]
-]:
+def _build_characteristic_class_map() -> dict[CharacteristicName, type[BaseCharacteristic]]:
     """Build the characteristic class mapping.
 
     This function is called lazily to avoid circular imports.
@@ -225,9 +222,7 @@ def _build_characteristic_class_map() -> dict[
     }
 
 
-def _get_characteristic_class_map() -> dict[
-    CharacteristicName, type[BaseCharacteristic]
-]:
+def _get_characteristic_class_map() -> dict[CharacteristicName, type[BaseCharacteristic]]:
     """Get the characteristic class map, building it if necessary."""
     # pylint: disable=global-statement
     global _characteristic_class_map
@@ -313,9 +308,7 @@ class CharacteristicRegistry:
             converted_props = _convert_properties_to_enums(properties)
             instance = char_cls(uuid=norm_uuid, properties=converted_props)
             char_uuid_norm = instance.char_uuid.replace("-", "").upper()
-            char_uuid_short = (
-                char_uuid_norm[4:8] if len(char_uuid_norm) == 32 else char_uuid_norm
-            )
+            char_uuid_short = char_uuid_norm[4:8] if len(char_uuid_norm) == 32 else char_uuid_norm
             if char_uuid_norm == norm_uuid or char_uuid_short == short_uuid:
                 return instance
         return None

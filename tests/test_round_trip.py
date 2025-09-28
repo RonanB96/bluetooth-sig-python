@@ -177,9 +177,7 @@ ROUND_TRIP_TEST_DATA = [
     (CyclingPowerControlPointCharacteristic, bytearray([0x01])),
     (
         GlucoseMeasurementCharacteristic,
-        bytearray(
-            [0x00, 0x00, 0x00, 0xE2, 0x07, 0x0A, 0x11, 0x0F, 0x2A, 0x00, 0x00, 0x00]
-        ),
+        bytearray([0x00, 0x00, 0x00, 0xE2, 0x07, 0x0A, 0x11, 0x0F, 0x2A, 0x00, 0x00, 0x00]),
     ),
     (GlucoseMeasurementContextCharacteristic, bytearray([0x00, 0x00, 0x00])),
     (GlucoseFeatureCharacteristic, bytearray([0x00, 0x00])),
@@ -199,37 +197,28 @@ class TestRoundTrip:
     """Round trip tests for all characteristics."""
 
     def test_all_characteristics_are_tested(self):
-        """Test that every characteristic class is included in ROUND_TRIP_TEST_DATA."""
+        """Test that every characteristic class is included in
+        ROUND_TRIP_TEST_DATA."""
         import bluetooth_sig.gatt.characteristics as char_module
 
         # Get all classes from the characteristics module that inherit from BaseCharacteristic
         all_characteristic_classes: set[Any] = set()
         for _name, obj in inspect.getmembers(char_module):
-            if (
-                inspect.isclass(obj)
-                and issubclass(obj, BaseCharacteristic)
-                and obj is not BaseCharacteristic
-            ):
+            if inspect.isclass(obj) and issubclass(obj, BaseCharacteristic) and obj is not BaseCharacteristic:
                 all_characteristic_classes.add(obj)
 
         # Get all classes from ROUND_TRIP_TEST_DATA
-        tested_classes: set[Any] = {
-            char_class for char_class, _ in ROUND_TRIP_TEST_DATA
-        }
+        tested_classes: set[Any] = {char_class for char_class, _ in ROUND_TRIP_TEST_DATA}
 
         # Check that all characteristic classes are tested
         missing_classes = all_characteristic_classes - tested_classes
         extra_classes = tested_classes - all_characteristic_classes
 
         assert not missing_classes, f"Missing round trip tests for: {missing_classes}"
-        assert not extra_classes, (
-            f"Extra classes in test data that don't exist: {extra_classes}"
-        )
+        assert not extra_classes, f"Extra classes in test data that don't exist: {extra_classes}"
 
     @pytest.mark.parametrize("char_class,test_data", ROUND_TRIP_TEST_DATA)
-    def test_round_trip(
-        self, char_class: type[BaseCharacteristic], test_data: bytearray
-    ):
+    def test_round_trip(self, char_class: type[BaseCharacteristic], test_data: bytearray):
         """Test that encoding and decoding preserve data."""
         char = char_class(uuid="", properties=set())
         parsed = char.decode_value(test_data)

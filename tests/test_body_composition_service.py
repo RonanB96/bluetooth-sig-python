@@ -218,10 +218,7 @@ class TestBodyCompositionService:
             expected[CharacteristicName.BODY_COMPOSITION_MEASUREMENT].char_class
             == BodyCompositionMeasurementCharacteristic
         )
-        assert (
-            expected[CharacteristicName.BODY_COMPOSITION_FEATURE].char_class
-            == BodyCompositionFeatureCharacteristic
-        )
+        assert expected[CharacteristicName.BODY_COMPOSITION_FEATURE].char_class == BodyCompositionFeatureCharacteristic
 
     def test_required_characteristics(self):
         """Test required characteristics for the service."""

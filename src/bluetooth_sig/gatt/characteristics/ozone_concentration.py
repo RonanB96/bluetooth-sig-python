@@ -9,8 +9,8 @@ from .templates import ConcentrationCharacteristic
 class OzoneConcentrationCharacteristic(ConcentrationCharacteristic):
     """Ozone concentration measurement characteristic (0x2BD4).
 
-    Represents ozone concentration in parts per billion (ppb)
-    with a resolution of 1 ppb.
+    Represents ozone concentration in parts per billion (ppb) with a
+    resolution of 1 ppb.
     """
 
     _characteristic_name: str = "Ozone Concentration"

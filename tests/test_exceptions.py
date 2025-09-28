@@ -75,9 +75,7 @@ class TestBluetoothSIGExceptions:
         assert error.field == "temperature"
         assert error.value == -300
         assert error.expected == "valid temperature range"
-        assert "Invalid temperature: -300 (expected valid temperature range)" in str(
-            error
-        )
+        assert "Invalid temperature: -300 (expected valid temperature range)" in str(error)
 
     def test_insufficient_data_error(self):
         """Test InsufficientDataError functionality."""
@@ -155,10 +153,7 @@ class TestBluetoothSIGExceptions:
 
         assert error.name == "SomeCharacteristic"
         assert error.yaml_type == "characteristic"
-        assert (
-            "Failed to resolve characteristic specification for: SomeCharacteristic"
-            in str(error)
-        )
+        assert "Failed to resolve characteristic specification for: SomeCharacteristic" in str(error)
 
     def test_service_characteristic_mismatch_error(self):
         """Test ServiceCharacteristicMismatchError functionality."""

@@ -3,19 +3,48 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import IntEnum
 from typing import Any
 
 from ..constants import SINT8_MIN
 from .base import BaseCharacteristic
 
-# DST offset mappings - module level constant
-DST_OFFSET_VALUES: dict[int, dict[str, str | float | None]] = {
-    0: {"description": "Standard Time", "offset_hours": 0.0},
-    2: {"description": "Half an hour Daylight Time", "offset_hours": 0.5},
-    4: {"description": "Daylight Time", "offset_hours": 1.0},
-    8: {"description": "Double Daylight Time", "offset_hours": 2.0},
-    255: {"description": "DST offset unknown", "offset_hours": None},
-}
+
+class DSTOffset(IntEnum):
+    """DST offset values as an IntEnum to avoid magic numbers.
+
+    Values correspond to the Bluetooth SIG encoded DST offset values.
+    """
+
+    STANDARD = 0
+    HALF_HOUR = 2
+    DAYLIGHT = 4
+    DOUBLE_DAYLIGHT = 8
+    UNKNOWN = 255
+
+    @property
+    def description(self) -> str:
+        """Human-readable description for this DST offset value."""
+
+        return {
+            DSTOffset.STANDARD: "Standard Time",
+            DSTOffset.HALF_HOUR: "Half an hour Daylight Time",
+            DSTOffset.DAYLIGHT: "Daylight Time",
+            DSTOffset.DOUBLE_DAYLIGHT: "Double Daylight Time",
+            DSTOffset.UNKNOWN: "DST offset unknown",
+        }[self]
+
+    @property
+    def offset_hours(self) -> float | None:
+        """Return the DST offset in hours (e.g. 0.5 for half hour), or None if unknown."""
+
+        return {
+            DSTOffset.STANDARD: 0.0,
+            DSTOffset.HALF_HOUR: 0.5,
+            DSTOffset.DAYLIGHT: 1.0,
+            DSTOffset.DOUBLE_DAYLIGHT: 2.0,
+            DSTOffset.UNKNOWN: None,
+        }[self]
 
 
 @dataclass
@@ -50,7 +79,8 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
     """Local time information characteristic.
 
     Represents the relation (offset) between local time and UTC.
-    Contains time zone and Daylight Savings Time (DST) offset information.
+    Contains time zone and Daylight Savings Time (DST) offset
+    information.
     """
 
     _characteristic_name: str = "Local Time Information"
@@ -58,7 +88,8 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
     def decode_value(  # pylint: disable=too-many-locals
         self, data: bytearray, ctx: Any | None = None
     ) -> LocalTimeInformationData:
-        """Parse local time information data (2 bytes: time zone + DST offset)."""
+        """Parse local time information data (2 bytes: time zone + DST
+        offset)."""
         if len(data) < 2:
             raise ValueError("Local time information data must be at least 2 bytes")
 
@@ -89,11 +120,11 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
             timezone_hours = None
 
         # Process DST offset
-        if dst_offset_raw in DST_OFFSET_VALUES:
-            dst_info: dict[str, str | float | None] = DST_OFFSET_VALUES[dst_offset_raw]
-            dst_desc = str(dst_info["description"])
-            dst_hours: float | None = dst_info["offset_hours"]  # type: ignore[assignment]
-        else:
+        try:
+            dst_enum = DSTOffset(dst_offset_raw)
+            dst_desc = dst_enum.description
+            dst_hours: float | None = dst_enum.offset_hours
+        except ValueError:
             dst_desc = f"Reserved (value: {dst_offset_raw})"
             dst_hours = None
 
@@ -132,14 +163,10 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
             Encoded bytes representing the local time information
         """
         # Encode timezone (use raw value directly)
-        timezone_byte = data.timezone.raw_value.to_bytes(
-            1, byteorder="little", signed=True
-        )
+        timezone_byte = data.timezone.raw_value.to_bytes(1, byteorder="little", signed=True)
 
         # Encode DST offset (use raw value directly)
-        dst_offset_byte = data.dst_offset.raw_value.to_bytes(
-            1, byteorder="little", signed=False
-        )
+        dst_offset_byte = data.dst_offset.raw_value.to_bytes(1, byteorder="little", signed=False)
 
         return bytearray(timezone_byte + dst_offset_byte)
 

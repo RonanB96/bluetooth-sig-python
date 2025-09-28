@@ -69,9 +69,7 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:  
 
     # Get available adapters
     adapters: Any
-    if hasattr(simplepyble_module, "Adapter") and hasattr(
-        simplepyble_module.Adapter, "get_adapters"
-    ):
+    if hasattr(simplepyble_module, "Adapter") and hasattr(simplepyble_module.Adapter, "get_adapters"):
         adapters = simplepyble_module.Adapter.get_adapters()  # type: ignore[attr-defined]
     elif hasattr(simplepyble_module, "get_adapters"):
         adapters = simplepyble_module.get_adapters()  # type: ignore[attr-defined]
@@ -102,9 +100,7 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:  
     for i, peripheral in enumerate(scan_results, 1):
         try:
             name = peripheral.identifier() or "Unknown"
-            address = (
-                peripheral.address() if hasattr(peripheral, "address") else "Unknown"
-            )
+            address = peripheral.address() if hasattr(peripheral, "address") else "Unknown"
             rssi = peripheral.rssi() if hasattr(peripheral, "rssi") else "N/A"
 
             device_info = {
@@ -231,9 +227,7 @@ def read_characteristics_simpleble(  # type: ignore # pylint: disable=too-many-l
 
                         if isinstance(raw_any, str):
                             raw_bytes = raw_any.encode("utf-8")
-                        elif hasattr(raw_any, "__iter__") and not isinstance(
-                            raw_any, bytes
-                        ):
+                        elif hasattr(raw_any, "__iter__") and not isinstance(raw_any, bytes):
                             # raw_any is an iterable of ints (e.g., array-like), convert to bytes
                             raw_bytes = bytes(raw_any)  # type: ignore[arg-type]
                         else:
@@ -257,10 +251,9 @@ def read_characteristics_simpleble(  # type: ignore # pylint: disable=too-many-l
     return results
 
 
-def read_and_parse_with_simpleble(
-    address: str, target_uuids: list[str] | None = None
-) -> dict[str, Any]:
-    """Read characteristics from a BLE device using SimpleBLE and parse with SIG standards.
+def read_and_parse_with_simpleble(address: str, target_uuids: list[str] | None = None) -> dict[str, Any]:
+    """Read characteristics from a BLE device using SimpleBLE and parse with
+    SIG standards.
 
     Args:
         address: BLE device address
@@ -331,24 +324,16 @@ def display_simpleble_results(results: dict[str, Any]) -> None:
         for _uuid, result in results.items():
             if isinstance(result, dict) and result.get("parse_success"):
                 unit_str = f" {result.get('unit', '')}" if result.get("unit") else ""
-                print(
-                    f"{result.get('name', 'Unknown')}: {result.get('value', 'N/A')}{unit_str}"
-                )
+                print(f"{result.get('name', 'Unknown')}: {result.get('value', 'N/A')}{unit_str}")
 
 
 def main() -> None:  # pylint: disable=too-many-nested-blocks
     """Main function demonstrating SimpleBLE + bluetooth_sig integration."""
-    parser = argparse.ArgumentParser(
-        description="SimpleBLE + bluetooth_sig integration example"
-    )
+    parser = argparse.ArgumentParser(description="SimpleBLE + bluetooth_sig integration example")
     parser.add_argument("--address", "-a", help="BLE device address to connect to")
     parser.add_argument("--scan", "-s", action="store_true", help="Scan for devices")
-    parser.add_argument(
-        "--timeout", "-t", type=float, default=10.0, help="Scan timeout in seconds"
-    )
-    parser.add_argument(
-        "--uuids", "-u", nargs="+", help="Specific characteristic UUIDs to read"
-    )
+    parser.add_argument("--timeout", "-t", type=float, default=10.0, help="Scan timeout in seconds")
+    parser.add_argument("--uuids", "-u", nargs="+", help="Specific characteristic UUIDs to read")
 
     args = parser.parse_args()
 
@@ -356,9 +341,7 @@ def main() -> None:  # pylint: disable=too-many-nested-blocks
         print("❌ SimplePyBLE is not available on this system.")
         print("This example requires SimplePyBLE which needs C++ build tools.")
         print("Install with: pip install simplepyble")
-        print(
-            "Note: Requires commercial license for commercial use since January 2025."
-        )
+        print("Note: Requires commercial license for commercial use since January 2025.")
         return
 
     try:

@@ -56,9 +56,7 @@ class IEEE11073Parser:
     FLOAT32_EXPONENT_BIT_WIDTH = 8
 
     # IEEE-11073 timestamp validation constants
-    IEEE11073_MIN_YEAR = (
-        1582  # Gregorian calendar adoption year (per Bluetooth SIG spec)
-    )
+    IEEE11073_MIN_YEAR = 1582  # Gregorian calendar adoption year (per Bluetooth SIG spec)
     MONTH_MIN = 1
     MONTH_MAX = 12
     DAY_MIN = 1
@@ -96,9 +94,7 @@ class IEEE11073Parser:
             return float("-inf")  # -INFINITY
 
         # Extract mantissa and exponent
-        mantissa = BitFieldUtils.extract_bits(
-            raw_value, IEEE11073Parser.SFLOAT_MANTISSA_MASK
-        )
+        mantissa = BitFieldUtils.extract_bits(raw_value, IEEE11073Parser.SFLOAT_MANTISSA_MASK)
         if mantissa >= IEEE11073Parser.SFLOAT_MANTISSA_SIGN_BIT:  # Negative mantissa
             mantissa = mantissa - IEEE11073Parser.SFLOAT_MANTISSA_CONVERSION
 
@@ -131,9 +127,7 @@ class IEEE11073Parser:
             return float("nan")  # NRes (Not a valid result)
 
         # Extract mantissa (24-bit) and exponent (8-bit)
-        mantissa = BitFieldUtils.extract_bits(
-            raw_value, IEEE11073Parser.FLOAT32_MANTISSA_MASK
-        )
+        mantissa = BitFieldUtils.extract_bits(raw_value, IEEE11073Parser.FLOAT32_MANTISSA_MASK)
         if mantissa >= IEEE11073Parser.FLOAT32_MANTISSA_SIGN_BIT:  # Negative mantissa
             mantissa = mantissa - IEEE11073Parser.FLOAT32_MANTISSA_CONVERSION
 
@@ -150,36 +144,22 @@ class IEEE11073Parser:
     @staticmethod
     def encode_sfloat(value: float) -> bytearray:
         """Encode float to IEEE 11073 16-bit SFLOAT."""
-
         if math.isnan(value):
             return bytearray(IEEE11073Parser.SFLOAT_NAN.to_bytes(2, byteorder="little"))
         if math.isinf(value):
             if value > 0:
-                return bytearray(
-                    IEEE11073Parser.SFLOAT_POSITIVE_INFINITY.to_bytes(
-                        2, byteorder="little"
-                    )
-                )
-            return bytearray(
-                IEEE11073Parser.SFLOAT_NEGATIVE_INFINITY.to_bytes(2, byteorder="little")
-            )
+                return bytearray(IEEE11073Parser.SFLOAT_POSITIVE_INFINITY.to_bytes(2, byteorder="little"))
+            return bytearray(IEEE11073Parser.SFLOAT_NEGATIVE_INFINITY.to_bytes(2, byteorder="little"))
 
         # Find best exponent and mantissa representation
         exponent = 0
         mantissa = value
 
-        while (
-            abs(mantissa) >= IEEE11073Parser.SFLOAT_MANTISSA_MAX
-            and exponent < IEEE11073Parser.SFLOAT_EXPONENT_MAX
-        ):
+        while abs(mantissa) >= IEEE11073Parser.SFLOAT_MANTISSA_MAX and exponent < IEEE11073Parser.SFLOAT_EXPONENT_MAX:
             mantissa /= 10
             exponent += 1
 
-        while (
-            abs(mantissa) < 1
-            and mantissa != 0
-            and exponent > IEEE11073Parser.SFLOAT_EXPONENT_MIN
-        ):
+        while abs(mantissa) < 1 and mantissa != 0 and exponent > IEEE11073Parser.SFLOAT_EXPONENT_MIN:
             mantissa *= 10
             exponent -= 1
 
@@ -209,21 +189,11 @@ class IEEE11073Parser:
     def encode_float32(value: float) -> bytearray:
         """Encode float to IEEE 11073 32-bit FLOAT."""
         if math.isnan(value):
-            return bytearray(
-                IEEE11073Parser.FLOAT32_NAN.to_bytes(4, byteorder="little")
-            )
+            return bytearray(IEEE11073Parser.FLOAT32_NAN.to_bytes(4, byteorder="little"))
         if math.isinf(value):
             if value > 0:
-                return bytearray(
-                    IEEE11073Parser.FLOAT32_POSITIVE_INFINITY.to_bytes(
-                        4, byteorder="little"
-                    )
-                )
-            return bytearray(
-                IEEE11073Parser.FLOAT32_NEGATIVE_INFINITY.to_bytes(
-                    4, byteorder="little"
-                )
-            )
+                return bytearray(IEEE11073Parser.FLOAT32_POSITIVE_INFINITY.to_bytes(4, byteorder="little"))
+            return bytearray(IEEE11073Parser.FLOAT32_NEGATIVE_INFINITY.to_bytes(4, byteorder="little"))
 
         if value == 0.0:
             return bytearray([0x00, 0x00, 0x00, 0x00])
@@ -273,14 +243,10 @@ class IEEE11073Parser:
         # Pack into 32-bit value: mantissa (24-bit signed) + exponent (8-bit signed)
         # Convert signed values to unsigned for bit packing
         mantissa_unsigned = (
-            best_mantissa
-            if best_mantissa >= 0
-            else best_mantissa + IEEE11073Parser.FLOAT32_MANTISSA_CONVERSION
+            best_mantissa if best_mantissa >= 0 else best_mantissa + IEEE11073Parser.FLOAT32_MANTISSA_CONVERSION
         )
         exponent_unsigned = (
-            best_exponent
-            if best_exponent >= 0
-            else best_exponent + IEEE11073Parser.FLOAT32_EXPONENT_CONVERSION
+            best_exponent if best_exponent >= 0 else best_exponent + IEEE11073Parser.FLOAT32_EXPONENT_CONVERSION
         )
 
         raw_value = BitFieldUtils.merge_bit_fields(
@@ -301,14 +267,10 @@ class IEEE11073Parser:
     def parse_timestamp(data: bytearray, offset: int) -> datetime:
         """Parse IEEE-11073 timestamp format (7 bytes)."""
         if len(data) < offset + IEEE11073Parser.TIMESTAMP_LENGTH:
-            raise InsufficientDataError(
-                "IEEE 11073 timestamp", data[offset:], IEEE11073Parser.TIMESTAMP_LENGTH
-            )
+            raise InsufficientDataError("IEEE 11073 timestamp", data[offset:], IEEE11073Parser.TIMESTAMP_LENGTH)
 
         timestamp_data = data[offset : offset + IEEE11073Parser.TIMESTAMP_LENGTH]
-        year, month, day, hours, minutes, seconds = struct.unpack(
-            "<HBBBBB", timestamp_data
-        )
+        year, month, day, hours, minutes, seconds = struct.unpack("<HBBBBB", timestamp_data)
         return datetime(year, month, day, hours, minutes, seconds)
 
     @staticmethod
@@ -316,14 +278,8 @@ class IEEE11073Parser:
         """Encode timestamp to IEEE-11073 7-byte format."""
         # Validate ranges per IEEE-11073 specification
         if not IEEE11073Parser.IEEE11073_MIN_YEAR <= timestamp.year <= MAXYEAR:
-            raise ValueRangeError(
-                "year", timestamp.year, IEEE11073Parser.IEEE11073_MIN_YEAR, MAXYEAR
-            )
-        if (
-            not IEEE11073Parser.MONTH_MIN
-            <= timestamp.month
-            <= IEEE11073Parser.MONTH_MAX
-        ):
+            raise ValueRangeError("year", timestamp.year, IEEE11073Parser.IEEE11073_MIN_YEAR, MAXYEAR)
+        if not IEEE11073Parser.MONTH_MIN <= timestamp.month <= IEEE11073Parser.MONTH_MAX:
             raise ValueRangeError(
                 "month",
                 timestamp.month,
@@ -331,9 +287,7 @@ class IEEE11073Parser:
                 IEEE11073Parser.MONTH_MAX,
             )
         if not IEEE11073Parser.DAY_MIN <= timestamp.day <= IEEE11073Parser.DAY_MAX:
-            raise ValueRangeError(
-                "day", timestamp.day, IEEE11073Parser.DAY_MIN, IEEE11073Parser.DAY_MAX
-            )
+            raise ValueRangeError("day", timestamp.day, IEEE11073Parser.DAY_MIN, IEEE11073Parser.DAY_MAX)
         if not IEEE11073Parser.HOUR_MIN <= timestamp.hour <= IEEE11073Parser.HOUR_MAX:
             raise ValueRangeError(
                 "hour",
@@ -341,22 +295,14 @@ class IEEE11073Parser:
                 IEEE11073Parser.HOUR_MIN,
                 IEEE11073Parser.HOUR_MAX,
             )
-        if (
-            not IEEE11073Parser.MINUTE_MIN
-            <= timestamp.minute
-            <= IEEE11073Parser.MINUTE_MAX
-        ):
+        if not IEEE11073Parser.MINUTE_MIN <= timestamp.minute <= IEEE11073Parser.MINUTE_MAX:
             raise ValueRangeError(
                 "minute",
                 timestamp.minute,
                 IEEE11073Parser.MINUTE_MIN,
                 IEEE11073Parser.MINUTE_MAX,
             )
-        if (
-            not IEEE11073Parser.SECOND_MIN
-            <= timestamp.second
-            <= IEEE11073Parser.SECOND_MAX
-        ):
+        if not IEEE11073Parser.SECOND_MIN <= timestamp.second <= IEEE11073Parser.SECOND_MAX:
             raise ValueRangeError(
                 "second",
                 timestamp.second,

@@ -9,8 +9,8 @@ from .templates import ConcentrationCharacteristic
 class MethaneConcentrationCharacteristic(ConcentrationCharacteristic):
     """Methane concentration measurement characteristic (0x2BD1).
 
-    Represents methane concentration in parts per million (ppm)
-    with a resolution of 1 ppm.
+    Represents methane concentration in parts per million (ppm) with a
+    resolution of 1 ppm.
     """
 
     _characteristic_name: str = "Methane Concentration"

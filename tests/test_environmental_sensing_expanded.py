@@ -150,7 +150,8 @@ class TestEnvironmentalSensingExpanded:
             wind_speed.decode_value(bytearray([0x50]))
 
     def test_environmental_sensing_service_expansion(self):
-        """Test that Environmental Sensing Service includes all new characteristics."""
+        """Test that Environmental Sensing Service includes all new
+        characteristics."""
         from bluetooth_sig.types.gatt_enums import CharacteristicName
 
         expected_chars = EnvironmentalSensingService.get_expected_characteristics()

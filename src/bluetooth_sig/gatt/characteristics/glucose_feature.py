@@ -75,8 +75,9 @@ class GlucoseFeatureData:  # pylint: disable=too-many-instance-attributes
 class GlucoseFeatureCharacteristic(BaseCharacteristic):
     """Glucose Feature characteristic (0x2A51).
 
-    Used to expose the supported features of a glucose monitoring device.
-    Indicates which optional fields and capabilities are available.
+    Used to expose the supported features of a glucose monitoring
+    device. Indicates which optional fields and capabilities are
+    available.
     """
 
     _characteristic_name: str = "Glucose Feature"
@@ -110,20 +111,12 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
 
         # Extract individual feature flags using enum
         low_battery_detection = bool(features & GlucoseFeatures.LOW_BATTERY_DETECTION)
-        sensor_malfunction_detection = bool(
-            features & GlucoseFeatures.SENSOR_MALFUNCTION_DETECTION
-        )
+        sensor_malfunction_detection = bool(features & GlucoseFeatures.SENSOR_MALFUNCTION_DETECTION)
         sensor_sample_size = bool(features & GlucoseFeatures.SENSOR_SAMPLE_SIZE)
-        sensor_strip_insertion_error = bool(
-            features & GlucoseFeatures.SENSOR_STRIP_INSERTION_ERROR
-        )
-        sensor_strip_type_error = bool(
-            features & GlucoseFeatures.SENSOR_STRIP_TYPE_ERROR
-        )
+        sensor_strip_insertion_error = bool(features & GlucoseFeatures.SENSOR_STRIP_INSERTION_ERROR)
+        sensor_strip_type_error = bool(features & GlucoseFeatures.SENSOR_STRIP_TYPE_ERROR)
         sensor_result_high_low = bool(features & GlucoseFeatures.SENSOR_RESULT_HIGH_LOW)
-        sensor_temperature_high_low = bool(
-            features & GlucoseFeatures.SENSOR_TEMPERATURE_HIGH_LOW
-        )
+        sensor_temperature_high_low = bool(features & GlucoseFeatures.SENSOR_TEMPERATURE_HIGH_LOW)
         sensor_read_interrupt = bool(features & GlucoseFeatures.SENSOR_READ_INTERRUPT)
         general_device_fault = bool(features & GlucoseFeatures.GENERAL_DEVICE_FAULT)
         time_fault = bool(features & GlucoseFeatures.TIME_FAULT)

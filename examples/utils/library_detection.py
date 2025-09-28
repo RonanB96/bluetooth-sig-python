@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Library detection utilities for BLE examples.
 
-This module handles detection and availability checking of different BLE libraries.
+This module handles detection and availability checking of different BLE
+libraries.
 """
 
 from __future__ import annotations
@@ -37,9 +38,7 @@ def show_library_availability() -> bool:
     if not AVAILABLE_LIBRARIES:
         print("❌ No BLE libraries found. Install one or more:")
         print("   pip install bleak-retry-connector  # Enhanced Bleak with retry logic")
-        print(
-            "   pip install simplepyble  # Cross-platform (commercial license for commercial use)"
-        )
+        print("   pip install simplepyble  # Cross-platform (commercial license for commercial use)")
         return False
 
     print("✅ Available BLE libraries:")
@@ -47,9 +46,7 @@ def show_library_availability() -> bool:
         async_str = "Async" if info["async"] else "Sync"
         print(f"   {lib_name}: {info['description']} ({async_str})")
 
-    print(
-        f"\n🎯 Will demonstrate bluetooth_sig parsing with {len(AVAILABLE_LIBRARIES)} libraries"
-    )
+    print(f"\n🎯 Will demonstrate bluetooth_sig parsing with {len(AVAILABLE_LIBRARIES)} libraries")
     return True
 
 

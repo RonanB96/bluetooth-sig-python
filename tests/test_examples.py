@@ -94,9 +94,7 @@ class TestAdvertisingParsing:
             await main()
 
         captured = capsys.readouterr()
-        assert (
-            "No data provided, using mock BLE data for demonstration:" in captured.out
-        )
+        assert "No data provided, using mock BLE data for demonstration:" in captured.out
         assert "Mock BLE Device Results with SIG Parsing:" in captured.out
         assert "Battery Level:" in captured.out
         assert "Device Name:" in captured.out
@@ -164,9 +162,7 @@ class TestMockDataConsistency:
 
         # Format data for parsing
         current_time = time.time()
-        formatted_data = {
-            uuid: (data, current_time) for uuid, data in mock_data.items()
-        }
+        formatted_data = {uuid: (data, current_time) for uuid, data in mock_data.items()}
 
         # Parse the data
         results = await parse_and_display_results(formatted_data, "Mock Test")

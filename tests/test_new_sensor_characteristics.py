@@ -34,9 +34,7 @@ class TestNavigationCharacteristics:
 
         # Test metadata
         assert char.unit == "°"
-        assert (
-            char.value_type.value == "string"
-        )  # Changed from float - YAML overrides manual
+        assert char.value_type.value == "string"  # Changed from float - YAML overrides manual
 
         # Test normal parsing: 18000 (in 0.01 degrees) = 180.00 degrees
         test_data = bytearray([0x40, 0x46])  # 18000 in little endian uint16
@@ -67,9 +65,7 @@ class TestNavigationCharacteristics:
 
         # Test metadata
         assert char.unit == "m"
-        assert (
-            char.value_type.value == "string"
-        )  # Changed from float - YAML overrides manual
+        assert char.value_type.value == "string"  # Changed from float - YAML overrides manual
 
         # Test normal parsing: 50000 (in 0.01 meters) = 500.00 meters
         test_data = bytearray([0x50, 0xC3, 0x00])  # 50000 in 24-bit little endian
@@ -139,9 +135,7 @@ class TestEnvironmentalCharacteristics:
 
         # Test metadata
         assert char.unit == ""
-        assert (
-            char._manual_value_type == "BarometricPressureTrend"
-        )  # Manual override: returns enum
+        assert char._manual_value_type == "BarometricPressureTrend"  # Manual override: returns enum
 
         # Test known trend values
         test_cases = [
@@ -170,9 +164,7 @@ class TestEnvironmentalCharacteristics:
 
         # Test metadata
         assert char.unit == "grains/m³"
-        assert (
-            char.value_type_resolved.value == "float"
-        )  # Manual override since decode_value returns float
+        assert char.value_type_resolved.value == "float"  # Manual override since decode_value returns float
 
         # Test normal parsing: 123456 count/m³
         test_data = bytearray([0x40, 0xE2, 0x01])  # 123456 in 24-bit little endian
@@ -208,9 +200,7 @@ class TestTimeCharacteristics:
 
         # Test metadata
         assert char.unit == ""
-        assert (
-            char.value_type.value == "string"
-        )  # Manual override: returns descriptive strings
+        assert char.value_type.value == "string"  # Manual override: returns descriptive strings
 
         # Test normal time zones
         test_cases = [

@@ -11,9 +11,10 @@ from .base import BaseGattService
 class GlucoseService(BaseGattService):
     """Glucose Service implementation (0x1808).
 
-    Used for glucose monitoring devices including continuous glucose monitors (CGMs)
-    and traditional glucose meters. Provides comprehensive glucose measurement data
-    with context and device capabilities.
+    Used for glucose monitoring devices including continuous glucose
+    monitors (CGMs) and traditional glucose meters. Provides
+    comprehensive glucose measurement data with context and device
+    capabilities.
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {

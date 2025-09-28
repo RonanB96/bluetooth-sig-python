@@ -17,7 +17,8 @@ from .utils import DataParser, IEEE11073Parser
 
 
 class BodyCompositionFlags(IntFlag):
-    """Body Composition Measurement flags as per Bluetooth SIG specification."""
+    """Body Composition Measurement flags as per Bluetooth SIG
+    specification."""
 
     IMPERIAL_UNITS = 0x001
     TIMESTAMP_PRESENT = 0x002
@@ -65,8 +66,9 @@ class BodyCompositionMeasurementData:  # pylint: disable=too-many-instance-attri
 class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     """Body Composition Measurement characteristic (0x2A9C).
 
-    Used to transmit body composition measurement data including body fat percentage,
-    muscle mass, bone mass, water percentage, and other body metrics.
+    Used to transmit body composition measurement data including body
+    fat percentage, muscle mass, bone mass, water percentage, and other
+    body metrics.
     """
 
     _characteristic_name: str = "Body Composition Measurement"
@@ -75,10 +77,9 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 50  # + Timestamp(7) + UserID(1) + Multiple measurements maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> BodyCompositionMeasurementData:
-        """Parse body composition measurement data according to Bluetooth specification.
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> BodyCompositionMeasurementData:
+        """Parse body composition measurement data according to Bluetooth
+        specification.
 
         Format: Flags(2) + Body Fat %(2) + [Timestamp(7)] + [User ID(1)] +
                 [Basal Metabolism(2)] + [Muscle Mass(2)] + [etc...]
@@ -93,9 +94,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             ValueError: If data format is invalid
         """
         if len(data) < 4:
-            raise ValueError(
-                "Body Composition Measurement data must be at least 4 bytes"
-            )
+            raise ValueError("Body Composition Measurement data must be at least 4 bytes")
 
         # Parse flags and required body fat percentage
         flags, offset = self._parse_flags_and_body_fat(data)
@@ -104,9 +103,9 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         result = BodyCompositionMeasurementData(
             body_fat_percentage=self._calculate_body_fat_percentage(data, offset - 2),
             flags=BodyCompositionFlags(flags),
-            measurement_units="imperial"
-            if BodyCompositionFlags.IMPERIAL_UNITS in BodyCompositionFlags(flags)
-            else "metric",
+            measurement_units=(
+                "imperial" if BodyCompositionFlags.IMPERIAL_UNITS in BodyCompositionFlags(flags) else "metric"
+            ),
         )
 
         # Parse optional fields based on flags
@@ -130,9 +129,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         # Build basic result with flags and body fat percentage
         result = bytearray()
-        result.extend(
-            DataParser.encode_int16(int(flags), signed=False)
-        )  # Flags (16-bit)
+        result.extend(DataParser.encode_int16(int(flags), signed=False))  # Flags (16-bit)
 
         # Convert body fat percentage to uint16 with 0.1% resolution
         body_fat_raw = round(body_fat_percentage * 10)
@@ -199,10 +196,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             offset += 1
 
         # Parse optional basal metabolism (uint16) if present
-        if (
-            BodyCompositionFlags.BASAL_METABOLISM_PRESENT in flags
-            and len(data) >= offset + 2
-        ):
+        if BodyCompositionFlags.BASAL_METABOLISM_PRESENT in flags and len(data) >= offset + 2:
             basal_metabolism_raw = DataParser.parse_int16(data, offset, signed=False)
             result.basal_metabolism = basal_metabolism_raw  # in kJ
             offset += 2
@@ -232,47 +226,32 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             Updated offset
         """
         # Parse optional muscle mass
-        if (
-            BodyCompositionFlags.MUSCLE_MASS_PRESENT in flags
-            and len(data) >= offset + 2
-        ):
+        if BodyCompositionFlags.MUSCLE_MASS_PRESENT in flags and len(data) >= offset + 2:
             muscle_mass, mass_unit = self._parse_mass_field(data, flags, offset)
             result.muscle_mass = muscle_mass
             result.muscle_mass_unit = mass_unit
             offset += 2
 
         # Parse optional muscle percentage
-        if (
-            BodyCompositionFlags.MUSCLE_PERCENTAGE_PRESENT in flags
-            and len(data) >= offset + 2
-        ):
+        if BodyCompositionFlags.MUSCLE_PERCENTAGE_PRESENT in flags and len(data) >= offset + 2:
             muscle_percentage_raw = DataParser.parse_int16(data, offset, signed=False)
             result.muscle_percentage = muscle_percentage_raw * 0.1
             offset += 2
 
         # Parse optional fat free mass
-        if (
-            BodyCompositionFlags.FAT_FREE_MASS_PRESENT in flags
-            and len(data) >= offset + 2
-        ):
+        if BodyCompositionFlags.FAT_FREE_MASS_PRESENT in flags and len(data) >= offset + 2:
             fat_free_mass, _ = self._parse_mass_field(data, flags, offset)
             result.fat_free_mass = fat_free_mass
             offset += 2
 
         # Parse optional soft lean mass
-        if (
-            BodyCompositionFlags.SOFT_LEAN_MASS_PRESENT in flags
-            and len(data) >= offset + 2
-        ):
+        if BodyCompositionFlags.SOFT_LEAN_MASS_PRESENT in flags and len(data) >= offset + 2:
             soft_lean_mass, _ = self._parse_mass_field(data, flags, offset)
             result.soft_lean_mass = soft_lean_mass
             offset += 2
 
         # Parse optional body water mass
-        if (
-            BodyCompositionFlags.BODY_WATER_MASS_PRESENT in flags
-            and len(data) >= offset + 2
-        ):
+        if BodyCompositionFlags.BODY_WATER_MASS_PRESENT in flags and len(data) >= offset + 2:
             body_water_mass, _ = self._parse_mass_field(data, flags, offset)
             result.body_water_mass = body_water_mass
             offset += 2
@@ -316,9 +295,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             result.height = height
             offset += 2
 
-    def _parse_mass_field(
-        self, data: bytearray, flags: BodyCompositionFlags, offset: int
-    ) -> tuple[float, str]:
+    def _parse_mass_field(self, data: bytearray, flags: BodyCompositionFlags, offset: int) -> tuple[float, str]:
         """Parse a mass field with unit conversion.
 
         Args:

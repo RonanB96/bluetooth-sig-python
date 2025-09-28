@@ -30,7 +30,7 @@ def extract_coverage_percentage(coverage_xml_path: str) -> float:
     root = tree.getroot()
 
     # Get line coverage percentage from the root element
-    line_rate = float(root.attrib['line-rate'])
+    line_rate = float(root.attrib["line-rate"])
     coverage_pct = round(line_rate * 100, 1)
 
     return coverage_pct
@@ -83,8 +83,8 @@ def create_coverage_badge_json(coverage_pct: float, output_dir: str) -> str:
 def main():
     """Main function to extract coverage and create badge JSON."""
     # Default paths
-    coverage_xml_path = 'coverage.xml'
-    output_dir = 'htmlcov'
+    coverage_xml_path = "coverage.xml"
+    output_dir = "htmlcov"
 
     # Allow override of paths via command line arguments
     if len(sys.argv) > 1:

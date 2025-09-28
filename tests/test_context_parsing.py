@@ -43,9 +43,7 @@ class MeasurementCharacteristic:
 
 def test_context_parsing_simple():
     # Create fake parsed calibration
-    calib_data = CharacteristicData(
-        uuid="calib", name="Calibration", value=2, raw_data=b"\x02"
-    )
+    calib_data = CharacteristicData(uuid="calib", name="Calibration", value=2, raw_data=b"\x02")
 
     ctx = CharacteristicContext(
         device_info=DeviceInfo(address="00:11:22:33:44:55"),

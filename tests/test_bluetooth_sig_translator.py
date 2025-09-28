@@ -19,38 +19,20 @@ class TestBluetoothSIGTranslator:
         translator = BluetoothSIGTranslator()
 
         # Test that core methods exist
-        assert hasattr(translator, "parse_characteristic"), (
-            "Translator should have parse_characteristic method"
-        )
-        assert hasattr(translator, "get_characteristic_info"), (
-            "Translator should have get_characteristic_info method"
-        )
-        assert hasattr(translator, "get_service_info"), (
-            "Translator should have get_service_info method"
-        )
+        assert hasattr(translator, "parse_characteristic"), "Translator should have parse_characteristic method"
+        assert hasattr(translator, "get_characteristic_info"), "Translator should have get_characteristic_info method"
+        assert hasattr(translator, "get_service_info"), "Translator should have get_service_info method"
         assert hasattr(translator, "list_supported_characteristics"), (
             "Translator should have list_supported_characteristics method"
         )
-        assert hasattr(translator, "list_supported_services"), (
-            "Translator should have list_supported_services method"
-        )
+        assert hasattr(translator, "list_supported_services"), "Translator should have list_supported_services method"
 
         # Test that methods are callable
-        assert callable(translator.parse_characteristic), (
-            "parse_characteristic should be callable"
-        )
-        assert callable(translator.get_characteristic_info), (
-            "get_characteristic_info should be callable"
-        )
-        assert callable(translator.get_service_info), (
-            "get_service_info should be callable"
-        )
-        assert callable(translator.list_supported_characteristics), (
-            "list_supported_characteristics should be callable"
-        )
-        assert callable(translator.list_supported_services), (
-            "list_supported_services should be callable"
-        )
+        assert callable(translator.parse_characteristic), "parse_characteristic should be callable"
+        assert callable(translator.get_characteristic_info), "get_characteristic_info should be callable"
+        assert callable(translator.get_service_info), "get_service_info should be callable"
+        assert callable(translator.list_supported_characteristics), "list_supported_characteristics should be callable"
+        assert callable(translator.list_supported_services), "list_supported_services should be callable"
 
     def test_parse_characteristic_fallback(self):
         """Test characteristic parsing returns fallback data."""
@@ -89,7 +71,8 @@ class TestBluetoothSIGTranslator:
             assert result.parse_success is True
 
     def test_get_characteristic_info_fallback(self):
-        """Test get_characteristic_info returns None for unknown characteristics."""
+        """Test get_characteristic_info returns None for unknown
+        characteristics."""
         translator = BluetoothSIGTranslator()
 
         # Test with unknown UUID
@@ -140,24 +123,14 @@ class TestBluetoothSIGTranslator:
         translator = BluetoothSIGTranslator()
 
         # Ensure no connection methods exist
-        assert not hasattr(translator, "connect"), (
-            "Translator should not have connect method"
-        )
-        assert not hasattr(translator, "disconnect"), (
-            "Translator should not have disconnect method"
-        )
-        assert not hasattr(translator, "get_rssi"), (
-            "Translator should not have get_rssi method"
-        )
-        assert not hasattr(translator, "read_characteristics"), (
-            "Translator should not have read_characteristics method"
-        )
+        assert not hasattr(translator, "connect"), "Translator should not have connect method"
+        assert not hasattr(translator, "disconnect"), "Translator should not have disconnect method"
+        assert not hasattr(translator, "get_rssi"), "Translator should not have get_rssi method"
+        assert not hasattr(translator, "read_characteristics"), "Translator should not have read_characteristics method"
         assert not hasattr(translator, "read_parsed_characteristics"), (
             "Translator should not have read_parsed_characteristics method"
         )
-        assert not hasattr(translator, "get_device_info"), (
-            "Translator should not have get_device_info method"
-        )
+        assert not hasattr(translator, "get_device_info"), "Translator should not have get_device_info method"
 
     def test_resolve_uuid_with_characteristic_name(self):
         """Test resolving characteristic name to full info."""
@@ -180,9 +153,7 @@ class TestBluetoothSIGTranslator:
         # Test known UUID
         result = translator.resolve_name("2A19")
         assert result is not None, "Should find info for 2A19"
-        assert result.name == "Battery Level", (
-            f"Expected 'Battery Level', got {result.name}"
-        )
+        assert result.name == "Battery Level", f"Expected 'Battery Level', got {result.name}"
         assert result.uuid == "2A19"
 
         # Test unknown UUID

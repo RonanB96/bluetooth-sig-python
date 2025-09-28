@@ -42,7 +42,8 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
     """Weight Measurement characteristic (0x2A9D).
 
     Used to transmit weight measurement data with optional fields.
-    Supports metric/imperial units, timestamps, user ID, BMI, and height.
+    Supports metric/imperial units, timestamps, user ID, BMI, and
+    height.
     """
 
     _characteristic_name: str = "Weight Measurement"
@@ -51,9 +52,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 21  # + Timestamp(7) + UserID(1) + BMI(2) + Height(2) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> WeightMeasurementData:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> WeightMeasurementData:
         """Parse weight measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +
@@ -98,10 +97,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
         )
 
         # Parse optional timestamp (7 bytes) if present
-        if (
-            WeightMeasurementFlags.TIMESTAMP_PRESENT in flags
-            and len(data) >= offset + 7
-        ):
+        if WeightMeasurementFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
             result.timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
@@ -119,9 +115,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
         # Parse optional height (uint16 with 0.001m resolution) if present
         if WeightMeasurementFlags.HEIGHT_PRESENT in flags and len(data) >= offset + 2:
             height_raw = DataParser.parse_int16(data, offset, signed=False)
-            if (
-                WeightMeasurementFlags.IMPERIAL_UNITS in flags
-            ):  # Imperial units (inches)
+            if WeightMeasurementFlags.IMPERIAL_UNITS in flags:  # Imperial units (inches)
                 result.height = height_raw * 0.1  # 0.1 inch resolution
                 result.height_unit = "in"
             else:  # SI units (meters)
@@ -182,9 +176,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
             result.extend(DataParser.encode_int16(bmi_raw, signed=False))
 
         if data.height is not None:
-            if (
-                WeightMeasurementFlags.IMPERIAL_UNITS in flags
-            ):  # Imperial units (inches)
+            if WeightMeasurementFlags.IMPERIAL_UNITS in flags:  # Imperial units (inches)
                 height_raw = round(data.height / 0.1)  # 0.1 inch resolution
             else:  # SI units (meters)
                 height_raw = round(data.height / 0.001)  # 0.001 m resolution

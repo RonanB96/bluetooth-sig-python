@@ -17,9 +17,7 @@ from .library_detection import (
 from .simpleble_integration import comprehensive_device_analysis_simpleble
 
 
-async def demo_library_comparison(
-    address: str, target_uuids: list[str] | None = None
-) -> dict[str, Any]:
+async def demo_library_comparison(address: str, target_uuids: list[str] | None = None) -> dict[str, Any]:
     """Compare BLE libraries using comprehensive device analysis.
 
     Note: Only supports bleak-retry and simpleble (plain bleak removed).

@@ -132,7 +132,8 @@ class MedicationType(IntEnum):
 
 
 class GlucoseMeasurementContextExtendedFlags(IntEnum):
-    """Glucose Measurement Context Extended Flags constants as per Bluetooth SIG specification.
+    """Glucose Measurement Context Extended Flags constants as per Bluetooth
+    SIG specification.
 
     Currently all bits are reserved for future use.
     """
@@ -218,8 +219,9 @@ class GlucoseMeasurementContextData:  # pylint: disable=too-many-instance-attrib
 class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     """Glucose Measurement Context characteristic (0x2A34).
 
-    Used to transmit additional context for glucose measurements including
-    carbohydrate intake, exercise, medication, and HbA1c information.
+    Used to transmit additional context for glucose measurements
+    including carbohydrate intake, exercise, medication, and HbA1c
+    information.
     """
 
     _characteristic_name: str = "Glucose Measurement Context"
@@ -230,10 +232,9 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     )
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> GlucoseMeasurementContextData:
-        """Parse glucose measurement context data according to Bluetooth specification.
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> GlucoseMeasurementContextData:
+        """Parse glucose measurement context data according to Bluetooth
+        specification.
 
         Format: Flags(1) + Sequence Number(2) + [Extended Flags(1)] + [Carbohydrate ID(1) + Carb(2)] +
                 [Meal(1)] + [Tester-Health(1)] + [Exercise Duration(2) + Exercise Intensity(1)] +
@@ -249,9 +250,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
             ValueError: If data format is invalid
         """
         if len(data) < 3:
-            raise ValueError(
-                "Glucose Measurement Context data must be at least 3 bytes"
-            )
+            raise ValueError("Glucose Measurement Context data must be at least 3 bytes")
 
         flags_raw = data[0]
         flags = GlucoseMeasurementContextFlags(flags_raw)
@@ -309,10 +308,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         offset: int,
     ) -> int:
         """Parse optional extended flags field."""
-        if (
-            GlucoseMeasurementContextFlags.EXTENDED_FLAGS_PRESENT in flags
-            and len(data) >= offset + 1
-        ):
+        if GlucoseMeasurementContextFlags.EXTENDED_FLAGS_PRESENT in flags and len(data) >= offset + 1:
             extended_flags = data[offset]
             result.extended_flags = extended_flags
             offset += 1
@@ -326,10 +322,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         offset: int,
     ) -> int:
         """Parse optional carbohydrate information field."""
-        if (
-            GlucoseMeasurementContextFlags.CARBOHYDRATE_PRESENT in flags
-            and len(data) >= offset + 3
-        ):
+        if GlucoseMeasurementContextFlags.CARBOHYDRATE_PRESENT in flags and len(data) >= offset + 3:
             carb_id = data[offset]
             carb_value = IEEE11073Parser.parse_sfloat(data, offset + 1)
             result.carbohydrate_id = CarbohydrateType(carb_id)
@@ -345,10 +338,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         offset: int,
     ) -> int:
         """Parse optional meal information field."""
-        if (
-            GlucoseMeasurementContextFlags.MEAL_PRESENT in flags
-            and len(data) >= offset + 1
-        ):
+        if GlucoseMeasurementContextFlags.MEAL_PRESENT in flags and len(data) >= offset + 1:
             meal = data[offset]
             result.meal = MealType(meal)
             offset += 1
@@ -362,10 +352,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         offset: int,
     ) -> int:
         """Parse optional tester and health information field."""
-        if (
-            GlucoseMeasurementContextFlags.TESTER_HEALTH_PRESENT in flags
-            and len(data) >= offset + 1
-        ):
+        if GlucoseMeasurementContextFlags.TESTER_HEALTH_PRESENT in flags and len(data) >= offset + 1:
             tester_health = data[offset]
             tester = BitFieldUtils.extract_bit_field(
                 tester_health,
@@ -390,10 +377,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         offset: int,
     ) -> int:
         """Parse optional exercise information field."""
-        if (
-            GlucoseMeasurementContextFlags.EXERCISE_PRESENT in flags
-            and len(data) >= offset + 3
-        ):
+        if GlucoseMeasurementContextFlags.EXERCISE_PRESENT in flags and len(data) >= offset + 3:
             exercise_duration = DataParser.parse_int16(data, offset, signed=False)
             exercise_intensity = data[offset + 2]
             result.exercise_duration_seconds = exercise_duration
@@ -409,10 +393,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         offset: int,
     ) -> int:
         """Parse optional medication information field."""
-        if (
-            GlucoseMeasurementContextFlags.MEDICATION_PRESENT in flags
-            and len(data) >= offset + 3
-        ):
+        if GlucoseMeasurementContextFlags.MEDICATION_PRESENT in flags and len(data) >= offset + 3:
             medication_id = data[offset]
             medication_value = IEEE11073Parser.parse_sfloat(data, offset + 1)
             result.medication_id = MedicationType(medication_id)
@@ -428,10 +409,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         offset: int,
     ) -> int:
         """Parse optional HbA1c information field."""
-        if (
-            GlucoseMeasurementContextFlags.HBA1C_PRESENT in flags
-            and len(data) >= offset + 2
-        ):
+        if GlucoseMeasurementContextFlags.HBA1C_PRESENT in flags and len(data) >= offset + 2:
             hba1c_value = IEEE11073Parser.parse_sfloat(data, offset)
             result.hba1c_percent = hba1c_value
             offset += 2

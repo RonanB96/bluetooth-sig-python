@@ -34,10 +34,9 @@ class CharacteristicSpec(Generic[CharacteristicType]):
     condition: str = ""
 
 
-def characteristic(
-    name: CharacteristicName, required: bool = False
-) -> CharacteristicSpec[BaseCharacteristic]:
-    """Create a CharacteristicSpec using the central registry for class mapping.
+def characteristic(name: CharacteristicName, required: bool = False) -> CharacteristicSpec[BaseCharacteristic]:
+    """Create a CharacteristicSpec using the central registry for class
+    mapping.
 
     This eliminates the need to manually specify the characteristic class
     by automatically resolving it from the CharacteristicName enum.
@@ -57,9 +56,7 @@ def characteristic(
 
 
 # Strong type definitions - using enums instead of strings for type safety
-CharacteristicCollection = dict[
-    CharacteristicName, CharacteristicSpec[BaseCharacteristic]
-]
+CharacteristicCollection = dict[CharacteristicName, CharacteristicSpec[BaseCharacteristic]]
 """Maps characteristic names (enums) to their specifications - STRONG TYPING ONLY."""
 
 # Network/protocol data structures - these are inherently dynamic from BLE

@@ -225,7 +225,8 @@ class UuidRegistry:
         return unit_name
 
     def _load_gss_specifications(self) -> None:
-        """Load detailed specifications from GSS YAML files to extract unit information."""
+        """Load detailed specifications from GSS YAML files to extract unit
+        information."""
         gss_path = self._find_gss_path()
         if not gss_path:
             return
@@ -269,9 +270,7 @@ class UuidRegistry:
             unit, value_type = self._extract_info_from_gss(char_data)
 
             if unit or value_type:
-                self._update_characteristics_with_gss_info(
-                    char_name, char_id, unit, value_type
-                )
+                self._update_characteristics_with_gss_info(char_name, char_id, unit, value_type)
 
         except (yaml.YAMLError, OSError, KeyError) as e:
             # Log warning for files that fail to parse for debugging
@@ -280,14 +279,10 @@ class UuidRegistry:
     def _update_characteristics_with_gss_info(
         self, char_name: str, char_id: str, unit: str | None, value_type: str | None
     ) -> None:
-        """Update existing UuidInfo entries with unit and value_type information."""
+        """Update existing UuidInfo entries with unit and value_type
+        information."""
         for key, uuid_info in self._characteristics.items():
-            if (
-                uuid_info.name == char_name
-                or uuid_info.id == char_id
-                or key == char_name
-                or key == char_id
-            ):
+            if uuid_info.name == char_name or uuid_info.id == char_id or key == char_name or key == char_id:
                 # Create new UuidInfo with unit and value_type
                 updated_info = UuidInfo(
                     uuid=uuid_info.uuid,
@@ -299,9 +294,7 @@ class UuidRegistry:
                 )
                 self._characteristics[key] = updated_info
 
-    def _extract_info_from_gss(
-        self, char_data: dict[str, Any]
-    ) -> tuple[str | None, str | None]:
+    def _extract_info_from_gss(self, char_data: dict[str, Any]) -> tuple[str | None, str | None]:
         """Extract unit and value_type from GSS characteristic structure.
 
         Args:

@@ -13,8 +13,8 @@ from .base import BaseCharacteristic
 class TimeZoneCharacteristic(BaseCharacteristic):
     """Time zone characteristic.
 
-    Represents the time difference in 15-minute increments between
-    local standard time and UTC.
+    Represents the time difference in 15-minute increments between local
+    standard time and UTC.
     """
 
     _characteristic_name: str = "Time Zone"

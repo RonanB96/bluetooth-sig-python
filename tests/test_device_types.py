@@ -16,9 +16,7 @@ class TestDeviceService:
         mock_service.service_name = "Battery Service"
         mock_characteristic = Mock()
 
-        device_service = DeviceService(
-            service=mock_service, characteristics={"battery_level": mock_characteristic}
-        )
+        device_service = DeviceService(service=mock_service, characteristics={"battery_level": mock_characteristic})
 
         assert device_service.service == mock_service
         assert device_service.characteristics == {"battery_level": mock_characteristic}
