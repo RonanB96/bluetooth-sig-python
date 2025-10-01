@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import IntFlag
 from typing import Any
 
+from ...types.gatt_enums import ValueType
 from .base import BaseCharacteristic
 from .utils import DataParser
 
@@ -44,6 +45,7 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Blood Pressure Feature"
+    _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> BloodPressureFeatureData:
         """Parse blood pressure feature data according to Bluetooth
@@ -89,8 +91,3 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
             Encoded bytes representing the blood pressure features
         """
         return DataParser.encode_int16(data.features_bitmap, signed=False)
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "bitmap"

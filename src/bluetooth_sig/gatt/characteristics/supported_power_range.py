@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ...types.gatt_enums import ValueType
 from ..constants import SINT16_MAX, SINT16_MIN
 from .base import BaseCharacteristic
 
@@ -15,7 +16,6 @@ class SupportedPowerRangeData:
 
     minimum: int  # Minimum power in Watts
     maximum: int  # Maximum power in Watts
-    unit: str = "W"
 
     def __post_init__(self) -> None:
         """Validate power range data."""
@@ -38,7 +38,8 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Supported Power Range"
-    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
+    # Override since decode_value returns structured SupportedPowerRangeData
+    _manual_value_type: ValueType | str | None = ValueType.DICT
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> SupportedPowerRangeData:
         """Parse supported power range data (2x sint16 in watts).
@@ -84,8 +85,3 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
         result.extend(data.maximum.to_bytes(2, byteorder="little", signed=True))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "W"

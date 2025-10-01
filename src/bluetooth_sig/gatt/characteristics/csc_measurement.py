@@ -161,8 +161,3 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
             result.extend(DataParser.encode_int16(crank_event_time_raw, signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "rev"  # Revolutions

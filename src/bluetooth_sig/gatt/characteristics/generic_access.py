@@ -14,12 +14,13 @@ class DeviceNameCharacteristic(BaseCharacteristic):
     """Device Name characteristic."""
 
     _characteristic_name: str = "Device Name"
+    _manual_value_type = "string"  # Override since decode_value returns str
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
         """Parse device name string."""
         return DataParser.parse_utf8_string(data)
 
-    def encode_value(self, data: str) -> bytearray:
+    def encode_value(self, data: Any) -> bytearray:
         """Encode device name value back to bytes.
 
         Args:
@@ -34,20 +35,16 @@ class DeviceNameCharacteristic(BaseCharacteristic):
         # Encode as UTF-8 bytes
         return bytearray(data.encode("utf-8"))
 
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""
-
 
 @dataclass
 class AppearanceCharacteristic(BaseCharacteristic):
     """Appearance characteristic."""
 
     _characteristic_name: str = "Appearance"
+    _manual_value_type = "int"  # Override since decode_value returns int
 
-    min_length: int = 2  # Appearance(2) fixed length
-    max_length: int = 2  # Appearance(2) fixed length
+    min_length = 2  # Appearance(2) fixed length
+    max_length = 2  # Appearance(2) fixed length
     allow_variable_length: bool = False  # Fixed length
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
@@ -65,8 +62,3 @@ class AppearanceCharacteristic(BaseCharacteristic):
         """
         appearance = int(data)
         return DataParser.encode_int16(appearance, signed=False)
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""

@@ -41,11 +41,12 @@ class TestBluetoothSIGTranslator:
         # Test with arbitrary UUID and data - should return fallback
         # when no parser available
         raw_data = b"\x64"  # 100 in binary
-        result = translator.parse_characteristic("unknown-uuid", raw_data)
+        unknown_uuid = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"  # Valid format but unknown
+        result = translator.parse_characteristic(unknown_uuid, raw_data)
 
         # Should return CharacteristicData with fallback info when no parser found
         assert isinstance(result, CharacteristicData)
-        assert result.uuid == "unknown-uuid"
+        assert result.uuid == unknown_uuid
         assert result.name == "Unknown"
         assert result.value == raw_data
         assert result.parse_success is False
@@ -76,7 +77,8 @@ class TestBluetoothSIGTranslator:
         translator = BluetoothSIGTranslator()
 
         # Test with unknown UUID
-        result = translator.get_characteristic_info("unknown-uuid")
+        unknown_uuid = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
+        result = translator.get_characteristic_info(unknown_uuid)
         assert result is None
 
     def test_get_service_info_fallback(self):
@@ -84,7 +86,8 @@ class TestBluetoothSIGTranslator:
         translator = BluetoothSIGTranslator()
 
         # Test with unknown UUID
-        result = translator.get_service_info("unknown-uuid")
+        unknown_uuid = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
+        result = translator.get_service_info(unknown_uuid)
         assert result is None
 
     def test_list_supported_characteristics(self):

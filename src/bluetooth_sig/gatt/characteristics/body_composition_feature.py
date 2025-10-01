@@ -241,8 +241,3 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
         except ValueError:
             # Values not in enum are reserved per Bluetooth SIG spec
             return HeightMeasurementResolution.NOT_SPECIFIED
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""  # Feature characteristic has no unit

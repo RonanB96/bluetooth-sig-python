@@ -10,8 +10,9 @@ from functools import lru_cache
 from typing import Any
 
 from ...registry.yaml_cross_reference import CharacteristicSpec, yaml_cross_reference
-from ...types import CharacteristicData
+from ...types import CharacteristicData, CharacteristicInfo
 from ...types.gatt_enums import CharacteristicName, GattProperty, ValueType
+from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
 from ..exceptions import (
     BluetoothSIGError,
@@ -21,6 +22,166 @@ from ..exceptions import (
     ValueRangeError,
 )
 from ..uuid_registry import uuid_registry
+
+
+class SIGCharacteristicResolver:
+    """Resolves SIG characteristic information from YAML and registry.
+
+    This class handles all SIG characteristic resolution logic, separating
+    concerns from the BaseCharacteristic constructor.
+    """
+
+    @staticmethod
+    def resolve_for_class(char_class: type[BaseCharacteristic]) -> CharacteristicInfo:
+        """Resolve CharacteristicInfo for a SIG characteristic class.
+
+        Args:
+            char_class: The characteristic class to resolve info for
+
+        Returns:
+            CharacteristicInfo with resolved UUID, name, value_type, unit
+
+        Raises:
+            UUIDResolutionError: If no UUID can be resolved for the class
+        """
+        # Try YAML resolution first
+        yaml_spec = SIGCharacteristicResolver.resolve_yaml_spec_for_class(char_class)
+        if yaml_spec:
+            return SIGCharacteristicResolver._create_info_from_yaml(yaml_spec, char_class)
+
+        # Fallback to registry
+        registry_info = SIGCharacteristicResolver.resolve_from_registry(char_class)
+        if registry_info:
+            return registry_info
+
+        # No resolution found
+        raise UUIDResolutionError(char_class.__name__, [char_class.__name__])
+
+    @staticmethod
+    def resolve_yaml_spec_for_class(char_class: type[BaseCharacteristic]) -> CharacteristicSpec | None:
+        """Resolve YAML spec for a characteristic class."""
+        # First try explicit characteristic name if set
+        characteristic_name = getattr(char_class, "_characteristic_name", None)
+        if characteristic_name:
+            return yaml_cross_reference.resolve_characteristic_spec(characteristic_name)
+
+        # Convert class name to standard format and try all possibilities
+        name = char_class.__name__
+
+        # Try different name formats:
+        # 1. Full class name (e.g., BatteryLevelCharacteristic)
+        # 2. Without 'Characteristic' suffix (e.g., BatteryLevel)
+        # 3. Space-separated (e.g., Battery Level)
+        char_name = name
+        if name.endswith("Characteristic"):
+            char_name = name[:-14]  # Remove 'Characteristic' suffix
+
+        # Split on camelCase and convert to space-separated
+        words = re.findall("[A-Z][^A-Z]*", char_name)
+        display_name = " ".join(words)
+
+        names_to_try = [
+            name,  # Full class name (e.g. BatteryLevelCharacteristic)
+            char_name,  # Without 'Characteristic' suffix
+            display_name,  # Space-separated (e.g. Battery Level)
+        ]
+
+        # Try each name format with YAML resolution
+        for try_name in names_to_try:
+            spec = yaml_cross_reference.resolve_characteristic_spec(try_name)
+            if spec:
+                return spec
+
+        return None
+
+    @staticmethod
+    def _create_info_from_yaml(
+        yaml_spec: CharacteristicSpec, char_class: type[BaseCharacteristic]
+    ) -> CharacteristicInfo:
+        """Create CharacteristicInfo from YAML spec."""
+        # Map GSS data types to our value types
+        type_mapping = {
+            "sint8": ValueType.INT,
+            "uint8": ValueType.INT,
+            "sint16": ValueType.INT,
+            "uint16": ValueType.INT,
+            "uint24": ValueType.INT,
+            "sint32": ValueType.INT,
+            "uint32": ValueType.INT,
+            "float32": ValueType.FLOAT,
+            "float64": ValueType.FLOAT,
+            "sfloat": ValueType.FLOAT,  # IEEE-11073 16-bit SFLOAT
+            "float": ValueType.FLOAT,  # IEEE-11073 32-bit FLOAT
+            "medfloat16": ValueType.FLOAT,  # Medical float 16-bit
+            "utf8s": ValueType.STRING,
+            "utf16s": ValueType.STRING,
+            "boolean": ValueType.BOOL,
+            "struct": ValueType.BYTES,
+            "variable": ValueType.BYTES,
+        }
+
+        value_type = (
+            type_mapping.get(yaml_spec.data_type, ValueType.UNKNOWN) if yaml_spec.data_type else ValueType.UNKNOWN
+        )
+
+        return CharacteristicInfo(
+            uuid=yaml_spec.uuid,
+            name=yaml_spec.name or char_class.__name__,
+            unit=yaml_spec.unit_symbol or "",
+            value_type=value_type,
+            properties=[],  # Properties will be resolved separately if needed
+        )
+
+    @staticmethod
+    def resolve_from_registry(char_class: type[BaseCharacteristic]) -> CharacteristicInfo | None:
+        """Fallback to registry resolution."""
+        # First try explicit characteristic name if set
+        characteristic_name = getattr(char_class, "_characteristic_name", None)
+        if characteristic_name:
+            char_info = uuid_registry.get_characteristic_info(characteristic_name)
+            if char_info:
+                return CharacteristicInfo(
+                    uuid=char_info.uuid,
+                    name=char_info.name,
+                    unit=char_info.unit or "",
+                    value_type=ValueType(char_info.value_type) if char_info.value_type else ValueType.UNKNOWN,
+                    properties=[],
+                )
+
+        # Convert class name to standard format and try all possibilities
+        name = char_class.__name__
+
+        # Try different name formats
+        char_name = name
+        if name.endswith("Characteristic"):
+            char_name = name[:-14]  # Remove 'Characteristic' suffix
+
+        # Split on camelCase and convert to space-separated
+        words = re.findall("[A-Z][^A-Z]*", char_name)
+        display_name = " ".join(words)
+
+        # Try different name formats
+        org_name = "org.bluetooth.characteristic." + "_".join(word.lower() for word in words)
+        names_to_try = [
+            name,  # Full class name (e.g. BatteryLevelCharacteristic)
+            char_name,  # Without 'Characteristic' suffix
+            display_name,  # Space-separated (e.g. Battery Level)
+            org_name,  # Characteristic-specific format
+        ]
+
+        # Try each name format
+        for try_name in names_to_try:
+            char_info = uuid_registry.get_characteristic_info(try_name)
+            if char_info:
+                return CharacteristicInfo(
+                    uuid=char_info.uuid,
+                    name=char_info.name,
+                    unit=char_info.unit or "",
+                    value_type=ValueType(char_info.value_type) if char_info.value_type else ValueType.UNKNOWN,
+                    properties=[],
+                )
+
+        return None
 
 
 class CharacteristicMeta(ABCMeta):
@@ -106,11 +267,18 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         #         return data[0]  # Validation happens automatically
     """
 
-    # Instance variables
-    uuid: str
-
+    # Required constructor parameters
+    uuid: BluetoothUUID | None = field(default=None)
     properties: set[GattProperty] | None = field(default=None)
-    value_type: ValueType = field(default=ValueType.STRING)
+
+    # Instance variables
+    _info: CharacteristicInfo = field(init=False)
+
+    # Manual overrides with proper types
+    _manual_unit: str | None = field(default=None, init=False)
+    _manual_value_type: ValueType | str | None = field(default=None, init=False)
+
+    value_type: ValueType = field(default=ValueType.STRING, init=False)
 
     # Optional validation attributes (can be overridden in subclasses)
     min_value: int | float | None = field(default=None)
@@ -122,161 +290,130 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     expected_type: type | None = field(default=None)
 
     def __post_init__(self) -> None:
-        """Initialize characteristic with UUID from registry based on class
-        name.
+        """Initialize characteristic with resolved information."""
+        try:
+            # Resolve characteristic information using proper resolver
+            self._info = SIGCharacteristicResolver.resolve_for_class(type(self))
+            # Keep the resolved UUID as single source of truth
+            # Constructor UUID is only used for test isolation/custom cases handled in except block
+        except UUIDResolutionError:
+            # Create minimal info for custom characteristics with type safety
+            fallback_uuid = self.uuid if self.uuid is not None else BluetoothUUID("0000")
+            self._info = CharacteristicInfo(
+                uuid=fallback_uuid,  # Use the UUID passed to constructor as fallback, or default
+                name=getattr(self, "_characteristic_name", self.__class__.__name__),
+                unit="",
+                value_type=ValueType.UNKNOWN,
+                properties=[],  # Proper typed empty list
+            )
 
-        Automatically resolves metadata from cross-file YAML references
-        including UUIDs, data types, field sizes, unit symbols, and byte
-        order hints.
-        """
+        # Apply manual overrides to _info (single source of truth)
+        if self._manual_unit is not None:
+            self._info.unit = self._manual_unit
+        if self._manual_value_type is not None:
+            # Handle both ValueType enum and string manual overrides
+            if isinstance(self._manual_value_type, ValueType):
+                self._info.value_type = self._manual_value_type
+            else:
+                # Map string value types to ValueType enum
+                string_to_value_type_map = {
+                    "string": ValueType.STRING,
+                    "int": ValueType.INT,
+                    "float": ValueType.FLOAT,
+                    "bytes": ValueType.BYTES,
+                    "bool": ValueType.BOOL,
+                    "datetime": ValueType.DATETIME,
+                    "uuid": ValueType.UUID,
+                    "dict": ValueType.DICT,
+                    "various": ValueType.VARIOUS,
+                    "unknown": ValueType.UNKNOWN,
+                    # Custom type strings that should map to basic types
+                    "BarometricPressureTrend": ValueType.INT,  # IntEnum -> int
+                }
+
+                try:
+                    # First try direct ValueType enum construction
+                    self._info.value_type = ValueType(self._manual_value_type)
+                except ValueError:
+                    # Fall back to string mapping
+                    self._info.value_type = string_to_value_type_map.get(self._manual_value_type, ValueType.VARIOUS)
+
+        # Set value_type from resolved info
+        self.value_type = self._info.value_type
+
+        # If value_type is still UNKNOWN after resolution and no manual override,
+        # try to infer from characteristic patterns
+        if self.value_type == ValueType.UNKNOWN and self._manual_value_type is None:
+            inferred_type = self._infer_value_type_from_patterns()
+            if inferred_type != ValueType.UNKNOWN:
+                self._info.value_type = inferred_type
+                self.value_type = inferred_type
+
         # Ensure properties is a typed set for static analysis and runtime
         if self.properties is None:
             self.properties = set()
 
-        if not hasattr(self, "_char_uuid"):
-            # Try cross-file resolution first
-            yaml_spec = self._resolve_yaml_spec()
-            if yaml_spec:
-                self._char_uuid = yaml_spec.uuid
+    def _infer_value_type_from_patterns(self) -> ValueType:
+        """Infer value type from characteristic naming patterns and class structure.
 
-                # Set additional metadata from YAML
-                if not hasattr(self, "_manual_value_type") and yaml_spec.data_type:
-                    # Map GSS data types to our value types
-                    type_mapping = {
-                        "sint8": ValueType.INT,
-                        "uint8": ValueType.INT,
-                        "sint16": ValueType.INT,
-                        "uint16": ValueType.INT,
-                        "uint24": ValueType.INT,
-                        "sint32": ValueType.INT,
-                        "uint32": ValueType.INT,
-                        "float32": ValueType.FLOAT,
-                        "float64": ValueType.FLOAT,
-                        "utf8s": ValueType.STRING,
-                    }
-                    self.value_type = type_mapping.get(yaml_spec.data_type, ValueType.BYTES)
-                self._yaml_data_type = yaml_spec.data_type
-                self._yaml_field_size = yaml_spec.field_size
-                self._yaml_unit_symbol = yaml_spec.unit_symbol
-                self._yaml_unit_id = yaml_spec.unit_id
-                self._yaml_resolution_text = yaml_spec.resolution_text
+        This provides a fallback when SIG resolution fails to determine proper value types.
+        """
+        class_name = self.__class__.__name__
+        char_name = getattr(self, "_characteristic_name", class_name)
 
-                return
+        # Pattern-based inference for common characteristics
+        measurement_patterns = [
+            "Measurement",
+            "Data",
+            "Reading",
+            "Value",
+            "Status",
+            "Feature",
+            "Capability",
+            "Support",
+            "Configuration",
+        ]
 
-            # Fallback to original registry resolution
-            self._resolve_from_basic_registry()
+        # If it contains measurement/data patterns, likely returns complex data -> bytes
+        if any(pattern in class_name or pattern in char_name for pattern in measurement_patterns):
+            return ValueType.BYTES
+
+        # Common simple value characteristics
+        simple_int_patterns = ["Level", "Count", "Index", "ID", "Appearance"]
+        if any(pattern in class_name or pattern in char_name for pattern in simple_int_patterns):
+            return ValueType.INT
+
+        simple_string_patterns = ["Name", "Description", "Text", "String"]
+        if any(pattern in class_name or pattern in char_name for pattern in simple_string_patterns):
+            return ValueType.STRING
+
+        # Default fallback for complex characteristics
+        return ValueType.BYTES
 
     def _resolve_yaml_spec(self) -> CharacteristicSpec | None:
         """Resolve specification using YAML cross-reference system."""
-        # First try explicit characteristic name if set
-        characteristic_name = getattr(self, "_characteristic_name", None)
-        if characteristic_name:
-            return yaml_cross_reference.resolve_characteristic_spec(characteristic_name)
-
-        # Convert class name to standard format and try all possibilities
-        name = self.__class__.__name__
-
-        # Try different name formats:
-        # 1. Full class name (e.g., BatteryLevelCharacteristic)
-        # 2. Without 'Characteristic' suffix (e.g., BatteryLevel)
-        # 3. Space-separated (e.g., Battery Level)
-        char_name = name
-        if name.endswith("Characteristic"):
-            char_name = name[:-14]  # Remove 'Characteristic' suffix
-
-        # Split on camelCase and convert to space-separated
-        words = re.findall("[A-Z][^A-Z]*", char_name)
-        display_name = " ".join(words)
-
-        names_to_try = [
-            name,  # Full class name (e.g. BatteryLevelCharacteristic)
-            char_name,  # Without 'Characteristic' suffix
-            display_name,  # Space-separated (e.g. Battery Level)
-        ]
-
-        # Try each name format with YAML resolution
-        for try_name in names_to_try:
-            spec = yaml_cross_reference.resolve_characteristic_spec(try_name)
-            if spec:
-                return spec
-
-        return None
-
-    def _resolve_from_basic_registry(self) -> None:
-        """Fallback to basic registry resolution (original behavior)."""
-        # First try explicit characteristic name if set
-        characteristic_name = getattr(self, "_characteristic_name", None)
-        if characteristic_name:
-            char_info = uuid_registry.get_characteristic_info(characteristic_name)
-            if char_info:
-                self._char_uuid = char_info.uuid
-                # Set value_type from registry if available and not manually overridden
-                if not hasattr(self, "_manual_value_type") and char_info.value_type:
-                    try:
-                        self.value_type = ValueType(char_info.value_type)
-                    except ValueError:
-                        # Fallback to STRING if conversion fails
-                        self.value_type = ValueType.STRING
-                return
-
-        # Convert class name to standard format and try all possibilities
-        name = self.__class__.__name__
-
-        # Try different name formats like services do:
-        # 1. Full class name (e.g., BatteryLevelCharacteristic)
-        # 2. Without 'Characteristic' suffix (e.g., BatteryLevel)
-        # 3. Space-separated (e.g., Battery Level)
-        char_name = name
-        if name.endswith("Characteristic"):
-            char_name = name[:-14]  # Remove 'Characteristic' suffix
-
-        # Split on camelCase and convert to space-separated
-        words = re.findall("[A-Z][^A-Z]*", char_name)
-        display_name = " ".join(words)
-
-        # Try different name formats
-        org_name = "org.bluetooth.characteristic." + "_".join(word.lower() for word in words)
-        names_to_try = [
-            name,  # Full class name (e.g. BatteryLevelCharacteristic)
-            char_name,  # Without 'Characteristic' suffix
-            display_name,  # Space-separated (e.g. Battery Level)
-            org_name,  # Characteristic-specific format
-        ]
-
-        # Try each name format
-        for try_name in names_to_try:
-            char_info = uuid_registry.get_characteristic_info(try_name)
-            if char_info:
-                self._char_uuid = char_info.uuid
-                # Set value_type from registry if available and not manually overridden
-                if not hasattr(self, "_manual_value_type") and char_info.value_type:
-                    try:
-                        self.value_type = ValueType(char_info.value_type)
-                    except ValueError:
-                        # Fallback to STRING if conversion fails
-                        self.value_type = ValueType.STRING
-                break
-        else:
-            raise UUIDResolutionError(name, names_to_try)
+        # Delegate to static method
+        return SIGCharacteristicResolver.resolve_yaml_spec_for_class(type(self))
 
     @property
-    def char_uuid(self) -> str:
-        """Get the characteristic UUID from registry based on name."""
-        return getattr(self, "_char_uuid", "")
+    def char_uuid(self) -> BluetoothUUID:
+        """Get the characteristic UUID from _info (single source of truth)."""
+        return self._info.uuid
+
+    @property
+    def info(self) -> CharacteristicInfo:
+        """Get the characteristic info (single source of truth)."""
+        return self._info
 
     @property
     def name(self) -> str:
-        """Get the characteristic name from UUID registry."""
-        characteristic_name = getattr(self, "_characteristic_name", None)
-        if characteristic_name:
-            return str(characteristic_name)
-        info = uuid_registry.get_characteristic_info(self.char_uuid)
-        return str(info.name) if info and info.name else f"Unknown Characteristic ({self.char_uuid})"
+        """Get the characteristic name from _info (single source of truth)."""
+        return self._info.name
 
     @property
     def summary(self) -> str:
         """Get the characteristic summary."""
-        info = uuid_registry.get_characteristic_info(self.char_uuid)
+        info = uuid_registry.get_characteristic_info(self._info.uuid)
         return info.summary if info else ""
 
     @property
@@ -289,13 +426,44 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return getattr(self, "_characteristic_name", self.__class__.__name__)
 
     @classmethod
-    def matches_uuid(cls, uuid: str) -> bool:
-        """Check if this characteristic matches the given UUID."""
-        # Create a temporary instance to get the UUID
+    def _resolve_class_uuid(cls) -> BluetoothUUID | None:
+        """Resolve the characteristic UUID for this class without creating an instance."""
+        # Try cross-file resolution first
+        yaml_spec = cls._resolve_yaml_spec_class()
+        if yaml_spec:
+            print(f"Found YAML spec: {yaml_spec.uuid}")
+            return yaml_spec.uuid
+
+        # Fallback to original registry resolution
+        return cls._resolve_from_basic_registry_class()
+
+    @classmethod
+    def _resolve_yaml_spec_class(cls) -> CharacteristicSpec | None:
+        """Resolve specification using YAML cross-reference system at class level."""
+        return SIGCharacteristicResolver.resolve_yaml_spec_for_class(cls)
+
+    @classmethod
+    def _resolve_from_basic_registry_class(cls) -> BluetoothUUID | None:
+        """Fallback to basic registry resolution at class level."""
         try:
-            temp_instance = cls(uuid="", properties=set())
-            return temp_instance.char_uuid.lower() in uuid.lower()
-        except (ValueError, AttributeError):
+            registry_info = SIGCharacteristicResolver.resolve_from_registry(cls)
+            return registry_info.uuid if registry_info else None
+        except Exception:
+            return None
+
+    @classmethod
+    def matches_uuid(cls, uuid: str | BluetoothUUID) -> bool:
+        """Check if this characteristic matches the given UUID."""
+        try:
+            class_uuid = cls._resolve_class_uuid()
+            if class_uuid is None:
+                return False
+            if isinstance(uuid, BluetoothUUID):
+                input_uuid = uuid
+            else:
+                input_uuid = BluetoothUUID(uuid)
+            return class_uuid == input_uuid
+        except ValueError:
             return False
 
     @abstractmethod
@@ -348,7 +516,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             characteristic_name.value if isinstance(characteristic_name, CharacteristicName) else characteristic_name
         )
         char_info = uuid_registry.get_characteristic_info(name_str)
-        return char_info.uuid if char_info else None
+        return str(char_info.uuid) if char_info else None
 
     def get_context_characteristic(
         self,
@@ -390,22 +558,16 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             self._validate_value(parsed_value)
 
             return CharacteristicData(
-                uuid=self.char_uuid,
-                name=self.display_name,
+                info=self._info,  # Use _info as single source of truth
                 value=parsed_value,
-                unit=self.unit,
-                value_type=self.value_type.value,
                 raw_data=bytes(data),
                 parse_success=True,
                 error_message="",
             )
         except (ValueError, TypeError, struct.error, BluetoothSIGError) as e:
             return CharacteristicData(
-                uuid=self.char_uuid,
-                name=self.display_name,
+                info=self._info,  # Use _info as single source of truth
                 value=None,
-                unit=self.unit,
-                value_type=self.value_type.value,
                 raw_data=bytes(data),
                 parse_success=False,
                 error_message=str(e),
@@ -429,28 +591,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     @property
     def unit(self) -> str:
-        """Get the unit of measurement for this characteristic.
-
-        First tries manual unit override, then YAML cross-reference,
-        then falls back to basic YAML registry. This allows manual
-        overrides to take precedence while using maximum automation as
-        default.
-        """
-        # First try manual unit override (takes priority)
-        manual_unit = getattr(self, "_manual_unit", None)
-        if manual_unit:
-            return str(manual_unit)
-
-        # Try unit symbol from cross-file references
-        if hasattr(self, "_yaml_unit_symbol") and self._yaml_unit_symbol:
-            return self._yaml_unit_symbol
-
-        # Fallback to unit from basic YAML registry
-        char_info = uuid_registry.get_characteristic_info(self.char_uuid)
-        if char_info and char_info.unit:
-            return str(char_info.unit)
-
-        return ""
+        """Get the unit of measurement from _info (single source of truth)."""
+        return self._info.unit
 
     @property
     def size(self) -> int | None:
@@ -478,35 +620,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     @property
     def value_type_resolved(self) -> ValueType:
-        """Get the value type for this characteristic.
-
-        First tries manual value_type override, then falls back to YAML
-        registry. This allows manual overrides to take precedence while
-        using automatic parsing as default.
-        """
-        # First try manual value_type override (takes priority)
-        manual_value_type = getattr(self, "_manual_value_type", None)
-        if manual_value_type:
-            if isinstance(manual_value_type, ValueType):
-                return manual_value_type
-            if isinstance(manual_value_type, str):
-                # Convert string to ValueType enum
-                try:
-                    return ValueType(manual_value_type)
-                except ValueError:
-                    pass
-
-        # Fallback to value_type from YAML registry for automatic parsing
-        char_info = uuid_registry.get_characteristic_info(self.char_uuid)
-        if char_info and char_info.value_type:
-            # Convert string to ValueType enum
-            try:
-                return ValueType(char_info.value_type)
-            except ValueError:
-                pass
-
-        # Final fallback to instance value_type
-        return self.value_type
+        """Get the value type from _info (single source of truth)."""
+        return self._info.value_type
 
     # YAML automation helper methods
     def get_yaml_data_type(self) -> str | None:
@@ -552,7 +667,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return "little"
 
     @classmethod
-    def from_uuid(cls, uuid: str, properties: set[GattProperty] | None = None) -> BaseCharacteristic:
+    def from_uuid(cls, uuid: str | BluetoothUUID, properties: set[GattProperty] | None = None) -> BaseCharacteristic:
         """Create a characteristic instance from UUID.
 
         Args:
@@ -562,6 +677,102 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Returns:
             Characteristic instance
         """
-        if properties is None:
-            properties = set()
-        return cls(uuid=uuid, properties=properties)
+        # Convert string to BluetoothUUID if needed
+        if isinstance(uuid, str):
+            uuid = BluetoothUUID(uuid)
+        # Create instance with the UUID
+        instance = cls(uuid=uuid, properties=properties or set())
+        return instance
+
+
+class CustomBaseCharacteristic(BaseCharacteristic):
+    """Helper base class for custom characteristic implementations.
+
+    This class provides a wrapper around physical BLE characteristics that are not
+    defined in the Bluetooth SIG specification. It requires a CharacteristicInfo
+    object and follows the single source of truth pattern.
+
+    This is NOT a dataclass since it needs custom initialization logic for
+    wrapping physical BLE characteristics.
+    """
+
+    _is_custom = True
+
+    def __init__(self, info: CharacteristicInfo, properties: set[GattProperty] | None = None) -> None:
+        """Initialize a custom characteristic.
+
+        Args:
+            info: CharacteristicInfo object with UUID, name, unit, value_type
+            properties: Set of GATT properties
+
+        Raises:
+            ValueError: If UUID is invalid
+        """
+        if not info.uuid or str(info.uuid) == "0000":
+            raise ValueError("Valid UUID is required for custom characteristics")
+
+        # Initialize parent with UUID and properties
+        super().__init__(uuid=info.uuid, properties=properties)
+
+        # Override the _info with our custom info (single source of truth)
+        self._info = info
+        self.value_type = info.value_type
+
+
+class UnknownCharacteristic(CustomBaseCharacteristic):
+    """Generic characteristic implementation for unknown/non-SIG characteristics.
+
+    This class provides basic functionality for characteristics that are not
+    defined in the Bluetooth SIG specification. It stores raw data without
+    attempting to parse it into structured types.
+    """
+
+    def __init__(self, info: CharacteristicInfo, properties: set[GattProperty] | None = None) -> None:
+        """Initialize an unknown characteristic.
+
+        Args:
+            info: CharacteristicInfo object with UUID, name, unit, value_type
+            properties: Set of GATT properties
+
+        Raises:
+            ValueError: If UUID is invalid
+        """
+        # If no name provided, generate one from UUID
+        if not info.name:
+            info = CharacteristicInfo(
+                uuid=info.uuid,
+                name=f"Unknown Characteristic ({info.uuid})",
+                unit=info.unit or "",
+                value_type=info.value_type or ValueType.BYTES,
+                properties=info.properties or [],
+            )
+
+        super().__init__(info=info, properties=properties)
+
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> bytes:
+        """Return raw bytes for unknown characteristics.
+
+        Args:
+            data: Raw bytes from the characteristic read
+            ctx: Optional context (ignored)
+
+        Returns:
+            Raw bytes as-is
+        """
+        return bytes(data)
+
+    def encode_value(self, data: Any) -> bytearray:
+        """Encode data to bytes for unknown characteristics.
+
+        Args:
+            data: Data to encode (must be bytes or bytearray)
+
+        Returns:
+            Encoded bytes
+
+        Raises:
+            ValueError: If data is not bytes/bytearray
+        """
+        if isinstance(data, (bytes, bytearray)):
+            return bytearray(data)
+        raise ValueError(f"Unknown characteristics require bytes data, got {type(data)}")

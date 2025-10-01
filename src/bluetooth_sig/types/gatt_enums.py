@@ -23,6 +23,13 @@ class GattProperty(Enum):
     EXTENDED_PROPERTIES = "extended-properties"
     RELIABLE_WRITE = "reliable-write"
     WRITABLE_AUXILIARIES = "writable-auxiliaries"
+    # Encryption and authentication properties
+    ENCRYPT_READ = "encrypt-read"
+    ENCRYPT_WRITE = "encrypt-write"
+    ENCRYPT_NOTIFY = "encrypt-notify"
+    AUTH_READ = "auth-read"
+    AUTH_WRITE = "auth-write"
+    AUTH_NOTIFY = "auth-notify"
 
 
 class ValueType(Enum):
@@ -35,6 +42,9 @@ class ValueType(Enum):
     BOOL = "bool"
     DATETIME = "datetime"
     UUID = "uuid"
+    DICT = "dict"
+    VARIOUS = "various"
+    UNKNOWN = "unknown"
 
 
 class DataType(Enum):
@@ -57,6 +67,8 @@ class DataType(Enum):
     STRUCT = "struct"
     MEDFLOAT16 = "medfloat16"
     MEDFLOAT32 = "medfloat32"
+    VARIOUS = "various"
+    UNKNOWN = "unknown"
 
 
 class CharacteristicName(Enum):

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from .templates import SimpleUint16Characteristic
@@ -29,13 +29,9 @@ class VOCConcentrationCharacteristic(SimpleUint16Characteristic):
     """
 
     _characteristic_name: str = "VOC Concentration"
+    _manual_unit: str | None = field(default="ppb", init=False)  # Unit as per SIG specification
     min_value: int = 0
     max_value: int = VOCConcentrationValues.VALUE_65534_OR_GREATER - 1  # 65533
-
-    @property
-    def unit(self) -> str:
-        """Return unit as per SIG specification."""
-        return "ppb"
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse VOC concentration value with special value handling."""

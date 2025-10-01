@@ -19,13 +19,13 @@ class TestWeightMeasurementCharacteristic:
 
     def test_characteristic_name(self):
         """Test characteristic name resolution."""
-        char = WeightMeasurementCharacteristic(uuid="", properties=set())
+        char = WeightMeasurementCharacteristic()
         assert char._characteristic_name == "Weight Measurement"
         assert char.value_type == ValueType.BYTES
 
     def test_parse_basic_weight_metric(self):
         """Test parsing basic weight in metric units."""
-        char = WeightMeasurementCharacteristic(uuid="", properties=set())
+        char = WeightMeasurementCharacteristic()
 
         # Flags: 0x00 (metric units), Weight: 14000 (70.00 kg with 0.005 kg resolution)
         data = bytearray([0x00, 0x70, 0x36])  # 0x3670 = 13936
@@ -38,7 +38,7 @@ class TestWeightMeasurementCharacteristic:
 
     def test_parse_basic_weight_imperial(self):
         """Test parsing basic weight in imperial units."""
-        char = WeightMeasurementCharacteristic(uuid="", properties=set())
+        char = WeightMeasurementCharacteristic()
 
         # Flags: 0x01 (imperial units), Weight: 15000
         # (150.00 lb with 0.01 lb resolution)
@@ -52,7 +52,7 @@ class TestWeightMeasurementCharacteristic:
 
     def test_parse_weight_with_user_id(self):
         """Test parsing weight with user ID."""
-        char = WeightMeasurementCharacteristic(uuid="", properties=set())
+        char = WeightMeasurementCharacteristic()
 
         # Flags: 0x04 (user ID present), Weight: 14000, User ID: 5
         data = bytearray([0x04, 0x70, 0x36, 0x05])
@@ -64,7 +64,7 @@ class TestWeightMeasurementCharacteristic:
 
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""
-        char = WeightMeasurementCharacteristic(uuid="", properties=set())
+        char = WeightMeasurementCharacteristic()
 
         # Too short data
         with pytest.raises(ValueError, match="at least 3 bytes"):
@@ -72,7 +72,7 @@ class TestWeightMeasurementCharacteristic:
 
     def test_unit_property(self):
         """Test unit property."""
-        char = WeightMeasurementCharacteristic(uuid="", properties=set())
+        char = WeightMeasurementCharacteristic()
         assert char.unit == "kg"
 
 
@@ -81,13 +81,13 @@ class TestWeightScaleFeatureCharacteristic:
 
     def test_characteristic_name(self):
         """Test characteristic name resolution."""
-        char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
+        char = WeightScaleFeatureCharacteristic()
         assert char._characteristic_name == "Weight Scale Feature"
         assert char.value_type == ValueType.BYTES
 
     def test_parse_basic_features(self):
         """Test parsing basic feature flags."""
-        char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
+        char = WeightScaleFeatureCharacteristic()
 
         # Features: 0x0000000F (timestamp, multiple users, BMI supported,
         # weight resolution 1)
@@ -101,7 +101,7 @@ class TestWeightScaleFeatureCharacteristic:
 
     def test_parse_no_features(self):
         """Test parsing with no features enabled."""
-        char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
+        char = WeightScaleFeatureCharacteristic()
 
         # Features: 0x00000000 (no features)
         data = bytearray([0x00, 0x00, 0x00, 0x00])
@@ -114,7 +114,7 @@ class TestWeightScaleFeatureCharacteristic:
 
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""
-        char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
+        char = WeightScaleFeatureCharacteristic()
 
         # Too short data
         with pytest.raises(ValueError, match="at least 4 bytes"):
@@ -122,7 +122,7 @@ class TestWeightScaleFeatureCharacteristic:
 
     def test_unit_property(self):
         """Test unit property (should be empty for feature characteristic)."""
-        char = WeightScaleFeatureCharacteristic(uuid="", properties=set())
+        char = WeightScaleFeatureCharacteristic()
         assert char.unit == ""
 
 

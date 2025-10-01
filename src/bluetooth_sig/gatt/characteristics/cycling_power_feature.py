@@ -57,8 +57,3 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
             raise ValueError(f"Feature mask {feature_mask} exceeds uint32 range")
 
         return DataParser.encode_int32(feature_mask, signed=False)
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""  # Feature bitmask has no unit

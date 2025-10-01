@@ -205,8 +205,3 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
             return HeightMeasurementResolution(resolution_bits)
         except ValueError:
             return HeightMeasurementResolution.NOT_SPECIFIED
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""  # Feature characteristic has no unit

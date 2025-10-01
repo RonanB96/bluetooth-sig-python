@@ -30,7 +30,6 @@ class PulseOximetryData:
 
     spo2: float
     pulse_rate: float
-    unit: str = "%"
     timestamp: datetime | None = None
     measurement_status: int | None = None
     device_status: int | None = None
@@ -47,8 +46,8 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "PLX Continuous Measurement"
 
     # Declarative validation (automatic)
-    min_length: int = 5  # Flags(1) + SpO2(2) + PulseRate(2) minimum
-    max_length: int = 16  # + Timestamp(7) + MeasurementStatus(2) + DeviceStatus(3) maximum
+    min_length: int | None = 5  # Flags(1) + SpO2(2) + PulseRate(2) minimum
+    max_length: int | None = 16  # + Timestamp(7) + MeasurementStatus(2) + DeviceStatus(3) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> PulseOximetryData:  # pylint: disable=too-many-locals
@@ -139,8 +138,3 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
 
         # Additional fields based on flags would be added (simplified)
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "%"  # SpO2 is in percentage

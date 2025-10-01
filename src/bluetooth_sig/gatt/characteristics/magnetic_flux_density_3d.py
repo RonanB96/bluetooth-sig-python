@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from ...types.gatt_enums import ValueType
 from .templates import VectorCharacteristic
 
 
@@ -17,8 +18,8 @@ class MagneticFluxDensity3DCharacteristic(VectorCharacteristic):
     """
 
     _characteristic_name: str = "Magnetic Flux Density - 3D"
-    _manual_value_type: str = "string"  # Override since decode_value returns dict
+    _manual_value_type: ValueType | str | None = ValueType.STRING  # Override since decode_value returns dict
+    _manual_unit: str | None = field(default="T", init=False)  # Override template's "units" default
 
     vector_components: list[str] = field(default_factory=lambda: ["x_axis", "y_axis", "z_axis"])
-    component_unit: str = "T"
     resolution: float = 1e-7

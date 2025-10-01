@@ -1,6 +1,6 @@
 """Average Voltage characteristic implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .templates import ScaledUint16Characteristic
 
@@ -13,5 +13,5 @@ class AverageVoltageCharacteristic(ScaledUint16Characteristic):
     """
 
     _characteristic_name: str = "Average Voltage"
+    _manual_unit: str | None = field(default="V", init=False)  # Override template's "units" default
     resolution: float = 1 / 64
-    measurement_unit: str = "V"

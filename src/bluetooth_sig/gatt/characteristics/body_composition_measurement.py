@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import IntFlag
 from typing import Any
@@ -72,6 +72,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Body Composition Measurement"
+    _manual_unit: str | None = field(default="various", init=False)  # Multiple units in measurement
 
     min_length: int = 4  # Flags(2) + BodyFat(2) minimum
     max_length: int = 50  # + Timestamp(7) + UserID(1) + Multiple measurements maximum

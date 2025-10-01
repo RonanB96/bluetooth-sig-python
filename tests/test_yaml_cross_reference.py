@@ -17,7 +17,7 @@ class TestYAMLCrossReference:
         """Test that YAML data types are extracted correctly for real
         characteristics."""
         # Test Temperature characteristic (known to use sint16)
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
+        temp_char = TemperatureCharacteristic()
         data_type = temp_char.get_yaml_data_type()
 
         # Should get data type from YAML if available, or None
@@ -29,7 +29,7 @@ class TestYAMLCrossReference:
             ], f"Temperature should use sint16 or medfloat16, got {data_type}"
 
         # Test Humidity characteristic (known to use uint16)
-        humidity_char = HumidityCharacteristic(uuid="", properties=set())
+        humidity_char = HumidityCharacteristic()
         humidity_data_type = humidity_char.get_yaml_data_type()
 
         if humidity_data_type:
@@ -39,7 +39,7 @@ class TestYAMLCrossReference:
     def test_yaml_field_size_extraction(self):
         """Test that YAML field sizes are extracted correctly."""
         # Test Temperature characteristic
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
+        temp_char = TemperatureCharacteristic()
         field_size = temp_char.get_yaml_field_size()
 
         if field_size:
@@ -47,7 +47,7 @@ class TestYAMLCrossReference:
             assert field_size in [2], f"Temperature field size should be 2 bytes, got {field_size}"
 
         # Test Humidity characteristic
-        humidity_char = HumidityCharacteristic(uuid="", properties=set())
+        humidity_char = HumidityCharacteristic()
         humidity_field_size = humidity_char.get_yaml_field_size()
 
         if humidity_field_size:
@@ -57,7 +57,7 @@ class TestYAMLCrossReference:
     def test_yaml_unit_id_extraction(self):
         """Test that YAML unit IDs are extracted correctly."""
         # Test Temperature characteristic
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
+        temp_char = TemperatureCharacteristic()
         unit_id = temp_char.get_yaml_unit_id()
 
         if unit_id:
@@ -67,7 +67,7 @@ class TestYAMLCrossReference:
             )
 
         # Test Humidity characteristic
-        humidity_char = HumidityCharacteristic(uuid="", properties=set())
+        humidity_char = HumidityCharacteristic()
         battery_unit_id = humidity_char.get_yaml_unit_id()
 
         if battery_unit_id:
@@ -79,7 +79,7 @@ class TestYAMLCrossReference:
     def test_is_signed_from_yaml_comprehensive(self):
         """Test signed type detection for various data types."""
         # Test Temperature characteristic (should be signed)
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
+        temp_char = TemperatureCharacteristic()
 
         # Mock different data types to test the logic
         test_cases = [
@@ -123,7 +123,7 @@ class TestYAMLCrossReference:
     def test_yaml_resolution_text_extraction(self):
         """Test that YAML resolution text is extracted when available."""
         # Test Temperature characteristic
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
+        temp_char = TemperatureCharacteristic()
         resolution_text = temp_char.get_yaml_resolution_text()
 
         if resolution_text:
@@ -137,7 +137,7 @@ class TestYAMLCrossReference:
         """Test that characteristics created via registry use YAML
         automation."""
         # Create Temperature characteristic via registry
-        temp_char = CharacteristicRegistry.create_characteristic("2A6E", properties=set())
+        temp_char = CharacteristicRegistry.create_characteristic("2A6E")
 
         if temp_char:
             # Should have YAML automation available
@@ -156,7 +156,7 @@ class TestYAMLCrossReference:
             assert isinstance(is_signed, bool)
 
         # Create Humidity characteristic via registry
-        humidity_char = CharacteristicRegistry.create_characteristic("2A6F", properties=set())
+        humidity_char = CharacteristicRegistry.create_characteristic("2A6F")
 
         if humidity_char:
             # Should have YAML automation available
@@ -171,8 +171,8 @@ class TestYAMLCrossReference:
         """Test that characteristics work correctly when YAML automation is not
         available."""
         # Create characteristics
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
-        humidity_char = HumidityCharacteristic(uuid="", properties=set())
+        temp_char = TemperatureCharacteristic()
+        humidity_char = HumidityCharacteristic()
 
         # Even without YAML data, methods should not crash
         assert temp_char.get_yaml_data_type() is None or isinstance(temp_char.get_yaml_data_type(), str)
@@ -189,7 +189,7 @@ class TestYAMLCrossReference:
 
     def test_yaml_byte_order_hint(self):
         """Test byte order hint for characteristics."""
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
+        temp_char = TemperatureCharacteristic()
         byte_order = temp_char.get_byte_order_hint()
 
         # Bluetooth SIG uses little-endian by convention
@@ -199,7 +199,7 @@ class TestYAMLCrossReference:
         """Test that YAML automation works with actual characteristic
         parsing."""
         # Test Temperature characteristic with real data
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
+        temp_char = TemperatureCharacteristic()
 
         # Parse some test data (400 = 4.00°C in 0.01°C units)
         test_data = bytearray([0x90, 0x01])  # 400 in little-endian
@@ -233,8 +233,8 @@ class TestYAMLCrossReference:
         """Test that YAML automation integrates well with existing
         characteristic functionality."""
         # Test that existing functionality still works
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
-        humidity_char = HumidityCharacteristic(uuid="", properties=set())
+        temp_char = TemperatureCharacteristic()
+        humidity_char = HumidityCharacteristic()
 
         # Test that all characteristics have their basic properties
         assert hasattr(temp_char, "char_uuid"), "Temperature characteristic should have char_uuid"

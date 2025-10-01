@@ -1,7 +1,8 @@
 """Magnetic Declination characteristic implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from ...types.gatt_enums import ValueType
 from .templates import ScaledUint16Characteristic
 
 
@@ -15,11 +16,12 @@ class MagneticDeclinationCharacteristic(ScaledUint16Characteristic):
     """
 
     _characteristic_name: str = "Magnetic Declination"
-    _manual_value_type: str = "float"  # Override YAML int type since decode_value returns float
+    # Override YAML int type since decode_value returns float
+    _manual_value_type: ValueType | str | None = ValueType.FLOAT
+    _manual_unit: str | None = field(default="°", init=False)  # Override template's "units" default
 
     # Template configuration
     resolution: float = 0.01  # 0.01 degree resolution
-    measurement_unit: str = "°"
     max_value: float = 655.35  # 65535 * 0.01 degrees max
 
     def encode_value(self, data: float) -> bytearray:

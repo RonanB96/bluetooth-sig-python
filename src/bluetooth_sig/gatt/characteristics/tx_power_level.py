@@ -1,6 +1,6 @@
 """Tx Power Level characteristic implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .templates import SimpleSint8Characteristic
 
@@ -13,6 +13,4 @@ class TxPowerLevelCharacteristic(SimpleSint8Characteristic):
     """
 
     _characteristic_name: str = "Tx Power Level"
-
-    # Template configuration
-    measurement_unit: str = "dBm"
+    _manual_unit: str | None = field(default="dBm", init=False)  # Override template's "units" default

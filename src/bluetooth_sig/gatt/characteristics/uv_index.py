@@ -11,8 +11,3 @@ class UVIndexCharacteristic(SimpleUint8Characteristic):
 
     _characteristic_name: str = "UV Index"
     # YAML provides uint8 -> int, which is correct for UV Index values (0-11+ scale)
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "UV Index"

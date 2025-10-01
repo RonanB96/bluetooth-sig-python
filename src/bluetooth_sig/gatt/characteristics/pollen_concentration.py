@@ -1,7 +1,8 @@
 """Pollen Concentration characteristic implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from ...types.gatt_enums import ValueType
 from .templates import Uint24ScaledCharacteristic
 
 
@@ -14,8 +15,8 @@ class PollenConcentrationCharacteristic(Uint24ScaledCharacteristic):
     """
 
     _characteristic_name: str = "Pollen Concentration"
-    _manual_value_type: str = "float"  # Override YAML spec since decode_value returns float
+    _manual_value_type: ValueType | str | None = "float"  # Override YAML spec since decode_value returns float
+    _manual_unit: str | None = field(default="grains/m³", init=False)  # Override template's "units" default
 
     # SIG specification configuration
     resolution: float = 1.0
-    measurement_unit: str = "grains/m³"

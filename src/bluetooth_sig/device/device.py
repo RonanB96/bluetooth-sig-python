@@ -326,14 +326,18 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Args:
             char_data: The parsed characteristic data with properties
         """
+        from ..types.gatt_enums import GattProperty
+
         properties = char_data.properties
 
         # Check for encryption requirements
-        if any(prop in properties for prop in ["encrypt-read", "encrypt-write", "encrypt-notify"]):
+        encrypt_props = [GattProperty.ENCRYPT_READ, GattProperty.ENCRYPT_WRITE, GattProperty.ENCRYPT_NOTIFY]
+        if any(prop in properties for prop in encrypt_props):
             self.encryption.requires_encryption = True
 
         # Check for authentication requirements
-        if any(prop in properties for prop in ["auth-read", "auth-write", "auth-notify"]):
+        auth_props = [GattProperty.AUTH_READ, GattProperty.AUTH_WRITE, GattProperty.AUTH_NOTIFY]
+        if any(prop in properties for prop in auth_props):
             self.encryption.requires_authentication = True
 
     def _parse_auxiliary_packets(self, aux_ptr: bytes) -> list[BLEAdvertisingPDU]:

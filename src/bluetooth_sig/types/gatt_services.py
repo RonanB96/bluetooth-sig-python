@@ -11,14 +11,16 @@ from typing import Generic, TypeVar
 
 from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
+from .data_types import CharacteristicInfo
 from .gatt_enums import CharacteristicName
+from .uuid import BluetoothUUID
 
 # Type variable for specific characteristic types
-CharacteristicType = TypeVar("CharacteristicType", bound=BaseCharacteristic)
+CharacteristicTypeVar = TypeVar("CharacteristicTypeVar", bound=BaseCharacteristic)
 
 
 @dataclass(frozen=True)
-class CharacteristicSpec(Generic[CharacteristicType]):
+class CharacteristicSpec(Generic[CharacteristicTypeVar]):
     """Specification for a single characteristic with strong typing.
 
     This provides compile-time type safety and IDE autocompletion
@@ -28,7 +30,7 @@ class CharacteristicSpec(Generic[CharacteristicType]):
     eliminating redundancy and following DRY principles.
     """
 
-    char_class: type[CharacteristicType]
+    char_class: type[CharacteristicTypeVar]
     required: bool = False
     conditional: bool = False
     condition: str = ""
@@ -60,8 +62,15 @@ CharacteristicCollection = dict[CharacteristicName, CharacteristicSpec[BaseChara
 """Maps characteristic names (enums) to their specifications - STRONG TYPING ONLY."""
 
 # Network/protocol data structures - these are inherently dynamic from BLE
-ServiceDiscoveryData = dict[str, dict[str, list[str]]]
-"""Service discovery data: Service UUID -> characteristic properties."""
+# Type aliases for service and characteristic discovery data
+ServiceDiscoveryData = dict[BluetoothUUID, CharacteristicInfo]
+"""Service discovery data: Service UUID -> characteristic discovery information."""
 
 # Export helper function
-__all__ = ["CharacteristicSpec", "CharacteristicCollection", "characteristic"]
+__all__ = [
+    "CharacteristicSpec",
+    "CharacteristicTypeVar",
+    "CharacteristicCollection",
+    "ServiceDiscoveryData",
+    "characteristic",
+]

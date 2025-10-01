@@ -1,7 +1,8 @@
 """Ozone Concentration characteristic implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from ...types.gatt_enums import ValueType
 from .templates import ConcentrationCharacteristic
 
 
@@ -14,9 +15,9 @@ class OzoneConcentrationCharacteristic(ConcentrationCharacteristic):
     """
 
     _characteristic_name: str = "Ozone Concentration"
-    _manual_value_type: str = "int"  # Manual override needed as no YAML available
+    _manual_value_type: ValueType | str | None = ValueType.INT  # Manual override needed as no YAML available
+    _manual_unit: str | None = field(default="ppb", init=False)  # Override template's "ppm" default
 
     # Template configuration
     resolution: float = 1.0
-    concentration_unit: str = "ppb"
     max_value: float = 65533.0  # Exclude special values 0xFFFE and 0xFFFF

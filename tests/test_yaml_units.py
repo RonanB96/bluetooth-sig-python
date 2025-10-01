@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
-
 import pytest
 
 from bluetooth_sig.gatt.characteristics import CharacteristicRegistry
@@ -41,9 +39,9 @@ class TestYAMLUnitParsing:
     def test_characteristic_unit_resolution_from_yaml(self):
         """Test that characteristics get units from YAML registry."""
         # Create characteristics and test their unit resolution
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
-        battery_char = BatteryLevelCharacteristic(uuid="", properties=set())
-        humidity_char = HumidityCharacteristic(uuid="", properties=set())
+        temp_char = TemperatureCharacteristic()
+        battery_char = BatteryLevelCharacteristic()
+        humidity_char = HumidityCharacteristic()
 
         # Get units - these should come from YAML if available, manual if not
         temp_unit = temp_char.unit
@@ -57,13 +55,13 @@ class TestYAMLUnitParsing:
 
     def test_manual_unit_priority(self):
         """Test that manual units take priority over YAML units."""
-        # Create a characteristic with manual unit override
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
-        cast(Any, temp_char)._manual_unit = "°F"  # Override with manual unit (test-only)
+        # Use PM25 characteristic which has manual unit override in class definition
+        from src.bluetooth_sig.gatt.characteristics.pm25_concentration import PM25ConcentrationCharacteristic
 
-        # The unit should be the manual unit if set, regardless of YAML
-        unit = temp_char.unit
-        assert unit == "°F", f"Unit should be manual (°F) when set, got {unit}"
+        # Create instance and check manual unit takes precedence
+        pm25_char = PM25ConcentrationCharacteristic()
+        unit = pm25_char.unit
+        assert unit == "µg/m³", f"PM25 unit should be manual (µg/m³) from class definition, got {unit}"
 
     def test_unknown_characteristic_unit(self):
         """Test behavior with characteristics not in YAML."""
@@ -106,14 +104,15 @@ class TestYAMLUnitParsing:
 
     def test_manual_unit_override_priority(self):
         """Test that manual unit overrides always take precedence over YAML."""
-        # Create characteristics that have manual unit overrides
-        temp_char = TemperatureCharacteristic(uuid="", properties=set())
-        # Intentional override for test: TemperatureCharacteristic supports manual unit via getattr
-        object.__setattr__(temp_char, "_manual_unit", "K")  # Intentional test override
-        # The unit property should prefer manual over YAML
-        unit_with_manual = temp_char.unit
-        # Should be the manual unit, since manual takes precedence
-        assert unit_with_manual == "K", f"Unit should be manual (K) when manual override is set, got {unit_with_manual}"
+        # Use Ozone characteristic which has manual unit override in class definition
+        from src.bluetooth_sig.gatt.characteristics.ozone_concentration import OzoneConcentrationCharacteristic
+
+        # Create instance and check manual unit takes precedence
+        ozone_char = OzoneConcentrationCharacteristic()
+        unit_with_manual = ozone_char.unit
+        assert unit_with_manual == "ppb", (
+            f"Ozone unit should be manual (ppb) from class definition, got {unit_with_manual}"
+        )
 
     def test_characteristic_creation_with_yaml_units(self):
         """Test that characteristics created via registry get units

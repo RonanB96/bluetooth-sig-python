@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Any
 
@@ -56,6 +56,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Cycling Power Vector"
+    _manual_unit: str | None = field(default="various", init=False)  # Multiple units in vector data
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> CyclingPowerVectorData:
         """Parse cycling power vector data according to Bluetooth

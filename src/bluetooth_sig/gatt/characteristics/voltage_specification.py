@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 
@@ -15,7 +16,6 @@ class VoltageSpecificationData:
 
     minimum: float  # Minimum voltage in Volts
     maximum: float  # Maximum voltage in Volts
-    unit: str = "V"
 
     def __post_init__(self) -> None:
         """Validate voltage specification data."""
@@ -43,7 +43,8 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Voltage Specification"
-    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
+    # Override since decode_value returns structured VoltageSpecificationData
+    _manual_value_type: ValueType | str | None = ValueType.DICT
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> VoltageSpecificationData:
         """Parse voltage specification data (2x uint16 in units of 1/64 V).
@@ -92,8 +93,3 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
         result.extend(max_voltage_raw.to_bytes(2, byteorder="little", signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "V"

@@ -7,7 +7,10 @@ types.gatt_enums to avoid circular imports.
 
 from __future__ import annotations
 
+import threading
+
 from ...types.gatt_enums import CharacteristicName, GattProperty
+from ...types.uuid import BluetoothUUID
 from .base import BaseCharacteristic
 
 # Export for other modules to import
@@ -22,7 +25,7 @@ _characteristic_class_map_str: dict[str, type[BaseCharacteristic]] | None = None
 
 
 def _convert_properties_to_enums(
-    properties: set[str] | set[GattProperty] | None,
+    properties: set[GattProperty] | None,
 ) -> set[GattProperty]:
     """Convert string properties to GattProperty enums, validating inputs.
 
@@ -238,6 +241,49 @@ CHARACTERISTIC_CLASS_MAP = _get_characteristic_class_map()
 class CharacteristicRegistry:
     """Encapsulates all GATT characteristic registry operations."""
 
+    _lock = threading.RLock()
+    _custom_characteristic_classes: dict[BluetoothUUID, type[BaseCharacteristic]] = {}
+
+    @classmethod
+    def register_characteristic_class(
+        cls, uuid: str | BluetoothUUID, char_cls: type[BaseCharacteristic], override: bool = False
+    ) -> None:
+        """Register a custom characteristic class at runtime.
+
+        Args:
+            uuid: The characteristic UUID (string or BluetoothUUID)
+            char_cls: The characteristic class to register
+            override: Whether to override existing registrations
+
+        Raises:
+            TypeError: If char_cls does not inherit from BaseCharacteristic
+            ValueError: If UUID conflicts with existing registration and override=False
+        """
+        if not issubclass(char_cls, BaseCharacteristic):
+            raise TypeError(f"Class {char_cls.__name__} must inherit from BaseCharacteristic")
+
+        # Always normalize UUID to BluetoothUUID
+        bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
+
+        with cls._lock:
+            # Check for conflicts
+            if not override:
+                if bt_uuid in cls._custom_characteristic_classes:
+                    raise ValueError(f"UUID {bt_uuid} already registered. Use override=True to replace.")
+
+            cls._custom_characteristic_classes[bt_uuid] = char_cls
+
+    @classmethod
+    def unregister_characteristic_class(cls, uuid: str | BluetoothUUID) -> None:
+        """Unregister a custom characteristic class.
+
+        Args:
+            uuid: The characteristic UUID to unregister (string or BluetoothUUID)
+        """
+        bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
+        with cls._lock:
+            cls._custom_characteristic_classes.pop(bt_uuid, None)
+
     @staticmethod
     def get_characteristic_class(
         name: CharacteristicName,
@@ -269,84 +315,57 @@ class CharacteristicRegistry:
         """
         return list(CharacteristicName)
 
-    @staticmethod
+    @classmethod
     def create_characteristic(
-        uuid_or_name: str | CharacteristicName,
-        properties: set[str] | set[GattProperty] | None = None,
+        cls,
+        uuid: str | BluetoothUUID,
+        properties: set[GattProperty] | None = None,
     ) -> BaseCharacteristic | None:
-        """Create a characteristic instance from a UUID or enum name.
-
-        For type safety and better IDE support, prefer using CharacteristicName enums
-        over raw UUID strings. Example:
-            # Preferred (type-safe):
-            temp_char = CharacteristicRegistry.create_characteristic(
-                CharacteristicName.TEMPERATURE
-            )
-
-            # Also supported (but less type-safe):
-            temp_char = CharacteristicRegistry.create_characteristic("2A6E")
+        """Create a characteristic instance from a UUID.
 
         Args:
-            uuid_or_name: The characteristic UUID (string) or CharacteristicName enum.
+            uuid: The characteristic UUID (string or BluetoothUUID).
             properties: Optional set of characteristic properties.
 
         Returns:
             Characteristic instance if found, None otherwise.
         """
-        # Handle enum input by looking up the class directly
-        if isinstance(uuid_or_name, CharacteristicName):
-            char_cls = _get_characteristic_class_map().get(uuid_or_name)
-            if char_cls:
-                converted_props = _convert_properties_to_enums(properties)
-                return char_cls(uuid="", properties=converted_props)
-            return None
+        # Handle UUID input
+        if isinstance(uuid, BluetoothUUID):
+            uuid_obj = uuid
+        else:
+            try:
+                uuid_obj = BluetoothUUID(uuid)
+            except ValueError:
+                # Invalid UUID format, cannot create characteristic
+                return None
 
-        # Handle string UUID input (existing logic)
-        norm_uuid = uuid_or_name.replace("-", "").upper()
-        short_uuid = norm_uuid[4:8] if len(norm_uuid) == 32 else norm_uuid
+        # Check custom registry first
+        with cls._lock:
+            if custom_cls := cls._custom_characteristic_classes.get(uuid_obj):
+                converted_props = _convert_properties_to_enums(properties)
+                return custom_cls.from_uuid(uuid_obj, properties=converted_props)
+
         for _, char_cls in _get_characteristic_class_map().items():
+            # Try to resolve UUID at class level first
+            resolved_uuid = char_cls._resolve_from_basic_registry_class()  # type: ignore[attr-defined]
+            if resolved_uuid and (
+                resolved_uuid.normalized == uuid_obj.normalized or resolved_uuid.short_form == uuid_obj.short_form
+            ):
+                converted_props = _convert_properties_to_enums(properties)
+                return char_cls.from_uuid(uuid_obj, properties=converted_props)
+            # Fallback to instantiation if class-level resolution fails
             converted_props = _convert_properties_to_enums(properties)
-            instance = char_cls(uuid=norm_uuid, properties=converted_props)
-            char_uuid_norm = instance.char_uuid.replace("-", "").upper()
-            char_uuid_short = char_uuid_norm[4:8] if len(char_uuid_norm) == 32 else char_uuid_norm
-            if char_uuid_norm == norm_uuid or char_uuid_short == short_uuid:
+            instance = char_cls.from_uuid(
+                BluetoothUUID("00000000-0000-0000-0000-000000000000"), properties=converted_props
+            )
+            char_uuid_obj = instance.char_uuid
+            if char_uuid_obj.normalized == uuid_obj.normalized or char_uuid_obj.short_form == uuid_obj.short_form:
                 return instance
         return None
 
-    @staticmethod
-    def create_characteristic_by_name(
-        name: CharacteristicName,
-        properties: set[str] | set[GattProperty] | None = None,
-    ) -> BaseCharacteristic | None:
-        """Create a characteristic instance by enum name (type-safe).
-
-        This is the preferred method for creating characteristics as it provides
-        full type safety and IDE autocompletion. Example:
-
-            temp_char = CharacteristicRegistry.create_characteristic_by_name(
-                CharacteristicName.TEMPERATURE
-            )
-
-            battery_char = CharacteristicRegistry.create_characteristic_by_name(
-                CharacteristicName.BATTERY_LEVEL,
-                properties={"read", "notify"}
-            )
-
-        Args:
-            name: The CharacteristicName enum value.
-            properties: Optional set of characteristic properties.
-
-        Returns:
-            Characteristic instance if the enum is valid, None otherwise.
-        """
-        char_cls = _get_characteristic_class_map().get(name)
-        if char_cls:
-            converted_props = _convert_properties_to_enums(properties)
-            return char_cls(uuid="", properties=converted_props)
-        return None
-
-    @staticmethod
-    def get_characteristic_class_by_uuid(uuid: str) -> type[BaseCharacteristic] | None:
+    @classmethod
+    def get_characteristic_class_by_uuid(cls, uuid: str | BluetoothUUID) -> type[BaseCharacteristic] | None:
         """Get the characteristic class for a given UUID.
 
         Args:
@@ -355,18 +374,44 @@ class CharacteristicRegistry:
         Returns:
             The characteristic class if found, None otherwise.
         """
-        norm_uuid = uuid.replace("-", "").upper()
+        # Always normalize UUID to BluetoothUUID
+        try:
+            bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
+        except ValueError:
+            return None
+
+        # Check custom registry first
+        with cls._lock:
+            if custom_cls := cls._custom_characteristic_classes.get(bt_uuid):
+                return custom_cls
+
         for char_cls in _get_characteristic_class_map().values():
-            instance = char_cls(uuid=norm_uuid, properties=set())
-            if instance.char_uuid.replace("-", "").upper() == norm_uuid:
+            # Try to resolve UUID at class level first
+            resolved_uuid = char_cls._resolve_from_basic_registry_class()  # type: ignore[attr-defined]
+            if resolved_uuid and (
+                resolved_uuid.normalized == bt_uuid.normalized or resolved_uuid.short_form == bt_uuid.short_form
+            ):
+                return char_cls
+            # Fallback to instantiation if class-level resolution fails
+            instance = char_cls.from_uuid(BluetoothUUID("00000000-0000-0000-0000-000000000000"), properties=set())
+            char_uuid_obj = instance.char_uuid
+            if char_uuid_obj.normalized == bt_uuid.normalized or char_uuid_obj.short_form == bt_uuid.short_form:
                 return char_cls
         return None
 
     @staticmethod
-    def get_all_characteristics() -> dict[str, type[BaseCharacteristic]]:
-        """Get all supported characteristics as a dictionary.
+    def get_all_characteristics() -> dict[CharacteristicName, type[BaseCharacteristic]]:
+        """Get all registered characteristic classes.
 
         Returns:
-            Dictionary mapping characteristic names to their classes.
+            Dictionary mapping characteristic names to classes
         """
-        return {e.value: c for e, c in _get_characteristic_class_map().items()}
+        result: dict[CharacteristicName, type[BaseCharacteristic]] = {}
+        for name, char_cls in _get_characteristic_class_map().items():
+            result[name] = char_cls
+        return result
+
+    @classmethod
+    def clear_custom_registrations(cls) -> None:
+        """Clear all custom characteristic registrations (for testing)."""
+        cls._custom_characteristic_classes.clear()

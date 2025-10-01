@@ -44,8 +44,14 @@ from .electric_current_statistics import ElectricCurrentStatisticsCharacteristic
 from .elevation import ElevationCharacteristic
 from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic
 from .glucose_feature import GlucoseFeatureCharacteristic, GlucoseFeatures
-from .glucose_measurement import GlucoseMeasurementCharacteristic
-from .glucose_measurement_context import GlucoseMeasurementContextCharacteristic
+from .glucose_measurement import (
+    GlucoseMeasurementCharacteristic,
+    GlucoseMeasurementFlags,
+)
+from .glucose_measurement_context import (
+    GlucoseMeasurementContextCharacteristic,
+    GlucoseMeasurementContextFlags,
+)
 from .heart_rate_measurement import HeartRateMeasurementCharacteristic
 from .heat_index import HeatIndexCharacteristic
 from .high_voltage import HighVoltageCharacteristic
@@ -129,6 +135,8 @@ __all__ = [
     "GlucoseFeatureCharacteristic",
     "GlucoseMeasurementCharacteristic",
     "GlucoseMeasurementContextCharacteristic",
+    "GlucoseMeasurementContextFlags",
+    "GlucoseMeasurementFlags",
     "GlucoseFeatures",
     "HeartRateMeasurementCharacteristic",
     "HeatIndexCharacteristic",

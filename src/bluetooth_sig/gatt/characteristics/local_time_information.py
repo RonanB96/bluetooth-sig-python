@@ -169,8 +169,3 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
         dst_offset_byte = data.dst_offset.raw_value.to_bytes(1, byteorder="little", signed=False)
 
         return bytearray(timezone_byte + dst_offset_byte)
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""  # No unit for time information

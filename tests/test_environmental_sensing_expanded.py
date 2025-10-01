@@ -29,7 +29,7 @@ class TestEnvironmentalSensingExpanded:
 
     def test_dew_point_parsing(self):
         """Test dew point characteristic parsing."""
-        char = DewPointCharacteristic(uuid="", properties=set())
+        char = DewPointCharacteristic()
 
         # Test positive temperature
         data = bytearray([25])  # 25°C
@@ -49,7 +49,7 @@ class TestEnvironmentalSensingExpanded:
 
     def test_heat_index_parsing(self):
         """Test heat index characteristic parsing."""
-        char = HeatIndexCharacteristic(uuid="", properties=set())
+        char = HeatIndexCharacteristic()
 
         # Test normal temperature
         data = bytearray([35])  # 35°C
@@ -61,7 +61,7 @@ class TestEnvironmentalSensingExpanded:
 
     def test_wind_chill_parsing(self):
         """Test wind chill characteristic parsing."""
-        char = WindChillCharacteristic(uuid="", properties=set())
+        char = WindChillCharacteristic()
 
         # Test negative temperature
         data = bytearray([256 - 15])  # -15°C
@@ -73,7 +73,7 @@ class TestEnvironmentalSensingExpanded:
 
     def test_true_wind_speed_parsing(self):
         """Test true wind speed characteristic parsing."""
-        char = TrueWindSpeedCharacteristic(uuid="", properties=set())
+        char = TrueWindSpeedCharacteristic()
 
         # Test 10.50 m/s (1050 * 0.01)
         data = bytearray([0x1A, 0x04])  # 1050 in little endian
@@ -85,7 +85,7 @@ class TestEnvironmentalSensingExpanded:
 
     def test_true_wind_direction_parsing(self):
         """Test true wind direction characteristic parsing."""
-        char = TrueWindDirectionCharacteristic(uuid="", properties=set())
+        char = TrueWindDirectionCharacteristic()
 
         # Test 180.0° (18000 * 0.01)
         data = bytearray([0x50, 0x46])  # 18000 in little endian
@@ -97,8 +97,8 @@ class TestEnvironmentalSensingExpanded:
 
     def test_apparent_wind_characteristics(self):
         """Test apparent wind speed and direction characteristics."""
-        speed_char = ApparentWindSpeedCharacteristic(uuid="", properties=set())
-        direction_char = ApparentWindDirectionCharacteristic(uuid="", properties=set())
+        speed_char = ApparentWindSpeedCharacteristic()
+        direction_char = ApparentWindDirectionCharacteristic()
 
         # Test parsing similar to true wind
         speed_data = bytearray([0x64, 0x00])  # 100 * 0.01 = 1.0 m/s
@@ -110,15 +110,15 @@ class TestEnvironmentalSensingExpanded:
     def test_characteristic_properties(self):
         """Test characteristic metadata properties."""
         # Temperature-like characteristics
-        dew_point = DewPointCharacteristic(uuid="", properties=set())
+        dew_point = DewPointCharacteristic()
         assert dew_point.unit == "°C"
 
         # Wind speed characteristics - now using YAML units
-        wind_speed = TrueWindSpeedCharacteristic(uuid="", properties=set())
+        wind_speed = TrueWindSpeedCharacteristic()
         assert wind_speed.unit == "m/s"
 
         # Wind direction characteristics - still using YAML units
-        wind_direction = TrueWindDirectionCharacteristic(uuid="", properties=set())
+        wind_direction = TrueWindDirectionCharacteristic()
         assert wind_direction.unit == "°"
 
     def test_characteristic_uuid_resolution(self):
@@ -134,18 +134,18 @@ class TestEnvironmentalSensingExpanded:
         ]
 
         for char_class, expected_uuid in characteristics:
-            char = char_class(uuid="", properties=set())
+            char = char_class()
             assert char.char_uuid == expected_uuid
 
     def test_data_validation(self):
         """Test data validation for insufficient bytes."""
         # Single-byte characteristics
-        dew_point = DewPointCharacteristic(uuid="", properties=set())
+        dew_point = DewPointCharacteristic()
         with pytest.raises(InsufficientDataError):
             dew_point.decode_value(bytearray([]))
 
         # Two-byte characteristics
-        wind_speed = TrueWindSpeedCharacteristic(uuid="", properties=set())
+        wind_speed = TrueWindSpeedCharacteristic()
         with pytest.raises(InsufficientDataError):
             wind_speed.decode_value(bytearray([0x50]))
 

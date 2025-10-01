@@ -1,7 +1,7 @@
 """Non-Methane Volatile Organic Compounds Concentration characteristic
 implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .templates import IEEE11073FloatCharacteristic
 
@@ -16,8 +16,4 @@ class NonMethaneVOCConcentrationCharacteristic(IEEE11073FloatCharacteristic):
     """
 
     _characteristic_name: str = "Non-Methane Volatile Organic Compounds Concentration"
-
-    @property
-    def unit(self) -> str:
-        """Return unit as per SIG specification."""
-        return "kg/m³"
+    _manual_unit: str | None = field(default="kg/m³", init=False)  # Unit as per SIG specification

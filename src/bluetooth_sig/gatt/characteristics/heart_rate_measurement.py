@@ -190,8 +190,3 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
             result.extend(DataParser.encode_int16(rr_raw, signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "bpm"

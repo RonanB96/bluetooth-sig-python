@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import IntFlag
 from typing import Any
@@ -47,6 +47,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Weight Measurement"
+    _manual_unit: str | None = field(default="kg", init=False)  # Primary unit for weight measurement
 
     min_length: int = 3  # Flags(1) + Weight(2) minimum
     max_length: int = 21  # + Timestamp(7) + UserID(1) + BMI(2) + Height(2) maximum
@@ -186,8 +187,3 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
             result.extend(DataParser.encode_int16(height_raw, signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "kg"  # Primary unit for weight

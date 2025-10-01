@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from ...types.gatt_enums import ValueType
 from .templates import Vector2DCharacteristic
 
 
@@ -16,8 +17,9 @@ class MagneticFluxDensity2DCharacteristic(Vector2DCharacteristic):
     """
 
     _characteristic_name: str = "Magnetic Flux Density - 2D"
-    _manual_value_type: str = "string"  # Override since decode_value returns dict
+    # Override YAML since decode_value returns structured dict
+    _manual_value_type: ValueType | str | None = ValueType.STRING  # Override since decode_value returns dict
+    _manual_unit: str | None = field(default="T", init=False)  # Tesla
 
     vector_components: list[str] = field(default_factory=lambda: ["x_axis", "y_axis"])
-    component_unit: str = "T"
     resolution: float = 1e-7

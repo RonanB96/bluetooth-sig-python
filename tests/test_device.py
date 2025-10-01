@@ -246,14 +246,21 @@ class TestDevice:
 
     def test_update_encryption_requirements(self):
         """Test encryption requirements tracking."""
-        from bluetooth_sig.types import CharacteristicData
+        from bluetooth_sig.types import CharacteristicData, CharacteristicInfo
+        from bluetooth_sig.types.gatt_enums import GattProperty
+        from bluetooth_sig.types.uuid import BluetoothUUID
 
-        # Create mock characteristic data with encryption properties
-        char_data = CharacteristicData(
-            uuid="2A19",
+        # Create mock characteristic info with encryption properties
+        char_info = CharacteristicInfo(
+            uuid=BluetoothUUID("2A19"),
             name="Battery Level",
+            properties=[GattProperty.READ, GattProperty.ENCRYPT_READ],
+        )
+
+        # Create characteristic data
+        char_data = CharacteristicData(
+            info=char_info,
             value=100,
-            properties=["read", "encrypt-read"],
         )
 
         self.device.update_encryption_requirements(char_data)
@@ -261,11 +268,15 @@ class TestDevice:
         assert self.device.encryption.requires_encryption is True
 
         # Test authentication requirement
-        char_data_auth = CharacteristicData(
-            uuid="2A19",
+        char_info_auth = CharacteristicInfo(
+            uuid=BluetoothUUID("2A19"),
             name="Battery Level",
+            properties=[GattProperty.READ, GattProperty.AUTH_READ],
+        )
+
+        char_data_auth = CharacteristicData(
+            info=char_info_auth,
             value=100,
-            properties=["read", "auth-read"],
         )
 
         self.device.update_encryption_requirements(char_data_auth)

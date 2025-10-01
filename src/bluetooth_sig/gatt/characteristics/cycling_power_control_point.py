@@ -267,8 +267,3 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
             response_value = data[2]
             result.request_op_code = CyclingPowerOpCode(request_op_code)
             result.response_value = CyclingPowerResponseValue(response_value)
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""  # Control point has no unit

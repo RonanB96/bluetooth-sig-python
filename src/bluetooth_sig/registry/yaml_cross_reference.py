@@ -9,6 +9,8 @@ from typing import Any
 
 import yaml
 
+from bluetooth_sig.types.uuid import BluetoothUUID
+
 
 @dataclass
 class FieldInfo:
@@ -32,7 +34,7 @@ class UnitInfo:
 class CharacteristicSpec:
     """Characteristic specification from cross-file YAML references."""
 
-    uuid: str
+    uuid: BluetoothUUID
     name: str
     field_info: FieldInfo | None = None
     unit_info: UnitInfo | None = None
@@ -85,7 +87,7 @@ class YAMLCrossReferenceResolver:
         self.bluetooth_sig_path = bluetooth_sig_path or self._find_bluetooth_sig_path()
         self._gss_specs: dict[str, dict[str, Any]] = {}
         self._unit_mappings: dict[str, str] = {}
-        self._characteristic_uuids: dict[str, str] = {}
+        self._characteristic_uuids: dict[str, BluetoothUUID] = {}
 
         # Lazy loading flags - only load when needed
         self._characteristic_uuids_loaded = False
@@ -168,7 +170,7 @@ class YAMLCrossReferenceResolver:
                             uuid = f"{uuid_raw:04X}"
                         else:
                             uuid = str(uuid_raw).replace("0x", "").upper()
-                        self._characteristic_uuids[name] = uuid
+                        self._characteristic_uuids[name] = BluetoothUUID(uuid)
                 self._characteristic_uuids_loaded = True
         except (OSError, yaml.YAMLError) as e:
             logging.warning("Failed to load characteristic UUIDs: %s", e)

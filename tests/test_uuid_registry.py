@@ -9,11 +9,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
+from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
+from bluetooth_sig.gatt.characteristics.temperature import TemperatureCharacteristic
 from bluetooth_sig.gatt.services.battery_service import BatteryService
 from bluetooth_sig.gatt.services.environmental_sensing import (
     EnvironmentalSensingService,
 )
 from bluetooth_sig.gatt.uuid_registry import UuidRegistry
+from bluetooth_sig.types.gatt_enums import GattProperty
+from bluetooth_sig.types.gatt_services import ServiceDiscoveryData
 
 
 @pytest.fixture(scope="session")
@@ -133,12 +138,23 @@ def test_service_class_name_resolution():
 
 def test_characteristic_discovery():
     """Test discovery and creation of characteristics from device data."""
-    # Mock device data
-    mock_battery_data = {"00002A19-0000-1000-8000-00805F9B34FB": {"properties": ["read", "notify"]}}  # Battery Level
+    # Use characteristic classes to get proper SIG UUIDs
+    battery_char = BatteryLevelCharacteristic()
+    temp_char = TemperatureCharacteristic()
+    humidity_char = HumidityCharacteristic()
 
-    mock_env_data = {
-        "00002A6E-0000-1000-8000-00805F9B34FB": {"properties": ["read", "notify"]},  # Temperature
-        "00002A6F-0000-1000-8000-00805F9B34FB": {"properties": ["read", "notify"]},  # Humidity
+    # Mock device data using strongly-typed format with typical properties
+    battery_info = battery_char.info
+    battery_info.properties = [GattProperty.READ, GattProperty.NOTIFY]  # Typical battery level properties
+    mock_battery_data: ServiceDiscoveryData = {battery_char.char_uuid: battery_info}
+
+    temp_info = temp_char.info
+    temp_info.properties = [GattProperty.READ, GattProperty.NOTIFY]  # Typical sensor properties
+    humidity_info = humidity_char.info
+    humidity_info.properties = [GattProperty.READ, GattProperty.NOTIFY]  # Typical sensor properties
+    mock_env_data: ServiceDiscoveryData = {
+        temp_char.char_uuid: temp_info,
+        humidity_char.char_uuid: humidity_info,
     }
 
     # Test Battery Service characteristic discovery
@@ -148,8 +164,6 @@ def test_characteristic_discovery():
     assert len(battery.characteristics) == 1, "Incorrect battery char count"
     char = next(iter(battery.characteristics.values()))
     assert char.name == "Battery Level"
-    from bluetooth_sig.types.gatt_enums import GattProperty
-
     assert char.properties is not None
     assert GattProperty.READ in char.properties
     assert GattProperty.NOTIFY in char.properties

@@ -1,6 +1,6 @@
 """Rainfall characteristic implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .templates import ScaledUint16Characteristic
 
@@ -14,5 +14,5 @@ class RainfallCharacteristic(ScaledUint16Characteristic):
     """
 
     _characteristic_name: str = "Rainfall"
+    _manual_unit: str | None = field(default="mm", init=False)  # Override template's "units" default
     resolution: float = 1.0  # 1mm resolution
-    measurement_unit: str = "mm"

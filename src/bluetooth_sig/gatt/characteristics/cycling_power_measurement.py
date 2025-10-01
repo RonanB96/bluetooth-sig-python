@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Any
 
@@ -77,6 +77,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
     PEDAL_POWER_BALANCE_RESOLUTION = 2.0  # 0.5% resolution
 
     _characteristic_name: str = "Cycling Power Measurement"
+    _manual_unit: str | None = field(default="W", init=False)  # Watts unit for power measurement
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> CyclingPowerMeasurementData:
         """Parse cycling power measurement data according to Bluetooth
@@ -223,8 +224,3 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             result.extend(DataParser.encode_int16(crank_time, signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "W"  # Watts

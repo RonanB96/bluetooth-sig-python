@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import IntEnum, IntFlag
 from typing import Any
@@ -124,6 +124,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Glucose Measurement"
+    _manual_unit: str | None = field(default="mg/dL or mmol/L", init=False)  # Unit depends on flags
 
     min_length: int = 12  # Ensured consistency with GlucoseMeasurementData
     max_length: int = 17  # Ensured consistency with GlucoseMeasurementData
@@ -271,8 +272,3 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
             result.extend(DataParser.encode_int16(data.sensor_status, signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "mg/dL or mmol/L"  # Unit depends on flags

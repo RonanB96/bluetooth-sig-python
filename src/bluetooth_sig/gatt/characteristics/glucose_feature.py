@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Any
 
@@ -81,6 +81,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Glucose Feature"
+    _manual_unit: str | None = field(default="bitmap", init=False)  # Feature bitmap
 
     min_length: int = 2  # Features(2) fixed length
     max_length: int = 2  # Features(2) fixed length
@@ -204,8 +205,3 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
             return str(feature)
         except ValueError:
             return f"Reserved feature bit {feature_bit}"
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "bitmap"  # Feature bitmap

@@ -1,6 +1,6 @@
 """High Voltage characteristic implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .templates import Uint24ScaledCharacteristic
 
@@ -13,5 +13,5 @@ class HighVoltageCharacteristic(Uint24ScaledCharacteristic):
     """
 
     _characteristic_name: str = "High Voltage"
+    _manual_unit: str | None = field(default="V", init=False)  # Override template's "units" default
     resolution: float = 1.0
-    measurement_unit: str = "V"

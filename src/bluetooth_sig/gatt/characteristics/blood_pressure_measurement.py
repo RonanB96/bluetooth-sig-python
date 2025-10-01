@@ -77,9 +77,10 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Blood Pressure Measurement"
+    _manual_value_type = "string"  # Override since decode_value returns dataclass
 
-    min_length: int = 7  # Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) minimum
-    max_length: int = 19  # + Timestamp(7) + PulseRate(2) + UserID(1) + MeasurementStatus(2) maximum
+    min_length = 7  # Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) minimum
+    max_length = 19  # + Timestamp(7) + PulseRate(2) + UserID(1) + MeasurementStatus(2) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureData:  # pylint: disable=too-many-locals
@@ -171,8 +172,3 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
             result.extend(DataParser.encode_int16(data.measurement_status, signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "mmHg/kPa"

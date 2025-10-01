@@ -9,6 +9,7 @@ from bluetooth_sig.gatt.characteristics import (
     GlucoseFeatures,
     GlucoseMeasurementCharacteristic,
     GlucoseMeasurementContextCharacteristic,
+    GlucoseMeasurementContextFlags,
 )
 from bluetooth_sig.gatt.characteristics.glucose_measurement import (
     GlucoseMeasurementData,
@@ -17,7 +18,6 @@ from bluetooth_sig.gatt.characteristics.glucose_measurement import (
 )
 from bluetooth_sig.gatt.characteristics.glucose_measurement_context import (
     CarbohydrateType,
-    GlucoseMeasurementContextFlags,
     GlucoseTester,
     HealthType,
     MealType,
@@ -25,6 +25,7 @@ from bluetooth_sig.gatt.characteristics.glucose_measurement_context import (
 )
 from bluetooth_sig.gatt.services.glucose import GlucoseService
 from bluetooth_sig.types.gatt_enums import CharacteristicName
+from bluetooth_sig.types.gatt_services import ServiceDiscoveryData
 
 
 class TestGlucoseService:
@@ -59,7 +60,7 @@ class TestGlucoseMeasurementCharacteristic:
     @pytest.fixture
     def glucose_measurement_char(self):
         """Fixture providing a glucose measurement characteristic."""
-        return GlucoseMeasurementCharacteristic(uuid="2A18", properties=set())
+        return GlucoseMeasurementCharacteristic()
 
     def test_glucose_measurement_instantiation(self, glucose_measurement_char: GlucoseMeasurementCharacteristic):
         """Test that glucose measurement characteristic can be instantiated."""
@@ -225,7 +226,7 @@ class TestGlucoseMeasurementContextCharacteristic:
     @pytest.fixture
     def glucose_context_char(self):
         """Fixture providing a glucose measurement context characteristic."""
-        return GlucoseMeasurementContextCharacteristic(uuid="2A34", properties=set())
+        return GlucoseMeasurementContextCharacteristic()
 
     def test_glucose_context_instantiation(self, glucose_context_char: GlucoseMeasurementContextCharacteristic):
         """Test that glucose context characteristic can be instantiated."""
@@ -339,7 +340,7 @@ class TestGlucoseFeatureCharacteristic:
     @pytest.fixture
     def glucose_feature_char(self):
         """Fixture providing a glucose feature characteristic."""
-        return GlucoseFeatureCharacteristic(uuid="2A51", properties=set())
+        return GlucoseFeatureCharacteristic()
 
     def test_glucose_feature_instantiation(self, glucose_feature_char: GlucoseFeatureCharacteristic):
         """Test that glucose feature characteristic can be instantiated."""
@@ -480,11 +481,15 @@ class TestGlucoseIntegration:
         """Test glucose service creation with characteristics."""
         from bluetooth_sig.gatt.services import GattServiceRegistry
 
-        # Simulate characteristics data
-        characteristics = {
-            "00002a18-0000-1000-8000-00805f9b34fb": {"properties": ["read", "notify"]},
-            "00002a34-0000-1000-8000-00805f9b34fb": {"properties": ["read", "notify"]},
-            "00002a51-0000-1000-8000-00805f9b34fb": {"properties": ["read"]},
+        # Use characteristic classes to get proper SIG UUIDs
+        glucose_measurement_char = GlucoseMeasurementCharacteristic()
+        glucose_context_char = GlucoseMeasurementContextCharacteristic()
+        glucose_feature_char = GlucoseFeatureCharacteristic()
+
+        characteristics: ServiceDiscoveryData = {
+            glucose_measurement_char.char_uuid: glucose_measurement_char.info,
+            glucose_context_char.char_uuid: glucose_context_char.info,
+            glucose_feature_char.char_uuid: glucose_feature_char.info,
         }
 
         service = GattServiceRegistry.create_service("1808", characteristics)

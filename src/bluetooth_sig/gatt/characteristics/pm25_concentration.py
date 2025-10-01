@@ -1,6 +1,6 @@
 """PM2.5 Concentration characteristic implementation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .templates import ConcentrationCharacteristic
 
@@ -14,8 +14,6 @@ class PM25ConcentrationCharacteristic(ConcentrationCharacteristic):
     """
 
     _characteristic_name: str = "Particulate Matter - PM2.5 Concentration"
-
-    # Template configuration
     resolution: float = 1.0
-    concentration_unit: str = "µg/m³"
+    _manual_unit: str | None = field(default="µg/m³", init=False)  # Override template's "ppm" default
     max_value: float = 65533.0  # Exclude special values 0xFFFE and 0xFFFF

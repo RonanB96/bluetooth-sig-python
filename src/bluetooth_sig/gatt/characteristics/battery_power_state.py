@@ -490,8 +490,3 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             battery_charge_state=battery_charge_state,
             battery_charge_level=battery_charge_level,
         )
-
-    @property
-    def unit(self) -> str:
-        """Unit for this characteristic (none)."""
-        return ""

@@ -12,10 +12,10 @@ from typing import Any
 import pytest
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-from bluetooth_sig.gatt.exceptions import UUIDResolutionError
 from bluetooth_sig.gatt.services.base import BaseGattService
 from bluetooth_sig.gatt.uuid_registry import uuid_registry
 from bluetooth_sig.types.gatt_enums import ValueType
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 def discover_service_classes() -> list[type[BaseGattService]]:
@@ -97,15 +97,17 @@ class TestCharacteristicRegistryValidation:
         registry."""
         try:
             # Create an instance to trigger UUID resolution
-            char = char_class(uuid="test", properties=set())
+            char = char_class(uuid=BluetoothUUID("1234"), properties=set())
             uuid = char.char_uuid
 
             # Verify UUID is not empty
             assert uuid, f"Characteristic {char_class.__name__} has empty UUID"
 
             # Verify UUID format (should be 4 characters for 16-bit UUIDs)
-            assert len(uuid) == 4, f"Characteristic {char_class.__name__} UUID '{uuid}' should be 4 characters"
-            assert all(c in "0123456789ABCDEF" for c in uuid), (
+            assert len(uuid.short_form) == 4, (
+                f"Characteristic {char_class.__name__} UUID '{uuid}' should be 4 characters"
+            )
+            assert all(c in "0123456789ABCDEF" for c in uuid.short_form), (
                 f"Characteristic {char_class.__name__} UUID '{uuid}' should be hexadecimal"
             )
 
@@ -117,8 +119,12 @@ class TestCharacteristicRegistryValidation:
         """Test that each characteristic exists in the YAML registry with
         correct information."""
         try:
-            char = char_class(uuid="test", properties=set())
-            uuid = char.char_uuid
+            # Resolve UUID at class level without creating instance
+            uuid = char_class._resolve_from_basic_registry_class()  # type: ignore[attr-defined]
+            assert uuid is not None, f"Characteristic {char_class.__name__} could not resolve UUID"
+
+            # Create instance with resolved UUID for name checking
+            char = char_class(uuid=uuid, properties=set())
             name = char.name
 
             # Check if UUID exists in registry
@@ -148,7 +154,7 @@ class TestCharacteristicRegistryValidation:
     def test_characteristic_properties(self, char_class: type[BaseCharacteristic]):
         """Test that each characteristic has valid properties."""
         try:
-            char = char_class(uuid="test", properties=set())
+            char = char_class(uuid=BluetoothUUID("1234"), properties=set())
 
             # Verify value_type is set
             assert hasattr(char, "value_type"), f"Characteristic {char_class.__name__} should have value_type attribute"
@@ -178,7 +184,7 @@ class TestCharacteristicRegistryValidation:
     def test_characteristic_name_resolution(self, char_class: type[BaseCharacteristic]):
         """Test that each characteristic can resolve its name correctly."""
         try:
-            char = char_class(uuid="test", properties=set())
+            char = char_class(uuid=BluetoothUUID("1234"), properties=set())
             name = char.name
 
             # Verify name is not empty
@@ -207,7 +213,7 @@ class TestRegistryConsistency:
         char_name_to_class = {}
         for char_class in char_classes:
             try:
-                char = char_class(uuid="test", properties=set())
+                char = char_class(uuid=BluetoothUUID("1234"), properties=set())
                 char_name_to_class[char.name] = char_class
             except Exception:
                 continue  # Skip characteristics that can't be instantiated
@@ -266,8 +272,11 @@ class TestRegistryConsistency:
         # Check characteristics
         for char_class in char_classes:
             try:
-                char = char_class(uuid="test", properties=set())
-                uuid = char.char_uuid
+                # Use class-level UUID resolution
+                uuid = char_class._resolve_class_uuid()  # type: ignore[attr-defined]
+                if uuid is None:
+                    missing_characteristics.append(f"{char_class.__name__} (failed to resolve UUID)")
+                    continue
                 char_info = uuid_registry.get_characteristic_info(uuid)
                 if char_info is None:
                     missing_characteristics.append(f"{char_class.__name__} (UUID: {uuid})")
@@ -336,14 +345,18 @@ class TestNameResolutionFallback:
             def unit(self) -> str:
                 return "°C"
 
-        char = TemperatureCharacteristic(uuid="test", properties=set())
+        # Test class-level resolution
+        resolved_uuid = TemperatureCharacteristic._resolve_from_basic_registry_class()  # type: ignore[attr-defined]
+        assert resolved_uuid is not None, "TemperatureCharacteristic should resolve UUID at class level"
+        assert resolved_uuid.short_form == "2A6E", (
+            f"TemperatureCharacteristic should resolve to UUID 2A6E, got {resolved_uuid.short_form}"
+        )
+
+        # Now test instance with resolved UUID
+        char = TemperatureCharacteristic(uuid=resolved_uuid, properties=set())
 
         # Should not have explicit characteristic name
         assert not hasattr(char, "_characteristic_name"), "Test characteristic should not have _characteristic_name set"
-
-        # Should resolve UUID through class name parsing: "TemperatureCharacteristic" -> "Temperature" -> "Temperature"
-        uuid = char.char_uuid
-        assert uuid == "2A6E", f"TemperatureCharacteristic should resolve to UUID 2A6E, got {uuid}"
 
         # Should get name from registry
         name = char.name
@@ -375,7 +388,7 @@ class TestNameResolutionFallback:
         name resolution."""
         from bluetooth_sig.gatt.characteristics.uv_index import UVIndexCharacteristic
 
-        char = UVIndexCharacteristic(uuid="test", properties=set())
+        char = UVIndexCharacteristic(uuid=BluetoothUUID("1234"), properties=set())
 
         # Should have explicit characteristic name
         assert hasattr(char, "_characteristic_name"), "UVIndexCharacteristic should have _characteristic_name set"
@@ -417,11 +430,15 @@ class TestNameResolutionFallback:
             def unit(self) -> str:
                 return ""
 
-        char = ModelNumberStringCharacteristic(uuid="test", properties=set())
+        # Test class-level resolution
+        resolved_uuid = ModelNumberStringCharacteristic._resolve_from_basic_registry_class()  # type: ignore[attr-defined]
+        assert resolved_uuid is not None, "ModelNumberStringCharacteristic should resolve UUID at class level"
+        assert resolved_uuid == "2A24", (
+            f"ModelNumberStringCharacteristic should resolve to UUID 2A24, got {resolved_uuid}"
+        )
 
-        # Should resolve "ModelNumberStringCharacteristic" -> "ModelNumberString" -> "Model Number String"
-        uuid = char.char_uuid
-        assert uuid == "2A24", f"ModelNumberStringCharacteristic should resolve to UUID 2A24, got {uuid}"
+        # Now test instance with resolved UUID
+        char = ModelNumberStringCharacteristic(uuid=resolved_uuid, properties=set())
 
         name = char.name
         assert name == "Model Number String", f"Expected 'Model Number String', got '{name}'"
@@ -452,9 +469,13 @@ class TestNameResolutionFallback:
             def unit(self) -> str:
                 return ""
 
-        # Should raise UUIDResolutionError when no UUID can be found
-        with pytest.raises(UUIDResolutionError):
-            UnknownTestCharacteristic(uuid="test", properties=set())
+        # Test class-level resolution should return None for unknown characteristic
+        resolved_uuid = UnknownTestCharacteristic._resolve_from_basic_registry_class()  # type: ignore[attr-defined]
+        assert resolved_uuid is None, "UnknownTestCharacteristic should not resolve UUID at class level"
+
+        # Should allow creating instance with explicit UUID even if not in registry
+        char = UnknownTestCharacteristic(uuid=BluetoothUUID("1234"), properties=set())
+        assert char.char_uuid == BluetoothUUID("1234"), "Should use provided UUID"
 
     def test_current_services_name_resolution_strategy(self):
         """Test that current services use the expected name resolution
@@ -525,7 +546,7 @@ class TestNameResolutionFallback:
             explicit_name,
             expected_name,
         ) in chars_with_explicit_names:
-            char = char_class(uuid="test", properties=set())
+            char = char_class(uuid=BluetoothUUID("1234"), properties=set())
             assert hasattr(char, "_characteristic_name"), f"{char_class.__name__} should have _characteristic_name"
             assert char._characteristic_name == explicit_name  # type: ignore[protected-access]
             assert char.char_uuid == expected_uuid

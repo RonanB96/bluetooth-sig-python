@@ -3,38 +3,126 @@
 from __future__ import annotations
 
 import logging
+import threading
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
 import yaml
 
+from bluetooth_sig.types.uuid import BluetoothUUID
 
-@dataclass
+
+class UuidOrigin(Enum):
+    """Origin of UUID information."""
+
+    BLUETOOTH_SIG = "bluetooth_sig"
+    RUNTIME = "runtime"
+
+
+@dataclass(frozen=True)
 class UuidInfo:
     """Information about a UUID."""
 
-    uuid: str
+    uuid: BluetoothUUID
     name: str
     id: str
     summary: str = ""
     unit: str | None = None
     value_type: str | None = None
+    origin: UuidOrigin = UuidOrigin.BLUETOOTH_SIG
+
+
+@dataclass(frozen=True)
+class CustomUuidEntry:
+    """Entry for custom UUID registration."""
+
+    uuid: BluetoothUUID
+    name: str
+    id: str | None = None
+    summary: str | None = None
+    unit: str | None = None
+    value_type: str | None = None
 
 
 class UuidRegistry:
-    """Registry for Bluetooth SIG UUIDs."""
+    """Registry for Bluetooth SIG UUIDs with canonical storage + alias indices."""
 
     def __init__(self) -> None:
         """Initialize the UUID registry."""
+        self._lock = threading.RLock()
+
+        # Canonical storage: normalized_uuid -> UuidInfo (single source of truth)
         self._services: dict[str, UuidInfo] = {}
         self._characteristics: dict[str, UuidInfo] = {}
+
+        # Lightweight alias indices: alias -> normalized_uuid
+        self._service_aliases: dict[str, str] = {}
+        self._characteristic_aliases: dict[str, str] = {}
+
+        # Unit mappings
         self._unit_mappings: dict[str, str] = {}
+
         try:
             self._load_uuids()
         except (FileNotFoundError, Exception):  # pylint: disable=broad-exception-caught
             # If YAML loading fails, continue with empty registry
             pass
+
+    def _store_service(self, info: UuidInfo) -> None:
+        """Store service info with canonical storage + aliases."""
+        canonical_key = info.uuid.normalized
+
+        # Store once in canonical location
+        self._services[canonical_key] = info
+
+        # Create lightweight alias mappings (normalized to lowercase)
+        aliases = self._generate_aliases(info)
+        for alias in aliases:
+            self._service_aliases[alias.lower()] = canonical_key
+
+    def _store_characteristic(self, info: UuidInfo) -> None:
+        """Store characteristic info with canonical storage + aliases."""
+        canonical_key = info.uuid.normalized
+
+        # Store once in canonical location
+        self._characteristics[canonical_key] = info
+
+        # Create lightweight alias mappings (normalized to lowercase)
+        aliases = self._generate_aliases(info)
+        for alias in aliases:
+            self._characteristic_aliases[alias.lower()] = canonical_key
+
+    def _generate_aliases(self, info: UuidInfo) -> set[str]:
+        """Generate name/ID-based alias keys for a UuidInfo (UUID variations handled by BluetoothUUID)."""
+        aliases: set[str] = {
+            # Name variations
+            info.name.lower(),  # Lowercase name
+            info.id,  # Full ID
+        }
+
+        # Add service/characteristic-specific name variations
+        if "service" in info.id:
+            service_name = info.id.replace("org.bluetooth.service.", "")
+            if service_name.endswith("_service"):
+                service_name = service_name[:-8]  # Remove _service
+            service_name = service_name.replace("_", " ").title()
+            aliases.add(service_name)
+        elif "characteristic" in info.id:
+            char_name = info.id.replace("org.bluetooth.characteristic.", "")
+            char_name = char_name.replace("_", " ").title()
+            aliases.add(char_name)
+
+        # Add space-separated words from name
+        name_words = info.name.replace("_", " ").replace("-", " ")
+        if " " in name_words:
+            aliases.add(name_words.title())
+            aliases.add(name_words.lower())
+
+        # Remove empty strings, None values, and the canonical key itself
+        canonical_key = info.uuid.normalized
+        return {alias for alias in aliases if alias and alias.strip() and alias != canonical_key}
 
     def _load_yaml(self, file_path: Path) -> list[dict[str, Any]]:
         """Load UUIDs from a YAML file."""
@@ -51,7 +139,6 @@ class UuidRegistry:
     def _load_uuids(self) -> None:
         """Load all UUIDs from YAML files."""
         # Try development location first (git submodule)
-        # From src/bluetooth_sig/gatt/uuid_registry.py, go up 4 levels to project root
         project_root = Path(__file__).parent.parent.parent.parent
         base_path = project_root / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
@@ -61,7 +148,6 @@ class UuidRegistry:
             base_path = pkg_root / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
         if not base_path.exists():
-            # Don't raise error, just return with empty registry
             return
 
         # Load service UUIDs
@@ -74,18 +160,11 @@ class UuidRegistry:
                 else:
                     uuid = hex(uuid)[2:].upper()
 
-                info = UuidInfo(uuid=uuid, name=uuid_info["name"], id=uuid_info["id"])
-                self._services[uuid] = info
-                # Index by all possible lookups
-                self._services[uuid_info["name"]] = info  # Exact name
-                self._services[uuid_info["name"].lower()] = info  # Lowercase
-                self._services[uuid_info["id"]] = info  # Full ID
-                # Service-specific format
-                service_name = uuid_info["id"].replace("org.bluetooth.service.", "")
-                if service_name.endswith("_service"):
-                    service_name = service_name[:-8]  # Remove _service
-                service_name = service_name.replace("_", " ").title()
-                self._services[service_name] = info  # Add name as key
+                bt_uuid = BluetoothUUID(uuid)
+                info = UuidInfo(
+                    uuid=bt_uuid, name=uuid_info["name"], id=uuid_info["id"], origin=UuidOrigin.BLUETOOTH_SIG
+                )
+                self._store_service(info)
 
         # Load characteristic UUIDs
         characteristic_yaml = base_path / "characteristic_uuids.yaml"
@@ -97,16 +176,14 @@ class UuidRegistry:
                 else:
                     uuid = hex(uuid)[2:].upper()
 
-                info = UuidInfo(uuid=uuid, name=uuid_info["name"], id=uuid_info["id"])
-                self._characteristics[uuid] = info
-                # Also index by name for characteristic lookup
-                self._characteristics[uuid_info["name"]] = info
-                self._characteristics[uuid_info["id"]] = info
+                bt_uuid = BluetoothUUID(uuid)
+                info = UuidInfo(
+                    uuid=bt_uuid, name=uuid_info["name"], id=uuid_info["id"], origin=UuidOrigin.BLUETOOTH_SIG
+                )
+                self._store_characteristic(info)
 
-        # Load unit mappings from units.yaml
+        # Load unit mappings and GSS specifications
         self._load_unit_mappings(base_path)
-
-        # Load detailed specifications from GSS YAML files to extract units
         self._load_gss_specifications()
 
     def _load_unit_mappings(self, base_path: Path) -> None:
@@ -124,27 +201,16 @@ class UuidRegistry:
                 if not unit_id or not unit_name:
                     continue
 
-                # Extract unit symbol from name
                 unit_symbol = self._extract_unit_symbol_from_name(unit_name)
                 if unit_symbol:
-                    # Map from the ID (e.g., org.bluetooth.unit.percentage) to symbol (%)
-                    # Remove org.bluetooth.unit. prefix for the key
                     unit_key = unit_id.replace("org.bluetooth.unit.", "").lower()
                     self._unit_mappings[unit_key] = unit_symbol
 
         except (yaml.YAMLError, OSError, KeyError):
-            # Skip unit loading if there's an error, continue without units
             pass
 
     def _extract_unit_symbol_from_name(self, unit_name: str) -> str | None:
-        """Extract unit symbol from unit name.
-
-        Args:
-            unit_name: Unit name like "percentage" or "Celsius temperature (degree Celsius)"
-
-        Returns:
-            Unit symbol like "%" or "°C", or the unit name if no symbol can be extracted
-        """
+        """Extract unit symbol from unit name."""
         # Handle common unit names that map to symbols
         unit_symbol_map = {
             "percentage": "%",
@@ -152,11 +218,10 @@ class UuidRegistry:
             "unitless": "",
         }
 
-        # Check for direct symbol mapping first
         if unit_name.lower() in unit_symbol_map:
             return unit_symbol_map[unit_name.lower()]
 
-        # Extract symbol from parentheses if present (e.g., "pressure (pascal)" -> "Pa")
+        # Extract symbol from parentheses if present
         if "(" in unit_name and ")" in unit_name:
             start = unit_name.find("(") + 1
             end = unit_name.find(")", start)
@@ -216,35 +281,29 @@ class UuidRegistry:
             "time": "s",
         }
 
-        # Check if unit name starts with a common unit type
         for unit_type, symbol in common_units.items():
             if unit_name.lower().startswith(unit_type):
                 return symbol
 
-        # If no symbol extraction is possible, return the name itself
         return unit_name
 
     def _load_gss_specifications(self) -> None:
-        """Load detailed specifications from GSS YAML files to extract unit
-        information."""
+        """Load detailed specifications from GSS YAML files."""
         gss_path = self._find_gss_path()
         if not gss_path:
             return
 
-        # Process all characteristic GSS YAML files
         for yaml_file in gss_path.glob("org.bluetooth.characteristic.*.yaml"):
             self._process_gss_file(yaml_file)
 
     def _find_gss_path(self) -> Path | None:
         """Find the GSS specifications directory."""
-        # From src/bluetooth_sig/gatt/uuid_registry.py, go up 4 levels to project root
         project_root = Path(__file__).parent.parent.parent.parent
         gss_path = project_root / "bluetooth_sig" / "gss"
 
         if gss_path.exists():
             return gss_path
 
-        # Try installed package location
         pkg_root = Path(__file__).parent.parent
         gss_path = pkg_root / "bluetooth_sig" / "gss"
 
@@ -266,43 +325,45 @@ class UuidRegistry:
             if not char_name or not char_id:
                 return
 
-            # Extract unit and value_type from structure fields
             unit, value_type = self._extract_info_from_gss(char_data)
 
             if unit or value_type:
-                self._update_characteristics_with_gss_info(char_name, char_id, unit, value_type)
+                self._update_characteristic_with_gss_info(char_name, char_id, unit, value_type)
 
         except (yaml.YAMLError, OSError, KeyError) as e:
-            # Log warning for files that fail to parse for debugging
             logging.warning("Failed to parse GSS YAML file %s: %s", yaml_file, e)
 
-    def _update_characteristics_with_gss_info(
+    def _update_characteristic_with_gss_info(
         self, char_name: str, char_id: str, unit: str | None, value_type: str | None
     ) -> None:
-        """Update existing UuidInfo entries with unit and value_type
-        information."""
-        for key, uuid_info in self._characteristics.items():
-            if uuid_info.name == char_name or uuid_info.id == char_id or key == char_name or key == char_id:
-                # Create new UuidInfo with unit and value_type
-                updated_info = UuidInfo(
-                    uuid=uuid_info.uuid,
-                    name=uuid_info.name,
-                    id=uuid_info.id,
-                    summary=uuid_info.summary,
-                    unit=unit or uuid_info.unit,
-                    value_type=value_type or uuid_info.value_type,
-                )
-                self._characteristics[key] = updated_info
+        """Update existing characteristic with GSS info."""
+        # Find the canonical entry by checking aliases (normalized to lowercase)
+        canonical_uuid = None
+        for search_key in [char_name, char_id]:
+            canonical_uuid = self._characteristic_aliases.get(search_key.lower())
+            if canonical_uuid:
+                break
+
+        if not canonical_uuid or canonical_uuid not in self._characteristics:
+            return
+
+        # Get existing info and create updated version
+        existing_info = self._characteristics[canonical_uuid]
+        updated_info = UuidInfo(
+            uuid=existing_info.uuid,
+            name=existing_info.name,
+            id=existing_info.id,
+            summary=existing_info.summary,
+            unit=unit or existing_info.unit,
+            value_type=value_type or existing_info.value_type,
+            origin=existing_info.origin,
+        )
+
+        # Update canonical store (aliases remain the same since UUID/name/id unchanged)
+        self._characteristics[canonical_uuid] = updated_info
 
     def _extract_info_from_gss(self, char_data: dict[str, Any]) -> tuple[str | None, str | None]:
-        """Extract unit and value_type from GSS characteristic structure.
-
-        Args:
-            char_data: Dictionary containing characteristic data from GSS YAML
-
-        Returns:
-            Tuple of (unit, value_type) where both may be None if not found
-        """
+        """Extract unit and value_type from GSS characteristic structure."""
         structure = char_data.get("structure", [])
         if not structure:
             return None, None
@@ -314,39 +375,26 @@ class UuidRegistry:
             if not isinstance(field, dict):
                 continue
 
-            # Extract value_type from 'type' field
             if "type" in field and not value_type:
                 yaml_type = field["type"]
                 value_type = self._convert_yaml_type_to_python_type(yaml_type)
 
-            # Extract unit from description
             description = field.get("description", "")
             if "Base Unit:" in description and not unit:
-                # Extract the unit after "Base Unit:"
                 unit_line = None
                 for line in description.split("\n"):
                     if "Base Unit:" in line:
                         unit_line = line.strip()
                         break
 
-                if unit_line:
-                    # Parse "Base Unit: org.bluetooth.unit.X" format
-                    if "org.bluetooth.unit." in unit_line:
-                        unit_spec = unit_line.split("org.bluetooth.unit.")[1].strip()
-                        unit = self._convert_bluetooth_unit_to_readable(unit_spec)
+                if unit_line and "org.bluetooth.unit." in unit_line:
+                    unit_spec = unit_line.split("org.bluetooth.unit.")[1].strip()
+                    unit = self._convert_bluetooth_unit_to_readable(unit_spec)
 
         return unit, value_type
 
     def _convert_yaml_type_to_python_type(self, yaml_type: str) -> str:
-        """Convert YAML type to Python type string.
-
-        Args:
-            yaml_type: YAML type like 'uint8', 'sint16', 'uint16', etc.
-
-        Returns:
-            Python type string: 'int', 'float', 'bytes', 'string', 'boolean'
-        """
-        # Map YAML types to Python types
+        """Convert YAML type to Python type string."""
         type_mapping = {
             # Integer types
             "uint8": "int",
@@ -362,9 +410,9 @@ class UuidRegistry:
             # Float types
             "float32": "float",
             "float64": "float",
-            "sfloat": "float",  # IEEE-11073 16-bit SFLOAT
-            "float": "float",  # IEEE-11073 32-bit FLOAT
-            "medfloat16": "float",  # Medical float 16-bit
+            "sfloat": "float",
+            "float": "float",
+            "medfloat16": "float",
             # String types
             "utf8s": "string",
             "utf16s": "string",
@@ -374,78 +422,175 @@ class UuidRegistry:
             "struct": "bytes",
             "variable": "bytes",
         }
-
         return type_mapping.get(yaml_type.lower(), "bytes")
 
     def _convert_bluetooth_unit_to_readable(self, unit_spec: str) -> str:
-        """Convert Bluetooth SIG unit specification to human-readable format.
-
-        Args:
-            unit_spec: Unit specification like "thermodynamic_temperature.degree_celsius"
-
-        Returns:
-            Human-readable unit like "°C"
-        """
-        # Remove trailing dots and clean up
+        """Convert Bluetooth SIG unit specification to human-readable format."""
         unit_spec = unit_spec.rstrip(".").lower()
-
-        # Use dynamically loaded unit mappings from units.yaml
         return self._unit_mappings.get(unit_spec, unit_spec)
 
-    def get_service_info(self, key: str) -> UuidInfo | None:
-        """Get information about a service.
+    def register_characteristic(
+        self,
+        entry: CustomUuidEntry,
+        override: bool = False,
+    ) -> None:
+        """Register a custom characteristic at runtime."""
+        with self._lock:
+            canonical_key = entry.uuid.normalized
 
-        Args:
-            key: Can be a UUID, name, or service ID
-        """
-        # Try direct lookup first
-        if info := self._services.get(key):
-            return info
+            # Check for conflicts with existing entries
+            if not override and canonical_key in self._characteristics:
+                existing = self._characteristics[canonical_key]
+                if existing.origin == UuidOrigin.BLUETOOTH_SIG:
+                    raise ValueError(
+                        f"UUID {entry.uuid} conflicts with existing SIG "
+                        "characteristic entry. Use override=True to replace."
+                    )
 
-        # Try normalized UUID
-        if len(key) >= 4:  # Might be a UUID
-            normalized = key.replace("0x", "").replace("-", "").upper()
-            if len(normalized) == 32:  # Full UUID
-                normalized = normalized[4:8]
-            if info := self._services.get(normalized):
-                return info
+            info = UuidInfo(
+                uuid=entry.uuid,
+                name=entry.name,
+                id=entry.id or f"runtime.characteristic.{entry.name.lower().replace(' ', '_')}",
+                summary=entry.summary or "",
+                unit=entry.unit,
+                value_type=entry.value_type,
+                origin=UuidOrigin.RUNTIME,
+            )
 
-        # Try name variations
-        key = key.replace("_", " ").title()  # Convert snake_case to Title Case
-        lower_key = key.lower()
+            self._store_characteristic(info)
 
-        # Try with 'Service' suffix variations
-        variations = [
-            key,  # Original with spaces
-            lower_key,  # Lowercase
-            key + " Service",  # With Service suffix
-            lower_key + " service",  # Lowercase with service
-        ]
+    def register_service(self, entry: CustomUuidEntry, override: bool = False) -> None:
+        """Register a custom service at runtime."""
+        with self._lock:
+            canonical_key = entry.uuid.normalized
 
-        for k in variations:
-            if info := self._services.get(k):
-                return info
+            # Check for conflicts with existing entries
+            if not override and canonical_key in self._services:
+                existing = self._services[canonical_key]
+                if existing.origin == UuidOrigin.BLUETOOTH_SIG:
+                    raise ValueError(
+                        f"UUID {entry.uuid} conflicts with existing SIG service entry. Use override=True to replace."
+                    )
+
+            info = UuidInfo(
+                uuid=entry.uuid,
+                name=entry.name,
+                id=entry.id or f"runtime.service.{entry.name.lower().replace(' ', '_')}",
+                summary=entry.summary or "",
+                origin=UuidOrigin.RUNTIME,
+            )
+
+            self._store_service(info)
+
+    def get_service_info(self, key: str | BluetoothUUID) -> UuidInfo | None:
+        """Get information about a service by UUID, name, or ID."""
+        with self._lock:
+            # Convert BluetoothUUID to canonical key
+            if isinstance(key, BluetoothUUID):
+                canonical_key = key.normalized
+                # Direct canonical lookup
+                if canonical_key in self._services:
+                    return self._services[canonical_key]
+            else:
+                search_key = str(key).strip()
+
+                # Try UUID normalization first
+                try:
+                    bt_uuid = BluetoothUUID(search_key)
+                    canonical_key = bt_uuid.normalized
+                    if canonical_key in self._services:
+                        return self._services[canonical_key]
+                except ValueError:
+                    pass
+
+                # Check alias index (normalized to lowercase)
+                alias_key = self._service_aliases.get(search_key.lower())
+                if alias_key and alias_key in self._services:
+                    return self._services[alias_key]
+
+                # Fallback to partial name matching
+                return self._find_by_partial_name(search_key, self._services, self._service_aliases)
+
+            return None
+
+    def get_characteristic_info(self, identifier: str | BluetoothUUID) -> UuidInfo | None:
+        """Get information about a characteristic by UUID, name, or ID."""
+        with self._lock:
+            # Convert BluetoothUUID to canonical key
+            if isinstance(identifier, BluetoothUUID):
+                canonical_key = identifier.normalized
+                # Direct canonical lookup
+                if canonical_key in self._characteristics:
+                    return self._characteristics[canonical_key]
+            else:
+                search_key = str(identifier).strip()
+
+                # Try UUID normalization first
+                try:
+                    bt_uuid = BluetoothUUID(search_key)
+                    canonical_key = bt_uuid.normalized
+                    if canonical_key in self._characteristics:
+                        return self._characteristics[canonical_key]
+                except ValueError:
+                    pass
+
+                # Check alias index (normalized to lowercase)
+                alias_key = self._characteristic_aliases.get(search_key.lower())
+                if alias_key and alias_key in self._characteristics:
+                    return self._characteristics[alias_key]
+
+                # Fallback to partial name matching
+                return self._find_by_partial_name(search_key, self._characteristics, self._characteristic_aliases)
+
+            return None
+
+    def _find_by_partial_name(
+        self, search_term: str, canonical_store: dict[str, UuidInfo], alias_index: dict[str, str]
+    ) -> UuidInfo | None:
+        """Find UUID info by partial name matching."""
+        search_lower = search_term.lower()
+
+        # Search through canonical store values for partial matches
+        for stored_info in canonical_store.values():
+            name_lower = stored_info.name.lower()
+
+            # Check various partial matching strategies
+            if search_lower == name_lower or search_lower in name_lower or name_lower in search_lower:
+                return stored_info
+
+            # Word boundary matching
+            search_words = search_lower.split()
+            name_words = name_lower.split()
+            if search_words and name_words:
+                if any(search_word in name_words for search_word in search_words):
+                    return stored_info
 
         return None
 
-    def get_characteristic_info(self, identifier: str) -> UuidInfo | None:
-        """Get information about a characteristic UUID or name."""
-        # First try direct lookup (for names and IDs)
-        if identifier in self._characteristics:
-            return self._characteristics[identifier]
+    def clear_custom_registrations(self) -> None:
+        """Clear all custom registrations (for testing)."""
+        with self._lock:
+            # Remove runtime entries from canonical stores
+            runtime_service_keys = [k for k, v in self._services.items() if v.origin == UuidOrigin.RUNTIME]
+            runtime_char_keys = [k for k, v in self._characteristics.items() if v.origin == UuidOrigin.RUNTIME]
 
-        # Try case-insensitive lookup
-        if identifier.lower() in self._characteristics:
-            return self._characteristics[identifier.lower()]
+            for key in runtime_service_keys:
+                del self._services[key]
+            for key in runtime_char_keys:
+                del self._characteristics[key]
 
-        # If it looks like a UUID, do UUID transformations
-        if all(c in "0123456789ABCDEFabcdef-x" for c in identifier):
-            uuid = identifier.replace("0x", "").replace("-", "").upper()
-            if len(uuid) == 32:  # Full UUID
-                uuid = uuid[4:8]
-            return self._characteristics.get(uuid)
+            # Remove corresponding aliases (alias -> canonical_key where canonical_key is runtime)
+            runtime_service_aliases = [
+                alias for alias, canonical in self._service_aliases.items() if canonical in runtime_service_keys
+            ]
+            runtime_char_aliases = [
+                alias for alias, canonical in self._characteristic_aliases.items() if canonical in runtime_char_keys
+            ]
 
-        return None
+            for alias in runtime_service_aliases:
+                del self._service_aliases[alias]
+            for alias in runtime_char_aliases:
+                del self._characteristic_aliases[alias]
 
 
 # Global instance

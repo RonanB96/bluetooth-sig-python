@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 
@@ -16,7 +17,6 @@ class ElectricCurrentStatisticsData:
     minimum: float  # Minimum current in Amperes
     maximum: float  # Maximum current in Amperes
     average: float  # Average current in Amperes
-    unit: str = "A"
 
     def __post_init__(self) -> None:
         """Validate current statistics data."""
@@ -50,7 +50,8 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Electric Current Statistics"
-    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
+    # Override since decode_value returns structured ElectricCurrentStatisticsData
+    _manual_value_type: ValueType | str | None = ValueType.DICT
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> ElectricCurrentStatisticsData:
         """Parse current statistics data (3x uint16 in units of 0.01 A).
@@ -99,8 +100,3 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
         result.extend(avg_current_raw.to_bytes(2, byteorder="little", signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "A"

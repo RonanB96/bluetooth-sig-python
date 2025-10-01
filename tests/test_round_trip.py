@@ -220,7 +220,7 @@ class TestRoundTrip:
     @pytest.mark.parametrize("char_class,test_data", ROUND_TRIP_TEST_DATA)
     def test_round_trip(self, char_class: type[BaseCharacteristic], test_data: bytearray):
         """Test that encoding and decoding preserve data."""
-        char = char_class(uuid="", properties=set())
+        char = char_class()  # SIG characteristics don't need UUID parameter
         parsed = char.decode_value(test_data)
         encoded = char.encode_value(parsed)
         assert encoded == test_data
