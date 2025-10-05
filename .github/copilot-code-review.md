@@ -1,22 +1,23 @@
-# AI Code Review Instructions (concise)
+﻿# AI Code Review Checklist (Pointer File)
 
-## Purpose
-Short, actionable checklist for AI agents reviewing pull requests in this repository.
+This file intentionally contains only the live, minimal checklist. Full authoritative rules are in `.github/copilot-instructions.md` – that document is the single source of truth. Do not duplicate rules here.
 
-## Review Checklist
+## Minimal Review Checklist
+Synchronised with Section 14 of `copilot-instructions.md`.
 
-- [ ] **Architecture:** GATT layer must not import Home Assistant modules. Layer boundaries must be clear.
-- [ ] **Registry:** No hardcoded UUIDs. All UUIDs must be resolved via the registry system or explicit name overrides.
-- [ ] **Parsing:** All characteristics/services must validate input length, type, and value ranges per SIG spec.
-- [ ] **Timeouts:** BLE connections must use explicit `timeout=10.0` for reliability.
-- [ ] **Types:** All code must use complete type hints and dataclass-based design for characteristics/services.
-- [ ] **Tests:** Registry resolution and parsing tests must be included for new/changed items.
-- [ ] **Documentation:** All public APIs and methods must have clear docstrings and usage examples.
-- [ ] **Performance:** BLE code must use efficient connection/discovery patterns and clean up resources.
-- [ ] **Security:** No hardcoded secrets. All binary parsing must be safe and robust.
+- [ ] Architecture: No forbidden framework imports in GATT/SIG layer.
+- [ ] Registry: All UUIDs resolved via registry; none hardcoded.
+- [ ] Parsing: Length/type/range validations per spec; sentinel handling.
+- [ ] Timeouts: Explicit `timeout=10.0` in BLE connection logic.
+- [ ] Types: Full type hints + dataclasses; no dynamic dict payloads.
+- [ ] Tests: Success + ≥2 failure mode tests + registry resolution.
+- [ ] Documentation: Docstrings, examples if new feature, CHANGELOG_NEW updated.
+- [ ] Performance: No redundant discovery/connect; resources released.
+- [ ] Security/Safety: No secrets; robust binary validation.
+- [ ] Formatting/Linting: format, lint, static typing all clean.
+- [ ] Spec References: Non-trivial logic cites spec section/table.
 
-## Guidance
-For full implementation patterns and rationale, see the project documentation and SIG specifications:
-- [Bluetooth SIG assigned numbers](https://www.bluetooth.com/specifications/assigned-numbers/)
-- [Python documentation](https://docs.python.org/)
-- See `docs/` for additional examples and rationale if available.
+If any item cannot be ticked, the PR must not be approved.
+
+## Reference
+See `.github/copilot-instructions.md` for full rationale, workflow, prohibitions, and escalation process.
