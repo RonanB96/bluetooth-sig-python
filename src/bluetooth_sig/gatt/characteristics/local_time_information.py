@@ -74,7 +74,6 @@ class LocalTimeInformationData:
     total_offset_hours: float | None = None
 
 
-@dataclass
 class LocalTimeInformationCharacteristic(BaseCharacteristic):
     """Local time information characteristic.
 

@@ -1,20 +1,20 @@
 """Nitrogen Dioxide Concentration characteristic implementation."""
 
-from dataclasses import dataclass, field
+from .base import BaseCharacteristic
+from .templates import ConcentrationTemplate
 
-from .templates import ConcentrationCharacteristic
 
-
-@dataclass
-class NitrogenDioxideConcentrationCharacteristic(ConcentrationCharacteristic):
+class NitrogenDioxideConcentrationCharacteristic(BaseCharacteristic):
     """Nitrogen dioxide concentration measurement characteristic (0x2BD2).
 
     Represents nitrogen dioxide (NO2) concentration in parts per billion
     (ppb) with a resolution of 1 ppb.
     """
 
+    _template = ConcentrationTemplate()
+
     _characteristic_name: str = "Nitrogen Dioxide Concentration"
-    _manual_unit: str | None = field(default="ppb", init=False)  # Override template's "ppm" default
+    _manual_unit: str = "ppb"  # Override template's "ppm" default
 
     # Template configuration
     resolution: float = 1.0

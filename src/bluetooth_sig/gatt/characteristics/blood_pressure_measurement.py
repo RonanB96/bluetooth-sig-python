@@ -68,7 +68,6 @@ class BloodPressureData:  # pylint: disable=too-many-instance-attributes
                 )
 
 
-@dataclass
 class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
     """Blood Pressure Measurement characteristic (0x2A35).
 
@@ -76,7 +75,6 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
     diastolic and mean arterial pressure.
     """
 
-    _characteristic_name: str = "Blood Pressure Measurement"
     _manual_value_type = "string"  # Override since decode_value returns dataclass
 
     min_length = 7  # Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) minimum

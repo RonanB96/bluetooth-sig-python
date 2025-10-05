@@ -89,7 +89,6 @@ class WeightScaleFeatureData:
             raise ValueError("Raw value must be a 32-bit unsigned integer")
 
 
-@dataclass
 class WeightScaleFeatureCharacteristic(BaseCharacteristic):
     """Weight Scale Feature characteristic (0x2A9E).
 

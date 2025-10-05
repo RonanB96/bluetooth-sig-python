@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import Any
 
-from .templates import SimpleUint16Characteristic
+from .base import BaseCharacteristic
+from .templates import Uint16Template
 
 
 # Special value constants for VOC Concentration characteristic
@@ -17,8 +17,7 @@ class VOCConcentrationValues:  # pylint: disable=too-few-public-methods
     VALUE_UNKNOWN = 0xFFFF  # Indicates value is not known
 
 
-@dataclass
-class VOCConcentrationCharacteristic(SimpleUint16Characteristic):
+class VOCConcentrationCharacteristic(BaseCharacteristic):
     """Volatile Organic Compounds concentration characteristic (0x2BE7).
 
     Uses uint16 format as per SIG specification.
@@ -28,8 +27,10 @@ class VOCConcentrationCharacteristic(SimpleUint16Characteristic):
      VOCConcentrationValues.VALUE_UNKNOWN = unknown)
     """
 
+    _template = Uint16Template()
+
     _characteristic_name: str = "VOC Concentration"
-    _manual_unit: str | None = field(default="ppb", init=False)  # Unit as per SIG specification
+    _manual_unit: str = "ppb"  # Unit as per SIG specification
     min_value: int = 0
     max_value: int = VOCConcentrationValues.VALUE_65534_OR_GREATER - 1  # 65533
 

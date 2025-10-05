@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import IntFlag
 from typing import Any
 
@@ -47,7 +47,6 @@ class CyclingPowerVectorData:
             raise ValueError("First crank measurement angle must be 0-360 degrees")
 
 
-@dataclass
 class CyclingPowerVectorCharacteristic(BaseCharacteristic):
     """Cycling Power Vector characteristic (0x2A64).
 
@@ -55,8 +54,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
     and torque measurements at different crank angles.
     """
 
-    _characteristic_name: str = "Cycling Power Vector"
-    _manual_unit: str | None = field(default="various", init=False)  # Multiple units in vector data
+    _manual_unit: str = "various"  # Multiple units in vector data
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> CyclingPowerVectorData:
         """Parse cycling power vector data according to Bluetooth

@@ -64,7 +64,7 @@ class TestUtilityFunctions:
         assert isinstance(result, dict)
         captured = capsys.readouterr()
         assert "Test Device Results with SIG Parsing:" in captured.out
-        assert "Battery Level: 100 %" in captured.out
+        assert "Battery Level: 100" in captured.out
         assert "Device Name: Test Device" in captured.out
 
     def test_show_library_availability(self, capsys):

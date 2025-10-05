@@ -42,7 +42,6 @@ class ElectricCurrentStatisticsData:
                 )
 
 
-@dataclass
 class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
     """Electric Current Statistics characteristic.
 

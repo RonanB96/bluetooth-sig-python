@@ -1,12 +1,10 @@
 """Battery level characteristic implementation."""
 
-from dataclasses import dataclass
+from .base import BaseCharacteristic
+from .templates import PercentageTemplate
 
-from .templates import PercentageCharacteristic
 
-
-@dataclass
-class BatteryLevelCharacteristic(PercentageCharacteristic):
+class BatteryLevelCharacteristic(BaseCharacteristic):
     """Battery level characteristic."""
 
-    _characteristic_name: str = "Battery Level"
+    _template = PercentageTemplate()

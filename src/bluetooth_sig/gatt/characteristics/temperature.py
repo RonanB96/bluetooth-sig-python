@@ -1,12 +1,12 @@
 """Temperature characteristic implementation."""
 
-from dataclasses import dataclass
+from .base import BaseCharacteristic
+from .templates import TemperatureTemplate
 
-from .templates import TemperatureCharacteristic as TemperatureTemplate
 
-
-@dataclass
-class TemperatureCharacteristic(TemperatureTemplate):
+class TemperatureCharacteristic(BaseCharacteristic):
     """Temperature measurement characteristic."""
+
+    _template = TemperatureTemplate()
 
     _characteristic_name: str = "Temperature"

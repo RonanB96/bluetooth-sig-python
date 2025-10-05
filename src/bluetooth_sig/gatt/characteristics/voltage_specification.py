@@ -34,7 +34,6 @@ class VoltageSpecificationData:
             )
 
 
-@dataclass
 class VoltageSpecificationCharacteristic(BaseCharacteristic):
     """Voltage Specification characteristic.
 

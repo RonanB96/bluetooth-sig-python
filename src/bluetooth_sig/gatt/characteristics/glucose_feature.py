@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import IntFlag
 from typing import Any
 
@@ -71,7 +71,6 @@ class GlucoseFeatureData:  # pylint: disable=too-many-instance-attributes
     feature_count: int
 
 
-@dataclass
 class GlucoseFeatureCharacteristic(BaseCharacteristic):
     """Glucose Feature characteristic (0x2A51).
 
@@ -81,7 +80,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Glucose Feature"
-    _manual_unit: str | None = field(default="bitmap", init=False)  # Feature bitmap
+    _manual_unit: str = "bitmap"  # Feature bitmap
 
     min_length: int = 2  # Features(2) fixed length
     max_length: int = 2  # Features(2) fixed length

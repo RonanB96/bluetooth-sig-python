@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import IntEnum, IntFlag
 from typing import Any
 
@@ -215,7 +215,6 @@ class GlucoseMeasurementContextData:  # pylint: disable=too-many-instance-attrib
             raise ValueError("Sequence number must be a uint16 value (0-UINT16_MAX)")
 
 
-@dataclass
 class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     """Glucose Measurement Context characteristic (0x2A34).
 
@@ -225,7 +224,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Glucose Measurement Context"
-    _manual_unit: str | None = field(default="various", init=False)  # Multiple units in context data
+    _manual_unit: str = "various"  # Multiple units in context data
 
     min_length: int | None = 3  # Flags(1) + Sequence(2) minimum
     max_length: int | None = (

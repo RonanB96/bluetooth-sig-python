@@ -1,12 +1,12 @@
 """Wind Chill characteristic implementation."""
 
-from dataclasses import dataclass
+from .base import BaseCharacteristic
+from .templates import Sint8Template
 
-from .templates import TemperatureLikeSint8Characteristic
 
-
-@dataclass
-class WindChillCharacteristic(TemperatureLikeSint8Characteristic):
+class WindChillCharacteristic(BaseCharacteristic):
     """Wind Chill measurement characteristic."""
+
+    _template = Sint8Template()
 
     _characteristic_name: str = "Wind Chill"

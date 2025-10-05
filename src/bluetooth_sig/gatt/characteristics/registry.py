@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import threading
 
-from ...types.gatt_enums import CharacteristicName, GattProperty
+from ...types.gatt_enums import CharacteristicName
 from ...types.uuid import BluetoothUUID
 from .base import BaseCharacteristic
 
@@ -18,49 +18,9 @@ __all__ = ["CharacteristicName", "CharacteristicRegistry"]
 
 # Lazy initialization of the class mappings to avoid circular imports
 
-
 # Lazy initialization of the class mappings to avoid circular imports
 _characteristic_class_map: dict[CharacteristicName, type[BaseCharacteristic]] | None = None
 _characteristic_class_map_str: dict[str, type[BaseCharacteristic]] | None = None
-
-
-def _convert_properties_to_enums(
-    properties: set[GattProperty] | None,
-) -> set[GattProperty]:
-    """Convert string properties to GattProperty enums, validating inputs.
-
-    Strings like 'read' or 'notify' will be converted to their
-    GattProperty equivalents. Any unknown string will raise a TypeError
-    to avoid silent acceptance of invalid values.
-    """
-    if not properties:
-        return set()
-
-    result: set[GattProperty] = set()
-    for prop in properties:
-        if isinstance(prop, GattProperty):
-            result.add(prop)
-        elif isinstance(prop, str):
-            normalized = prop.strip().upper().replace("-", "_")
-            # Accept both enum names and values
-            try:
-                # Try to match enum name first
-                result.add(GattProperty[normalized])
-                continue
-            except KeyError:
-                # Try to match enum value (case-insensitive)
-                matched = False
-                for gp in GattProperty:
-                    if gp.value.lower() == prop.strip().lower():
-                        result.add(gp)
-                        matched = True
-                        break
-                if not matched:
-                    raise TypeError(f"Unknown GATT property: {prop}") from None
-        else:
-            raise TypeError("properties must be a set of GattProperty or string names")
-
-    return result
 
 
 def _build_characteristic_class_map() -> dict[CharacteristicName, type[BaseCharacteristic]]:
@@ -259,17 +219,52 @@ class CharacteristicRegistry:
             TypeError: If char_cls does not inherit from BaseCharacteristic
             ValueError: If UUID conflicts with existing registration and override=False
         """
-        if not issubclass(char_cls, BaseCharacteristic):
-            raise TypeError(f"Class {char_cls.__name__} must inherit from BaseCharacteristic")
+        # Runtime safety check retained in case of dynamic caller misuse despite type hints.
+        if not isinstance(char_cls, type) or not issubclass(char_cls, BaseCharacteristic):  # type: ignore[unreachable]
+            raise TypeError(f"Class {char_cls!r} must inherit from BaseCharacteristic")
 
         # Always normalize UUID to BluetoothUUID
         bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
 
+        # Determine if this UUID is already represented by a SIG (built-in) characteristic
+        def _find_sig_class_for_uuid(target: BluetoothUUID) -> type[BaseCharacteristic] | None:
+            for candidate in _get_characteristic_class_map().values():
+                try:
+                    # Direct protected access acceptable within internal registry module.
+                    resolved_uuid_obj = candidate._resolve_from_basic_registry_class()  # type: ignore[attr-defined]
+                    if resolved_uuid_obj and (
+                        resolved_uuid_obj.normalized == target.normalized  # type: ignore[attr-defined]
+                        or resolved_uuid_obj.short_form == target.short_form  # type: ignore[attr-defined]
+                    ):
+                        return candidate
+                except Exception:  # pylint: disable=broad-exception-caught
+                    continue
+            return None
+
+        sig_cls = _find_sig_class_for_uuid(bt_uuid)
+
         with cls._lock:
-            # Check for conflicts
-            if not override:
-                if bt_uuid in cls._custom_characteristic_classes:
-                    raise ValueError(f"UUID {bt_uuid} already registered. Use override=True to replace.")
+            # Prevent duplicate custom registration unless override explicitly requested
+            if not override and bt_uuid in cls._custom_characteristic_classes:
+                raise ValueError(f"UUID {bt_uuid} already registered. Use override=True to replace.")
+
+            # If collides with a SIG characteristic, enforce explicit override + permission flag
+            if sig_cls is not None:
+                if not override:
+                    raise ValueError(
+                        f"UUID {bt_uuid} conflicts with existing SIG characteristic {sig_cls.__name__}. "
+                        "Use override=True to replace."
+                    )
+                # Require an explicit opt‑in marker on the custom class
+                try:
+                    allows_override = bool(char_cls._allows_sig_override)  # type: ignore[attr-defined]
+                except AttributeError:
+                    allows_override = False
+                if not allows_override:
+                    raise ValueError(
+                        "Override of SIG characteristic "
+                        f"{sig_cls.__name__} requires _allows_sig_override=True on {char_cls.__name__}."
+                    )
 
             cls._custom_characteristic_classes[bt_uuid] = char_cls
 
@@ -319,13 +314,11 @@ class CharacteristicRegistry:
     def create_characteristic(
         cls,
         uuid: str | BluetoothUUID,
-        properties: set[GattProperty] | None = None,
     ) -> BaseCharacteristic | None:
         """Create a characteristic instance from a UUID.
 
         Args:
             uuid: The characteristic UUID (string or BluetoothUUID).
-            properties: Optional set of characteristic properties.
 
         Returns:
             Characteristic instance if found, None otherwise.
@@ -343,8 +336,7 @@ class CharacteristicRegistry:
         # Check custom registry first
         with cls._lock:
             if custom_cls := cls._custom_characteristic_classes.get(uuid_obj):
-                converted_props = _convert_properties_to_enums(properties)
-                return custom_cls.from_uuid(uuid_obj, properties=converted_props)
+                return custom_cls()
 
         for _, char_cls in _get_characteristic_class_map().items():
             # Try to resolve UUID at class level first
@@ -352,14 +344,10 @@ class CharacteristicRegistry:
             if resolved_uuid and (
                 resolved_uuid.normalized == uuid_obj.normalized or resolved_uuid.short_form == uuid_obj.short_form
             ):
-                converted_props = _convert_properties_to_enums(properties)
-                return char_cls.from_uuid(uuid_obj, properties=converted_props)
+                return char_cls()
             # Fallback to instantiation if class-level resolution fails
-            converted_props = _convert_properties_to_enums(properties)
-            instance = char_cls.from_uuid(
-                BluetoothUUID("00000000-0000-0000-0000-000000000000"), properties=converted_props
-            )
-            char_uuid_obj = instance.char_uuid
+            instance = char_cls()
+            char_uuid_obj = instance.uuid
             if char_uuid_obj.normalized == uuid_obj.normalized or char_uuid_obj.short_form == uuid_obj.short_form:
                 return instance
         return None
@@ -393,8 +381,8 @@ class CharacteristicRegistry:
             ):
                 return char_cls
             # Fallback to instantiation if class-level resolution fails
-            instance = char_cls.from_uuid(BluetoothUUID("00000000-0000-0000-0000-000000000000"), properties=set())
-            char_uuid_obj = instance.char_uuid
+            instance = char_cls()
+            char_uuid_obj = instance.uuid
             if char_uuid_obj.normalized == bt_uuid.normalized or char_uuid_obj.short_form == bt_uuid.short_form:
                 return char_cls
         return None

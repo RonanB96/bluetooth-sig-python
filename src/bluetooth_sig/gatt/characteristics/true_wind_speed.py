@@ -1,12 +1,12 @@
 """True Wind Speed characteristic implementation."""
 
-from dataclasses import dataclass
+from .base import BaseCharacteristic
+from .templates import ScaledUint16Template
 
-from .templates import WindSpeedCharacteristic
 
-
-@dataclass
-class TrueWindSpeedCharacteristic(WindSpeedCharacteristic):
+class TrueWindSpeedCharacteristic(BaseCharacteristic):
     """True Wind Speed measurement characteristic."""
+
+    _template = ScaledUint16Template()
 
     _characteristic_name: str = "True Wind Speed"

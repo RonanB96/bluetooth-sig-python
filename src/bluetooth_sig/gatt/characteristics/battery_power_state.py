@@ -178,7 +178,6 @@ class BatteryPowerState:
     charging_fault_reason: str | list[str] | None = None
 
 
-@dataclass
 class BatteryPowerStateCharacteristic(BaseCharacteristic):
     """Battery Level Status characteristic (0x2BED).
 
@@ -187,11 +186,12 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
     information.
     """
 
-    _characteristic_name: str = "Battery Level Status"
+    _characteristic_name: str | None = "Battery Level Status"
+
     # YAML describes this as boolean[] which maps to 'string' in the registry;
     # decode_value returns a dict, but tests and registry expect the declared
     # value_type to be 'string'. Override to keep metadata consistent.
-    _manual_value_type: str = "string"
+    _manual_value_type = "string"
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> BatteryPowerStateData:
         """Parse the Battery Level Status value.

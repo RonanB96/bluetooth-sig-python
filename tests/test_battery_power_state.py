@@ -283,7 +283,7 @@ class TestBatteryPowerStateCharacteristic:
     def test_characteristic_uuid_resolution(self):
         """Test characteristic UUID resolution."""
         char = BatteryPowerStateCharacteristic()
-        assert char.char_uuid == "2BED"
+        assert char.uuid == "2BED"
 
     def test_encode_value(self):
         """Test encoding BatteryPowerStateData back to bytes."""

@@ -76,7 +76,6 @@ class HeartRateData:
                 raise ValueError(f"RR interval must be 0.0-65.535 seconds, got {interval}")
 
 
-@dataclass
 class HeartRateMeasurementCharacteristic(BaseCharacteristic):
     """Heart Rate Measurement characteristic (0x2A37).
 

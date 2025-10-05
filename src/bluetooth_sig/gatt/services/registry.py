@@ -211,7 +211,7 @@ class GattServiceRegistry:
     @classmethod
     def supported_services(cls) -> list[str]:
         """Get a list of supported service UUIDs."""
-        return [str(service().SERVICE_UUID) for service in cls._get_services()]
+        return [str(service().uuid) for service in cls._get_services()]
 
     @classmethod
     def supported_service_names(cls) -> list[str]:

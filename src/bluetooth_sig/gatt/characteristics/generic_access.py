@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 from .base import BaseCharacteristic
 from .utils import DataParser
 
 
-@dataclass
 class DeviceNameCharacteristic(BaseCharacteristic):
     """Device Name characteristic."""
 
@@ -36,7 +34,6 @@ class DeviceNameCharacteristic(BaseCharacteristic):
         return bytearray(data.encode("utf-8"))
 
 
-@dataclass
 class AppearanceCharacteristic(BaseCharacteristic):
     """Appearance characteristic."""
 

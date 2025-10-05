@@ -1,17 +1,15 @@
 """Ammonia Concentration characteristic implementation."""
 
-from dataclasses import dataclass, field
+from .base import BaseCharacteristic
+from .templates import IEEE11073FloatTemplate
 
-from .templates import IEEE11073FloatCharacteristic
 
-
-@dataclass
-class AmmoniaConcentrationCharacteristic(IEEE11073FloatCharacteristic):
+class AmmoniaConcentrationCharacteristic(BaseCharacteristic):
     """Ammonia concentration measurement characteristic (0x2BCF).
 
     Uses IEEE 11073 SFLOAT format (medfloat16) as per SIG specification.
     Unit: kg/m³ (kilogram per cubic meter)
     """
 
-    _characteristic_name: str = "Ammonia Concentration"
-    _manual_unit: str | None = field(default="kg/m³", init=False)  # Unit as per SIG specification
+    _manual_unit: str | None = "kg/m³"  # Unit as per SIG specification
+    _template = IEEE11073FloatTemplate()

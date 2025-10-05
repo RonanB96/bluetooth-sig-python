@@ -34,7 +34,7 @@ class TestGlucoseService:
     def test_glucose_service_instantiation(self):
         """Test that glucose service can be instantiated properly."""
         service = GlucoseService()
-        assert service.SERVICE_UUID == "1808"
+        assert service.uuid == "1808"
         assert service.name == "Glucose"
 
     def test_glucose_service_characteristics(self):
@@ -64,7 +64,7 @@ class TestGlucoseMeasurementCharacteristic:
 
     def test_glucose_measurement_instantiation(self, glucose_measurement_char: GlucoseMeasurementCharacteristic):
         """Test that glucose measurement characteristic can be instantiated."""
-        assert glucose_measurement_char.char_uuid == "2A18"
+        assert glucose_measurement_char.uuid == "2A18"
         assert glucose_measurement_char.value_type.value == "bytes"  # YAML struct type
         assert glucose_measurement_char.unit == "mg/dL or mmol/L"
 
@@ -230,7 +230,7 @@ class TestGlucoseMeasurementContextCharacteristic:
 
     def test_glucose_context_instantiation(self, glucose_context_char: GlucoseMeasurementContextCharacteristic):
         """Test that glucose context characteristic can be instantiated."""
-        assert glucose_context_char.char_uuid == "2A34"
+        assert glucose_context_char.uuid == "2A34"
         assert glucose_context_char.value_type.value == "bytes"  # YAML struct type
         assert glucose_context_char.unit == "various"
 
@@ -344,7 +344,7 @@ class TestGlucoseFeatureCharacteristic:
 
     def test_glucose_feature_instantiation(self, glucose_feature_char: GlucoseFeatureCharacteristic):
         """Test that glucose feature characteristic can be instantiated."""
-        assert glucose_feature_char.char_uuid == "2A51"
+        assert glucose_feature_char.uuid == "2A51"
         assert glucose_feature_char.value_type.value == "bytes"  # YAML struct type
         assert glucose_feature_char.unit == "bitmap"
 
@@ -459,7 +459,7 @@ class TestGlucoseIntegration:
 
         # Check that glucose service can be instantiated correctly
         glucose_service = service_class()
-        assert glucose_service.SERVICE_UUID == "1808"
+        assert glucose_service.uuid == "1808"
 
     def test_glucose_characteristics_registration(self):
         """Test that glucose characteristics are properly registered."""
@@ -487,9 +487,9 @@ class TestGlucoseIntegration:
         glucose_feature_char = GlucoseFeatureCharacteristic()
 
         characteristics: ServiceDiscoveryData = {
-            glucose_measurement_char.char_uuid: glucose_measurement_char.info,
-            glucose_context_char.char_uuid: glucose_context_char.info,
-            glucose_feature_char.char_uuid: glucose_feature_char.info,
+            glucose_measurement_char.uuid: glucose_measurement_char.info,
+            glucose_context_char.uuid: glucose_context_char.info,
+            glucose_feature_char.uuid: glucose_feature_char.info,
         }
 
         service = GattServiceRegistry.create_service("1808", characteristics)

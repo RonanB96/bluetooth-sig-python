@@ -40,7 +40,6 @@ class BluetoothSIGTranslator:
         uuid: str,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-        properties: set[str] | None = None,
     ) -> CharacteristicData:
         """Parse a characteristic's raw data using SIG standards.
 
@@ -55,9 +54,8 @@ class BluetoothSIGTranslator:
         Returns:
             CharacteristicData with parsed value and metadata
         """
-        # Create characteristic instance for parsing. Pass explicit properties
-        # rather than arbitrary kwargs to keep the API clear and type-safe.
-        characteristic = CharacteristicRegistry.create_characteristic(uuid, properties=properties or set())
+        # Create characteristic instance for parsing
+        characteristic = CharacteristicRegistry.create_characteristic(uuid)
 
         if characteristic:
             # Use the parse_value method; pass context when provided.
@@ -73,7 +71,7 @@ class BluetoothSIGTranslator:
             uuid=BluetoothUUID(uuid),
             name="Unknown",
             description="",
-            value_type=ValueType.BYTES,
+            value_type=ValueType.UNKNOWN,
             unit="",
             properties=[],
         )
@@ -103,18 +101,10 @@ class BluetoothSIGTranslator:
         if not char_class:
             return None
 
-        # Create temporary instance to get metadata
+        # Create temporary instance to get metadata (no parameters needed for auto-resolution)
         try:
-            temp_char = char_class(uuid=uuid, properties=set())
-            value_type_str = (
-                temp_char.value_type.value if hasattr(temp_char.value_type, "value") else str(temp_char.value_type)
-            )
-            return CharacteristicInfo(
-                uuid=temp_char.char_uuid,
-                name=getattr(temp_char, "_characteristic_name", char_class.__name__),
-                value_type=value_type_str,
-                unit=temp_char.unit,
-            )
+            temp_char = char_class()
+            return temp_char.info
         except Exception:  # pylint: disable=broad-exception-caught
             return None
 
@@ -130,8 +120,8 @@ class BluetoothSIGTranslator:
         char_class = CharacteristicRegistry.get_characteristic_class(name)
         if char_class:
             try:
-                temp_char = char_class(uuid="", properties=set())
-                return temp_char.char_uuid
+                temp_char = char_class()
+                return str(temp_char.info.uuid)
             except Exception:  # pylint: disable=broad-exception-caught
                 pass
         return None
@@ -156,7 +146,7 @@ class BluetoothSIGTranslator:
         if service_class:
             try:
                 temp_service = service_class()
-                return temp_service.SERVICE_UUID
+                return str(temp_service.uuid)
             except Exception:  # pylint: disable=broad-exception-caught
                 pass
 
@@ -179,7 +169,7 @@ class BluetoothSIGTranslator:
                     temp_char.value_type.value if hasattr(temp_char.value_type, "value") else str(temp_char.value_type)
                 )
                 return CharacteristicInfo(
-                    uuid=temp_char.char_uuid,
+                    uuid=temp_char.uuid,
                     name=getattr(temp_char, "_characteristic_name", char_class.__name__),
                     value_type=value_type_str,
                     unit=temp_char.unit,
@@ -223,7 +213,7 @@ class BluetoothSIGTranslator:
         try:
             temp_service = service_class()
             return ServiceInfo(
-                uuid=temp_service.SERVICE_UUID,
+                uuid=temp_service.uuid,
                 name=temp_service.name,
                 characteristics=[str(uuid) for uuid in temp_service.characteristics.keys()],
             )
@@ -243,7 +233,7 @@ class BluetoothSIGTranslator:
         ) in CharacteristicRegistry.get_all_characteristics().items():
             try:
                 temp_char = char_class(uuid="", properties=set())
-                result[name] = temp_char.char_uuid
+                result[name] = temp_char.uuid
             except Exception:  # pylint: disable=broad-exception-caught
                 continue
         return result
@@ -259,7 +249,7 @@ class BluetoothSIGTranslator:
             try:
                 temp_service = service_class()
                 service_name = getattr(temp_service, "_service_name", service_class.__name__)
-                result[service_name] = temp_service.SERVICE_UUID
+                result[service_name] = temp_service.uuid
             except Exception:  # pylint: disable=broad-exception-caught
                 continue
         return result

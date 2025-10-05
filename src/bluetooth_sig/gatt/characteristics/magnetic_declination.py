@@ -1,13 +1,11 @@
 """Magnetic Declination characteristic implementation."""
 
-from dataclasses import dataclass, field
-
 from ...types.gatt_enums import ValueType
-from .templates import ScaledUint16Characteristic
+from .base import BaseCharacteristic
+from .templates import ScaledUint16Template
 
 
-@dataclass
-class MagneticDeclinationCharacteristic(ScaledUint16Characteristic):
+class MagneticDeclinationCharacteristic(BaseCharacteristic):
     """Magnetic declination characteristic.
 
     Represents the magnetic declination - the angle on the horizontal plane
@@ -15,10 +13,12 @@ class MagneticDeclinationCharacteristic(ScaledUint16Characteristic):
     Magnetic North, measured clockwise from True North to Magnetic North.
     """
 
+    _template = ScaledUint16Template()
+
     _characteristic_name: str = "Magnetic Declination"
     # Override YAML int type since decode_value returns float
     _manual_value_type: ValueType | str | None = ValueType.FLOAT
-    _manual_unit: str | None = field(default="°", init=False)  # Override template's "units" default
+    _manual_unit: str = "°"  # Override template's "units" default
 
     # Template configuration
     resolution: float = 0.01  # 0.01 degree resolution

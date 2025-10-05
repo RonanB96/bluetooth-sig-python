@@ -18,7 +18,6 @@ from bluetooth_sig.gatt.characteristics.true_wind_speed import (
 )
 from bluetooth_sig.gatt.characteristics.wind_chill import WindChillCharacteristic
 from bluetooth_sig.gatt.constants import SINT8_MAX, SINT8_MIN, UINT8_MAX
-from bluetooth_sig.gatt.exceptions import InsufficientDataError
 from bluetooth_sig.gatt.services.environmental_sensing import (
     EnvironmentalSensingService,
 )
@@ -115,7 +114,7 @@ class TestEnvironmentalSensingExpanded:
 
         # Wind speed characteristics - now using YAML units
         wind_speed = TrueWindSpeedCharacteristic()
-        assert wind_speed.unit == "m/s"
+        assert wind_speed.unit == "metres per second"
 
         # Wind direction characteristics - still using YAML units
         wind_direction = TrueWindDirectionCharacteristic()
@@ -135,18 +134,18 @@ class TestEnvironmentalSensingExpanded:
 
         for char_class, expected_uuid in characteristics:
             char = char_class()
-            assert char.char_uuid == expected_uuid
+            assert char.uuid == expected_uuid
 
     def test_data_validation(self):
         """Test data validation for insufficient bytes."""
         # Single-byte characteristics
         dew_point = DewPointCharacteristic()
-        with pytest.raises(InsufficientDataError):
+        with pytest.raises(ValueError, match="Insufficient data"):
             dew_point.decode_value(bytearray([]))
 
         # Two-byte characteristics
         wind_speed = TrueWindSpeedCharacteristic()
-        with pytest.raises(InsufficientDataError):
+        with pytest.raises(ValueError, match="Insufficient data"):
             wind_speed.decode_value(bytearray([0x50]))
 
     def test_environmental_sensing_service_expansion(self):

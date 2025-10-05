@@ -30,7 +30,6 @@ class TemperatureMeasurementData:
     temperature_type: int | None = None
 
 
-@dataclass
 class TemperatureMeasurementCharacteristic(BaseCharacteristic):
     """Temperature Measurement characteristic (0x2A1C).
 

@@ -118,13 +118,13 @@ class TestYAMLUnitParsing:
         """Test that characteristics created via registry get units
         automatically."""
         # Create characteristics using the registry
-        battery_char = CharacteristicRegistry.create_characteristic("2A19", properties=set())  # Battery Level UUID
+        battery_char = CharacteristicRegistry.create_characteristic("2A19")  # Battery Level UUID
         if battery_char:
             unit = battery_char.unit
             # Should get unit from YAML or be empty if YAML not available
             assert unit in ["%", ""], f"Battery Level should have % unit or be empty, got {unit}"
 
-        temp_char = CharacteristicRegistry.create_characteristic("2A6E", properties=set())  # Temperature UUID
+        temp_char = CharacteristicRegistry.create_characteristic("2A6E")  # Temperature UUID
         if temp_char:
             unit = temp_char.unit
             # Should get unit from YAML or be empty if YAML not available

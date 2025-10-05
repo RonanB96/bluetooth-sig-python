@@ -1,13 +1,13 @@
 """Pressure characteristic implementation."""
 
-from dataclasses import dataclass
+from .base import BaseCharacteristic
+from .templates import PressureTemplate
 
-from .templates import PressureCharacteristic as PressureTemplate
 
-
-@dataclass
-class PressureCharacteristic(PressureTemplate):
+class PressureCharacteristic(BaseCharacteristic):
     """Atmospheric pressure characteristic."""
+
+    _template = PressureTemplate()
 
     _characteristic_name: str = "Pressure"
 

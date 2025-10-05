@@ -19,7 +19,6 @@ from bluetooth_sig.gatt.characteristics.barometric_pressure_trend import (
     BarometricPressureTrend,
 )
 from bluetooth_sig.gatt.constants import UINT8_MAX
-from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 
 class TestNavigationCharacteristics:
@@ -30,7 +29,7 @@ class TestNavigationCharacteristics:
         char = MagneticDeclinationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A2C"
+        assert char.uuid == "2A2C"
 
         # Test metadata
         assert char.unit == "°"
@@ -53,7 +52,7 @@ class TestNavigationCharacteristics:
         char = MagneticDeclinationCharacteristic()
 
         # Test insufficient data
-        with pytest.raises(InsufficientDataError):
+        with pytest.raises(ValueError, match="Insufficient data"):
             char.decode_value(bytearray([0x12]))
 
     def test_elevation_parsing(self):
@@ -61,7 +60,7 @@ class TestNavigationCharacteristics:
         char = ElevationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A6C"
+        assert char.uuid == "2A6C"
 
         # Test metadata
         assert char.unit == "m"
@@ -82,7 +81,7 @@ class TestNavigationCharacteristics:
         char = ElevationCharacteristic()
 
         # Test insufficient data
-        with pytest.raises(ValueError, match="must be at least 3 bytes"):
+        with pytest.raises(ValueError, match="Insufficient data"):
             char.decode_value(bytearray([0x12, 0x34]))
 
     def test_magnetic_flux_density_2d_parsing(self):
@@ -90,7 +89,7 @@ class TestNavigationCharacteristics:
         char = MagneticFluxDensity2DCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2AA0"
+        assert char.uuid == "2AA0"
 
         # Test metadata
         assert char.unit == "T"
@@ -108,7 +107,7 @@ class TestNavigationCharacteristics:
         char = MagneticFluxDensity3DCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2AA1"
+        assert char.uuid == "2AA1"
 
         # Test metadata
         assert char.unit == "T"
@@ -131,7 +130,7 @@ class TestEnvironmentalCharacteristics:
         char = BarometricPressureTrendCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2AA3"
+        assert char.uuid == "2AA3"
 
         # Test metadata
         assert char.unit == ""
@@ -160,7 +159,7 @@ class TestEnvironmentalCharacteristics:
         char = PollenConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A75"
+        assert char.uuid == "2A75"
 
         # Test metadata
         assert char.unit == "grains/m³"
@@ -176,7 +175,7 @@ class TestEnvironmentalCharacteristics:
         char = RainfallCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A78"
+        assert char.uuid == "2A78"
 
         # Test metadata
         assert char.unit == "mm"
@@ -196,7 +195,7 @@ class TestTimeCharacteristics:
         char = TimeZoneCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A0E"
+        assert char.uuid == "2A0E"
 
         # Test metadata
         assert char.unit == ""
@@ -227,7 +226,7 @@ class TestTimeCharacteristics:
         char = LocalTimeInformationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A0F"
+        assert char.uuid == "2A0F"
 
         # Test metadata
         assert char.unit == ""

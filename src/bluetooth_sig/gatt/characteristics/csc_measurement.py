@@ -30,12 +30,14 @@ class CSCMeasurementData:
             raise ValueError("Flags must be a uint8 value (0-UINT8_MAX)")
 
 
-@dataclass
 class CSCMeasurementCharacteristic(BaseCharacteristic):
     """CSC (Cycling Speed and Cadence) Measurement characteristic (0x2A5B).
 
     Used to transmit cycling speed and cadence data.
     """
+
+    # Override automatic name resolution because "CSC" is an acronym
+    _characteristic_name: str = "CSC Measurement"
 
     # CSC Measurement Flags (per Bluetooth SIG specification)
     WHEEL_REVOLUTION_DATA_PRESENT = 0x01
@@ -43,8 +45,6 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
     # Time resolution constants
     CSC_TIME_RESOLUTION = 1024.0  # 1/1024 second resolution for both wheel and crank event times
-
-    _characteristic_name: str = "CSC Measurement"
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> CSCMeasurementData:
         """Parse CSC measurement data according to Bluetooth specification.

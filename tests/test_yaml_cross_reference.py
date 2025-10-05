@@ -109,11 +109,7 @@ class TestYAMLCrossReference:
 
         for data_type, expected_signed in test_cases:
             # Temporarily set the data type
-            if data_type:
-                temp_char._yaml_data_type = data_type
-            else:
-                if hasattr(temp_char, "_yaml_data_type"):
-                    delattr(temp_char, "_yaml_data_type")
+            temp_char._yaml_data_type = data_type
 
             is_signed = temp_char.is_signed_from_yaml()
             assert is_signed == expected_signed, (
@@ -237,8 +233,8 @@ class TestYAMLCrossReference:
         humidity_char = HumidityCharacteristic()
 
         # Test that all characteristics have their basic properties
-        assert hasattr(temp_char, "char_uuid"), "Temperature characteristic should have char_uuid"
-        assert hasattr(humidity_char, "char_uuid"), "Humidity characteristic should have char_uuid"
+        assert hasattr(temp_char, "uuid"), "Temperature characteristic should have uuid"
+        assert hasattr(humidity_char, "uuid"), "Humidity characteristic should have uuid"
 
         # Test that YAML methods don't interfere with existing functionality
         assert temp_char.unit in ["°C", ""], "Temperature unit should work"

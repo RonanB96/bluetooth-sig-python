@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 from .base import BaseCharacteristic
 from .utils import DataParser
 
 
-@dataclass
 class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
     """Cycling Power Feature characteristic (0x2A65).
 
@@ -17,8 +15,6 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
     Contains a 32-bit bitmask indicating supported measurement
     capabilities.
     """
-
-    _characteristic_name: str = "Cycling Power Feature"
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse cycling power feature data.

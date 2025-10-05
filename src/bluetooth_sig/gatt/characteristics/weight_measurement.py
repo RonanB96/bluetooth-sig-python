@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import IntFlag
 from typing import Any
@@ -37,7 +37,6 @@ class WeightMeasurementData:  # pylint: disable=too-many-instance-attributes
     height_unit: str | None = None
 
 
-@dataclass
 class WeightMeasurementCharacteristic(BaseCharacteristic):
     """Weight Measurement characteristic (0x2A9D).
 
@@ -47,7 +46,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Weight Measurement"
-    _manual_unit: str | None = field(default="kg", init=False)  # Primary unit for weight measurement
+    _manual_unit: str = "kg"  # Primary unit for weight measurement
 
     min_length: int = 3  # Flags(1) + Weight(2) minimum
     max_length: int = 21  # + Timestamp(7) + UserID(1) + BMI(2) + Height(2) maximum

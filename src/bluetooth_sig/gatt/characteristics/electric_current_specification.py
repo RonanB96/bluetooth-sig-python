@@ -30,7 +30,6 @@ class ElectricCurrentSpecificationData:
             raise ValueError(f"Maximum current {self.maximum} A is outside valid range (0.0 to {max_current_value} A)")
 
 
-@dataclass
 class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic):
     """Electric Current Specification characteristic.
 

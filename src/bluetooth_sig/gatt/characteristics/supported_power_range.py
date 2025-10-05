@@ -29,7 +29,6 @@ class SupportedPowerRangeData:
             raise ValueError(f"Maximum power {self.maximum} W is outside valid range (SINT16_MIN to SINT16_MAX W)")
 
 
-@dataclass
 class SupportedPowerRangeCharacteristic(BaseCharacteristic):
     """Supported Power Range characteristic.
 

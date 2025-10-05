@@ -2,24 +2,30 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
-from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+from bluetooth_sig.types import CharacteristicInfo
+from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-@dataclass
-class ValidationHelperCharacteristic(BaseCharacteristic):
+class ValidationHelperCharacteristic(CustomBaseCharacteristic):
     """Helper characteristic with validation attributes."""
-
-    _characteristic_name: str = "Test Validation"
 
     # Validation attributes
     expected_length: int | None = 2
     min_value: int | float | None = 0
     max_value: int | float | None = 100
     expected_type: type | None = int
+
+    _info = CharacteristicInfo(
+        uuid=BluetoothUUID("12345678-1234-1234-1234-123456789012"),
+        name="Test Validation",
+        unit="",
+        value_type=ValueType.INT,
+        properties=[],
+    )
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Simple decode - just parse as uint16."""
@@ -32,11 +38,16 @@ class ValidationHelperCharacteristic(BaseCharacteristic):
         return bytearray(data.to_bytes(2, byteorder="little", signed=False))
 
 
-@dataclass
-class NoValidationCharacteristic(BaseCharacteristic):
+class NoValidationCharacteristic(CustomBaseCharacteristic):
     """Test characteristic without validation attributes."""
 
-    _characteristic_name: str = "No Validation"
+    _info = CharacteristicInfo(
+        uuid=BluetoothUUID("12345678-1234-1234-1234-123456789013"),
+        name="No Validation",
+        unit="",
+        value_type=ValueType.INT,
+        properties=[],
+    )
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Simple decode without validation."""
@@ -52,7 +63,7 @@ class TestBaseCharacteristicValidation:
 
     def test_successful_parse_with_validation(self):
         """Test successful parsing when all validations pass."""
-        char = ValidationHelperCharacteristic.from_uuid(BluetoothUUID("2A19"))
+        char = ValidationHelperCharacteristic()
         data = bytearray([50, 0])  # 50 in little endian, within range 0-100
 
         result = char.parse_value(data)
@@ -65,7 +76,7 @@ class TestBaseCharacteristicValidation:
 
     def test_failed_parse_with_length_validation(self):
         """Test parsing failure when length validation fails."""
-        char = ValidationHelperCharacteristic.from_uuid(BluetoothUUID("2A19"))
+        char = ValidationHelperCharacteristic()
         data = bytearray([50])  # Only 1 byte, but expects 2
 
         result = char.parse_value(data)
@@ -77,7 +88,7 @@ class TestBaseCharacteristicValidation:
 
     def test_parse_with_decode_error(self):
         """Test parsing when decode_value raises an exception."""
-        char = ValidationHelperCharacteristic.from_uuid(BluetoothUUID("2A19"))
+        char = ValidationHelperCharacteristic()
         data = bytearray([200, 0])  # 200 is out of range 0-100
 
         result = char.parse_value(data)
@@ -90,11 +101,17 @@ class TestBaseCharacteristicValidation:
         """Test that minimum value validation failures are handled
         correctly."""
 
-        @dataclass
-        class MinValueCharacteristic(BaseCharacteristic):
-            _characteristic_name: str = "Min Value Test"
+        class MinValueCharacteristic(CustomBaseCharacteristic):
             min_value: int | float | None = 10
             max_value: int | float | None = 100
+
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("12345678-1234-1234-1234-123456789014"),
+                name="Min Value Test",
+                unit="",
+                value_type=ValueType.INT,
+                properties=[],
+            )
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 return 5  # Below min_value of 10
@@ -102,7 +119,7 @@ class TestBaseCharacteristicValidation:
             def encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
-        char = MinValueCharacteristic.from_uuid(BluetoothUUID("2A19"))
+        char = MinValueCharacteristic()
         data = bytearray([1, 2])
 
         result = char.parse_value(data)
@@ -114,10 +131,16 @@ class TestBaseCharacteristicValidation:
     def test_type_validation_failure(self):
         """Test that type validation failures are handled correctly."""
 
-        @dataclass
-        class TypeValidationCharacteristic(BaseCharacteristic):
-            _characteristic_name: str = "Type Test"
+        class TypeValidationCharacteristic(CustomBaseCharacteristic):
             expected_type: type | None = float
+
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("12345678-1234-1234-1234-123456789015"),
+                name="Type Test",
+                unit="",
+                value_type=ValueType.INT,
+                properties=[],
+            )
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:  # Returns int but expects float
                 return 42
@@ -125,7 +148,7 @@ class TestBaseCharacteristicValidation:
             def encode_value(self, data: Any) -> bytearray:
                 return bytearray()
 
-        char = TypeValidationCharacteristic.from_uuid(BluetoothUUID("2A19"))
+        char = TypeValidationCharacteristic()
         data = bytearray([1, 2])
 
         result = char.parse_value(data)
@@ -136,7 +159,7 @@ class TestBaseCharacteristicValidation:
 
     def test_no_validation_never_fails(self):
         """Test that characteristics without validation attributes never fail."""
-        char = NoValidationCharacteristic.from_uuid(BluetoothUUID("2A19"))
+        char = NoValidationCharacteristic()
         data = bytearray([1, 2, 3, 4, 5])  # Any data should work
 
         result = char.parse_value(data)
@@ -147,10 +170,16 @@ class TestBaseCharacteristicValidation:
     def test_min_length_validation(self):
         """Test minimum length validation."""
 
-        @dataclass
-        class MinLengthCharacteristic(BaseCharacteristic):
-            _characteristic_name: str = "Min Length Test"
+        class MinLengthCharacteristic(CustomBaseCharacteristic):
             min_length: int | None = 3
+
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("12345678-1234-1234-1234-123456789016"),
+                name="Min Length Test",
+                unit="",
+                value_type=ValueType.INT,
+                properties=[],
+            )
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 return len(data)
@@ -158,7 +187,7 @@ class TestBaseCharacteristicValidation:
             def encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
-        char = MinLengthCharacteristic.from_uuid(BluetoothUUID("2A19"))
+        char = MinLengthCharacteristic()
 
         # Test with too short data
         result = char.parse_value(bytearray([1, 2]))  # 2 bytes < min_length 3
@@ -173,10 +202,16 @@ class TestBaseCharacteristicValidation:
     def test_max_length_validation(self):
         """Test maximum length validation."""
 
-        @dataclass
-        class MaxLengthCharacteristic(BaseCharacteristic):
-            _characteristic_name: str = "Max Length Test"
+        class MaxLengthCharacteristic(CustomBaseCharacteristic):
             max_length: int | None = 3
+
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("12345678-1234-1234-1234-123456789017"),
+                name="Max Length Test",
+                unit="",
+                value_type=ValueType.INT,
+                properties=[],
+            )
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 return len(data)
@@ -184,7 +219,7 @@ class TestBaseCharacteristicValidation:
             def encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
-        char = MaxLengthCharacteristic.from_uuid(BluetoothUUID("2A19"))
+        char = MaxLengthCharacteristic()
 
         # Test with too long data
         result = char.parse_value(bytearray([1, 2, 3, 4]))  # 4 bytes > max_length 3
@@ -199,9 +234,14 @@ class TestBaseCharacteristicValidation:
     def test_decode_value_exception_handling(self):
         """Test that exceptions from decode_value are properly handled."""
 
-        @dataclass
-        class ExceptionCharacteristic(BaseCharacteristic):
-            _characteristic_name: str = "Exception Test"
+        class ExceptionCharacteristic(CustomBaseCharacteristic):
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("12345678-1234-1234-1234-123456789018"),
+                name="Exception Test",
+                unit="",
+                value_type=ValueType.INT,
+                properties=[],
+            )
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 raise ValueError("Custom decode error")
@@ -209,7 +249,7 @@ class TestBaseCharacteristicValidation:
             def encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
-        char = ExceptionCharacteristic.from_uuid(BluetoothUUID("2A19"))
+        char = ExceptionCharacteristic()
         data = bytearray([1, 2])
 
         result = char.parse_value(data)
@@ -222,9 +262,14 @@ class TestBaseCharacteristicValidation:
         """Test that struct.error exceptions are properly handled."""
         import struct
 
-        @dataclass
-        class StructErrorCharacteristic(BaseCharacteristic):
-            _characteristic_name: str = "Struct Error Test"
+        class StructErrorCharacteristic(CustomBaseCharacteristic):
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("12345678-1234-1234-1234-123456789019"),
+                name="Struct Error Test",
+                unit="",
+                value_type=ValueType.INT,
+                properties=[],
+            )
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 # This will raise struct.error due to insufficient data
@@ -233,7 +278,7 @@ class TestBaseCharacteristicValidation:
             def encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
-        char = StructErrorCharacteristic.from_uuid(BluetoothUUID("2A19"))
+        char = StructErrorCharacteristic()
         data = bytearray([1, 2])  # Only 2 bytes, but struct expects 4
 
         result = char.parse_value(data)

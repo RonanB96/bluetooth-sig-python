@@ -227,7 +227,7 @@ class TestBatteryServiceValidation:
         """Test validation of complete battery service."""
         # Add required battery level characteristic
         battery_char = BatteryLevelCharacteristic()
-        self.service.characteristics[battery_char.char_uuid] = battery_char
+        self.service.characteristics[battery_char.uuid] = battery_char
 
         result = self.service.validate_service()
 
@@ -261,7 +261,7 @@ class TestBatteryServiceValidation:
 
         # Add the characteristic and test present status
         battery_char = BatteryLevelCharacteristic()
-        self.service.characteristics[battery_char.char_uuid] = battery_char
+        self.service.characteristics[battery_char.uuid] = battery_char
 
         status = self.service.get_characteristic_status(CharacteristicName.BATTERY_LEVEL)
         assert status is not None
@@ -298,7 +298,7 @@ class TestBatteryServiceValidation:
 
         # With battery level - has minimum functionality
         battery_char = BatteryLevelCharacteristic()
-        self.service.characteristics[battery_char.char_uuid] = battery_char
+        self.service.characteristics[battery_char.uuid] = battery_char
 
         assert self.service.has_minimum_functionality() is True
 
@@ -411,7 +411,7 @@ class TestServiceValidationIntegration:
 
         # Add only some characteristics (simulating real device)
         model_char = ModelNumberStringCharacteristic()
-        service.characteristics[model_char.char_uuid] = model_char
+        service.characteristics[model_char.uuid] = model_char
 
         report = service.get_service_completeness_report()
 

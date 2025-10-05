@@ -35,7 +35,6 @@ class BloodPressureFeatureData:
     multiple_bond_support: bool
 
 
-@dataclass
 class BloodPressureFeatureCharacteristic(BaseCharacteristic):
     """Blood Pressure Feature characteristic (0x2A49).
 
@@ -44,7 +43,6 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
     available.
     """
 
-    _characteristic_name: str = "Blood Pressure Feature"
     _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> BloodPressureFeatureData:

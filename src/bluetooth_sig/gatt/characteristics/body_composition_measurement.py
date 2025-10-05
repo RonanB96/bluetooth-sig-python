@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import IntFlag
 from typing import Any
@@ -62,7 +62,6 @@ class BodyCompositionMeasurementData:  # pylint: disable=too-many-instance-attri
             raise ValueError("Flags must be a 16-bit value")
 
 
-@dataclass
 class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     """Body Composition Measurement characteristic (0x2A9C).
 
@@ -71,8 +70,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     body metrics.
     """
 
-    _characteristic_name: str = "Body Composition Measurement"
-    _manual_unit: str | None = field(default="various", init=False)  # Multiple units in measurement
+    _manual_unit: str = "various"  # Multiple units in measurement
 
     min_length: int = 4  # Flags(2) + BodyFat(2) minimum
     max_length: int = 50  # + Timestamp(7) + UserID(1) + Multiple measurements maximum

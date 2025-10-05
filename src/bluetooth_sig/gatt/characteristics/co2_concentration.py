@@ -1,22 +1,22 @@
 """CO2 Concentration characteristic implementation."""
 
-from dataclasses import dataclass, field
-
 from ...types.gatt_enums import ValueType
-from .templates import ConcentrationCharacteristic
+from .base import BaseCharacteristic
+from .templates import ConcentrationTemplate
 
 
-@dataclass
-class CO2ConcentrationCharacteristic(ConcentrationCharacteristic):
+class CO2ConcentrationCharacteristic(BaseCharacteristic):
     """CO2 concentration measurement characteristic (0x2B8C).
 
     Represents carbon dioxide concentration in parts per million (ppm)
     with a resolution of 1 ppm.
     """
 
+    _template = ConcentrationTemplate()
+
     _characteristic_name: str = "CO\\textsubscript{2} Concentration"
     _manual_value_type: ValueType | str | None = ValueType.INT
-    _manual_unit: str | None = field(default="ppm", init=False)  # Override template's "ppm" default
+    _manual_unit: str = "ppm"  # Override template's "ppm" default
 
     # Template configuration
     resolution: float = 1.0

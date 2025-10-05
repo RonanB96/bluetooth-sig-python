@@ -40,7 +40,6 @@ class RSCMeasurementData:
             raise ValueError("Cadence must be a uint8 value (0-UINT8_MAX)")
 
 
-@dataclass
 class RSCMeasurementCharacteristic(BaseCharacteristic):
     """RSC (Running Speed and Cadence) Measurement characteristic (0x2A53).
 

@@ -508,9 +508,6 @@ class UuidRegistry:
                 if alias_key and alias_key in self._services:
                     return self._services[alias_key]
 
-                # Fallback to partial name matching
-                return self._find_by_partial_name(search_key, self._services, self._service_aliases)
-
             return None
 
     def get_characteristic_info(self, identifier: str | BluetoothUUID) -> UuidInfo | None:
@@ -539,33 +536,7 @@ class UuidRegistry:
                 if alias_key and alias_key in self._characteristics:
                     return self._characteristics[alias_key]
 
-                # Fallback to partial name matching
-                return self._find_by_partial_name(search_key, self._characteristics, self._characteristic_aliases)
-
             return None
-
-    def _find_by_partial_name(
-        self, search_term: str, canonical_store: dict[str, UuidInfo], alias_index: dict[str, str]
-    ) -> UuidInfo | None:
-        """Find UUID info by partial name matching."""
-        search_lower = search_term.lower()
-
-        # Search through canonical store values for partial matches
-        for stored_info in canonical_store.values():
-            name_lower = stored_info.name.lower()
-
-            # Check various partial matching strategies
-            if search_lower == name_lower or search_lower in name_lower or name_lower in search_lower:
-                return stored_info
-
-            # Word boundary matching
-            search_words = search_lower.split()
-            name_words = name_lower.split()
-            if search_words and name_words:
-                if any(search_word in name_words for search_word in search_words):
-                    return stored_info
-
-        return None
 
     def clear_custom_registrations(self) -> None:
         """Clear all custom registrations (for testing)."""

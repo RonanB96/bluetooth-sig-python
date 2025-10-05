@@ -16,7 +16,6 @@ from bluetooth_sig.gatt.characteristics import (
     VOCConcentrationCharacteristic,
 )
 from bluetooth_sig.gatt.constants import MAX_CONCENTRATION_PPM
-from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 
 class TestGasSensorCharacteristics:
@@ -27,7 +26,7 @@ class TestGasSensorCharacteristics:
         char = AmmoniaConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2BCF"
+        assert char.uuid == "2BCF"
 
         # Test metadata - Updated for SIG spec compliance (medfloat16, kg/m³)
         assert char.unit == "kg/m³"
@@ -38,7 +37,7 @@ class TestGasSensorCharacteristics:
         char = CO2ConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2B8C"
+        assert char.uuid == "2B8C"
 
         # Test metadata
         assert char.unit == "ppm"
@@ -73,7 +72,7 @@ class TestGasSensorCharacteristics:
         char = CO2ConcentrationCharacteristic()
 
         # Test insufficient data
-        with pytest.raises(InsufficientDataError):
+        with pytest.raises(ValueError, match="Insufficient data"):
             char.decode_value(bytearray([0x34]))
 
     def test_tvoc_concentration_parsing(self):
@@ -81,7 +80,7 @@ class TestGasSensorCharacteristics:
         char = NonMethaneVOCConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2BD3"
+        assert char.uuid == "2BD3"
 
         # Test metadata - Updated for SIG spec compliance (medfloat16, kg/m³)
         assert char.unit == "kg/m³"
@@ -121,7 +120,7 @@ class TestGasSensorCharacteristics:
         char = VOCConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2BE7"
+        assert char.uuid == "2BE7"
 
         # Test metadata - Updated for SIG spec compliance (uint16, ppb)
         assert char.unit == "ppb"
@@ -171,7 +170,7 @@ class TestGasSensorCharacteristics:
         char = NitrogenDioxideConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2BD2"
+        assert char.uuid == "2BD2"
 
         # Test metadata
         assert char.unit == "ppb"
@@ -186,7 +185,7 @@ class TestGasSensorCharacteristics:
         char = PM25ConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2BD6"
+        assert char.uuid == "2BD6"
 
         # Test metadata
         assert char.unit == "µg/m³"
@@ -227,27 +226,27 @@ class TestGasSensorCharacteristics:
         tests."""
         # Test Methane
         methane_char = MethaneConcentrationCharacteristic()
-        assert methane_char.char_uuid == "2BD1"
+        assert methane_char.uuid == "2BD1"
         assert methane_char.unit == "ppm"
 
         # Test Ozone
         ozone_char = OzoneConcentrationCharacteristic()
-        assert ozone_char.char_uuid == "2BD4"
+        assert ozone_char.uuid == "2BD4"
         assert ozone_char.unit == "ppb"
 
         # Test PM1
         pm1_char = PM1ConcentrationCharacteristic()
-        assert pm1_char.char_uuid == "2BD5"
+        assert pm1_char.uuid == "2BD5"
         assert pm1_char.unit == "µg/m³"
 
         # Test PM10
         pm10_char = PM10ConcentrationCharacteristic()
-        assert pm10_char.char_uuid == "2BD7"
+        assert pm10_char.uuid == "2BD7"
         assert pm10_char.unit == "µg/m³"
 
         # Test SO2
         so2_char = SulfurDioxideConcentrationCharacteristic()
-        assert so2_char.char_uuid == "2BD8"
+        assert so2_char.uuid == "2BD8"
         assert so2_char.unit == "ppb"
 
     def test_particulate_matter_parsing(self):

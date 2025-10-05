@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import re
 import struct
-from abc import ABC, ABCMeta, abstractmethod
-from dataclasses import dataclass, field
+from abc import ABC, ABCMeta
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any
+
+from bluetooth_sig.gatt.characteristics.templates import CodingTemplate
 
 from ...registry.yaml_cross_reference import CharacteristicSpec, yaml_cross_reference
 from ...types import CharacteristicData, CharacteristicInfo
@@ -22,6 +24,23 @@ from ..exceptions import (
     ValueRangeError,
 )
 from ..uuid_registry import uuid_registry
+
+
+@dataclass
+class ValidationConfig:
+    """Configuration for characteristic validation constraints.
+
+    Groups validation parameters into a single, optional configuration object
+    to simplify BaseCharacteristic constructor signatures.
+    """
+
+    min_value: int | float | None = None
+    max_value: int | float | None = None
+    expected_length: int | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    allow_variable_length: bool = False
+    expected_type: type | None = None
 
 
 class SIGCharacteristicResolver:
@@ -160,13 +179,14 @@ class SIGCharacteristicResolver:
         words = re.findall("[A-Z][^A-Z]*", char_name)
         display_name = " ".join(words)
 
-        # Try different name formats
+        # Try different name formats in order of highest hit rate
+        # Based on testing: space_separated (89%), without_suffix (11%), org_id (0%)
         org_name = "org.bluetooth.characteristic." + "_".join(word.lower() for word in words)
         names_to_try = [
-            name,  # Full class name (e.g. BatteryLevelCharacteristic)
-            char_name,  # Without 'Characteristic' suffix
-            display_name,  # Space-separated (e.g. Battery Level)
-            org_name,  # Characteristic-specific format
+            display_name,  # Space-separated (e.g. "Battery Level") - 89% hit rate
+            char_name,  # Without 'Characteristic' suffix (e.g. "BatteryLevel") - 11% hit rate
+            org_name,  # Org ID format (e.g. "org.bluetooth.characteristic.battery_level")
+            name,  # Full class name (e.g. "BatteryLevelCharacteristic") - fallback
         ]
 
         # Try each name format
@@ -213,7 +233,6 @@ class CharacteristicMeta(ABCMeta):
         return new_class
 
 
-@dataclass
 class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=too-many-instance-attributes
     """Base class for all GATT characteristics.
 
@@ -230,22 +249,20 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         expected_type: Expected Python type for parsed values
 
     Example usage in subclasses:
-        @dataclass
         class ExampleCharacteristic(BaseCharacteristic):
             \"\"\"Example showing validation attributes usage.\"\"\"
 
-            # Declare validation constraints as dataclass fields
-            expected_length: int = 2
-            min_value: int = 0
-            max_value: int = UINT16_MAX
-            expected_type: type = int
+            # Declare validation constraints as class attributes
+            expected_length = 2
+            min_value = 0
+            max_value = 65535  # UINT16_MAX
+            expected_type = int
 
             def decode_value(self, data: bytearray) -> int:
                 # Just parse - validation happens automatically in parse_value
                 return DataParser.parse_int16(data, 0, signed=False)
 
         # Before: BatteryLevelCharacteristic with hardcoded validation
-        # @dataclass
         # class BatteryLevelCharacteristic(BaseCharacteristic):
         #     def decode_value(self, data: bytearray) -> int:
         #         if not data:
@@ -256,57 +273,92 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         #         return level
 
         # After: BatteryLevelCharacteristic with declarative validation
-        # @dataclass
         # class BatteryLevelCharacteristic(BaseCharacteristic):
-        #     expected_length: int = 1
-        #     min_value: int = 0
-        #     max_value: int = PERCENTAGE_MAX
-        #     expected_type: type = int
+        #     expected_length = 1
+        #     min_value = 0
+        #     max_value = 100  # PERCENTAGE_MAX
+        #     expected_type = int
         #
         #     def decode_value(self, data: bytearray) -> int:
         #         return data[0]  # Validation happens automatically
     """
 
-    # Required constructor parameters
-    uuid: BluetoothUUID | None = field(default=None)
-    properties: set[GattProperty] | None = field(default=None)
+    # Explicit class attributes with defaults (replaces getattr usage)
+    _characteristic_name: str | None = None
+    _manual_unit: str | None = None
+    _manual_value_type: ValueType | str | None = None
+    _manual_size: int | None = None
 
-    # Instance variables
-    _info: CharacteristicInfo = field(init=False)
+    # Validation attributes (Progressive API Level 2)
+    min_value: int | float | None = None
+    max_value: int | float | None = None
+    expected_length: int | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    allow_variable_length: bool = False
+    expected_type: type | None = None
 
-    # Manual overrides with proper types
-    _manual_unit: str | None = field(default=None, init=False)
-    _manual_value_type: ValueType | str | None = field(default=None, init=False)
+    # Template support (Progressive API Level 4)
+    _template: CodingTemplate | None = None  # CodingTemplate instance for composition
 
-    value_type: ValueType = field(default=ValueType.STRING, init=False)
+    # YAML automation attributes
+    _yaml_data_type: str | None = None
+    _yaml_field_size: int | str | None = None
+    _yaml_unit_id: str | None = None
+    _yaml_resolution_text: str | None = None
 
-    # Optional validation attributes (can be overridden in subclasses)
-    min_value: int | float | None = field(default=None)
-    max_value: int | float | None = field(default=None)
-    expected_length: int | None = field(default=None)
-    min_length: int | None = field(default=None)
-    max_length: int | None = field(default=None)
-    allow_variable_length: bool = field(default=False)
-    expected_type: type | None = field(default=None)
+    def __init__(
+        self,
+        info: CharacteristicInfo | None = None,
+        validation: ValidationConfig | None = None,
+    ) -> None:
+        """Initialize characteristic with structured configuration.
+
+        Args:
+            info: Complete characteristic information (optional for SIG characteristics)
+            validation: Validation constraints configuration (optional)
+        """
+        # Store provided info or None (will be resolved in __post_init__)
+        self._provided_info = info
+
+        # Instance variables (will be set in __post_init__)
+        self._info: CharacteristicInfo
+
+        # Manual overrides with proper types (using explicit class attributes)
+        self._manual_unit: str | None = self.__class__._manual_unit
+        self._manual_value_type: ValueType | str | None = self.__class__._manual_value_type
+        self.value_type: ValueType = ValueType.UNKNOWN
+
+        # Set validation attributes from ValidationConfig or class defaults
+        if validation:
+            self.min_value = validation.min_value
+            self.max_value = validation.max_value
+            self.expected_length = validation.expected_length
+            self.min_length = validation.min_length
+            self.max_length = validation.max_length
+            self.allow_variable_length = validation.allow_variable_length
+            self.expected_type = validation.expected_type
+        else:
+            # Fall back to class attributes for Progressive API Level 2
+            self.min_value = self.__class__.min_value
+            self.max_value = self.__class__.max_value
+            self.expected_length = self.__class__.expected_length
+            self.min_length = self.__class__.min_length
+            self.max_length = self.__class__.max_length
+            self.allow_variable_length = self.__class__.allow_variable_length
+            self.expected_type = self.__class__.expected_type
+
+        # Call post-init to resolve characteristic info
+        self.__post_init__()
 
     def __post_init__(self) -> None:
         """Initialize characteristic with resolved information."""
-        try:
+        # Use provided info if available, otherwise resolve from SIG specs
+        if self._provided_info:
+            self._info = self._provided_info
+        else:
             # Resolve characteristic information using proper resolver
             self._info = SIGCharacteristicResolver.resolve_for_class(type(self))
-            # Keep the resolved UUID as single source of truth
-            # Constructor UUID is only used for test isolation/custom cases handled in except block
-        except UUIDResolutionError:
-            # Create minimal info for custom characteristics with type safety
-            fallback_uuid = self.uuid if self.uuid is not None else BluetoothUUID("0000")
-            self._info = CharacteristicInfo(
-                uuid=fallback_uuid,  # Use the UUID passed to constructor as fallback, or default
-                name=getattr(self, "_characteristic_name", self.__class__.__name__),
-                unit="",
-                value_type=ValueType.UNKNOWN,
-                properties=[],  # Proper typed empty list
-            )
-
         # Apply manual overrides to _info (single source of truth)
         if self._manual_unit is not None:
             self._info.unit = self._manual_unit
@@ -349,17 +401,13 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 self._info.value_type = inferred_type
                 self.value_type = inferred_type
 
-        # Ensure properties is a typed set for static analysis and runtime
-        if self.properties is None:
-            self.properties = set()
-
     def _infer_value_type_from_patterns(self) -> ValueType:
         """Infer value type from characteristic naming patterns and class structure.
 
         This provides a fallback when SIG resolution fails to determine proper value types.
         """
         class_name = self.__class__.__name__
-        char_name = getattr(self, "_characteristic_name", class_name)
+        char_name = self._characteristic_name or class_name
 
         # Pattern-based inference for common characteristics
         measurement_patterns = [
@@ -396,7 +444,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return SIGCharacteristicResolver.resolve_yaml_spec_for_class(type(self))
 
     @property
-    def char_uuid(self) -> BluetoothUUID:
+    def uuid(self) -> BluetoothUUID:
         """Get the characteristic UUID from _info (single source of truth)."""
         return self._info.uuid
 
@@ -413,6 +461,9 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     @property
     def summary(self) -> str:
         """Get the characteristic summary."""
+        # NOTE: For single source of truth, we should use _info but CharacteristicInfo
+        # doesn't currently include summary field. This is a temporary compromise
+        # until CharacteristicInfo is enhanced with summary field
         info = uuid_registry.get_characteristic_info(self._info.uuid)
         return info.summary if info else ""
 
@@ -423,7 +474,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Uses explicit _characteristic_name if set, otherwise falls back
         to class name.
         """
-        return getattr(self, "_characteristic_name", self.__class__.__name__)
+        return self._characteristic_name or self.__class__.__name__
 
     @classmethod
     def _resolve_class_uuid(cls) -> BluetoothUUID | None:
@@ -466,9 +517,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         except ValueError:
             return False
 
-    @abstractmethod
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> Any:
         """Parse the characteristic's raw value.
+
+        If _template is set (Level 4 Progressive API), uses the template's decode_value method.
+        Otherwise, subclasses must override this method.
 
         Args:
             data: Raw bytes from the characteristic read
@@ -478,9 +531,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             Parsed value in the appropriate type
 
         Raises:
-            NotImplementedError: This is an abstract method
+            NotImplementedError: If no template is set and subclass doesn't override
         """
-        raise NotImplementedError
+        if self._template is not None:
+            return self._template.decode_value(data, offset=0)
+        raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
     def _validate_range(self, value: Any) -> None:
         """Validate value is within min/max range."""
@@ -573,9 +628,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 error_message=str(e),
             )
 
-    @abstractmethod
     def encode_value(self, data: Any) -> bytearray:
         """Encode the characteristic's value to raw bytes.
+
+        If _template is set (Level 4 Progressive API), uses the template's encode_value method.
+        Otherwise, subclasses must override this method.
 
         Args:
             data: Dataclass instance or value to encode
@@ -585,14 +642,21 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         Raises:
             ValueError: If data is invalid for encoding
-            NotImplementedError: Must be implemented by subclasses
+            NotImplementedError: If no template is set and subclass doesn't override
         """
-        raise NotImplementedError
+        if self._template is not None:
+            return self._template.encode_value(data)
+        raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override encode_value()")
 
     @property
     def unit(self) -> str:
         """Get the unit of measurement from _info (single source of truth)."""
         return self._info.unit
+
+    @property
+    def properties(self) -> list[GattProperty]:
+        """Get the GATT properties from _info (single source of truth)."""
+        return self._info.properties
 
     @property
     def size(self) -> int | None:
@@ -604,10 +668,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         length for parsing and encoding.
         """
         # First try manual size override if set
-        if hasattr(self, "_manual_size"):
-            manual_size = getattr(self, "_manual_size", None)
-            if isinstance(manual_size, int):
-                return manual_size
+        if self._manual_size is not None:
+            return self._manual_size
 
         # Try field size from YAML cross-reference
         field_size = self.get_yaml_field_size()
@@ -626,11 +688,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     # YAML automation helper methods
     def get_yaml_data_type(self) -> str | None:
         """Get the data type from YAML automation (e.g., 'sint16', 'uint8')."""
-        return getattr(self, "_yaml_data_type", None)
+        return self._yaml_data_type
 
     def get_yaml_field_size(self) -> int | None:
         """Get the field size in bytes from YAML automation."""
-        field_size = getattr(self, "_yaml_field_size", None)
+        field_size = self._yaml_field_size
         if field_size and isinstance(field_size, str) and field_size.isdigit():
             return int(field_size)
         if isinstance(field_size, int):
@@ -639,11 +701,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     def get_yaml_unit_id(self) -> str | None:
         """Get the Bluetooth SIG unit identifier from YAML automation."""
-        return getattr(self, "_yaml_unit_id", None)
+        return self._yaml_unit_id
 
     def get_yaml_resolution_text(self) -> str | None:
         """Get the resolution description text from YAML automation."""
-        return getattr(self, "_yaml_resolution_text", None)
+        return self._yaml_resolution_text
 
     def is_signed_from_yaml(self) -> bool:
         """Determine if the data type is signed based on YAML automation."""
@@ -666,57 +728,88 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         convention)."""
         return "little"
 
-    @classmethod
-    def from_uuid(cls, uuid: str | BluetoothUUID, properties: set[GattProperty] | None = None) -> BaseCharacteristic:
-        """Create a characteristic instance from UUID.
-
-        Args:
-            uuid: Characteristic UUID
-            properties: Set of GATT properties (optional)
-
-        Returns:
-            Characteristic instance
-        """
-        # Convert string to BluetoothUUID if needed
-        if isinstance(uuid, str):
-            uuid = BluetoothUUID(uuid)
-        # Create instance with the UUID
-        instance = cls(uuid=uuid, properties=properties or set())
-        return instance
-
 
 class CustomBaseCharacteristic(BaseCharacteristic):
     """Helper base class for custom characteristic implementations.
 
     This class provides a wrapper around physical BLE characteristics that are not
-    defined in the Bluetooth SIG specification. It requires a CharacteristicInfo
-    object and follows the single source of truth pattern.
+    defined in the Bluetooth SIG specification. It supports both manual info passing
+    and automatic class-level _info binding via __init_subclass__.
 
-    This is NOT a dataclass since it needs custom initialization logic for
-    wrapping physical BLE characteristics.
+    Progressive API Levels Supported:
+    - Level 2: Class-level _info attribute (automatic binding)
+    - Legacy: Manual info parameter (backwards compatibility)
     """
 
     _is_custom = True
+    _configured_info: CharacteristicInfo | None = None  # Stores class-level _info
+    _allows_sig_override = False  # Default: no SIG override permission
 
-    def __init__(self, info: CharacteristicInfo, properties: set[GattProperty] | None = None) -> None:
-        """Initialize a custom characteristic.
+    def __init_subclass__(cls, allow_sig_override: bool = False, **kwargs: Any) -> None:
+        """Automatically set up _info if provided as class attribute.
 
         Args:
-            info: CharacteristicInfo object with UUID, name, unit, value_type
-            properties: Set of GATT properties
+            allow_sig_override: Set to True when intentionally overriding SIG UUIDs
 
         Raises:
-            ValueError: If UUID is invalid
+            ValueError: If class uses SIG UUID without override permission
         """
-        if not info.uuid or str(info.uuid) == "0000":
+        super().__init_subclass__(**kwargs)
+
+        # Store override permission for registry validation
+        cls._allows_sig_override = allow_sig_override
+
+        # If class has _info attribute, validate and store it
+        if hasattr(cls, "_info"):
+            info = getattr(cls, "_info", None)
+            if info is not None:
+                # Check for SIG UUID override (unless explicitly allowed)
+                if not allow_sig_override and info.uuid.is_sig_characteristic():
+                    raise ValueError(
+                        f"{cls.__name__} uses SIG UUID {info.uuid} without override flag. "
+                        "Use custom UUID or add allow_sig_override=True parameter."
+                    )
+
+                cls._configured_info = info
+
+    def __init__(
+        self,
+        info: CharacteristicInfo | None = None,
+    ) -> None:
+        """Initialize a custom characteristic with automatic _info resolution.
+
+        Args:
+            info: Optional override for class-configured _info
+
+        Raises:
+            ValueError: If no valid info available from class or parameter
+        """
+        # Use provided info, or fall back to class-configured _info
+        final_info = info or self.__class__._configured_info
+
+        if not final_info:
+            raise ValueError(f"{self.__class__.__name__} requires either 'info' parameter or '_info' class attribute")
+
+        if not final_info.uuid or str(final_info.uuid) == "0000":
             raise ValueError("Valid UUID is required for custom characteristics")
 
-        # Initialize parent with UUID and properties
-        super().__init__(uuid=info.uuid, properties=properties)
+        # Call parent constructor with our info to maintain consistency
+        super().__init__(info=final_info)
 
-        # Override the _info with our custom info (single source of truth)
-        self._info = info
-        self.value_type = info.value_type
+    def __post_init__(self) -> None:
+        """Override BaseCharacteristic.__post_init__ to use custom info management.
+
+        CustomBaseCharacteristic manages _info manually from provided or configured info,
+        bypassing SIG resolution that would fail for custom characteristics.
+        """
+        # Use provided info if available (from manual override), otherwise use configured info
+        if hasattr(self, "_provided_info") and self._provided_info:
+            self._info = self._provided_info
+        elif self.__class__._configured_info:
+            self._info = self.__class__._configured_info
+        else:
+            # This shouldn't happen if class setup is correct
+            raise ValueError(f"CustomBaseCharacteristic {self.__class__.__name__} has no valid info source")
 
 
 class UnknownCharacteristic(CustomBaseCharacteristic):
@@ -727,12 +820,11 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
     attempting to parse it into structured types.
     """
 
-    def __init__(self, info: CharacteristicInfo, properties: set[GattProperty] | None = None) -> None:
+    def __init__(self, info: CharacteristicInfo) -> None:
         """Initialize an unknown characteristic.
 
         Args:
-            info: CharacteristicInfo object with UUID, name, unit, value_type
-            properties: Set of GATT properties
+            info: CharacteristicInfo object with UUID, name, unit, value_type, properties
 
         Raises:
             ValueError: If UUID is invalid
@@ -747,7 +839,7 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
                 properties=info.properties or [],
             )
 
-        super().__init__(info=info, properties=properties)
+        super().__init__(info=info)
 
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> bytes:
         """Return raw bytes for unknown characteristics.

@@ -17,15 +17,22 @@ class BluetoothUUID:
     Provides automatic conversion between formats and consistent comparison.
     """
 
+    # SIG base UUID suffix (everything after XXXX placeholder)
+    SIG_BASE_SUFFIX = "00001000800000805F9B34FB"
+
     # Bluetooth SIG base UUID for 16-bit to 128-bit conversion
-    BASE_UUID = "0000XXXX00001000800000805F9B34FB"
+    BASE_UUID = f"0000XXXX{SIG_BASE_SUFFIX}"
 
     # UUID validation constants
     INVALID_SHORT_UUID = "0000"
     INVALID_BASE_UUID_DASHED = "00000000-0000-1000-8000-00805f9b34fb"
-    INVALID_BASE_UUID_NORMALIZED = "0000000000001000800000805F9B34FB"
+    INVALID_BASE_UUID_NORMALIZED = f"00000000{SIG_BASE_SUFFIX}"
     INVALID_NULL_UUID = "0000000000000000000000000000"
-    INVALID_PLACEHOLDER_UUID = "0000123400001000800000805F9B34FB"
+    INVALID_PLACEHOLDER_UUID = f"00001234{SIG_BASE_SUFFIX}"
+
+    # SIG characteristic UUID ranges (from actual YAML data)
+    SIG_CHARACTERISTIC_MIN = 0x2A00  # 10752
+    SIG_CHARACTERISTIC_MAX = 0x2C24  # 11300
 
     UUID_SHORT_LEN = 4
     UUID_FULL_LEN = 32
@@ -65,7 +72,7 @@ class BluetoothUUID:
         # Determine if it's 16-bit or 128-bit
         if len(cleaned) == BluetoothUUID.UUID_SHORT_LEN:
             # 16-bit UUID - expand to 128-bit
-            return f"0000{cleaned}00001000800000805F9B34FB"
+            return f"0000{cleaned}{BluetoothUUID.SIG_BASE_SUFFIX}"
         elif len(cleaned) == BluetoothUUID.UUID_FULL_LEN:
             # Already 128-bit
             return cleaned
@@ -131,7 +138,7 @@ class BluetoothUUID:
         if self.is_full:
             return self._normalized
         elif self.is_short:
-            return f"0000{self._normalized}00001000800000805F9B34FB"
+            return f"0000{self._normalized}{self.SIG_BASE_SUFFIX}"
         else:
             raise ValueError(f"Invalid UUID length: {len(self._normalized)}")
 
@@ -211,3 +218,33 @@ class BluetoothUUID:
             self.INVALID_NULL_UUID,
             self.INVALID_PLACEHOLDER_UUID,
         )
+
+    def is_sig_characteristic(self) -> bool:
+        """Check if this UUID is a Bluetooth SIG assigned characteristic UUID.
+
+        Based on actual SIG assigned numbers from characteristic_uuids.yaml.
+        Range verified: 0x2A00 to 0x2C24 (and potentially expanding).
+
+        Returns:
+            True if this is a SIG characteristic UUID, False otherwise
+        """
+        # Must be a full 128-bit UUID using SIG base UUID pattern
+        if not self.is_full:
+            return False
+
+        # Check if it uses the SIG base UUID pattern by comparing with our constant
+        if not self.normalized.endswith(self.SIG_BASE_SUFFIX):
+            return False
+
+        # Must start with "0000" to be a proper SIG UUID
+        if not self.normalized.startswith("0000"):
+            return False
+
+        try:
+            # Use existing short_form property instead of manual string slicing
+            uuid_int = int(self.short_form, 16)
+
+            # Check if it's in the SIG characteristic range using constants
+            return self.SIG_CHARACTERISTIC_MIN <= uuid_int <= self.SIG_CHARACTERISTIC_MAX
+        except ValueError:
+            return False

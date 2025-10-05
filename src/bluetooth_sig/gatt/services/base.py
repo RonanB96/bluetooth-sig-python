@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from ...types import CharacteristicInfo as BaseCharacteristicInfo
 from ...types.gatt_enums import GattProperty
@@ -126,7 +126,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
     _service_name: str = ""  # Override in subclasses with service name string
 
     @property
-    def SERVICE_UUID(self) -> BluetoothUUID:
+    def uuid(self) -> BluetoothUUID:
         """Get the service UUID from registry based on class name."""
         # First try explicit service name if set
         if hasattr(self, "_service_name") and self._service_name:
@@ -172,20 +172,20 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
     @property
     def name(self) -> str:
         """Get the service name from UUID registry."""
-        info = uuid_registry.get_service_info(str(self.SERVICE_UUID))
-        return info.name if info else f"Unknown Service ({self.SERVICE_UUID})"
+        info = uuid_registry.get_service_info(str(self.uuid))
+        return info.name if info else f"Unknown Service ({self.uuid})"
 
     @property
     def summary(self) -> str:
         """Get the service summary."""
-        info = uuid_registry.get_service_info(str(self.SERVICE_UUID))
+        info = uuid_registry.get_service_info(str(self.uuid))
         return info.summary if info else ""
 
     @classmethod
     def matches_uuid(cls, uuid: str | BluetoothUUID) -> bool:
         """Check if this service matches the given UUID."""
         try:
-            service_uuid = cls().SERVICE_UUID
+            service_uuid = cls().uuid
             input_uuid = BluetoothUUID(uuid)
             return service_uuid == input_uuid
         except ValueError:
@@ -289,15 +289,10 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         Args:
             characteristics: Dict mapping UUID to characteristic info
         """
-        for uuid, char_info in characteristics.items():
-            uuid_obj = BluetoothUUID(uuid)
-            prop_vals = set(char_info.properties)
-            char = CharacteristicRegistry.create_characteristic(
-                uuid=uuid_obj,
-                properties=cast(Optional[set[GattProperty]], prop_vals),
-            )
+        for uuid, _ in characteristics.items():
+            char = CharacteristicRegistry.create_characteristic(uuid=uuid)
             if char:
-                self.characteristics[uuid_obj] = char
+                self.characteristics[uuid] = char
 
     def get_characteristic(self, uuid: BluetoothUUID) -> GattCharacteristic | None:
         """Get a characteristic by UUID."""
@@ -388,7 +383,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             uuid_obj = char_info.uuid
             if uuid_obj not in self.characteristics:
                 # Create a placeholder characteristic instance for missing required characteristic
-                missing_char = char_spec.char_class(uuid=uuid_obj)
+                missing_char = char_spec.char_class()
                 result.missing_required.append(missing_char)
                 result.errors.append(f"Missing required characteristic: {lookup_name}")
 
@@ -407,7 +402,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             uuid_obj = char_info.uuid
             if uuid_obj not in self.characteristics:
                 # Create a placeholder characteristic instance for missing optional characteristic
-                missing_char = char_spec.char_class(uuid=uuid_obj.normalized)
+                missing_char = char_spec.char_class()
                 result.missing_optional.append(missing_char)
                 if strict:
                     result.warnings.append(f"Missing optional characteristic: {lookup_name}")
@@ -433,7 +428,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         for uuid, characteristic in self.characteristics.items():
             try:
                 # Basic validation - check if characteristic can provide its UUID
-                _ = characteristic.char_uuid
+                _ = characteristic.uuid
             except (AttributeError, ValueError, TypeError) as e:
                 result.invalid_characteristics.append(characteristic)
                 result.errors.append(f"Invalid characteristic {uuid}: {e}")
@@ -540,7 +535,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             try:
                 # Try to validate the characteristic
                 char = self.characteristics[uuid_obj]
-                _ = char.char_uuid  # Basic validation
+                _ = char.uuid  # Basic validation
                 return CharacteristicStatus.PRESENT
             except (KeyError, AttributeError, ValueError, TypeError):
                 return CharacteristicStatus.INVALID
@@ -620,7 +615,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         return ServiceCompletenessReport(
             service_name=self.name,
-            service_uuid=self.SERVICE_UUID,
+            service_uuid=self.uuid,
             health_status=validation.status,
             is_healthy=validation.is_healthy,
             characteristics_present=len(self.characteristics),
@@ -681,13 +676,22 @@ class CustomBaseGattService(BaseGattService):
                 properties = {GattProperty(prop.lower()) for prop in char_data["properties"] if isinstance(prop, str)}
 
             # Try to create SIG-defined characteristic first
-            char_instance = CharacteristicRegistry.create_characteristic(
-                uuid=uuid_obj.normalized, properties=properties if properties else None
-            )
+            char_instance = CharacteristicRegistry.create_characteristic(uuid=uuid_obj.normalized)
 
             # If no SIG characteristic found, create generic unknown characteristic
             if char_instance is None:
-                char_instance = UnknownCharacteristic(uuid=uuid_obj.normalized, properties=properties)
+                from ...types import CharacteristicInfo
+                from ...types.gatt_enums import ValueType
+
+                char_instance = UnknownCharacteristic(
+                    info=CharacteristicInfo(
+                        uuid=uuid_obj,
+                        name=f"Unknown Characteristic ({uuid_obj})",
+                        unit="",
+                        value_type=ValueType.BYTES,
+                        properties=list(properties) if properties else [],
+                    )
+                )
 
             if char_instance:
                 self.characteristics[uuid_obj] = char_instance

@@ -17,7 +17,6 @@ from bluetooth_sig.gatt.services.environmental_sensing import (
     EnvironmentalSensingService,
 )
 from bluetooth_sig.gatt.uuid_registry import UuidRegistry
-from bluetooth_sig.types.gatt_enums import GattProperty
 from bluetooth_sig.types.gatt_services import ServiceDiscoveryData
 
 
@@ -129,10 +128,10 @@ def test_service_class_name_resolution():
     battery = BatteryService()
     env = EnvironmentalSensingService()
 
-    assert battery.SERVICE_UUID == "180F", "Wrong Battery Service UUID"
+    assert battery.uuid == "180F", "Wrong Battery Service UUID"
     assert battery.name == "Battery", "Wrong Battery Service name"
 
-    assert env.SERVICE_UUID == "181A", "Wrong Environmental Service UUID"
+    assert env.uuid == "181A", "Wrong Environmental Service UUID"
     assert env.name == "Environmental Sensing", "Wrong Environmental Service name"
 
 
@@ -143,18 +142,12 @@ def test_characteristic_discovery():
     temp_char = TemperatureCharacteristic()
     humidity_char = HumidityCharacteristic()
 
-    # Mock device data using strongly-typed format with typical properties
-    battery_info = battery_char.info
-    battery_info.properties = [GattProperty.READ, GattProperty.NOTIFY]  # Typical battery level properties
-    mock_battery_data: ServiceDiscoveryData = {battery_char.char_uuid: battery_info}
+    # Mock device data using CharacteristicInfo from the characteristic instances
+    mock_battery_data: ServiceDiscoveryData = {battery_char.uuid: battery_char.info}
 
-    temp_info = temp_char.info
-    temp_info.properties = [GattProperty.READ, GattProperty.NOTIFY]  # Typical sensor properties
-    humidity_info = humidity_char.info
-    humidity_info.properties = [GattProperty.READ, GattProperty.NOTIFY]  # Typical sensor properties
     mock_env_data: ServiceDiscoveryData = {
-        temp_char.char_uuid: temp_info,
-        humidity_char.char_uuid: humidity_info,
+        temp_char.uuid: temp_char.info,
+        humidity_char.uuid: humidity_char.info,
     }
 
     # Test Battery Service characteristic discovery
@@ -164,10 +157,8 @@ def test_characteristic_discovery():
     assert len(battery.characteristics) == 1, "Incorrect battery char count"
     char = next(iter(battery.characteristics.values()))
     assert char.name == "Battery Level"
+    # Properties come from YAML or class definition, not from discovery data
     assert char.properties is not None
-    assert GattProperty.READ in char.properties
-    assert GattProperty.NOTIFY in char.properties
-
     # Test Environmental Service characteristic discovery
     env = EnvironmentalSensingService()
     env.process_characteristics(mock_env_data)
@@ -286,3 +277,24 @@ def test_direct_yaml_loading(yaml_data: dict[str, Any]) -> None:
     assert battery_level["name"] == "Battery Level", "Wrong Battery Level name in YAML"
     assert temperature["name"] == "Temperature", "Wrong Temperature name in YAML"
     assert humidity["name"] == "Humidity", "Wrong Humidity name in YAML"
+
+
+class TestBluetoothUUID:
+    """Tests for BluetoothUUID utility methods."""
+
+    def test_sig_characteristic_uuid_detection(self) -> None:
+        """Test SIG characteristic UUID detection logic."""
+        from bluetooth_sig.types.uuid import BluetoothUUID
+
+        # Test SIG characteristic UUIDs (should return True)
+        assert BluetoothUUID("2A19").is_sig_characteristic() is True  # Battery Level
+        assert BluetoothUUID("2A37").is_sig_characteristic() is True  # Heart Rate
+        assert BluetoothUUID("2A00").is_sig_characteristic() is True  # Device Name
+        assert BluetoothUUID("2C24").is_sig_characteristic() is True  # Upper range
+
+        # Test non-SIG UUIDs (should return False)
+        assert BluetoothUUID("12345678-1234-1234-1234-123456789ABC").is_sig_characteristic() is False
+        assert BluetoothUUID("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF").is_sig_characteristic() is False
+        assert BluetoothUUID("1800").is_sig_characteristic() is False  # Service UUID
+        assert BluetoothUUID("29FF").is_sig_characteristic() is False  # Below SIG range
+        assert BluetoothUUID("2C25").is_sig_characteristic() is False  # Above SIG range

@@ -1,20 +1,20 @@
 """Voltage characteristic implementation."""
 
-from dataclasses import dataclass, field
-
 from ..constants import UINT16_MAX
-from .templates import ScaledUint16Characteristic
+from .base import BaseCharacteristic
+from .templates import ScaledUint16Template
 
 
-@dataclass
-class VoltageCharacteristic(ScaledUint16Characteristic):
+class VoltageCharacteristic(BaseCharacteristic):
     """Voltage characteristic.
 
     Measures voltage with 1/64 V resolution.
     """
 
+    _template = ScaledUint16Template()
+
     _characteristic_name: str = "Voltage"
-    _manual_unit: str | None = field(default="V", init=False)  # Override template's "units" default
+    _manual_unit: str = "V"  # Override template's "units" default
 
     # Template configuration
     resolution: float = 1 / 64  # 1/64 V resolution

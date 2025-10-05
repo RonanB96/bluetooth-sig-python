@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 from ...types.gatt_enums import ValueType
@@ -10,7 +9,6 @@ from ..constants import SINT8_MIN
 from .base import BaseCharacteristic
 
 
-@dataclass
 class TimeZoneCharacteristic(BaseCharacteristic):
     """Time zone characteristic.
 

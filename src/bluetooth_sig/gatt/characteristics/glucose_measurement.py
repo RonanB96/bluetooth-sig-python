@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import IntEnum, IntFlag
 from typing import Any
@@ -115,7 +115,6 @@ class GlucoseMeasurementData:  # pylint: disable=too-many-instance-attributes
         return value in {0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
 
 
-@dataclass
 class GlucoseMeasurementCharacteristic(BaseCharacteristic):
     """Glucose Measurement characteristic (0x2A18).
 
@@ -123,8 +122,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
     and status. Core characteristic for glucose monitoring devices.
     """
 
-    _characteristic_name: str = "Glucose Measurement"
-    _manual_unit: str | None = field(default="mg/dL or mmol/L", init=False)  # Unit depends on flags
+    _manual_unit: str = "mg/dL or mmol/L"  # Unit depends on flags
 
     min_length: int = 12  # Ensured consistency with GlucoseMeasurementData
     max_length: int = 17  # Ensured consistency with GlucoseMeasurementData

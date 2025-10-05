@@ -21,6 +21,15 @@ from src.bluetooth_sig.types.uuid import BluetoothUUID
 class CustomCharacteristicImpl(CustomBaseCharacteristic):
     """Test custom characteristic implementation."""
 
+    # Progressive API Level 2: _info class attribute (auto-handled via __init_subclass__)
+    _info = CharacteristicInfo(
+        uuid=BluetoothUUID("abcd1234-0000-1000-8000-00805f9b34fb"),
+        name="CustomCharacteristicImpl",
+        unit="",
+        value_type=ValueType.INT,
+        properties=[],
+    )
+
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse test data as uint16."""
         return DataParser.parse_int16(bytes(data), 0, signed=False)
@@ -33,7 +42,7 @@ class CustomCharacteristicImpl(CustomBaseCharacteristic):
 
     @classmethod
     def from_uuid(cls, uuid: str | BluetoothUUID, properties: set[GattProperty] | None = None):
-        """Create instance from UUID for registry compatibility."""
+        """Create instance from UUID for registry compatibility (legacy support)."""
         if isinstance(uuid, str):
             uuid = BluetoothUUID(uuid)
 
@@ -45,7 +54,7 @@ class CustomCharacteristicImpl(CustomBaseCharacteristic):
             properties=list(properties or []),
         )
 
-        return cls(info=info, properties=properties)
+        return cls(info=info)
 
 
 class CustomServiceImpl(CustomBaseGattService):
@@ -248,3 +257,64 @@ class TestRuntimeRegistration:
 
         assert hasattr(CustomServiceImpl, "_is_custom")
         assert CustomServiceImpl._is_custom is True  # pylint: disable=protected-access
+
+    def test_sig_override_permission_required(self) -> None:
+        """Test that SIG UUID override requires _allows_sig_override=True on the custom class."""
+
+        # Attempt to define class with SIG UUID without _allows_sig_override should fail
+        with pytest.raises(ValueError, match="SIG UUID.*without override flag"):
+
+            class SIGOverrideWithoutPermission(CustomBaseCharacteristic):
+                """Test class attempting SIG override without permission."""
+
+                # Trying to use SIG UUID without permission
+                _info = CharacteristicInfo(
+                    uuid=BluetoothUUID("2A19"),  # Battery Level UUID (SIG assigned)
+                    name="Unauthorized SIG Override",
+                    unit="%",
+                    value_type=ValueType.INT,
+                    properties=[],
+                )
+
+                def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+                    return data[0]
+
+                def encode_value(self, data: Any) -> bytearray:
+                    return bytearray([data])
+
+    def test_sig_override_permission_allowed(self) -> None:
+        """Test that SIG UUID override works when _allows_sig_override=True is set."""
+
+        # Should not raise with allow_sig_override=True
+        class SIGOverrideWithPermission(CustomBaseCharacteristic, allow_sig_override=True):
+            """Test class with explicit SIG override permission."""
+
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("2A19"),  # Battery Level UUID (SIG assigned)
+                name="Authorized SIG Override",
+                unit="%",
+                value_type=ValueType.INT,
+                properties=[],
+            )
+
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+                return data[0]
+
+            def encode_value(self, data: Any) -> bytearray:
+                return bytearray([data])
+
+        # Should work without error
+        char = SIGOverrideWithPermission()
+        assert char._info.uuid == BluetoothUUID("2A19")
+        assert char._allows_sig_override is True
+
+        # Should also work with registry registration
+        CharacteristicRegistry.register_characteristic_class(
+            "2A19",  # Battery Level UUID (SIG assigned)
+            SIGOverrideWithPermission,
+            override=True,
+        )
+
+        # Verify override worked
+        cls = CharacteristicRegistry.get_characteristic_class_by_uuid("2A19")
+        assert cls == SIGOverrideWithPermission

@@ -42,7 +42,6 @@ class VoltageStatisticsData:
                 )
 
 
-@dataclass
 class VoltageStatisticsCharacteristic(BaseCharacteristic):
     """Voltage Statistics characteristic.
 

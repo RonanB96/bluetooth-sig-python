@@ -126,8 +126,6 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
     TWO_BYTE_PARAM_LENGTH = 3  # op_code(1) + param(2)
     RESPONSE_CODE_LENGTH = 3  # op_code(1) + request(1) + response(1)
 
-    _characteristic_name: str = "Cycling Power Control Point"
-
     def decode_value(self, data: bytearray, ctx: Any | None = None) -> CyclingPowerControlPointData:
         """Parse cycling power control point data.
 

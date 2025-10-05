@@ -58,10 +58,14 @@ print_warning() {
 # return its exit code without causing the script to exit (wraps set +e/-e).
 run_capture() {
     CAPTURE_OUTPUT=""
-    set +e
+    # Temporarily disable all error exit behaviors to properly capture command output  
+    local old_opts
+    old_opts=$(set +o)
+    set +euo pipefail
     CAPTURE_OUTPUT=$(eval "$*" 2>&1)
     local rc=$?
-    set -e
+    # Restore original shell options
+    eval "$old_opts"
     return $rc
 }
 
@@ -96,7 +100,9 @@ check_venv() {
 # Run ruff linting (replaces flake8)
 # shellcheck disable=SC2120
 run_ruff() {
+    # Usage: run_ruff [is_parallel] [logfile]
     local is_parallel="${1:-false}"
+    local _logfile="${2:-}"
 
     if [ "$is_parallel" != "true" ]; then
         print_header "Running ruff"
@@ -126,9 +132,20 @@ run_ruff() {
             return 1
         fi
     else
-        # In parallel mode, just return the output via stdout/stderr
+        # In parallel mode, always write the ruff output to logfile if provided
+        if [ -n "${_logfile}" ]; then
+            # Write atomically: use a temp file then move into place
+            tmpfile="${_logfile}.$$.$RANDOM.tmp"
+            printf "%s\n" "$RUFF_OUTPUT" >"$tmpfile" || true
+            mv "$tmpfile" "$_logfile" || true
+        fi
+        # Also output to stdout for spawn_bg to capture
         if [ $RUFF_EXIT_CODE -ne 0 ]; then
+            echo "=== RUFF OUTPUT ==="
             echo "$RUFF_OUTPUT"
+            echo "=== END RUFF OUTPUT ==="
+        fi
+        if [ $RUFF_EXIT_CODE -ne 0 ]; then
             return 1
         fi
         return 0
@@ -139,7 +156,9 @@ run_ruff() {
 # Run pylint
 # shellcheck disable=SC2120
 run_pylint() {
+    # Usage: run_pylint [is_parallel] [logfile]
     local is_parallel="${1:-false}"
+    local _logfile="${2:-}"
 
     if [ "$is_parallel" != "true" ]; then
         print_header "Running pylint"
@@ -163,9 +182,6 @@ run_pylint() {
     PROD_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
 
     # Extract production score
-    if [ "$is_parallel" != "true" ]; then
-        echo "$PROD_PYLINT_OUTPUT"
-    fi
     PROD_SCORE=$(echo "$PROD_PYLINT_OUTPUT" | sed -n 's/.*rated at \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
 
     if [ "$is_parallel" != "true" ]; then
@@ -202,7 +218,6 @@ run_pylint() {
     # W0212: protected-access - Tests frequently access private/protected members
     # C0415: import-outside-toplevel - Tests may import conditionally or inside functions
     # W0718: broad-exception-caught - Tests may catch broad exceptions for robustness
-    # W0613: unused-argument - Test fixtures/methods may have unused parameters
     # R0914: too-many-locals - Complex tests may need many local variables
     # R0912: too-many-branches - Test logic may have many conditional branches
     # R0915: too-many-statements - Test setup/verification may have many statements
@@ -215,7 +230,7 @@ run_pylint() {
     # W0404: reimported - Tests may reimport modules
     # W0221: arguments-differ - Test methods may have different signatures than base
     # E0401: import-error - Tests may import modules that aren't available in test environment
-    run_capture "pylint --persistent=n --disable=C0114,C0115,C0116,W0212,C0415,W0718,W0613,R0914,R0912,R0915,R1702,C1803,W0105,R0903,W0201,W0621,W0404,W0221,E0401 $TEST_FOLDERS"
+    run_capture "pylint --persistent=n --disable=C0114,C0115,C0116,W0212,C0415,W0718,W0613,R0914,R0912,R0915,R1702,C1803,W0105,R0903,W0201,W0621,W0404,W0221,E0401 $TEST_FOLDERS $EXAMPLES_FOLDERS"
     TEST_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
     local TEST_PYLINT_EXIT_CODE=$?
 
@@ -223,6 +238,37 @@ run_pylint() {
     if [ "$is_parallel" != "true" ]; then
         echo "Test pylint output (ignoring common test issues):"
         echo "$TEST_PYLINT_OUTPUT"
+    else
+        # In parallel mode, write a combined pylint report to the logfile so
+        # both production and test outputs (and approximate exit statuses)
+        # are always present. This avoids partial logfile contents when the
+        # helper runs in a background subshell.
+        if [ -n "${_logfile}" ]; then
+            tmpfile="${_logfile}.$$.$RANDOM.tmp"
+            {
+                printf "=== PYLINT: production ===\n"
+                printf "%s\n" "$PROD_PYLINT_OUTPUT"
+                printf "\n=== PYLINT: tests (common issues ignored) ===\n"
+                printf "%s\n" "$TEST_PYLINT_OUTPUT"
+                printf "\n=== PYLINT: summary ===\n"
+                printf "production_score=%s\n" "${PROD_SCORE:-unknown}"
+                printf "test_exit_code=%s\n" "${TEST_PYLINT_EXIT_CODE:-unknown}"
+            } >"$tmpfile" || true
+            mv "$tmpfile" "$_logfile" || true
+        fi
+        # Also output to stdout for spawn_bg to capture when there are errors
+        if [ $exit_code -ne 0 ]; then
+            echo "=== PYLINT OUTPUT ==="
+            if [ "$PROD_SCORE" != "10.00" ]; then
+                echo "Production pylint score: $PROD_SCORE/10 (must be 10.00)"
+                echo "$PROD_PYLINT_OUTPUT"
+            fi
+            if [ $TEST_PYLINT_EXIT_CODE -ne 0 ]; then
+                echo "Test pylint issues:"
+                echo "$TEST_PYLINT_OUTPUT"
+            fi
+            echo "=== END PYLINT OUTPUT ==="
+        fi
     fi
 
     # Check if pylint passed after disabling common issues
@@ -243,7 +289,9 @@ run_pylint() {
 # Run mypy type checking
 # shellcheck disable=SC2120
 run_mypy() {
+    # Usage: run_mypy [is_parallel] [logfile]
     local is_parallel="${1:-false}"
+    local _logfile="${2:-}"
 
     if [ "$is_parallel" != "true" ]; then
         print_header "Running mypy type checking"
@@ -279,9 +327,24 @@ run_mypy() {
             echo "$PROD_MYPY_OUTPUT"
             exit_code=1
         fi
-    elif [ $PROD_MYPY_EXIT_CODE -ne 0 ]; then
-        echo "$PROD_MYPY_OUTPUT"
-        exit_code=1
+    else
+        if [ -n "${_logfile}" ]; then
+            tmpfile="${_logfile}.$$.$RANDOM.tmp"
+            {
+                printf "=== MYPY: production ===\n"
+                printf "%s\n" "$PROD_MYPY_OUTPUT"
+            } >"$tmpfile" || true
+            mv "$tmpfile" "$_logfile" || true
+        fi
+        # Also output to stdout for spawn_bg to capture when there are errors
+        if [ $PROD_MYPY_EXIT_CODE -ne 0 ]; then
+            echo "=== MYPY PRODUCTION OUTPUT ==="
+            echo "$PROD_MYPY_OUTPUT"
+            echo "=== END MYPY PRODUCTION OUTPUT ==="
+        fi
+        if [ $PROD_MYPY_EXIT_CODE -ne 0 ]; then
+            exit_code=1
+        fi
     fi
 
     if [ "$is_parallel" != "true" ]; then
@@ -306,9 +369,23 @@ run_mypy() {
             echo "$EXAMPLES_MYPY_OUTPUT"
             exit_code=1
         fi
-    elif [ $EXAMPLES_MYPY_EXIT_CODE -ne 0 ]; then
-        echo "$EXAMPLES_MYPY_OUTPUT"
-        exit_code=1
+    else
+        if [ -n "${_logfile}" ]; then
+            {
+                printf "\n=== MYPY: examples ===\n"
+                printf "%s\n" "$EXAMPLES_MYPY_OUTPUT"
+            } >>"$_logfile"
+            # If appending, ensure atomicity by appending to a tmp and then
+            # concatenating. Simpler approach: append to final file as above
+            # but ensure parent waits on PID before reading. Keep as append.
+        fi
+        # Also output to stdout for spawn_bg to capture when there are errors
+        if [ $EXAMPLES_MYPY_EXIT_CODE -ne 0 ]; then
+            echo "=== MYPY EXAMPLES OUTPUT ==="
+            echo "$EXAMPLES_MYPY_OUTPUT"
+            echo "=== END MYPY EXAMPLES OUTPUT ==="
+            exit_code=1
+        fi
     fi
 
     if [ "$is_parallel" != "true" ]; then
@@ -334,9 +411,23 @@ run_mypy() {
             echo "$TEST_MYPY_OUTPUT"
             exit_code=1
         fi
-    elif [ $TEST_MYPY_EXIT_CODE -ne 0 ]; then
-        echo "$TEST_MYPY_OUTPUT"
-        exit_code=1
+    else
+        if [ -n "${_logfile}" ]; then
+            {
+                printf "\n=== MYPY: tests ===\n"
+                printf "%s\n" "$TEST_MYPY_OUTPUT"
+            } >>"$_logfile"
+                # As above, tests appended to logfile. The helper uses mv for the
+                # initial production section; subsequent appends are OK because
+                # the parent waits on PID before reading the file.
+        fi
+        # Also output to stdout for spawn_bg to capture when there are errors
+        if [ $TEST_MYPY_EXIT_CODE -ne 0 ]; then
+            echo "=== MYPY TESTS OUTPUT ==="
+            echo "$TEST_MYPY_OUTPUT"
+            echo "=== END MYPY TESTS OUTPUT ==="
+            exit_code=1
+        fi
     fi
 
     return $exit_code
@@ -345,7 +436,9 @@ run_mypy() {
 # Run shellcheck
 # shellcheck disable=SC2120
 run_shellcheck() {
+    # Usage: run_shellcheck [is_parallel] [logfile]
     local is_parallel="${1:-false}"
+    local _logfile="${2:-}"
 
     if [ "$is_parallel" != "true" ]; then
         print_header "Running shellcheck"
@@ -396,6 +489,21 @@ run_shellcheck() {
                 if [ "$is_parallel" != "true" ]; then
                     echo "Shellcheck output for: $script"
                     printf "%s\n" "$CAPTURE_OUTPUT"
+                else
+                    # In parallel mode, append the script's output into the provided logfile
+                    if [ -n "${_logfile}" ]; then
+                                # Append each script's output; rely on parent wait to
+                                # only read logfile after background job completes.
+                                {
+                                    printf "=== SHELLCHECK: %s ===\n" "$script"
+                                    printf "%s\n" "$CAPTURE_OUTPUT"
+                                    printf "\n"
+                                } >>"$_logfile" || true
+                    fi
+                    # Also output to stdout for spawn_bg to capture
+                    echo "=== SHELLCHECK ERROR: $script ==="
+                    printf "%s\n" "$CAPTURE_OUTPUT"
+                    echo "=== END SHELLCHECK ERROR ==="
                 fi
                 # Count issues for this script from captured output
                 local script_issues
@@ -479,9 +587,11 @@ run_all_checks_parallel() {
     echo "Detected CPU cores: $CORES"
 
     # Helper: wait for pid, print a named result and update exit_code
+    # Accepts an optional third argument: logfile path to display on failure
     wait_and_report() {
         local pid=$1
         local name="$2"
+        local logfile="$3"
         local code
         # avoid exiting the whole script if the waited-for process fails
         set +e
@@ -493,62 +603,96 @@ run_all_checks_parallel() {
         else
             print_error "$name failed"
             exit_code=1
+            # If logfile exists, print a helpful excerpt for debugging
+            if [ -n "${logfile:-}" ] && [ -f "$logfile" ]; then
+                echo "--- Begin $name output ($logfile) ---"
+                sed -n '1,200p' "$logfile" || true
+                echo "--- End $name output ---"
+            fi
         fi
     }
 
     local exit_code=0
 
-    # Run ruff (single-threaded invocation; --threads isn't supported in many installs)
-    # shellcheck disable=SC2086  # RUFF_FOLDERS is intentionally space-separated
-    ruff check --cache-dir .ruff_cache $RUFF_FOLDERS >/dev/null 2>&1 &
-    pid_ruff=$!
-
-    # Run pylint for production and tests as independent processes using --jobs
-    pylint --persistent=n --jobs="$CORES" $BLUETOOTH_SIG_FOLDERS >/dev/null 2>&1 &
-    pid_pylint_prod=$!
-
-    pylint --persistent=n --jobs="$CORES" --disable=C0114,C0115,C0116,W0212,C0415,W0718,W0613,R0914,R0912,R0915,R1702,C1803,W0105,R0903,W0201,W0621,W0404,W0221,E0401 $TEST_FOLDERS >/dev/null 2>&1 &
-    pid_pylint_test=$!
-
-    # Run mypy prod/examples/tests as separate background processes
-    MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml >/dev/null 2>&1 &
-    pid_mypy_prod=$!
-
-    MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml $EXAMPLES_FOLDERS >/dev/null 2>&1 &
-    pid_mypy_examples=$!
-
-    PYTHONPATH="" python -m mypy --cache-dir=.mypy_cache --config-file pyproject.toml $TEST_FOLDERS >/dev/null 2>&1 &
-    pid_mypy_test=$!
-
-    # Run shellcheck across scripts in parallel using xargs -P
-    mapfile -t SHELL_SCRIPTS < <(find scripts -name "*.sh" -type f | grep -v ".venv" | head -100)
-    if [ "${#SHELL_SCRIPTS[@]}" -gt 0 ]; then
-        printf "%s\n" "${SHELL_SCRIPTS[@]}" | xargs -n1 -P "$CORES" -I{} sh -c 'shellcheck "{}" >/dev/null 2>&1 || exit 2' &
-        pid_shellcheck=$!
+    # Create a temporary log directory for parallel runs so we can surface
+    # tool output on failure without flooding the console on success.
+    # Create a log directory. Use mktemp where available, otherwise fall back
+    # to a timestamped directory to avoid mktemp implementation differences.
+    LOGDIR=""
+    if LOGDIR=$(mktemp -d "${PROJECT_ROOT}/.lint_logs.XXXX" 2>/dev/null); then
+        :
     else
-        pid_shellcheck=0
+        LOGDIR="${PROJECT_ROOT}/.lint_logs.$(date +%s%N)"
+        mkdir -p "$LOGDIR"
     fi
+    export LOGDIR
+    
+    # Set up cleanup trap to remove temporary directory on exit/interrupt
+    cleanup_logdir() {
+        if [ -n "${LOGDIR:-}" ] && [ -d "$LOGDIR" ]; then
+            rm -rf "$LOGDIR" 2>/dev/null || true
+        fi
+    }
+    trap cleanup_logdir EXIT INT TERM
+    
+    echo "Writing parallel lint logs to: $LOGDIR"
 
-    echo "⏳ Running comprehensive checks in parallel (ruff, pylint(prod/test), mypy(prod/examples/tests), shellcheck)..."
+    # Spawn each check as a backgrounded invocation of the existing helper
+    # functions so the parallel and sequential paths use the same code.
+    spawn_bg() {
+        # spawn_bg <function_name> <logfile> <pidfile>
+        local func="$1"
+        local logfile="$2"
+        local pidfile="$3"
+        
+        # Run the function in a subshell with proper output redirection
+        # The helper functions are responsible for writing their output to logfile
+        # in parallel mode, but we also capture any stdout/stderr here as backup
+        ( 
+            set +e
+            # Call the function with parallel mode and logfile
+            $func true "$logfile" >"${logfile}.stdout" 2>"${logfile}.stderr"
+            local rc=$?
+            # Combine any stdout/stderr with the main logfile for complete output
+            if [ -s "${logfile}.stdout" ] || [ -s "${logfile}.stderr" ]; then
+                {
+                    if [ -s "${logfile}.stdout" ]; then
+                        echo "=== STDOUT ==="
+                        cat "${logfile}.stdout"
+                    fi
+                    if [ -s "${logfile}.stderr" ]; then
+                        echo "=== STDERR ==="
+                        cat "${logfile}.stderr"  
+                    fi
+                } >> "$logfile"
+            fi
+            # Clean up temporary files
+            rm -f "${logfile}.stdout" "${logfile}.stderr"
+            exit $rc
+        ) &
+        
+        # Write PID to pidfile for parent to track
+        printf "%s" "$!" >"$pidfile"
+    }
+
+    # Start backgrounded helper functions and capture pids via pidfiles
+    spawn_bg run_ruff "$LOGDIR/ruff.out" "$LOGDIR/ruff.pid"
+    spawn_bg run_pylint "$LOGDIR/pylint.out" "$LOGDIR/pylint.pid"
+    spawn_bg run_mypy "$LOGDIR/mypy.out" "$LOGDIR/mypy.pid"
+    spawn_bg run_shellcheck "$LOGDIR/shellcheck.out" "$LOGDIR/shellcheck.pid"
+
+    pid_ruff=$(cat "$LOGDIR/ruff.pid")
+    pid_pylint=$(cat "$LOGDIR/pylint.pid")
+    pid_mypy=$(cat "$LOGDIR/mypy.pid")
+    pid_shellcheck=$(cat "$LOGDIR/shellcheck.pid")
+
+    echo "⏳ Running comprehensive checks in parallel (ruff, pylint(prod/examples/test), mypy(prod/examples/tests), shellcheck)..."
 
     # Wait & report using the helper to reduce duplication
-    wait_and_report "$pid_ruff" "✅ ruff"
-    wait_and_report "$pid_pylint_prod" "✅ pylint (production)"
-    wait_and_report "$pid_pylint_test" "✅ pylint (tests)"
-    wait_and_report "$pid_mypy_prod" "✅ mypy (production)"
-    wait_and_report "$pid_mypy_examples" "✅ mypy (examples)"
-    wait_and_report "$pid_mypy_test" "✅ mypy (tests)"
-
-    if [ "$pid_shellcheck" -ne 0 ]; then
-        wait "$pid_shellcheck"
-        shellcheck_result=$?
-        if [ $shellcheck_result -eq 0 ]; then
-            print_success "✅ shellcheck"
-        else
-            print_error "❌ shellcheck"
-            exit_code=1
-        fi
-    fi
+    wait_and_report "$pid_ruff" "✅ ruff" "$LOGDIR/ruff.out"
+    wait_and_report "$pid_pylint" "✅ pylint" "$LOGDIR/pylint.out"
+    wait_and_report "$pid_mypy" "✅ mypy" "$LOGDIR/mypy.out"
+    wait_and_report "$pid_shellcheck" "✅ shellcheck" "$LOGDIR/shellcheck.out"
 
     echo ""
 
@@ -557,6 +701,9 @@ run_all_checks_parallel() {
     else
         print_error "💥 Some linting checks failed"
     fi
+
+    # Explicit cleanup of temporary log directory
+    cleanup_logdir
 
     return $exit_code
 }

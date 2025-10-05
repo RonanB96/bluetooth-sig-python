@@ -103,7 +103,6 @@ class BodyCompositionFeatureData:  # pylint: disable=too-many-instance-attribute
     height_measurement_resolution: HeightMeasurementResolution
 
 
-@dataclass
 class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
     """Body Composition Feature characteristic (0x2A9B).
 
@@ -111,8 +110,6 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
     supported by the body composition device. This is a read-only
     characteristic that describes device capabilities.
     """
-
-    _characteristic_name: str = "Body Composition Feature"
 
     min_length: int = 4  # Features(4) fixed length
     max_length: int = 4  # Features(4) fixed length
