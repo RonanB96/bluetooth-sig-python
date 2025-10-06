@@ -34,6 +34,10 @@ class BluetoothUUID:
     SIG_CHARACTERISTIC_MIN = 0x2A00  # 10752
     SIG_CHARACTERISTIC_MAX = 0x2C24  # 11300
 
+    # SIG service UUID ranges (from actual YAML data)
+    SIG_SERVICE_MIN = 0x1800  # 6144
+    SIG_SERVICE_MAX = 0x185C  # 6236
+
     UUID_SHORT_LEN = 4
     UUID_FULL_LEN = 32
 
@@ -244,5 +248,35 @@ class BluetoothUUID:
 
             # Check if it's in the SIG characteristic range using constants
             return self.SIG_CHARACTERISTIC_MIN <= uuid_int <= self.SIG_CHARACTERISTIC_MAX
+        except ValueError:
+            return False
+
+    def is_sig_service(self) -> bool:
+        """Check if this UUID is a Bluetooth SIG assigned service UUID.
+
+        Based on actual SIG assigned numbers from service_uuids.yaml.
+        Range verified: 0x1800 to 0x185C (and potentially expanding).
+
+        Returns:
+            True if this is a SIG service UUID, False otherwise
+        """
+        # Must be a full 128-bit UUID using SIG base UUID pattern
+        if not self.is_full:
+            return False
+
+        # Check if it uses the SIG base UUID pattern by comparing with our constant
+        if not self.normalized.endswith(self.SIG_BASE_SUFFIX):
+            return False
+
+        # Must start with "0000" to be a proper SIG UUID
+        if not self.normalized.startswith("0000"):
+            return False
+
+        try:
+            # Use existing short_form property instead of manual string slicing
+            uuid_int = int(self.short_form, 16)
+
+            # Check if it's in the SIG service range using constants
+            return self.SIG_SERVICE_MIN <= uuid_int <= self.SIG_SERVICE_MAX
         except ValueError:
             return False

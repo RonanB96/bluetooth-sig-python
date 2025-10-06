@@ -68,6 +68,20 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
 class UnknownService(BaseGattService):
     """Generic service for unknown/unsupported UUIDs."""
 
+    def __init__(self, uuid: str | None = None) -> None:
+        """Initialize unknown service with optional UUID."""
+        from ..types import ServiceInfo
+        from ..types.uuid import BluetoothUUID
+
+        # Use provided UUID or a placeholder
+        service_uuid = BluetoothUUID(uuid) if uuid else BluetoothUUID("00001234-0000-1000-8000-00805F9B34FB")
+        info = ServiceInfo(
+            uuid=service_uuid,
+            name=f"Unknown Service ({service_uuid})",
+            description="",
+        )
+        super().__init__(info=info)
+
     @classmethod
     def get_expected_characteristics(cls) -> CharacteristicCollection:
         return {}

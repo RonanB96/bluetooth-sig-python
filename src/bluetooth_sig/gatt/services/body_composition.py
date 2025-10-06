@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import ClassVar
 
 from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
-@dataclass
 class BodyCompositionService(BaseGattService):
     """Body Composition Service implementation (0x181B).
 

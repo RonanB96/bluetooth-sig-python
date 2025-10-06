@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import ClassVar
 
 from ..characteristics.registry import CharacteristicName
 from .base import BaseGattService
 
 
-@dataclass
 class GlucoseService(BaseGattService):
     """Glucose Service implementation (0x1808).
 
