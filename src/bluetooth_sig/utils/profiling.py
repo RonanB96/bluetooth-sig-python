@@ -100,20 +100,29 @@ def benchmark_function(
         ...     operation="Battery Level parsing"
         ... )
         >>> print(result)
+
+    Note:
+        Uses time.perf_counter() for high-resolution timing. The function
+        includes a warmup run to avoid JIT compilation overhead in the
+        measurements. Individual timings are collected to compute min/max
+        statistics.
     """
     times: list[float] = []
 
-    # Warmup run
+    # Warmup run to avoid JIT compilation overhead
     func()
 
-    # Timed runs
-    start_total = time.perf_counter()
+    # Collect individual timings with minimal overhead
+    # We measure both individual times (for min/max) and total time
+    perf_counter = time.perf_counter  # Cache function lookup
+    start_total = perf_counter()
     for _ in range(iterations):
-        start = time.perf_counter()
+        start = perf_counter()
         func()
-        times.append(time.perf_counter() - start)
-    total_time = time.perf_counter() - start_total
+        times.append(perf_counter() - start)
+    total_time = perf_counter() - start_total
 
+    # Calculate statistics
     avg_time = total_time / iterations
     min_time = min(times)
     max_time = max(times)
