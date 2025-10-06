@@ -57,6 +57,31 @@ Shows pure SIG standards parsing without any BLE connection library dependencies
 python examples/pure_sig_parsing.py
 ```
 
+## Benchmarks
+
+### benchmarks/parsing_performance.py
+Comprehensive performance benchmark for parsing operations. Measures parse latency, compares manual vs library parsing, and provides optimization recommendations.
+
+```bash
+# Run full benchmark
+python examples/benchmarks/parsing_performance.py
+
+# Run with debug logging (shows overhead)
+python examples/benchmarks/parsing_performance.py --log-level=debug
+
+# Quick benchmark with fewer iterations
+python examples/benchmarks/parsing_performance.py --quick
+```
+
+**Output includes:**
+- Single characteristic parsing performance
+- Batch parsing vs individual parsing comparison
+- UUID resolution performance
+- Real-world scenario simulation
+- Optimization recommendations
+
+See [`../docs/PERFORMANCE.md`](../docs/PERFORMANCE.md) for detailed performance guide.
+
 ## Utilities Package
 
 The `utils/` subdirectory contains organized utility modules split by functionality:
@@ -93,7 +118,7 @@ All examples require a BLE device address. You can discover devices using:
 # Using bleak-retry example
 python examples/with_bleak_retry.py --scan
 
-# Using SimplePyBLE example  
+# Using SimplePyBLE example
 python examples/with_simpleble.py --scan
 ```
 
@@ -107,3 +132,4 @@ This examples directory follows these principles:
 2. **Clean Separation** - Utilities are organized by functionality in the `utils/` package
 3. **Library Agnostic** - Core SIG parsing works with any BLE library
 4. **Production Ready** - Examples demonstrate robust patterns suitable for production use
+5. **Performance Aware** - Benchmarks and profiling tools help optimize real-world usage

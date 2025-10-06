@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from ..gatt.characteristics import CharacteristicName, CharacteristicRegistry
@@ -21,6 +22,8 @@ from ..types import (
 )
 from ..types.gatt_enums import ValueType
 from ..types.uuid import BluetoothUUID
+
+logger = logging.getLogger(__name__)
 
 
 class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
@@ -61,19 +64,29 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             CharacteristicData with parsed value and metadata
         """
+        logger.debug("Parsing characteristic UUID=%s, data_len=%d", uuid, len(raw_data))
+
         # Create characteristic instance for parsing
         characteristic = CharacteristicRegistry.create_characteristic(uuid)
 
         if characteristic:
+            logger.debug("Found parser for UUID=%s: %s", uuid, type(characteristic).__name__)
             # Use the parse_value method; pass context when provided.
             result = characteristic.parse_value(raw_data, ctx)
 
             # Attach context if available and result doesn't already have it
             if ctx is not None:
                 result.source_context = ctx
+
+            if result.parse_success:
+                logger.debug("Successfully parsed %s: %s", result.name, result.value)
+            else:
+                logger.warning("Parse failed for %s: %s", result.name, result.error_message)
+
             return result
 
         # No parser found, return fallback result
+        logger.info("No parser available for UUID=%s", uuid)
         fallback_info = CharacteristicInfo(
             uuid=BluetoothUUID(uuid),
             name="Unknown",
@@ -360,6 +373,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             Dictionary mapping UUIDs to CharacteristicData results
         """
+        logger.debug("Batch parsing %d characteristics", len(char_data))
         base_ctx = ctx
 
         results: dict[str, CharacteristicData] = {}
@@ -379,6 +393,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
             results[uuid] = self.parse_characteristic(uuid, raw_data, ctx=per_call_ctx)
 
+        logger.debug("Batch parsing complete: %d results", len(results))
         return results
 
     def get_characteristics_info(self, uuids: list[str]) -> dict[str, CharacteristicInfo | None]:
