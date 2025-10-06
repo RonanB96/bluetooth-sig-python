@@ -56,7 +56,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = "various"  # Multiple units in vector data
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> CyclingPowerVectorData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> CyclingPowerVectorData:
         """Parse cycling power vector data according to Bluetooth
         specification.
 

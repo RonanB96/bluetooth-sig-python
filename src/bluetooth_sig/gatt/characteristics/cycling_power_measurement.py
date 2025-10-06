@@ -77,7 +77,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = "W"  # Watts unit for power measurement
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> CyclingPowerMeasurementData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> CyclingPowerMeasurementData:
         """Parse cycling power measurement data according to Bluetooth
         specification.
 

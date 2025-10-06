@@ -8,7 +8,7 @@ from enum import Enum
 from typing import Any, TypeVar, cast
 
 from ...types import CharacteristicInfo as BaseCharacteristicInfo
-from ...types.gatt_enums import GattProperty
+from ...types.gatt_enums import GattProperty, ValueType
 from ...types.gatt_services import (
     CharacteristicCollection,
     CharacteristicSpec,
@@ -303,7 +303,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
     @property
     def supported_characteristics(self) -> set[BaseCharacteristic]:
         """Get the set of characteristic UUIDs supported by this service."""
-        return {str(uuid) for uuid in self.characteristics.keys()}
+        return {str(uuid) for uuid in self.characteristics}
 
     # New enhanced methods for service validation and health
 
@@ -354,7 +354,66 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         return issues
 
-    def validate_service(self, strict: bool = False) -> ServiceValidationResult:  # pylint: disable=too-many-branches,R0915
+    def _validate_characteristic_group(
+        self,
+        char_dict: ServiceCharacteristicCollection,
+        result: ServiceValidationResult,
+        is_required: bool,
+        strict: bool,
+    ) -> None:
+        """Validate a group of characteristics (required/optional/conditional)."""
+        for char_name, char_spec in char_dict.items():
+            lookup_name = char_name.value if hasattr(char_name, "value") else str(char_name)
+            char_info = uuid_registry.get_characteristic_info(lookup_name)
+
+            if not char_info:
+                if is_required:
+                    result.errors.append(f"Unknown required characteristic: {lookup_name}")
+                elif strict:
+                    result.warnings.append(f"Unknown optional characteristic: {lookup_name}")
+                continue
+
+            if char_info.uuid not in self.characteristics:
+                missing_char = char_spec.char_class()
+                if is_required:
+                    result.missing_required.append(missing_char)
+                    result.errors.append(f"Missing required characteristic: {lookup_name}")
+                else:
+                    result.missing_optional.append(missing_char)
+                    if strict:
+                        result.warnings.append(f"Missing optional characteristic: {lookup_name}")
+
+    def _validate_conditional_characteristics(
+        self, conditional_chars: ServiceCharacteristicCollection, result: ServiceValidationResult
+    ) -> None:
+        """Validate conditional characteristics."""
+        for char_name, conditional_spec in conditional_chars.items():
+            lookup_name = char_name.value if hasattr(char_name, "value") else str(char_name)
+            char_info = uuid_registry.get_characteristic_info(lookup_name)
+
+            if not char_info:
+                result.warnings.append(f"Unknown conditional characteristic: {lookup_name}")
+                continue
+
+            if char_info.uuid not in self.characteristics:
+                result.warnings.append(
+                    f"Missing conditional characteristic: {lookup_name} (required when {conditional_spec.condition})"
+                )
+
+    def _determine_health_status(self, result: ServiceValidationResult, required_count: int, strict: bool) -> None:
+        """Determine overall service health status."""
+        if result.missing_required:
+            result.status = (
+                ServiceHealthStatus.INCOMPLETE
+                if len(result.missing_required) >= required_count
+                else ServiceHealthStatus.PARTIAL
+            )
+        elif result.missing_optional and strict:
+            result.status = ServiceHealthStatus.FUNCTIONAL
+        elif result.warnings or result.invalid_characteristics:
+            result.status = ServiceHealthStatus.FUNCTIONAL
+
+    def validate_service(self, strict: bool = False) -> ServiceValidationResult:  # pylint: disable=too-many-branches
         """Validate the completeness and health of this service.
 
         Args:
@@ -365,86 +424,21 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         """
         result = ServiceValidationResult(status=ServiceHealthStatus.COMPLETE)
 
-        required_chars = self.get_required_characteristics()
-        optional_chars = self.get_optional_characteristics()
-        conditional_chars = self.get_conditional_characteristics()
-
-        # Check required characteristics
-        for char_name, char_spec in required_chars.items():
-            try:
-                lookup_name = char_name.value
-            except AttributeError:
-                lookup_name = str(char_name)
-            char_info = uuid_registry.get_characteristic_info(lookup_name)
-            if not char_info:
-                result.errors.append(f"Unknown required characteristic: {lookup_name}")
-                continue
-
-            uuid_obj = char_info.uuid
-            if uuid_obj not in self.characteristics:
-                # Create a placeholder characteristic instance for missing required characteristic
-                missing_char = char_spec.char_class()
-                result.missing_required.append(missing_char)
-                result.errors.append(f"Missing required characteristic: {lookup_name}")
-
-        # Check optional characteristics
-        for char_name, char_spec in optional_chars.items():
-            try:
-                lookup_name = char_name.value
-            except AttributeError:
-                lookup_name = str(char_name)
-            char_info = uuid_registry.get_characteristic_info(lookup_name)
-            if not char_info:
-                if strict:
-                    result.warnings.append(f"Unknown optional characteristic: {lookup_name}")
-                continue
-
-            uuid_obj = char_info.uuid
-            if uuid_obj not in self.characteristics:
-                # Create a placeholder characteristic instance for missing optional characteristic
-                missing_char = char_spec.char_class()
-                result.missing_optional.append(missing_char)
-                if strict:
-                    result.warnings.append(f"Missing optional characteristic: {lookup_name}")
-
-        # Check conditional characteristics
-        for char_name, conditional_spec in conditional_chars.items():
-            try:
-                lookup_name = char_name.value
-            except AttributeError:
-                lookup_name = str(char_name)
-            char_info = uuid_registry.get_characteristic_info(lookup_name)
-            if not char_info:
-                result.warnings.append(f"Unknown conditional characteristic: {lookup_name}")
-                continue
-
-            # For now, just report missing conditional characteristics as warnings
-            uuid_obj = char_info.uuid
-            if uuid_obj not in self.characteristics:
-                condition = conditional_spec.condition
-                result.warnings.append(f"Missing conditional characteristic: {lookup_name} (required when {condition})")
+        # Validate required, optional, and conditional characteristics
+        self._validate_characteristic_group(self.get_required_characteristics(), result, True, strict)
+        self._validate_characteristic_group(self.get_optional_characteristics(), result, False, strict)
+        self._validate_conditional_characteristics(self.get_conditional_characteristics(), result)
 
         # Validate existing characteristics
         for uuid, characteristic in self.characteristics.items():
             try:
-                # Basic validation - check if characteristic can provide its UUID
                 _ = characteristic.uuid
             except (AttributeError, ValueError, TypeError) as e:
                 result.invalid_characteristics.append(characteristic)
                 result.errors.append(f"Invalid characteristic {uuid}: {e}")
 
-        # Determine overall service health status
-        if result.missing_required:
-            if len(result.missing_required) >= len(required_chars):
-                result.status = ServiceHealthStatus.INCOMPLETE
-            else:
-                result.status = ServiceHealthStatus.PARTIAL
-        elif result.missing_optional and strict:
-            result.status = ServiceHealthStatus.FUNCTIONAL
-        elif result.warnings or result.invalid_characteristics:
-            result.status = ServiceHealthStatus.FUNCTIONAL
-        else:
-            result.status = ServiceHealthStatus.COMPLETE
+        # Determine overall health status
+        self._determine_health_status(result, len(self.get_required_characteristics()), strict)
 
         return result
 
@@ -680,11 +674,8 @@ class CustomBaseGattService(BaseGattService):
 
             # If no SIG characteristic found, create generic unknown characteristic
             if char_instance is None:
-                from ...types import CharacteristicInfo
-                from ...types.gatt_enums import ValueType
-
                 char_instance = UnknownCharacteristic(
-                    info=CharacteristicInfo(
+                    info=BaseCharacteristicInfo(
                         uuid=uuid_obj,
                         name=f"Unknown Characteristic ({uuid_obj})",
                         unit="",

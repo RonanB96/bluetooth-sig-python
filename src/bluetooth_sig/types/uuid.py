@@ -59,7 +59,8 @@ class BluetoothUUID:
     def _normalize_uuid(uuid: str | BluetoothUUID) -> str:
         """Normalize UUID to uppercase hex without dashes or 0x prefix."""
         if isinstance(uuid, BluetoothUUID):
-            return uuid._normalized
+            # Access to protected attribute is intentional for self-reference normalization
+            return uuid._normalized  # pylint: disable=protected-access
 
         cleaned = uuid.replace("-", "").replace(" ", "").upper()
         if cleaned.startswith("0X"):
@@ -73,11 +74,10 @@ class BluetoothUUID:
         if len(cleaned) == BluetoothUUID.UUID_SHORT_LEN:
             # 16-bit UUID - expand to 128-bit
             return f"0000{cleaned}{BluetoothUUID.SIG_BASE_SUFFIX}"
-        elif len(cleaned) == BluetoothUUID.UUID_FULL_LEN:
+        if len(cleaned) == BluetoothUUID.UUID_FULL_LEN:
             # Already 128-bit
             return cleaned
-        else:
-            raise ValueError(f"Invalid UUID length: {len(cleaned)} (expected 4 or 32 characters)")
+        raise ValueError(f"Invalid UUID length: {len(cleaned)} (expected 4 or 32 characters)")
 
     @staticmethod
     def _normalize_uuid_from_int(uuid_int: int) -> str:
@@ -127,20 +127,18 @@ class BluetoothUUID:
         """Get 16-bit short form (e.g., '180F')."""
         if self.is_short:
             return self._normalized
-        elif self.is_full:
+        if self.is_full:
             return self._normalized[4:8]
-        else:
-            raise ValueError(f"Invalid UUID length: {len(self._normalized)}")
+        raise ValueError(f"Invalid UUID length: {len(self._normalized)}")
 
     @property
     def full_form(self) -> str:
         """Get 128-bit full form with Bluetooth base UUID."""
         if self.is_full:
             return self._normalized
-        elif self.is_short:
+        if self.is_short:
             return f"0000{self._normalized}{self.SIG_BASE_SUFFIX}"
-        else:
-            raise ValueError(f"Invalid UUID length: {len(self._normalized)}")
+        raise ValueError(f"Invalid UUID length: {len(self._normalized)}")
 
     @property
     def dashed_form(self) -> str:

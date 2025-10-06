@@ -1,5 +1,7 @@
 """Voltage characteristic implementation."""
 
+from __future__ import annotations
+
 from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 from .templates import ScaledUint16Template

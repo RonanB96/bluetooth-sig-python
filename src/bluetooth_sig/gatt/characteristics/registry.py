@@ -230,8 +230,7 @@ class CharacteristicRegistry:
         def _find_sig_class_for_uuid(target: BluetoothUUID) -> type[BaseCharacteristic] | None:
             for candidate in _get_characteristic_class_map().values():
                 try:
-                    # Direct protected access acceptable within internal registry module.
-                    resolved_uuid_obj = candidate._resolve_from_basic_registry_class()  # type: ignore[attr-defined]
+                    resolved_uuid_obj = candidate.get_class_uuid()  # type: ignore[attr-defined]
                     if resolved_uuid_obj and (
                         resolved_uuid_obj.normalized == target.normalized  # type: ignore[attr-defined]
                         or resolved_uuid_obj.short_form == target.short_form  # type: ignore[attr-defined]
@@ -256,10 +255,7 @@ class CharacteristicRegistry:
                         "Use override=True to replace."
                     )
                 # Require an explicit opt‑in marker on the custom class
-                try:
-                    allows_override = bool(char_cls._allows_sig_override)  # type: ignore[attr-defined]
-                except AttributeError:
-                    allows_override = False
+                allows_override = char_cls.get_allows_sig_override()
                 if not allows_override:
                     raise ValueError(
                         "Override of SIG characteristic "
@@ -340,7 +336,7 @@ class CharacteristicRegistry:
 
         for _, char_cls in _get_characteristic_class_map().items():
             # Try to resolve UUID at class level first
-            resolved_uuid = char_cls._resolve_from_basic_registry_class()  # type: ignore[attr-defined]
+            resolved_uuid = char_cls.get_class_uuid()  # type: ignore[attr-defined]
             if resolved_uuid and (
                 resolved_uuid.normalized == uuid_obj.normalized or resolved_uuid.short_form == uuid_obj.short_form
             ):
@@ -375,7 +371,7 @@ class CharacteristicRegistry:
 
         for char_cls in _get_characteristic_class_map().values():
             # Try to resolve UUID at class level first
-            resolved_uuid = char_cls._resolve_from_basic_registry_class()  # type: ignore[attr-defined]
+            resolved_uuid = char_cls.get_class_uuid()  # type: ignore[attr-defined]
             if resolved_uuid and (
                 resolved_uuid.normalized == bt_uuid.normalized or resolved_uuid.short_form == bt_uuid.short_form
             ):
@@ -402,4 +398,5 @@ class CharacteristicRegistry:
     @classmethod
     def clear_custom_registrations(cls) -> None:
         """Clear all custom characteristic registrations (for testing)."""
-        cls._custom_characteristic_classes.clear()
+        with cls._lock:
+            cls._custom_characteristic_classes.clear()

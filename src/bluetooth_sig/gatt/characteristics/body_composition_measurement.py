@@ -76,7 +76,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 50  # + Timestamp(7) + UserID(1) + Multiple measurements maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> BodyCompositionMeasurementData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> BodyCompositionMeasurementData:
         """Parse body composition measurement data according to Bluetooth
         specification.
 

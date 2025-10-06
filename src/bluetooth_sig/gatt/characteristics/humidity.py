@@ -1,5 +1,7 @@
 """Humidity characteristic implementation."""
 
+from __future__ import annotations
+
 from ...types.gatt_enums import ValueType
 from ..constants import PERCENTAGE_MAX
 from .base import BaseCharacteristic

@@ -233,11 +233,15 @@ class CharacteristicMeta(ABCMeta):
         return new_class
 
 
-class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=too-many-instance-attributes
+class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Base class for all GATT characteristics.
 
     Automatically resolves UUID, unit, and value_type from Bluetooth SIG YAML specifications.
     Supports manual overrides via _manual_unit and _manual_value_type attributes.
+
+    Note: This class intentionally has >20 public methods as it provides the complete
+    characteristic API including parsing, validation, UUID resolution, registry interaction,
+    and metadata access. The methods are well-organized by functionality.
 
     Validation Attributes (optional class-level declarations):
         min_value: Minimum allowed value for parsed data
@@ -306,6 +310,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     _yaml_field_size: int | str | None = None
     _yaml_unit_id: str | None = None
     _yaml_resolution_text: str | None = None
+
+    _allows_sig_override = False
 
     def __init__(
         self,
@@ -477,6 +483,29 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return self._characteristic_name or self.__class__.__name__
 
     @classmethod
+    def get_allows_sig_override(cls) -> bool:
+        """Check if this characteristic class allows overriding SIG characteristics.
+
+        Custom characteristics that need to override official Bluetooth SIG
+        characteristics must set _allows_sig_override = True as a class attribute.
+
+        Returns:
+            True if SIG override is allowed, False otherwise.
+        """
+        return cls._allows_sig_override
+
+    @classmethod
+    def get_class_uuid(cls) -> BluetoothUUID | None:
+        """Get the characteristic UUID for this class without creating an instance.
+
+        This is the public API for registry and other modules to resolve UUIDs.
+
+        Returns:
+            BluetoothUUID if the class has a resolvable UUID, None otherwise.
+        """
+        return cls._resolve_class_uuid()
+
+    @classmethod
     def _resolve_class_uuid(cls) -> BluetoothUUID | None:
         """Resolve the characteristic UUID for this class without creating an instance."""
         # Try cross-file resolution first
@@ -499,7 +528,12 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         try:
             registry_info = SIGCharacteristicResolver.resolve_from_registry(cls)
             return registry_info.uuid if registry_info else None
-        except Exception:
+        except (ValueError, KeyError, AttributeError, TypeError):
+            # Registry resolution can fail for various reasons:
+            # - ValueError: Invalid UUID format
+            # - KeyError: Characteristic not in registry
+            # - AttributeError: Missing expected attributes
+            # - TypeError: Type mismatch in resolution
             return None
 
     @classmethod
@@ -534,7 +568,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             NotImplementedError: If no template is set and subclass doesn't override
         """
         if self._template is not None:
-            return self._template.decode_value(data, offset=0)
+            return self._template.decode_value(data, offset=0, ctx=ctx)
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
     def _validate_range(self, value: Any) -> None:
@@ -805,8 +839,9 @@ class CustomBaseCharacteristic(BaseCharacteristic):
         # Use provided info if available (from manual override), otherwise use configured info
         if hasattr(self, "_provided_info") and self._provided_info:
             self._info = self._provided_info
-        elif self.__class__._configured_info:
-            self._info = self.__class__._configured_info
+        elif self.__class__._configured_info:  # pylint: disable=protected-access
+            # Access to _configured_info is intentional for class-level info management
+            self._info = self.__class__._configured_info  # pylint: disable=protected-access
         else:
             # This shouldn't happen if class setup is correct
             raise ValueError(f"CustomBaseCharacteristic {self.__class__.__name__} has no valid info source")

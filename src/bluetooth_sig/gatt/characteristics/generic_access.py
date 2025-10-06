@@ -14,7 +14,7 @@ class DeviceNameCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Device Name"
     _manual_value_type = "string"  # Override since decode_value returns str
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> str:
         """Parse device name string."""
         return DataParser.parse_utf8_string(data)
 
@@ -44,7 +44,7 @@ class AppearanceCharacteristic(BaseCharacteristic):
     max_length = 2  # Appearance(2) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> int:
         """Parse appearance value (uint16)."""
         return DataParser.parse_int16(data, 0, signed=False)
 

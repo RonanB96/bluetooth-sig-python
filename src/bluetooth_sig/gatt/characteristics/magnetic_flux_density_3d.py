@@ -27,7 +27,7 @@ class MagneticFluxDensity3DCharacteristic(BaseCharacteristic):
     _vector_components: list[str] = ["x_axis", "y_axis", "z_axis"]
     resolution: float = 1e-7
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> VectorData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> VectorData:
         """Parse 3D magnetic flux density (3 x sint16 with resolution)."""
         if len(data) < 6:
             raise ValueError("Insufficient data for 3D magnetic flux density (need 6 bytes)")

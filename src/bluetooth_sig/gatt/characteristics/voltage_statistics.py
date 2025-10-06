@@ -52,7 +52,7 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured VoltageStatisticsData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> VoltageStatisticsData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> VoltageStatisticsData:
         """Parse voltage statistics data (3x uint16 in units of 1/64 V).
 
         Args:

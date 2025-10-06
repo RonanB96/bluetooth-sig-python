@@ -81,7 +81,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
     max_length = 19  # + Timestamp(7) + PulseRate(2) + UserID(1) + MeasurementStatus(2) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureData:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> BloodPressureData:  # pylint: disable=too-many-locals
         """Parse blood pressure measurement data according to Bluetooth
         specification.
 

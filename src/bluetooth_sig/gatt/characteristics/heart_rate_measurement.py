@@ -84,7 +84,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Heart Rate Measurement"
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> HeartRateData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> HeartRateData:
         """Parse heart rate measurement data according to Bluetooth
         specification.
 

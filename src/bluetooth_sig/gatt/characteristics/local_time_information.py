@@ -85,7 +85,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Local Time Information"
 
     def decode_value(  # pylint: disable=too-many-locals
-        self, data: bytearray, ctx: Any | None = None
+        self, data: bytearray, _ctx: Any | None = None
     ) -> LocalTimeInformationData:
         """Parse local time information data (2 bytes: time zone + DST
         offset)."""

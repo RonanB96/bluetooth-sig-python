@@ -50,7 +50,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
     max_length: int | None = 16  # + Timestamp(7) + MeasurementStatus(2) + DeviceStatus(3) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> PulseOximetryData:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> PulseOximetryData:  # pylint: disable=too-many-locals
         """Parse pulse oximetry measurement data according to Bluetooth
         specification.
 

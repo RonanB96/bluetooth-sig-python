@@ -337,30 +337,31 @@ class UuidRegistry:
         self, char_name: str, char_id: str, unit: str | None, value_type: str | None
     ) -> None:
         """Update existing characteristic with GSS info."""
-        # Find the canonical entry by checking aliases (normalized to lowercase)
-        canonical_uuid = None
-        for search_key in [char_name, char_id]:
-            canonical_uuid = self._characteristic_aliases.get(search_key.lower())
-            if canonical_uuid:
-                break
+        with self._lock:
+            # Find the canonical entry by checking aliases (normalized to lowercase)
+            canonical_uuid = None
+            for search_key in [char_name, char_id]:
+                canonical_uuid = self._characteristic_aliases.get(search_key.lower())
+                if canonical_uuid:
+                    break
 
-        if not canonical_uuid or canonical_uuid not in self._characteristics:
-            return
+            if not canonical_uuid or canonical_uuid not in self._characteristics:
+                return
 
-        # Get existing info and create updated version
-        existing_info = self._characteristics[canonical_uuid]
-        updated_info = UuidInfo(
-            uuid=existing_info.uuid,
-            name=existing_info.name,
-            id=existing_info.id,
-            summary=existing_info.summary,
-            unit=unit or existing_info.unit,
-            value_type=value_type or existing_info.value_type,
-            origin=existing_info.origin,
-        )
+            # Get existing info and create updated version
+            existing_info = self._characteristics[canonical_uuid]
+            updated_info = UuidInfo(
+                uuid=existing_info.uuid,
+                name=existing_info.name,
+                id=existing_info.id,
+                summary=existing_info.summary,
+                unit=unit or existing_info.unit,
+                value_type=value_type or existing_info.value_type,
+                origin=existing_info.origin,
+            )
 
-        # Update canonical store (aliases remain the same since UUID/name/id unchanged)
-        self._characteristics[canonical_uuid] = updated_info
+            # Update canonical store (aliases remain the same since UUID/name/id unchanged)
+            self._characteristics[canonical_uuid] = updated_info
 
     def _extract_info_from_gss(self, char_data: dict[str, Any]) -> tuple[str | None, str | None]:
         """Extract unit and value_type from GSS characteristic structure."""

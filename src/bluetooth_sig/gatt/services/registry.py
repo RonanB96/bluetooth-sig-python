@@ -221,4 +221,5 @@ class GattServiceRegistry:
     @classmethod
     def clear_custom_registrations(cls) -> None:
         """Clear all custom service registrations (for testing)."""
-        cls._custom_service_classes.clear()
+        with cls._lock:
+            cls._custom_service_classes.clear()

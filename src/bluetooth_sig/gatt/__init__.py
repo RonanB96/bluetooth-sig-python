@@ -1,5 +1,7 @@
 """GATT package initialization."""
 
+from __future__ import annotations
+
 from .characteristics.base import BaseCharacteristic
 from .constants import (
     ABSOLUTE_ZERO_CELSIUS,

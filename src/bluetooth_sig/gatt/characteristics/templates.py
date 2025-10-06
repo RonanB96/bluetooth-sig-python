@@ -45,12 +45,13 @@ class CodingTemplate(ABC):
     """
 
     @abstractmethod
-    def decode_value(self, data: bytearray, offset: int = 0) -> Any:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> Any:
         """Decode raw bytes to typed value.
 
         Args:
             data: Raw bytes to parse
             offset: Byte offset to start parsing from
+            ctx: Optional context for parsing
 
         Returns:
             Parsed value of appropriate type (int, float, str, bytes, or custom dataclass)
@@ -108,7 +109,7 @@ class Uint8Template(CodingTemplate):
         """Size: 1 byte."""
         return 1
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> int:
         """Parse 8-bit unsigned integer."""
         if len(data) < offset + 1:
             raise ValueError("Insufficient data for uint8 parsing")
@@ -129,7 +130,7 @@ class Sint8Template(CodingTemplate):
         """Size: 1 byte."""
         return 1
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> int:
         """Parse 8-bit signed integer."""
         if len(data) < offset + 1:
             raise ValueError("Insufficient data for sint8 parsing")
@@ -150,7 +151,7 @@ class Uint16Template(CodingTemplate):
         """Size: 2 bytes."""
         return 2
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> int:
         """Parse 16-bit unsigned integer."""
         if len(data) < offset + 2:
             raise ValueError("Insufficient data for uint16 parsing")
@@ -171,7 +172,7 @@ class Sint16Template(CodingTemplate):
         """Size: 2 bytes."""
         return 2
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> int:
         """Parse 16-bit signed integer."""
         if len(data) < offset + 2:
             raise ValueError("Insufficient data for sint16 parsing")
@@ -192,7 +193,7 @@ class Uint32Template(CodingTemplate):
         """Size: 4 bytes."""
         return 4
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> int:
         """Parse 32-bit unsigned integer."""
         if len(data) < offset + 4:
             raise ValueError("Insufficient data for uint32 parsing")
@@ -230,7 +231,7 @@ class ScaledUint16Template(CodingTemplate):
         """Size: 2 bytes."""
         return 2
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> float:
         """Parse scaled 16-bit unsigned integer."""
         if len(data) < offset + 2:
             raise ValueError("Insufficient data for scaled uint16 parsing")
@@ -265,7 +266,7 @@ class ScaledSint16Template(CodingTemplate):
         """Size: 2 bytes."""
         return 2
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> float:
         """Parse scaled 16-bit signed integer."""
         if len(data) < offset + 2:
             raise ValueError("Insufficient data for scaled sint16 parsing")
@@ -296,7 +297,7 @@ class ScaledUint32Template(CodingTemplate):
         """Size: 4 bytes."""
         return 4
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> float:
         """Parse scaled 32-bit unsigned integer."""
         if len(data) < offset + 4:
             raise ValueError("Insufficient data for scaled uint32 parsing")
@@ -331,7 +332,7 @@ class ScaledUint24Template(CodingTemplate):
         """Size: 3 bytes."""
         return 3
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> float:
         """Parse scaled 24-bit unsigned integer."""
         if len(data) < offset + 3:
             raise ValueError("Insufficient data for scaled uint24 parsing")
@@ -366,7 +367,7 @@ class ScaledSint24Template(CodingTemplate):
         """Size: 3 bytes."""
         return 3
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> float:
         """Parse scaled 24-bit signed integer."""
         if len(data) < offset + 3:
             raise ValueError("Insufficient data for scaled sint24 parsing")
@@ -405,7 +406,7 @@ class PercentageTemplate(CodingTemplate):
         """Size: 1 byte."""
         return 1
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> int:
         """Parse percentage value."""
         if len(data) < offset + 1:
             raise ValueError("Insufficient data for percentage parsing")
@@ -433,7 +434,7 @@ class TemperatureTemplate(CodingTemplate):
         """Size: 2 bytes."""
         return 2
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> float:
         """Parse temperature in 0.01°C resolution."""
         return self._scaled_template.decode_value(data, offset)
 
@@ -461,7 +462,7 @@ class ConcentrationTemplate(CodingTemplate):
         """Size: 2 bytes."""
         return 2
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> float:
         """Parse concentration with resolution."""
         return self._scaled_template.decode_value(data, offset)
 
@@ -482,7 +483,7 @@ class PressureTemplate(CodingTemplate):
         """Size: 4 bytes."""
         return 4
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> float:
         """Parse pressure in 0.1 Pa resolution (returns Pa)."""
         return self._scaled_template.decode_value(data, offset)
 
@@ -499,7 +500,7 @@ class IEEE11073FloatTemplate(CodingTemplate):
         """Size: 2 bytes."""
         return 2
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> float:
         """Parse IEEE 11073 SFLOAT format."""
         if len(data) < offset + 2:
             raise ValueError("Insufficient data for IEEE11073 SFLOAT parsing")
@@ -518,7 +519,7 @@ class Float32Template(CodingTemplate):
         """Size: 4 bytes."""
         return 4
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> float:
         """Parse IEEE-754 32-bit float."""
         if len(data) < offset + 4:
             raise ValueError("Insufficient data for float32 parsing")
@@ -550,7 +551,7 @@ class Utf8StringTemplate(CodingTemplate):
         """Size: Variable (0 to max_length)."""
         return self.max_length
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> str:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> str:
         """Parse UTF-8 string from remaining data."""
         if offset >= len(data):
             return ""
@@ -589,7 +590,7 @@ class VectorTemplate(CodingTemplate):
         """Size: 12 bytes (3 x float32)."""
         return 12
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> VectorData:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> VectorData:
         """Parse 3D vector data."""
         if len(data) < offset + 12:
             raise ValueError("Insufficient data for 3D vector parsing (need 12 bytes)")
@@ -617,7 +618,7 @@ class Vector2DTemplate(CodingTemplate):
         """Size: 8 bytes (2 x float32)."""
         return 8
 
-    def decode_value(self, data: bytearray, offset: int = 0) -> Vector2DData:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: Any | None = None) -> Vector2DData:
         """Parse 2D vector data."""
         if len(data) < offset + 8:
             raise ValueError("Insufficient data for 2D vector parsing (need 8 bytes)")

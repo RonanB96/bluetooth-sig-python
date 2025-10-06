@@ -28,6 +28,7 @@ from ..types import (
 )
 from ..types.data_types import CharacteristicData
 from ..types.device_types import DeviceEncryption, DeviceService
+from ..types.gatt_enums import GattProperty
 from ..types.gatt_services import CharacteristicCollection
 from .advertising_parser import AdvertisingParser
 from .connection import ConnectionManagerProtocol
@@ -326,8 +327,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Args:
             char_data: The parsed characteristic data with properties
         """
-        from ..types.gatt_enums import GattProperty
-
         properties = char_data.properties
 
         # Check for encryption requirements

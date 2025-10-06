@@ -1,4 +1,6 @@
 """Non-Methane Volatile Organic Compounds Concentration characteristic
+from __future__ import annotations
+
 implementation."""
 
 from .base import BaseCharacteristic

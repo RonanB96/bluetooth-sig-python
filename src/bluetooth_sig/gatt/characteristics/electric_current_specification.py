@@ -41,7 +41,7 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured ElectricCurrentSpecificationData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> ElectricCurrentSpecificationData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> ElectricCurrentSpecificationData:
         """Parse current specification data (2x uint16 in units of 0.01 A).
 
         Args:

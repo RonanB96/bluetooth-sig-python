@@ -1,5 +1,7 @@
 """PM1 Concentration characteristic implementation."""
 
+from __future__ import annotations
+
 from ...types.gatt_enums import ValueType
 from .base import BaseCharacteristic
 from .templates import ConcentrationTemplate

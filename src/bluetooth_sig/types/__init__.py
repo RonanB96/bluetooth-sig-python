@@ -1,5 +1,7 @@
 """Data types for Bluetooth SIG standards."""
 
+from __future__ import annotations
+
 from .advertising import (
     BLEAdvertisementTypes,
     BLEAdvertisingPDU,

@@ -128,7 +128,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 17  # Ensured consistency with GlucoseMeasurementData
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> GlucoseMeasurementData:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> GlucoseMeasurementData:  # pylint: disable=too-many-locals
         """Parse glucose measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + Base Time(7) + [Time Offset(2)] +

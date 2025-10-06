@@ -87,7 +87,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
     allow_variable_length: bool = False  # Fixed length
 
     def decode_value(  # pylint: disable=too-many-locals
-        self, data: bytearray, ctx: Any | None = None
+        self, data: bytearray, _ctx: Any | None = None
     ) -> GlucoseFeatureData:
         """Parse glucose feature data according to Bluetooth specification.
 

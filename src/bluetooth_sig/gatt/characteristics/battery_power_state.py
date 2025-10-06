@@ -193,7 +193,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
     # value_type to be 'string'. Override to keep metadata consistent.
     _manual_value_type = "string"
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> BatteryPowerStateData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> BatteryPowerStateData:
         """Parse the Battery Level Status value.
 
         The characteristic supports a 1-byte basic format and a 2-byte

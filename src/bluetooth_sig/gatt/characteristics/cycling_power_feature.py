@@ -16,7 +16,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
     capabilities.
     """
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> int:
         """Parse cycling power feature data.
 
         Format: 32-bit feature bitmask (little endian)

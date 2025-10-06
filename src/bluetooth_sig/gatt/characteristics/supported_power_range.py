@@ -40,7 +40,7 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured SupportedPowerRangeData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> SupportedPowerRangeData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> SupportedPowerRangeData:
         """Parse supported power range data (2x sint16 in watts).
 
         Args:

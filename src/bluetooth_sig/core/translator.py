@@ -23,9 +23,16 @@ from ..types.gatt_enums import ValueType
 from ..types.uuid import BluetoothUUID
 
 
-class BluetoothSIGTranslator:
+class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
     """Pure Bluetooth SIG standards translator for characteristic and service
-    interpretation."""
+    interpretation.
+
+    Note: This class intentionally has >20 public methods as it serves as the
+    primary API surface for Bluetooth SIG standards translation, covering
+    characteristic parsing, service discovery, UUID resolution, and registry
+    management. The methods are organized by functionality and reducing them
+    would harm API clarity.
+    """
 
     def __init__(self) -> None:
         """Initialize the SIG translator."""

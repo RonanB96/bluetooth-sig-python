@@ -52,7 +52,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 21  # + Timestamp(7) + UserID(1) + BMI(2) + Height(2) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> WeightMeasurementData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> WeightMeasurementData:
         """Parse weight measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +

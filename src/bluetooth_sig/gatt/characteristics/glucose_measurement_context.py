@@ -232,7 +232,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     )
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> GlucoseMeasurementContextData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> GlucoseMeasurementContextData:
         """Parse glucose measurement context data according to Bluetooth
         specification.
 

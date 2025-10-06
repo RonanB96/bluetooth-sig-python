@@ -1,4 +1,6 @@
 """Utility classes for GATT characteristic parsing and encoding.
+from __future__ import annotations
+
 
 This module provides organized utility classes that characteristics can
 import and use as needed, maintaining logical grouping of functionality
