@@ -20,7 +20,7 @@ class TestTimer:
     def test_timer_basic(self):
         """Test basic timer functionality."""
         with timer("test_operation") as t:
-            time.sleep(0.01)  # Sleep for 0.01 seconds (10ms)
+            time.sleep(0.01)  # Sleep for 0.01 seconds
 
         assert "elapsed" in t
         assert t["elapsed"] >= 0.01

@@ -46,9 +46,7 @@ class TestTranslatorLogging:
         unknown_data = bytes([0x01, 0x02])
 
         # Use a valid UUID format for an unknown characteristic
-        result = translator.parse_characteristic(
-            "00001234-0000-1000-8000-00805F9B34FB", unknown_data
-        )
+        result = translator.parse_characteristic("00001234-0000-1000-8000-00805F9B34FB", unknown_data)
 
         assert not result.parse_success
         info_messages = [r.message for r in caplog.records if r.levelno == logging.INFO]
