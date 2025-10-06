@@ -28,9 +28,9 @@ class TimingResult:
             f"{self.operation}:\n"
             f"  Iterations: {self.iterations}\n"
             f"  Total time: {self.total_time:.4f}s\n"
-            f"  Average:    {self.avg_time*1000:.4f}ms per operation\n"
-            f"  Min:        {self.min_time*1000:.4f}ms\n"
-            f"  Max:        {self.max_time*1000:.4f}ms\n"
+            f"  Average:    {self.avg_time * 1000:.4f}ms per operation\n"
+            f"  Min:        {self.min_time * 1000:.4f}ms\n"
+            f"  Max:        {self.max_time * 1000:.4f}ms\n"
             f"  Throughput: {self.per_second:.0f} ops/sec"
         )
 
@@ -166,9 +166,7 @@ def compare_implementations(
     return results
 
 
-def format_comparison(
-    results: dict[str, TimingResult], baseline: str | None = None
-) -> str:
+def format_comparison(results: dict[str, TimingResult], baseline: str | None = None) -> str:
     """Format comparison results as a human-readable table.
 
     Args:
@@ -184,10 +182,7 @@ def format_comparison(
     lines = ["Performance Comparison:", "=" * 80]
 
     # Header
-    lines.append(
-        f"{'Implementation':<30} {'Avg Time':<15} "
-        f"{'Throughput':<20} {'vs Baseline'}"
-    )
+    lines.append(f"{'Implementation':<30} {'Avg Time':<15} {'Throughput':<20} {'vs Baseline'}")
     lines.append("-" * 80)
 
     baseline_time = None
@@ -195,13 +190,13 @@ def format_comparison(
         baseline_time = results[baseline].avg_time
 
     for name, result in results.items():
-        avg_str = f"{result.avg_time*1000:.4f}ms"
+        avg_str = f"{result.avg_time * 1000:.4f}ms"
         throughput_str = f"{result.per_second:.0f} ops/sec"
 
         if baseline_time and name != baseline:
             ratio = result.avg_time / baseline_time
             if ratio < 1:
-                comparison = f"{1/ratio:.2f}x faster"
+                comparison = f"{1 / ratio:.2f}x faster"
             else:
                 comparison = f"{ratio:.2f}x slower"
         elif name == baseline:

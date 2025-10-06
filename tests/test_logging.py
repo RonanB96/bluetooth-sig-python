@@ -21,10 +21,7 @@ class TestTranslatorLogging:
 
         assert result.parse_success
         # Check that debug logs were captured
-        assert any(
-            "Parsing characteristic" in record.message
-            for record in caplog.records
-        )
+        assert any("Parsing characteristic" in record.message for record in caplog.records)
         assert any("Found parser" in record.message for record in caplog.records)
 
     def test_logging_debug_level(self, caplog):
@@ -36,9 +33,7 @@ class TestTranslatorLogging:
 
         translator.parse_characteristic("2A19", battery_data)
 
-        debug_messages = [
-            r.message for r in caplog.records if r.levelno == logging.DEBUG
-        ]
+        debug_messages = [r.message for r in caplog.records if r.levelno == logging.DEBUG]
         assert len(debug_messages) >= 2  # At least parsing start and success
         assert any("UUID=2A19" in msg for msg in debug_messages)
         assert any("data_len=1" in msg for msg in debug_messages)
@@ -50,7 +45,10 @@ class TestTranslatorLogging:
         translator = BluetoothSIGTranslator()
         unknown_data = bytes([0x01, 0x02])
 
-        result = translator.parse_characteristic("unknown-uuid", unknown_data)
+        # Use a valid UUID format for an unknown characteristic
+        result = translator.parse_characteristic(
+            "00001234-0000-1000-8000-00805F9B34FB", unknown_data
+        )
 
         assert not result.parse_success
         info_messages = [r.message for r in caplog.records if r.levelno == logging.INFO]
@@ -82,9 +80,7 @@ class TestTranslatorLogging:
         results = translator.parse_characteristics(sensor_data)
 
         assert len(results) == 2
-        debug_messages = [
-            r.message for r in caplog.records if r.levelno == logging.DEBUG
-        ]
+        debug_messages = [r.message for r in caplog.records if r.levelno == logging.DEBUG]
         assert any("Batch parsing" in msg for msg in debug_messages)
         assert any("2 characteristics" in msg for msg in debug_messages)
 
@@ -98,9 +94,7 @@ class TestTranslatorLogging:
         translator.parse_characteristic("2A19", battery_data)
 
         # Should have no debug messages at WARNING level
-        debug_messages = [
-            r.message for r in caplog.records if r.levelno == logging.DEBUG
-        ]
+        debug_messages = [r.message for r in caplog.records if r.levelno == logging.DEBUG]
         assert len(debug_messages) == 0
 
     def test_logging_performance_overhead_minimal(self):

@@ -67,9 +67,7 @@ def benchmark_single_characteristic_parsing(session: ProfilingSession) -> None:
     results = compare_implementations(
         {
             "manual": lambda: manual_battery_parse(battery_data),
-            "sig_library": lambda: translator.parse_characteristic(
-                "2A19", battery_data
-            ),
+            "sig_library": lambda: translator.parse_characteristic("2A19", battery_data),
         },
         iterations=iterations,
     )
@@ -150,10 +148,7 @@ def benchmark_batch_parsing(session: ProfilingSession) -> None:
         operation="Individual parse (4 characteristics)",
     )
 
-    print(format_comparison(
-        {"batch": batch_result, "individual": individual_result},
-        baseline="individual"
-    ))
+    print(format_comparison({"batch": batch_result, "individual": individual_result}, baseline="individual"))
 
     session.add_result(batch_result)
 
@@ -183,10 +178,14 @@ def benchmark_uuid_resolution(session: ProfilingSession) -> None:
         operation="Name resolution",
     )
 
-    print(format_comparison({
-        "uuid_lookup": uuid_lookup,
-        "name_resolution": name_resolution,
-    }))
+    print(
+        format_comparison(
+            {
+                "uuid_lookup": uuid_lookup,
+                "name_resolution": name_resolution,
+            }
+        )
+    )
 
     session.add_result(uuid_lookup)
 
@@ -215,8 +214,8 @@ def benchmark_real_world_scenario(session: ProfilingSession) -> None:
 
     print(str(result))
     print("\nFor a device sending notifications every 1 second:")
-    print(f"  CPU time per notification: {result.avg_time*1000:.4f}ms")
-    print(f"  Percentage of 1s interval: {result.avg_time*100:.4f}%")
+    print(f"  CPU time per notification: {result.avg_time * 1000:.4f}ms")
+    print(f"  Percentage of 1s interval: {result.avg_time * 100:.4f}%")
     print(f"  Could handle {int(result.per_second)} concurrent devices")
 
     session.add_result(result)
@@ -232,15 +231,11 @@ def print_summary(session: ProfilingSession) -> None:
     print(f"Total operations measured: {len(session.results)}")
 
     if session.results:
-        avg_throughput = sum(r.per_second for r in session.results) / len(
-            session.results
-        )
-        avg_latency = sum(r.avg_time for r in session.results) / len(
-            session.results
-        )
+        avg_throughput = sum(r.per_second for r in session.results) / len(session.results)
+        avg_latency = sum(r.avg_time for r in session.results) / len(session.results)
 
         print("\nAverage performance across all tests:")
-        print(f"  Latency:    {avg_latency*1000:.4f}ms per operation")
+        print(f"  Latency:    {avg_latency * 1000:.4f}ms per operation")
         print(f"  Throughput: {avg_throughput:.0f} operations/sec")
 
     print("\n" + "=" * 80)
@@ -271,9 +266,7 @@ def print_summary(session: ProfilingSession) -> None:
 
 def main():
     """Run the performance benchmarks."""
-    parser = argparse.ArgumentParser(
-        description="Benchmark Bluetooth SIG library parsing performance"
-    )
+    parser = argparse.ArgumentParser(description="Benchmark Bluetooth SIG library parsing performance")
     parser.add_argument(
         "--log-level",
         choices=["debug", "info", "warning", "error"],
@@ -320,8 +313,9 @@ def main():
         print("\n\n⚠️  Benchmark interrupted by user")
         sys.exit(1)
     except Exception as e:  # pylint: disable=broad-except
-        print(f"\n\n❌ Benchmark failed: {e}")
+        print(f"\n\n❌ Benchmark failed ({type(e).__name__}): {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

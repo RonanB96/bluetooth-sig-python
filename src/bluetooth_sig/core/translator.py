@@ -64,17 +64,13 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             CharacteristicData with parsed value and metadata
         """
-        logger.debug(
-            "Parsing characteristic UUID=%s, data_len=%d", uuid, len(raw_data)
-        )
+        logger.debug("Parsing characteristic UUID=%s, data_len=%d", uuid, len(raw_data))
 
         # Create characteristic instance for parsing
         characteristic = CharacteristicRegistry.create_characteristic(uuid)
 
         if characteristic:
-            logger.debug(
-                "Found parser for UUID=%s: %s", uuid, type(characteristic).__name__
-            )
+            logger.debug("Found parser for UUID=%s: %s", uuid, type(characteristic).__name__)
             # Use the parse_value method; pass context when provided.
             result = characteristic.parse_value(raw_data, ctx)
 
@@ -85,9 +81,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             if result.parse_success:
                 logger.debug("Successfully parsed %s: %s", result.name, result.value)
             else:
-                logger.warning(
-                    "Parse failed for %s: %s", result.name, result.error_message
-                )
+                logger.warning("Parse failed for %s: %s", result.name, result.error_message)
 
             return result
 
