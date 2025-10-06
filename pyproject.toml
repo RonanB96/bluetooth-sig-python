@@ -49,7 +49,7 @@ dev = [
 ]
 test = [
     "pytest==8.4.2",
-    "pytest-asyncio==1.1.0",
+    "pytest-asyncio==1.2.0",
     "pytest-cov>=6.2,<8",
     "bleak>=0.21.0",
     "bleak-retry-connector>=2.13.1,<3",
