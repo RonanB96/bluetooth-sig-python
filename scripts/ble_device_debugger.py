@@ -141,6 +141,7 @@ async def debug_ble_device(target_address: str) -> None:
     except Exception as e:
         print(f"❌ Connection error: {e}")
         import traceback
+
         traceback.print_exc()
 
 

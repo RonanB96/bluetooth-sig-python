@@ -16,7 +16,8 @@ from bluetooth_sig.device.connection import ConnectionManagerProtocol
 
 
 class BleakRetryConnectionManager(ConnectionManagerProtocol):
-    """Connection manager using Bleak with retry connector for robust BLE communication."""
+    """Connection manager using Bleak with retry connector for robust BLE
+    communication."""
 
     def __init__(self, address: str, timeout: float = 30.0, max_attempts: int = 3):
         self.address = address
@@ -60,9 +61,7 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
         char_uuid: str,
         callback: Callable[[str, bytes], None],
     ) -> None:
-        def adapted_callback(
-            characteristic: BleakGATTCharacteristic, data: bytearray
-        ) -> None:
+        def adapted_callback(characteristic: BleakGATTCharacteristic, data: bytearray) -> None:
             callback(characteristic.uuid, bytes(data))
 
         await self.client.start_notify(char_uuid, adapted_callback)
@@ -177,7 +176,8 @@ async def discover_services_bleak_retry(  # pylint: disable=too-many-locals
     timeout: float = 10.0,
     max_attempts: int = 3,
 ) -> dict[str, Any]:
-    """Discover services and characteristics from a BLE device using bleak-retry.
+    """Discover services and characteristics from a BLE device using bleak-
+    retry.
 
     Args:
         address: Device address
@@ -273,7 +273,8 @@ async def handle_notifications_bleak_retry(  # pylint: disable=too-many-locals,t
     timeout: float = 10.0,
     max_attempts: int = 3,
 ) -> None:
-    """Handle BLE notifications using bleak-retry with comprehensive retry logic.
+    """Handle BLE notifications using bleak-retry with comprehensive retry
+    logic.
 
     Args:
         address: BLE device address
@@ -292,9 +293,7 @@ async def handle_notifications_bleak_retry(  # pylint: disable=too-many-locals,t
 
     notification_count = 0
 
-    def notification_handler(
-        characteristic: BleakGATTCharacteristic, data: bytearray
-    ) -> None:
+    def notification_handler(characteristic: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle incoming notification data."""
         nonlocal notification_count
         notification_count += 1
@@ -356,9 +355,7 @@ async def handle_notifications_bleak_retry(  # pylint: disable=too-many-locals,t
 
         # Check if characteristic supports notifications
         if "notify" not in target_char.properties:
-            print(
-                f"   ⚠️  Warning: Characteristic {characteristic_uuid} may not support notifications"
-            )
+            print(f"   ⚠️  Warning: Characteristic {characteristic_uuid} may not support notifications")
             print(f"      Properties: {target_char.properties}")
 
         # Enable notifications

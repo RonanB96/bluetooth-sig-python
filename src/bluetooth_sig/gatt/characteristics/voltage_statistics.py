@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 
@@ -16,18 +17,16 @@ class VoltageStatisticsData:
     minimum: float  # Minimum voltage in Volts
     maximum: float  # Maximum voltage in Volts
     average: float  # Average voltage in Volts
-    unit: str = "V"
 
     def __post_init__(self) -> None:
         """Validate voltage statistics data."""
         # Validate logical order
         if self.minimum > self.maximum:
-            raise ValueError(
-                f"Minimum voltage {self.minimum} V cannot be greater than maximum {self.maximum} V"
-            )
+            raise ValueError(f"Minimum voltage {self.minimum} V cannot be greater than maximum {self.maximum} V")
         if not self.minimum <= self.average <= self.maximum:
             raise ValueError(
-                f"Average voltage {self.average} V must be between minimum {self.minimum} V and maximum {self.maximum} V"
+                f"Average voltage {self.average} V must be between "
+                f"minimum {self.minimum} V and maximum {self.maximum} V"
             )
 
         # Validate range for uint16 with 1/64 V resolution (0 to ~1024 V)
@@ -43,7 +42,6 @@ class VoltageStatisticsData:
                 )
 
 
-@dataclass
 class VoltageStatisticsCharacteristic(BaseCharacteristic):
     """Voltage Statistics characteristic.
 
@@ -51,11 +49,10 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Voltage Statistics"
-    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
+    # Override since decode_value returns structured VoltageStatisticsData
+    _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> VoltageStatisticsData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> VoltageStatisticsData:
         """Parse voltage statistics data (3x uint16 in units of 1/64 V).
 
         Args:
@@ -91,10 +88,7 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
             Encoded bytes representing the voltage statistics (3x uint16, 1/64 V resolution)
         """
         if not isinstance(data, VoltageStatisticsData):
-            raise TypeError(
-                f"Voltage statistics data must be a VoltageStatisticsData, "
-                f"got {type(data).__name__}"
-            )
+            raise TypeError(f"Voltage statistics data must be a VoltageStatisticsData, got {type(data).__name__}")
 
         # Convert Volts to raw values (multiply by 64 for 1/64 V resolution)
         min_voltage_raw = round(data.minimum * 64)
@@ -117,8 +111,3 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
         result.extend(avg_voltage_raw.to_bytes(2, byteorder="little", signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "V"

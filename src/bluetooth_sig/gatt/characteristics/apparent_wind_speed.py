@@ -1,12 +1,12 @@
 """Apparent Wind Speed characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import WindSpeedCharacteristic
+from .base import BaseCharacteristic
+from .templates import ScaledUint16Template
 
 
-@dataclass
-class ApparentWindSpeedCharacteristic(WindSpeedCharacteristic):
+class ApparentWindSpeedCharacteristic(BaseCharacteristic):
     """Apparent Wind Speed measurement characteristic."""
 
-    _characteristic_name: str = "Apparent Wind Speed"
+    _template = ScaledUint16Template()

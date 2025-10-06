@@ -69,6 +69,4 @@ class DebugUtils:
         expected_size = struct.calcsize(format_string)
         actual_size = len(data)
         if actual_size != expected_size:
-            raise ValueError(
-                f"Data size {actual_size} doesn't match format '{format_string}' size {expected_size}"
-            )
+            raise ValueError(f"Data size {actual_size} doesn't match format '{format_string}' size {expected_size}")

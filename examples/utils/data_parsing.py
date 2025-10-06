@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Data parsing utilities for BLE examples.
 
-This module provides common data parsing and display functions for BLE characteristics.
+This module provides common data parsing and display functions for BLE
+characteristics.
 """
 
 from __future__ import annotations
@@ -104,9 +105,7 @@ def _parse_characteristic_data(
         return None
 
 
-def _perform_sig_analysis(
-    results: dict[str, dict[str, Any]], _translator: BluetoothSIGTranslator
-) -> None:
+def _perform_sig_analysis(results: dict[str, dict[str, Any]], _translator: BluetoothSIGTranslator) -> None:
     """Perform comprehensive SIG analysis on collected results."""
     print("\n🧬 Bluetooth SIG Analysis:")
     print("=" * 50)

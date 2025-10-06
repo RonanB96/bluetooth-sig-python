@@ -1,21 +1,21 @@
-"""Non-Methane Volatile Organic Compounds Concentration characteristic implementation."""
+"""Non-Methane Volatile Organic Compounds Concentration characteristic
+from __future__ import annotations
 
-from dataclasses import dataclass
+implementation."""
 
-from .templates import IEEE11073FloatCharacteristic
+from .base import BaseCharacteristic
+from .templates import IEEE11073FloatTemplate
 
 
-@dataclass
-class NonMethaneVOCConcentrationCharacteristic(IEEE11073FloatCharacteristic):
-    """Non-Methane Volatile Organic Compounds concentration characteristic (0x2BD3).
+class NonMethaneVOCConcentrationCharacteristic(BaseCharacteristic):
+    """Non-Methane Volatile Organic Compounds concentration characteristic
+    (0x2BD3).
 
     Uses IEEE 11073 SFLOAT format (medfloat16) as per SIG specification.
     Unit: kg/m³ (kilogram per cubic meter)
     """
 
-    _characteristic_name: str = "Non-Methane Volatile Organic Compounds Concentration"
+    _template = IEEE11073FloatTemplate()
 
-    @property
-    def unit(self) -> str:
-        """Return unit as per SIG specification."""
-        return "kg/m³"
+    _characteristic_name: str = "Non-Methane Volatile Organic Compounds Concentration"
+    _manual_unit: str = "kg/m³"  # Unit as per SIG specification

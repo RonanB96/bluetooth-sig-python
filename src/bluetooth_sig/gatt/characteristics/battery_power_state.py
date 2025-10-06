@@ -86,9 +86,7 @@ class BatteryChargeState(IntEnum):
     NOT_CHARGING = 3
 
     def __str__(self) -> str:
-        return {0: "unknown", 1: "charging", 2: "discharging", 3: "not_charging"}[
-            self.value
-        ]
+        return {0: "unknown", 1: "charging", 2: "discharging", 3: "not_charging"}[self.value]
 
     @classmethod
     def from_byte(cls, byte_val: int) -> BatteryChargeState:
@@ -180,23 +178,22 @@ class BatteryPowerState:
     charging_fault_reason: str | list[str] | None = None
 
 
-@dataclass
 class BatteryPowerStateCharacteristic(BaseCharacteristic):
     """Battery Level Status characteristic (0x2BED).
 
-    This characteristic encodes battery presence, external power sources,
-    charging state, charge level and optional extended charging information.
+    This characteristic encodes battery presence, external power
+    sources, charging state, charge level and optional extended charging
+    information.
     """
 
-    _characteristic_name: str = "Battery Level Status"
+    _characteristic_name: str | None = "Battery Level Status"
+
     # YAML describes this as boolean[] which maps to 'string' in the registry;
     # decode_value returns a dict, but tests and registry expect the declared
     # value_type to be 'string'. Override to keep metadata consistent.
-    _manual_value_type: str = "string"
+    _manual_value_type = "string"
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> BatteryPowerStateData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> BatteryPowerStateData:
         """Parse the Battery Level Status value.
 
         The characteristic supports a 1-byte basic format and a 2-byte
@@ -212,39 +209,27 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         # Full SIG format: Flags (1 byte) + Power State (2 bytes little-endian)
         if len(data) >= 3:
             flags = int(data[0])
-            power_state_raw = int.from_bytes(
-                data[1:3], byteorder="little", signed=False
-            )
+            power_state_raw = int.from_bytes(data[1:3], byteorder="little", signed=False)
 
             parsed = self._parse_power_state_16(power_state_raw)
 
             # validate/advance optional fields indicated in Flags
             offset = 3
             # Identifier needs an explicit, specific error message in tests
-            if BitFieldUtils.test_bit(
-                flags, BatteryPowerStateBits.IDENTIFIER_PRESENT_BIT
-            ):
+            if BitFieldUtils.test_bit(flags, BatteryPowerStateBits.IDENTIFIER_PRESENT_BIT):
                 if len(data) < offset + 2:
-                    raise ValueError(
-                        "Identifier indicated by Flags but missing from payload"
-                    )
+                    raise ValueError("Identifier indicated by Flags but missing from payload")
                 offset += 2
 
             # Combine remaining optional field checks into one branch to keep
             # static analysis branch count down.
             remaining_needed = offset
-            if BitFieldUtils.test_bit(
-                flags, BatteryPowerStateBits.BATTERY_LEVEL_PRESENT_BIT
-            ):
+            if BitFieldUtils.test_bit(flags, BatteryPowerStateBits.BATTERY_LEVEL_PRESENT_BIT):
                 remaining_needed += 1
-            if BitFieldUtils.test_bit(
-                flags, BatteryPowerStateBits.ADDITIONAL_INFO_PRESENT_BIT
-            ):
+            if BitFieldUtils.test_bit(flags, BatteryPowerStateBits.ADDITIONAL_INFO_PRESENT_BIT):
                 remaining_needed += 1
             if len(data) < remaining_needed:
-                raise ValueError(
-                    "Flags indicate additional fields are missing from payload"
-                )
+                raise ValueError("Flags indicate additional fields are missing from payload")
             # We don't need to advance offset further here because we only
             # validate presence (values are not returned in canonical output).
 
@@ -275,21 +260,13 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             )
             if fault_raw != 0:
                 fault_reasons: list[str] = []
-                if BitFieldUtils.test_bit(
-                    fault_raw, BatteryPowerStateBits.BATTERY_FAULT_BIT
-                ):
+                if BitFieldUtils.test_bit(fault_raw, BatteryPowerStateBits.BATTERY_FAULT_BIT):
                     fault_reasons.append("battery_fault")
-                if BitFieldUtils.test_bit(
-                    fault_raw, BatteryPowerStateBits.EXTERNAL_POWER_FAULT_BIT
-                ):
+                if BitFieldUtils.test_bit(fault_raw, BatteryPowerStateBits.EXTERNAL_POWER_FAULT_BIT):
                     fault_reasons.append("external_power_fault")
-                if BitFieldUtils.test_bit(
-                    fault_raw, BatteryPowerStateBits.OTHER_FAULT_BIT
-                ):
+                if BitFieldUtils.test_bit(fault_raw, BatteryPowerStateBits.OTHER_FAULT_BIT):
                     fault_reasons.append("other_fault")
-                charging_fault_reason = (
-                    fault_reasons[0] if len(fault_reasons) == 1 else fault_reasons
-                )
+                charging_fault_reason = fault_reasons[0] if len(fault_reasons) == 1 else fault_reasons
 
             return BatteryPowerStateData(
                 raw_value=state_raw,
@@ -386,14 +363,13 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
     def _parse_power_state_16(self, power_state_raw: int) -> BatteryPowerState:
         """Parse the 16-bit Power State bitfield into its components.
 
-        Returns a BatteryPowerState dataclass with the parsed components.
+        Returns a BatteryPowerState dataclass with the parsed
+        components.
         """
         # battery present (bit 0): 0 = No/Not present, 1 = Present
         battery_present = (
             BatteryPresentState.PRESENT
-            if BitFieldUtils.test_bit(
-                power_state_raw, BatteryPowerStateBits.BATTERY_PRESENT_EXT_BIT
-            )
+            if BitFieldUtils.test_bit(power_state_raw, BatteryPowerStateBits.BATTERY_PRESENT_EXT_BIT)
             else BatteryPresentState.NOT_PRESENT
         )
 
@@ -450,16 +426,12 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         fault_reasons: list[str] = []
         if BitFieldUtils.test_bit(fault_bits, BatteryPowerStateBits.BATTERY_FAULT_BIT):
             fault_reasons.append("battery_fault")
-        if BitFieldUtils.test_bit(
-            fault_bits, BatteryPowerStateBits.EXTERNAL_POWER_FAULT_BIT
-        ):
+        if BitFieldUtils.test_bit(fault_bits, BatteryPowerStateBits.EXTERNAL_POWER_FAULT_BIT):
             fault_reasons.append("external_power_fault")
         if BitFieldUtils.test_bit(fault_bits, BatteryPowerStateBits.OTHER_FAULT_BIT):
             fault_reasons.append("other_fault")
 
-        charging_fault_reason = (
-            fault_reasons[0] if len(fault_reasons) == 1 else fault_reasons or None
-        )
+        charging_fault_reason = fault_reasons[0] if len(fault_reasons) == 1 else fault_reasons or None
 
         return BatteryPowerState(
             battery_present=battery_present,
@@ -481,14 +453,10 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         battery_present = BatteryPresentState.from_byte(battery_present_raw)
 
         wired_external_power_connected = bool(
-            BitFieldUtils.test_bit(
-                state_raw, BatteryPowerStateBits.WIRED_POWER_CONNECTED_BIT
-            )
+            BitFieldUtils.test_bit(state_raw, BatteryPowerStateBits.WIRED_POWER_CONNECTED_BIT)
         )
         wireless_external_power_connected = bool(
-            BitFieldUtils.test_bit(
-                state_raw, BatteryPowerStateBits.WIRELESS_POWER_CONNECTED_BIT
-            )
+            BitFieldUtils.test_bit(state_raw, BatteryPowerStateBits.WIRELESS_POWER_CONNECTED_BIT)
         )
 
         charge_state_raw = BitFieldUtils.extract_bit_field(
@@ -522,8 +490,3 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             battery_charge_state=battery_charge_state,
             battery_charge_level=battery_charge_level,
         )
-
-    @property
-    def unit(self) -> str:
-        """Unit for this characteristic (none)."""
-        return ""

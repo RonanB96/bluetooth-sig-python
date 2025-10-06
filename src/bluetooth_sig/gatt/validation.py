@@ -1,7 +1,8 @@
 """Enhanced validation utilities for strict type checking and data validation.
 
-This module provides additional validation capabilities beyond the basic utils,
-focusing on strict type safety and comprehensive data integrity checks.
+This module provides additional validation capabilities beyond the basic
+utils, focusing on strict type safety and comprehensive data integrity
+checks.
 """
 
 from __future__ import annotations
@@ -52,9 +53,7 @@ class ValidationRule:
 
         # Custom validation
         if self.custom_validator and not self.custom_validator(value):
-            message = (
-                self.error_message or f"Custom validation failed for {self.field_name}"
-            )
+            message = self.error_message or f"Custom validation failed for {self.field_name}"
             raise DataValidationError(self.field_name, value, message)
 
 
@@ -201,9 +200,7 @@ def create_range_validator(
     return validator
 
 
-def validate_measurement_data(
-    data: dict[str, Any], measurement_type: str
-) -> dict[str, Any]:
+def validate_measurement_data(data: dict[str, Any], measurement_type: str) -> dict[str, Any]:
     """Validate measurement data based on type and return validated data."""
     if measurement_type == "heart_rate":
         HEART_RATE_VALIDATOR.validate_dict(data)

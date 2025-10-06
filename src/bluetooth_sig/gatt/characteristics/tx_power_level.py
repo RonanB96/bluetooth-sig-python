@@ -1,18 +1,18 @@
 """Tx Power Level characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import SimpleSint8Characteristic
+from .base import BaseCharacteristic
+from .templates import Sint8Template
 
 
-@dataclass
-class TxPowerLevelCharacteristic(SimpleSint8Characteristic):
+class TxPowerLevelCharacteristic(BaseCharacteristic):
     """Tx Power Level characteristic.
 
     Measures transmit power level in dBm.
     """
 
-    _characteristic_name: str = "Tx Power Level"
+    _template = Sint8Template()
 
-    # Template configuration
-    measurement_unit: str = "dBm"
+    _characteristic_name: str = "Tx Power Level"
+    _manual_unit: str = "dBm"  # Override template's "units" default

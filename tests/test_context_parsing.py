@@ -3,7 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from bluetooth_sig.gatt.context import CharacteristicContext, DeviceInfo
-from bluetooth_sig.types import CharacteristicData
+from bluetooth_sig.types import CharacteristicData, CharacteristicInfo
+from bluetooth_sig.types.gatt_enums import ValueType
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 @dataclass
@@ -43,9 +45,14 @@ class MeasurementCharacteristic:
 
 def test_context_parsing_simple():
     # Create fake parsed calibration
-    calib_data = CharacteristicData(
-        uuid="calib", name="Calibration", value=2, raw_data=b"\x02"
+    calib_info = CharacteristicInfo(
+        uuid=BluetoothUUID("2A19"),  # Use a valid UUID format
+        name="Calibration",
+        value_type=ValueType.INT,
+        unit="",
+        properties=[],
     )
+    calib_data = CharacteristicData(info=calib_info, value=2, raw_data=b"\x02")
 
     ctx = CharacteristicContext(
         device_info=DeviceInfo(address="00:11:22:33:44:55"),

@@ -9,6 +9,8 @@ from typing import Any
 
 import yaml
 
+from bluetooth_sig.types.uuid import BluetoothUUID
+
 
 @dataclass
 class FieldInfo:
@@ -32,7 +34,7 @@ class UnitInfo:
 class CharacteristicSpec:
     """Characteristic specification from cross-file YAML references."""
 
-    uuid: str
+    uuid: BluetoothUUID
     name: str
     field_info: FieldInfo | None = None
     unit_info: UnitInfo | None = None
@@ -85,7 +87,7 @@ class YAMLCrossReferenceResolver:
         self.bluetooth_sig_path = bluetooth_sig_path or self._find_bluetooth_sig_path()
         self._gss_specs: dict[str, dict[str, Any]] = {}
         self._unit_mappings: dict[str, str] = {}
-        self._characteristic_uuids: dict[str, str] = {}
+        self._characteristic_uuids: dict[str, BluetoothUUID] = {}
 
         # Lazy loading flags - only load when needed
         self._characteristic_uuids_loaded = False
@@ -99,17 +101,15 @@ class YAMLCrossReferenceResolver:
             logging.warning("YAML characteristic UUID loading failed: %s", e)
 
     def _find_bluetooth_sig_path(self) -> Path:
-        """Find bluetooth_sig submodule path by searching for project root markers."""
+        """Find bluetooth_sig submodule path by searching for project root
+        markers."""
         # Search upward from current file location for project root
         current = Path(__file__).parent
         while current != current.parent:  # Stop at filesystem root
             # Look for project root markers
             if (current / "pyproject.toml").exists() or (current / ".git").exists():
                 bluetooth_sig = current / "bluetooth_sig"
-                if (
-                    bluetooth_sig.exists()
-                    and (bluetooth_sig / "assigned_numbers").exists()
-                ):
+                if bluetooth_sig.exists() and (bluetooth_sig / "assigned_numbers").exists():
                     return bluetooth_sig
             current = current.parent
 
@@ -154,12 +154,7 @@ class YAMLCrossReferenceResolver:
         if self._characteristic_uuids_loaded:
             return
 
-        uuid_file = (
-            self.bluetooth_sig_path
-            / "assigned_numbers"
-            / "uuids"
-            / "characteristic_uuids.yaml"
-        )
+        uuid_file = self.bluetooth_sig_path / "assigned_numbers" / "uuids" / "characteristic_uuids.yaml"
         if not uuid_file.exists():
             return
 
@@ -175,13 +170,14 @@ class YAMLCrossReferenceResolver:
                             uuid = f"{uuid_raw:04X}"
                         else:
                             uuid = str(uuid_raw).replace("0x", "").upper()
-                        self._characteristic_uuids[name] = uuid
+                        self._characteristic_uuids[name] = BluetoothUUID(uuid)
                 self._characteristic_uuids_loaded = True
         except (OSError, yaml.YAMLError) as e:
             logging.warning("Failed to load characteristic UUIDs: %s", e)
 
     def _load_gss_specifications(self) -> None:
-        """Load GSS YAML files for data types, field sizes, and unit references."""
+        """Load GSS YAML files for data types, field sizes, and unit
+        references."""
         gss_dir = self.bluetooth_sig_path / "gss"
         if not gss_dir.exists():
             return
@@ -206,9 +202,7 @@ class YAMLCrossReferenceResolver:
 
     def _load_unit_mappings(self) -> None:
         """Load unit symbol mappings from units.yaml."""
-        units_file = (
-            self.bluetooth_sig_path / "assigned_numbers" / "uuids" / "units.yaml"
-        )
+        units_file = self.bluetooth_sig_path / "assigned_numbers" / "uuids" / "units.yaml"
         if not units_file.exists():
             return
 
@@ -280,9 +274,7 @@ class YAMLCrossReferenceResolver:
         # Return empty string if no symbol can be extracted
         return ""
 
-    def resolve_characteristic_spec(
-        self, characteristic_name: str
-    ) -> CharacteristicSpec | None:
+    def resolve_characteristic_spec(self, characteristic_name: str) -> CharacteristicSpec | None:
         """Characteristic resolution with cross-file YAML references."""
         # 1. Get UUID from characteristic_uuids.yaml (already loaded)
         uuid = self._characteristic_uuids.get(characteristic_name)
@@ -314,9 +306,7 @@ class YAMLCrossReferenceResolver:
 
                 # Extract base unit from description
                 if "Base Unit:" in field_description:
-                    base_unit_line = (
-                        field_description.split("Base Unit:")[1].split("\n")[0].strip()
-                    )
+                    base_unit_line = field_description.split("Base Unit:")[1].split("\n")[0].strip()
                     base_unit = base_unit_line
                     unit_id = base_unit_line
 
@@ -350,7 +340,8 @@ class YAMLCrossReferenceResolver:
         return data_type.startswith("sint") or data_type in signed_types
 
     def get_byte_order_hint(self) -> str:
-        """Get byte order hint (Bluetooth SIG uses little-endian by convention)."""
+        """Get byte order hint (Bluetooth SIG uses little-endian by
+        convention)."""
         return "little"
 
 

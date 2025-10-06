@@ -1,17 +1,18 @@
 """Average Current characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import ScaledUint16Characteristic
+from .base import BaseCharacteristic
+from .templates import ScaledUint16Template
 
 
-@dataclass
-class AverageCurrentCharacteristic(ScaledUint16Characteristic):
+class AverageCurrentCharacteristic(BaseCharacteristic):
     """Average Current characteristic.
 
     Measures average electric current with 0.01 A resolution.
     """
 
-    _characteristic_name: str = "Average Current"
+    _template = ScaledUint16Template()
+
+    _manual_unit: str = "A"  # Override template's "units" default
     resolution: float = 0.01
-    measurement_unit: str = "A"

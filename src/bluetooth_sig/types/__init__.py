@@ -1,5 +1,7 @@
 """Data types for Bluetooth SIG standards."""
 
+from __future__ import annotations
+
 from .advertising import (
     BLEAdvertisementTypes,
     BLEAdvertisingPDU,
@@ -15,7 +17,9 @@ from .context import CharacteristicContext, DeviceInfo
 from .data_types import (
     CharacteristicData,
     CharacteristicInfo,
+    CharacteristicRegistration,
     ServiceInfo,
+    ServiceRegistration,
     SIGInfo,
     ValidationResult,
 )
@@ -32,6 +36,7 @@ __all__ = [
     "CharacteristicData",
     "CharacteristicDataProtocol",
     "CharacteristicInfo",
+    "CharacteristicRegistration",
     "DeviceAdvertiserData",
     "DeviceInfo",
     "ExtendedHeaderMode",
@@ -40,6 +45,7 @@ __all__ = [
     "PDUFlags",
     "PDUType",
     "ServiceInfo",
+    "ServiceRegistration",
     "SIGInfo",
     "ValidationResult",
 ]

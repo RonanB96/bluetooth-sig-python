@@ -89,12 +89,12 @@ class WeightScaleFeatureData:
             raise ValueError("Raw value must be a 32-bit unsigned integer")
 
 
-@dataclass
 class WeightScaleFeatureCharacteristic(BaseCharacteristic):
     """Weight Scale Feature characteristic (0x2A9E).
 
-    Used to indicate which optional features are supported by the weight scale.
-    This is a read-only characteristic that describes device capabilities.
+    Used to indicate which optional features are supported by the weight
+    scale. This is a read-only characteristic that describes device
+    capabilities.
     """
 
     _characteristic_name: str = "Weight Scale Feature"
@@ -103,10 +103,9 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
     max_length: int = 4  # Features(4) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> WeightScaleFeatureData:
-        """Parse weight scale feature data according to Bluetooth specification.
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> WeightScaleFeatureData:
+        """Parse weight scale feature data according to Bluetooth
+        specification.
 
         Format: Features(4 bytes) - bitmask indicating supported features
 
@@ -127,12 +126,8 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
         # Parse feature flags according to specification
         return WeightScaleFeatureData(
             raw_value=features_raw,
-            timestamp_supported=bool(
-                features_raw & WeightScaleFeatures.TIMESTAMP_SUPPORTED
-            ),
-            multiple_users_supported=bool(
-                features_raw & WeightScaleFeatures.MULTIPLE_USERS_SUPPORTED
-            ),
+            timestamp_supported=bool(features_raw & WeightScaleFeatures.TIMESTAMP_SUPPORTED),
+            multiple_users_supported=bool(features_raw & WeightScaleFeatures.MULTIPLE_USERS_SUPPORTED),
             bmi_supported=bool(features_raw & WeightScaleFeatures.BMI_SUPPORTED),
             weight_measurement_resolution=self._get_weight_resolution(features_raw),
             height_measurement_resolution=self._get_height_resolution(features_raw),
@@ -209,8 +204,3 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
             return HeightMeasurementResolution(resolution_bits)
         except ValueError:
             return HeightMeasurementResolution.NOT_SPECIFIED
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""  # Feature characteristic has no unit

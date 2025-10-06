@@ -9,11 +9,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
+from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
+from bluetooth_sig.gatt.characteristics.temperature import TemperatureCharacteristic
 from bluetooth_sig.gatt.services.battery_service import BatteryService
 from bluetooth_sig.gatt.services.environmental_sensing import (
     EnvironmentalSensingService,
 )
 from bluetooth_sig.gatt.uuid_registry import UuidRegistry
+from bluetooth_sig.types.gatt_services import ServiceDiscoveryData
 
 
 @pytest.fixture(scope="session")
@@ -124,29 +128,26 @@ def test_service_class_name_resolution():
     battery = BatteryService()
     env = EnvironmentalSensingService()
 
-    assert battery.SERVICE_UUID == "180F", "Wrong Battery Service UUID"
+    assert battery.uuid == "180F", "Wrong Battery Service UUID"
     assert battery.name == "Battery", "Wrong Battery Service name"
 
-    assert env.SERVICE_UUID == "181A", "Wrong Environmental Service UUID"
+    assert env.uuid == "181A", "Wrong Environmental Service UUID"
     assert env.name == "Environmental Sensing", "Wrong Environmental Service name"
 
 
 def test_characteristic_discovery():
     """Test discovery and creation of characteristics from device data."""
-    # Mock device data
-    mock_battery_data = {
-        "00002A19-0000-1000-8000-00805F9B34FB": {  # Battery Level
-            "properties": ["read", "notify"]
-        }
-    }
+    # Use characteristic classes to get proper SIG UUIDs
+    battery_char = BatteryLevelCharacteristic()
+    temp_char = TemperatureCharacteristic()
+    humidity_char = HumidityCharacteristic()
 
-    mock_env_data = {
-        "00002A6E-0000-1000-8000-00805F9B34FB": {  # Temperature
-            "properties": ["read", "notify"]
-        },
-        "00002A6F-0000-1000-8000-00805F9B34FB": {  # Humidity
-            "properties": ["read", "notify"]
-        },
+    # Mock device data using CharacteristicInfo from the characteristic instances
+    mock_battery_data: ServiceDiscoveryData = {battery_char.uuid: battery_char.info}
+
+    mock_env_data: ServiceDiscoveryData = {
+        temp_char.uuid: temp_char.info,
+        humidity_char.uuid: humidity_char.info,
     }
 
     # Test Battery Service characteristic discovery
@@ -156,19 +157,13 @@ def test_characteristic_discovery():
     assert len(battery.characteristics) == 1, "Incorrect battery char count"
     char = next(iter(battery.characteristics.values()))
     assert char.name == "Battery Level"
-    from bluetooth_sig.types.gatt_enums import GattProperty
-
+    # Properties come from YAML or class definition, not from discovery data
     assert char.properties is not None
-    assert GattProperty.READ in char.properties
-    assert GattProperty.NOTIFY in char.properties
-
     # Test Environmental Service characteristic discovery
     env = EnvironmentalSensingService()
     env.process_characteristics(mock_env_data)
 
-    assert len(env.characteristics) == 2, (
-        "Wrong number of environmental characteristics"
-    )
+    assert len(env.characteristics) == 2, "Wrong number of environmental characteristics"
     chars = list(env.characteristics.values())
     char_names = {c.name for c in chars}
     assert "Temperature" in char_names
@@ -187,26 +182,16 @@ def test_full_uuid_lookup(mock_uuid_registry: UuidRegistry):
 
 def test_invalid_uuid_lookup(mock_uuid_registry: UuidRegistry):
     """Test lookup behavior with invalid UUIDs."""
-    assert mock_uuid_registry.get_service_info("0000") is None, (
-        "Should return None for invalid service"
-    )
-    assert mock_uuid_registry.get_characteristic_info("0000") is None, (
-        "Should return None for invalid characteristic"
-    )
+    assert mock_uuid_registry.get_service_info("0000") is None, "Should return None for invalid service"
+    assert mock_uuid_registry.get_characteristic_info("0000") is None, "Should return None for invalid characteristic"
 
 
 def test_yaml_file_presence():
     """Test that required YAML files exist."""
-    base_path = (
-        Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
-    )
+    base_path = Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
-    assert (base_path / "service_uuids.yaml").exists(), (
-        "Service UUIDs YAML file missing"
-    )
-    assert (base_path / "characteristic_uuids.yaml").exists(), (
-        "Characteristic UUIDs YAML file missing"
-    )
+    assert (base_path / "service_uuids.yaml").exists(), "Service UUIDs YAML file missing"
+    assert (base_path / "characteristic_uuids.yaml").exists(), "Characteristic UUIDs YAML file missing"
 
 
 @pytest.fixture(scope="session")
@@ -214,9 +199,7 @@ def yaml_data() -> dict[str, Any]:
     """Load YAML data once per session for performance."""
     import yaml
 
-    base_path = (
-        Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
-    )
+    base_path = Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
     # Load service data
     service_file = base_path / "service_uuids.yaml"
@@ -262,9 +245,7 @@ def test_direct_yaml_loading(yaml_data: dict[str, Any]) -> None:
     assert battery_service is not None, "Failed to find Battery Service in YAML"
     assert env_service is not None, "Failed to find Environmental Service in YAML"
     assert battery_service["name"] == "Battery", "Wrong Battery Service name in YAML"
-    assert env_service["name"] == "Environmental Sensing", (
-        "Wrong Environmental Service name in YAML"
-    )
+    assert env_service["name"] == "Environmental Sensing", "Wrong Environmental Service name in YAML"
 
     assert "uuids" in char_data, "Characteristic YAML should have 'uuids' key"
     assert isinstance(char_data["uuids"], list), "Characteristic UUIDs should be a list"
@@ -288,9 +269,7 @@ def test_direct_yaml_loading(yaml_data: dict[str, Any]) -> None:
         elif uuid == "2A6F":  # Humidity
             humidity = char
 
-    assert battery_level is not None, (
-        "Failed to find Battery Level characteristic in YAML"
-    )
+    assert battery_level is not None, "Failed to find Battery Level characteristic in YAML"
     assert temperature is not None, "Failed to find Temperature characteristic in YAML"
     assert humidity is not None, "Failed to find Humidity characteristic in YAML"
 
@@ -298,3 +277,24 @@ def test_direct_yaml_loading(yaml_data: dict[str, Any]) -> None:
     assert battery_level["name"] == "Battery Level", "Wrong Battery Level name in YAML"
     assert temperature["name"] == "Temperature", "Wrong Temperature name in YAML"
     assert humidity["name"] == "Humidity", "Wrong Humidity name in YAML"
+
+
+class TestBluetoothUUID:
+    """Tests for BluetoothUUID utility methods."""
+
+    def test_sig_characteristic_uuid_detection(self) -> None:
+        """Test SIG characteristic UUID detection logic."""
+        from bluetooth_sig.types.uuid import BluetoothUUID
+
+        # Test SIG characteristic UUIDs (should return True)
+        assert BluetoothUUID("2A19").is_sig_characteristic() is True  # Battery Level
+        assert BluetoothUUID("2A37").is_sig_characteristic() is True  # Heart Rate
+        assert BluetoothUUID("2A00").is_sig_characteristic() is True  # Device Name
+        assert BluetoothUUID("2C24").is_sig_characteristic() is True  # Upper range
+
+        # Test non-SIG UUIDs (should return False)
+        assert BluetoothUUID("12345678-1234-1234-1234-123456789ABC").is_sig_characteristic() is False
+        assert BluetoothUUID("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF").is_sig_characteristic() is False
+        assert BluetoothUUID("1800").is_sig_characteristic() is False  # Service UUID
+        assert BluetoothUUID("29FF").is_sig_characteristic() is False  # Below SIG range
+        assert BluetoothUUID("2C25").is_sig_characteristic() is False  # Above SIG range

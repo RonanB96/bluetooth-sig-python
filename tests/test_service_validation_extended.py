@@ -1,5 +1,3 @@
-"""Additional edge case tests for service validation functionality."""
-
 from __future__ import annotations
 
 from typing import cast
@@ -14,6 +12,7 @@ from bluetooth_sig.gatt.services import (
     ServiceHealthStatus,
 )
 from bluetooth_sig.types.gatt_enums import GattProperty
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 class TestServiceValidationEdgeCasesExtended:
@@ -23,10 +22,8 @@ class TestServiceValidationEdgeCasesExtended:
         """Test service validation with characteristics not in registry."""
         service = BatteryService()
         # Add a characteristic with unknown UUID using BatteryLevelCharacteristic
-        unknown_char = BatteryLevelCharacteristic(
-            uuid="FFFF", properties={GattProperty.READ}
-        )
-        service.characteristics["FFFF"] = unknown_char
+        unknown_char = BatteryLevelCharacteristic()
+        service.characteristics[BluetoothUUID("FFFF")] = unknown_char
 
         # Validation should still work
         result = service.validate_service()
@@ -37,17 +34,17 @@ class TestServiceValidationEdgeCasesExtended:
         service = BatteryService()
 
         # Add all expected characteristics
-        battery_char = BatteryLevelCharacteristic(
-            uuid="2A19", properties={GattProperty.READ}
-        )
-        service.characteristics["2A19"] = battery_char
+        battery_char = BatteryLevelCharacteristic()
+        service.characteristics[BluetoothUUID("2A19")] = battery_char
 
         report = service.get_service_completeness_report()
 
         assert report.is_healthy is True
         assert report.characteristics_present >= 1
         assert len(report.missing_required) == 0
-        assert "Battery Level" in report.present_characteristics
+        # Check that Battery Level characteristic is present
+        battery_present = any(char.name == "Battery Level" for char in report.present_characteristics)
+        assert battery_present
 
     def test_get_characteristic_status_with_partial_match(self):
         """Test getting status of characteristics with partial name matches."""
@@ -109,9 +106,9 @@ class TestServiceValidationEdgeCasesExtended:
 
         # Should have meaningful names in missing required
         if result.missing_required:
-            for missing_name in result.missing_required:
-                assert isinstance(missing_name, str)
-                assert len(missing_name) > 0
+            for missing_char in result.missing_required:
+                assert isinstance(missing_char, BaseCharacteristic)
+                assert len(missing_char.name) > 0
 
     def test_service_completeness_report_consistency(self):
         """Test that completeness report data is internally consistent."""
@@ -120,19 +117,17 @@ class TestServiceValidationEdgeCasesExtended:
 
         # Check consistency
         assert (
-            len(report.present_characteristics)
-            + len(report.missing_required)
-            + len(report.missing_optional)
+            len(report.present_characteristics) + len(report.missing_required) + len(report.missing_optional)
             >= report.characteristics_expected
         )
 
         assert report.characteristics_present == len(report.present_characteristics)
 
         # Missing details should match missing characteristics
-        for missing_name in report.missing_required + report.missing_optional:
-            if missing_name in report.missing_details:
-                detail = report.missing_details[missing_name]
-                assert detail.name == missing_name
+        for missing_char in report.missing_required + report.missing_optional:
+            if missing_char.name in report.missing_details:
+                detail = report.missing_details[missing_char.name]
+                assert detail.name == missing_char.name
                 assert detail.status == CharacteristicStatus.MISSING
 
     def test_has_minimum_functionality_edge_cases(self):
@@ -146,17 +141,11 @@ class TestServiceValidationEdgeCasesExtended:
         expected_chars = service.get_expected_characteristics()
         required_chars = service.get_required_characteristics()
 
-        optional_chars = {
-            name: char_class
-            for name, char_class in expected_chars.items()
-            if name not in required_chars
-        }
+        optional_chars = {name: char_class for name, char_class in expected_chars.items() if name not in required_chars}
 
         # If there are optional characteristics, add one
         if optional_chars:
-            _first_optional_name, first_optional_spec = next(
-                iter(optional_chars.items())
-            )
+            _first_optional_name, first_optional_spec = next(iter(optional_chars.items()))
             # Try to create the optional characteristic from the spec
             try:
                 # CharacteristicSpec has attribute 'char_class' in the new format
@@ -166,13 +155,11 @@ class TestServiceValidationEdgeCasesExtended:
                     else first_optional_spec
                 )
                 # Cast to concrete class type for static type checkers
-                first_optional_class = cast(
-                    type[BaseCharacteristic], first_optional_class
-                )
+                first_optional_class = cast(type[BaseCharacteristic], first_optional_class)
                 optional_char = first_optional_class(
-                    uuid="test", properties={GattProperty.READ}
+                    uuid="12345678-1234-5678-9abc-def012345678", properties={GattProperty.READ}
                 )
-                service.characteristics["test"] = optional_char
+                service.characteristics[BluetoothUUID("12345678-1234-5678-9abc-def012345678")] = optional_char
 
                 # Should still not have minimum functionality without required chars
                 assert service.has_minimum_functionality() is False
@@ -182,9 +169,7 @@ class TestServiceValidationEdgeCasesExtended:
 
         # With required characteristics
         if required_chars:
-            _first_required_name, first_required_spec = next(
-                iter(required_chars.items())
-            )
+            _first_required_name, first_required_spec = next(iter(required_chars.items()))
             try:
                 first_required_class = (
                     first_required_spec.char_class
@@ -192,13 +177,11 @@ class TestServiceValidationEdgeCasesExtended:
                     else first_required_spec
                 )
                 # Cast to concrete class type for static type checkers
-                first_required_class = cast(
-                    type[BaseCharacteristic], first_required_class
-                )
+                first_required_class = cast(type[BaseCharacteristic], first_required_class)
                 required_char = first_required_class(
-                    uuid="required", properties={GattProperty.READ}
+                    uuid="87654321-4321-8765-cba9-876543210fed", properties={GattProperty.READ}
                 )
-                service.characteristics["required"] = required_char
+                service.characteristics[BluetoothUUID("87654321-4321-8765-cba9-876543210fed")] = required_char
 
                 # Should have minimum functionality now
                 assert service.has_minimum_functionality() is True

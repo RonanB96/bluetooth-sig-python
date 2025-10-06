@@ -1,12 +1,14 @@
 """Heat Index characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import TemperatureLikeUint8Characteristic
+from .base import BaseCharacteristic
+from .templates import Uint8Template
 
 
-@dataclass
-class HeatIndexCharacteristic(TemperatureLikeUint8Characteristic):
+class HeatIndexCharacteristic(BaseCharacteristic):
     """Heat Index measurement characteristic."""
+
+    _template = Uint8Template()
 
     _characteristic_name: str = "Heat Index"

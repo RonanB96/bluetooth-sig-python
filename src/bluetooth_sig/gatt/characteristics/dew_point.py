@@ -1,12 +1,14 @@
 """Dew Point characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import TemperatureLikeSint8Characteristic
+from .base import BaseCharacteristic
+from .templates import Sint8Template
 
 
-@dataclass
-class DewPointCharacteristic(TemperatureLikeSint8Characteristic):
+class DewPointCharacteristic(BaseCharacteristic):
     """Dew Point measurement characteristic."""
+
+    _template = Sint8Template()
 
     _characteristic_name: str = "Dew Point"

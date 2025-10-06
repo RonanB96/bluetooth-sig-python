@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 
@@ -16,18 +17,16 @@ class ElectricCurrentStatisticsData:
     minimum: float  # Minimum current in Amperes
     maximum: float  # Maximum current in Amperes
     average: float  # Average current in Amperes
-    unit: str = "A"
 
     def __post_init__(self) -> None:
         """Validate current statistics data."""
         # Validate logical order
         if self.minimum > self.maximum:
-            raise ValueError(
-                f"Minimum current {self.minimum} A cannot be greater than maximum {self.maximum} A"
-            )
+            raise ValueError(f"Minimum current {self.minimum} A cannot be greater than maximum {self.maximum} A")
         if not self.minimum <= self.average <= self.maximum:
             raise ValueError(
-                f"Average current {self.average} A must be between minimum {self.minimum} A and maximum {self.maximum} A"
+                f"Average current {self.average} A must be between "
+                f"minimum {self.minimum} A and maximum {self.maximum} A"
             )
 
         # Validate range for uint16 with 0.01 A resolution (0 to 655.35 A)
@@ -43,7 +42,6 @@ class ElectricCurrentStatisticsData:
                 )
 
 
-@dataclass
 class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
     """Electric Current Statistics characteristic.
 
@@ -51,11 +49,10 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Electric Current Statistics"
-    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
+    # Override since decode_value returns structured ElectricCurrentStatisticsData
+    _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> ElectricCurrentStatisticsData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> ElectricCurrentStatisticsData:
         """Parse current statistics data (3x uint16 in units of 0.01 A).
 
         Args:
@@ -68,9 +65,7 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
             ValueError: If data is insufficient
         """
         if len(data) < 6:
-            raise ValueError(
-                "Electric current statistics data must be at least 6 bytes"
-            )
+            raise ValueError("Electric current statistics data must be at least 6 bytes")
 
         # Convert 3x uint16 (little endian) to current statistics in Amperes
         min_current_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
@@ -83,33 +78,15 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
             average=avg_current_raw * 0.01,
         )
 
-    def encode_value(
-        self, data: ElectricCurrentStatisticsData | dict[str, float]
-    ) -> bytearray:
+    def encode_value(self, data: ElectricCurrentStatisticsData) -> bytearray:
         """Encode electric current statistics value back to bytes.
 
         Args:
-            data: ElectricCurrentStatisticsData instance or dict with 'minimum', 'maximum', and 'average' current values in Amperes
+            data: ElectricCurrentStatisticsData instance
 
         Returns:
             Encoded bytes representing the current statistics (3x uint16, 0.01 A resolution)
         """
-        if isinstance(data, dict):
-            # Convert dict to dataclass for backward compatibility
-            if "minimum" not in data or "maximum" not in data or "average" not in data:
-                raise ValueError(
-                    "Electric current statistics data must contain 'minimum', 'maximum', and 'average' keys"
-                )
-            data = ElectricCurrentStatisticsData(
-                minimum=float(data["minimum"]),
-                maximum=float(data["maximum"]),
-                average=float(data["average"]),
-            )
-        elif not isinstance(data, ElectricCurrentStatisticsData):
-            raise TypeError(
-                "Electric current statistics data must be ElectricCurrentStatisticsData or dictionary"
-            )
-
         # Convert Amperes to raw values (multiply by 100 for 0.01 A resolution)
         min_current_raw = round(data.minimum * 100)
         max_current_raw = round(data.maximum * 100)
@@ -122,8 +99,3 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
         result.extend(avg_current_raw.to_bytes(2, byteorder="little", signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "A"

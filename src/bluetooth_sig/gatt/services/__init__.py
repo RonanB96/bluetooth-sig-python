@@ -1,5 +1,7 @@
 """Registry of supported GATT services."""
 
+from __future__ import annotations
+
 # Import individual service classes for backward compatibility
 from .automation_io import AutomationIOService
 from .base import (

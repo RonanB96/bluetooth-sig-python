@@ -1,5 +1,7 @@
 """RSSI utility functions for BLE operations."""
 
+from __future__ import annotations
+
 
 def get_rssi_quality(rssi: int) -> str:
     """Get human-readable RSSI signal quality description.

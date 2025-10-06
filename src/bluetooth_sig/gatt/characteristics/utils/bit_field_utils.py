@@ -33,17 +33,13 @@ class BitFieldUtils:  # pylint: disable=too-many-public-methods
         return (value >> start_bit) & mask
 
     @staticmethod
-    def set_bit_field(
-        value: int, field_value: int, start_bit: int, num_bits: int
-    ) -> int:
+    def set_bit_field(value: int, field_value: int, start_bit: int, num_bits: int) -> int:
         """Set a bit field in an integer value."""
         if num_bits <= 0 or start_bit < 0:
             raise ValueError("Invalid bit field parameters")
         mask = (BitFieldUtils.SINGLE_BIT_MASK << num_bits) - 1
         if field_value > mask:
-            raise ValueError(
-                f"Field value {field_value} exceeds {num_bits}-bit capacity"
-            )
+            raise ValueError(f"Field value {field_value} exceeds {num_bits}-bit capacity")
         # Clear the field and set new value
         value &= ~(mask << start_bit)
         value |= (field_value & mask) << start_bit
@@ -169,7 +165,10 @@ class BitFieldUtils:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def calculate_parity(value: int) -> int:
-        """Calculate the parity (even/odd) of set bits. Returns 0 for even, 1 for odd."""
+        """Calculate the parity (even/odd) of set bits.
+
+        Returns 0 for even, 1 for odd.
+        """
         parity = 0
         while value:
             parity ^= value & 1
@@ -177,24 +176,18 @@ class BitFieldUtils:  # pylint: disable=too-many-public-methods
         return parity
 
     @staticmethod
-    def validate_bit_field_range(
-        start_bit: int, num_bits: int, total_bits: int = DEFAULT_BIT_WIDTH
-    ) -> bool:
+    def validate_bit_field_range(start_bit: int, num_bits: int, total_bits: int = DEFAULT_BIT_WIDTH) -> bool:
         """Validate that a bit field range is within bounds."""
         return start_bit >= 0 and num_bits > 0 and start_bit + num_bits <= total_bits
 
     @staticmethod
-    def copy_bit_field(
-        source: int, dest: int, source_start: int, dest_start: int, num_bits: int
-    ) -> int:
+    def copy_bit_field(source: int, dest: int, source_start: int, dest_start: int, num_bits: int) -> int:
         """Copy a bit field from source to destination."""
         field_value = BitFieldUtils.extract_bit_field(source, source_start, num_bits)
         return BitFieldUtils.set_bit_field(dest, field_value, dest_start, num_bits)
 
     @staticmethod
-    def shift_bit_field_left(
-        value: int, start_bit: int, num_bits: int, shift_amount: int
-    ) -> int:
+    def shift_bit_field_left(value: int, start_bit: int, num_bits: int, shift_amount: int) -> int:
         """Shift a bit field left within the value."""
         if shift_amount <= 0:
             return value
@@ -206,9 +199,7 @@ class BitFieldUtils:  # pylint: disable=too-many-public-methods
         return BitFieldUtils.set_bit_field(value, field_value, new_start, num_bits)
 
     @staticmethod
-    def shift_bit_field_right(
-        value: int, start_bit: int, num_bits: int, shift_amount: int
-    ) -> int:
+    def shift_bit_field_right(value: int, start_bit: int, num_bits: int, shift_amount: int) -> int:
         """Shift a bit field right within the value."""
         if shift_amount <= 0:
             return value
@@ -228,9 +219,7 @@ class BitFieldUtils:  # pylint: disable=too-many-public-methods
         """
         result = 0
         for field_value, start_bit, num_bits in fields:
-            result = BitFieldUtils.set_bit_field(
-                result, field_value, start_bit, num_bits
-            )
+            result = BitFieldUtils.set_bit_field(result, field_value, start_bit, num_bits)
         return result
 
     @staticmethod
@@ -244,16 +233,14 @@ class BitFieldUtils:  # pylint: disable=too-many-public-methods
         Returns:
             List of extracted field values
         """
-        return [
-            BitFieldUtils.extract_bit_field(value, start_bit, num_bits)
-            for start_bit, num_bits in field_specs
-        ]
+        return [BitFieldUtils.extract_bit_field(value, start_bit, num_bits) for start_bit, num_bits in field_specs]
 
     @staticmethod
-    def compare_bit_fields(
-        value1: int, value2: int, start_bit: int, num_bits: int
-    ) -> int:
-        """Compare bit fields between two values. Returns -1, 0, or 1."""
+    def compare_bit_fields(value1: int, value2: int, start_bit: int, num_bits: int) -> int:
+        """Compare bit fields between two values.
+
+        Returns -1, 0, or 1.
+        """
         field1 = BitFieldUtils.extract_bit_field(value1, start_bit, num_bits)
         field2 = BitFieldUtils.extract_bit_field(value2, start_bit, num_bits)
         if field1 < field2:
@@ -263,9 +250,7 @@ class BitFieldUtils:  # pylint: disable=too-many-public-methods
         return 0
 
     @staticmethod
-    def rotate_left(
-        value: int, positions: int, bit_width: int = DEFAULT_BIT_WIDTH
-    ) -> int:
+    def rotate_left(value: int, positions: int, bit_width: int = DEFAULT_BIT_WIDTH) -> int:
         """Rotate bits left by the specified number of positions."""
         positions = positions % bit_width
         if positions == 0:
@@ -275,9 +260,7 @@ class BitFieldUtils:  # pylint: disable=too-many-public-methods
         return ((value << positions) | (value >> (bit_width - positions))) & mask
 
     @staticmethod
-    def rotate_right(
-        value: int, positions: int, bit_width: int = DEFAULT_BIT_WIDTH
-    ) -> int:
+    def rotate_right(value: int, positions: int, bit_width: int = DEFAULT_BIT_WIDTH) -> int:
         """Rotate bits right by the specified number of positions."""
         positions = positions % bit_width
         if positions == 0:

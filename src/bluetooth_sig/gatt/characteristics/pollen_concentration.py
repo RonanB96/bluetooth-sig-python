@@ -1,23 +1,23 @@
 """Pollen Concentration characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import Uint24ScaledCharacteristic
+from ...types.gatt_enums import ValueType
+from .base import BaseCharacteristic
+from .templates import ScaledUint24Template
 
 
-@dataclass
-class PollenConcentrationCharacteristic(Uint24ScaledCharacteristic):
+class PollenConcentrationCharacteristic(BaseCharacteristic):
     """Pollen concentration measurement characteristic (0x2A75).
 
-    Uses uint24 format as per SIG specification.
+    Uses uint24 (3 bytes) format as per SIG specification.
     Unit: grains/m³ (count per cubic meter)
     """
 
-    _characteristic_name: str = "Pollen Concentration"
-    _manual_value_type: str = (
-        "float"  # Override YAML spec since decode_value returns float
-    )
+    _template = ScaledUint24Template(scale_factor=1.0)
+
+    _manual_value_type: ValueType | str | None = "float"  # Override YAML spec since decode_value returns float
+    _manual_unit: str = "grains/m³"  # Override template's "units" default
 
     # SIG specification configuration
     resolution: float = 1.0
-    measurement_unit: str = "grains/m³"

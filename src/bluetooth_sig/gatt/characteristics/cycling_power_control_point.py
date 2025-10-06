@@ -34,7 +34,8 @@ class CyclingPowerControlPointData:  # pylint: disable=too-many-instance-attribu
 
 
 class CyclingPowerOpCode(IntEnum):
-    """Cycling Power Control Point operation codes as per Bluetooth SIG specification."""
+    """Cycling Power Control Point operation codes as per Bluetooth SIG
+    specification."""
 
     # Value 0x00 is Reserved for Future Use
     SET_CUMULATIVE_VALUE = 0x01
@@ -84,7 +85,8 @@ MIN_OP_CODE_LENGTH = 1  # Minimum length for op code data
 
 
 class CyclingPowerResponseValue(IntEnum):
-    """Cycling Power Control Point response values as per Bluetooth SIG specification."""
+    """Cycling Power Control Point response values as per Bluetooth SIG
+    specification."""
 
     # Value 0x00 is Reserved for Future Use
     SUCCESS = 0x01
@@ -108,7 +110,8 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
     """Cycling Power Control Point characteristic (0x2A66).
 
     Used for control and configuration of cycling power sensors.
-    Provides commands for calibration, configuration, and sensor control.
+    Provides commands for calibration, configuration, and sensor
+    control.
     """
 
     # Resolution constants for parameter calculations
@@ -123,11 +126,7 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
     TWO_BYTE_PARAM_LENGTH = 3  # op_code(1) + param(2)
     RESPONSE_CODE_LENGTH = 3  # op_code(1) + request(1) + response(1)
 
-    _characteristic_name: str = "Cycling Power Control Point"
-
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> CyclingPowerControlPointData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> CyclingPowerControlPointData:
         """Parse cycling power control point data.
 
         Format: Op Code(1) + [Request Parameter] or Response Code(1) + [Response Parameter]
@@ -179,23 +178,11 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
         elif data.sensor_location is not None:
             result.append(data.sensor_location)
         elif data.crank_length is not None:
-            result.extend(
-                DataParser.encode_int16(
-                    int(data.crank_length * self.CRANK_LENGTH_RESOLUTION), signed=False
-                )
-            )
+            result.extend(DataParser.encode_int16(int(data.crank_length * self.CRANK_LENGTH_RESOLUTION), signed=False))
         elif data.chain_length is not None:
-            result.extend(
-                DataParser.encode_int16(
-                    int(data.chain_length * self.CHAIN_LENGTH_RESOLUTION), signed=False
-                )
-            )
+            result.extend(DataParser.encode_int16(int(data.chain_length * self.CHAIN_LENGTH_RESOLUTION), signed=False))
         elif data.chain_weight is not None:
-            result.extend(
-                DataParser.encode_int16(
-                    int(data.chain_weight * self.CHAIN_WEIGHT_RESOLUTION), signed=False
-                )
-            )
+            result.extend(DataParser.encode_int16(int(data.chain_weight * self.CHAIN_WEIGHT_RESOLUTION), signed=False))
         elif data.span_length is not None:
             result.extend(DataParser.encode_int16(data.span_length, signed=False))
         elif data.measurement_mask is not None:
@@ -205,9 +192,7 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
 
         return result
 
-    def _parse_op_code_parameters(
-        self, op_code: int, data: bytearray, result: CyclingPowerControlPointData
-    ) -> None:
+    def _parse_op_code_parameters(self, op_code: int, data: bytearray, result: CyclingPowerControlPointData) -> None:
         """Parse operation code specific parameters.
 
         Args:
@@ -232,72 +217,51 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
         elif op_code == CyclingPowerOpCode.RESPONSE_CODE:
             self._parse_response_code(data, result)
 
-    def _parse_cumulative_value(
-        self, data: bytearray, result: CyclingPowerControlPointData
-    ) -> None:
+    def _parse_cumulative_value(self, data: bytearray, result: CyclingPowerControlPointData) -> None:
         """Parse cumulative value parameter."""
         if len(data) >= self.CUMULATIVE_VALUE_LENGTH:
             cumulative_value = DataParser.parse_int32(data, offset=1, signed=False)
             result.cumulative_value = cumulative_value
 
-    def _parse_sensor_location(
-        self, data: bytearray, result: CyclingPowerControlPointData
-    ) -> None:
+    def _parse_sensor_location(self, data: bytearray, result: CyclingPowerControlPointData) -> None:
         """Parse sensor location parameter."""
         if len(data) >= self.SENSOR_LOCATION_LENGTH:
             result.sensor_location = data[1]
 
-    def _parse_crank_length(
-        self, data: bytearray, result: CyclingPowerControlPointData
-    ) -> None:
+    def _parse_crank_length(self, data: bytearray, result: CyclingPowerControlPointData) -> None:
         """Parse crank length parameter."""
         if len(data) >= self.TWO_BYTE_PARAM_LENGTH:
             crank_length = DataParser.parse_int16(data, offset=1, signed=False)
             result.crank_length = crank_length / self.CRANK_LENGTH_RESOLUTION
 
-    def _parse_chain_length(
-        self, data: bytearray, result: CyclingPowerControlPointData
-    ) -> None:
+    def _parse_chain_length(self, data: bytearray, result: CyclingPowerControlPointData) -> None:
         """Parse chain length parameter."""
         if len(data) >= self.TWO_BYTE_PARAM_LENGTH:
             chain_length = DataParser.parse_int16(data, offset=1, signed=False)
             result.chain_length = chain_length / self.CHAIN_LENGTH_RESOLUTION
 
-    def _parse_chain_weight(
-        self, data: bytearray, result: CyclingPowerControlPointData
-    ) -> None:
+    def _parse_chain_weight(self, data: bytearray, result: CyclingPowerControlPointData) -> None:
         """Parse chain weight parameter."""
         if len(data) >= self.TWO_BYTE_PARAM_LENGTH:
             chain_weight = DataParser.parse_int16(data, offset=1, signed=False)
             result.chain_weight = chain_weight / self.CHAIN_WEIGHT_RESOLUTION
 
-    def _parse_span_length(
-        self, data: bytearray, result: CyclingPowerControlPointData
-    ) -> None:
+    def _parse_span_length(self, data: bytearray, result: CyclingPowerControlPointData) -> None:
         """Parse span length parameter."""
         if len(data) >= self.TWO_BYTE_PARAM_LENGTH:
             span_length = DataParser.parse_int16(data, offset=1, signed=False)
             result.span_length = span_length  # mm
 
-    def _parse_measurement_mask(
-        self, data: bytearray, result: CyclingPowerControlPointData
-    ) -> None:
+    def _parse_measurement_mask(self, data: bytearray, result: CyclingPowerControlPointData) -> None:
         """Parse measurement mask parameter."""
         if len(data) >= self.TWO_BYTE_PARAM_LENGTH:
             mask = DataParser.parse_int16(data, offset=1, signed=False)
             result.measurement_mask = mask
 
-    def _parse_response_code(
-        self, data: bytearray, result: CyclingPowerControlPointData
-    ) -> None:
+    def _parse_response_code(self, data: bytearray, result: CyclingPowerControlPointData) -> None:
         """Parse response code parameters."""
         if len(data) >= self.RESPONSE_CODE_LENGTH:
             request_op_code = data[1]
             response_value = data[2]
             result.request_op_code = CyclingPowerOpCode(request_op_code)
             result.response_value = CyclingPowerResponseValue(response_value)
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""  # Control point has no unit

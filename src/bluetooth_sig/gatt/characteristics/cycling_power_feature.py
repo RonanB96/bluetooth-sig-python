@@ -2,24 +2,21 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 from .base import BaseCharacteristic
 from .utils import DataParser
 
 
-@dataclass
 class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
     """Cycling Power Feature characteristic (0x2A65).
 
     Used to expose the supported features of a cycling power sensor.
-    Contains a 32-bit bitmask indicating supported measurement capabilities.
+    Contains a 32-bit bitmask indicating supported measurement
+    capabilities.
     """
 
-    _characteristic_name: str = "Cycling Power Feature"
-
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> int:
         """Parse cycling power feature data.
 
         Format: 32-bit feature bitmask (little endian)
@@ -56,8 +53,3 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
             raise ValueError(f"Feature mask {feature_mask} exceeds uint32 range")
 
         return DataParser.encode_int32(feature_mask, signed=False)
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""  # Feature bitmask has no unit

@@ -101,9 +101,7 @@ class TestDevice:
 
     def test_device_string_representation(self):
         """Test Device string representation."""
-        expected = (
-            f"Device({self.device_address}, name=, 0 services, 0 characteristics)"
-        )
+        expected = f"Device({self.device_address}, name=, 0 services, 0 characteristics)"
         assert str(self.device) == expected
 
         # Test with name and services
@@ -248,14 +246,21 @@ class TestDevice:
 
     def test_update_encryption_requirements(self):
         """Test encryption requirements tracking."""
-        from bluetooth_sig.types import CharacteristicData
+        from bluetooth_sig.types import CharacteristicData, CharacteristicInfo
+        from bluetooth_sig.types.gatt_enums import GattProperty
+        from bluetooth_sig.types.uuid import BluetoothUUID
 
-        # Create mock characteristic data with encryption properties
-        char_data = CharacteristicData(
-            uuid="2A19",
+        # Create mock characteristic info with encryption properties
+        char_info = CharacteristicInfo(
+            uuid=BluetoothUUID("2A19"),
             name="Battery Level",
+            properties=[GattProperty.READ, GattProperty.ENCRYPT_READ],
+        )
+
+        # Create characteristic data
+        char_data = CharacteristicData(
+            info=char_info,
             value=100,
-            properties=["read", "encrypt-read"],
         )
 
         self.device.update_encryption_requirements(char_data)
@@ -263,11 +268,15 @@ class TestDevice:
         assert self.device.encryption.requires_encryption is True
 
         # Test authentication requirement
-        char_data_auth = CharacteristicData(
-            uuid="2A19",
+        char_info_auth = CharacteristicInfo(
+            uuid=BluetoothUUID("2A19"),
             name="Battery Level",
+            properties=[GattProperty.READ, GattProperty.AUTH_READ],
+        )
+
+        char_data_auth = CharacteristicData(
+            info=char_info_auth,
             value=100,
-            properties=["read", "auth-read"],
         )
 
         self.device.update_encryption_requirements(char_data_auth)
@@ -349,9 +358,7 @@ class TestDevice:
         # Test manager that raises exception - use module-level FaultyManager
         faulty_manager = FaultyManager()
         # cast to ConnectionManagerProtocol to satisfy static type checking
-        self.device.attach_connection_manager(
-            cast(ConnectionManagerProtocol, faulty_manager)
-        )
+        self.device.attach_connection_manager(cast(ConnectionManagerProtocol, faulty_manager))
 
         # Should propagate the exception
         with pytest.raises(RuntimeError, match="Connection check failed"):
@@ -359,23 +366,21 @@ class TestDevice:
 
         # Test manager without is_connected property - use module-level IncompleteManager
         incomplete_manager = IncompleteManager()
-        self.device.attach_connection_manager(
-            cast(ConnectionManagerProtocol, incomplete_manager)
-        )
+        self.device.attach_connection_manager(cast(ConnectionManagerProtocol, incomplete_manager))
 
         # Should return False for manager without is_connected property
         assert self.device.is_connected is False
 
     def test_is_connected_with_none_manager(self):
-        """Test is_connected returns False when manager's is_connected returns False."""
+        """Test is_connected returns False when manager's is_connected returns
+        False."""
         none_manager = NoneManager()
-        self.device.attach_connection_manager(
-            cast(ConnectionManagerProtocol, none_manager)
-        )
+        self.device.attach_connection_manager(cast(ConnectionManagerProtocol, none_manager))
         assert self.device.is_connected is False
 
     def test_connection_manager_protocol_interface(self):
-        """Test that ConnectionManagerProtocol has the is_connected property."""
+        """Test that ConnectionManagerProtocol has the is_connected
+        property."""
         import inspect
 
         # Check that is_connected is part of the protocol interface
@@ -438,8 +443,6 @@ class TestDevice:
         self.device.parse_advertiser_data(raw_advertising_data)
         device_info4 = self.device.device_info
         assert device_info4 is device_info1  # Still same object (efficient)
-        assert (
-            device_info4.name == "Test Device"
-        )  # Name remains (not overwritten by advertiser)
+        assert device_info4.name == "Test Device"  # Name remains (not overwritten by advertiser)
         assert "180F" in device_info4.service_uuids  # Service UUID from advertiser data
         assert 76 in device_info4.manufacturer_data  # Manufacturer data from advertiser

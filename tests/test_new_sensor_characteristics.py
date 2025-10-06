@@ -19,7 +19,6 @@ from bluetooth_sig.gatt.characteristics.barometric_pressure_trend import (
     BarometricPressureTrend,
 )
 from bluetooth_sig.gatt.constants import UINT8_MAX
-from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 
 class TestNavigationCharacteristics:
@@ -27,16 +26,14 @@ class TestNavigationCharacteristics:
 
     def test_magnetic_declination_parsing(self):
         """Test Magnetic Declination characteristic parsing."""
-        char = MagneticDeclinationCharacteristic(uuid="", properties=set())
+        char = MagneticDeclinationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A2C"
+        assert char.uuid == "2A2C"
 
         # Test metadata
         assert char.unit == "°"
-        assert (
-            char.value_type.value == "string"
-        )  # Changed from float - YAML overrides manual
+        assert char.value_type.value == "float"  # Manual override takes precedence over YAML uint16
 
         # Test normal parsing: 18000 (in 0.01 degrees) = 180.00 degrees
         test_data = bytearray([0x40, 0x46])  # 18000 in little endian uint16
@@ -52,24 +49,22 @@ class TestNavigationCharacteristics:
 
     def test_magnetic_declination_error_handling(self):
         """Test Magnetic Declination error handling."""
-        char = MagneticDeclinationCharacteristic(uuid="", properties=set())
+        char = MagneticDeclinationCharacteristic()
 
         # Test insufficient data
-        with pytest.raises(InsufficientDataError):
+        with pytest.raises(ValueError, match="Insufficient data"):
             char.decode_value(bytearray([0x12]))
 
     def test_elevation_parsing(self):
         """Test Elevation characteristic parsing."""
-        char = ElevationCharacteristic(uuid="", properties=set())
+        char = ElevationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A6C"
+        assert char.uuid == "2A6C"
 
         # Test metadata
         assert char.unit == "m"
-        assert (
-            char.value_type.value == "string"
-        )  # Changed from float - YAML overrides manual
+        assert char.value_type.value == "float"  # Manual override takes precedence over YAML sint24
 
         # Test normal parsing: 50000 (in 0.01 meters) = 500.00 meters
         test_data = bytearray([0x50, 0xC3, 0x00])  # 50000 in 24-bit little endian
@@ -83,18 +78,18 @@ class TestNavigationCharacteristics:
 
     def test_elevation_error_handling(self):
         """Test Elevation error handling."""
-        char = ElevationCharacteristic(uuid="", properties=set())
+        char = ElevationCharacteristic()
 
         # Test insufficient data
-        with pytest.raises(ValueError, match="must be at least 3 bytes"):
+        with pytest.raises(ValueError, match="Insufficient data"):
             char.decode_value(bytearray([0x12, 0x34]))
 
     def test_magnetic_flux_density_2d_parsing(self):
         """Test Magnetic Flux Density 2D characteristic parsing."""
-        char = MagneticFluxDensity2DCharacteristic(uuid="", properties=set())
+        char = MagneticFluxDensity2DCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2AA0"
+        assert char.uuid == "2AA0"
 
         # Test metadata
         assert char.unit == "T"
@@ -109,10 +104,10 @@ class TestNavigationCharacteristics:
 
     def test_magnetic_flux_density_3d_parsing(self):
         """Test Magnetic Flux Density 3D characteristic parsing."""
-        char = MagneticFluxDensity3DCharacteristic(uuid="", properties=set())
+        char = MagneticFluxDensity3DCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2AA1"
+        assert char.uuid == "2AA1"
 
         # Test metadata
         assert char.unit == "T"
@@ -132,16 +127,14 @@ class TestEnvironmentalCharacteristics:
 
     def test_barometric_pressure_trend_parsing(self):
         """Test Barometric Pressure Trend characteristic parsing."""
-        char = BarometricPressureTrendCharacteristic(uuid="", properties=set())
+        char = BarometricPressureTrendCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2AA3"
+        assert char.uuid == "2AA3"
 
         # Test metadata
         assert char.unit == ""
-        assert (
-            char._manual_value_type == "BarometricPressureTrend"
-        )  # Manual override: returns enum
+        assert char._manual_value_type == "BarometricPressureTrend"  # Manual override: returns enum
 
         # Test known trend values
         test_cases = [
@@ -163,16 +156,14 @@ class TestEnvironmentalCharacteristics:
 
     def test_pollen_concentration_parsing(self):
         """Test Pollen Concentration characteristic parsing."""
-        char = PollenConcentrationCharacteristic(uuid="", properties=set())
+        char = PollenConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A75"
+        assert char.uuid == "2A75"
 
         # Test metadata
         assert char.unit == "grains/m³"
-        assert (
-            char.value_type_resolved.value == "float"
-        )  # Manual override since decode_value returns float
+        assert char.value_type_resolved.value == "float"  # Manual override since decode_value returns float
 
         # Test normal parsing: 123456 count/m³
         test_data = bytearray([0x40, 0xE2, 0x01])  # 123456 in 24-bit little endian
@@ -181,10 +172,10 @@ class TestEnvironmentalCharacteristics:
 
     def test_rainfall_parsing(self):
         """Test Rainfall characteristic parsing."""
-        char = RainfallCharacteristic(uuid="", properties=set())
+        char = RainfallCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A78"
+        assert char.uuid == "2A78"
 
         # Test metadata
         assert char.unit == "mm"
@@ -201,16 +192,14 @@ class TestTimeCharacteristics:
 
     def test_time_zone_parsing(self):
         """Test Time Zone characteristic parsing."""
-        char = TimeZoneCharacteristic(uuid="", properties=set())
+        char = TimeZoneCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A0E"
+        assert char.uuid == "2A0E"
 
         # Test metadata
         assert char.unit == ""
-        assert (
-            char.value_type.value == "string"
-        )  # Manual override: returns descriptive strings
+        assert char.value_type.value == "string"  # Manual override: returns descriptive strings
 
         # Test normal time zones
         test_cases = [
@@ -234,10 +223,10 @@ class TestTimeCharacteristics:
 
     def test_local_time_information_parsing(self):
         """Test Local Time Information characteristic parsing."""
-        char = LocalTimeInformationCharacteristic(uuid="", properties=set())
+        char = LocalTimeInformationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2A0F"
+        assert char.uuid == "2A0F"
 
         # Test metadata
         assert char.unit == ""
@@ -261,7 +250,7 @@ class TestTimeCharacteristics:
 
     def test_local_time_information_encode_value(self):
         """Test encoding LocalTimeInformationData back to bytes."""
-        char = LocalTimeInformationCharacteristic(uuid="", properties=set())
+        char = LocalTimeInformationCharacteristic()
 
         from bluetooth_sig.gatt.characteristics.local_time_information import (
             DSTOffsetInfo,
@@ -293,7 +282,7 @@ class TestTimeCharacteristics:
 
     def test_local_time_information_round_trip(self):
         """Test that parsing and encoding preserve data."""
-        char = LocalTimeInformationCharacteristic(uuid="", properties=set())
+        char = LocalTimeInformationCharacteristic()
 
         # Test with UTC+2 and DST
         original_data = bytearray([8, 4])

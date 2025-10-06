@@ -2,26 +2,25 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
+from ...types.gatt_enums import ValueType
 from ..constants import SINT8_MIN
 from .base import BaseCharacteristic
 
 
-@dataclass
 class TimeZoneCharacteristic(BaseCharacteristic):
     """Time zone characteristic.
 
-    Represents the time difference in 15-minute increments between
-    local standard time and UTC.
+    Represents the time difference in 15-minute increments between local
+    standard time and UTC.
     """
 
     _characteristic_name: str = "Time Zone"
     # Manual override: YAML indicates sint8->int but we return descriptive strings
-    _manual_value_type: str = "string"
+    _manual_value_type: ValueType | str | None = ValueType.STRING
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> str:
         """Parse time zone data (sint8 in 15-minute increments from UTC)."""
         if len(data) < 1:
             raise ValueError("Time zone data must be at least 1 byte")
@@ -102,8 +101,3 @@ class TimeZoneCharacteristic(BaseCharacteristic):
             )
 
         return bytearray(offset_raw.to_bytes(1, byteorder="little", signed=True))
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return ""  # No unit for time zone offset

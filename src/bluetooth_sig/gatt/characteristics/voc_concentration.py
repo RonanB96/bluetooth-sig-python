@@ -2,39 +2,39 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
-from .templates import SimpleUint16Characteristic
+from .base import BaseCharacteristic
+from .templates import Uint16Template
 
 
 # Special value constants for VOC Concentration characteristic
 class VOCConcentrationValues:  # pylint: disable=too-few-public-methods
-    """Special values for VOC Concentration characteristic per Bluetooth SIG specification."""
+    """Special values for VOC Concentration characteristic per Bluetooth SIG
+    specification."""
 
     VALUE_65534_OR_GREATER = 0xFFFE  # Indicates value is 65534 or greater
     VALUE_UNKNOWN = 0xFFFF  # Indicates value is not known
 
 
-@dataclass
-class VOCConcentrationCharacteristic(SimpleUint16Characteristic):
+class VOCConcentrationCharacteristic(BaseCharacteristic):
     """Volatile Organic Compounds concentration characteristic (0x2BE7).
 
     Uses uint16 format as per SIG specification.
     Unit: ppb (parts per billion)
-    Range: 0-65533 (VOCConcentrationValues.VALUE_65534_OR_GREATER = ≥65534, VOCConcentrationValues.VALUE_UNKNOWN = unknown)
+    Range: 0-65533
+    (VOCConcentrationValues.VALUE_65534_OR_GREATER = ≥65534,
+     VOCConcentrationValues.VALUE_UNKNOWN = unknown)
     """
 
+    _template = Uint16Template()
+
     _characteristic_name: str = "VOC Concentration"
+    _manual_unit: str = "ppb"  # Unit as per SIG specification
     min_value: int = 0
     max_value: int = VOCConcentrationValues.VALUE_65534_OR_GREATER - 1  # 65533
 
-    @property
-    def unit(self) -> str:
-        """Return unit as per SIG specification."""
-        return "ppb"
-
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> int:
         """Parse VOC concentration value with special value handling."""
         raw_value = super().decode_value(data)
 

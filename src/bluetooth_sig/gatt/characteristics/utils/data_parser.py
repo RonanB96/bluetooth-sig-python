@@ -43,12 +43,11 @@ class DataParser:
         signed: bool = False,
         endian: Literal["little", "big"] = "little",
     ) -> int:
-        """Parse 16-bit integer with configurable endianness and signed interpretation."""
+        """Parse 16-bit integer with configurable endianness and signed
+        interpretation."""
         if len(data) < offset + 2:
             raise InsufficientDataError("int16", data[offset:], 2)
-        return int.from_bytes(
-            data[offset : offset + 2], byteorder=endian, signed=signed
-        )
+        return int.from_bytes(data[offset : offset + 2], byteorder=endian, signed=signed)
 
     @staticmethod
     def parse_int32(
@@ -57,12 +56,11 @@ class DataParser:
         signed: bool = False,
         endian: Literal["little", "big"] = "little",
     ) -> int:
-        """Parse 32-bit integer with configurable endianness and signed interpretation."""
+        """Parse 32-bit integer with configurable endianness and signed
+        interpretation."""
         if len(data) < offset + 4:
             raise InsufficientDataError("int32", data[offset:], 4)
-        return int.from_bytes(
-            data[offset : offset + 4], byteorder=endian, signed=signed
-        )
+        return int.from_bytes(data[offset : offset + 4], byteorder=endian, signed=signed)
 
     @staticmethod
     def parse_float32(data: bytearray, offset: int = 0) -> float:
@@ -84,9 +82,7 @@ class DataParser:
         return data.decode("utf-8", errors="replace").rstrip("\x00")
 
     @staticmethod
-    def parse_variable_length(
-        data: bytes | bytearray, min_length: int, max_length: int
-    ) -> bytes:
+    def parse_variable_length(data: bytes | bytearray, min_length: int, max_length: int) -> bytes:
         """Parse variable length data with validation."""
         length = len(data)
         if length < min_length:
@@ -107,10 +103,9 @@ class DataParser:
         return bytearray(value.to_bytes(1, byteorder="little", signed=signed))
 
     @staticmethod
-    def encode_int16(
-        value: int, signed: bool = False, endian: Literal["little", "big"] = "little"
-    ) -> bytearray:
-        """Encode 16-bit integer with configurable endianness and signed/unsigned validation."""
+    def encode_int16(value: int, signed: bool = False, endian: Literal["little", "big"] = "little") -> bytearray:
+        """Encode 16-bit integer with configurable endianness and
+        signed/unsigned validation."""
         if signed:
             if not SINT16_MIN <= value <= SINT16_MAX:
                 raise ValueRangeError("sint16", value, SINT16_MIN, SINT16_MAX)
@@ -120,10 +115,9 @@ class DataParser:
         return bytearray(value.to_bytes(2, byteorder=endian, signed=signed))
 
     @staticmethod
-    def encode_int32(
-        value: int, signed: bool = False, endian: Literal["little", "big"] = "little"
-    ) -> bytearray:
-        """Encode 32-bit integer with configurable endianness and signed/unsigned validation."""
+    def encode_int32(value: int, signed: bool = False, endian: Literal["little", "big"] = "little") -> bytearray:
+        """Encode 32-bit integer with configurable endianness and
+        signed/unsigned validation."""
         if signed:
             if not SINT32_MIN <= value <= SINT32_MAX:
                 raise ValueRangeError("sint32", value, SINT32_MIN, SINT32_MAX)

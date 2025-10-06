@@ -1,17 +1,19 @@
 """Voltage Frequency characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import ScaledUint16Characteristic
+from .base import BaseCharacteristic
+from .templates import ScaledUint16Template
 
 
-@dataclass
-class VoltageFrequencyCharacteristic(ScaledUint16Characteristic):
+class VoltageFrequencyCharacteristic(BaseCharacteristic):
     """Voltage Frequency characteristic.
 
     Measures voltage frequency with 1/256 Hz resolution.
     """
 
+    _template = ScaledUint16Template()
+
     _characteristic_name: str = "Voltage Frequency"
+    _manual_unit: str = "Hz"  # Override template's "units" default
     resolution: float = 1 / 256
-    measurement_unit: str = "Hz"

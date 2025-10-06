@@ -40,7 +40,6 @@ class RSCMeasurementData:
             raise ValueError("Cadence must be a uint8 value (0-UINT8_MAX)")
 
 
-@dataclass
 class RSCMeasurementCharacteristic(BaseCharacteristic):
     """RSC (Running Speed and Cadence) Measurement characteristic (0x2A53).
 
@@ -49,9 +48,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "RSC Measurement"
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> RSCMeasurementData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> RSCMeasurementData:
         """Parse RSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Instantaneous Speed(2) + Instantaneous Cadence(1) +
@@ -85,17 +82,13 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
         offset = 4
 
         # Parse optional instantaneous stride length (2 bytes) if present
-        if (RSCMeasurementFlags.INSTANTANEOUS_STRIDE_LENGTH_PRESENT in flags) and len(
-            data
-        ) >= offset + 2:
+        if (RSCMeasurementFlags.INSTANTANEOUS_STRIDE_LENGTH_PRESENT in flags) and len(data) >= offset + 2:
             stride_length_raw = DataParser.parse_int16(data, offset, signed=False)
             instantaneous_stride_length = stride_length_raw / 100.0  # Convert to meters
             offset += 2
 
         # Parse optional total distance (4 bytes) if present
-        if (RSCMeasurementFlags.TOTAL_DISTANCE_PRESENT in flags) and len(
-            data
-        ) >= offset + 4:
+        if (RSCMeasurementFlags.TOTAL_DISTANCE_PRESENT in flags) and len(data) >= offset + 4:
             total_distance_raw = DataParser.parse_int32(data, offset, signed=False)
             total_distance = total_distance_raw / 10.0  # Convert to meters
 
@@ -117,10 +110,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
             Encoded bytes representing the RSC measurement
         """
         if not isinstance(data, RSCMeasurementData):
-            raise TypeError(
-                f"RSC measurement data must be a RSCMeasurementData, "
-                f"got {type(data).__name__}"
-            )
+            raise TypeError(f"RSC measurement data must be a RSCMeasurementData, got {type(data).__name__}")
 
         # Build flags based on available optional data
         flags = RSCMeasurementFlags(data.flags)
@@ -136,14 +126,10 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
         # Validate required fields
         speed_raw = round(data.instantaneous_speed * 256)  # Convert to 1/256 m/s units
         if not 0 <= speed_raw <= 0xFFFF:
-            raise ValueError(
-                f"Speed {data.instantaneous_speed} m/s exceeds uint16 range"
-            )
+            raise ValueError(f"Speed {data.instantaneous_speed} m/s exceeds uint16 range")
 
         if not 0 <= data.instantaneous_cadence <= UINT8_MAX:
-            raise ValueError(
-                f"Cadence {data.instantaneous_cadence} exceeds uint8 range"
-            )
+            raise ValueError(f"Cadence {data.instantaneous_cadence} exceeds uint8 range")
 
         # Start with flags, speed, and cadence
         result = bytearray([int(flags)])
@@ -157,9 +143,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
             stride_length = float(data.instantaneous_stride_length)
             stride_length_raw = round(stride_length * 100)  # Convert to cm units
             if not 0 <= stride_length_raw <= 0xFFFF:
-                raise ValueError(
-                    f"Stride length {stride_length} m exceeds uint16 range"
-                )
+                raise ValueError(f"Stride length {stride_length} m exceeds uint16 range")
             result.extend(DataParser.encode_int16(stride_length_raw, signed=False))
 
         # Add optional total distance if present
@@ -169,9 +153,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
             total_distance = float(data.total_distance)
             total_distance_raw = round(total_distance * 10)  # Convert to dm units
             if not 0 <= total_distance_raw <= 0xFFFFFFFF:
-                raise ValueError(
-                    f"Total distance {total_distance} m exceeds uint32 range"
-                )
+                raise ValueError(f"Total distance {total_distance} m exceeds uint32 range")
             result.extend(DataParser.encode_int32(total_distance_raw, signed=False))
 
         return result

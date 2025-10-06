@@ -1,21 +1,21 @@
 """PM2.5 Concentration characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import ConcentrationCharacteristic
+from .base import BaseCharacteristic
+from .templates import ConcentrationTemplate
 
 
-@dataclass
-class PM25ConcentrationCharacteristic(ConcentrationCharacteristic):
+class PM25ConcentrationCharacteristic(BaseCharacteristic):
     """PM2.5 particulate matter concentration characteristic (0x2BD6).
 
-    Represents particulate matter PM2.5 concentration in micrograms per cubic meter
-    with a resolution of 1 μg/m³.
+    Represents particulate matter PM2.5 concentration in micrograms per
+    cubic meter with a resolution of 1 μg/m³.
     """
 
-    _characteristic_name: str = "Particulate Matter - PM2.5 Concentration"
+    _template = ConcentrationTemplate()
 
-    # Template configuration
+    _characteristic_name: str = "Particulate Matter - PM2.5 Concentration"
     resolution: float = 1.0
-    concentration_unit: str = "µg/m³"
+    _manual_unit: str = "µg/m³"  # Override template's "ppm" default
     max_value: float = 65533.0  # Exclude special values 0xFFFE and 0xFFFF

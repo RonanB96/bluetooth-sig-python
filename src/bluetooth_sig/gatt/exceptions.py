@@ -1,12 +1,10 @@
-"""Custom exceptions for Bluetooth SIG GATT operations.
-
-This module provides specialized exceptions for different types of errors
-that can occur during GATT characteristic and service operations.
-"""
+"""GATT exceptions for the Bluetooth SIG library."""
 
 from __future__ import annotations
 
 from typing import Any
+
+from ..types.uuid import BluetoothUUID
 
 
 class BluetoothSIGError(Exception):
@@ -110,9 +108,7 @@ class TypeMismatchError(DataValidationError):
 class EnumValueError(DataValidationError):
     """Exception raised when an enum value is invalid."""
 
-    def __init__(
-        self, field: str, value: Any, enum_class: type, valid_values: list[Any]
-    ):
+    def __init__(self, field: str, value: Any, enum_class: type, valid_values: list[Any]):
         self.enum_class = enum_class
         self.valid_values = valid_values
         expected = f"{enum_class.__name__} value from {valid_values}"
@@ -139,7 +135,8 @@ class YAMLResolutionError(BluetoothSIGError):
 
 
 class ServiceCharacteristicMismatchError(ServiceError):
-    """Exception raised when expected characteristics are not found in a service."""
+    """Exception raised when expected characteristics are not found in a
+    service."""
 
     def __init__(self, service: str, missing_characteristics: list[str]):
         self.service = service
@@ -155,4 +152,32 @@ class TemplateConfigurationError(CharacteristicError):
         self.template = template
         self.configuration_issue = configuration_issue
         message = f"Template {template} configuration error: {configuration_issue}"
+        super().__init__(message)
+
+
+class UUIDRequiredError(BluetoothSIGError):
+    """Exception raised when a UUID is required but not provided or invalid."""
+
+    def __init__(self, class_name: str, entity_type: str):
+        self.class_name = class_name
+        self.entity_type = entity_type
+        message = (
+            f"Custom {entity_type} '{class_name}' requires a valid UUID. "
+            f"Provide a non-empty UUID when instantiating custom {entity_type}s."
+        )
+        super().__init__(message)
+
+
+class UUIDCollisionError(BluetoothSIGError):
+    """Exception raised when attempting to use a UUID that already exists in SIG registry."""
+
+    def __init__(self, uuid: BluetoothUUID | str, existing_name: str, class_name: str):
+        self.uuid = uuid
+        self.existing_name = existing_name
+        self.class_name = class_name
+        message = (
+            f"UUID '{uuid}' is already used by SIG characteristic '{existing_name}'. "
+            f"Cannot create custom characteristic '{class_name}' with existing SIG UUID. "
+            f"Use allow_sig_override=True if you intentionally want to override this SIG characteristic."
+        )
         super().__init__(message)

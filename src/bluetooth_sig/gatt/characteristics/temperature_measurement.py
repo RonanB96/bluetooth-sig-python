@@ -30,7 +30,6 @@ class TemperatureMeasurementData:
     temperature_type: int | None = None
 
 
-@dataclass
 class TemperatureMeasurementCharacteristic(BaseCharacteristic):
     """Temperature Measurement characteristic (0x2A1C).
 
@@ -45,10 +44,9 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
     max_length: int | None = 13  # + Timestamp(7) + TemperatureType(1) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
-        """Parse temperature measurement data according to Bluetooth specification.
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
+        """Parse temperature measurement data according to Bluetooth
+        specification.
 
         Format: Flags(1) + Temperature Value(4) + [Timestamp(7)] + [Temperature Type(1)]
         Temperature is IEEE-11073 32-bit float.
@@ -70,24 +68,16 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         # Check temperature unit flag (bit 0)
         unit = "°F" if TemperatureMeasurementFlags.FAHRENHEIT_UNIT in flags else "°C"
 
-        result = TemperatureMeasurementData(
-            temperature=temp_value, unit=unit, flags=int(flags)
-        )
+        result = TemperatureMeasurementData(temperature=temp_value, unit=unit, flags=int(flags))
 
         # Parse optional timestamp (7 bytes) if present
         offset = 5
-        if (
-            TemperatureMeasurementFlags.TIMESTAMP_PRESENT in flags
-            and len(data) >= offset + 7
-        ):
+        if TemperatureMeasurementFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
             result.timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
         # Parse optional temperature type (1 byte) if present
-        if (
-            TemperatureMeasurementFlags.TEMPERATURE_TYPE_PRESENT in flags
-            and len(data) >= offset + 1
-        ):
+        if TemperatureMeasurementFlags.TEMPERATURE_TYPE_PRESENT in flags and len(data) >= offset + 1:
             result.temperature_type = data[offset]
 
         return result
@@ -126,12 +116,3 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
             result.append(int(data.temperature_type))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        # Check for manual unit override first
-        manual_unit = getattr(self, "_manual_unit", None)
-        if manual_unit:
-            return str(manual_unit)
-        return "°C/°F"  # Unit depends on flags

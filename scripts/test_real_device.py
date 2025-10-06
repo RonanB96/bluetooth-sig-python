@@ -28,9 +28,7 @@ except ImportError as e:
 
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 async def test_device_connection(mac_address: str):
@@ -51,7 +49,7 @@ async def test_device_connection(mac_address: str):
             device_name = client.address
             try:
                 # Try to get device name from advertisement data
-                device_name = getattr(client._device, 'name', None) or client.address
+                device_name = getattr(client._device, "name", None) or client.address
             except Exception:
                 device_name = client.address
 
@@ -138,15 +136,14 @@ async def test_device_connection(mac_address: str):
 
             if values:
                 discovered_uuids = list(values.keys())
-                print(f"📊 Analyzing {len(discovered_uuids)} discovered "
-                      "characteristics:")
+                print(f"📊 Analyzing {len(discovered_uuids)} discovered " "characteristics:")
 
                 # Batch analysis
                 char_info = translator.get_characteristics_info(discovered_uuids)
                 for uuid, info in char_info.items():
                     if info:
-                        name = info.get('name', 'Unknown')
-                        data_type = info.get('data_type', 'unknown')
+                        name = info.get("name", "Unknown")
+                        data_type = info.get("data_type", "unknown")
                         print(f"  📋 {uuid}: {name} [{data_type}]")
                     else:
                         print(f"  ❓ {uuid}: Unknown characteristic")
@@ -158,13 +155,12 @@ async def test_device_connection(mac_address: str):
                     if isinstance(data, (bytes, bytearray)):
                         is_valid = translator.validate_characteristic_data(uuid, data)
                         status = "✅" if is_valid else "⚠️"
-                        validity = 'Valid' if is_valid else 'Unknown format'
+                        validity = "Valid" if is_valid else "Unknown format"
                         print(f"  {status} {uuid}: {validity}")
                         if is_valid:
                             valid_count += 1
 
-                print(f"\n📈 Validation: {valid_count}/{len(values)} "
-                      "characteristics have known format")
+                print(f"\n📈 Validation: {valid_count}/{len(values)} " "characteristics have known format")
 
             print("\n✅ Test completed successfully")
             return True
@@ -185,7 +181,7 @@ async def scan_devices(timeout: float = 10.0):
             print(f"Found {len(devices)} devices:")
             for idx, device in enumerate(devices, 1):
                 name = device.name or "Unknown"
-                rssi_str = f"({device.rssi} dBm)" if hasattr(device, 'rssi') and device.rssi else ""
+                rssi_str = f"({device.rssi} dBm)" if hasattr(device, "rssi") and device.rssi else ""
                 print(f"  {idx:2d}. {device.address} - {name} {rssi_str}")
         else:
             print("No devices found")

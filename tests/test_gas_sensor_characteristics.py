@@ -16,7 +16,6 @@ from bluetooth_sig.gatt.characteristics import (
     VOCConcentrationCharacteristic,
 )
 from bluetooth_sig.gatt.constants import MAX_CONCENTRATION_PPM
-from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 
 class TestGasSensorCharacteristics:
@@ -24,23 +23,21 @@ class TestGasSensorCharacteristics:
 
     def test_ammonia_concentration_parsing(self):
         """Test ammonia concentration characteristic parsing."""
-        char = AmmoniaConcentrationCharacteristic(uuid="", properties=set())
+        char = AmmoniaConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2BCF"
+        assert char.uuid == "2BCF"
 
         # Test metadata - Updated for SIG spec compliance (medfloat16, kg/m³)
         assert char.unit == "kg/m³"
-        assert (
-            char.value_type_resolved.value == "float"
-        )  # YAML specifies medfloat16 format
+        assert char.value_type_resolved.value == "float"  # YAML specifies medfloat16 format
 
     def test_co2_concentration_parsing(self):
         """Test CO2 concentration characteristic parsing."""
-        char = CO2ConcentrationCharacteristic(uuid="", properties=set())
+        char = CO2ConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2B8C"
+        assert char.uuid == "2B8C"
 
         # Test metadata
         assert char.unit == "ppm"
@@ -60,7 +57,7 @@ class TestGasSensorCharacteristics:
 
     def test_co2_concentration_special_values(self):
         """Test CO2 concentration special values."""
-        char = CO2ConcentrationCharacteristic(uuid="", properties=set())
+        char = CO2ConcentrationCharacteristic()
 
         # Test 0xFFFE (value is 65534) - currently not handled as special case
         result = char.decode_value(bytearray([0xFE, 0xFF]))
@@ -72,18 +69,18 @@ class TestGasSensorCharacteristics:
 
     def test_co2_concentration_invalid_data(self):
         """Test CO2 concentration with invalid data."""
-        char = CO2ConcentrationCharacteristic(uuid="", properties=set())
+        char = CO2ConcentrationCharacteristic()
 
         # Test insufficient data
-        with pytest.raises(InsufficientDataError):
+        with pytest.raises(ValueError, match="Insufficient data"):
             char.decode_value(bytearray([0x34]))
 
     def test_tvoc_concentration_parsing(self):
         """Test TVOC concentration characteristic parsing."""
-        char = NonMethaneVOCConcentrationCharacteristic(uuid="", properties=set())
+        char = NonMethaneVOCConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2BD3"
+        assert char.uuid == "2BD3"
 
         # Test metadata - Updated for SIG spec compliance (medfloat16, kg/m³)
         assert char.unit == "kg/m³"
@@ -97,7 +94,7 @@ class TestGasSensorCharacteristics:
 
     def test_tvoc_concentration_special_values(self):
         """Test TVOC concentration special values per IEEE 11073 SFLOAT."""
-        char = NonMethaneVOCConcentrationCharacteristic(uuid="", properties=set())
+        char = NonMethaneVOCConcentrationCharacteristic()
 
         # Test IEEE 11073 special values
         import math
@@ -120,10 +117,10 @@ class TestGasSensorCharacteristics:
 
     def test_voc_concentration_parsing(self):
         """Test VOC concentration characteristic parsing."""
-        char = VOCConcentrationCharacteristic(uuid="", properties=set())
+        char = VOCConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2BE7"
+        assert char.uuid == "2BE7"
 
         # Test metadata - Updated for SIG spec compliance (uint16, ppb)
         assert char.unit == "ppb"
@@ -140,7 +137,7 @@ class TestGasSensorCharacteristics:
 
     def test_voc_concentration_special_values(self):
         """Test VOC concentration special values per SIG specification."""
-        char = VOCConcentrationCharacteristic(uuid="", properties=set())
+        char = VOCConcentrationCharacteristic()
 
         # Test 0xFFFE (value is 65534 or greater)
         test_data = bytearray([0xFE, 0xFF])
@@ -170,10 +167,10 @@ class TestGasSensorCharacteristics:
 
     def test_nitrogen_dioxide_concentration_parsing(self):
         """Test nitrogen dioxide concentration characteristic parsing."""
-        char = NitrogenDioxideConcentrationCharacteristic(uuid="", properties=set())
+        char = NitrogenDioxideConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2BD2"
+        assert char.uuid == "2BD2"
 
         # Test metadata
         assert char.unit == "ppb"
@@ -185,10 +182,10 @@ class TestGasSensorCharacteristics:
 
     def test_pm25_concentration_parsing(self):
         """Test PM2.5 concentration characteristic parsing."""
-        char = PM25ConcentrationCharacteristic(uuid="", properties=set())
+        char = PM25ConcentrationCharacteristic()
 
         # Test UUID resolution
-        assert char.char_uuid == "2BD6"
+        assert char.uuid == "2BD6"
 
         # Test metadata
         assert char.unit == "µg/m³"
@@ -215,7 +212,7 @@ class TestGasSensorCharacteristics:
         ]
 
         for char_class in characteristics:
-            char = char_class(uuid="", properties=set())
+            char = char_class()
             # Remove debug output and set correct expectations
             assert char.value_type.value in [
                 "int",
@@ -225,38 +222,39 @@ class TestGasSensorCharacteristics:
             ]  # Accept current automatic parsing
 
     def test_extended_gas_sensor_characteristics(self):
-        """Test extended gas sensor characteristics not covered in other tests."""
+        """Test extended gas sensor characteristics not covered in other
+        tests."""
         # Test Methane
-        methane_char = MethaneConcentrationCharacteristic(uuid="", properties=set())
-        assert methane_char.char_uuid == "2BD1"
+        methane_char = MethaneConcentrationCharacteristic()
+        assert methane_char.uuid == "2BD1"
         assert methane_char.unit == "ppm"
 
         # Test Ozone
-        ozone_char = OzoneConcentrationCharacteristic(uuid="", properties=set())
-        assert ozone_char.char_uuid == "2BD4"
+        ozone_char = OzoneConcentrationCharacteristic()
+        assert ozone_char.uuid == "2BD4"
         assert ozone_char.unit == "ppb"
 
         # Test PM1
-        pm1_char = PM1ConcentrationCharacteristic(uuid="", properties=set())
-        assert pm1_char.char_uuid == "2BD5"
+        pm1_char = PM1ConcentrationCharacteristic()
+        assert pm1_char.uuid == "2BD5"
         assert pm1_char.unit == "µg/m³"
 
         # Test PM10
-        pm10_char = PM10ConcentrationCharacteristic(uuid="", properties=set())
-        assert pm10_char.char_uuid == "2BD7"
+        pm10_char = PM10ConcentrationCharacteristic()
+        assert pm10_char.uuid == "2BD7"
         assert pm10_char.unit == "µg/m³"
 
         # Test SO2
-        so2_char = SulfurDioxideConcentrationCharacteristic(uuid="", properties=set())
-        assert so2_char.char_uuid == "2BD8"
+        so2_char = SulfurDioxideConcentrationCharacteristic()
+        assert so2_char.uuid == "2BD8"
         assert so2_char.unit == "ppb"
 
     def test_particulate_matter_parsing(self):
         """Test particulate matter characteristics parsing."""
         chars = [
-            (PM1ConcentrationCharacteristic(uuid="", properties=set()), "PM1"),
-            (PM25ConcentrationCharacteristic(uuid="", properties=set()), "PM2.5"),
-            (PM10ConcentrationCharacteristic(uuid="", properties=set()), "PM10"),
+            (PM1ConcentrationCharacteristic(), "PM1"),
+            (PM25ConcentrationCharacteristic(), "PM2.5"),
+            (PM10ConcentrationCharacteristic(), "PM10"),
         ]
 
         for char, name in chars:
@@ -272,17 +270,17 @@ class TestGasSensorCharacteristics:
         """Test gas concentration characteristics parsing."""
         chars = [
             (
-                MethaneConcentrationCharacteristic(uuid="", properties=set()),
+                MethaneConcentrationCharacteristic(),
                 "Methane",
                 "ppm",
             ),
             (
-                OzoneConcentrationCharacteristic(uuid="", properties=set()),
+                OzoneConcentrationCharacteristic(),
                 "Ozone",
                 "ppb",
             ),
             (
-                SulfurDioxideConcentrationCharacteristic(uuid="", properties=set()),
+                SulfurDioxideConcentrationCharacteristic(),
                 "SO2",
                 "ppb",
             ),

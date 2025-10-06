@@ -1,7 +1,7 @@
 """Utilities package for bluetooth_sig examples.
 
-This package contains utilities split by functionality to improve maintainability
-and reduce the size of individual modules.
+This package contains utilities split by functionality to improve
+maintainability and reduce the size of individual modules.
 """
 
 # Set up path for imports from src directory

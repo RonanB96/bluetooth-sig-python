@@ -92,28 +92,20 @@ class TestBLEAdvertisingPDU:
 
     def test_extended_advertising_detection(self):
         """Test detection of extended advertising PDUs."""
-        extended_pdu = BLEAdvertisingPDU(
-            pdu_type=PDUType.ADV_EXT_IND, tx_add=False, rx_add=False, length=5
-        )
+        extended_pdu = BLEAdvertisingPDU(pdu_type=PDUType.ADV_EXT_IND, tx_add=False, rx_add=False, length=5)
         assert extended_pdu.is_extended_advertising is True
         assert extended_pdu.is_legacy_advertising is False
 
-        legacy_pdu = BLEAdvertisingPDU(
-            pdu_type=PDUType.ADV_IND, tx_add=False, rx_add=False, length=5
-        )
+        legacy_pdu = BLEAdvertisingPDU(pdu_type=PDUType.ADV_IND, tx_add=False, rx_add=False, length=5)
         assert legacy_pdu.is_extended_advertising is False
         assert legacy_pdu.is_legacy_advertising is True
 
     def test_pdu_name_property(self):
         """Test PDU name resolution."""
-        pdu = BLEAdvertisingPDU(
-            pdu_type=PDUType.ADV_IND, tx_add=False, rx_add=False, length=5
-        )
+        pdu = BLEAdvertisingPDU(pdu_type=PDUType.ADV_IND, tx_add=False, rx_add=False, length=5)
         assert pdu.pdu_name == "ADV_IND"
 
-        pdu = BLEAdvertisingPDU(
-            pdu_type=PDUType.ADV_EXT_IND, tx_add=False, rx_add=False, length=5
-        )
+        pdu = BLEAdvertisingPDU(pdu_type=PDUType.ADV_EXT_IND, tx_add=False, rx_add=False, length=5)
         assert pdu.pdu_name == "ADV_EXT_IND"
 
 

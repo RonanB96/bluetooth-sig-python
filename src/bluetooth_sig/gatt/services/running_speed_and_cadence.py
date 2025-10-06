@@ -1,5 +1,7 @@
 """Running Speed and Cadence Service implementation."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -11,8 +13,9 @@ from .base import BaseGattService
 class RunningSpeedAndCadenceService(BaseGattService):
     """Running Speed and Cadence Service implementation (0x1814).
 
-    Used for running sensors that measure speed, cadence, stride length, and distance.
-    Contains the RSC Measurement characteristic for running metrics.
+    Used for running sensors that measure speed, cadence, stride length,
+    and distance. Contains the RSC Measurement characteristic for
+    running metrics.
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {

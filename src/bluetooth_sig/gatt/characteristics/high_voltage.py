@@ -1,17 +1,18 @@
 """High Voltage characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import Uint24ScaledCharacteristic
+from .base import BaseCharacteristic
+from .templates import ScaledUint24Template
 
 
-@dataclass
-class HighVoltageCharacteristic(Uint24ScaledCharacteristic):
+class HighVoltageCharacteristic(BaseCharacteristic):
     """High Voltage characteristic.
 
-    Measures high voltage systems using uint24 format.
+    Measures high voltage systems using uint24 (3 bytes) format.
     """
 
-    _characteristic_name: str = "High Voltage"
+    _template = ScaledUint24Template(scale_factor=1.0)
+
+    _manual_unit: str = "V"  # Override template's "units" default
     resolution: float = 1.0
-    measurement_unit: str = "V"

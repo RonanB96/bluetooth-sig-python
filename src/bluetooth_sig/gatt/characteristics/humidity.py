@@ -1,21 +1,23 @@
 """Humidity characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
+from ...types.gatt_enums import ValueType
 from ..constants import PERCENTAGE_MAX
-from .templates import ScaledUint16Characteristic
+from .base import BaseCharacteristic
+from .templates import ScaledUint16Template
 
 
-@dataclass
-class HumidityCharacteristic(ScaledUint16Characteristic):
+class HumidityCharacteristic(BaseCharacteristic):
     """Humidity measurement characteristic."""
 
+    _template = ScaledUint16Template()
+
     _characteristic_name: str = "Humidity"
-    _manual_value_type: str = (
-        "float"  # Override YAML int type since decode_value returns float
-    )
+    # Override YAML int type since decode_value returns float
+    _manual_value_type: ValueType | str | None = ValueType.FLOAT
+    _manual_unit: str = "%"  # Override template's "units" default
 
     # Template configuration
     resolution: float = 0.01  # 0.01% resolution
-    measurement_unit: str = "%"
     max_value: float = PERCENTAGE_MAX  # Humidity max 100%

@@ -1,15 +1,18 @@
 """Sound Pressure Level characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import SignedSoundPressureCharacteristic
+from .base import BaseCharacteristic
+from .templates import ScaledSint16Template
 
 
-@dataclass
-class SoundPressureLevelCharacteristic(SignedSoundPressureCharacteristic):
+class SoundPressureLevelCharacteristic(BaseCharacteristic):
     """Power Specification characteristic (0x2B06).
 
     Measures power specification values.
+    Format: sint16 (2 bytes) with 0.1 resolution.
     """
+
+    _template = ScaledSint16Template(scale_factor=0.1)
 
     _characteristic_name: str = "Power Specification"

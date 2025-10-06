@@ -20,13 +20,13 @@ class TestBodyCompositionMeasurementCharacteristic:
 
     def test_characteristic_name(self):
         """Test characteristic name resolution."""
-        char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
+        char = BodyCompositionMeasurementCharacteristic()
         assert char.name == "Body Composition Measurement"
         assert char.value_type == ValueType.BYTES
 
     def test_parse_basic_body_fat_metric(self):
         """Test parsing basic body fat percentage in metric units."""
-        char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
+        char = BodyCompositionMeasurementCharacteristic()
 
         # Flags: 0x0000 (metric units), Body Fat: 250 (25.0% with 0.1% resolution)
         data = bytearray([0x00, 0x00, 0xFA, 0x00])  # 0x00FA = 250
@@ -38,7 +38,7 @@ class TestBodyCompositionMeasurementCharacteristic:
 
     def test_parse_body_fat_imperial(self):
         """Test parsing body fat percentage in imperial units."""
-        char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
+        char = BodyCompositionMeasurementCharacteristic()
 
         # Flags: 0x0001 (imperial units), Body Fat: 180 (18.0%)
         data = bytearray([0x01, 0x00, 0xB4, 0x00])  # 0x00B4 = 180
@@ -50,7 +50,7 @@ class TestBodyCompositionMeasurementCharacteristic:
 
     def test_parse_with_user_id(self):
         """Test parsing with user ID."""
-        char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
+        char = BodyCompositionMeasurementCharacteristic()
 
         # Flags: 0x0004 (user ID present), Body Fat: 250, User ID: 3
         data = bytearray([0x04, 0x00, 0xFA, 0x00, 0x03])
@@ -62,7 +62,7 @@ class TestBodyCompositionMeasurementCharacteristic:
 
     def test_parse_with_muscle_mass_metric(self):
         """Test parsing with muscle mass in metric units."""
-        char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
+        char = BodyCompositionMeasurementCharacteristic()
 
         # Flags: 0x0010 (muscle mass present), Body Fat: 250,
         # Muscle Mass: 10000 (50.0 kg)
@@ -76,7 +76,7 @@ class TestBodyCompositionMeasurementCharacteristic:
 
     def test_parse_with_muscle_mass_imperial(self):
         """Test parsing with muscle mass in imperial units."""
-        char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
+        char = BodyCompositionMeasurementCharacteristic()
 
         # Flags: 0x0011 (imperial + muscle mass), Body Fat: 250,
         # Muscle Mass: 11000 (110.0 lb)
@@ -90,16 +90,16 @@ class TestBodyCompositionMeasurementCharacteristic:
 
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""
-        char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
+        char = BodyCompositionMeasurementCharacteristic()
 
         # Too short data
         with pytest.raises(ValueError, match="at least 4 bytes"):
             char.decode_value(bytearray([0x00, 0x00, 0xFA]))
 
     def test_unit_property(self):
-        """Test unit property."""
-        char = BodyCompositionMeasurementCharacteristic(uuid="", properties=set())
-        assert char.unit == "%"
+        """Test unit property - should return 'various' for multi-unit characteristic."""
+        char = BodyCompositionMeasurementCharacteristic()
+        assert char.unit == "various"
 
 
 class TestBodyCompositionFeatureCharacteristic:
@@ -107,13 +107,13 @@ class TestBodyCompositionFeatureCharacteristic:
 
     def test_characteristic_name(self):
         """Test characteristic name resolution."""
-        char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
+        char = BodyCompositionFeatureCharacteristic()
         assert char.name == "Body Composition Feature"
         assert char.value_type == ValueType.BYTES
 
     def test_parse_basic_features(self):
         """Test parsing basic feature flags."""
-        char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
+        char = BodyCompositionFeatureCharacteristic()
 
         # Features: 0x0000001F (timestamp, multiple users, basal metabolism,
         # muscle mass, muscle %)
@@ -128,7 +128,7 @@ class TestBodyCompositionFeatureCharacteristic:
 
     def test_parse_no_features(self):
         """Test parsing with no features enabled."""
-        char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
+        char = BodyCompositionFeatureCharacteristic()
 
         # Features: 0x00000000 (no features)
         data = bytearray([0x00, 0x00, 0x00, 0x00])
@@ -142,7 +142,7 @@ class TestBodyCompositionFeatureCharacteristic:
 
     def test_parse_invalid_data(self):
         """Test parsing with invalid data."""
-        char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
+        char = BodyCompositionFeatureCharacteristic()
 
         # Too short data
         with pytest.raises(ValueError, match="at least 4 bytes"):
@@ -150,12 +150,12 @@ class TestBodyCompositionFeatureCharacteristic:
 
     def test_unit_property(self):
         """Test unit property (should be empty for feature characteristic)."""
-        char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
+        char = BodyCompositionFeatureCharacteristic()
         assert char.unit == ""
 
     def test_encode_value(self):
         """Test encoding BodyCompositionFeatureData back to bytes."""
-        char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
+        char = BodyCompositionFeatureCharacteristic()
 
         from bluetooth_sig.gatt.characteristics.body_composition_feature import (
             BodyCompositionFeatureData,
@@ -188,7 +188,7 @@ class TestBodyCompositionFeatureCharacteristic:
 
     def test_round_trip_basic(self):
         """Test that parsing and encoding preserve basic feature data."""
-        char = BodyCompositionFeatureCharacteristic(uuid="", properties=set())
+        char = BodyCompositionFeatureCharacteristic()
 
         # Test with basic features only (no resolution fields to preserve simplicity)
         original_data = bytearray([0x1F, 0x00, 0x00, 0x00])
@@ -218,10 +218,7 @@ class TestBodyCompositionService:
             expected[CharacteristicName.BODY_COMPOSITION_MEASUREMENT].char_class
             == BodyCompositionMeasurementCharacteristic
         )
-        assert (
-            expected[CharacteristicName.BODY_COMPOSITION_FEATURE].char_class
-            == BodyCompositionFeatureCharacteristic
-        )
+        assert expected[CharacteristicName.BODY_COMPOSITION_FEATURE].char_class == BodyCompositionFeatureCharacteristic
 
     def test_required_characteristics(self):
         """Test required characteristics for the service."""

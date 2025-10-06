@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import IntEnum
+from typing import Any
 
-from .templates import EnumCharacteristic
+from .base import BaseCharacteristic
+from .templates import Uint8Template
 
 
 class BarometricPressureTrend(IntEnum):
@@ -47,16 +48,34 @@ class BarometricPressureTrend(IntEnum):
             return cls.UNKNOWN
 
 
-@dataclass
-class BarometricPressureTrendCharacteristic(EnumCharacteristic):
+class BarometricPressureTrendCharacteristic(BaseCharacteristic):
     """Barometric pressure trend characteristic.
 
     Represents the trend observed for barometric pressure using
     enumerated values.
     """
 
-    _characteristic_name: str = "Barometric Pressure Trend"
-    # Manual override: YAML indicates uint8->int but we return enum
-    _manual_value_type: str = "BarometricPressureTrend"
+    _template = Uint8Template()  # Used for base uint8 parsing, then converted to enum
 
-    enum_class: type = BarometricPressureTrend
+    # Manual override: YAML indicates uint8->int but we return enum
+    _manual_value_type = "BarometricPressureTrend"
+
+    enum_class = BarometricPressureTrend
+
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> BarometricPressureTrend:
+        """Parse barometric pressure trend and return enum.
+
+        Maps reserved value (0xFF) and invalid values to UNKNOWN.
+        """
+        # Use template to parse uint8
+        raw_value = self._template.decode_value(data, offset=0, ctx=ctx)
+        # Convert to enum with fallback
+        return BarometricPressureTrend.from_value(raw_value)
+
+    def encode_value(self, data: BarometricPressureTrend | int) -> bytearray:
+        """Encode barometric pressure trend enum to bytes."""
+        if isinstance(data, BarometricPressureTrend):
+            value = data.value
+        else:
+            value = int(data)
+        return self._template.encode_value(value)

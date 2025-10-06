@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ...types.gatt_enums import ValueType
 from ..constants import SINT16_MAX, SINT16_MIN
 from .base import BaseCharacteristic
 
@@ -15,39 +16,31 @@ class SupportedPowerRangeData:
 
     minimum: int  # Minimum power in Watts
     maximum: int  # Maximum power in Watts
-    unit: str = "W"
 
     def __post_init__(self) -> None:
         """Validate power range data."""
         if self.minimum > self.maximum:
-            raise ValueError(
-                f"Minimum power {self.minimum} W cannot be greater than maximum {self.maximum} W"
-            )
+            raise ValueError(f"Minimum power {self.minimum} W cannot be greater than maximum {self.maximum} W")
 
         # Validate range for sint16 (SINT16_MIN to SINT16_MAX)
         if not SINT16_MIN <= self.minimum <= SINT16_MAX:
-            raise ValueError(
-                f"Minimum power {self.minimum} W is outside valid range (SINT16_MIN to SINT16_MAX W)"
-            )
+            raise ValueError(f"Minimum power {self.minimum} W is outside valid range (SINT16_MIN to SINT16_MAX W)")
         if not SINT16_MIN <= self.maximum <= SINT16_MAX:
-            raise ValueError(
-                f"Maximum power {self.maximum} W is outside valid range (SINT16_MIN to SINT16_MAX W)"
-            )
+            raise ValueError(f"Maximum power {self.maximum} W is outside valid range (SINT16_MIN to SINT16_MAX W)")
 
 
-@dataclass
 class SupportedPowerRangeCharacteristic(BaseCharacteristic):
     """Supported Power Range characteristic.
 
-    Specifies minimum and maximum power values for power capability specification.
+    Specifies minimum and maximum power values for power capability
+    specification.
     """
 
     _characteristic_name: str = "Supported Power Range"
-    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
+    # Override since decode_value returns structured SupportedPowerRangeData
+    _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> SupportedPowerRangeData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> SupportedPowerRangeData:
         """Parse supported power range data (2x sint16 in watts).
 
         Args:
@@ -78,10 +71,7 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
             Encoded bytes representing the power range (2x sint16)
         """
         if not isinstance(data, SupportedPowerRangeData):
-            raise TypeError(
-                f"Supported power range data must be a SupportedPowerRangeData, "
-                f"got {type(data).__name__}"
-            )
+            raise TypeError(f"Supported power range data must be a SupportedPowerRangeData, got {type(data).__name__}")
 
         # Validate range for sint16 (SINT16_MIN to SINT16_MAX)
         if not SINT16_MIN <= data.minimum <= SINT16_MAX:
@@ -94,8 +84,3 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
         result.extend(data.maximum.to_bytes(2, byteorder="little", signed=True))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "W"

@@ -1,18 +1,19 @@
 """Rainfall characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import ScaledUint16Characteristic
+from .base import BaseCharacteristic
+from .templates import ScaledUint16Template
 
 
-@dataclass
-class RainfallCharacteristic(ScaledUint16Characteristic):
+class RainfallCharacteristic(BaseCharacteristic):
     """Rainfall characteristic.
 
-    Represents the amount of rain that has fallen in millimeters.
-    Uses uint16 with 1 mm resolution (1:1 scaling).
+    Represents the amount of rain that has fallen in millimeters. Uses
+    uint16 with 1 mm resolution (1:1 scaling).
     """
 
-    _characteristic_name: str = "Rainfall"
+    _template = ScaledUint16Template(scale_factor=1.0)  # 1mm resolution
+
+    _manual_unit: str = "mm"  # Override template's "units" default
     resolution: float = 1.0  # 1mm resolution
-    measurement_unit: str = "mm"

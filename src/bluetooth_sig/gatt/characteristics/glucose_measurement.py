@@ -115,23 +115,20 @@ class GlucoseMeasurementData:  # pylint: disable=too-many-instance-attributes
         return value in {0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
 
 
-@dataclass
 class GlucoseMeasurementCharacteristic(BaseCharacteristic):
     """Glucose Measurement characteristic (0x2A18).
 
-    Used to transmit glucose concentration measurements with timestamps and status.
-    Core characteristic for glucose monitoring devices.
+    Used to transmit glucose concentration measurements with timestamps
+    and status. Core characteristic for glucose monitoring devices.
     """
 
-    _characteristic_name: str = "Glucose Measurement"
+    _manual_unit: str = "mg/dL or mmol/L"  # Unit depends on flags
 
     min_length: int = 12  # Ensured consistency with GlucoseMeasurementData
     max_length: int = 17  # Ensured consistency with GlucoseMeasurementData
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> GlucoseMeasurementData:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> GlucoseMeasurementData:  # pylint: disable=too-many-locals
         """Parse glucose measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + Base Time(7) + [Time Offset(2)] +
@@ -170,13 +167,8 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
         )
 
         # Parse optional time offset (2 bytes) if present
-        if (
-            GlucoseMeasurementFlags.TIME_OFFSET_PRESENT in flags
-            and len(data) >= offset + 2
-        ):
-            result.time_offset_minutes = DataParser.parse_int16(
-                data, offset, signed=True
-            )  # signed
+        if GlucoseMeasurementFlags.TIME_OFFSET_PRESENT in flags and len(data) >= offset + 2:
+            result.time_offset_minutes = DataParser.parse_int16(data, offset, signed=True)  # signed
             offset += 2
 
         # Parse glucose concentration (2 bytes) - IEEE-11073 SFLOAT
@@ -184,21 +176,14 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
             glucose_value = IEEE11073Parser.parse_sfloat(data, offset)
 
             # Determine unit based on flags
-            unit = (
-                "mmol/L"
-                if GlucoseMeasurementFlags.GLUCOSE_CONCENTRATION_UNITS_MMOL_L in flags
-                else "mg/dL"
-            )
+            unit = "mmol/L" if GlucoseMeasurementFlags.GLUCOSE_CONCENTRATION_UNITS_MMOL_L in flags else "mg/dL"
 
             result.glucose_concentration = glucose_value
             result.unit = unit
             offset += 2
 
         # Parse optional type and sample location (1 byte) if present
-        if (
-            GlucoseMeasurementFlags.TYPE_SAMPLE_LOCATION_PRESENT in flags
-            and len(data) >= offset + 1
-        ):
+        if GlucoseMeasurementFlags.TYPE_SAMPLE_LOCATION_PRESENT in flags and len(data) >= offset + 1:
             type_sample = data[offset]
             glucose_type = BitFieldUtils.extract_bit_field(
                 type_sample,
@@ -217,10 +202,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
             offset += 1
 
         # Parse optional sensor status annotation (2 bytes) if present
-        if (
-            GlucoseMeasurementFlags.SENSOR_STATUS_ANNUNCIATION_PRESENT in flags
-            and len(data) >= offset + 2
-        ):
+        if GlucoseMeasurementFlags.SENSOR_STATUS_ANNUNCIATION_PRESENT in flags and len(data) >= offset + 2:
             result.sensor_status = DataParser.parse_int16(data, offset, signed=False)
 
         return result
@@ -247,9 +229,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
 
         # Validate ranges
         if not 0 <= data.sequence_number <= 0xFFFF:
-            raise ValueError(
-                f"Sequence number {data.sequence_number} exceeds uint16 range"
-            )
+            raise ValueError(f"Sequence number {data.sequence_number} exceeds uint16 range")
 
         # Start with flags, sequence number, and base time
         result = bytearray([int(flags)])
@@ -259,12 +239,8 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
         # Add optional time offset
         if data.time_offset_minutes is not None:
             if not SINT16_MIN <= data.time_offset_minutes <= SINT16_MAX:
-                raise ValueError(
-                    f"Time offset {data.time_offset_minutes} exceeds sint16 range"
-                )
-            result.extend(
-                DataParser.encode_int16(data.time_offset_minutes, signed=True)
-            )
+                raise ValueError(f"Time offset {data.time_offset_minutes} exceeds sint16 range")
+            result.extend(DataParser.encode_int16(data.time_offset_minutes, signed=True))
 
         # Add glucose concentration using IEEE-11073 SFLOAT
         result.extend(IEEE11073Parser.encode_sfloat(data.glucose_concentration))
@@ -290,14 +266,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
         # Add optional sensor status
         if data.sensor_status is not None:
             if not 0 <= data.sensor_status <= 0xFFFF:
-                raise ValueError(
-                    f"Sensor status {data.sensor_status} exceeds uint16 range"
-                )
+                raise ValueError(f"Sensor status {data.sensor_status} exceeds uint16 range")
             result.extend(DataParser.encode_int16(data.sensor_status, signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "mg/dL or mmol/L"  # Unit depends on flags

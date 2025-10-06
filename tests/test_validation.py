@@ -225,12 +225,8 @@ class TestStrictValidator:
     def test_validate_dict_success(self):
         """Test successful dictionary validation."""
         validator = StrictValidator()
-        validator.add_rule(
-            ValidationRule("temperature", float, min_value=-40.0, max_value=85.0)
-        )
-        validator.add_rule(
-            ValidationRule("humidity", float, min_value=0.0, max_value=100.0)
-        )
+        validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
+        validator.add_rule(ValidationRule("humidity", float, min_value=0.0, max_value=100.0))
 
         data = {"temperature": 25.5, "humidity": 65.0, "other_field": "ignored"}
 
@@ -240,9 +236,7 @@ class TestStrictValidator:
     def test_validate_dict_failure(self):
         """Test dictionary validation failure."""
         validator = StrictValidator()
-        validator.add_rule(
-            ValidationRule("temperature", float, min_value=-40.0, max_value=85.0)
-        )
+        validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
 
         data = {"temperature": 150.0}  # Out of range
 
@@ -263,12 +257,8 @@ class TestStrictValidator:
                 self.humidity = humidity
 
         validator = StrictValidator()
-        validator.add_rule(
-            ValidationRule("temperature", float, min_value=-40.0, max_value=85.0)
-        )
-        validator.add_rule(
-            ValidationRule("humidity", float, min_value=0.0, max_value=100.0)
-        )
+        validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
+        validator.add_rule(ValidationRule("humidity", float, min_value=0.0, max_value=100.0))
 
         reading = SensorReading(25.5, 65.0)
 
@@ -287,9 +277,7 @@ class TestStrictValidator:
                 self.temperature = temperature
 
         validator = StrictValidator()
-        validator.add_rule(
-            ValidationRule("temperature", float, min_value=-40.0, max_value=85.0)
-        )
+        validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
 
         reading = SensorReading(-50.0)  # Out of range
 
@@ -310,12 +298,8 @@ class TestStrictValidator:
                 self.temperature = temperature
 
         validator = StrictValidator()
-        validator.add_rule(
-            ValidationRule("temperature", float, min_value=-40.0, max_value=85.0)
-        )
-        validator.add_rule(
-            ValidationRule("humidity", float, min_value=0.0, max_value=100.0)
-        )
+        validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
+        validator.add_rule(ValidationRule("humidity", float, min_value=0.0, max_value=100.0))
 
         reading = PartialReading(25.5)
 
@@ -364,12 +348,8 @@ class TestValidationIntegration:
     def test_realistic_sensor_validation(self):
         """Test realistic sensor data validation scenario."""
         # Simulate validating sensor reading
-        temperature_rule = ValidationRule(
-            "temperature", (int, float), min_value=-40.0, max_value=85.0
-        )
-        humidity_rule = ValidationRule(
-            "humidity", (int, float), min_value=0.0, max_value=100.0
-        )
+        temperature_rule = ValidationRule("temperature", (int, float), min_value=-40.0, max_value=85.0)
+        humidity_rule = ValidationRule("humidity", (int, float), min_value=0.0, max_value=100.0)
 
         # Valid sensor readings
         temperature_rule.validate(23.5)
@@ -424,11 +404,7 @@ class TestValidationIntegration:
                 custom_validator=CommonValidators.is_valid_percentage,
             )
         )
-        validator.add_rule(
-            ValidationRule(
-                "power", (int, float), custom_validator=CommonValidators.is_valid_power
-            )
-        )
+        validator.add_rule(ValidationRule("power", (int, float), custom_validator=CommonValidators.is_valid_power))
 
         # Valid data
         valid_data = {

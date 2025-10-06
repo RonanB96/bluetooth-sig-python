@@ -1,20 +1,22 @@
 """Electric Current characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import ScaledUint16Characteristic
+from .base import BaseCharacteristic
+from .templates import ScaledUint16Template
 
 
-@dataclass
-class ElectricCurrentCharacteristic(ScaledUint16Characteristic):
+class ElectricCurrentCharacteristic(BaseCharacteristic):
     """Electric Current characteristic.
 
     Measures electric current with 0.01 A resolution.
     """
 
+    _template = ScaledUint16Template()
+
     _characteristic_name: str = "Electric Current"
+    _manual_unit: str = "A"  # Override template's "units" default
 
     # Template configuration
     resolution: float = 0.01  # 0.01 A resolution
-    measurement_unit: str = "A"
     max_value: float = 655.35  # 65535 * 0.01 A max

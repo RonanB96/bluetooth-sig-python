@@ -1,22 +1,25 @@
 """PM1 Concentration characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import ConcentrationCharacteristic
+from ...types.gatt_enums import ValueType
+from .base import BaseCharacteristic
+from .templates import ConcentrationTemplate
 
 
-@dataclass
-class PM1ConcentrationCharacteristic(ConcentrationCharacteristic):
-    """PM1 particulate matter concentration characteristic (0x2BD5).
+class PM1ConcentrationCharacteristic(BaseCharacteristic):
+    """PM1 particulate matter concentration characteristic (0x2BD7).
 
-    Represents particulate matter PM1 concentration in micrograms per cubic meter
-    with a resolution of 1 μg/m³.
+    Represents particulate matter PM1 concentration in micrograms per
+    cubic meter with a resolution of 1 μg/m³.
     """
 
+    _template = ConcentrationTemplate()
+
     _characteristic_name: str = "Particulate Matter - PM1 Concentration"
-    _manual_value_type: str = "int"  # Manual override needed as no YAML available
+    _manual_value_type: ValueType | str | None = ValueType.INT
+    _manual_unit: str = "µg/m³"  # Override template's "ppm" default
 
     # Template configuration
     resolution: float = 1.0
-    concentration_unit: str = "µg/m³"
     max_value: float = 65533.0  # Exclude special values 0xFFFE and 0xFFFF

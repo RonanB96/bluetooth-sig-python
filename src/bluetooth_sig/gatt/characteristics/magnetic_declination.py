@@ -1,12 +1,13 @@
 """Magnetic Declination characteristic implementation."""
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-from .templates import ScaledUint16Characteristic
+from ...types.gatt_enums import ValueType
+from .base import BaseCharacteristic
+from .templates import ScaledUint16Template
 
 
-@dataclass
-class MagneticDeclinationCharacteristic(ScaledUint16Characteristic):
+class MagneticDeclinationCharacteristic(BaseCharacteristic):
     """Magnetic declination characteristic.
 
     Represents the magnetic declination - the angle on the horizontal plane
@@ -14,14 +15,15 @@ class MagneticDeclinationCharacteristic(ScaledUint16Characteristic):
     Magnetic North, measured clockwise from True North to Magnetic North.
     """
 
+    _template = ScaledUint16Template()
+
     _characteristic_name: str = "Magnetic Declination"
-    _manual_value_type: str = (
-        "float"  # Override YAML int type since decode_value returns float
-    )
+    # Override YAML int type since decode_value returns float
+    _manual_value_type: ValueType | str | None = ValueType.FLOAT
+    _manual_unit: str = "°"  # Override template's "units" default
 
     # Template configuration
     resolution: float = 0.01  # 0.01 degree resolution
-    measurement_unit: str = "°"
     max_value: float = 655.35  # 65535 * 0.01 degrees max
 
     def encode_value(self, data: float) -> bytearray:

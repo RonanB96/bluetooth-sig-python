@@ -1,7 +1,7 @@
 """Shared constants for GATT characteristics and services.
 
-This module provides commonly used constants throughout the Bluetooth SIG
-implementation to avoid duplication and ensure consistency.
+This module provides commonly used constants throughout the Bluetooth
+SIG implementation to avoid duplication and ensure consistency.
 """
 
 from __future__ import annotations

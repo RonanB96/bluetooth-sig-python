@@ -1,5 +1,7 @@
 """Health Thermometer Service implementation."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -11,8 +13,9 @@ from .base import BaseGattService
 class HealthThermometerService(BaseGattService):
     """Health Thermometer Service implementation (0x1809).
 
-    Used for medical temperature measurement devices.
-    Contains the Temperature Measurement characteristic for medical-grade temperature readings.
+    Used for medical temperature measurement devices. Contains the
+    Temperature Measurement characteristic for medical-grade temperature
+    readings.
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {

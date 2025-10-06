@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import IntFlag
 from typing import Any
 
+from ...types.gatt_enums import ValueType
 from .base import BaseCharacteristic
 from .utils import DataParser
 
@@ -34,20 +35,19 @@ class BloodPressureFeatureData:
     multiple_bond_support: bool
 
 
-@dataclass
 class BloodPressureFeatureCharacteristic(BaseCharacteristic):
     """Blood Pressure Feature characteristic (0x2A49).
 
-    Used to expose the supported features of a blood pressure monitoring device.
-    Indicates which optional measurements and capabilities are available.
+    Used to expose the supported features of a blood pressure monitoring
+    device. Indicates which optional measurements and capabilities are
+    available.
     """
 
-    _characteristic_name: str = "Blood Pressure Feature"
+    _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> BloodPressureFeatureData:
-        """Parse blood pressure feature data according to Bluetooth specification.
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> BloodPressureFeatureData:
+        """Parse blood pressure feature data according to Bluetooth
+        specification.
 
         Format: Features(2) - 16-bit bitmap indicating supported features
 
@@ -62,24 +62,12 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
 
         features_bitmap = DataParser.parse_int16(data, 0, signed=False)
 
-        body_movement_detection = bool(
-            features_bitmap & BloodPressureFeatures.BODY_MOVEMENT_DETECTION
-        )
-        cuff_fit_detection = bool(
-            features_bitmap & BloodPressureFeatures.CUFF_FIT_DETECTION
-        )
-        irregular_pulse_detection = bool(
-            features_bitmap & BloodPressureFeatures.IRREGULAR_PULSE_DETECTION
-        )
-        pulse_rate_range_detection = bool(
-            features_bitmap & BloodPressureFeatures.PULSE_RATE_RANGE_DETECTION
-        )
-        measurement_position_detection = bool(
-            features_bitmap & BloodPressureFeatures.MEASUREMENT_POSITION_DETECTION
-        )
-        multiple_bond_support = bool(
-            features_bitmap & BloodPressureFeatures.MULTIPLE_BOND_SUPPORT
-        )
+        body_movement_detection = bool(features_bitmap & BloodPressureFeatures.BODY_MOVEMENT_DETECTION)
+        cuff_fit_detection = bool(features_bitmap & BloodPressureFeatures.CUFF_FIT_DETECTION)
+        irregular_pulse_detection = bool(features_bitmap & BloodPressureFeatures.IRREGULAR_PULSE_DETECTION)
+        pulse_rate_range_detection = bool(features_bitmap & BloodPressureFeatures.PULSE_RATE_RANGE_DETECTION)
+        measurement_position_detection = bool(features_bitmap & BloodPressureFeatures.MEASUREMENT_POSITION_DETECTION)
+        multiple_bond_support = bool(features_bitmap & BloodPressureFeatures.MULTIPLE_BOND_SUPPORT)
 
         return BloodPressureFeatureData(
             features_bitmap=features_bitmap,
@@ -101,8 +89,3 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
             Encoded bytes representing the blood pressure features
         """
         return DataParser.encode_int16(data.features_bitmap, signed=False)
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "bitmap"

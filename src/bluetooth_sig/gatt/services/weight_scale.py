@@ -1,5 +1,7 @@
 """Weight Scale Service implementation."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -11,8 +13,9 @@ from .base import BaseGattService
 class WeightScaleService(BaseGattService):
     """Weight Scale Service implementation (0x181D).
 
-    Used for smart scale devices that measure weight and related body metrics.
-    Contains Weight Measurement and Weight Scale Feature characteristics.
+    Used for smart scale devices that measure weight and related body
+    metrics. Contains Weight Measurement and Weight Scale Feature
+    characteristics.
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {

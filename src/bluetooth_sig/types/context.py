@@ -15,9 +15,7 @@ class DeviceInfo:
 
     address: str = ""
     name: str = ""
-    manufacturer_data: dict[int, bytes] = field(
-        default_factory=lambda: cast(dict[int, bytes], {})
-    )
+    manufacturer_data: dict[int, bytes] = field(default_factory=lambda: cast(dict[int, bytes], {}))
     service_uuids: list[str] = field(default_factory=lambda: cast(list[str], []))
 
 

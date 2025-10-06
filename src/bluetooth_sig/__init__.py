@@ -1,7 +1,10 @@
 """Bluetooth SIG Standards Library for pure SIG standard interpretation.
+from __future__ import annotations
 
-A framework-agnostic library for parsing and interpreting Bluetooth SIG standards,
-including GATT characteristics, services, and UUID resolution.
+
+A framework-agnostic library for parsing and interpreting Bluetooth SIG
+standards, including GATT characteristics, services, and UUID
+resolution.
 """
 
 from .core import BluetoothSIGTranslator

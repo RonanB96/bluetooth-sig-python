@@ -54,10 +54,25 @@ print_warning() {
 check_venv() {
     if [ -z "${VIRTUAL_ENV:-}" ]; then
         print_warning "Virtual environment not detected."
-        if [ -n "${PROJECT_ROOT:-}" ]; then
-            print_warning "Consider running: source $PROJECT_ROOT/.venv/bin/activate"
+        # Attempt auto-activation if a local .venv exists
+        local candidate="${PROJECT_ROOT:-.}/.venv/bin/activate"
+        if [ -f "$candidate" ]; then
+            print_header "Attempting to activate project virtualenv: ${candidate%/bin/activate}"
+            # shellcheck disable=SC1091
+            # shellcheck source=/dev/null
+            if source "$candidate"; then
+                print_success "Activated virtual environment: $VIRTUAL_ENV"
+            else
+                print_warning "Failed to activate virtualenv at $candidate"
+                print_warning "Run: source $candidate"
+            fi
         else
-            print_warning "Consider running: source .venv/bin/activate"
+            if [ -n "${PROJECT_ROOT:-}" ]; then
+                print_warning "No .venv found at $PROJECT_ROOT/.venv"
+                print_warning "Create one with: python -m venv .venv && source .venv/bin/activate && pip install -e '.[dev]'"
+            else
+                print_warning "Create one with: python -m venv .venv && source .venv/bin/activate && pip install -e '.[dev]'"
+            fi
         fi
     else
         print_success "Virtual environment active: $VIRTUAL_ENV"

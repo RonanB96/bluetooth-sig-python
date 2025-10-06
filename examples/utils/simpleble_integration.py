@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """SimplePyBLE integration utilities for BLE examples.
 
-This module provides SimplePyBLE-specific BLE connection and characteristic reading functions.
+This module provides SimplePyBLE-specific BLE connection and
+characteristic reading functions.
 """
 
 from __future__ import annotations
@@ -18,7 +19,8 @@ from bluetooth_sig.device.connection import ConnectionManagerProtocol
 
 
 class SimpleCharacteristic:
-    """Simple characteristic object compatible with Device class expectations."""
+    """Simple characteristic object compatible with Device class
+    expectations."""
 
     def __init__(self, uuid: str, properties: list[str] | None = None):
         self.uuid = uuid
@@ -28,9 +30,7 @@ class SimpleCharacteristic:
 class SimpleService:
     """Simple service object compatible with Device class expectations."""
 
-    def __init__(
-        self, uuid: str, characteristics: list[SimpleCharacteristic] | None = None
-    ):
+    def __init__(self, uuid: str, characteristics: list[SimpleCharacteristic] | None = None):
         self.uuid = uuid
         self.characteristics = characteristics or []
 
@@ -38,9 +38,7 @@ class SimpleService:
 class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
     """Connection manager using SimplePyBLE for BLE communication."""
 
-    def __init__(
-        self, address: str, simpleble_module: types.ModuleType, timeout: float = 30.0
-    ) -> None:
+    def __init__(self, address: str, simpleble_module: types.ModuleType, timeout: float = 30.0) -> None:
         self.address = address
         self.timeout = timeout
         self.simpleble_module = simpleble_module
@@ -68,9 +66,7 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
 
     async def disconnect(self) -> None:
         if self.peripheral:
-            await asyncio.get_event_loop().run_in_executor(
-                self.executor, self.peripheral.disconnect
-            )
+            await asyncio.get_event_loop().run_in_executor(self.executor, self.peripheral.disconnect)
 
     async def read_gatt_char(self, char_uuid: str) -> bytes:
         def _read() -> bytes:
@@ -114,9 +110,7 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
 
             return services
 
-        return await asyncio.get_event_loop().run_in_executor(
-            self.executor, _get_services
-        )
+        return await asyncio.get_event_loop().run_in_executor(self.executor, _get_services)
 
     async def start_notify(self, char_uuid: str, callback: Any) -> None:
         # Not implemented: SimplePyBLE notification support
@@ -192,11 +186,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals
                 try:
                     # Try to read characteristic
                     raw_data = characteristic.read()
-                    char_uuid_short = (
-                        char_uuid[4:8].upper()
-                        if len(char_uuid) > 8
-                        else char_uuid.upper()
-                    )
+                    char_uuid_short = char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
 
                     # Parse with bluetooth_sig
                     result = translator.parse_characteristic(char_uuid_short, raw_data)

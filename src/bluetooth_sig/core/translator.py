@@ -5,22 +5,34 @@ from __future__ import annotations
 from typing import Any
 
 from ..gatt.characteristics import CharacteristicName, CharacteristicRegistry
+from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.context import CharacteristicContext
 from ..gatt.services import GattServiceRegistry, ServiceName
 from ..gatt.services.base import BaseGattService
-from ..gatt.uuid_registry import uuid_registry
+from ..gatt.uuid_registry import CustomUuidEntry, uuid_registry
 from ..types import (
     CharacteristicData,
     CharacteristicInfo,
+    CharacteristicRegistration,
     ServiceInfo,
+    ServiceRegistration,
     SIGInfo,
     ValidationResult,
 )
+from ..types.gatt_enums import ValueType
+from ..types.uuid import BluetoothUUID
 
 
-class BluetoothSIGTranslator:
+class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
     """Pure Bluetooth SIG standards translator for characteristic and service
-    interpretation."""
+    interpretation.
+
+    Note: This class intentionally has >20 public methods as it serves as the
+    primary API surface for Bluetooth SIG standards translation, covering
+    characteristic parsing, service discovery, UUID resolution, and registry
+    management. The methods are organized by functionality and reducing them
+    would harm API clarity.
+    """
 
     def __init__(self) -> None:
         """Initialize the SIG translator."""
@@ -35,7 +47,6 @@ class BluetoothSIGTranslator:
         uuid: str,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-        properties: set[str] | None = None,
     ) -> CharacteristicData:
         """Parse a characteristic's raw data using SIG standards.
 
@@ -50,11 +61,8 @@ class BluetoothSIGTranslator:
         Returns:
             CharacteristicData with parsed value and metadata
         """
-        # Create characteristic instance for parsing. Pass explicit properties
-        # rather than arbitrary kwargs to keep the API clear and type-safe.
-        characteristic = CharacteristicRegistry.create_characteristic(
-            uuid, properties=properties or set()
-        )
+        # Create characteristic instance for parsing
+        characteristic = CharacteristicRegistry.create_characteristic(uuid)
 
         if characteristic:
             # Use the parse_value method; pass context when provided.
@@ -66,9 +74,16 @@ class BluetoothSIGTranslator:
             return result
 
         # No parser found, return fallback result
-        return CharacteristicData(
-            uuid=uuid,
+        fallback_info = CharacteristicInfo(
+            uuid=BluetoothUUID(uuid),
             name="Unknown",
+            description="",
+            value_type=ValueType.UNKNOWN,
+            unit="",
+            properties=[],
+        )
+        return CharacteristicData(
+            info=fallback_info,
             value=raw_data,
             raw_data=raw_data,
             parse_success=False,
@@ -84,24 +99,19 @@ class BluetoothSIGTranslator:
         Returns:
             CharacteristicInfo with metadata or None if not found
         """
-        char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(uuid)
+        try:
+            bt_uuid = BluetoothUUID(uuid)
+        except ValueError:
+            return None
+
+        char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(bt_uuid)
         if not char_class:
             return None
 
-        # Create temporary instance to get metadata
+        # Create temporary instance to get metadata (no parameters needed for auto-resolution)
         try:
-            temp_char = char_class(uuid=uuid, properties=set())
-            value_type_str = (
-                temp_char.value_type.value
-                if hasattr(temp_char.value_type, "value")
-                else str(temp_char.value_type)
-            )
-            return CharacteristicInfo(
-                uuid=temp_char.char_uuid,
-                name=getattr(temp_char, "_characteristic_name", char_class.__name__),
-                value_type=value_type_str,
-                unit=temp_char.unit,
-            )
+            temp_char = char_class()
+            return temp_char.info
         except Exception:  # pylint: disable=broad-exception-caught
             return None
 
@@ -117,8 +127,8 @@ class BluetoothSIGTranslator:
         char_class = CharacteristicRegistry.get_characteristic_class(name)
         if char_class:
             try:
-                temp_char = char_class(uuid="", properties=set())
-                return temp_char.char_uuid
+                temp_char = char_class()
+                return str(temp_char.info.uuid)
             except Exception:  # pylint: disable=broad-exception-caught
                 pass
         return None
@@ -143,15 +153,13 @@ class BluetoothSIGTranslator:
         if service_class:
             try:
                 temp_service = service_class()
-                return temp_service.SERVICE_UUID
+                return str(temp_service.uuid)
             except Exception:  # pylint: disable=broad-exception-caught
                 pass
 
         return None
 
-    def get_characteristic_info_by_name(
-        self, name: CharacteristicName
-    ) -> CharacteristicInfo | None:
+    def get_characteristic_info_by_name(self, name: CharacteristicName) -> CharacteristicInfo | None:
         """Get characteristic info by enum name.
 
         Args:
@@ -165,15 +173,11 @@ class BluetoothSIGTranslator:
             try:
                 temp_char = char_class(uuid="", properties=set())
                 value_type_str = (
-                    temp_char.value_type.value
-                    if hasattr(temp_char.value_type, "value")
-                    else str(temp_char.value_type)
+                    temp_char.value_type.value if hasattr(temp_char.value_type, "value") else str(temp_char.value_type)
                 )
                 return CharacteristicInfo(
-                    uuid=temp_char.char_uuid,
-                    name=getattr(
-                        temp_char, "_characteristic_name", char_class.__name__
-                    ),
+                    uuid=temp_char.uuid,
+                    name=getattr(temp_char, "_characteristic_name", char_class.__name__),
                     value_type=value_type_str,
                     unit=temp_char.unit,
                 )
@@ -194,9 +198,7 @@ class BluetoothSIGTranslator:
         try:
             uuid_info = uuid_registry.get_service_info(name)
             if uuid_info:
-                return ServiceInfo(
-                    uuid=uuid_info.uuid, name=uuid_info.name, characteristics=[]
-                )
+                return ServiceInfo(uuid=uuid_info.uuid, name=uuid_info.name, characteristics=[])
         except Exception:  # pylint: disable=broad-exception-caught
             pass
 
@@ -218,9 +220,9 @@ class BluetoothSIGTranslator:
         try:
             temp_service = service_class()
             return ServiceInfo(
-                uuid=temp_service.SERVICE_UUID,
+                uuid=temp_service.uuid,
                 name=temp_service.name,
-                characteristics=list(temp_service.characteristics.keys()),
+                characteristics=[str(uuid) for uuid in temp_service.characteristics.keys()],
             )
         except Exception:  # pylint: disable=broad-exception-caught
             return None
@@ -238,7 +240,7 @@ class BluetoothSIGTranslator:
         ) in CharacteristicRegistry.get_all_characteristics().items():
             try:
                 temp_char = char_class(uuid="", properties=set())
-                result[name] = temp_char.char_uuid
+                result[name] = temp_char.uuid
             except Exception:  # pylint: disable=broad-exception-caught
                 continue
         return result
@@ -253,10 +255,8 @@ class BluetoothSIGTranslator:
         for service_class in GattServiceRegistry.get_all_services():
             try:
                 temp_service = service_class()
-                service_name = getattr(
-                    temp_service, "_service_name", service_class.__name__
-                )
-                result[service_name] = temp_service.SERVICE_UUID
+                service_name = getattr(temp_service, "_service_name", service_class.__name__)
+                result[service_name] = temp_service.uuid
             except Exception:  # pylint: disable=broad-exception-caught
                 continue
         return result
@@ -268,9 +268,7 @@ class BluetoothSIGTranslator:
             services: Dictionary of service UUIDs to their characteristics
         """
         for uuid, service_data in services.items():
-            service = GattServiceRegistry.create_service(
-                uuid, service_data.get("characteristics", {})
-            )
+            service = GattServiceRegistry.create_service(uuid, service_data.get("characteristics", {}))
             if service:
                 self._services[uuid] = service
 
@@ -383,9 +381,7 @@ class BluetoothSIGTranslator:
 
         return results
 
-    def get_characteristics_info(
-        self, uuids: list[str]
-    ) -> dict[str, CharacteristicInfo | None]:
+    def get_characteristics_info(self, uuids: list[str]) -> dict[str, CharacteristicInfo | None]:
         """Get information about multiple characteristics by UUID.
 
         Args:
@@ -449,6 +445,72 @@ class BluetoothSIGTranslator:
             return [str(k) for k in required_chars]
         except Exception:  # pylint: disable=broad-exception-caught
             return []
+
+    def register_custom_characteristic_class(
+        self,
+        uuid_or_name: str,
+        cls: type[BaseCharacteristic],
+        metadata: CharacteristicRegistration | None = None,
+        override: bool = False,
+    ) -> None:
+        """Register a custom characteristic class at runtime.
+
+        Args:
+            uuid_or_name: The characteristic UUID or name
+            cls: The characteristic class to register
+            metadata: Optional metadata dataclass with name, unit, value_type, summary
+            override: Whether to override existing registrations
+
+        Raises:
+            TypeError: If cls does not inherit from BaseCharacteristic
+            ValueError: If UUID conflicts with existing registration and override=False
+        """
+        # Register the class
+        CharacteristicRegistry.register_characteristic_class(uuid_or_name, cls, override)
+
+        # Register metadata if provided
+        if metadata:
+            entry = CustomUuidEntry(
+                uuid=metadata.uuid,
+                name=metadata.name or cls.__name__,
+                id=metadata.id,
+                summary=metadata.summary,
+                unit=metadata.unit,
+                value_type=metadata.value_type,
+            )
+            uuid_registry.register_characteristic(entry, override)
+
+    def register_custom_service_class(
+        self,
+        uuid_or_name: str,
+        cls: type[BaseGattService],
+        metadata: ServiceRegistration | None = None,
+        override: bool = False,
+    ) -> None:
+        """Register a custom service class at runtime.
+
+        Args:
+            uuid_or_name: The service UUID or name
+            cls: The service class to register
+            metadata: Optional metadata dataclass with name, summary
+            override: Whether to override existing registrations
+
+        Raises:
+            TypeError: If cls does not inherit from BaseGattService
+            ValueError: If UUID conflicts with existing registration and override=False
+        """
+        # Register the class
+        GattServiceRegistry.register_service_class(uuid_or_name, cls, override)
+
+        # Register metadata if provided
+        if metadata:
+            entry = CustomUuidEntry(
+                uuid=metadata.uuid,
+                name=metadata.name or cls.__name__,
+                id=metadata.id,
+                summary=metadata.summary,
+            )
+            uuid_registry.register_service(entry, override)
 
 
 # Global instance for backward compatibility with gatt_manager

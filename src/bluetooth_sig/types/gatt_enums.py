@@ -1,7 +1,8 @@
 """Core GATT enumerations for strong typing.
 
-Defines enums for GATT properties, value types, characteristic names, and other core BLE concepts
-to replace string usage with type-safe alternatives.
+Defines enums for GATT properties, value types, characteristic names,
+and other core BLE concepts to replace string usage with type-safe
+alternatives.
 """
 
 from __future__ import annotations
@@ -22,6 +23,13 @@ class GattProperty(Enum):
     EXTENDED_PROPERTIES = "extended-properties"
     RELIABLE_WRITE = "reliable-write"
     WRITABLE_AUXILIARIES = "writable-auxiliaries"
+    # Encryption and authentication properties
+    ENCRYPT_READ = "encrypt-read"
+    ENCRYPT_WRITE = "encrypt-write"
+    ENCRYPT_NOTIFY = "encrypt-notify"
+    AUTH_READ = "auth-read"
+    AUTH_WRITE = "auth-write"
+    AUTH_NOTIFY = "auth-notify"
 
 
 class ValueType(Enum):
@@ -34,6 +42,9 @@ class ValueType(Enum):
     BOOL = "bool"
     DATETIME = "datetime"
     UUID = "uuid"
+    DICT = "dict"
+    VARIOUS = "various"
+    UNKNOWN = "unknown"
 
 
 class DataType(Enum):
@@ -56,6 +67,8 @@ class DataType(Enum):
     STRUCT = "struct"
     MEDFLOAT16 = "medfloat16"
     MEDFLOAT32 = "medfloat32"
+    VARIOUS = "various"
+    UNKNOWN = "unknown"
 
 
 class CharacteristicName(Enum):
@@ -116,9 +129,7 @@ class CharacteristicName(Enum):
     CO2_CONCENTRATION = "Carbon Dioxide Concentration"
     METHANE_CONCENTRATION = "Methane Concentration"
     NITROGEN_DIOXIDE_CONCENTRATION = "Nitrogen Dioxide Concentration"
-    NON_METHANE_VOC_CONCENTRATION = (
-        "Non-Methane Volatile Organic Compounds Concentration"
-    )
+    NON_METHANE_VOC_CONCENTRATION = "Non-Methane Volatile Organic Compounds Concentration"
     OZONE_CONCENTRATION = "Ozone Concentration"
     PM1_CONCENTRATION = "Particulate Matter - PM1 Concentration"
     PM10_CONCENTRATION = "Particulate Matter - PM10 Concentration"

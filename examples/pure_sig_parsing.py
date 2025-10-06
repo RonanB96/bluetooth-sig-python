@@ -44,9 +44,7 @@ def demonstrate_pure_sig_parsing() -> None:
     """Demonstrate pure SIG parsing with various characteristic types."""
     print("🔵 Pure Bluetooth SIG Standards Parsing Demo")
     print("=" * 50)
-    print(
-        "This demo shows parsing raw characteristic data using official SIG standards."
-    )
+    print("This demo shows parsing raw characteristic data using official SIG standards.")
     print("No BLE hardware or connections required!\n")
 
     # Initialize the SIG translator
@@ -63,25 +61,19 @@ def demonstrate_pure_sig_parsing() -> None:
         {
             "name": "Temperature",
             "uuid": "2A6E",
-            "data": bytes(
-                [0x64, 0x09]
-            ),  # 24.20°C in SIG format (0x0964 = 2404, * 0.01 = 24.04°C)
+            "data": bytes([0x64, 0x09]),  # 24.20°C in SIG format (0x0964 = 2404, * 0.01 = 24.04°C)
             "description": "Temperature measurement in Celsius",
         },
         {
             "name": "Humidity",
             "uuid": "2A6F",
-            "data": bytes(
-                [0x10, 0x27]
-            ),  # 100.00% humidity (0x2710 = 10000, * 0.01 = 100.00%)
+            "data": bytes([0x10, 0x27]),  # 100.00% humidity (0x2710 = 10000, * 0.01 = 100.00%)
             "description": "Relative humidity percentage",
         },
         {
             "name": "Pressure",
             "uuid": "2A6D",
-            "data": bytes(
-                [0x40, 0x9C, 0x00, 0x00]
-            ),  # 1000.0 hPa (atmospheric pressure)
+            "data": bytes([0x40, 0x9C, 0x00, 0x00]),  # 1000.0 hPa (atmospheric pressure)
             "description": "Atmospheric pressure in hectopascals",
         },
         {
@@ -187,7 +179,8 @@ def demonstrate_integration_pattern() -> None:
     """Show the recommended integration pattern for BLE libraries."""
     print("\n🔧 Integration Pattern for BLE Libraries")
     print("=" * 50)
-    print("""
+    print(
+        """
 The bluetooth_sig library provides pure SIG translation that works with ANY BLE library:
 
 # Step 1: Get raw data (using any BLE library)
@@ -206,7 +199,8 @@ This pattern works with:
 - bleak-retry-connector
 - simplepyble
 - Any custom BLE implementation
-""")
+"""
+    )
 
 
 if __name__ == "__main__":
@@ -221,9 +215,7 @@ if __name__ == "__main__":
         demonstrate_integration_pattern()
 
         print("\n✅ Demo completed successfully!")
-        print(
-            "The bluetooth_sig library is ready for integration with your BLE library of choice."
-        )
+        print("The bluetooth_sig library is ready for integration with your BLE library of choice.")
 
     except Exception as e:  # pylint: disable=broad-except
         print(f"\n❌ Demo failed: {e}")

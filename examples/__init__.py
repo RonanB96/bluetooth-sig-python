@@ -1,7 +1,8 @@
 """Examples package for bluetooth_sig.
 
 This package contains example scripts demonstrating bluetooth_sig usage.
-All examples automatically have the src and examples directories added to the Python path.
+All examples automatically have the src and examples directories added
+to the Python path.
 """
 
 # Set up path for imports from src directory and examples directory - centralized for all examples

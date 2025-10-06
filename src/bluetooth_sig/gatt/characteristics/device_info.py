@@ -2,48 +2,41 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from .base import BaseCharacteristic
+from .templates import Utf8StringTemplate
 
-from .templates import StringCharacteristic
 
-
-@dataclass
-class ManufacturerNameStringCharacteristic(StringCharacteristic):
+class ManufacturerNameStringCharacteristic(BaseCharacteristic):
     """Manufacturer Name String characteristic."""
 
-    _characteristic_name: str = "Manufacturer Name String"
+    _template = Utf8StringTemplate()
 
 
-@dataclass
-class ModelNumberStringCharacteristic(StringCharacteristic):
+class ModelNumberStringCharacteristic(BaseCharacteristic):
     """Model Number String characteristic."""
 
-    _characteristic_name: str = "Model Number String"
+    _template = Utf8StringTemplate()
 
 
-@dataclass
-class SerialNumberStringCharacteristic(StringCharacteristic):
+class SerialNumberStringCharacteristic(BaseCharacteristic):
     """Serial Number String characteristic."""
 
-    _characteristic_name: str = "Serial Number String"
+    _template = Utf8StringTemplate()
 
 
-@dataclass
-class FirmwareRevisionStringCharacteristic(StringCharacteristic):
+class FirmwareRevisionStringCharacteristic(BaseCharacteristic):
     """Firmware Revision String characteristic."""
 
-    _characteristic_name: str = "Firmware Revision String"
+    _template = Utf8StringTemplate()
 
 
-@dataclass
-class HardwareRevisionStringCharacteristic(StringCharacteristic):
+class HardwareRevisionStringCharacteristic(BaseCharacteristic):
     """Hardware Revision String characteristic."""
 
-    _characteristic_name: str = "Hardware Revision String"
+    _template = Utf8StringTemplate()
 
 
-@dataclass
-class SoftwareRevisionStringCharacteristic(StringCharacteristic):
+class SoftwareRevisionStringCharacteristic(BaseCharacteristic):
     """Software Revision String characteristic."""
 
-    _characteristic_name: str = "Software Revision String"
+    _template = Utf8StringTemplate()

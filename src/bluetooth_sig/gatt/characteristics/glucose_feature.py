@@ -71,22 +71,23 @@ class GlucoseFeatureData:  # pylint: disable=too-many-instance-attributes
     feature_count: int
 
 
-@dataclass
 class GlucoseFeatureCharacteristic(BaseCharacteristic):
     """Glucose Feature characteristic (0x2A51).
 
-    Used to expose the supported features of a glucose monitoring device.
-    Indicates which optional fields and capabilities are available.
+    Used to expose the supported features of a glucose monitoring
+    device. Indicates which optional fields and capabilities are
+    available.
     """
 
     _characteristic_name: str = "Glucose Feature"
+    _manual_unit: str = "bitmap"  # Feature bitmap
 
     min_length: int = 2  # Features(2) fixed length
     max_length: int = 2  # Features(2) fixed length
     allow_variable_length: bool = False  # Fixed length
 
     def decode_value(  # pylint: disable=too-many-locals
-        self, data: bytearray, ctx: Any | None = None
+        self, data: bytearray, _ctx: Any | None = None
     ) -> GlucoseFeatureData:
         """Parse glucose feature data according to Bluetooth specification.
 
@@ -110,20 +111,12 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
 
         # Extract individual feature flags using enum
         low_battery_detection = bool(features & GlucoseFeatures.LOW_BATTERY_DETECTION)
-        sensor_malfunction_detection = bool(
-            features & GlucoseFeatures.SENSOR_MALFUNCTION_DETECTION
-        )
+        sensor_malfunction_detection = bool(features & GlucoseFeatures.SENSOR_MALFUNCTION_DETECTION)
         sensor_sample_size = bool(features & GlucoseFeatures.SENSOR_SAMPLE_SIZE)
-        sensor_strip_insertion_error = bool(
-            features & GlucoseFeatures.SENSOR_STRIP_INSERTION_ERROR
-        )
-        sensor_strip_type_error = bool(
-            features & GlucoseFeatures.SENSOR_STRIP_TYPE_ERROR
-        )
+        sensor_strip_insertion_error = bool(features & GlucoseFeatures.SENSOR_STRIP_INSERTION_ERROR)
+        sensor_strip_type_error = bool(features & GlucoseFeatures.SENSOR_STRIP_TYPE_ERROR)
         sensor_result_high_low = bool(features & GlucoseFeatures.SENSOR_RESULT_HIGH_LOW)
-        sensor_temperature_high_low = bool(
-            features & GlucoseFeatures.SENSOR_TEMPERATURE_HIGH_LOW
-        )
+        sensor_temperature_high_low = bool(features & GlucoseFeatures.SENSOR_TEMPERATURE_HIGH_LOW)
         sensor_read_interrupt = bool(features & GlucoseFeatures.SENSOR_READ_INTERRUPT)
         general_device_fault = bool(features & GlucoseFeatures.GENERAL_DEVICE_FAULT)
         time_fault = bool(features & GlucoseFeatures.TIME_FAULT)
@@ -211,8 +204,3 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
             return str(feature)
         except ValueError:
             return f"Reserved feature bit {feature_bit}"
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "bitmap"  # Feature bitmap

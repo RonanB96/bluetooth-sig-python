@@ -5,16 +5,18 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from ...types import CharacteristicInfo as BaseCharacteristicInfo
-from ...types.gatt_enums import GattProperty
+from ...types.gatt_enums import GattProperty, ValueType
 from ...types.gatt_services import (
     CharacteristicCollection,
     CharacteristicSpec,
     ServiceDiscoveryData,
 )
+from ...types.uuid import BluetoothUUID
 from ..characteristics import BaseCharacteristic, CharacteristicRegistry
+from ..characteristics.base import UnknownCharacteristic
 from ..characteristics.registry import CharacteristicName
 from ..exceptions import UUIDResolutionError
 from ..uuid_registry import UuidInfo, uuid_registry
@@ -38,9 +40,7 @@ class ServiceHealthStatus(Enum):
 
     COMPLETE = "complete"  # All required characteristics present
     FUNCTIONAL = "functional"  # Required characteristics present, some optional missing
-    PARTIAL = (
-        "partial"  # Some required characteristics missing but service still usable
-    )
+    PARTIAL = "partial"  # Some required characteristics missing but service still usable
     INCOMPLETE = "incomplete"  # Critical required characteristics missing
 
 
@@ -57,10 +57,10 @@ class ServiceValidationResult:
     """Result of service validation."""
 
     status: ServiceHealthStatus
-    missing_required: list[str] = field(default_factory=lambda: cast(list[str], []))
-    missing_optional: list[str] = field(default_factory=lambda: cast(list[str], []))
-    invalid_characteristics: list[str] = field(
-        default_factory=lambda: cast(list[str], [])
+    missing_required: list[BaseCharacteristic] = field(default_factory=lambda: cast(list[BaseCharacteristic], []))
+    missing_optional: list[BaseCharacteristic] = field(default_factory=lambda: cast(list[BaseCharacteristic], []))
+    invalid_characteristics: list[BaseCharacteristic] = field(
+        default_factory=lambda: cast(list[BaseCharacteristic], [])
     )
     warnings: list[str] = field(default_factory=lambda: cast(list[str], []))
     errors: list[str] = field(default_factory=lambda: cast(list[str], []))
@@ -81,9 +81,10 @@ class ServiceValidationResult:
 
 @dataclass
 class ServiceCharacteristicInfo(BaseCharacteristicInfo):
-    """Service-specific information about a characteristic with context about its presence."""
+    """Service-specific information about a characteristic with context about
+    its presence."""
 
-    status: CharacteristicStatus = CharacteristicStatus.PRESENT
+    status: CharacteristicStatus = CharacteristicStatus.INVALID
     is_required: bool = False
     is_conditional: bool = False
     condition_description: str = ""
@@ -95,21 +96,19 @@ class ServiceCompletenessReport:  # pylint: disable=too-many-instance-attributes
     """Comprehensive report about service completeness and health."""
 
     service_name: str
-    service_uuid: str
-    health_status: str
+    service_uuid: BluetoothUUID
+    health_status: ServiceHealthStatus
     is_healthy: bool
     characteristics_present: int
     characteristics_expected: int
     characteristics_required: int
-    present_characteristics: list[str] = field(default_factory=lambda: [])
-    missing_required: list[str] = field(default_factory=lambda: [])
-    missing_optional: list[str] = field(default_factory=lambda: [])
-    invalid_characteristics: list[str] = field(default_factory=lambda: [])
+    present_characteristics: list[BaseCharacteristic] = field(default_factory=lambda: [])
+    missing_required: list[BaseCharacteristic] = field(default_factory=lambda: [])
+    missing_optional: list[BaseCharacteristic] = field(default_factory=lambda: [])
+    invalid_characteristics: list[BaseCharacteristic] = field(default_factory=lambda: [])
     warnings: list[str] = field(default_factory=lambda: [])
     errors: list[str] = field(default_factory=lambda: [])
-    missing_details: dict[str, ServiceCharacteristicInfo] = field(
-        default_factory=lambda: {}
-    )
+    missing_details: dict[str, ServiceCharacteristicInfo] = field(default_factory=lambda: {})
 
 
 # All type definitions moved to src/bluetooth_sig/types/gatt_services.py
@@ -121,13 +120,13 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
     """Base class for all GATT services."""
 
     # Instance variables
-    characteristics: dict[str, BaseCharacteristic] = field(
-        default_factory=lambda: cast(dict[str, BaseCharacteristic], {})
+    characteristics: dict[BluetoothUUID, BaseCharacteristic] = field(
+        default_factory=lambda: cast(dict[BluetoothUUID, BaseCharacteristic], {})
     )
     _service_name: str = ""  # Override in subclasses with service name string
 
     @property
-    def SERVICE_UUID(self) -> str:
+    def uuid(self) -> BluetoothUUID:
         """Get the service UUID from registry based on class name."""
         # First try explicit service name if set
         if hasattr(self, "_service_name") and self._service_name:
@@ -173,37 +172,29 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
     @property
     def name(self) -> str:
         """Get the service name from UUID registry."""
-        info = uuid_registry.get_service_info(self.SERVICE_UUID)
-        return info.name if info else f"Unknown Service ({self.SERVICE_UUID})"
+        info = uuid_registry.get_service_info(str(self.uuid))
+        return info.name if info else f"Unknown Service ({self.uuid})"
 
     @property
     def summary(self) -> str:
         """Get the service summary."""
-        info = uuid_registry.get_service_info(self.SERVICE_UUID)
+        info = uuid_registry.get_service_info(str(self.uuid))
         return info.summary if info else ""
 
     @classmethod
-    def matches_uuid(cls, uuid: str) -> bool:
+    def matches_uuid(cls, uuid: str | BluetoothUUID) -> bool:
         """Check if this service matches the given UUID."""
         try:
-            service_uuid = cls().SERVICE_UUID.lower()
-            input_uuid = uuid.lower().replace("-", "")
-
-            # If service UUID is short (16-bit), convert to full format for comparison
-            if len(service_uuid) == 4:  # 16-bit UUID
-                service_uuid = f"0000{service_uuid}00001000800000805f9b34fb"
-
-            # If input UUID is short (16-bit), convert to full format for comparison
-            if len(input_uuid) == 4:  # 16-bit UUID
-                input_uuid = f"0000{input_uuid}00001000800000805f9b34fb"
-
+            service_uuid = cls().uuid
+            input_uuid = BluetoothUUID(uuid)
             return service_uuid == input_uuid
         except ValueError:
             return False
 
     @classmethod
     def get_expected_characteristics(cls) -> ServiceCharacteristicCollection:
-        """Get the expected characteristics for this service from the service_characteristics dict.
+        """Get the expected characteristics for this service from the
+        service_characteristics dict.
 
         Looks for a 'service_characteristics' class attribute containing a dictionary of
         CharacteristicName -> required flag, and automatically builds CharacteristicSpec objects.
@@ -220,9 +211,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             for char_name, is_required in svc_chars.items():
                 char_class = CharacteristicRegistry.get_characteristic_class(char_name)
                 if char_class:
-                    expected[char_name] = CharacteristicSpec(
-                        char_class=char_class, required=is_required
-                    )
+                    expected[char_name] = CharacteristicSpec(char_class=char_class, required=is_required)
 
         # Return an enum-keyed dict for strong typing. Callers must perform
         # explicit conversions from strings to `CharacteristicName` where needed.
@@ -230,7 +219,8 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
     @classmethod
     def get_required_characteristics(cls) -> ServiceCharacteristicCollection:
-        """Get the required characteristics for this service from the characteristics dict.
+        """Get the required characteristics for this service from the
+        characteristics dict.
 
         Automatically filters the characteristics dictionary for required=True entries.
 
@@ -254,7 +244,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         return None
 
     @classmethod
-    def get_required_characteristic_keys(cls) -> set[str]:
+    def get_required_characteristic_keys(cls) -> set[CharacteristicName]:
         """Get the set of required characteristic keys from the schema.
 
         Override this method when using strongly-typed characteristics.
@@ -263,11 +253,11 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         Returns:
             Set of required characteristic field names
         """
-        return set()
+        return set(cls.get_required_characteristics().keys())
 
-    def get_expected_characteristic_uuids(self) -> set[str]:
+    def get_expected_characteristic_uuids(self) -> set[BluetoothUUID]:
         """Get the set of expected characteristic UUIDs for this service."""
-        expected_uuids: set[str] = set()
+        expected_uuids: set[BluetoothUUID] = set()
         for char_name, _char_spec in self.get_expected_characteristics().items():
             # char_name is expected to be a CharacteristicName enum; handle accordingly
             try:
@@ -279,9 +269,9 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
                 expected_uuids.add(char_info.uuid)
         return expected_uuids
 
-    def get_required_characteristic_uuids(self) -> set[str]:
+    def get_required_characteristic_uuids(self) -> set[BluetoothUUID]:
         """Get the set of required characteristic UUIDs for this service."""
-        required_uuids: set[str] = set()
+        required_uuids: set[BluetoothUUID] = set()
         for char_name, _char_spec in self.get_required_characteristics().items():
             try:
                 lookup_name = char_name.value
@@ -293,29 +283,27 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         return required_uuids
 
     def process_characteristics(self, characteristics: ServiceDiscoveryData) -> None:
-        """Process the characteristics for this service (default implementation).
+        """Process the characteristics for this service (default
+        implementation).
 
         Args:
-            characteristics: Dict mapping UUID to characteristic properties
+            characteristics: Dict mapping UUID to characteristic info
         """
-        for uuid, props in characteristics.items():
-            uuid = uuid.replace("-", "").upper()
-            prop_vals = set(props.get("properties", []))
-            char = CharacteristicRegistry.create_characteristic(
-                uuid_or_name=uuid,
-                properties=cast(Optional[set[GattProperty]], prop_vals),
-            )
+        for uuid, _ in characteristics.items():
+            char = CharacteristicRegistry.create_characteristic(uuid=uuid)
             if char:
                 self.characteristics[uuid] = char
 
-    def get_characteristic(self, uuid: str) -> GattCharacteristic | None:
+    def get_characteristic(self, uuid: BluetoothUUID) -> GattCharacteristic | None:
         """Get a characteristic by UUID."""
-        return self.characteristics.get(uuid.lower())
+        if isinstance(uuid, str):
+            uuid = BluetoothUUID(uuid)
+        return self.characteristics.get(uuid)
 
     @property
-    def supported_characteristics(self) -> set[str]:
+    def supported_characteristics(self) -> set[BaseCharacteristic]:
         """Get the set of characteristic UUIDs supported by this service."""
-        return set(self.characteristics.keys())
+        return {str(uuid) for uuid in self.characteristics}
 
     # New enhanced methods for service validation and health
 
@@ -328,11 +316,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         """
         expected = cls.get_expected_characteristics()
         required = cls.get_required_characteristics()
-        return {
-            name: char_spec
-            for name, char_spec in expected.items()
-            if name not in required
-        }
+        return {name: char_spec for name, char_spec in expected.items() if name not in required}
 
     @classmethod
     def get_conditional_characteristics(cls) -> ServiceCharacteristicCollection:
@@ -366,13 +350,70 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         for char_name, _char_spec in expected.items():
             char_info = uuid_registry.get_characteristic_info(char_name.value)
             if not char_info:
-                issues.append(
-                    f"Characteristic '{char_name.value}' not found in UUID registry"
-                )
+                issues.append(f"Characteristic '{char_name.value}' not found in UUID registry")
 
         return issues
 
-    def validate_service(self, strict: bool = False) -> ServiceValidationResult:  # pylint: disable=too-many-branches,R0915
+    def _validate_characteristic_group(
+        self,
+        char_dict: ServiceCharacteristicCollection,
+        result: ServiceValidationResult,
+        is_required: bool,
+        strict: bool,
+    ) -> None:
+        """Validate a group of characteristics (required/optional/conditional)."""
+        for char_name, char_spec in char_dict.items():
+            lookup_name = char_name.value if hasattr(char_name, "value") else str(char_name)
+            char_info = uuid_registry.get_characteristic_info(lookup_name)
+
+            if not char_info:
+                if is_required:
+                    result.errors.append(f"Unknown required characteristic: {lookup_name}")
+                elif strict:
+                    result.warnings.append(f"Unknown optional characteristic: {lookup_name}")
+                continue
+
+            if char_info.uuid not in self.characteristics:
+                missing_char = char_spec.char_class()
+                if is_required:
+                    result.missing_required.append(missing_char)
+                    result.errors.append(f"Missing required characteristic: {lookup_name}")
+                else:
+                    result.missing_optional.append(missing_char)
+                    if strict:
+                        result.warnings.append(f"Missing optional characteristic: {lookup_name}")
+
+    def _validate_conditional_characteristics(
+        self, conditional_chars: ServiceCharacteristicCollection, result: ServiceValidationResult
+    ) -> None:
+        """Validate conditional characteristics."""
+        for char_name, conditional_spec in conditional_chars.items():
+            lookup_name = char_name.value if hasattr(char_name, "value") else str(char_name)
+            char_info = uuid_registry.get_characteristic_info(lookup_name)
+
+            if not char_info:
+                result.warnings.append(f"Unknown conditional characteristic: {lookup_name}")
+                continue
+
+            if char_info.uuid not in self.characteristics:
+                result.warnings.append(
+                    f"Missing conditional characteristic: {lookup_name} (required when {conditional_spec.condition})"
+                )
+
+    def _determine_health_status(self, result: ServiceValidationResult, required_count: int, strict: bool) -> None:
+        """Determine overall service health status."""
+        if result.missing_required:
+            result.status = (
+                ServiceHealthStatus.INCOMPLETE
+                if len(result.missing_required) >= required_count
+                else ServiceHealthStatus.PARTIAL
+            )
+        elif result.missing_optional and strict:
+            result.status = ServiceHealthStatus.FUNCTIONAL
+        elif result.warnings or result.invalid_characteristics:
+            result.status = ServiceHealthStatus.FUNCTIONAL
+
+    def validate_service(self, strict: bool = False) -> ServiceValidationResult:  # pylint: disable=too-many-branches
         """Validate the completeness and health of this service.
 
         Args:
@@ -383,87 +424,21 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         """
         result = ServiceValidationResult(status=ServiceHealthStatus.COMPLETE)
 
-        required_chars = self.get_required_characteristics()
-        optional_chars = self.get_optional_characteristics()
-        conditional_chars = self.get_conditional_characteristics()
-
-        # Check required characteristics
-        for char_name, _char_spec in required_chars.items():
-            try:
-                lookup_name = char_name.value
-            except AttributeError:
-                lookup_name = str(char_name)
-            char_info = uuid_registry.get_characteristic_info(lookup_name)
-            if not char_info:
-                result.errors.append(f"Unknown required characteristic: {lookup_name}")
-                continue
-
-            if char_info.uuid not in self.characteristics:
-                result.missing_required.append(lookup_name)
-                result.errors.append(f"Missing required characteristic: {lookup_name}")
-
-        # Check optional characteristics
-        for char_name, _char_spec in optional_chars.items():
-            try:
-                lookup_name = char_name.value
-            except AttributeError:
-                lookup_name = str(char_name)
-            char_info = uuid_registry.get_characteristic_info(lookup_name)
-            if not char_info:
-                if strict:
-                    result.warnings.append(
-                        f"Unknown optional characteristic: {lookup_name}"
-                    )
-                continue
-
-            if char_info.uuid not in self.characteristics:
-                result.missing_optional.append(lookup_name)
-                if strict:
-                    result.warnings.append(
-                        f"Missing optional characteristic: {lookup_name}"
-                    )
-
-        # Check conditional characteristics
-        for char_name, conditional_spec in conditional_chars.items():
-            try:
-                lookup_name = char_name.value
-            except AttributeError:
-                lookup_name = str(char_name)
-            char_info = uuid_registry.get_characteristic_info(lookup_name)
-            if not char_info:
-                result.warnings.append(
-                    f"Unknown conditional characteristic: {lookup_name}"
-                )
-                continue
-
-            # For now, just report missing conditional characteristics as warnings
-            if char_info.uuid not in self.characteristics:
-                condition = conditional_spec.condition
-                result.warnings.append(
-                    f"Missing conditional characteristic: {lookup_name} (required when {condition})"
-                )
+        # Validate required, optional, and conditional characteristics
+        self._validate_characteristic_group(self.get_required_characteristics(), result, True, strict)
+        self._validate_characteristic_group(self.get_optional_characteristics(), result, False, strict)
+        self._validate_conditional_characteristics(self.get_conditional_characteristics(), result)
 
         # Validate existing characteristics
         for uuid, characteristic in self.characteristics.items():
             try:
-                # Basic validation - check if characteristic can provide its UUID
-                _ = characteristic.char_uuid
+                _ = characteristic.uuid
             except (AttributeError, ValueError, TypeError) as e:
-                result.invalid_characteristics.append(uuid)
+                result.invalid_characteristics.append(characteristic)
                 result.errors.append(f"Invalid characteristic {uuid}: {e}")
 
-        # Determine overall service health status
-        if result.missing_required:
-            if len(result.missing_required) >= len(required_chars):
-                result.status = ServiceHealthStatus.INCOMPLETE
-            else:
-                result.status = ServiceHealthStatus.PARTIAL
-        elif result.missing_optional and strict:
-            result.status = ServiceHealthStatus.FUNCTIONAL
-        elif result.warnings or result.invalid_characteristics:
-            result.status = ServiceHealthStatus.FUNCTIONAL
-        else:
-            result.status = ServiceHealthStatus.COMPLETE
+        # Determine overall health status
+        self._determine_health_status(result, len(self.get_required_characteristics()), strict)
 
         return result
 
@@ -485,7 +460,8 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             if not char_info:
                 continue
 
-            if char_info.uuid not in self.characteristics:
+            uuid_obj = char_info.uuid
+            if uuid_obj not in self.characteristics:
                 is_required = char_name in required_chars
                 is_conditional = char_name in conditional_chars
                 condition_desc = ""
@@ -529,10 +505,9 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
                 return enum_char
         return None
 
-    def _get_characteristic_metadata(
-        self, char_enum: CharacteristicName
-    ) -> tuple[bool, bool, str]:
-        """Get characteristic metadata (is_required, is_conditional, condition_desc)."""
+    def _get_characteristic_metadata(self, char_enum: CharacteristicName) -> tuple[bool, bool, str]:
+        """Get characteristic metadata (is_required, is_conditional,
+        condition_desc)."""
         required_chars = self.get_required_characteristics()
         conditional_chars = self.get_conditional_characteristics()
 
@@ -547,20 +522,20 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         return is_required, is_conditional, condition_desc
 
     def _get_characteristic_status(self, char_info: UuidInfo) -> CharacteristicStatus:
-        """Get the status of a characteristic (present, missing, or invalid)."""
-        if char_info.uuid in self.characteristics:
+        """Get the status of a characteristic (present, missing, or
+        invalid)."""
+        uuid_obj = char_info.uuid
+        if uuid_obj in self.characteristics:
             try:
                 # Try to validate the characteristic
-                char = self.characteristics[char_info.uuid]
-                _ = char.char_uuid  # Basic validation
+                char = self.characteristics[uuid_obj]
+                _ = char.uuid  # Basic validation
                 return CharacteristicStatus.PRESENT
             except (KeyError, AttributeError, ValueError, TypeError):
                 return CharacteristicStatus.INVALID
         return CharacteristicStatus.MISSING
 
-    def get_characteristic_status(
-        self, characteristic_name: CharacteristicName
-    ) -> ServiceCharacteristicInfo | None:
+    def get_characteristic_status(self, characteristic_name: CharacteristicName) -> ServiceCharacteristicInfo | None:
         """Get detailed status of a specific characteristic.
 
         Args:
@@ -581,9 +556,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         if not char_info:
             return None
 
-        is_required, is_conditional, condition_desc = self._get_characteristic_metadata(
-            char_enum
-        )
+        is_required, is_conditional, condition_desc = self._get_characteristic_metadata(char_enum)
 
         char_class = None
         if char_enum in expected_chars:
@@ -591,9 +564,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             if hasattr(char_spec, "char_class"):
                 char_class = char_spec.char_class  # New format
             else:
-                char_class = cast(
-                    type[BaseCharacteristic], char_spec
-                )  # Legacy format: value is the class directly
+                char_class = cast(type[BaseCharacteristic], char_spec)  # Legacy format: value is the class directly
 
         status = self._get_characteristic_status(char_info)
 
@@ -619,10 +590,10 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         present_chars: list[str] = []
         for uuid, char in self.characteristics.items():
             try:
-                char_name = char.name if hasattr(char, "name") else f"UUID:{uuid}"
+                char_name = char.name if hasattr(char, "name") else f"UUID:{str(uuid)}"
                 present_chars.append(char_name)
             except (AttributeError, ValueError, TypeError):
-                present_chars.append(f"Invalid:{uuid}")
+                present_chars.append(f"Invalid:{str(uuid)}")
 
         missing_details = {
             name.value: ServiceCharacteristicInfo(
@@ -638,13 +609,13 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         return ServiceCompletenessReport(
             service_name=self.name,
-            service_uuid=self.SERVICE_UUID,
-            health_status=validation.status.value,
+            service_uuid=self.uuid,
+            health_status=validation.status,
             is_healthy=validation.is_healthy,
             characteristics_present=len(self.characteristics),
             characteristics_expected=len(self.get_expected_characteristics()),
             characteristics_required=len(self.get_required_characteristics()),
-            present_characteristics=sorted(present_chars),
+            present_characteristics=list(self.characteristics.values()),
             missing_required=validation.missing_required,
             missing_optional=validation.missing_optional,
             invalid_characteristics=validation.invalid_characteristics,
@@ -660,6 +631,58 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             True if service has all required characteristics and is usable
         """
         validation = self.validate_service()
-        return (not validation.missing_required) and (
-            validation.status != ServiceHealthStatus.INCOMPLETE
-        )
+        return (not validation.missing_required) and (validation.status != ServiceHealthStatus.INCOMPLETE)
+
+
+class CustomBaseGattService(BaseGattService):
+    """Helper base class for custom service implementations.
+
+    This class provides a marker attribute and common initialization pattern
+    for user-defined custom services. It inherits all functionality
+    from BaseGattService while making it easier to identify and work with
+    custom implementations.
+    """
+
+    _is_custom = True
+
+    def __init__(self) -> None:
+        """Initialize a custom service."""
+        super().__init__()
+
+    def process_characteristics(self, characteristics: dict[str, dict[str, Any]]) -> None:
+        """Process discovered characteristics for this service.
+
+        Handles both Bluetooth SIG-defined characteristics and custom non-SIG characteristics.
+        SIG characteristics are parsed using registered parsers, while non-SIG characteristics
+        are stored as generic UnknownCharacteristic instances.
+
+        Args:
+            characteristics: Dictionary mapping characteristic UUIDs to their data
+        """
+        # Store characteristics for later access
+        for uuid, char_data in characteristics.items():
+            # Normalize UUID format
+            uuid_obj = BluetoothUUID(uuid)
+
+            # Extract properties if available
+            properties: set[GattProperty] = set()
+            if "properties" in char_data and isinstance(char_data["properties"], list):
+                properties = {GattProperty(prop.lower()) for prop in char_data["properties"] if isinstance(prop, str)}
+
+            # Try to create SIG-defined characteristic first
+            char_instance = CharacteristicRegistry.create_characteristic(uuid=uuid_obj.normalized)
+
+            # If no SIG characteristic found, create generic unknown characteristic
+            if char_instance is None:
+                char_instance = UnknownCharacteristic(
+                    info=BaseCharacteristicInfo(
+                        uuid=uuid_obj,
+                        name=f"Unknown Characteristic ({uuid_obj})",
+                        unit="",
+                        value_type=ValueType.BYTES,
+                        properties=list(properties) if properties else [],
+                    )
+                )
+
+            if char_instance:
+                self.characteristics[uuid_obj] = char_instance

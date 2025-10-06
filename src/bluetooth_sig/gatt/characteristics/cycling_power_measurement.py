@@ -56,17 +56,15 @@ class CyclingPowerMeasurementData:  # pylint: disable=too-many-instance-attribut
         if not 0 <= flags_value <= UINT16_MAX:
             raise ValueError("Flags must be a uint16 value (0-UINT16_MAX)")
         if not 0 <= self.instantaneous_power <= UINT16_MAX:
-            raise ValueError(
-                "Instantaneous power must be a uint16 value (0-UINT16_MAX)"
-            )
+            raise ValueError("Instantaneous power must be a uint16 value (0-UINT16_MAX)")
 
 
-@dataclass
 class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
     """Cycling Power Measurement characteristic (0x2A63).
 
-    Used to transmit cycling power measurement data including instantaneous power,
-    pedal power balance, accumulated energy, and revolution data.
+    Used to transmit cycling power measurement data including
+    instantaneous power, pedal power balance, accumulated energy, and
+    revolution data.
     """
 
     # Special values
@@ -77,12 +75,11 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
     CRANK_TIME_RESOLUTION = 1024.0  # 1/1024 second resolution
     PEDAL_POWER_BALANCE_RESOLUTION = 2.0  # 0.5% resolution
 
-    _characteristic_name: str = "Cycling Power Measurement"
+    _manual_unit: str = "W"  # Watts unit for power measurement
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> CyclingPowerMeasurementData:
-        """Parse cycling power measurement data according to Bluetooth specification.
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> CyclingPowerMeasurementData:
+        """Parse cycling power measurement data according to Bluetooth
+        specification.
 
         Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +
         [Accumulated Energy(2)] + [Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +
@@ -115,9 +112,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
         offset = 4
 
         # Parse optional pedal power balance (1 byte) if present
-        if (flags & CyclingPowerMeasurementFlags.PEDAL_POWER_BALANCE_PRESENT) and len(
-            data
-        ) >= offset + 1:
+        if (flags & CyclingPowerMeasurementFlags.PEDAL_POWER_BALANCE_PRESENT) and len(data) >= offset + 1:
             pedal_power_balance = data[offset]
             # Value UNKNOWN_PEDAL_POWER_BALANCE indicates unknown, otherwise percentage (0-100)
             if pedal_power_balance != self.UNKNOWN_PEDAL_POWER_BALANCE:
@@ -127,21 +122,15 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             offset += 1
 
         # Parse optional accumulated energy (2 bytes) if present
-        if (flags & CyclingPowerMeasurementFlags.ACCUMULATED_ENERGY_PRESENT) and len(
-            data
-        ) >= offset + 2:
+        if (flags & CyclingPowerMeasurementFlags.ACCUMULATED_ENERGY_PRESENT) and len(data) >= offset + 2:
             accumulated_energy = DataParser.parse_int16(data, offset, signed=False)
             result.accumulated_energy = accumulated_energy  # kJ
             offset += 2
 
         # Parse optional wheel revolution data (6 bytes total) if present
-        if (flags & CyclingPowerMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT) and len(
-            data
-        ) >= offset + 6:
+        if (flags & CyclingPowerMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT) and len(data) >= offset + 6:
             wheel_revolutions = DataParser.parse_int32(data, offset, signed=False)
-            wheel_event_time_raw = DataParser.parse_int16(
-                data, offset + 4, signed=False
-            )
+            wheel_event_time_raw = DataParser.parse_int16(data, offset + 4, signed=False)
             # Wheel event time is in 1/WHEEL_TIME_RESOLUTION second units
             wheel_event_time = wheel_event_time_raw / self.WHEEL_TIME_RESOLUTION
 
@@ -150,13 +139,9 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             offset += 6
 
         # Parse optional crank revolution data (4 bytes total) if present
-        if (flags & CyclingPowerMeasurementFlags.CRANK_REVOLUTION_DATA_PRESENT) and len(
-            data
-        ) >= offset + 4:
+        if (flags & CyclingPowerMeasurementFlags.CRANK_REVOLUTION_DATA_PRESENT) and len(data) >= offset + 4:
             crank_revolutions = DataParser.parse_int16(data, offset, signed=False)
-            crank_event_time_raw = DataParser.parse_int16(
-                data, offset + 2, signed=False
-            )
+            crank_event_time_raw = DataParser.parse_int16(data, offset + 2, signed=False)
             # Crank event time is in 1/CRANK_TIME_RESOLUTION second units
             crank_event_time = crank_event_time_raw / self.CRANK_TIME_RESOLUTION
 
@@ -175,7 +160,6 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
         Returns:
             Encoded bytes representing the power measurement
         """
-
         instantaneous_power = data.instantaneous_power
         pedal_power_balance = data.pedal_power_balance
         accumulated_energy = data.accumulated_energy
@@ -187,34 +171,22 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
         # Build flags based on available data
         flags = 0
         if pedal_power_balance is not None:
-            flags |= (
-                CyclingPowerMeasurementFlags.PEDAL_POWER_BALANCE_PRESENT
-            )  # Pedal power balance present
+            flags |= CyclingPowerMeasurementFlags.PEDAL_POWER_BALANCE_PRESENT  # Pedal power balance present
         if accumulated_energy is not None:
-            flags |= (
-                CyclingPowerMeasurementFlags.ACCUMULATED_ENERGY_PRESENT
-            )  # Accumulated energy present
+            flags |= CyclingPowerMeasurementFlags.ACCUMULATED_ENERGY_PRESENT  # Accumulated energy present
         if wheel_revolutions is not None and wheel_event_time is not None:
-            flags |= (
-                CyclingPowerMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT
-            )  # Wheel revolution data present
+            flags |= CyclingPowerMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT  # Wheel revolution data present
         if crank_revolutions is not None and crank_event_time is not None:
-            flags |= (
-                CyclingPowerMeasurementFlags.CRANK_REVOLUTION_DATA_PRESENT
-            )  # Crank revolution data present
+            flags |= CyclingPowerMeasurementFlags.CRANK_REVOLUTION_DATA_PRESENT  # Crank revolution data present
 
         # Validate instantaneous power (sint16 range)
         if not SINT16_MIN <= instantaneous_power <= SINT16_MAX:
-            raise ValueError(
-                f"Instantaneous power {instantaneous_power} W exceeds sint16 range"
-            )
+            raise ValueError(f"Instantaneous power {instantaneous_power} W exceeds sint16 range")
 
         # Start with flags and instantaneous power
         result = bytearray()
         result.extend(DataParser.encode_int16(flags, signed=False))  # Flags (16-bit)
-        result.extend(
-            DataParser.encode_int16(instantaneous_power, signed=True)
-        )  # Power (sint16)
+        result.extend(DataParser.encode_int16(instantaneous_power, signed=True))  # Power (sint16)
 
         # Add optional fields based on flags
         if pedal_power_balance is not None:
@@ -250,8 +222,3 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             result.extend(DataParser.encode_int16(crank_time, signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "W"  # Watts

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 
@@ -15,28 +16,20 @@ class ElectricCurrentRangeData:
 
     min: float  # Minimum current in Amperes
     max: float  # Maximum current in Amperes
-    unit: str = "A"
 
     def __post_init__(self) -> None:
         """Validate current range data."""
         if self.min > self.max:
-            raise ValueError(
-                f"Minimum current {self.min} A cannot be greater than maximum {self.max} A"
-            )
+            raise ValueError(f"Minimum current {self.min} A cannot be greater than maximum {self.max} A")
 
         # Validate range for uint16 with 0.01 A resolution (0 to 655.35 A)
         max_current_value = UINT16_MAX * 0.01
         if not 0.0 <= self.min <= max_current_value:
-            raise ValueError(
-                f"Minimum current {self.min} A is outside valid range (0.0 to {max_current_value} A)"
-            )
+            raise ValueError(f"Minimum current {self.min} A is outside valid range (0.0 to {max_current_value} A)")
         if not 0.0 <= self.max <= max_current_value:
-            raise ValueError(
-                f"Maximum current {self.max} A is outside valid range (0.0 to {max_current_value} A)"
-            )
+            raise ValueError(f"Maximum current {self.max} A is outside valid range (0.0 to {max_current_value} A)")
 
 
-@dataclass
 class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
     """Electric Current Range characteristic.
 
@@ -44,11 +37,10 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Electric Current Range"
-    _manual_value_type: str = "string"  # Override since decode_value returns dataclass
+    # Override since decode_value returns structured ElectricCurrentRangeData
+    _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(
-        self, data: bytearray, ctx: Any | None = None
-    ) -> ElectricCurrentRangeData:
+    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> ElectricCurrentRangeData:
         """Parse current range data (2x uint16 in units of 0.01 A).
 
         Args:
@@ -67,9 +59,7 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
         min_current_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
         max_current_raw = int.from_bytes(data[2:4], byteorder="little", signed=False)
 
-        return ElectricCurrentRangeData(
-            min=min_current_raw * 0.01, max=max_current_raw * 0.01
-        )
+        return ElectricCurrentRangeData(min=min_current_raw * 0.01, max=max_current_raw * 0.01)
 
     def encode_value(self, data: ElectricCurrentRangeData) -> bytearray:
         """Encode electric current range value back to bytes.
@@ -82,8 +72,7 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
         """
         if not isinstance(data, ElectricCurrentRangeData):
             raise TypeError(
-                f"Electric current range data must be an ElectricCurrentRangeData, "
-                f"got {type(data).__name__}"
+                f"Electric current range data must be an ElectricCurrentRangeData, got {type(data).__name__}"
             )
             # Convert Amperes to raw values (multiply by 100 for 0.01 A resolution)
         min_current_raw = round(data.min * 100)
@@ -100,8 +89,3 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
         result.extend(max_current_raw.to_bytes(2, byteorder="little", signed=False))
 
         return result
-
-    @property
-    def unit(self) -> str:
-        """Get the unit of measurement."""
-        return "A"

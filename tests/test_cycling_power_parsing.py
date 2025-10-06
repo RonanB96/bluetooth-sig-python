@@ -10,7 +10,6 @@ from bluetooth_sig.gatt.characteristics import (
     CyclingPowerMeasurementCharacteristic,
     CyclingPowerVectorCharacteristic,
 )
-from bluetooth_sig.types.gatt_enums import GattProperty
 
 
 class TestCyclingPowerParsing:
@@ -18,9 +17,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_feature_parsing(self):
         """Test cycling power feature characteristic parsing."""
-        char = CyclingPowerFeatureCharacteristic(
-            uuid="2A65", properties={GattProperty.READ}
-        )
+        char = CyclingPowerFeatureCharacteristic()
 
         # Test basic feature mask
         feature_data = struct.pack("<I", 0x0000001F)  # Multiple features enabled
@@ -40,9 +37,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_feature_invalid_data(self):
         """Test cycling power feature with invalid data."""
-        char = CyclingPowerFeatureCharacteristic(
-            uuid="2A65", properties={GattProperty.READ}
-        )
+        char = CyclingPowerFeatureCharacteristic()
 
         # Test insufficient data
         with pytest.raises(ValueError, match="must be at least 4 bytes"):
@@ -54,9 +49,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_measurement_basic(self):
         """Test basic cycling power measurement parsing."""
-        char = CyclingPowerMeasurementCharacteristic(
-            uuid="2A63", properties={GattProperty.NOTIFY}
-        )
+        char = CyclingPowerMeasurementCharacteristic()
 
         # Test minimum required data: Flags(2) + Power(2)
         flags = 0x0000  # No optional fields
@@ -70,9 +63,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_measurement_with_pedal_balance(self):
         """Test cycling power measurement with pedal power balance."""
-        char = CyclingPowerMeasurementCharacteristic(
-            uuid="2A63", properties={GattProperty.NOTIFY}
-        )
+        char = CyclingPowerMeasurementCharacteristic()
 
         # Test with pedal power balance
         flags = 0x0001  # Pedal power balance present
@@ -96,9 +87,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_measurement_with_accumulated_energy(self):
         """Test cycling power measurement with accumulated energy."""
-        char = CyclingPowerMeasurementCharacteristic(
-            uuid="2A63", properties={GattProperty.NOTIFY}
-        )
+        char = CyclingPowerMeasurementCharacteristic()
 
         # Test with accumulated energy
         flags = 0x0008  # Accumulated energy present
@@ -113,9 +102,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_measurement_with_wheel_data(self):
         """Test cycling power measurement with wheel revolution data."""
-        char = CyclingPowerMeasurementCharacteristic(
-            uuid="2A63", properties={GattProperty.NOTIFY}
-        )
+        char = CyclingPowerMeasurementCharacteristic()
 
         # Test with wheel revolution data
         flags = 0x0010  # Wheel revolution data present
@@ -132,9 +119,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_measurement_with_crank_data(self):
         """Test cycling power measurement with crank revolution data."""
-        char = CyclingPowerMeasurementCharacteristic(
-            uuid="2A63", properties={GattProperty.NOTIFY}
-        )
+        char = CyclingPowerMeasurementCharacteristic()
 
         # Test with crank revolution data
         flags = 0x0020  # Crank revolution data present
@@ -151,9 +136,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_measurement_combined_fields(self):
         """Test cycling power measurement with multiple optional fields."""
-        char = CyclingPowerMeasurementCharacteristic(
-            uuid="2A63", properties={GattProperty.NOTIFY}
-        )
+        char = CyclingPowerMeasurementCharacteristic()
 
         # Test with pedal balance + accumulated energy + crank data
         flags = 0x0001 | 0x0008 | 0x0020  # Multiple flags
@@ -162,9 +145,7 @@ class TestCyclingPowerParsing:
         energy = 200  # 200 kJ
         crank_revs = 8900
         crank_time = 512  # 0.5 second
-        test_data = struct.pack(
-            "<HhBHHH", flags, power, balance, energy, crank_revs, crank_time
-        )
+        test_data = struct.pack("<HhBHHH", flags, power, balance, energy, crank_revs, crank_time)
         result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 41  # 0x0001 | 0x0008 | 0x0020 = 1 + 8 + 32 = 41
@@ -176,9 +157,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_measurement_invalid_data(self):
         """Test cycling power measurement with invalid data."""
-        char = CyclingPowerMeasurementCharacteristic(
-            uuid="2A63", properties={GattProperty.NOTIFY}
-        )
+        char = CyclingPowerMeasurementCharacteristic()
 
         # Test insufficient data
         with pytest.raises(ValueError, match="must be at least 4 bytes"):
@@ -190,9 +169,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_vector_basic(self):
         """Test basic cycling power vector parsing."""
-        char = CyclingPowerVectorCharacteristic(
-            uuid="2A64", properties={GattProperty.NOTIFY}
-        )
+        char = CyclingPowerVectorCharacteristic()
 
         # Test minimum required data: Flags(1) + Crank Revs(2) + Crank Time(2) + First Angle(2)
         flags = 0x00  # No optional arrays
@@ -206,13 +183,11 @@ class TestCyclingPowerParsing:
         assert result.crank_revolution_data.crank_revolutions == 1234
         assert result.crank_revolution_data.last_crank_event_time == 1.0
         assert result.first_crank_measurement_angle == 0.5
-        assert char.unit == "newton metre"
+        assert char.unit == "various"
 
     def test_cycling_power_vector_with_force_array(self):
         """Test cycling power vector with force magnitude array."""
-        char = CyclingPowerVectorCharacteristic(
-            uuid="2A64", properties={GattProperty.NOTIFY}
-        )
+        char = CyclingPowerVectorCharacteristic()
 
         # Test with force magnitude array
         flags = 0x01  # Force magnitudes present
@@ -221,9 +196,7 @@ class TestCyclingPowerParsing:
         first_angle = 180  # 1.0 degrees
         force1 = 100  # 100 N
         force2 = 150  # 150 N
-        test_data = struct.pack(
-            "<BHHHhh", flags, crank_revs, crank_time, first_angle, force1, force2
-        )
+        test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, force1, force2)
         result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 1
@@ -234,9 +207,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_vector_with_torque_array(self):
         """Test cycling power vector with torque magnitude array."""
-        char = CyclingPowerVectorCharacteristic(
-            uuid="2A64", properties={GattProperty.NOTIFY}
-        )
+        char = CyclingPowerVectorCharacteristic()
 
         # Test with torque magnitude array
         flags = 0x02  # Torque magnitudes present
@@ -245,9 +216,7 @@ class TestCyclingPowerParsing:
         first_angle = 360  # 2.0 degrees
         torque1 = 160  # 5.0 Nm (160 / 32)
         torque2 = 192  # 6.0 Nm (192 / 32)
-        test_data = struct.pack(
-            "<BHHHhh", flags, crank_revs, crank_time, first_angle, torque1, torque2
-        )
+        test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, torque1, torque2)
         result = char.decode_value(bytearray(test_data))
 
         assert result.flags == 2
@@ -258,9 +227,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_vector_invalid_data(self):
         """Test cycling power vector with invalid data."""
-        char = CyclingPowerVectorCharacteristic(
-            uuid="2A64", properties={GattProperty.NOTIFY}
-        )
+        char = CyclingPowerVectorCharacteristic()
 
         # Test insufficient data
         with pytest.raises(ValueError, match="must be at least 7 bytes"):
@@ -272,9 +239,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_control_point_basic(self):
         """Test basic cycling power control point parsing."""
-        char = CyclingPowerControlPointCharacteristic(
-            uuid="2A66", properties={GattProperty.WRITE}
-        )
+        char = CyclingPowerControlPointCharacteristic()
 
         # Test simple op code without parameters
         op_code = 0x03  # Request Supported Sensor Locations
@@ -288,9 +253,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_control_point_with_parameters(self):
         """Test cycling power control point with parameters."""
-        char = CyclingPowerControlPointCharacteristic(
-            uuid="2A66", properties={GattProperty.WRITE}
-        )
+        char = CyclingPowerControlPointCharacteristic()
 
         # Test Set Cumulative Value
         op_code = 0x01
@@ -314,9 +277,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_control_point_response(self):
         """Test cycling power control point response parsing."""
-        char = CyclingPowerControlPointCharacteristic(
-            uuid="2A66", properties={GattProperty.INDICATE}
-        )
+        char = CyclingPowerControlPointCharacteristic()
 
         # Test response code
         op_code = 0x20  # Response Code
@@ -333,9 +294,7 @@ class TestCyclingPowerParsing:
 
     def test_cycling_power_control_point_invalid_data(self):
         """Test cycling power control point with invalid data."""
-        char = CyclingPowerControlPointCharacteristic(
-            uuid="2A66", properties={GattProperty.WRITE}
-        )
+        char = CyclingPowerControlPointCharacteristic()
 
         # Test empty data
         with pytest.raises(ValueError, match="must be at least 1 byte"):

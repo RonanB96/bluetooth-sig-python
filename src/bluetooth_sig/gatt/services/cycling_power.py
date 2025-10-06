@@ -1,5 +1,7 @@
 """Cycling Power Service implementation."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -12,7 +14,8 @@ class CyclingPowerService(BaseGattService):
     """Cycling Power Service implementation (0x1818).
 
     Used for cycling power meters that measure power output in watts.
-    Supports instantaneous power, force/torque vectors, and control functions.
+    Supports instantaneous power, force/torque vectors, and control
+    functions.
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {

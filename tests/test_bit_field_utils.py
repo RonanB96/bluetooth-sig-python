@@ -267,12 +267,8 @@ class TestBitFieldUtils:  # pylint: disable=too-many-public-methods
         """Test bit field range validation."""
         assert BitFieldUtils.validate_bit_field_range(0, 8, 32) is True
         assert BitFieldUtils.validate_bit_field_range(24, 8, 32) is True
-        assert (
-            BitFieldUtils.validate_bit_field_range(25, 8, 32) is False
-        )  # Exceeds 32 bits
-        assert (
-            BitFieldUtils.validate_bit_field_range(-1, 8, 32) is False
-        )  # Negative start
+        assert BitFieldUtils.validate_bit_field_range(25, 8, 32) is False  # Exceeds 32 bits
+        assert BitFieldUtils.validate_bit_field_range(-1, 8, 32) is False  # Negative start
         assert BitFieldUtils.validate_bit_field_range(0, 0, 32) is False  # Zero bits
 
     # Test copy_bit_field
@@ -282,9 +278,7 @@ class TestBitFieldUtils:  # pylint: disable=too-many-public-methods
         dest = 0b00001111  # Bits 0-3 set
 
         result = BitFieldUtils.copy_bit_field(source, dest, 4, 0, 4)
-        assert (
-            result == 0b00001111
-        )  # dest with bits 0-3 replaced by source bits 4-7 (15 -> 15)
+        assert result == 0b00001111  # dest with bits 0-3 replaced by source bits 4-7 (15 -> 15)
 
     # Test shift_bit_field_left and shift_bit_field_right
     def test_shift_bit_field_left(self):
