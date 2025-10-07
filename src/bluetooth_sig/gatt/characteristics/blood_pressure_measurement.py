@@ -73,15 +73,22 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
 
     Used to transmit blood pressure measurements with systolic,
     diastolic and mean arterial pressure.
+
+    SIG Specification Pattern:
+    This characteristic can use Blood Pressure Feature (0x2A49) to interpret
+    which status flags are supported by the device.
     """
 
     _manual_value_type = "string"  # Override since decode_value returns dataclass
+
+    # Declare optional dependency on Blood Pressure Feature for status interpretation
+    dependencies = ["00002A49-0000-1000-8000-00805F9B34FB"]  # Blood Pressure Feature UUID
 
     min_length = 7  # Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) minimum
     max_length = 19  # + Timestamp(7) + PulseRate(2) + UserID(1) + MeasurementStatus(2) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> BloodPressureData:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureData:  # pylint: disable=too-many-locals
         """Parse blood pressure measurement data according to Bluetooth
         specification.
 
@@ -91,10 +98,15 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
 
         Args:
             data: Raw bytearray from BLE characteristic
-            ctx: Optional context providing access to device features and other characteristics
+            ctx: Optional context providing access to Blood Pressure Feature characteristic
+                for validating which measurement status flags are supported
 
         Returns:
             BloodPressureData containing parsed blood pressure data with metadata
+
+        SIG Pattern:
+        When context is available, can validate that measurement status flags are
+        within the device's supported features as indicated by Blood Pressure Feature.
         """
         if len(data) < 7:
             raise ValueError("Blood Pressure Measurement data must be at least 7 bytes")
