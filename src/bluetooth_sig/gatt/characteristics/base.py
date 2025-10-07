@@ -254,7 +254,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     _allows_sig_override = False
 
     # Multi-characteristic parsing support (Progressive API Level 5)
-    dependencies: list[str] | None = None  # Optional list of characteristic UUIDs this parser depends on
+    dependencies: list[str] = []  # Optional list of characteristic UUIDs this parser depends on
 
     def __init__(
         self,

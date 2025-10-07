@@ -37,26 +37,3 @@ class CharacteristicContext:
     advertisement: bytes = b""
     other_characteristics: Mapping[str, CharacteristicDataProtocol] | None = None
     raw_service: bytes = b""
-
-    def get_characteristic_by_uuid(self, uuid: str) -> CharacteristicDataProtocol | None:
-        """Get another characteristic from the same service by UUID.
-
-        Args:
-            uuid: Short UUID (e.g., "2A34") or full UUID
-
-        Returns:
-            Parsed characteristic data if available, None otherwise
-        """
-        if not self.other_characteristics:
-            return None
-        return self.other_characteristics.get(uuid)
-
-    def get_all_characteristics(self) -> dict[str, CharacteristicDataProtocol]:
-        """Get all characteristics from the service.
-
-        Returns:
-            Dictionary mapping UUIDs to parsed characteristic data
-        """
-        if not self.other_characteristics:
-            return {}
-        return dict(self.other_characteristics)

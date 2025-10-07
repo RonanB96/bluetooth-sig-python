@@ -94,8 +94,8 @@ class SensorReadingCharacteristic(CustomBaseCharacteristic):
         calibration_factor = 1.0
 
         # Enhance with context if available (SIG pattern: optional enrichment)
-        if ctx is not None:
-            calib_char = ctx.get_characteristic_by_uuid("CA11B001-0000-1000-8000-00805F9B34FB")
+        if ctx is not None and ctx.other_characteristics:
+            calib_char = ctx.other_characteristics.get("CA11B001-0000-1000-8000-00805F9B34FB")
             if calib_char and calib_char.parse_success:
                 calibration_factor = calib_char.value
                 # Note: In production, log when context is expected but missing
@@ -167,8 +167,8 @@ class SequencedDataCharacteristic(CustomBaseCharacteristic):
         result: dict[str, Any] = {"sequence_number": seq_num, "value": data_value, "matched": False}
 
         # Match with context sequence number if available
-        if ctx is not None:
-            seq_char = ctx.get_characteristic_by_uuid("5E900001-0000-1000-8000-00805F9B34FB")
+        if ctx is not None and ctx.other_characteristics:
+            seq_char = ctx.other_characteristics.get("5E900001-0000-1000-8000-00805F9B34FB")
             if seq_char and seq_char.parse_success:
                 expected_seq = seq_char.value
                 result["matched"] = seq_num == expected_seq
@@ -220,7 +220,7 @@ class TestMultiCharacteristicDependencies:
         """Test that characteristics can declare dependencies."""
         # Independent characteristic has no dependencies
         calib = CalibrationCharacteristic()
-        assert calib.dependencies is None
+        assert calib.dependencies == []
 
         # Dependent characteristic declares its dependencies
         sensor = SensorReadingCharacteristic()
@@ -358,8 +358,8 @@ class TestMultiCharacteristicDependencies:
         assert data_result.parse_success is True
         assert data_result.value["matched"] is False  # Sequence numbers don't match
 
-    def test_context_helper_methods(self):
-        """Test CharacteristicContext helper methods."""
+    def test_context_direct_access(self):
+        """Test CharacteristicContext direct access to other_characteristics."""
         from bluetooth_sig.types import CharacteristicData
 
         # Create mock characteristic data
@@ -379,31 +379,26 @@ class TestMultiCharacteristicDependencies:
         # Create context
         ctx = CharacteristicContext(other_characteristics={str(CalibrationCharacteristic._info.uuid): calib_data})
 
-        # Test get_characteristic_by_uuid
-        result = ctx.get_characteristic_by_uuid(str(CalibrationCharacteristic._info.uuid))
+        # Test direct access via other_characteristics
+        assert ctx.other_characteristics is not None
+        result = ctx.other_characteristics.get(str(CalibrationCharacteristic._info.uuid))
         assert result is not None
         assert result.value == 2.5
 
-        # Test get_characteristic_by_uuid with non-existent UUID
-        result = ctx.get_characteristic_by_uuid("nonexistent")
+        # Test with non-existent UUID
+        result = ctx.other_characteristics.get("nonexistent")
         assert result is None
 
-        # Test get_all_characteristics
-        all_chars = ctx.get_all_characteristics()
-        assert len(all_chars) == 1
-        assert str(CalibrationCharacteristic._info.uuid) in all_chars
+        # Test getting all characteristics
+        assert len(ctx.other_characteristics) == 1
+        assert str(CalibrationCharacteristic._info.uuid) in ctx.other_characteristics
 
-    def test_empty_context_helper_methods(self):
-        """Test CharacteristicContext helper methods with empty context."""
+    def test_empty_context_access(self):
+        """Test CharacteristicContext with empty other_characteristics."""
         ctx = CharacteristicContext()
 
-        # Test get_characteristic_by_uuid returns None
-        result = ctx.get_characteristic_by_uuid("any-uuid")
-        assert result is None
-
-        # Test get_all_characteristics returns empty dict
-        all_chars = ctx.get_all_characteristics()
-        assert len(all_chars) == 0
+        # Test that other_characteristics is None by default
+        assert ctx.other_characteristics is None
 
     def test_circular_dependency_detection(self, translator):
         """Test that circular dependencies are detected and handled gracefully."""
