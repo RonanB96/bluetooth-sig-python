@@ -254,7 +254,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     _allows_sig_override = False
 
     # Multi-characteristic parsing support (Progressive API Level 5)
-    dependencies: list[str] = []  # Optional list of characteristic UUIDs this parser depends on
+    dependencies: list[str] = []  # Optional list of characteristic UUIDs this parser depends on (resolved dynamically)
+    _dependency_names: list[CharacteristicName] = []  # Declare dependencies using CharacteristicName enum
 
     def __init__(
         self,
@@ -349,6 +350,14 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             if inferred_type != ValueType.UNKNOWN:
                 self._info.value_type = inferred_type
                 self.value_type = inferred_type
+
+        # Resolve dependencies from _dependency_names if provided (Progressive API Level 5)
+        if self._dependency_names:
+            self.dependencies = []
+            for dep_name in self._dependency_names:
+                dep_uuid = self._get_characteristic_uuid_by_name(dep_name)
+                if dep_uuid:
+                    self.dependencies.append(dep_uuid)
 
     def _infer_value_type_from_patterns(self) -> ValueType:
         """Infer value type from characteristic naming patterns and class structure.

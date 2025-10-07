@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from enum import IntEnum, IntFlag
 from typing import Any
 
+from ...types.gatt_enums import CharacteristicName
 from ..constants import UINT8_MAX, UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -236,7 +237,8 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     _manual_unit: str = "various"  # Multiple units in context data
 
     # Declare dependency on Glucose Measurement for sequence number matching
-    dependencies = ["00002A18-0000-1000-8000-00805F9B34FB"]  # Glucose Measurement UUID
+    # Dependencies resolved dynamically via registry
+    _dependency_names = [CharacteristicName.GLUCOSE_MEASUREMENT]
 
     min_length: int | None = 3  # Flags(1) + Sequence(2) minimum
     max_length: int | None = (
@@ -281,8 +283,8 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
 
         # Validate sequence number matching with Glucose Measurement if context available
         # SIG Specification: "Contains the sequence number of the corresponding Glucose Measurement"
-        if ctx is not None and isinstance(ctx, CharacteristicContext) and ctx.other_characteristics:
-            glucose_meas = ctx.other_characteristics.get("00002A18-0000-1000-8000-00805F9B34FB")
+        if ctx is not None and isinstance(ctx, CharacteristicContext):
+            glucose_meas = self.get_context_characteristic(ctx, CharacteristicName.GLUCOSE_MEASUREMENT)
             if glucose_meas and glucose_meas.parse_success:
                 # Extract sequence number from GlucoseMeasurementData
                 if hasattr(glucose_meas.value, "sequence_number"):

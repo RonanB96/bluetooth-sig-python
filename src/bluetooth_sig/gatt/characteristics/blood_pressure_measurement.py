@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import IntFlag
 
+from ...types.gatt_enums import CharacteristicName
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
@@ -82,7 +83,8 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
     _manual_value_type = "string"  # Override since decode_value returns dataclass
 
     # Declare optional dependency on Blood Pressure Feature for status interpretation
-    dependencies = ["00002A49-0000-1000-8000-00805F9B34FB"]  # Blood Pressure Feature UUID
+    # Dependencies resolved dynamically via registry
+    _dependency_names = [CharacteristicName.BLOOD_PRESSURE_FEATURE]
 
     min_length = 7  # Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) minimum
     max_length = 19  # + Timestamp(7) + PulseRate(2) + UserID(1) + MeasurementStatus(2) maximum
