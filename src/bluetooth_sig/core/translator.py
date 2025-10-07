@@ -399,7 +399,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         # Sort characteristics by dependencies (topological sort using graphlib)
         try:
             # Build graph for TopologicalSorter: {node: {predecessors}}
-            ts = TopologicalSorter[str]()
+            # Note: Don't use TopologicalSorter[str]() - not compatible with Python 3.9
+            ts = TopologicalSorter()
             for uuid in char_data.keys():
                 deps = uuid_to_dependencies.get(uuid, [])
                 # Filter to only include dependencies that are in this batch
