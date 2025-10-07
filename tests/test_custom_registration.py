@@ -305,8 +305,8 @@ class TestRuntimeRegistration:
 
         # Should work without error
         char = SIGOverrideWithPermission()
-        assert char._info.uuid == BluetoothUUID("2A19")
-        assert char._allows_sig_override is True
+        assert char.uuid == BluetoothUUID("2A19")
+        assert char.get_allows_sig_override() is True
 
         # Should also work with registry registration
         CharacteristicRegistry.register_characteristic_class(

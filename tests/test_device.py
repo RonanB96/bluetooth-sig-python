@@ -214,18 +214,32 @@ class TestDevice:
         assert battery_data.name == "Battery Level"
 
     def test_add_service_unknown_service(self):
-        """Test adding a service with unknown service type."""
-        # Unknown service characteristics
+        """Test adding a service with unknown service name raises ValueError."""
+        # Unknown service name that's not a valid UUID (contains non-hex characters)
         characteristics = {
             "1234": b"\x01\x02\x03",
         }
 
-        self.device.add_service("ABCD", characteristics)
+        # Should raise ValueError for unknown service name that's not a UUID
+        with pytest.raises(ValueError, match="Cannot resolve service UUID for 'InvalidServiceName'"):
+            self.device.add_service("InvalidServiceName", characteristics)
 
-        assert "ABCD" in self.device.services
-        service = self.device.services["ABCD"]
+    def test_add_service_with_unknown_uuid(self):
+        """Test adding a service with a valid UUID that's not in the registry creates UnknownService."""
+        # Use a valid UUID format that's not a known service
+        unknown_uuid = "ABCD"  # Valid 16-bit UUID, but not a known service
+        characteristics = {
+            "1234": b"\x01\x02\x03",
+        }
+
+        self.device.add_service(unknown_uuid, characteristics)
+
+        # Should create an entry with the UUID as the key
+        assert unknown_uuid in self.device.services
+        service = self.device.services[unknown_uuid]
+        # The service should be an UnknownService
+        assert service.service.__class__.__name__ == "UnknownService"
         assert len(service.characteristics) == 1
-        assert "1234" in service.characteristics
 
     def test_get_characteristic_data(self):
         """Test retrieving characteristic data."""

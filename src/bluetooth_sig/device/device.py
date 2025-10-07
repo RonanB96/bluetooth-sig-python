@@ -17,7 +17,7 @@ from typing import Any, Callable, Protocol
 from ..gatt.characteristics import CharacteristicName
 from ..gatt.context import CharacteristicContext, DeviceInfo
 from ..gatt.services import GattServiceRegistry, ServiceName
-from ..gatt.services.base import BaseGattService
+from ..gatt.services.base import UnknownService
 from ..types import (
     BLEAdvertisementTypes,
     BLEAdvertisingPDU,
@@ -29,7 +29,7 @@ from ..types import (
 from ..types.data_types import CharacteristicData
 from ..types.device_types import DeviceEncryption, DeviceService
 from ..types.gatt_enums import GattProperty
-from ..types.gatt_services import CharacteristicCollection
+from ..types.uuid import BluetoothUUID
 from .advertising_parser import AdvertisingParser
 from .connection import ConnectionManagerProtocol
 
@@ -63,32 +63,6 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
 
     def get_characteristic_info_by_name(self, name: CharacteristicName) -> Any | None:
         """Get characteristic info by enum name (optional method)."""
-
-
-class UnknownService(BaseGattService):
-    """Generic service for unknown/unsupported UUIDs."""
-
-    def __init__(self, uuid: str | None = None) -> None:
-        """Initialize unknown service with optional UUID."""
-        from ..types import ServiceInfo
-        from ..types.uuid import BluetoothUUID
-
-        # Use provided UUID or a placeholder
-        service_uuid = BluetoothUUID(uuid) if uuid else BluetoothUUID("00001234-0000-1000-8000-00805F9B34FB")
-        info = ServiceInfo(
-            uuid=service_uuid,
-            name=f"Unknown Service ({service_uuid})",
-            description="",
-        )
-        super().__init__(info=info)
-
-    @classmethod
-    def get_expected_characteristics(cls) -> CharacteristicCollection:
-        return {}
-
-    @classmethod
-    def get_required_characteristics(cls) -> CharacteristicCollection:
-        return {}
 
 
 def _is_uuid_like(value: str) -> bool:
@@ -138,15 +112,16 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             service_uuid = self.translator.get_service_uuid(service_name)
 
         if not service_uuid:
-            # Fallback to unknown service if UUID not found
-            service: BaseGattService = UnknownService()
-            device_service = DeviceService(service=service, characteristics={})
-            self.services[service_name if isinstance(service_name, str) else service_name.value] = device_service
-            return
+            # No UUID found - this is an error condition
+            service_name_str = service_name if isinstance(service_name, str) else service_name.value
+            raise ValueError(
+                f"Cannot resolve service UUID for '{service_name_str}'. "
+                "Service name not found in registry and not a valid UUID format."
+            )
 
         service_class = GattServiceRegistry.get_service_class(service_uuid)
         if not service_class:
-            service = UnknownService()
+            service = UnknownService(uuid=BluetoothUUID(service_uuid))
         else:
             service = service_class()
 
@@ -567,7 +542,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             service_uuid = service_info.uuid
             if service_uuid not in self.services:
                 # Create a service instance - we'll use UnknownService for undiscovered services
-                service_instance = UnknownService()
+                service_instance = UnknownService(uuid=BluetoothUUID(service_uuid))
                 device_service = DeviceService(service=service_instance, characteristics={})
                 self.services[service_uuid] = device_service
 

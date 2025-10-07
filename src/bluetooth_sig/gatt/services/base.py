@@ -103,10 +103,9 @@ class SIGServiceResolver:
         words = re.findall("[A-Z][^A-Z]*", service_name_base)
         display_name = " ".join(words)
 
-        # Try different name formats ordered by hit rate: space-separated (64%), without suffix (14%)
         names_to_try = [
-            display_name,  # Space-separated (e.g. Environmental Sensing) - 64% hit rate
-            service_name_base,  # Without 'Service' suffix (e.g. Battery) - 14% hit rate
+            display_name,  # Space-separated (e.g. Environmental Sensing)
+            service_name_base,  # Without 'Service' suffix (e.g. Battery)
             display_name + " Service",  # Space-separated with suffix
             name,  # Full class name (e.g. BatteryService)
             "org.bluetooth.service." + "_".join(words).lower(),  # org format
@@ -214,6 +213,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
     # Class attributes for explicit name overrides
     _service_name: str | None = None
+    _info: ServiceInfo | None = None  # Populated in __post_init__
 
     def __init__(
         self,
@@ -229,8 +229,6 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         # Store provided info or None (will be resolved in __post_init__)
         self._provided_info = info
 
-        # Instance variables (will be set in __post_init__)
-        self._info: ServiceInfo
         self.characteristics: dict[BluetoothUUID, BaseCharacteristic] = {}
 
         # Set validation attributes from ServiceValidationConfig
@@ -764,16 +762,14 @@ class CustomBaseGattService(BaseGattService):
 
         cls._allows_sig_override = allow_sig_override
 
-        # Check if class defines _info attribute and validate it
-        if "_info" in cls.__dict__:
-            info = cls.__dict__["_info"]
-            if info is not None:
-                if not allow_sig_override and info.uuid.is_sig_service():
-                    raise ValueError(
-                        f"{cls.__name__} uses SIG UUID {info.uuid} without override flag. "
-                        "Use custom UUID or add allow_sig_override=True parameter."
-                    )
-                cls._configured_info = info
+        info = cls._info
+        if info is not None:
+            if not allow_sig_override and info.uuid.is_sig_service():
+                raise ValueError(
+                    f"{cls.__name__} uses SIG UUID {info.uuid} without override flag. "
+                    "Use custom UUID or add allow_sig_override=True parameter."
+                )
+            cls._configured_info = info
 
     def __init__(
         self,

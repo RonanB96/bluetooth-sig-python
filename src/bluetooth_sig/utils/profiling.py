@@ -56,11 +56,11 @@ class ProfilingSession:
 
 
 @contextmanager
-def timer(operation: str = "operation"):
+def timer(operation: str = "operation"):  # pylint: disable=unused-argument
     """Context manager for timing a single operation.
 
     Args:
-        operation: Name of the operation being timed
+        operation: Name of the operation being timed (currently unused, reserved for future use)
 
     Yields:
         Dictionary that will contain 'elapsed' key with timing result
