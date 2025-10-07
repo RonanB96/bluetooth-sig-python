@@ -158,7 +158,7 @@ def demonstrate_dependent_parsing_without_context():
 
     print(f"✅ Parsed sensor reading: {result.value}")
     print(f"   Parse success: {result.parse_success}")
-    print(f"   Note: Used default calibration factor (1.0) since no context provided")
+    print("   Note: Used default calibration factor (1.0) since no context provided")
     print()
 
 
@@ -194,9 +194,7 @@ def demonstrate_dependent_parsing_with_context():
     print(f"📊 Step 1: Parsed calibration factor: {calib_result.value}")
 
     # Parse sensor WITH context containing calibration
-    ctx = CharacteristicContext(
-        other_characteristics={str(CalibrationCharacteristic._info.uuid): calib_result}
-    )
+    ctx = CharacteristicContext(other_characteristics={str(CalibrationCharacteristic._info.uuid): calib_result})
 
     sensor_result = translator.parse_characteristic(
         str(SensorReadingCharacteristic._info.uuid),
@@ -205,8 +203,8 @@ def demonstrate_dependent_parsing_with_context():
     )
 
     print(f"✅ Step 2: Parsed sensor reading: {sensor_result.value}")
-    print(f"   Raw value: 100")
-    print(f"   Calibration factor: 2.5")
+    print("   Raw value: 100")
+    print("   Calibration factor: 2.5")
     print(f"   Calibrated value: 100 × 2.5 = {sensor_result.value}")
     print()
 
