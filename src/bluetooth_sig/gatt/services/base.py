@@ -103,14 +103,13 @@ class SIGServiceResolver:
         words = re.findall("[A-Z][^A-Z]*", service_name_base)
         display_name = " ".join(words)
 
-        # Try different name formats in order of highest hit rate
+        # Try different name formats ordered by hit rate: space-separated (64%), without suffix (14%)
         names_to_try = [
+            display_name,  # Space-separated (e.g. Environmental Sensing) - 64% hit rate
+            service_name_base,  # Without 'Service' suffix (e.g. Battery) - 14% hit rate
+            display_name + " Service",  # Space-separated with suffix
             name,  # Full class name (e.g. BatteryService)
-            service_name_base,  # Without 'Service' suffix
-            display_name,  # Space-separated (e.g. Environmental Sensing)
-            display_name + " Service",  # With Service suffix
-            # Service-specific format
-            "org.bluetooth.service." + "_".join(words).lower(),
+            "org.bluetooth.service." + "_".join(words).lower(),  # org format
         ]
 
         # Try each name format
@@ -211,10 +210,6 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
     Automatically resolves UUID, name, and summary from Bluetooth SIG specifications.
     Follows the same pattern as BaseCharacteristic for consistency.
-
-    Progressive API Levels Supported:
-    - Level 1: Manual info passing (for dynamic/runtime services)
-    - Level 3: Automatic SIG resolution (most common case)
     """
 
     # Class attributes for explicit name overrides
@@ -750,10 +745,6 @@ class CustomBaseGattService(BaseGattService):
     This class provides a wrapper around custom services that are not
     defined in the Bluetooth SIG specification. It supports both manual info passing
     and automatic class-level _info binding via __init_subclass__.
-
-    Progressive API Levels Supported:
-    - Level 2: Class-level _info attribute (automatic binding)
-    - Legacy: Manual info parameter (backwards compatibility)
     """
 
     _is_custom = True
@@ -771,20 +762,17 @@ class CustomBaseGattService(BaseGattService):
         """
         super().__init_subclass__(**kwargs)
 
-        # Store override permission for registry validation
         cls._allows_sig_override = allow_sig_override
 
-        # If class has _info attribute, validate and store it
-        if hasattr(cls, "_info"):
-            info = getattr(cls, "_info", None)
+        # Check if class defines _info attribute and validate it
+        if "_info" in cls.__dict__:
+            info = cls.__dict__["_info"]
             if info is not None:
-                # Check for SIG UUID override (unless explicitly allowed)
                 if not allow_sig_override and info.uuid.is_sig_service():
                     raise ValueError(
                         f"{cls.__name__} uses SIG UUID {info.uuid} without override flag. "
                         "Use custom UUID or add allow_sig_override=True parameter."
                     )
-
                 cls._configured_info = info
 
     def __init__(

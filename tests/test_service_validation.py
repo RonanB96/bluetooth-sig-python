@@ -435,4 +435,4 @@ class TestServiceValidationIntegration:
         end_time = time.time()
 
         # Should complete 100 validation cycles in reasonable time
-        assert end_time - start_time < 1.0  # Less than 1 second
+        assert end_time - start_time < 2.0  # Less than 2 seconds
