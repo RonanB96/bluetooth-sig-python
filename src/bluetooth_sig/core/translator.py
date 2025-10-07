@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections import defaultdict, deque
 from typing import Any
 
 from ..gatt.characteristics import CharacteristicName, CharacteristicRegistry
@@ -24,6 +25,55 @@ from ..types.gatt_enums import ValueType
 from ..types.uuid import BluetoothUUID
 
 logger = logging.getLogger(__name__)
+
+
+def _topological_sort_characteristics(char_uuids: list[str], uuid_to_dependencies: dict[str, list[str]]) -> list[str]:
+    """Sort characteristics by dependencies using topological sort.
+
+    Characteristics with no dependencies are parsed first, followed by
+    characteristics that depend on them, ensuring all dependencies are
+    available when parsing dependent characteristics.
+
+    Args:
+        char_uuids: List of characteristic UUIDs to sort
+        uuid_to_dependencies: Mapping from UUID to list of dependency UUIDs
+
+    Returns:
+        List of UUIDs in dependency order (independent first, dependent last)
+
+    Raises:
+        ValueError: If circular dependencies are detected
+    """
+    # Build adjacency list for graph (dependency -> dependent)
+    graph: dict[str, list[str]] = defaultdict(list)
+    in_degree: dict[str, int] = {uuid: 0 for uuid in char_uuids}
+
+    for uuid in char_uuids:
+        dependencies = uuid_to_dependencies.get(uuid, [])
+        for dep_uuid in dependencies:
+            if dep_uuid in in_degree:  # Only track dependencies within this batch
+                graph[dep_uuid].append(uuid)
+                in_degree[uuid] += 1
+
+    # Kahn's algorithm for topological sort
+    queue: deque[str] = deque([uuid for uuid in char_uuids if in_degree[uuid] == 0])
+    sorted_uuids: list[str] = []
+
+    while queue:
+        current = queue.popleft()
+        sorted_uuids.append(current)
+
+        for dependent in graph[current]:
+            in_degree[dependent] -= 1
+            if in_degree[dependent] == 0:
+                queue.append(dependent)
+
+    # Check for circular dependencies
+    if len(sorted_uuids) != len(char_uuids):
+        remaining = [uuid for uuid in char_uuids if uuid not in sorted_uuids]
+        raise ValueError(f"Circular dependency detected among characteristics: {remaining}")
+
+    return sorted_uuids
 
 
 class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
@@ -366,7 +416,12 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
     def parse_characteristics(
         self, char_data: dict[str, bytes], ctx: CharacteristicContext | None = None
     ) -> dict[str, CharacteristicData]:
-        """Parse multiple characteristics at once.
+        """Parse multiple characteristics at once with dependency-aware ordering.
+
+        This method automatically handles multi-characteristic dependencies by parsing
+        independent characteristics first, then parsing characteristics that depend on them.
+        The parsing order is determined by the `dependencies` attribute declared on
+        characteristic classes.
 
         Args:
             char_data: Dictionary mapping UUIDs to raw data bytes
@@ -375,12 +430,32 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             Dictionary mapping UUIDs to CharacteristicData results
+
+        Raises:
+            ValueError: If circular dependencies are detected
         """
         logger.debug("Batch parsing %d characteristics", len(char_data))
         base_ctx = ctx
 
+        # Resolve dependencies for each characteristic
+        uuid_to_dependencies: dict[str, list[str]] = {}
+        for uuid in char_data.keys():
+            characteristic = CharacteristicRegistry.create_characteristic(uuid)
+            if characteristic and hasattr(characteristic, "dependencies") and characteristic.dependencies:
+                uuid_to_dependencies[uuid] = characteristic.dependencies
+                logger.debug("Characteristic %s has dependencies: %s", uuid, characteristic.dependencies)
+
+        # Sort characteristics by dependencies (topological sort)
+        try:
+            sorted_uuids = _topological_sort_characteristics(list(char_data.keys()), uuid_to_dependencies)
+            logger.debug("Dependency-sorted parsing order: %s", sorted_uuids)
+        except ValueError as e:
+            logger.warning("Dependency sorting failed: %s. Using original order.", e)
+            sorted_uuids = list(char_data.keys())
+
         results: dict[str, CharacteristicData] = {}
-        for uuid, raw_data in char_data.items():
+        for uuid in sorted_uuids:
+            raw_data = char_data[uuid]
             # Build a context for this parse that shares device-level info
             # from the base context but provides the current results mapping
             # so parsers can look up previously-parsed characteristics.
