@@ -15,7 +15,6 @@ class VoltageCharacteristic(BaseCharacteristic):
 
     _template = ScaledUint16Template()
 
-    _characteristic_name: str = "Voltage"
     _manual_unit: str = "V"  # Override template's "units" default
 
     # Template configuration

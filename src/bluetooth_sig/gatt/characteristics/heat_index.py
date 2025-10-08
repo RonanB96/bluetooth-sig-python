@@ -10,5 +10,3 @@ class HeatIndexCharacteristic(BaseCharacteristic):
     """Heat Index measurement characteristic."""
 
     _template = Uint8Template()
-
-    _characteristic_name: str = "Heat Index"

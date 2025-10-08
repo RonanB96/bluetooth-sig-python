@@ -16,7 +16,6 @@ class MethaneConcentrationCharacteristic(BaseCharacteristic):
 
     _template = ConcentrationTemplate()
 
-    _characteristic_name: str = "Methane Concentration"
     _manual_value_type: ValueType | str | None = "int"
     _manual_unit: str = "ppm"  # Override template's "ppm" default
 

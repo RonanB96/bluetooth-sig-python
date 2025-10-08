@@ -36,7 +36,6 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
     Specifies lower and upper current bounds (2x uint16).
     """
 
-    _characteristic_name: str = "Electric Current Range"
     # Override since decode_value returns structured ElectricCurrentRangeData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 

@@ -150,7 +150,7 @@ class CharacteristicName(Enum):
     AVERAGE_VOLTAGE = "Average Voltage"
     SUPPORTED_POWER_RANGE = "Supported Power Range"
     # Audio characteristics
-    SOUND_PRESSURE_LEVEL = "Sound Pressure Level"
+    NOISE = "Noise"
     # Pulse oximetry
     PULSE_OXIMETRY_CONTINUOUS_MEASUREMENT = "Pulse Oximetry Continuous Measurement"
     # Generic Access

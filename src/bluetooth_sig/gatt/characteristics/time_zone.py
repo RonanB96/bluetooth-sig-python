@@ -16,11 +16,10 @@ class TimeZoneCharacteristic(BaseCharacteristic):
     standard time and UTC.
     """
 
-    _characteristic_name: str = "Time Zone"
     # Manual override: YAML indicates sint8->int but we return descriptive strings
     _manual_value_type: ValueType | str | None = ValueType.STRING
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> str:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
         """Parse time zone data (sint8 in 15-minute increments from UTC)."""
         if len(data) < 1:
             raise ValueError("Time zone data must be at least 1 byte")
@@ -37,6 +36,10 @@ class TimeZoneCharacteristic(BaseCharacteristic):
             return f"Reserved (value: {offset_raw})"
 
         # Convert 15-minute increments to hours and minutes
+        # pylint: disable=duplicate-code
+        # NOTE: UTC offset formatting is shared with LocalTimeInformationCharacteristic.
+        # Both use identical 15-minute increment conversion and formatting per Bluetooth SIG time spec.
+        # Consolidation not practical as they're independent characteristics with different data structures.
         total_minutes = offset_raw * 15
         hours = total_minutes // 60
         minutes = abs(total_minutes % 60)

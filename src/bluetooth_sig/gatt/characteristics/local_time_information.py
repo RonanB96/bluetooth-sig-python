@@ -82,10 +82,10 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
     information.
     """
 
-    _characteristic_name: str = "Local Time Information"
-
     def decode_value(  # pylint: disable=too-many-locals
-        self, data: bytearray, _ctx: Any | None = None
+        self,
+        data: bytearray,
+        ctx: Any | None = None,
     ) -> LocalTimeInformationData:
         """Parse local time information data (2 bytes: time zone + DST
         offset)."""
@@ -103,6 +103,10 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
             timezone_desc = "Unknown"
             timezone_hours = None
         elif -48 <= timezone_raw <= 56:
+            # pylint: disable=duplicate-code
+            # NOTE: UTC offset formatting is shared with TimeZoneCharacteristic.
+            # Both use identical 15-minute increment conversion per Bluetooth SIG time spec.
+            # Consolidation not practical as they're independent characteristics with different data structures.
             total_minutes = timezone_raw * 15
             hours = total_minutes // 60
             minutes = abs(total_minutes % 60)

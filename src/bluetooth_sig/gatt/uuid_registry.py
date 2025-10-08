@@ -209,6 +209,11 @@ class UuidRegistry:
         except (yaml.YAMLError, OSError, KeyError):
             pass
 
+    # pylint: disable=duplicate-code
+    # NOTE: Unit symbol extraction logic is shared with YAMLCrossReferenceSystem._extract_unit_symbol_from_name.
+    # Both need to parse Bluetooth SIG unit specifications identically. Consolidation would require shared utility
+    # module, but these are in different architectural layers (GATT registry vs YAML cross-reference system).
+    # TODO: Consider extracting to shared bluetooth_sig.registry.unit_utils module if more duplication emerges.
     def _extract_unit_symbol_from_name(self, unit_name: str) -> str | None:
         """Extract unit symbol from unit name."""
         # Handle common unit names that map to symbols

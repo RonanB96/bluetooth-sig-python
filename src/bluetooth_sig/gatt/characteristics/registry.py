@@ -80,6 +80,7 @@ def _build_characteristic_class_map() -> dict[CharacteristicName, type[BaseChara
     from .nitrogen_dioxide_concentration import (
         NitrogenDioxideConcentrationCharacteristic,
     )
+    from .noise import NoiseCharacteristic
     from .non_methane_voc_concentration import NonMethaneVOCConcentrationCharacteristic
     from .ozone_concentration import OzoneConcentrationCharacteristic
     from .pm1_concentration import PM1ConcentrationCharacteristic
@@ -89,7 +90,6 @@ def _build_characteristic_class_map() -> dict[CharacteristicName, type[BaseChara
     from .pressure import PressureCharacteristic
     from .rainfall import RainfallCharacteristic
     from .rsc_measurement import RSCMeasurementCharacteristic
-    from .sound_pressure_level import SoundPressureLevelCharacteristic
     from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacteristic
     from .supported_power_range import SupportedPowerRangeCharacteristic
     from .temperature import TemperatureCharacteristic
@@ -117,7 +117,6 @@ def _build_characteristic_class_map() -> dict[CharacteristicName, type[BaseChara
         CharacteristicName.PRESSURE: PressureCharacteristic,
         CharacteristicName.UV_INDEX: UVIndexCharacteristic,
         CharacteristicName.ILLUMINANCE: IlluminanceCharacteristic,
-        CharacteristicName.POWER_SPECIFICATION: SoundPressureLevelCharacteristic,
         CharacteristicName.HEART_RATE_MEASUREMENT: HeartRateMeasurementCharacteristic,
         CharacteristicName.BLOOD_PRESSURE_MEASUREMENT: BloodPressureMeasurementCharacteristic,
         CharacteristicName.BLOOD_PRESSURE_FEATURE: BloodPressureFeatureCharacteristic,
@@ -155,6 +154,7 @@ def _build_characteristic_class_map() -> dict[CharacteristicName, type[BaseChara
         CharacteristicName.VOLTAGE_FREQUENCY: VoltageFrequencyCharacteristic,
         CharacteristicName.SUPPORTED_POWER_RANGE: SupportedPowerRangeCharacteristic,
         CharacteristicName.TX_POWER_LEVEL: TxPowerLevelCharacteristic,
+        CharacteristicName.NOISE: NoiseCharacteristic,
         CharacteristicName.DEW_POINT: DewPointCharacteristic,
         CharacteristicName.HEAT_INDEX: HeatIndexCharacteristic,
         CharacteristicName.WIND_CHILL: WindChillCharacteristic,

@@ -10,5 +10,3 @@ class TrueWindDirectionCharacteristic(BaseCharacteristic):
     """True Wind Direction measurement characteristic."""
 
     _template = ScaledUint16Template()
-
-    _characteristic_name: str = "True Wind Direction"

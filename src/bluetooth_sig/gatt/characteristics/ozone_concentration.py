@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code  # Concentration characteristics share template configuration
 """Ozone Concentration characteristic implementation."""
 
 from __future__ import annotations
@@ -16,7 +17,6 @@ class OzoneConcentrationCharacteristic(BaseCharacteristic):
 
     _template = ConcentrationTemplate()
 
-    _characteristic_name: str = "Ozone Concentration"
     _manual_value_type: ValueType | str | None = ValueType.INT  # Manual override needed as no YAML available
     _manual_unit: str = "ppb"  # Override template's "ppm" default
 

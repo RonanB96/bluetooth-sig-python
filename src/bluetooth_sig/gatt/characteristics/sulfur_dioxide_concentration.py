@@ -16,7 +16,6 @@ class SulfurDioxideConcentrationCharacteristic(BaseCharacteristic):
 
     _template = ConcentrationTemplate()
 
-    _characteristic_name: str = "Sulfur Dioxide Concentration"
     _manual_value_type: ValueType | str | None = ValueType.INT
     _manual_unit: str = "ppb"  # Override template's "ppm" default
 

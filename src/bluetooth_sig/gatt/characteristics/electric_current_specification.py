@@ -37,7 +37,6 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic):
     specifications.
     """
 
-    _characteristic_name: str = "Electric Current Specification"
     # Override since decode_value returns structured ElectricCurrentSpecificationData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 

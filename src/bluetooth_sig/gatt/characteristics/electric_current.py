@@ -14,7 +14,6 @@ class ElectricCurrentCharacteristic(BaseCharacteristic):
 
     _template = ScaledUint16Template()
 
-    _characteristic_name: str = "Electric Current"
     _manual_unit: str = "A"  # Override template's "units" default
 
     # Template configuration

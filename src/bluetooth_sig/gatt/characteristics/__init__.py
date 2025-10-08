@@ -65,6 +65,7 @@ from .magnetic_flux_density_2d import MagneticFluxDensity2DCharacteristic
 from .magnetic_flux_density_3d import MagneticFluxDensity3DCharacteristic
 from .methane_concentration import MethaneConcentrationCharacteristic
 from .nitrogen_dioxide_concentration import NitrogenDioxideConcentrationCharacteristic
+from .noise import NoiseCharacteristic
 from .non_methane_voc_concentration import NonMethaneVOCConcentrationCharacteristic
 from .ozone_concentration import OzoneConcentrationCharacteristic
 from .pm1_concentration import PM1ConcentrationCharacteristic
@@ -80,7 +81,6 @@ from .registry import (
     CharacteristicRegistry,
 )
 from .rsc_measurement import RSCMeasurementCharacteristic
-from .sound_pressure_level import SoundPressureLevelCharacteristic
 from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacteristic
 from .supported_power_range import SupportedPowerRangeCharacteristic
 from .temperature import TemperatureCharacteristic
@@ -166,7 +166,7 @@ __all__ = [
     "RSCMeasurementCharacteristic",
     "SerialNumberStringCharacteristic",
     "SoftwareRevisionStringCharacteristic",
-    "SoundPressureLevelCharacteristic",
+    "NoiseCharacteristic",
     "SulfurDioxideConcentrationCharacteristic",
     "SupportedPowerRangeCharacteristic",
     "TemperatureCharacteristic",

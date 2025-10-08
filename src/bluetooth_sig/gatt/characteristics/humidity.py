@@ -13,11 +13,10 @@ class HumidityCharacteristic(BaseCharacteristic):
 
     _template = ScaledUint16Template()
 
-    _characteristic_name: str = "Humidity"
     # Override YAML int type since decode_value returns float
     _manual_value_type: ValueType | str | None = ValueType.FLOAT
-    _manual_unit: str = "%"  # Override template's "units" default
+    _manual_unit: str | None = "%"  # Override template's "units" default
 
     # Template configuration
     resolution: float = 0.01  # 0.01% resolution
-    max_value: float = PERCENTAGE_MAX  # Humidity max 100%
+    max_value: int | float | None = PERCENTAGE_MAX  # Humidity max 100%
