@@ -8,7 +8,7 @@ from typing import Any
 from ..gatt.characteristics import CharacteristicName, CharacteristicRegistry
 from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.context import CharacteristicContext
-from ..gatt.services import GattServiceRegistry, ServiceName
+from ..gatt.services import SERVICE_CLASS_MAP, GattServiceRegistry, ServiceName
 from ..gatt.services.base import BaseGattService
 from ..gatt.uuid_registry import CustomUuidEntry, uuid_registry
 from ..types import (
@@ -155,14 +155,17 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             Service UUID or None if not found
         """
-        # Handle enum input
+        # Try to find the service by name - use direct map access
         if isinstance(name, ServiceName):
-            service_name: str | ServiceName = name
+            service_class = SERVICE_CLASS_MAP.get(name)
         else:
-            service_name = name
+            # For string names, find the matching enum member
+            service_class = None
+            for enum_member in ServiceName:
+                if enum_member.value == name:
+                    service_class = SERVICE_CLASS_MAP.get(enum_member)
+                    break
 
-        # Try to find the service by name
-        service_class = GattServiceRegistry.get_service_class_by_name(service_name)
         if service_class:
             try:
                 temp_service = service_class()

@@ -37,7 +37,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
     """
 
     # Override automatic name resolution because "CSC" is an acronym
-    _characteristic_name: str = "CSC Measurement"
+    _characteristic_name: str | None = "CSC Measurement"
 
     # CSC Measurement Flags (per Bluetooth SIG specification)
     WHEEL_REVOLUTION_DATA_PRESENT = 0x01
@@ -46,7 +46,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
     # Time resolution constants
     CSC_TIME_RESOLUTION = 1024.0  # 1/1024 second resolution for both wheel and crank event times
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> CSCMeasurementData:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> CSCMeasurementData:
         """Parse CSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + [Cumulative Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +
@@ -107,9 +107,6 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
         Returns:
             Encoded bytes representing the CSC measurement
         """
-        if not isinstance(data, CSCMeasurementData):
-            raise TypeError(f"CSC measurement data must be a CSCMeasurementData, got {type(data).__name__}")
-
         # Build flags based on available data
         flags = data.flags
         has_wheel_data = data.cumulative_wheel_revolutions is not None and data.last_wheel_event_time is not None
@@ -126,8 +123,14 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
         # Add wheel revolution data if present
         if has_wheel_data:
-            wheel_revolutions = int(data.cumulative_wheel_revolutions)  # type: ignore[arg-type]
-            wheel_event_time = float(data.last_wheel_event_time)  # type: ignore[arg-type]
+            wheel_revolutions_value = data.cumulative_wheel_revolutions
+            last_wheel_event_time_value = data.last_wheel_event_time
+
+            if wheel_revolutions_value is None or last_wheel_event_time_value is None:
+                raise ValueError("CSC wheel revolution data marked present but missing values")
+
+            wheel_revolutions = int(wheel_revolutions_value)
+            wheel_event_time = float(last_wheel_event_time_value)
 
             # Validate ranges
             if not 0 <= wheel_revolutions <= 0xFFFFFFFF:
@@ -144,8 +147,14 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
         # Add crank revolution data if present
         if has_crank_data:
-            crank_revolutions = int(data.cumulative_crank_revolutions)  # type: ignore[arg-type]
-            crank_event_time = float(data.last_crank_event_time)  # type: ignore[arg-type]
+            crank_revolutions_value = data.cumulative_crank_revolutions
+            last_crank_event_time_value = data.last_crank_event_time
+
+            if crank_revolutions_value is None or last_crank_event_time_value is None:
+                raise ValueError("CSC crank revolution data marked present but missing values")
+
+            crank_revolutions = int(crank_revolutions_value)
+            crank_event_time = float(last_crank_event_time_value)
 
             # Validate ranges
             if not 0 <= crank_revolutions <= 0xFFFF:

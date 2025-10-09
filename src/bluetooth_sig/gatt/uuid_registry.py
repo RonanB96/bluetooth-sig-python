@@ -7,7 +7,7 @@ import threading
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -125,16 +125,28 @@ class UuidRegistry:
         return {alias for alias in aliases if alias and alias.strip() and alias != canonical_key}
 
     def _load_yaml(self, file_path: Path) -> list[dict[str, Any]]:
-        """Load UUIDs from a YAML file."""
+        """Load UUID entries from a YAML file."""
         if not file_path.exists():
             return []
 
-        with file_path.open("r") as f:
-            data = yaml.safe_load(f)
-            if isinstance(data, dict):
-                uuids = data.get("uuids", [])
-                return uuids  # type: ignore[no-any-return]
+        with file_path.open("r", encoding="utf-8") as file_handle:
+            data = yaml.safe_load(file_handle)
+
+        if not isinstance(data, dict):
             return []
+
+        data_dict = cast(dict[str, Any], data)
+        uuid_entries = data_dict.get("uuids")
+        if not isinstance(uuid_entries, list):
+            return []
+
+        uuid_entries_list = cast(list[Any], uuid_entries)
+        typed_entries: list[dict[str, Any]] = []
+        for entry in uuid_entries_list:
+            if isinstance(entry, dict):
+                typed_entries.append(cast(dict[str, Any], entry))
+
+        return typed_entries
 
     def _load_uuids(self) -> None:
         """Load all UUIDs from YAML files."""
@@ -371,24 +383,35 @@ class UuidRegistry:
     def _extract_info_from_gss(self, char_data: dict[str, Any]) -> tuple[str | None, str | None]:
         """Extract unit and value_type from GSS characteristic structure."""
         structure = char_data.get("structure", [])
-        if not structure:
+        if not isinstance(structure, list) or not structure:
+            return None, None
+
+        structure_list = cast(list[Any], structure)
+        typed_structure: list[dict[str, Any]] = []
+        for raw_field in structure_list:
+            if isinstance(raw_field, dict):
+                typed_structure.append(cast(dict[str, Any], raw_field))
+
+        if not typed_structure:
             return None, None
 
         unit = None
         value_type = None
 
-        for field in structure:
-            if not isinstance(field, dict):
+        for field in typed_structure:
+            field_dict: dict[str, Any] = field
+
+            if not value_type and isinstance(field_dict.get("type"), str):
+                yaml_type_value = cast(str, field_dict["type"])
+                value_type = self._convert_yaml_type_to_python_type(yaml_type_value)
+
+            description_value = field_dict.get("description", "")
+            if not isinstance(description_value, str):
                 continue
 
-            if "type" in field and not value_type:
-                yaml_type = field["type"]
-                value_type = self._convert_yaml_type_to_python_type(yaml_type)
-
-            description = field.get("description", "")
-            if "Base Unit:" in description and not unit:
+            if "Base Unit:" in description_value and not unit:
                 unit_line = None
-                for line in description.split("\n"):
+                for line in description_value.split("\n"):
                     if "Base Unit:" in line:
                         unit_line = line.strip()
                         break

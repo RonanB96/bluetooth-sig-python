@@ -153,10 +153,7 @@ class CharacteristicMeta(ABCMeta):
         namespace: dict[str, Any],
         **kwargs: Any,
     ) -> type:
-        # Create the class normally
-        new_class = super().__new__(mcs, name, bases, namespace, **kwargs)
-
-        # Auto-handle template flags
+        # Auto-handle template flags before class creation so attributes are part of namespace
         if bases:  # Not the base class itself
             # Check if this class is in templates.py (template) or a concrete implementation
             module_name = namespace.get("__module__", "")
@@ -167,7 +164,10 @@ class CharacteristicMeta(ABCMeta):
                 # Check if any parent has _is_template = True
                 has_template_parent = any(getattr(base, "_is_template", False) for base in bases)
                 if has_template_parent and "_is_template" not in namespace:
-                    new_class._is_template = False  # type: ignore[attr-defined] # Mark as concrete characteristic
+                    namespace["_is_template"] = False  # Mark as concrete characteristic
+
+        # Create the class normally
+        new_class = super().__new__(mcs, name, bases, namespace, **kwargs)
 
         return new_class
 
@@ -231,6 +231,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     _manual_unit: str | None = None
     _manual_value_type: ValueType | str | None = None
     _manual_size: int | None = None
+    _is_template: bool = False
 
     # Validation attributes (Progressive API Level 2)
     min_value: int | float | None = None
@@ -450,7 +451,6 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # Try cross-file resolution first
         yaml_spec = cls._resolve_yaml_spec_class()
         if yaml_spec:
-            print(f"Found YAML spec: {yaml_spec.uuid}")
             return yaml_spec.uuid
 
         # Fallback to original registry resolution

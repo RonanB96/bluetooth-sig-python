@@ -24,7 +24,6 @@ from .health_thermometer import HealthThermometerService
 from .heart_rate import HeartRateService
 from .registry import (
     SERVICE_CLASS_MAP,
-    SERVICE_CLASS_MAP_STR,
     GattServiceRegistry,
     ServiceName,
 )
@@ -35,7 +34,6 @@ __all__ = [
     # Registry components
     "GattServiceRegistry",
     "SERVICE_CLASS_MAP",
-    "SERVICE_CLASS_MAP_STR",
     "ServiceName",
     # Service validation and status classes
     "ServiceHealthStatus",
