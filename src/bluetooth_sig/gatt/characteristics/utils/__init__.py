@@ -13,6 +13,9 @@ from .data_validator import DataValidator
 from .debug_utils import DebugUtils
 from .ieee11073_parser import IEEE11073Parser
 
+# pylint: disable=duplicate-code
+# NOTE: __all__ export list is identical to characteristics/utils.py for backwards compatibility.
+# Both files export the same utility classes - this is intentional for dual import path support.
 __all__ = [
     "BitFieldUtils",
     "DataParser",

@@ -7,195 +7,178 @@ types.gatt_enums to avoid circular imports.
 
 from __future__ import annotations
 
+import inspect
+import pkgutil
+import re
 import threading
+from functools import lru_cache
+from importlib import import_module
+
+from typing_extensions import TypeGuard
 
 from ...types.gatt_enums import CharacteristicName
 from ...types.uuid import BluetoothUUID
+from ..registry_utils import TypeValidator
+from ..resolver import NameVariantGenerator
+from ..uuid_registry import uuid_registry
 from .base import BaseCharacteristic
 
 # Export for other modules to import
 __all__ = ["CharacteristicName", "CharacteristicRegistry"]
 
-# Lazy initialization of the class mappings to avoid circular imports
 
-# Lazy initialization of the class mappings to avoid circular imports
-_characteristic_class_map: dict[CharacteristicName, type[BaseCharacteristic]] | None = None
-_characteristic_class_map_str: dict[str, type[BaseCharacteristic]] | None = None
+class _CharacteristicClassValidator:  # pylint: disable=too-few-public-methods
+    """Utility class for validating characteristic classes.
 
-
-def _build_characteristic_class_map() -> dict[CharacteristicName, type[BaseCharacteristic]]:
-    """Build the characteristic class mapping.
-
-    This function is called lazily to avoid circular imports.
+    Note: Single-purpose validator class - pylint disable justified.
     """
-    # pylint: disable=import-outside-toplevel,too-many-locals,too-many-statements
-    from .ammonia_concentration import AmmoniaConcentrationCharacteristic
-    from .apparent_wind_direction import ApparentWindDirectionCharacteristic
-    from .apparent_wind_speed import ApparentWindSpeedCharacteristic
-    from .average_current import AverageCurrentCharacteristic
-    from .average_voltage import AverageVoltageCharacteristic
-    from .barometric_pressure_trend import BarometricPressureTrendCharacteristic
-    from .battery_level import BatteryLevelCharacteristic
-    from .battery_power_state import BatteryPowerStateCharacteristic
-    from .blood_pressure_feature import BloodPressureFeatureCharacteristic
-    from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
-    from .body_composition_feature import BodyCompositionFeatureCharacteristic
-    from .body_composition_measurement import BodyCompositionMeasurementCharacteristic
-    from .co2_concentration import CO2ConcentrationCharacteristic
-    from .csc_measurement import CSCMeasurementCharacteristic
-    from .cycling_power_control_point import CyclingPowerControlPointCharacteristic
-    from .cycling_power_feature import CyclingPowerFeatureCharacteristic
-    from .cycling_power_measurement import CyclingPowerMeasurementCharacteristic
-    from .cycling_power_vector import CyclingPowerVectorCharacteristic
-    from .device_info import (
-        FirmwareRevisionStringCharacteristic,
-        HardwareRevisionStringCharacteristic,
-        ManufacturerNameStringCharacteristic,
-        ModelNumberStringCharacteristic,
-        SerialNumberStringCharacteristic,
-        SoftwareRevisionStringCharacteristic,
-    )
-    from .dew_point import DewPointCharacteristic
-    from .electric_current import ElectricCurrentCharacteristic
-    from .electric_current_range import ElectricCurrentRangeCharacteristic
-    from .electric_current_specification import (
-        ElectricCurrentSpecificationCharacteristic,
-    )
-    from .electric_current_statistics import ElectricCurrentStatisticsCharacteristic
-    from .elevation import ElevationCharacteristic
-    from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic
-    from .glucose_feature import GlucoseFeatureCharacteristic
-    from .glucose_measurement import GlucoseMeasurementCharacteristic
-    from .glucose_measurement_context import GlucoseMeasurementContextCharacteristic
-    from .heart_rate_measurement import HeartRateMeasurementCharacteristic
-    from .heat_index import HeatIndexCharacteristic
-    from .high_voltage import HighVoltageCharacteristic
-    from .humidity import HumidityCharacteristic
-    from .illuminance import IlluminanceCharacteristic
-    from .local_time_information import LocalTimeInformationCharacteristic
-    from .magnetic_declination import MagneticDeclinationCharacteristic
-    from .magnetic_flux_density_2d import MagneticFluxDensity2DCharacteristic
-    from .magnetic_flux_density_3d import MagneticFluxDensity3DCharacteristic
-    from .methane_concentration import MethaneConcentrationCharacteristic
-    from .nitrogen_dioxide_concentration import (
-        NitrogenDioxideConcentrationCharacteristic,
-    )
-    from .non_methane_voc_concentration import NonMethaneVOCConcentrationCharacteristic
-    from .ozone_concentration import OzoneConcentrationCharacteristic
-    from .pm1_concentration import PM1ConcentrationCharacteristic
-    from .pm10_concentration import PM10ConcentrationCharacteristic
-    from .pm25_concentration import PM25ConcentrationCharacteristic
-    from .pollen_concentration import PollenConcentrationCharacteristic
-    from .pressure import PressureCharacteristic
-    from .rainfall import RainfallCharacteristic
-    from .rsc_measurement import RSCMeasurementCharacteristic
-    from .sound_pressure_level import SoundPressureLevelCharacteristic
-    from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacteristic
-    from .supported_power_range import SupportedPowerRangeCharacteristic
-    from .temperature import TemperatureCharacteristic
-    from .temperature_measurement import TemperatureMeasurementCharacteristic
-    from .time_zone import TimeZoneCharacteristic
-    from .true_wind_direction import TrueWindDirectionCharacteristic
-    from .true_wind_speed import TrueWindSpeedCharacteristic
-    from .tx_power_level import TxPowerLevelCharacteristic
-    from .uv_index import UVIndexCharacteristic
-    from .voc_concentration import VOCConcentrationCharacteristic
-    from .voltage import VoltageCharacteristic
-    from .voltage_frequency import VoltageFrequencyCharacteristic
-    from .voltage_specification import VoltageSpecificationCharacteristic
-    from .voltage_statistics import VoltageStatisticsCharacteristic
-    from .weight_measurement import WeightMeasurementCharacteristic
-    from .weight_scale_feature import WeightScaleFeatureCharacteristic
-    from .wind_chill import WindChillCharacteristic
 
-    return {
-        CharacteristicName.BATTERY_LEVEL: BatteryLevelCharacteristic,
-        CharacteristicName.BATTERY_LEVEL_STATUS: BatteryPowerStateCharacteristic,
-        CharacteristicName.TEMPERATURE: TemperatureCharacteristic,
-        CharacteristicName.TEMPERATURE_MEASUREMENT: TemperatureMeasurementCharacteristic,
-        CharacteristicName.HUMIDITY: HumidityCharacteristic,
-        CharacteristicName.PRESSURE: PressureCharacteristic,
-        CharacteristicName.UV_INDEX: UVIndexCharacteristic,
-        CharacteristicName.ILLUMINANCE: IlluminanceCharacteristic,
-        CharacteristicName.POWER_SPECIFICATION: SoundPressureLevelCharacteristic,
-        CharacteristicName.HEART_RATE_MEASUREMENT: HeartRateMeasurementCharacteristic,
-        CharacteristicName.BLOOD_PRESSURE_MEASUREMENT: BloodPressureMeasurementCharacteristic,
-        CharacteristicName.BLOOD_PRESSURE_FEATURE: BloodPressureFeatureCharacteristic,
-        CharacteristicName.CSC_MEASUREMENT: CSCMeasurementCharacteristic,
-        CharacteristicName.RSC_MEASUREMENT: RSCMeasurementCharacteristic,
-        CharacteristicName.CYCLING_POWER_MEASUREMENT: CyclingPowerMeasurementCharacteristic,
-        CharacteristicName.CYCLING_POWER_FEATURE: CyclingPowerFeatureCharacteristic,
-        CharacteristicName.CYCLING_POWER_VECTOR: CyclingPowerVectorCharacteristic,
-        CharacteristicName.CYCLING_POWER_CONTROL_POINT: CyclingPowerControlPointCharacteristic,
-        CharacteristicName.GLUCOSE_MEASUREMENT: GlucoseMeasurementCharacteristic,
-        CharacteristicName.GLUCOSE_MEASUREMENT_CONTEXT: GlucoseMeasurementContextCharacteristic,
-        CharacteristicName.GLUCOSE_FEATURE: GlucoseFeatureCharacteristic,
-        CharacteristicName.MANUFACTURER_NAME_STRING: ManufacturerNameStringCharacteristic,
-        CharacteristicName.MODEL_NUMBER_STRING: ModelNumberStringCharacteristic,
-        CharacteristicName.SERIAL_NUMBER_STRING: SerialNumberStringCharacteristic,
-        CharacteristicName.FIRMWARE_REVISION_STRING: FirmwareRevisionStringCharacteristic,
-        CharacteristicName.HARDWARE_REVISION_STRING: HardwareRevisionStringCharacteristic,
-        CharacteristicName.SOFTWARE_REVISION_STRING: SoftwareRevisionStringCharacteristic,
-        CharacteristicName.DEVICE_NAME: DeviceNameCharacteristic,
-        CharacteristicName.APPEARANCE: AppearanceCharacteristic,
-        CharacteristicName.WEIGHT_MEASUREMENT: WeightMeasurementCharacteristic,
-        CharacteristicName.WEIGHT_SCALE_FEATURE: WeightScaleFeatureCharacteristic,
-        CharacteristicName.BODY_COMPOSITION_MEASUREMENT: BodyCompositionMeasurementCharacteristic,
-        CharacteristicName.BODY_COMPOSITION_FEATURE: BodyCompositionFeatureCharacteristic,
-        CharacteristicName.ELECTRIC_CURRENT: ElectricCurrentCharacteristic,
-        CharacteristicName.VOLTAGE: VoltageCharacteristic,
-        CharacteristicName.AVERAGE_CURRENT: AverageCurrentCharacteristic,
-        CharacteristicName.AVERAGE_VOLTAGE: AverageVoltageCharacteristic,
-        CharacteristicName.ELECTRIC_CURRENT_RANGE: ElectricCurrentRangeCharacteristic,
-        CharacteristicName.ELECTRIC_CURRENT_SPECIFICATION: ElectricCurrentSpecificationCharacteristic,
-        CharacteristicName.ELECTRIC_CURRENT_STATISTICS: ElectricCurrentStatisticsCharacteristic,
-        CharacteristicName.VOLTAGE_SPECIFICATION: VoltageSpecificationCharacteristic,
-        CharacteristicName.VOLTAGE_STATISTICS: VoltageStatisticsCharacteristic,
-        CharacteristicName.HIGH_VOLTAGE: HighVoltageCharacteristic,
-        CharacteristicName.VOLTAGE_FREQUENCY: VoltageFrequencyCharacteristic,
-        CharacteristicName.SUPPORTED_POWER_RANGE: SupportedPowerRangeCharacteristic,
-        CharacteristicName.TX_POWER_LEVEL: TxPowerLevelCharacteristic,
-        CharacteristicName.DEW_POINT: DewPointCharacteristic,
-        CharacteristicName.HEAT_INDEX: HeatIndexCharacteristic,
-        CharacteristicName.WIND_CHILL: WindChillCharacteristic,
-        CharacteristicName.TRUE_WIND_SPEED: TrueWindSpeedCharacteristic,
-        CharacteristicName.TRUE_WIND_DIRECTION: TrueWindDirectionCharacteristic,
-        CharacteristicName.APPARENT_WIND_SPEED: ApparentWindSpeedCharacteristic,
-        CharacteristicName.APPARENT_WIND_DIRECTION: ApparentWindDirectionCharacteristic,
-        CharacteristicName.MAGNETIC_DECLINATION: MagneticDeclinationCharacteristic,
-        CharacteristicName.MAGNETIC_FLUX_DENSITY_2D: MagneticFluxDensity2DCharacteristic,
-        CharacteristicName.MAGNETIC_FLUX_DENSITY_3D: MagneticFluxDensity3DCharacteristic,
-        CharacteristicName.ELEVATION: ElevationCharacteristic,
-        CharacteristicName.BAROMETRIC_PRESSURE_TREND: BarometricPressureTrendCharacteristic,
-        CharacteristicName.TIME_ZONE: TimeZoneCharacteristic,
-        CharacteristicName.LOCAL_TIME_INFORMATION: LocalTimeInformationCharacteristic,
-        CharacteristicName.POLLEN_CONCENTRATION: PollenConcentrationCharacteristic,
-        CharacteristicName.RAINFALL: RainfallCharacteristic,
-        CharacteristicName.CO2_CONCENTRATION: CO2ConcentrationCharacteristic,
-        CharacteristicName.VOC_CONCENTRATION: VOCConcentrationCharacteristic,
-        CharacteristicName.NON_METHANE_VOC_CONCENTRATION: NonMethaneVOCConcentrationCharacteristic,
-        CharacteristicName.AMMONIA_CONCENTRATION: AmmoniaConcentrationCharacteristic,
-        CharacteristicName.METHANE_CONCENTRATION: MethaneConcentrationCharacteristic,
-        CharacteristicName.NITROGEN_DIOXIDE_CONCENTRATION: NitrogenDioxideConcentrationCharacteristic,
-        CharacteristicName.OZONE_CONCENTRATION: OzoneConcentrationCharacteristic,
-        CharacteristicName.PM1_CONCENTRATION: PM1ConcentrationCharacteristic,
-        CharacteristicName.PM25_CONCENTRATION: PM25ConcentrationCharacteristic,
-        CharacteristicName.PM10_CONCENTRATION: PM10ConcentrationCharacteristic,
-        CharacteristicName.SULFUR_DIOXIDE_CONCENTRATION: SulfurDioxideConcentrationCharacteristic,
+    @staticmethod
+    def is_characteristic_subclass(candidate: object) -> TypeGuard[type[BaseCharacteristic]]:
+        """Return True when candidate is a BaseCharacteristic subclass."""
+        return TypeValidator.is_subclass_of(candidate, BaseCharacteristic)
+
+
+class _RegistryKeyBuilder:
+    """Builds registry lookup keys for characteristics."""
+
+    _NON_ALPHANUMERIC_RE = re.compile(r"[^a-z0-9]+")
+
+    # Special cases for characteristics whose YAML names don't match enum display names
+    # NOTE: CO2 uses LaTeX formatting in official Bluetooth SIG spec: "CO\textsubscript{2} Concentration"
+    _SPECIAL_INFO_NAME_TO_ENUM = {
+        "CO\\textsubscript{2} Concentration": CharacteristicName.CO2_CONCENTRATION,
     }
 
+    @classmethod
+    def slugify_characteristic_identifier(cls, value: str) -> str:
+        """Convert a characteristic display name into an org.bluetooth identifier slug."""
+        return cls._NON_ALPHANUMERIC_RE.sub("_", value.lower()).strip("_")
 
-def _get_characteristic_class_map() -> dict[CharacteristicName, type[BaseCharacteristic]]:
-    """Get the characteristic class map, building it if necessary."""
-    # pylint: disable=global-statement
-    global _characteristic_class_map
-    if _characteristic_class_map is None:
-        _characteristic_class_map = _build_characteristic_class_map()
-    return _characteristic_class_map
+    @classmethod
+    def generate_candidate_keys(cls, enum_member: CharacteristicName) -> list[str]:
+        """Generate registry lookup keys for a characteristic enum value."""
+        class_name = enum_member.value.replace(" ", "") + "Characteristic"
+        variants = NameVariantGenerator.generate_characteristic_variants(class_name, enum_member.value)
+        slug = cls.slugify_characteristic_identifier(enum_member.value)
+        org_identifier = f"org.bluetooth.characteristic.{slug}"
+        return [*variants, enum_member.name.replace("_", " "), org_identifier]
+
+    @classmethod
+    def build_uuid_to_enum_map(cls) -> dict[str, CharacteristicName]:
+        """Create a mapping from normalized UUID string to CharacteristicName."""
+        uuid_to_enum: dict[str, CharacteristicName] = {}
+
+        for enum_member in CharacteristicName:
+            for candidate in cls.generate_candidate_keys(enum_member):
+                info = uuid_registry.get_characteristic_info(candidate)
+                if info is None:
+                    continue
+                uuid_to_enum[info.uuid.normalized] = enum_member
+                break
+
+        for info_name, enum_member in cls._SPECIAL_INFO_NAME_TO_ENUM.items():
+            info = uuid_registry.get_characteristic_info(info_name)
+            if info is None:
+                continue
+            uuid_to_enum.setdefault(info.uuid.normalized, enum_member)
+
+        return uuid_to_enum
+
+
+class _CharacteristicClassDiscovery:
+    """Handles discovery and validation of characteristic classes in the package."""
+
+    _MODULE_EXCLUSIONS = {"__main__", "__init__", "base", "registry", "templates"}
+
+    @classmethod
+    def iter_module_names(cls) -> list[str]:
+        """Return sorted characteristic module names discovered via pkgutil.walk_packages [1]_.
+
+        References:
+            .. [1] Python standard library documentation, pkgutil.walk_packages,
+               https://docs.python.org/3/library/pkgutil.html#pkgutil.walk_packages
+        """
+        package_name = __package__ or "bluetooth_sig.gatt.characteristics"
+        package = import_module(package_name)
+        module_names: list[str] = []
+        prefix = f"{package_name}."
+        for module_info in pkgutil.walk_packages(package.__path__, prefix):
+            module_basename = module_info.name.rsplit(".", 1)[-1]
+            if module_basename in cls._MODULE_EXCLUSIONS:
+                continue
+            module_names.append(module_info.name)
+        module_names.sort()
+        return module_names
+
+    @classmethod
+    def discover_classes(cls) -> list[type[BaseCharacteristic]]:
+        """Discover all concrete characteristic classes defined in the package.
+
+        Validates that discovered classes have required methods for proper operation.
+        """
+        discovered: list[type[BaseCharacteristic]] = []
+        for module_name in cls.iter_module_names():
+            module = import_module(module_name)
+            candidates: list[type[BaseCharacteristic]] = []
+            for _, obj in inspect.getmembers(module, inspect.isclass):
+                if not _CharacteristicClassValidator.is_characteristic_subclass(obj):
+                    continue
+                if obj is BaseCharacteristic or getattr(obj, "_is_template", False):
+                    continue
+                if obj.__module__ != module.__name__:
+                    continue
+
+                # Validate that the class has required methods
+                if not hasattr(obj, "get_class_uuid") or not callable(obj.get_class_uuid):
+                    continue  # Skip classes without proper UUID resolution
+
+                candidates.append(obj)
+            candidates.sort(key=lambda cls: cls.__name__)
+            discovered.extend(candidates)
+        return discovered
+
+
+class _CharacteristicMapBuilder:
+    """Builds and caches the characteristic class map."""
+
+    @staticmethod
+    def build_map() -> dict[CharacteristicName, type[BaseCharacteristic]]:
+        """Build the characteristic class mapping lazily using runtime discovery."""
+        mapping: dict[CharacteristicName, type[BaseCharacteristic]] = {}
+        uuid_to_enum = _RegistryKeyBuilder.build_uuid_to_enum_map()
+
+        for char_cls in _CharacteristicClassDiscovery.discover_classes():
+            uuid_obj = char_cls.get_class_uuid()
+            if uuid_obj is None:
+                continue
+            enum_member = uuid_to_enum.get(uuid_obj.normalized)
+            if enum_member is None:
+                continue
+            existing = mapping.get(enum_member)
+            if existing is not None and existing is not char_cls:
+                raise RuntimeError(
+                    f"Multiple characteristic classes resolved for {enum_member.name}:"
+                    f" {existing.__name__} and {char_cls.__name__}"
+                )
+            mapping[enum_member] = char_cls
+
+        return mapping
+
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def get_cached_map() -> dict[CharacteristicName, type[BaseCharacteristic]]:
+        """Return the cached characteristic class map."""
+        return _CharacteristicMapBuilder.build_map()
+
+    @staticmethod
+    def clear_cache() -> None:
+        """Clear the characteristic class map cache."""
+        _CharacteristicMapBuilder.get_cached_map.cache_clear()
 
 
 # Public API - enum-keyed map
-CHARACTERISTIC_CLASS_MAP = _get_characteristic_class_map()
+CHARACTERISTIC_CLASS_MAP = _CharacteristicMapBuilder.get_cached_map()
 
 
 class CharacteristicRegistry:
@@ -205,9 +188,7 @@ class CharacteristicRegistry:
     _custom_characteristic_classes: dict[BluetoothUUID, type[BaseCharacteristic]] = {}
 
     @classmethod
-    def register_characteristic_class(
-        cls, uuid: str | BluetoothUUID, char_cls: type[BaseCharacteristic], override: bool = False
-    ) -> None:
+    def register_characteristic_class(cls, uuid: str | BluetoothUUID, char_cls: object, override: bool = False) -> None:
         """Register a custom characteristic class at runtime.
 
         Args:
@@ -220,24 +201,20 @@ class CharacteristicRegistry:
             ValueError: If UUID conflicts with existing registration and override=False
         """
         # Runtime safety check retained in case of dynamic caller misuse despite type hints.
-        if not isinstance(char_cls, type) or not issubclass(char_cls, BaseCharacteristic):  # type: ignore[unreachable]
+        if not _CharacteristicClassValidator.is_characteristic_subclass(char_cls):
             raise TypeError(f"Class {char_cls!r} must inherit from BaseCharacteristic")
+
+        characteristic_cls: type[BaseCharacteristic] = char_cls
 
         # Always normalize UUID to BluetoothUUID
         bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
 
         # Determine if this UUID is already represented by a SIG (built-in) characteristic
         def _find_sig_class_for_uuid(target: BluetoothUUID) -> type[BaseCharacteristic] | None:
-            for candidate in _get_characteristic_class_map().values():
-                try:
-                    resolved_uuid_obj = candidate.get_class_uuid()  # type: ignore[attr-defined]
-                    if resolved_uuid_obj and (
-                        resolved_uuid_obj.normalized == target.normalized  # type: ignore[attr-defined]
-                        or resolved_uuid_obj.short_form == target.short_form  # type: ignore[attr-defined]
-                    ):
-                        return candidate
-                except Exception:  # pylint: disable=broad-exception-caught
-                    continue
+            for candidate in _CharacteristicMapBuilder.get_cached_map().values():
+                resolved_uuid_obj = candidate.get_class_uuid()
+                if resolved_uuid_obj and resolved_uuid_obj == target:
+                    return candidate
             return None
 
         sig_cls = _find_sig_class_for_uuid(bt_uuid)
@@ -255,14 +232,14 @@ class CharacteristicRegistry:
                         "Use override=True to replace."
                     )
                 # Require an explicit opt‑in marker on the custom class
-                allows_override = char_cls.get_allows_sig_override()
+                allows_override = characteristic_cls.get_allows_sig_override()
                 if not allows_override:
                     raise ValueError(
                         "Override of SIG characteristic "
-                        f"{sig_cls.__name__} requires _allows_sig_override=True on {char_cls.__name__}."
+                        f"{sig_cls.__name__} requires _allows_sig_override=True on {characteristic_cls.__name__}."
                     )
 
-            cls._custom_characteristic_classes[bt_uuid] = char_cls
+            cls._custom_characteristic_classes[bt_uuid] = characteristic_cls
 
     @classmethod
     def unregister_characteristic_class(cls, uuid: str | BluetoothUUID) -> None:
@@ -283,10 +260,7 @@ class CharacteristicRegistry:
 
         This API is enum-only. Callers must pass a `CharacteristicName`.
         """
-        return _get_characteristic_class_map().get(name)
-
-    @staticmethod
-    # Enum-only registry: string-to-enum helpers removed to eliminate legacy usage.
+        return _CharacteristicMapBuilder.get_cached_map().get(name)
 
     @staticmethod
     def list_all_characteristic_names() -> list[str]:
@@ -334,18 +308,12 @@ class CharacteristicRegistry:
             if custom_cls := cls._custom_characteristic_classes.get(uuid_obj):
                 return custom_cls()
 
-        for _, char_cls in _get_characteristic_class_map().items():
-            # Try to resolve UUID at class level first
-            resolved_uuid = char_cls.get_class_uuid()  # type: ignore[attr-defined]
-            if resolved_uuid and (
-                resolved_uuid.normalized == uuid_obj.normalized or resolved_uuid.short_form == uuid_obj.short_form
-            ):
+        # Look up by UUID at class level (no instantiation needed)
+        for _, char_cls in _CharacteristicMapBuilder.get_cached_map().items():
+            resolved_uuid = char_cls.get_class_uuid()
+            if resolved_uuid and resolved_uuid == uuid_obj:
                 return char_cls()
-            # Fallback to instantiation if class-level resolution fails
-            instance = char_cls()
-            char_uuid_obj = instance.uuid
-            if char_uuid_obj.normalized == uuid_obj.normalized or char_uuid_obj.short_form == uuid_obj.short_form:
-                return instance
+
         return None
 
     @classmethod
@@ -369,18 +337,12 @@ class CharacteristicRegistry:
             if custom_cls := cls._custom_characteristic_classes.get(bt_uuid):
                 return custom_cls
 
-        for char_cls in _get_characteristic_class_map().values():
-            # Try to resolve UUID at class level first
-            resolved_uuid = char_cls.get_class_uuid()  # type: ignore[attr-defined]
-            if resolved_uuid and (
-                resolved_uuid.normalized == bt_uuid.normalized or resolved_uuid.short_form == bt_uuid.short_form
-            ):
+        # Look up by UUID at class level (no instantiation needed)
+        for char_cls in _CharacteristicMapBuilder.get_cached_map().values():
+            resolved_uuid = char_cls.get_class_uuid()
+            if resolved_uuid and resolved_uuid == bt_uuid:
                 return char_cls
-            # Fallback to instantiation if class-level resolution fails
-            instance = char_cls()
-            char_uuid_obj = instance.uuid
-            if char_uuid_obj.normalized == bt_uuid.normalized or char_uuid_obj.short_form == bt_uuid.short_form:
-                return char_cls
+
         return None
 
     @staticmethod
@@ -391,7 +353,7 @@ class CharacteristicRegistry:
             Dictionary mapping characteristic names to classes
         """
         result: dict[CharacteristicName, type[BaseCharacteristic]] = {}
-        for name, char_cls in _get_characteristic_class_map().items():
+        for name, char_cls in _CharacteristicMapBuilder.get_cached_map().items():
             result[name] = char_cls
         return result
 
@@ -400,3 +362,13 @@ class CharacteristicRegistry:
         """Clear all custom characteristic registrations (for testing)."""
         with cls._lock:
             cls._custom_characteristic_classes.clear()
+
+    @staticmethod
+    def clear_cache() -> None:
+        """Clear the characteristic class map cache (for testing).
+
+        This forces the registry to be rebuilt on next access.
+        Use sparingly - primarily for testing scenarios where
+        characteristic classes are modified at runtime.
+        """
+        _CharacteristicMapBuilder.clear_cache()

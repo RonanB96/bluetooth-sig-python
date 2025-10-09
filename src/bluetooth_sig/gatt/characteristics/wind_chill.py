@@ -10,5 +10,3 @@ class WindChillCharacteristic(BaseCharacteristic):
     """Wind Chill measurement characteristic."""
 
     _template = Sint8Template()
-
-    _characteristic_name: str = "Wind Chill"

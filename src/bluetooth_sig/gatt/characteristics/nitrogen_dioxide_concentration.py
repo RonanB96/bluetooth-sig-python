@@ -15,7 +15,6 @@ class NitrogenDioxideConcentrationCharacteristic(BaseCharacteristic):
 
     _template = ConcentrationTemplate()
 
-    _characteristic_name: str = "Nitrogen Dioxide Concentration"
     _manual_unit: str = "ppb"  # Override template's "ppm" default
 
     # Template configuration

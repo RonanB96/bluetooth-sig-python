@@ -108,8 +108,7 @@ disable = [
     "C0412", # ungrouped-imports (handled by ruff import sorting)
     "C0413", # wrong-import-position (handled by ruff import sorting)
     "E0611", # no-name-in-module (editable install issue affects entire project)
-    "R0801", # duplicate-code (BLE protocol patterns have legitimate code duplication)
-]
+    ]
 
 # Note: Other issues like broad-exception-caught, too-few-public-methods,
 # no-member, redefined-outer-name are now handled with targeted inline

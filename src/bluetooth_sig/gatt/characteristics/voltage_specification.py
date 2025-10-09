@@ -41,7 +41,6 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
     specifications.
     """
 
-    _characteristic_name: str = "Voltage Specification"
     # Override since decode_value returns structured VoltageSpecificationData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
@@ -82,6 +81,10 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
         max_voltage_raw = round(data.maximum * 64)
 
         # Validate range for uint16 (0 to UINT16_MAX)
+        #  pylint: disable=duplicate-code
+        # NOTE: This uint16 validation and encoding pattern is shared with VoltageStatisticsCharacteristic.
+        # Both characteristics encode voltage values using the same 1/64V resolution and uint16 little-endian format
+        # per Bluetooth SIG spec. Consolidation not practical as each has different field structures.
         for name, value in [("minimum", min_voltage_raw), ("maximum", max_voltage_raw)]:
             if not 0 <= value <= UINT16_MAX:
                 raise ValueError(f"Voltage {name} value {value} exceeds uint16 range")

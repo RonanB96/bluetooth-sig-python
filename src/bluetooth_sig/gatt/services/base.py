@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, TypeVar, cast
@@ -20,6 +19,7 @@ from ..characteristics import BaseCharacteristic, CharacteristicRegistry
 from ..characteristics.base import UnknownCharacteristic
 from ..characteristics.registry import CharacteristicName
 from ..exceptions import UUIDResolutionError
+from ..resolver import ServiceRegistrySearch
 from ..uuid_registry import UuidInfo, uuid_registry
 
 # Type aliases
@@ -52,8 +52,8 @@ class SIGServiceResolver:
     """Resolves SIG service information from registry.
 
     This class handles all SIG service resolution logic, separating
-    concerns from the BaseGattService constructor. Follows the same
-    pattern as SIGCharacteristicResolver for consistency.
+    concerns from the BaseGattService constructor. Uses shared utilities
+    from the resolver module to avoid code duplication with characteristic resolution.
     """
 
     @staticmethod
@@ -79,49 +79,11 @@ class SIGServiceResolver:
 
     @staticmethod
     def resolve_from_registry(service_class: type[BaseGattService]) -> ServiceInfo | None:
-        """Resolve service info from registry."""
-        # First try explicit service name if set
+        """Resolve service info from registry using shared search strategy."""
+        # Use shared registry search strategy
+        search_strategy = ServiceRegistrySearch()
         service_name = getattr(service_class, "_service_name", None)
-        if service_name:
-            svc_info = uuid_registry.get_service_info(service_name)
-            if svc_info:
-                return ServiceInfo(
-                    uuid=svc_info.uuid,
-                    name=svc_info.name,
-                    description=svc_info.summary or "",
-                )
-
-        # Convert class name to standard format and try all possibilities
-        name = service_class.__name__
-
-        # Try different name formats
-        service_name_base = name
-        if name.endswith("Service"):
-            service_name_base = name[:-7]  # Remove 'Service' suffix
-
-        # Split on camelCase and convert to space-separated
-        words = re.findall("[A-Z][^A-Z]*", service_name_base)
-        display_name = " ".join(words)
-
-        names_to_try = [
-            display_name,  # Space-separated (e.g. Environmental Sensing)
-            service_name_base,  # Without 'Service' suffix (e.g. Battery)
-            display_name + " Service",  # Space-separated with suffix
-            name,  # Full class name (e.g. BatteryService)
-            "org.bluetooth.service." + "_".join(words).lower(),  # org format
-        ]
-
-        # Try each name format
-        for try_name in names_to_try:
-            svc_info = uuid_registry.get_service_info(try_name)
-            if svc_info:
-                return ServiceInfo(
-                    uuid=svc_info.uuid,
-                    name=svc_info.name,
-                    description=svc_info.summary or "",
-                )
-
-        return None
+        return search_strategy.search(service_class, service_name)
 
 
 class ServiceHealthStatus(Enum):
@@ -749,6 +711,10 @@ class CustomBaseGattService(BaseGattService):
     _configured_info: ServiceInfo | None = None  # Stores class-level _info
     _allows_sig_override = False  # Default: no SIG override permission
 
+    # pylint: disable=duplicate-code
+    # NOTE: __init_subclass__ and __init__ patterns are intentionally similar to CustomBaseCharacteristic.
+    # This is by design - both custom characteristic and service classes need identical validation
+    # and info management patterns. Consolidation not possible due to different base types and info types.
     def __init_subclass__(cls, allow_sig_override: bool = False, **kwargs: Any) -> None:
         """Automatically set up _info if provided as class attribute.
 

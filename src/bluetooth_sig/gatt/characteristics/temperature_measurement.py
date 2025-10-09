@@ -37,14 +37,12 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
     Different from Environmental Temperature (0x2A6E).
     """
 
-    _characteristic_name: str = "Temperature Measurement"
-
     # Declarative validation attributes
     min_length: int | None = 5  # Flags(1) + Temperature(4) minimum
     max_length: int | None = 13  # + Timestamp(7) + TemperatureType(1) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
         """Parse temperature measurement data according to Bluetooth
         specification.
 

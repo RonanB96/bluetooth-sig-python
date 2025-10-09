@@ -150,8 +150,27 @@ class CharacteristicName(Enum):
     AVERAGE_VOLTAGE = "Average Voltage"
     SUPPORTED_POWER_RANGE = "Supported Power Range"
     # Audio characteristics
-    SOUND_PRESSURE_LEVEL = "Sound Pressure Level"
+    NOISE = "Noise"
     # Pulse oximetry
     PULSE_OXIMETRY_CONTINUOUS_MEASUREMENT = "Pulse Oximetry Continuous Measurement"
     # Generic Access
     TX_POWER_LEVEL = "Tx Power Level"
+
+
+class ServiceName(Enum):
+    """Enumeration of all supported GATT service names."""
+
+    GENERIC_ACCESS = "Generic Access"
+    GENERIC_ATTRIBUTE = "Generic Attribute"
+    DEVICE_INFORMATION = "Device Information"
+    BATTERY_SERVICE = "Battery Service"
+    HEART_RATE = "Heart Rate"
+    HEALTH_THERMOMETER = "Health Thermometer"
+    GLUCOSE = "Glucose"
+    CYCLING_SPEED_AND_CADENCE = "Cycling Speed and Cadence"
+    CYCLING_POWER = "Cycling Power"
+    RUNNING_SPEED_AND_CADENCE = "Running Speed and Cadence"
+    AUTOMATION_IO = "Automation IO"
+    ENVIRONMENTAL_SENSING = "Environmental Sensing"
+    BODY_COMPOSITION = "Body Composition"
+    WEIGHT_SCALE = "Weight Scale"

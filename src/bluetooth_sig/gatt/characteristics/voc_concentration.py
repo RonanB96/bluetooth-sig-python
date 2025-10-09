@@ -29,12 +29,11 @@ class VOCConcentrationCharacteristic(BaseCharacteristic):
 
     _template = Uint16Template()
 
-    _characteristic_name: str = "VOC Concentration"
-    _manual_unit: str = "ppb"  # Unit as per SIG specification
-    min_value: int = 0
-    max_value: int = VOCConcentrationValues.VALUE_65534_OR_GREATER - 1  # 65533
+    _manual_unit: str | None = "ppb"  # Unit as per SIG specification
+    min_value: int | float | None = 0
+    max_value: int | float | None = VOCConcentrationValues.VALUE_65534_OR_GREATER - 1  # 65533
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> int:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
         """Parse VOC concentration value with special value handling."""
         raw_value = super().decode_value(data)
 

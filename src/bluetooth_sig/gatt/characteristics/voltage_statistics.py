@@ -48,7 +48,6 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
     Provides statistical voltage data over time.
     """
 
-    _characteristic_name: str = "Voltage Statistics"
     # Override since decode_value returns structured VoltageStatisticsData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
@@ -96,6 +95,10 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
         avg_voltage_raw = round(data.average * 64)
 
         # Validate range for uint16 (0 to UINT16_MAX)
+        # pylint: disable=duplicate-code
+        # NOTE: This uint16 validation and encoding pattern is shared with VoltageSpecificationCharacteristic.
+        # Both characteristics encode voltage values using the same 1/64V resolution and uint16 little-endian format
+        # per Bluetooth SIG spec. Consolidation not practical as each has different field structures (2 vs 3 values).
         for name, value in [
             ("minimum", min_voltage_raw),
             ("maximum", max_voltage_raw),

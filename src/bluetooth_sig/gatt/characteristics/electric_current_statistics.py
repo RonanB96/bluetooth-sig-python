@@ -48,7 +48,6 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
     Provides statistical current data (min, max, average over time).
     """
 
-    _characteristic_name: str = "Electric Current Statistics"
     # Override since decode_value returns structured ElectricCurrentStatisticsData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 

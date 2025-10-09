@@ -334,6 +334,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return []
 
+    # pylint: disable=duplicate-code
+    # NOTE: This method duplicates AdvertisingParser._parse_legacy_advertising for backwards compatibility.
+    # TODO: Refactor to delegate to AdvertisingParser.parse() instead of maintaining duplicate BLE spec parsing.
+    # Duplication exists because Device has legacy inline parsing; consolidation requires API migration.
     def _parse_legacy_advertising(self, raw_data: bytes) -> None:
         manufacturer_data: dict[int, bytes] = {}
         service_uuids: list[str] = []
@@ -391,6 +395,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if local_name and not self.name:
             self.name = local_name
 
+    # pylint: disable=duplicate-code
+    # NOTE: This method duplicates AdvertisingParser._parse_ad_structures for backwards compatibility.
+    # TODO: Refactor to delegate to AdvertisingParser instead of maintaining duplicate BLE spec parsing.
+    # Duplication exists because Device has legacy inline parsing; consolidation requires API migration.
     def _parse_ad_structures(self, data: bytes) -> ParsedADStructures:
         """Parse advertising data structures from raw bytes.
 

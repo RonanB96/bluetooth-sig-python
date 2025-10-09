@@ -220,6 +220,11 @@ class YAMLCrossReferenceResolver:
         except (OSError, yaml.YAMLError) as e:
             logging.warning("Failed to load unit mappings: %s", e)
 
+    # pylint: disable=duplicate-code
+    # NOTE: Unit symbol extraction logic is shared with UUIDRegistry._extract_unit_symbol_from_name.
+    # Both need to parse Bluetooth SIG unit specifications identically. Consolidation would require shared utility
+    # module, but these are in different architectural layers (YAML cross-reference vs GATT registry system).
+    # TODO: Consider extracting to shared bluetooth_sig.registry.unit_utils module if more duplication emerges.
     def _extract_unit_symbol(self, unit_name: str) -> str:
         """Extract unit symbol from units.yaml name field."""
         # Handle common unit names that map to symbols

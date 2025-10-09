@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 import struct
 from abc import ABC, ABCMeta
 from dataclasses import dataclass
@@ -23,6 +22,7 @@ from ..exceptions import (
     UUIDResolutionError,
     ValueRangeError,
 )
+from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
 from ..uuid_registry import uuid_registry
 
 
@@ -47,8 +47,11 @@ class SIGCharacteristicResolver:
     """Resolves SIG characteristic information from YAML and registry.
 
     This class handles all SIG characteristic resolution logic, separating
-    concerns from the BaseCharacteristic constructor.
+    concerns from the BaseCharacteristic constructor. Uses shared utilities
+    from the resolver module to avoid code duplication.
     """
+
+    camel_case_to_display_name = staticmethod(NameNormalizer.camel_case_to_display_name)
 
     @staticmethod
     def resolve_for_class(char_class: type[BaseCharacteristic]) -> CharacteristicInfo:
@@ -78,32 +81,12 @@ class SIGCharacteristicResolver:
 
     @staticmethod
     def resolve_yaml_spec_for_class(char_class: type[BaseCharacteristic]) -> CharacteristicSpec | None:
-        """Resolve YAML spec for a characteristic class."""
-        # First try explicit characteristic name if set
+        """Resolve YAML spec for a characteristic class using shared name variant logic."""
+        # Get explicit name if set
         characteristic_name = getattr(char_class, "_characteristic_name", None)
-        if characteristic_name:
-            return yaml_cross_reference.resolve_characteristic_spec(characteristic_name)
 
-        # Convert class name to standard format and try all possibilities
-        name = char_class.__name__
-
-        # Try different name formats:
-        # 1. Full class name (e.g., BatteryLevelCharacteristic)
-        # 2. Without 'Characteristic' suffix (e.g., BatteryLevel)
-        # 3. Space-separated (e.g., Battery Level)
-        char_name = name
-        if name.endswith("Characteristic"):
-            char_name = name[:-14]  # Remove 'Characteristic' suffix
-
-        # Split on camelCase and convert to space-separated
-        words = re.findall("[A-Z][^A-Z]*", char_name)
-        display_name = " ".join(words)
-
-        names_to_try = [
-            name,  # Full class name (e.g. BatteryLevelCharacteristic)
-            char_name,  # Without 'Characteristic' suffix
-            display_name,  # Space-separated (e.g. Battery Level)
-        ]
+        # Generate all name variants using shared utility
+        names_to_try = NameVariantGenerator.generate_characteristic_variants(char_class.__name__, characteristic_name)
 
         # Try each name format with YAML resolution
         for try_name in names_to_try:
@@ -153,55 +136,11 @@ class SIGCharacteristicResolver:
 
     @staticmethod
     def resolve_from_registry(char_class: type[BaseCharacteristic]) -> CharacteristicInfo | None:
-        """Fallback to registry resolution."""
-        # First try explicit characteristic name if set
+        """Fallback to registry resolution using shared search strategy."""
+        # Use shared registry search strategy
+        search_strategy = CharacteristicRegistrySearch()
         characteristic_name = getattr(char_class, "_characteristic_name", None)
-        if characteristic_name:
-            char_info = uuid_registry.get_characteristic_info(characteristic_name)
-            if char_info:
-                return CharacteristicInfo(
-                    uuid=char_info.uuid,
-                    name=char_info.name,
-                    unit=char_info.unit or "",
-                    value_type=ValueType(char_info.value_type) if char_info.value_type else ValueType.UNKNOWN,
-                    properties=[],
-                )
-
-        # Convert class name to standard format and try all possibilities
-        name = char_class.__name__
-
-        # Try different name formats
-        char_name = name
-        if name.endswith("Characteristic"):
-            char_name = name[:-14]  # Remove 'Characteristic' suffix
-
-        # Split on camelCase and convert to space-separated
-        words = re.findall("[A-Z][^A-Z]*", char_name)
-        display_name = " ".join(words)
-
-        # Try different name formats in order of highest hit rate
-        # Based on testing: space_separated (89%), without_suffix (11%), org_id (0%)
-        org_name = "org.bluetooth.characteristic." + "_".join(word.lower() for word in words)
-        names_to_try = [
-            display_name,  # Space-separated (e.g. "Battery Level") - 89% hit rate
-            char_name,  # Without 'Characteristic' suffix (e.g. "BatteryLevel") - 11% hit rate
-            org_name,  # Org ID format (e.g. "org.bluetooth.characteristic.battery_level")
-            name,  # Full class name (e.g. "BatteryLevelCharacteristic") - fallback
-        ]
-
-        # Try each name format
-        for try_name in names_to_try:
-            char_info = uuid_registry.get_characteristic_info(try_name)
-            if char_info:
-                return CharacteristicInfo(
-                    uuid=char_info.uuid,
-                    name=char_info.name,
-                    unit=char_info.unit or "",
-                    value_type=ValueType(char_info.value_type) if char_info.value_type else ValueType.UNKNOWN,
-                    properties=[],
-                )
-
-        return None
+        return search_strategy.search(char_class, characteristic_name)
 
 
 class CharacteristicMeta(ABCMeta):
@@ -214,10 +153,7 @@ class CharacteristicMeta(ABCMeta):
         namespace: dict[str, Any],
         **kwargs: Any,
     ) -> type:
-        # Create the class normally
-        new_class = super().__new__(mcs, name, bases, namespace, **kwargs)
-
-        # Auto-handle template flags
+        # Auto-handle template flags before class creation so attributes are part of namespace
         if bases:  # Not the base class itself
             # Check if this class is in templates.py (template) or a concrete implementation
             module_name = namespace.get("__module__", "")
@@ -228,7 +164,10 @@ class CharacteristicMeta(ABCMeta):
                 # Check if any parent has _is_template = True
                 has_template_parent = any(getattr(base, "_is_template", False) for base in bases)
                 if has_template_parent and "_is_template" not in namespace:
-                    new_class._is_template = False  # type: ignore[attr-defined] # Mark as concrete characteristic
+                    namespace["_is_template"] = False  # Mark as concrete characteristic
+
+        # Create the class normally
+        new_class = super().__new__(mcs, name, bases, namespace, **kwargs)
 
         return new_class
 
@@ -292,6 +231,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     _manual_unit: str | None = None
     _manual_value_type: ValueType | str | None = None
     _manual_size: int | None = None
+    _is_template: bool = False
 
     # Validation attributes (Progressive API Level 2)
     min_value: int | float | None = None
@@ -511,7 +451,6 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # Try cross-file resolution first
         yaml_spec = cls._resolve_yaml_spec_class()
         if yaml_spec:
-            print(f"Found YAML spec: {yaml_spec.uuid}")
             return yaml_spec.uuid
 
         # Fallback to original registry resolution
@@ -779,6 +718,10 @@ class CustomBaseCharacteristic(BaseCharacteristic):
     _configured_info: CharacteristicInfo | None = None  # Stores class-level _info
     _allows_sig_override = False  # Default: no SIG override permission
 
+    # pylint: disable=duplicate-code
+    # NOTE: __init_subclass__ and __init__ patterns are intentionally similar to CustomBaseService.
+    # This is by design - both custom characteristic and service classes need identical validation
+    # and info management patterns. Consolidation not possible due to different base types and info types.
     def __init_subclass__(cls, allow_sig_override: bool = False, **kwargs: Any) -> None:
         """Automatically set up _info if provided as class attribute.
 

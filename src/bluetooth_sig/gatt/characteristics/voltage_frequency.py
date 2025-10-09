@@ -14,6 +14,5 @@ class VoltageFrequencyCharacteristic(BaseCharacteristic):
 
     _template = ScaledUint16Template()
 
-    _characteristic_name: str = "Voltage Frequency"
     _manual_unit: str = "Hz"  # Override template's "units" default
     resolution: float = 1 / 256

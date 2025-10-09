@@ -10,5 +10,3 @@ class DewPointCharacteristic(BaseCharacteristic):
     """Dew Point measurement characteristic."""
 
     _template = Sint8Template()
-
-    _characteristic_name: str = "Dew Point"
