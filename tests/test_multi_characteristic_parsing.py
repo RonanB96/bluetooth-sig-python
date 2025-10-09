@@ -67,8 +67,9 @@ class SensorReadingCharacteristic(CustomBaseCharacteristic):
         properties=[GattProperty.READ, GattProperty.NOTIFY],
     )
 
-    # Declare dependency on calibration characteristic
-    dependencies = ["CA11B001-0000-1000-8000-00805F9B34FB"]
+    # Declare dependency using direct class reference (following Django ForeignKey pattern)
+
+    _dependencies = [CalibrationCharacteristic]
 
     min_length = 2
     expected_type = float
@@ -148,8 +149,9 @@ class SequencedDataCharacteristic(CustomBaseCharacteristic):
         properties=[GattProperty.READ, GattProperty.NOTIFY],
     )
 
-    # Declare dependency on sequence number characteristic
-    dependencies = ["5E900001-0000-1000-8000-00805F9B34FB"]
+    # Declare dependency using direct class reference (following Django ForeignKey pattern)
+
+    _dependencies = [SequenceNumberCharacteristic]
 
     min_length = 4
     expected_type = dict
@@ -217,14 +219,17 @@ class TestMultiCharacteristicDependencies:
         return translator
 
     def test_dependency_declaration(self):
-        """Test that characteristics can declare dependencies."""
+        """Test that characteristics can declare dependencies with hard types."""
         # Independent characteristic has no dependencies
         calib = CalibrationCharacteristic()
         assert calib.dependencies == []
 
-        # Dependent characteristic declares its dependencies
+        # Dependent characteristic declares its dependencies using direct class reference
         sensor = SensorReadingCharacteristic()
         assert sensor.dependencies == ["CA11B001-0000-1000-8000-00805F9B34FB"]
+        # Verify the declaration uses class type (hard type, not soft string)
+        assert len(sensor._dependencies) == 1
+        assert sensor._dependencies[0] == CalibrationCharacteristic
 
     def test_parse_independent_characteristic(self, translator):
         """Test parsing independent characteristic without context."""
@@ -412,7 +417,8 @@ class TestMultiCharacteristicDependencies:
                 value_type=ValueType.INT,
                 properties=[],
             )
-            dependencies = ["C4A1BBBB-0000-1000-8000-00805F9B34FB"]
+            # Forward reference will be resolved after CharB is defined
+            _dependencies = []
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 return int(data[0])
@@ -428,13 +434,17 @@ class TestMultiCharacteristicDependencies:
                 value_type=ValueType.INT,
                 properties=[],
             )
-            dependencies = ["C4A1AAAA-0000-1000-8000-00805F9B34FB"]
+            # Reference CharA directly (no hardcoding)
+            _dependencies = [CharA]
 
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 return int(data[0])
 
             def encode_value(self, data: int) -> bytearray:
                 return bytearray([data])
+
+        # Complete circular reference (CharA depends on CharB)
+        CharA._dependencies = [CharB]
 
         # Register characteristics
         translator.register_custom_characteristic_class(str(CharA._info.uuid), CharA)

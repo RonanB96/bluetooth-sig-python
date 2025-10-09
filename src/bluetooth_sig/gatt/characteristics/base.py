@@ -254,8 +254,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     _allows_sig_override = False
 
     # Multi-characteristic parsing support (Progressive API Level 5)
-    dependencies: list[str] = []  # Optional list of characteristic UUIDs this parser depends on (resolved dynamically)
-    _dependency_names: list[CharacteristicName] = []  # Declare dependencies using CharacteristicName enum
+    _dependencies: list[type[BaseCharacteristic]] = []
 
     def __init__(
         self,
@@ -351,14 +350,6 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 self._info.value_type = inferred_type
                 self.value_type = inferred_type
 
-        # Resolve dependencies from _dependency_names if provided (Progressive API Level 5)
-        if self._dependency_names:
-            self.dependencies = []
-            for dep_name in self._dependency_names:
-                dep_uuid = self._get_characteristic_uuid_by_name(dep_name)
-                if dep_uuid:
-                    self.dependencies.append(dep_uuid)
-
     def _infer_value_type_from_patterns(self) -> ValueType:
         """Infer value type from characteristic naming patterns and class structure.
 
@@ -433,6 +424,44 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         to class name.
         """
         return self._characteristic_name or self.__class__.__name__
+
+    @property
+    def dependencies(self) -> list[BluetoothUUID]:
+        """Get resolved dependency UUIDs from class references.
+
+        Unified pattern: Extract UUID from characteristic class metadata (_info.uuid)
+        - SIG characteristics: Convert class name to SIG name, look up UUID via registry
+        - Custom characteristics: Direct access to _info.uuid
+
+        Single source of truth with complete type safety - no soft string types,
+        no hardcoded UUIDs (extracted from class definition).
+
+        Returns:
+            List of resolved UUID strings for dependencies (empty list if none)
+        """
+        if not self._dependencies:
+            return []
+
+        resolved: list[BluetoothUUID] = []
+        for dep_class in self._dependencies:
+            # Try to get class-level UUID (custom characteristics have _configured_info)
+            configured_info: CharacteristicInfo | None = getattr(dep_class, "_configured_info", None)
+            if configured_info is not None:
+                # Custom characteristic with explicit _info
+                resolved.append(configured_info.uuid)
+            else:
+                # SIG characteristic: convert class name to SIG name and resolve via registry
+                class_name: str = dep_class.__name__
+                # Remove 'Characteristic' suffix
+                name_without_suffix: str = class_name.replace("Characteristic", "")
+                # Insert spaces before capital letters to get SIG name
+                sig_name: str = re.sub(r"(?<!^)(?=[A-Z])", " ", name_without_suffix)
+                # Look up UUID via registry
+                dep_uuid: str | None = self._get_characteristic_uuid_by_name(sig_name)
+                if dep_uuid is not None:
+                    resolved.append(dep_uuid)
+
+        return resolved
 
     @classmethod
     def get_allows_sig_override(cls) -> bool:
@@ -561,15 +590,45 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def get_context_characteristic(
         self,
         ctx: CharacteristicContext | None,
-        characteristic_name: CharacteristicName | str,
+        characteristic_name: CharacteristicName | str | type[BaseCharacteristic],
     ) -> Any | None:
-        """Generic utility to find a characteristic in context by name."""
+        """Generic utility to find a characteristic in context by name or class.
+
+        Args:
+            ctx: Context containing other characteristics
+            characteristic_name: Enum, string name, or characteristic class
+
+        Returns:
+            Characteristic data if found, None otherwise
+        """
         if not ctx or not ctx.other_characteristics:
             return None
 
-        char_uuid = self._get_characteristic_uuid_by_name(characteristic_name)
-        if not char_uuid:
-            return None
+        # Extract UUID from class if provided
+        if isinstance(characteristic_name, type):
+            # Class reference provided - try to get class-level UUID
+            configured_info: CharacteristicInfo | None = getattr(characteristic_name, "_configured_info", None)
+            if configured_info is not None:
+                # Custom characteristic with explicit _configured_info
+                char_uuid: str = str(configured_info.uuid)
+            else:
+                # SIG characteristic: convert class name to SIG name and resolve via registry
+                class_name: str = characteristic_name.__name__
+                # Remove 'Characteristic' suffix
+                name_without_suffix: str = class_name.replace("Characteristic", "")
+                # Insert spaces before capital letters to get SIG name
+                sig_name: str = re.sub(r"(?<!^)(?=[A-Z])", " ", name_without_suffix)
+                # Look up UUID via registry
+                resolved_uuid: str | None = self._get_characteristic_uuid_by_name(sig_name)
+                if resolved_uuid is None:
+                    return None
+                char_uuid = resolved_uuid
+        else:
+            # Enum or string name
+            resolved_uuid = self._get_characteristic_uuid_by_name(characteristic_name)
+            if resolved_uuid is None:
+                return None
+            char_uuid = resolved_uuid
 
         return ctx.other_characteristics.get(char_uuid)
 
