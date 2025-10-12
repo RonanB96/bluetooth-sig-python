@@ -236,8 +236,8 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Glucose Measurement Context"
     _manual_unit: str = "various"  # Multiple units in context data
 
-    # Declare dependency on Glucose Measurement for sequence number matching
-    _dependencies = [GlucoseMeasurementCharacteristic]
+    # Declare dependency on Glucose Measurement for sequence number matching (REQUIRED)
+    _required_dependencies = [GlucoseMeasurementCharacteristic]
 
     min_length: int | None = 3  # Flags(1) + Sequence(2) minimum
     max_length: int | None = (

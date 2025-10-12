@@ -1,4 +1,5 @@
 """Base class for GATT characteristics."""
+# pylint: disable=too-many-lines
 
 from __future__ import annotations
 
@@ -254,7 +255,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     _allows_sig_override = False
 
     # Multi-characteristic parsing support (Progressive API Level 5)
-    _dependencies: list[type[BaseCharacteristic]] = []
+    _required_dependencies: list[type[BaseCharacteristic]] = []  # Dependencies that MUST be present
+    _optional_dependencies: list[type[BaseCharacteristic]] = []  # Dependencies that enrich parsing when available
 
     def __init__(
         self,
@@ -296,6 +298,10 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             self.max_length = self.__class__.max_length
             self.allow_variable_length = self.__class__.allow_variable_length
             self.expected_type = self.__class__.expected_type
+
+        # Dependency caches (resolved once per instance)
+        self._resolved_required_dependencies: list[str] | None = None
+        self._resolved_optional_dependencies: list[str] | None = None
 
         # Call post-init to resolve characteristic info
         self.__post_init__()
@@ -425,43 +431,69 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         """
         return self._characteristic_name or self.__class__.__name__
 
-    @property
-    def dependencies(self) -> list[BluetoothUUID]:
-        """Get resolved dependency UUIDs from class references.
+    @classmethod
+    def _normalize_dependency_class(cls, dep_class: type[BaseCharacteristic]) -> str | None:
+        """Resolve a dependency class to its canonical UUID string.
 
-        Unified pattern: Extract UUID from characteristic class metadata (_info.uuid)
-        - SIG characteristics: Convert class name to SIG name, look up UUID via registry
-        - Custom characteristics: Direct access to _info.uuid
-
-        Single source of truth with complete type safety - no soft string types,
-        no hardcoded UUIDs (extracted from class definition).
+        Args:
+            dep_class: The characteristic class to resolve
 
         Returns:
-            List of resolved UUID strings for dependencies (empty list if none)
+            Canonical UUID string or None if unresolvable
         """
-        if not self._dependencies:
-            return []
+        configured_info: CharacteristicInfo | None = getattr(dep_class, "_info", None)
+        if configured_info is not None:
+            return str(configured_info.uuid)
 
-        resolved: list[BluetoothUUID] = []
-        for dep_class in self._dependencies:
-            # Try to get class-level UUID (custom characteristics have _configured_info)
-            configured_info: CharacteristicInfo | None = getattr(dep_class, "_configured_info", None)
-            if configured_info is not None:
-                # Custom characteristic with explicit _info
-                resolved.append(configured_info.uuid)
-            else:
-                # SIG characteristic: convert class name to SIG name and resolve via registry
-                class_name: str = dep_class.__name__
-                # Remove 'Characteristic' suffix
-                name_without_suffix: str = class_name.replace("Characteristic", "")
-                # Insert spaces before capital letters to get SIG name
-                sig_name: str = re.sub(r"(?<!^)(?=[A-Z])", " ", name_without_suffix)
-                # Look up UUID via registry
-                dep_uuid: str | None = self._get_characteristic_uuid_by_name(sig_name)
-                if dep_uuid is not None:
-                    resolved.append(dep_uuid)
+        try:
+            class_uuid = dep_class.get_class_uuid()
+            if class_uuid is not None:
+                return str(class_uuid)
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass
+
+        try:
+            temp_instance = dep_class()
+            return str(temp_instance.info.uuid)
+        except Exception:  # pylint: disable=broad-exception-caught
+            return None
+
+    def _resolve_dependencies(self, attr_name: str) -> list[str]:
+        """Resolve dependency class references to canonical UUID strings."""
+
+        dependency_classes: list[type[BaseCharacteristic]] = []
+
+        declared = getattr(self.__class__, attr_name, []) or []
+        dependency_classes.extend(declared)
+
+        resolved: list[str] = []
+        seen: set[str] = set()
+
+        for dep_class in dependency_classes:
+            uuid_str = self._normalize_dependency_class(dep_class)
+            if uuid_str and uuid_str not in seen:
+                seen.add(uuid_str)
+                resolved.append(uuid_str)
 
         return resolved
+
+    @property
+    def required_dependencies(self) -> list[str]:
+        """Get resolved required dependency UUID strings."""
+
+        if self._resolved_required_dependencies is None:
+            self._resolved_required_dependencies = self._resolve_dependencies("_required_dependencies")
+
+        return list(self._resolved_required_dependencies)
+
+    @property
+    def optional_dependencies(self) -> list[str]:
+        """Get resolved optional dependency UUID strings."""
+
+        if self._resolved_optional_dependencies is None:
+            self._resolved_optional_dependencies = self._resolve_dependencies("_optional_dependencies")
+
+        return list(self._resolved_optional_dependencies)
 
     @classmethod
     def get_allows_sig_override(cls) -> bool:

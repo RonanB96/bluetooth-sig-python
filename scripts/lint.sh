@@ -58,7 +58,7 @@ print_warning() {
 # return its exit code without causing the script to exit (wraps set +e/-e).
 run_capture() {
     CAPTURE_OUTPUT=""
-    # Temporarily disable all error exit behaviors to properly capture command output  
+    # Temporarily disable all error exit behaviors to properly capture command output
     local old_opts
     old_opts=$(set +o)
     set +euo pipefail
@@ -170,6 +170,8 @@ run_pylint() {
     fi
 
     local exit_code=0
+    local production_failed=0
+    local tests_failed=0
 
     # Run pylint on production code (strict requirements)
     if [ "$is_parallel" != "true" ]; then
@@ -195,6 +197,7 @@ run_pylint() {
             echo "Please fix all pylint issues in production code or add justified disable comments."
         fi
         exit_code=1
+        production_failed=1
     else
         if [ "$is_parallel" != "true" ]; then
             print_success "Production code achieved perfect pylint score: 10.00/10"
@@ -233,6 +236,13 @@ run_pylint() {
     run_capture "pylint --persistent=n --disable=C0114,C0115,C0116,W0212,C0415,W0718,W0613,R0914,R0912,R0915,R1702,C1803,W0105,R0903,W0201,W0621,W0404,W0221,E0401 $TEST_FOLDERS $EXAMPLES_FOLDERS"
     TEST_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
     local TEST_PYLINT_EXIT_CODE=$?
+    local TEST_PYLINT_HAS_MESSAGES=0
+    if printf '%s\n' "$TEST_PYLINT_OUTPUT" | grep -Eq ':[[:space:]]*\[[A-Z]'; then
+        TEST_PYLINT_HAS_MESSAGES=1
+    fi
+    if [ $TEST_PYLINT_EXIT_CODE -ne 0 ]; then
+        tests_failed=1
+    fi
 
     # Always show detailed test output in non-parallel mode
     if [ "$is_parallel" != "true" ]; then
@@ -253,17 +263,18 @@ run_pylint() {
                 printf "\n=== PYLINT: summary ===\n"
                 printf "production_score=%s\n" "${PROD_SCORE:-unknown}"
                 printf "test_exit_code=%s\n" "${TEST_PYLINT_EXIT_CODE:-unknown}"
+                printf "test_messages_present=%s\n" "${TEST_PYLINT_HAS_MESSAGES:-0}"
             } >"$tmpfile" || true
             mv "$tmpfile" "$_logfile" || true
         fi
         # Also output to stdout for spawn_bg to capture when there are errors
-        if [ $exit_code -ne 0 ]; then
+        if [ $production_failed -eq 1 ] || [ $tests_failed -eq 1 ]; then
             echo "=== PYLINT OUTPUT ==="
-            if [ "$PROD_SCORE" != "10.00" ]; then
+            if [ $production_failed -eq 1 ]; then
                 echo "Production pylint score: $PROD_SCORE/10 (must be 10.00)"
                 echo "$PROD_PYLINT_OUTPUT"
             fi
-            if [ $TEST_PYLINT_EXIT_CODE -ne 0 ]; then
+            if [ $tests_failed -eq 1 ]; then
                 echo "Test pylint issues:"
                 echo "$TEST_PYLINT_OUTPUT"
             fi
@@ -280,6 +291,9 @@ run_pylint() {
     else
         if [ "$is_parallel" != "true" ]; then
             print_success "Test code passed pylint checks (common test issues ignored)"
+        fi
+        if [ $TEST_PYLINT_HAS_MESSAGES -eq 1 ] && [ "$is_parallel" != "true" ]; then
+            print_warning "pylint reported warnings/errors in tests/examples"
         fi
     fi
 
@@ -600,6 +614,12 @@ run_all_checks_parallel() {
         set -e
         if [ $code -eq 0 ]; then
             print_success "$name passed"
+            if [ -n "${logfile:-}" ] && [ -f "$logfile" ] && [ "$name" = "pylint" ]; then
+                if grep -q 'test_messages_present=1' "$logfile"; then
+                    print_warning "pylint reported warnings/errors in tests/examples"
+                    sed -n '1,200p' "$logfile" || true
+                fi
+            fi
         else
             print_error "$name failed"
             exit_code=1
@@ -626,7 +646,7 @@ run_all_checks_parallel() {
         mkdir -p "$LOGDIR"
     fi
     export LOGDIR
-    
+
     # Set up cleanup trap to remove temporary directory on exit/interrupt
     cleanup_logdir() {
         if [ -n "${LOGDIR:-}" ] && [ -d "$LOGDIR" ]; then
@@ -634,7 +654,7 @@ run_all_checks_parallel() {
         fi
     }
     trap cleanup_logdir EXIT INT TERM
-    
+
     echo "Writing parallel lint logs to: $LOGDIR"
 
     # Spawn each check as a backgrounded invocation of the existing helper
@@ -644,11 +664,11 @@ run_all_checks_parallel() {
         local func="$1"
         local logfile="$2"
         local pidfile="$3"
-        
+
         # Run the function in a subshell with proper output redirection
         # The helper functions are responsible for writing their output to logfile
         # in parallel mode, but we also capture any stdout/stderr here as backup
-        ( 
+        (
             set +e
             # Call the function with parallel mode and logfile
             $func true "$logfile" >"${logfile}.stdout" 2>"${logfile}.stderr"
@@ -662,7 +682,7 @@ run_all_checks_parallel() {
                     fi
                     if [ -s "${logfile}.stderr" ]; then
                         echo "=== STDERR ==="
-                        cat "${logfile}.stderr"  
+                        cat "${logfile}.stderr"
                     fi
                 } >> "$logfile"
             fi
@@ -670,7 +690,7 @@ run_all_checks_parallel() {
             rm -f "${logfile}.stdout" "${logfile}.stderr"
             exit $rc
         ) &
-        
+
         # Write PID to pidfile for parent to track
         printf "%s" "$!" >"$pidfile"
     }
@@ -689,10 +709,10 @@ run_all_checks_parallel() {
     echo "⏳ Running comprehensive checks in parallel (ruff, pylint(prod/examples/test), mypy(prod/examples/tests), shellcheck)..."
 
     # Wait & report using the helper to reduce duplication
-    wait_and_report "$pid_ruff" "✅ ruff" "$LOGDIR/ruff.out"
-    wait_and_report "$pid_pylint" "✅ pylint" "$LOGDIR/pylint.out"
-    wait_and_report "$pid_mypy" "✅ mypy" "$LOGDIR/mypy.out"
-    wait_and_report "$pid_shellcheck" "✅ shellcheck" "$LOGDIR/shellcheck.out"
+    wait_and_report "$pid_ruff" "ruff" "$LOGDIR/ruff.out"
+    wait_and_report "$pid_pylint" "pylint" "$LOGDIR/pylint.out"
+    wait_and_report "$pid_mypy" "mypy" "$LOGDIR/mypy.out"
+    wait_and_report "$pid_shellcheck" "shellcheck" "$LOGDIR/shellcheck.out"
 
     echo ""
 

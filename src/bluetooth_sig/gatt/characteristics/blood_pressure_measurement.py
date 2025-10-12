@@ -83,7 +83,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
     _manual_value_type = "string"  # Override since decode_value returns dataclass
 
     # Declare optional dependency on Blood Pressure Feature for status interpretation
-    _dependencies = [BloodPressureFeatureCharacteristic]
+    _optional_dependencies = [BloodPressureFeatureCharacteristic]
 
     min_length = 7  # Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) minimum
     max_length = 19  # + Timestamp(7) + PulseRate(2) + UserID(1) + MeasurementStatus(2) maximum
