@@ -56,7 +56,7 @@ class SensorContactState(IntEnum):
         return cls.NOT_DETECTED
 
 
-class HeartRateData(msgspec.Struct, frozen=True, kw_only=True):
+class HeartRateData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed data from Heart Rate Measurement characteristic.
 
     Uses msgspec.Struct for performance-critical BLE notification handling.

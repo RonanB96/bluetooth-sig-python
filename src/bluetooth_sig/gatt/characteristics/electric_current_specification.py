@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
+
+import msgspec
 
 from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 
 
-@dataclass
-class ElectricCurrentSpecificationData:
-    """Data class for electric current specification."""
+class ElectricCurrentSpecificationData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
+    """Data class for electric current specification.
+
+    Uses msgspec.Struct for performance-critical BLE notification handling.
+    - frozen=True: Immutable after creation for thread safety
+    - kw_only=True: Explicit keyword arguments for clarity
+    """
 
     minimum: float  # Minimum current in Amperes
     maximum: float  # Maximum current in Amperes
