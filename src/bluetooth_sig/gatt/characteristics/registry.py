@@ -7,18 +7,15 @@ types.gatt_enums to avoid circular imports.
 
 from __future__ import annotations
 
-import inspect
-import pkgutil
 import re
 import threading
 from functools import lru_cache
-from importlib import import_module
 
 from typing_extensions import TypeGuard
 
 from ...types.gatt_enums import CharacteristicName
 from ...types.uuid import BluetoothUUID
-from ..registry_utils import TypeValidator
+from ..registry_utils import ModuleDiscovery, TypeValidator
 from ..resolver import NameVariantGenerator
 from ..uuid_registry import uuid_registry
 from .base import BaseCharacteristic
@@ -93,23 +90,14 @@ class _CharacteristicClassDiscovery:
 
     @classmethod
     def iter_module_names(cls) -> list[str]:
-        """Return sorted characteristic module names discovered via pkgutil.walk_packages [1]_.
+        """Return sorted characteristic module names discovered via pkgutil.walk_packages.
 
         References:
-            .. [1] Python standard library documentation, pkgutil.walk_packages,
-               https://docs.python.org/3/library/pkgutil.html#pkgutil.walk_packages
+            Python standard library documentation, pkgutil.walk_packages,
+            https://docs.python.org/3/library/pkgutil.html#pkgutil.walk_packages
         """
         package_name = __package__ or "bluetooth_sig.gatt.characteristics"
-        package = import_module(package_name)
-        module_names: list[str] = []
-        prefix = f"{package_name}."
-        for module_info in pkgutil.walk_packages(package.__path__, prefix):
-            module_basename = module_info.name.rsplit(".", 1)[-1]
-            if module_basename in cls._MODULE_EXCLUSIONS:
-                continue
-            module_names.append(module_info.name)
-        module_names.sort()
-        return module_names
+        return ModuleDiscovery.iter_module_names(package_name, cls._MODULE_EXCLUSIONS)
 
     @classmethod
     def discover_classes(cls) -> list[type[BaseCharacteristic]]:
@@ -117,26 +105,12 @@ class _CharacteristicClassDiscovery:
 
         Validates that discovered classes have required methods for proper operation.
         """
-        discovered: list[type[BaseCharacteristic]] = []
-        for module_name in cls.iter_module_names():
-            module = import_module(module_name)
-            candidates: list[type[BaseCharacteristic]] = []
-            for _, obj in inspect.getmembers(module, inspect.isclass):
-                if not _CharacteristicClassValidator.is_characteristic_subclass(obj):
-                    continue
-                if obj is BaseCharacteristic or getattr(obj, "_is_template", False):
-                    continue
-                if obj.__module__ != module.__name__:
-                    continue
-
-                # Validate that the class has required methods
-                if not hasattr(obj, "get_class_uuid") or not callable(obj.get_class_uuid):
-                    continue  # Skip classes without proper UUID resolution
-
-                candidates.append(obj)
-            candidates.sort(key=lambda cls: cls.__name__)
-            discovered.extend(candidates)
-        return discovered
+        module_names = cls.iter_module_names()
+        return ModuleDiscovery.discover_classes(
+            module_names,
+            BaseCharacteristic,
+            _CharacteristicClassValidator.is_characteristic_subclass,
+        )
 
 
 class _CharacteristicMapBuilder:

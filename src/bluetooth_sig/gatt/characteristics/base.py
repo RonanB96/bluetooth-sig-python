@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 import struct
 from abc import ABC, ABCMeta
 from dataclasses import dataclass

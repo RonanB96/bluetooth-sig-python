@@ -98,6 +98,68 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
             last_crank_event_time=last_crank_event_time,
         )
 
+    def _encode_wheel_data(self, data: CSCMeasurementData) -> bytearray:
+        """Encode wheel revolution data.
+
+        Args:
+            data: CSCMeasurementData containing wheel data
+
+        Returns:
+            Encoded wheel revolution bytes
+
+        Raises:
+            ValueError: If wheel data is invalid or out of range
+        """
+        if data.cumulative_wheel_revolutions is None or data.last_wheel_event_time is None:
+            raise ValueError("CSC wheel revolution data marked present but missing values")
+
+        wheel_revolutions = int(data.cumulative_wheel_revolutions)
+        wheel_event_time = float(data.last_wheel_event_time)
+
+        # Validate ranges
+        if not 0 <= wheel_revolutions <= 0xFFFFFFFF:
+            raise ValueError(f"Wheel revolutions {wheel_revolutions} exceeds uint32 range")
+
+        wheel_event_time_raw = round(wheel_event_time * self.CSC_TIME_RESOLUTION)
+        if not 0 <= wheel_event_time_raw <= 0xFFFF:
+            raise ValueError(f"Wheel event time {wheel_event_time_raw} exceeds uint16 range")
+
+        result = bytearray()
+        result.extend(DataParser.encode_int32(wheel_revolutions, signed=False))
+        result.extend(DataParser.encode_int16(wheel_event_time_raw, signed=False))
+        return result
+
+    def _encode_crank_data(self, data: CSCMeasurementData) -> bytearray:
+        """Encode crank revolution data.
+
+        Args:
+            data: CSCMeasurementData containing crank data
+
+        Returns:
+            Encoded crank revolution bytes
+
+        Raises:
+            ValueError: If crank data is invalid or out of range
+        """
+        if data.cumulative_crank_revolutions is None or data.last_crank_event_time is None:
+            raise ValueError("CSC crank revolution data marked present but missing values")
+
+        crank_revolutions = int(data.cumulative_crank_revolutions)
+        crank_event_time = float(data.last_crank_event_time)
+
+        # Validate ranges
+        if not 0 <= crank_revolutions <= 0xFFFF:
+            raise ValueError(f"Crank revolutions {crank_revolutions} exceeds uint16 range")
+
+        crank_event_time_raw = round(crank_event_time * self.CSC_TIME_RESOLUTION)
+        if not 0 <= crank_event_time_raw <= 0xFFFF:
+            raise ValueError(f"Crank event time {crank_event_time_raw} exceeds uint16 range")
+
+        result = bytearray()
+        result.extend(DataParser.encode_int16(crank_revolutions, signed=False))
+        result.extend(DataParser.encode_int16(crank_event_time_raw, signed=False))
+        return result
+
     def encode_value(self, data: CSCMeasurementData) -> bytearray:
         """Encode CSC measurement value back to bytes.
 
@@ -114,59 +176,19 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
         # Update flags to match available data
         if has_wheel_data:
-            flags |= self.WHEEL_REVOLUTION_DATA_PRESENT  # Wheel revolution data present
+            flags |= self.WHEEL_REVOLUTION_DATA_PRESENT
         if has_crank_data:
-            flags |= self.CRANK_REVOLUTION_DATA_PRESENT  # Crank revolution data present
+            flags |= self.CRANK_REVOLUTION_DATA_PRESENT
 
         # Start with flags byte
         result = bytearray([flags])
 
         # Add wheel revolution data if present
         if has_wheel_data:
-            wheel_revolutions_value = data.cumulative_wheel_revolutions
-            last_wheel_event_time_value = data.last_wheel_event_time
-
-            if wheel_revolutions_value is None or last_wheel_event_time_value is None:
-                raise ValueError("CSC wheel revolution data marked present but missing values")
-
-            wheel_revolutions = int(wheel_revolutions_value)
-            wheel_event_time = float(last_wheel_event_time_value)
-
-            # Validate ranges
-            if not 0 <= wheel_revolutions <= 0xFFFFFFFF:
-                raise ValueError(f"Wheel revolutions {wheel_revolutions} exceeds uint32 range")
-
-            wheel_event_time_raw = round(
-                wheel_event_time * self.CSC_TIME_RESOLUTION
-            )  # Convert to 1/CSC_TIME_RESOLUTION second units
-            if not 0 <= wheel_event_time_raw <= 0xFFFF:
-                raise ValueError(f"Wheel event time {wheel_event_time_raw} exceeds uint16 range")
-
-            result.extend(DataParser.encode_int32(wheel_revolutions, signed=False))
-            result.extend(DataParser.encode_int16(wheel_event_time_raw, signed=False))
+            result.extend(self._encode_wheel_data(data))
 
         # Add crank revolution data if present
         if has_crank_data:
-            crank_revolutions_value = data.cumulative_crank_revolutions
-            last_crank_event_time_value = data.last_crank_event_time
-
-            if crank_revolutions_value is None or last_crank_event_time_value is None:
-                raise ValueError("CSC crank revolution data marked present but missing values")
-
-            crank_revolutions = int(crank_revolutions_value)
-            crank_event_time = float(last_crank_event_time_value)
-
-            # Validate ranges
-            if not 0 <= crank_revolutions <= 0xFFFF:
-                raise ValueError(f"Crank revolutions {crank_revolutions} exceeds uint16 range")
-
-            crank_event_time_raw = round(
-                crank_event_time * self.CSC_TIME_RESOLUTION
-            )  # Convert to 1/CSC_TIME_RESOLUTION second units
-            if not 0 <= crank_event_time_raw <= 0xFFFF:
-                raise ValueError(f"Crank event time {crank_event_time_raw} exceeds uint16 range")
-
-            result.extend(DataParser.encode_int16(crank_revolutions, signed=False))
-            result.extend(DataParser.encode_int16(crank_event_time_raw, signed=False))
+            result.extend(self._encode_crank_data(data))
 
         return result
