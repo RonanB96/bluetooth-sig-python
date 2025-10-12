@@ -3,6 +3,8 @@
 import sys
 from pathlib import Path
 
+# pylint: disable=duplicate-code
+
 # Add src directory for bluetooth_sig imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -33,6 +35,12 @@ except ImportError:
 
 async def main() -> None:
     """Main function for basic usage demonstration."""
+    # pylint: disable=duplicate-code
+    # NOTE: Argument parsing duplicates service_discovery.py CLI setup.
+    # Duplication justified because:
+    # 1. Each example script is self-contained for educational clarity
+    # 2. Users should be able to run examples independently without shared CLI module
+    # 3. Different examples may diverge in their specific arguments over time
     parser = argparse.ArgumentParser(description="Basic bluetooth_sig usage")
     parser.add_argument("--address", required=True, help="BLE device address")
     parser.add_argument(

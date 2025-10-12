@@ -12,6 +12,7 @@ This test suite demonstrates various use cases for custom characteristics:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import new_class
 from typing import Any
 
 import pytest
@@ -190,20 +191,20 @@ class DeviceStatusFlags(CustomBaseCharacteristic):
             "wifi_connected": bool(flags & 0x20),
         }
 
-    def encode_value(self, flags: dict[str, bool]) -> bytearray:
+    def encode_value(self, data: dict[str, bool]) -> bytearray:
         """Encode status flags dict to byte."""
         byte = 0
-        if flags.get("powered_on", False):
+        if data.get("powered_on", False):
             byte |= 0x01
-        if flags.get("charging", False):
+        if data.get("charging", False):
             byte |= 0x02
-        if flags.get("low_battery", False):
+        if data.get("low_battery", False):
             byte |= 0x04
-        if flags.get("error", False):
+        if data.get("error", False):
             byte |= 0x08
-        if flags.get("bluetooth_connected", False):
+        if data.get("bluetooth_connected", False):
             byte |= 0x10
-        if flags.get("wifi_connected", False):
+        if data.get("wifi_connected", False):
             byte |= 0x20
         return bytearray([byte])
 
@@ -504,8 +505,8 @@ class TestCustomCharacteristicErrorHandling:
         """Test that SIG UUID without override flag fails."""
         with pytest.raises(ValueError, match="without override flag"):
 
-            class UnauthorizedSIGOverride(CustomBaseCharacteristic):
-                _info = CharacteristicInfo(
+            def _class_body(namespace: dict[str, Any]) -> None:  # pragma: no cover
+                namespace["_info"] = CharacteristicInfo(
                     uuid=BluetoothUUID("2A19"),  # SIG UUID without override
                     name="Unauthorized Battery",
                     unit="%",
@@ -513,11 +514,30 @@ class TestCustomCharacteristicErrorHandling:
                     properties=[],
                 )
 
-                def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+                def decode_value(  # pylint: disable=duplicate-code
+                    # NOTE: Minimal characteristic implementation duplicates other test fixtures.
+                    # Duplication justified because:
+                    # 1. Test isolation - each test creates its own custom characteristic
+                    # 2. Boilerplate decode/encode stubs required by CustomBaseCharacteristic API
+                    # 3. Consolidation would reduce test independence and clarity
+                    self: CustomBaseCharacteristic,
+                    data: bytearray,
+                    ctx: Any | None = None,
+                ) -> int:
                     return 0
 
-                def encode_value(self, data: int) -> bytearray:
+                def encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
                     return bytearray()
+
+                namespace["decode_value"] = decode_value
+                namespace["encode_value"] = encode_value
+
+            new_class(
+                "UnauthorizedSIGOverride",
+                (CustomBaseCharacteristic,),
+                {"allow_sig_override": False},
+                _class_body,
+            )
 
     def test_decode_error_handling(self):
         """Test that decode errors are properly handled."""
@@ -610,8 +630,8 @@ class TestCustomBaseCharacteristicAPI:
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 return DataParser.parse_int16(data, 0, signed=False)
 
-            def encode_value(self, value: int) -> bytearray:
-                return DataParser.encode_int16(value, signed=False)
+            def encode_value(self, data: int) -> bytearray:
+                return DataParser.encode_int16(data, signed=False)
 
         # Should create without explicit info parameter
         char = AutoInfoCharacteristic()
@@ -670,10 +690,8 @@ class TestCustomBaseCharacteristicAPI:
 
         with pytest.raises(ValueError, match="uses SIG UUID.*without override flag"):
 
-            class BadSIGOverride(CustomBaseCharacteristic):
-                """Should fail: uses SIG UUID without allow_sig_override=True."""
-
-                _info = CharacteristicInfo(
+            def _bad_body(namespace: dict[str, Any]) -> None:  # pragma: no cover
+                namespace["_info"] = CharacteristicInfo(
                     uuid=BluetoothUUID("2A19"),  # SIG Battery Level UUID
                     name="Bad Override",
                     unit="%",
@@ -681,11 +699,30 @@ class TestCustomBaseCharacteristicAPI:
                     properties=[],
                 )
 
-                def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+                def decode_value(  # pylint: disable=duplicate-code
+                    # NOTE: Minimal characteristic implementation duplicates other test fixtures.
+                    # Duplication justified because:
+                    # 1. Test isolation - each test creates its own custom characteristic
+                    # 2. Boilerplate decode/encode stubs required by CustomBaseCharacteristic API
+                    # 3. Consolidation would reduce test independence and clarity
+                    self: CustomBaseCharacteristic,
+                    data: bytearray,
+                    ctx: Any | None = None,
+                ) -> int:
                     return data[0]
 
-                def encode_value(self, value: int) -> bytearray:
-                    return bytearray([value])
+                def encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
+                    return bytearray([data])
+
+                namespace["decode_value"] = decode_value
+                namespace["encode_value"] = encode_value
+
+            new_class(
+                "BadSIGOverride",
+                (CustomBaseCharacteristic,),
+                {"allow_sig_override": False},
+                _bad_body,
+            )
 
     def test_sig_override_with_permission(self) -> None:
         """Test that SIG UUID override works with explicit permission."""
@@ -701,11 +738,20 @@ class TestCustomBaseCharacteristicAPI:
                 properties=[],
             )
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+            def decode_value(  # pylint: disable=duplicate-code
+                # NOTE: Minimal characteristic implementation duplicates other test fixtures.
+                # Duplication justified because:
+                # 1. Test isolation - each test creates its own custom characteristic
+                # 2. Boilerplate decode/encode stubs required by CustomBaseCharacteristic API
+                # 3. Consolidation would reduce test independence and clarity
+                self,
+                data: bytearray,
+                ctx: Any | None = None,
+            ) -> int:
                 return data[0]
 
-            def encode_value(self, value: int) -> bytearray:
-                return bytearray([value])
+            def encode_value(self, data: int) -> bytearray:
+                return bytearray([data])
 
         # Should create successfully
         char = AllowedSIGOverride()
@@ -722,8 +768,8 @@ class TestCustomBaseCharacteristicAPI:
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 return data[0]
 
-            def encode_value(self, value: int) -> bytearray:
-                return bytearray([value])
+            def encode_value(self, data: int) -> bytearray:
+                return bytearray([data])
 
         with pytest.raises(ValueError, match="requires either 'info' parameter or '_info' class attribute"):
             MissingInfoCharacteristic()
@@ -745,8 +791,8 @@ class TestCustomBaseCharacteristicAPI:
             def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
                 return data[0]
 
-            def encode_value(self, value: int) -> bytearray:
-                return bytearray([value])
+            def encode_value(self, data: int) -> bytearray:
+                return bytearray([data])
 
         # Should create successfully without override flag
         char = CustomUUIDCharacteristic()

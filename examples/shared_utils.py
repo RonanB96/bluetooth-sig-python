@@ -5,6 +5,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from utils.device_scanning import safe_get_device_info
+
+# pylint: disable=duplicate-code
+
 # Add src directory for bluetooth_sig imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -40,18 +44,6 @@ except ImportError:
     simplepyble_available = False
 
 
-def short_uuid(uuid: str) -> str:
-    """Normalize a UUID to a short 16-bit uppercase string."""
-    if not uuid:
-        return ""
-    u = str(uuid).replace("-", "").lower()
-    if len(u) == 32:
-        return u[4:8].upper()
-    if len(u) >= 4:
-        return u[-4:].upper()
-    return u.upper()
-
-
 async def scan_devices(timeout: float = 10.0) -> list[Any]:
     """Scan for BLE devices using available library."""
     if not bleak_available:
@@ -65,9 +57,7 @@ async def scan_devices(timeout: float = 10.0) -> list[Any]:
 
     print(f"Found {len(devices)} devices:")
     for i, device in enumerate(devices, 1):
-        name = getattr(device, "name", None) or "Unknown"
-        address = getattr(device, "address", "Unknown")
-        rssi = getattr(device, "rssi", None)
+        name, address, rssi = safe_get_device_info(device)
         if rssi is not None:
             print(f"  {i}. {name} ({address}) - RSSI: {rssi}dBm")
         else:
@@ -144,6 +134,12 @@ def parse_results(raw_results: dict[str, tuple[bytes, float]]) -> dict[str, Any]
     print("Parsing results with SIG library:")
 
     for uuid_short, (raw_data, read_time) in raw_results.items():
+        # pylint: disable=duplicate-code
+        # NOTE: Result parsing/display pattern duplicates data_parsing logic.
+        # Duplication justified because:
+        # 1. Common pattern for displaying BLE characteristic parse results
+        # 2. Simple dict construction, consolidation would over-engineer for 10 lines
+        # 3. Each utility module stays self-contained for clarity
         try:
             result = translator.parse_characteristic(uuid_short, raw_data)
 

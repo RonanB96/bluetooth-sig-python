@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+# pylint: disable=duplicate-code
+
 # Add src directory for bluetooth_sig imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -15,14 +17,58 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
 import argparse
-import time
-from typing import Any
+import asyncio
+from types import ModuleType
+from typing import Any, cast
 
-import simplepyble as simplepyble_module
+from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.types.data_types import CharacteristicData
+from examples import shared_utils
+from examples.utils import library_detection, simpleble_integration
 
-from bluetooth_sig import BluetoothSIGTranslator
-from examples.utils.library_detection import simplepyble_available
-from examples.utils.simpleble_integration import comprehensive_device_analysis_simpleble
+
+def parse_results(raw_results: dict[str, tuple[bytes, float]]) -> dict[str, Any]:
+    """Typed wrapper around shared example parser."""
+
+    return shared_utils.parse_results(raw_results)
+
+
+async def read_characteristics_with_manager(
+    connection_manager: ConnectionManagerProtocol,
+    target_uuids: list[str] | None = None,
+    timeout: float = 10.0,
+) -> dict[str, tuple[bytes, float]]:
+    """Typed wrapper delegating to shared characteristic reader."""
+
+    return await shared_utils.read_characteristics_with_manager(connection_manager, target_uuids, timeout)
+
+
+def scan_devices_simpleble(simpleble_module: ModuleType, timeout: float = 10.0) -> list[dict[str, Any]]:
+    """Wrapper ensuring precise typing for scanning helper."""
+
+    return cast(list[dict[str, Any]], simpleble_integration.scan_devices_simpleble(simpleble_module, timeout))
+
+
+def comprehensive_device_analysis_simpleble(
+    address: str,
+    simpleble_module: ModuleType,
+) -> dict[str, CharacteristicData]:
+    """Wrapper ensuring precise typing for comprehensive analysis helper."""
+
+    return simpleble_integration.comprehensive_device_analysis_simpleble(address, simpleble_module)
+
+
+def create_simpleble_connection_manager(address: str, simpleble_module: ModuleType) -> ConnectionManagerProtocol:
+    """Factory returning a connection manager instance with explicit typing."""
+
+    manager = simpleble_integration.SimplePyBLEConnectionManager(address, simpleble_module)
+    return cast(ConnectionManagerProtocol, manager)
+
+
+simplepyble_available_raw = getattr(library_detection, "simplepyble_available", False)
+simplepyble_available: bool = bool(simplepyble_available_raw)
+simplepyble_module_attr = getattr(library_detection, "simplepyble_module", None)
+simplepyble_module = cast(ModuleType, simplepyble_module_attr)
 
 """SimplePyBLE integration example
 
@@ -57,201 +103,32 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:  
     Returns:
         List of device dictionaries with address, name, and RSSI
     """
-    # mypy doesn't understand optional imports, so ignore type checking for this function
     if not simplepyble_available:  # type: ignore[possibly-unbound]
         print("❌ SimplePyBLE not available")
         return []
 
-    # At this point we know simplepyble is available
     assert simplepyble_module is not None
 
     print(f"🔍 Scanning for BLE devices ({timeout}s)...")
+    devices = scan_devices_simpleble(simplepyble_module, timeout)
 
-    # Get available adapters
-    adapters: Any
-    if hasattr(simplepyble_module, "Adapter") and hasattr(simplepyble_module.Adapter, "get_adapters"):
-        adapters = simplepyble_module.Adapter.get_adapters()  # type: ignore[attr-defined]
-    elif hasattr(simplepyble_module, "get_adapters"):
-        adapters = simplepyble_module.get_adapters()  # type: ignore[attr-defined]
-    else:
-        print("❌ SimplePyBLE API for adapter discovery not found")
-        return []
-    if not adapters:
-        print("❌ No BLE adapters found")
-        return []
-    adapter: Any = adapters[0]  # type: ignore[index]
-    if not adapters:
-        print("❌ No BLE adapters found")
+    if not devices:
+        print("❌ No BLE adapters found or scan failed")
         return []
 
-    adapter = adapters[0]  # Use first adapter
-    print(f"📡 Using adapter: {adapter.identifier()}")
-
-    # Start scanning
-    adapter.scan_start()
-    time.sleep(timeout)
-    adapter.scan_stop()
-
-    # Get scan results
-    scan_results = adapter.scan_get_results()
-
-    devices: list[dict[str, Any]] = []
-    print(f"\n📡 Found {len(scan_results)} devices:")
-    for i, peripheral in enumerate(scan_results, 1):
-        try:
-            name = peripheral.identifier() or "Unknown"
-            address = peripheral.address() if hasattr(peripheral, "address") else "Unknown"
-            rssi = peripheral.rssi() if hasattr(peripheral, "rssi") else "N/A"
-
-            device_info = {
-                "name": name,
-                "address": address,
-                "rssi": rssi,
-                "peripheral": peripheral,
-            }
-            devices.append(device_info)
-
-            print(f"  {i}. {name} ({address}) - RSSI: {rssi}dBm")
-
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            print(f"  {i}. Error reading device info: {e}")
+    print(f"\n📡 Found {len(devices)} devices:")
+    for index, device in enumerate(devices, 1):
+        name = device.get("name", "Unknown")
+        address = device.get("address", "Unknown")
+        rssi = device.get("rssi", "N/A")
+        print(f"  {index}. {name} ({address}) - RSSI: {rssi}dBm")
 
     return devices
 
 
-def read_characteristics_simpleble(  # type: ignore # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-nested-blocks
+def read_and_parse_with_simpleble(
     address: str, target_uuids: list[str] | None = None
-) -> dict[str, Any]:
-    """Read characteristics from a BLE device using SimpleBLE.
-
-    Args:
-        address: BLE device address
-        target_uuids: List of characteristic UUIDs to read (if None, reads ALL readable characteristics)
-
-    Returns:
-        Dictionary mapping UUID to (raw_data, char_object) tuples
-    """
-    if not simplepyble_available or simplepyble_module is None:
-        print("❌ SimplePyBLE not available")
-        return {}
-
-    results: dict[str, Any] = {}
-
-    print(f"🔵 Connecting to device using SimpleBLE: {address}")
-
-    try:
-        # Get adapter
-        adapters = simplepyble_module.Adapter.get_adapters()  # noqa: F821 # pylint: disable=undefined-variable,no-member
-        if not adapters:
-            print("❌ No BLE adapters found")
-            return results
-
-        adapter = adapters[0]
-
-        # Find the device (may need to scan first)
-        print("🔍 Looking for device...")
-        adapter.scan_start()
-        time.sleep(5.0)  # Scan briefly
-        adapter.scan_stop()
-
-        scan_results = adapter.scan_get_results()
-        target_peripheral = None
-
-        for peripheral in scan_results:
-            try:
-                if hasattr(peripheral, "address") and peripheral.address() == address:
-                    target_peripheral = peripheral
-                    break
-                if peripheral.identifier() == address:
-                    target_peripheral = peripheral
-                    break
-            except Exception:  # pylint: disable=broad-exception-caught
-                continue
-
-        if not target_peripheral:
-            print(f"❌ Device {address} not found in scan results")
-            return results
-
-        # Connect to device
-        print("🔗 Connecting...")
-        target_peripheral.connect()
-
-        if not target_peripheral.is_connected():
-            print("❌ Failed to connect")
-            return results
-
-        print(f"✅ Connected to {address}")
-
-        # Discover services and read characteristics
-        if target_uuids:
-            print(f"\n📊 Reading {len(target_uuids)} specific characteristics...")
-        else:
-            print("\n📊 Reading ALL readable characteristics...")
-
-        services = target_peripheral.services()
-
-        for service in services:
-            try:
-                service_uuid = service.uuid()
-
-                # Get characteristics for this service
-                characteristics = service.characteristics()
-
-                for char in characteristics:
-                    try:
-                        char_uuid = char.uuid()
-
-                        # Extract short UUID for SIG lookup
-                        if len(char_uuid) > 8:
-                            char_uuid_short = char_uuid[4:8].upper()
-                        else:
-                            char_uuid_short = char_uuid.upper()
-
-                        # Check if we should read this characteristic
-                        if target_uuids and char_uuid_short not in target_uuids:
-                            continue
-
-                        print(f"  📖 Reading characteristic {char_uuid_short}...")
-
-                        # Use peripheral.read(service_uuid, char_uuid)
-                        raw_data = target_peripheral.read(service_uuid, char_uuid)
-
-                        if not raw_data:
-                            print("     ⚠️  No data read")
-                            continue
-
-                        # Convert to bytes if needed. Cast to Any to avoid example-only mypy errors
-                        from typing import Any as _Any
-
-                        raw_any: _Any = raw_data
-
-                        if isinstance(raw_any, str):
-                            raw_bytes = raw_any.encode("utf-8")
-                        elif hasattr(raw_any, "__iter__") and not isinstance(raw_any, bytes):
-                            # raw_any is an iterable of ints (e.g., array-like), convert to bytes
-                            raw_bytes = bytes(raw_any)  # type: ignore[arg-type]
-                        else:
-                            raw_bytes = raw_any
-
-                        results[char_uuid_short] = (raw_bytes, char)
-
-                    except Exception as e:  # pylint: disable=broad-exception-caught
-                        print(f"     ❌ Error reading characteristic: {e}")
-
-            except Exception as e:  # pylint: disable=broad-exception-caught
-                print(f"  ❌ Error processing service: {e}")
-
-        # Disconnect
-        target_peripheral.disconnect()
-        print(f"\n🔌 Disconnected from {address}")
-
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"❌ Connection failed: {e}")
-
-    return results
-
-
-def read_and_parse_with_simpleble(address: str, target_uuids: list[str] | None = None) -> dict[str, Any]:
+) -> dict[str, Any] | dict[str, CharacteristicData]:
     """Read characteristics from a BLE device using SimpleBLE and parse with
     SIG standards.
 
@@ -262,36 +139,21 @@ def read_and_parse_with_simpleble(address: str, target_uuids: list[str] | None =
     Returns:
         Dictionary of parsed characteristic data or comprehensive analysis results
     """
-    if not simplepyble_available or simplepyble_module is None:
+    if not simplepyble_available:
         print("❌ SimplePyBLE not available")
         return {}
 
     if target_uuids is None:
         # Use comprehensive device analysis for real device discovery
         print("🔍 Using comprehensive device analysis...")
-        return comprehensive_device_analysis_simpleble(address, simplepyble_module)  # type: ignore[arg-type] # noqa: F821 # pylint: disable=undefined-variable
+        return comprehensive_device_analysis_simpleble(address, simplepyble_module)
 
-    # Use targeted reading for specific UUIDs (legacy mode)
-    print("📋 Reading specific characteristics...")
+    async def _collect() -> dict[str, tuple[bytes, float]]:
+        manager = create_simpleble_connection_manager(address, simplepyble_module)
+        return await read_characteristics_with_manager(manager, target_uuids)
 
-    # Read raw characteristics
-    raw_results = read_characteristics_simpleble(address, target_uuids)
-
-    # Parse with SIG standards
-    translator = BluetoothSIGTranslator()
-    parsed_results = {}
-
-    for char_uuid_short, (raw_bytes, _) in raw_results.items():
-        result = translator.parse_characteristic(char_uuid_short, raw_bytes)
-
-        if result.parse_success:
-            unit_str = f" {result.unit}" if result.unit else ""
-            print(f"     ✅ {result.name}: {result.value}{unit_str}")
-        else:
-            print(f"     ❌ Parse failed: {result.error_message}")
-
-        print(f"     📄 Raw data: {raw_bytes.hex().upper()}")
-        parsed_results[char_uuid_short] = result
+    raw_results: dict[str, tuple[bytes, float]] = asyncio.run(_collect())
+    parsed_results: dict[str, Any] = parse_results(raw_results)
 
     print(f"\n✅ Successfully read {len(parsed_results)} characteristics")
     return parsed_results
@@ -313,7 +175,7 @@ def handle_device_operations_simpleble(args: argparse.Namespace) -> None:
         display_simpleble_results(results)
 
 
-def display_simpleble_results(results: dict[str, Any]) -> None:
+def display_simpleble_results(results: dict[str, Any] | dict[str, CharacteristicData]) -> None:
     """Display SimpleBLE results in a consistent format."""
     if "stats" in results:
         if results["parsed_data"]:
@@ -322,9 +184,21 @@ def display_simpleble_results(results: dict[str, Any]) -> None:
                 print(f"{data['name']}: {data['value']}{unit_str}")
     else:
         for _uuid, result in results.items():
-            if isinstance(result, dict) and result.get("parse_success"):
-                unit_str = f" {result.get('unit', '')}" if result.get("unit") else ""
-                print(f"{result.get('name', 'Unknown')}: {result.get('value', 'N/A')}{unit_str}")
+            if isinstance(result, CharacteristicData):
+                if result.parse_success:
+                    unit_str = f" {result.unit}" if result.unit else ""
+                    print(f"{result.name}: {result.value}{unit_str}")
+                else:
+                    uuid_str = str(result.uuid)
+                    print(f"{uuid_str}: Parse failed")
+            elif isinstance(result, dict):
+                result_mapping = cast(dict[str, Any], result)
+                if result_mapping.get("parse_success"):
+                    unit_value = result_mapping.get("unit", "")
+                    unit_str = f" {unit_value}" if unit_value else ""
+                    name_value = result_mapping.get("name", "Unknown")
+                    value_value = result_mapping.get("value", "N/A")
+                    print(f"{name_value}: {value_value}{unit_str}")
 
 
 def main() -> None:  # pylint: disable=too-many-nested-blocks

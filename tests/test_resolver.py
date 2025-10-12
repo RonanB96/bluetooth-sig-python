@@ -167,13 +167,13 @@ class TestNameVariantGenerator:
 class BatteryLevelCharacteristic:
     """Mock characteristic class for testing."""
 
-    pass
+    example_uuid = "2A19"
 
 
 class BatteryService:
     """Mock service class for testing."""
 
-    pass
+    example_uuid = "180F"
 
 
 class TestCharacteristicRegistrySearch:

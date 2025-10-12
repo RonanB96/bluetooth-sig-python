@@ -10,12 +10,44 @@ from __future__ import annotations
 import asyncio
 import types
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, cast
+from typing import Any
 
 import simplepyble
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.types.data_types import CharacteristicData
+from bluetooth_sig.types.uuid import BluetoothUUID
+
+
+def scan_devices_simpleble(  # pylint: disable=duplicate-code
+    simpleble_module: types.ModuleType, timeout: float = 10.0
+) -> list[dict[str, Any]]:
+    # NOTE: Device listing pattern duplicates bleak_retry_integration scan display logic.
+    # Duplication justified because:
+    # 1. SimplePyBLE API differs from Bleak (different method names, synchronous)
+    # 2. Example code prioritizes readability over DRY for learning purposes
+    # 3. Consolidation would require abstract device wrapper, over-engineering for examples
+    """Scan for BLE devices using SimplePyBLE utilities."""
+    # NOTE: SimplePyBLE exposes dynamic attributes; stubs provide type safety
+    adapters = simpleble_module.Adapter.get_adapters()  # pylint: disable=no-member
+    if not adapters:
+        return []
+
+    adapter = adapters[0]
+    adapter.scan_for(int(timeout * 1000))
+
+    devices: list[dict[str, Any]] = []
+    for peripheral in adapter.scan_get_results():
+        info: dict[str, Any] = {
+            "peripheral": peripheral,
+            "name": peripheral.identifier(),
+            "address": peripheral.address(),
+            "rssi": peripheral.rssi(),
+        }
+        devices.append(info)
+
+    return devices
 
 
 class SimpleCharacteristic:
@@ -42,21 +74,22 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         self.address = address
         self.timeout = timeout
         self.simpleble_module = simpleble_module
-        self.adapter: simplepyble.Adapter | None = None  # type: ignore[no-any-unimported]
+        self.adapter: simplepyble.Adapter
         self.peripheral: simplepyble.Peripheral | None = None  # type: ignore[no-any-unimported]
         self.executor = ThreadPoolExecutor(max_workers=1)
 
     async def connect(self) -> None:
         def _connect() -> None:
-            adapters = self.simpleble_module.Adapter.get_adapters()
+            # NOTE: SimplePyBLE exposes dynamic attributes; stubs provide type safety
+            adapters = self.simpleble_module.Adapter.get_adapters()  # pylint: disable=no-member
             if not adapters:
                 raise RuntimeError("No BLE adapters found")
             self.adapter = adapters[0]
+
             self.adapter.scan_for(2000)
-            peripherals = self.adapter.scan_get_results()
-            for p in peripherals:
-                if p.address().upper() == self.address.upper():
-                    self.peripheral = p
+            for peripheral in self.adapter.scan_get_results():
+                if peripheral.address().upper() == self.address.upper():
+                    self.peripheral = peripheral
                     break
             if not self.peripheral:
                 raise RuntimeError(f"Device {self.address} not found")
@@ -75,7 +108,8 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
             for service in p.services():
                 for char in service.characteristics():
                     if char.uuid().upper() == char_uuid.upper():
-                        return cast(bytes, char.read())
+                        raw_value = char.read()
+                        return bytes(raw_value)
             raise RuntimeError(f"Characteristic {char_uuid} not found")
 
         return await asyncio.get_event_loop().run_in_executor(self.executor, _read)
@@ -87,7 +121,7 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
             for service in p.services():
                 for char in service.characteristics():
                     if char.uuid().upper() == char_uuid.upper():
-                        cast(Any, char).write(data)
+                        char.write(data)
                         return
             raise RuntimeError(f"Characteristic {char_uuid} not found")
 
@@ -126,9 +160,15 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         return self.peripheral is not None and self.peripheral.is_connected()
 
 
-def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals
-    address: str, simpleble_module: types.ModuleType
-) -> dict[str, Any]:
+def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,duplicate-code
+    address: str,
+    simpleble_module: types.ModuleType,
+) -> dict[str, CharacteristicData]:
+    # NOTE: Result parsing pattern duplicates shared_utils and data_parsing display logic.
+    # Duplication justified because:
+    # 1. SimplePyBLE is synchronous, shared utils are async (different execution models)
+    # 2. This returns CharacteristicData objects, shared utils return dicts (different types)
+    # 3. Example code prioritizes clarity over abstraction for educational purposes
     """Analyze a BLE device using SimplePyBLE (synchronous).
 
     Args:
@@ -136,10 +176,10 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals
         simpleble_module: The imported simplepyble module
 
     Returns:
-        Dict of analysis results
+        Mapping of short UUIDs to characteristic parse data
     """
     print("📱 SimplePyBLE Comprehensive Device Analysis...")
-    results: dict[str, dict[str, Any]] = {}
+    results: dict[str, CharacteristicData] = {}
 
     try:
         # Initialize SimplePyBLE adapter
@@ -186,20 +226,12 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals
                 try:
                     # Try to read characteristic
                     raw_data = characteristic.read()
-                    char_uuid_short = char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
-
-                    # Parse with bluetooth_sig
-                    result = translator.parse_characteristic(char_uuid_short, raw_data)
-
-                    if result.parse_success:
-                        results[char_uuid_short] = {
-                            "name": result.name,
-                            "value": result.value,
-                            "unit": result.unit,
-                            "raw_data": raw_data,
-                        }
-                        unit_str = f" {result.unit}" if result.unit else ""
-                        print(f"   ✅ {result.name}: {result.value}{unit_str}")
+                    char_uuid_short = BluetoothUUID(char_uuid)
+                    parse_outcome = translator.parse_characteristic(char_uuid_short, raw_data)
+                    results[char_uuid_short] = parse_outcome
+                    if parse_outcome.parse_success:
+                        unit_str = f" {parse_outcome.unit}" if parse_outcome.unit else ""
+                        print(f"   ✅ {parse_outcome.name}: {parse_outcome.value}{unit_str}")
                     else:
                         print(f"   ❌ {char_uuid_short}: Parse failed")
 

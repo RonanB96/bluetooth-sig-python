@@ -3,6 +3,8 @@
 import sys
 from pathlib import Path
 
+# pylint: disable=duplicate-code
+
 # Add src directory for bluetooth_sig imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
