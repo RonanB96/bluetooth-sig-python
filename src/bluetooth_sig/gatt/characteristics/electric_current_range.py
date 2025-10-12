@@ -12,12 +12,7 @@ from .base import BaseCharacteristic
 
 
 class ElectricCurrentRangeData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
-    """Data class for electric current range.
-
-    Uses msgspec.Struct for performance-critical BLE notification handling.
-    - frozen=True: Immutable after creation for thread safety
-    - kw_only=True: Explicit keyword arguments for clarity
-    """
+    """Data class for electric current range."""
 
     min: float  # Minimum current in Amperes
     max: float  # Maximum current in Amperes

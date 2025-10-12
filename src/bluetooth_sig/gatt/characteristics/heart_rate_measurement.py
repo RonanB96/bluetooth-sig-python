@@ -57,12 +57,7 @@ class SensorContactState(IntEnum):
 
 
 class HeartRateData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
-    """Parsed data from Heart Rate Measurement characteristic.
-
-    Uses msgspec.Struct for performance-critical BLE notification handling.
-    - frozen=True: Immutable after creation for thread safety
-    - kw_only=True: Explicit keyword arguments for clarity
-    """
+    """Parsed data from Heart Rate Measurement characteristic."""
 
     heart_rate: int  # BPM (0-UINT16_MAX)
     sensor_contact: SensorContactState

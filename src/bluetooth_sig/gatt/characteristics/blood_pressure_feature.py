@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import IntFlag
 from typing import Any
+
+import msgspec
 
 from ...types.gatt_enums import ValueType
 from .base import BaseCharacteristic
@@ -22,8 +23,7 @@ class BloodPressureFeatures(IntFlag):
     MULTIPLE_BOND_SUPPORT = 0x20
 
 
-@dataclass
-class BloodPressureFeatureData:
+class BloodPressureFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed data from Blood Pressure Feature characteristic."""
 
     features_bitmap: int

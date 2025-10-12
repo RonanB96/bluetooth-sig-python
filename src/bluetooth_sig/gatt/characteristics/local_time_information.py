@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any
+
+import msgspec
 
 from ..constants import SINT8_MIN
 from .base import BaseCharacteristic
@@ -47,8 +48,7 @@ class DSTOffset(IntEnum):
         }[self]
 
 
-@dataclass
-class TimezoneInfo:
+class TimezoneInfo(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Timezone information part of local time data."""
 
     description: str
@@ -56,8 +56,7 @@ class TimezoneInfo:
     raw_value: int
 
 
-@dataclass
-class DSTOffsetInfo:
+class DSTOffsetInfo(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """DST offset information part of local time data."""
 
     description: str
@@ -65,8 +64,7 @@ class DSTOffsetInfo:
     raw_value: int
 
 
-@dataclass
-class LocalTimeInformationData:
+class LocalTimeInformationData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed data from Local Time Information characteristic."""
 
     timezone: TimezoneInfo

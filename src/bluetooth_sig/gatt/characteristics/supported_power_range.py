@@ -12,12 +12,7 @@ from .base import BaseCharacteristic
 
 
 class SupportedPowerRangeData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
-    """Data class for supported power range.
-
-    Uses msgspec.Struct for performance-critical BLE notification handling.
-    - frozen=True: Immutable after creation for thread safety
-    - kw_only=True: Explicit keyword arguments for clarity
-    """
+    """Data class for supported power range."""
 
     minimum: int  # Minimum power in Watts
     maximum: int  # Maximum power in Watts

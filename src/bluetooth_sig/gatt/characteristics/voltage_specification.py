@@ -12,12 +12,7 @@ from .base import BaseCharacteristic
 
 
 class VoltageSpecificationData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
-    """Data class for voltage specification.
-
-    Uses msgspec.Struct for performance-critical BLE notification handling.
-    - frozen=True: Immutable after creation for thread safety
-    - kw_only=True: Explicit keyword arguments for clarity
-    """
+    """Data class for voltage specification."""
 
     minimum: float  # Minimum voltage in Volts
     maximum: float  # Maximum voltage in Volts

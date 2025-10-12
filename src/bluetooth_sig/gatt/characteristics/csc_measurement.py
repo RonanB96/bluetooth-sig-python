@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
+
+import msgspec
 
 from ..constants import UINT8_MAX
 from .base import BaseCharacteristic
@@ -14,8 +15,7 @@ from .utils import DataParser
 # to determine which measurement fields are supported and apply appropriate scaling
 
 
-@dataclass
-class CSCMeasurementData:
+class CSCMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed data from CSC Measurement characteristic."""
 
     flags: int

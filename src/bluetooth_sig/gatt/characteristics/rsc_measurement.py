@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import IntFlag
 from typing import Any
+
+import msgspec
 
 from ..constants import UINT8_MAX
 from .base import BaseCharacteristic
@@ -22,8 +23,7 @@ class RSCMeasurementFlags(IntFlag):
     TOTAL_DISTANCE_PRESENT = 0x02
 
 
-@dataclass
-class RSCMeasurementData:
+class RSCMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed data from RSC Measurement characteristic."""
 
     instantaneous_speed: float  # m/s
