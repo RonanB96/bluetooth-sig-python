@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from enum import IntFlag
 from typing import Any
+
+import msgspec
 
 from ..constants import UINT8_MAX
 from .base import BaseCharacteristic
@@ -22,8 +23,7 @@ class WeightMeasurementFlags(IntFlag):
     HEIGHT_PRESENT = 0x10
 
 
-@dataclass
-class WeightMeasurementData:  # pylint: disable=too-many-instance-attributes
+class WeightMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Parsed weight measurement data."""
 
     weight: float
@@ -89,41 +89,50 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
             weight_unit = "kg"
             measurement_units = "metric"
 
-        result = WeightMeasurementData(
+        # Parse optional timestamp (7 bytes) if present
+        timestamp = None
+        if WeightMeasurementFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
+            timestamp = IEEE11073Parser.parse_timestamp(data, offset)
+            offset += 7
+
+        # Parse optional user ID (1 byte) if present
+        user_id = None
+        if WeightMeasurementFlags.USER_ID_PRESENT in flags and len(data) >= offset + 1:
+            user_id = int(data[offset])
+            offset += 1
+
+        # Parse optional BMI (uint16 with 0.1 resolution) if present
+        bmi = None
+        if WeightMeasurementFlags.BMI_PRESENT in flags and len(data) >= offset + 2:
+            bmi_raw = DataParser.parse_int16(data, offset, signed=False)
+            bmi = bmi_raw * 0.1
+            offset += 2
+
+        # Parse optional height (uint16 with 0.001m resolution) if present
+        height = None
+        height_unit = None
+        if WeightMeasurementFlags.HEIGHT_PRESENT in flags and len(data) >= offset + 2:
+            height_raw = DataParser.parse_int16(data, offset, signed=False)
+            if WeightMeasurementFlags.IMPERIAL_UNITS in flags:  # Imperial units (inches)
+                height = height_raw * 0.1  # 0.1 inch resolution
+                height_unit = "in"
+            else:  # SI units (meters)
+                height = height_raw * 0.001  # 0.001 m resolution
+                height_unit = "m"
+            offset += 2
+
+        # Create result with all parsed values
+        return WeightMeasurementData(
             weight=weight,
             weight_unit=weight_unit,
             measurement_units=measurement_units,
             flags=int(flags),
+            timestamp=timestamp,
+            user_id=user_id,
+            bmi=bmi,
+            height=height,
+            height_unit=height_unit,
         )
-
-        # Parse optional timestamp (7 bytes) if present
-        if WeightMeasurementFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
-            result.timestamp = IEEE11073Parser.parse_timestamp(data, offset)
-            offset += 7
-
-        # Parse optional user ID (1 byte) if present
-        if WeightMeasurementFlags.USER_ID_PRESENT in flags and len(data) >= offset + 1:
-            result.user_id = data[offset]
-            offset += 1
-
-        # Parse optional BMI (uint16 with 0.1 resolution) if present
-        if WeightMeasurementFlags.BMI_PRESENT in flags and len(data) >= offset + 2:
-            bmi_raw = DataParser.parse_int16(data, offset, signed=False)
-            result.bmi = bmi_raw * 0.1
-            offset += 2
-
-        # Parse optional height (uint16 with 0.001m resolution) if present
-        if WeightMeasurementFlags.HEIGHT_PRESENT in flags and len(data) >= offset + 2:
-            height_raw = DataParser.parse_int16(data, offset, signed=False)
-            if WeightMeasurementFlags.IMPERIAL_UNITS in flags:  # Imperial units (inches)
-                result.height = height_raw * 0.1  # 0.1 inch resolution
-                result.height_unit = "in"
-            else:  # SI units (meters)
-                result.height = height_raw * 0.001  # 0.001 m resolution
-                result.height_unit = "m"
-            offset += 2
-
-        return result
 
     def encode_value(self, data: WeightMeasurementData) -> bytearray:  # pylint: disable=too-many-branches # Complex measurement data with many optional fields
         """Encode weight measurement value back to bytes.

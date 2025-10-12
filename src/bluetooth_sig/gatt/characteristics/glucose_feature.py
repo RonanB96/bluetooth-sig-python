@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import IntFlag
 from typing import Any
+
+import msgspec
 
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -51,8 +52,7 @@ class GlucoseFeatures(IntFlag):
         return enabled
 
 
-@dataclass
-class GlucoseFeatureData:  # pylint: disable=too-many-instance-attributes
+class GlucoseFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Parsed data from Glucose Feature characteristic."""
 
     features_bitmap: GlucoseFeatures
@@ -67,7 +67,7 @@ class GlucoseFeatureData:  # pylint: disable=too-many-instance-attributes
     general_device_fault: bool
     time_fault: bool
     multiple_bond_support: bool
-    enabled_features: list[GlucoseFeatures]
+    enabled_features: tuple[GlucoseFeatures, ...]
     feature_count: int
 
 
@@ -123,7 +123,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
         multiple_bond_support = bool(features & GlucoseFeatures.MULTIPLE_BOND_SUPPORT)
 
         # Get enabled features using the enum method
-        enabled_features = features.get_enabled_features()
+        enabled_features = tuple(features.get_enabled_features())
 
         return GlucoseFeatureData(
             features_bitmap=features,
