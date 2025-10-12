@@ -1,4 +1,6 @@
 name: Lint and Code Quality
+permissions:
+  contents: read
 
 on:
   push:
@@ -10,6 +12,8 @@ jobs:
   format:
     name: 'Format Check'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
     - name: 'Checkout Code'
@@ -36,6 +40,8 @@ jobs:
   lint:
     name: 'Lint Check'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
     - name: 'Checkout Code'
