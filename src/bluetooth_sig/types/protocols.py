@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol
-
-if TYPE_CHECKING:
-    from .data_types import ParseFieldError
+from typing import Any, Protocol
 
 
 class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-methods
@@ -23,5 +20,5 @@ class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-me
     parse_success: bool
     properties: list[str]
     name: str
-    field_errors: list[ParseFieldError]
+    field_errors: list[Any]  # ParseFieldError, but avoid circular import
     parse_trace: list[str]

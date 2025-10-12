@@ -351,5 +351,83 @@ class TestFieldErrorFormatting:
         assert "No parse trace available" in formatted
 
 
+class TestTraceControlPerformance:
+    """Test suite for parse trace control performance feature."""
+
+    def test_trace_disabled_for_performance(self):
+        """Test that parse trace can be disabled for performance."""
+
+        class NoTraceCharacteristic(CustomBaseCharacteristic):
+            """Characteristic with trace disabled."""
+
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("FFFFFFFF-1234-1234-1234-123456789012"),
+                name="No Trace Test",
+                unit="test",
+                value_type=ValueType.INT,
+                properties=[],
+            )
+
+            # Disable trace collection for performance
+            _enable_parse_trace = False
+
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+                """Simple decode."""
+                return int(data[0])
+
+            def encode_value(self, data: int) -> bytearray:
+                """Simple encode."""
+                return bytearray([data])
+
+        char = NoTraceCharacteristic()
+        data = bytearray([42])
+
+        result = char.parse_value(data)
+
+        # Parse should succeed
+        assert result.parse_success is True
+        assert result.value == 42
+
+        # But trace should be empty due to disabled flag
+        assert len(result.parse_trace) == 0
+
+    def test_trace_enabled_by_default(self):
+        """Test that parse trace is enabled by default."""
+
+        class DefaultTraceCharacteristic(CustomBaseCharacteristic):
+            """Characteristic with default trace setting."""
+
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("EEEEEEEE-1234-1234-1234-123456789012"),
+                name="Default Trace Test",
+                unit="test",
+                value_type=ValueType.INT,
+                properties=[],
+            )
+
+            # Don't set _enable_parse_trace - should default to True
+
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+                """Simple decode."""
+                return int(data[0])
+
+            def encode_value(self, data: int) -> bytearray:
+                """Simple encode."""
+                return bytearray([data])
+
+        char = DefaultTraceCharacteristic()
+        data = bytearray([42])
+
+        result = char.parse_value(data)
+
+        # Parse should succeed
+        assert result.parse_success is True
+        assert result.value == 42
+
+        # Trace should have entries by default
+        assert len(result.parse_trace) > 0
+        assert any("Starting parse" in step for step in result.parse_trace)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from .bit_field_utils import BitFieldUtils
 
-if TYPE_CHECKING:
+# Import at module level to avoid banned TYPE_CHECKING pattern
+try:
     from bluetooth_sig.types.data_types import ParseFieldError
+except ImportError:
+    # Fallback for testing or edge cases
+    ParseFieldError = None  # type: ignore[misc, assignment]
 
 
 class DebugUtils:
@@ -75,7 +79,7 @@ class DebugUtils:
             raise ValueError(f"Data size {actual_size} doesn't match format '{format_string}' size {expected_size}")
 
     @staticmethod
-    def format_field_error(error: ParseFieldError, data: bytes | bytearray) -> str:
+    def format_field_error(error: Any, data: bytes | bytearray) -> str:
         """Format a field-level parsing error with context.
 
         Args:
@@ -111,7 +115,7 @@ class DebugUtils:
         return " | ".join(parts)
 
     @staticmethod
-    def format_field_errors(errors: list[ParseFieldError], data: bytes | bytearray) -> str:
+    def format_field_errors(errors: list[Any], data: bytes | bytearray) -> str:
         """Format multiple field errors into a readable message.
 
         Args:
