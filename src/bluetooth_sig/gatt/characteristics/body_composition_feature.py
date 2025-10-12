@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import IntEnum, IntFlag
 from typing import Any
+
+import msgspec
 
 from .base import BaseCharacteristic
 from .utils import BitFieldUtils, DataParser
@@ -83,8 +84,7 @@ class BodyCompositionFeatures(IntFlag):
     HEIGHT_SUPPORTED = 0x400
 
 
-@dataclass
-class BodyCompositionFeatureData:  # pylint: disable=too-many-instance-attributes
+class BodyCompositionFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Parsed data from Body Composition Feature characteristic."""
 
     features: BodyCompositionFeatures

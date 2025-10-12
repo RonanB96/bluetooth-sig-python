@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from enum import IntFlag
 from typing import Any
+
+import msgspec
 
 from ..constants import PERCENTAGE_MAX
 from .base import BaseCharacteristic
@@ -34,8 +35,7 @@ class BodyCompositionFlags(IntFlag):
     HEIGHT_PRESENT = 0x800
 
 
-@dataclass
-class BodyCompositionMeasurementData:  # pylint: disable=too-many-instance-attributes # Comprehensive medical measurement data with many optional fields
+class BodyCompositionMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Parsed data from Body Composition Measurement characteristic."""
 
     body_fat_percentage: float
@@ -97,20 +97,20 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         # Parse flags and required body fat percentage
         flags, offset = self._parse_flags_and_body_fat(data)
+        body_fat_percentage = self._calculate_body_fat_percentage(data, offset - 2)
+        flags_enum = BodyCompositionFlags(flags)
+        measurement_units = "imperial" if BodyCompositionFlags.IMPERIAL_UNITS in flags_enum else "metric"
 
-        # Create dataclass with required fields
-        result = BodyCompositionMeasurementData(
-            body_fat_percentage=self._calculate_body_fat_percentage(data, offset - 2),
-            flags=BodyCompositionFlags(flags),
-            measurement_units=(
-                "imperial" if BodyCompositionFlags.IMPERIAL_UNITS in BodyCompositionFlags(flags) else "metric"
-            ),
+        # Parse optional fields based on flags - collect all values
+        optional_fields = self._parse_optional_fields_dict(data, flags_enum, offset)
+
+        # Create struct with all parsed values
+        return BodyCompositionMeasurementData(
+            body_fat_percentage=body_fat_percentage,
+            flags=flags_enum,
+            measurement_units=measurement_units,
+            **optional_fields,
         )
-
-        # Parse optional fields based on flags
-        self._parse_optional_fields(data, result.flags, offset, result)
-
-        return result
 
     def encode_value(self, data: BodyCompositionMeasurementData) -> bytearray:
         """Encode body composition measurement value back to bytes.
@@ -168,58 +168,62 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         body_fat_raw = DataParser.parse_int16(data, offset, signed=False)
         return float(body_fat_raw) * 0.1  # 0.1% resolution
 
-    def _parse_optional_fields(
+    def _parse_optional_fields_dict(
         self,
         data: bytearray,
         flags: BodyCompositionFlags,
         offset: int,
-        result: BodyCompositionMeasurementData,
-    ) -> None:
-        """Parse all optional fields based on flags.
+    ) -> dict[str, Any]:
+        """Parse all optional fields based on flags and return as dict.
 
         Args:
             data: Raw bytearray
             flags: Parsed flags indicating which fields are present
             offset: Current offset in data
-            result: Result dataclass to populate
+
+        Returns:
+            Dictionary of parsed optional fields
         """
+        fields: dict[str, Any] = {}
+
         # Parse optional timestamp (7 bytes) if present
         if BodyCompositionFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
-            timestamp = IEEE11073Parser.parse_timestamp(data, offset)
-            result.timestamp = timestamp
+            fields["timestamp"] = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
         # Parse optional user ID (1 byte) if present
         if BodyCompositionFlags.USER_ID_PRESENT in flags and len(data) >= offset + 1:
-            result.user_id = data[offset]
+            fields["user_id"] = int(data[offset])
             offset += 1
 
         # Parse optional basal metabolism (uint16) if present
         if BodyCompositionFlags.BASAL_METABOLISM_PRESENT in flags and len(data) >= offset + 2:
             basal_metabolism_raw = DataParser.parse_int16(data, offset, signed=False)
-            result.basal_metabolism = basal_metabolism_raw  # in kJ
+            fields["basal_metabolism"] = basal_metabolism_raw  # in kJ
             offset += 2
 
         # Parse mass-related fields
-        offset = self._parse_mass_fields(data, flags, offset, result)
+        offset = self._parse_mass_fields_dict(data, flags, offset, fields)
 
         # Parse other measurement fields
-        self._parse_other_measurements(data, flags, offset, result)
+        self._parse_other_measurements_dict(data, flags, offset, fields)
 
-    def _parse_mass_fields(
+        return fields
+
+    def _parse_mass_fields_dict(
         self,
         data: bytearray,
         flags: BodyCompositionFlags,
         offset: int,
-        result: BodyCompositionMeasurementData,
+        fields: dict[str, Any],
     ) -> int:
-        """Parse mass-related optional fields.
+        """Parse mass-related optional fields into dict.
 
         Args:
             data: Raw bytearray
             flags: Parsed flags
             offset: Current offset
-            result: Result dataclass to populate
+            fields: Dictionary to populate with parsed fields
 
         Returns:
             Updated offset
@@ -227,61 +231,61 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         # Parse optional muscle mass
         if BodyCompositionFlags.MUSCLE_MASS_PRESENT in flags and len(data) >= offset + 2:
             muscle_mass, mass_unit = self._parse_mass_field(data, flags, offset)
-            result.muscle_mass = muscle_mass
-            result.muscle_mass_unit = mass_unit
+            fields["muscle_mass"] = muscle_mass
+            fields["muscle_mass_unit"] = mass_unit
             offset += 2
 
         # Parse optional muscle percentage
         if BodyCompositionFlags.MUSCLE_PERCENTAGE_PRESENT in flags and len(data) >= offset + 2:
             muscle_percentage_raw = DataParser.parse_int16(data, offset, signed=False)
-            result.muscle_percentage = muscle_percentage_raw * 0.1
+            fields["muscle_percentage"] = muscle_percentage_raw * 0.1
             offset += 2
 
         # Parse optional fat free mass
         if BodyCompositionFlags.FAT_FREE_MASS_PRESENT in flags and len(data) >= offset + 2:
             fat_free_mass, _ = self._parse_mass_field(data, flags, offset)
-            result.fat_free_mass = fat_free_mass
+            fields["fat_free_mass"] = fat_free_mass
             offset += 2
 
         # Parse optional soft lean mass
         if BodyCompositionFlags.SOFT_LEAN_MASS_PRESENT in flags and len(data) >= offset + 2:
             soft_lean_mass, _ = self._parse_mass_field(data, flags, offset)
-            result.soft_lean_mass = soft_lean_mass
+            fields["soft_lean_mass"] = soft_lean_mass
             offset += 2
 
         # Parse optional body water mass
         if BodyCompositionFlags.BODY_WATER_MASS_PRESENT in flags and len(data) >= offset + 2:
             body_water_mass, _ = self._parse_mass_field(data, flags, offset)
-            result.body_water_mass = body_water_mass
+            fields["body_water_mass"] = body_water_mass
             offset += 2
 
         return offset
 
-    def _parse_other_measurements(
+    def _parse_other_measurements_dict(
         self,
         data: bytearray,
         flags: BodyCompositionFlags,
         offset: int,
-        result: BodyCompositionMeasurementData,
+        fields: dict[str, Any],
     ) -> None:
-        """Parse impedance, weight, and height measurements.
+        """Parse impedance, weight, and height measurements into dict.
 
         Args:
             data: Raw bytearray
             flags: Parsed flags
             offset: Current offset
-            result: Result dataclass to populate
+            fields: Dictionary to populate with parsed fields
         """
         # Parse optional impedance
         if BodyCompositionFlags.IMPEDANCE_PRESENT in flags and len(data) >= offset + 2:
             impedance_raw = DataParser.parse_int16(data, offset, signed=False)
-            result.impedance = impedance_raw * 0.1
+            fields["impedance"] = impedance_raw * 0.1
             offset += 2
 
         # Parse optional weight
         if BodyCompositionFlags.WEIGHT_PRESENT in flags and len(data) >= offset + 2:
             weight, _ = self._parse_mass_field(data, flags, offset)
-            result.weight = weight
+            fields["weight"] = weight
             offset += 2
 
         # Parse optional height
@@ -291,7 +295,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
                 height = height_raw * 0.1  # 0.1 inch resolution
             else:  # SI units
                 height = height_raw * 0.001  # 0.001 m resolution
-            result.height = height
+            fields["height"] = height
             offset += 2
 
     def _parse_mass_field(self, data: bytearray, flags: BodyCompositionFlags, offset: int) -> tuple[float, str]:

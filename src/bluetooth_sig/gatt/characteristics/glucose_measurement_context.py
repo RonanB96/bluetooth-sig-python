@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from enum import IntEnum, IntFlag
 from typing import Any
+
+import msgspec
 
 from ..constants import UINT8_MAX, UINT16_MAX
 from ..context import CharacteristicContext
@@ -190,8 +191,7 @@ class GlucoseMeasurementContextFlags(IntFlag):
     RESERVED = 0x80
 
 
-@dataclass
-class GlucoseMeasurementContextData:  # pylint: disable=too-many-instance-attributes # Medical measurement context with many optional fields
+class GlucoseMeasurementContextData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Parsed data from Glucose Measurement Context characteristic.
 
     Used for both parsing and encoding - None values represent optional fields.
@@ -296,22 +296,22 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
                             meas_seq,
                         )
 
-        # Create dataclass with required fields
-        result = GlucoseMeasurementContextData(
+        # Parse all optional fields based on flags - collect values
+        fields: dict[str, Any] = {}
+        offset = self._parse_extended_flags_dict(data, flags, fields, offset)
+        offset = self._parse_carbohydrate_info_dict(data, flags, fields, offset)
+        offset = self._parse_meal_info_dict(data, flags, fields, offset)
+        offset = self._parse_tester_health_info_dict(data, flags, fields, offset)
+        offset = self._parse_exercise_info_dict(data, flags, fields, offset)
+        offset = self._parse_medication_info_dict(data, flags, fields, offset)
+        self._parse_hba1c_info_dict(data, flags, fields, offset)
+
+        # Create struct with all parsed values
+        return GlucoseMeasurementContextData(
             sequence_number=sequence_number,
             flags=flags,
+            **fields,
         )
-
-        # Parse all optional fields based on flags
-        offset = self._parse_extended_flags(data, flags, result, offset)
-        offset = self._parse_carbohydrate_info(data, flags, result, offset)
-        offset = self._parse_meal_info(data, flags, result, offset)
-        offset = self._parse_tester_health_info(data, flags, result, offset)
-        offset = self._parse_exercise_info(data, flags, result, offset)
-        offset = self._parse_medication_info(data, flags, result, offset)
-        self._parse_hba1c_info(data, flags, result, offset)
-
-        return result
 
     def encode_value(self, data: GlucoseMeasurementContextData) -> bytearray:
         """Encode glucose measurement context value back to bytes.
@@ -336,55 +336,55 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         # Additional context fields would be added based on flags (simplified)
         return result
 
-    def _parse_extended_flags(
+    def _parse_extended_flags_dict(
         self,
         data: bytearray,
         flags: GlucoseMeasurementContextFlags,
-        result: GlucoseMeasurementContextData,
+        fields: dict[str, Any],
         offset: int,
     ) -> int:
         """Parse optional extended flags field."""
         if GlucoseMeasurementContextFlags.EXTENDED_FLAGS_PRESENT in flags and len(data) >= offset + 1:
             extended_flags = data[offset]
-            result.extended_flags = extended_flags
+            fields["extended_flags"] = extended_flags
             offset += 1
         return offset
 
-    def _parse_carbohydrate_info(
+    def _parse_carbohydrate_info_dict(
         self,
         data: bytearray,
         flags: GlucoseMeasurementContextFlags,
-        result: GlucoseMeasurementContextData,
+        fields: dict[str, Any],
         offset: int,
     ) -> int:
         """Parse optional carbohydrate information field."""
         if GlucoseMeasurementContextFlags.CARBOHYDRATE_PRESENT in flags and len(data) >= offset + 3:
             carb_id = data[offset]
             carb_value = IEEE11073Parser.parse_sfloat(data, offset + 1)
-            result.carbohydrate_id = CarbohydrateType(carb_id)
-            result.carbohydrate_kg = carb_value
+            fields["carbohydrate_id"] = CarbohydrateType(carb_id)
+            fields["carbohydrate_kg"] = carb_value
             offset += 3
         return offset
 
-    def _parse_meal_info(
+    def _parse_meal_info_dict(
         self,
         data: bytearray,
         flags: GlucoseMeasurementContextFlags,
-        result: GlucoseMeasurementContextData,
+        fields: dict[str, Any],
         offset: int,
     ) -> int:
         """Parse optional meal information field."""
         if GlucoseMeasurementContextFlags.MEAL_PRESENT in flags and len(data) >= offset + 1:
             meal = data[offset]
-            result.meal = MealType(meal)
+            fields["meal"] = MealType(meal)
             offset += 1
         return offset
 
-    def _parse_tester_health_info(
+    def _parse_tester_health_info_dict(
         self,
         data: bytearray,
         flags: GlucoseMeasurementContextFlags,
-        result: GlucoseMeasurementContextData,
+        fields: dict[str, Any],
         offset: int,
     ) -> int:
         """Parse optional tester and health information field."""
@@ -400,53 +400,53 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
                 GlucoseMeasurementContextBits.HEALTH_START_BIT,
                 GlucoseMeasurementContextBits.HEALTH_BIT_WIDTH,
             )  # Bits 0-3 (4 bits)
-            result.tester = GlucoseTester(tester)
-            result.health = HealthType(health)
+            fields["tester"] = GlucoseTester(tester)
+            fields["health"] = HealthType(health)
             offset += 1
         return offset
 
-    def _parse_exercise_info(
+    def _parse_exercise_info_dict(
         self,
         data: bytearray,
         flags: GlucoseMeasurementContextFlags,
-        result: GlucoseMeasurementContextData,
+        fields: dict[str, Any],
         offset: int,
     ) -> int:
         """Parse optional exercise information field."""
         if GlucoseMeasurementContextFlags.EXERCISE_PRESENT in flags and len(data) >= offset + 3:
             exercise_duration = DataParser.parse_int16(data, offset, signed=False)
             exercise_intensity = data[offset + 2]
-            result.exercise_duration_seconds = exercise_duration
-            result.exercise_intensity_percent = exercise_intensity
+            fields["exercise_duration_seconds"] = exercise_duration
+            fields["exercise_intensity_percent"] = exercise_intensity
             offset += 3
         return offset
 
-    def _parse_medication_info(
+    def _parse_medication_info_dict(
         self,
         data: bytearray,
         flags: GlucoseMeasurementContextFlags,
-        result: GlucoseMeasurementContextData,
+        fields: dict[str, Any],
         offset: int,
     ) -> int:
         """Parse optional medication information field."""
         if GlucoseMeasurementContextFlags.MEDICATION_PRESENT in flags and len(data) >= offset + 3:
             medication_id = data[offset]
             medication_value = IEEE11073Parser.parse_sfloat(data, offset + 1)
-            result.medication_id = MedicationType(medication_id)
-            result.medication_kg = medication_value
+            fields["medication_id"] = MedicationType(medication_id)
+            fields["medication_kg"] = medication_value
             offset += 3
         return offset
 
-    def _parse_hba1c_info(
+    def _parse_hba1c_info_dict(
         self,
         data: bytearray,
         flags: GlucoseMeasurementContextFlags,
-        result: GlucoseMeasurementContextData,
+        fields: dict[str, Any],
         offset: int,
     ) -> int:
         """Parse optional HbA1c information field."""
         if GlucoseMeasurementContextFlags.HBA1C_PRESENT in flags and len(data) >= offset + 2:
             hba1c_value = IEEE11073Parser.parse_sfloat(data, offset)
-            result.hba1c_percent = hba1c_value
+            fields["hba1c_percent"] = hba1c_value
             offset += 2
         return offset
