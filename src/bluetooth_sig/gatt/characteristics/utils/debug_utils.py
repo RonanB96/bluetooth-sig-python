@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import struct
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .bit_field_utils import BitFieldUtils
+
+if TYPE_CHECKING:
+    from bluetooth_sig.types.data_types import ParseFieldError
 
 
 class DebugUtils:
@@ -70,3 +73,78 @@ class DebugUtils:
         actual_size = len(data)
         if actual_size != expected_size:
             raise ValueError(f"Data size {actual_size} doesn't match format '{format_string}' size {expected_size}")
+
+    @staticmethod
+    def format_field_error(error: ParseFieldError, data: bytes | bytearray) -> str:
+        """Format a field-level parsing error with context.
+
+        Args:
+            error: The ParseFieldError to format
+            data: Complete raw data for context
+
+        Returns:
+            Formatted error message with hex dump and field context
+        """
+        parts = [f"Field '{error.field}' failed: {error.reason}"]
+
+        if error.offset is not None:
+            parts.append(f"Offset: {error.offset}")
+
+        # Show hex dump of the problematic slice or full data
+        if error.raw_slice:
+            hex_dump = DebugUtils.format_hex_data(error.raw_slice)
+            parts.append(f"Data: [{hex_dump}]")
+        elif data:
+            # Show context around the error
+            if error.offset is not None and error.offset < len(data):
+                # Show a few bytes before and after the offset
+                start = max(0, error.offset - 2)
+                end = min(len(data), error.offset + 3)
+                context_slice = data[start:end]
+                hex_dump = DebugUtils.format_hex_data(context_slice)
+                parts.append(f"Context at offset {start}: [{hex_dump}]")
+            else:
+                # Show all data if offset not available
+                hex_dump = DebugUtils.format_hex_data(data)
+                parts.append(f"Full data: [{hex_dump}]")
+
+        return " | ".join(parts)
+
+    @staticmethod
+    def format_field_errors(errors: list[ParseFieldError], data: bytes | bytearray) -> str:
+        """Format multiple field errors into a readable message.
+
+        Args:
+            errors: List of ParseFieldError objects
+            data: Complete raw data for context
+
+        Returns:
+            Formatted string with all field errors and context
+        """
+        if not errors:
+            return "No field errors"
+
+        lines = [f"Found {len(errors)} field error(s):"]
+        for i, error in enumerate(errors, 1):
+            lines.append(f"  {i}. {DebugUtils.format_field_error(error, data)}")
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def format_parse_trace(trace: list[str]) -> str:
+        """Format parse trace as readable steps.
+
+        Args:
+            trace: List of parse trace entries
+
+        Returns:
+            Formatted trace string
+        """
+        if not trace:
+            return "No parse trace available"
+
+        lines = ["Parse trace:"]
+        for i, step in enumerate(trace, 1):
+            lines.append(f"  {i}. {step}")
+
+        return "\n".join(lines)

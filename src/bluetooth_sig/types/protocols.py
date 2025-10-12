@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from .data_types import ParseFieldError
 
 
 class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-methods
@@ -10,6 +13,9 @@ class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-me
 
     This avoids importing the full `CharacteristicData` type here and
     gives callers a useful static type for `other_characteristics`.
+
+    Now includes field-level error reporting and parse trace capabilities
+    for improved diagnostics.
     """
 
     value: Any
@@ -17,3 +23,5 @@ class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-me
     parse_success: bool
     properties: list[str]
     name: str
+    field_errors: list[ParseFieldError]
+    parse_trace: list[str]

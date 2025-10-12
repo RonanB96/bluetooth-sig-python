@@ -24,6 +24,9 @@ from ..exceptions import (
     UUIDResolutionError,
     ValueRangeError,
 )
+from ..exceptions import (
+    ParseFieldError as ParseFieldException,
+)
 from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
 from ..uuid_registry import uuid_registry
 
@@ -670,24 +673,39 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         This method automatically validates input data length and parsed values
         based on class-level validation attributes, then returns a CharacteristicData
-        object with rich metadata.
+        object with rich metadata including field-level errors and parse traces.
 
         Args:
             data: Raw bytes from the characteristic read
             ctx: Optional context information for parsing
 
         Returns:
-            CharacteristicData object with parsed value and metadata
+            CharacteristicData object with parsed value, metadata, field errors, and parse trace
         """
+        # pylint: disable=import-outside-toplevel
+        # NOTE: Import here to avoid circular dependency between base characteristic and data types
+        from ...types.data_types import ParseFieldError
+
+        # Initialize trace and field error collection
+        parse_trace: list[str] = []
+        field_errors: list[ParseFieldError] = []
+
         # Call subclass implementation with validation
         try:
+            parse_trace.append(f"Starting parse of {self._info.name}")
+
             # Validate input data length
+            parse_trace.append(f"Validating data length (got {len(data)} bytes)")
             self._validate_length(data)
 
+            parse_trace.append("Decoding value")
             parsed_value = self.decode_value(bytearray(data), ctx)
 
             # Validate parsed value
+            parse_trace.append(f"Validating parsed value (type: {type(parsed_value).__name__})")
             self._validate_value(parsed_value)
+
+            parse_trace.append("Parse completed successfully")
 
             return CharacteristicData(
                 info=self._info,  # Use _info as single source of truth
@@ -695,14 +713,50 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 raw_data=bytes(data),
                 parse_success=True,
                 error_message="",
+                field_errors=[],
+                parse_trace=parse_trace,
             )
         except (ValueError, TypeError, struct.error, BluetoothSIGError) as e:
+            # Extract field information from ParseFieldException if available
+            if isinstance(e, ParseFieldException):
+                field_errors.append(
+                    ParseFieldError(
+                        field=e.field,
+                        reason=e.reason,
+                        offset=e.offset,
+                        raw_slice=bytes(data) if len(data) > 0 else None,
+                    )
+                )
+                parse_trace.append(f"Field error in '{e.field}': {e.reason}")
+            else:
+                # Generic error - try to extract field from error message
+                error_msg = str(e)
+                parse_trace.append(f"Parse failed: {error_msg}")
+
+                # Check if error contains field information in standard format
+                if "Invalid " in error_msg and ":" in error_msg:
+                    # Try to extract field name from messages like "Invalid value: 200"
+                    parts = error_msg.split(":", 1)
+                    if len(parts) == 2:
+                        field_name = parts[0].replace("Invalid ", "").strip()
+                        reason = parts[1].strip()
+                        field_errors.append(
+                            ParseFieldError(
+                                field=field_name,
+                                reason=reason,
+                                offset=None,
+                                raw_slice=bytes(data) if len(data) > 0 else None,
+                            )
+                        )
+
             return CharacteristicData(
                 info=self._info,  # Use _info as single source of truth
                 value=None,
                 raw_data=bytes(data),
                 parse_success=False,
                 error_message=str(e),
+                field_errors=field_errors,
+                parse_trace=parse_trace,
             )
 
     def encode_value(self, data: Any) -> bytearray:

@@ -43,6 +43,44 @@ class DataParsingError(CharacteristicError):
         super().__init__(message)
 
 
+class ParseFieldError(DataParsingError):  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    """Exception raised when a specific field fails to parse.
+
+    This exception provides detailed context about which field failed, where it
+    failed in the data, and why it failed. This enables actionable error messages
+    and structured error reporting.
+
+    NOTE: This exception intentionally has more arguments than the standard limit
+    to provide complete field-level diagnostic information. The additional parameters
+    (field, offset) are essential for actionable error messages and field-level debugging.
+
+    Attributes:
+        field: Name of the field that failed (e.g., "temperature", "flags")
+        offset: Byte offset where the field starts in the raw data
+        expected: Description of what was expected
+        actual: Description of what was actually encountered
+    """
+
+    def __init__(
+        self,
+        characteristic: str,
+        field: str,
+        data: bytes | bytearray,
+        reason: str,
+        offset: int | None = None,
+    ):
+        self.field = field
+        self.offset = offset
+
+        # Format message with field and offset information
+        field_info = f"field '{field}'"
+        if offset is not None:
+            field_info = f"{field_info} at offset {offset}"
+
+        detailed_reason = f"{field_info}: {reason}"
+        super().__init__(characteristic, data, detailed_reason)
+
+
 class DataEncodingError(CharacteristicError):
     """Exception raised when characteristic data encoding fails."""
 
