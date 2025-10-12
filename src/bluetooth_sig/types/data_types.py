@@ -10,6 +10,26 @@ from .gatt_enums import GattProperty, ValueType
 from .uuid import BluetoothUUID
 
 
+@dataclass(frozen=True)
+class ParseFieldError:
+    """Represents a field-level parsing error with diagnostic information.
+
+    This provides structured error information similar to Pydantic's validation
+    errors, making it easier to debug which specific field failed and why.
+
+    Attributes:
+        field: Name of the field that failed (e.g., "temperature", "flags")
+        reason: Human-readable description of why parsing failed
+        offset: Optional byte offset where the field starts in raw data
+        raw_slice: Optional raw bytes that were being parsed when error occurred
+    """
+
+    field: str
+    reason: str
+    offset: int | None = None
+    raw_slice: bytes | None = None
+
+
 @dataclass
 class SIGInfo:
     """Base information about Bluetooth SIG characteristics or services."""
@@ -36,8 +56,16 @@ class ServiceInfo(SIGInfo):
 
 
 @dataclass
-class CharacteristicData:
-    """Parsed characteristic data with validation results."""
+class CharacteristicData:  # pylint: disable=too-many-instance-attributes
+    """Parsed characteristic data with validation results.
+
+    Provides structured error reporting with field-level diagnostics and parse traces
+    to help identify exactly where and why parsing failed.
+
+    NOTE: This dataclass intentionally has more attributes than the standard limit
+    to provide complete diagnostic information. The additional fields (field_errors,
+    parse_trace) are essential for actionable error reporting and debugging.
+    """
 
     info: CharacteristicInfo
     value: Any | None = None
@@ -45,6 +73,8 @@ class CharacteristicData:
     parse_success: bool = False
     error_message: str = ""
     source_context: CharacteristicContext = field(default_factory=CharacteristicContext)
+    field_errors: list[ParseFieldError] = field(default_factory=list)
+    parse_trace: list[str] = field(default_factory=list)
 
     @property
     def name(self) -> str:

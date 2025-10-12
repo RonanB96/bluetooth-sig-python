@@ -44,7 +44,7 @@ def decode_value(self, data, ctx=None):  # ❌ No types!
 ## Data Modeling Standards
 
 **Use dataclasses for structured data:**
-- `@dataclass(slots=True, frozen=True)` where immutability fits
+- `@dataclass(frozen=True)` where immutability fits
 - Mutable only if justified with inline comment
 - Use `int`, `float`, `Decimal`, `Enum`, or purpose-specific dataclasses
 - NO raw `dict` or `tuple` returns from public functions
@@ -55,7 +55,7 @@ def decode_value(self, data, ctx=None):  # ❌ No types!
 ```python
 from dataclasses import dataclass
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class TemperatureData:
     """Temperature measurement from BLE characteristic.
 
