@@ -1,7 +1,9 @@
 """Base class for GATT characteristics."""
+# pylint: disable=too-many-lines
 
 from __future__ import annotations
 
+import re
 import struct
 from abc import ABC, ABCMeta
 from dataclasses import dataclass
@@ -253,6 +255,10 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     _allows_sig_override = False
 
+    # Multi-characteristic parsing support (Progressive API Level 5)
+    _required_dependencies: list[type[BaseCharacteristic]] = []  # Dependencies that MUST be present
+    _optional_dependencies: list[type[BaseCharacteristic]] = []  # Dependencies that enrich parsing when available
+
     def __init__(
         self,
         info: CharacteristicInfo | None = None,
@@ -293,6 +299,10 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             self.max_length = self.__class__.max_length
             self.allow_variable_length = self.__class__.allow_variable_length
             self.expected_type = self.__class__.expected_type
+
+        # Dependency caches (resolved once per instance)
+        self._resolved_required_dependencies: list[str] | None = None
+        self._resolved_optional_dependencies: list[str] | None = None
 
         # Call post-init to resolve characteristic info
         self.__post_init__()
@@ -423,6 +433,70 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return self._characteristic_name or self.__class__.__name__
 
     @classmethod
+    def _normalize_dependency_class(cls, dep_class: type[BaseCharacteristic]) -> str | None:
+        """Resolve a dependency class to its canonical UUID string.
+
+        Args:
+            dep_class: The characteristic class to resolve
+
+        Returns:
+            Canonical UUID string or None if unresolvable
+        """
+        configured_info: CharacteristicInfo | None = getattr(dep_class, "_info", None)
+        if configured_info is not None:
+            return str(configured_info.uuid)
+
+        try:
+            class_uuid = dep_class.get_class_uuid()
+            if class_uuid is not None:
+                return str(class_uuid)
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass
+
+        try:
+            temp_instance = dep_class()
+            return str(temp_instance.info.uuid)
+        except Exception:  # pylint: disable=broad-exception-caught
+            return None
+
+    def _resolve_dependencies(self, attr_name: str) -> list[str]:
+        """Resolve dependency class references to canonical UUID strings."""
+
+        dependency_classes: list[type[BaseCharacteristic]] = []
+
+        declared = getattr(self.__class__, attr_name, []) or []
+        dependency_classes.extend(declared)
+
+        resolved: list[str] = []
+        seen: set[str] = set()
+
+        for dep_class in dependency_classes:
+            uuid_str = self._normalize_dependency_class(dep_class)
+            if uuid_str and uuid_str not in seen:
+                seen.add(uuid_str)
+                resolved.append(uuid_str)
+
+        return resolved
+
+    @property
+    def required_dependencies(self) -> list[str]:
+        """Get resolved required dependency UUID strings."""
+
+        if self._resolved_required_dependencies is None:
+            self._resolved_required_dependencies = self._resolve_dependencies("_required_dependencies")
+
+        return list(self._resolved_required_dependencies)
+
+    @property
+    def optional_dependencies(self) -> list[str]:
+        """Get resolved optional dependency UUID strings."""
+
+        if self._resolved_optional_dependencies is None:
+            self._resolved_optional_dependencies = self._resolve_dependencies("_optional_dependencies")
+
+        return list(self._resolved_optional_dependencies)
+
+    @classmethod
     def get_allows_sig_override(cls) -> bool:
         """Check if this characteristic class allows overriding SIG characteristics.
 
@@ -549,15 +623,45 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def get_context_characteristic(
         self,
         ctx: CharacteristicContext | None,
-        characteristic_name: CharacteristicName | str,
+        characteristic_name: CharacteristicName | str | type[BaseCharacteristic],
     ) -> Any | None:
-        """Generic utility to find a characteristic in context by name."""
+        """Generic utility to find a characteristic in context by name or class.
+
+        Args:
+            ctx: Context containing other characteristics
+            characteristic_name: Enum, string name, or characteristic class
+
+        Returns:
+            Characteristic data if found, None otherwise
+        """
         if not ctx or not ctx.other_characteristics:
             return None
 
-        char_uuid = self._get_characteristic_uuid_by_name(characteristic_name)
-        if not char_uuid:
-            return None
+        # Extract UUID from class if provided
+        if isinstance(characteristic_name, type):
+            # Class reference provided - try to get class-level UUID
+            configured_info: CharacteristicInfo | None = getattr(characteristic_name, "_configured_info", None)
+            if configured_info is not None:
+                # Custom characteristic with explicit _configured_info
+                char_uuid: str = str(configured_info.uuid)
+            else:
+                # SIG characteristic: convert class name to SIG name and resolve via registry
+                class_name: str = characteristic_name.__name__
+                # Remove 'Characteristic' suffix
+                name_without_suffix: str = class_name.replace("Characteristic", "")
+                # Insert spaces before capital letters to get SIG name
+                sig_name: str = re.sub(r"(?<!^)(?=[A-Z])", " ", name_without_suffix)
+                # Look up UUID via registry
+                resolved_uuid: str | None = self._get_characteristic_uuid_by_name(sig_name)
+                if resolved_uuid is None:
+                    return None
+                char_uuid = resolved_uuid
+        else:
+            # Enum or string name
+            resolved_uuid = self._get_characteristic_uuid_by_name(characteristic_name)
+            if resolved_uuid is None:
+                return None
+            char_uuid = resolved_uuid
 
         return ctx.other_characteristics.get(char_uuid)
 

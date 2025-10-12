@@ -496,3 +496,110 @@ class TestGlucoseIntegration:
         assert service is not None
         assert isinstance(service, GlucoseService)
         assert len(service.characteristics) == 3
+
+
+class TestGlucoseMultiCharacteristic:
+    """Test multi-characteristic parsing with glucose measurements."""
+
+    def test_glucose_context_with_measurement_context(self):
+        """Test parsing glucose measurement and context together with sequence number matching."""
+        from bluetooth_sig.core import BluetoothSIGTranslator
+
+        translator = BluetoothSIGTranslator()
+
+        # Create matching glucose measurement and context with same sequence number (42)
+        # Glucose Measurement: Flags + Seq(42) + Timestamp + Glucose
+        glucose_data = bytearray(
+            [
+                0x00,  # flags: no optional fields, mg/dL unit
+                0x2A,
+                0x00,  # sequence: 42
+                0xE8,
+                0x07,
+                0x03,
+                0x0F,
+                0x0E,
+                0x1E,
+                0x2D,  # timestamp: 2024-03-15 14:30:45
+                0x80,
+                0x17,  # glucose: 120.0 mg/dL (SFLOAT)
+            ]
+        )
+
+        # Glucose Context: Flags + Seq(42)
+        context_data = bytearray(
+            [
+                0x00,  # flags: no optional fields
+                0x2A,
+                0x00,  # sequence: 42 (matches measurement)
+            ]
+        )
+
+        # Parse both characteristics together
+        char_data = {
+            "00002A18-0000-1000-8000-00805F9B34FB": glucose_data,  # Glucose Measurement
+            "00002A34-0000-1000-8000-00805F9B34FB": context_data,  # Glucose Measurement Context
+        }
+
+        results = translator.parse_characteristics(char_data)
+
+        # Both should parse successfully
+        assert len(results) == 2
+        assert all(r.parse_success for r in results.values())
+
+        # Check sequence numbers match
+        glucose_result = results["00002A18-0000-1000-8000-00805F9B34FB"]
+        context_result = results["00002A34-0000-1000-8000-00805F9B34FB"]
+
+        assert glucose_result.value.sequence_number == 42
+        assert context_result.value.sequence_number == 42
+
+    def test_glucose_context_sequence_mismatch_warning(self, caplog):
+        """Test that mismatched sequence numbers generate a warning."""
+        from bluetooth_sig.core import BluetoothSIGTranslator
+
+        translator = BluetoothSIGTranslator()
+
+        # Create glucose measurement and context with DIFFERENT sequence numbers
+        glucose_data = bytearray(
+            [
+                0x00,  # flags
+                0x2A,
+                0x00,  # sequence: 42
+                0xE8,
+                0x07,
+                0x03,
+                0x0F,
+                0x0E,
+                0x1E,
+                0x2D,  # timestamp
+                0x80,
+                0x17,  # glucose: 120.0 mg/dL
+            ]
+        )
+
+        context_data = bytearray(
+            [
+                0x00,  # flags
+                0x63,
+                0x00,  # sequence: 99 (MISMATCH!)
+            ]
+        )
+
+        char_data = {
+            "00002A18-0000-1000-8000-00805F9B34FB": glucose_data,
+            "00002A34-0000-1000-8000-00805F9B34FB": context_data,
+        }
+
+        # Parse both - should succeed but log warning
+        import logging
+
+        with caplog.at_level(logging.WARNING):
+            results = translator.parse_characteristics(char_data)
+
+        # Both should still parse successfully
+        assert len(results) == 2
+        assert all(r.parse_success for r in results.values())
+
+        # Check that warning was logged about mismatch
+        assert any("does not match" in record.message for record in caplog.records)

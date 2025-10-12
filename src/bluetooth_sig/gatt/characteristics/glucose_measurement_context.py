@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from enum import IntEnum, IntFlag
 from typing import Any
 
 from ..constants import UINT8_MAX, UINT16_MAX
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .glucose_measurement import GlucoseMeasurementCharacteristic
 from .utils import BitFieldUtils, DataParser, IEEE11073Parser
+
+logger = logging.getLogger(__name__)
 
 
 class GlucoseMeasurementContextBits:
@@ -221,10 +226,18 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     Used to transmit additional context for glucose measurements
     including carbohydrate intake, exercise, medication, and HbA1c
     information.
+
+    SIG Specification Pattern:
+    This characteristic depends on Glucose Measurement (0x2A18) for sequence number
+    matching. The sequence_number field in this context must match the sequence_number
+    from a corresponding Glucose Measurement characteristic.
     """
 
     _characteristic_name: str = "Glucose Measurement Context"
     _manual_unit: str = "various"  # Multiple units in context data
+
+    # Declare dependency on Glucose Measurement for sequence number matching (REQUIRED)
+    _required_dependencies = [GlucoseMeasurementCharacteristic]
 
     min_length: int | None = 3  # Flags(1) + Sequence(2) minimum
     max_length: int | None = (
@@ -232,7 +245,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     )
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> GlucoseMeasurementContextData:
+    def decode_value(self, data: bytearray, ctx: Any | None = None) -> GlucoseMeasurementContextData:
         """Parse glucose measurement context data according to Bluetooth
         specification.
 
@@ -242,12 +255,19 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
 
         Args:
             data: Raw bytearray from BLE characteristic
+            ctx: Optional context providing access to Glucose Measurement characteristic
+                for sequence number validation
 
         Returns:
             GlucoseMeasurementContextData containing parsed glucose context data
 
         Raises:
             ValueError: If data format is invalid
+
+        SIG Pattern:
+        When context is available, validates that this context's sequence_number matches
+        a Glucose Measurement sequence_number, following the SIG specification pattern
+        where contexts are paired with measurements via sequence number matching.
         """
         if len(data) < 3:
             raise ValueError("Glucose Measurement Context data must be at least 3 bytes")
@@ -259,6 +279,22 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         # Parse sequence number (2 bytes)
         sequence_number = DataParser.parse_int16(data, offset, signed=False)
         offset += 2
+
+        # Validate sequence number matching with Glucose Measurement if context available
+        # SIG Specification: "Contains the sequence number of the corresponding Glucose Measurement"
+        if ctx is not None and isinstance(ctx, CharacteristicContext):
+            glucose_meas = self.get_context_characteristic(ctx, GlucoseMeasurementCharacteristic)
+            if glucose_meas and glucose_meas.parse_success:
+                # Extract sequence number from GlucoseMeasurementData
+                if hasattr(glucose_meas.value, "sequence_number"):
+                    meas_seq = glucose_meas.value.sequence_number
+                    if meas_seq != sequence_number:
+                        logger.warning(
+                            "Glucose Measurement Context sequence number (%d) does not match "
+                            "Glucose Measurement sequence number (%d)",
+                            sequence_number,
+                            meas_seq,
+                        )
 
         # Create dataclass with required fields
         result = GlucoseMeasurementContextData(

@@ -105,6 +105,17 @@ class TypeMismatchError(DataValidationError):
         super().__init__(field, value, expected)
 
 
+class MissingDependencyError(CharacteristicError):
+    """Exception raised when a required dependency is missing for multi-characteristic parsing."""
+
+    def __init__(self, characteristic: str, missing_dependencies: list[str]):
+        self.characteristic = characteristic
+        self.missing_dependencies = missing_dependencies
+        dep_list = ", ".join(missing_dependencies)
+        message = f"{characteristic} requires missing dependencies: {dep_list}"
+        super().__init__(message)
+
+
 class EnumValueError(DataValidationError):
     """Exception raised when an enum value is invalid."""
 

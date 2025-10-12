@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from collections.abc import Mapping
+from graphlib import TopologicalSorter
+from typing import Any, cast
 
 from ..gatt.characteristics import CharacteristicName, CharacteristicRegistry
 from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.context import CharacteristicContext
+from ..gatt.exceptions import MissingDependencyError
 from ..gatt.services import SERVICE_CLASS_MAP, GattServiceRegistry, ServiceName
 from ..gatt.services.base import BaseGattService
 from ..gatt.uuid_registry import CustomUuidEntry, uuid_registry
 from ..types import (
     CharacteristicData,
+    CharacteristicDataProtocol,
     CharacteristicInfo,
     CharacteristicRegistration,
     ServiceInfo,
@@ -366,7 +370,16 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
     def parse_characteristics(
         self, char_data: dict[str, bytes], ctx: CharacteristicContext | None = None
     ) -> dict[str, CharacteristicData]:
-        """Parse multiple characteristics at once.
+        """Parse multiple characteristics at once with dependency-aware ordering.
+
+        This method automatically handles multi-characteristic dependencies by parsing
+        independent characteristics first, then parsing characteristics that depend on them.
+        The parsing order is determined by the `required_dependencies` and `optional_dependencies`
+        attributes declared on characteristic classes.
+
+        Required dependencies MUST be present and successfully parsed; missing required
+        dependencies result in parse failure with MissingDependencyError. Optional dependencies
+        enrich parsing when available but are not mandatory.
 
         Args:
             char_data: Dictionary mapping UUIDs to raw data bytes
@@ -375,29 +388,215 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             Dictionary mapping UUIDs to CharacteristicData results
+
+        Raises:
+            ValueError: If circular dependencies are detected
         """
         logger.debug("Batch parsing %d characteristics", len(char_data))
         base_ctx = ctx
 
-        results: dict[str, CharacteristicData] = {}
-        for uuid, raw_data in char_data.items():
-            # Build a context for this parse that shares device-level info
-            # from the base context but provides the current results mapping
-            # so parsers can look up previously-parsed characteristics.
-            if base_ctx is not None:
-                per_call_ctx = CharacteristicContext(
-                    device_info=base_ctx.device_info,
-                    advertisement=base_ctx.advertisement,
-                    other_characteristics=results,
-                    raw_service=base_ctx.raw_service,
-                )
-            else:
-                per_call_ctx = CharacteristicContext(other_characteristics=results)
+        (
+            uuid_to_char,
+            uuid_to_required_deps,
+            uuid_to_optional_deps,
+        ) = self._prepare_characteristic_dependencies(char_data)
 
-            results[uuid] = self.parse_characteristic(uuid, raw_data, ctx=per_call_ctx)
+        sorted_uuids = self._resolve_dependency_order(char_data, uuid_to_required_deps, uuid_to_optional_deps)
+
+        results: dict[str, CharacteristicData] = {}
+        for uuid_str in sorted_uuids:
+            raw_data = char_data[uuid_str]
+            characteristic = uuid_to_char.get(uuid_str)
+
+            missing_required = self._find_missing_required_dependencies(
+                uuid_str,
+                uuid_to_required_deps.get(uuid_str, []),
+                results,
+                base_ctx,
+            )
+
+            if missing_required:
+                results[uuid_str] = self._build_missing_dependency_failure(
+                    uuid_str,
+                    raw_data,
+                    characteristic,
+                    missing_required,
+                )
+                continue
+
+            self._log_optional_dependency_gaps(
+                uuid_str,
+                uuid_to_optional_deps.get(uuid_str, []),
+                results,
+                base_ctx,
+            )
+
+            parse_ctx = self._build_parse_context(base_ctx, results)
+            results[uuid_str] = self.parse_characteristic(uuid_str, raw_data, ctx=parse_ctx)
 
         logger.debug("Batch parsing complete: %d results", len(results))
         return results
+
+    def _prepare_characteristic_dependencies(
+        self, char_data: Mapping[str, bytes]
+    ) -> tuple[dict[str, BaseCharacteristic], dict[str, list[str]], dict[str, list[str]]]:
+        """Instantiate characteristics once and collect declared dependencies."""
+
+        uuid_to_char: dict[str, BaseCharacteristic] = {}
+        uuid_to_required_deps: dict[str, list[str]] = {}
+        uuid_to_optional_deps: dict[str, list[str]] = {}
+
+        for uuid in char_data:
+            characteristic = CharacteristicRegistry.create_characteristic(uuid)
+            if characteristic is None:
+                continue
+
+            uuid_to_char[uuid] = characteristic
+
+            required = characteristic.required_dependencies
+            optional = characteristic.optional_dependencies
+
+            if required:
+                uuid_to_required_deps[uuid] = required
+                logger.debug("Characteristic %s has required dependencies: %s", uuid, required)
+            if optional:
+                uuid_to_optional_deps[uuid] = optional
+                logger.debug("Characteristic %s has optional dependencies: %s", uuid, optional)
+
+        return uuid_to_char, uuid_to_required_deps, uuid_to_optional_deps
+
+    def _resolve_dependency_order(
+        self,
+        char_data: Mapping[str, bytes],
+        uuid_to_required_deps: Mapping[str, list[str]],
+        uuid_to_optional_deps: Mapping[str, list[str]],
+    ) -> list[str]:
+        """Topologically sort characteristics based on declared dependencies."""
+
+        try:
+            sorter = TopologicalSorter()
+            for uuid in char_data:
+                all_deps = uuid_to_required_deps.get(uuid, []) + uuid_to_optional_deps.get(uuid, [])
+                batch_deps = [dep for dep in all_deps if dep in char_data]
+                sorter.add(uuid, *batch_deps)
+
+            sorted_sequence = sorter.static_order()
+            sorted_uuids = [str(item) for item in sorted_sequence]
+            logger.debug("Dependency-sorted parsing order: %s", sorted_uuids)
+            return sorted_uuids
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logger.warning("Dependency sorting failed: %s. Using original order.", exc)
+            return list(char_data.keys())
+
+    def _find_missing_required_dependencies(
+        self,
+        uuid: str,
+        required_deps: list[str],
+        results: Mapping[str, CharacteristicData],
+        base_ctx: CharacteristicContext | None,
+    ) -> list[str]:
+        """Determine which required dependencies are unavailable for a characteristic."""
+
+        if not required_deps:
+            return []
+
+        missing: list[str] = []
+        other_chars = base_ctx.other_characteristics if base_ctx and base_ctx.other_characteristics else None
+
+        for dep_uuid in required_deps:
+            if dep_uuid in results:
+                if not results[dep_uuid].parse_success:
+                    missing.append(dep_uuid)
+                continue
+
+            if other_chars and dep_uuid in other_chars:
+                if not other_chars[dep_uuid].parse_success:
+                    missing.append(dep_uuid)
+                continue
+
+            missing.append(dep_uuid)
+
+        if missing:
+            logger.debug("Characteristic %s missing required dependencies: %s", uuid, missing)
+
+        return missing
+
+    def _build_missing_dependency_failure(
+        self,
+        uuid: str,
+        raw_data: bytes,
+        characteristic: BaseCharacteristic | None,
+        missing_required: list[str],
+    ) -> CharacteristicData:
+        """Create a failure result when required dependencies are absent."""
+
+        char_name = characteristic.name if characteristic else "Unknown"
+        error = MissingDependencyError(char_name, missing_required)
+        logger.warning("Skipping %s due to missing required dependencies: %s", uuid, missing_required)
+
+        if characteristic is not None:
+            failure_info = characteristic.info
+        else:
+            fallback_info = self.get_characteristic_info(uuid)
+            if fallback_info is not None:
+                failure_info = fallback_info
+            else:
+                failure_info = CharacteristicInfo(
+                    uuid=BluetoothUUID(uuid),
+                    name=char_name,
+                    description="",
+                    value_type=ValueType.UNKNOWN,
+                    unit="",
+                    properties=[],
+                )
+
+        return CharacteristicData(
+            info=failure_info,
+            value=None,
+            raw_data=raw_data,
+            parse_success=False,
+            error_message=str(error),
+        )
+
+    def _log_optional_dependency_gaps(
+        self,
+        uuid: str,
+        optional_deps: list[str],
+        results: Mapping[str, CharacteristicData],
+        base_ctx: CharacteristicContext | None,
+    ) -> None:
+        """Emit debug logs when optional dependencies are unavailable."""
+
+        if not optional_deps:
+            return
+
+        other_chars = base_ctx.other_characteristics if base_ctx and base_ctx.other_characteristics else None
+
+        for dep_uuid in optional_deps:
+            if dep_uuid in results:
+                continue
+            if other_chars and dep_uuid in other_chars:
+                continue
+            logger.debug("Optional dependency %s not available for %s", dep_uuid, uuid)
+
+    def _build_parse_context(
+        self,
+        base_ctx: CharacteristicContext | None,
+        results: Mapping[str, CharacteristicData],
+    ) -> CharacteristicContext:
+        """Construct the context passed to per-characteristic parsers."""
+
+        results_mapping = cast(Mapping[str, CharacteristicDataProtocol], results)
+
+        if base_ctx is not None:
+            return CharacteristicContext(
+                device_info=base_ctx.device_info,
+                advertisement=base_ctx.advertisement,
+                other_characteristics=results_mapping,
+                raw_service=base_ctx.raw_service,
+            )
+
+        return CharacteristicContext(other_characteristics=results_mapping)
 
     def get_characteristics_info(self, uuids: list[str]) -> dict[str, CharacteristicInfo | None]:
         """Get information about multiple characteristics by UUID.
