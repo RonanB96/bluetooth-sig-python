@@ -1,0 +1,7 @@
+Collecting msgspec
+  Downloading msgspec-0.19.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata
+     - 6.9 kB ? 0:00:00
+Downloading msgspec-0.19.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+   - 210.7 kB 131.2 MB/s 0:00:00
+Installing collected packages: msgspec
+Successfully installed msgspec-0.19.0
