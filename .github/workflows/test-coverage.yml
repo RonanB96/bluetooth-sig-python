@@ -46,10 +46,37 @@ jobs:
       run: |
         python scripts/extract_coverage_badge.py
 
-    - name: Deploy coverage to GitHub Pages
-      if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main'
-      uses: peaceiris/actions-gh-pages@v4
+    - name: Upload coverage artifacts
+      if: matrix.python-version == '3.12'
+      uses: actions/upload-artifact@v4
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: htmlcov
-        destination_dir: coverage
+        name: coverage-report
+        path: htmlcov
+        retention-days: 30
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: htmlcov
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
