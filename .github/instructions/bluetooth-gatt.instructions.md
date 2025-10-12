@@ -126,7 +126,7 @@ from dataclasses import dataclass
 from .base import BaseCharacteristic
 from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class BatteryLevelData:
     """Battery level characteristic data.
 

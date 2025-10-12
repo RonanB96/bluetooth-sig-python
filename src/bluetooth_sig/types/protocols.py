@@ -10,6 +10,9 @@ class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-me
 
     This avoids importing the full `CharacteristicData` type here and
     gives callers a useful static type for `other_characteristics`.
+
+    Now includes field-level error reporting and parse trace capabilities
+    for improved diagnostics.
     """
 
     value: Any
@@ -17,3 +20,5 @@ class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-me
     parse_success: bool
     properties: list[str]
     name: str
+    field_errors: list[Any]  # ParseFieldError, but avoid circular import
+    parse_trace: list[str]
