@@ -12,23 +12,6 @@ from typing import Any
 from bluetooth_sig import BluetoothSIGTranslator
 
 
-def short_uuid(uuid: str) -> str:
-    """Normalize a UUID (full or short) to a short 16-bit uppercase string.
-
-    Examples:
-      '00002a19-0000-1000-8000-00805f9b34fb' -> '2A19'
-      '2a19' -> '2A19'
-    """
-    if not uuid:
-        return ""
-    u = str(uuid).replace("-", "").lower()
-    if len(u) == 32:
-        return u[4:8].upper()
-    if len(u) >= 4:
-        return u[-4:].upper()
-    return u.upper()
-
-
 async def parse_and_display_results(
     raw_results: dict[str, tuple[bytes, float]], library_name: str = "BLE Library"
 ) -> dict[str, Any]:
@@ -48,6 +31,12 @@ async def parse_and_display_results(
     print("=" * 50)
 
     for uuid_short, (raw_data, read_time) in raw_results.items():
+        # pylint: disable=duplicate-code
+        # NOTE: Result parsing/display pattern duplicates shared_utils logic.
+        # Duplication justified because:
+        # 1. Common pattern for displaying BLE characteristic parse results
+        # 2. Simple dict construction, consolidation would over-engineer for 10 lines
+        # 3. Each utility module stays self-contained for clarity
         try:
             # Parse with bluetooth_sig (connection-agnostic)
             result = translator.parse_characteristic(uuid_short, raw_data)

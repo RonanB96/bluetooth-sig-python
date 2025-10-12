@@ -18,7 +18,6 @@ from .bleak_retry_integration import (
 )
 from .data_parsing import (
     parse_and_display_results,
-    short_uuid,
 )
 from .demo_functions import (
     demo_library_comparison,
@@ -53,7 +52,6 @@ __all__ = [
     "scan_with_bleak_retry",
     # Data parsing
     "parse_and_display_results",
-    "short_uuid",
     # Device scanning
     "safe_get_device_info",
     # Mock data

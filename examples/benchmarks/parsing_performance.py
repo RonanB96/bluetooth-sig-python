@@ -120,7 +120,12 @@ def benchmark_batch_parsing(session: ProfilingSession) -> None:
     iterations = 1000
 
     # Simulate data from multiple sensors (typical smart device)
-    sensor_data = {
+    sensor_data = {  # pylint: disable=duplicate-code
+        # NOTE: Test sensor data duplicates pure_sig_parsing example fixture.
+        # Duplication justified because:
+        # 1. Standard test dataset for demonstrating multi-characteristic parsing
+        # 2. Each example demonstrates different aspects (pure parsing vs performance)
+        # 3. Self-contained examples are more educational than shared test data
         "2A19": bytes([0x55]),  # 85% battery
         "2A6E": bytes([0x58, 0x07]),  # 18.64°C temperature
         "2A6F": bytes([0x38, 0x19]),  # 65.12% humidity

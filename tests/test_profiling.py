@@ -29,7 +29,7 @@ class TestTimer:
     def test_timer_no_exception(self):
         """Test timer handles operations without exceptions."""
         with timer() as t:
-            x = 1 + 1  # noqa: F841
+            _ = 1 + 1
 
         assert "elapsed" in t
         assert t["elapsed"] >= 0

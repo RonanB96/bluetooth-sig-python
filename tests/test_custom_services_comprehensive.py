@@ -13,6 +13,9 @@ This test suite focuses on testing the ACTUAL LIBRARY CODE for custom services:
 
 from __future__ import annotations
 
+from types import new_class
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.core.translator import BluetoothSIGTranslator
@@ -105,12 +108,19 @@ class TestInitSubclassValidation:
         """Test that SIG UUIDs require allow_sig_override=True."""
         with pytest.raises(ValueError, match="without override flag"):
 
-            class UnauthorizedSIGService(CustomBaseGattService):
-                _info = ServiceInfo(
+            def _service_body(namespace: dict[str, Any]) -> None:  # pragma: no cover
+                namespace["_info"] = ServiceInfo(
                     uuid=BluetoothUUID("180F"),  # Battery Service (SIG)
                     name="Unauthorized",
                     description="Should fail",
                 )
+
+            new_class(
+                "UnauthorizedSIGService",
+                (CustomBaseGattService,),
+                {"allow_sig_override": False},
+                _service_body,
+            )
 
     def test_sig_uuid_with_override_flag_succeeds(self):
         """Test that SIG UUIDs work with allow_sig_override=True."""

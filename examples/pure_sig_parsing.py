@@ -3,19 +3,7 @@
 import sys
 from pathlib import Path
 
-# Add src directory for bluetooth_sig imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Add parent directory for examples package imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Add examples directory for utils imports
-sys.path.insert(0, str(Path(__file__).parent))
-
-
-# Set up paths for imports
-import sys
-from pathlib import Path
+# pylint: disable=duplicate-code
 
 # Add src directory for bluetooth_sig imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -154,7 +142,12 @@ def demonstrate_batch_parsing() -> None:
     translator = BluetoothSIGTranslator()
 
     # Simulate data from multiple sensors
-    sensor_data = {
+    sensor_data = {  # pylint: disable=duplicate-code
+        # NOTE: Test sensor data duplicates parsing_performance benchmark fixture.
+        # Duplication justified because:
+        # 1. Standard test dataset for demonstrating multi-characteristic parsing
+        # 2. Each example demonstrates different aspects (pure parsing vs performance)
+        # 3. Self-contained examples are more educational than shared test data
         "2A19": bytes([0x55]),  # 85% battery
         "2A6E": bytes([0x58, 0x07]),  # 18.64°C
         "2A6F": bytes([0x38, 0x19]),  # 65.12% humidity

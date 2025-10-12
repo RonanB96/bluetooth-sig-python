@@ -11,6 +11,7 @@ import bleak  # type: ignore[import]  # noqa: F401 # pylint: disable=unused-impo
 import bleak_retry_connector  # type: ignore[import]  # noqa: F401 # pylint: disable=unused-import
 from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from utils.device_scanning import safe_get_device_info
 
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
 
@@ -159,9 +160,7 @@ async def scan_with_bleak_retry(timeout: float = 10.0) -> list[Any]:
 
     print(f"\n📡 Found {len(devices)} devices:")
     for i, device in enumerate(devices, 1):
-        name = getattr(device, "name", None) or "Unknown"
-        address = getattr(device, "address", "Unknown")
-        rssi = getattr(device, "rssi", None)
+        name, address, rssi = safe_get_device_info(device)
 
         if rssi is not None:
             print(f"  {i}. {name} ({address}) - RSSI: {rssi}dBm")

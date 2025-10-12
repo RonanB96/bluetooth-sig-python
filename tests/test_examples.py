@@ -11,7 +11,6 @@ from examples.utils import (
     AVAILABLE_LIBRARIES,
     mock_ble_data,
     parse_and_display_results,
-    short_uuid,
     show_library_availability,
 )
 
@@ -34,22 +33,6 @@ class TestUtilityFunctions:
         # Check data types
         for _uuid, raw_data in data.items():
             assert isinstance(raw_data, bytes)
-
-    def test_short_uuid(self):
-        """Test UUID shortening function."""
-        # Test full UUID to short
-        full_uuid = "00002a19-0000-1000-8000-00805f9b34fb"
-        assert short_uuid(full_uuid) == "2A19"
-
-        # Test already short UUID
-        short = "2a19"
-        assert short_uuid(short) == "2A19"
-
-        # Test empty UUID
-        assert short_uuid("") == ""
-
-        # Test invalid UUID (function takes last 4 characters)
-        assert short_uuid("invalid") == "ALID"
 
     @pytest.mark.asyncio
     async def test_parse_and_display_results(self, capsys):
@@ -180,8 +163,8 @@ class TestMockDataConsistency:
         assert set(data1.keys()) == set(data2.keys())
 
         # Should return the same values
-        for uuid in data1:
-            assert data1[uuid] == data2[uuid]
+        for uuid, value in data1.items():
+            assert value == data2[uuid]
 
 
 @pytest.mark.parametrize(

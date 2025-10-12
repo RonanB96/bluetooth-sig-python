@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import new_class
 from typing import Any
 
 import pytest
@@ -264,23 +265,44 @@ class TestRuntimeRegistration:
         # Attempt to define class with SIG UUID without _allows_sig_override should fail
         with pytest.raises(ValueError, match="SIG UUID.*without override flag"):
 
-            class SIGOverrideWithoutPermission(CustomBaseCharacteristic):
-                """Test class attempting SIG override without permission."""
-
-                # Trying to use SIG UUID without permission
-                _info = CharacteristicInfo(
-                    uuid=BluetoothUUID("2A19"),  # Battery Level UUID (SIG assigned)
-                    name="Unauthorized SIG Override",
-                    unit="%",
-                    value_type=ValueType.INT,
-                    properties=[],
+            def _class_body(namespace: dict[str, Any]) -> None:  # pragma: no cover
+                namespace.update(
+                    {
+                        "__doc__": "Test class attempting SIG override without permission.",
+                        "_info": CharacteristicInfo(
+                            uuid=BluetoothUUID("2A19"),  # Battery Level UUID (SIG assigned)
+                            name="Unauthorized SIG Override",
+                            unit="%",
+                            value_type=ValueType.INT,
+                            properties=[],
+                        ),
+                    }
                 )
 
-                def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+                def decode_value(  # pylint: disable=duplicate-code
+                    # NOTE: Minimal characteristic implementation duplicates other test fixtures.
+                    # Duplication justified because:
+                    # 1. Test isolation - each test creates its own custom characteristic
+                    # 2. Boilerplate decode/encode stubs required by CustomBaseCharacteristic API
+                    # 3. Consolidation would reduce test independence and clarity
+                    self: CustomBaseCharacteristic,
+                    data: bytearray,
+                    ctx: Any | None = None,
+                ) -> int:
                     return data[0]
 
-                def encode_value(self, data: Any) -> bytearray:
+                def encode_value(self: CustomBaseCharacteristic, data: Any) -> bytearray:
                     return bytearray([data])
+
+                namespace["decode_value"] = decode_value
+                namespace["encode_value"] = encode_value
+
+            new_class(
+                "SIGOverrideWithoutPermission",
+                (CustomBaseCharacteristic,),
+                {"allow_sig_override": False},
+                _class_body,
+            )
 
     def test_sig_override_permission_allowed(self) -> None:
         """Test that SIG UUID override works when _allows_sig_override=True is set."""
@@ -297,7 +319,16 @@ class TestRuntimeRegistration:
                 properties=[],
             )
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+            def decode_value(  # pylint: disable=duplicate-code
+                # NOTE: Minimal characteristic implementation duplicates other test fixtures.
+                # Duplication justified because:
+                # 1. Test isolation - each test creates its own custom characteristic
+                # 2. Boilerplate decode/encode stubs required by CustomBaseCharacteristic API
+                # 3. Consolidation would reduce test independence and clarity
+                self,
+                data: bytearray,
+                ctx: Any | None = None,
+            ) -> int:
                 return data[0]
 
             def encode_value(self, data: Any) -> bytearray:
