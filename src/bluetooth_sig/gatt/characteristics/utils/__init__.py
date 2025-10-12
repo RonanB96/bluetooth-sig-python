@@ -12,6 +12,7 @@ from .data_parser import DataParser
 from .data_validator import DataValidator
 from .debug_utils import DebugUtils
 from .ieee11073_parser import IEEE11073Parser
+from .parse_trace import ParseTrace
 
 # pylint: disable=duplicate-code
 # NOTE: __all__ export list is identical to characteristics/utils.py for backwards compatibility.
@@ -22,4 +23,5 @@ __all__ = [
     "DataValidator",
     "DebugUtils",
     "IEEE11073Parser",
+    "ParseTrace",
 ]

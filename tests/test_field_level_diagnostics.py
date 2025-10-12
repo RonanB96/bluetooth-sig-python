@@ -268,7 +268,11 @@ class TestGenericErrorExtraction:
     """Test suite for extracting field information from generic exceptions."""
 
     def test_generic_value_error_extraction(self):
-        """Test that generic ValueError messages are parsed for field information."""
+        """Test that generic ValueError messages do not produce field errors.
+
+        Generic errors (not ParseFieldException) are reported in the main
+        error_message field but do not produce field_errors entries.
+        """
 
         class GenericErrorCharacteristic(CustomBaseCharacteristic):
             _info = CharacteristicInfo(
@@ -296,10 +300,11 @@ class TestGenericErrorExtraction:
         result = char.parse_value(data)
 
         assert result.parse_success is False
-        # Should extract field information even from generic errors
-        assert len(result.field_errors) >= 1
-        if result.field_errors:
-            assert result.field_errors[0].field == "value"
+        # Generic errors do not produce field_errors (no brittle string parsing)
+        assert len(result.field_errors) == 0
+        # But the error message is still captured
+        assert "Invalid value: 200" in result.error_message
+        assert "Parse failed:" in result.parse_trace[-1]
 
 
 class TestFieldErrorFormatting:
@@ -426,7 +431,50 @@ class TestTraceControlPerformance:
 
         # Trace should have entries by default
         assert len(result.parse_trace) > 0
-        assert any("Starting parse" in step for step in result.parse_trace)
+
+    def test_trace_disabled_via_environment_variable(self):
+        """Test that parse trace can be disabled via environment variable."""
+        import os
+
+        class EnvTraceCharacteristic(CustomBaseCharacteristic):
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("EEEEEEEE-1234-1234-1234-123456789012"),
+                name="Environment Trace Test",
+                unit="",
+                value_type=ValueType.INT,
+                properties=[],
+            )
+
+            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+                """Simple decode."""
+                return int(data[0])
+
+            def encode_value(self, data: int) -> bytearray:
+                """Simple encode."""
+                return bytearray([data])
+
+        # Set environment variable to disable tracing
+        old_value = os.environ.get("BLUETOOTH_SIG_ENABLE_PARSE_TRACE")
+        try:
+            os.environ["BLUETOOTH_SIG_ENABLE_PARSE_TRACE"] = "0"
+
+            char = EnvTraceCharacteristic()
+            data = bytearray([42])
+
+            result = char.parse_value(data)
+
+            # Parse should succeed
+            assert result.parse_success is True
+            assert result.value == 42
+
+            # Trace should be empty when disabled via env var
+            assert len(result.parse_trace) == 0
+        finally:
+            # Restore original environment
+            if old_value is None:
+                os.environ.pop("BLUETOOTH_SIG_ENABLE_PARSE_TRACE", None)
+            else:
+                os.environ["BLUETOOTH_SIG_ENABLE_PARSE_TRACE"] = old_value
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ from .gatt_enums import GattProperty, ValueType
 from .uuid import BluetoothUUID
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ParseFieldError:
     """Represents a field-level parsing error with diagnostic information.
 

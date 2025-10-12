@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import struct
 from abc import ABC, ABCMeta
@@ -30,6 +31,7 @@ from ..exceptions import (
 )
 from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
 from ..uuid_registry import uuid_registry
+from .utils.parse_trace import ParseTrace
 
 
 @dataclass
@@ -264,7 +266,9 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     _optional_dependencies: list[type[BaseCharacteristic]] = []  # Dependencies that enrich parsing when available
 
     # Parse trace control (for performance tuning)
-    _enable_parse_trace: bool = True  # Set to False to disable trace collection for performance
+    # Can be configured via BLUETOOTH_SIG_ENABLE_PARSE_TRACE environment variable
+    # Set to "0", "false", or "no" to disable trace collection
+    _enable_parse_trace: bool = True  # Default: enabled
 
     def __init__(
         self,
@@ -672,6 +676,22 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         return ctx.other_characteristics.get(char_uuid)
 
+    @staticmethod
+    def _is_parse_trace_enabled() -> bool:
+        """Check if parse trace is enabled via environment variable or class default.
+
+        Returns:
+            True if parse tracing is enabled, False otherwise
+
+        Environment Variables:
+            BLUETOOTH_SIG_ENABLE_PARSE_TRACE: Set to "0", "false", or "no" to disable
+        """
+        env_value = os.getenv("BLUETOOTH_SIG_ENABLE_PARSE_TRACE", "").lower()
+        if env_value in ("0", "false", "no"):
+            return False
+        # Default to class attribute if env var not set
+        return True
+
     def parse_value(self, data: bytes | bytearray, ctx: Any | None = None) -> CharacteristicData:
         """Parse characteristic data with automatic validation.
 
@@ -679,8 +699,9 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         based on class-level validation attributes, then returns a CharacteristicData
         object with rich metadata including field-level errors and parse traces.
 
-        Parse trace collection can be disabled by setting _enable_parse_trace = False
-        on the characteristic class for performance-critical applications.
+        Parse trace collection can be disabled by:
+        1. Setting BLUETOOTH_SIG_ENABLE_PARSE_TRACE environment variable to "0", "false", or "no"
+        2. Setting _enable_parse_trace = False on the characteristic class
 
         Args:
             data: Raw bytes from the characteristic read
@@ -689,32 +710,29 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Returns:
             CharacteristicData object with parsed value, metadata, field errors, and parse trace
         """
-        # Initialize trace and field error collection
-        parse_trace: list[str] = []
+        # Check both environment variable and class attribute
+        trace_enabled = self._is_parse_trace_enabled() and self._enable_parse_trace
+
+        # Initialize trace and field error collection using ParseTrace class
+        trace = ParseTrace(enabled=trace_enabled)
         field_errors: list[ParseFieldError] = []
-        enable_trace = self._enable_parse_trace
 
         # Call subclass implementation with validation
         try:
-            if enable_trace:
-                parse_trace.append(f"Starting parse of {self._info.name}")
+            trace.append(f"Starting parse of {self._info.name}")
 
             # Validate input data length
-            if enable_trace:
-                parse_trace.append(f"Validating data length (got {len(data)} bytes)")
+            trace.append(f"Validating data length (got {len(data)} bytes)")
             self._validate_length(data)
 
-            if enable_trace:
-                parse_trace.append("Decoding value")
+            trace.append("Decoding value")
             parsed_value = self.decode_value(bytearray(data), ctx)
 
             # Validate parsed value
-            if enable_trace:
-                parse_trace.append(f"Validating parsed value (type: {type(parsed_value).__name__})")
+            trace.append(f"Validating parsed value (type: {type(parsed_value).__name__})")
             self._validate_value(parsed_value)
 
-            if enable_trace:
-                parse_trace.append("Parse completed successfully")
+            trace.append("Parse completed successfully")
 
             return CharacteristicData(
                 info=self._info,  # Use _info as single source of truth
@@ -723,7 +741,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 parse_success=True,
                 error_message="",
                 field_errors=[],
-                parse_trace=parse_trace if enable_trace else [],
+                parse_trace=trace.get_trace(),
             )
         except (ValueError, TypeError, struct.error, BluetoothSIGError) as e:
             # Extract field information from ParseFieldException if available
@@ -731,34 +749,15 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 field_errors.append(
                     ParseFieldError(
                         field=e.field,
-                        reason=e.reason,
+                        reason=e.field_reason,  # Use field_reason which stores the original reason
                         offset=e.offset,
-                        raw_slice=bytes(data) if len(data) > 0 else None,
+                        raw_slice=bytes(data),
                     )
                 )
-                if enable_trace:
-                    parse_trace.append(f"Field error in '{e.field}': {e.reason}")
+                trace.append(f"Field error in '{e.field}': {e.field_reason}")
             else:
-                # Generic error - try to extract field from error message
-                error_msg = str(e)
-                if enable_trace:
-                    parse_trace.append(f"Parse failed: {error_msg}")
-
-                # Check if error contains field information in standard format
-                if "Invalid " in error_msg and ":" in error_msg:
-                    # Try to extract field name from messages like "Invalid value: 200"
-                    parts = error_msg.split(":", 1)
-                    if len(parts) == 2:
-                        field_name = parts[0].replace("Invalid ", "").strip()
-                        reason = parts[1].strip()
-                        field_errors.append(
-                            ParseFieldError(
-                                field=field_name,
-                                reason=reason,
-                                offset=None,
-                                raw_slice=bytes(data) if len(data) > 0 else None,
-                            )
-                        )
+                # Generic error - report without trying to extract field details
+                trace.append(f"Parse failed: {str(e)}")
 
             return CharacteristicData(
                 info=self._info,  # Use _info as single source of truth
@@ -767,7 +766,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 parse_success=False,
                 error_message=str(e),
                 field_errors=field_errors,
-                parse_trace=parse_trace if enable_trace else [],
+                parse_trace=trace.get_trace(),
             )
 
     def encode_value(self, data: Any) -> bytearray:

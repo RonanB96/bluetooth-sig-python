@@ -43,7 +43,7 @@ class DataParsingError(CharacteristicError):
         super().__init__(message)
 
 
-class ParseFieldError(DataParsingError):  # pylint: disable=too-many-arguments,too-many-positional-arguments
+class ParseFieldError(DataParsingError):
     """Exception raised when a specific field fails to parse.
 
     This exception provides detailed context about which field failed, where it
@@ -61,6 +61,8 @@ class ParseFieldError(DataParsingError):  # pylint: disable=too-many-arguments,t
         actual: Description of what was actually encountered
     """
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    # NOTE: More arguments than standard limit required for complete field-level diagnostics
     def __init__(
         self,
         characteristic: str,
@@ -71,6 +73,8 @@ class ParseFieldError(DataParsingError):  # pylint: disable=too-many-arguments,t
     ):
         self.field = field
         self.offset = offset
+        # Store the original reason before formatting
+        self.field_reason = reason
 
         # Format message with field and offset information
         field_info = f"field '{field}'"
