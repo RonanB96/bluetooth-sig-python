@@ -211,31 +211,6 @@ class DeviceStatusFlags(CustomBaseCharacteristic):
 
 
 # ==============================================================================
-# Variant 6: SIG UUID Override (with permission)
-# ==============================================================================
-
-
-class CustomBatteryLevel(CustomBaseCharacteristic, allow_sig_override=True):
-    """Custom battery level implementation that overrides SIG UUID.
-
-    This demonstrates intentional SIG UUID override with custom behavior.
-    Requires explicit allow_sig_override=True.
-    """
-
-    _template = Uint8Template()
-    min_value: int = 0
-    max_value: int = 100
-
-    _info = CharacteristicInfo(
-        uuid=BluetoothUUID("2A19"),  # Official SIG Battery Level UUID
-        name="Custom Battery Level",
-        unit="%",
-        value_type=ValueType.INT,
-        properties=[GattProperty.READ, GattProperty.NOTIFY],
-    )
-
-
-# ==============================================================================
 # Test Suite
 # ==============================================================================
 
@@ -368,6 +343,7 @@ class TestCustomCharacteristicVariants:
         data = bytearray([0x11])  # 0x01 | 0x10
         result = char.parse_value(data)
         assert result.parse_success is True
+        assert result.value is not None
         assert result.value["powered_on"] is True
         assert result.value["bluetooth_connected"] is True
         assert result.value["charging"] is False
@@ -386,6 +362,27 @@ class TestCustomCharacteristicVariants:
 
     def test_custom_battery_level_override(self) -> None:
         """Test custom battery level with SIG UUID override."""
+
+        # Define CustomBatteryLevel inside test to avoid module-level registration
+        class CustomBatteryLevel(CustomBaseCharacteristic, allow_sig_override=True):
+            """Custom battery level implementation that overrides SIG UUID.
+
+            This demonstrates intentional SIG UUID override with custom behavior.
+            Requires explicit allow_sig_override=True.
+            """
+
+            _template = Uint8Template()
+            min_value: int = 0
+            max_value: int = 100
+
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("2A19"),  # Official SIG Battery Level UUID
+                name="Custom Battery Level",
+                unit="%",
+                value_type=ValueType.INT,
+                properties=[GattProperty.READ, GattProperty.NOTIFY],
+            )
+
         char = CustomBatteryLevel()
 
         # Verify override is allowed
@@ -400,6 +397,23 @@ class TestCustomCharacteristicVariants:
 
     def test_custom_characteristics_have_is_custom_marker(self) -> None:
         """Verify all custom characteristics have _is_custom marker."""
+
+        # Define CustomBatteryLevel inside test to avoid module-level registration
+        class CustomBatteryLevel(CustomBaseCharacteristic, allow_sig_override=True):
+            """Custom battery level implementation that overrides SIG UUID."""
+
+            _template = Uint8Template()
+            min_value: int = 0
+            max_value: int = 100
+
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("2A19"),  # Official SIG Battery Level UUID
+                name="Custom Battery Level",
+                unit="%",
+                value_type=ValueType.INT,
+                properties=[GattProperty.READ, GattProperty.NOTIFY],
+            )
+
         assert SimpleTemperatureSensor._is_custom is True
         assert PrecisionHumiditySensor._is_custom is True
         assert MultiSensorCharacteristic._is_custom is True

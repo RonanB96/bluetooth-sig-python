@@ -61,6 +61,10 @@ class UuidRegistry:
         self._service_aliases: dict[str, str] = {}
         self._characteristic_aliases: dict[str, str] = {}
 
+        # Preserve SIG entries overridden at runtime so we can restore them
+        self._service_overrides: dict[str, UuidInfo] = {}
+        self._characteristic_overrides: dict[str, UuidInfo] = {}
+
         # Unit mappings
         self._unit_mappings: dict[str, str] = {}
 
@@ -466,12 +470,19 @@ class UuidRegistry:
             canonical_key = entry.uuid.normalized
 
             # Check for conflicts with existing entries
-            if not override and canonical_key in self._characteristics:
+            if canonical_key in self._characteristics:
                 existing = self._characteristics[canonical_key]
                 if existing.origin == UuidOrigin.BLUETOOTH_SIG:
+                    if not override:
+                        raise ValueError(
+                            f"UUID {entry.uuid} conflicts with existing SIG "
+                            "characteristic entry. Use override=True to replace."
+                        )
+                    # Preserve original SIG entry for restoration
+                    self._characteristic_overrides.setdefault(canonical_key, existing)
+                elif existing.origin == UuidOrigin.RUNTIME and not override:
                     raise ValueError(
-                        f"UUID {entry.uuid} conflicts with existing SIG "
-                        "characteristic entry. Use override=True to replace."
+                        f"UUID {entry.uuid} already registered as runtime characteristic. Use override=True to replace."
                     )
 
             info = UuidInfo(
@@ -492,11 +503,19 @@ class UuidRegistry:
             canonical_key = entry.uuid.normalized
 
             # Check for conflicts with existing entries
-            if not override and canonical_key in self._services:
+            if canonical_key in self._services:
                 existing = self._services[canonical_key]
                 if existing.origin == UuidOrigin.BLUETOOTH_SIG:
+                    if not override:
+                        raise ValueError(
+                            f"UUID {entry.uuid} conflicts with existing SIG service entry. "
+                            "Use override=True to replace."
+                        )
+                    # Preserve original SIG entry for restoration
+                    self._service_overrides.setdefault(canonical_key, existing)
+                elif existing.origin == UuidOrigin.RUNTIME and not override:
                     raise ValueError(
-                        f"UUID {entry.uuid} conflicts with existing SIG service entry. Use override=True to replace."
+                        f"UUID {entry.uuid} already registered as runtime service. Use override=True to replace."
                     )
 
             info = UuidInfo(
@@ -589,6 +608,16 @@ class UuidRegistry:
                 del self._service_aliases[alias]
             for alias in runtime_char_aliases:
                 del self._characteristic_aliases[alias]
+
+            # Restore any preserved SIG entries that were overridden
+            for key in runtime_service_keys:
+                original = self._service_overrides.pop(key, None)
+                if original is not None:
+                    self._store_service(original)
+            for key in runtime_char_keys:
+                original = self._characteristic_overrides.pop(key, None)
+                if original is not None:
+                    self._store_characteristic(original)
 
 
 # Global instance

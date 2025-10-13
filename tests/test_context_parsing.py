@@ -56,7 +56,7 @@ def test_context_parsing_simple() -> None:
 
     ctx = CharacteristicContext(
         device_info=DeviceInfo(address="00:11:22:33:44:55"),
-        other_characteristics={"calib": calib_data},
+        other_characteristics={"calib": calib_data},  # type: ignore[dict-item]
     )
 
     meas = MeasurementCharacteristic()

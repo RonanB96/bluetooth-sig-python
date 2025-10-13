@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, cast
+from typing import Any, Callable, cast
 
 import pytest
 
@@ -42,8 +42,9 @@ class MockConnectionManager:
     async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
         pass
 
-    async def get_services(self) -> dict:
-        return []
+    def get_services(self) -> dict[str, Any]:
+        """Mock get_services."""
+        return {}
 
     async def start_notify(self, char_uuid: str, callback: Callable[[bytes], None]) -> None:
         pass

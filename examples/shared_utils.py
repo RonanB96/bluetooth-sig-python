@@ -5,8 +5,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from utils.device_scanning import safe_get_device_info
-
 # pylint: disable=duplicate-code
 
 # Add src directory for bluetooth_sig imports
@@ -22,6 +20,7 @@ from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from examples.utils.device_scanning import safe_get_device_info
 
 """Shared utilities for bluetooth-sig examples."""
 

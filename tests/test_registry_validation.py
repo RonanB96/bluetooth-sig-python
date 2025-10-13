@@ -115,6 +115,10 @@ class TestCharacteristicRegistryValidation:
         except ValueError as e:
             pytest.fail(f"Characteristic {char_class.__name__} failed UUID resolution: {e}")
 
+    @pytest.fixture(autouse=True)
+    def _reset_registries(self, reset_registries: None) -> None:
+        """Ensure registries are reset after each test."""
+
     @pytest.mark.parametrize("char_class", discover_characteristic_classes())
     def test_characteristic_in_yaml_registry(self, char_class: type[BaseCharacteristic]) -> None:
         """Test that each characteristic exists in the YAML registry with

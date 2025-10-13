@@ -23,6 +23,7 @@ from typing import Any, cast
 
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
 from bluetooth_sig.types.data_types import CharacteristicData
+from bluetooth_sig.types.uuid import BluetoothUUID
 from examples import shared_utils
 from examples.utils import library_detection, simpleble_integration
 
@@ -52,7 +53,7 @@ def scan_devices_simpleble(simpleble_module: ModuleType, timeout: float = 10.0) 
 def comprehensive_device_analysis_simpleble(
     address: str,
     simpleble_module: ModuleType,
-) -> dict[str, CharacteristicData]:
+) -> dict[BluetoothUUID, CharacteristicData]:
     """Wrapper ensuring precise typing for comprehensive analysis helper."""
 
     return simpleble_integration.comprehensive_device_analysis_simpleble(address, simpleble_module)

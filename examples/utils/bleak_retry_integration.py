@@ -12,9 +12,11 @@ import bleak_retry_connector  # type: ignore[import]  # noqa: F401 # pylint: dis
 from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.service import BleakGATTServiceCollection
-from utils.device_scanning import safe_get_device_info
 
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
+
+# Import from examples.utils when run from project root
+from examples.utils.device_scanning import safe_get_device_info
 
 
 class BleakRetryConnectionManager(ConnectionManagerProtocol):

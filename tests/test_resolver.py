@@ -179,6 +179,10 @@ class BatteryService:
 class TestCharacteristicRegistrySearch:
     """Tests for CharacteristicRegistrySearch strategy."""
 
+    @pytest.fixture(autouse=True)
+    def _reset_registries(self, reset_registries: None) -> None:
+        """Ensure registries are reset after each test."""
+
     def test_search_finds_known_characteristic(self) -> None:
         """Test that search finds a known characteristic in the registry."""
         strategy = CharacteristicRegistrySearch()
@@ -275,6 +279,10 @@ class TestServiceRegistrySearch:
 
 class TestResolverIntegration:
     """Integration tests for resolver utilities working together."""
+
+    @pytest.fixture(autouse=True)
+    def _reset_registries(self, reset_registries: None) -> None:
+        """Ensure registries are reset after each test."""
 
     def test_characteristic_resolution_pipeline(self) -> None:
         """Test complete characteristic resolution pipeline."""

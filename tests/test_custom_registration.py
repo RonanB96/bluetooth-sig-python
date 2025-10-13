@@ -68,12 +68,9 @@ class CustomServiceImpl(CustomBaseGattService):
 class TestRuntimeRegistration:
     """Test runtime registration functionality."""
 
-    def setup_method(self) -> None:
-        """Reset registries before each test."""
-        # Clear custom registrations
-        CharacteristicRegistry.clear_custom_registrations()
-        GattServiceRegistry.clear_custom_registrations()
-        uuid_registry.clear_custom_registrations()
+    @pytest.fixture(autouse=True)
+    def _reset_registries(self, reset_registries: None) -> None:
+        """Automatically reset registries after each test in this class."""
 
     def test_register_custom_characteristic_metadata(self) -> None:
         """Test registering custom characteristic metadata."""
