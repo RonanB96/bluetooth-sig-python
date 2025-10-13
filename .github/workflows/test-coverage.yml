@@ -54,9 +54,47 @@ jobs:
         path: htmlcov
         retention-days: 30
 
+  build-docs:
+    name: Build Documentation
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install documentation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs mkdocs-material mkdocstrings[python] pymdown-extensions
+
+      - name: Build documentation
+        run: |
+          mkdocs build
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: coverage-report
+          path: site/coverage
+
+      - name: Upload combined site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: site/
+          retention-days: 30
+
   deploy:
     name: Deploy to GitHub Pages
-    needs: test
+    needs: build-docs
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -66,16 +104,16 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Download coverage artifacts
+      - name: Download site artifacts
         uses: actions/download-artifact@v5
         with:
-          name: coverage-report
-          path: htmlcov
+          name: site
+          path: site
 
       - name: Upload to GitHub Pages
         uses: actions/upload-pages-artifact@v4
         with:
-          path: htmlcov
+          path: site
 
       - name: Deploy to GitHub Pages
         id: deployment
