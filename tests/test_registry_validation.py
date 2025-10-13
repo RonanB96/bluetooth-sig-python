@@ -268,10 +268,10 @@ class TestRegistryConsistency:
         for service_class in service_classes:
             try:
                 service = service_class()
-                uuid = service.uuid
-                service_info = uuid_registry.get_service_info(uuid)
+                service_uuid = service.uuid
+                service_info = uuid_registry.get_service_info(service_uuid)
                 if service_info is None:
-                    missing_services.append(f"{service_class.__name__} (UUID: {uuid})")
+                    missing_services.append(f"{service_class.__name__} (UUID: {service_uuid})")
             except Exception:
                 missing_services.append(f"{service_class.__name__} (failed to instantiate)")
 
@@ -279,13 +279,14 @@ class TestRegistryConsistency:
         for char_class in char_classes:
             try:
                 # Use class-level UUID resolution
-                uuid = char_class._resolve_class_uuid()  # type: ignore[attr-defined]
-                if uuid is None:
+                char_uuid: BluetoothUUID | None = char_class._resolve_class_uuid()  # type: ignore[attr-defined]
+                if char_uuid is None:
                     missing_characteristics.append(f"{char_class.__name__} (failed to resolve UUID)")
                     continue
-                char_info = uuid_registry.get_characteristic_info(uuid)
+                # char_uuid is now narrowed to BluetoothUUID (non-None)
+                char_info = uuid_registry.get_characteristic_info(char_uuid)
                 if char_info is None:
-                    missing_characteristics.append(f"{char_class.__name__} (UUID: {uuid})")
+                    missing_characteristics.append(f"{char_class.__name__} (UUID: {char_uuid})")
             except Exception:
                 missing_characteristics.append(f"{char_class.__name__} (failed to instantiate)")
 
@@ -564,11 +565,11 @@ class TestNameResolutionFallback:
             expected_uuid,
             expected_name,
         ) in chars_without_explicit_names:
-            char = char_class()
+            char_instance: BaseCharacteristic = char_class()  # Explicit type to fix mypy inference
             # Should NOT have explicit _characteristic_name attribute
-            assert not hasattr(char, "_characteristic_name") or char._characteristic_name is None  # type: ignore[protected-access]
-            assert char.uuid == expected_uuid
-            assert char.name == expected_name
+            assert not hasattr(char_instance, "_characteristic_name") or char_instance._characteristic_name is None  # type: ignore[protected-access]
+            assert char_instance.uuid == expected_uuid
+            assert char_instance.name == expected_name
 
 
 if __name__ == "__main__":

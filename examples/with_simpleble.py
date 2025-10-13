@@ -129,7 +129,7 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:  
 
 def read_and_parse_with_simpleble(
     address: str, target_uuids: list[str] | None = None
-) -> dict[str, Any] | dict[str, CharacteristicData]:
+) -> dict[str, Any] | dict[BluetoothUUID, CharacteristicData]:
     """Read characteristics from a BLE device using SimpleBLE and parse with
     SIG standards.
 
@@ -176,10 +176,15 @@ def handle_device_operations_simpleble(args: argparse.Namespace) -> None:
         display_simpleble_results(results)
 
 
-def display_simpleble_results(results: dict[str, Any] | dict[str, CharacteristicData]) -> None:
+def display_simpleble_results(
+    results: dict[str, Any] | dict[str, CharacteristicData] | dict[BluetoothUUID, CharacteristicData],
+) -> None:
     """Display SimpleBLE results in a consistent format."""
-    if "stats" in results and "parsed_data" in results:
-        parsed_data = results["parsed_data"]
+    # Type narrowing: check if results is dict[str, Any] with stats/parsed_data
+    if "stats" in results and "parsed_data" in results:  # type: ignore[operator]
+        # This must be dict[str, Any] from comprehensive analysis
+        results_any = cast(dict[str, Any], results)
+        parsed_data: Any = results_any["parsed_data"]
         if isinstance(parsed_data, dict):
             for _uuid, data in parsed_data.items():
                 if isinstance(data, CharacteristicData):
@@ -187,7 +192,7 @@ def display_simpleble_results(results: dict[str, Any] | dict[str, Characteristic
                     print(f"{data.name}: {data.value}{unit_str}")
                 elif isinstance(data, dict):
                     unit_str = f" {data['unit']}" if data.get("unit") else ""
-                    print(f"{data.get('name', _uuid)}: {data.get('value', 'N/A')}{unit_str}")
+                    print(f"{data.get('name', str(_uuid))}: {data.get('value', 'N/A')}{unit_str}")
     else:
         for _uuid, result in results.items():
             if isinstance(result, CharacteristicData):

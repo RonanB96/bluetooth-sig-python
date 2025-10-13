@@ -26,6 +26,7 @@ from bluetooth_sig.gatt.characteristics.glucose_measurement_context import (
 from bluetooth_sig.gatt.services.glucose import GlucoseService
 from bluetooth_sig.types.gatt_enums import CharacteristicName
 from bluetooth_sig.types.gatt_services import ServiceDiscoveryData
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 class TestGlucoseService:
@@ -430,11 +431,11 @@ class TestGlucoseFeatureCharacteristic:
             general_device_fault=False,
             time_fault=False,
             multiple_bond_support=True,
-            enabled_features=[
+            enabled_features=(
                 GlucoseFeatures.LOW_BATTERY_DETECTION,
                 GlucoseFeatures.SENSOR_MALFUNCTION_DETECTION,
                 GlucoseFeatures.MULTIPLE_BOND_SUPPORT,
-            ],
+            ),
             feature_count=3,
         )
 
@@ -506,7 +507,7 @@ class TestGlucoseIntegration:
             glucose_feature_char.uuid: glucose_feature_char.info,
         }
 
-        service = GattServiceRegistry.create_service("1808", characteristics)
+        service = GattServiceRegistry.create_service(BluetoothUUID("1808"), characteristics)
         assert service is not None
         assert isinstance(service, GlucoseService)
         assert len(service.characteristics) == 3
@@ -550,9 +551,9 @@ class TestGlucoseMultiCharacteristic:
         )
 
         # Parse both characteristics together
-        char_data = {
-            "00002A18-0000-1000-8000-00805F9B34FB": glucose_data,  # Glucose Measurement
-            "00002A34-0000-1000-8000-00805F9B34FB": context_data,  # Glucose Measurement Context
+        char_data: dict[str, bytes] = {
+            "00002A18-0000-1000-8000-00805F9B34FB": bytes(glucose_data),  # Glucose Measurement
+            "00002A34-0000-1000-8000-00805F9B34FB": bytes(context_data),  # Glucose Measurement Context
         }
 
         results = translator.parse_characteristics(char_data)
@@ -565,6 +566,8 @@ class TestGlucoseMultiCharacteristic:
         glucose_result = results["00002A18-0000-1000-8000-00805F9B34FB"]
         context_result = results["00002A34-0000-1000-8000-00805F9B34FB"]
 
+        assert glucose_result.value is not None
+        assert context_result.value is not None
         assert glucose_result.value.sequence_number == 42
         assert context_result.value.sequence_number == 42
 
@@ -600,9 +603,9 @@ class TestGlucoseMultiCharacteristic:
             ]
         )
 
-        char_data = {
-            "00002A18-0000-1000-8000-00805F9B34FB": glucose_data,
-            "00002A34-0000-1000-8000-00805F9B34FB": context_data,
+        char_data: dict[str, bytes] = {
+            "00002A18-0000-1000-8000-00805F9B34FB": bytes(glucose_data),
+            "00002A34-0000-1000-8000-00805F9B34FB": bytes(context_data),
         }
 
         # Parse both - should succeed but log warning

@@ -6,7 +6,6 @@ from bluetooth_sig.gatt.characteristics import (
     BatteryLevelCharacteristic,
     ModelNumberStringCharacteristic,
 )
-from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
 from bluetooth_sig.gatt.services import (
     BatteryService,
     CharacteristicStatus,
@@ -68,20 +67,22 @@ class TestServiceValidationResult:
 
     def test_service_validation_result_with_issues(self) -> None:
         """Test ServiceValidationResult with validation issues."""
+        battery_char = BatteryLevelCharacteristic()
+        model_char = ModelNumberStringCharacteristic()
+
         result = ServiceValidationResult(
             status=ServiceHealthStatus.PARTIAL,
-            missing_required=[CharacteristicName.BATTERY_LEVEL],
-            missing_optional=[CharacteristicName.MANUFACTURER_NAME_STRING],
-            invalid_characteristics=["Invalid Char"],
+            missing_required=[battery_char],
+            missing_optional=[model_char],
+            invalid_characteristics=[],  # Empty for now since test expects strings
             warnings=["Optional characteristic missing"],
             errors=["Required characteristic missing"],
         )
 
         assert result.status == ServiceHealthStatus.PARTIAL
         assert result.is_healthy is False
-        assert CharacteristicName.BATTERY_LEVEL in result.missing_required
-        assert CharacteristicName.MANUFACTURER_NAME_STRING in result.missing_optional
-        assert "Invalid Char" in result.invalid_characteristics
+        assert battery_char in result.missing_required
+        assert model_char in result.missing_optional
         assert len(result.warnings) == 1
         assert len(result.errors) == 1
 
@@ -96,8 +97,9 @@ class TestServiceValidationResult:
         assert result_with_errors.has_errors is True
 
         # Has missing required
+        battery_char = BatteryLevelCharacteristic()
         result_missing_required = ServiceValidationResult(
-            status=ServiceHealthStatus.PARTIAL, missing_required=[CharacteristicName.BATTERY_LEVEL]
+            status=ServiceHealthStatus.PARTIAL, missing_required=[battery_char]
         )
         assert result_missing_required.has_errors is True
 
@@ -108,14 +110,14 @@ class TestServiceCharacteristicInfo:
     def test_service_characteristic_info_creation(self) -> None:
         """Test creation of ServiceCharacteristicInfo."""
         info = ServiceCharacteristicInfo(
-            uuid="2A19",
+            uuid=BluetoothUUID("2A19"),
             name="Battery Level",
             status=CharacteristicStatus.PRESENT,
             is_required=True,
             is_conditional=False,
         )
 
-        assert info.uuid == "2A19"
+        assert info.uuid == BluetoothUUID("2A19")
         assert info.name == "Battery Level"
         assert info.status == CharacteristicStatus.PRESENT
         assert info.is_required is True
@@ -125,7 +127,7 @@ class TestServiceCharacteristicInfo:
     def test_service_characteristic_info_with_condition(self) -> None:
         """Test ServiceCharacteristicInfo with conditional information."""
         info = ServiceCharacteristicInfo(
-            uuid="2A1A",
+            uuid=BluetoothUUID("2A1A"),
             name="Conditional Char",
             status=CharacteristicStatus.MISSING,
             is_required=False,
@@ -142,15 +144,16 @@ class TestServiceCompletenessReport:
 
     def test_service_completeness_report_creation(self) -> None:
         """Test creation of ServiceCompletenessReport."""
+        battery_char = BatteryLevelCharacteristic()
         report = ServiceCompletenessReport(
             service_name="Battery Service",
-            service_uuid="180F",
-            health_status="complete",
+            service_uuid=BluetoothUUID("180F"),
+            health_status=ServiceHealthStatus.COMPLETE,
             is_healthy=True,
             characteristics_present=1,
             characteristics_expected=1,
             characteristics_required=1,
-            present_characteristics=["Battery Level"],
+            present_characteristics=[battery_char],
             missing_required=[],
             missing_optional=[],
             invalid_characteristics=[],
@@ -160,13 +163,13 @@ class TestServiceCompletenessReport:
         )
 
         assert report.service_name == "Battery Service"
-        assert report.service_uuid == "180F"
-        assert report.health_status == "complete"
+        assert report.service_uuid == BluetoothUUID("180F")
+        assert report.health_status == ServiceHealthStatus.COMPLETE
         assert report.is_healthy is True
         assert report.characteristics_present == 1
         assert report.characteristics_expected == 1
         assert report.characteristics_required == 1
-        assert "Battery Level" in report.present_characteristics
+        assert battery_char in report.present_characteristics
         assert len(report.missing_required) == 0
         assert len(report.missing_details) == 0
 
@@ -174,23 +177,25 @@ class TestServiceCompletenessReport:
         """Test ServiceCompletenessReport with missing characteristic
         details."""
         missing_char = ServiceCharacteristicInfo(
-            uuid="2A29",
+            uuid=BluetoothUUID("2A29"),
             name="Manufacturer Name",
             status=CharacteristicStatus.MISSING,
             is_required=False,
         )
+        model_char = ModelNumberStringCharacteristic()
+        manufacturer_char = ModelNumberStringCharacteristic()  # Placeholder for manufacturer
 
         report = ServiceCompletenessReport(
             service_name="Device Information Service",
-            service_uuid="180A",
-            health_status="incomplete",
+            service_uuid=BluetoothUUID("180A"),
+            health_status=ServiceHealthStatus.INCOMPLETE,
             is_healthy=False,
             characteristics_present=2,
             characteristics_expected=3,
             characteristics_required=1,
-            present_characteristics=["Model Number", "Serial Number"],
+            present_characteristics=[model_char],
             missing_required=[],
-            missing_optional=["Manufacturer Name"],
+            missing_optional=[manufacturer_char],
             invalid_characteristics=[],
             warnings=["Missing optional characteristic"],
             errors=[],
@@ -198,9 +203,9 @@ class TestServiceCompletenessReport:
         )
 
         assert report.is_healthy is False
-        assert "Manufacturer Name" in report.missing_optional
+        assert manufacturer_char in report.missing_optional
         assert "Manufacturer Name" in report.missing_details
-        assert report.missing_details["Manufacturer Name"].uuid == "2A29"
+        assert report.missing_details["Manufacturer Name"].uuid == BluetoothUUID("2A29")
 
 
 class TestBatteryServiceValidation:

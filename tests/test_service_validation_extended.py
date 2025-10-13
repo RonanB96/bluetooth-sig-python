@@ -11,7 +11,6 @@ from bluetooth_sig.gatt.services import (
     CharacteristicStatus,
     ServiceHealthStatus,
 )
-from bluetooth_sig.types.gatt_enums import GattProperty
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -156,9 +155,7 @@ class TestServiceValidationEdgeCasesExtended:
                 )
                 # Cast to concrete class type for static type checkers
                 first_optional_class = cast(type[BaseCharacteristic], first_optional_class)
-                optional_char = first_optional_class(
-                    uuid="12345678-1234-5678-9abc-def012345678", properties={GattProperty.READ}
-                )
+                optional_char = first_optional_class()
                 service.characteristics[BluetoothUUID("12345678-1234-5678-9abc-def012345678")] = optional_char
 
                 # Should still not have minimum functionality without required chars
@@ -178,9 +175,7 @@ class TestServiceValidationEdgeCasesExtended:
                 )
                 # Cast to concrete class type for static type checkers
                 first_required_class = cast(type[BaseCharacteristic], first_required_class)
-                required_char = first_required_class(
-                    uuid="87654321-4321-8765-cba9-876543210fed", properties={GattProperty.READ}
-                )
+                required_char = first_required_class()
                 service.characteristics[BluetoothUUID("87654321-4321-8765-cba9-876543210fed")] = required_char
 
                 # Should have minimum functionality now

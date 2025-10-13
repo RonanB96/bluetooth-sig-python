@@ -73,33 +73,39 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
         spo2 = IEEE11073Parser.parse_sfloat(data, 1)
         pulse_rate = IEEE11073Parser.parse_sfloat(data, 3)
 
-        result = PulseOximetryData(spo2=spo2, pulse_rate=pulse_rate)
-
+        # Parse optional fields
+        timestamp: datetime | None = None
+        measurement_status: int | None = None
+        device_status: int | None = None
+        pulse_amplitude_index: float | None = None
         offset = 5
 
-        # Parse optional timestamp (7 bytes) if present
         if PulseOximetryFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
-            result.timestamp = IEEE11073Parser.parse_timestamp(data, offset)
+            timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
-        # Parse optional measurement status (2 bytes) if present
         if PulseOximetryFlags.MEASUREMENT_STATUS_PRESENT in flags and len(data) >= offset + 2:
-            result.measurement_status = DataParser.parse_int16(data, offset, signed=False)
+            measurement_status = DataParser.parse_int16(data, offset, signed=False)
             offset += 2
 
-        # Parse optional device and sensor status (3 bytes) if present
         if PulseOximetryFlags.DEVICE_STATUS_PRESENT in flags and len(data) >= offset + 3:
             device_status = DataParser.parse_int32(
                 data[offset : offset + 3] + b"\x00", 0, signed=False
             )  # Pad to 4 bytes
-            result.device_status = device_status
             offset += 3
 
-        # Parse optional pulse amplitude index (2 bytes) if present
         if PulseOximetryFlags.PULSE_AMPLITUDE_INDEX_PRESENT in flags and len(data) >= offset + 2:
-            result.pulse_amplitude_index = IEEE11073Parser.parse_sfloat(data, offset)
+            pulse_amplitude_index = IEEE11073Parser.parse_sfloat(data, offset)
 
-        return result
+        # Create immutable struct with all values
+        return PulseOximetryData(
+            spo2=spo2,
+            pulse_rate=pulse_rate,
+            timestamp=timestamp,
+            measurement_status=measurement_status,
+            device_status=device_status,
+            pulse_amplitude_index=pulse_amplitude_index,
+        )
 
     def encode_value(self, data: PulseOximetryData) -> bytearray:
         """Encode pulse oximetry measurement value back to bytes.

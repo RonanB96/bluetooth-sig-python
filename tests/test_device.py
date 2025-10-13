@@ -42,12 +42,12 @@ class MockConnectionManager:
     async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
         pass
 
-    def get_services(self) -> dict[str, Any]:
-        """Mock get_services."""
+    async def get_services(self) -> Any:  # noqa: ANN401
+        """Mock get_services - returns async."""
         return {}
 
-    async def start_notify(self, char_uuid: str, callback: Callable[[bytes], None]) -> None:
-        pass
+    async def start_notify(self, char_uuid: str, callback: Callable[[str, bytes], None]) -> None:
+        """Mock start_notify with correct signature."""
 
     async def stop_notify(self, char_uuid: str) -> None:
         pass

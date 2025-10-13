@@ -45,8 +45,9 @@ class CalibrationCharacteristic(CustomBaseCharacteristic):
         This characteristic is independent and does not use context.
         """
         import struct
+        from typing import cast
 
-        return struct.unpack("<f", bytes(data))[0]
+        return cast(float, struct.unpack("<f", bytes(data))[0])
 
     def encode_value(self, data: float) -> bytearray:
         """Encode calibration factor."""
@@ -373,6 +374,8 @@ class TestMultiCharacteristicDependencies:
         assert seq_result.value == 42
 
         assert data_result.parse_success is True
+        assert data_result.value is not None
+        assert isinstance(data_result.value, dict)
         assert data_result.value["sequence_number"] == 42
         assert data_result.value["value"] == 123
         assert data_result.value["matched"] is True  # Sequence numbers match
@@ -395,6 +398,8 @@ class TestMultiCharacteristicDependencies:
 
         data_result = results[str(SequencedDataCharacteristic._info.uuid)]
         assert data_result.parse_success is True
+        assert data_result.value is not None
+        assert isinstance(data_result.value, dict)
         assert data_result.value["matched"] is False  # Sequence numbers don't match
 
     def test_context_direct_access(self) -> None:
@@ -416,7 +421,15 @@ class TestMultiCharacteristicDependencies:
         )
 
         # Create context
-        ctx = CharacteristicContext(other_characteristics={str(CalibrationCharacteristic._info.uuid): calib_data})
+        from typing import cast
+
+        from bluetooth_sig.types.protocols import CharacteristicDataProtocol
+
+        ctx = CharacteristicContext(
+            other_characteristics={
+                str(CalibrationCharacteristic._info.uuid): cast(CharacteristicDataProtocol, calib_data)  # type: ignore[misc]
+            }
+        )
 
         # Test direct access via other_characteristics
         assert ctx.other_characteristics is not None
@@ -613,8 +626,9 @@ class TestRequiredOptionalDependencies:
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
                 import struct
+                from typing import cast
 
-                return struct.unpack("<f", bytes(data[:4]))[0]
+                return cast(float, struct.unpack("<f", bytes(data[:4]))[0])
 
             def encode_value(self, data: float) -> bytearray:
                 import struct
@@ -771,6 +785,8 @@ class TestRequiredOptionalDependencies:
         # Data should parse successfully without enrichment
         data_result = results["DA1A0001-0000-1000-8000-00805F9B34FB"]
         assert data_result.parse_success is True
+        assert data_result.value is not None
+        assert isinstance(data_result.value, dict)
         assert data_result.value["data_value"] == 100
         assert data_result.value["enriched"] is False
 
@@ -791,6 +807,8 @@ class TestRequiredOptionalDependencies:
         assert measurement_result.value == 123
 
         assert context_result.parse_success is True
+        assert context_result.value is not None
+        assert isinstance(context_result.value, dict)
         assert context_result.value["context_value"] == 42
         assert context_result.value["has_measurement"] is True
         assert context_result.value["measurement_value"] == 123
@@ -814,6 +832,8 @@ class TestRequiredOptionalDependencies:
         assert enrichment_result.value == pytest.approx(2.5)
 
         assert data_result.parse_success is True
+        assert data_result.value is not None
+        assert isinstance(data_result.value, dict)
         assert data_result.value["data_value"] == 100
         assert data_result.value["enriched"] is True
         assert data_result.value["enriched_value"] == pytest.approx(250.0)
@@ -859,6 +879,8 @@ class TestRequiredOptionalDependencies:
 
         multi_result = results[multi_uuid]
         assert multi_result.parse_success is True
+        assert multi_result.value is not None
+        assert isinstance(multi_result.value, dict)
         assert multi_result.value["measurement_match"] is True
         assert multi_result.value["context_match"] is True
         assert multi_result.value["enriched"] is False
@@ -890,6 +912,8 @@ class TestRequiredOptionalDependencies:
 
         multi_result = results[multi_uuid]
         assert multi_result.parse_success is True
+        assert multi_result.value is not None
+        assert isinstance(multi_result.value, dict)
         assert multi_result.value["measurement_match"] is True
         assert multi_result.value["context_match"] is True
         assert multi_result.value["enriched"] is True

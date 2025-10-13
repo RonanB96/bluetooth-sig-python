@@ -457,7 +457,7 @@ class TestCustomCharacteristicRegistration:
         data = bytearray([0x14, 0x00])  # 20°C
         result = translator.parse_characteristic(
             str(SimpleTemperatureSensor._info.uuid),
-            data,
+            bytes(data),
         )
 
         assert result.parse_success is True
@@ -492,7 +492,7 @@ class TestCustomCharacteristicRegistration:
 
         result = translator.parse_characteristic(
             str(MultiSensorCharacteristic._info.uuid),
-            data,
+            bytes(data),
         )
 
         assert result.parse_success is True

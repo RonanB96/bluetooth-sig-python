@@ -177,11 +177,9 @@ run_pylint() {
     if [ "$is_parallel" != "true" ]; then
         echo "Checking production code..."
     fi
-    local PROD_PYLINT_OUTPUT
     # Use persistent cache for better performance
     # shellcheck disable=SC2086  # BLUETOOTH_SIG_FOLDERS is intentionally space-separated
     run_capture "pylint --persistent=n $BLUETOOTH_SIG_FOLDERS"
-    local PROD_PYLINT_EXIT_CODE=$?
     PROD_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
 
     # Extract production score

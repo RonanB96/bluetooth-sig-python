@@ -66,19 +66,26 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         # Check temperature unit flag (bit 0)
         unit = "°F" if TemperatureMeasurementFlags.FAHRENHEIT_UNIT in flags else "°C"
 
-        result = TemperatureMeasurementData(temperature=temp_value, unit=unit, flags=int(flags))
-
-        # Parse optional timestamp (7 bytes) if present
+        # Parse optional fields
+        timestamp: datetime | None = None
+        temperature_type: int | None = None
         offset = 5
+
         if TemperatureMeasurementFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
-            result.timestamp = IEEE11073Parser.parse_timestamp(data, offset)
+            timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
-        # Parse optional temperature type (1 byte) if present
         if TemperatureMeasurementFlags.TEMPERATURE_TYPE_PRESENT in flags and len(data) >= offset + 1:
-            result.temperature_type = data[offset]
+            temperature_type = data[offset]
 
-        return result
+        # Create immutable struct with all values
+        return TemperatureMeasurementData(
+            temperature=temp_value,
+            unit=unit,
+            flags=int(flags),
+            timestamp=timestamp,
+            temperature_type=temperature_type,
+        )
 
     def encode_value(self, data: TemperatureMeasurementData) -> bytearray:
         """Encode temperature measurement value back to bytes.
