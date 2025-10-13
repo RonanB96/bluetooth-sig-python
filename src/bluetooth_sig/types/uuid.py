@@ -155,6 +155,33 @@ class BluetoothUUID:
         """Get UUID as integer value."""
         return int(self._normalized, 16)
 
+    @property
+    def bytes(self) -> bytes:
+        """Get UUID as 16-byte binary representation (big-endian).
+
+        Useful for BLE wire protocol operations where UUIDs need to be
+        transmitted in binary format.
+
+        Returns:
+            16 bytes representing the full 128-bit UUID in big-endian byte order
+        """
+        # Always use full form (128-bit) for bytes representation
+        full_int = int(self.full_form, 16)
+        return full_int.to_bytes(16, byteorder="big")
+
+    @property
+    def bytes_le(self) -> bytes:
+        """Get UUID as 16-byte binary representation (little-endian).
+
+        Some BLE operations require little-endian byte order.
+
+        Returns:
+            16 bytes representing the full 128-bit UUID in little-endian byte order
+        """
+        # Always use full form (128-bit) for bytes representation
+        full_int = int(self.full_form, 16)
+        return full_int.to_bytes(16, byteorder="little")
+
     def matches(self, other: str | BluetoothUUID) -> bool:
         """Check if this UUID matches another UUID (handles format conversion automatically)."""
         if not isinstance(other, BluetoothUUID):
