@@ -1,0 +1,103 @@
+site_name: Bluetooth SIG Standards Library
+site_description: Pure Python library for Bluetooth SIG standards interpretation, providing comprehensive GATT characteristic and service parsing
+site_url: https://ronanb96.github.io/bluetooth-sig-python/
+repo_url: https://github.com/RonanB96/bluetooth-sig-python
+repo_name: RonanB96/bluetooth-sig-python
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_toc_entry: false
+            heading_level: 2
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: installation.md
+    - Quick Start: quickstart.md
+    - Usage Guide: usage.md
+  - Core Concepts:
+    - Why Use This Library: why-use.md
+    - What Problems It Solves: what-it-solves.md
+    - What It Does NOT Solve: what-it-does-not-solve.md
+    - Architecture Overview: architecture.md
+  - Guides:
+    - BLE Integration: guides/ble-integration.md
+    - Adding New Characteristics: guides/adding-characteristics.md
+    - Performance Optimization: guides/performance.md
+  - API Reference:
+    - Core API: api/core.md
+    - GATT Layer: api/gatt.md
+    - Registry System: api/registry.md
+    - Types & Enums: api/types.md
+  - Development:
+    - Contributing: contributing.md
+    - Testing: testing.md
+    - Code of Conduct: code-of-conduct.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/RonanB96/bluetooth-sig-python
+  version:
+    provider: mike
+
+copyright: Copyright &copy; 2024 RonanB96

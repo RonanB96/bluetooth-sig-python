@@ -1,0 +1,230 @@
+# Quick Start
+
+Get started with the Bluetooth SIG Standards Library in 5 minutes.
+
+## Installation
+
+```bash
+pip install bluetooth-sig
+```
+
+That's it! The library is ready to use.
+
+## Basic Usage
+
+### 1. Import the Library
+
+```python
+from bluetooth_sig.core import BluetoothSIGTranslator
+
+translator = BluetoothSIGTranslator()
+```
+
+### 2. Resolve UUIDs
+
+```python
+# Get service information
+service_info = translator.resolve_uuid("180F")
+print(f"Service: {service_info.name}")  # Service: Battery Service
+
+# Get characteristic information
+char_info = translator.resolve_uuid("2A19")
+print(f"Characteristic: {char_info.name}")  # Characteristic: Battery Level
+```
+
+### 3. Parse Characteristic Data
+
+```python
+# Parse battery level (0-100%)
+battery_data = translator.parse_characteristic_data("2A19", bytearray([85]))
+print(f"Battery: {battery_data.value}%")  # Battery: 85%
+
+# Parse temperature (°C)
+temp_data = translator.parse_characteristic_data("2A6E", bytearray([0x64, 0x09]))
+print(f"Temperature: {temp_data.value}°C")  # Temperature: 24.36°C
+
+# Parse humidity (%)
+humidity_data = translator.parse_characteristic_data("2A6F", bytearray([0x3A, 0x13]))
+print(f"Humidity: {humidity_data.value}%")  # Humidity: 49.42%
+```
+
+## Complete Example
+
+Here's a complete working example:
+
+```python
+from bluetooth_sig.core import BluetoothSIGTranslator
+
+def main():
+    # Create translator
+    translator = BluetoothSIGTranslator()
+    
+    # UUID Resolution
+    print("=== UUID Resolution ===")
+    service_info = translator.resolve_uuid("180F")
+    print(f"UUID 180F: {service_info.name} ({service_info.type})")
+    
+    # Name Resolution
+    print("\n=== Name Resolution ===")
+    battery_level = translator.resolve_name("Battery Level")
+    print(f"Battery Level: {battery_level.uuid}")
+    
+    # Data Parsing
+    print("\n=== Data Parsing ===")
+    
+    # Battery level
+    battery_data = translator.parse_characteristic_data("2A19", bytearray([75]))
+    print(f"Battery: {battery_data.value}%")
+    
+    # Temperature
+    temp_data = translator.parse_characteristic_data("2A6E", bytearray([0x64, 0x09]))
+    print(f"Temperature: {temp_data.value}°C")
+    
+    # Humidity
+    humidity_data = translator.parse_characteristic_data("2A6F", bytearray([0x3A, 0x13]))
+    print(f"Humidity: {humidity_data.value}%")
+
+if __name__ == "__main__":
+    main()
+```
+
+**Output:**
+```
+=== UUID Resolution ===
+UUID 180F: Battery Service (service)
+
+=== Name Resolution ===
+Battery Level: 2A19
+
+=== Data Parsing ===
+Battery: 75%
+Temperature: 24.36°C
+Humidity: 49.42%
+```
+
+## Integration with BLE Libraries
+
+The library is designed to work with any BLE connection library. Here's how:
+
+### With bleak (Async)
+
+```python
+from bleak import BleakClient
+from bluetooth_sig.core import BluetoothSIGTranslator
+
+async def read_battery_level(address: str):
+    translator = BluetoothSIGTranslator()
+    
+    async with BleakClient(address) as client:
+        # Read raw data with bleak
+        raw_data = await client.read_gatt_char("2A19")
+        
+        # Parse with bluetooth-sig
+        result = translator.parse_characteristic_data("2A19", raw_data)
+        print(f"Battery: {result.value}%")
+```
+
+### With simplepyble (Sync)
+
+```python
+from simplepyble import Peripheral, Adapter
+from bluetooth_sig.core import BluetoothSIGTranslator
+
+def read_battery_level(peripheral: Peripheral):
+    translator = BluetoothSIGTranslator()
+    
+    # Find battery service
+    services = peripheral.services()
+    battery_service = next(s for s in services if s.uuid() == "180F")
+    
+    # Find battery level characteristic
+    battery_char = next(c for c in battery_service.characteristics() 
+                       if c.uuid() == "2A19")
+    
+    # Read raw data
+    raw_data = peripheral.read(battery_service.uuid(), battery_char.uuid())
+    
+    # Parse with bluetooth-sig
+    result = translator.parse_characteristic_data("2A19", bytearray(raw_data))
+    print(f"Battery: {result.value}%")
+```
+
+## Common Use Cases
+
+### Reading Multiple Sensors
+
+```python
+from bluetooth_sig.core import BluetoothSIGTranslator
+
+translator = BluetoothSIGTranslator()
+
+# Simulate reading from multiple sensors
+sensor_data = {
+    "2A19": bytearray([85]),           # Battery
+    "2A6E": bytearray([0x64, 0x09]),   # Temperature
+    "2A6F": bytearray([0x3A, 0x13]),   # Humidity
+    "2A6D": bytearray([0x50, 0xC3, 0x00, 0x00]),  # Pressure
+}
+
+for uuid, raw_data in sensor_data.items():
+    result = translator.parse_characteristic_data(uuid, raw_data)
+    print(f"{uuid}: {result.value} {getattr(result, 'unit', '')}")
+```
+
+### Error Handling
+
+```python
+from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig.gatt.exceptions import (
+    InsufficientDataError,
+    ValueRangeError,
+    UUIDResolutionError
+)
+
+translator = BluetoothSIGTranslator()
+
+try:
+    # Attempt to parse invalid data
+    result = translator.parse_characteristic_data("2A19", bytearray([]))
+except InsufficientDataError as e:
+    print(f"Data too short: {e}")
+
+try:
+    # Attempt to parse out-of-range value
+    result = translator.parse_characteristic_data("2A19", bytearray([150]))
+except ValueRangeError as e:
+    print(f"Invalid value: {e}")
+
+try:
+    # Attempt to resolve unknown UUID
+    info = translator.resolve_uuid("XXXX")
+except UUIDResolutionError as e:
+    print(f"Unknown UUID: {e}")
+```
+
+## Supported Characteristics
+
+The library supports 70+ GATT characteristics across multiple categories:
+
+- **Battery Service**: Battery Level, Battery Power State
+- **Environmental Sensing**: Temperature, Humidity, Pressure, Air Quality
+- **Health Monitoring**: Heart Rate, Blood Pressure, Glucose
+- **Fitness Tracking**: Running/Cycling Speed, Cadence, Power
+- **Device Information**: Manufacturer, Model, Firmware Version
+- And many more...
+
+See the [Usage Guide](usage.md) for a complete list.
+
+## Next Steps
+
+- [Usage Guide](usage.md) - Comprehensive usage examples
+- [BLE Integration Guide](guides/ble-integration.md) - Integrate with your BLE library
+- [API Reference](api/core.md) - Complete API documentation
+- [What Problems It Solves](what-it-solves.md) - Understand the benefits
+
+## Getting Help
+
+- **Documentation**: You're reading it! 📚
+- **Examples**: Check the [examples/](https://github.com/RonanB96/bluetooth-sig-python/tree/main/examples) directory
+- **Issues**: [GitHub Issues](https://github.com/RonanB96/bluetooth-sig-python/issues)
+- **Source**: [GitHub Repository](https://github.com/RonanB96/bluetooth-sig-python)
