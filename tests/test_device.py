@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Any, Callable, cast
 
 import pytest
 
@@ -15,7 +15,7 @@ from bluetooth_sig.types.device_types import DeviceEncryption
 class MockConnectionManager:
     """Mock connection manager for testing."""
 
-    def __init__(self, connected: bool = False):
+    def __init__(self, connected: bool = False) -> None:
         self.address = "AA:BB:CC:DD:EE:FF"
         self._connected = connected
 
@@ -42,11 +42,12 @@ class MockConnectionManager:
     async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
         pass
 
-    async def get_services(self):
-        return []
+    async def get_services(self) -> Any:  # noqa: ANN401
+        """Mock get_services - returns async."""
+        return {}
 
-    async def start_notify(self, char_uuid: str, callback) -> None:
-        pass
+    async def start_notify(self, char_uuid: str, callback: Callable[[str, bytes], None]) -> None:
+        """Mock start_notify with correct signature."""
 
     async def stop_notify(self, char_uuid: str) -> None:
         pass
@@ -84,13 +85,13 @@ class NoneManager:
 class TestDevice:
     """Test cases for the Device class."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test fixtures."""
         self.translator = BluetoothSIGTranslator()
         self.device_address = "AA:BB:CC:DD:EE:FF"
         self.device = Device(self.device_address, self.translator)
 
-    def test_device_initialization(self):
+    def test_device_initialization(self) -> None:
         """Test Device initialization."""
         assert self.device.address == self.device_address
         assert self.device.translator == self.translator
@@ -99,7 +100,7 @@ class TestDevice:
         assert isinstance(self.device.encryption, DeviceEncryption)
         assert self.device.advertiser_data is not None
 
-    def test_device_string_representation(self):
+    def test_device_string_representation(self) -> None:
         """Test Device string representation."""
         expected = f"Device({self.device_address}, name=, 0 services, 0 characteristics)"
         assert str(self.device) == expected
@@ -109,7 +110,7 @@ class TestDevice:
         expected = f"Device({self.device_address}, name=Test Device, 0 services, 0 characteristics)"
         assert str(self.device) == expected
 
-    def test_parse_advertiser_data_basic(self):
+    def test_parse_advertiser_data_basic(self) -> None:
         """Test basic advertiser data parsing."""
         # Sample advertisement data with local name
         adv_data = bytes(
@@ -141,7 +142,7 @@ class TestDevice:
         assert self.device.advertiser_data.flags == 0x06
         assert self.device.name == "Test Device"  # Should update device name
 
-    def test_parse_advertiser_data_manufacturer(self):
+    def test_parse_advertiser_data_manufacturer(self) -> None:
         """Test advertiser data parsing with manufacturer data."""
         # Sample advertisement data with manufacturer data
         adv_data = bytes(
@@ -161,7 +162,7 @@ class TestDevice:
         assert self.device.advertiser_data is not None
         assert self.device.advertiser_data.manufacturer_data[0x004C] == b"\x01\x02\x03"
 
-    def test_parse_advertiser_data_service_uuids(self):
+    def test_parse_advertiser_data_service_uuids(self) -> None:
         """Test advertiser data parsing with service UUIDs."""
         # Sample advertisement data with 16-bit service UUIDs
         adv_data = bytes(
@@ -178,7 +179,7 @@ class TestDevice:
         assert self.device.advertiser_data is not None
         assert "180F" in self.device.advertiser_data.service_uuids
 
-    def test_parse_advertiser_data_tx_power(self):
+    def test_parse_advertiser_data_tx_power(self) -> None:
         """Test advertiser data parsing with TX power."""
         # Sample advertisement data with TX power
         adv_data = bytes(
@@ -194,7 +195,7 @@ class TestDevice:
         assert self.device.advertiser_data is not None
         assert self.device.advertiser_data.tx_power == -4
 
-    def test_add_service_known_service(self):
+    def test_add_service_known_service(self) -> None:
         """Test adding a service with known service type."""
         # Battery service characteristics
         characteristics = {
@@ -213,7 +214,7 @@ class TestDevice:
         assert battery_data.value == 100
         assert battery_data.name == "Battery Level"
 
-    def test_add_service_unknown_service(self):
+    def test_add_service_unknown_service(self) -> None:
         """Test adding a service with unknown service name raises ValueError."""
         # Unknown service name that's not a valid UUID (contains non-hex characters)
         characteristics = {
@@ -224,7 +225,7 @@ class TestDevice:
         with pytest.raises(ValueError, match="Cannot resolve service UUID for 'InvalidServiceName'"):
             self.device.add_service("InvalidServiceName", characteristics)
 
-    def test_add_service_with_unknown_uuid(self):
+    def test_add_service_with_unknown_uuid(self) -> None:
         """Test adding a service with a valid UUID that's not in the registry creates UnknownService."""
         # Use a valid UUID format that's not a known service
         unknown_uuid = "ABCD"  # Valid 16-bit UUID, but not a known service
@@ -241,7 +242,7 @@ class TestDevice:
         assert service.service.__class__.__name__ == "UnknownService"
         assert len(service.characteristics) == 1
 
-    def test_get_characteristic_data(self):
+    def test_get_characteristic_data(self) -> None:
         """Test retrieving characteristic data."""
         # Add a service first
         characteristics = {
@@ -258,7 +259,7 @@ class TestDevice:
         assert self.device.get_characteristic_data("9999", "9999") is None
         assert self.device.get_characteristic_data("180F", "9999") is None
 
-    def test_update_encryption_requirements(self):
+    def test_update_encryption_requirements(self) -> None:
         """Test encryption requirements tracking."""
         from bluetooth_sig.types import CharacteristicData, CharacteristicInfo
         from bluetooth_sig.types.gatt_enums import GattProperty
@@ -297,7 +298,7 @@ class TestDevice:
 
         assert self.device.encryption.requires_authentication is True
 
-    def test_device_with_advertiser_context(self):
+    def test_device_with_advertiser_context(self) -> None:
         """Test device functionality with advertiser data context."""
         # Set up advertiser data first
         adv_data = bytes(
@@ -339,7 +340,7 @@ class TestDevice:
         assert "180F" in self.device.services
         assert self.device.name == "Test Device"
 
-    def test_is_connected_property(self):
+    def test_is_connected_property(self) -> None:
         """Test is_connected property behavior."""
         # Test with no connection manager
         assert self.device.is_connected is False
@@ -354,7 +355,7 @@ class TestDevice:
         self.device.attach_connection_manager(mock_manager)
         assert self.device.is_connected is True
 
-    def test_is_connected_edge_cases(self):
+    def test_is_connected_edge_cases(self) -> None:
         """Test is_connected property edge cases."""
         # Test connection manager state change
         mock_manager = MockConnectionManager(connected=True)
@@ -367,7 +368,7 @@ class TestDevice:
 
     # Test None return value from manager is handled in separate test
 
-    def test_is_connected_error_handling(self):
+    def test_is_connected_error_handling(self) -> None:
         """Test is_connected property error handling."""
         # Test manager that raises exception - use module-level FaultyManager
         faulty_manager = FaultyManager()
@@ -385,14 +386,14 @@ class TestDevice:
         # Should return False for manager without is_connected property
         assert self.device.is_connected is False
 
-    def test_is_connected_with_none_manager(self):
+    def test_is_connected_with_none_manager(self) -> None:
         """Test is_connected returns False when manager's is_connected returns
         False."""
         none_manager = NoneManager()
         self.device.attach_connection_manager(cast(ConnectionManagerProtocol, none_manager))
         assert self.device.is_connected is False
 
-    def test_connection_manager_protocol_interface(self):
+    def test_connection_manager_protocol_interface(self) -> None:
         """Test that ConnectionManagerProtocol has the is_connected
         property."""
         import inspect
@@ -418,7 +419,7 @@ class TestDevice:
         for method in expected_methods:
             assert method in protocol_attrs, f"Method {method} missing from protocol"
 
-    def test_device_info_caching(self):
+    def test_device_info_caching(self) -> None:
         """Test that device info is cached and updated efficiently."""
         # First access creates cache
         device_info1 = self.device.device_info

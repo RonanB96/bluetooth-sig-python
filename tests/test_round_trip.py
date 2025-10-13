@@ -196,7 +196,7 @@ ROUND_TRIP_TEST_DATA = [
 class TestRoundTrip:
     """Round trip tests for all characteristics."""
 
-    def test_all_characteristics_are_tested(self):
+    def test_all_characteristics_are_tested(self) -> None:
         """Test that every characteristic class is included in
         ROUND_TRIP_TEST_DATA."""
         import bluetooth_sig.gatt.characteristics as char_module
@@ -218,7 +218,7 @@ class TestRoundTrip:
         assert not extra_classes, f"Extra classes in test data that don't exist: {extra_classes}"
 
     @pytest.mark.parametrize("char_class,test_data", ROUND_TRIP_TEST_DATA)
-    def test_round_trip(self, char_class: type[BaseCharacteristic], test_data: bytearray):
+    def test_round_trip(self, char_class: type[BaseCharacteristic], test_data: bytearray) -> None:
         """Test that encoding and decoding preserve data."""
         char = char_class()  # SIG characteristics don't need UUID parameter
         parsed = char.decode_value(test_data)

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from enum import IntEnum
-from typing import Any
 
 import msgspec
 
 from ..constants import SINT8_MIN
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
 
@@ -83,7 +83,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
     def decode_value(  # pylint: disable=too-many-locals
         self,
         data: bytearray,
-        ctx: Any | None = None,
+        ctx: CharacteristicContext | None = None,
     ) -> LocalTimeInformationData:
         """Parse local time information data (2 bytes: time zone + DST
         offset)."""

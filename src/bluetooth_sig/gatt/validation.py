@@ -38,7 +38,7 @@ class ValidationRule:
     custom_validator: Callable[[Any], bool] | None = None
     error_message: str | None = None
 
-    def validate(self, value: Any) -> None:
+    def validate(self, value: Any) -> None:  # noqa: ANN401  # Validates values of various types
         """Apply this validation rule to a value."""
         # Type check
         if not isinstance(value, self.expected_type):
@@ -73,7 +73,7 @@ class StrictValidator:
             if field_name in self.rules:
                 self.rules[field_name].validate(value)
 
-    def validate_object(self, obj: Any) -> None:
+    def validate_object(self, obj: Any) -> None:  # noqa: ANN401  # Validates objects of any type
         """Validate an object's attributes against all rules."""
         for field_name, rule in self.rules.items():
             if hasattr(obj, field_name):

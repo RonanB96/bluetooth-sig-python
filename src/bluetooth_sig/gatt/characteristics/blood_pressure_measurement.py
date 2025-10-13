@@ -114,32 +114,46 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
 
         flags = data[0]
 
-        result_data = BloodPressureData(
-            systolic=IEEE11073Parser.parse_sfloat(data, 1),
-            diastolic=IEEE11073Parser.parse_sfloat(data, 3),
-            mean_arterial_pressure=IEEE11073Parser.parse_sfloat(data, 5),
-            unit="kPa" if flags & BloodPressureFlags.UNITS_KPA else "mmHg",
-            flags=flags,
-        )
+        # Parse required fields
+        systolic = IEEE11073Parser.parse_sfloat(data, 1)
+        diastolic = IEEE11073Parser.parse_sfloat(data, 3)
+        mean_arterial_pressure = IEEE11073Parser.parse_sfloat(data, 5)
+        unit = "kPa" if flags & BloodPressureFlags.UNITS_KPA else "mmHg"
 
+        # Parse optional fields
+        timestamp: datetime | None = None
+        pulse_rate: float | None = None
+        user_id: int | None = None
+        measurement_status: int | None = None
         offset = 7
 
         if (flags & BloodPressureFlags.TIMESTAMP_PRESENT) and len(data) >= offset + 7:
-            result_data.timestamp = IEEE11073Parser.parse_timestamp(data, offset)
+            timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
         if (flags & BloodPressureFlags.PULSE_RATE_PRESENT) and len(data) >= offset + 2:
-            result_data.pulse_rate = IEEE11073Parser.parse_sfloat(data, offset)
+            pulse_rate = IEEE11073Parser.parse_sfloat(data, offset)
             offset += 2
 
         if (flags & BloodPressureFlags.USER_ID_PRESENT) and len(data) >= offset + 1:
-            result_data.user_id = data[offset]
+            user_id = data[offset]
             offset += 1
 
         if (flags & BloodPressureFlags.MEASUREMENT_STATUS_PRESENT) and len(data) >= offset + 2:
-            result_data.measurement_status = DataParser.parse_int16(data, offset, signed=False)
+            measurement_status = DataParser.parse_int16(data, offset, signed=False)
 
-        return result_data
+        # Create immutable struct with all values
+        return BloodPressureData(
+            systolic=systolic,
+            diastolic=diastolic,
+            mean_arterial_pressure=mean_arterial_pressure,
+            unit=unit,
+            flags=flags,
+            timestamp=timestamp,
+            pulse_rate=pulse_rate,
+            user_id=user_id,
+            measurement_status=measurement_status,
+        )
 
     def encode_value(self, data: BloodPressureData) -> bytearray:
         """Encode BloodPressureData back to bytes.

@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import msgspec
 
 from ..constants import UINT8_MAX
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
@@ -46,7 +45,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
     # Time resolution constants
     CSC_TIME_RESOLUTION = 1024.0  # 1/1024 second resolution for both wheel and crank event times
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> CSCMeasurementData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CSCMeasurementData:
         """Parse CSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + [Cumulative Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +

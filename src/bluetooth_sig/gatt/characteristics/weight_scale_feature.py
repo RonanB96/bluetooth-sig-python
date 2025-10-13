@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from enum import IntEnum, IntFlag
-from typing import Any
 
 import msgspec
 
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import BitFieldUtils, DataParser
 
@@ -103,7 +103,7 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
     max_length: int = 4  # Features(4) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> WeightScaleFeatureData:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> WeightScaleFeatureData:
         """Parse weight scale feature data according to Bluetooth
         specification.
 

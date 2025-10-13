@@ -159,7 +159,7 @@ class CharacteristicMeta(ABCMeta):
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401  # Metaclass receives arbitrary keyword arguments
     ) -> type:
         # Auto-handle template flags before class creation so attributes are part of namespace
         if bases:  # Not the base class itself
@@ -520,6 +520,18 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return cls._allows_sig_override
 
     @classmethod
+    def get_configured_info(cls) -> CharacteristicInfo | None:
+        """Get the class-level configured CharacteristicInfo.
+
+        This provides public access to the _configured_info attribute that is set
+        by __init_subclass__ for custom characteristics.
+
+        Returns:
+            CharacteristicInfo if configured, None otherwise
+        """
+        return getattr(cls, "_configured_info", None)
+
+    @classmethod
     def get_class_uuid(cls) -> BluetoothUUID | None:
         """Get the characteristic UUID for this class without creating an instance.
 
@@ -575,7 +587,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         except ValueError:
             return False
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> Any:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> Any:  # noqa: ANN401  # Context and return types vary by characteristic
         """Parse the characteristic's raw value.
 
         If _template is set (Level 4 Progressive API), uses the template's decode_value method.
@@ -595,7 +607,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             return self._template.decode_value(data, offset=0, ctx=ctx)
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
-    def _validate_range(self, value: Any) -> None:
+    def _validate_range(self, value: Any) -> None:  # noqa: ANN401  # Validates values of various numeric types
         """Validate value is within min/max range."""
         if self.min_value is not None and value < self.min_value:
             raise ValueRangeError("value", value, self.min_value, self.max_value)
@@ -612,7 +624,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         if self.max_length is not None and length > self.max_length:
             raise ValueError(f"Maximum {self.max_length} bytes allowed, got {length}")
 
-    def _validate_value(self, value: Any) -> None:
+    def _validate_value(self, value: Any) -> None:  # noqa: ANN401  # Validates values of various types
         """Validate parsed value meets all requirements."""
         if self.expected_type is not None and not isinstance(value, self.expected_type):
             raise TypeMismatchError("parsed_value", value, self.expected_type)
@@ -635,7 +647,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         self,
         ctx: CharacteristicContext | None,
         characteristic_name: CharacteristicName | str | type[BaseCharacteristic],
-    ) -> Any | None:
+    ) -> Any | None:  # noqa: ANN401  # Returns various characteristic types from context
         """Generic utility to find a characteristic in context by name or class.
 
         Args:
@@ -692,7 +704,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # Default to class attribute if env var not set
         return True
 
-    def parse_value(self, data: bytes | bytearray, ctx: Any | None = None) -> CharacteristicData:
+    def parse_value(self, data: bytes | bytearray, ctx: CharacteristicContext | None = None) -> CharacteristicData:  # noqa: ANN401  # Context type varies
         """Parse characteristic data with automatic validation.
 
         This method automatically validates input data length and parsed values
@@ -769,7 +781,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 parse_trace=trace.get_trace(),
             )
 
-    def encode_value(self, data: Any) -> bytearray:
+    def encode_value(self, data: Any) -> bytearray:  # noqa: ANN401  # Encodes various value types (int, float, dataclass, etc.)
         """Encode the characteristic's value to raw bytes.
 
         If _template is set (Level 4 Progressive API), uses the template's encode_value method.
@@ -886,11 +898,20 @@ class CustomBaseCharacteristic(BaseCharacteristic):
     _configured_info: CharacteristicInfo | None = None  # Stores class-level _info
     _allows_sig_override = False  # Default: no SIG override permission
 
+    @classmethod
+    def get_configured_info(cls) -> CharacteristicInfo | None:
+        """Get the class-level configured CharacteristicInfo.
+
+        Returns:
+            CharacteristicInfo if configured, None otherwise
+        """
+        return cls._configured_info
+
     # pylint: disable=duplicate-code
     # NOTE: __init_subclass__ and __init__ patterns are intentionally similar to CustomBaseService.
     # This is by design - both custom characteristic and service classes need identical validation
     # and info management patterns. Consolidation not possible due to different base types and info types.
-    def __init_subclass__(cls, allow_sig_override: bool = False, **kwargs: Any) -> None:
+    def __init_subclass__(cls, allow_sig_override: bool = False, **kwargs: Any) -> None:  # noqa: ANN401  # Receives subclass kwargs
         """Automatically set up _info if provided as class attribute.
 
         Args:
@@ -930,7 +951,7 @@ class CustomBaseCharacteristic(BaseCharacteristic):
             ValueError: If no valid info available from class or parameter
         """
         # Use provided info, or fall back to class-configured _info
-        final_info = info or self.__class__._configured_info
+        final_info = info or self.__class__.get_configured_info()
 
         if not final_info:
             raise ValueError(f"{self.__class__.__name__} requires either 'info' parameter or '_info' class attribute")
@@ -950,12 +971,13 @@ class CustomBaseCharacteristic(BaseCharacteristic):
         # Use provided info if available (from manual override), otherwise use configured info
         if hasattr(self, "_provided_info") and self._provided_info:
             self._info = self._provided_info
-        elif self.__class__._configured_info:  # pylint: disable=protected-access
-            # Access to _configured_info is intentional for class-level info management
-            self._info = self.__class__._configured_info  # pylint: disable=protected-access
         else:
-            # This shouldn't happen if class setup is correct
-            raise ValueError(f"CustomBaseCharacteristic {self.__class__.__name__} has no valid info source")
+            configured_info = self.__class__.get_configured_info()
+            if configured_info:
+                self._info = configured_info
+            else:
+                # This shouldn't happen if class setup is correct
+                raise ValueError(f"CustomBaseCharacteristic {self.__class__.__name__} has no valid info source")
 
 
 class UnknownCharacteristic(CustomBaseCharacteristic):
@@ -981,13 +1003,13 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
                 uuid=info.uuid,
                 name=f"Unknown Characteristic ({info.uuid})",
                 unit=info.unit or "",
-                value_type=info.value_type or ValueType.BYTES,
+                value_type=info.value_type if info.value_type is not None else ValueType.UNKNOWN,
                 properties=info.properties or [],
             )
 
         super().__init__(info=info)
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> bytes:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bytes:  # noqa: ANN401  # Context type varies
         """Return raw bytes for unknown characteristics.
 
         Args:
@@ -999,7 +1021,7 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
         """
         return bytes(data)
 
-    def encode_value(self, data: Any) -> bytearray:
+    def encode_value(self, data: Any) -> bytearray:  # noqa: ANN401  # Accepts bytes-like objects
         """Encode data to bytes for unknown characteristics.
 
         Args:

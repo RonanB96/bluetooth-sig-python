@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import types
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
@@ -54,7 +55,7 @@ class SimpleCharacteristic:
     """Simple characteristic object compatible with Device class
     expectations."""
 
-    def __init__(self, uuid: str, properties: list[str] | None = None):
+    def __init__(self, uuid: str, properties: list[str] | None = None) -> None:
         self.uuid = uuid
         self.properties = properties or []
 
@@ -62,7 +63,7 @@ class SimpleCharacteristic:
 class SimpleService:
     """Simple service object compatible with Device class expectations."""
 
-    def __init__(self, uuid: str, characteristics: list[SimpleCharacteristic] | None = None):
+    def __init__(self, uuid: str, characteristics: list[SimpleCharacteristic] | None = None) -> None:
         self.uuid = uuid
         self.characteristics = characteristics or []
 
@@ -74,7 +75,7 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         self.address = address
         self.timeout = timeout
         self.simpleble_module = simpleble_module
-        self.adapter: simplepyble.Adapter
+        self.adapter: simplepyble.Adapter  # type: ignore[no-any-unimported]
         self.peripheral: simplepyble.Peripheral | None = None  # type: ignore[no-any-unimported]
         self.executor = ThreadPoolExecutor(max_workers=1)
 
@@ -146,7 +147,7 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
 
         return await asyncio.get_event_loop().run_in_executor(self.executor, _get_services)
 
-    async def start_notify(self, char_uuid: str, callback: Any) -> None:
+    async def start_notify(self, char_uuid: str, callback: Callable[[str, bytes], None]) -> None:
         # Not implemented: SimplePyBLE notification support
         raise NotImplementedError("Notification not supported in this example")
 
@@ -163,7 +164,7 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
 def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,duplicate-code
     address: str,
     simpleble_module: types.ModuleType,
-) -> dict[str, CharacteristicData]:
+) -> dict[BluetoothUUID, CharacteristicData]:
     # NOTE: Result parsing pattern duplicates shared_utils and data_parsing display logic.
     # Duplication justified because:
     # 1. SimplePyBLE is synchronous, shared utils are async (different execution models)
@@ -179,7 +180,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,
         Mapping of short UUIDs to characteristic parse data
     """
     print("📱 SimplePyBLE Comprehensive Device Analysis...")
-    results: dict[str, CharacteristicData] = {}
+    results: dict[BluetoothUUID, CharacteristicData] = {}
 
     try:
         # Initialize SimplePyBLE adapter
@@ -227,7 +228,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,
                     # Try to read characteristic
                     raw_data = characteristic.read()
                     char_uuid_short = BluetoothUUID(char_uuid)
-                    parse_outcome = translator.parse_characteristic(char_uuid_short, raw_data)
+                    parse_outcome = translator.parse_characteristic(str(char_uuid_short), raw_data)
                     results[char_uuid_short] = parse_outcome
                     if parse_outcome.parse_success:
                         unit_str = f" {parse_outcome.unit}" if parse_outcome.unit else ""

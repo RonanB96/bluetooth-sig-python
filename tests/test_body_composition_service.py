@@ -18,13 +18,13 @@ from bluetooth_sig.types.gatt_enums import ValueType
 class TestBodyCompositionMeasurementCharacteristic:
     """Test Body Composition Measurement characteristic implementation."""
 
-    def test_characteristic_name(self):
+    def test_characteristic_name(self) -> None:
         """Test characteristic name resolution."""
         char = BodyCompositionMeasurementCharacteristic()
         assert char.name == "Body Composition Measurement"
         assert char.value_type == ValueType.BYTES
 
-    def test_parse_basic_body_fat_metric(self):
+    def test_parse_basic_body_fat_metric(self) -> None:
         """Test parsing basic body fat percentage in metric units."""
         char = BodyCompositionMeasurementCharacteristic()
 
@@ -36,7 +36,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         assert result.body_fat_percentage == pytest.approx(25.0, abs=0.1)
         assert result.measurement_units == "metric"
 
-    def test_parse_body_fat_imperial(self):
+    def test_parse_body_fat_imperial(self) -> None:
         """Test parsing body fat percentage in imperial units."""
         char = BodyCompositionMeasurementCharacteristic()
 
@@ -48,7 +48,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         assert result.body_fat_percentage == pytest.approx(18.0, abs=0.1)
         assert result.measurement_units == "imperial"
 
-    def test_parse_with_user_id(self):
+    def test_parse_with_user_id(self) -> None:
         """Test parsing with user ID."""
         char = BodyCompositionMeasurementCharacteristic()
 
@@ -60,7 +60,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         assert hasattr(result, "user_id")
         assert result.user_id == 3
 
-    def test_parse_with_muscle_mass_metric(self):
+    def test_parse_with_muscle_mass_metric(self) -> None:
         """Test parsing with muscle mass in metric units."""
         char = BodyCompositionMeasurementCharacteristic()
 
@@ -74,7 +74,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         assert result.muscle_mass == pytest.approx(50.0, abs=0.01)  # 10000 * 0.005
         assert result.muscle_mass_unit == "kg"
 
-    def test_parse_with_muscle_mass_imperial(self):
+    def test_parse_with_muscle_mass_imperial(self) -> None:
         """Test parsing with muscle mass in imperial units."""
         char = BodyCompositionMeasurementCharacteristic()
 
@@ -88,7 +88,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         assert result.muscle_mass == pytest.approx(110.0, abs=0.01)  # 11000 * 0.01
         assert result.muscle_mass_unit == "lb"
 
-    def test_parse_invalid_data(self):
+    def test_parse_invalid_data(self) -> None:
         """Test parsing with invalid data."""
         char = BodyCompositionMeasurementCharacteristic()
 
@@ -96,7 +96,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         with pytest.raises(ValueError, match="at least 4 bytes"):
             char.decode_value(bytearray([0x00, 0x00, 0xFA]))
 
-    def test_unit_property(self):
+    def test_unit_property(self) -> None:
         """Test unit property - should return 'various' for multi-unit characteristic."""
         char = BodyCompositionMeasurementCharacteristic()
         assert char.unit == "various"
@@ -105,13 +105,13 @@ class TestBodyCompositionMeasurementCharacteristic:
 class TestBodyCompositionFeatureCharacteristic:
     """Test Body Composition Feature characteristic implementation."""
 
-    def test_characteristic_name(self):
+    def test_characteristic_name(self) -> None:
         """Test characteristic name resolution."""
         char = BodyCompositionFeatureCharacteristic()
         assert char.name == "Body Composition Feature"
         assert char.value_type == ValueType.BYTES
 
-    def test_parse_basic_features(self):
+    def test_parse_basic_features(self) -> None:
         """Test parsing basic feature flags."""
         char = BodyCompositionFeatureCharacteristic()
 
@@ -126,7 +126,7 @@ class TestBodyCompositionFeatureCharacteristic:
         assert result.muscle_mass_supported is True
         assert result.muscle_percentage_supported is True
 
-    def test_parse_no_features(self):
+    def test_parse_no_features(self) -> None:
         """Test parsing with no features enabled."""
         char = BodyCompositionFeatureCharacteristic()
 
@@ -140,7 +140,7 @@ class TestBodyCompositionFeatureCharacteristic:
         assert result.muscle_mass_supported is False
         assert result.muscle_percentage_supported is False
 
-    def test_parse_invalid_data(self):
+    def test_parse_invalid_data(self) -> None:
         """Test parsing with invalid data."""
         char = BodyCompositionFeatureCharacteristic()
 
@@ -148,12 +148,12 @@ class TestBodyCompositionFeatureCharacteristic:
         with pytest.raises(ValueError, match="at least 4 bytes"):
             char.decode_value(bytearray([0x00, 0x00, 0x00]))
 
-    def test_unit_property(self):
+    def test_unit_property(self) -> None:
         """Test unit property (should be empty for feature characteristic)."""
         char = BodyCompositionFeatureCharacteristic()
         assert char.unit == ""
 
-    def test_encode_value(self):
+    def test_encode_value(self) -> None:
         """Test encoding BodyCompositionFeatureData back to bytes."""
         char = BodyCompositionFeatureCharacteristic()
 
@@ -186,7 +186,7 @@ class TestBodyCompositionFeatureCharacteristic:
         assert len(encoded) == 4
         assert encoded == bytearray([0x1F, 0x00, 0x00, 0x00])
 
-    def test_round_trip_basic(self):
+    def test_round_trip_basic(self) -> None:
         """Test that parsing and encoding preserve basic feature data."""
         char = BodyCompositionFeatureCharacteristic()
 
@@ -206,7 +206,7 @@ class TestBodyCompositionFeatureCharacteristic:
 class TestBodyCompositionService:
     """Test Body Composition Service implementation."""
 
-    def test_expected_characteristics(self):
+    def test_expected_characteristics(self) -> None:
         """Test expected characteristics for the service."""
         from bluetooth_sig.types.gatt_enums import CharacteristicName
 
@@ -220,7 +220,7 @@ class TestBodyCompositionService:
         )
         assert expected[CharacteristicName.BODY_COMPOSITION_FEATURE].char_class == BodyCompositionFeatureCharacteristic
 
-    def test_required_characteristics(self):
+    def test_required_characteristics(self) -> None:
         """Test required characteristics for the service."""
         from bluetooth_sig.types.gatt_enums import CharacteristicName
 
@@ -233,7 +233,7 @@ class TestBodyCompositionService:
         )
         # Body Composition Feature is not required
 
-    def test_service_creation(self):
+    def test_service_creation(self) -> None:
         """Test service instantiation."""
         service = BodyCompositionService()
         assert service is not None

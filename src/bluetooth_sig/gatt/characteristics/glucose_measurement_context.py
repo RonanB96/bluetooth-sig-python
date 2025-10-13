@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from enum import IntEnum, IntFlag
-from typing import Any
 
 import msgspec
 
@@ -291,7 +290,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     )
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> GlucoseMeasurementContextData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> GlucoseMeasurementContextData:
         """Parse glucose measurement context data according to Bluetooth
         specification.
 

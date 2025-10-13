@@ -18,7 +18,7 @@ from examples.utils import (
 class TestUtilityFunctions:
     """Test utility functions from the utils package."""
 
-    def test_mock_ble_data(self):
+    def test_mock_ble_data(self) -> None:
         """Test mock BLE data generation."""
         data = mock_ble_data()
 
@@ -35,7 +35,7 @@ class TestUtilityFunctions:
             assert isinstance(raw_data, bytes)
 
     @pytest.mark.asyncio
-    async def test_parse_and_display_results(self, capsys):
+    async def test_parse_and_display_results(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test parsing and display of BLE results."""
         test_data = {
             "2A19": (bytes([0x64]), time.time()),  # 100% battery
@@ -50,7 +50,7 @@ class TestUtilityFunctions:
         assert "Battery Level: 100" in captured.out
         assert "Device Name: Test Device" in captured.out
 
-    def test_show_library_availability(self, capsys):
+    def test_show_library_availability(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test library availability display."""
         show_library_availability()
 
@@ -58,7 +58,7 @@ class TestUtilityFunctions:
         assert "BLE Library Availability Check" in captured.out
         assert "Available BLE libraries:" in captured.out
 
-    def test_available_libraries(self):
+    def test_available_libraries(self) -> None:
         """Test AVAILABLE_LIBRARIES constant."""
         assert isinstance(AVAILABLE_LIBRARIES, dict)
         # Should be a dictionary of library configurations
@@ -68,7 +68,7 @@ class TestAdvertisingParsing:
     """Test advertising_parsing.py example without real devices."""
 
     @pytest.mark.asyncio
-    async def test_advertising_parsing_with_mock_data(self, capsys):
+    async def test_advertising_parsing_with_mock_data(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test advertising parsing with mock data."""
         from examples.advertising_parsing import main
 
@@ -83,7 +83,7 @@ class TestAdvertisingParsing:
         assert "Device Name:" in captured.out
 
     @pytest.mark.asyncio
-    async def test_advertising_parsing_with_hex_data(self, capsys):
+    async def test_advertising_parsing_with_hex_data(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test advertising parsing with provided hex data."""
         from examples.advertising_parsing import main
 
@@ -98,7 +98,7 @@ class TestAdvertisingParsing:
         assert "Provided Data Results with SIG Parsing:" in captured.out
 
     @pytest.mark.asyncio
-    async def test_advertising_parsing_invalid_hex(self, capsys):
+    async def test_advertising_parsing_invalid_hex(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test advertising parsing with invalid hex data."""
         from examples.advertising_parsing import main
 
@@ -113,7 +113,7 @@ class TestAdvertisingParsing:
 class TestPureSigParsing:
     """Test pure_sig_parsing.py example."""
 
-    def test_pure_sig_parsing_demo(self, capsys):
+    def test_pure_sig_parsing_demo(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test the pure SIG parsing demonstration."""
         from examples.pure_sig_parsing import demonstrate_pure_sig_parsing
 
@@ -125,7 +125,7 @@ class TestPureSigParsing:
         assert "Device Name" in captured.out
         assert "Temperature" in captured.out
 
-    def test_pure_sig_parsing_batch_demo(self, capsys):
+    def test_pure_sig_parsing_batch_demo(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test the batch parsing demonstration."""
         from examples.pure_sig_parsing import demonstrate_batch_parsing
 
@@ -139,7 +139,7 @@ class TestMockDataConsistency:
     """Test that mock data is consistent and parseable."""
 
     @pytest.mark.asyncio
-    async def test_mock_data_parsing_consistency(self):
+    async def test_mock_data_parsing_consistency(self) -> None:
         """Test that all mock data can be parsed successfully."""
         mock_data = mock_ble_data()
 
@@ -154,7 +154,7 @@ class TestMockDataConsistency:
         assert isinstance(results, dict)
         assert len(results) > 0
 
-    def test_mock_ble_data_consistency(self):
+    def test_mock_ble_data_consistency(self) -> None:
         """Test that mock_ble_data returns consistent results."""
         data1 = mock_ble_data()
         data2 = mock_ble_data()
@@ -177,7 +177,7 @@ class TestMockDataConsistency:
         ("020106030318180f", 8),  # Longer advertising packet
     ],
 )
-def test_hex_data_conversion(hex_data, expected_length):
+def test_hex_data_conversion(hex_data: str, expected_length: int) -> None:
     """Test hex data conversion in advertising parsing."""
     # Remove separators and convert
     clean_hex = hex_data.replace(" ", "").replace(":", "")

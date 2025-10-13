@@ -7,16 +7,17 @@ from typing import Any
 
 import pytest
 
-from src.bluetooth_sig.core.translator import BluetoothSIGTranslator
-from src.bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
-from src.bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
-from src.bluetooth_sig.gatt.characteristics.utils import DataParser
-from src.bluetooth_sig.gatt.services.base import CustomBaseGattService
-from src.bluetooth_sig.gatt.services.registry import GattServiceRegistry
-from src.bluetooth_sig.gatt.uuid_registry import CustomUuidEntry, uuid_registry
-from src.bluetooth_sig.types import CharacteristicInfo, CharacteristicRegistration, ServiceRegistration
-from src.bluetooth_sig.types.gatt_enums import GattProperty, ValueType
-from src.bluetooth_sig.types.uuid import BluetoothUUID
+from bluetooth_sig.core.translator import BluetoothSIGTranslator
+from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
+from bluetooth_sig.gatt.characteristics.utils import DataParser
+from bluetooth_sig.gatt.context import CharacteristicContext
+from bluetooth_sig.gatt.services.base import CustomBaseGattService
+from bluetooth_sig.gatt.services.registry import GattServiceRegistry
+from bluetooth_sig.gatt.uuid_registry import CustomUuidEntry, uuid_registry
+from bluetooth_sig.types import CharacteristicInfo, CharacteristicRegistration, ServiceRegistration
+from bluetooth_sig.types.gatt_enums import GattProperty, ValueType
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 class CustomCharacteristicImpl(CustomBaseCharacteristic):
@@ -31,18 +32,18 @@ class CustomCharacteristicImpl(CustomBaseCharacteristic):
         properties=[],
     )
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
         """Parse test data as uint16."""
         return DataParser.parse_int16(bytes(data), 0, signed=False)
 
-    def encode_value(self, data: Any) -> bytearray:
+    def encode_value(self, data: int) -> bytearray:
         """Encode value to bytes (required abstract method)."""
-        if isinstance(data, int):
-            return bytearray(data.to_bytes(2, "little", signed=False))
-        raise ValueError(f"Cannot encode {type(data)} to bytes")
+        return bytearray(data.to_bytes(2, "little", signed=False))
 
     @classmethod
-    def from_uuid(cls, uuid: str | BluetoothUUID, properties: set[GattProperty] | None = None):
+    def from_uuid(
+        cls, uuid: str | BluetoothUUID, properties: set[GattProperty] | None = None
+    ) -> CustomCharacteristicImpl:
         """Create instance from UUID for registry compatibility (legacy support)."""
         if isinstance(uuid, str):
             uuid = BluetoothUUID(uuid)
@@ -67,12 +68,9 @@ class CustomServiceImpl(CustomBaseGattService):
 class TestRuntimeRegistration:
     """Test runtime registration functionality."""
 
-    def setup_method(self) -> None:
-        """Reset registries before each test."""
-        # Clear custom registrations
-        CharacteristicRegistry.clear_custom_registrations()
-        GattServiceRegistry.clear_custom_registrations()
-        uuid_registry.clear_custom_registrations()
+    @pytest.fixture(autouse=True)
+    def _reset_registries(self, reset_registries: None) -> None:
+        """Automatically reset registries after each test in this class."""
 
     def test_register_custom_characteristic_metadata(self) -> None:
         """Test registering custom characteristic metadata."""
@@ -287,11 +285,11 @@ class TestRuntimeRegistration:
                     # 3. Consolidation would reduce test independence and clarity
                     self: CustomBaseCharacteristic,
                     data: bytearray,
-                    ctx: Any | None = None,
+                    ctx: CharacteristicContext | None = None,
                 ) -> int:
                     return data[0]
 
-                def encode_value(self: CustomBaseCharacteristic, data: Any) -> bytearray:
+                def encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
                     return bytearray([data])
 
                 namespace["decode_value"] = decode_value
@@ -327,11 +325,11 @@ class TestRuntimeRegistration:
                 # 3. Consolidation would reduce test independence and clarity
                 self,
                 data: bytearray,
-                ctx: Any | None = None,
+                ctx: CharacteristicContext | None = None,
             ) -> int:
                 return data[0]
 
-            def encode_value(self, data: Any) -> bytearray:
+            def encode_value(self, data: int) -> bytearray:
                 return bytearray([data])
 
         # Should work without error

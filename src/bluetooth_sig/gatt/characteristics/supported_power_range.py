@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import msgspec
 
 from ...types.gatt_enums import ValueType
 from ..constants import SINT16_MAX, SINT16_MIN
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
 
@@ -40,7 +39,7 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured SupportedPowerRangeData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> SupportedPowerRangeData:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> SupportedPowerRangeData:
         """Parse supported power range data (2x sint16 in watts).
 
         Args:

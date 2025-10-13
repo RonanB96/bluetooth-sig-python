@@ -42,7 +42,7 @@ def mock_uuid_registry() -> UuidRegistry:
     env_info.name = "Environmental Sensing"
     env_info.id = "org.bluetooth.service.environmental_sensing"
 
-    def mock_get_service_info(uuid: str) -> Any:
+    def mock_get_service_info(uuid: str) -> MagicMock | None:
         return {
             "180F": battery_info,
             "181A": env_info,
@@ -66,7 +66,7 @@ def mock_uuid_registry() -> UuidRegistry:
     humidity_info.name = "Humidity"
     humidity_info.id = "org.bluetooth.characteristic.humidity"
 
-    def mock_get_characteristic_info(uuid: str) -> Any:
+    def mock_get_characteristic_info(uuid: str) -> MagicMock | None:
         return {
             "2A19": battery_level_info,
             "00002A19-0000-1000-8000-00805F9B34FB": battery_level_info,
@@ -95,7 +95,7 @@ def test_service_uuid_lookup_parametrized(
     service_uuid: str,
     service_name: str,
     service_id: str,
-):
+) -> None:
     """Test that service UUIDs are correctly loaded from YAML files."""
     info = mock_uuid_registry.get_service_info(service_uuid)
     assert info is not None, f"{service_name} Service not found"
@@ -114,7 +114,7 @@ def test_service_uuid_lookup_parametrized(
 )
 def test_characteristic_uuid_lookup_parametrized(
     mock_uuid_registry: UuidRegistry, char_uuid: str, char_name: str, char_id: str
-):
+) -> None:
     """Test that characteristic UUIDs are correctly loaded."""
     info = mock_uuid_registry.get_characteristic_info(char_uuid)
     assert info is not None, f"{char_name} characteristic not found"
@@ -123,7 +123,7 @@ def test_characteristic_uuid_lookup_parametrized(
     assert info.id == char_id
 
 
-def test_service_class_name_resolution():
+def test_service_class_name_resolution() -> None:
     """Test that service classes correctly resolve their UUIDs from names."""
     battery = BatteryService()
     env = EnvironmentalSensingService()
@@ -135,7 +135,7 @@ def test_service_class_name_resolution():
     assert env.name == "Environmental Sensing", "Wrong Environmental Service name"
 
 
-def test_characteristic_discovery():
+def test_characteristic_discovery() -> None:
     """Test discovery and creation of characteristics from device data."""
     # Use characteristic classes to get proper SIG UUIDs
     battery_char = BatteryLevelCharacteristic()
@@ -170,7 +170,7 @@ def test_characteristic_discovery():
     assert "Humidity" in char_names
 
 
-def test_full_uuid_lookup(mock_uuid_registry: UuidRegistry):
+def test_full_uuid_lookup(mock_uuid_registry: UuidRegistry) -> None:
     """Test lookup with full 128-bit UUIDs."""
     # Test with full Battery Level UUID
     full_uuid = "00002A19-0000-1000-8000-00805F9B34FB"
@@ -180,13 +180,13 @@ def test_full_uuid_lookup(mock_uuid_registry: UuidRegistry):
     assert info.name == "Battery Level"
 
 
-def test_invalid_uuid_lookup(mock_uuid_registry: UuidRegistry):
+def test_invalid_uuid_lookup(mock_uuid_registry: UuidRegistry) -> None:
     """Test lookup behavior with invalid UUIDs."""
     assert mock_uuid_registry.get_service_info("0000") is None, "Should return None for invalid service"
     assert mock_uuid_registry.get_characteristic_info("0000") is None, "Should return None for invalid characteristic"
 
 
-def test_yaml_file_presence():
+def test_yaml_file_presence() -> None:
     """Test that required YAML files exist."""
     base_path = Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
@@ -298,3 +298,55 @@ class TestBluetoothUUID:
         assert BluetoothUUID("1800").is_sig_characteristic() is False  # Service UUID
         assert BluetoothUUID("29FF").is_sig_characteristic() is False  # Below SIG range
         assert BluetoothUUID("2C25").is_sig_characteristic() is False  # Above SIG range
+
+    def test_bytes_property(self) -> None:
+        """Test .bytes property for binary representation."""
+        from bluetooth_sig.types.uuid import BluetoothUUID
+
+        # Test with short form UUID
+        uuid_short = BluetoothUUID("180F")  # Battery Service
+        expected_bytes = bytes.fromhex("0000180f00001000800000805f9b34fb")
+        assert uuid_short.bytes == expected_bytes
+        assert len(uuid_short.bytes) == 16
+
+        # Test with full form UUID
+        uuid_full = BluetoothUUID("0000180F-0000-1000-8000-00805F9B34FB")
+        assert uuid_full.bytes == expected_bytes
+
+        # Verify both forms produce same bytes
+        assert uuid_short.bytes == uuid_full.bytes
+
+        # Test with custom UUID
+        custom_uuid = BluetoothUUID("12345678-1234-5678-9ABC-DEF012345678")
+        expected_custom = bytes.fromhex("12345678123456789ABCDEF012345678")
+        assert custom_uuid.bytes == expected_custom
+
+    def test_bytes_le_property(self) -> None:
+        """Test .bytes_le property for little-endian binary representation."""
+        from bluetooth_sig.types.uuid import BluetoothUUID
+
+        # Test with short form UUID
+        uuid_short = BluetoothUUID("180F")
+        expected_bytes_le = bytes.fromhex("fb349b5f80000080001000000f180000")
+        assert uuid_short.bytes_le == expected_bytes_le
+        assert len(uuid_short.bytes_le) == 16
+
+        # Test that bytes and bytes_le are different (endianness matters)
+        assert uuid_short.bytes != uuid_short.bytes_le
+
+        # Test that reversing bytes_le gives bytes
+        assert bytes(reversed(uuid_short.bytes_le)) == uuid_short.bytes
+
+    def test_bytes_roundtrip(self) -> None:
+        """Test that UUID can be reconstructed from bytes."""
+        from bluetooth_sig.types.uuid import BluetoothUUID
+
+        original = BluetoothUUID("2A37")  # Heart Rate Measurement
+
+        # Reconstruct from bytes
+        uuid_bytes = original.bytes
+        reconstructed_int = int.from_bytes(uuid_bytes, byteorder="big")
+        reconstructed = BluetoothUUID(reconstructed_int)
+
+        assert original == reconstructed
+        assert original.bytes == reconstructed.bytes

@@ -10,7 +10,7 @@ from bluetooth_sig.types.device_types import DeviceEncryption, DeviceService
 class TestDeviceService:
     """Test DeviceService dataclass."""
 
-    def test_device_service_creation(self):
+    def test_device_service_creation(self) -> None:
         """Test creation of DeviceService with mock service."""
         mock_service = Mock()
         mock_service.service_name = "Battery Service"
@@ -21,7 +21,7 @@ class TestDeviceService:
         assert device_service.service == mock_service
         assert device_service.characteristics == {"battery_level": mock_characteristic}
 
-    def test_device_service_default_characteristics(self):
+    def test_device_service_default_characteristics(self) -> None:
         """Test DeviceService with default empty characteristics."""
         mock_service = Mock()
 
@@ -34,7 +34,7 @@ class TestDeviceService:
 class TestDeviceEncryption:
     """Test DeviceEncryption dataclass."""
 
-    def test_device_encryption_creation_minimal(self):
+    def test_device_encryption_creation_minimal(self) -> None:
         """Test creation of DeviceEncryption with minimal parameters."""
         encryption = DeviceEncryption()
 
@@ -44,7 +44,7 @@ class TestDeviceEncryption:
         assert encryption.security_mode == 0
         assert encryption.key_size == 0
 
-    def test_device_encryption_creation_full(self):
+    def test_device_encryption_creation_full(self) -> None:
         """Test creation of DeviceEncryption with all parameters."""
         encryption = DeviceEncryption(
             requires_authentication=True,
@@ -60,7 +60,7 @@ class TestDeviceEncryption:
         assert encryption.security_mode == 1
         assert encryption.key_size == 128
 
-    def test_device_encryption_partial_config(self):
+    def test_device_encryption_partial_config(self) -> None:
         """Test DeviceEncryption with partial configuration."""
         encryption = DeviceEncryption(requires_authentication=True, security_mode=2)
 

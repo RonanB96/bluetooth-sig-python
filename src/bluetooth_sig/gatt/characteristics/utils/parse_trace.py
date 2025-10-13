@@ -17,7 +17,7 @@ class ParseTrace:
         result = trace.get_trace()  # Returns list of strings
     """
 
-    def __init__(self, enabled: bool = True):
+    def __init__(self, enabled: bool = True) -> None:
         """Initialize parse trace collector.
 
         Args:

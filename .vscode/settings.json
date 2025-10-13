@@ -44,6 +44,8 @@
         "python scripts/": true,
         "python examples/": true,
         ".venv/bin/python3": true,
+        "python3 -c": true,
+        "python -c": true,
         // File and directory read commands
         "cp": true,
         "cat": true,
@@ -223,4 +225,9 @@
     "cSpell.words": [
         "simplepyble"
     ],
+    // Ensure VS Code integrated terminals (and processes spawned inheriting that env) can find uvx & other venv tools
+    // Prepends the project .venv/bin to PATH. This helps MCP / Serena spawning avoid ENOENT for uvx.
+    "terminal.integrated.env.linux": {
+        "PATH": "${workspaceFolder}/.venv/bin:$HOME/.local/bin:${env:PATH}"
+    },
 }

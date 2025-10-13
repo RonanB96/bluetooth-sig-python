@@ -10,6 +10,7 @@ from typing import Any
 
 from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.utils import DebugUtils
+from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.exceptions import ParseFieldError as ParseFieldException
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import ValueType
@@ -27,7 +28,7 @@ class LoggingTestCharacteristic(CustomBaseCharacteristic):
         properties=[],
     )
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
         """Decode with potential field errors."""
         if len(data) < 3:
             raise ParseFieldException(
@@ -60,7 +61,7 @@ class LoggingTestCharacteristic(CustomBaseCharacteristic):
 class TestLoggingFieldErrors:
     """Test suite for logging integration with field-level errors."""
 
-    def test_field_errors_available_in_result(self):
+    def test_field_errors_available_in_result(self) -> None:
         """Test that field errors are available in parse result for logging."""
         char = LoggingTestCharacteristic()
         # Data that will cause field error (value > 200)
@@ -79,7 +80,7 @@ class TestLoggingFieldErrors:
         # Verify parse trace is populated
         assert len(result.parse_trace) > 0
 
-    def test_parse_trace_available_for_logging(self):
+    def test_parse_trace_available_for_logging(self) -> None:
         """Test that parse trace is available for logging."""
         char = LoggingTestCharacteristic()
         # Valid data
@@ -95,7 +96,7 @@ class TestLoggingFieldErrors:
         assert any("Starting parse" in step for step in result.parse_trace)
         assert any("completed successfully" in step for step in result.parse_trace)
 
-    def test_debug_utils_format_for_logging(self):
+    def test_debug_utils_format_for_logging(self) -> None:
         """Test that DebugUtils formatting works for logging output."""
         char = LoggingTestCharacteristic()
         data = bytes([250, 0x10, 0x20])
@@ -113,7 +114,7 @@ class TestLoggingFieldErrors:
             formatted_trace = DebugUtils.format_parse_trace(result.parse_trace)
             assert "Parse trace:" in formatted_trace
 
-    def test_field_error_hex_dump_in_logging(self):
+    def test_field_error_hex_dump_in_logging(self) -> None:
         """Test that hex dump context is available for logging."""
         char = LoggingTestCharacteristic()
         data = bytes([250, 0x10, 0x20])
@@ -127,7 +128,7 @@ class TestLoggingFieldErrors:
             # Should contain hex representation for debugging
             assert "FA" in formatted or "250" in formatted  # Hex or decimal representation
 
-    def test_backward_compatibility_error_message(self):
+    def test_backward_compatibility_error_message(self) -> None:
         """Test that error_message is still populated for backward compatibility."""
         char = LoggingTestCharacteristic()
         data = bytes([250, 0x10, 0x20])
@@ -141,7 +142,7 @@ class TestLoggingFieldErrors:
         # New field_errors should also be available
         assert len(result.field_errors) > 0
 
-    def test_multiple_field_errors_logging(self):
+    def test_multiple_field_errors_logging(self) -> None:
         """Test logging with multiple field errors."""
 
         class MultiErrorCharacteristic(CustomBaseCharacteristic):
@@ -155,7 +156,7 @@ class TestLoggingFieldErrors:
                 properties=[],
             )
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:
+            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
                 """Decode with validation that can fail in multiple fields."""
                 # Check field 1
                 if len(data) < 2:

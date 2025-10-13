@@ -23,6 +23,7 @@ from typing import Any, cast
 
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
 from bluetooth_sig.types.data_types import CharacteristicData
+from bluetooth_sig.types.uuid import BluetoothUUID
 from examples import shared_utils
 from examples.utils import library_detection, simpleble_integration
 
@@ -46,13 +47,13 @@ async def read_characteristics_with_manager(
 def scan_devices_simpleble(simpleble_module: ModuleType, timeout: float = 10.0) -> list[dict[str, Any]]:
     """Wrapper ensuring precise typing for scanning helper."""
 
-    return cast(list[dict[str, Any]], simpleble_integration.scan_devices_simpleble(simpleble_module, timeout))
+    return simpleble_integration.scan_devices_simpleble(simpleble_module, timeout)
 
 
 def comprehensive_device_analysis_simpleble(
     address: str,
     simpleble_module: ModuleType,
-) -> dict[str, CharacteristicData]:
+) -> dict[BluetoothUUID, CharacteristicData]:
     """Wrapper ensuring precise typing for comprehensive analysis helper."""
 
     return simpleble_integration.comprehensive_device_analysis_simpleble(address, simpleble_module)
@@ -128,7 +129,7 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:  
 
 def read_and_parse_with_simpleble(
     address: str, target_uuids: list[str] | None = None
-) -> dict[str, Any] | dict[str, CharacteristicData]:
+) -> dict[str, Any] | dict[BluetoothUUID, CharacteristicData]:
     """Read characteristics from a BLE device using SimpleBLE and parse with
     SIG standards.
 
@@ -175,13 +176,23 @@ def handle_device_operations_simpleble(args: argparse.Namespace) -> None:
         display_simpleble_results(results)
 
 
-def display_simpleble_results(results: dict[str, Any] | dict[str, CharacteristicData]) -> None:
+def display_simpleble_results(
+    results: dict[str, Any] | dict[str, CharacteristicData] | dict[BluetoothUUID, CharacteristicData],
+) -> None:
     """Display SimpleBLE results in a consistent format."""
-    if "stats" in results:
-        if results["parsed_data"]:
-            for _uuid, data in results["parsed_data"].items():
-                unit_str = f" {data['unit']}" if data["unit"] else ""
-                print(f"{data['name']}: {data['value']}{unit_str}")
+    # Type narrowing: check if results is dict[str, Any] with stats/parsed_data
+    if "stats" in results and "parsed_data" in results:  # type: ignore[operator]
+        # This must be dict[str, Any] from comprehensive analysis
+        results_any = cast(dict[str, Any], results)
+        parsed_data: Any = results_any["parsed_data"]
+        if isinstance(parsed_data, dict):
+            for _uuid, data in parsed_data.items():
+                if isinstance(data, CharacteristicData):
+                    unit_str = f" {data.unit}" if data.unit else ""
+                    print(f"{data.name}: {data.value}{unit_str}")
+                elif isinstance(data, dict):
+                    unit_str = f" {data['unit']}" if data.get("unit") else ""
+                    print(f"{data.get('name', str(_uuid))}: {data.get('value', 'N/A')}{unit_str}")
     else:
         for _uuid, result in results.items():
             if isinstance(result, CharacteristicData):

@@ -8,6 +8,7 @@ from typing import Any
 import msgspec
 
 from ..constants import UINT8_MAX
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import BitFieldUtils
 
@@ -192,7 +193,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
     # value_type to be 'string'. Override to keep metadata consistent.
     _manual_value_type = "string"
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> BatteryPowerStateData:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> BatteryPowerStateData:
         """Parse the Battery Level Status value.
 
         The characteristic supports a 1-byte basic format and a 2-byte

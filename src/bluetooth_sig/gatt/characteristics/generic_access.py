@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
@@ -14,11 +13,11 @@ class DeviceNameCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Device Name"
     _manual_value_type = "string"  # Override since decode_value returns str
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> str:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> str:
         """Parse device name string."""
         return DataParser.parse_utf8_string(data)
 
-    def encode_value(self, data: Any) -> bytearray:
+    def encode_value(self, data: str) -> bytearray:
         """Encode device name value back to bytes.
 
         Args:
@@ -27,9 +26,6 @@ class DeviceNameCharacteristic(BaseCharacteristic):
         Returns:
             Encoded bytes representing the device name (UTF-8)
         """
-        if not isinstance(data, str):
-            raise TypeError("Device name must be a string")
-
         # Encode as UTF-8 bytes
         return bytearray(data.encode("utf-8"))
 
@@ -44,7 +40,7 @@ class AppearanceCharacteristic(BaseCharacteristic):
     max_length = 2  # Appearance(2) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> int:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> int:
         """Parse appearance value (uint16)."""
         return DataParser.parse_int16(data, 0, signed=False)
 

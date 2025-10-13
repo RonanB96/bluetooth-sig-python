@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from enum import IntFlag
-from typing import Any
 
 import msgspec
 
 from ...types.gatt_enums import ValueType
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
@@ -45,7 +45,7 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
 
     _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> BloodPressureFeatureData:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> BloodPressureFeatureData:
         """Parse blood pressure feature data according to Bluetooth
         specification.
 

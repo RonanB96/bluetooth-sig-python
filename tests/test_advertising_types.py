@@ -14,14 +14,14 @@ from bluetooth_sig.types.advertising import (
 class TestPDUType:
     """Test PDU type enum and properties."""
 
-    def test_extended_advertising_pdus(self):
+    def test_extended_advertising_pdus(self) -> None:
         """Test identification of extended advertising PDU types."""
         assert PDUType.ADV_EXT_IND.is_extended_advertising is True
         assert PDUType.ADV_AUX_IND.is_extended_advertising is True
         assert PDUType.ADV_IND.is_extended_advertising is False
         assert PDUType.ADV_DIRECT_IND.is_extended_advertising is False
 
-    def test_legacy_advertising_pdus(self):
+    def test_legacy_advertising_pdus(self) -> None:
         """Test identification of legacy advertising PDU types."""
         assert PDUType.ADV_IND.is_legacy_advertising is True
         assert PDUType.ADV_DIRECT_IND.is_legacy_advertising is True
@@ -37,7 +37,7 @@ class TestPDUType:
 class TestBLEExtendedHeader:
     """Test extended header functionality."""
 
-    def test_extended_header_properties(self):
+    def test_extended_header_properties(self) -> None:
         """Test extended header property methods."""
         # Test with no flags set
         header = BLEExtendedHeader(adv_mode=0)
@@ -74,7 +74,7 @@ class TestBLEExtendedHeader:
 class TestBLEAdvertisingPDU:
     """Test BLE advertising PDU functionality."""
 
-    def test_pdu_creation(self):
+    def test_pdu_creation(self) -> None:
         """Test PDU creation and basic properties."""
         pdu = BLEAdvertisingPDU(
             pdu_type=PDUType.ADV_IND,
@@ -90,7 +90,7 @@ class TestBLEAdvertisingPDU:
         assert pdu.length == 10
         assert pdu.payload == b"test_data"
 
-    def test_extended_advertising_detection(self):
+    def test_extended_advertising_detection(self) -> None:
         """Test detection of extended advertising PDUs."""
         extended_pdu = BLEAdvertisingPDU(pdu_type=PDUType.ADV_EXT_IND, tx_add=False, rx_add=False, length=5)
         assert extended_pdu.is_extended_advertising is True
@@ -100,7 +100,7 @@ class TestBLEAdvertisingPDU:
         assert legacy_pdu.is_extended_advertising is False
         assert legacy_pdu.is_legacy_advertising is True
 
-    def test_pdu_name_property(self):
+    def test_pdu_name_property(self) -> None:
         """Test PDU name resolution."""
         pdu = BLEAdvertisingPDU(pdu_type=PDUType.ADV_IND, tx_add=False, rx_add=False, length=5)
         assert pdu.pdu_name == "ADV_IND"
@@ -112,7 +112,7 @@ class TestBLEAdvertisingPDU:
 class TestParsedADStructures:
     """Test parsed advertising data structures."""
 
-    def test_dataclass_creation(self):
+    def test_dataclass_creation(self) -> None:
         """Test creation of ParsedADStructures dataclass."""
         parsed = ParsedADStructures()
         assert parsed.manufacturer_data == {}
@@ -121,7 +121,7 @@ class TestParsedADStructures:
         assert parsed.tx_power == 0
         assert parsed.flags == 0
 
-    def test_dataclass_with_data(self):
+    def test_dataclass_with_data(self) -> None:
         """Test ParsedADStructures with populated data."""
         parsed = ParsedADStructures(
             manufacturer_data={0x1234: b"test_data"},

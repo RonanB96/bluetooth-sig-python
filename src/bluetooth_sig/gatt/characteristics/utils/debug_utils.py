@@ -1,4 +1,4 @@
-"""Debugging and testing support utilities."""
+"""Debug utility methods for characteristic parsing."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import struct
 from typing import Any
 
 from bluetooth_sig.types.data_types import ParseFieldError
+from bluetooth_sig.types.protocols import CharacteristicProtocol
 
 from .bit_field_utils import BitFieldUtils
 
@@ -23,7 +24,7 @@ class DebugUtils:
         return " ".join(f"{byte:02X}" for byte in data)  # HEX_FORMAT_WIDTH = 2
 
     @staticmethod
-    def validate_round_trip(characteristic: Any, original_data: bytearray) -> bool:
+    def validate_round_trip(characteristic: CharacteristicProtocol, original_data: bytearray) -> bool:
         """Validate that parse/encode operations preserve data integrity."""
         try:
             parsed = characteristic.parse_value(original_data)
@@ -34,7 +35,7 @@ class DebugUtils:
 
     @staticmethod
     def format_measurement_value(
-        value: Any,
+        value: int | float | str | None,
         unit: str | None = None,
         precision: int = 2,  # DebugUtils.DEFAULT_PRECISION,
     ) -> str:

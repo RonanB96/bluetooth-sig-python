@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from enum import IntFlag
-from typing import Any
 
 import msgspec
 
@@ -13,6 +12,7 @@ from ..constants import (
     UINT8_MAX,
     UINT16_MAX,
 )
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
@@ -77,7 +77,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = "W"  # Watts unit for power measurement
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> CyclingPowerMeasurementData:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> CyclingPowerMeasurementData:
         """Parse cycling power measurement data according to Bluetooth
         specification.
 

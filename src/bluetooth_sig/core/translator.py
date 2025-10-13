@@ -54,6 +54,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         uuid: str,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
+        properties: set[str] | None = None,  # pylint: disable=unused-argument
     ) -> CharacteristicData:
         """Parse a characteristic's raw data using SIG standards.
 
@@ -62,8 +63,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             raw_data: Raw bytes from the characteristic
             ctx: Optional `CharacteristicContext` providing device-level info
                 and previously-parsed characteristics to the parser.
-            properties: Optional set of characteristic properties to pass when
-                constructing the characteristic instance.
+            properties: Optional set of characteristic properties (unused, kept for protocol compatibility)
 
         Returns:
             CharacteristicData with parsed value and metadata
@@ -190,19 +190,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         """
         char_class = CharacteristicRegistry.get_characteristic_class(name)
         if char_class:
-            try:
-                temp_char = char_class(uuid="", properties=set())
-                value_type_str = (
-                    temp_char.value_type.value if hasattr(temp_char.value_type, "value") else str(temp_char.value_type)
-                )
-                return CharacteristicInfo(
-                    uuid=temp_char.uuid,
-                    name=getattr(temp_char, "_characteristic_name", char_class.__name__),
-                    value_type=value_type_str,
-                    unit=temp_char.unit,
-                )
-            except Exception:  # pylint: disable=broad-exception-caught
-                pass
+            return char_class.get_configured_info()
         return None
 
     def get_service_info_by_name(self, name: str) -> ServiceInfo | None:
@@ -233,16 +221,21 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             ServiceInfo with metadata or None if not found
         """
-        service_class = GattServiceRegistry.get_service_class_by_uuid(uuid)
+        service_class = GattServiceRegistry.get_service_class_by_uuid(BluetoothUUID(uuid))
         if not service_class:
             return None
 
         try:
             temp_service = service_class()
+            # Convert characteristics dict to list of CharacteristicInfo
+            char_infos: list[CharacteristicInfo] = []
+            for _, char_instance in temp_service.characteristics.items():
+                # Use public info property
+                char_infos.append(char_instance.info)
             return ServiceInfo(
                 uuid=temp_service.uuid,
                 name=temp_service.name,
-                characteristics=[str(uuid) for uuid in temp_service.characteristics.keys()],
+                characteristics=char_infos,
             )
         except Exception:  # pylint: disable=broad-exception-caught
             return None
@@ -254,15 +247,13 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             Dictionary mapping characteristic names to UUIDs
         """
         result: dict[str, str] = {}
-        for (
-            name,
-            char_class,
-        ) in CharacteristicRegistry.get_all_characteristics().items():
-            try:
-                temp_char = char_class(uuid="", properties=set())
-                result[name] = temp_char.uuid
-            except Exception:  # pylint: disable=broad-exception-caught
-                continue
+        for name, char_class in CharacteristicRegistry.get_all_characteristics().items():
+            # Try to get configured_info from class using public accessor
+            configured_info = char_class.get_configured_info()
+            if configured_info:
+                # Convert CharacteristicName enum to string for dict key
+                name_str = name.value if hasattr(name, "value") else str(name)
+                result[name_str] = str(configured_info.uuid)
         return result
 
     def list_supported_services(self) -> dict[str, str]:
@@ -276,7 +267,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             try:
                 temp_service = service_class()
                 service_name = getattr(temp_service, "_service_name", service_class.__name__)
-                result[service_name] = temp_service.uuid
+                result[service_name] = str(temp_service.uuid)
             except Exception:  # pylint: disable=broad-exception-caught
                 continue
         return result
@@ -287,10 +278,30 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Args:
             services: Dictionary of service UUIDs to their characteristics
         """
-        for uuid, service_data in services.items():
-            service = GattServiceRegistry.create_service(uuid, service_data.get("characteristics", {}))
+        for uuid_str, service_data in services.items():
+            uuid = BluetoothUUID(uuid_str)
+            # Convert dict[str, dict] to ServiceDiscoveryData
+            characteristics: dict[BluetoothUUID, CharacteristicInfo] = {}
+            for char_uuid_str, char_data in service_data.get("characteristics", {}).items():
+                char_uuid = BluetoothUUID(char_uuid_str)
+                # Create CharacteristicInfo from dict
+                vtype_raw = char_data.get("value_type", "bytes")
+                if isinstance(vtype_raw, str):
+                    value_type = ValueType(vtype_raw)
+                elif isinstance(vtype_raw, ValueType):
+                    value_type = vtype_raw
+                else:
+                    value_type = ValueType.BYTES
+                characteristics[char_uuid] = CharacteristicInfo(
+                    uuid=char_uuid,
+                    name=char_data.get("name", ""),
+                    unit=char_data.get("unit", ""),
+                    value_type=value_type,
+                    properties=char_data.get("properties", []),
+                )
+            service = GattServiceRegistry.create_service(uuid, characteristics)
             if service:
-                self._services[uuid] = service
+                self._services[str(uuid)] = service
 
     def get_service(self, uuid: str) -> BaseGattService | None:
         """Get a service instance by UUID.
@@ -329,12 +340,18 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         try:
             char_info = uuid_registry.get_characteristic_info(name)
             if char_info:
-                # Build CharacteristicInfo
+                # Build CharacteristicInfo from registry data
+                value_type = ValueType.UNKNOWN
+                if char_info.value_type:
+                    try:
+                        value_type = ValueType(char_info.value_type)
+                    except (ValueError, KeyError):
+                        value_type = ValueType.UNKNOWN
                 return CharacteristicInfo(
                     uuid=char_info.uuid,
                     name=char_info.name,
-                    value_type="",
-                    unit="",
+                    value_type=value_type,
+                    unit=char_info.unit or "",
                 )
         except Exception:  # pylint: disable=broad-exception-caught
             pass
@@ -474,14 +491,14 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         """Topologically sort characteristics based on declared dependencies."""
 
         try:
-            sorter = TopologicalSorter()
+            sorter: TopologicalSorter[str] = TopologicalSorter()
             for uuid in char_data:
                 all_deps = uuid_to_required_deps.get(uuid, []) + uuid_to_optional_deps.get(uuid, [])
                 batch_deps = [dep for dep in all_deps if dep in char_data]
                 sorter.add(uuid, *batch_deps)
 
             sorted_sequence = sorter.static_order()
-            sorted_uuids = [str(item) for item in sorted_sequence]
+            sorted_uuids = list(sorted_sequence)
             logger.debug("Dependency-sorted parsing order: %s", sorted_uuids)
             return sorted_uuids
         except Exception as exc:  # pylint: disable=broad-exception-caught
@@ -627,7 +644,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             # Attempt to parse the data - if it succeeds, format is valid
             parsed = self.parse_characteristic(uuid, data)
             return ValidationResult(
-                uuid=uuid,
+                uuid=BluetoothUUID(uuid),
                 name=parsed.name,
                 is_valid=parsed.parse_success,
                 actual_length=len(data),
@@ -636,7 +653,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         except Exception as e:  # pylint: disable=broad-exception-caught
             # If parsing failed, data format is invalid
             return ValidationResult(
-                uuid=uuid,
+                uuid=BluetoothUUID(uuid),
                 name="Unknown",
                 is_valid=False,
                 actual_length=len(data),
@@ -652,7 +669,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             List of characteristic UUIDs for this service
         """
-        service_class = GattServiceRegistry.get_service_class_by_uuid(service_uuid)
+        service_class = GattServiceRegistry.get_service_class_by_uuid(BluetoothUUID(service_uuid))
         if not service_class:
             return []
 
@@ -687,13 +704,15 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         # Register metadata if provided
         if metadata:
+            # Convert ValueType enum to string for registry storage
+            vtype_str = metadata.value_type.value if hasattr(metadata.value_type, "value") else str(metadata.value_type)
             entry = CustomUuidEntry(
                 uuid=metadata.uuid,
                 name=metadata.name or cls.__name__,
                 id=metadata.id,
                 summary=metadata.summary,
                 unit=metadata.unit,
-                value_type=metadata.value_type,
+                value_type=vtype_str,
             )
             uuid_registry.register_characteristic(entry, override)
 

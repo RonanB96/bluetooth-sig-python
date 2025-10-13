@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import IntFlag
-from typing import Any
 
 import msgspec
 
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import IEEE11073Parser
 
@@ -42,7 +42,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
     max_length: int | None = 13  # + Timestamp(7) + TemperatureType(1) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
         """Parse temperature measurement data according to Bluetooth
         specification.
 
@@ -66,19 +66,26 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         # Check temperature unit flag (bit 0)
         unit = "°F" if TemperatureMeasurementFlags.FAHRENHEIT_UNIT in flags else "°C"
 
-        result = TemperatureMeasurementData(temperature=temp_value, unit=unit, flags=int(flags))
-
-        # Parse optional timestamp (7 bytes) if present
+        # Parse optional fields
+        timestamp: datetime | None = None
+        temperature_type: int | None = None
         offset = 5
+
         if TemperatureMeasurementFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
-            result.timestamp = IEEE11073Parser.parse_timestamp(data, offset)
+            timestamp = IEEE11073Parser.parse_timestamp(data, offset)
             offset += 7
 
-        # Parse optional temperature type (1 byte) if present
         if TemperatureMeasurementFlags.TEMPERATURE_TYPE_PRESENT in flags and len(data) >= offset + 1:
-            result.temperature_type = data[offset]
+            temperature_type = data[offset]
 
-        return result
+        # Create immutable struct with all values
+        return TemperatureMeasurementData(
+            temperature=temp_value,
+            unit=unit,
+            flags=int(flags),
+            timestamp=timestamp,
+            temperature_type=temperature_type,
+        )
 
     def encode_value(self, data: TemperatureMeasurementData) -> bytearray:
         """Encode temperature measurement value back to bytes.

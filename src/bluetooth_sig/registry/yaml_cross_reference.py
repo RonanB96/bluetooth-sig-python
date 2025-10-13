@@ -82,7 +82,7 @@ class CharacteristicSpec:
 class YAMLCrossReferenceResolver:
     """YAML resolver with cross-file references for maximum automation."""
 
-    def __init__(self, bluetooth_sig_path: Path | None = None):
+    def __init__(self, bluetooth_sig_path: Path | None = None) -> None:
         """Initialize with path to bluetooth_sig submodule."""
         self.bluetooth_sig_path = bluetooth_sig_path or self._find_bluetooth_sig_path()
         self._gss_specs: dict[str, dict[str, Any]] = {}

@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import IntFlag
-from typing import Any
 
 import msgspec
 
 from ..constants import PERCENTAGE_MAX
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
 
@@ -120,7 +120,9 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 50  # + Timestamp(7) + UserID(1) + Multiple measurements maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> BodyCompositionMeasurementData:
+    def decode_value(
+        self, data: bytearray, _ctx: CharacteristicContext | None = None
+    ) -> BodyCompositionMeasurementData:
         """Parse body composition measurement data according to Bluetooth
         specification.
 

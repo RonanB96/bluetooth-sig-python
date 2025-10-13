@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 
-def safe_get_device_info(device: Any) -> tuple[str, str, str | None]:
+def safe_get_device_info(device: Any) -> tuple[str, str, str | None]:  # noqa: ANN401  # Works with any BLE library's device type
     """Safely extract device information from any BLE device object.
 
     Args:

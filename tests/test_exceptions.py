@@ -24,7 +24,7 @@ from bluetooth_sig.gatt.exceptions import (
 class TestBluetoothSIGExceptions:
     """Test exception hierarchy and functionality."""
 
-    def test_base_exception_inheritance(self):
+    def test_base_exception_inheritance(self) -> None:
         """Test that all exceptions inherit from BluetoothSIGError."""
         # Test inheritance chain
         assert issubclass(CharacteristicError, BluetoothSIGError)
@@ -33,7 +33,7 @@ class TestBluetoothSIGExceptions:
         assert issubclass(DataParsingError, CharacteristicError)
         assert issubclass(DataValidationError, CharacteristicError)
 
-    def test_uuid_resolution_error(self):
+    def test_uuid_resolution_error(self) -> None:
         """Test UUIDResolutionError functionality."""
         # Basic error
         error = UUIDResolutionError("SomeCharacteristic")
@@ -47,7 +47,7 @@ class TestBluetoothSIGExceptions:
         assert error_with_attempts.attempted_names == attempted
         assert "Tried:" in str(error_with_attempts)
 
-    def test_data_parsing_error(self):
+    def test_data_parsing_error(self) -> None:
         """Test DataParsingError functionality."""
         test_data = b"\x01\x02\x03"
         error = DataParsingError("TestCharacteristic", test_data, "Invalid format")
@@ -58,7 +58,7 @@ class TestBluetoothSIGExceptions:
         assert "Failed to parse TestCharacteristic data [01 02 03]" in str(error)
         assert "Invalid format" in str(error)
 
-    def test_data_encoding_error(self):
+    def test_data_encoding_error(self) -> None:
         """Test DataEncodingError functionality."""
         test_value = 42
         error = DataEncodingError("TestCharacteristic", test_value, "Invalid range")
@@ -68,7 +68,7 @@ class TestBluetoothSIGExceptions:
         assert error.reason == "Invalid range"
         assert "Failed to encode TestCharacteristic value 42" in str(error)
 
-    def test_data_validation_error(self):
+    def test_data_validation_error(self) -> None:
         """Test DataValidationError functionality."""
         error = DataValidationError("temperature", -300, "valid temperature range")
 
@@ -77,7 +77,7 @@ class TestBluetoothSIGExceptions:
         assert error.expected == "valid temperature range"
         assert "Invalid temperature: -300 (expected valid temperature range)" in str(error)
 
-    def test_insufficient_data_error(self):
+    def test_insufficient_data_error(self) -> None:
         """Test InsufficientDataError functionality."""
         test_data = b"\x01\x02"
         error = InsufficientDataError("TestCharacteristic", test_data, 4)
@@ -88,7 +88,7 @@ class TestBluetoothSIGExceptions:
         assert error.actual == 2
         assert "need 4 bytes, got 2" in str(error)
 
-    def test_value_range_error(self):
+    def test_value_range_error(self) -> None:
         """Test ValueRangeError functionality."""
         error = ValueRangeError("temperature", 150, -40, 85)
 
@@ -98,7 +98,7 @@ class TestBluetoothSIGExceptions:
         assert error.max_val == 85
         assert "Invalid temperature: 150 (expected range [-40, 85])" in str(error)
 
-    def test_type_mismatch_error_single_type(self):
+    def test_type_mismatch_error_single_type(self) -> None:
         """Test TypeMismatchError with single expected type."""
         error = TypeMismatchError("value", "string", int)
 
@@ -108,7 +108,7 @@ class TestBluetoothSIGExceptions:
         assert error.actual_type is str
         assert "expected type int, got str" in str(error)
 
-    def test_type_mismatch_error_tuple_types(self):
+    def test_type_mismatch_error_tuple_types(self) -> None:
         """Test TypeMismatchError with tuple of expected types."""
         error = TypeMismatchError("value", "string", (int, float))
 
@@ -118,7 +118,7 @@ class TestBluetoothSIGExceptions:
         assert error.actual_type is str
         assert "expected type int or float, got str" in str(error)
 
-    def test_enum_value_error(self):
+    def test_enum_value_error(self) -> None:
         """Test EnumValueError functionality."""
         from enum import Enum  # pylint: disable=import-outside-toplevel
 
@@ -137,7 +137,7 @@ class TestBluetoothSIGExceptions:
         assert error.valid_values == valid_values
         assert "TestEnum value from [1, 2]" in str(error)
 
-    def test_ieee11073_error(self):
+    def test_ieee11073_error(self) -> None:
         """Test IEEE11073Error functionality."""
         test_data = b"\xff\xff"
         error = IEEE11073Error(test_data, "SFLOAT", "Invalid mantissa")
@@ -147,7 +147,7 @@ class TestBluetoothSIGExceptions:
         assert error.reason == "Invalid mantissa"
         assert "Failed to parse IEEE 11073 SFLOAT data" in str(error)
 
-    def test_yaml_resolution_error(self):
+    def test_yaml_resolution_error(self) -> None:
         """Test YAMLResolutionError functionality."""
         error = YAMLResolutionError("SomeCharacteristic", "characteristic")
 
@@ -155,7 +155,7 @@ class TestBluetoothSIGExceptions:
         assert error.yaml_type == "characteristic"
         assert "Failed to resolve characteristic specification for: SomeCharacteristic" in str(error)
 
-    def test_service_characteristic_mismatch_error(self):
+    def test_service_characteristic_mismatch_error(self) -> None:
         """Test ServiceCharacteristicMismatchError functionality."""
         missing = ["BatteryLevel", "DeviceInformation"]
         error = ServiceCharacteristicMismatchError("BatteryService", missing)
@@ -165,7 +165,7 @@ class TestBluetoothSIGExceptions:
         assert "Service BatteryService missing required characteristics" in str(error)
         assert "BatteryLevel, DeviceInformation" in str(error)
 
-    def test_template_configuration_error(self):
+    def test_template_configuration_error(self) -> None:
         """Test TemplateConfigurationError functionality."""
         error = TemplateConfigurationError("GenericTemplate", "Missing required field")
 
@@ -173,7 +173,7 @@ class TestBluetoothSIGExceptions:
         assert error.configuration_issue == "Missing required field"
         assert "Template GenericTemplate configuration error" in str(error)
 
-    def test_exception_inheritance_with_isinstance(self):
+    def test_exception_inheritance_with_isinstance(self) -> None:
         """Test isinstance checks work correctly."""
         # Create specific exceptions
         data_error = DataParsingError("test", b"\x01", "reason")
@@ -189,7 +189,7 @@ class TestBluetoothSIGExceptions:
         assert isinstance(validation_error, CharacteristicError)
         assert isinstance(validation_error, BluetoothSIGError)
 
-    def test_exception_can_be_raised_and_caught(self):
+    def test_exception_can_be_raised_and_caught(self) -> None:
         """Test exceptions can be properly raised and caught."""
         with pytest.raises(UUIDResolutionError) as exc_info:
             raise UUIDResolutionError("TestCharacteristic", ["Test", "TestChar"])

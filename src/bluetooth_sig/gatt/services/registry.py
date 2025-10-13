@@ -20,6 +20,12 @@ from ..registry_utils import ModuleDiscovery, TypeValidator
 from ..uuid_registry import uuid_registry
 from .base import BaseGattService
 
+__all__ = [
+    "ServiceName",
+    "SERVICE_CLASS_MAP",
+    "GattServiceRegistry",
+]
+
 
 class _ServiceClassValidator:  # pylint: disable=too-few-public-methods
     """Utility class for validating service classes.
