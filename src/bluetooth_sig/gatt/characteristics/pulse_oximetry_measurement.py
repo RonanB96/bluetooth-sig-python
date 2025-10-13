@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from enum import IntFlag
 from typing import Any
+
+import msgspec
 
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
@@ -24,8 +25,7 @@ class PulseOximetryFlags(IntFlag):
     PULSE_AMPLITUDE_INDEX_PRESENT = 0x08
 
 
-@dataclass
-class PulseOximetryData:
+class PulseOximetryData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed pulse oximetry measurement data."""
 
     spo2: float

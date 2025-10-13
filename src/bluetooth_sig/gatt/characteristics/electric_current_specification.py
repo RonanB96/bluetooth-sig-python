@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
+
+import msgspec
 
 from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 
 
-@dataclass
-class ElectricCurrentSpecificationData:
+class ElectricCurrentSpecificationData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Data class for electric current specification."""
 
     minimum: float  # Minimum current in Amperes

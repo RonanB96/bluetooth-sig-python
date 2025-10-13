@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from enum import IntFlag
 from typing import Any
+
+import msgspec
 
 from .base import BaseCharacteristic
 from .utils import IEEE11073Parser
@@ -19,8 +20,7 @@ class TemperatureMeasurementFlags(IntFlag):
     TEMPERATURE_TYPE_PRESENT = 0x04
 
 
-@dataclass
-class TemperatureMeasurementData:
+class TemperatureMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed temperature measurement data."""
 
     temperature: float

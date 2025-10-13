@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import IntFlag
 from typing import Any
+
+import msgspec
 
 from ..constants import SINT16_MAX, SINT16_MIN, UINT8_MAX
 from .base import BaseCharacteristic
@@ -18,16 +19,14 @@ class CyclingPowerVectorFlags(IntFlag):
     INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT = 0x02
 
 
-@dataclass
-class CrankRevolutionData:
+class CrankRevolutionData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Crank revolution data from cycling power vector."""
 
     crank_revolutions: int
     last_crank_event_time: float  # in seconds
 
 
-@dataclass
-class CyclingPowerVectorData:
+class CyclingPowerVectorData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed data from Cycling Power Vector characteristic.
 
     Used for both parsing and encoding - all fields are properly typed.
@@ -36,8 +35,8 @@ class CyclingPowerVectorData:
     flags: int
     crank_revolution_data: CrankRevolutionData
     first_crank_measurement_angle: float
-    instantaneous_force_magnitude_array: list[float] | None = None
-    instantaneous_torque_magnitude_array: list[float] | None = None
+    instantaneous_force_magnitude_array: tuple[float, ...] | None = None
+    instantaneous_torque_magnitude_array: tuple[float, ...] | None = None
 
     def __post_init__(self) -> None:
         """Validate cycling power vector data."""
@@ -95,12 +94,11 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
         )
 
         offset = 7
-        force_magnitudes: list[float] | None = None
-        torque_magnitudes: list[float] | None = None
+        force_magnitudes_list: list[float] = []
+        torque_magnitudes_list: list[float] = []
 
         # Parse optional instantaneous force magnitude array if present
         if (flags & CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT) and len(data) > offset:
-            force_magnitudes = []
             # Each force magnitude is 2 bytes (signed 16-bit, 1 N units)
             while offset + 1 < len(data) and not (
                 flags & CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
@@ -108,26 +106,25 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
                 if offset + 2 > len(data):
                     break
                 force_raw = DataParser.parse_int16(data, offset, signed=True)
-                force_magnitudes.append(float(force_raw))  # Force in Newtons
+                force_magnitudes_list.append(float(force_raw))  # Force in Newtons
                 offset += 2
 
         # Parse optional instantaneous torque magnitude array if present
         if (flags & CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT) and len(data) > offset:
-            torque_magnitudes = []
             # Each torque magnitude is 2 bytes (signed 16-bit, 1/32 Nm units)
             while offset + 1 < len(data):
                 if offset + 2 > len(data):
                     break
                 torque_raw = DataParser.parse_int16(data, offset, signed=True)
-                torque_magnitudes.append(torque_raw / 32.0)  # Convert to Nm
+                torque_magnitudes_list.append(torque_raw / 32.0)  # Convert to Nm
                 offset += 2
 
         return CyclingPowerVectorData(
             flags=flags,
             crank_revolution_data=crank_revolution_data,
             first_crank_measurement_angle=first_angle,
-            instantaneous_force_magnitude_array=force_magnitudes,
-            instantaneous_torque_magnitude_array=torque_magnitudes,
+            instantaneous_force_magnitude_array=tuple(force_magnitudes_list) if force_magnitudes_list else None,
+            instantaneous_torque_magnitude_array=tuple(torque_magnitudes_list) if torque_magnitudes_list else None,
         )
 
     def encode_value(self, data: CyclingPowerVectorData) -> bytearray:  # pylint: disable=too-many-branches # Complex cycling power vector with optional fields

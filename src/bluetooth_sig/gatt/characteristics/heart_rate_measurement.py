@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from enum import IntEnum, IntFlag
 from typing import Any
+
+import msgspec
 
 from ..constants import UINT8_MAX, UINT16_MAX
 from .base import BaseCharacteristic
@@ -55,14 +56,13 @@ class SensorContactState(IntEnum):
         return cls.NOT_DETECTED
 
 
-@dataclass
-class HeartRateData:
+class HeartRateData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed data from Heart Rate Measurement characteristic."""
 
     heart_rate: int  # BPM (0-UINT16_MAX)
     sensor_contact: SensorContactState
     energy_expended: int | None = None  # kJ
-    rr_intervals: list[float] = field(default_factory=list)  # R-R intervals in seconds
+    rr_intervals: tuple[float, ...] = ()  # R-R intervals in seconds, immutable tuple
     flags: int = 0  # Raw flags byte for reference
 
     def __post_init__(self) -> None:
@@ -157,7 +157,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
             heart_rate=heart_rate,
             sensor_contact=sensor_contact,
             energy_expended=energy_expended,
-            rr_intervals=rr_intervals,
+            rr_intervals=tuple(rr_intervals),  # Convert list to tuple for immutable struct
             flags=flags,
         )
 

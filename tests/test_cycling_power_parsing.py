@@ -203,7 +203,7 @@ class TestCyclingPowerParsing:
         assert result.crank_revolution_data.crank_revolutions == 1234
         assert result.crank_revolution_data.last_crank_event_time == 1.0
         assert result.first_crank_measurement_angle == 1.0
-        assert result.instantaneous_force_magnitude_array == [100.0, 150.0]
+        assert result.instantaneous_force_magnitude_array == (100.0, 150.0)
 
     def test_cycling_power_vector_with_torque_array(self):
         """Test cycling power vector with torque magnitude array."""
@@ -223,7 +223,7 @@ class TestCyclingPowerParsing:
         assert result.crank_revolution_data.crank_revolutions == 1234
         assert result.crank_revolution_data.last_crank_event_time == 1.0
         assert result.first_crank_measurement_angle == 2.0
-        assert result.instantaneous_torque_magnitude_array == [5.0, 6.0]
+        assert result.instantaneous_torque_magnitude_array == (5.0, 6.0)
 
     def test_cycling_power_vector_invalid_data(self):
         """Test cycling power vector with invalid data."""
