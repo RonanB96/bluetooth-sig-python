@@ -56,8 +56,6 @@ jobs:
 
   build-docs:
     name: Build Documentation
-    needs: test
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -73,19 +71,25 @@ jobs:
       - name: Install documentation dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mkdocs mkdocs-material mkdocstrings[python] pymdown-extensions
+          pip install -e ".[docs]"
+
+      - name: Generate characteristics list
+        run: |
+          python scripts/generate_characteristics_list.py
 
       - name: Build documentation
         run: |
           mkdocs build
 
-      - name: Download coverage artifacts
+      - name: Download coverage artifacts (main branch only)
+        if: github.ref == 'refs/heads/main'
         uses: actions/download-artifact@v5
         with:
           name: coverage-report
           path: site/coverage
 
-      - name: Upload combined site artifact
+      - name: Upload combined site artifact (main branch only)
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: site

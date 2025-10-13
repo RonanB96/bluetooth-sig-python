@@ -137,16 +137,17 @@ Support for 70+ characteristics across multiple service categories:
 - Device Information
 - And many more...
 
-## Comparison with Other Solutions
+## Comparison with DIY Parsing
 
-| Feature | bluetooth-sig | DIY Parsing | Other Libraries |
-|---------|--------------|-------------|-----------------|
-| Standards Compliance | ✅ Official specs | ❌ Manual implementation | ⚠️ Varies |
-| Type Safety | ✅ Full typing | ❌ Raw bytes | ⚠️ Limited |
-| UUID Resolution | ✅ Automatic | ❌ Manual mapping | ⚠️ Limited |
-| BLE Library Support | ✅ Any library | ✅ Any library | ❌ Specific library |
-| Validation | ✅ Built-in | ❌ Manual | ⚠️ Limited |
-| Maintenance | ✅ SIG registry updates | ❌ You maintain | ⚠️ Project dependent |
+| Feature | bluetooth-sig | DIY Manual Parsing |
+|---------|--------------|---------------------|
+| Standards Compliance | ✅ Official specs | ❌ Manual implementation |
+| Type Safety | ✅ Full typing | ❌ Raw bytes |
+| UUID Resolution | ✅ Automatic | ❌ Manual mapping |
+| BLE Library Support | ✅ Any library | ✅ Any library |
+| Validation | ✅ Built-in | ❌ Manual |
+| Maintenance | ✅ SIG registry updates | ❌ You maintain |
+| Custom Characteristics | ✅ Extension API | ✅ You implement everything |
 
 ## Real-World Example
 

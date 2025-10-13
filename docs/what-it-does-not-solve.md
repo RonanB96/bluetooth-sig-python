@@ -69,43 +69,49 @@ Bluetooth Classic and BLE are fundamentally different protocols with different s
 
 ---
 
-## ❌ Custom or Proprietary Protocols
+## ✅ Custom Characteristics ARE Supported
 
-### What This Library Does NOT Do
+### What This Library DOES Support
 
-This library **only** supports official Bluetooth SIG standardized characteristics and services.
+While the library provides **70+ official Bluetooth SIG standard characteristics**, it also **fully supports adding custom characteristics**.
 
-**Not Supported:**
-- Vendor-specific characteristics
-- Custom protocols built on top of BLE
-- Proprietary data formats
-- Device manufacturer extensions
+**You CAN:**
+- ✅ Create vendor-specific characteristics
+- ✅ Add custom protocols on top of BLE
+- ✅ Implement proprietary data formats
+- ✅ Extend with device manufacturer-specific characteristics
 
-### Example
+### How to Add Custom Characteristics
 
-```python
-# ❌ This will fail - not a standard UUID
-translator.parse_characteristic_data("CUSTOM-UUID-1234", data)
-# UUIDResolutionError: UUID not found in registry
-
-# ✅ This works - standard Battery Level
-translator.parse_characteristic_data("2A19", data)
-```
-
-### Workaround
-
-For custom characteristics, you can:
-
-1. **Use the raw data directly** from your BLE library
-2. **Extend the library** by creating custom characteristic classes
-3. **Parse manually** for your specific use case
+The library provides a clean API for extending with your own characteristics:
 
 ```python
-# For custom characteristics, parse manually
-raw_data = await client.read_gatt_char("custom-uuid")
-# Your custom parsing logic
-custom_value = struct.unpack('<H', raw_data)[0]
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.types import CharacteristicInfo
+from bluetooth_sig.types.uuid import BluetoothUUID
+
+class MyCustomCharacteristic(BaseCharacteristic):
+    """Your custom characteristic."""
+    
+    _info = CharacteristicInfo(
+        uuid=BluetoothUUID("ABCD"),  # Your UUID
+        name="My Custom Characteristic"
+    )
+    
+    def decode_value(self, data: bytearray) -> int:
+        """Your parsing logic."""
+        return int(data[0])
+
+# Use it just like standard characteristics
+custom_char = MyCustomCharacteristic()
+value = custom_char.decode_value(bytearray([42]))
 ```
+
+**See the [Adding New Characteristics Guide](../guides/adding-characteristics/) for complete examples.**
+
+### What Is NOT Included Out-of-the-Box
+
+The library includes 70+ official SIG characteristics, but doesn't include every possible vendor-specific characteristic. You need to implement those yourself using the extension API.
 
 ---
 

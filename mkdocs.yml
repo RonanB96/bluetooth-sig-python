@@ -68,6 +68,12 @@ markdown_extensions:
   - toc:
       permalink: true
 
+not_in_nav: |
+  README.md
+  AGENT_GUIDE.md
+  BLUETOOTH_SIG_ARCHITECTURE.md
+  PERFORMANCE.md
+
 nav:
   - Home: index.md
   - Getting Started:
@@ -88,6 +94,7 @@ nav:
     - GATT Layer: api/gatt.md
     - Registry System: api/registry.md
     - Types & Enums: api/types.md
+    - Supported Characteristics: supported-characteristics.md
   - Development:
     - Contributing: contributing.md
     - Testing: testing.md

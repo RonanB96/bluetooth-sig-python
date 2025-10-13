@@ -90,7 +90,7 @@ Unlike other Bluetooth libraries that focus on device connectivity, this library
 - **Issues**: [GitHub Issues](https://github.com/RonanB96/bluetooth-sig-python/issues)
 - **Source Code**: [GitHub Repository](https://github.com/RonanB96/bluetooth-sig-python)
 - **Documentation**: You're here! 🎉
-- **Coverage Report**: [Test Coverage](coverage/index.html) (Generated from CI)
+- **Coverage Report**: [Test Coverage](https://ronanb96.github.io/bluetooth-sig-python/coverage/) (Generated from CI)
 
 ## License
 
