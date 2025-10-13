@@ -12,8 +12,9 @@ and custom characteristics through composition.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Any
+
+import msgspec
 
 from ..constants import (
     PERCENTAGE_MAX,
@@ -79,8 +80,7 @@ class CodingTemplate(ABC):
 # =============================================================================
 
 
-@dataclass
-class VectorData:
+class VectorData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """3D vector measurement data."""
 
     x_axis: float
@@ -88,8 +88,7 @@ class VectorData:
     z_axis: float
 
 
-@dataclass
-class Vector2DData:
+class Vector2DData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """2D vector measurement data."""
 
     x_axis: float

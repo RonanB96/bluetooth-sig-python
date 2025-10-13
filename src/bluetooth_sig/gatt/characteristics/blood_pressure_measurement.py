@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from enum import IntFlag
+
+import msgspec
 
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -33,8 +34,7 @@ class BloodPressureMeasurementStatus(IntFlag):
     IMPROPER_MEASUREMENT_POSITION = 0x0010
 
 
-@dataclass
-class BloodPressureData:  # pylint: disable=too-many-instance-attributes
+class BloodPressureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Parsed data from Blood Pressure Measurement characteristic."""
 
     systolic: float

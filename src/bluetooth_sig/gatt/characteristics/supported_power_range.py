@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
+
+import msgspec
 
 from ...types.gatt_enums import ValueType
 from ..constants import SINT16_MAX, SINT16_MIN
 from .base import BaseCharacteristic
 
 
-@dataclass
-class SupportedPowerRangeData:
+class SupportedPowerRangeData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Data class for supported power range."""
 
     minimum: int  # Minimum power in Watts

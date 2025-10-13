@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any
+
+import msgspec
 
 from ..constants import UINT8_MAX
 from .base import BaseCharacteristic
@@ -146,8 +147,7 @@ class BatteryChargingType(IntEnum):
             return cls.UNKNOWN
 
 
-@dataclass
-class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
+class BatteryPowerStateData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Parsed data from Battery Power State characteristic."""
 
     raw_value: int
@@ -157,7 +157,7 @@ class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
     battery_charge_state: BatteryChargeState
     battery_charge_level: BatteryChargeLevel
     battery_charging_type: BatteryChargingType
-    charging_fault_reason: str | list[str] | None = None
+    charging_fault_reason: str | tuple[str, ...] | None = None
 
     def __post_init__(self) -> None:
         """Validate battery power state data."""
@@ -165,8 +165,7 @@ class BatteryPowerStateData:  # pylint: disable=too-many-instance-attributes
             raise ValueError(f"Raw value must be 0-UINT8_MAX, got {self.raw_value}")
 
 
-@dataclass
-class BatteryPowerState:
+class BatteryPowerState(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed battery power state components."""
 
     battery_present: BatteryPresentState
@@ -175,7 +174,7 @@ class BatteryPowerState:
     battery_charge_state: BatteryChargeState
     battery_charge_level: BatteryChargeLevel
     battery_charging_type: BatteryChargingType = BatteryChargingType.UNKNOWN
-    charging_fault_reason: str | list[str] | None = None
+    charging_fault_reason: str | tuple[str, ...] | None = None
 
 
 class BatteryPowerStateCharacteristic(BaseCharacteristic):
@@ -266,7 +265,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
                     fault_reasons.append("external_power_fault")
                 if BitFieldUtils.test_bit(fault_raw, BatteryPowerStateBits.OTHER_FAULT_BIT):
                     fault_reasons.append("other_fault")
-                charging_fault_reason = fault_reasons[0] if len(fault_reasons) == 1 else fault_reasons
+                charging_fault_reason = fault_reasons[0] if len(fault_reasons) == 1 else tuple(fault_reasons)
 
             return BatteryPowerStateData(
                 raw_value=state_raw,
@@ -431,7 +430,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         if BitFieldUtils.test_bit(fault_bits, BatteryPowerStateBits.OTHER_FAULT_BIT):
             fault_reasons.append("other_fault")
 
-        charging_fault_reason = fault_reasons[0] if len(fault_reasons) == 1 else fault_reasons or None
+        charging_fault_reason = fault_reasons[0] if len(fault_reasons) == 1 else (tuple(fault_reasons) or None)
 
         return BatteryPowerState(
             battery_present=battery_present,

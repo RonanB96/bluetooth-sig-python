@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from enum import IntEnum, IntFlag
 from typing import Any
+
+import msgspec
 
 from .base import BaseCharacteristic
 from .utils import BitFieldUtils, DataParser
@@ -72,8 +73,7 @@ class HeightMeasurementResolution(IntEnum):
         return descriptions.get(self.value, "Reserved for Future Use")
 
 
-@dataclass
-class WeightScaleFeatureData:
+class WeightScaleFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed data from Weight Scale Feature characteristic."""
 
     raw_value: int

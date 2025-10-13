@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from enum import IntEnum, IntFlag
 from typing import Any
+
+import msgspec
 
 from ..constants import SINT16_MAX, SINT16_MIN
 from .base import BaseCharacteristic
@@ -92,8 +93,7 @@ class GlucoseMeasurementFlags(IntFlag):
     SENSOR_STATUS_ANNUNCIATION_PRESENT = 0x08
 
 
-@dataclass
-class GlucoseMeasurementData:  # pylint: disable=too-many-instance-attributes
+class GlucoseMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Parsed glucose measurement data."""
 
     sequence_number: int
@@ -157,55 +157,59 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
         base_time = IEEE11073Parser.parse_timestamp(data, offset)
         offset += 7
 
-        # Initialize result object with required fields
-        result = GlucoseMeasurementData(
-            sequence_number=sequence_number,
-            base_time=base_time,
-            glucose_concentration=0.0,  # Will be updated below
-            unit="mg/dL",  # Default, will be updated based on flags
-            flags=flags,
-        )
-
         # Parse optional time offset (2 bytes) if present
+        time_offset_minutes = None
         if GlucoseMeasurementFlags.TIME_OFFSET_PRESENT in flags and len(data) >= offset + 2:
-            result.time_offset_minutes = DataParser.parse_int16(data, offset, signed=True)  # signed
+            time_offset_minutes = DataParser.parse_int16(data, offset, signed=True)  # signed
             offset += 2
 
         # Parse glucose concentration (2 bytes) - IEEE-11073 SFLOAT
+        glucose_concentration = 0.0
+        unit = "mg/dL"
         if len(data) >= offset + 2:
-            glucose_value = IEEE11073Parser.parse_sfloat(data, offset)
-
+            glucose_concentration = IEEE11073Parser.parse_sfloat(data, offset)
             # Determine unit based on flags
             unit = "mmol/L" if GlucoseMeasurementFlags.GLUCOSE_CONCENTRATION_UNITS_MMOL_L in flags else "mg/dL"
-
-            result.glucose_concentration = glucose_value
-            result.unit = unit
             offset += 2
 
         # Parse optional type and sample location (1 byte) if present
+        glucose_type = None
+        sample_location = None
         if GlucoseMeasurementFlags.TYPE_SAMPLE_LOCATION_PRESENT in flags and len(data) >= offset + 1:
             type_sample = data[offset]
-            glucose_type = BitFieldUtils.extract_bit_field(
+            glucose_type_val = BitFieldUtils.extract_bit_field(
                 type_sample,
                 GlucoseMeasurementBits.GLUCOSE_TYPE_START_BIT,
                 GlucoseMeasurementBits.GLUCOSE_TYPE_BIT_WIDTH,
             )
-            sample_location = BitFieldUtils.extract_bit_field(
+            sample_location_val = BitFieldUtils.extract_bit_field(
                 type_sample,
                 GlucoseMeasurementBits.GLUCOSE_SAMPLE_LOCATION_START_BIT,
                 GlucoseMeasurementBits.GLUCOSE_SAMPLE_LOCATION_BIT_WIDTH,
             )
 
-            result.glucose_type = GlucoseType(glucose_type)
-            result.sample_location = SampleLocation(sample_location)
+            glucose_type = GlucoseType(glucose_type_val)
+            sample_location = SampleLocation(sample_location_val)
 
             offset += 1
 
         # Parse optional sensor status annotation (2 bytes) if present
+        sensor_status = None
         if GlucoseMeasurementFlags.SENSOR_STATUS_ANNUNCIATION_PRESENT in flags and len(data) >= offset + 2:
-            result.sensor_status = DataParser.parse_int16(data, offset, signed=False)
+            sensor_status = DataParser.parse_int16(data, offset, signed=False)
 
-        return result
+        # Create result with all parsed values
+        return GlucoseMeasurementData(
+            sequence_number=sequence_number,
+            base_time=base_time,
+            glucose_concentration=glucose_concentration,
+            unit=unit,
+            flags=flags,
+            time_offset_minutes=time_offset_minutes,
+            glucose_type=glucose_type,
+            sample_location=sample_location,
+            sensor_status=sensor_status,
+        )
 
     def encode_value(self, data: GlucoseMeasurementData) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches # Complex medical data encoding
         """Encode glucose measurement value back to bytes.
