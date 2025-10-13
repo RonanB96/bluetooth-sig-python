@@ -5,14 +5,14 @@ from __future__ import annotations
 import time
 from collections.abc import Generator
 from contextlib import contextmanager
-from dataclasses import dataclass, field
 from typing import Any, Callable, TypeVar
+
+import msgspec
 
 T = TypeVar("T")
 
 
-@dataclass
-class TimingResult:
+class TimingResult(msgspec.Struct, kw_only=True):
     """Result of a timing measurement."""
 
     operation: str
@@ -36,12 +36,11 @@ class TimingResult:
         )
 
 
-@dataclass
-class ProfilingSession:
+class ProfilingSession(msgspec.Struct, kw_only=True):
     """Track multiple profiling results in a session."""
 
     name: str
-    results: list[TimingResult] = field(default_factory=list)
+    results: list[TimingResult] = msgspec.field(default_factory=list)
 
     def add_result(self, result: TimingResult) -> None:
         """Add a timing result to the session."""

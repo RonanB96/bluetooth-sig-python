@@ -7,13 +7,13 @@ import os
 import re
 import struct
 from abc import ABC, ABCMeta
-from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any
 
+import msgspec
+
 from bluetooth_sig.gatt.characteristics.templates import CodingTemplate
 
-from ...registry.yaml_cross_reference import CharacteristicSpec, yaml_cross_reference
 from ...types import CharacteristicData, CharacteristicInfo
 from ...types.data_types import ParseFieldError
 from ...types.gatt_enums import CharacteristicName, GattProperty, ValueType
@@ -30,12 +30,11 @@ from ..exceptions import (
     ParseFieldError as ParseFieldException,
 )
 from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
-from ..uuid_registry import uuid_registry
+from ..uuid_registry import CharacteristicSpec, uuid_registry
 from .utils.parse_trace import ParseTrace
 
 
-@dataclass
-class ValidationConfig:
+class ValidationConfig(msgspec.Struct, kw_only=True):
     """Configuration for characteristic validation constraints.
 
     Groups validation parameters into a single, optional configuration object
@@ -98,7 +97,7 @@ class SIGCharacteristicResolver:
 
         # Try each name format with YAML resolution
         for try_name in names_to_try:
-            spec = yaml_cross_reference.resolve_characteristic_spec(try_name)
+            spec = uuid_registry.resolve_characteristic_spec(try_name)
             if spec:
                 return spec
 

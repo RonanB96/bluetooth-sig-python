@@ -4,14 +4,70 @@ from __future__ import annotations
 
 import logging
 import threading
-from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, cast
 
-import yaml
+import msgspec
 
 from bluetooth_sig.types.uuid import BluetoothUUID
+
+
+class FieldInfo(msgspec.Struct, frozen=True, kw_only=True):
+    """Field-related metadata from YAML."""
+
+    data_type: str | None = None
+    field_size: str | None = None
+
+
+class UnitInfo(msgspec.Struct, frozen=True, kw_only=True):
+    """Unit-related metadata from YAML."""
+
+    unit_id: str | None = None
+    unit_symbol: str | None = None
+    base_unit: str | None = None
+    resolution_text: str | None = None
+
+
+class CharacteristicSpec(msgspec.Struct, kw_only=True):
+    """Characteristic specification from cross-file YAML references."""
+
+    uuid: BluetoothUUID
+    name: str
+    field_info: FieldInfo = msgspec.field(default_factory=FieldInfo)
+    unit_info: UnitInfo = msgspec.field(default_factory=UnitInfo)
+    description: str | None = None
+
+    # Convenience properties for backward compatibility
+    @property
+    def data_type(self) -> str | None:
+        """Get data type from field info."""
+        return self.field_info.data_type if self.field_info else None
+
+    @property
+    def field_size(self) -> str | None:
+        """Get field size from field info."""
+        return self.field_info.field_size if self.field_info else None
+
+    @property
+    def unit_id(self) -> str | None:
+        """Get unit ID from unit info."""
+        return self.unit_info.unit_id if self.unit_info else None
+
+    @property
+    def unit_symbol(self) -> str | None:
+        """Get unit symbol from unit info."""
+        return self.unit_info.unit_symbol if self.unit_info else None
+
+    @property
+    def base_unit(self) -> str | None:
+        """Get base unit from unit info."""
+        return self.unit_info.base_unit if self.unit_info else None
+
+    @property
+    def resolution_text(self) -> str | None:
+        """Get resolution text from unit info."""
+        return self.unit_info.resolution_text if self.unit_info else None
 
 
 class UuidOrigin(Enum):
@@ -21,8 +77,7 @@ class UuidOrigin(Enum):
     RUNTIME = "runtime"
 
 
-@dataclass(frozen=True)
-class UuidInfo:
+class UuidInfo(msgspec.Struct, frozen=True, kw_only=True):
     """Information about a UUID."""
 
     uuid: BluetoothUUID
@@ -34,8 +89,7 @@ class UuidInfo:
     origin: UuidOrigin = UuidOrigin.BLUETOOTH_SIG
 
 
-@dataclass(frozen=True)
-class CustomUuidEntry:
+class CustomUuidEntry(msgspec.Struct, frozen=True, kw_only=True):
     """Entry for custom UUID registration."""
 
     uuid: BluetoothUUID
@@ -67,6 +121,9 @@ class UuidRegistry:
 
         # Unit mappings
         self._unit_mappings: dict[str, str] = {}
+
+        # GSS specifications storage (for resolve_characteristic_spec)
+        self._gss_specs: dict[str, dict[str, Any]] = {}
 
         try:
             self._load_uuids()
@@ -134,7 +191,7 @@ class UuidRegistry:
             return []
 
         with file_path.open("r", encoding="utf-8") as file_handle:
-            data = yaml.safe_load(file_handle)
+            data = msgspec.yaml.decode(file_handle.read())
 
         if not isinstance(data, dict):
             return []
@@ -221,16 +278,18 @@ class UuidRegistry:
                     unit_key = unit_id.replace("org.bluetooth.unit.", "").lower()
                     self._unit_mappings[unit_key] = unit_symbol
 
-        except (yaml.YAMLError, OSError, KeyError):
+        except (msgspec.DecodeError, OSError, KeyError):
             pass
 
-    # pylint: disable=duplicate-code
-    # NOTE: Unit symbol extraction logic is shared with YAMLCrossReferenceSystem._extract_unit_symbol_from_name.
-    # Both need to parse Bluetooth SIG unit specifications identically. Consolidation would require shared utility
-    # module, but these are in different architectural layers (GATT registry vs YAML cross-reference system).
-    # TODO: Consider extracting to shared bluetooth_sig.registry.unit_utils module if more duplication emerges.
-    def _extract_unit_symbol_from_name(self, unit_name: str) -> str | None:
-        """Extract unit symbol from unit name."""
+    def _extract_unit_symbol_from_name(self, unit_name: str) -> str:
+        """Extract unit symbol from unit name.
+
+        Args:
+            unit_name: The unit name from units.yaml (e.g., "pressure (pascal)")
+
+        Returns:
+            Unit symbol string (e.g., "Pa"), or empty string if no symbol can be extracted
+        """
         # Handle common unit names that map to symbols
         unit_symbol_map = {
             "percentage": "%",
@@ -305,7 +364,14 @@ class UuidRegistry:
             if unit_name.lower().startswith(unit_type):
                 return symbol
 
-        return unit_name
+        # Handle thermodynamic temperature specially (from yaml_cross_reference)
+        if "celsius temperature" in unit_name.lower():
+            return "°C"
+        if "fahrenheit temperature" in unit_name.lower():
+            return "°F"
+
+        # Return empty string if no symbol can be extracted (API compatibility)
+        return ""
 
     def _load_gss_specifications(self) -> None:
         """Load detailed specifications from GSS YAML files."""
@@ -333,7 +399,7 @@ class UuidRegistry:
         """Process a single GSS YAML file."""
         try:
             with yaml_file.open("r", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+                data = msgspec.yaml.decode(f.read())
 
             if not data or "characteristic" not in data:
                 return
@@ -345,12 +411,19 @@ class UuidRegistry:
             if not char_name or not char_id:
                 return
 
+            # Store full GSS spec for resolve_characteristic_spec method
+            # Store by both ID and name for lookup flexibility
+            if char_id:
+                self._gss_specs[char_id] = char_data
+            if char_name:
+                self._gss_specs[char_name] = char_data
+
             unit, value_type = self._extract_info_from_gss(char_data)
 
             if unit or value_type:
                 self._update_characteristic_with_gss_info(char_name, char_id, unit, value_type)
 
-        except (yaml.YAMLError, OSError, KeyError) as e:
+        except (msgspec.DecodeError, OSError, KeyError) as e:
             logging.warning("Failed to parse GSS YAML file %s: %s", yaml_file, e)
 
     def _update_characteristic_with_gss_info(
@@ -583,6 +656,112 @@ class UuidRegistry:
                     return self._characteristics[alias_key]
 
             return None
+
+    def resolve_characteristic_spec(self, characteristic_name: str) -> CharacteristicSpec | None:
+        """Resolve characteristic specification with rich YAML metadata.
+
+        This method provides detailed characteristic information including data types,
+        field sizes, units, and descriptions by cross-referencing multiple YAML sources.
+
+        Args:
+            characteristic_name: Name of the characteristic (e.g., "Temperature", "Battery Level")
+
+        Returns:
+            CharacteristicSpec with full metadata, or None if not found
+
+        Example:
+            spec = uuid_registry.resolve_characteristic_spec("Temperature")
+            if spec:
+                print(f"UUID: {spec.uuid}, Unit: {spec.unit_symbol}, Type: {spec.data_type}")
+        """
+        with self._lock:
+            # 1. Get UUID from characteristic registry
+            char_info = self.get_characteristic_info(characteristic_name)
+            if not char_info:
+                return None
+
+            # 2. Get GSS specification if available
+            gss_spec = None
+            for search_key in [characteristic_name, char_info.id]:
+                # Load GSS specs on-demand (already loaded in __init__)
+                if hasattr(self, "_gss_specs"):
+                    gss_spec = getattr(self, "_gss_specs", {}).get(search_key)
+                    if gss_spec:
+                        break
+
+            # 3. Extract metadata from GSS specification
+            data_type = None
+            field_size = None
+            unit_id = None
+            unit_symbol = None
+            base_unit = None
+            resolution_text = None
+            description = None
+
+            if gss_spec:
+                description = gss_spec.get("description", "")
+                structure = gss_spec.get("structure", [])
+
+                if structure and len(structure) > 0:
+                    first_field = structure[0]
+                    data_type = first_field.get("type")
+                    field_size = first_field.get("size")
+                    field_description = first_field.get("description", "")
+
+                    # Extract base unit from description
+                    if "Base Unit:" in field_description:
+                        base_unit_line = field_description.split("Base Unit:")[1].split("\n")[0].strip()
+                        base_unit = base_unit_line
+                        unit_id = base_unit_line
+
+                        # Cross-reference unit_id with units.yaml to get symbol
+                        if hasattr(self, "_unit_mappings"):
+                            unit_symbol = getattr(self, "_unit_mappings", {}).get(unit_id, "")
+
+                    # Extract resolution information
+                    if "resolution of" in field_description.lower():
+                        resolution_text = field_description
+
+            # 4. Use existing unit/value_type from UuidInfo if GSS didn't provide them
+            if not unit_symbol and char_info.unit:
+                unit_symbol = char_info.unit
+
+            return CharacteristicSpec(
+                uuid=char_info.uuid,
+                name=char_info.name,
+                field_info=FieldInfo(data_type=data_type, field_size=field_size),
+                unit_info=UnitInfo(
+                    unit_id=unit_id,
+                    unit_symbol=unit_symbol,
+                    base_unit=base_unit,
+                    resolution_text=resolution_text,
+                ),
+                description=description,
+            )
+
+    def get_signed_from_data_type(self, data_type: str | None) -> bool:
+        """Determine if data type is signed from GSS data type.
+
+        Args:
+            data_type: GSS data type string (e.g., "sint16", "float32", "uint8")
+
+        Returns:
+            True if the type represents signed values, False otherwise
+        """
+        if not data_type:
+            return False
+        # Comprehensive signed type detection
+        signed_types = {"float32", "float64", "medfloat16", "medfloat32"}
+        return data_type.startswith("sint") or data_type in signed_types
+
+    @staticmethod
+    def get_byte_order_hint() -> str:
+        """Get byte order hint for Bluetooth SIG specifications.
+
+        Returns:
+            "little" - Bluetooth SIG uses little-endian by convention
+        """
+        return "little"
 
     def clear_custom_registrations(self) -> None:
         """Clear all custom registrations (for testing)."""

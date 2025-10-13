@@ -20,7 +20,7 @@ class TestValidationRule:
 
     def test_basic_type_validation_success(self) -> None:
         """Test successful type validation."""
-        rule = ValidationRule("temperature", float)
+        rule = ValidationRule(field_name="temperature", expected_type=float)
 
         # Should not raise for correct type
         rule.validate(25.5)
@@ -29,7 +29,7 @@ class TestValidationRule:
 
     def test_basic_type_validation_failure(self) -> None:
         """Test type validation failure."""
-        rule = ValidationRule("temperature", float)
+        rule = ValidationRule(field_name="temperature", expected_type=float)
 
         with pytest.raises(TypeMismatchError) as exc_info:
             rule.validate("not a float")
@@ -40,7 +40,7 @@ class TestValidationRule:
 
     def test_tuple_type_validation_success(self) -> None:
         """Test validation with tuple of allowed types."""
-        rule = ValidationRule("value", (int, float))
+        rule = ValidationRule(field_name="value", expected_type=(int, float))
 
         # Should not raise for either type
         rule.validate(42)
@@ -48,7 +48,7 @@ class TestValidationRule:
 
     def test_tuple_type_validation_failure(self) -> None:
         """Test validation failure with tuple of types."""
-        rule = ValidationRule("value", (int, float))
+        rule = ValidationRule(field_name="value", expected_type=(int, float))
 
         with pytest.raises(TypeMismatchError) as exc_info:
             rule.validate("string")
@@ -57,7 +57,7 @@ class TestValidationRule:
 
     def test_range_validation_success(self) -> None:
         """Test successful range validation."""
-        rule = ValidationRule("percentage", float, min_value=0.0, max_value=100.0)
+        rule = ValidationRule(field_name="percentage", expected_type=float, min_value=0.0, max_value=100.0)
 
         # Valid values
         rule.validate(0.0)
@@ -66,7 +66,7 @@ class TestValidationRule:
 
     def test_range_validation_failure_min(self) -> None:
         """Test range validation failure (below minimum)."""
-        rule = ValidationRule("percentage", float, min_value=0.0, max_value=100.0)
+        rule = ValidationRule(field_name="percentage", expected_type=float, min_value=0.0, max_value=100.0)
 
         with pytest.raises(ValueRangeError) as exc_info:
             rule.validate(-10.0)
@@ -78,7 +78,7 @@ class TestValidationRule:
 
     def test_range_validation_failure_max(self) -> None:
         """Test range validation failure (above maximum)."""
-        rule = ValidationRule("percentage", float, min_value=0.0, max_value=100.0)
+        rule = ValidationRule(field_name="percentage", expected_type=float, min_value=0.0, max_value=100.0)
 
         with pytest.raises(ValueRangeError) as exc_info:
             rule.validate(150.0)
@@ -91,7 +91,7 @@ class TestValidationRule:
         def is_even(value: int) -> bool:
             return value % 2 == 0
 
-        rule = ValidationRule("even_number", int, custom_validator=is_even)
+        rule = ValidationRule(field_name="even_number", expected_type=int, custom_validator=is_even)
 
         # Should not raise for even numbers
         rule.validate(2)
@@ -104,7 +104,7 @@ class TestValidationRule:
         def is_even(value: int) -> bool:
             return value % 2 == 0
 
-        rule = ValidationRule("even_number", int, custom_validator=is_even)
+        rule = ValidationRule(field_name="even_number", expected_type=int, custom_validator=is_even)
 
         with pytest.raises(DataValidationError) as exc_info:
             rule.validate(3)
@@ -118,8 +118,8 @@ class TestValidationRule:
             return value > 0
 
         rule = ValidationRule(
-            "positive_value",
-            float,
+            field_name="positive_value",
+            expected_type=float,
             custom_validator=is_positive,
             error_message="Value must be positive",
         )
@@ -131,7 +131,7 @@ class TestValidationRule:
 
     def test_min_only_validation(self) -> None:
         """Test validation with only minimum value."""
-        rule = ValidationRule("temperature", float, min_value=-273.15)
+        rule = ValidationRule(field_name="temperature", expected_type=float, min_value=-273.15)
 
         rule.validate(-273.15)  # Should pass
         rule.validate(0.0)  # Should pass
@@ -142,7 +142,7 @@ class TestValidationRule:
 
     def test_max_only_validation(self) -> None:
         """Test validation with only maximum value."""
-        rule = ValidationRule("temperature", float, max_value=1000.0)
+        rule = ValidationRule(field_name="temperature", expected_type=float, max_value=1000.0)
 
         rule.validate(-100.0)  # Should pass
         rule.validate(0.0)  # Should pass
@@ -216,7 +216,7 @@ class TestStrictValidator:
     def test_add_rule(self) -> None:
         """Test adding validation rules."""
         validator = StrictValidator()
-        rule = ValidationRule("temperature", float, min_value=-40.0, max_value=85.0)
+        rule = ValidationRule(field_name="temperature", expected_type=float, min_value=-40.0, max_value=85.0)
 
         validator.add_rule(rule)
         assert "temperature" in validator.rules
@@ -225,8 +225,10 @@ class TestStrictValidator:
     def test_validate_dict_success(self) -> None:
         """Test successful dictionary validation."""
         validator = StrictValidator()
-        validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
-        validator.add_rule(ValidationRule("humidity", float, min_value=0.0, max_value=100.0))
+        validator.add_rule(
+            ValidationRule(field_name="temperature", expected_type=float, min_value=-40.0, max_value=85.0)
+        )
+        validator.add_rule(ValidationRule(field_name="humidity", expected_type=float, min_value=0.0, max_value=100.0))
 
         data = {"temperature": 25.5, "humidity": 65.0, "other_field": "ignored"}
 
@@ -236,7 +238,9 @@ class TestStrictValidator:
     def test_validate_dict_failure(self) -> None:
         """Test dictionary validation failure."""
         validator = StrictValidator()
-        validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
+        validator.add_rule(
+            ValidationRule(field_name="temperature", expected_type=float, min_value=-40.0, max_value=85.0)
+        )
 
         data = {"temperature": 150.0}  # Out of range
 
@@ -257,8 +261,10 @@ class TestStrictValidator:
                 self.humidity = humidity
 
         validator = StrictValidator()
-        validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
-        validator.add_rule(ValidationRule("humidity", float, min_value=0.0, max_value=100.0))
+        validator.add_rule(
+            ValidationRule(field_name="temperature", expected_type=float, min_value=-40.0, max_value=85.0)
+        )
+        validator.add_rule(ValidationRule(field_name="humidity", expected_type=float, min_value=0.0, max_value=100.0))
 
         reading = SensorReading(25.5, 65.0)
 
@@ -277,7 +283,9 @@ class TestStrictValidator:
                 self.temperature = temperature
 
         validator = StrictValidator()
-        validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
+        validator.add_rule(
+            ValidationRule(field_name="temperature", expected_type=float, min_value=-40.0, max_value=85.0)
+        )
 
         reading = SensorReading(-50.0)  # Out of range
 
@@ -298,8 +306,10 @@ class TestStrictValidator:
                 self.temperature = temperature
 
         validator = StrictValidator()
-        validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
-        validator.add_rule(ValidationRule("humidity", float, min_value=0.0, max_value=100.0))
+        validator.add_rule(
+            ValidationRule(field_name="temperature", expected_type=float, min_value=-40.0, max_value=85.0)
+        )
+        validator.add_rule(ValidationRule(field_name="humidity", expected_type=float, min_value=0.0, max_value=100.0))
 
         reading = PartialReading(25.5)
 
@@ -318,8 +328,8 @@ class TestValidationIntegration:
             return value != 0.0
 
         rule = ValidationRule(
-            "non_zero_temperature",
-            float,
+            field_name="non_zero_temperature",
+            expected_type=float,
             min_value=-273.15,
             max_value=1000.0,
             custom_validator=not_exactly_zero,
@@ -348,8 +358,12 @@ class TestValidationIntegration:
     def test_realistic_sensor_validation(self) -> None:
         """Test realistic sensor data validation scenario."""
         # Simulate validating sensor reading
-        temperature_rule = ValidationRule("temperature", (int, float), min_value=-40.0, max_value=85.0)
-        humidity_rule = ValidationRule("humidity", (int, float), min_value=0.0, max_value=100.0)
+        temperature_rule = ValidationRule(
+            field_name="temperature", expected_type=(int, float), min_value=-40.0, max_value=85.0
+        )
+        humidity_rule = ValidationRule(
+            field_name="humidity", expected_type=(int, float), min_value=0.0, max_value=100.0
+        )
 
         # Valid sensor readings
         temperature_rule.validate(23.5)
@@ -366,8 +380,8 @@ class TestValidationIntegration:
         """Test integration with CommonValidators."""
         # Create rule using CommonValidators
         rule = ValidationRule(
-            "percentage",
-            (int, float),
+            field_name="percentage",
+            expected_type=(int, float),
             custom_validator=CommonValidators.is_valid_percentage,
             error_message="Invalid percentage value",
         )
@@ -390,8 +404,8 @@ class TestValidationIntegration:
         # Add multiple rules
         validator.add_rule(
             ValidationRule(
-                "temperature",
-                float,
+                field_name="temperature",
+                expected_type=float,
                 min_value=-40.0,
                 max_value=85.0,
                 custom_validator=CommonValidators.is_physical_temperature,
@@ -399,12 +413,16 @@ class TestValidationIntegration:
         )
         validator.add_rule(
             ValidationRule(
-                "humidity",
-                (int, float),
+                field_name="humidity",
+                expected_type=(int, float),
                 custom_validator=CommonValidators.is_valid_percentage,
             )
         )
-        validator.add_rule(ValidationRule("power", (int, float), custom_validator=CommonValidators.is_valid_power))
+        validator.add_rule(
+            ValidationRule(
+                field_name="power", expected_type=(int, float), custom_validator=CommonValidators.is_valid_power
+            )
+        )
 
         # Valid data
         valid_data = {

@@ -89,7 +89,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self._name: str = ""
         self.services: dict[str, DeviceService] = {}
         self.encryption = DeviceEncryption()
-        self.advertiser_data = DeviceAdvertiserData(b"")
+        self.advertiser_data = DeviceAdvertiserData(raw_data=b"")
 
         # Advertising parser for handling advertising data
         self.advertising_parser = AdvertisingParser()

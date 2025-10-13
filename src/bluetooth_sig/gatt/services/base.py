@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, TypeVar, cast
+
+import msgspec
 
 from ...types import CharacteristicInfo as BaseCharacteristicInfo
 from ...types import ServiceInfo
@@ -35,8 +36,7 @@ ServiceCharacteristics = TypeVar("ServiceCharacteristics")
 # strings to `CharacteristicName` explicitly at public boundaries.
 
 
-@dataclass
-class ServiceValidationConfig:
+class ServiceValidationConfig(msgspec.Struct, kw_only=True):
     """Configuration for service validation constraints.
 
     Groups validation parameters into a single, optional configuration object
@@ -102,18 +102,15 @@ class CharacteristicStatus(Enum):
     INVALID = "invalid"  # Characteristic found but invalid/unusable
 
 
-@dataclass
-class ServiceValidationResult:
+class ServiceValidationResult(msgspec.Struct, kw_only=True):
     """Result of service validation."""
 
     status: ServiceHealthStatus
-    missing_required: list[BaseCharacteristic] = field(default_factory=lambda: cast(list[BaseCharacteristic], []))
-    missing_optional: list[BaseCharacteristic] = field(default_factory=lambda: cast(list[BaseCharacteristic], []))
-    invalid_characteristics: list[BaseCharacteristic] = field(
-        default_factory=lambda: cast(list[BaseCharacteristic], [])
-    )
-    warnings: list[str] = field(default_factory=lambda: cast(list[str], []))
-    errors: list[str] = field(default_factory=lambda: cast(list[str], []))
+    missing_required: list[BaseCharacteristic] = msgspec.field(default_factory=list)
+    missing_optional: list[BaseCharacteristic] = msgspec.field(default_factory=list)
+    invalid_characteristics: list[BaseCharacteristic] = msgspec.field(default_factory=list)
+    warnings: list[str] = msgspec.field(default_factory=list)
+    errors: list[str] = msgspec.field(default_factory=list)
 
     @property
     def is_healthy(self) -> bool:
@@ -129,7 +126,6 @@ class ServiceValidationResult:
         return len(self.errors) > 0 or len(self.missing_required) > 0
 
 
-@dataclass
 class ServiceCharacteristicInfo(BaseCharacteristicInfo):
     """Service-specific information about a characteristic with context about
     its presence."""
@@ -141,8 +137,7 @@ class ServiceCharacteristicInfo(BaseCharacteristicInfo):
     char_class: type[BaseCharacteristic] | None = None
 
 
-@dataclass
-class ServiceCompletenessReport:  # pylint: disable=too-many-instance-attributes
+class ServiceCompletenessReport(msgspec.Struct, kw_only=True):  # pylint: disable=too-many-instance-attributes
     """Comprehensive report about service completeness and health."""
 
     service_name: str
@@ -152,13 +147,13 @@ class ServiceCompletenessReport:  # pylint: disable=too-many-instance-attributes
     characteristics_present: int
     characteristics_expected: int
     characteristics_required: int
-    present_characteristics: list[BaseCharacteristic] = field(default_factory=lambda: [])
-    missing_required: list[BaseCharacteristic] = field(default_factory=lambda: [])
-    missing_optional: list[BaseCharacteristic] = field(default_factory=lambda: [])
-    invalid_characteristics: list[BaseCharacteristic] = field(default_factory=lambda: [])
-    warnings: list[str] = field(default_factory=lambda: [])
-    errors: list[str] = field(default_factory=lambda: [])
-    missing_details: dict[str, ServiceCharacteristicInfo] = field(default_factory=lambda: {})
+    present_characteristics: list[BaseCharacteristic] = msgspec.field(default_factory=list)
+    missing_required: list[BaseCharacteristic] = msgspec.field(default_factory=list)
+    missing_optional: list[BaseCharacteristic] = msgspec.field(default_factory=list)
+    invalid_characteristics: list[BaseCharacteristic] = msgspec.field(default_factory=list)
+    warnings: list[str] = msgspec.field(default_factory=list)
+    errors: list[str] = msgspec.field(default_factory=list)
+    missing_details: dict[str, ServiceCharacteristicInfo] = msgspec.field(default_factory=dict)
 
 
 # All type definitions moved to src/bluetooth_sig/types/gatt_services.py

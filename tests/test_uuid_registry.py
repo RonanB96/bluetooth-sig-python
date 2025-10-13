@@ -197,19 +197,19 @@ def test_yaml_file_presence() -> None:
 @pytest.fixture(scope="session")
 def yaml_data() -> dict[str, Any]:
     """Load YAML data once per session for performance."""
-    import yaml
+    import msgspec
 
     base_path = Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
     # Load service data
     service_file = base_path / "service_uuids.yaml"
     with service_file.open("r") as f:
-        service_data = yaml.safe_load(f)
+        service_data = msgspec.yaml.decode(f.read())
 
     # Load characteristic data
     char_file = base_path / "characteristic_uuids.yaml"
     with char_file.open("r") as f:
-        char_data = yaml.safe_load(f)
+        char_data = msgspec.yaml.decode(f.read())
 
     return {"services": service_data, "characteristics": char_data}
 

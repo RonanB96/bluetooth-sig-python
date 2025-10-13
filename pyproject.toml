@@ -109,11 +109,11 @@ disable = [
     "C0412", # ungrouped-imports (handled by ruff import sorting)
     "C0413", # wrong-import-position (handled by ruff import sorting)
     "E0611", # no-name-in-module (editable install issue affects entire project)
+    "R0903", # too-few-public-methods (not applicable to data structures like msgspec.Struct)
     ]
 
-# Note: Other issues like broad-exception-caught, too-few-public-methods,
-# no-member, redefined-outer-name are now handled with targeted inline
-# disables in specific files where they're needed.
+# Note: Other issues like broad-exception-caught, no-member, redefined-outer-name
+# are now handled with targeted inline disables in specific files where they're needed.
 
 [tool.pylint.BASIC]
 good-names = ["id", "i", "j", "k", "ex", "Run", "_", "fp", "e"]
@@ -201,11 +201,6 @@ module = "examples.*"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 warn_unused_ignores = false  # Allow extra type: ignore comments for flexibility
-
-[[tool.mypy.overrides]]
-module = "bluetooth_sig.*.yaml_cross_reference"
-# External module - ignore if not available
-ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "pydantic.*"

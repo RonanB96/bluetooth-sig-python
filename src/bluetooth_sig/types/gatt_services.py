@@ -6,8 +6,9 @@ NO LEGACY CODE SUPPORT - development phase only.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Generic, TypeVar
+
+import msgspec
 
 from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
@@ -19,8 +20,7 @@ from .uuid import BluetoothUUID
 CharacteristicTypeVar = TypeVar("CharacteristicTypeVar", bound=BaseCharacteristic)
 
 
-@dataclass(frozen=True)
-class CharacteristicSpec(Generic[CharacteristicTypeVar]):
+class CharacteristicSpec(msgspec.Struct, Generic[CharacteristicTypeVar], frozen=True, kw_only=True):
     """Specification for a single characteristic with strong typing.
 
     This provides compile-time type safety and IDE autocompletion
