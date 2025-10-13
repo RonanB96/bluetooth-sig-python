@@ -443,7 +443,7 @@ class TestMultiCharacteristicDependencies:
 
         # Test getting all characteristics
         assert len(ctx.other_characteristics) == 1
-        assert str(CalibrationCharacteristic._info.uuid) in ctx.other_characteristics
+        assert str(CalibrationCharacteristic._info.uuid) in ctx.other_characteristics  # pylint: disable=unsupported-membership-test
 
     def test_empty_context_access(self) -> None:
         """Test CharacteristicContext with empty other_characteristics."""

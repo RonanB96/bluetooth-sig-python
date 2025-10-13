@@ -22,13 +22,28 @@ from .exceptions import (
     ValueRangeError,
 )
 from .services.base import BaseGattService as BaseService
-from .uuid_registry import UuidInfo, UuidRegistry
+from .uuid_registry import (
+    CharacteristicSpec,
+    CustomUuidEntry,
+    FieldInfo,
+    UnitInfo,
+    UuidInfo,
+    UuidOrigin,
+    UuidRegistry,
+    uuid_registry,
+)
 
 __all__ = [
     "BaseService",
     "BaseCharacteristic",
-    "UuidRegistry",
+    "CharacteristicSpec",
+    "CustomUuidEntry",
+    "FieldInfo",
+    "UnitInfo",
     "UuidInfo",
+    "UuidOrigin",
+    "UuidRegistry",
+    "uuid_registry",
     # Constants
     "ABSOLUTE_ZERO_CELSIUS",
     "PERCENTAGE_MAX",

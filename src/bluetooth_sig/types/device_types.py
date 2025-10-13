@@ -2,25 +2,20 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import cast
+import msgspec
 
 from ..gatt.services.base import BaseGattService
 from .protocols import CharacteristicDataProtocol
 
 
-@dataclass
-class DeviceService:
+class DeviceService(msgspec.Struct, kw_only=True):
     """Represents a service on a device with its characteristics."""
 
     service: BaseGattService
-    characteristics: dict[str, CharacteristicDataProtocol] = field(
-        default_factory=lambda: cast(dict[str, CharacteristicDataProtocol], {})
-    )
+    characteristics: dict[str, CharacteristicDataProtocol] = msgspec.field(default_factory=dict)
 
 
-@dataclass
-class DeviceEncryption:
+class DeviceEncryption(msgspec.Struct, kw_only=True):
     """Encryption requirements and status for the device."""
 
     requires_authentication: bool = False

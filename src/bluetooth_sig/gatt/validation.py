@@ -7,8 +7,9 @@ checks.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import Any, Callable, TypeVar
+
+import msgspec
 
 from .characteristics.utils.ieee11073_parser import IEEE11073Parser
 from .constants import (
@@ -27,8 +28,7 @@ from .exceptions import (
 T = TypeVar("T")
 
 
-@dataclass
-class ValidationRule:
+class ValidationRule(msgspec.Struct, kw_only=True):
     """Represents a validation rule with optional custom validator."""
 
     field_name: str
@@ -52,16 +52,17 @@ class ValidationRule:
                 raise ValueRangeError(self.field_name, value, min_val, max_val)
 
         # Custom validation
-        if self.custom_validator and not self.custom_validator(value):
-            message = self.error_message or f"Custom validation failed for {self.field_name}"
-            raise DataValidationError(self.field_name, value, message)
+        if self.custom_validator:
+            # Note: custom_validator is type-hinted as Callable, but pylint doesn't recognize this
+            if not self.custom_validator(value):  # pylint: disable=not-callable
+                message = self.error_message or f"Custom validation failed for {self.field_name}"
+                raise DataValidationError(self.field_name, value, message)
 
 
-@dataclass
-class StrictValidator:
+class StrictValidator(msgspec.Struct, kw_only=True):
     """Strict validation engine for complex data structures."""
 
-    rules: dict[str, ValidationRule] = field(default_factory=dict)
+    rules: dict[str, ValidationRule] = msgspec.field(default_factory=dict)
 
     def add_rule(self, rule: ValidationRule) -> None:
         """Add a validation rule."""

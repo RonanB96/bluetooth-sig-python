@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, cast
+from typing import Any
+
+import msgspec
 
 from .context import CharacteristicContext
 from .gatt_enums import GattProperty, ValueType
 from .uuid import BluetoothUUID
 
 
-@dataclass(frozen=True)
-class ParseFieldError:
+class ParseFieldError(msgspec.Struct, frozen=True, kw_only=True):
     """Represents a field-level parsing error with diagnostic information.
 
     This provides structured error information similar to Pydantic's validation
@@ -30,8 +30,7 @@ class ParseFieldError:
     raw_slice: bytes | None = None
 
 
-@dataclass
-class SIGInfo:
+class SIGInfo(msgspec.Struct, kw_only=True):
     """Base information about Bluetooth SIG characteristics or services."""
 
     uuid: BluetoothUUID
@@ -39,30 +38,27 @@ class SIGInfo:
     description: str = ""
 
 
-@dataclass
 class CharacteristicInfo(SIGInfo):
     """Information about a Bluetooth characteristic."""
 
     value_type: ValueType = ValueType.UNKNOWN
     unit: str = ""
-    properties: list[GattProperty] = field(default_factory=lambda: cast(list[GattProperty], []))
+    properties: list[GattProperty] = msgspec.field(default_factory=list)
 
 
-@dataclass
 class ServiceInfo(SIGInfo):
     """Information about a Bluetooth service."""
 
-    characteristics: list[CharacteristicInfo] = field(default_factory=lambda: cast(list[CharacteristicInfo], []))
+    characteristics: list[CharacteristicInfo] = msgspec.field(default_factory=list)
 
 
-@dataclass
-class CharacteristicData:  # pylint: disable=too-many-instance-attributes
+class CharacteristicData(msgspec.Struct, kw_only=True):
     """Parsed characteristic data with validation results.
 
     Provides structured error reporting with field-level diagnostics and parse traces
     to help identify exactly where and why parsing failed.
 
-    NOTE: This dataclass intentionally has more attributes than the standard limit
+    NOTE: This struct intentionally has more attributes than the standard limit
     to provide complete diagnostic information. The additional fields (field_errors,
     parse_trace) are essential for actionable error reporting and debugging.
     """
@@ -72,9 +68,9 @@ class CharacteristicData:  # pylint: disable=too-many-instance-attributes
     raw_data: bytes = b""
     parse_success: bool = False
     error_message: str = ""
-    source_context: CharacteristicContext = field(default_factory=CharacteristicContext)
-    field_errors: list[ParseFieldError] = field(default_factory=list)
-    parse_trace: list[str] = field(default_factory=list)
+    source_context: CharacteristicContext = msgspec.field(default_factory=CharacteristicContext)
+    field_errors: list[ParseFieldError] = msgspec.field(default_factory=list)
+    parse_trace: list[str] = msgspec.field(default_factory=list)
 
     @property
     def name(self) -> str:
@@ -97,7 +93,6 @@ class CharacteristicData:  # pylint: disable=too-many-instance-attributes
         return self.info.unit
 
 
-@dataclass
 class ValidationResult(SIGInfo):
     """Result of data validation."""
 
@@ -107,8 +102,7 @@ class ValidationResult(SIGInfo):
     error_message: str = ""
 
 
-@dataclass
-class CharacteristicRegistration:
+class CharacteristicRegistration(msgspec.Struct, kw_only=True):
     """Unified metadata for custom UUID registration"""
 
     uuid: BluetoothUUID
@@ -119,8 +113,7 @@ class CharacteristicRegistration:
     value_type: ValueType = ValueType.STRING
 
 
-@dataclass
-class ServiceRegistration:
+class ServiceRegistration(msgspec.Struct, kw_only=True):
     """Unified metadata for custom UUID registration"""
 
     uuid: BluetoothUUID

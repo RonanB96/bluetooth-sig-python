@@ -11,10 +11,10 @@ This test suite demonstrates various use cases for custom characteristics:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from types import new_class
 from typing import Any
 
+import msgspec
 import pytest
 
 from bluetooth_sig.core.translator import BluetoothSIGTranslator
@@ -82,8 +82,7 @@ class PrecisionHumiditySensor(CustomBaseCharacteristic):
 # ==============================================================================
 
 
-@dataclass
-class EnvironmentalReading:
+class EnvironmentalReading(msgspec.Struct, kw_only=True):
     """Structured environmental sensor reading."""
 
     temperature: float
@@ -335,18 +334,19 @@ class TestCustomCharacteristicVariants:
         result = char.parse_value(data)
         assert result.parse_success is True
         assert isinstance(result.value, dict)
-        assert result.value["powered_on"] is False
-        assert result.value["charging"] is False
-        assert result.value["error"] is False
+        # Pylint false positive: result.value is dict, but pylint doesn't recognize msgspec.Struct returns
+        assert result.value["powered_on"] is False  # pylint: disable=unsubscriptable-object
+        assert result.value["charging"] is False  # pylint: disable=unsubscriptable-object
+        assert result.value["error"] is False  # pylint: disable=unsubscriptable-object
 
         # Test multiple flags on: powered_on + bluetooth_connected
         data = bytearray([0x11])  # 0x01 | 0x10
         result = char.parse_value(data)
         assert result.parse_success is True
         assert result.value is not None
-        assert result.value["powered_on"] is True
-        assert result.value["bluetooth_connected"] is True
-        assert result.value["charging"] is False
+        assert result.value["powered_on"] is True  # pylint: disable=unsubscriptable-object
+        assert result.value["bluetooth_connected"] is True  # pylint: disable=unsubscriptable-object
+        assert result.value["charging"] is False  # pylint: disable=unsubscriptable-object
 
         # Test round-trip
         flags = {

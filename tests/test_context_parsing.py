@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import msgspec
 
 from bluetooth_sig.gatt.context import CharacteristicContext, DeviceInfo
 from bluetooth_sig.types import CharacteristicData, CharacteristicInfo
@@ -8,8 +8,7 @@ from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-@dataclass
-class DummyCalibration:
+class DummyCalibration(msgspec.Struct, kw_only=True):
     value: float
 
 
