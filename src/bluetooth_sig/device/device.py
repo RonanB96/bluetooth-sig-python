@@ -17,7 +17,7 @@ from typing import Any, Callable, Protocol
 from ..gatt.characteristics import CharacteristicName
 from ..gatt.context import CharacteristicContext, DeviceInfo
 from ..gatt.services import GattServiceRegistry, ServiceName
-from ..gatt.services.base import UnknownService
+from ..gatt.services.base import BaseGattService, UnknownService
 from ..types import (
     BLEAdvertisementTypes,
     BLEAdvertisingPDU,
@@ -32,6 +32,12 @@ from ..types.gatt_enums import GattProperty
 from ..types.uuid import BluetoothUUID
 from .advertising_parser import AdvertisingParser
 from .connection import ConnectionManagerProtocol
+
+__all__ = [
+    "Device",
+    "SIGTranslatorProtocol",
+    "UnknownService",
+]
 
 
 class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
@@ -120,6 +126,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             )
 
         service_class = GattServiceRegistry.get_service_class(service_uuid)
+        service: BaseGattService
         if not service_class:
             service = UnknownService(uuid=BluetoothUUID(service_uuid))
         else:

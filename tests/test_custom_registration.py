@@ -7,17 +7,17 @@ from typing import Any
 
 import pytest
 
-from src.bluetooth_sig.core.translator import BluetoothSIGTranslator
-from src.bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
-from src.bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
-from src.bluetooth_sig.gatt.characteristics.utils import DataParser
-from src.bluetooth_sig.gatt.context import CharacteristicContext
-from src.bluetooth_sig.gatt.services.base import CustomBaseGattService
-from src.bluetooth_sig.gatt.services.registry import GattServiceRegistry
-from src.bluetooth_sig.gatt.uuid_registry import CustomUuidEntry, uuid_registry
-from src.bluetooth_sig.types import CharacteristicInfo, CharacteristicRegistration, ServiceRegistration
-from src.bluetooth_sig.types.gatt_enums import GattProperty, ValueType
-from src.bluetooth_sig.types.uuid import BluetoothUUID
+from bluetooth_sig.core.translator import BluetoothSIGTranslator
+from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
+from bluetooth_sig.gatt.characteristics.utils import DataParser
+from bluetooth_sig.gatt.context import CharacteristicContext
+from bluetooth_sig.gatt.services.base import CustomBaseGattService
+from bluetooth_sig.gatt.services.registry import GattServiceRegistry
+from bluetooth_sig.gatt.uuid_registry import CustomUuidEntry, uuid_registry
+from bluetooth_sig.types import CharacteristicInfo, CharacteristicRegistration, ServiceRegistration
+from bluetooth_sig.types.gatt_enums import GattProperty, ValueType
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 class CustomCharacteristicImpl(CustomBaseCharacteristic):

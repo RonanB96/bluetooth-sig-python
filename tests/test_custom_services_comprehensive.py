@@ -149,9 +149,9 @@ class TestInitSubclassValidation:
             )
 
         # pylint: disable=protected-access
-        # type: ignore[attr-defined] - testing internal state
+        # Testing internal state
         assert ServiceWithInfo._configured_info is not None  # type: ignore[attr-defined]
-        assert ServiceWithInfo._configured_info.uuid == BluetoothUUID("BB000001-0000-1000-8000-00805F9B34FB")  # type: ignore[attr-defined,union-attr]
+        assert ServiceWithInfo._configured_info.uuid == BluetoothUUID("BB000001-0000-1000-8000-00805F9B34FB")  # type: ignore[attr-defined, union-attr]
 
 
 # ==============================================================================
@@ -240,16 +240,18 @@ class TestProcessCharacteristics:
     ) -> None:
         """Test processing a single discovered characteristic."""
         service = service_class_factory()()
+        uuid = BluetoothUUID("12345678-0000-1000-8000-00805F9B34FB")
         discovered = {
-            "12345678-0000-1000-8000-00805F9B34FB": {
-                "properties": ["read", "notify"],
-            },
+            uuid: CharacteristicInfo(
+                uuid=uuid,
+                name="",
+                properties=[GattProperty.READ, GattProperty.NOTIFY],
+            ),
         }
 
         service.process_characteristics(discovered)
 
         assert len(service.characteristics) == 1
-        uuid = BluetoothUUID("12345678-0000-1000-8000-00805F9B34FB")
         assert uuid in service.characteristics
 
         # Verify it's an UnknownCharacteristic since UUID not in registry
@@ -261,10 +263,13 @@ class TestProcessCharacteristics:
     ) -> None:
         """Test processing multiple discovered characteristics."""
         service = service_class_factory()()
+        uuid1 = BluetoothUUID("11111111-0000-1000-8000-00805F9B34FB")
+        uuid2 = BluetoothUUID("22222222-0000-1000-8000-00805F9B34FB")
+        uuid3 = BluetoothUUID("33333333-0000-1000-8000-00805F9B34FB")
         discovered = {
-            "11111111-0000-1000-8000-00805F9B34FB": {"properties": ["read"]},
-            "22222222-0000-1000-8000-00805F9B34FB": {"properties": ["write"]},
-            "33333333-0000-1000-8000-00805F9B34FB": {"properties": ["notify"]},
+            uuid1: CharacteristicInfo(uuid=uuid1, name="", properties=[GattProperty.READ]),
+            uuid2: CharacteristicInfo(uuid=uuid2, name="", properties=[GattProperty.WRITE]),
+            uuid3: CharacteristicInfo(uuid=uuid3, name="", properties=[GattProperty.NOTIFY]),
         }
 
         service.process_characteristics(discovered)
@@ -278,16 +283,18 @@ class TestProcessCharacteristics:
         service = service_class_factory()()
 
         # Battery Level is a known SIG characteristic
+        uuid = BluetoothUUID("2A19")
         discovered = {
-            "2A19": {  # Battery Level characteristic
-                "properties": ["read", "notify"],
-            },
+            uuid: CharacteristicInfo(
+                uuid=uuid,
+                name="Battery Level",
+                properties=[GattProperty.READ, GattProperty.NOTIFY],
+            ),
         }
 
         service.process_characteristics(discovered)
 
         assert len(service.characteristics) == 1
-        uuid = BluetoothUUID("2A19")
         assert uuid in service.characteristics
 
         # Should NOT be UnknownCharacteristic - should be from registry
@@ -302,9 +309,11 @@ class TestProcessCharacteristics:
         service = service_class_factory()()
 
         # Try different UUID formats
+        short_uuid = BluetoothUUID("ABCD")
+        long_uuid = BluetoothUUID("ABCDEF01-0000-1000-8000-00805F9B34FB")
         discovered = {
-            "ABCD": {"properties": ["read"]},  # Short form
-            "ABCDEF01-0000-1000-8000-00805F9B34FB": {"properties": ["write"]},  # Full form
+            short_uuid: CharacteristicInfo(uuid=short_uuid, name="", properties=[GattProperty.READ]),
+            long_uuid: CharacteristicInfo(uuid=long_uuid, name="", properties=[GattProperty.WRITE]),
         }
 
         service.process_characteristics(discovered)
@@ -312,9 +321,6 @@ class TestProcessCharacteristics:
         assert len(service.characteristics) == 2
 
         # Verify both UUIDs are stored in normalized form
-        short_uuid = BluetoothUUID("ABCD")
-        long_uuid = BluetoothUUID("ABCDEF01-0000-1000-8000-00805F9B34FB")
-
         assert short_uuid in service.characteristics
         assert long_uuid in service.characteristics
 
@@ -323,15 +329,16 @@ class TestProcessCharacteristics:
     ) -> None:
         """Test that GATT properties are correctly extracted."""
         service = service_class_factory()()
+        uuid = BluetoothUUID("AAAA0001-0000-1000-8000-00805F9B34FB")
         discovered = {
-            "AAAA0001-0000-1000-8000-00805F9B34FB": {
-                "properties": ["read", "write", "notify"],
-            },
+            uuid: CharacteristicInfo(
+                uuid=uuid,
+                name="",
+                properties=[GattProperty.READ, GattProperty.WRITE, GattProperty.NOTIFY],
+            ),
         }
 
         service.process_characteristics(discovered)
-
-        uuid = BluetoothUUID("AAAA0001-0000-1000-8000-00805F9B34FB")
         char = service.characteristics[uuid]
 
         # Check that properties were extracted
@@ -370,9 +377,11 @@ class TestUnknownService:
         uuid = BluetoothUUID("FFFF0003-0000-1000-8000-00805F9B34FB")
         service = UnknownService(uuid=uuid)
 
+        uuid1 = BluetoothUUID("AAAA0001-0000-1000-8000-00805F9B34FB")
+        uuid2 = BluetoothUUID("BBBB0001-0000-1000-8000-00805F9B34FB")
         discovered = {
-            "AAAA0001-0000-1000-8000-00805F9B34FB": {"properties": ["read"]},
-            "BBBB0001-0000-1000-8000-00805F9B34FB": {"properties": ["write"]},
+            uuid1: CharacteristicInfo(uuid=uuid1, name="", properties=[GattProperty.READ]),
+            uuid2: CharacteristicInfo(uuid=uuid2, name="", properties=[GattProperty.WRITE]),
         }
 
         service.process_characteristics(discovered)
@@ -643,8 +652,9 @@ class TestEdgeCases:
         service = service_class_factory()()
 
         # Characteristic without properties field
+        uuid = BluetoothUUID("AAAA0300-0000-1000-8000-00805F9B34FB")
         discovered = {
-            "AAAA0300-0000-1000-8000-00805F9B34FB": {},
+            uuid: CharacteristicInfo(uuid=uuid, name="", properties=[]),
         }
 
         service.process_characteristics(discovered)
@@ -654,14 +664,13 @@ class TestEdgeCases:
     def test_process_characteristics_with_invalid_properties(
         self, service_class_factory: Callable[..., type[CustomBaseGattService]]
     ) -> None:
-        """Test processing characteristics with non-list properties."""
+        """Test processing characteristics with empty properties."""
         service = service_class_factory()()
 
-        # Properties is not a list
-        discovered: dict[str, dict[str, object]] = {
-            "AAAA0400-0000-1000-8000-00805F9B34FB": {
-                "properties": "invalid",  # Not a list
-            },
+        # Empty properties list
+        uuid = BluetoothUUID("AAAA0400-0000-1000-8000-00805F9B34FB")
+        discovered = {
+            uuid: CharacteristicInfo(uuid=uuid, name="", properties=[]),
         }
 
         service.process_characteristics(discovered)

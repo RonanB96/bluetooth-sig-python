@@ -234,7 +234,8 @@ run_pylint() {
     # W0404: reimported - Tests may reimport modules
     # W0221: arguments-differ - Test methods may have different signatures than base
     # E0401: import-error - Tests may import modules that aren't available in test environment
-    run_capture "pylint --persistent=n --disable=C0114,C0115,C0116,W0212,C0415,W0718,W0613,R0914,R0912,R0915,R1702,C1803,W0105,R0903,W0201,W0621,W0404,W0221,E0401 $TEST_FOLDERS $EXAMPLES_FOLDERS"
+    # R0801: duplicate-code - Test fixtures may have similar boilerplate code
+    run_capture "pylint --persistent=n --disable=C0114,C0115,C0116,W0212,C0415,W0718,W0613,R0914,R0912,R0915,R1702,C1803,W0105,R0903,W0201,W0621,W0404,W0221,E0401,R0801 $TEST_FOLDERS $EXAMPLES_FOLDERS"
     local TEST_PYLINT_EXIT_CODE=$?
     TEST_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
     local TEST_PYLINT_HAS_MESSAGES=0
@@ -329,8 +330,8 @@ run_mypy() {
         echo "Checking production code types..."
     fi
     local PROD_MYPY_OUTPUT
-    # Use cache for better performance
-    run_capture "MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml"
+    # Use cache for better performance and -p flag to check specific package
+    run_capture "MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml -p bluetooth_sig"
     local PROD_MYPY_EXIT_CODE=$?
     PROD_MYPY_OUTPUT="$CAPTURE_OUTPUT"
 

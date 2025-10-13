@@ -520,6 +520,18 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return cls._allows_sig_override
 
     @classmethod
+    def get_configured_info(cls) -> CharacteristicInfo | None:
+        """Get the class-level configured CharacteristicInfo.
+
+        This provides public access to the _configured_info attribute that is set
+        by __init_subclass__ for custom characteristics.
+
+        Returns:
+            CharacteristicInfo if configured, None otherwise
+        """
+        return getattr(cls, "_configured_info", None)
+
+    @classmethod
     def get_class_uuid(cls) -> BluetoothUUID | None:
         """Get the characteristic UUID for this class without creating an instance.
 
@@ -886,6 +898,15 @@ class CustomBaseCharacteristic(BaseCharacteristic):
     _configured_info: CharacteristicInfo | None = None  # Stores class-level _info
     _allows_sig_override = False  # Default: no SIG override permission
 
+    @classmethod
+    def get_configured_info(cls) -> CharacteristicInfo | None:
+        """Get the class-level configured CharacteristicInfo.
+
+        Returns:
+            CharacteristicInfo if configured, None otherwise
+        """
+        return cls._configured_info
+
     # pylint: disable=duplicate-code
     # NOTE: __init_subclass__ and __init__ patterns are intentionally similar to CustomBaseService.
     # This is by design - both custom characteristic and service classes need identical validation
@@ -930,7 +951,7 @@ class CustomBaseCharacteristic(BaseCharacteristic):
             ValueError: If no valid info available from class or parameter
         """
         # Use provided info, or fall back to class-configured _info
-        final_info = info or self.__class__._configured_info
+        final_info = info or self.__class__.get_configured_info()
 
         if not final_info:
             raise ValueError(f"{self.__class__.__name__} requires either 'info' parameter or '_info' class attribute")
@@ -950,12 +971,13 @@ class CustomBaseCharacteristic(BaseCharacteristic):
         # Use provided info if available (from manual override), otherwise use configured info
         if hasattr(self, "_provided_info") and self._provided_info:
             self._info = self._provided_info
-        elif self.__class__._configured_info:  # pylint: disable=protected-access
-            # Access to _configured_info is intentional for class-level info management
-            self._info = self.__class__._configured_info  # pylint: disable=protected-access
         else:
-            # This shouldn't happen if class setup is correct
-            raise ValueError(f"CustomBaseCharacteristic {self.__class__.__name__} has no valid info source")
+            configured_info = self.__class__.get_configured_info()
+            if configured_info:
+                self._info = configured_info
+            else:
+                # This shouldn't happen if class setup is correct
+                raise ValueError(f"CustomBaseCharacteristic {self.__class__.__name__} has no valid info source")
 
 
 class UnknownCharacteristic(CustomBaseCharacteristic):
@@ -981,7 +1003,7 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
                 uuid=info.uuid,
                 name=f"Unknown Characteristic ({info.uuid})",
                 unit=info.unit or "",
-                value_type=info.value_type or ValueType.BYTES,
+                value_type=info.value_type if info.value_type is not None else ValueType.UNKNOWN,
                 properties=info.properties or [],
             )
 

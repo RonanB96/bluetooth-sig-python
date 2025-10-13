@@ -56,7 +56,7 @@ class TestYAMLUnitParsing:
     def test_manual_unit_priority(self) -> None:
         """Test that manual units take priority over YAML units."""
         # Use PM25 characteristic which has manual unit override in class definition
-        from src.bluetooth_sig.gatt.characteristics.pm25_concentration import PM25ConcentrationCharacteristic
+        from bluetooth_sig.gatt.characteristics.pm25_concentration import PM25ConcentrationCharacteristic
 
         # Create instance and check manual unit takes precedence
         pm25_char = PM25ConcentrationCharacteristic()
@@ -105,7 +105,7 @@ class TestYAMLUnitParsing:
     def test_manual_unit_override_priority(self) -> None:
         """Test that manual unit overrides always take precedence over YAML."""
         # Use Ozone characteristic which has manual unit override in class definition
-        from src.bluetooth_sig.gatt.characteristics.ozone_concentration import OzoneConcentrationCharacteristic
+        from bluetooth_sig.gatt.characteristics.ozone_concentration import OzoneConcentrationCharacteristic
 
         # Create instance and check manual unit takes precedence
         ozone_char = OzoneConcentrationCharacteristic()

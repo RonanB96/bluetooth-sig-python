@@ -127,8 +127,8 @@ def demonstrate_uuid_resolution() -> None:
         if char_info:
             print(f"   ✅ Name: {char_info.name}")
             print(f"   📝 Description: {char_info.description or 'N/A'}")
-            print(f"   🏷️  Type: {char_info.value_type or 'N/A'}")
-            print(f"   📏 Unit: {char_info.unit or 'N/A'}")
+            print(f"   🏷️  Type: {char_info.value_type}")
+            print(f"   📏 Unit: {char_info.unit if char_info.unit else 'N/A'}")
         else:
             print("   ℹ️  Not found in characteristic registry")
         print()

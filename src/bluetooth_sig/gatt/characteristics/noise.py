@@ -9,6 +9,8 @@ Per Bluetooth SIG specification (UUID 0x2BE4):
 
 from __future__ import annotations
 
+from typing import cast
+
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .templates import Uint8Template
@@ -41,7 +43,7 @@ class NoiseCharacteristic(BaseCharacteristic):
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int | None:
         """Decode noise level with special value handling."""
-        raw_value = super().decode_value(data, ctx)
+        raw_value = cast(int, super().decode_value(data, ctx))
 
         if raw_value == self.MAX_OR_GREATER_VALUE:
             return self.MAX_MEASURABLE_VALUE  # Return minimum of "254 or greater" range

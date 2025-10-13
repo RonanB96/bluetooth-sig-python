@@ -132,7 +132,12 @@ class NameVariantGenerator:
 
         # Remove duplicates while preserving order
         seen: set[str] = set()
-        return [v for v in variants if not (v in seen or seen.add(v))]
+        result: list[str] = []
+        for v in variants:
+            if v not in seen:
+                seen.add(v)
+                result.append(v)
+        return result
 
     @staticmethod
     def generate_service_variants(class_name: str, explicit_name: str | None = None) -> list[str]:
@@ -179,7 +184,12 @@ class NameVariantGenerator:
 
         # Remove duplicates while preserving order
         seen: set[str] = set()
-        return [v for v in variants if not (v in seen or seen.add(v))]
+        result: list[str] = []
+        for v in variants:
+            if v not in seen:
+                seen.add(v)
+                result.append(v)
+        return result
 
 
 class RegistrySearchStrategy(Generic[TInfo]):  # pylint: disable=too-few-public-methods

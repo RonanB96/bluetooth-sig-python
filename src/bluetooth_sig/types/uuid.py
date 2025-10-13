@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import re
 
 
@@ -156,7 +157,7 @@ class BluetoothUUID:
         return int(self._normalized, 16)
 
     @property
-    def bytes(self) -> bytes:
+    def bytes(self) -> builtins.bytes:
         """Get UUID as 16-byte binary representation (big-endian).
 
         Useful for BLE wire protocol operations where UUIDs need to be
@@ -170,7 +171,7 @@ class BluetoothUUID:
         return full_int.to_bytes(16, byteorder="big")
 
     @property
-    def bytes_le(self) -> bytes:
+    def bytes_le(self) -> builtins.bytes:
         """Get UUID as 16-byte binary representation (little-endian).
 
         Some BLE operations require little-endian byte order.

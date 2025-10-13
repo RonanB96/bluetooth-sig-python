@@ -140,9 +140,8 @@ class UuidRegistry:
         if not isinstance(uuid_entries, list):
             return []
 
-        uuid_entries_list = cast(list[Any], uuid_entries)
         typed_entries: list[dict[str, Any]] = []
-        for entry in uuid_entries_list:
+        for entry in uuid_entries:
             if isinstance(entry, dict):
                 typed_entries.append(cast(dict[str, Any], entry))
 
@@ -386,9 +385,8 @@ class UuidRegistry:
         if not isinstance(structure, list) or not structure:
             return None, None
 
-        structure_list = cast(list[Any], structure)
         typed_structure: list[dict[str, Any]] = []
-        for raw_field in structure_list:
+        for raw_field in structure:
             if isinstance(raw_field, dict):
                 typed_structure.append(cast(dict[str, Any], raw_field))
 

@@ -8,7 +8,6 @@ from typing import Any, TypeVar, cast
 
 from ...types import CharacteristicInfo as BaseCharacteristicInfo
 from ...types import ServiceInfo
-from ...types.gatt_enums import GattProperty, ValueType
 from ...types.gatt_services import (
     CharacteristicCollection,
     CharacteristicSpec,
@@ -216,21 +215,25 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
     @property
     def uuid(self) -> BluetoothUUID:
         """Get the service UUID from _info (single source of truth)."""
+        assert self._info is not None, "Service info should be initialized in __post_init__"
         return self._info.uuid
 
     @property
     def name(self) -> str:
         """Get the service name from _info (single source of truth)."""
+        assert self._info is not None, "Service info should be initialized in __post_init__"
         return self._info.name
 
     @property
     def summary(self) -> str:
         """Get the service summary from _info (single source of truth)."""
+        assert self._info is not None, "Service info should be initialized in __post_init__"
         return self._info.description
 
     @property
     def info(self) -> ServiceInfo:
         """Get the service info (single source of truth)."""
+        assert self._info is not None, "Service info should be initialized in __post_init__"
         return self._info
 
     @classmethod
@@ -251,7 +254,10 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         """Check if this service matches the given UUID."""
         try:
             service_uuid = cls.get_class_uuid()
-            input_uuid = BluetoothUUID(uuid)
+            if isinstance(uuid, BluetoothUUID):
+                input_uuid = uuid
+            else:
+                input_uuid = BluetoothUUID(uuid)
             return service_uuid == input_uuid
         except (ValueError, UUIDResolutionError):
             return False
@@ -368,7 +374,8 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
     @property
     def supported_characteristics(self) -> set[BaseCharacteristic]:
         """Get the set of characteristic UUIDs supported by this service."""
-        return {str(uuid) for uuid in self.characteristics}
+        # Return set of characteristic instances, not UUID strings
+        return set(self.characteristics.values())
 
     # New enhanced methods for service validation and health
 
@@ -777,7 +784,7 @@ class CustomBaseGattService(BaseGattService):
             # This shouldn't happen if class setup is correct
             raise ValueError(f"CustomBaseGattService {self.__class__.__name__} has no valid info source")
 
-    def process_characteristics(self, characteristics: dict[str, dict[str, Any]]) -> None:
+    def process_characteristics(self, characteristics: ServiceDiscoveryData) -> None:
         """Process discovered characteristics for this service.
 
         Handles both Bluetooth SIG-defined characteristics and custom non-SIG characteristics.
@@ -785,18 +792,10 @@ class CustomBaseGattService(BaseGattService):
         are stored as generic UnknownCharacteristic instances.
 
         Args:
-            characteristics: Dictionary mapping characteristic UUIDs to their data
+            characteristics: Dictionary mapping characteristic UUIDs to CharacteristicInfo
         """
         # Store characteristics for later access
-        for uuid, char_data in characteristics.items():
-            # Normalize UUID format
-            uuid_obj = BluetoothUUID(uuid)
-
-            # Extract properties if available
-            properties: set[GattProperty] = set()
-            if "properties" in char_data and isinstance(char_data["properties"], list):
-                properties = {GattProperty(prop.lower()) for prop in char_data["properties"] if isinstance(prop, str)}
-
+        for uuid_obj, char_info in characteristics.items():
             # Try to create SIG-defined characteristic first
             char_instance = CharacteristicRegistry.create_characteristic(uuid=uuid_obj.normalized)
 
@@ -805,10 +804,10 @@ class CustomBaseGattService(BaseGattService):
                 char_instance = UnknownCharacteristic(
                     info=BaseCharacteristicInfo(
                         uuid=uuid_obj,
-                        name=f"Unknown Characteristic ({uuid_obj})",
-                        unit="",
-                        value_type=ValueType.BYTES,
-                        properties=list(properties) if properties else [],
+                        name=char_info.name or f"Unknown Characteristic ({uuid_obj})",
+                        unit=char_info.unit or "",
+                        value_type=char_info.value_type,
+                        properties=char_info.properties or [],
                     )
                 )
 

@@ -6,8 +6,8 @@ import struct
 from typing import Any
 
 from bluetooth_sig.types.data_types import ParseFieldError
+from bluetooth_sig.types.protocols import CharacteristicProtocol
 
-from ..base import BaseCharacteristic
 from .bit_field_utils import BitFieldUtils
 
 
@@ -24,7 +24,7 @@ class DebugUtils:
         return " ".join(f"{byte:02X}" for byte in data)  # HEX_FORMAT_WIDTH = 2
 
     @staticmethod
-    def validate_round_trip(characteristic: BaseCharacteristic, original_data: bytearray) -> bool:
+    def validate_round_trip(characteristic: CharacteristicProtocol, original_data: bytearray) -> bool:
         """Validate that parse/encode operations preserve data integrity."""
         try:
             parsed = characteristic.parse_value(original_data)

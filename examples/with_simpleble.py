@@ -46,7 +46,7 @@ async def read_characteristics_with_manager(
 def scan_devices_simpleble(simpleble_module: ModuleType, timeout: float = 10.0) -> list[dict[str, Any]]:
     """Wrapper ensuring precise typing for scanning helper."""
 
-    return cast(list[dict[str, Any]], simpleble_integration.scan_devices_simpleble(simpleble_module, timeout))
+    return simpleble_integration.scan_devices_simpleble(simpleble_module, timeout)
 
 
 def comprehensive_device_analysis_simpleble(
@@ -177,11 +177,16 @@ def handle_device_operations_simpleble(args: argparse.Namespace) -> None:
 
 def display_simpleble_results(results: dict[str, Any] | dict[str, CharacteristicData]) -> None:
     """Display SimpleBLE results in a consistent format."""
-    if "stats" in results:
-        if results["parsed_data"]:
-            for _uuid, data in results["parsed_data"].items():
-                unit_str = f" {data['unit']}" if data["unit"] else ""
-                print(f"{data['name']}: {data['value']}{unit_str}")
+    if "stats" in results and "parsed_data" in results:
+        parsed_data = results["parsed_data"]
+        if isinstance(parsed_data, dict):
+            for _uuid, data in parsed_data.items():
+                if isinstance(data, CharacteristicData):
+                    unit_str = f" {data.unit}" if data.unit else ""
+                    print(f"{data.name}: {data.value}{unit_str}")
+                elif isinstance(data, dict):
+                    unit_str = f" {data['unit']}" if data.get("unit") else ""
+                    print(f"{data.get('name', _uuid)}: {data.get('value', 'N/A')}{unit_str}")
     else:
         for _uuid, result in results.items():
             if isinstance(result, CharacteristicData):

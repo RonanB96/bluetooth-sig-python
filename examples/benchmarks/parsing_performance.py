@@ -38,14 +38,16 @@ def manual_battery_parse(data: bytes) -> int:
 
 def manual_temperature_parse(data: bytes) -> float:
     """Manual temperature parsing - minimal features."""
-    return struct.unpack("<h", data[:2])[0] * 0.01
+    temp_raw: int = struct.unpack("<h", data[:2])[0]  # type: ignore[assignment]
+    return temp_raw * 0.01
 
 
 def manual_heart_rate_parse(data: bytes) -> int:
     """Manual heart rate parsing - minimal features."""
     flags = data[0]
     if flags & 0x01:
-        return struct.unpack("<H", data[1:3])[0]
+        hr_value: int = struct.unpack("<H", data[1:3])[0]  # type: ignore[assignment]
+        return hr_value
     return data[1]
 
 

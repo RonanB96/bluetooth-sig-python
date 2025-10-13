@@ -29,7 +29,7 @@ async def demo_library_comparison(address: str, target_uuids: list[str] | None =
     Returns:
         Dict of results from each library
     """
-    comparison_results = {}
+    comparison_results: dict[str, Any] = {}
 
     print("🔍 Comparing BLE Libraries (bleak-retry and simpleble only)")
     print("=" * 60)
