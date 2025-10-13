@@ -131,6 +131,7 @@ select = [
     "I",   # isort
     "B",   # flake8-bugbear
     "UP",  # pyupgrade
+    "ANN", # flake8-annotations - enforce type hints
 ]
 ignore = [
     "E701", # Multiple statements on one line (colon)
@@ -189,22 +190,17 @@ check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
-# Allow some flexibility in tests - tests often have type issues due to:
-# - Mock objects and fixtures with dynamic attributes
-# - Test-specific patterns that don't follow strict typing
-# - External dependencies that may not be fully typed
-# - Complex test setup that benefits from flexibility
-disallow_untyped_defs = false
-disallow_incomplete_defs = false
-warn_unused_ignores = false
-ignore_missing_imports = true
+# Allow some flexibility for mock objects and fixtures
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_unused_ignores = false  # Allow extra type: ignore comments for test flexibility
+ignore_missing_imports = true  # Allow missing imports for test utilities
 
 [[tool.mypy.overrides]]
 module = "examples.*"
-# Allow some flexibility in examples (demonstration code)
-disallow_untyped_defs = false
-disallow_incomplete_defs = false
-warn_unused_ignores = false
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_unused_ignores = false  # Allow extra type: ignore comments for flexibility
 
 [[tool.mypy.overrides]]
 module = "bluetooth_sig.*.yaml_cross_reference"

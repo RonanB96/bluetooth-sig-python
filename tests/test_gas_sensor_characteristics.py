@@ -21,7 +21,7 @@ from bluetooth_sig.gatt.constants import MAX_CONCENTRATION_PPM
 class TestGasSensorCharacteristics:
     """Test gas sensor characteristics for air quality monitoring."""
 
-    def test_ammonia_concentration_parsing(self):
+    def test_ammonia_concentration_parsing(self) -> None:
         """Test ammonia concentration characteristic parsing."""
         char = AmmoniaConcentrationCharacteristic()
 
@@ -32,7 +32,7 @@ class TestGasSensorCharacteristics:
         assert char.unit == "kg/m³"
         assert char.value_type_resolved.value == "float"  # YAML specifies medfloat16 format
 
-    def test_co2_concentration_parsing(self):
+    def test_co2_concentration_parsing(self) -> None:
         """Test CO2 concentration characteristic parsing."""
         char = CO2ConcentrationCharacteristic()
 
@@ -55,7 +55,7 @@ class TestGasSensorCharacteristics:
         high_data = bytearray([0xFD, 0xFF])  # 65533 ppm
         assert char.decode_value(high_data) == 65533
 
-    def test_co2_concentration_special_values(self):
+    def test_co2_concentration_special_values(self) -> None:
         """Test CO2 concentration special values."""
         char = CO2ConcentrationCharacteristic()
 
@@ -67,7 +67,7 @@ class TestGasSensorCharacteristics:
         result = char.decode_value(bytearray([0xFF, 0xFF]))
         assert result == MAX_CONCENTRATION_PPM  # Just returns the raw value
 
-    def test_co2_concentration_invalid_data(self):
+    def test_co2_concentration_invalid_data(self) -> None:
         """Test CO2 concentration with invalid data."""
         char = CO2ConcentrationCharacteristic()
 
@@ -75,7 +75,7 @@ class TestGasSensorCharacteristics:
         with pytest.raises(ValueError, match="Insufficient data"):
             char.decode_value(bytearray([0x34]))
 
-    def test_tvoc_concentration_parsing(self):
+    def test_tvoc_concentration_parsing(self) -> None:
         """Test TVOC concentration characteristic parsing."""
         char = NonMethaneVOCConcentrationCharacteristic()
 
@@ -92,7 +92,7 @@ class TestGasSensorCharacteristics:
         parsed = char.decode_value(test_data)
         assert isinstance(parsed, float)
 
-    def test_tvoc_concentration_special_values(self):
+    def test_tvoc_concentration_special_values(self) -> None:
         """Test TVOC concentration special values per IEEE 11073 SFLOAT."""
         char = NonMethaneVOCConcentrationCharacteristic()
 
@@ -115,7 +115,7 @@ class TestGasSensorCharacteristics:
         result = char.decode_value(bytearray([0x02, 0x08]))
         assert math.isinf(result) and result < 0, f"Expected -inf, got {result}"
 
-    def test_voc_concentration_parsing(self):
+    def test_voc_concentration_parsing(self) -> None:
         """Test VOC concentration characteristic parsing."""
         char = VOCConcentrationCharacteristic()
 
@@ -135,7 +135,7 @@ class TestGasSensorCharacteristics:
         encoded = char.encode_value(1024)
         assert encoded == bytearray([0x00, 0x04])
 
-    def test_voc_concentration_special_values(self):
+    def test_voc_concentration_special_values(self) -> None:
         """Test VOC concentration special values per SIG specification."""
         char = VOCConcentrationCharacteristic()
 
@@ -165,7 +165,7 @@ class TestGasSensorCharacteristics:
         encoded = char.encode_value(65534)
         assert encoded == bytearray([0xFE, 0xFF])
 
-    def test_nitrogen_dioxide_concentration_parsing(self):
+    def test_nitrogen_dioxide_concentration_parsing(self) -> None:
         """Test nitrogen dioxide concentration characteristic parsing."""
         char = NitrogenDioxideConcentrationCharacteristic()
 
@@ -180,7 +180,7 @@ class TestGasSensorCharacteristics:
         parsed = char.decode_value(test_data)
         assert parsed == 50
 
-    def test_pm25_concentration_parsing(self):
+    def test_pm25_concentration_parsing(self) -> None:
         """Test PM2.5 concentration characteristic parsing."""
         char = PM25ConcentrationCharacteristic()
 
@@ -195,7 +195,7 @@ class TestGasSensorCharacteristics:
         parsed = char.decode_value(test_data)
         assert parsed == 25
 
-    def test_all_characteristics_have_proper_metadata(self):
+    def test_all_characteristics_have_proper_metadata(self) -> None:
         """Test that all gas sensor characteristics have proper metadata."""
         characteristics = [
             CO2ConcentrationCharacteristic,
@@ -221,7 +221,7 @@ class TestGasSensorCharacteristics:
                 "bytes",
             ]  # Accept current automatic parsing
 
-    def test_extended_gas_sensor_characteristics(self):
+    def test_extended_gas_sensor_characteristics(self) -> None:
         """Test extended gas sensor characteristics not covered in other
         tests."""
         # Test Methane
@@ -249,7 +249,7 @@ class TestGasSensorCharacteristics:
         assert so2_char.uuid == "2BD8"
         assert so2_char.unit == "ppb"
 
-    def test_particulate_matter_parsing(self):
+    def test_particulate_matter_parsing(self) -> None:
         """Test particulate matter characteristics parsing."""
         chars = [
             (PM1ConcentrationCharacteristic(), "PM1"),
@@ -266,7 +266,7 @@ class TestGasSensorCharacteristics:
             # Test unit and device class
             assert char.unit == "µg/m³", f"{name} unit incorrect"
 
-    def test_gas_concentration_parsing(self):
+    def test_gas_concentration_parsing(self) -> None:
         """Test gas concentration characteristics parsing."""
         chars = [
             (

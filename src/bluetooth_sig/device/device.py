@@ -50,7 +50,7 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
         properties: set[str] | None = None,
-    ) -> Any:
+    ) -> Any:  # noqa: ANN401  # Returns characteristic-specific types (int, float, dataclass, etc.)
         """Parse a single characteristic's raw bytes."""
 
     @abstractmethod
@@ -61,7 +61,7 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
     def get_service_uuid(self, name: str | ServiceName) -> str | None:
         """Get the UUID for a service name or enum."""
 
-    def get_characteristic_info_by_name(self, name: CharacteristicName) -> Any | None:
+    def get_characteristic_info_by_name(self, name: CharacteristicName) -> Any | None:  # noqa: ANN401  # Adapter-specific characteristic info
         """Get characteristic info by enum name (optional method)."""
 
 
@@ -179,7 +179,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             raise RuntimeError("No connection manager attached to Device")
         await self.connection_manager.disconnect()
 
-    async def read(self, char_name: str | CharacteristicName) -> Any | None:
+    async def read(self, char_name: str | CharacteristicName) -> Any | None:  # noqa: ANN401  # Returns characteristic-specific types
         """Read a characteristic value from the device.
 
         Args:
@@ -561,7 +561,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return dict(self.services)
 
-    async def get_characteristic_info(self, char_uuid: str) -> Any | None:
+    async def get_characteristic_info(self, char_uuid: str) -> Any | None:  # noqa: ANN401  # Adapter-specific characteristic metadata
         """Get information about a characteristic from the connection manager.
 
         Args:

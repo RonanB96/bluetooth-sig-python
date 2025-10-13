@@ -38,11 +38,11 @@ class TestPerformanceTracking:
     """Track parsing performance to detect regressions."""
 
     @pytest.fixture
-    def translator(self):
+    def translator(self) -> BluetoothSIGTranslator:
         """Create a translator instance for testing."""
         return BluetoothSIGTranslator()
 
-    def test_battery_level_parse_performance(self, translator):
+    def test_battery_level_parse_performance(self, translator: BluetoothSIGTranslator) -> None:
         """Track battery level parsing performance (baseline: <5ms).
 
         This test establishes a performance baseline. The threshold is
@@ -73,7 +73,7 @@ class TestPerformanceTracking:
             f"This indicates a major performance regression."
         )
 
-    def test_temperature_parse_performance(self, translator):
+    def test_temperature_parse_performance(self, translator: BluetoothSIGTranslator) -> None:
         """Track temperature parsing performance (baseline: <10ms).
 
         This test establishes a performance baseline for moderate complexity
@@ -102,7 +102,7 @@ class TestPerformanceTracking:
             f"This indicates a major performance regression."
         )
 
-    def test_batch_parse_performance(self, translator):
+    def test_batch_parse_performance(self, translator: BluetoothSIGTranslator) -> None:
         """Track batch parsing performance (baseline: <20ms for 4 chars).
 
         This test ensures batch parsing remains efficient. Threshold is
@@ -137,7 +137,7 @@ class TestPerformanceTracking:
             f"This indicates a major performance regression."
         )
 
-    def test_uuid_resolution_performance(self, translator):
+    def test_uuid_resolution_performance(self, translator: BluetoothSIGTranslator) -> None:
         """Track UUID resolution performance (baseline: <2ms).
 
         This test ensures characteristic info lookup remains fast.
@@ -165,7 +165,7 @@ class TestPerformanceTracking:
             f"This indicates a major performance regression."
         )
 
-    def test_parse_timing_accuracy(self, translator):
+    def test_parse_timing_accuracy(self, translator: BluetoothSIGTranslator) -> None:
         """Verify timing measurements are accurate and consistent.
 
         This test ensures the timing infrastructure itself is working correctly.
@@ -198,7 +198,9 @@ class TestPerformanceTracking:
 
         assert cv < 30, f"Timing measurements inconsistent: CV={cv:.1f}% (expected <30%). Measurements: {measurements}"
 
-    def test_parse_with_logging_overhead(self, translator, caplog):
+    def test_parse_with_logging_overhead(
+        self, translator: BluetoothSIGTranslator, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """Track performance impact of logging.
 
         This test ensures logging overhead remains minimal when logs are captured

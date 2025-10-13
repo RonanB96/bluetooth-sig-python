@@ -21,6 +21,7 @@ from bluetooth_sig.core.translator import BluetoothSIGTranslator
 from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.templates import ScaledUint16Template, Uint8Template
 from bluetooth_sig.gatt.characteristics.utils import DataParser
+from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.types import CharacteristicInfo, CharacteristicRegistration
 from bluetooth_sig.types.gatt_enums import GattProperty, ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -46,7 +47,7 @@ class SimpleTemperatureSensor(CustomBaseCharacteristic):
         properties=[GattProperty.READ, GattProperty.NOTIFY],
     )
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
         """Parse temperature as signed 16-bit integer."""
         return DataParser.parse_int16(data, 0, signed=True)
 
@@ -104,7 +105,7 @@ class MultiSensorCharacteristic(CustomBaseCharacteristic):
         properties=[GattProperty.READ, GattProperty.NOTIFY],
     )
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> EnvironmentalReading:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> EnvironmentalReading:
         """Parse multi-field environmental data."""
         if len(data) < 12:
             raise ValueError("Multi-sensor data requires at least 12 bytes")
@@ -151,7 +152,7 @@ class DeviceSerialNumberCharacteristic(CustomBaseCharacteristic):
         properties=[GattProperty.READ],
     )
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> str:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
         """Parse serial number as UTF-8 string."""
         return data.decode("utf-8").strip()
 
@@ -179,7 +180,7 @@ class DeviceStatusFlags(CustomBaseCharacteristic):
         properties=[GattProperty.READ, GattProperty.NOTIFY],
     )
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, bool]:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, bool]:
         """Parse status flags and return dict of flag states."""
         flags = data[0]
         return {
@@ -242,7 +243,7 @@ class CustomBatteryLevel(CustomBaseCharacteristic, allow_sig_override=True):
 class TestCustomCharacteristicVariants:
     """Test suite for all custom characteristic variants."""
 
-    def test_simple_temperature_sensor(self):
+    def test_simple_temperature_sensor(self) -> None:
         """Test simple temperature sensor characteristic."""
         sensor = SimpleTemperatureSensor()
 
@@ -264,7 +265,7 @@ class TestCustomCharacteristicVariants:
         result = sensor.parse_value(encoded)
         assert result.value == 25
 
-    def test_simple_temperature_validation(self):
+    def test_simple_temperature_validation(self) -> None:
         """Test temperature sensor validation."""
         sensor = SimpleTemperatureSensor()
 
@@ -278,7 +279,7 @@ class TestCustomCharacteristicVariants:
         # The sensor will decode the value, but validation will fail if out of range
         # We need to ensure the value would be outside -40 to 85 range
 
-    def test_precision_humidity_sensor(self):
+    def test_precision_humidity_sensor(self) -> None:
         """Test precision humidity sensor with template."""
         sensor = PrecisionHumiditySensor()
 
@@ -295,7 +296,7 @@ class TestCustomCharacteristicVariants:
         assert result.parse_success is True
         assert result.value == 100.0
 
-    def test_multi_sensor_characteristic(self):
+    def test_multi_sensor_characteristic(self) -> None:
         """Test multi-field environmental sensor."""
         sensor = MultiSensorCharacteristic()
 
@@ -325,7 +326,7 @@ class TestCustomCharacteristicVariants:
         assert result.value.pressure == 101325
         assert result.value.timestamp == 1610612736
 
-    def test_multi_sensor_length_validation(self):
+    def test_multi_sensor_length_validation(self) -> None:
         """Test multi-sensor minimum length validation."""
         sensor = MultiSensorCharacteristic()
 
@@ -334,7 +335,7 @@ class TestCustomCharacteristicVariants:
         result = sensor.parse_value(short_data)
         assert result.parse_success is False
 
-    def test_device_serial_number(self):
+    def test_device_serial_number(self) -> None:
         """Test string-based serial number characteristic."""
         char = DeviceSerialNumberCharacteristic()
 
@@ -350,7 +351,7 @@ class TestCustomCharacteristicVariants:
         result = char.parse_value(encoded)
         assert result.value == "TEST12345"
 
-    def test_device_status_flags(self):
+    def test_device_status_flags(self) -> None:
         """Test device status flags characteristic."""
         char = DeviceStatusFlags()
 
@@ -383,7 +384,7 @@ class TestCustomCharacteristicVariants:
         encoded = char.encode_value(flags)
         assert encoded[0] == 0x23  # 0x01 | 0x02 | 0x20
 
-    def test_custom_battery_level_override(self):
+    def test_custom_battery_level_override(self) -> None:
         """Test custom battery level with SIG UUID override."""
         char = CustomBatteryLevel()
 
@@ -397,7 +398,7 @@ class TestCustomCharacteristicVariants:
         assert result.parse_success is True
         assert result.value == 85
 
-    def test_custom_characteristics_have_is_custom_marker(self):
+    def test_custom_characteristics_have_is_custom_marker(self) -> None:
         """Verify all custom characteristics have _is_custom marker."""
         assert SimpleTemperatureSensor._is_custom is True
         assert PrecisionHumiditySensor._is_custom is True
@@ -406,7 +407,7 @@ class TestCustomCharacteristicVariants:
         assert DeviceStatusFlags._is_custom is True
         assert CustomBatteryLevel._is_custom is True
 
-    def test_custom_characteristic_properties(self):
+    def test_custom_characteristic_properties(self) -> None:
         """Test that properties are properly defined."""
         # Simple temperature has READ and NOTIFY
         temp = SimpleTemperatureSensor()
@@ -422,7 +423,7 @@ class TestCustomCharacteristicVariants:
 class TestCustomCharacteristicRegistration:
     """Test runtime registration of custom characteristics."""
 
-    def test_register_simple_characteristic(self):
+    def test_register_simple_characteristic(self) -> None:
         """Test registering a simple custom characteristic."""
         translator = BluetoothSIGTranslator()
 
@@ -448,7 +449,7 @@ class TestCustomCharacteristicRegistration:
         assert result.parse_success is True
         assert result.value == 20
 
-    def test_register_multi_field_characteristic(self):
+    def test_register_multi_field_characteristic(self) -> None:
         """Test registering multi-field characteristic."""
         translator = BluetoothSIGTranslator()
 
@@ -487,13 +488,13 @@ class TestCustomCharacteristicRegistration:
 class TestCustomCharacteristicErrorHandling:
     """Test error handling for custom characteristics."""
 
-    def test_custom_characteristic_without_uuid_fails(self):
+    def test_custom_characteristic_without_uuid_fails(self) -> None:
         """Test that custom characteristic without _info raises error."""
         with pytest.raises(ValueError, match="requires either 'info' parameter or '_info' class attribute"):
 
             class MissingInfoCharacteristic(CustomBaseCharacteristic):
                 # Missing _info attribute entirely
-                def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+                def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                     return 0
 
                 def encode_value(self, data: int) -> bytearray:
@@ -501,7 +502,7 @@ class TestCustomCharacteristicErrorHandling:
 
             _ = MissingInfoCharacteristic()  # Should raise ValueError
 
-    def test_custom_characteristic_sig_uuid_without_override_fails(self):
+    def test_custom_characteristic_sig_uuid_without_override_fails(self) -> None:
         """Test that SIG UUID without override flag fails."""
         with pytest.raises(ValueError, match="without override flag"):
 
@@ -522,7 +523,7 @@ class TestCustomCharacteristicErrorHandling:
                     # 3. Consolidation would reduce test independence and clarity
                     self: CustomBaseCharacteristic,
                     data: bytearray,
-                    ctx: Any | None = None,
+                    ctx: CharacteristicContext | None = None,
                 ) -> int:
                     return 0
 
@@ -539,7 +540,7 @@ class TestCustomCharacteristicErrorHandling:
                 _class_body,
             )
 
-    def test_decode_error_handling(self):
+    def test_decode_error_handling(self) -> None:
         """Test that decode errors are properly handled."""
         sensor = SimpleTemperatureSensor()
 
@@ -548,7 +549,7 @@ class TestCustomCharacteristicErrorHandling:
         assert result.parse_success is False
         assert result.value is None
 
-    def test_validation_error_handling(self):
+    def test_validation_error_handling(self) -> None:
         """Test that validation errors are properly handled."""
         sensor = PrecisionHumiditySensor()
 
@@ -561,7 +562,7 @@ class TestCustomCharacteristicErrorHandling:
 class TestCustomCharacteristicEdgeCases:
     """Test edge cases for custom characteristics."""
 
-    def test_empty_data_handling(self):
+    def test_empty_data_handling(self) -> None:
         """Test handling of empty data."""
         chars = [
             SimpleTemperatureSensor(),
@@ -573,7 +574,7 @@ class TestCustomCharacteristicEdgeCases:
             result = char.parse_value(bytearray())
             assert result.parse_success is False
 
-    def test_maximum_values(self):
+    def test_maximum_values(self) -> None:
         """Test handling of maximum values."""
         sensor = SimpleTemperatureSensor()
 
@@ -583,7 +584,7 @@ class TestCustomCharacteristicEdgeCases:
         assert result.parse_success is True
         assert result.value == 85
 
-    def test_minimum_values(self):
+    def test_minimum_values(self) -> None:
         """Test handling of minimum values."""
         sensor = SimpleTemperatureSensor()
 
@@ -593,7 +594,7 @@ class TestCustomCharacteristicEdgeCases:
         assert result.parse_success is True
         assert result.value == -40
 
-    def test_string_encoding_edge_cases(self):
+    def test_string_encoding_edge_cases(self) -> None:
         """Test string encoding with special characters."""
         char = DeviceSerialNumberCharacteristic()
 
@@ -627,7 +628,7 @@ class TestCustomBaseCharacteristicAPI:
                 properties=[],
             )
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return DataParser.parse_int16(data, 0, signed=False)
 
             def encode_value(self, data: int) -> bytearray:
@@ -662,10 +663,10 @@ class TestCustomBaseCharacteristicAPI:
                 properties=[],
             )
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return DataParser.parse_int16(data, 0, signed=False)
 
-            def encode_value(self, data: Any) -> bytearray:
+            def encode_value(self, data: int) -> bytearray:
                 return DataParser.encode_int16(data, signed=False)
 
         # Create with manual info override
@@ -707,7 +708,7 @@ class TestCustomBaseCharacteristicAPI:
                     # 3. Consolidation would reduce test independence and clarity
                     self: CustomBaseCharacteristic,
                     data: bytearray,
-                    ctx: Any | None = None,
+                    ctx: CharacteristicContext | None = None,
                 ) -> int:
                     return data[0]
 
@@ -746,7 +747,7 @@ class TestCustomBaseCharacteristicAPI:
                 # 3. Consolidation would reduce test independence and clarity
                 self,
                 data: bytearray,
-                ctx: Any | None = None,
+                ctx: CharacteristicContext | None = None,
             ) -> int:
                 return data[0]
 
@@ -765,7 +766,7 @@ class TestCustomBaseCharacteristicAPI:
         class MissingInfoCharacteristic(CustomBaseCharacteristic):
             """Should fail: no _info provided."""
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return data[0]
 
             def encode_value(self, data: int) -> bytearray:
@@ -788,7 +789,7 @@ class TestCustomBaseCharacteristicAPI:
                 properties=[],
             )
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return data[0]
 
             def encode_value(self, data: int) -> bytearray:

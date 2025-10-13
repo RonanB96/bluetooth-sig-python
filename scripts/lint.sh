@@ -118,8 +118,8 @@ run_ruff() {
     # Enable caching for better performance
     # shellcheck disable=SC2086  # RUFF_FOLDERS is intentionally space-separated
     run_capture "ruff check --cache-dir .ruff_cache $RUFF_FOLDERS"
-    RUFF_OUTPUT="$CAPTURE_OUTPUT"
     local RUFF_EXIT_CODE=$?
+    RUFF_OUTPUT="$CAPTURE_OUTPUT"
 
     if [ "$is_parallel" != "true" ]; then
         if [ $RUFF_EXIT_CODE -eq 0 ]; then
@@ -181,6 +181,7 @@ run_pylint() {
     # Use persistent cache for better performance
     # shellcheck disable=SC2086  # BLUETOOTH_SIG_FOLDERS is intentionally space-separated
     run_capture "pylint --persistent=n $BLUETOOTH_SIG_FOLDERS"
+    local PROD_PYLINT_EXIT_CODE=$?
     PROD_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
 
     # Extract production score
@@ -234,8 +235,8 @@ run_pylint() {
     # W0221: arguments-differ - Test methods may have different signatures than base
     # E0401: import-error - Tests may import modules that aren't available in test environment
     run_capture "pylint --persistent=n --disable=C0114,C0115,C0116,W0212,C0415,W0718,W0613,R0914,R0912,R0915,R1702,C1803,W0105,R0903,W0201,W0621,W0404,W0221,E0401 $TEST_FOLDERS $EXAMPLES_FOLDERS"
-    TEST_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
     local TEST_PYLINT_EXIT_CODE=$?
+    TEST_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
     local TEST_PYLINT_HAS_MESSAGES=0
     if printf '%s\n' "$TEST_PYLINT_OUTPUT" | grep -Eq ':[[:space:]]*\[[A-Z]'; then
         TEST_PYLINT_HAS_MESSAGES=1
@@ -330,8 +331,8 @@ run_mypy() {
     local PROD_MYPY_OUTPUT
     # Use cache for better performance
     run_capture "MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml"
-    PROD_MYPY_OUTPUT="$CAPTURE_OUTPUT"
     local PROD_MYPY_EXIT_CODE=$?
+    PROD_MYPY_OUTPUT="$CAPTURE_OUTPUT"
 
     if [ "$is_parallel" != "true" ]; then
         if [ $PROD_MYPY_EXIT_CODE -eq 0 ]; then
@@ -372,8 +373,8 @@ run_mypy() {
     # Run mypy but don't fail on errors (examples are allowed to have type issues)
     # shellcheck disable=SC2086  # EXAMPLES_FOLDERS is intentionally space-separated
     run_capture "MYPYPATH=src python -m mypy --cache-dir=.mypy_cache --explicit-package-bases --config-file pyproject.toml $EXAMPLES_FOLDERS"
-    local EXAMPLES_MYPY_OUTPUT="$CAPTURE_OUTPUT"
     local EXAMPLES_MYPY_EXIT_CODE=$?
+    local EXAMPLES_MYPY_OUTPUT="$CAPTURE_OUTPUT"
 
     if [ "$is_parallel" != "true" ]; then
         if [ $EXAMPLES_MYPY_EXIT_CODE -eq 0 ]; then
@@ -414,8 +415,8 @@ run_mypy() {
     # shellcheck disable=SC2086  # TEST_FOLDERS is intentionally space-separated
     # Use PYTHONPATH="" to avoid duplicate source issues
     run_capture "PYTHONPATH=\"\" python -m mypy --cache-dir=.mypy_cache --config-file pyproject.toml $TEST_FOLDERS"
-    local TEST_MYPY_OUTPUT="$CAPTURE_OUTPUT"
     local TEST_MYPY_EXIT_CODE=$?
+    local TEST_MYPY_OUTPUT="$CAPTURE_OUTPUT"
 
     if [ "$is_parallel" != "true" ]; then
         if [ $TEST_MYPY_EXIT_CODE -eq 0 ]; then

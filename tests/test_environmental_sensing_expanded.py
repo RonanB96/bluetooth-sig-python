@@ -26,7 +26,7 @@ from bluetooth_sig.gatt.services.environmental_sensing import (
 class TestEnvironmentalSensingExpanded:
     """Test expanded environmental sensing characteristics."""
 
-    def test_dew_point_parsing(self):
+    def test_dew_point_parsing(self) -> None:
         """Test dew point characteristic parsing."""
         char = DewPointCharacteristic()
 
@@ -46,7 +46,7 @@ class TestEnvironmentalSensingExpanded:
         data = bytearray([SINT8_MIN & 0xFF])  # Max negative sint8 (SINT8_MIN)
         assert char.decode_value(data) == SINT8_MIN
 
-    def test_heat_index_parsing(self):
+    def test_heat_index_parsing(self) -> None:
         """Test heat index characteristic parsing."""
         char = HeatIndexCharacteristic()
 
@@ -58,7 +58,7 @@ class TestEnvironmentalSensingExpanded:
         data = bytearray([UINT8_MAX])  # UINT8_MAX°C
         assert char.decode_value(data) == UINT8_MAX
 
-    def test_wind_chill_parsing(self):
+    def test_wind_chill_parsing(self) -> None:
         """Test wind chill characteristic parsing."""
         char = WindChillCharacteristic()
 
@@ -70,7 +70,7 @@ class TestEnvironmentalSensingExpanded:
         data = bytearray([5])  # 5°C
         assert char.decode_value(data) == 5.0
 
-    def test_true_wind_speed_parsing(self):
+    def test_true_wind_speed_parsing(self) -> None:
         """Test true wind speed characteristic parsing."""
         char = TrueWindSpeedCharacteristic()
 
@@ -82,7 +82,7 @@ class TestEnvironmentalSensingExpanded:
         data = bytearray([0x00, 0x00])
         assert char.decode_value(data) == 0.0
 
-    def test_true_wind_direction_parsing(self):
+    def test_true_wind_direction_parsing(self) -> None:
         """Test true wind direction characteristic parsing."""
         char = TrueWindDirectionCharacteristic()
 
@@ -94,7 +94,7 @@ class TestEnvironmentalSensingExpanded:
         data = bytearray([0x00, 0x00])
         assert char.decode_value(data) == 0.0
 
-    def test_apparent_wind_characteristics(self):
+    def test_apparent_wind_characteristics(self) -> None:
         """Test apparent wind speed and direction characteristics."""
         speed_char = ApparentWindSpeedCharacteristic()
         direction_char = ApparentWindDirectionCharacteristic()
@@ -106,7 +106,7 @@ class TestEnvironmentalSensingExpanded:
         direction_data = bytearray([0x10, 0x27])  # 10000 * 0.01 = 100.0°
         assert direction_char.decode_value(direction_data) == 100.0
 
-    def test_characteristic_properties(self):
+    def test_characteristic_properties(self) -> None:
         """Test characteristic metadata properties."""
         # Temperature-like characteristics
         dew_point = DewPointCharacteristic()
@@ -120,7 +120,7 @@ class TestEnvironmentalSensingExpanded:
         wind_direction = TrueWindDirectionCharacteristic()
         assert wind_direction.unit == "°"
 
-    def test_characteristic_uuid_resolution(self):
+    def test_characteristic_uuid_resolution(self) -> None:
         """Test that characteristics resolve to correct UUIDs."""
         characteristics = [
             (DewPointCharacteristic, "2A7B"),
@@ -136,7 +136,7 @@ class TestEnvironmentalSensingExpanded:
             char = char_class()
             assert char.uuid == expected_uuid
 
-    def test_data_validation(self):
+    def test_data_validation(self) -> None:
         """Test data validation for insufficient bytes."""
         # Single-byte characteristics
         dew_point = DewPointCharacteristic()
@@ -148,7 +148,7 @@ class TestEnvironmentalSensingExpanded:
         with pytest.raises(ValueError, match="Insufficient data"):
             wind_speed.decode_value(bytearray([0x50]))
 
-    def test_environmental_sensing_service_expansion(self):
+    def test_environmental_sensing_service_expansion(self) -> None:
         """Test that Environmental Sensing Service includes all new
         characteristics."""
         from bluetooth_sig.types.gatt_enums import CharacteristicName

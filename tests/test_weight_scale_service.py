@@ -17,13 +17,13 @@ from bluetooth_sig.types.gatt_enums import ValueType
 class TestWeightMeasurementCharacteristic:
     """Test Weight Measurement characteristic implementation."""
 
-    def test_characteristic_name(self):
+    def test_characteristic_name(self) -> None:
         """Test characteristic name resolution."""
         char = WeightMeasurementCharacteristic()
         assert char._characteristic_name == "Weight Measurement"
         assert char.value_type == ValueType.BYTES
 
-    def test_parse_basic_weight_metric(self):
+    def test_parse_basic_weight_metric(self) -> None:
         """Test parsing basic weight in metric units."""
         char = WeightMeasurementCharacteristic()
 
@@ -36,7 +36,7 @@ class TestWeightMeasurementCharacteristic:
         assert result.weight_unit == "kg"
         assert result.measurement_units == "metric"
 
-    def test_parse_basic_weight_imperial(self):
+    def test_parse_basic_weight_imperial(self) -> None:
         """Test parsing basic weight in imperial units."""
         char = WeightMeasurementCharacteristic()
 
@@ -50,7 +50,7 @@ class TestWeightMeasurementCharacteristic:
         assert result.weight_unit == "lb"
         assert result.measurement_units == "imperial"
 
-    def test_parse_weight_with_user_id(self):
+    def test_parse_weight_with_user_id(self) -> None:
         """Test parsing weight with user ID."""
         char = WeightMeasurementCharacteristic()
 
@@ -62,7 +62,7 @@ class TestWeightMeasurementCharacteristic:
         assert hasattr(result, "user_id")
         assert result.user_id == 5
 
-    def test_parse_invalid_data(self):
+    def test_parse_invalid_data(self) -> None:
         """Test parsing with invalid data."""
         char = WeightMeasurementCharacteristic()
 
@@ -70,7 +70,7 @@ class TestWeightMeasurementCharacteristic:
         with pytest.raises(ValueError, match="at least 3 bytes"):
             char.decode_value(bytearray([0x00, 0x70]))
 
-    def test_unit_property(self):
+    def test_unit_property(self) -> None:
         """Test unit property."""
         char = WeightMeasurementCharacteristic()
         assert char.unit == "kg"
@@ -79,13 +79,13 @@ class TestWeightMeasurementCharacteristic:
 class TestWeightScaleFeatureCharacteristic:
     """Test Weight Scale Feature characteristic implementation."""
 
-    def test_characteristic_name(self):
+    def test_characteristic_name(self) -> None:
         """Test characteristic name resolution."""
         char = WeightScaleFeatureCharacteristic()
         assert char._characteristic_name == "Weight Scale Feature"
         assert char.value_type == ValueType.BYTES
 
-    def test_parse_basic_features(self):
+    def test_parse_basic_features(self) -> None:
         """Test parsing basic feature flags."""
         char = WeightScaleFeatureCharacteristic()
 
@@ -99,7 +99,7 @@ class TestWeightScaleFeatureCharacteristic:
         assert result.bmi_supported is True
         assert result.weight_measurement_resolution == WeightMeasurementResolution.HALF_KG_OR_1_LB
 
-    def test_parse_no_features(self):
+    def test_parse_no_features(self) -> None:
         """Test parsing with no features enabled."""
         char = WeightScaleFeatureCharacteristic()
 
@@ -112,7 +112,7 @@ class TestWeightScaleFeatureCharacteristic:
         assert result.bmi_supported is False
         assert result.weight_measurement_resolution == WeightMeasurementResolution.NOT_SPECIFIED
 
-    def test_parse_invalid_data(self):
+    def test_parse_invalid_data(self) -> None:
         """Test parsing with invalid data."""
         char = WeightScaleFeatureCharacteristic()
 
@@ -120,7 +120,7 @@ class TestWeightScaleFeatureCharacteristic:
         with pytest.raises(ValueError, match="at least 4 bytes"):
             char.decode_value(bytearray([0x00, 0x00, 0x00]))
 
-    def test_unit_property(self):
+    def test_unit_property(self) -> None:
         """Test unit property (should be empty for feature characteristic)."""
         char = WeightScaleFeatureCharacteristic()
         assert char.unit == ""
@@ -129,7 +129,7 @@ class TestWeightScaleFeatureCharacteristic:
 class TestWeightScaleService:
     """Test Weight Scale Service implementation."""
 
-    def test_expected_characteristics(self):
+    def test_expected_characteristics(self) -> None:
         """Test expected characteristics for the service."""
         expected = WeightScaleService.get_expected_characteristics()
 
@@ -138,7 +138,7 @@ class TestWeightScaleService:
         assert expected[CharacteristicName.WEIGHT_MEASUREMENT].char_class == WeightMeasurementCharacteristic
         assert expected[CharacteristicName.WEIGHT_SCALE_FEATURE].char_class == WeightScaleFeatureCharacteristic
 
-    def test_required_characteristics(self):
+    def test_required_characteristics(self) -> None:
         """Test required characteristics for the service."""
         required = WeightScaleService.get_required_characteristics()
 
@@ -146,7 +146,7 @@ class TestWeightScaleService:
         assert required[CharacteristicName.WEIGHT_MEASUREMENT].char_class == WeightMeasurementCharacteristic
         # Weight Scale Feature is not required
 
-    def test_service_creation(self):
+    def test_service_creation(self) -> None:
         """Test service instantiation."""
         service = WeightScaleService()
         assert service is not None

@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import msgspec
 
 from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
 
@@ -51,7 +50,7 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured VoltageStatisticsData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> VoltageStatisticsData:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> VoltageStatisticsData:
         """Parse voltage statistics data (3x uint16 in units of 1/64 V).
 
         Args:

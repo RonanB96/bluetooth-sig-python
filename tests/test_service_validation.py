@@ -22,7 +22,7 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 class TestServiceHealthStatus:
     """Test ServiceHealthStatus enum."""
 
-    def test_health_status_values(self):
+    def test_health_status_values(self) -> None:
         """Test that all expected health status values exist."""
         assert ServiceHealthStatus.COMPLETE
         assert ServiceHealthStatus.FUNCTIONAL
@@ -39,7 +39,7 @@ class TestServiceHealthStatus:
 class TestCharacteristicStatus:
     """Test CharacteristicStatus enum."""
 
-    def test_characteristic_status_values(self):
+    def test_characteristic_status_values(self) -> None:
         """Test that all expected characteristic status values exist."""
         assert CharacteristicStatus.PRESENT
         assert CharacteristicStatus.MISSING
@@ -54,7 +54,7 @@ class TestCharacteristicStatus:
 class TestServiceValidationResult:
     """Test ServiceValidationResult dataclass."""
 
-    def test_service_validation_result_creation(self):
+    def test_service_validation_result_creation(self) -> None:
         """Test creation of ServiceValidationResult."""
         result = ServiceValidationResult(status=ServiceHealthStatus.COMPLETE)
 
@@ -66,7 +66,7 @@ class TestServiceValidationResult:
         assert result.warnings == []
         assert result.errors == []
 
-    def test_service_validation_result_with_issues(self):
+    def test_service_validation_result_with_issues(self) -> None:
         """Test ServiceValidationResult with validation issues."""
         result = ServiceValidationResult(
             status=ServiceHealthStatus.PARTIAL,
@@ -85,7 +85,7 @@ class TestServiceValidationResult:
         assert len(result.warnings) == 1
         assert len(result.errors) == 1
 
-    def test_has_errors_property(self):
+    def test_has_errors_property(self) -> None:
         """Test the has_errors property."""
         # No errors or missing required
         result = ServiceValidationResult(status=ServiceHealthStatus.COMPLETE)
@@ -105,7 +105,7 @@ class TestServiceValidationResult:
 class TestServiceCharacteristicInfo:
     """Test ServiceCharacteristicInfo dataclass."""
 
-    def test_service_characteristic_info_creation(self):
+    def test_service_characteristic_info_creation(self) -> None:
         """Test creation of ServiceCharacteristicInfo."""
         info = ServiceCharacteristicInfo(
             uuid="2A19",
@@ -122,7 +122,7 @@ class TestServiceCharacteristicInfo:
         assert info.is_conditional is False
         assert info.condition_description == ""
 
-    def test_service_characteristic_info_with_condition(self):
+    def test_service_characteristic_info_with_condition(self) -> None:
         """Test ServiceCharacteristicInfo with conditional information."""
         info = ServiceCharacteristicInfo(
             uuid="2A1A",
@@ -140,7 +140,7 @@ class TestServiceCharacteristicInfo:
 class TestServiceCompletenessReport:
     """Test ServiceCompletenessReport dataclass."""
 
-    def test_service_completeness_report_creation(self):
+    def test_service_completeness_report_creation(self) -> None:
         """Test creation of ServiceCompletenessReport."""
         report = ServiceCompletenessReport(
             service_name="Battery Service",
@@ -170,7 +170,7 @@ class TestServiceCompletenessReport:
         assert len(report.missing_required) == 0
         assert len(report.missing_details) == 0
 
-    def test_service_completeness_report_with_missing_details(self):
+    def test_service_completeness_report_with_missing_details(self) -> None:
         """Test ServiceCompletenessReport with missing characteristic
         details."""
         missing_char = ServiceCharacteristicInfo(
@@ -208,11 +208,11 @@ class TestBatteryServiceValidation:
 
     service: BatteryService
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test fixtures."""
         self.service = BatteryService()
 
-    def test_empty_battery_service_validation(self):
+    def test_empty_battery_service_validation(self) -> None:
         """Test validation of empty battery service."""
         result = self.service.validate_service()
 
@@ -223,7 +223,7 @@ class TestBatteryServiceValidation:
         assert battery_level_missing
         assert len(result.errors) > 0
 
-    def test_complete_battery_service_validation(self):
+    def test_complete_battery_service_validation(self) -> None:
         """Test validation of complete battery service."""
         # Add required battery level characteristic
         battery_char = BatteryLevelCharacteristic()
@@ -236,7 +236,7 @@ class TestBatteryServiceValidation:
         assert len(result.missing_required) == 0
         assert len(result.errors) == 0
 
-    def test_battery_service_get_missing_characteristics(self):
+    def test_battery_service_get_missing_characteristics(self) -> None:
         """Test getting missing characteristics from battery service."""
         from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
 
@@ -249,7 +249,7 @@ class TestBatteryServiceValidation:
         assert battery_info.status == CharacteristicStatus.MISSING
         assert battery_info.is_required is True
 
-    def test_battery_service_characteristic_status(self):
+    def test_battery_service_characteristic_status(self) -> None:
         """Test getting characteristic status."""
         # Test missing characteristic
         from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
@@ -273,7 +273,7 @@ class TestBatteryServiceValidation:
         if CharacteristicName.UV_INDEX not in self.service.get_expected_characteristics():
             assert unknown_status is None
 
-    def test_battery_service_completeness_report(self):
+    def test_battery_service_completeness_report(self) -> None:
         """Test getting service completeness report."""
         report = self.service.get_service_completeness_report()
 
@@ -291,7 +291,7 @@ class TestBatteryServiceValidation:
         assert missing_detail.uuid.short_form == "2A19"
         assert missing_detail.is_required is True
 
-    def test_battery_service_has_minimum_functionality(self):
+    def test_battery_service_has_minimum_functionality(self) -> None:
         """Test checking minimum functionality."""
         # Without battery level - no minimum functionality
         assert self.service.has_minimum_functionality() is False
@@ -308,11 +308,11 @@ class TestDeviceInformationServiceValidation:
 
     service: DeviceInformationService
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test fixtures."""
         self.service = DeviceInformationService()
 
-    def test_empty_device_info_service_validation(self):
+    def test_empty_device_info_service_validation(self) -> None:
         """Test validation of empty device information service."""
         result = self.service.validate_service()
 
@@ -323,14 +323,14 @@ class TestDeviceInformationServiceValidation:
             ServiceHealthStatus.COMPLETE,
         ]
 
-    def test_device_info_service_strict_validation(self):
+    def test_device_info_service_strict_validation(self) -> None:
         """Test strict validation mode."""
         result = self.service.validate_service(strict=True)
 
         # In strict mode, missing optional characteristics should generate warnings
         assert isinstance(result.warnings, list)
 
-    def test_device_info_service_missing_characteristics(self):
+    def test_device_info_service_missing_characteristics(self) -> None:
         """Test getting missing characteristics."""
         from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
 
@@ -362,7 +362,7 @@ class TestDeviceInformationServiceValidation:
 class TestServiceValidationEdgeCases:
     """Test edge cases and error conditions."""
 
-    def test_service_with_invalid_characteristic(self):
+    def test_service_with_invalid_characteristic(self) -> None:
         """Test service with invalid characteristic data."""
         service = BatteryService()
 
@@ -374,7 +374,7 @@ class TestServiceValidationEdgeCases:
         # Should still handle this gracefully
         assert isinstance(result, ServiceValidationResult)
 
-    def test_bluetooth_sig_compliance_validation(self):
+    def test_bluetooth_sig_compliance_validation(self) -> None:
         """Test Bluetooth SIG compliance validation."""
         issues = BatteryService.validate_bluetooth_sig_compliance()
 
@@ -386,7 +386,7 @@ class TestServiceValidationEdgeCases:
 class TestServiceValidationIntegration:
     """Integration tests for service validation functionality."""
 
-    def test_multiple_services_validation(self):
+    def test_multiple_services_validation(self) -> None:
         """Test validation across multiple service types."""
         battery_service = BatteryService()
         device_info_service = DeviceInformationService()
@@ -405,7 +405,7 @@ class TestServiceValidationIntegration:
         assert battery_report.service_name == "Battery"
         assert device_report.service_name == "Device Information"
 
-    def test_service_validation_with_partial_implementation(self):
+    def test_service_validation_with_partial_implementation(self) -> None:
         """Test validation with partially implemented service."""
         service = DeviceInformationService()
 
@@ -421,7 +421,7 @@ class TestServiceValidationIntegration:
         assert model_present
         assert len(report.missing_details) > 0
 
-    def test_service_validation_performance(self):
+    def test_service_validation_performance(self) -> None:
         """Test that service validation is performant."""
         import time
 

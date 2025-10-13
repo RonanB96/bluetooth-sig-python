@@ -14,7 +14,7 @@ from bluetooth_sig.gatt.uuid_registry import uuid_registry
 class TestYAMLUnitParsing:
     """Test automatic unit parsing from YAML specifications."""
 
-    def test_yaml_unit_loading_basic(self):
+    def test_yaml_unit_loading_basic(self) -> None:
         """Test that units are loaded from YAML files for common
         characteristics."""
         # Test Temperature characteristic - should get "°C" from YAML
@@ -36,7 +36,7 @@ class TestYAMLUnitParsing:
         if humidity_info.unit:
             assert humidity_info.unit == "%", f"Humidity unit should be %, got {humidity_info.unit}"
 
-    def test_characteristic_unit_resolution_from_yaml(self):
+    def test_characteristic_unit_resolution_from_yaml(self) -> None:
         """Test that characteristics get units from YAML registry."""
         # Create characteristics and test their unit resolution
         temp_char = TemperatureCharacteristic()
@@ -53,7 +53,7 @@ class TestYAMLUnitParsing:
         assert battery_unit in ["%", ""], f"Battery unit should be % or empty, got {battery_unit}"
         assert humidity_unit in ["%", ""], f"Humidity unit should be % or empty, got {humidity_unit}"
 
-    def test_manual_unit_priority(self):
+    def test_manual_unit_priority(self) -> None:
         """Test that manual units take priority over YAML units."""
         # Use PM25 characteristic which has manual unit override in class definition
         from src.bluetooth_sig.gatt.characteristics.pm25_concentration import PM25ConcentrationCharacteristic
@@ -63,13 +63,13 @@ class TestYAMLUnitParsing:
         unit = pm25_char.unit
         assert unit == "µg/m³", f"PM25 unit should be manual (µg/m³) from class definition, got {unit}"
 
-    def test_unknown_characteristic_unit(self):
+    def test_unknown_characteristic_unit(self) -> None:
         """Test behavior with characteristics not in YAML."""
         # Try to get info for a characteristic that doesn't exist
         unknown_info = uuid_registry.get_characteristic_info("NonExistentCharacteristic")
         assert unknown_info is None, "Unknown characteristic should return None"
 
-    def test_unit_conversion_mappings(self):
+    def test_unit_conversion_mappings(self) -> None:
         """Test that Bluetooth SIG unit specifications are converted
         correctly."""
         # Test the conversion function directly (if accessible)
@@ -91,7 +91,7 @@ class TestYAMLUnitParsing:
                 f"Unit {bluetooth_unit} should convert to {expected_unit}, got {converted}"
             )
 
-    def test_gss_yaml_file_parsing(self):
+    def test_gss_yaml_file_parsing(self) -> None:
         """Test that GSS YAML files can be parsed without errors."""
         # This test ensures the GSS parsing doesn't crash
         # Even if no GSS files are available, it should handle gracefully
@@ -102,7 +102,7 @@ class TestYAMLUnitParsing:
         except (ValueError, TypeError, OSError) as e:
             pytest.fail(f"GSS specification loading should not raise exceptions: {e}")
 
-    def test_manual_unit_override_priority(self):
+    def test_manual_unit_override_priority(self) -> None:
         """Test that manual unit overrides always take precedence over YAML."""
         # Use Ozone characteristic which has manual unit override in class definition
         from src.bluetooth_sig.gatt.characteristics.ozone_concentration import OzoneConcentrationCharacteristic
@@ -114,7 +114,7 @@ class TestYAMLUnitParsing:
             f"Ozone unit should be manual (ppb) from class definition, got {unit_with_manual}"
         )
 
-    def test_characteristic_creation_with_yaml_units(self):
+    def test_characteristic_creation_with_yaml_units(self) -> None:
         """Test that characteristics created via registry get units
         automatically."""
         # Create characteristics using the registry

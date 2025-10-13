@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import IntFlag
-from typing import Any
 
 import msgspec
 
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
 
@@ -50,7 +50,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
     max_length: int | None = 16  # + Timestamp(7) + MeasurementStatus(2) + DeviceStatus(3) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> PulseOximetryData:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> PulseOximetryData:  # pylint: disable=too-many-locals
         """Parse pulse oximetry measurement data according to Bluetooth
         specification.
 

@@ -24,7 +24,7 @@ from bluetooth_sig.gatt.constants import UINT8_MAX
 class TestNavigationCharacteristics:
     """Test navigation and positioning characteristics."""
 
-    def test_magnetic_declination_parsing(self):
+    def test_magnetic_declination_parsing(self) -> None:
         """Test Magnetic Declination characteristic parsing."""
         char = MagneticDeclinationCharacteristic()
 
@@ -47,7 +47,7 @@ class TestNavigationCharacteristics:
         max_data = bytearray([0x9F, 0x8C])  # 35999 = 359.99 degrees
         assert char.decode_value(max_data) == 359.99
 
-    def test_magnetic_declination_error_handling(self):
+    def test_magnetic_declination_error_handling(self) -> None:
         """Test Magnetic Declination error handling."""
         char = MagneticDeclinationCharacteristic()
 
@@ -55,7 +55,7 @@ class TestNavigationCharacteristics:
         with pytest.raises(ValueError, match="Insufficient data"):
             char.decode_value(bytearray([0x12]))
 
-    def test_elevation_parsing(self):
+    def test_elevation_parsing(self) -> None:
         """Test Elevation characteristic parsing."""
         char = ElevationCharacteristic()
 
@@ -76,7 +76,7 @@ class TestNavigationCharacteristics:
         parsed_neg = char.decode_value(neg_data)
         assert parsed_neg == -0.01
 
-    def test_elevation_error_handling(self):
+    def test_elevation_error_handling(self) -> None:
         """Test Elevation error handling."""
         char = ElevationCharacteristic()
 
@@ -84,7 +84,7 @@ class TestNavigationCharacteristics:
         with pytest.raises(ValueError, match="Insufficient data"):
             char.decode_value(bytearray([0x12, 0x34]))
 
-    def test_magnetic_flux_density_2d_parsing(self):
+    def test_magnetic_flux_density_2d_parsing(self) -> None:
         """Test Magnetic Flux Density 2D characteristic parsing."""
         char = MagneticFluxDensity2DCharacteristic()
 
@@ -102,7 +102,7 @@ class TestNavigationCharacteristics:
         assert abs(parsed.x_axis - 1e-4) < 1e-10  # 1000 * 10^-7 = 1e-4
         assert abs(parsed.y_axis - (-5e-5)) < 1e-10  # -500 * 10^-7 = -5e-5
 
-    def test_magnetic_flux_density_3d_parsing(self):
+    def test_magnetic_flux_density_3d_parsing(self) -> None:
         """Test Magnetic Flux Density 3D characteristic parsing."""
         char = MagneticFluxDensity3DCharacteristic()
 
@@ -125,7 +125,7 @@ class TestNavigationCharacteristics:
 class TestEnvironmentalCharacteristics:
     """Test environmental sensor characteristics."""
 
-    def test_barometric_pressure_trend_parsing(self):
+    def test_barometric_pressure_trend_parsing(self) -> None:
         """Test Barometric Pressure Trend characteristic parsing."""
         char = BarometricPressureTrendCharacteristic()
 
@@ -154,7 +154,7 @@ class TestEnvironmentalCharacteristics:
         parsed = char.decode_value(reserved_data)
         assert parsed == BarometricPressureTrend.UNKNOWN  # Falls back to UNKNOWN
 
-    def test_pollen_concentration_parsing(self):
+    def test_pollen_concentration_parsing(self) -> None:
         """Test Pollen Concentration characteristic parsing."""
         char = PollenConcentrationCharacteristic()
 
@@ -170,7 +170,7 @@ class TestEnvironmentalCharacteristics:
         parsed = char.decode_value(test_data)
         assert parsed == 123456.0  # Returns float now
 
-    def test_rainfall_parsing(self):
+    def test_rainfall_parsing(self) -> None:
         """Test Rainfall characteristic parsing."""
         char = RainfallCharacteristic()
 
@@ -190,7 +190,7 @@ class TestEnvironmentalCharacteristics:
 class TestTimeCharacteristics:
     """Test time-related characteristics."""
 
-    def test_time_zone_parsing(self):
+    def test_time_zone_parsing(self) -> None:
         """Test Time Zone characteristic parsing."""
         char = TimeZoneCharacteristic()
 
@@ -221,7 +221,7 @@ class TestTimeCharacteristics:
         parsed = char.decode_value(unknown_data)
         assert parsed == "Unknown"
 
-    def test_local_time_information_parsing(self):
+    def test_local_time_information_parsing(self) -> None:
         """Test Local Time Information characteristic parsing."""
         char = LocalTimeInformationCharacteristic()
 
@@ -248,7 +248,7 @@ class TestTimeCharacteristics:
         assert parsed_unknown.timezone.description == "Unknown"
         assert parsed_unknown.dst_offset.description == "DST offset unknown"
 
-    def test_local_time_information_encode_value(self):
+    def test_local_time_information_encode_value(self) -> None:
         """Test encoding LocalTimeInformationData back to bytes."""
         char = LocalTimeInformationCharacteristic()
 
@@ -280,7 +280,7 @@ class TestTimeCharacteristics:
         assert len(encoded) == 2
         assert encoded == bytearray([8, 4])
 
-    def test_local_time_information_round_trip(self):
+    def test_local_time_information_round_trip(self) -> None:
         """Test that parsing and encoding preserve data."""
         char = LocalTimeInformationCharacteristic()
 

@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
@@ -16,7 +15,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
     capabilities.
     """
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> int:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> int:
         """Parse cycling power feature data.
 
         Format: 32-bit feature bitmask (little endian)

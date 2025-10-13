@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from enum import IntEnum
-from typing import Any
 
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .templates import Uint8Template
 
@@ -62,7 +62,7 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
 
     enum_class = BarometricPressureTrend
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> BarometricPressureTrend:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BarometricPressureTrend:  # noqa: ANN401  # Context type varies
         """Parse barometric pressure trend and return enum.
 
         Maps reserved value (0xFF) and invalid values to UNKNOWN.

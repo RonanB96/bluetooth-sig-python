@@ -17,7 +17,7 @@ from bluetooth_sig.utils.profiling import (
 class TestTimer:
     """Test the timer context manager."""
 
-    def test_timer_basic(self):
+    def test_timer_basic(self) -> None:
         """Test basic timer functionality."""
         with timer("test_operation") as t:
             time.sleep(0.01)  # Sleep for 0.01 seconds
@@ -26,7 +26,7 @@ class TestTimer:
         assert t["elapsed"] >= 0.01
         assert t["elapsed"] < 0.05  # Should complete quickly
 
-    def test_timer_no_exception(self):
+    def test_timer_no_exception(self) -> None:
         """Test timer handles operations without exceptions."""
         with timer() as t:
             _ = 1 + 1
@@ -38,7 +38,7 @@ class TestTimer:
 class TestTimingResult:
     """Test TimingResult dataclass."""
 
-    def test_timing_result_creation(self):
+    def test_timing_result_creation(self) -> None:
         """Test creating a TimingResult."""
         result = TimingResult(
             operation="test_op",
@@ -55,7 +55,7 @@ class TestTimingResult:
         assert result.total_time == 1.0
         assert result.avg_time == 0.001
 
-    def test_timing_result_str(self):
+    def test_timing_result_str(self) -> None:
         """Test string representation of TimingResult."""
         result = TimingResult(
             operation="test_op",
@@ -76,7 +76,7 @@ class TestTimingResult:
 class TestBenchmarkFunction:
     """Test benchmark_function utility."""
 
-    def test_benchmark_simple_function(self):
+    def test_benchmark_simple_function(self) -> None:
         """Test benchmarking a simple function."""
         result = benchmark_function(
             lambda: time.sleep(0.001),
@@ -91,7 +91,7 @@ class TestBenchmarkFunction:
         assert result.max_time > 0
         assert result.per_second > 0
 
-    def test_benchmark_fast_function(self):
+    def test_benchmark_fast_function(self) -> None:
         """Test benchmarking a very fast function."""
         result = benchmark_function(
             lambda: 1 + 1,
@@ -104,11 +104,11 @@ class TestBenchmarkFunction:
         assert result.avg_time < 0.001  # Should be very fast
         assert result.per_second > 1000  # Should handle many ops/sec
 
-    def test_benchmark_with_state(self):
+    def test_benchmark_with_state(self) -> None:
         """Test benchmarking a function that modifies state."""
         counter = [0]
 
-        def increment():
+        def increment() -> None:
             counter[0] += 1
 
         result = benchmark_function(
@@ -125,7 +125,7 @@ class TestBenchmarkFunction:
 class TestCompareImplementations:
     """Test compare_implementations utility."""
 
-    def test_compare_two_implementations(self):
+    def test_compare_two_implementations(self) -> None:
         """Test comparing two implementations."""
         results = compare_implementations(
             {
@@ -139,7 +139,7 @@ class TestCompareImplementations:
         assert "slow" in results
         assert results["fast"].avg_time < results["slow"].avg_time
 
-    def test_compare_empty_dict(self):
+    def test_compare_empty_dict(self) -> None:
         """Test comparing with empty implementations dict."""
         results = compare_implementations({}, iterations=10)
         assert results == {}
@@ -148,7 +148,7 @@ class TestCompareImplementations:
 class TestFormatComparison:
     """Test format_comparison utility."""
 
-    def test_format_comparison_with_baseline(self):
+    def test_format_comparison_with_baseline(self) -> None:
         """Test formatting comparison results with baseline."""
         results = {
             "baseline": TimingResult(
@@ -179,7 +179,7 @@ class TestFormatComparison:
         assert "(baseline)" in formatted
         assert "faster" in formatted
 
-    def test_format_comparison_without_baseline(self):
+    def test_format_comparison_without_baseline(self) -> None:
         """Test formatting comparison results without baseline."""
         results = {
             "impl1": TimingResult(
@@ -198,7 +198,7 @@ class TestFormatComparison:
         assert "Performance Comparison" in formatted
         assert "impl1" in formatted
 
-    def test_format_comparison_empty(self):
+    def test_format_comparison_empty(self) -> None:
         """Test formatting empty results."""
         formatted = format_comparison({})
         assert "No results to display" in formatted
@@ -207,14 +207,14 @@ class TestFormatComparison:
 class TestProfilingSession:
     """Test ProfilingSession class."""
 
-    def test_session_creation(self):
+    def test_session_creation(self) -> None:
         """Test creating a profiling session."""
         session = ProfilingSession(name="test_session")
 
         assert session.name == "test_session"
         assert session.results == []
 
-    def test_session_add_result(self):
+    def test_session_add_result(self) -> None:
         """Test adding results to session."""
         session = ProfilingSession(name="test_session")
 
@@ -232,7 +232,7 @@ class TestProfilingSession:
         assert len(session.results) == 1
         assert session.results[0] == result
 
-    def test_session_str(self):
+    def test_session_str(self) -> None:
         """Test string representation of session."""
         session = ProfilingSession(name="test_session")
 

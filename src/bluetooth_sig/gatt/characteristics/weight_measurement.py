@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import IntFlag
-from typing import Any
 
 import msgspec
 
 from ..constants import UINT8_MAX
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
 
@@ -52,7 +52,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 21  # + Timestamp(7) + UserID(1) + BMI(2) + Height(2) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> WeightMeasurementData:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> WeightMeasurementData:
         """Parse weight measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +

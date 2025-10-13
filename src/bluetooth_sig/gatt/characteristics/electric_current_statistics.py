@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import msgspec
 
 from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
 
@@ -51,7 +50,7 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured ElectricCurrentStatisticsData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> ElectricCurrentStatisticsData:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> ElectricCurrentStatisticsData:
         """Parse current statistics data (3x uint16 in units of 0.01 A).
 
         Args:

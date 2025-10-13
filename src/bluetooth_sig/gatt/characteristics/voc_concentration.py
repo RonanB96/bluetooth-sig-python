@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .templates import Uint16Template
 
@@ -33,7 +32,7 @@ class VOCConcentrationCharacteristic(BaseCharacteristic):
     min_value: int | float | None = 0
     max_value: int | float | None = VOCConcentrationValues.VALUE_65534_OR_GREATER - 1  # 65533
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
         """Parse VOC concentration value with special value handling."""
         raw_value = super().decode_value(data)
 

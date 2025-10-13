@@ -19,65 +19,65 @@ from bluetooth_sig.types.gatt_enums import ValueType
 class TestNameNormalizer:
     """Tests for NameNormalizer utility class."""
 
-    def test_camel_case_to_display_name_simple(self):
+    def test_camel_case_to_display_name_simple(self) -> None:
         """Test simple camelCase conversion."""
         assert NameNormalizer.camel_case_to_display_name("BatteryLevel") == "Battery Level"
         assert NameNormalizer.camel_case_to_display_name("Temperature") == "Temperature"
         assert NameNormalizer.camel_case_to_display_name("DeviceInformation") == "Device Information"
 
-    def test_camel_case_to_display_name_with_acronyms(self):
+    def test_camel_case_to_display_name_with_acronyms(self) -> None:
         """Test camelCase conversion with acronyms."""
         assert NameNormalizer.camel_case_to_display_name("VOCConcentration") == "VOC Concentration"
         assert NameNormalizer.camel_case_to_display_name("CO2Concentration") == "CO2 Concentration"
         assert NameNormalizer.camel_case_to_display_name("PM25Concentration") == "PM25 Concentration"
 
-    def test_camel_case_to_display_name_with_numbers(self):
+    def test_camel_case_to_display_name_with_numbers(self) -> None:
         """Test camelCase conversion with numbers."""
         assert NameNormalizer.camel_case_to_display_name("NO2Concentration") == "NO2 Concentration"
         assert NameNormalizer.camel_case_to_display_name("PM10Concentration") == "PM10 Concentration"
 
-    def test_camel_case_to_display_name_edge_cases(self):
+    def test_camel_case_to_display_name_edge_cases(self) -> None:
         """Test edge cases for camelCase conversion."""
         assert NameNormalizer.camel_case_to_display_name("A") == "A"
         assert NameNormalizer.camel_case_to_display_name("AB") == "AB"
         assert NameNormalizer.camel_case_to_display_name("ABC") == "ABC"
         assert NameNormalizer.camel_case_to_display_name("") == ""
 
-    def test_remove_suffix_characteristic(self):
+    def test_remove_suffix_characteristic(self) -> None:
         """Test removing 'Characteristic' suffix."""
         assert NameNormalizer.remove_suffix("BatteryLevelCharacteristic", "Characteristic") == "BatteryLevel"
         assert NameNormalizer.remove_suffix("TemperatureCharacteristic", "Characteristic") == "Temperature"
         assert NameNormalizer.remove_suffix("BatteryLevel", "Characteristic") == "BatteryLevel"
 
-    def test_remove_suffix_service(self):
+    def test_remove_suffix_service(self) -> None:
         """Test removing 'Service' suffix."""
         assert NameNormalizer.remove_suffix("BatteryService", "Service") == "Battery"
         assert NameNormalizer.remove_suffix("DeviceInformationService", "Service") == "DeviceInformation"
         assert NameNormalizer.remove_suffix("Battery", "Service") == "Battery"
 
-    def test_remove_suffix_empty(self):
+    def test_remove_suffix_empty(self) -> None:
         """Test removing suffix from empty string."""
         assert NameNormalizer.remove_suffix("", "Characteristic") == ""
 
-    def test_to_org_format_characteristic(self):
+    def test_to_org_format_characteristic(self) -> None:
         """Test org format generation for characteristics."""
         words = ["Battery", "Level"]
         result = NameNormalizer.to_org_format(words, "characteristic")
         assert result == "org.bluetooth.characteristic.battery_level"
 
-    def test_to_org_format_service(self):
+    def test_to_org_format_service(self) -> None:
         """Test org format generation for services."""
         words = ["Device", "Information"]
         result = NameNormalizer.to_org_format(words, "service")
         assert result == "org.bluetooth.service.device_information"
 
-    def test_to_org_format_single_word(self):
+    def test_to_org_format_single_word(self) -> None:
         """Test org format with single word."""
         words = ["Battery"]
         result = NameNormalizer.to_org_format(words, "service")
         assert result == "org.bluetooth.service.battery"
 
-    def test_to_org_format_with_acronyms(self):
+    def test_to_org_format_with_acronyms(self) -> None:
         """Test org format with acronyms."""
         words = ["VOC", "Concentration"]
         result = NameNormalizer.to_org_format(words, "characteristic")
@@ -87,7 +87,7 @@ class TestNameNormalizer:
 class TestNameVariantGenerator:
     """Tests for NameVariantGenerator utility class."""
 
-    def test_generate_characteristic_variants_basic(self):
+    def test_generate_characteristic_variants_basic(self) -> None:
         """Test characteristic variant generation for basic names."""
         variants = NameVariantGenerator.generate_characteristic_variants("BatteryLevelCharacteristic")
 
@@ -97,7 +97,7 @@ class TestNameVariantGenerator:
         assert "org.bluetooth.characteristic.battery_level" in variants  # Org format
         assert "BatteryLevelCharacteristic" in variants  # Original name
 
-    def test_generate_characteristic_variants_with_explicit_name(self):
+    def test_generate_characteristic_variants_with_explicit_name(self) -> None:
         """Test characteristic variant generation with explicit name override."""
         variants = NameVariantGenerator.generate_characteristic_variants(
             "BatteryLevelCharacteristic", explicit_name="Battery Level"
@@ -106,7 +106,7 @@ class TestNameVariantGenerator:
         # Explicit name should be first
         assert variants[0] == "Battery Level"
 
-    def test_generate_characteristic_variants_without_suffix(self):
+    def test_generate_characteristic_variants_without_suffix(self) -> None:
         """Test characteristic variant generation when class name has no suffix."""
         variants = NameVariantGenerator.generate_characteristic_variants("Temperature")
 
@@ -114,7 +114,7 @@ class TestNameVariantGenerator:
         # Should not have duplicates
         assert len(variants) == len(set(variants))
 
-    def test_generate_characteristic_variants_with_acronym(self):
+    def test_generate_characteristic_variants_with_acronym(self) -> None:
         """Test characteristic variant generation with acronyms."""
         variants = NameVariantGenerator.generate_characteristic_variants("VOCConcentrationCharacteristic")
 
@@ -122,14 +122,14 @@ class TestNameVariantGenerator:
         assert "VOCConcentration" in variants
         assert "org.bluetooth.characteristic.voc_concentration" in variants
 
-    def test_generate_characteristic_variants_no_duplicates(self):
+    def test_generate_characteristic_variants_no_duplicates(self) -> None:
         """Test that variant generation removes duplicates."""
         variants = NameVariantGenerator.generate_characteristic_variants("Temperature")
 
         # Should not have duplicates
         assert len(variants) == len(set(variants))
 
-    def test_generate_service_variants_basic(self):
+    def test_generate_service_variants_basic(self) -> None:
         """Test service variant generation for basic names."""
         variants = NameVariantGenerator.generate_service_variants("BatteryService")
 
@@ -138,14 +138,14 @@ class TestNameVariantGenerator:
         assert "BatteryService" in variants  # Original name
         assert "org.bluetooth.service.battery" in variants  # Org format
 
-    def test_generate_service_variants_with_explicit_name(self):
+    def test_generate_service_variants_with_explicit_name(self) -> None:
         """Test service variant generation with explicit name override."""
         variants = NameVariantGenerator.generate_service_variants("BatteryService", explicit_name="Battery Service")
 
         # Explicit name should be first
         assert variants[0] == "Battery Service"
 
-    def test_generate_service_variants_multi_word(self):
+    def test_generate_service_variants_multi_word(self) -> None:
         """Test service variant generation with multi-word names."""
         variants = NameVariantGenerator.generate_service_variants("DeviceInformationService")
 
@@ -154,7 +154,7 @@ class TestNameVariantGenerator:
         assert "Device Information Service" in variants
         assert "org.bluetooth.service.device_information" in variants
 
-    def test_generate_service_variants_no_duplicates(self):
+    def test_generate_service_variants_no_duplicates(self) -> None:
         """Test that service variant generation removes duplicates."""
         variants = NameVariantGenerator.generate_service_variants("BatteryService")
 
@@ -179,7 +179,7 @@ class BatteryService:
 class TestCharacteristicRegistrySearch:
     """Tests for CharacteristicRegistrySearch strategy."""
 
-    def test_search_finds_known_characteristic(self):
+    def test_search_finds_known_characteristic(self) -> None:
         """Test that search finds a known characteristic in the registry."""
         strategy = CharacteristicRegistrySearch()
         result = strategy.search(BatteryLevelCharacteristic, explicit_name=None)
@@ -189,7 +189,7 @@ class TestCharacteristicRegistrySearch:
         assert isinstance(result, CharacteristicInfo)
         assert result.name == "Battery Level"
 
-    def test_search_with_explicit_name(self):
+    def test_search_with_explicit_name(self) -> None:
         """Test search with explicit name override."""
         strategy = CharacteristicRegistrySearch()
 
@@ -201,7 +201,7 @@ class TestCharacteristicRegistrySearch:
         assert result is not None
         assert result.name == "Battery Level"
 
-    def test_search_returns_none_for_unknown(self):
+    def test_search_returns_none_for_unknown(self) -> None:
         """Test that search returns None for unknown characteristics."""
         strategy = CharacteristicRegistrySearch()
 
@@ -212,7 +212,7 @@ class TestCharacteristicRegistrySearch:
 
         assert result is None
 
-    def test_search_returns_characteristic_info(self):
+    def test_search_returns_characteristic_info(self) -> None:
         """Test that search returns properly structured CharacteristicInfo."""
         strategy = CharacteristicRegistrySearch()
         result = strategy.search(BatteryLevelCharacteristic, explicit_name=None)
@@ -228,7 +228,7 @@ class TestCharacteristicRegistrySearch:
 class TestServiceRegistrySearch:
     """Tests for ServiceRegistrySearch strategy."""
 
-    def test_search_finds_known_service(self):
+    def test_search_finds_known_service(self) -> None:
         """Test that search finds a known service in the registry."""
         strategy = ServiceRegistrySearch()
         result = strategy.search(BatteryService, explicit_name=None)
@@ -238,7 +238,7 @@ class TestServiceRegistrySearch:
         assert isinstance(result, ServiceInfo)
         assert "Battery" in result.name
 
-    def test_search_with_explicit_name(self):
+    def test_search_with_explicit_name(self) -> None:
         """Test search with explicit name override."""
         strategy = ServiceRegistrySearch()
 
@@ -251,7 +251,7 @@ class TestServiceRegistrySearch:
         assert result is not None
         assert "Battery" in result.name
 
-    def test_search_returns_none_for_unknown(self):
+    def test_search_returns_none_for_unknown(self) -> None:
         """Test that search returns None for unknown services."""
         strategy = ServiceRegistrySearch()
 
@@ -262,7 +262,7 @@ class TestServiceRegistrySearch:
 
         assert result is None
 
-    def test_search_returns_service_info(self):
+    def test_search_returns_service_info(self) -> None:
         """Test that search returns properly structured ServiceInfo."""
         strategy = ServiceRegistrySearch()
         result = strategy.search(BatteryService, explicit_name=None)
@@ -276,7 +276,7 @@ class TestServiceRegistrySearch:
 class TestResolverIntegration:
     """Integration tests for resolver utilities working together."""
 
-    def test_characteristic_resolution_pipeline(self):
+    def test_characteristic_resolution_pipeline(self) -> None:
         """Test complete characteristic resolution pipeline."""
         # 1. Generate variants
         variants = NameVariantGenerator.generate_characteristic_variants("BatteryLevelCharacteristic")
@@ -292,7 +292,7 @@ class TestResolverIntegration:
         assert result is not None
         assert "Battery Level" in result.name
 
-    def test_service_resolution_pipeline(self):
+    def test_service_resolution_pipeline(self) -> None:
         """Test complete service resolution pipeline."""
         # 1. Generate variants
         variants = NameVariantGenerator.generate_service_variants("BatteryService")
@@ -308,7 +308,7 @@ class TestResolverIntegration:
         assert result is not None
         assert "Battery" in result.name
 
-    def test_name_normalization_consistency(self):
+    def test_name_normalization_consistency(self) -> None:
         """Test that name normalization is consistent across different paths."""
         # Test characteristic path
         char_name = "BatteryLevelCharacteristic"
@@ -324,7 +324,7 @@ class TestResolverIntegration:
 
         assert svc_display == "Battery"
 
-    def test_variant_generation_order_preserved(self):
+    def test_variant_generation_order_preserved(self) -> None:
         """Test that variant generation preserves priority order."""
         variants = NameVariantGenerator.generate_characteristic_variants(
             "BatteryLevelCharacteristic", explicit_name="Custom Name"

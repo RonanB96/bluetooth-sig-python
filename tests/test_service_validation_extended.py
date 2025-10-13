@@ -18,7 +18,7 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 class TestServiceValidationEdgeCasesExtended:
     """Extended edge case tests for service validation."""
 
-    def test_service_with_unknown_characteristics(self):
+    def test_service_with_unknown_characteristics(self) -> None:
         """Test service validation with characteristics not in registry."""
         service = BatteryService()
         # Add a characteristic with unknown UUID using BatteryLevelCharacteristic
@@ -29,7 +29,7 @@ class TestServiceValidationEdgeCasesExtended:
         result = service.validate_service()
         assert isinstance(result.status, ServiceHealthStatus)
 
-    def test_service_completeness_with_all_present(self):
+    def test_service_completeness_with_all_present(self) -> None:
         """Test completeness report when all characteristics are present."""
         service = BatteryService()
 
@@ -46,7 +46,7 @@ class TestServiceValidationEdgeCasesExtended:
         battery_present = any(char.name == "Battery Level" for char in report.present_characteristics)
         assert battery_present
 
-    def test_get_characteristic_status_with_partial_match(self):
+    def test_get_characteristic_status_with_partial_match(self) -> None:
         """Test getting status of characteristics with partial name matches."""
         service = BatteryService()
         # Test case-insensitive and partial matching (now enum-only)
@@ -56,7 +56,7 @@ class TestServiceValidationEdgeCasesExtended:
         if status is not None:  # Depends on implementation
             assert status.status == CharacteristicStatus.MISSING
 
-    def test_validate_service_with_strict_mode(self):
+    def test_validate_service_with_strict_mode(self) -> None:
         """Test service validation in strict mode."""
         service = BatteryService()
 
@@ -71,7 +71,7 @@ class TestServiceValidationEdgeCasesExtended:
         # Strict mode might have more warnings
         assert len(result_strict.warnings) >= len(result_normal.warnings)
 
-    def test_service_validation_with_conditional_characteristics(self):
+    def test_service_validation_with_conditional_characteristics(self) -> None:
         """Test validation with conditional characteristics."""
         service = BatteryService()
 
@@ -83,7 +83,7 @@ class TestServiceValidationEdgeCasesExtended:
             assert char_info.status == CharacteristicStatus.MISSING
             assert isinstance(char_info.is_conditional, bool)
 
-    def test_service_health_status_ordering(self):
+    def test_service_health_status_ordering(self) -> None:
         """Test that health status enum values have logical ordering."""
         # Test enum values exist and have expected ordering
         statuses = list(ServiceHealthStatus)
@@ -92,7 +92,7 @@ class TestServiceValidationEdgeCasesExtended:
         assert ServiceHealthStatus.PARTIAL in statuses
         assert ServiceHealthStatus.INCOMPLETE in statuses
 
-    def test_service_validation_error_messages(self):
+    def test_service_validation_error_messages(self) -> None:
         """Test that validation provides meaningful error messages."""
         service = BatteryService()
 
@@ -110,7 +110,7 @@ class TestServiceValidationEdgeCasesExtended:
                 assert isinstance(missing_char, BaseCharacteristic)
                 assert len(missing_char.name) > 0
 
-    def test_service_completeness_report_consistency(self):
+    def test_service_completeness_report_consistency(self) -> None:
         """Test that completeness report data is internally consistent."""
         service = BatteryService()
         report = service.get_service_completeness_report()
@@ -130,7 +130,7 @@ class TestServiceValidationEdgeCasesExtended:
                 assert detail.name == missing_char.name
                 assert detail.status == CharacteristicStatus.MISSING
 
-    def test_has_minimum_functionality_edge_cases(self):
+    def test_has_minimum_functionality_edge_cases(self) -> None:
         """Test has_minimum_functionality with various configurations."""
         service = BatteryService()
 

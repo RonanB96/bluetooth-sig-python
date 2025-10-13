@@ -13,7 +13,7 @@ class TestYAMLCrossReference:
     """Test YAML cross-reference system for characteristic metadata
     automation."""
 
-    def test_yaml_data_type_extraction(self):
+    def test_yaml_data_type_extraction(self) -> None:
         """Test that YAML data types are extracted correctly for real
         characteristics."""
         # Test Temperature characteristic (known to use sint16)
@@ -36,7 +36,7 @@ class TestYAMLCrossReference:
             assert isinstance(humidity_data_type, str), f"Data type should be string, got {type(humidity_data_type)}"
             assert humidity_data_type == "uint16", f"Humidity should use uint16, got {humidity_data_type}"
 
-    def test_yaml_field_size_extraction(self):
+    def test_yaml_field_size_extraction(self) -> None:
         """Test that YAML field sizes are extracted correctly."""
         # Test Temperature characteristic
         temp_char = TemperatureCharacteristic()
@@ -54,7 +54,7 @@ class TestYAMLCrossReference:
             assert isinstance(humidity_field_size, int), f"Field size should be int, got {type(humidity_field_size)}"
             assert humidity_field_size == 2, f"Humidity field size should be 2 bytes, got {humidity_field_size}"
 
-    def test_yaml_unit_id_extraction(self):
+    def test_yaml_unit_id_extraction(self) -> None:
         """Test that YAML unit IDs are extracted correctly."""
         # Test Temperature characteristic
         temp_char = TemperatureCharacteristic()
@@ -76,7 +76,7 @@ class TestYAMLCrossReference:
                 f"Battery unit ID should reference percentage, got {battery_unit_id}"
             )
 
-    def test_is_signed_from_yaml_comprehensive(self):
+    def test_is_signed_from_yaml_comprehensive(self) -> None:
         """Test signed type detection for various data types."""
         # Test Temperature characteristic (should be signed)
         temp_char = TemperatureCharacteristic()
@@ -116,7 +116,7 @@ class TestYAMLCrossReference:
                 f"Data type {data_type} should be {'signed' if expected_signed else 'unsigned'}, got {is_signed}"
             )
 
-    def test_yaml_resolution_text_extraction(self):
+    def test_yaml_resolution_text_extraction(self) -> None:
         """Test that YAML resolution text is extracted when available."""
         # Test Temperature characteristic
         temp_char = TemperatureCharacteristic()
@@ -129,7 +129,7 @@ class TestYAMLCrossReference:
                 f"Resolution text should contain scale info, got {resolution_text}"
             )
 
-    def test_characteristic_registry_with_yaml_automation(self):
+    def test_characteristic_registry_with_yaml_automation(self) -> None:
         """Test that characteristics created via registry use YAML
         automation."""
         # Create Temperature characteristic via registry
@@ -163,7 +163,7 @@ class TestYAMLCrossReference:
             if humidity_data_type and humidity_data_type == "uint16":
                 assert not humidity_is_signed, "Humidity (uint16) should not be signed"
 
-    def test_yaml_automation_fallback_behavior(self):
+    def test_yaml_automation_fallback_behavior(self) -> None:
         """Test that characteristics work correctly when YAML automation is not
         available."""
         # Create characteristics
@@ -183,7 +183,7 @@ class TestYAMLCrossReference:
         assert temp_unit in ["°C", ""], f"Temperature unit should be °C or empty, got {temp_unit}"
         assert battery_unit in ["%", ""], f"Battery unit should be % or empty, got {battery_unit}"
 
-    def test_yaml_byte_order_hint(self):
+    def test_yaml_byte_order_hint(self) -> None:
         """Test byte order hint for characteristics."""
         temp_char = TemperatureCharacteristic()
         byte_order = temp_char.get_byte_order_hint()
@@ -191,7 +191,7 @@ class TestYAMLCrossReference:
         # Bluetooth SIG uses little-endian by convention
         assert byte_order == "little", f"Byte order should be little-endian, got {byte_order}"
 
-    def test_yaml_automation_with_real_parsing(self):
+    def test_yaml_automation_with_real_parsing(self) -> None:
         """Test that YAML automation works with actual characteristic
         parsing."""
         # Test Temperature characteristic with real data
@@ -225,7 +225,7 @@ class TestYAMLCrossReference:
             # Parsing might fail if no manual implementation exists yet
             pytest.skip(f"Temperature parsing not implemented: {e}")
 
-    def test_yaml_automation_integration_with_existing_functionality(self):
+    def test_yaml_automation_integration_with_existing_functionality(self) -> None:
         """Test that YAML automation integrates well with existing
         characteristic functionality."""
         # Test that existing functionality still works

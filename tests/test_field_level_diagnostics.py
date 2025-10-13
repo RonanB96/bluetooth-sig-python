@@ -12,6 +12,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.utils import DebugUtils
+from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.exceptions import ParseFieldError as ParseFieldException
 from bluetooth_sig.types import CharacteristicInfo, ParseFieldError
 from bluetooth_sig.types.gatt_enums import ValueType
@@ -29,7 +30,7 @@ class MultiFieldCharacteristic(CustomBaseCharacteristic):
         properties=[],
     )
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> dict[str, Any]:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
         """Decode multiple fields with explicit trace entries."""
         if len(data) < 4:
             # Raise ParseFieldException with field information
@@ -85,7 +86,7 @@ class MultiFieldCharacteristic(CustomBaseCharacteristic):
 class TestFieldLevelDiagnostics:
     """Test suite for field-level error reporting and parse traces."""
 
-    def test_parse_success_includes_trace(self):
+    def test_parse_success_includes_trace(self) -> None:
         """Test that successful parsing includes a parse trace."""
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0xE8, 0x03, 50])  # flags=1, temp=10.00°C, humidity=50%
@@ -98,7 +99,7 @@ class TestFieldLevelDiagnostics:
         assert "Starting parse" in result.parse_trace[0]
         assert "completed successfully" in result.parse_trace[-1]
 
-    def test_field_error_in_temperature(self):
+    def test_field_error_in_temperature(self) -> None:
         """Test that temperature field errors are captured with field information."""
         char = MultiFieldCharacteristic()
         # Temperature value 6000 (0x1770) is out of range
@@ -115,7 +116,7 @@ class TestFieldLevelDiagnostics:
         assert "out of valid range" in field_error.reason
         assert field_error.offset == 1
 
-    def test_field_error_in_humidity(self):
+    def test_field_error_in_humidity(self) -> None:
         """Test that humidity field errors are captured with field information."""
         char = MultiFieldCharacteristic()
         # Humidity value 150 exceeds maximum 100
@@ -132,7 +133,7 @@ class TestFieldLevelDiagnostics:
         assert "exceeds maximum 100%" in field_error.reason
         assert field_error.offset == 3
 
-    def test_field_error_in_data_length(self):
+    def test_field_error_in_data_length(self) -> None:
         """Test that insufficient data errors are captured as field errors."""
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0xE8])  # Only 2 bytes, need 4
@@ -148,7 +149,7 @@ class TestFieldLevelDiagnostics:
         assert "need at least 4 bytes" in field_error.reason
         assert field_error.offset == 0
 
-    def test_parse_trace_on_failure(self):
+    def test_parse_trace_on_failure(self) -> None:
         """Test that parse trace captures steps leading to failure."""
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0x70, 0x17, 50])  # Temperature out of range
@@ -160,7 +161,7 @@ class TestFieldLevelDiagnostics:
         assert any("Starting parse" in step for step in result.parse_trace)
         assert any("Field error" in step for step in result.parse_trace)
 
-    def test_debug_utils_format_field_error(self):
+    def test_debug_utils_format_field_error(self) -> None:
         """Test DebugUtils.format_field_error produces readable output."""
         error = ParseFieldError(
             field="temperature",
@@ -177,7 +178,7 @@ class TestFieldLevelDiagnostics:
         assert "Offset: 1" in formatted
         assert "70 17" in formatted  # Hex dump
 
-    def test_debug_utils_format_field_errors(self):
+    def test_debug_utils_format_field_errors(self) -> None:
         """Test DebugUtils.format_field_errors handles multiple errors."""
         errors = [
             ParseFieldError(
@@ -201,7 +202,7 @@ class TestFieldLevelDiagnostics:
         assert "temperature" in formatted
         assert "humidity" in formatted
 
-    def test_debug_utils_format_parse_trace(self):
+    def test_debug_utils_format_parse_trace(self) -> None:
         """Test DebugUtils.format_parse_trace produces readable output."""
         trace = [
             "Starting parse of Multi Field Test",
@@ -215,7 +216,7 @@ class TestFieldLevelDiagnostics:
         assert "Parse trace:" in formatted
         assert all(step in formatted for step in trace)
 
-    def test_field_error_includes_hex_context(self):
+    def test_field_error_includes_hex_context(self) -> None:
         """Test that field errors include hex dump context for debugging."""
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0x70, 0x17, 50])
@@ -231,7 +232,7 @@ class TestFieldLevelDiagnostics:
         # Should include hex representation
         assert "70" in formatted or "17" in formatted
 
-    def test_error_message_backward_compatibility(self):
+    def test_error_message_backward_compatibility(self) -> None:
         """Test that error_message field is still populated for backward compatibility."""
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0x70, 0x17, 50])
@@ -242,7 +243,7 @@ class TestFieldLevelDiagnostics:
         assert result.error_message != ""
         assert "temperature" in result.error_message
 
-    def test_empty_field_errors_on_success(self):
+    def test_empty_field_errors_on_success(self) -> None:
         """Test that successful parsing has empty field_errors list."""
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0xE8, 0x03, 50])
@@ -252,7 +253,7 @@ class TestFieldLevelDiagnostics:
         assert result.parse_success is True
         assert result.field_errors == []
 
-    def test_raw_slice_in_field_error(self):
+    def test_raw_slice_in_field_error(self) -> None:
         """Test that ParseFieldException captures raw data slice."""
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0x70, 0x17, 150])  # Humidity out of range
@@ -267,7 +268,7 @@ class TestFieldLevelDiagnostics:
 class TestGenericErrorExtraction:
     """Test suite for extracting field information from generic exceptions."""
 
-    def test_generic_value_error_extraction(self):
+    def test_generic_value_error_extraction(self) -> None:
         """Test that generic ValueError messages do not produce field errors.
 
         Generic errors (not ParseFieldException) are reported in the main
@@ -287,7 +288,7 @@ class TestGenericErrorExtraction:
             min_value: int | float | None = 0
             max_value: int | float | None = 100
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 """Return value that will fail validation."""
                 return 200  # Out of range
 
@@ -310,7 +311,7 @@ class TestGenericErrorExtraction:
 class TestFieldErrorFormatting:
     """Test suite for field error formatting utilities."""
 
-    def test_format_field_error_with_offset(self):
+    def test_format_field_error_with_offset(self) -> None:
         """Test formatting field error with offset information."""
         error = ParseFieldError(
             field="flags",
@@ -326,7 +327,7 @@ class TestFieldErrorFormatting:
         assert "Offset: 0" in formatted
         assert "FF" in formatted
 
-    def test_format_field_error_without_offset(self):
+    def test_format_field_error_without_offset(self) -> None:
         """Test formatting field error without offset information."""
         error = ParseFieldError(
             field="overall_structure",
@@ -343,13 +344,13 @@ class TestFieldErrorFormatting:
         # Should show full data when offset not available
         assert "01 02 03" in formatted
 
-    def test_empty_field_errors_formatting(self):
+    def test_empty_field_errors_formatting(self) -> None:
         """Test formatting empty field errors list."""
         formatted = DebugUtils.format_field_errors([], bytearray())
 
         assert "No field errors" in formatted
 
-    def test_empty_parse_trace_formatting(self):
+    def test_empty_parse_trace_formatting(self) -> None:
         """Test formatting empty parse trace."""
         formatted = DebugUtils.format_parse_trace([])
 
@@ -359,7 +360,7 @@ class TestFieldErrorFormatting:
 class TestTraceControlPerformance:
     """Test suite for parse trace control performance feature."""
 
-    def test_trace_disabled_for_performance(self):
+    def test_trace_disabled_for_performance(self) -> None:
         """Test that parse trace can be disabled for performance."""
 
         class NoTraceCharacteristic(CustomBaseCharacteristic):
@@ -376,7 +377,7 @@ class TestTraceControlPerformance:
             # Disable trace collection for performance
             _enable_parse_trace = False
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 """Simple decode."""
                 return int(data[0])
 
@@ -396,7 +397,7 @@ class TestTraceControlPerformance:
         # But trace should be empty due to disabled flag
         assert len(result.parse_trace) == 0
 
-    def test_trace_enabled_by_default(self):
+    def test_trace_enabled_by_default(self) -> None:
         """Test that parse trace is enabled by default."""
 
         class DefaultTraceCharacteristic(CustomBaseCharacteristic):
@@ -412,7 +413,7 @@ class TestTraceControlPerformance:
 
             # Don't set _enable_parse_trace - should default to True
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 """Simple decode."""
                 return int(data[0])
 
@@ -432,7 +433,7 @@ class TestTraceControlPerformance:
         # Trace should have entries by default
         assert len(result.parse_trace) > 0
 
-    def test_trace_disabled_via_environment_variable(self):
+    def test_trace_disabled_via_environment_variable(self) -> None:
         """Test that parse trace can be disabled via environment variable."""
         import os
 
@@ -445,7 +446,7 @@ class TestTraceControlPerformance:
                 properties=[],
             )
 
-            def decode_value(self, data: bytearray, ctx: Any | None = None) -> int:
+            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 """Simple decode."""
                 return int(data[0])
 

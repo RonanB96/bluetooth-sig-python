@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Callable, TypeVar
@@ -56,7 +57,7 @@ class ProfilingSession:
 
 
 @contextmanager
-def timer(operation: str = "operation"):  # pylint: disable=unused-argument
+def timer(_operation: str = "operation") -> Generator[dict[str, float], None, None]:
     """Context manager for timing a single operation.
 
     Args:

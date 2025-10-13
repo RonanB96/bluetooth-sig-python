@@ -16,7 +16,7 @@ from bluetooth_sig.types.gatt_enums import ValueType
 class TestBatteryPowerStateCharacteristic:
     """Test Battery Power State characteristic implementation."""
 
-    def test_characteristic_name(self):
+    def test_characteristic_name(self) -> None:
         """Test characteristic name resolution."""
         char = BatteryPowerStateCharacteristic()
         # Test that characteristic name is correctly set (accessing protected member for testing)
@@ -25,7 +25,7 @@ class TestBatteryPowerStateCharacteristic:
             char.value_type == ValueType.STRING
         )  # YAML has boolean[] which maps to string, but decode_value returns dict
 
-    def test_parse_basic_battery_state(self):
+    def test_parse_basic_battery_state(self) -> None:
         """Test parsing basic battery state with all flags."""
         char = BatteryPowerStateCharacteristic()
 
@@ -48,7 +48,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason is None
 
-    def test_parse_battery_not_present(self):
+    def test_parse_battery_not_present(self) -> None:
         """Test parsing when battery is not present."""
         char = BatteryPowerStateCharacteristic()
 
@@ -68,7 +68,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason is None
 
-    def test_parse_wireless_power_discharging(self):
+    def test_parse_wireless_power_discharging(self) -> None:
         """Test parsing with wireless power and discharging state."""
         char = BatteryPowerStateCharacteristic()
 
@@ -91,7 +91,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason is None
 
-    def test_parse_critically_low_not_charging(self):
+    def test_parse_critically_low_not_charging(self) -> None:
         """Test parsing critically low battery not charging."""
         char = BatteryPowerStateCharacteristic()
 
@@ -114,7 +114,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason is None
 
-    def test_parse_extended_format_with_charging_type(self):
+    def test_parse_extended_format_with_charging_type(self) -> None:
         """Test parsing extended format with charging type information."""
         char = BatteryPowerStateCharacteristic()
 
@@ -144,7 +144,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charging_type == expected["battery_charging_type"]
         assert result.charging_fault_reason is None
 
-    def test_parse_extended_format_with_fault(self):
+    def test_parse_extended_format_with_fault(self) -> None:
         """Test parsing extended format with charging fault."""
         char = BatteryPowerStateCharacteristic()
 
@@ -171,7 +171,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charging_type == BatteryChargingType.TRICKLE
         assert result.charging_fault_reason == "battery_fault"
 
-    def test_parse_extended_format_constant_voltage(self):
+    def test_parse_extended_format_constant_voltage(self) -> None:
         """Test parsing with constant voltage charging type."""
         char = BatteryPowerStateCharacteristic()
 
@@ -183,7 +183,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charging_type == BatteryChargingType.CONSTANT_VOLTAGE
         assert result.charging_fault_reason is None
 
-    def test_parse_full_flags_power_state_format(self):
+    def test_parse_full_flags_power_state_format(self) -> None:
         """Test parsing the full SIG Flags + 2-byte Power State format."""
         char = BatteryPowerStateCharacteristic()
 
@@ -200,7 +200,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason is None
 
-    def test_flags_identifier_missing_raises(self):
+    def test_flags_identifier_missing_raises(self) -> None:
         """If Flags indicate Identifier present but payload is too short,
         raise."""
         char = BatteryPowerStateCharacteristic()
@@ -210,7 +210,7 @@ class TestBatteryPowerStateCharacteristic:
         with pytest.raises(ValueError, match="Identifier indicated by Flags"):
             char.decode_value(data)
 
-    def test_parse_extended_format_external_power_fault(self):
+    def test_parse_extended_format_external_power_fault(self) -> None:
         """Test parsing with external power fault."""
         char = BatteryPowerStateCharacteristic()
 
@@ -224,7 +224,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charging_type == BatteryChargingType.UNKNOWN
         assert result.charging_fault_reason == "external_power_fault"
 
-    def test_parse_all_unknown_states(self):
+    def test_parse_all_unknown_states(self) -> None:
         """Test parsing with all states unknown."""
         char = BatteryPowerStateCharacteristic()
 
@@ -251,7 +251,7 @@ class TestBatteryPowerStateCharacteristic:
         assert result.battery_charging_type == expected["battery_charging_type"]
         assert result.charging_fault_reason is None
 
-    def test_parse_reserved_states(self):
+    def test_parse_reserved_states(self) -> None:
         """Test parsing with reserved states."""
         char = BatteryPowerStateCharacteristic()
 
@@ -263,7 +263,7 @@ class TestBatteryPowerStateCharacteristic:
 
         assert result.battery_present == BatteryPresentState.RESERVED
 
-    def test_parse_invalid_data(self):
+    def test_parse_invalid_data(self) -> None:
         """Test parsing with invalid data."""
         char = BatteryPowerStateCharacteristic()
 
@@ -275,17 +275,17 @@ class TestBatteryPowerStateCharacteristic:
         with pytest.raises(ValueError, match="must be at least 1 byte"):
             char.decode_value(bytearray([]))
 
-    def test_unit_property(self):
+    def test_unit_property(self) -> None:
         """Test unit property (should be empty for status characteristic)."""
         char = BatteryPowerStateCharacteristic()
         assert char.unit == ""
 
-    def test_characteristic_uuid_resolution(self):
+    def test_characteristic_uuid_resolution(self) -> None:
         """Test characteristic UUID resolution."""
         char = BatteryPowerStateCharacteristic()
         assert char.uuid == "2BED"
 
-    def test_encode_value(self):
+    def test_encode_value(self) -> None:
         """Test encoding BatteryPowerStateData back to bytes."""
         char = BatteryPowerStateCharacteristic()
 
@@ -310,7 +310,7 @@ class TestBatteryPowerStateCharacteristic:
         assert len(encoded) == 1
         assert encoded[0] == 0xD6
 
-    def test_round_trip_parse_encode(self):
+    def test_round_trip_parse_encode(self) -> None:
         """Test that parsing and encoding preserve data for basic format."""
         char = BatteryPowerStateCharacteristic()
 

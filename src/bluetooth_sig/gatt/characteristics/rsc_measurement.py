@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from enum import IntFlag
-from typing import Any
 
 import msgspec
 
 from ..constants import UINT8_MAX
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
@@ -48,7 +48,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "RSC Measurement"
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> RSCMeasurementData:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> RSCMeasurementData:
         """Parse RSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Instantaneous Speed(2) + Instantaneous Cadence(1) +

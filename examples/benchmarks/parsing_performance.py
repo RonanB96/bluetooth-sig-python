@@ -143,7 +143,7 @@ def benchmark_batch_parsing(session: ProfilingSession) -> None:
     )
 
     # Individual parsing for comparison
-    def parse_individually():
+    def parse_individually() -> None:
         for uuid, data in sensor_data.items():
             translator.parse_characteristic(uuid, data)
 
@@ -269,7 +269,7 @@ def print_summary(session: ProfilingSession) -> None:
     """)
 
 
-def main():
+def main() -> None:
     """Run the performance benchmarks."""
     parser = argparse.ArgumentParser(description="Benchmark Bluetooth SIG library parsing performance")
     parser.add_argument(

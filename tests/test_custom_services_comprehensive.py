@@ -13,6 +13,7 @@ This test suite focuses on testing the ACTUAL LIBRARY CODE for custom services:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from types import new_class
 from typing import Any
 
@@ -32,7 +33,7 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 @pytest.fixture
-def service_class_factory():
+def service_class_factory() -> Callable[..., type[CustomBaseGattService]]:
     """Factory fixture to create custom service classes with unique UUIDs."""
     counter = 0
 
@@ -90,7 +91,7 @@ def service_class_factory():
 class TestInitSubclassValidation:
     """Test __init_subclass__ SIG UUID validation."""
 
-    def test_custom_uuid_allowed_without_override(self):
+    def test_custom_uuid_allowed_without_override(self) -> None:
         """Test that custom (non-SIG) UUIDs work without override flag."""
 
         class CustomUUIDService(CustomBaseGattService):
@@ -104,7 +105,7 @@ class TestInitSubclassValidation:
         service = CustomUUIDService()
         assert service.uuid == BluetoothUUID("AA000001-0000-1000-8000-00805F9B34FB")
 
-    def test_sig_uuid_requires_override_flag(self):
+    def test_sig_uuid_requires_override_flag(self) -> None:
         """Test that SIG UUIDs require allow_sig_override=True."""
         with pytest.raises(ValueError, match="without override flag"):
 
@@ -122,7 +123,7 @@ class TestInitSubclassValidation:
                 _service_body,
             )
 
-    def test_sig_uuid_with_override_flag_succeeds(self):
+    def test_sig_uuid_with_override_flag_succeeds(self) -> None:
         """Test that SIG UUIDs work with allow_sig_override=True."""
 
         class AuthorizedSIGService(CustomBaseGattService, allow_sig_override=True):
@@ -137,7 +138,7 @@ class TestInitSubclassValidation:
         # pylint: disable=protected-access
         assert service._allows_sig_override is True  # type: ignore[attr-defined]
 
-    def test_configured_info_stored_in_class(self):
+    def test_configured_info_stored_in_class(self) -> None:
         """Test that _info is stored in _configured_info during __init_subclass__."""
 
         class ServiceWithInfo(CustomBaseGattService):
@@ -161,7 +162,7 @@ class TestInitSubclassValidation:
 class TestInitAndPostInit:
     """Test __init__ and __post_init__ info resolution."""
 
-    def test_info_from_class_attribute(self, service_class_factory):
+    def test_info_from_class_attribute(self, service_class_factory: Callable[..., type[CustomBaseGattService]]) -> None:
         """Test that _info class attribute is used automatically."""
         service_cls = service_class_factory(name="Auto Info", description="Automatic info binding")
         service = service_cls()
@@ -170,7 +171,9 @@ class TestInitAndPostInit:
         assert service.summary == "Automatic info binding"
         assert isinstance(service.uuid, BluetoothUUID)
 
-    def test_info_parameter_overrides_class_attribute(self, service_class_factory):
+    def test_info_parameter_overrides_class_attribute(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test that info parameter overrides _info class attribute."""
         service_cls = service_class_factory(name="Original", description="Original description")
 
@@ -186,7 +189,7 @@ class TestInitAndPostInit:
         assert service.name == "Override"
         assert service.summary == "Overridden description"
 
-    def test_missing_info_raises_error(self):
+    def test_missing_info_raises_error(self) -> None:
         """Test that missing _info and no parameter raises ValueError."""
         with pytest.raises(ValueError, match="requires either 'info' parameter or '_info' class attribute"):
 
@@ -195,7 +198,9 @@ class TestInitAndPostInit:
 
             NoInfoService()
 
-    def test_post_init_uses_provided_info(self, service_class_factory):
+    def test_post_init_uses_provided_info(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test that __post_init__ correctly uses provided info."""
         service_cls = service_class_factory()
 
@@ -221,14 +226,18 @@ class TestInitAndPostInit:
 class TestProcessCharacteristics:
     """Test process_characteristics() method functionality."""
 
-    def test_process_empty_characteristics(self, service_class_factory):
+    def test_process_empty_characteristics(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test processing empty characteristics dict."""
         service = service_class_factory()()
         service.process_characteristics({})
 
         assert len(service.characteristics) == 0
 
-    def test_process_single_characteristic(self, service_class_factory):
+    def test_process_single_characteristic(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test processing a single discovered characteristic."""
         service = service_class_factory()()
         discovered = {
@@ -247,7 +256,9 @@ class TestProcessCharacteristics:
         char = service.characteristics[uuid]
         assert isinstance(char, UnknownCharacteristic)
 
-    def test_process_multiple_characteristics(self, service_class_factory):
+    def test_process_multiple_characteristics(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test processing multiple discovered characteristics."""
         service = service_class_factory()()
         discovered = {
@@ -260,7 +271,9 @@ class TestProcessCharacteristics:
 
         assert len(service.characteristics) == 3
 
-    def test_process_sig_characteristic_uses_registry(self, service_class_factory):
+    def test_process_sig_characteristic_uses_registry(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test that SIG characteristics use CharacteristicRegistry."""
         service = service_class_factory()()
 
@@ -282,7 +295,9 @@ class TestProcessCharacteristics:
         # It will be a registered characteristic type, not Unknown
         assert char.info.name == "Battery Level"
 
-    def test_process_characteristics_normalizes_uuid(self, service_class_factory):
+    def test_process_characteristics_normalizes_uuid(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test that UUID formats are normalized."""
         service = service_class_factory()()
 
@@ -303,7 +318,9 @@ class TestProcessCharacteristics:
         assert short_uuid in service.characteristics
         assert long_uuid in service.characteristics
 
-    def test_process_characteristics_extracts_properties(self, service_class_factory):
+    def test_process_characteristics_extracts_properties(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test that GATT properties are correctly extracted."""
         service = service_class_factory()()
         discovered = {
@@ -331,7 +348,7 @@ class TestProcessCharacteristics:
 class TestUnknownService:
     """Test UnknownService class functionality."""
 
-    def test_unknown_service_creation_with_uuid_only(self):
+    def test_unknown_service_creation_with_uuid_only(self) -> None:
         """Test creating UnknownService with just UUID."""
         uuid = BluetoothUUID("FFFF0001-0000-1000-8000-00805F9B34FB")
         service = UnknownService(uuid=uuid)
@@ -340,7 +357,7 @@ class TestUnknownService:
         assert "Unknown Service" in service.name
         assert str(uuid) in service.name
 
-    def test_unknown_service_creation_with_custom_name(self):
+    def test_unknown_service_creation_with_custom_name(self) -> None:
         """Test creating UnknownService with custom name."""
         uuid = BluetoothUUID("FFFF0002-0000-1000-8000-00805F9B34FB")
         service = UnknownService(uuid=uuid, name="Custom Unknown Service")
@@ -348,7 +365,7 @@ class TestUnknownService:
         assert service.uuid == uuid
         assert service.name == "Custom Unknown Service"
 
-    def test_unknown_service_process_characteristics(self):
+    def test_unknown_service_process_characteristics(self) -> None:
         """Test that UnknownService can process characteristics."""
         uuid = BluetoothUUID("FFFF0003-0000-1000-8000-00805F9B34FB")
         service = UnknownService(uuid=uuid)
@@ -371,11 +388,11 @@ class TestUnknownService:
 class TestServiceRegistration:
     """Test runtime service registration."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Clear registrations before each test."""
         GattServiceRegistry.clear_custom_registrations()
 
-    def test_register_custom_service_class(self):
+    def test_register_custom_service_class(self) -> None:
         """Test registering a custom service class."""
 
         class CustomService(CustomBaseGattService):
@@ -392,7 +409,7 @@ class TestServiceRegistration:
         retrieved_cls = GattServiceRegistry.get_service_class(uuid_str)
         assert retrieved_cls == CustomService
 
-    def test_unregister_custom_service_class(self):
+    def test_unregister_custom_service_class(self) -> None:
         """Test unregistering a custom service class."""
 
         class CustomService(CustomBaseGattService):
@@ -413,7 +430,7 @@ class TestServiceRegistration:
         GattServiceRegistry.unregister_service_class(uuid_str)
         assert GattServiceRegistry.get_service_class(uuid_str) is None
 
-    def test_register_via_translator(self):
+    def test_register_via_translator(self) -> None:
         """Test registering service via BluetoothSIGTranslator."""
 
         class CustomService(CustomBaseGattService):
@@ -439,7 +456,7 @@ class TestServiceRegistration:
         retrieved_cls = GattServiceRegistry.get_service_class(str(service.uuid))
         assert retrieved_cls == CustomService
 
-    def test_register_invalid_class_raises_error(self):
+    def test_register_invalid_class_raises_error(self) -> None:
         """Test that registering non-service class raises TypeError."""
 
         class NotAService:
@@ -460,7 +477,7 @@ class TestServiceRegistration:
 class TestInfoPropertyAccess:
     """Test service info property access."""
 
-    def test_uuid_property(self, service_class_factory):
+    def test_uuid_property(self, service_class_factory: Callable[..., type[CustomBaseGattService]]) -> None:
         """Test uuid property returns correct UUID."""
         service_cls = service_class_factory()
         service = service_cls()
@@ -470,17 +487,17 @@ class TestInfoPropertyAccess:
         # pylint: disable=protected-access
         assert service.uuid == service_cls._configured_info.uuid  # type: ignore[attr-defined,union-attr]
 
-    def test_name_property(self, service_class_factory):
+    def test_name_property(self, service_class_factory: Callable[..., type[CustomBaseGattService]]) -> None:
         """Test name property returns correct name."""
         service = service_class_factory(name="Test Service Name")()
         assert service.name == "Test Service Name"
 
-    def test_summary_property(self, service_class_factory):
+    def test_summary_property(self, service_class_factory: Callable[..., type[CustomBaseGattService]]) -> None:
         """Test summary property returns description."""
         service = service_class_factory(description="Test description here")()
         assert service.summary == "Test description here"
 
-    def test_info_property(self, service_class_factory):
+    def test_info_property(self, service_class_factory: Callable[..., type[CustomBaseGattService]]) -> None:
         """Test info property returns ServiceInfo object."""
         service = service_class_factory()()
         info = service.info
@@ -499,14 +516,18 @@ class TestInfoPropertyAccess:
 class TestServiceInheritance:
     """Test service inheritance and markers."""
 
-    def test_custom_service_inherits_base_service(self, service_class_factory):
+    def test_custom_service_inherits_base_service(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test that CustomBaseGattService inherits from BaseGattService."""
         service = service_class_factory()()
 
         assert isinstance(service, BaseGattService)
         assert isinstance(service, CustomBaseGattService)
 
-    def test_custom_service_has_is_custom_marker(self, service_class_factory):
+    def test_custom_service_has_is_custom_marker(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test that custom services have _is_custom = True."""
         service_cls = service_class_factory()
         service = service_cls()
@@ -515,7 +536,9 @@ class TestServiceInheritance:
         assert service_cls._is_custom is True  # type: ignore[attr-defined]
         assert service._is_custom is True  # type: ignore[attr-defined]
 
-    def test_custom_service_has_base_methods(self, service_class_factory):
+    def test_custom_service_has_base_methods(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test that custom services have all base service methods."""
         service = service_class_factory()()
 
@@ -535,7 +558,9 @@ class TestServiceInheritance:
 class TestCharacteristicIntegration:
     """Test integration between services and characteristics."""
 
-    def test_characteristics_dict_is_initialized(self, service_class_factory):
+    def test_characteristics_dict_is_initialized(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test that characteristics dict is initialized empty."""
         service = service_class_factory()()
 
@@ -543,7 +568,9 @@ class TestCharacteristicIntegration:
         assert isinstance(service.characteristics, dict)
         assert len(service.characteristics) == 0
 
-    def test_manual_characteristic_addition(self, service_class_factory):
+    def test_manual_characteristic_addition(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test manually adding characteristics to service."""
         service = service_class_factory()()
 
@@ -563,7 +590,9 @@ class TestCharacteristicIntegration:
         assert len(service.characteristics) == 1
         assert char.info.uuid in service.characteristics
 
-    def test_service_validation_with_characteristics(self, service_class_factory):
+    def test_service_validation_with_characteristics(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test service validation works with characteristics."""
         service = service_class_factory()()
 
@@ -607,7 +636,9 @@ class TestCharacteristicIntegration:
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 
-    def test_process_characteristics_with_missing_properties(self, service_class_factory):
+    def test_process_characteristics_with_missing_properties(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test processing characteristics without properties field."""
         service = service_class_factory()()
 
@@ -620,7 +651,9 @@ class TestEdgeCases:
 
         assert len(service.characteristics) == 1
 
-    def test_process_characteristics_with_invalid_properties(self, service_class_factory):
+    def test_process_characteristics_with_invalid_properties(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test processing characteristics with non-list properties."""
         service = service_class_factory()()
 
@@ -636,7 +669,7 @@ class TestEdgeCases:
         # Should still create characteristic (properties just won't be extracted)
         assert len(service.characteristics) == 1
 
-    def test_empty_uuid_string_rejected(self):
+    def test_empty_uuid_string_rejected(self) -> None:
         """Test that empty UUID string is rejected."""
         with pytest.raises((ValueError, TypeError)):
             # This should fail at BluetoothUUID level
@@ -646,7 +679,9 @@ class TestEdgeCases:
                 description="Bad",
             )
 
-    def test_service_with_none_description(self, service_class_factory):
+    def test_service_with_none_description(
+        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
+    ) -> None:
         """Test service can have empty description."""
         service = service_class_factory(description="")()
         assert service.summary == ""

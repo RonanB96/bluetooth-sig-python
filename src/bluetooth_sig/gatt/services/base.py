@@ -715,7 +715,7 @@ class CustomBaseGattService(BaseGattService):
     # NOTE: __init_subclass__ and __init__ patterns are intentionally similar to CustomBaseCharacteristic.
     # This is by design - both custom characteristic and service classes need identical validation
     # and info management patterns. Consolidation not possible due to different base types and info types.
-    def __init_subclass__(cls, allow_sig_override: bool = False, **kwargs: Any) -> None:
+    def __init_subclass__(cls, allow_sig_override: bool = False, **kwargs: Any) -> None:  # noqa: ANN401  # Receives subclass kwargs
         """Automatically set up _info if provided as class attribute.
 
         Args:

@@ -159,7 +159,7 @@ class CharacteristicMeta(ABCMeta):
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401  # Metaclass receives arbitrary keyword arguments
     ) -> type:
         # Auto-handle template flags before class creation so attributes are part of namespace
         if bases:  # Not the base class itself
@@ -575,7 +575,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         except ValueError:
             return False
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> Any:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> Any:  # noqa: ANN401  # Context and return types vary by characteristic
         """Parse the characteristic's raw value.
 
         If _template is set (Level 4 Progressive API), uses the template's decode_value method.
@@ -595,7 +595,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             return self._template.decode_value(data, offset=0, ctx=ctx)
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
-    def _validate_range(self, value: Any) -> None:
+    def _validate_range(self, value: Any) -> None:  # noqa: ANN401  # Validates values of various numeric types
         """Validate value is within min/max range."""
         if self.min_value is not None and value < self.min_value:
             raise ValueRangeError("value", value, self.min_value, self.max_value)
@@ -612,7 +612,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         if self.max_length is not None and length > self.max_length:
             raise ValueError(f"Maximum {self.max_length} bytes allowed, got {length}")
 
-    def _validate_value(self, value: Any) -> None:
+    def _validate_value(self, value: Any) -> None:  # noqa: ANN401  # Validates values of various types
         """Validate parsed value meets all requirements."""
         if self.expected_type is not None and not isinstance(value, self.expected_type):
             raise TypeMismatchError("parsed_value", value, self.expected_type)
@@ -635,7 +635,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         self,
         ctx: CharacteristicContext | None,
         characteristic_name: CharacteristicName | str | type[BaseCharacteristic],
-    ) -> Any | None:
+    ) -> Any | None:  # noqa: ANN401  # Returns various characteristic types from context
         """Generic utility to find a characteristic in context by name or class.
 
         Args:
@@ -692,7 +692,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # Default to class attribute if env var not set
         return True
 
-    def parse_value(self, data: bytes | bytearray, ctx: Any | None = None) -> CharacteristicData:
+    def parse_value(self, data: bytes | bytearray, ctx: CharacteristicContext | None = None) -> CharacteristicData:  # noqa: ANN401  # Context type varies
         """Parse characteristic data with automatic validation.
 
         This method automatically validates input data length and parsed values
@@ -769,7 +769,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 parse_trace=trace.get_trace(),
             )
 
-    def encode_value(self, data: Any) -> bytearray:
+    def encode_value(self, data: Any) -> bytearray:  # noqa: ANN401  # Encodes various value types (int, float, dataclass, etc.)
         """Encode the characteristic's value to raw bytes.
 
         If _template is set (Level 4 Progressive API), uses the template's encode_value method.
@@ -890,7 +890,7 @@ class CustomBaseCharacteristic(BaseCharacteristic):
     # NOTE: __init_subclass__ and __init__ patterns are intentionally similar to CustomBaseService.
     # This is by design - both custom characteristic and service classes need identical validation
     # and info management patterns. Consolidation not possible due to different base types and info types.
-    def __init_subclass__(cls, allow_sig_override: bool = False, **kwargs: Any) -> None:
+    def __init_subclass__(cls, allow_sig_override: bool = False, **kwargs: Any) -> None:  # noqa: ANN401  # Receives subclass kwargs
         """Automatically set up _info if provided as class attribute.
 
         Args:
@@ -987,7 +987,7 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
 
         super().__init__(info=info)
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> bytes:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bytes:  # noqa: ANN401  # Context type varies
         """Return raw bytes for unknown characteristics.
 
         Args:
@@ -999,7 +999,7 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
         """
         return bytes(data)
 
-    def encode_value(self, data: Any) -> bytearray:
+    def encode_value(self, data: Any) -> bytearray:  # noqa: ANN401  # Accepts bytes-like objects
         """Encode data to bytes for unknown characteristics.
 
         Args:

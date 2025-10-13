@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from enum import IntEnum, IntFlag
-from typing import Any
 
 import msgspec
 
 from ..constants import UINT8_MAX, UINT16_MAX
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
@@ -110,7 +110,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
       * Errata Correction 23224 (mandatory for compliance)
     """
 
-    def decode_value(self, data: bytearray, ctx: Any | None = None) -> HeartRateData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> HeartRateData:
         """Parse heart rate measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Heart Rate Value(1-2) + [Energy Expended(2)] + [RR-Intervals(2*n)]

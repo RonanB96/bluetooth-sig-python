@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import types
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
@@ -54,7 +55,7 @@ class SimpleCharacteristic:
     """Simple characteristic object compatible with Device class
     expectations."""
 
-    def __init__(self, uuid: str, properties: list[str] | None = None):
+    def __init__(self, uuid: str, properties: list[str] | None = None) -> None:
         self.uuid = uuid
         self.properties = properties or []
 
@@ -62,7 +63,7 @@ class SimpleCharacteristic:
 class SimpleService:
     """Simple service object compatible with Device class expectations."""
 
-    def __init__(self, uuid: str, characteristics: list[SimpleCharacteristic] | None = None):
+    def __init__(self, uuid: str, characteristics: list[SimpleCharacteristic] | None = None) -> None:
         self.uuid = uuid
         self.characteristics = characteristics or []
 
@@ -146,7 +147,7 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
 
         return await asyncio.get_event_loop().run_in_executor(self.executor, _get_services)
 
-    async def start_notify(self, char_uuid: str, callback: Any) -> None:
+    async def start_notify(self, char_uuid: str, callback: Callable[[str, bytes], None]) -> None:
         # Not implemented: SimplePyBLE notification support
         raise NotImplementedError("Notification not supported in this example")
 

@@ -7,14 +7,14 @@ from bluetooth_sig.types import CharacteristicData, ValidationResult
 class TestBluetoothSIGTranslator:
     """Test BluetoothSIGTranslator SIG standards functionality."""
 
-    def test_translator_instantiation(self):
+    def test_translator_instantiation(self) -> None:
         """Test that BluetoothSIGTranslator can be instantiated correctly."""
         translator = BluetoothSIGTranslator()
 
         assert translator is not None
         assert str(translator) == "BluetoothSIGTranslator(pure SIG standards)"
 
-    def test_translator_methods_exist(self):
+    def test_translator_methods_exist(self) -> None:
         """Test that essential methods exist on BluetoothSIGTranslator."""
         translator = BluetoothSIGTranslator()
 
@@ -34,7 +34,7 @@ class TestBluetoothSIGTranslator:
         assert callable(translator.list_supported_characteristics), "list_supported_characteristics should be callable"
         assert callable(translator.list_supported_services), "list_supported_services should be callable"
 
-    def test_parse_characteristic_fallback(self):
+    def test_parse_characteristic_fallback(self) -> None:
         """Test characteristic parsing returns fallback data."""
         translator = BluetoothSIGTranslator()
 
@@ -51,7 +51,7 @@ class TestBluetoothSIGTranslator:
         assert result.value == raw_data
         assert result.parse_success is False
 
-    def test_parse_characteristic_with_uuid_formats(self):
+    def test_parse_characteristic_with_uuid_formats(self) -> None:
         """Test characteristic parsing with different UUID formats."""
         translator = BluetoothSIGTranslator()
 
@@ -71,7 +71,7 @@ class TestBluetoothSIGTranslator:
             assert result.value == 100
             assert result.parse_success is True
 
-    def test_get_characteristic_info_fallback(self):
+    def test_get_characteristic_info_fallback(self) -> None:
         """Test get_characteristic_info returns None for unknown
         characteristics."""
         translator = BluetoothSIGTranslator()
@@ -81,7 +81,7 @@ class TestBluetoothSIGTranslator:
         result = translator.get_characteristic_info(unknown_uuid)
         assert result is None
 
-    def test_get_service_info_fallback(self):
+    def test_get_service_info_fallback(self) -> None:
         """Test get_service_info returns None for unknown services."""
         translator = BluetoothSIGTranslator()
 
@@ -90,7 +90,7 @@ class TestBluetoothSIGTranslator:
         result = translator.get_service_info(unknown_uuid)
         assert result is None
 
-    def test_list_supported_characteristics(self):
+    def test_list_supported_characteristics(self) -> None:
         """Test listing supported characteristics."""
         translator = BluetoothSIGTranslator()
 
@@ -98,7 +98,7 @@ class TestBluetoothSIGTranslator:
         assert isinstance(characteristics, dict)
         # Without YAML registry, may be empty but should be a dict
 
-    def test_list_supported_services(self):
+    def test_list_supported_services(self) -> None:
         """Test listing supported services."""
         translator = BluetoothSIGTranslator()
 
@@ -106,11 +106,11 @@ class TestBluetoothSIGTranslator:
         assert isinstance(services, dict)
         # Without YAML registry, may be empty but should be a dict
 
-    def test_pure_sig_translation_pattern(self):
+    def test_pure_sig_translation_pattern(self) -> None:
         """Test the pure SIG translation pattern from docs."""
         translator = BluetoothSIGTranslator()
 
-        def parse_sensor_reading(char_uuid: str, raw_data: bytes):
+        def parse_sensor_reading(char_uuid: str, raw_data: bytes) -> CharacteristicData:
             """Pure SIG standard translation - no connection dependencies."""
             return translator.parse_characteristic(char_uuid, raw_data)
 
@@ -121,7 +121,7 @@ class TestBluetoothSIGTranslator:
         assert result.value == 100
         assert result.parse_success is True
 
-    def test_no_connection_methods(self):
+    def test_no_connection_methods(self) -> None:
         """Test that translator has no connection-related methods."""
         translator = BluetoothSIGTranslator()
 
@@ -135,7 +135,7 @@ class TestBluetoothSIGTranslator:
         )
         assert not hasattr(translator, "get_device_info"), "Translator should not have get_device_info method"
 
-    def test_resolve_uuid_with_characteristic_name(self):
+    def test_resolve_uuid_with_characteristic_name(self) -> None:
         """Test resolving characteristic name to full info."""
         translator = BluetoothSIGTranslator()
 
@@ -149,7 +149,7 @@ class TestBluetoothSIGTranslator:
         result = translator.resolve_uuid("Unknown Characteristic")
         assert result is None
 
-    def test_resolve_name_with_uuid(self):
+    def test_resolve_name_with_uuid(self) -> None:
         """Test resolving UUID to full SIG information."""
         translator = BluetoothSIGTranslator()
 
@@ -163,7 +163,7 @@ class TestBluetoothSIGTranslator:
         result = translator.resolve_name("FFFF")
         assert result is None
 
-    def test_parse_characteristics_batch(self):
+    def test_parse_characteristics_batch(self) -> None:
         """Test parsing multiple characteristics at once."""
         translator = BluetoothSIGTranslator()
 
@@ -183,7 +183,7 @@ class TestBluetoothSIGTranslator:
         # Temperature should be parsed (400 * 0.01 = 4.0)
         assert isinstance(results["2A6E"].value, float)
 
-    def test_get_characteristics_info_batch(self):
+    def test_get_characteristics_info_batch(self) -> None:
         """Test getting info for multiple characteristics."""
         translator = BluetoothSIGTranslator()
 
@@ -195,7 +195,7 @@ class TestBluetoothSIGTranslator:
         assert results["2A6E"] is not None  # Temperature should be found
         assert results["FFFF"] is None  # Unknown should be None
 
-    def test_validate_characteristic_data(self):
+    def test_validate_characteristic_data(self) -> None:
         """Test validating characteristic data format."""
         translator = BluetoothSIGTranslator()
 
@@ -210,7 +210,7 @@ class TestBluetoothSIGTranslator:
         assert isinstance(result, ValidationResult)
         assert result.actual_length == 0
 
-    def test_get_service_characteristics(self):
+    def test_get_service_characteristics(self) -> None:
         """Test getting characteristics for a service."""
         translator = BluetoothSIGTranslator()
 

@@ -40,7 +40,7 @@ class ConnectionManagerProtocol(Protocol):
         """Write raw bytes to a characteristic identified by `char_uuid`."""
         raise NotImplementedError()
 
-    async def get_services(self) -> Any:  # pragma: no cover
+    async def get_services(self) -> Any:  # noqa: ANN401  # pragma: no cover  # Adapter-specific service collection type
         """Return a structure describing services/characteristics from the
         adapter.
 

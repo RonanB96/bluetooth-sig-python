@@ -11,6 +11,7 @@ import bleak  # type: ignore[import]  # noqa: F401 # pylint: disable=unused-impo
 import bleak_retry_connector  # type: ignore[import]  # noqa: F401 # pylint: disable=unused-import
 from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.service import BleakGattServiceCollection
 from utils.device_scanning import safe_get_device_info
 
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
@@ -20,7 +21,7 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
     """Connection manager using Bleak with retry connector for robust BLE
     communication."""
 
-    def __init__(self, address: str, timeout: float = 30.0, max_attempts: int = 3):
+    def __init__(self, address: str, timeout: float = 30.0, max_attempts: int = 3) -> None:
         self.address = address
         self.timeout = timeout
         self.max_attempts = max_attempts
@@ -54,7 +55,7 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
     async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
         await self.client.write_gatt_char(char_uuid, data)
 
-    async def get_services(self) -> Any:
+    async def get_services(self) -> BleakGattServiceCollection:
         return self.client.services
 
     async def start_notify(

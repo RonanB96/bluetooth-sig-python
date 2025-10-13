@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from enum import IntFlag
-from typing import Any
 
 import msgspec
 
 from ..constants import SINT16_MAX, SINT16_MIN, UINT8_MAX
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
@@ -55,7 +55,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = "various"  # Multiple units in vector data
 
-    def decode_value(self, data: bytearray, _ctx: Any | None = None) -> CyclingPowerVectorData:
+    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> CyclingPowerVectorData:
         """Parse cycling power vector data according to Bluetooth
         specification.
 

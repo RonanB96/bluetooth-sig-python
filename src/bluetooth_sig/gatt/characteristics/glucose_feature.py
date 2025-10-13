@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from enum import IntFlag
-from typing import Any
 
 import msgspec
 
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
@@ -87,7 +87,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
     allow_variable_length: bool = False  # Fixed length
 
     def decode_value(  # pylint: disable=too-many-locals
-        self, data: bytearray, _ctx: Any | None = None
+        self, data: bytearray, _ctx: CharacteristicContext | None = None
     ) -> GlucoseFeatureData:
         """Parse glucose feature data according to Bluetooth specification.
 

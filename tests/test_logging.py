@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import logging
 
+import pytest
+
 from bluetooth_sig import BluetoothSIGTranslator
 
 
 class TestTranslatorLogging:
     """Test logging functionality in BluetoothSIGTranslator."""
 
-    def test_logging_can_be_enabled(self, caplog):
+    def test_logging_can_be_enabled(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test that logging can be enabled and captured."""
         caplog.set_level(logging.DEBUG)
 
@@ -24,7 +26,7 @@ class TestTranslatorLogging:
         assert any("Parsing characteristic" in record.message for record in caplog.records)
         assert any("Found parser" in record.message for record in caplog.records)
 
-    def test_logging_debug_level(self, caplog):
+    def test_logging_debug_level(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test debug level logging output."""
         caplog.set_level(logging.DEBUG)
 
@@ -38,7 +40,7 @@ class TestTranslatorLogging:
         assert any("UUID=2A19" in msg for msg in debug_messages)
         assert any("data_len=1" in msg for msg in debug_messages)
 
-    def test_logging_info_level(self, caplog):
+    def test_logging_info_level(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test info level logging for unknown characteristics."""
         caplog.set_level(logging.INFO)
 
@@ -52,7 +54,7 @@ class TestTranslatorLogging:
         info_messages = [r.message for r in caplog.records if r.levelno == logging.INFO]
         assert any("No parser available" in msg for msg in info_messages)
 
-    def test_logging_warning_level(self, caplog):
+    def test_logging_warning_level(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test warning level logging for parse failures."""
         caplog.set_level(logging.WARNING)
 
@@ -65,7 +67,7 @@ class TestTranslatorLogging:
         # Should have warning about parse failure
         # May or may not have warnings depending on characteristic implementation
 
-    def test_logging_batch_parsing(self, caplog):
+    def test_logging_batch_parsing(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test logging during batch parsing."""
         caplog.set_level(logging.DEBUG)
 
@@ -82,7 +84,7 @@ class TestTranslatorLogging:
         assert any("Batch parsing" in msg for msg in debug_messages)
         assert any("2 characteristics" in msg for msg in debug_messages)
 
-    def test_logging_disabled_by_default(self, caplog):
+    def test_logging_disabled_by_default(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test that logging is disabled at default WARNING level."""
         caplog.set_level(logging.WARNING)
 
@@ -95,7 +97,7 @@ class TestTranslatorLogging:
         debug_messages = [r.message for r in caplog.records if r.levelno == logging.DEBUG]
         assert len(debug_messages) == 0
 
-    def test_logging_performance_overhead_minimal(self):
+    def test_logging_performance_overhead_minimal(self) -> None:
         """Test that logging overhead is minimal when disabled."""
         import time
 

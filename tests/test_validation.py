@@ -18,7 +18,7 @@ from bluetooth_sig.gatt.validation import (
 class TestValidationRule:
     """Test ValidationRule class functionality."""
 
-    def test_basic_type_validation_success(self):
+    def test_basic_type_validation_success(self) -> None:
         """Test successful type validation."""
         rule = ValidationRule("temperature", float)
 
@@ -27,7 +27,7 @@ class TestValidationRule:
         rule.validate(0.0)
         rule.validate(-10.5)
 
-    def test_basic_type_validation_failure(self):
+    def test_basic_type_validation_failure(self) -> None:
         """Test type validation failure."""
         rule = ValidationRule("temperature", float)
 
@@ -38,7 +38,7 @@ class TestValidationRule:
         assert exc_info.value.value == "not a float"
         assert exc_info.value.expected_type is float
 
-    def test_tuple_type_validation_success(self):
+    def test_tuple_type_validation_success(self) -> None:
         """Test validation with tuple of allowed types."""
         rule = ValidationRule("value", (int, float))
 
@@ -46,7 +46,7 @@ class TestValidationRule:
         rule.validate(42)
         rule.validate(42.5)
 
-    def test_tuple_type_validation_failure(self):
+    def test_tuple_type_validation_failure(self) -> None:
         """Test validation failure with tuple of types."""
         rule = ValidationRule("value", (int, float))
 
@@ -55,7 +55,7 @@ class TestValidationRule:
 
         assert "int or float" in str(exc_info.value)
 
-    def test_range_validation_success(self):
+    def test_range_validation_success(self) -> None:
         """Test successful range validation."""
         rule = ValidationRule("percentage", float, min_value=0.0, max_value=100.0)
 
@@ -64,7 +64,7 @@ class TestValidationRule:
         rule.validate(50.0)
         rule.validate(100.0)
 
-    def test_range_validation_failure_min(self):
+    def test_range_validation_failure_min(self) -> None:
         """Test range validation failure (below minimum)."""
         rule = ValidationRule("percentage", float, min_value=0.0, max_value=100.0)
 
@@ -76,7 +76,7 @@ class TestValidationRule:
         assert exc_info.value.min_val == 0.0
         assert exc_info.value.max_val == 100.0
 
-    def test_range_validation_failure_max(self):
+    def test_range_validation_failure_max(self) -> None:
         """Test range validation failure (above maximum)."""
         rule = ValidationRule("percentage", float, min_value=0.0, max_value=100.0)
 
@@ -85,7 +85,7 @@ class TestValidationRule:
 
         assert exc_info.value.value == 150.0
 
-    def test_custom_validator_success(self):
+    def test_custom_validator_success(self) -> None:
         """Test successful custom validation."""
 
         def is_even(value: int) -> bool:
@@ -98,7 +98,7 @@ class TestValidationRule:
         rule.validate(42)
         rule.validate(0)
 
-    def test_custom_validator_failure(self):
+    def test_custom_validator_failure(self) -> None:
         """Test custom validation failure."""
 
         def is_even(value: int) -> bool:
@@ -111,7 +111,7 @@ class TestValidationRule:
 
         assert "Custom validation failed" in str(exc_info.value)
 
-    def test_custom_error_message(self):
+    def test_custom_error_message(self) -> None:
         """Test custom error message."""
 
         def is_positive(value: float) -> bool:
@@ -129,7 +129,7 @@ class TestValidationRule:
 
         assert "Value must be positive" in str(exc_info.value)
 
-    def test_min_only_validation(self):
+    def test_min_only_validation(self) -> None:
         """Test validation with only minimum value."""
         rule = ValidationRule("temperature", float, min_value=-273.15)
 
@@ -140,7 +140,7 @@ class TestValidationRule:
         with pytest.raises(ValueRangeError):
             rule.validate(-300.0)  # Should fail
 
-    def test_max_only_validation(self):
+    def test_max_only_validation(self) -> None:
         """Test validation with only maximum value."""
         rule = ValidationRule("temperature", float, max_value=1000.0)
 
@@ -155,20 +155,20 @@ class TestValidationRule:
 class TestCommonValidators:
     """Test CommonValidators utility functions."""
 
-    def test_is_positive(self):
+    def test_is_positive(self) -> None:
         """Test positive value validation."""
         assert CommonValidators.is_positive(1.0)
         assert CommonValidators.is_positive(0.001)
         assert not CommonValidators.is_positive(0.0)
         assert not CommonValidators.is_positive(-1.0)
 
-    def test_is_non_negative(self):
+    def test_is_non_negative(self) -> None:
         """Test non-negative value validation."""
         assert CommonValidators.is_non_negative(1.0)
         assert CommonValidators.is_non_negative(0.0)
         assert not CommonValidators.is_non_negative(-0.001)
 
-    def test_is_valid_percentage(self):
+    def test_is_valid_percentage(self) -> None:
         """Test percentage validation."""
         assert CommonValidators.is_valid_percentage(0.0)
         assert CommonValidators.is_valid_percentage(50.0)
@@ -176,7 +176,7 @@ class TestCommonValidators:
         assert not CommonValidators.is_valid_percentage(-10.0)
         assert not CommonValidators.is_valid_percentage(150.0)
 
-    def test_is_valid_extended_percentage(self):
+    def test_is_valid_extended_percentage(self) -> None:
         """Test extended percentage validation."""
         assert CommonValidators.is_valid_extended_percentage(0.0)
         assert CommonValidators.is_valid_extended_percentage(100.0)
@@ -184,7 +184,7 @@ class TestCommonValidators:
         assert not CommonValidators.is_valid_extended_percentage(-10.0)
         assert not CommonValidators.is_valid_extended_percentage(250.0)
 
-    def test_is_physical_temperature(self):
+    def test_is_physical_temperature(self) -> None:
         """Test physical temperature validation."""
         assert CommonValidators.is_physical_temperature(-273.15)  # Absolute zero
         assert CommonValidators.is_physical_temperature(0.0)
@@ -193,7 +193,7 @@ class TestCommonValidators:
         assert not CommonValidators.is_physical_temperature(-300.0)
         assert not CommonValidators.is_physical_temperature(1500.0)
 
-    def test_is_valid_concentration(self):
+    def test_is_valid_concentration(self) -> None:
         """Test concentration validation."""
         assert CommonValidators.is_valid_concentration(0.0)
         assert CommonValidators.is_valid_concentration(1000.0)
@@ -201,7 +201,7 @@ class TestCommonValidators:
         assert not CommonValidators.is_valid_concentration(-10.0)
         assert not CommonValidators.is_valid_concentration(100000.0)
 
-    def test_is_valid_power(self):
+    def test_is_valid_power(self) -> None:
         """Test power validation."""
         assert CommonValidators.is_valid_power(0.0)
         assert CommonValidators.is_valid_power(1000.0)
@@ -213,7 +213,7 @@ class TestCommonValidators:
 class TestStrictValidator:
     """Test StrictValidator class functionality."""
 
-    def test_add_rule(self):
+    def test_add_rule(self) -> None:
         """Test adding validation rules."""
         validator = StrictValidator()
         rule = ValidationRule("temperature", float, min_value=-40.0, max_value=85.0)
@@ -222,7 +222,7 @@ class TestStrictValidator:
         assert "temperature" in validator.rules
         assert validator.rules["temperature"] == rule
 
-    def test_validate_dict_success(self):
+    def test_validate_dict_success(self) -> None:
         """Test successful dictionary validation."""
         validator = StrictValidator()
         validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
@@ -233,7 +233,7 @@ class TestStrictValidator:
         # Should not raise
         validator.validate_dict(data)
 
-    def test_validate_dict_failure(self):
+    def test_validate_dict_failure(self) -> None:
         """Test dictionary validation failure."""
         validator = StrictValidator()
         validator.add_rule(ValidationRule("temperature", float, min_value=-40.0, max_value=85.0))
@@ -243,7 +243,7 @@ class TestStrictValidator:
         with pytest.raises(ValueRangeError):
             validator.validate_dict(data)
 
-    def test_validate_object_success(self):
+    def test_validate_object_success(self) -> None:
         """Test successful object validation."""
 
         class SensorReading:  # pylint: disable=too-few-public-methods
@@ -265,7 +265,7 @@ class TestStrictValidator:
         # Should not raise
         validator.validate_object(reading)
 
-    def test_validate_object_failure(self):
+    def test_validate_object_failure(self) -> None:
         """Test object validation failure."""
 
         class SensorReading:  # pylint: disable=too-few-public-methods
@@ -284,7 +284,7 @@ class TestStrictValidator:
         with pytest.raises(ValueRangeError):
             validator.validate_object(reading)
 
-    def test_validate_object_missing_attribute(self):
+    def test_validate_object_missing_attribute(self) -> None:
         """Test validation skips missing attributes."""
 
         class PartialReading:  # pylint: disable=too-few-public-methods
@@ -310,7 +310,7 @@ class TestStrictValidator:
 class TestValidationIntegration:
     """Test validation integration scenarios."""
 
-    def test_combined_validation_rules(self):
+    def test_combined_validation_rules(self) -> None:
         """Test combining multiple validation aspects."""
 
         # Temperature with type, range, and custom validation
@@ -345,7 +345,7 @@ class TestValidationIntegration:
 
         assert "Temperature cannot be exactly zero" in str(exc_info.value)
 
-    def test_realistic_sensor_validation(self):
+    def test_realistic_sensor_validation(self) -> None:
         """Test realistic sensor data validation scenario."""
         # Simulate validating sensor reading
         temperature_rule = ValidationRule("temperature", (int, float), min_value=-40.0, max_value=85.0)
@@ -362,7 +362,7 @@ class TestValidationIntegration:
         with pytest.raises(ValueRangeError):
             humidity_rule.validate(120.0)  # Impossible humidity
 
-    def test_validation_with_common_validators(self):
+    def test_validation_with_common_validators(self) -> None:
         """Test integration with CommonValidators."""
         # Create rule using CommonValidators
         rule = ValidationRule(
@@ -383,7 +383,7 @@ class TestValidationIntegration:
 
         assert "Invalid percentage value" in str(exc_info.value)
 
-    def test_strict_validator_with_multiple_rules(self):
+    def test_strict_validator_with_multiple_rules(self) -> None:
         """Test StrictValidator with multiple complex rules."""
         validator = StrictValidator()
 
