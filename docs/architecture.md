@@ -1,20 +1,21 @@
 # Architecture Overview
 
-Understanding the architecture helps you make the most of the Bluetooth SIG Standards Library.
+Understanding the architecture helps you make the most of the Bluetooth SIG Standards
+Library.
 
 ## Design Philosophy
 
 The library follows these core principles:
 
 1. **Standards First** - Built directly from Bluetooth SIG specifications
-2. **Separation of Concerns** - Parse data, don't manage connections
-3. **Type Safety** - Strong typing throughout
-4. **Framework Agnostic** - Works with any BLE library
-5. **Zero Side Effects** - Pure functions for parsing
+1. **Separation of Concerns** - Parse data, don't manage connections
+1. **Type Safety** - Strong typing throughout
+1. **Framework Agnostic** - Works with any BLE library
+1. **Zero Side Effects** - Pure functions for parsing
 
 ## High-Level Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                  Your Application                        │
 │            (GUI, Business Logic, State)                  │
@@ -58,12 +59,14 @@ The library follows these core principles:
 **Key Class**: `BluetoothSIGTranslator`
 
 **Responsibilities**:
+
 - UUID ↔ Name resolution
 - Characteristic data parsing
 - Service information lookup
 - Type conversion and validation
 
 **Example Usage**:
+
 ```python
 from bluetooth_sig.core import BluetoothSIGTranslator
 
@@ -76,7 +79,8 @@ result = translator.parse_characteristic_data("2A19", data)
 **Purpose**: Bluetooth GATT specification implementation
 
 **Structure**:
-```
+
+```text
 gatt/
 ├── characteristics/    # 70+ characteristic implementations
 │   ├── base.py        # Base characteristic class
@@ -94,6 +98,7 @@ gatt/
 **Key Components**:
 
 #### Base Characteristic
+
 ```python
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 
@@ -109,6 +114,7 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
 ```
 
 #### Characteristic Features
+
 - **Length validation** - Ensures correct data size
 - **Range validation** - Enforces spec limits
 - **Type conversion** - Raw bytes → typed values
@@ -120,25 +126,28 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
 **Purpose**: UUID and name resolution based on official Bluetooth SIG registry
 
 **Structure**:
-```
+
+```text
 registry/
 ├── yaml_cross_reference.py  # YAML registry loader
 ├── uuid_registry.py          # UUID resolution
 └── name_resolver.py          # Name-based lookup
 ```
 
-**Data Source**: 
+**Data Source**:
+
 - Official Bluetooth SIG YAML files (via git submodule)
 - Located in `bluetooth_sig/assigned_numbers/uuids/`
 
 **Capabilities**:
+
 ```python
 # UUID to information
 info = registry.get_characteristic_info("2A19")
 # Returns: CharacteristicInfo(uuid="2A19", name="Battery Level")
 
 # Name to UUID
-uuid = registry.resolve_name("Battery Level")
+uuid = registry.resolve_by_name("Battery Level")
 # Returns: "2A19"
 
 # Handles both short and long UUID formats
@@ -153,6 +162,7 @@ info = registry.get_service_info("0000180f-0000-1000-8000-00805f9b34fb")
 **Key Components**:
 
 #### Enums
+
 ```python
 from bluetooth_sig.types.gatt_enums import (
     CharacteristicName,
@@ -165,6 +175,7 @@ ServiceName.BATTERY_SERVICE        # "Battery Service"
 ```
 
 #### Data Structures
+
 ```python
 from dataclasses import dataclass
 
@@ -178,7 +189,7 @@ class BatteryLevelData:
 
 ### Parsing Flow
 
-```
+```text
 1. Raw BLE Data
    ↓
 2. BluetoothSIGTranslator.parse_characteristic_data()
@@ -257,14 +268,14 @@ def decode_value(self, data: bytearray) -> int:
     # Layer 1: Structure validation
     if len(data) != 1:
         raise InsufficientDataError(...)
-    
+
     # Layer 2: Data extraction
     value = int(data[0])
-    
+
     # Layer 3: Domain validation
     if not 0 <= value <= 100:
         raise ValueRangeError(...)
-    
+
     return value
 ```
 
@@ -282,7 +293,7 @@ class MyCustomCharacteristic(BaseCharacteristic):
         uuid=BluetoothUUID("XXXX"),
         name="My Custom Characteristic"
     )
-    
+
     def decode_value(self, data: bytearray) -> int:
         # Your parsing logic
         return int(data[0])
@@ -297,7 +308,7 @@ class MyCustomService(BaseService):
     def __init__(self):
         super().__init__()
         self.my_char = MyCustomCharacteristic()
-    
+
     @property
     def characteristics(self) -> dict:
         return {"my_char": self.my_char}
@@ -306,16 +317,19 @@ class MyCustomService(BaseService):
 ## Testing Architecture
 
 ### Unit Tests
+
 - Individual characteristic parsing
 - Registry resolution
 - Validation logic
 
 ### Integration Tests
+
 - Full parsing flow
 - Multiple characteristics
 - Error handling
 
 ### Example
+
 ```python
 def test_battery_parsing():
     translator = BluetoothSIGTranslator()
@@ -326,12 +340,14 @@ def test_battery_parsing():
 ## Performance Considerations
 
 ### Optimizations
+
 - **Registry caching** - UUID lookups cached after first resolution
 - **Minimal allocations** - Direct parsing without intermediate objects
 - **Type hints** - Enable JIT optimization
 - **Lazy loading** - Characteristics loaded on-demand
 
 ### Benchmarks
+
 - UUID resolution: ~10 μs
 - Simple characteristic parse: ~50 μs
 - Complex characteristic parse: ~200 μs
@@ -339,21 +355,25 @@ def test_battery_parsing():
 ## Architectural Benefits
 
 ### 1. Maintainability
+
 - Clear separation of concerns
 - Each characteristic is independent
 - Easy to add new characteristics
 
 ### 2. Testability
+
 - Pure functions (no side effects)
 - Easy to mock
 - No hardware required for testing
 
 ### 3. Flexibility
+
 - Framework agnostic
 - Platform independent
 - Extensible design
 
 ### 4. Type Safety
+
 - Full type hints
 - Runtime validation
 - Compile-time checking (mypy)

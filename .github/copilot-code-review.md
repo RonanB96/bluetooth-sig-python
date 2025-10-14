@@ -3,6 +3,7 @@
 This file intentionally contains only the live, minimal checklist. Full authoritative rules are in `.github/copilot-instructions.md` – that document is the single source of truth. Do not duplicate rules here.
 
 ## Minimal Review Checklist
+
 Synchronised with Section 14 of `copilot-instructions.md`.
 
 - [ ] Architecture: No forbidden framework imports in GATT/SIG layer.
@@ -20,4 +21,5 @@ Synchronised with Section 14 of `copilot-instructions.md`.
 If any item cannot be ticked, the PR must not be approved.
 
 ## Reference
+
 See `.github/copilot-instructions.md` for full rationale, workflow, prohibitions, and escalation process.

@@ -1,8 +1,8 @@
 # Bluetooth SIG Standards Library
 
-**A pure Python library for Bluetooth SIG standards interpretation**
+A pure Python library for Bluetooth SIG standards interpretation
 
-[![Coverage Status](https://img.shields.io/endpoint?url=https://ronanb96.github.io/bluetooth-sig-python/coverage/coverage-badge.json)](https://ronanb96.github.io/bluetooth-sig-python/coverage/)
+[![Coverage Status](https://img.shields.io/endpoint?url=https://ronanb96.github.io/bluetooth-sig-python/coverage/coverage-badge.json)](coverage/)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://img.shields.io/pypi/v/bluetooth-sig.svg)](https://pypi.org/project/bluetooth-sig/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -28,11 +28,11 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 translator = BluetoothSIGTranslator()
 
 # Resolve UUIDs
-service_info = translator.resolve_uuid("180F")  # Battery Service
-print(f"Service: {service_info.name}")
+service_info = translator.resolve_by_uuid("180F")  # Battery
+print(f"Service: {service_info.name}")  # Service: Battery
 
 # Parse characteristic data
-battery_data = translator.parse_characteristic_data("2A19", bytearray([85]))
+battery_data = translator.parse_characteristic("2A19", bytearray([85]))
 print(f"Battery: {battery_data.value}%")  # Battery: 85%
 ```
 
@@ -40,7 +40,7 @@ print(f"Battery: {battery_data.value}%")  # Battery: 85%
 
 <div class="grid cards" markdown>
 
--   :material-clock-fast:{ .lg .middle } __Quick Start__
+- :material-clock-fast:{ .lg .middle } __Quick Start__
 
     ---
 
@@ -48,7 +48,7 @@ print(f"Battery: {battery_data.value}%")  # Battery: 85%
 
     [:octicons-arrow-right-24: Quick Start](quickstart.md)
 
--   :material-book-open-variant:{ .lg .middle } __Installation__
+- :material-book-open-variant:{ .lg .middle } __Installation__
 
     ---
 
@@ -56,7 +56,7 @@ print(f"Battery: {battery_data.value}%")  # Battery: 85%
 
     [:octicons-arrow-right-24: Installation](installation.md)
 
--   :material-code-braces:{ .lg .middle } __Usage Guide__
+- :material-code-braces:{ .lg .middle } __Usage Guide__
 
     ---
 
@@ -64,7 +64,7 @@ print(f"Battery: {battery_data.value}%")  # Battery: 85%
 
     [:octicons-arrow-right-24: Usage Guide](usage.md)
 
--   :material-api:{ .lg .middle } __API Reference__
+- :material-api:{ .lg .middle } __API Reference__
 
     ---
 
@@ -76,21 +76,16 @@ print(f"Battery: {battery_data.value}%")  # Battery: 85%
 
 ## Why Choose This Library?
 
-Unlike other Bluetooth libraries that focus on device connectivity, this library specializes in **standards interpretation**. It bridges the gap between raw BLE data and meaningful application-level information by:
+Unlike other Bluetooth libraries that focus on device connectivity, this library specializes in **standards interpretation**. It bridges the gap between raw BLE data and meaningful application-level information.
 
-- **Parsing complex GATT characteristics** according to official specifications
-- **Resolving UUIDs** to human-readable service and characteristic names
-- **Providing type-safe data structures** for all parsed values
-- **Working with any BLE library** for maximum flexibility
-
-[Learn more about what this library solves →](what-it-solves.md)
+[Learn more about what this library solves →](why-use.md)
 
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/RonanB96/bluetooth-sig-python/issues)
 - **Source Code**: [GitHub Repository](https://github.com/RonanB96/bluetooth-sig-python)
 - **Documentation**: You're here! 🎉
-- **Coverage Report**: [Test Coverage](https://ronanb96.github.io/bluetooth-sig-python/coverage/) (Generated from CI)
+- **Coverage Report**: [Test Coverage](coverage/) (Generated from CI)
 
 ## License
 

@@ -4,7 +4,7 @@ This library addresses specific pain points when working with Bluetooth Low Ener
 
 ## Problem 1: Standards Interpretation Complexity
 
-### The Challenge
+### The Challenge (Standards Interpretation)
 
 Bluetooth SIG specifications are detailed technical documents that define how to encode/decode data for each characteristic. Implementing these correctly requires:
 
@@ -17,6 +17,7 @@ Bluetooth SIG specifications are detailed technical documents that define how to
 ### Example: Temperature Characteristic (0x2A6E)
 
 **Specification Requirements:**
+
 - 2 bytes (sint16)
 - Little-endian byte order
 - Resolution: 0.01°C
@@ -24,23 +25,25 @@ Bluetooth SIG specifications are detailed technical documents that define how to
 - Valid range: -273.15°C to +327.67°C
 
 **Manual Implementation:**
+
 ```python
 def parse_temperature(data: bytes) -> float | None:
     if len(data) != 2:
         raise ValueError("Temperature requires 2 bytes")
-    
+
     raw_value = int.from_bytes(data, byteorder='little', signed=True)
-    
+
     if raw_value == -32768:  # 0x8000
         return None  # Not available
-    
+
     if raw_value < -27315 or raw_value > 32767:
         raise ValueError("Temperature out of range")
-    
+
     return raw_value * 0.01
 ```
 
 **With bluetooth-sig:**
+
 ```python
 from bluetooth_sig.core import BluetoothSIGTranslator
 
@@ -49,7 +52,7 @@ result = translator.parse_characteristic_data("2A6E", data)
 # Handles all validation, conversion, and edge cases automatically
 ```
 
-### ✅ What We Solve
+### ✅ What We Solve (Standards Interpretation)
 
 - **Automatic standards compliance** - All 70+ characteristics follow official specs
 - **Unit conversion handling** - Correct scaling factors applied automatically
@@ -57,11 +60,11 @@ result = translator.parse_characteristic_data("2A6E", data)
 - **Validation** - Input data validated before parsing
 - **Type safety** - Structured data returned, not raw bytes
 
----
+______________________________________________________________________
 
 ## Problem 2: UUID Management & Resolution
 
-### The Challenge
+### The Challenge (UUID Management)
 
 Bluetooth uses UUIDs to identify services and characteristics:
 
@@ -71,9 +74,9 @@ Bluetooth uses UUIDs to identify services and characteristics:
 Both represent "Battery Service", but you need to:
 
 1. Maintain a mapping of UUIDs to names
-2. Handle both short and long forms
-3. Support reverse lookup (name → UUID)
-4. Keep up with Bluetooth SIG registry updates
+1. Handle both short and long forms
+1. Support reverse lookup (name → UUID)
+1. Keep up with Bluetooth SIG registry updates
 
 ### Manual Approach
 
@@ -94,7 +97,7 @@ CHARACTERISTIC_UUIDS = {
 }
 
 # Handling lookups
-def resolve_uuid(uuid: str) -> str:
+def resolve_by_name(uuid: str) -> str:
     # Short form?
     if len(uuid) == 4:
         return SERVICE_UUIDS.get(uuid) or CHARACTERISTIC_UUIDS.get(uuid)
@@ -105,7 +108,7 @@ def resolve_uuid(uuid: str) -> str:
     return "Unknown"
 ```
 
-### ✅ What We Solve
+### ✅ What We Solve (UUID Management)
 
 ```python
 from bluetooth_sig.core import BluetoothSIGTranslator
@@ -113,11 +116,11 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 translator = BluetoothSIGTranslator()
 
 # Automatic UUID resolution (short or long form)
-info = translator.resolve_uuid("180F")
-info = translator.resolve_uuid("0000180f-0000-1000-8000-00805f9b34fb")  # Same result
+info = translator.resolve_by_uuid("180F")
+info = translator.resolve_by_uuid("0000180f-0000-1000-8000-00805f9b34fb")  # Same result
 
 # Reverse lookup
-battery_service = translator.resolve_name("Battery Service")
+battery_service = translator.resolve_by_name("Battery Service")
 print(battery_service.uuid)  # "180F"
 
 # Get full information
@@ -131,11 +134,11 @@ print(info.uuid)  # "180F"
 - **Both directions** - UUID → name and name → UUID
 - **Multiple formats** - Handles short and long UUID forms
 
----
+______________________________________________________________________
 
 ## Problem 3: Type Safety & Data Validation
 
-### The Challenge
+### The Challenge (Type Safety)
 
 Raw BLE data is just bytes. Without proper typing:
 
@@ -156,7 +159,7 @@ result = parse_battery(some_data)
 # No type hints, no validation, no structure
 ```
 
-### ✅ What We Solve
+### ✅ What We Solve (Type Safety)
 
 ```python
 from bluetooth_sig.core import BluetoothSIGTranslator
@@ -174,7 +177,7 @@ print(result.unit)   # "%"
 temp_result = translator.parse_characteristic_data("2A1C", data)
 # Returns TemperatureMeasurement dataclass with:
 #   - value: float
-#   - unit: str  
+#   - unit: str
 #   - timestamp: datetime | None
 #   - temperature_type: str | None
 ```
@@ -184,11 +187,11 @@ temp_result = translator.parse_characteristic_data("2A1C", data)
 - **IDE support** - Autocomplete and inline documentation
 - **Type checking** - Works with mypy, pyright, etc.
 
----
+______________________________________________________________________
 
 ## Problem 4: Framework Lock-in
 
-### The Challenge
+### The Challenge (Framework Lock-in)
 
 Many BLE libraries combine connection management with data parsing, forcing you to:
 
@@ -197,7 +200,7 @@ Many BLE libraries combine connection management with data parsing, forcing you 
 - Be limited to their supported platforms
 - Migrate everything if you want to change BLE libraries
 
-### ✅ What We Solve
+### ✅ What We Solve (Framework Lock-in)
 
 **Framework-agnostic design** - Parse data from any BLE library:
 
@@ -228,11 +231,11 @@ result = translator.parse_characteristic_data(uuid, data)
 - **Platform flexibility** - Not tied to specific OS/platform
 - **Testing** - Easy to mock BLE interactions
 
----
+______________________________________________________________________
 
 ## Problem 5: Maintenance Burden
 
-### The Challenge
+### The Challenge (Maintenance Burden)
 
 Maintaining a custom BLE parsing implementation requires:
 
@@ -242,7 +245,7 @@ Maintaining a custom BLE parsing implementation requires:
 - Keeping up with new data formats
 - Ensuring backwards compatibility
 
-### ✅ What We Solve
+### ✅ What We Solve (Maintenance Burden)
 
 - **Centralized maintenance** - One library, many users
 - **SIG registry updates** - New characteristics added as standards evolve
@@ -250,16 +253,17 @@ Maintaining a custom BLE parsing implementation requires:
 - **Specification compliance** - Validated against official specs
 - **Version management** - Clear versioning and changelog
 
----
+______________________________________________________________________
 
 ## Problem 6: Complex Multi-Field Characteristics
 
-### The Challenge
+### The Challenge (Multi-Field Characteristics)
 
 Many characteristics have conditional fields based on flags:
 
 **Temperature Measurement (0x2A1C):**
-```
+
+```text
 Byte 0: Flags
   - Bit 0: Temperature unit (0=°C, 1=°F)
   - Bit 1: Timestamp present
@@ -275,22 +279,22 @@ Byte 12: Temperature Type (if bit 2 set)
 def parse_temp_measurement(data: bytes) -> dict:
     flags = data[0]
     offset = 1
-    
+
     # Parse temperature (IEEE-11073 SFLOAT - complex format)
     temp_bytes = data[offset:offset+4]
     temp_value = parse_ieee_sfloat(temp_bytes)  # Another complex function
     offset += 4
-    
+
     # Conditional fields
     timestamp = None
     if flags & 0x02:
         timestamp = parse_timestamp(data[offset:offset+7])
         offset += 7
-    
+
     temp_type = None
     if flags & 0x04:
         temp_type = data[offset]
-    
+
     return {
         "value": temp_value,
         "unit": "°F" if flags & 0x01 else "°C",
@@ -299,7 +303,7 @@ def parse_temp_measurement(data: bytes) -> dict:
     }
 ```
 
-### ✅ What We Solve
+### ✅ What We Solve (Multi-Field Characteristics)
 
 ```python
 from bluetooth_sig.core import BluetoothSIGTranslator
@@ -312,7 +316,7 @@ result = translator.parse_characteristic_data("2A1C", data)
 # Returns type-safe structured data
 ```
 
----
+______________________________________________________________________
 
 ## Summary: Key Problems Solved
 

@@ -4,7 +4,7 @@ Understanding what this library **does not** do is just as important as understa
 
 ## ❌ BLE Device Connection & Communication
 
-### What This Library Does NOT Do
+### What This Library Does NOT Do (BLE Connection)
 
 This library **does not** handle:
 
@@ -37,7 +37,7 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 async with BleakClient(device_address) as client:
     # bleak reads the raw data
     raw_data = await client.read_gatt_char("2A19")
-    
+
     # bluetooth-sig interprets the data
     translator = BluetoothSIGTranslator()
     result = translator.parse_characteristic_data("2A19", raw_data)
@@ -45,29 +45,31 @@ async with BleakClient(device_address) as client:
 ```
 
 **Separation of Concerns:**
+
 - **BLE Library** → Device discovery, connection, I/O
 - **bluetooth-sig** → Standards interpretation, data parsing
 
----
+______________________________________________________________________
 
 ## ❌ Bluetooth Classic Support
 
-### What This Library Does NOT Do
+### What This Library Does NOT Do (Bluetooth Classic)
 
 This library **only** supports Bluetooth Low Energy (BLE) / GATT characteristics.
 
 **Not Supported:**
+
 - Bluetooth Classic (BR/EDR)
 - RFCOMM profiles
 - A2DP (audio streaming)
 - HFP (hands-free profile)
 - Other classic Bluetooth profiles
 
-### Reason
+### Reason (Bluetooth Classic)
 
 Bluetooth Classic and BLE are fundamentally different protocols with different standards. This library focuses exclusively on BLE/GATT standards as defined by Bluetooth SIG.
 
----
+______________________________________________________________________
 
 ## ✅ Custom Characteristics ARE Supported
 
@@ -76,6 +78,7 @@ Bluetooth Classic and BLE are fundamentally different protocols with different s
 While the library provides **70+ official Bluetooth SIG standard characteristics**, it also **fully supports adding custom characteristics**.
 
 **You CAN:**
+
 - ✅ Create vendor-specific characteristics
 - ✅ Add custom protocols on top of BLE
 - ✅ Implement proprietary data formats
@@ -92,12 +95,12 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 
 class MyCustomCharacteristic(BaseCharacteristic):
     """Your custom characteristic."""
-    
+
     _info = CharacteristicInfo(
         uuid=BluetoothUUID("ABCD"),  # Your UUID
         name="My Custom Characteristic"
     )
-    
+
     def decode_value(self, data: bytearray) -> int:
         """Your parsing logic."""
         return int(data[0])
@@ -107,17 +110,17 @@ custom_char = MyCustomCharacteristic()
 value = custom_char.decode_value(bytearray([42]))
 ```
 
-**See the [Adding New Characteristics Guide](../guides/adding-characteristics/) for complete examples.**
+**See the [Adding New Characteristics Guide](guides/adding-characteristics.md) for complete examples.**
 
 ### What Is NOT Included Out-of-the-Box
 
 The library includes 70+ official SIG characteristics, but doesn't include every possible vendor-specific characteristic. You need to implement those yourself using the extension API.
 
----
+______________________________________________________________________
 
 ## ❌ Real-Time Streaming & High-Frequency Data
 
-### What This Library Does NOT Do
+### What This Library Does NOT Do (Real-Time Streaming)
 
 This library is optimized for **parsing individual characteristic reads**, not:
 
@@ -130,12 +133,14 @@ This library is optimized for **parsing individual characteristic reads**, not:
 ### Use Cases Where This Matters
 
 **Not Ideal For:**
+
 - Audio streaming (use A2DP or dedicated audio libraries)
 - High-frequency sensor data (>100 Hz)
 - Video transmission
 - Large file transfers
 
 **Perfect For:**
+
 - Periodic sensor readings (temperature, humidity, battery)
 - On-demand characteristic reads
 - Notification parsing (heart rate, step count)
@@ -143,28 +148,30 @@ This library is optimized for **parsing individual characteristic reads**, not:
 
 ### Performance Characteristics
 
-- **Typical parsing time:** <1ms per characteristic
+- **Typical parsing time:** \<1ms per characteristic
 - **Memory footprint:** Minimal (no buffering)
 - **Throughput:** Optimized for individual reads, not streaming
 
----
+______________________________________________________________________
 
 ## ❌ Firmware or Embedded Device Implementation
 
-### What This Library Does NOT Do
+### What This Library Does NOT Do (Firmware/Embedded)
 
 This is a **client-side** library for applications that interact with BLE devices.
 
 **Not Designed For:**
+
 - Running on BLE peripheral devices
 - Embedded systems (ESP32, Arduino, nRF52, etc.)
 - Firmware implementation
 - BLE server/peripheral role
 - Resource-constrained environments
 
-### Reason
+### Reason (Embedded/Firmware)
 
 This library:
+
 - Requires Python 3.9+ runtime
 - Uses standard library features not available in embedded contexts
 - Focuses on parsing from a client perspective
@@ -173,17 +180,19 @@ This library:
 ### Alternative for Embedded
 
 For embedded/firmware development, use:
+
 - Platform-specific BLE stacks (Nordic SDK, ESP-IDF, etc.)
 - Embedded C/C++ BLE libraries
 - Platform vendor SDKs
 
----
+______________________________________________________________________
 
 ## ❌ Device Management & State Tracking
 
-### What This Library Does NOT Do
+### What This Library Does NOT Do (Device Management)
 
 **Not Included:**
+
 - Device state management
 - Connection history tracking
 - Device pairing storage
@@ -196,8 +205,8 @@ For embedded/firmware development, use:
 These features are typically provided by:
 
 1. **BLE libraries** (bleak-retry-connector provides retry logic)
-2. **Your application** (track device state as needed)
-3. **Platform services** (OS-level Bluetooth management)
+1. **Your application** (track device state as needed)
+1. **Platform services** (OS-level Bluetooth management)
 
 ```python
 # This library doesn't maintain device state
@@ -209,15 +218,16 @@ result2 = translator.parse_characteristic_data("2A19", data2)
 # No state maintained between calls
 ```
 
----
+______________________________________________________________________
 
 ## ❌ GUI or User Interface
 
-### What This Library Does NOT Do
+### What This Library Does NOT Do (GUI/Interface)
 
 This is a **library**, not an application.
 
 **Not Included:**
+
 - Desktop applications
 - Mobile apps
 - Web interfaces
@@ -245,13 +255,14 @@ def parse_data(uuid):
     return jsonify({"value": result.value})
 ```
 
----
+______________________________________________________________________
 
 ## ❌ Protocol Implementation
 
-### What This Library Does NOT Do
+### What This Library Does NOT Do (Protocol Implementation)
 
 **Not Provided:**
+
 - BLE stack implementation
 - GATT server implementation
 - ATT protocol handling
@@ -263,35 +274,38 @@ def parse_data(uuid):
 
 This library works at the **application layer**, interpreting data according to GATT profile specifications. Lower-level protocol details are handled by your BLE library and operating system.
 
----
+______________________________________________________________________
 
 ## ❌ Hardware Abstraction
 
-### What This Library Does NOT Do
+### What This Library Does NOT Do (Hardware Abstraction)
 
 **No Hardware Dependencies:**
+
 - Bluetooth adapter management
 - Hardware initialization
 - Driver installation
 - Platform-specific configuration
 - USB dongle management
 
-### Reason
+### Reason (Hardware Abstraction)
 
 Hardware abstraction is provided by:
+
 1. **Operating system** Bluetooth stack
-2. **BLE library** (bleak, simplepyble, etc.)
-3. **Platform drivers**
+1. **BLE library** (bleak, simplepyble, etc.)
+1. **Platform drivers**
 
 This library remains hardware-agnostic by working with already-connected data.
 
----
+______________________________________________________________________
 
 ## ❌ Testing Infrastructure for BLE Devices
 
-### What This Library Does NOT Do
+### What This Library Does NOT Do (Testing Infrastructure)
 
 **Not Included:**
+
 - BLE device simulators
 - Mock BLE peripherals
 - Hardware test fixtures
@@ -308,15 +322,15 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 
 def test_battery_parsing():
     translator = BluetoothSIGTranslator()
-    
+
     # Mock raw data (no real BLE device needed)
     mock_battery_data = bytearray([85])
-    
+
     result = translator.parse_characteristic_data("2A19", mock_battery_data)
     assert result.value == 85
 ```
 
----
+______________________________________________________________________
 
 ## Clear Boundaries: What's In Scope vs Out of Scope
 
@@ -340,7 +354,7 @@ def test_battery_parsing():
 - GUI/application layer
 - Hardware abstraction
 
----
+______________________________________________________________________
 
 ## Architecture Decision
 
@@ -349,28 +363,29 @@ This focused scope is **intentional design**:
 ### Benefits
 
 1. **Simplicity** - One job, done well
-2. **Flexibility** - Works with any BLE library
-3. **Maintainability** - Focused on standards, not connections
-4. **Testability** - Easy to test without hardware
-5. **Portability** - Platform-agnostic
+1. **Flexibility** - Works with any BLE library
+1. **Maintainability** - Focused on standards, not connections
+1. **Testability** - Easy to test without hardware
+1. **Portability** - Platform-agnostic
 
 ### Philosophy
 
 > "Do one thing and do it well" - Unix Philosophy
 
 By focusing exclusively on **standards interpretation**, this library remains:
+
 - Simple to understand
 - Easy to maintain
 - Compatible with any BLE stack
 - Testable without hardware
 
----
+______________________________________________________________________
 
 ## Recommended Tool Stack
 
 For a complete BLE solution:
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │         Your Application                     │
 │  (GUI, business logic, state management)    │
@@ -394,17 +409,19 @@ For a complete BLE solution:
 
 Each layer handles its specific responsibilities.
 
----
+______________________________________________________________________
 
 ## Summary
 
 **This library is:**
+
 - A standards interpretation library
 - For parsing GATT characteristics
 - Framework-agnostic
 - Focused on data translation
 
 **This library is NOT:**
+
 - A BLE connection manager
 - A device management system
 - An application framework

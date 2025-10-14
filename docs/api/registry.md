@@ -33,11 +33,11 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 translator = BluetoothSIGTranslator()
 
 # Service name to UUID
-service = translator.resolve_name("Battery Service")
+service = translator.resolve_by_name("Battery Service")
 print(service.uuid)  # "180F"
 
 # Characteristic name to UUID
-char = translator.resolve_name("Battery Level")
+char = translator.resolve_by_name("Battery Level")
 print(char.uuid)  # "2A19"
 ```
 

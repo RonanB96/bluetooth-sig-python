@@ -1,6 +1,7 @@
 # BLE Integration Guide
 
-Learn how to integrate bluetooth-sig with your preferred BLE connection library.
+Learn how to integrate bluetooth-sig with your preferred BLE connection
+library.
 
 ## Philosophy
 
@@ -9,13 +10,14 @@ The bluetooth-sig library follows a clean separation of concerns:
 - **BLE Library** → Device connection, I/O operations
 - **bluetooth-sig** → Standards interpretation, data parsing
 
-This design lets you choose the best BLE library for your platform while using bluetooth-sig for consistent data parsing.
+This design lets you choose the best BLE library for your platform while using
+bluetooth-sig for consistent data parsing.
 
 ## Integration with bleak
 
 [bleak](https://github.com/hbldh/bleak) is a cross-platform async BLE library (recommended).
 
-### Installation
+### bleak Installation
 
 ```bash
 pip install bluetooth-sig bleak
@@ -30,21 +32,23 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 
 async def main():
     translator = BluetoothSIGTranslator()
-    
+
     # Scan for devices
     devices = await BleakScanner.discover()
     for device in devices:
         print(f"Found: {device.name} ({device.address})")
-    
+
     # Connect to device
     address = "AA:BB:CC:DD:EE:FF"
     async with BleakClient(address) as client:
         # Read battery level
         raw_data = await client.read_gatt_char("2A19")
-        
+
         # Parse with bluetooth-sig
-        result = translator.parse_characteristic_data("2A19", raw_data)
-        print(f"Battery: {result.value}%")
+    result = translator.parse_characteristic_data("2A19", raw_data)
+    print(
+        f"Battery: {result.value}%"
+    )
 
 asyncio.run(main())
 ```
@@ -54,7 +58,7 @@ asyncio.run(main())
 ```python
 async def read_sensor_data(address: str):
     translator = BluetoothSIGTranslator()
-    
+
     async with BleakClient(address) as client:
         # Define characteristics to read
         characteristics = {
@@ -62,7 +66,7 @@ async def read_sensor_data(address: str):
             "Temperature": "2A6E",
             "Humidity": "2A6F",
         }
-        
+
         # Read and parse
         for name, uuid in characteristics.items():
             try:
@@ -79,7 +83,7 @@ async def read_sensor_data(address: str):
 def notification_handler(sender, data):
     """Handle BLE notifications."""
     translator = BluetoothSIGTranslator()
-    
+
     # Parse the notification data
     uuid = str(sender.uuid)
     result = translator.parse_characteristic_data(uuid, data)
@@ -89,25 +93,26 @@ async def subscribe_to_notifications(address: str):
     async with BleakClient(address) as client:
         # Subscribe to heart rate notifications
         await client.start_notify("2A37", notification_handler)
-        
+
         # Keep listening
         await asyncio.sleep(30)
-        
+
         # Unsubscribe
         await client.stop_notify("2A37")
 ```
 
 ## Integration with bleak-retry-connector
 
-[bleak-retry-connector](https://github.com/Bluetooth-Devices/bleak-retry-connector) adds robust retry logic (recommended for production).
+[bleak-retry-connector](https://github.com/Bluetooth-Devices/bleak-retry-connector)
+adds robust retry logic (recommended for production).
 
-### Installation
+### bleak-retry-connector Installation
 
 ```bash
 pip install bluetooth-sig bleak-retry-connector
 ```
 
-### Example
+### Example (bleak-retry-connector)
 
 ```python
 import asyncio
@@ -116,7 +121,7 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 
 async def read_with_retry(address: str):
     translator = BluetoothSIGTranslator()
-    
+
     # Establish connection with automatic retries
     client = await establish_connection(
         BleakClient,
@@ -124,27 +129,28 @@ async def read_with_retry(address: str):
         name="Sensor Device",
         max_attempts=3
     )
-    
+
     try:
         # Read battery level
         raw_data = await client.read_gatt_char("2A19")
         result = translator.parse_characteristic_data("2A19", raw_data)
-        print(f"Battery: {result.value}%")
+    print(f"Battery: {result.value}%")
     finally:
         await client.disconnect()
 ```
 
 ## Integration with simplepyble
 
-[simplepyble](https://github.com/OpenBluetoothToolbox/SimpleBLE) is a cross-platform sync BLE library.
+[simplepyble](https://github.com/OpenBluetoothToolbox/SimpleBLE) is a cross-platform
+sync BLE library.
 
-### Installation
+### simplepyble Installation
 
 ```bash
 pip install bluetooth-sig simplepyble
 ```
 
-### Example
+### Example (simplepyble)
 
 ```python
 from simplepyble import Adapter, Peripheral
@@ -152,27 +158,27 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 
 def main():
     translator = BluetoothSIGTranslator()
-    
+
     # Get adapter
     adapters = Adapter.get_adapters()
     if not adapters:
         print("No adapters found")
         return
-    
+
     adapter = adapters[0]
-    
+
     # Scan for devices
     adapter.scan_for(5000)  # 5 seconds
     peripherals = adapter.scan_get_results()
-    
+
     if not peripherals:
         print("No devices found")
         return
-    
+
     # Connect to first device
     peripheral = peripherals[0]
     peripheral.connect()
-    
+
     try:
         # Find battery service
         services = peripheral.services()
@@ -180,7 +186,7 @@ def main():
             (s for s in services if s.uuid() == "180F"),
             None
         )
-        
+
         if battery_service:
             # Find battery level characteristic
             battery_char = next(
@@ -188,7 +194,7 @@ def main():
                  if c.uuid() == "2A19"),
                 None
             )
-            
+
             if battery_char:
                 # Read and parse
                 raw_data = peripheral.read(
@@ -219,10 +225,10 @@ from bluetooth_sig.gatt.exceptions import (
 try:
     # BLE operation
     raw_data = await client.read_gatt_char(uuid)
-    
+
     # Parse
     result = translator.parse_characteristic_data(uuid, raw_data)
-    
+
 except BleakError as e:
     print(f"BLE error: {e}")
 except InsufficientDataError as e:
@@ -290,11 +296,11 @@ from bluetooth_sig.gatt.exceptions import BluetoothSIGError
 
 class SensorReader:
     """Read and parse BLE sensor data."""
-    
+
     def __init__(self, address: str):
         self.address = address
         self.translator = BluetoothSIGTranslator()
-    
+
     async def read_battery(self) -> int:
         """Read battery level."""
         async with BleakClient(self.address) as client:
@@ -304,7 +310,7 @@ class SensorReader:
                 raw_data
             )
             return result.value
-    
+
     async def read_temperature(self) -> float:
         """Read temperature in °C."""
         async with BleakClient(self.address) as client:
@@ -314,18 +320,18 @@ class SensorReader:
                 raw_data
             )
             return result.value
-    
+
     async def read_all(self) -> dict:
         """Read all sensor data."""
         results = {}
-        
+
         async with BleakClient(self.address) as client:
             sensors = {
                 "battery": "2A19",
                 "temperature": "2A6E",
                 "humidity": "2A6F",
             }
-            
+
             for name, uuid in sensors.items():
                 try:
                     raw_data = await asyncio.wait_for(
@@ -341,20 +347,22 @@ class SensorReader:
                     print(f"Parse error for {name}: {e}")
                 except Exception as e:
                     print(f"BLE error for {name}: {e}")
-        
+
         return results
 
 async def main():
     reader = SensorReader("AA:BB:CC:DD:EE:FF")
-    
+
     # Read battery
     battery = await reader.read_battery()
     print(f"Battery: {battery}%")
-    
+
     # Read all sensors
     data = await reader.read_all()
     for name, value in data.items():
-        print(f"{name}: {value}")
+        print(
+            f"{name}: {value}"
+        )
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -364,4 +372,8 @@ if __name__ == "__main__":
 
 - [Quick Start](../quickstart.md) - Basic usage
 - [API Reference](../api/core.md) - Full API documentation
-- [Examples](https://github.com/RonanB96/bluetooth-sig-python/tree/main/examples) - More examples
+- [Examples](https://github.com/RonanB96/bluetooth-sig-python/tree/main/examples)
+  - More examples
+  - Additional resources
+  - Community support
+  - More examples

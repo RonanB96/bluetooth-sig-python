@@ -2,13 +2,15 @@
 
 Get started with the Bluetooth SIG Standards Library in 5 minutes.
 
-## Installation
+## Prerequisites
+
+Before using the library, make sure it's installed:
 
 ```bash
 pip install bluetooth-sig
 ```
 
-That's it! The library is ready to use.
+For detailed installation instructions, see the [Installation Guide](installation.md).
 
 ## Basic Usage
 
@@ -24,11 +26,11 @@ translator = BluetoothSIGTranslator()
 
 ```python
 # Get service information
-service_info = translator.resolve_uuid("180F")
+service_info = translator.resolve_by_uuid("180F")
 print(f"Service: {service_info.name}")  # Service: Battery Service
 
 # Get characteristic information
-char_info = translator.resolve_uuid("2A19")
+char_info = translator.resolve_by_uuid("2A19")
 print(f"Characteristic: {char_info.name}")  # Characteristic: Battery Level
 ```
 
@@ -36,15 +38,15 @@ print(f"Characteristic: {char_info.name}")  # Characteristic: Battery Level
 
 ```python
 # Parse battery level (0-100%)
-battery_data = translator.parse_characteristic_data("2A19", bytearray([85]))
+battery_data = translator.parse_characteristic("2A19", bytearray([85]))
 print(f"Battery: {battery_data.value}%")  # Battery: 85%
 
 # Parse temperature (°C)
-temp_data = translator.parse_characteristic_data("2A6E", bytearray([0x64, 0x09]))
+temp_data = translator.parse_characteristic("2A6E", bytearray([0x64, 0x09]))
 print(f"Temperature: {temp_data.value}°C")  # Temperature: 24.36°C
 
 # Parse humidity (%)
-humidity_data = translator.parse_characteristic_data("2A6F", bytearray([0x3A, 0x13]))
+humidity_data = translator.parse_characteristic("2A6F", bytearray([0x3A, 0x13]))
 print(f"Humidity: {humidity_data.value}%")  # Humidity: 49.42%
 ```
 
@@ -58,38 +60,42 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 def main():
     # Create translator
     translator = BluetoothSIGTranslator()
-    
+
     # UUID Resolution
     print("=== UUID Resolution ===")
-    service_info = translator.resolve_uuid("180F")
-    print(f"UUID 180F: {service_info.name} ({service_info.type})")
-    
+    service_info = translator.resolve_by_uuid("180F")
+    print(f"UUID 180F: {service_info.name}")
+
     # Name Resolution
     print("\n=== Name Resolution ===")
-    battery_level = translator.resolve_name("Battery Level")
+    battery_level = translator.resolve_by_name("Battery Level")
     print(f"Battery Level: {battery_level.uuid}")
-    
+
     # Data Parsing
     print("\n=== Data Parsing ===")
-    
+
+
     # Battery level
-    battery_data = translator.parse_characteristic_data("2A19", bytearray([75]))
+    battery_data = translator.parse_characteristic("2A19", bytearray([75]))
     print(f"Battery: {battery_data.value}%")
-    
+
     # Temperature
-    temp_data = translator.parse_characteristic_data("2A6E", bytearray([0x64, 0x09]))
+    temp_data = translator.parse_characteristic("2A6E", bytearray([0x64, 0x09]))
     print(f"Temperature: {temp_data.value}°C")
-    
+
     # Humidity
-    humidity_data = translator.parse_characteristic_data("2A6F", bytearray([0x3A, 0x13]))
+    humidity_data = translator.parse_characteristic("2A6F", bytearray([0x3A, 0x13]))
     print(f"Humidity: {humidity_data.value}%")
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()
+
 ```
 
 **Output:**
-```
+
+```text
 === UUID Resolution ===
 UUID 180F: Battery Service (service)
 
@@ -104,103 +110,15 @@ Humidity: 49.42%
 
 ## Integration with BLE Libraries
 
-The library is designed to work with any BLE connection library. Here's how:
-
-### With bleak (Async)
-
-```python
-from bleak import BleakClient
-from bluetooth_sig.core import BluetoothSIGTranslator
-
-async def read_battery_level(address: str):
-    translator = BluetoothSIGTranslator()
-    
-    async with BleakClient(address) as client:
-        # Read raw data with bleak
-        raw_data = await client.read_gatt_char("2A19")
-        
-        # Parse with bluetooth-sig
-        result = translator.parse_characteristic_data("2A19", raw_data)
-        print(f"Battery: {result.value}%")
-```
-
-### With simplepyble (Sync)
-
-```python
-from simplepyble import Peripheral, Adapter
-from bluetooth_sig.core import BluetoothSIGTranslator
-
-def read_battery_level(peripheral: Peripheral):
-    translator = BluetoothSIGTranslator()
-    
-    # Find battery service
-    services = peripheral.services()
-    battery_service = next(s for s in services if s.uuid() == "180F")
-    
-    # Find battery level characteristic
-    battery_char = next(c for c in battery_service.characteristics() 
-                       if c.uuid() == "2A19")
-    
-    # Read raw data
-    raw_data = peripheral.read(battery_service.uuid(), battery_char.uuid())
-    
-    # Parse with bluetooth-sig
-    result = translator.parse_characteristic_data("2A19", bytearray(raw_data))
-    print(f"Battery: {result.value}%")
-```
+The library is designed to work with any BLE connection library. See the [BLE Integration Guide](guides/ble-integration.md) for detailed examples with bleak, simplepyble, and other libraries.
 
 ## Common Use Cases
 
-### Reading Multiple Sensors
-
-```python
-from bluetooth_sig.core import BluetoothSIGTranslator
-
-translator = BluetoothSIGTranslator()
-
-# Simulate reading from multiple sensors
-sensor_data = {
-    "2A19": bytearray([85]),           # Battery
-    "2A6E": bytearray([0x64, 0x09]),   # Temperature
-    "2A6F": bytearray([0x3A, 0x13]),   # Humidity
-    "2A6D": bytearray([0x50, 0xC3, 0x00, 0x00]),  # Pressure
-}
-
-for uuid, raw_data in sensor_data.items():
-    result = translator.parse_characteristic_data(uuid, raw_data)
-    print(f"{uuid}: {result.value} {getattr(result, 'unit', '')}")
-```
+For examples of reading multiple sensors and advanced usage patterns, see the [Usage Guide](usage.md).
 
 ### Error Handling
 
-```python
-from bluetooth_sig.core import BluetoothSIGTranslator
-from bluetooth_sig.gatt.exceptions import (
-    InsufficientDataError,
-    ValueRangeError,
-    UUIDResolutionError
-)
-
-translator = BluetoothSIGTranslator()
-
-try:
-    # Attempt to parse invalid data
-    result = translator.parse_characteristic_data("2A19", bytearray([]))
-except InsufficientDataError as e:
-    print(f"Data too short: {e}")
-
-try:
-    # Attempt to parse out-of-range value
-    result = translator.parse_characteristic_data("2A19", bytearray([150]))
-except ValueRangeError as e:
-    print(f"Invalid value: {e}")
-
-try:
-    # Attempt to resolve unknown UUID
-    info = translator.resolve_uuid("XXXX")
-except UUIDResolutionError as e:
-    print(f"Unknown UUID: {e}")
-```
+For comprehensive error handling examples and troubleshooting, see the [Usage Guide](usage.md) and [Testing Guide](testing.md).
 
 ## Supported Characteristics
 

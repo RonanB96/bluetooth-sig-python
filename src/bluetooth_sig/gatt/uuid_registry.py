@@ -170,6 +170,9 @@ class UuidRegistry:
                 service_name = service_name[:-8]  # Remove _service
             service_name = service_name.replace("_", " ").title()
             aliases.add(service_name)
+            # Also add "Service" suffix if not present
+            if not service_name.endswith(" Service"):
+                aliases.add(service_name + " Service")
         elif "characteristic" in info.id:
             char_name = info.id.replace("org.bluetooth.characteristic.", "")
             char_name = char_name.replace("_", " ").title()

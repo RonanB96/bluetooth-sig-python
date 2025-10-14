@@ -41,30 +41,30 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 
 class TestBLEParsing:
     """Test BLE characteristic parsing without hardware."""
-    
+
     def test_battery_level_parsing(self):
         """Test battery level parsing with mock data."""
         translator = BluetoothSIGTranslator()
-        
+
         # Mock raw BLE data (no hardware needed)
         mock_data = bytearray([75])
-        
+
         # Parse
         result = translator.parse_characteristic_data("2A19", mock_data)
-        
+
         # Assert
         assert result.value == 75
         assert 0 <= result.value <= 100
-    
+
     def test_temperature_parsing(self):
         """Test temperature parsing with mock data."""
         translator = BluetoothSIGTranslator()
-        
+
         # Mock temperature data: 24.36°C
         mock_data = bytearray([0x64, 0x09])
-        
+
         result = translator.parse_characteristic_data("2A6E", mock_data)
-        
+
         assert result.value == 24.36
         assert isinstance(result.value, float)
 ```
@@ -80,19 +80,19 @@ from bluetooth_sig.gatt.exceptions import (
 
 class TestErrorHandling:
     """Test error handling without hardware."""
-    
+
     def test_insufficient_data(self):
         """Test error when data is too short."""
         translator = BluetoothSIGTranslator()
-        
+
         # Empty data
         with pytest.raises(InsufficientDataError):
             translator.parse_characteristic_data("2A19", bytearray([]))
-    
+
     def test_out_of_range_value(self):
         """Test error when value is out of range."""
         translator = BluetoothSIGTranslator()
-        
+
         # Battery level > 100%
         with pytest.raises(ValueRangeError):
             translator.parse_characteristic_data("2A19", bytearray([150]))
@@ -122,12 +122,12 @@ async def test_read_battery_with_mock(mock_bleak_client):
     """Test reading battery level with mocked BLE."""
     # Setup mock
     mock_bleak_client.read_gatt_char.return_value = bytearray([85])
-    
+
     # Your application code
     translator = BluetoothSIGTranslator()
     raw_data = await mock_bleak_client.read_gatt_char("2A19")
     result = translator.parse_characteristic_data("2A19", raw_data)
-    
+
     # Assert
     assert result.value == 85
     mock_bleak_client.read_gatt_char.assert_called_once_with("2A19")
@@ -143,12 +143,12 @@ def test_read_battery_simplepyble_mock():
     # Create mock peripheral
     mock_peripheral = Mock()
     mock_peripheral.read.return_value = bytes([75])
-    
+
     # Your application code
     translator = BluetoothSIGTranslator()
     raw_data = mock_peripheral.read("180F", "2A19")
     result = translator.parse_characteristic_data("2A19", bytearray(raw_data))
-    
+
     # Assert
     assert result.value == 75
     mock_peripheral.read.assert_called_once()
@@ -161,20 +161,20 @@ def test_read_battery_simplepyble_mock():
 ```python
 class TestDataFactory:
     """Factory for creating test data."""
-    
+
     @staticmethod
     def battery_level(percentage: int) -> bytearray:
         """Create battery level test data."""
         assert 0 <= percentage <= 100
         return bytearray([percentage])
-    
+
     @staticmethod
     def temperature(celsius: float) -> bytearray:
         """Create temperature test data."""
         # Temperature encoded as sint16 with 0.01°C resolution
         value = int(celsius * 100)
         return bytearray(value.to_bytes(2, byteorder='little', signed=True))
-    
+
     @staticmethod
     def humidity(percentage: float) -> bytearray:
         """Create humidity test data."""
@@ -185,12 +185,12 @@ class TestDataFactory:
 # Usage
 def test_with_factory():
     translator = BluetoothSIGTranslator()
-    
+
     # Generate test data
     battery_data = TestDataFactory.battery_level(85)
     temp_data = TestDataFactory.temperature(24.36)
     humidity_data = TestDataFactory.humidity(49.42)
-    
+
     # Test parsing
     assert translator.parse_characteristic_data("2A19", battery_data).value == 85
     assert translator.parse_characteristic_data("2A6E", temp_data).value == 24.36
@@ -266,41 +266,41 @@ Test complete workflows:
 ```python
 class TestIntegration:
     """Integration tests for complete workflows."""
-    
+
     def test_multiple_characteristics(self):
         """Test parsing multiple characteristics."""
         translator = BluetoothSIGTranslator()
-        
+
         # Simulate reading multiple characteristics
         sensor_data = {
             "2A19": bytearray([85]),           # Battery: 85%
             "2A6E": bytearray([0x64, 0x09]),   # Temp: 24.36°C
             "2A6F": bytearray([0x3A, 0x13]),   # Humidity: 49.42%
         }
-        
+
         results = {}
         for uuid, data in sensor_data.items():
             results[uuid] = translator.parse_characteristic_data(uuid, data)
-        
+
         # Verify all parsed correctly
         assert results["2A19"].value == 85
         assert results["2A6E"].value == 24.36
         assert results["2A6F"].value == 49.42
-    
+
     def test_uuid_resolution_workflow(self):
         """Test UUID resolution workflow."""
         translator = BluetoothSIGTranslator()
-        
+
         # Resolve UUID to name
-        char_info = translator.resolve_uuid("2A19")
+        char_info = translator.resolve_by_uuid("2A19")
         assert char_info.name == "Battery Level"
-        
+
         # Resolve name to UUID
-        battery_uuid = translator.resolve_name("Battery Level")
+        battery_uuid = translator.resolve_by_name("Battery Level")
         assert battery_uuid.uuid == "2A19"
-        
+
         # Round-trip
-        assert translator.resolve_uuid(battery_uuid.uuid).name == char_info.name
+        assert translator.resolve_by_name(battery_uuid.uuid).name == char_info.name
 ```
 
 ## Performance Testing
@@ -312,18 +312,18 @@ def test_parsing_performance():
     """Test parsing performance."""
     translator = BluetoothSIGTranslator()
     data = bytearray([75])
-    
+
     # Warm up
     for _ in range(100):
         translator.parse_characteristic_data("2A19", data)
-    
+
     # Measure
     start = time.perf_counter()
     iterations = 10000
     for _ in range(iterations):
         translator.parse_characteristic_data("2A19", data)
     elapsed = time.perf_counter() - start
-    
+
     # Should be fast (< 100μs per parse)
     avg_time = elapsed / iterations
     assert avg_time < 0.0001, f"Parsing too slow: {avg_time:.6f}s per iteration"
@@ -334,7 +334,7 @@ def test_parsing_performance():
 
 Recommended test structure:
 
-```
+```text
 tests/
 ├── conftest.py                 # Shared fixtures
 ├── test_core/
@@ -367,25 +367,25 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
-    
+
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    
+
     - name: Install dependencies
       run: |
         pip install -e ".[dev,test]"
-    
+
     - name: Run tests
       run: |
         pytest tests/ --cov=src/bluetooth_sig --cov-report=xml
-    
+
     - name: Upload coverage
       uses: codecov/codecov-action@v3
 ```
@@ -432,10 +432,10 @@ def test_temperature_parsing():
     # Arrange
     translator = BluetoothSIGTranslator()
     data = bytearray([0x64, 0x09])
-    
+
     # Act
     result = translator.parse_characteristic_data("2A6E", data)
-    
+
     # Assert
     assert result.value == 24.36
 ```

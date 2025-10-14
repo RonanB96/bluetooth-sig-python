@@ -1,13 +1,14 @@
 # GATT Layer API Reference
 
-The GATT layer provides the fundamental building blocks for Bluetooth characteristic parsing.
+The GATT layer provides the fundamental building blocks for Bluetooth characteristic
+parsing.
 
 ## Overview
 
 The GATT layer consists of:
 
 - **Characteristic parsers** - 70+ implementations for standard characteristics
-- **Service definitions** - Organize characteristics into services  
+- **Service definitions** - Organize characteristics into services
 - **Validation logic** - Ensure data integrity
 - **Exception types** - Clear error reporting
 

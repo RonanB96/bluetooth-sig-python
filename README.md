@@ -33,7 +33,7 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 translator = BluetoothSIGTranslator()
 
 # Resolve UUIDs
-service_info = translator.resolve_uuid("180F")
+service_info = translator.resolve_by_uuid("180F")
 print(f"Service: {service_info.name}")  # "Battery Service"
 
 # Parse characteristic data
@@ -69,7 +69,7 @@ translator = BluetoothSIGTranslator()
 async with BleakClient(address) as client:
     # bleak handles connection
     raw_data = await client.read_gatt_char("2A19")
-    
+
     # bluetooth-sig handles parsing
     result = translator.parse_characteristic_data("2A19", raw_data)
     print(f"Battery: {result.value}%")
@@ -95,7 +95,7 @@ See the **[BLE Integration Guide](https://ronanb96.github.io/bluetooth-sig-pytho
 - **[Full Documentation](https://ronanb96.github.io/bluetooth-sig-python/)** - Complete guides and API reference
 - **[Quick Start Guide](https://ronanb96.github.io/bluetooth-sig-python/quickstart/)** - Get started in 5 minutes
 - **[API Reference](https://ronanb96.github.io/bluetooth-sig-python/api/core/)** - Detailed API documentation
-- **[Examples](examples/)** - Integration examples with various BLE libraries
+- **[Examples](https://github.com/RonanB96/bluetooth-sig-python/tree/main/examples)** - Integration examples with various BLE libraries
 
 ## Contributing
 
@@ -103,12 +103,12 @@ Contributions are welcome! Please see the **[Contributing Guide](https://ronanb9
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/RonanB96/bluetooth-sig-python/blob/main/LICENSE) file for details.
 
 ## Links
 
-- **PyPI**: https://pypi.org/project/bluetooth-sig/
-- **Documentation**: https://ronanb96.github.io/bluetooth-sig-python/
-- **Source Code**: https://github.com/RonanB96/bluetooth-sig-python
-- **Issue Tracker**: https://github.com/RonanB96/bluetooth-sig-python/issues
-- **Changelog**: https://github.com/RonanB96/bluetooth-sig-python/blob/main/HISTORY.md
+- **PyPI**: <https://pypi.org/project/bluetooth-sig/>
+- **Documentation**: <https://ronanb96.github.io/bluetooth-sig-python/>
+- **Source Code**: <https://github.com/RonanB96/bluetooth-sig-python>
+- **Issue Tracker**: <https://github.com/RonanB96/bluetooth-sig-python/issues>
+- **Changelog**: <https://github.com/RonanB96/bluetooth-sig-python/blob/main/HISTORY.md>

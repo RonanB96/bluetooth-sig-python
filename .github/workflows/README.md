@@ -55,10 +55,10 @@ python -m pylint src/ble_gatt_device/ --exit-zero --score y
 When testing locally or in agent environments, ensure:
 
 1. **Python 3.11+** is available
-2. **Git submodules** are initialized: `git submodule update --init --recursive`
-3. **Package installation** in development mode: `pip install -e ".[dev]"`
-4. **Tool execution** via Python modules: Use `python -m tool_name` instead of direct commands
-5. **Configuration loading**: flake8-pyproject allows flake8 to read from `pyproject.toml`
+1. **Git submodules** are initialized: `git submodule update --init --recursive`
+1. **Package installation** in development mode: `pip install -e ".[dev]"`
+1. **Tool execution** via Python modules: Use `python -m tool_name` instead of direct commands
+1. **Configuration loading**: flake8-pyproject allows flake8 to read from `pyproject.toml`
 
 ### Key Environment Dependencies
 

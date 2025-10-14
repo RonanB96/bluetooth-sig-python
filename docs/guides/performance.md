@@ -1,6 +1,7 @@
 # Performance Guide
 
-Tips for optimizing performance when using the Bluetooth SIG Standards Library.
+Tips for optimizing performance when using the Bluetooth SIG Standards
+Library.
 
 ## Performance Characteristics
 
@@ -16,8 +17,8 @@ Tips for optimizing performance when using the Bluetooth SIG Standards Library.
 The library is optimized for parsing speed. Typical bottlenecks are:
 
 1. **BLE I/O operations** - Reading from device (milliseconds)
-2. **Network latency** - For remote devices
-3. **Connection management** - Device discovery and pairing
+1. **Network latency** - For remote devices
+1. **Connection management** - Device discovery and pairing
 
 The parsing itself is rarely the bottleneck.
 
@@ -48,7 +49,7 @@ async with BleakClient(address) as client:
     battery_data = await client.read_gatt_char("2A19")
     temp_data = await client.read_gatt_char("2A6E")
     humidity_data = await client.read_gatt_char("2A6F")
-    
+
     # Parse offline
     battery = translator.parse_characteristic_data("2A19", battery_data)
     temp = translator.parse_characteristic_data("2A6E", temp_data)
@@ -103,7 +104,7 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 def profile_parsing():
     translator = BluetoothSIGTranslator()
     data = bytearray([75])
-    
+
     # Run many iterations
     for _ in range(10000):
         translator.parse_characteristic_data("2A19", data)
@@ -121,11 +122,13 @@ stats.print_stats(10)
 
 ### Registry Caching
 
-The registry is loaded once and cached. This is automatic and requires no configuration.
+The registry is loaded once and cached. This is automatic and requires
+no configuration.
 
 ### Cleanup
 
-For long-running applications, there's minimal memory accumulation. No special cleanup needed.
+For long-running applications, there's minimal memory accumulation. No special
+cleanup needed.
 
 ## Concurrent Operations
 
@@ -142,14 +145,17 @@ def parse_in_thread(uuid, data):
 
 # Parallel parsing (though rarely needed)
 with ThreadPoolExecutor(max_workers=4) as executor:
-    futures = [
-        executor.submit(parse_in_thread, uuid, data)
-        for uuid, data in sensor_data.items()
-    ]
-    results = [f.result() for f in futures]
+        futures = [
+            executor.submit(parse_in_thread, uuid, data)
+            for uuid, data in sensor_data.items()
+        ]
+        results = [
+            f.result() for f in futures
+        ]
 ```
 
-**Note**: Parsing is so fast that parallelization rarely provides benefits. Focus on parallelizing BLE I/O operations instead.
+**Note**: Parsing is so fast that parallelization rarely provides benefits.
+Focus on parallelizing BLE I/O operations instead.
 
 ## Real-World Performance
 
@@ -167,18 +173,21 @@ for _ in range(1000):
 elapsed = time.perf_counter() - start
 
 print(f"1000 parses in {elapsed:.3f}s")
-print(f"Average: {elapsed * 1000:.1f}μs per parse")
+print(
+    f"Average: {elapsed * 1000:.1f}μs per parse"
+)
 # Typical output: "1000 parses in 0.050s" (50μs avg)
 ```
 
-The parsing overhead is negligible compared to BLE operations (typically 10-100ms per read).
+The parsing overhead is negligible compared to BLE operations (typically
+10-100ms per read).
 
 ## Recommendations
 
 1. **Focus on BLE optimization** - Connection management, batching
-2. **Reuse translator instances** - Create once, use many times
-3. **Profile your application** - Identify real bottlenecks
-4. **Don't over-optimize** - Parsing is already fast
+1. **Reuse translator instances** - Create once, use many times
+1. **Profile your application** - Identify real bottlenecks
+1. **Don't over-optimize** - Parsing is already fast
 
 ## See Also
 

@@ -44,7 +44,7 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 translator = BluetoothSIGTranslator()
 
 # Parse according to official specifications
-temp_data = translator.parse_characteristic_data("2A6E", bytearray([0x64, 0x09]))
+temp_data = translator.parse_characteristic("2A6E", bytearray([0x64, 0x09]))
 print(f"Temperature: {temp_data.value}°C")  # Temperature: 24.36°C
 ```
 
@@ -52,11 +52,11 @@ print(f"Temperature: {temp_data.value}°C")  # Temperature: 24.36°C
 
 ```python
 # Resolve UUIDs to names
-service_info = translator.resolve_uuid("180F")
+service_info = translator.resolve_by_uuid("180F")
 print(service_info.name)  # "Battery Service"
 
 # Reverse lookup
-battery_service = translator.resolve_name("Battery Service")
+battery_service = translator.resolve_by_name("Battery Service")
 print(battery_service.uuid)  # "180F"
 ```
 
@@ -64,7 +64,7 @@ print(battery_service.uuid)  # "180F"
 
 ```python
 # Get structured data, not raw bytes
-battery_data = translator.parse_characteristic_data("2A19", bytearray([85]))
+battery_data = translator.parse_characteristic("2A19", bytearray([85]))
 
 # battery_data is a typed dataclass with validation
 assert battery_data.value == 85
@@ -73,19 +73,19 @@ assert 0 <= battery_data.value <= 100  # Automatically validated
 
 ## When Should You Use This Library?
 
-### ✅ Perfect For:
+### ✅ Perfect For
 
 - **Application Developers**: Building apps that need to display BLE sensor data
 - **IoT Projects**: Reading data from Bluetooth sensors and devices
 - **Testing & Validation**: Verifying BLE device implementations
 - **Protocol Implementation**: Building BLE client applications
-- **Research & Analysis**: Analyzing BLE device behavior
+- **Research & Analysis**: Analysing BLE device behaviour
+- **Custom Protocols**: Supports custom GATT characteristics via extension API
 
-### ❌ Not Designed For:
+### ❌ Not Designed For
 
 - **BLE Connection Management**: Use `bleak`, `simplepyble`, or similar libraries for actual device connections
 - **Firmware Development**: This is a client-side library, not for embedded devices
-- **Custom Protocols**: Only supports official Bluetooth SIG standards
 - **Real-time Streaming**: Optimized for parsing, not high-frequency streaming
 
 ## Key Differentiators
@@ -102,12 +102,12 @@ Works with **any** BLE connection library:
 # Works with bleak
 from bleak import BleakClient
 raw_data = await client.read_gatt_char(uuid)
-parsed = translator.parse_characteristic_data(uuid, raw_data)
+parsed = translator.parse_characteristic(uuid, raw_data)
 
 # Works with simplepyble
 from simplepyble import Peripheral
 raw_data = peripheral.read(service_uuid, char_uuid)
-parsed = translator.parse_characteristic_data(char_uuid, raw_data)
+parsed = translator.parse_characteristic(char_uuid, raw_data)
 
 # Works with ANY BLE library
 ```
@@ -151,7 +151,7 @@ Support for 70+ characteristics across multiple service categories:
 
 ## Real-World Example
 
-### Without bluetooth-sig:
+### Without bluetooth-sig
 
 ```python
 # Manual parsing (error-prone)
@@ -171,7 +171,7 @@ UUID_MAP = {
 }
 ```
 
-### With bluetooth-sig:
+### With bluetooth-sig
 
 ```python
 from bluetooth_sig.core import BluetoothSIGTranslator
@@ -179,7 +179,7 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 translator = BluetoothSIGTranslator()
 
 # One line, standards-compliant, type-safe
-result = translator.parse_characteristic_data("2A19", data)
+result = translator.parse_characteristic("2A19", data)
 ```
 
 ## Next Steps
