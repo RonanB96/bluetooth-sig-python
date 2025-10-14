@@ -140,13 +140,13 @@ class TestBluetoothSIGTranslator:
         translator = BluetoothSIGTranslator()
 
         # Test known characteristic
-        result = translator.resolve_uuid("Battery Level")
+        result = translator.resolve_by_name("Battery Level")
         assert result is not None, "Should find Battery Level characteristic"
         assert result.uuid == "2A19", f"Expected 2A19, got {result.uuid}"
         assert result.name == "Battery Level"
 
         # Test unknown characteristic
-        result = translator.resolve_uuid("Unknown Characteristic")
+        result = translator.resolve_by_name("Unknown Characteristic")
         assert result is None
 
     def test_resolve_name_with_uuid(self) -> None:
@@ -154,13 +154,13 @@ class TestBluetoothSIGTranslator:
         translator = BluetoothSIGTranslator()
 
         # Test known UUID
-        result = translator.resolve_name("2A19")
+        result = translator.resolve_by_uuid("2A19")
         assert result is not None, "Should find info for 2A19"
         assert result.name == "Battery Level", f"Expected 'Battery Level', got {result.name}"
         assert result.uuid == "2A19"
 
         # Test unknown UUID
-        result = translator.resolve_name("FFFF")
+        result = translator.resolve_by_uuid("FFFF")
         assert result is None
 
     def test_parse_characteristics_batch(self) -> None:

@@ -6,10 +6,15 @@ on:
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   format:
     name: 'Format Check'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
 
@@ -23,13 +28,25 @@ jobs:
       uses: actions/setup-python@v6
       with:
         python-version: "3.12"
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
 
-    - name: 'Install Dependencies'
+    - name: 'Cache system dependencies'
+      uses: actions/cache@v4
+      with:
+        path: /var/cache/apt
+        key: ${{ runner.os }}-apt-lint-${{ hashFiles('scripts/install-deps.sh') }}
+        restore-keys: |
+          ${{ runner.os }}-apt-lint-
+
+    - name: 'Install system dependencies'
       run: |
-        python -m pip install --upgrade pip
-        # Install system build dependencies to allow building native example libs
         sudo apt-get update
         sudo apt-get install -y build-essential cmake ninja-build pkg-config libdbus-1-dev libglib2.0-dev libudev-dev python3-dev
+
+    - name: 'Install Python dependencies'
+      run: |
+        python -m pip install --upgrade pip
         pip install -e .[dev,test,examples]
 
     - name: 'Check Code Formatting'
@@ -38,6 +55,7 @@ jobs:
   lint:
     name: 'Lint Check'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
 
@@ -51,16 +69,26 @@ jobs:
       uses: actions/setup-python@v6
       with:
         python-version: "3.12"
+        cache: 'pip'
+        cache-dependency-path: 'pyproject.toml'
 
-    - name: 'Install Dependencies'
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev,test,examples]"
+    - name: 'Cache system dependencies'
+      uses: actions/cache@v4
+      with:
+        path: /var/cache/apt
+        key: ${{ runner.os }}-apt-lint-${{ hashFiles('scripts/install-deps.sh') }}
+        restore-keys: |
+          ${{ runner.os }}-apt-lint-
 
-    - name: 'Install Shellcheck'
+    - name: 'Install system dependencies'
       run: |
         sudo apt-get update
         sudo apt-get install -y shellcheck
+
+    - name: 'Install Python dependencies'
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev,test,examples]"
 
     - name: 'Run Linting Checks'
       run: ./scripts/lint.sh --all

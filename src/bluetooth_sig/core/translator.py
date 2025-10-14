@@ -327,7 +327,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         """Clear all discovered services."""
         self._services.clear()
 
-    def resolve_uuid(self, name: str) -> SIGInfo | None:
+    def resolve_by_name(self, name: str) -> SIGInfo | None:
         """Resolve a characteristic or service name to its full info.
 
         Args:
@@ -363,7 +363,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         return None
 
-    def resolve_name(self, uuid: str) -> SIGInfo | None:
+    def resolve_by_uuid(self, uuid: str) -> SIGInfo | None:
         """Resolve a UUID to its full SIG information.
 
         Args:

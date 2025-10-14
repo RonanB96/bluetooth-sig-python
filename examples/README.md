@@ -5,6 +5,7 @@ This directory contains clean, focused examples demonstrating the core functiona
 ## Example BLE Libraries
 
 ### with_bleak_retry.py
+
 Demonstrates robust BLE connections using Bleak with retry logic and SIG parsing.
 
 ```bash
@@ -13,6 +14,7 @@ python examples/with_bleak_retry.py --scan
 ```
 
 ### with_simpleble.py
+
 Shows integration with SimplePyBLE (cross-platform synchronous BLE library) and SIG parsing.
 
 ```bash
@@ -23,6 +25,7 @@ python examples/with_simpleble.py --scan
 ## Core Examples
 
 ### basic_usage.py
+
 Demonstrates basic read/write operations with the bluetooth_sig library.
 
 ```bash
@@ -30,6 +33,7 @@ python examples/basic_usage.py --address 12:34:56:78:9A:BC
 ```
 
 ### service_discovery.py
+
 Shows the Device class API for service and characteristic discovery.
 
 ```bash
@@ -37,6 +41,7 @@ python examples/service_discovery.py --address 12:34:56:78:9A:BC
 ```
 
 ### notifications.py
+
 Handles BLE notifications with characteristic parsing.
 
 ```bash
@@ -44,6 +49,7 @@ python examples/notifications.py --address 12:34:56:78:9A:BC --characteristic 2A
 ```
 
 ### advertising_parsing.py
+
 Parses BLE advertising data packets using the AdvertisingParser.
 
 ```bash
@@ -51,6 +57,7 @@ python examples/advertising_parsing.py --data "02010605FF4C001005011C7261F4"
 ```
 
 ### pure_sig_parsing.py
+
 Shows pure SIG standards parsing without any BLE connection library dependencies.
 
 ```bash
@@ -60,6 +67,7 @@ python examples/pure_sig_parsing.py
 ## Benchmarks
 
 ### benchmarks/parsing_performance.py
+
 Comprehensive performance benchmark for parsing operations. Measures parse latency, compares manual vs library parsing, and provides optimization recommendations.
 
 ```bash
@@ -74,6 +82,7 @@ python examples/benchmarks/parsing_performance.py --quick
 ```
 
 **Output includes:**
+
 - Single characteristic parsing performance
 - Batch parsing vs individual parsing comparison
 - UUID resolution performance
@@ -129,7 +138,7 @@ The examples will automatically use available BLE libraries and handle library a
 This examples directory follows these principles:
 
 1. **Minimal Overlap** - Each example focuses on a specific use case
-2. **Clean Separation** - Utilities are organized by functionality in the `utils/` package
-3. **Library Agnostic** - Core SIG parsing works with any BLE library
-4. **Production Ready** - Examples demonstrate robust patterns suitable for production use
-5. **Performance Aware** - Benchmarks and profiling tools help optimize real-world usage
+1. **Clean Separation** - Utilities are organized by functionality in the `utils/` package
+1. **Library Agnostic** - Core SIG parsing works with any BLE library
+1. **Production Ready** - Examples demonstrate robust patterns suitable for production use
+1. **Performance Aware** - Benchmarks and profiling tools help optimize real-world usage

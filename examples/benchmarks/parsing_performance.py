@@ -180,7 +180,7 @@ def benchmark_uuid_resolution(session: ProfilingSession) -> None:
 
     # Name resolution
     name_resolution = benchmark_function(
-        lambda: translator.resolve_uuid("Battery Level"),
+        lambda: translator.resolve_by_name("Battery Level"),
         iterations=iterations,
         operation="Name resolution",
     )
