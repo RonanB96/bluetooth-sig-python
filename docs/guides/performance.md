@@ -30,12 +30,12 @@ The parsing itself is rarely the bottleneck.
 # ✅ Good - create once, reuse
 translator = BluetoothSIGTranslator()
 for data in sensor_readings:
-    result = translator.parse_characteristic_data(uuid, data)
+    result = translator.parse_characteristic(uuid, data)
 
 # ❌ Bad - creating new instances
 for data in sensor_readings:
     translator = BluetoothSIGTranslator()  # Wasteful
-    result = translator.parse_characteristic_data(uuid, data)
+    result = translator.parse_characteristic(uuid, data)
 ```
 
 ### 2. Batch Operations
@@ -51,15 +51,15 @@ async with BleakClient(address) as client:
     humidity_data = await client.read_gatt_char("2A6F")
 
     # Parse offline
-    battery = translator.parse_characteristic_data("2A19", battery_data)
-    temp = translator.parse_characteristic_data("2A6E", temp_data)
-    humidity = translator.parse_characteristic_data("2A6F", humidity_data)
+    battery = translator.parse_characteristic("2A19", battery_data)
+    temp = translator.parse_characteristic("2A6E", temp_data)
+    humidity = translator.parse_characteristic("2A6F", humidity_data)
 
 # ❌ Bad - connect/disconnect for each
 for uuid in uuids:
     async with BleakClient(address) as client:
         data = await client.read_gatt_char(uuid)
-        result = translator.parse_characteristic_data(uuid, data)
+        result = translator.parse_characteristic(uuid, data)
 ```
 
 ### 3. Use Direct Characteristic Classes
@@ -77,7 +77,7 @@ for data in battery_readings:
 # ⚠️ Slower - goes through translator
 translator = BluetoothSIGTranslator()
 for data in battery_readings:
-    result = translator.parse_characteristic_data("2A19", data)
+    result = translator.parse_characteristic("2A19", data)
 ```
 
 ### 4. Avoid Unnecessary Conversions
@@ -85,11 +85,11 @@ for data in battery_readings:
 ```python
 # ✅ Good - use bytearray directly
 data = bytearray([85])
-result = translator.parse_characteristic_data("2A19", data)
+result = translator.parse_characteristic("2A19", data)
 
 # ❌ Bad - unnecessary conversion
 data = bytes([85])
-result = translator.parse_characteristic_data("2A19", bytearray(data))
+result = translator.parse_characteristic("2A19", bytearray(data))
 ```
 
 ## Profiling
@@ -99,7 +99,7 @@ To identify bottlenecks in your application:
 ```python
 import cProfile
 import pstats
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 def profile_parsing():
     translator = BluetoothSIGTranslator()
@@ -107,7 +107,7 @@ def profile_parsing():
 
     # Run many iterations
     for _ in range(10000):
-        translator.parse_characteristic_data("2A19", data)
+        translator.parse_characteristic("2A19", data)
 
 # Profile
 cProfile.run('profile_parsing()', 'stats.prof')
@@ -141,7 +141,7 @@ from concurrent.futures import ThreadPoolExecutor
 translator = BluetoothSIGTranslator()
 
 def parse_in_thread(uuid, data):
-    return translator.parse_characteristic_data(uuid, data)
+    return translator.parse_characteristic(uuid, data)
 
 # Parallel parsing (though rarely needed)
 with ThreadPoolExecutor(max_workers=4) as executor:
@@ -169,7 +169,7 @@ translator = BluetoothSIGTranslator()
 # Time 1000 parses
 start = time.perf_counter()
 for _ in range(1000):
-    translator.parse_characteristic_data("2A19", bytearray([75]))
+    translator.parse_characteristic("2A19", bytearray([75]))
 elapsed = time.perf_counter() - start
 
 print(f"1000 parses in {elapsed:.3f}s")

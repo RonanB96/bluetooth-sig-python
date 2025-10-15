@@ -17,7 +17,7 @@ For detailed installation instructions, see the [Installation Guide](installatio
 ### 1. Import the Library
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 ```
@@ -36,6 +36,8 @@ print(f"Characteristic: {char_info.name}")  # Characteristic: Battery Level
 
 ### 3. Parse Characteristic Data
 
+The [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] method returns a [CharacteristicData][bluetooth_sig.types.CharacteristicData] object with parsed values:
+
 ```python
 # Parse battery level (0-100%)
 battery_data = translator.parse_characteristic("2A19", bytearray([85]))
@@ -50,12 +52,82 @@ humidity_data = translator.parse_characteristic("2A6F", bytearray([0x3A, 0x13]))
 print(f"Humidity: {humidity_data.value}%")  # Humidity: 49.42%
 ```
 
+The [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] method returns a [CharacteristicData][bluetooth_sig.types.CharacteristicData] object containing:
+
+- `value` - The parsed, human-readable value
+- `info` - [CharacteristicInfo][bluetooth_sig.types.CharacteristicInfo] with UUID, name, unit, and properties
+- `raw_data` - Original bytearray
+- `parse_success` - Boolean indicating successful parsing
+- `error_message` - Error details if parsing failed
+
+## Working with Types
+
+### CharacteristicData Result Object
+
+Every call to [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] returns a [CharacteristicData][bluetooth_sig.types.CharacteristicData] object:
+
+```python
+from bluetooth_sig import BluetoothSIGTranslator
+
+translator = BluetoothSIGTranslator()
+result = translator.parse_characteristic("2A19", bytearray([85]))
+
+# Access parsed value
+print(result.value)          # 85
+
+# Access metadata via CharacteristicInfo
+print(result.info.name)      # "Battery Level"
+print(result.info.unit)      # "%"
+print(result.info.uuid)      # "00002a19-0000-1000-8000-00805f9b34fb"
+
+# Access raw data and status
+print(result.raw_data)       # bytearray([85])
+print(result.parse_success)  # True
+print(result.error_message)  # None
+```
+
+See the [CharacteristicData][bluetooth_sig.types.CharacteristicData] API reference for complete details.
+
+### Using Enums for Type Safety
+
+For type-safe UUID references, use the built-in enums:
+
+```python
+from bluetooth_sig.types.gatt_enums import CharacteristicName, ServiceName
+
+# Characteristic enums
+CharacteristicName.BATTERY_LEVEL  # "Battery Level"
+CharacteristicName.TEMPERATURE    # "Temperature"
+CharacteristicName.HUMIDITY       # "Humidity"
+
+# Service enums
+ServiceName.BATTERY_SERVICE           # "Battery Service"
+ServiceName.ENVIRONMENTAL_SENSING     # "Environmental Sensing"
+ServiceName.DEVICE_INFORMATION        # "Device Information"
+```
+
+These enums provide autocomplete and prevent typos when resolving by name.
+
+### Error Handling with ValidationResult
+
+When validation fails, check the [ValidationResult][bluetooth_sig.types.ValidationResult]:
+
+```python
+result = translator.parse_characteristic("2A19", bytearray([200]))  # Invalid: >100%
+
+if not result.parse_success:
+    print(f"Error: {result.error_message}")
+    # Error: Value 200 exceeds maximum 100 for Battery Level
+```
+
+See the [ValidationResult][bluetooth_sig.types.ValidationResult] API reference for all validation fields.
+
 ## Complete Example
 
 Here's a complete working example:
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 def main():
     # Create translator

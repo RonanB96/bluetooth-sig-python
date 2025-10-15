@@ -28,7 +28,7 @@ pip install bluetooth-sig
 ## Quick Start
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
@@ -37,7 +37,7 @@ service_info = translator.resolve_by_uuid("180F")
 print(f"Service: {service_info.name}")  # "Battery Service"
 
 # Parse characteristic data
-battery_data = translator.parse_characteristic_data("2A19", bytearray([85]))
+battery_data = translator.parse_characteristic("2A19", bytearray([85]))
 print(f"Battery: {battery_data.value}%")  # "Battery: 85%"
 ```
 
@@ -62,7 +62,7 @@ Works seamlessly with any BLE connection library:
 
 ```python
 from bleak import BleakClient
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
@@ -71,7 +71,7 @@ async with BleakClient(address) as client:
     raw_data = await client.read_gatt_char("2A19")
 
     # bluetooth-sig handles parsing
-    result = translator.parse_characteristic_data("2A19", raw_data)
+    result = translator.parse_characteristic("2A19", raw_data)
     print(f"Battery: {result.value}%")
 ```
 

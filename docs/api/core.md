@@ -1,24 +1,33 @@
 # Core API Reference
 
-The core API provides the main entry point for using the Bluetooth SIG Standards
-Library.
+The core API provides the main entry point for using the Bluetooth SIG Standards Library.
 
-## BluetoothSIGTranslator
+::: bluetooth_sig.BluetoothSIGTranslator
+    options:
+      show_root_heading: false
+      heading_level: 2
+      show_source: true
 
-::: bluetooth_sig.core.BluetoothSIGTranslator
-options:
-show_root_heading: true
-heading_level: 3
+## Quick Examples
 
-## Quick Reference
+### Parse Characteristic Data
+
+```python
+from bluetooth_sig import BluetoothSIGTranslator
+
+translator = BluetoothSIGTranslator()
+
+# Parse battery level - returns CharacteristicData
+result = translator.parse_characteristic("2A19", bytearray([85]))
+print(f"Battery: {result.value}%")  # Battery: 85%
+print(f"Unit: {result.info.unit}")  # Unit: %
+```
+
+The [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] method returns a [CharacteristicData][bluetooth_sig.types.CharacteristicData] object.
 
 ### UUID Resolution
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
-
-translator = BluetoothSIGTranslator()
-
 # Resolve UUID to get information
 service_info = translator.resolve_by_uuid("180F")
 print(service_info.name)  # "Battery Service"
@@ -27,6 +36,8 @@ print(service_info.name)  # "Battery Service"
 char_info = translator.resolve_by_uuid("2A19")
 print(char_info.name)  # "Battery Level"
 ```
+
+See [resolve_by_uuid][bluetooth_sig.BluetoothSIGTranslator.resolve_by_uuid] for full details.
 
 ### Name Resolution
 
@@ -39,21 +50,7 @@ battery_level = translator.resolve_by_name("Battery Level")
 print(battery_level.uuid)  # "2A19"
 ```
 
-### Characteristic Parsing
-
-```python
-# Parse characteristic data
-battery_data = translator.parse_characteristic("2A19", bytearray([85]))
-print(f"Battery: {battery_data.value}%")  # Battery: 85%
-
-# Parse temperature
-temp_data = translator.parse_characteristic("2A6E", bytearray([0x64, 0x09]))
-print(f"Temperature: {temp_data.value}°C")  # Temperature: 24.36°C
-```
-
 ## Error Handling
-
-The core API can raise several exceptions:
 
 ```python
 from bluetooth_sig.gatt.exceptions import (
@@ -74,6 +71,38 @@ except ValueRangeError:
 
 ## See Also
 
-- [GATT Layer API](gatt.md) - Lower-level GATT APIs
-- [Registry API](registry.md) - UUID registry system
+- [GATT Layer](gatt.md) - Lower-level GATT APIs
+- [Registry System](registry.md) - UUID registry details
 - [Usage Guide](../usage.md) - Practical examples
+
+## Type Definitions
+
+These types are returned by the core API methods:
+
+::: bluetooth_sig.types.CharacteristicData
+    options:
+      show_root_heading: true
+      heading_level: 3
+      show_source: false
+      members: true
+
+::: bluetooth_sig.types.CharacteristicInfo
+    options:
+      show_root_heading: true
+      heading_level: 3
+      show_source: false
+      members: true
+
+::: bluetooth_sig.types.ServiceInfo
+    options:
+      show_root_heading: true
+      heading_level: 3
+      show_source: false
+      members: true
+
+::: bluetooth_sig.types.ValidationResult
+    options:
+      show_root_heading: true
+      heading_level: 3
+      show_source: false
+      members: true

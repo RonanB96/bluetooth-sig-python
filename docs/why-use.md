@@ -39,7 +39,7 @@ This library handles all the complexity for you:
 ### ✅ Automatic Standards Interpretation
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
@@ -174,7 +174,7 @@ UUID_MAP = {
 ### With bluetooth-sig
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 

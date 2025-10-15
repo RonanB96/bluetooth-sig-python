@@ -45,10 +45,10 @@ def parse_temperature(data: bytes) -> float | None:
 **With bluetooth-sig:**
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
-result = translator.parse_characteristic_data("2A6E", data)
+result = translator.parse_characteristic("2A6E", data)
 # Handles all validation, conversion, and edge cases automatically
 ```
 
@@ -111,7 +111,7 @@ def resolve_by_name(uuid: str) -> str:
 ### ✅ What We Solve (UUID Management)
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
@@ -162,10 +162,10 @@ result = parse_battery(some_data)
 ### ✅ What We Solve (Type Safety)
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
-result = translator.parse_characteristic_data("2A19", bytearray([85]))
+result = translator.parse_characteristic("2A19", bytearray([85]))
 
 # result is a typed dataclass
 # IDE autocomplete works
@@ -174,7 +174,7 @@ print(result.value)  # 85
 print(result.unit)   # "%"
 
 # For complex characteristics
-temp_result = translator.parse_characteristic_data("2A1C", data)
+temp_result = translator.parse_characteristic("2A1C", data)
 # Returns TemperatureMeasurement dataclass with:
 #   - value: float
 #   - unit: str
@@ -205,7 +205,7 @@ Many BLE libraries combine connection management with data parsing, forcing you 
 **Framework-agnostic design** - Parse data from any BLE library:
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
@@ -213,17 +213,17 @@ translator = BluetoothSIGTranslator()
 from bleak import BleakClient
 async with BleakClient(address) as client:
     data = await client.read_gatt_char(uuid)
-    result = translator.parse_characteristic_data(uuid, data)
+    result = translator.parse_characteristic(uuid, data)
 
 # Works with simplepyble
 from simplepyble import Peripheral
 peripheral = Peripheral(adapter, address)
 data = peripheral.read(service_uuid, char_uuid)
-result = translator.parse_characteristic_data(char_uuid, data)
+result = translator.parse_characteristic(char_uuid, data)
 
 # Works with your custom BLE implementation
 data = my_custom_ble_lib.read_characteristic(uuid)
-result = translator.parse_characteristic_data(uuid, data)
+result = translator.parse_characteristic(uuid, data)
 ```
 
 - **Separation of concerns** - Parsing separate from connection
@@ -306,10 +306,10 @@ def parse_temp_measurement(data: bytes) -> dict:
 ### ✅ What We Solve (Multi-Field Characteristics)
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
-result = translator.parse_characteristic_data("2A1C", data)
+result = translator.parse_characteristic("2A1C", data)
 
 # Returns TemperatureMeasurement dataclass with all fields parsed
 # Handles all flag combinations automatically

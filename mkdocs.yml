@@ -41,6 +41,7 @@ theme:
 
 plugins:
   - search
+  - autorefs
   - mkdocstrings:
       handlers:
         python:
@@ -55,6 +56,10 @@ plugins:
             show_labels: true
             show_symbol_type_heading: true
             show_symbol_type_toc: true
+            signature_crossrefs: true
+            separate_signature: true
+            show_signature_annotations: true
+            merge_init_into_class: true
 
 hooks:
   - docs_hooks.py
@@ -114,7 +119,6 @@ nav:
     - Core API: api/core.md
     - GATT Layer: api/gatt.md
     - Registry System: api/registry.md
-    - Types & Enums: api/types.md
     - Supported Characteristics: supported-characteristics.md
   - Explanation:
     - Why Use This Library: why-use.md

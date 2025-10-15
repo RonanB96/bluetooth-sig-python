@@ -23,13 +23,13 @@ The **Bluetooth SIG Standards Library** provides comprehensive GATT characterist
 ## Quick Example
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
 # Resolve UUIDs
 service_info = translator.resolve_by_uuid("180F")  # Battery
-print(f"Service: {service_info.name}")  # Service: Battery
+print(f"Service: {service_info.name}")  # Service: Battery Service
 
 # Parse characteristic data
 battery_data = translator.parse_characteristic("2A19", bytearray([85]))

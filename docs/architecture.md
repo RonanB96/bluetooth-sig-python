@@ -52,11 +52,11 @@ The library follows these core principles:
 
 ## Layer Breakdown
 
-### 1. Core API Layer (`src/bluetooth_sig/core.py`)
+### 1. Core API Layer (`src/bluetooth_sig/core/translator.py`)
 
 **Purpose**: High-level, user-facing API
 
-**Key Class**: `BluetoothSIGTranslator`
+**Key Class**: `BluetoothSIGTranslator` - see [Core API](api/core.md)
 
 **Responsibilities**:
 
@@ -68,10 +68,10 @@ The library follows these core principles:
 **Example Usage**:
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
-result = translator.parse_characteristic_data("2A19", data)
+result = translator.parse_characteristic("2A19", data)
 ```
 
 ### 2. GATT Layer (`src/bluetooth_sig/gatt/`)
@@ -192,7 +192,7 @@ class BatteryLevelData:
 ```text
 1. Raw BLE Data
    ↓
-2. BluetoothSIGTranslator.parse_characteristic_data()
+2. BluetoothSIGTranslator.parse_characteristic()
    ↓
 3. Registry lookup (UUID → Characteristic class)
    ↓
@@ -212,8 +212,10 @@ class BatteryLevelData:
 raw_data = bytearray([0x64, 0x09])  # Temperature data
 
 # Step 1: Call translator
+from bluetooth_sig import BluetoothSIGTranslator
+
 translator = BluetoothSIGTranslator()
-result = translator.parse_characteristic_data("2A6E", raw_data)
+result = translator.parse_characteristic("2A6E", raw_data)
 
 # Internal flow:
 # 1. Registry resolves "2A6E" → TemperatureCharacteristic
@@ -222,7 +224,7 @@ result = translator.parse_characteristic_data("2A6E", raw_data)
 #    - Extracts int: 2404 (little-endian)
 #    - Validates range
 #    - Applies scaling: 2404 * 0.01 = 24.04°C
-# 3. Returns typed float: 24.04
+# 3. Returns CharacteristicData with value: 24.04
 
 # Output: Parsed value
 print(result.value)  # 24.04
@@ -331,9 +333,11 @@ class MyCustomService(BaseService):
 ### Example
 
 ```python
+from bluetooth_sig import BluetoothSIGTranslator
+
 def test_battery_parsing():
     translator = BluetoothSIGTranslator()
-    result = translator.parse_characteristic_data("2A19", bytearray([85]))
+    result = translator.parse_characteristic("2A19", bytearray([85]))
     assert result.value == 85
 ```
 

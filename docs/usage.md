@@ -3,7 +3,7 @@
 To use Bluetooth SIG Standards Library in a project:
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 # Create translator instance
 translator = BluetoothSIGTranslator()
@@ -19,7 +19,7 @@ print(f"Characteristic: {char_info.name}")
 ## Basic Example
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 def main():
     translator = BluetoothSIGTranslator()
