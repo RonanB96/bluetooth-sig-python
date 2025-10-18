@@ -259,7 +259,6 @@ class TestRuntimeRegistration:
 
     def test_sig_override_permission_required(self) -> None:
         """Test that SIG UUID override requires _allows_sig_override=True on the custom class."""
-
         # Attempt to define class with SIG UUID without _allows_sig_override should fail
         with pytest.raises(ValueError, match="SIG UUID.*without override flag"):
 

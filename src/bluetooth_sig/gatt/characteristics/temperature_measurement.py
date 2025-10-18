@@ -43,17 +43,18 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
     allow_variable_length: bool = True  # Variable optional fields
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
-        """Parse temperature measurement data according to Bluetooth
-        specification.
+        """Parse temperature measurement data according to Bluetooth specification.
 
-        Format: Flags(1) + Temperature Value(4) + [Timestamp(7)] + [Temperature Type(1)]
+        Format: Flags(1) + Temperature Value(4) + [Timestamp(7)] + [Temperature Type(1)].
         Temperature is IEEE-11073 32-bit float.
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional context providing surrounding characteristic metadata when available.
 
         Returns:
-            TemperatureMeasurementData containing parsed temperature data with metadata
+            TemperatureMeasurementData containing parsed temperature data with metadata.
+
         """
         if len(data) < 5:
             raise ValueError("Temperature Measurement data must be at least 5 bytes")
@@ -95,6 +96,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the temperature measurement
+
         """
         # Build flags
         flags = TemperatureMeasurementFlags(0)

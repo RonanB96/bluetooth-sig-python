@@ -198,7 +198,8 @@ class TestRoundTrip:
 
     def test_all_characteristics_are_tested(self) -> None:
         """Test that every characteristic class is included in
-        ROUND_TRIP_TEST_DATA."""
+        ROUND_TRIP_TEST_DATA.
+        """
         import bluetooth_sig.gatt.characteristics as char_module
 
         # Get all classes from the characteristics module that inherit from BaseCharacteristic

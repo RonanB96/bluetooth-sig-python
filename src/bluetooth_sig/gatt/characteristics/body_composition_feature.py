@@ -115,20 +115,21 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
     max_length: int = 4  # Features(4) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> BodyCompositionFeatureData:
-        """Parse body composition feature data according to Bluetooth
-        specification.
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BodyCompositionFeatureData:
+        """Parse body composition feature data according to Bluetooth specification.
 
-        Format: Features(4 bytes) - bitmask indicating supported measurements
+        Format: Features(4 bytes) - bitmask indicating supported measurements.
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            Dict containing parsed feature flags
+            BodyCompositionFeatureData containing parsed feature flags.
 
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
+
         """
         if len(data) < 4:
             raise ValueError("Body Composition Feature data must be at least 4 bytes")
@@ -164,6 +165,7 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the body composition features
+
         """
         # Reconstruct the features bitmap from individual flags
         features_bitmap = 0
@@ -205,6 +207,7 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
 
         Returns:
             MassMeasurementResolution enum value
+
         """
         resolution_bits = BitFieldUtils.extract_bit_field(
             features,
@@ -226,6 +229,7 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
 
         Returns:
             HeightMeasurementResolution enum value
+
         """
         resolution_bits = BitFieldUtils.extract_bit_field(
             features,

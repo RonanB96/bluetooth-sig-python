@@ -13,8 +13,17 @@ class DeviceNameCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Device Name"
     _manual_value_type = "string"  # Override since decode_value returns str
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> str:
-        """Parse device name string."""
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+        """Parse device name string.
+
+        Args:
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
+
+        Returns:
+            Decoded device name string.
+
+        """
         return DataParser.parse_utf8_string(data)
 
     def encode_value(self, data: str) -> bytearray:
@@ -25,6 +34,7 @@ class DeviceNameCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the device name (UTF-8)
+
         """
         # Encode as UTF-8 bytes
         return bytearray(data.encode("utf-8"))
@@ -40,8 +50,17 @@ class AppearanceCharacteristic(BaseCharacteristic):
     max_length = 2  # Appearance(2) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> int:
-        """Parse appearance value (uint16)."""
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+        """Parse appearance value (uint16).
+
+        Args:
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
+
+        Returns:
+            Parsed appearance as integer.
+
+        """
         return DataParser.parse_int16(data, 0, signed=False)
 
     def encode_value(self, data: int) -> bytearray:
@@ -52,6 +71,7 @@ class AppearanceCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the appearance
+
         """
         appearance = int(data)
         return DataParser.encode_int16(appearance, signed=False)

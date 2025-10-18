@@ -65,8 +65,7 @@ class DataValidator:
 
     @staticmethod
     def validate_percentage(value: int | float, allow_over_100: bool = False) -> None:
-        """Validate percentage value (0-100% or 0-200% for some
-        characteristics)."""
+        """Validate percentage value (0-100% or 0-200% for some characteristics)."""
         max_value = EXTENDED_PERCENTAGE_MAX if allow_over_100 else PERCENTAGE_MAX
         if value < PERCENTAGE_MIN or value > max_value:
             raise ValueRangeError("percentage", value, 0, max_value)

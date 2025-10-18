@@ -52,13 +52,15 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
         [Cumulative Crank Revolutions(2)] + [Last Crank Event Time(2)]
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            CSCMeasurementData containing parsed CSC data
+            CSCMeasurementData containing parsed CSC data.
 
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
+
         """
         if len(data) < 1:
             raise ValueError("CSC Measurement data must be at least 1 byte")
@@ -108,6 +110,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
         Raises:
             ValueError: If wheel data is invalid or out of range
+
         """
         if data.cumulative_wheel_revolutions is None or data.last_wheel_event_time is None:
             raise ValueError("CSC wheel revolution data marked present but missing values")
@@ -139,6 +142,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
         Raises:
             ValueError: If crank data is invalid or out of range
+
         """
         if data.cumulative_crank_revolutions is None or data.last_crank_event_time is None:
             raise ValueError("CSC crank revolution data marked present but missing values")
@@ -167,6 +171,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the CSC measurement
+
         """
         # Build flags based on available data
         flags = data.flags

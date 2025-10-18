@@ -45,6 +45,7 @@ class NameNormalizer:
             "CO2 Concentration"
             >>> NameNormalizer.camel_case_to_display_name("BatteryLevel")
             "Battery Level"
+
         """
         # Step 1: Handle consecutive capitals followed by lowercase
         # e.g., "VOCConcentration" -> "VOC Concentration"
@@ -63,6 +64,7 @@ class NameNormalizer:
 
         Returns:
             Name without suffix, or original name if suffix not present
+
         """
         if name.endswith(suffix):
             return name[: -len(suffix)]
@@ -78,6 +80,7 @@ class NameNormalizer:
 
         Returns:
             Org format string (e.g., "org.bluetooth.characteristic.battery_level")
+
         """
         return f"org.bluetooth.{entity_type}." + "_".join(word.lower() for word in words)
 
@@ -99,6 +102,7 @@ class NameVariantGenerator:
 
         Returns:
             List of name variants ordered by likelihood of success
+
         """
         variants: list[str] = []
 
@@ -149,6 +153,7 @@ class NameVariantGenerator:
 
         Returns:
             List of name variants ordered by likelihood of success
+
         """
         variants: list[str] = []
 
@@ -208,6 +213,7 @@ class RegistrySearchStrategy(Generic[TInfo]):  # pylint: disable=too-few-public-
 
         Returns:
             Resolved info object or None if not found
+
         """
         variants = self._generate_variants(class_obj.__name__, explicit_name)
 

@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""Notification handling example using bleak-retry integration.
+
+This example demonstrates how to subscribe and handle BLE notifications
+using the bleak-retry-connector integration layered with the
+bluetooth_sig parsing utilities.
+"""
+
 # Set up paths for imports
 import sys
 from pathlib import Path
@@ -18,8 +25,6 @@ import argparse
 import asyncio
 
 from examples.utils.bleak_retry_integration import handle_notifications_bleak_retry
-
-"""Notification handling example using bleak-retry integration."""
 
 
 async def main() -> None:

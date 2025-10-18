@@ -50,19 +50,20 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
     max_length: int | None = 16  # + Timestamp(7) + MeasurementStatus(2) + DeviceStatus(3) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> PulseOximetryData:  # pylint: disable=too-many-locals
-        """Parse pulse oximetry measurement data according to Bluetooth
-        specification.
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PulseOximetryData:  # pylint: disable=too-many-locals
+        """Parse pulse oximetry measurement data according to Bluetooth specification.
 
         Format: Flags(1) + SpO2(2) + Pulse Rate(2) + [Timestamp(7)] +
         [Measurement Status(2)] + [Device Status(3)] + [Pulse Amplitude Index(2)]
         SpO2 and Pulse Rate are IEEE-11073 16-bit SFLOAT.
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            PulseOximetryData containing parsed pulse oximetry data
+            PulseOximetryData containing parsed pulse oximetry data.
+
         """
         if len(data) < 5:
             raise ValueError("Pulse Oximetry Measurement data must be at least 5 bytes")
@@ -115,6 +116,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the measurement
+
         """
         # Convert to IEEE-11073 SFLOAT format (simplified as uint16)
         spo2_raw = round(data.spo2 * 10)  # 0.1% resolution

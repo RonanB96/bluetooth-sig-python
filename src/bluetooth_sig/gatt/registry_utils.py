@@ -30,6 +30,7 @@ class TypeValidator:  # pylint: disable=too-few-public-methods
 
         Returns:
             True if candidate is a subclass of base_class
+
         """
         return isinstance(candidate, type) and issubclass(candidate, base_class)
 
@@ -61,6 +62,7 @@ class ModuleDiscovery:
         References:
             Python standard library documentation, pkgutil.walk_packages,
             https://docs.python.org/3/library/pkgutil.html#pkgutil.walk_packages
+
         """
         package = import_module(package_name)
         module_names: list[str] = []
@@ -88,6 +90,7 @@ class ModuleDiscovery:
 
         Returns:
             Sorted list of discovered classes
+
         """
         discovered: list[type[T]] = []
         for module_name in module_names:

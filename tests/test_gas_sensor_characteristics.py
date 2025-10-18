@@ -223,7 +223,8 @@ class TestGasSensorCharacteristics:
 
     def test_extended_gas_sensor_characteristics(self) -> None:
         """Test extended gas sensor characteristics not covered in other
-        tests."""
+        tests.
+        """
         # Test Methane
         methane_char = MethaneConcentrationCharacteristic()
         assert methane_char.uuid == "2BD1"

@@ -216,6 +216,7 @@ class BitFieldUtils:  # pylint: disable=too-many-public-methods
 
         Args:
             fields: Tuples of (field_value, start_bit, num_bits)
+
         """
         result = 0
         for field_value, start_bit, num_bits in fields:
@@ -232,6 +233,7 @@ class BitFieldUtils:  # pylint: disable=too-many-public-methods
 
         Returns:
             List of extracted field values
+
         """
         return [BitFieldUtils.extract_bit_field(value, start_bit, num_bits) for start_bit, num_bits in field_specs]
 
@@ -280,6 +282,7 @@ class BitFieldUtils:  # pylint: disable=too-many-public-methods
 
         Returns:
             The extracted bit field value
+
         """
         shifted_mask = mask << shift
         return BitFieldUtils.extract_bits(value, shifted_mask) >> shift

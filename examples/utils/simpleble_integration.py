@@ -52,18 +52,39 @@ def scan_devices_simpleble(  # pylint: disable=duplicate-code
 
 
 class SimpleCharacteristic:
-    """Simple characteristic object compatible with Device class
-    expectations."""
+    """Simple characteristic object compatible with Device class expectations.
+
+    Lightweight container used by example code to represent characteristic
+    metadata for SimplePyBLE adapters.
+    """
 
     def __init__(self, uuid: str, properties: list[str] | None = None) -> None:
+        """Create a lightweight characteristic representation for examples.
+
+        Args:
+            uuid: The characteristic UUID as a string.
+            properties: Optional list of property names (e.g. ['read', 'notify']).
+
+        """
         self.uuid = uuid
         self.properties = properties or []
 
 
 class SimpleService:
-    """Simple service object compatible with Device class expectations."""
+    """Simple service object compatible with Device class expectations.
+
+    Lightweight container used by example code to represent service
+    metadata for SimplePyBLE adapters.
+    """
 
     def __init__(self, uuid: str, characteristics: list[SimpleCharacteristic] | None = None) -> None:
+        """Create a lightweight service representation for examples.
+
+        Args:
+            uuid: The service UUID as a string.
+            characteristics: Optional list of SimpleCharacteristic instances.
+
+        """
         self.uuid = uuid
         self.characteristics = characteristics or []
 
@@ -72,6 +93,14 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
     """Connection manager using SimplePyBLE for BLE communication."""
 
     def __init__(self, address: str, simpleble_module: types.ModuleType, timeout: float = 30.0) -> None:
+        """Initialize the SimplePyBLE connection manager used by examples.
+
+        Args:
+            address: BLE peripheral address to connect to.
+            simpleble_module: The imported simplepyble module to use.
+            timeout: Timeout for connection operations in seconds.
+
+        """
         self.address = address
         self.timeout = timeout
         self.simpleble_module = simpleble_module
@@ -80,6 +109,12 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         self.executor = ThreadPoolExecutor(max_workers=1)
 
     async def connect(self) -> None:
+        """Connect to the target peripheral and prepare the adapter state.
+
+        This method runs the blocking SimplePyBLE connection logic in a
+        thread pool executor to avoid blocking the asyncio event loop.
+        """
+
         def _connect() -> None:
             # NOTE: SimplePyBLE exposes dynamic attributes; stubs provide type safety
             adapters = self.simpleble_module.Adapter.get_adapters()  # pylint: disable=no-member
@@ -99,10 +134,23 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         await asyncio.get_event_loop().run_in_executor(self.executor, _connect)
 
     async def disconnect(self) -> None:
+        """Disconnect from the peripheral if connected.
+
+        Runs the SimplePyBLE disconnect call in the thread executor.
+        """
         if self.peripheral:
             await asyncio.get_event_loop().run_in_executor(self.executor, self.peripheral.disconnect)
 
     async def read_gatt_char(self, char_uuid: str) -> bytes:
+        """Read a GATT characteristic from the connected peripheral.
+
+        Args:
+            char_uuid: The UUID of the characteristic to read.
+
+        Returns:
+            Raw bytes read from the characteristic.
+        """
+
         def _read() -> bytes:
             p = self.peripheral
             assert p is not None
@@ -116,6 +164,13 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         return await asyncio.get_event_loop().run_in_executor(self.executor, _read)
 
     async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
+        """Write raw bytes to a GATT characteristic on the peripheral.
+
+        Args:
+            char_uuid: The UUID of the characteristic to write.
+            data: Bytes to write to the characteristic.
+        """
+
         def _write() -> None:
             p = self.peripheral
             assert p is not None
@@ -129,6 +184,12 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         await asyncio.get_event_loop().run_in_executor(self.executor, _write)
 
     async def get_services(self) -> object:
+        """Retrieve and convert peripheral services into example objects.
+
+        Returns:
+            A list-like object containing SimpleService instances.
+        """
+
         def _get_services() -> object:
             p = self.peripheral
             assert p is not None
@@ -148,10 +209,20 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         return await asyncio.get_event_loop().run_in_executor(self.executor, _get_services)
 
     async def start_notify(self, char_uuid: str, callback: Callable[[str, bytes], None]) -> None:
+        """Start notifications for a given characteristic.
+
+        The example does not implement notification handling for SimplePyBLE
+        and raises NotImplementedError.
+        """
         # Not implemented: SimplePyBLE notification support
         raise NotImplementedError("Notification not supported in this example")
 
     async def stop_notify(self, char_uuid: str) -> None:
+        """Stop notifications for a given characteristic.
+
+        The example does not implement notification handling for SimplePyBLE
+        and raises NotImplementedError.
+        """
         # Not implemented: SimplePyBLE notification support
         raise NotImplementedError("Notification not supported in this example")
 
@@ -178,6 +249,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,
 
     Returns:
         Mapping of short UUIDs to characteristic parse data
+
     """
     print("📱 SimplePyBLE Comprehensive Device Analysis...")
     results: dict[BluetoothUUID, CharacteristicData] = {}

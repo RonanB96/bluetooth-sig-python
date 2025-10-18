@@ -68,6 +68,7 @@ class BatteryPresentState(IntEnum):
     RESERVED = 3
 
     def __str__(self) -> str:
+        """Return a human-readable representation of the battery presence state."""
         return {0: "unknown", 1: "not_present", 2: "present", 3: "reserved"}[self.value]
 
     @classmethod
@@ -88,6 +89,7 @@ class BatteryChargeState(IntEnum):
     NOT_CHARGING = 3
 
     def __str__(self) -> str:
+        """Return a human-readable representation of the battery charge state."""
         return {0: "unknown", 1: "charging", 2: "discharging", 3: "not_charging"}[self.value]
 
     @classmethod
@@ -108,6 +110,7 @@ class BatteryChargeLevel(IntEnum):
     CRITICALLY_LOW = 3
 
     def __str__(self) -> str:
+        """Return a human-readable representation of the battery charge level."""
         return {0: "unknown", 1: "good", 2: "low", 3: "critically_low"}[self.value]
 
     @classmethod
@@ -130,6 +133,7 @@ class BatteryChargingType(IntEnum):
     CONSTANT_POWER = 5
 
     def __str__(self) -> str:
+        """Return a human-readable representation of the battery charging type."""
         return {
             0: "unknown",
             1: "constant_current",
@@ -193,13 +197,24 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
     # value_type to be 'string'. Override to keep metadata consistent.
     _manual_value_type = "string"
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> BatteryPowerStateData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BatteryPowerStateData:
         """Parse the Battery Level Status value.
 
         The characteristic supports a 1-byte basic format and a 2-byte
         extended format with charging type and fault codes in the second
         byte. If `data` is empty or None a ValueError is raised.
+
+        Args:
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
+
+        Returns:
+            BatteryPowerStateData containing parsed battery power state values.
+
         """
+        # `ctx` is part of the public decode_value signature but unused in this
+        # concrete implementation — mark it as used for linters.
+        del ctx
         if not data or len(data) < 1:
             raise ValueError("Battery Level Status must be at least 1 byte")
 
@@ -309,6 +324,7 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
 
         Raises:
             ValueError: If data contains invalid values
+
         """
         # For simplicity, we'll encode to the basic single-byte format
         # Future enhancement could support the extended formats

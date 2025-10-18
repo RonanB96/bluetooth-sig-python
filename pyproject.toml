@@ -44,6 +44,7 @@ dev = [
     "pytest-cov>=6.2,<8",
     "pylint~=3.3",
     "ruff~=0.13",
+    "pydocstyle~=6.3",
     "types-PyYAML~=6.0",
     "mypy~=1.0",
     "ipdb~=0.13",
@@ -128,6 +129,10 @@ good-names = ["id", "i", "j", "k", "ex", "Run", "_", "fp", "e"]
 
 [tool.ruff]
 line-length = 120
+# Allow Ruff to apply safe, automatic fixes by default when invoked without
+# explicit `--no-fix`/`--fix` flags. Individual CI or developer workflows may
+# still override this via the command-line.
+fix = true
 target-version = "py39"
 exclude = [".git", "__pycache__", "build", "dist", ".venv", ".venv*", ".eggs"]
 
@@ -140,6 +145,7 @@ select = [
     "B",   # flake8-bugbear
     "UP",  # pyupgrade
     "ANN", # flake8-annotations - enforce type hints
+    "D",   # pydocstyle (Google-style docstrings)
 ]
 ignore = [
     "E701", # Multiple statements on one line (colon)
@@ -150,6 +156,30 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"] # Ignore unused imports in __init__.py files
 "docs_hooks.py" = ["ANN001", "ANN002", "ANN003", "ANN201"] # MkDocs hooks must match their interface exactly
+# Tests and examples intentionally omit exhaustive Google-style docstrings in
+# many places (fixtures, local test helpers, and example scripts). Ignore
+# docstring-related (D...) codes in those paths so we can focus fixes on
+# production code under `src/`.
+"tests/**" = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D107",
+    "D205",
+    "D401",
+    "D417",
+]
+
+[tool.ruff.lint.pydocstyle]
+# Make Ruff's pydocstyle plugin use the same Google convention the project
+# already declares for the standalone `pydocstyle` tool. This prevents Ruff
+# from enabling incompatible pydocstyle rules and eliminates the spurious
+# "incompatible rules" warnings that were previously reported during
+# formatting/lint runs.
+convention = "google"
 
 [tool.ruff.format]
 # Use black-compatible formatting
@@ -157,6 +187,9 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+# Reformat python code examples found inside docstrings. This allows Ruff to
+# automatically tidy up code fences and doctest examples inside docstrings.
+docstring-code-format = true
 
 [tool.ruff.lint.isort]
 known-first-party = ["bluetooth_sig"]
@@ -221,3 +254,10 @@ module = "simplepyble.*"
 # Simplepyble is an optional external dependency used in examples; it does not ship
 # type stubs. Allow missing imports for it so example code mypy checks do not fail.
 ignore_missing_imports = true
+
+[tool.pydocstyle]
+# Enforce Google-style docstrings as mandated by project standards
+convention = "google"
+# Prevent inheriting a parent pydocstyle config which could change the
+# effective set of checked codes; keep the repository config deterministic.
+inherit = false

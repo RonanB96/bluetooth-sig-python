@@ -12,6 +12,7 @@ def mock_ble_data() -> dict[str, bytes]:
 
     Returns:
         Dict mapping UUID to mock raw data
+
     """
     return {
         "2A19": bytes([0x64]),  # 100% battery

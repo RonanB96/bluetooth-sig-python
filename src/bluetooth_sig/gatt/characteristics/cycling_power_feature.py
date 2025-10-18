@@ -15,19 +15,21 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
     capabilities.
     """
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> int:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
         """Parse cycling power feature data.
 
-        Format: 32-bit feature bitmask (little endian)
+        Format: 32-bit feature bitmask (little endian).
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            32-bit feature bitmask as integer
+            32-bit feature bitmask as integer.
 
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
+
         """
         if len(data) < 4:
             raise ValueError("Cycling Power Feature data must be at least 4 bytes")
@@ -44,6 +46,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the cycling power features (uint32)
+
         """
         feature_mask = int(data)
 

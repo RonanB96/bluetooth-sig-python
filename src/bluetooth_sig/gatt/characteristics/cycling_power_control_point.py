@@ -48,8 +48,7 @@ class CyclingPowerControlPointData(msgspec.Struct, frozen=True, kw_only=True):  
 
 
 class CyclingPowerOpCode(IntEnum):
-    """Cycling Power Control Point operation codes as per Bluetooth SIG
-    specification."""
+    """Cycling Power Control Point operation codes as per Bluetooth SIG specification."""
 
     # Value 0x00 is Reserved for Future Use
     SET_CUMULATIVE_VALUE = 0x01
@@ -99,8 +98,7 @@ MIN_OP_CODE_LENGTH = 1  # Minimum length for op code data
 
 
 class CyclingPowerResponseValue(IntEnum):
-    """Cycling Power Control Point response values as per Bluetooth SIG
-    specification."""
+    """Cycling Power Control Point response values as per Bluetooth SIG specification."""
 
     # Value 0x00 is Reserved for Future Use
     SUCCESS = 0x01
@@ -140,20 +138,21 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
     TWO_BYTE_PARAM_LENGTH = 3  # op_code(1) + param(2)
     RESPONSE_CODE_LENGTH = 3  # op_code(1) + request(1) + response(1)
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> CyclingPowerControlPointData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerControlPointData:
         """Parse cycling power control point data.
 
-        Format: Op Code(1) + [Request Parameter] or Response Code(1) + [Response Parameter]
+        Format: Op Code(1) + [Request Parameter] or Response Code(1) + [Response Parameter].
 
         Args:
-            data: Raw bytearray from BLE characteristic
-            ctx: Optional context (unused in current implementation)
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            CyclingPowerControlPointData containing parsed control point data
+            CyclingPowerControlPointData containing parsed control point data.
 
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
+
         """
         if len(data) < MIN_OP_CODE_LENGTH:
             raise ValueError("Cycling Power Control Point data must be at least 1 byte")
@@ -199,6 +198,7 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the control point command
+
         """
         if isinstance(data, int):
             # Simple op code only
@@ -242,6 +242,7 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
 
         Returns:
             OpCodeParameters containing all parsed parameters
+
         """
         cumulative_value: int | None = None
         sensor_location: int | None = None

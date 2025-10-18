@@ -34,6 +34,7 @@ class SensorContactState(IntEnum):
     DETECTED = 2
 
     def __str__(self) -> str:
+        """Return human-readable sensor contact state."""
         return {0: "not_supported", 1: "not_detected", 2: "detected"}[self.value]
 
     def __eq__(self, other: object) -> bool:
@@ -108,6 +109,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
       * Bluetooth SIG Heart Rate Service 1.0 (https://www.bluetooth.com/specifications/specs/heart-rate-service-1-0/)
       * Bluetooth SIG Heart Rate Profile 1.0 (https://www.bluetooth.com/specifications/specs/heart-rate-profile-1-0/)
       * Errata Correction 23224 (mandatory for compliance)
+
     """
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> HeartRateData:
@@ -116,10 +118,12 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
         Format: Flags(1) + Heart Rate Value(1-2) + [Energy Expended(2)] + [RR-Intervals(2*n)]
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            HeartRateData containing parsed heart rate data with metadata
+            HeartRateData containing parsed heart rate data with metadata.
+
         """
         if len(data) < 2:
             raise ValueError("Heart Rate Measurement data must be at least 2 bytes")
@@ -171,6 +175,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the heart rate measurement
+
         """
         flags = 0
 

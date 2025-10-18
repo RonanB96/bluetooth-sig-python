@@ -84,6 +84,7 @@ class DebugUtils:
 
         Returns:
             Formatted error message with hex dump and field context
+
         """
         parts = [f"Field '{error.field}' failed: {error.reason}"]
 
@@ -120,6 +121,7 @@ class DebugUtils:
 
         Returns:
             Formatted string with all field errors and context
+
         """
         if not errors:
             return "No field errors"
@@ -139,6 +141,7 @@ class DebugUtils:
 
         Returns:
             Formatted trace string
+
         """
         if not trace:
             return "No parse trace available"

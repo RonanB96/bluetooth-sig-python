@@ -26,8 +26,17 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
     _vector_components: list[str] = ["x_axis", "y_axis"]
     resolution: float = 1e-7
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> Vector2DData:
-        """Parse 2D magnetic flux density (2 x sint16 with resolution)."""
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> Vector2DData:
+        """Parse 2D magnetic flux density (2 x sint16 with resolution).
+
+        Args:
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
+
+        Returns:
+            Vector2DData with x and y axis values in Tesla.
+
+        """
         if len(data) < 4:
             raise ValueError("Insufficient data for 2D magnetic flux density (need 4 bytes)")
 

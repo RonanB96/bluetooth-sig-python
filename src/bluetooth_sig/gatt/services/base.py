@@ -67,6 +67,7 @@ class SIGServiceResolver:
 
         Raises:
             UUIDResolutionError: If no UUID can be resolved for the class
+
         """
         # Try registry resolution
         registry_info = SIGServiceResolver.resolve_from_registry(service_class)
@@ -127,8 +128,10 @@ class ServiceValidationResult(msgspec.Struct, kw_only=True):
 
 
 class ServiceCharacteristicInfo(BaseCharacteristicInfo):
-    """Service-specific information about a characteristic with context about
-    its presence."""
+    """Service-specific information about a characteristic with context about its presence.
+
+    Provides status, requirement, and class context for a characteristic within a service.
+    """
 
     status: CharacteristicStatus = CharacteristicStatus.INVALID
     is_required: bool = False
@@ -181,6 +184,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         Args:
             info: Complete service information (optional for SIG services)
             validation: Validation constraints configuration (optional)
+
         """
         # Store provided info or None (will be resolved in __post_init__)
         self._provided_info = info
@@ -209,25 +213,28 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
     @property
     def uuid(self) -> BluetoothUUID:
-        """Get the service UUID from _info (single source of truth)."""
+        """Get the service UUID from _info."""
         assert self._info is not None, "Service info should be initialized in __post_init__"
         return self._info.uuid
 
     @property
     def name(self) -> str:
-        """Get the service name from _info (single source of truth)."""
+        """Get the service name from _info."""
         assert self._info is not None, "Service info should be initialized in __post_init__"
         return self._info.name
 
     @property
     def summary(self) -> str:
-        """Get the service summary from _info (single source of truth)."""
+        """Get the service summary from _info."""
         assert self._info is not None, "Service info should be initialized in __post_init__"
         return self._info.description
 
     @property
     def info(self) -> ServiceInfo:
-        """Get the service info (single source of truth)."""
+        """Return the resolved service information for this instance.
+
+        The info property provides all metadata about the service, including UUID, name, and description.
+        """
         assert self._info is not None, "Service info should be initialized in __post_init__"
         return self._info
 
@@ -240,6 +247,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         Raises:
             UUIDResolutionError: If UUID cannot be resolved
+
         """
         info = SIGServiceResolver.resolve_for_class(cls)
         return info.uuid
@@ -259,14 +267,14 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
     @classmethod
     def get_expected_characteristics(cls) -> ServiceCharacteristicCollection:
-        """Get the expected characteristics for this service from the
-        service_characteristics dict.
+        """Get the expected characteristics for this service from the service_characteristics dict.
 
         Looks for a 'service_characteristics' class attribute containing a dictionary of
-        CharacteristicName -> required flag, and automatically builds CharacteristicSpec objects.
+            CharacteristicName -> required flag, and automatically builds CharacteristicSpec objects.
 
         Returns:
             ServiceCharacteristicCollection mapping characteristic name to CharacteristicSpec
+
         """
         # Build expected mapping keyed by CharacteristicName enum for type safety.
         expected: dict[CharacteristicName, CharacteristicSpec[BaseCharacteristic]] = {}
@@ -285,13 +293,13 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
     @classmethod
     def get_required_characteristics(cls) -> ServiceCharacteristicCollection:
-        """Get the required characteristics for this service from the
-        characteristics dict.
+        """Get the required characteristics for this service from the characteristics dict.
 
         Automatically filters the characteristics dictionary for required=True entries.
 
         Returns:
             ServiceCharacteristicCollection mapping characteristic name to CharacteristicSpec
+
         """
         expected = cls.get_expected_characteristics()
         return {name: spec for name, spec in expected.items() if spec.required}
@@ -306,6 +314,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         Returns:
             TypedDict class defining the service's characteristics, or None
+
         """
         return None
 
@@ -318,6 +327,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         Returns:
             Set of required characteristic field names
+
         """
         return set(cls.get_required_characteristics().keys())
 
@@ -349,11 +359,11 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         return required_uuids
 
     def process_characteristics(self, characteristics: ServiceDiscoveryData) -> None:
-        """Process the characteristics for this service (default
-        implementation).
+        """Process the characteristics for this service (default implementation).
 
         Args:
             characteristics: Dict mapping UUID to characteristic info
+
         """
         for uuid, _ in characteristics.items():
             char = CharacteristicRegistry.create_characteristic(uuid=uuid)
@@ -380,6 +390,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         Returns:
             ServiceCharacteristicCollection mapping characteristic name to CharacteristicSpec
+
         """
         expected = cls.get_expected_characteristics()
         required = cls.get_required_characteristics()
@@ -393,6 +404,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             ServiceCharacteristicCollection mapping characteristic name to CharacteristicSpec
 
         Override in subclasses to specify conditional characteristics.
+
         """
         return {}
 
@@ -404,6 +416,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             List of compliance issues found
 
         Override in subclasses to provide service-specific validation.
+
         """
         issues: list[str] = []
 
@@ -488,6 +501,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         Returns:
             ServiceValidationResult with detailed status information
+
         """
         result = ServiceValidationResult(status=ServiceHealthStatus.COMPLETE)
 
@@ -516,6 +530,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         Returns:
             Dict mapping characteristic name to ServiceCharacteristicInfo
+
         """
         missing: dict[CharacteristicName, ServiceCharacteristicInfo] = {}
         expected_chars = self.get_expected_characteristics()
@@ -573,8 +588,10 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         return None
 
     def _get_characteristic_metadata(self, char_enum: CharacteristicName) -> tuple[bool, bool, str]:
-        """Get characteristic metadata (is_required, is_conditional,
-        condition_desc)."""
+        """Get characteristic metadata (is_required, is_conditional, condition_desc).
+
+        Returns metadata about the characteristic's requirement and condition.
+        """
         required_chars = self.get_required_characteristics()
         conditional_chars = self.get_conditional_characteristics()
 
@@ -589,8 +606,10 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         return is_required, is_conditional, condition_desc
 
     def _get_characteristic_status(self, char_info: UuidInfo) -> CharacteristicStatus:
-        """Get the status of a characteristic (present, missing, or
-        invalid)."""
+        """Get the status of a characteristic (present, missing, or invalid).
+
+        Returns the status of the characteristic for reporting and validation.
+        """
         uuid_obj = char_info.uuid
         if uuid_obj in self.characteristics:
             try:
@@ -610,6 +629,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         Returns:
             CharacteristicInfo if characteristic is expected by this service, None otherwise
+
         """
         expected_chars = self.get_expected_characteristics()
 
@@ -650,6 +670,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         Returns:
             ServiceCompletenessReport with detailed service status information
+
         """
         validation = self.validate_service(strict=True)
         missing = self.get_missing_characteristics()
@@ -696,6 +717,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         Returns:
             True if service has all required characteristics and is usable
+
         """
         validation = self.validate_service()
         return (not validation.missing_required) and (validation.status != ServiceHealthStatus.INCOMPLETE)
@@ -722,9 +744,11 @@ class CustomBaseGattService(BaseGattService):
 
         Args:
             allow_sig_override: Set to True when intentionally overriding SIG UUIDs
+            **kwargs: Additional keyword arguments for subclassing.
 
         Raises:
             ValueError: If class uses SIG UUID without override permission
+
         """
         super().__init_subclass__(**kwargs)
 
@@ -750,6 +774,7 @@ class CustomBaseGattService(BaseGattService):
 
         Raises:
             ValueError: If no valid info available from class or parameter
+
         """
         # Use provided info, or fall back to class-configured _info
         final_info = info or self.__class__._configured_info
@@ -764,9 +789,9 @@ class CustomBaseGattService(BaseGattService):
         super().__init__(info=final_info)
 
     def __post_init__(self) -> None:
-        """Override BaseGattService.__post_init__() to use custom info management.
+        """Initialise custom service info management for CustomBaseGattService.
 
-        CustomBaseGattService manages _info manually from provided or configured info,
+        Manages _info manually from provided or configured info,
         bypassing SIG resolution that would fail for custom services.
         """
         # Use provided info if available (from manual override), otherwise use configured info
@@ -788,6 +813,7 @@ class CustomBaseGattService(BaseGattService):
 
         Args:
             characteristics: Dictionary mapping characteristic UUIDs to CharacteristicInfo
+
         """
         # Store characteristics for later access
         for uuid_obj, char_info in characteristics.items():
@@ -824,6 +850,7 @@ class UnknownService(CustomBaseGattService):
         Args:
             uuid: The service UUID
             name: Optional custom name (defaults to "Unknown Service (UUID)")
+
         """
         info = ServiceInfo(
             uuid=uuid,

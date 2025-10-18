@@ -100,8 +100,14 @@ class CustomUuidEntry(msgspec.Struct, frozen=True, kw_only=True):
     value_type: str | None = None
 
 
-class UuidRegistry:
-    """Registry for Bluetooth SIG UUIDs with canonical storage + alias indices."""
+class UuidRegistry:  # pylint: disable=too-many-instance-attributes
+    """Registry for Bluetooth SIG UUIDs with canonical storage + alias indices.
+
+    This registry stores a number of internal caches and mappings which
+    legitimately exceed the default pylint instance attribute limit. The
+    complexity is intentional and centralised; an inline disable is used to
+    avoid noisy global configuration changes.
+    """
 
     def __init__(self) -> None:
         """Initialize the UUID registry."""
@@ -292,6 +298,7 @@ class UuidRegistry:
 
         Returns:
             Unit symbol string (e.g., "Pa"), or empty string if no symbol can be extracted
+
         """
         # Handle common unit names that map to symbols
         unit_symbol_map = {
@@ -660,7 +667,7 @@ class UuidRegistry:
 
             return None
 
-    def resolve_characteristic_spec(self, characteristic_name: str) -> CharacteristicSpec | None:
+    def resolve_characteristic_spec(self, characteristic_name: str) -> CharacteristicSpec | None:  # pylint: disable=too-many-locals
         """Resolve characteristic specification with rich YAML metadata.
 
         This method provides detailed characteristic information including data types,
@@ -676,6 +683,7 @@ class UuidRegistry:
             spec = uuid_registry.resolve_characteristic_spec("Temperature")
             if spec:
                 print(f"UUID: {spec.uuid}, Unit: {spec.unit_symbol}, Type: {spec.data_type}")
+
         """
         with self._lock:
             # 1. Get UUID from characteristic registry
@@ -750,6 +758,7 @@ class UuidRegistry:
 
         Returns:
             True if the type represents signed values, False otherwise
+
         """
         if not data_type:
             return False
@@ -763,6 +772,7 @@ class UuidRegistry:
 
         Returns:
             "little" - Bluetooth SIG uses little-endian by convention
+
         """
         return "little"
 

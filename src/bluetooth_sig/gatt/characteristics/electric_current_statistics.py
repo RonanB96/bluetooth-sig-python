@@ -50,17 +50,19 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured ElectricCurrentStatisticsData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> ElectricCurrentStatisticsData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ElectricCurrentStatisticsData:
         """Parse current statistics data (3x uint16 in units of 0.01 A).
 
         Args:
-            data: Raw bytes from the characteristic read
+            data: Raw bytes from the characteristic read.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            ElectricCurrentStatisticsData with 'minimum', 'maximum', and 'average' current values in Amperes
+            ElectricCurrentStatisticsData with 'minimum', 'maximum', and 'average' current values in Amperes.
 
         Raises:
-            ValueError: If data is insufficient
+            ValueError: If data is insufficient.
+
         """
         if len(data) < 6:
             raise ValueError("Electric current statistics data must be at least 6 bytes")
@@ -84,6 +86,7 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the current statistics (3x uint16, 0.01 A resolution)
+
         """
         # Convert Amperes to raw values (multiply by 100 for 0.01 A resolution)
         min_current_raw = round(data.minimum * 100)

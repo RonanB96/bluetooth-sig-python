@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Service discovery example using the Device class.
+
+Demonstrates how to discover services and characteristics using the
+Bluetooth SIG translator together with a pluggable connection manager.
+"""
+
 # Set up paths for imports
 import sys
 from pathlib import Path
@@ -29,8 +35,6 @@ except ImportError:
     from examples.utils.bleak_retry_integration import BleakRetryConnectionManager
 
     simplepyble_available = False
-
-"""Service discovery example using Device class."""
 
 
 async def main() -> None:

@@ -57,6 +57,7 @@ class CodingTemplate(ABC):
 
         Returns:
             Parsed value of appropriate type (int, float, str, bytes, or custom dataclass)
+
         """
 
     @abstractmethod
@@ -68,6 +69,7 @@ class CodingTemplate(ABC):
 
         Returns:
             Raw bytes representing the value
+
         """
 
     @property
@@ -223,6 +225,7 @@ class ScaledUint16Template(CodingTemplate):
 
         Args:
             scale_factor: Factor to multiply raw value by (e.g., 0.01 for 2 decimal places)
+
         """
         self.scale_factor = scale_factor
 
@@ -258,6 +261,7 @@ class ScaledSint16Template(CodingTemplate):
 
         Args:
             scale_factor: Factor to multiply raw value by
+
         """
         self.scale_factor = scale_factor
 
@@ -289,6 +293,7 @@ class ScaledUint32Template(CodingTemplate):
 
         Args:
             scale_factor: Factor to multiply raw value by (e.g., 0.1 for 1 decimal place)
+
         """
         self.scale_factor = scale_factor
 
@@ -324,6 +329,7 @@ class ScaledUint24Template(CodingTemplate):
 
         Args:
             scale_factor: Factor to multiply raw value by
+
         """
         self.scale_factor = scale_factor
 
@@ -359,6 +365,7 @@ class ScaledSint24Template(CodingTemplate):
 
         Args:
             scale_factor: Factor to multiply raw value by
+
         """
         self.scale_factor = scale_factor
 
@@ -454,6 +461,7 @@ class ConcentrationTemplate(CodingTemplate):
 
         Args:
             resolution: Measurement resolution (e.g., 1.0 for integer ppm, 0.1 for 0.1 ppm)
+
         """
         self._scaled_template = ScaledUint16Template(scale_factor=resolution)
 
@@ -543,6 +551,7 @@ class Utf8StringTemplate(CodingTemplate):
 
         Args:
             max_length: Maximum string length in bytes
+
         """
         self.max_length = max_length
 

@@ -69,6 +69,64 @@ class TemperatureData:
     timestamp: datetime | None = None
 ```
 
+## Docstrings & in-code documentation
+
+Docstrings are the authoritative in-code documentation for this project. Because every public Python symbol in this repository must be fully typed and documented, docstrings should focus on semantics, units, expected ranges, sentinel values and error modes rather than repeating type annotations.
+
+- PEP 257 basics: always use triple double quotes ("""), start with a one-line imperative summary (<=80 chars preferred) followed by a blank line and an extended description when needed.
+- Preferred style: Google style for all public API docstrings (Args, Returns, Raises, Examples). NumPy style may be used only for highly numerical modules after explicit justification.
+- Content expectations for public APIs:
+  - Summary: what the function/class does (imperative sentence).
+  - Parameters: describe semantics, units, valid ranges, special sentinel values (do not duplicate type information that already appears in the function signature).
+  - Returns/Yields: describe the returned value(s), units, rounding/resolution, and sentinel mapping (e.g., 0xFFFF → None).
+  - Raises: list the exceptions that will be raised and the conditions that cause them.
+  - Examples: provide short, copy/paste runnable examples in doctest format where practical; include assertions or expected output so readers can self-verify.
+  - Attributes (for dataclasses): include an Attributes section with physical units and any invariants or constraints.
+
+- Semantics vs. types: because this project mandates PEP 484 type hints for all public functions and methods, docstrings SHOULD NOT repeat the type annotations except when doing so improves readability (for example when documenting returned structured dataclasses or complex union types). If a type is repeated in a docstring, it MUST match the source annotation exactly.
+
+ - Tooling and enforcement:
+    - Use `pydocstyle` for enforcing docstring presence and high-level conventions (PEP 257) during CI and local checks. Configure `pydocstyle` rules in `pyproject.toml` or `setup.cfg` as project policy evolves.
+    - Make Google style the canonical style. When rendering documentation with mkdocstrings or Sphinx, configure the handler to parse Google-style docstrings so generated API docs are consistent. If using Sphinx, enable `sphinx.ext.napoleon` and set:
+
+        ```py
+        napoleon_google_docstring = True
+        napoleon_numpy_docstring = False
+        ```
+
+    - Include doctest examples as part of the test suite where reasonable (pytest's `--doctest-glob` or `--doctest-modules`) so examples stay correct.
+
+Example (Google style):
+
+```python
+def decode_battery_level(data: bytearray) -> int:
+    """Decode the Battery Level characteristic.
+
+    The battery level is encoded in the first byte and ranges from 0 to 100
+    representing percent charge. A value of ``0xFF`` indicates "unknown" and
+    should be handled by callers or converted to ``None`` by a higher-level
+    adapter where appropriate.
+
+    Args:
+        data: Raw bytes containing the battery level; the first byte holds
+            the battery percentage.
+
+    Returns:
+        int: Battery percentage (0-100).
+
+    Raises:
+        InsufficientDataError: If ``data`` is shorter than 1 byte.
+
+    Examples:
+        >>> decode_battery_level(bytearray([100]))
+        100
+    """
+    if len(data) < 1:
+        raise InsufficientDataError("Battery Level characteristic requires 1 byte")
+    return int(data[0])
+```
+
+
 ## Code Duplication Policy
 
 **NEVER disable duplicate-code warnings for entire files.**

@@ -175,7 +175,8 @@ class TestServiceCompletenessReport:
 
     def test_service_completeness_report_with_missing_details(self) -> None:
         """Test ServiceCompletenessReport with missing characteristic
-        details."""
+        details.
+        """
         missing_char = ServiceCharacteristicInfo(
             uuid=BluetoothUUID("2A29"),
             name="Manufacturer Name",

@@ -95,6 +95,7 @@ class _CharacteristicClassDiscovery:
         References:
             Python standard library documentation, pkgutil.walk_packages,
             https://docs.python.org/3/library/pkgutil.html#pkgutil.walk_packages
+
         """
         package_name = __package__ or "bluetooth_sig.gatt.characteristics"
         return ModuleDiscovery.iter_module_names(package_name, cls._MODULE_EXCLUSIONS)
@@ -173,6 +174,7 @@ class CharacteristicRegistry:
         Raises:
             TypeError: If char_cls does not inherit from BaseCharacteristic
             ValueError: If UUID conflicts with existing registration and override=False
+
         """
         # Runtime safety check retained in case of dynamic caller misuse despite type hints.
         if not _CharacteristicClassValidator.is_characteristic_subclass(char_cls):
@@ -221,6 +223,7 @@ class CharacteristicRegistry:
 
         Args:
             uuid: The characteristic UUID to unregister (string or BluetoothUUID)
+
         """
         bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
         with cls._lock:
@@ -242,6 +245,7 @@ class CharacteristicRegistry:
 
         Returns:
             List of all characteristic names.
+
         """
         return [e.value for e in CharacteristicName]
 
@@ -251,6 +255,7 @@ class CharacteristicRegistry:
 
         Returns:
             List of all characteristic enum values.
+
         """
         return list(CharacteristicName)
 
@@ -266,6 +271,7 @@ class CharacteristicRegistry:
 
         Returns:
             Characteristic instance if found, None otherwise.
+
         """
         # Handle UUID input
         if isinstance(uuid, BluetoothUUID):
@@ -299,6 +305,7 @@ class CharacteristicRegistry:
 
         Returns:
             The characteristic class if found, None otherwise.
+
         """
         # Always normalize UUID to BluetoothUUID
         try:
@@ -325,6 +332,7 @@ class CharacteristicRegistry:
 
         Returns:
             Dictionary mapping characteristic names to classes
+
         """
         result: dict[CharacteristicName, type[BaseCharacteristic]] = {}
         for name, char_cls in _CharacteristicMapBuilder.get_cached_map().items():

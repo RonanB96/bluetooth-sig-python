@@ -98,7 +98,8 @@ class TestBaseCharacteristicValidation:
 
     def test_range_validation_failure_min(self) -> None:
         """Test that minimum value validation failures are handled
-        correctly."""
+        correctly.
+        """
 
         class MinValueCharacteristic(CustomBaseCharacteristic):
             min_value: int | float | None = 10

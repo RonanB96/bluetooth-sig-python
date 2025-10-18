@@ -43,17 +43,19 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured VoltageSpecificationData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> VoltageSpecificationData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VoltageSpecificationData:
         """Parse voltage specification data (2x uint16 in units of 1/64 V).
 
         Args:
-            data: Raw bytes from the characteristic read
+            data: Raw bytes from the characteristic read.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            VoltageSpecificationData with 'minimum' and 'maximum' voltage specification values in Volts
+            VoltageSpecificationData with 'minimum' and 'maximum' voltage specification values in Volts.
 
         Raises:
-            ValueError: If data is insufficient
+            ValueError: If data is insufficient.
+
         """
         if len(data) < 4:
             raise ValueError("Voltage specification data must be at least 4 bytes")
@@ -72,6 +74,7 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the voltage specification (2x uint16, 1/64 V resolution)
+
         """
         if not isinstance(data, VoltageSpecificationData):
             raise TypeError(f"Voltage specification data must be a VoltageSpecificationData, got {type(data).__name__}")

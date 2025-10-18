@@ -1,5 +1,4 @@
-"""Device class for grouping BLE device services, characteristics, encryption,
-and advertiser data.
+"""Device class for grouping BLE device services, characteristics, encryption, and advertiser data.
 
 This module provides a high-level Device abstraction that groups all
 services, characteristics, encryption requirements, and advertiser data
@@ -79,7 +78,7 @@ def _is_uuid_like(value: str) -> bool:
 
 
 class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
-    """High-level BLE device abstraction.
+    r"""High-level BLE device abstraction.
 
     This class groups all services, characteristics, encryption requirements, and
     advertiser data for a BLE device. It integrates with
@@ -109,9 +108,17 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         battery = device.get_characteristic_data("2A19")
         print(f"Battery: {battery.value}%")
         ```
+
     """
 
     def __init__(self, address: str, translator: SIGTranslatorProtocol) -> None:
+        """Initialise Device instance with address and translator.
+
+        Args:
+            address: BLE device address
+            translator: SIGTranslatorProtocol instance
+
+        """
         self.address = address
         self.translator = translator
         # Optional connection manager implementing ConnectionManagerProtocol
@@ -128,6 +135,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self._device_info_cache: DeviceInfo | None = None
 
     def __str__(self) -> str:
+        """Return string representation of Device.
+
+        Returns:
+            str: String representation of Device.
+
+        """
         service_count = len(self.services)
         char_count = sum(len(service.characteristics) for service in self.services.values())
         return f"Device({self.address}, name={self.name}, {service_count} services, {char_count} characteristics)"
@@ -138,6 +151,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Args:
             service_name: Name or enum of the service to add
             characteristics: Dictionary mapping characteristic UUIDs to raw data
+
         """
         # Resolve service UUID: accept UUID-like strings directly, else ask translator
         # service_uuid can be a string or None (translator may return None)
@@ -186,12 +200,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Args:
             manager: Connection manager implementing the ConnectionManagerProtocol
+
         """
         self.connection_manager = manager
 
     async def detach_connection_manager(self) -> None:
-        """Detach the current connection manager and disconnect if
-        connected."""
+        """Detach the current connection manager and disconnect if connected.
+
+        Disconnects if a connection manager is present, then removes it.
+        """
         if self.connection_manager:
             await self.disconnect()
         self.connection_manager = None
@@ -201,6 +218,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError: If no connection manager is attached
+
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
@@ -211,6 +229,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError: If no connection manager is attached
+
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
@@ -227,6 +246,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError: If no connection manager is attached
+
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
@@ -245,6 +265,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError: If no connection manager is attached
+
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
@@ -261,6 +282,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError: If no connection manager is attached
+
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
@@ -287,6 +309,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             ValueError: If the characteristic name cannot be resolved
+
         """
         if isinstance(identifier, CharacteristicName):
             # For enum inputs, ask the translator for the UUID
@@ -307,6 +330,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Args:
             char_name: Characteristic name or UUID
+
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached")
@@ -319,6 +343,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Args:
             raw_data: Raw bytes from BLE advertising packet
+
         """
         parsed_data = self.advertising_parser.parse_advertising_data(raw_data)
         self.advertiser_data = parsed_data
@@ -330,15 +355,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     def get_characteristic_data(
         self, service_name: str | ServiceName, char_uuid: str
     ) -> CharacteristicDataProtocol | None:
-        """Get parsed characteristic data for a specific service and
-        characteristic.
+        """Get parsed characteristic data for a specific service and characteristic.
 
         Args:
             service_name: Name or enum of the service
             char_uuid: UUID of the characteristic
 
         Returns:
-            Parsed characteristic data or None if not found
+            Parsed characteristic data or None if not found.
+
         """
         service_key = service_name if isinstance(service_name, str) else service_name.value
         service = self.services.get(service_key)
@@ -347,11 +372,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return None
 
     def update_encryption_requirements(self, char_data: CharacteristicData) -> None:
-        """Update device encryption requirements based on characteristic
-        properties.
+        """Update device encryption requirements based on characteristic properties.
 
         Args:
             char_data: The parsed characteristic data with properties
+
         """
         properties = char_data.properties
 
@@ -444,6 +469,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Returns:
             ParsedADStructures object with extracted data
+
         """
         # pylint: disable=too-many-branches,too-many-statements
         parsed = ParsedADStructures()
@@ -576,6 +602,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError: If no connection manager is attached
+
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
@@ -609,6 +636,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError: If no connection manager is attached
+
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
@@ -631,6 +659,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError: If no connection manager is attached
+
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
@@ -659,6 +688,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError: If no connection manager is attached
+
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
@@ -682,6 +712,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Returns:
             DeviceInfo with current device metadata
+
         """
         if self._device_info_cache is None:
             self._device_info_cache = DeviceInfo(
@@ -716,6 +747,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Returns:
             True if connected, False otherwise
+
         """
         if self.connection_manager is None:
             return False
@@ -730,6 +762,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Returns:
             DeviceService instance or None if not found
+
         """
         return self.services.get(service_uuid)
 
@@ -741,6 +774,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Returns:
             List of matching DeviceService instances
+
         """
         service_uuid = self.translator.get_service_uuid_by_name(
             service_name if isinstance(service_name, str) else service_name.value
@@ -757,6 +791,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Returns:
             Dictionary mapping service UUIDs to lists of characteristic UUIDs
+
         """
         if service_uuid:
             service = self.services.get(service_uuid)

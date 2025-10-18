@@ -545,6 +545,62 @@ run_shellcheck() {
     fi
 }
 
+# Run pydocstyle
+run_pydocstyle() {
+    # Usage: run_pydocstyle [is_parallel] [logfile]
+    local is_parallel="${1:-false}"
+    local _logfile="${2:-}"
+
+    if [ "$is_parallel" != "true" ]; then
+        print_header "Running pydocstyle"
+    fi
+
+    if ! command -v pydocstyle >/dev/null 2>&1; then
+        print_error "pydocstyle not found. Install with: pip install pydocstyle"
+        return 1
+    fi
+
+    # Run pydocstyle only on source code (tests are excluded
+    # because they intentionally contain many informal helpers
+    # scripts that don't require exhaustive Google-style docstrings).
+    local PYDOCSTYLE_FOLDERS="src examples"
+    local PYDOCSTYLE_OUTPUT
+    # shellcheck disable=SC2086  # PYDOCSTYLE_FOLDERS is intentionally space-separated
+    run_capture "pydocstyle --convention=google $PYDOCSTYLE_FOLDERS"
+    local PYDOCSTYLE_EXIT_CODE=$?
+    PYDOCSTYLE_OUTPUT="$CAPTURE_OUTPUT"
+
+    if [ "$is_parallel" != "true" ]; then
+        if [ $PYDOCSTYLE_EXIT_CODE -eq 0 ]; then
+            print_success "pydocstyle passed with zero violations"
+            return 0
+        else
+            # Show the actual pydocstyle output
+            echo "$PYDOCSTYLE_OUTPUT"
+            print_error "pydocstyle found violations"
+            return 1
+        fi
+    else
+        # In parallel mode, always write the pydocstyle output to logfile if provided
+        if [ -n "${_logfile}" ]; then
+            # Write atomically: use a temp file then move into place
+            tmpfile="${_logfile}.$$.$RANDOM.tmp"
+            printf "%s\n" "$PYDOCSTYLE_OUTPUT" >"$tmpfile" || true
+            mv "$tmpfile" "$_logfile" || true
+        fi
+        # Also output to stdout for spawn_bg to capture
+        if [ $PYDOCSTYLE_EXIT_CODE -ne 0 ]; then
+            echo "=== PYDOCSTYLE OUTPUT ==="
+            echo "$PYDOCSTYLE_OUTPUT"
+            echo "=== END PYDOCSTYLE OUTPUT ==="
+        fi
+        if [ $PYDOCSTYLE_EXIT_CODE -ne 0 ]; then
+            return 1
+        fi
+        return 0
+    fi
+}
+
 # Run all linting checks
 run_all_checks() {
     print_header "Running all linting checks"
@@ -573,6 +629,12 @@ run_all_checks() {
         echo ""
 
         if ! run_shellcheck; then
+            exit_code=1
+        fi
+
+        echo ""
+
+        if ! run_pydocstyle; then
             exit_code=1
         fi
 
@@ -700,19 +762,22 @@ run_all_checks_parallel() {
     spawn_bg run_pylint "$LOGDIR/pylint.out" "$LOGDIR/pylint.pid"
     spawn_bg run_mypy "$LOGDIR/mypy.out" "$LOGDIR/mypy.pid"
     spawn_bg run_shellcheck "$LOGDIR/shellcheck.out" "$LOGDIR/shellcheck.pid"
+    spawn_bg run_pydocstyle "$LOGDIR/pydocstyle.out" "$LOGDIR/pydocstyle.pid"
 
     pid_ruff=$(cat "$LOGDIR/ruff.pid")
     pid_pylint=$(cat "$LOGDIR/pylint.pid")
     pid_mypy=$(cat "$LOGDIR/mypy.pid")
     pid_shellcheck=$(cat "$LOGDIR/shellcheck.pid")
+    pid_pydocstyle=$(cat "$LOGDIR/pydocstyle.pid")
 
-    echo "⏳ Running comprehensive checks in parallel (ruff, pylint(prod/examples/test), mypy(prod/examples/tests), shellcheck)..."
+    echo "⏳ Running comprehensive checks in parallel (ruff, pylint(prod/examples/test), mypy(prod/examples/tests), shellcheck, pydocstyle)..."
 
     # Wait & report using the helper to reduce duplication
     wait_and_report "$pid_ruff" "ruff" "$LOGDIR/ruff.out"
     wait_and_report "$pid_pylint" "pylint" "$LOGDIR/pylint.out"
     wait_and_report "$pid_mypy" "mypy" "$LOGDIR/mypy.out"
     wait_and_report "$pid_shellcheck" "shellcheck" "$LOGDIR/shellcheck.out"
+    wait_and_report "$pid_pydocstyle" "pydocstyle" "$LOGDIR/pydocstyle.out"
 
     echo ""
 
@@ -771,6 +836,11 @@ while [[ $# -gt 0 ]]; do
             run_shellcheck
             exit $?
             ;;
+        --doc)
+            check_venv
+            run_pydocstyle
+            exit $?
+            ;;
         --help|-h)
             echo "Usage: $0 [OPTION]"
             echo ""
@@ -787,6 +857,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --pylint            Run pylint analysis (production: 10.00/10, tests: ignores common test issues)"
             echo "  --mypy              Run mypy type checking (production: strict, tests: lenient)"
             echo "  --shellcheck        Run shellcheck shell script analysis"
+            echo "  --doc               Run pydocstyle docstring analysis (Google style)"
             echo ""
             echo "Examples:"
             echo "  $0                  # Run all comprehensive checks in parallel (~16s - fastest)"
@@ -796,6 +867,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0 --pylint         # Run only pylint"
             echo "  $0 --mypy           # Run only mypy"
             echo "  $0 --shellcheck     # Run only shellcheck"
+            echo "  $0 --doc     # Run only pydocstyle"
             echo ""
             echo "Note: For formatting, use ./scripts/format.sh"
             echo ""

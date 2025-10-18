@@ -21,7 +21,6 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 
 def characteristic_uuid(characteristic_cls: type[CustomBaseCharacteristic]) -> str:
     """Return the string UUID for the given characteristic class."""
-
     return str(characteristic_cls().info.uuid)
 
 
@@ -93,6 +92,7 @@ class SensorReadingCharacteristic(CustomBaseCharacteristic):
         SIG Pattern:
         This demonstrates optional context enrichment - the characteristic works
         standalone but can be enhanced with context data when available.
+
         """
         # Parse raw sensor value
         raw_value = int.from_bytes(bytes(data[:2]), byteorder="little", signed=True)
@@ -312,7 +312,6 @@ class TestMultiCharacteristicDependencies:
 
     def test_missing_required_dependency_fails_fast(self, translator: BluetoothSIGTranslator) -> None:
         """Missing required dependency should yield a clear failure result."""
-
         sensor_uuid = str(SensorReadingCharacteristic().info.uuid)
         raw_sensor = (100).to_bytes(2, byteorder="little", signed=True)
 
@@ -326,7 +325,6 @@ class TestMultiCharacteristicDependencies:
 
     def test_optional_dependency_absent_still_succeeds(self, translator: BluetoothSIGTranslator) -> None:
         """Optional dependencies should not block parsing when unavailable."""
-
         from bluetooth_sig.gatt.characteristics.blood_pressure_measurement import (
             BloodPressureData,
             BloodPressureMeasurementCharacteristic,
@@ -840,7 +838,6 @@ class TestRequiredOptionalDependencies:
 
     def test_multi_dependency_missing_requirements_fails(self, translator: BluetoothSIGTranslator) -> None:
         """Multiple required dependencies must all be present."""
-
         multi_uuid = "F0EADF11-0000-1000-8000-00805F9B34FB"
         # Provide raw value referencing measurement/context data that is not supplied
         multi_raw = (123).to_bytes(2, byteorder="little", signed=False) + (42).to_bytes(
@@ -858,7 +855,6 @@ class TestRequiredOptionalDependencies:
 
     def test_multi_dependency_with_required_only(self, translator: BluetoothSIGTranslator) -> None:
         """Multiple required dependencies allow parsing without optional enrichment."""
-
         measurement_uuid = "0EA50001-0000-1000-8000-00805F9B34FB"
         context_uuid = "C0111E11-0000-1000-8000-00805F9B34FB"
         multi_uuid = "F0EADF11-0000-1000-8000-00805F9B34FB"

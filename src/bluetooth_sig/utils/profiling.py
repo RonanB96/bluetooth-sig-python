@@ -69,6 +69,7 @@ def timer(_operation: str = "operation") -> Generator[dict[str, float], None, No
         >>> with timer("parse") as t:
         ...     parse_characteristic(data)
         >>> print(f"Elapsed: {t['elapsed']:.4f}s")
+
     """
     timing: dict[str, float] = {}
     start = time.perf_counter()
@@ -83,7 +84,7 @@ def benchmark_function(
     iterations: int = 1000,
     operation: str = "function",
 ) -> TimingResult:
-    """Benchmark a function by running it multiple times.
+    r"""Benchmark a function by running it multiple times.
 
     Args:
         func: Function to benchmark (should take no arguments)
@@ -97,7 +98,7 @@ def benchmark_function(
         >>> result = benchmark_function(
         ...     lambda: translator.parse_characteristic("2A19", b"\\x64"),
         ...     iterations=10000,
-        ...     operation="Battery Level parsing"
+        ...     operation="Battery Level parsing",
         ... )
         >>> print(result)
 
@@ -106,6 +107,7 @@ def benchmark_function(
         includes a warmup run to avoid JIT compilation overhead in the
         measurements. Individual timings are collected to compute min/max
         statistics.
+
     """
     times: list[float] = []
 
@@ -153,12 +155,16 @@ def compare_implementations(
         Dictionary mapping implementation names to their TimingResults
 
     Example:
-        >>> results = compare_implementations({
-        ...     "manual": lambda: manual_parse(data),
-        ...     "sig_lib": lambda: translator.parse_characteristic("2A19", data)
-        ... }, iterations=10000)
+        >>> results = compare_implementations(
+        ...     {
+        ...         "manual": lambda: manual_parse(data),
+        ...         "sig_lib": lambda: translator.parse_characteristic("2A19", data),
+        ...     },
+        ...     iterations=10000,
+        ... )
         >>> for name, result in results.items():
-        ...     print(f"{name}: {result.avg_time*1000:.4f}ms")
+        ...     print(f"{name}: {result.avg_time * 1000:.4f}ms")
+
     """
     results: dict[str, TimingResult] = {}
     for name, func in implementations.items():
@@ -175,6 +181,7 @@ def format_comparison(results: dict[str, TimingResult], baseline: str | None = N
 
     Returns:
         Formatted string with comparison table
+
     """
     if not results:
         return "No results to display"

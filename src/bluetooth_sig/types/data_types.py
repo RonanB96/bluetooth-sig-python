@@ -22,6 +22,7 @@ class ParseFieldError(msgspec.Struct, frozen=True, kw_only=True):
         reason: Human-readable description of why parsing failed
         offset: Optional byte offset where the field starts in raw data
         raw_slice: Optional raw bytes that were being parsed when error occurred
+
     """
 
     field: str
@@ -103,7 +104,7 @@ class ValidationResult(SIGInfo):
 
 
 class CharacteristicRegistration(msgspec.Struct, kw_only=True):
-    """Unified metadata for custom UUID registration"""
+    """Unified metadata for custom UUID registration."""
 
     uuid: BluetoothUUID
     name: str = ""
@@ -114,7 +115,7 @@ class CharacteristicRegistration(msgspec.Struct, kw_only=True):
 
 
 class ServiceRegistration(msgspec.Struct, kw_only=True):
-    """Unified metadata for custom UUID registration"""
+    """Unified metadata for custom UUID registration."""
 
     uuid: BluetoothUUID
     name: str = ""

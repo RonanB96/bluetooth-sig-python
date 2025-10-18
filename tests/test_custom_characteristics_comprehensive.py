@@ -702,7 +702,6 @@ class TestCustomBaseCharacteristicAPI:
 
     def test_sig_override_protection(self) -> None:
         """Test that __init_subclass__ prevents SIG UUID usage without permission."""
-
         with pytest.raises(ValueError, match="uses SIG UUID.*without override flag"):
 
             def _bad_body(namespace: dict[str, Any]) -> None:  # pragma: no cover

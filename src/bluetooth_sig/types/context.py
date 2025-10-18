@@ -29,6 +29,7 @@ class CharacteristicContext(msgspec.Struct, kw_only=True):
             `bluetooth_sig.core.CharacteristicData`). Parsers may consult this
             mapping to implement multi-characteristic decoding.
         raw_service: Optional raw service-level payload when applicable.
+
     """
 
     device_info: DeviceInfo | None = None

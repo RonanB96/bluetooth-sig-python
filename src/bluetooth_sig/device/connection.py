@@ -41,8 +41,7 @@ class ConnectionManagerProtocol(Protocol):
         raise NotImplementedError()
 
     async def get_services(self) -> Any:  # noqa: ANN401  # pragma: no cover  # Adapter-specific service collection type
-        """Return a structure describing services/characteristics from the
-        adapter.
+        """Return a structure describing services/characteristics from the adapter.
 
         The concrete return type depends on the adapter; `Device` uses
         this only for enumeration in examples. Adapters should provide
@@ -53,8 +52,7 @@ class ConnectionManagerProtocol(Protocol):
         raise NotImplementedError()
 
     async def start_notify(self, char_uuid: str, callback: Callable[[str, bytes], None]) -> None:  # pragma: no cover
-        """Start notifications for `char_uuid` and invoke `callback(uuid,
-        data)` on updates."""
+        """Start notifications for `char_uuid` and invoke `callback(uuid, data)` on updates."""
         raise NotImplementedError()
 
     async def stop_notify(self, char_uuid: str) -> None:  # pragma: no cover
@@ -67,6 +65,7 @@ class ConnectionManagerProtocol(Protocol):
 
         Returns:
             True if connected to the device, False otherwise
+
         """
         raise NotImplementedError()
 

@@ -53,6 +53,7 @@ def service_class_factory() -> Callable[..., type[CustomBaseGattService]]:
 
         Returns:
             A new CustomBaseGattService subclass
+
         """
         nonlocal counter
         counter += 1

@@ -11,6 +11,7 @@ def get_rssi_quality(rssi: int) -> str:
 
     Returns:
         Human-readable quality description
+
     """
     if rssi >= -30:
         return "Excellent"

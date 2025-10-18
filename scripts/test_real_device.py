@@ -137,7 +137,7 @@ async def test_device_connection(mac_address: str):
 
             if values:
                 discovered_uuids = list(values.keys())
-                print(f"📊 Analyzing {len(discovered_uuids)} discovered " "characteristics:")
+                print(f"📊 Analyzing {len(discovered_uuids)} discovered characteristics:")
 
                 # Batch analysis
                 char_info = translator.get_characteristics_info_by_uuids(discovered_uuids)
@@ -161,7 +161,7 @@ async def test_device_connection(mac_address: str):
                         if validation.is_valid:
                             valid_count += 1
 
-                print(f"\n📈 Validation: {valid_count}/{len(values)} " "characteristics have known format")
+                print(f"\n📈 Validation: {valid_count}/{len(values)} characteristics have known format")
 
             print("\n✅ Test completed successfully")
             return True

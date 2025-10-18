@@ -55,22 +55,26 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = "various"  # Multiple units in vector data
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> CyclingPowerVectorData:
-        """Parse cycling power vector data according to Bluetooth
-        specification.
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerVectorData:
+        """Parse cycling power vector data according to Bluetooth specification.
 
         Format: Flags(1) + Crank Revolution Data(2) + Last Crank Event Time(2) +
         First Crank Measurement Angle(2) + [Instantaneous Force Magnitude Array] +
         [Instantaneous Torque Magnitude Array]
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            CyclingPowerVectorData containing parsed cycling power vector data
+            CyclingPowerVectorData containing parsed cycling power vector data.
 
+        # `ctx` is intentionally unused in this implementation; mark as used
+        # so linters do not report an unused-argument error.
+        del ctx
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
+
         """
         if len(data) < 7:
             raise ValueError("Cycling Power Vector data must be at least 7 bytes")
@@ -135,6 +139,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the power vector
+
         """
         if not isinstance(data, CyclingPowerVectorData):
             raise TypeError(f"Cycling power vector data must be a CyclingPowerVectorData, got {type(data).__name__}")

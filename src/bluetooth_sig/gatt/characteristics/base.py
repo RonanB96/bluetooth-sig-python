@@ -72,6 +72,7 @@ class SIGCharacteristicResolver:
 
         Raises:
             UUIDResolutionError: If no UUID can be resolved for the class
+
         """
         # Try YAML resolution first
         yaml_spec = SIGCharacteristicResolver.resolve_yaml_spec_for_class(char_class)
@@ -160,6 +161,12 @@ class CharacteristicMeta(ABCMeta):
         namespace: dict[str, Any],
         **kwargs: Any,  # noqa: ANN401  # Metaclass receives arbitrary keyword arguments
     ) -> type:
+        """Create the characteristic class and handle template markers.
+
+        This metaclass hook ensures template classes and concrete
+        implementations are correctly annotated with the ``_is_template``
+        attribute before the class object is created.
+        """
         # Auto-handle template flags before class creation so attributes are part of namespace
         if bases:  # Not the base class itself
             # Check if this class is in templates.py (template) or a concrete implementation
@@ -200,7 +207,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     Example usage in subclasses:
         class ExampleCharacteristic(BaseCharacteristic):
-            \"\"\"Example showing validation attributes usage.\"\"\"
+            '''Example showing validation attributes usage.'''
 
             # Declare validation constraints as class attributes
             expected_length = 2
@@ -279,6 +286,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Args:
             info: Complete characteristic information (optional for SIG characteristics)
             validation: Validation constraints configuration (optional)
+
         """
         # Store provided info or None (will be resolved in __post_init__)
         self._provided_info = info
@@ -411,17 +419,17 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     @property
     def uuid(self) -> BluetoothUUID:
-        """Get the characteristic UUID from _info (single source of truth)."""
+        """Get the characteristic UUID from _info."""
         return self._info.uuid
 
     @property
     def info(self) -> CharacteristicInfo:
-        """Get the characteristic info (single source of truth)."""
+        """Characteristic information."""
         return self._info
 
     @property
     def name(self) -> str:
-        """Get the characteristic name from _info (single source of truth)."""
+        """Get the characteristic name from _info."""
         return self._info.name
 
     @property
@@ -451,6 +459,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         Returns:
             Canonical UUID string or None if unresolvable
+
         """
         configured_info: CharacteristicInfo | None = getattr(dep_class, "_info", None)
         if configured_info is not None:
@@ -471,7 +480,6 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     def _resolve_dependencies(self, attr_name: str) -> list[str]:
         """Resolve dependency class references to canonical UUID strings."""
-
         dependency_classes: list[type[BaseCharacteristic]] = []
 
         declared = getattr(self.__class__, attr_name, []) or []
@@ -491,7 +499,6 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     @property
     def required_dependencies(self) -> list[str]:
         """Get resolved required dependency UUID strings."""
-
         if self._resolved_required_dependencies is None:
             self._resolved_required_dependencies = self._resolve_dependencies("_required_dependencies")
 
@@ -500,7 +507,6 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     @property
     def optional_dependencies(self) -> list[str]:
         """Get resolved optional dependency UUID strings."""
-
         if self._resolved_optional_dependencies is None:
             self._resolved_optional_dependencies = self._resolve_dependencies("_optional_dependencies")
 
@@ -515,6 +521,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         Returns:
             True if SIG override is allowed, False otherwise.
+
         """
         return cls._allows_sig_override
 
@@ -527,6 +534,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         Returns:
             CharacteristicInfo if configured, None otherwise
+
         """
         return getattr(cls, "_configured_info", None)
 
@@ -538,6 +546,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         Returns:
             BluetoothUUID if the class has a resolvable UUID, None otherwise.
+
         """
         return cls._resolve_class_uuid()
 
@@ -601,6 +610,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         Raises:
             NotImplementedError: If no template is set and subclass doesn't override
+
         """
         if self._template is not None:
             return self._template.decode_value(data, offset=0, ctx=ctx)
@@ -647,14 +657,15 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         ctx: CharacteristicContext | None,
         characteristic_name: CharacteristicName | str | type[BaseCharacteristic],
     ) -> Any | None:  # noqa: ANN401  # Returns various characteristic types from context
-        """Generic utility to find a characteristic in context by name or class.
+        """Find a characteristic in a context by name or class.
 
         Args:
-            ctx: Context containing other characteristics
-            characteristic_name: Enum, string name, or characteristic class
+            ctx: Context containing other characteristics.
+            characteristic_name: Enum, string name, or characteristic class.
 
         Returns:
-            Characteristic data if found, None otherwise
+            Characteristic data if found, None otherwise.
+
         """
         if not ctx or not ctx.other_characteristics:
             return None
@@ -696,6 +707,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         Environment Variables:
             BLUETOOTH_SIG_ENABLE_PARSE_TRACE: Set to "0", "false", or "no" to disable
+
         """
         env_value = os.getenv("BLUETOOTH_SIG_ENABLE_PARSE_TRACE", "").lower()
         if env_value in ("0", "false", "no"):
@@ -720,6 +732,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         Returns:
             CharacteristicData object with parsed value, metadata, field errors, and parse trace
+
         """
         # Check both environment variable and class attribute
         trace_enabled = self._is_parse_trace_enabled() and self._enable_parse_trace
@@ -795,6 +808,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Raises:
             ValueError: If data is invalid for encoding
             NotImplementedError: If no template is set and subclass doesn't override
+
         """
         if self._template is not None:
             return self._template.encode_value(data)
@@ -802,22 +816,22 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     @property
     def unit(self) -> str:
-        """Get the unit of measurement from _info (single source of truth)."""
+        """Get the unit of measurement from _info."""
         return self._info.unit
 
     @property
     def properties(self) -> list[GattProperty]:
-        """Get the GATT properties from _info (single source of truth)."""
+        """Get the GATT properties from _info."""
         return self._info.properties
 
     @property
     def size(self) -> int | None:
-        """Get the size in bytes for this characteristic from YAML
-        specifications.
+        """Get the size in bytes for this characteristic from YAML specifications.
 
-        Returns the field size from YAML automation if available,
-        otherwise None. This is useful for determining the expected data
-        length for parsing and encoding.
+        Returns the field size from YAML automation if available, otherwise None.
+        This is useful for determining the expected data length for parsing
+        and encoding.
+
         """
         # First try manual size override if set
         if self._manual_size is not None:
@@ -834,7 +848,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     @property
     def value_type_resolved(self) -> ValueType:
-        """Get the value type from _info (single source of truth)."""
+        """Get the value type from _info."""
         return self._info.value_type
 
     # YAML automation helper methods
@@ -876,8 +890,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return False
 
     def get_byte_order_hint(self) -> str:
-        """Get byte order hint (Bluetooth SIG uses little-endian by
-        convention)."""
+        """Get byte order hint (Bluetooth SIG uses little-endian by convention)."""
         return "little"
 
 
@@ -903,6 +916,7 @@ class CustomBaseCharacteristic(BaseCharacteristic):
 
         Returns:
             CharacteristicInfo if configured, None otherwise
+
         """
         return cls._configured_info
 
@@ -914,10 +928,14 @@ class CustomBaseCharacteristic(BaseCharacteristic):
         """Automatically set up _info if provided as class attribute.
 
         Args:
-            allow_sig_override: Set to True when intentionally overriding SIG UUIDs
+            allow_sig_override: Set to True when intentionally overriding SIG UUIDs.
+            **kwargs: Additional subclass keyword arguments passed by callers or
+                metaclasses; these are accepted for compatibility and ignored
+                unless explicitly handled.
 
         Raises:
-            ValueError: If class uses SIG UUID without override permission
+            ValueError: If class uses SIG UUID without override permission.
+
         """
         super().__init_subclass__(**kwargs)
 
@@ -948,6 +966,7 @@ class CustomBaseCharacteristic(BaseCharacteristic):
 
         Raises:
             ValueError: If no valid info available from class or parameter
+
         """
         # Use provided info, or fall back to class-configured _info
         final_info = info or self.__class__.get_configured_info()
@@ -995,6 +1014,7 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
 
         Raises:
             ValueError: If UUID is invalid
+
         """
         # If no name provided, generate one from UUID
         if not info.name:
@@ -1017,6 +1037,7 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
 
         Returns:
             Raw bytes as-is
+
         """
         return bytes(data)
 
@@ -1031,6 +1052,7 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
 
         Raises:
             ValueError: If data is not bytes/bytearray
+
         """
         if isinstance(data, (bytes, bytearray)):
             return bytearray(data)

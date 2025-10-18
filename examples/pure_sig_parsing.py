@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Pure SIG parsing examples for bluetooth_sig.
+
+This module demonstrates parsing characteristic data using only the
+Bluetooth SIG translator without requiring BLE hardware.
+"""
+
 # Set up paths for imports
 import sys
 from pathlib import Path
