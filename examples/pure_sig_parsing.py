@@ -92,8 +92,9 @@ def demonstrate_pure_sig_parsing() -> None:
         if result.parse_success:
             unit_str = f" {result.unit}" if result.unit else ""
             print(f"   ✅ Parsed value: {result.value}{unit_str}")
-            if hasattr(result, "value_type") and result.value_type:
-                print(f"   📋 Value type: {result.value_type}")
+            # Value type is available on the CharacteristicInfo attached to the result
+            if getattr(result.info, "value_type", None):
+                print(f"   📋 Value type: {result.info.value_type}")
         else:
             print(f"   ❌ Parse failed: {result.error_message}")
 
@@ -123,7 +124,7 @@ def demonstrate_uuid_resolution() -> None:
         print(f"🔗 UUID: {uuid}")
 
         # Get characteristic information
-        char_info = translator.get_characteristic_info(uuid)
+        char_info = translator.get_characteristic_info_by_uuid(uuid)
         if char_info:
             print(f"   ✅ Name: {char_info.name}")
             print(f"   📝 Description: {char_info.description or 'N/A'}")

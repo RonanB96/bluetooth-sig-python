@@ -116,11 +116,11 @@ from bluetooth_sig import BluetoothSIGTranslator
 translator = BluetoothSIGTranslator()
 
 # Automatic UUID resolution (short or long form)
-info = translator.resolve_by_uuid("180F")
-info = translator.resolve_by_uuid("0000180f-0000-1000-8000-00805f9b34fb")  # Same result
+info = translator.get_sig_info_by_uuid("180F")
+info = translator.get_sig_info_by_uuid("0000180f-0000-1000-8000-00805f9b34fb")  # Same result
 
 # Reverse lookup
-battery_service = translator.resolve_by_name("Battery Service")
+battery_service = translator.get_sig_info_by_name("Battery Service")
 print(battery_service.uuid)  # "180F"
 
 # Get full information

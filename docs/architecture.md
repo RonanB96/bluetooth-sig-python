@@ -147,7 +147,7 @@ info = registry.get_characteristic_info("2A19")
 # Returns: CharacteristicInfo(uuid="2A19", name="Battery Level")
 
 # Name to UUID
-uuid = registry.resolve_by_name("Battery Level")
+uuid = registry.get_sig_info_by_name("Battery Level")
 # Returns: "2A19"
 
 # Handles both short and long UUID formats

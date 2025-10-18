@@ -31,12 +31,13 @@ pip install bluetooth-sig
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
+service_info = translator.get_sig_info_by_uuid("180F")
+print(service_info.name)  # "Battery Service"
+```
 
-# Resolve UUIDs
-service_info = translator.resolve_by_uuid("180F")
-print(f"Service: {service_info.name}")  # "Battery Service"
+## Parse characteristic data
 
-# Parse characteristic data
+```python
 battery_data = translator.parse_characteristic("2A19", bytearray([85]))
 print(f"Battery: {battery_data.value}%")  # "Battery: 85%"
 ```

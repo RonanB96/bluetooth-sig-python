@@ -20,8 +20,10 @@ class TestBluetoothSIGTranslator:
 
         # Test that core methods exist
         assert hasattr(translator, "parse_characteristic"), "Translator should have parse_characteristic method"
-        assert hasattr(translator, "get_characteristic_info"), "Translator should have get_characteristic_info method"
-        assert hasattr(translator, "get_service_info"), "Translator should have get_service_info method"
+        assert hasattr(translator, "get_characteristic_info_by_uuid"), (
+            "Translator should have get_characteristic_info_by_uuid method"
+        )
+        assert hasattr(translator, "get_service_info_by_uuid"), "Translator should have get_service_info_by_uuid method"
         assert hasattr(translator, "list_supported_characteristics"), (
             "Translator should have list_supported_characteristics method"
         )
@@ -29,8 +31,10 @@ class TestBluetoothSIGTranslator:
 
         # Test that methods are callable
         assert callable(translator.parse_characteristic), "parse_characteristic should be callable"
-        assert callable(translator.get_characteristic_info), "get_characteristic_info should be callable"
-        assert callable(translator.get_service_info), "get_service_info should be callable"
+        assert callable(translator.get_characteristic_info_by_uuid), (
+            "get_characteristic_info_by_uuid should be callable"
+        )
+        assert callable(translator.get_service_info_by_uuid), "get_service_info_by_uuid should be callable"
         assert callable(translator.list_supported_characteristics), "list_supported_characteristics should be callable"
         assert callable(translator.list_supported_services), "list_supported_services should be callable"
 
@@ -41,12 +45,12 @@ class TestBluetoothSIGTranslator:
         # Test with arbitrary UUID and data - should return fallback
         # when no parser available
         raw_data = b"\x64"  # 100 in binary
-        unknown_uuid = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"  # Valid format but unknown
+        unknown_uuid = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
         result = translator.parse_characteristic(unknown_uuid, raw_data)
 
         # Should return CharacteristicData with fallback info when no parser found
         assert isinstance(result, CharacteristicData)
-        assert result.uuid == unknown_uuid
+        assert str(result.uuid) == unknown_uuid
         assert result.name == "Unknown"
         assert result.value == raw_data
         assert result.parse_success is False
@@ -59,9 +63,9 @@ class TestBluetoothSIGTranslator:
 
         # Test different UUID formats - should all work
         uuids = [
-            "2A19",  # Short form
-            "00002A19-0000-1000-8000-00805F9B34FB",  # Full form with dashes
-            "00002a19-0000-1000-8000-00805f9b34fb",  # Lowercase
+            "2A19",
+            "00002A19-0000-1000-8000-00805F9B34FB",
+            "00002a19-0000-1000-8000-00805f9b34fb",
         ]
 
         for uuid in uuids:
@@ -72,13 +76,12 @@ class TestBluetoothSIGTranslator:
             assert result.parse_success is True
 
     def test_get_characteristic_info_fallback(self) -> None:
-        """Test get_characteristic_info returns None for unknown
-        characteristics."""
+        """Test get_characteristic_info returns None for unknown characteristics."""
         translator = BluetoothSIGTranslator()
 
         # Test with unknown UUID
         unknown_uuid = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
-        result = translator.get_characteristic_info(unknown_uuid)
+        result = translator.get_characteristic_info_by_uuid(unknown_uuid)
         assert result is None
 
     def test_get_service_info_fallback(self) -> None:
@@ -87,7 +90,7 @@ class TestBluetoothSIGTranslator:
 
         # Test with unknown UUID
         unknown_uuid = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
-        result = translator.get_service_info(unknown_uuid)
+        result = translator.get_service_info_by_uuid(unknown_uuid)
         assert result is None
 
     def test_list_supported_characteristics(self) -> None:
@@ -96,7 +99,6 @@ class TestBluetoothSIGTranslator:
 
         characteristics = translator.list_supported_characteristics()
         assert isinstance(characteristics, dict)
-        # Without YAML registry, may be empty but should be a dict
 
     def test_list_supported_services(self) -> None:
         """Test listing supported services."""
@@ -104,7 +106,6 @@ class TestBluetoothSIGTranslator:
 
         services = translator.list_supported_services()
         assert isinstance(services, dict)
-        # Without YAML registry, may be empty but should be a dict
 
     def test_pure_sig_translation_pattern(self) -> None:
         """Test the pure SIG translation pattern from docs."""
@@ -140,13 +141,13 @@ class TestBluetoothSIGTranslator:
         translator = BluetoothSIGTranslator()
 
         # Test known characteristic
-        result = translator.resolve_by_name("Battery Level")
+        result = translator.get_sig_info_by_name("Battery Level")
         assert result is not None, "Should find Battery Level characteristic"
-        assert result.uuid == "2A19", f"Expected 2A19, got {result.uuid}"
+        assert str(result.uuid) == "00002A19-0000-1000-8000-00805F9B34FB"
         assert result.name == "Battery Level"
 
         # Test unknown characteristic
-        result = translator.resolve_by_name("Unknown Characteristic")
+        result = translator.get_sig_info_by_name("Unknown Characteristic")
         assert result is None
 
     def test_resolve_name_with_uuid(self) -> None:
@@ -154,13 +155,13 @@ class TestBluetoothSIGTranslator:
         translator = BluetoothSIGTranslator()
 
         # Test known UUID
-        result = translator.resolve_by_uuid("2A19")
+        result = translator.get_sig_info_by_uuid("2A19")
         assert result is not None, "Should find info for 2A19"
         assert result.name == "Battery Level", f"Expected 'Battery Level', got {result.name}"
-        assert result.uuid == "2A19"
+        assert str(result.uuid) == "00002A19-0000-1000-8000-00805F9B34FB"
 
         # Test unknown UUID
-        result = translator.resolve_by_uuid("FFFF")
+        result = translator.get_sig_info_by_uuid("FFFF")
         assert result is None
 
     def test_parse_characteristics_batch(self) -> None:
@@ -188,7 +189,7 @@ class TestBluetoothSIGTranslator:
         translator = BluetoothSIGTranslator()
 
         uuids = ["2A19", "2A6E", "FFFF"]  # Known, known, unknown
-        results = translator.get_characteristics_info(uuids)
+        results = translator.get_characteristics_info_by_uuids(uuids)
 
         assert len(results) == 3
         assert results["2A19"] is not None  # Battery Level should be found

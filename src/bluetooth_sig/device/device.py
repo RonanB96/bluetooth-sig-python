@@ -60,11 +60,11 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         """Parse a single characteristic's raw bytes."""
 
     @abstractmethod
-    def get_characteristic_uuid(self, name: CharacteristicName) -> str | None:
+    def get_characteristic_uuid_by_name(self, name: CharacteristicName) -> str | None:
         """Get the UUID for a characteristic name enum (enum-only API)."""
 
     @abstractmethod
-    def get_service_uuid(self, name: str | ServiceName) -> str | None:
+    def get_service_uuid_by_name(self, name: str | ServiceName) -> str | None:
         """Get the UUID for a service name or enum."""
 
     def get_characteristic_info_by_name(self, name: CharacteristicName) -> Any | None:  # noqa: ANN401  # Adapter-specific characteristic info
@@ -79,7 +79,37 @@ def _is_uuid_like(value: str) -> bool:
 
 
 class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
-    """High-level BLE device abstraction."""
+    """High-level BLE device abstraction.
+
+    This class groups all services, characteristics, encryption requirements, and
+    advertiser data for a BLE device. It integrates with
+    [BluetoothSIGTranslator][bluetooth_sig.BluetoothSIGTranslator]
+    for parsing while providing a unified view of device state.
+
+    Key features:
+    - Parse advertiser data from BLE scan results
+    - Add and manage GATT services with their characteristics
+    - Access parsed characteristic data by UUID
+    - Handle device encryption requirements
+    - Cache device information for performance
+
+    Example:
+        Create and configure a device:
+
+        ```python
+        from bluetooth_sig import BluetoothSIGTranslator, Device
+
+        translator = BluetoothSIGTranslator()
+        device = Device("AA:BB:CC:DD:EE:FF", translator)
+
+        # Add a service
+        device.add_service("180F", {"2A19": b"\\x64"})  # Battery service
+
+        # Get parsed data
+        battery = device.get_characteristic_data("2A19")
+        print(f"Battery: {battery.value}%")
+        ```
+    """
 
     def __init__(self, address: str, translator: SIGTranslatorProtocol) -> None:
         self.address = address
@@ -115,7 +145,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if isinstance(service_name, str) and _is_uuid_like(service_name):
             service_uuid = service_name
         else:
-            service_uuid = self.translator.get_service_uuid(service_name)
+            service_uuid = self.translator.get_service_uuid_by_name(service_name)
 
         if not service_uuid:
             # No UUID found - this is an error condition
@@ -260,7 +290,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         if isinstance(identifier, CharacteristicName):
             # For enum inputs, ask the translator for the UUID
-            uuid = self.translator.get_characteristic_uuid(identifier)
+            uuid = self.translator.get_characteristic_uuid_by_name(identifier)
             if uuid:
                 return uuid
             norm = identifier.value.strip()
@@ -712,7 +742,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns:
             List of matching DeviceService instances
         """
-        service_uuid = self.translator.get_service_uuid(
+        service_uuid = self.translator.get_service_uuid_by_name(
             service_name if isinstance(service_name, str) else service_name.value
         )
         if service_uuid and service_uuid in self.services:

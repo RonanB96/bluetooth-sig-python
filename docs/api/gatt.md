@@ -29,18 +29,18 @@ All characteristic implementations inherit from [BaseCharacteristic][].
 
 ### BaseService
 
-::: bluetooth_sig.BaseService
+::: bluetooth_sig.gatt.services.base.BaseGattService
     options:
       show_root_heading: false
       heading_level: 4
 
-All service definitions inherit from [BaseService][].
+All service definitions inherit from BaseGattService.
 
 ## Registries
 
 ### CharacteristicRegistry
 
-::: bluetooth_sig.CharacteristicRegistry
+::: bluetooth_sig.gatt.characteristics.registry.CharacteristicRegistry
     options:
       show_root_heading: false
       heading_level: 4
@@ -52,7 +52,7 @@ Use [CharacteristicRegistry][] to register custom characteristics.
 
 ### GattServiceRegistry
 
-::: bluetooth_sig.GattServiceRegistry
+::: bluetooth_sig.gatt.services.registry.GattServiceRegistry
     options:
       show_root_heading: false
       heading_level: 4

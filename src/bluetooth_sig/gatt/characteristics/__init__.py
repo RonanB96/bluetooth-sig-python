@@ -1,11 +1,11 @@
 """Bluetooth SIG GATT characteristic registry.
-from __future__ import annotations
-
 
 Provides type-safe, registry-driven lookup for all supported
 characteristics. Now encapsulated in CharacteristicRegistry class for
 API clarity and extensibility.
 """
+
+from __future__ import annotations
 
 # Import the registry components from the dedicated registry module
 # Import all individual characteristic classes for backward compatibility

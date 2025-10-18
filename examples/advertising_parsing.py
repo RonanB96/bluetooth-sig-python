@@ -70,7 +70,7 @@ def demo_advertising_parsing() -> None:
         print("\nService name resolution:")
         service_uuids = cast(list[str], mock_advertising_data["service_uuids"])
         for uuid in service_uuids:
-            service_info = translator.get_service_info(uuid)
+            service_info = translator.get_service_info_by_uuid(uuid)
             if service_info:
                 print(f"  {uuid}: {service_info.name}")
             else:

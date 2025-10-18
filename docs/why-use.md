@@ -52,11 +52,11 @@ print(f"Temperature: {temp_data.value}°C")  # Temperature: 24.36°C
 
 ```python
 # Resolve UUIDs to names
-service_info = translator.resolve_by_uuid("180F")
+service_info = translator.get_sig_info_by_uuid("180F")
 print(service_info.name)  # "Battery Service"
 
 # Reverse lookup
-battery_service = translator.resolve_by_name("Battery Service")
+battery_service = translator.get_sig_info_by_name("Battery Service")
 print(battery_service.uuid)  # "180F"
 ```
 

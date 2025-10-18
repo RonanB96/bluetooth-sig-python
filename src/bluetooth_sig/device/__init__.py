@@ -1,7 +1,8 @@
 """Device class for grouping BLE device services, characteristics, encryption,
-from __future__ import annotations
+and advertiser data.
+"""
 
-and advertiser data."""
+from __future__ import annotations
 
 from .device import Device, SIGTranslatorProtocol, UnknownService
 

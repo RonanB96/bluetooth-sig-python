@@ -15,13 +15,14 @@ from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
-# UUID to name
-char_info = translator.resolve_by_uuid("2A19")
+```python
+# Resolve UUID to characteristic info
+char_info = translator.get_sig_info_by_uuid("2A19")
 print(char_info.name)  # "Battery Level"
 
-# Name to UUID
-char_info = translator.resolve_by_name("Battery Level")
-print(char_info.uuid)  # "2A19"
+# Resolve name to characteristic info
+char_info = translator.get_sig_info_by_name("Battery Level")
+print(char_info.uuid)  # "0x2A19"
 ```
 
 ## Direct Registry Access

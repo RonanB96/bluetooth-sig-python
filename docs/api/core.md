@@ -29,24 +29,26 @@ The [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteri
 
 ```python
 # Resolve UUID to get information
-service_info = translator.resolve_by_uuid("180F")
+service_info = translator.get_sig_info_by_uuid("180F")
 print(service_info.name)  # "Battery Service"
 
 # Resolve characteristic
-char_info = translator.resolve_by_uuid("2A19")
+char_info = translator.get_sig_info_by_uuid("2A19")
 print(char_info.name)  # "Battery Level"
 ```
 
-See [resolve_by_uuid][bluetooth_sig.BluetoothSIGTranslator.resolve_by_uuid] for full details.
+See [get_sig_info_by_uuid][bluetooth_sig.BluetoothSIGTranslator.get_sig_info_by_uuid] for full details.
 
-### Name Resolution
+battery_level = translator.get_sig_info("Battery Level")
+
+## Name Resolution
 
 ```python
 # Resolve name to UUID
-battery_service = translator.resolve_by_name("Battery Service")
+battery_service = translator.get_sig_info_by_name("Battery Service")
 print(battery_service.uuid)  # "180F"
 
-battery_level = translator.resolve_by_name("Battery Level")
+battery_level = translator.get_sig_info_by_name("Battery Level")
 print(battery_level.uuid)  # "2A19"
 ```
 

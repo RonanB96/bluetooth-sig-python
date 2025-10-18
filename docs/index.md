@@ -26,14 +26,8 @@ The **Bluetooth SIG Standards Library** provides comprehensive GATT characterist
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
-
-# Resolve UUIDs
-service_info = translator.resolve_by_uuid("180F")  # Battery
-print(f"Service: {service_info.name}")  # Service: Battery Service
-
-# Parse characteristic data
-battery_data = translator.parse_characteristic("2A19", bytearray([85]))
-print(f"Battery: {battery_data.value}%")  # Battery: 85%
+service_info = translator.get_sig_info_by_uuid("180F")  # Battery
+char_info = translator.get_sig_info_by_uuid("2A19")    # Battery Level
 ```
 
 ## Getting Started

@@ -21,7 +21,7 @@ from .exceptions import (
     UUIDResolutionError,
     ValueRangeError,
 )
-from .services.base import BaseGattService as BaseService
+from .services.base import BaseGattService
 from .uuid_registry import (
     CharacteristicSpec,
     CustomUuidEntry,
@@ -34,7 +34,7 @@ from .uuid_registry import (
 )
 
 __all__ = [
-    "BaseService",
+    "BaseGattService",
     "BaseCharacteristic",
     "CharacteristicSpec",
     "CustomUuidEntry",

@@ -25,13 +25,18 @@ translator = BluetoothSIGTranslator()
 ### 2. Resolve UUIDs
 
 ```python
+from bluetooth_sig import BluetoothSIGTranslator
+
+translator = BluetoothSIGTranslator()
+
 # Get service information
-service_info = translator.resolve_by_uuid("180F")
-print(f"Service: {service_info.name}")  # Service: Battery Service
+service_info = translator.get_sig_info_by_uuid("180F")
+print(f"Service: {service_info.name}")  # "Battery Service"
 
 # Get characteristic information
-char_info = translator.resolve_by_uuid("2A19")
-print(f"Characteristic: {char_info.name}")  # Characteristic: Battery Level
+char_info = translator.get_sig_info_by_uuid("2A19")
+print(f"Characteristic: {char_info.name}")  # "Battery Level"
+print(f"Unit: {char_info.unit}")  # "percentage"
 ```
 
 ### 3. Parse Characteristic Data
@@ -135,12 +140,12 @@ def main():
 
     # UUID Resolution
     print("=== UUID Resolution ===")
-    service_info = translator.resolve_by_uuid("180F")
+    service_info = translator.get_sig_info_by_uuid("180F")
     print(f"UUID 180F: {service_info.name}")
 
     # Name Resolution
     print("\n=== Name Resolution ===")
-    battery_level = translator.resolve_by_name("Battery Level")
+    battery_level = translator.get_sig_info_by_name("Battery Level")
     print(f"Battery Level: {battery_level.uuid}")
 
     # Data Parsing

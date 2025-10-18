@@ -292,15 +292,15 @@ class TestIntegration:
         translator = BluetoothSIGTranslator()
 
         # Resolve UUID to name
-        char_info = translator.resolve_by_uuid("2A19")
+        char_info = translator.get_sig_info_by_uuid("2A19")
         assert char_info.name == "Battery Level"
 
         # Resolve name to UUID
-        battery_uuid = translator.resolve_by_name("Battery Level")
+        battery_uuid = translator.get_sig_info_by_name("Battery Level")
         assert battery_uuid.uuid == "2A19"
 
         # Round-trip
-        assert translator.resolve_by_name(battery_uuid.uuid).name == char_info.name
+        assert translator.get_sig_info_by_uuid(battery_uuid.uuid).name == char_info.name
 ```
 
 ## Performance Testing
