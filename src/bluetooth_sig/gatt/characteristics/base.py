@@ -598,7 +598,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> Any:  # noqa: ANN401  # Context and return types vary by characteristic
         """Parse the characteristic's raw value.
 
-        If _template is set (Level 4 Progressive API), uses the template's decode_value method.
+        If _template is set, uses the template's decode_value method.
         Otherwise, subclasses must override this method.
 
         Args:
@@ -796,7 +796,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def encode_value(self, data: Any) -> bytearray:  # noqa: ANN401  # Encodes various value types (int, float, dataclass, etc.)
         """Encode the characteristic's value to raw bytes.
 
-        If _template is set (Level 4 Progressive API), uses the template's encode_value method.
+        If _template is set , uses the template's encode_value method.
         Otherwise, subclasses must override this method.
 
         Args:

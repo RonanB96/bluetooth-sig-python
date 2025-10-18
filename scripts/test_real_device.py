@@ -9,6 +9,7 @@ import asyncio
 import logging
 import sys
 from pathlib import Path
+from typing import Optional
 
 # Configure path for imports
 script_dir = Path(__file__).parent
@@ -31,7 +32,7 @@ except ImportError as e:
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-async def test_device_connection(mac_address: str):
+async def test_device_connection(mac_address: str) -> Optional[bool]:
     """Test connection to a real device using Bleak."""
     print(f"\n🔍 Testing connection to device: {mac_address}")
     print("=" * 60)
@@ -171,7 +172,7 @@ async def test_device_connection(mac_address: str):
         return False
 
 
-async def scan_devices(timeout: float = 10.0):
+async def scan_devices(timeout: float = 10.0) -> None:
     """Scan for nearby BLE devices."""
     print(f"🔍 Scanning for BLE devices (timeout: {timeout}s)...")
     print("=" * 60)
@@ -196,7 +197,7 @@ async def scan_devices(timeout: float = 10.0):
         print("Try running with elevated privileges: sudo python scripts/test_real_device.py scan")
 
 
-async def main():
+async def main() -> None:
     """Main function."""
     if not DEPENDENCIES_AVAILABLE:
         print("\n❌ Required dependencies are not installed.")
@@ -234,7 +235,7 @@ async def main():
         print("For more advanced debugging, use: python scripts/ble_debug.py --help")
 
 
-def print_error_analysis():
+def print_error_analysis() -> None:
     """Print analysis of common BLE connection errors and solutions."""
     print("🔍 Common BLE Error Analysis & Solutions")
     print("=" * 60)
