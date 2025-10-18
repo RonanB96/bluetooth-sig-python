@@ -1,5 +1,5 @@
 # mypy: warn_unused_ignores=False
-"""Coding templates for characteristic composition patterns (Level 4 Progressive API).
+"""Coding templates for characteristic composition patterns.
 
 This module provides reusable coding template classes that can be composed into
 characteristics via dependency injection. Templates are pure coding strategies

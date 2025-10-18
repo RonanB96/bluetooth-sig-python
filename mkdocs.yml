@@ -124,7 +124,7 @@ nav:
     - Why Use This Library: why-use.md
     - What Problems It Solves: what-it-solves.md
     - What It Does NOT Solve: what-it-does-not-solve.md
-    - Architecture Overview: architecture.md
+    - Architecture Overview: architecture/index.md
   - Community:
     - Code of Conduct: code-of-conduct.md
     - GitHub README: github-readme.md

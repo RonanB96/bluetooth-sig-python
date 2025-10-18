@@ -103,6 +103,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[docs]"
 
+      - name: Cache system dependencies
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: ${{ runner.os }}-apt-${{ hashFiles('scripts/install-deps.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      - name: Install system packages required for UML generation
+        run: |
+          # PlantUML requires Java; pydeps uses Graphviz (dot) to render
+          # dependency graphs. Install both so docs generation is reliable.
+          sudo apt-get update
+          sudo apt-get install -y graphviz plantuml openjdk-11-jre-headless
+
 
       - name: Download coverage artifacts
         uses: actions/download-artifact@v5

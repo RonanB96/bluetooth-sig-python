@@ -126,5 +126,5 @@ except ValueRangeError as e:
 
 - [Core API](core.md) - High-level `BluetoothSIGTranslator` API
 - [Supported Characteristics](../supported-characteristics.md) - Full list
-- [Architecture](../architecture.md) - Design details
+- [Architecture](../architecture/index.md) - Design details
 - [Adding Characteristics](../guides/adding-characteristics.md) - Custom implementations

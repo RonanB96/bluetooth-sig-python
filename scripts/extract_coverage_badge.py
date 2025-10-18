@@ -82,7 +82,7 @@ def create_coverage_badge_json(coverage_pct: float, output_dir: str) -> str:
     return badge_path
 
 
-def main():
+def main() -> None:
     """Main function to extract coverage and create badge JSON."""
     # Default paths
     coverage_xml_path = "coverage.xml"
