@@ -2,7 +2,7 @@
 
 A pure Python library for Bluetooth SIG standards interpretation
 
-[![Coverage Status](https://img.shields.io/endpoint?url=https://ronanb96.github.io/bluetooth-sig-python/coverage/coverage-badge.json)](coverage/)
+[![Coverage Status](https://img.shields.io/endpoint?url=https://ronanb96.github.io/bluetooth-sig-python/coverage/coverage-badge.json)](coverage/index.html)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://img.shields.io/pypi/v/bluetooth-sig.svg)](https://pypi.org/project/bluetooth-sig/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -79,7 +79,7 @@ Unlike other Bluetooth libraries that focus on device connectivity, this library
 - **Issues**: [GitHub Issues](https://github.com/RonanB96/bluetooth-sig-python/issues)
 - **Source Code**: [GitHub Repository](https://github.com/RonanB96/bluetooth-sig-python)
 - **Documentation**: You're here! 🎉
-- **Coverage Report**: [Test Coverage](coverage/) (Generated from CI)
+- **Coverage Report**: [Test Coverage](coverage/index.html) (Generated from CI)
 
 ## License
 
