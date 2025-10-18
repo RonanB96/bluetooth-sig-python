@@ -634,7 +634,7 @@ run_all_checks() {
 
         echo ""
 
-        if ! run_pydocstyle; then
+        if ! run_pydocstyle false ""; then
             exit_code=1
         fi
 
