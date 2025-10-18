@@ -1,3 +1,8 @@
+<!-- Architecture overview page (canonical) - copied into a folder so
+     relative links to diagrams/ and other docs resolve correctly when
+     the page is served at /architecture/.
+-->
+
 # Architecture Overview
 
 Understanding the architecture helps you make the most of the Bluetooth SIG Standards
@@ -50,13 +55,25 @@ The library follows these core principles:
 └─────────────────────────────────────────────────────────┘
 ```
 
+## Package Structure
+
+[![Package Dependencies](../diagrams/deps/bluetooth_sig.svg)](../diagrams/deps/bluetooth_sig.svg)
+
+## Package Hierarchy
+
+[![Package Hierarchy](../diagrams/svg/packages_bluetooth_sig.svg)](../diagrams/svg/packages_bluetooth_sig.svg)
+
+## Class Hierarchy
+
+[![Class Diagram](../diagrams/svg/classes_bluetooth_sig.svg)](../diagrams/svg/classes_bluetooth_sig.svg)
+
 ## Layer Breakdown
 
 ### 1. Core API Layer (`src/bluetooth_sig/core/translator.py`)
 
 **Purpose**: High-level, user-facing API
 
-**Key Class**: `BluetoothSIGTranslator` - see [Core API](api/core.md)
+**Key Class**: `BluetoothSIGTranslator` - see [Core API](../api/core.md)
 
 **Responsibilities**:
 
@@ -103,14 +120,14 @@ gatt/
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 
 class BatteryLevelCharacteristic(BaseCharacteristic):
-    def decode_value(self, data: bytearray) -> int:
-        # Standards-compliant parsing
-        if len(data) != 1:
-            raise InsufficientDataError("Battery Level requires 1 byte")
-        value = int(data[0])
-        if not 0 <= value <= 100:
-            raise ValueRangeError("Battery must be 0-100%")
-        return value
+     def decode_value(self, data: bytearray) -> int:
+          # Standards-compliant parsing
+          if len(data) != 1:
+               raise InsufficientDataError("Battery Level requires 1 byte")
+          value = int(data[0])
+          if not 0 <= value <= 100:
+               raise ValueRangeError("Battery must be 0-100%")
+          return value
 ```
 
 #### Characteristic Features
@@ -165,8 +182,8 @@ info = registry.get_service_info("0000180f-0000-1000-8000-00805f9b34fb")
 
 ```python
 from bluetooth_sig.types.gatt_enums import (
-    CharacteristicName,
-    ServiceName,
+     CharacteristicName,
+     ServiceName,
 )
 
 # Strongly-typed enum values
@@ -181,8 +198,48 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class BatteryLevelData:
-    value: int
-    unit: str = "%"
+     value: int
+     unit: str = "%"
+```
+
+
+### 2. GATT Layer (`src/bluetooth_sig/gatt/`)
+
+**Purpose**: Bluetooth GATT specification implementation
+
+**Structure**:
+
+```text
+gatt/
+├── characteristics/    # 70+ characteristic implementations
+│   ├── base.py        # Base characteristic class
+│   ├── battery_level.py
+│   ├── temperature.py
+│   ├── humidity.py
+│   └── ...
+├── services/          # Service definitions
+│   ├── base.py
+│   ├── battery_service.py
+│   └── ...
+└── exceptions.py      # GATT-specific exceptions
+```
+
+**Key Components**:
+
+#### Base Characteristic
+
+```python
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+
+class BatteryLevelCharacteristic(BaseCharacteristic):
+     def decode_value(self, data: bytearray) -> int:
+          # Standards-compliant parsing
+          if len(data) != 1:
+               raise InsufficientDataError("Battery Level requires 1 byte")
+          value = int(data[0])
+          if not 0 <= value <= 100:
+               raise ValueRangeError("Battery must be 0-100%")
+          return value
 ```
 
 ## Data Flow
@@ -238,16 +295,16 @@ Each characteristic is a strategy for parsing specific data:
 
 ```python
 class BaseCharacteristic:
-    def decode_value(self, data: bytearray) -> Any:
-        raise NotImplementedError
+     def decode_value(self, data: bytearray) -> Any:
+          raise NotImplementedError
 
 class BatteryLevelCharacteristic(BaseCharacteristic):
-    def decode_value(self, data: bytearray) -> int:
-        # Battery-specific parsing
+     def decode_value(self, data: bytearray) -> int:
+          # Battery-specific parsing
 
 class TemperatureCharacteristic(BaseCharacteristic):
-    def decode_value(self, data: bytearray) -> float:
-        # Temperature-specific parsing
+     def decode_value(self, data: bytearray) -> float:
+          # Temperature-specific parsing
 ```
 
 ### 2. Registry Pattern
@@ -267,18 +324,18 @@ Multi-layer validation:
 
 ```python
 def decode_value(self, data: bytearray) -> int:
-    # Layer 1: Structure validation
-    if len(data) != 1:
-        raise InsufficientDataError(...)
+     # Layer 1: Structure validation
+     if len(data) != 1:
+          raise InsufficientDataError(...)
 
-    # Layer 2: Data extraction
-    value = int(data[0])
+     # Layer 2: Data extraction
+     value = int(data[0])
 
-    # Layer 3: Domain validation
-    if not 0 <= value <= 100:
-        raise ValueRangeError(...)
+     # Layer 3: Domain validation
+     if not 0 <= value <= 100:
+          raise ValueRangeError(...)
 
-    return value
+     return value
 ```
 
 ## Extension Points
@@ -291,14 +348,14 @@ from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 class MyCustomCharacteristic(BaseCharacteristic):
-    _info = CharacteristicInfo(
-        uuid=BluetoothUUID("XXXX"),
-        name="My Custom Characteristic"
-    )
+     _info = CharacteristicInfo(
+          uuid=BluetoothUUID("XXXX"),
+          name="My Custom Characteristic"
+     )
 
-    def decode_value(self, data: bytearray) -> int:
-        # Your parsing logic
-        return int(data[0])
+     def decode_value(self, data: bytearray) -> int:
+          # Your parsing logic
+          return int(data[0])
 ```
 
 ### Custom Services
@@ -307,13 +364,13 @@ class MyCustomCharacteristic(BaseCharacteristic):
 from bluetooth_sig.gatt.services.base import BaseService
 
 class MyCustomService(BaseService):
-    def __init__(self):
-        super().__init__()
-        self.my_char = MyCustomCharacteristic()
+     def __init__(self):
+          super().__init__()
+          self.my_char = MyCustomCharacteristic()
 
-    @property
-    def characteristics(self) -> dict:
-        return {"my_char": self.my_char}
+     @property
+     def characteristics(self) -> dict:
+          return {"my_char": self.my_char}
 ```
 
 ## Testing Architecture
@@ -336,9 +393,9 @@ class MyCustomService(BaseService):
 from bluetooth_sig import BluetoothSIGTranslator
 
 def test_battery_parsing():
-    translator = BluetoothSIGTranslator()
-    result = translator.parse_characteristic("2A19", bytearray([85]))
-    assert result.value == 85
+     translator = BluetoothSIGTranslator()
+     result = translator.parse_characteristic("2A19", bytearray([85]))
+     assert result.value == 85
 ```
 
 ## Performance Considerations
@@ -394,7 +451,8 @@ def test_battery_parsing():
 
 ## Next Steps
 
-- [API Reference](api/core.md) - Detailed API documentation
-- [Adding Characteristics](guides/adding-characteristics.md) - Extend the library
-- [Performance Guide](guides/performance.md) - Optimization tips
-- [Usage Guide](usage.md) - Practical examples
+- [API Reference](../api/core.md) - Detailed API documentation
+- [Adding Characteristics](../guides/adding-characteristics.md) - Extend the library
+- [Performance Guide](../guides/performance.md) - Optimization tips
+- [Usage Guide](../usage.md) - Practical examples
+

@@ -147,7 +147,7 @@ async def debug_ble_device(target_address: str) -> None:
         traceback.print_exc()
 
 
-def main():
+def main() -> None:
     """Main entry point for the debugger."""
     if len(sys.argv) != 2:
         print("Usage: python ble_device_debugger.py <MAC_ADDRESS>")
