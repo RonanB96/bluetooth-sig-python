@@ -26,8 +26,20 @@ class MagneticFluxDensity3DCharacteristic(BaseCharacteristic):
     _vector_components: list[str] = ["x_axis", "y_axis", "z_axis"]
     resolution: float = 1e-7
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> VectorData:
-        """Parse 3D magnetic flux density (3 x sint16 with resolution)."""
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VectorData:
+        """Parse 3D magnetic flux density (3 x sint16 with resolution).
+
+        Args:
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
+
+        Returns:
+            VectorData with x, y, z axis values in Tesla.
+
+        # Parameter `ctx` is part of the public API but unused in this implementation.
+        # Explicitly delete it to satisfy linters.
+        del ctx
+        """
         if len(data) < 6:
             raise ValueError("Insufficient data for 3D magnetic flux density (need 6 bytes)")
 

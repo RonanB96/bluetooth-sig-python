@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Advertising data parsing example using the AdvertisingParser.
+
+Demonstrates how to use the AdvertisingParser and Bluetooth SIG translator to
+interpret advertising PDUs and service data for examples and tests.
+"""
+
 # Set up paths for imports
 import sys
 from pathlib import Path
@@ -18,8 +24,6 @@ import asyncio
 from typing import cast
 
 from bluetooth_sig import BluetoothSIGTranslator
-
-"""Advertising data parsing example using AdvertisingParser."""
 
 
 def demo_advertising_parsing() -> None:

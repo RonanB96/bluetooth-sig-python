@@ -52,6 +52,7 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic):
 
         Raises:
             ValueError: If data is insufficient
+
         """
         if len(data) < 4:
             raise ValueError("Electric current specification data must be at least 4 bytes")
@@ -70,6 +71,7 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the current specification (2x uint16, 0.01 A resolution)
+
         """
         # Convert Amperes to raw values (multiply by 100 for 0.01 A resolution)
         min_current_raw = round(data.minimum * 100)

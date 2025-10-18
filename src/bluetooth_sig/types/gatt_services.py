@@ -37,8 +37,7 @@ class CharacteristicSpec(msgspec.Struct, Generic[CharacteristicTypeVar], frozen=
 
 
 def characteristic(name: CharacteristicName, required: bool = False) -> CharacteristicSpec[BaseCharacteristic]:
-    """Create a CharacteristicSpec using the central registry for class
-    mapping.
+    """Create a CharacteristicSpec using the central registry for class mapping.
 
     This eliminates the need to manually specify the characteristic class
     by automatically resolving it from the CharacteristicName enum.
@@ -49,6 +48,7 @@ def characteristic(name: CharacteristicName, required: bool = False) -> Characte
 
     Returns:
         A CharacteristicSpec with the appropriate class from the registry
+
     """
     char_class = CharacteristicRegistry.get_characteristic_class(name)
     if char_class is None:

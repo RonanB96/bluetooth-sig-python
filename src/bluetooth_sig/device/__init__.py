@@ -1,6 +1,4 @@
-"""Device class for grouping BLE device services, characteristics, encryption,
-and advertiser data.
-"""
+"""Device class for grouping BLE device services, characteristics, encryption, and advertiser data."""
 
 from __future__ import annotations
 

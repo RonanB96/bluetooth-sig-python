@@ -50,6 +50,7 @@ class BluetoothUUID:
 
         Raises:
             ValueError: If UUID format is invalid
+
         """
         if isinstance(uuid, int):
             self._normalized = self._normalize_uuid_from_int(uuid)
@@ -165,6 +166,7 @@ class BluetoothUUID:
 
         Returns:
             16 bytes representing the full 128-bit UUID in big-endian byte order
+
         """
         # Always use full form (128-bit) for bytes representation
         full_int = int(self.full_form, 16)
@@ -178,6 +180,7 @@ class BluetoothUUID:
 
         Returns:
             16 bytes representing the full 128-bit UUID in little-endian byte order
+
         """
         # Always use full form (128-bit) for bytes representation
         full_int = int(self.full_form, 16)
@@ -242,6 +245,7 @@ class BluetoothUUID:
             - Null UUID (all zeros)
             - Placeholder UUID (used internally)
             True otherwise
+
         """
         return self.normalized not in (
             self.INVALID_BASE_UUID_NORMALIZED,
@@ -257,6 +261,7 @@ class BluetoothUUID:
 
         Returns:
             True if this is a SIG characteristic UUID, False otherwise
+
         """
         # Must be a full 128-bit UUID using SIG base UUID pattern
         if not self.is_full:
@@ -287,6 +292,7 @@ class BluetoothUUID:
 
         Returns:
             True if this is a SIG service UUID, False otherwise
+
         """
         # Must be a full 128-bit UUID using SIG base UUID pattern
         if not self.is_full:

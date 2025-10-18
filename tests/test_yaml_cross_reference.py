@@ -11,11 +11,13 @@ from bluetooth_sig.gatt.characteristics.temperature import TemperatureCharacteri
 
 class TestYAMLCrossReference:
     """Test YAML cross-reference system for characteristic metadata
-    automation."""
+    automation.
+    """
 
     def test_yaml_data_type_extraction(self) -> None:
         """Test that YAML data types are extracted correctly for real
-        characteristics."""
+        characteristics.
+        """
         # Test Temperature characteristic (known to use sint16)
         temp_char = TemperatureCharacteristic()
         data_type = temp_char.get_yaml_data_type()
@@ -131,7 +133,8 @@ class TestYAMLCrossReference:
 
     def test_characteristic_registry_with_yaml_automation(self) -> None:
         """Test that characteristics created via registry use YAML
-        automation."""
+        automation.
+        """
         # Create Temperature characteristic via registry
         temp_char = CharacteristicRegistry.create_characteristic("2A6E")
 
@@ -165,7 +168,8 @@ class TestYAMLCrossReference:
 
     def test_yaml_automation_fallback_behavior(self) -> None:
         """Test that characteristics work correctly when YAML automation is not
-        available."""
+        available.
+        """
         # Create characteristics
         temp_char = TemperatureCharacteristic()
         humidity_char = HumidityCharacteristic()
@@ -193,7 +197,8 @@ class TestYAMLCrossReference:
 
     def test_yaml_automation_with_real_parsing(self) -> None:
         """Test that YAML automation works with actual characteristic
-        parsing."""
+        parsing.
+        """
         # Test Temperature characteristic with real data
         temp_char = TemperatureCharacteristic()
 
@@ -227,7 +232,8 @@ class TestYAMLCrossReference:
 
     def test_yaml_automation_integration_with_existing_functionality(self) -> None:
         """Test that YAML automation integrates well with existing
-        characteristic functionality."""
+        characteristic functionality.
+        """
         # Test that existing functionality still works
         temp_char = TemperatureCharacteristic()
         humidity_char = HumidityCharacteristic()

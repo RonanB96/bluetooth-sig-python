@@ -388,14 +388,16 @@ class TestDevice:
 
     def test_is_connected_with_none_manager(self) -> None:
         """Test is_connected returns False when manager's is_connected returns
-        False."""
+        False.
+        """
         none_manager = NoneManager()
         self.device.attach_connection_manager(cast(ConnectionManagerProtocol, none_manager))
         assert self.device.is_connected is False
 
     def test_connection_manager_protocol_interface(self) -> None:
         """Test that ConnectionManagerProtocol has the is_connected
-        property."""
+        property.
+        """
         import inspect
 
         # Check that is_connected is part of the protocol interface

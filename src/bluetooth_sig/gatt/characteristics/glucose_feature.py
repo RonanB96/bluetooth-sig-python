@@ -102,6 +102,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
 
         Raises:
             ValueError: If data format is invalid
+
         """
         if len(data) < 2:
             raise ValueError("Glucose Feature data must be at least 2 bytes")
@@ -150,6 +151,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the glucose features
+
         """
         # Reconstruct the features bitmap from individual flags using enum values
         features_bitmap = 0
@@ -187,6 +189,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
 
         Returns:
             Human-readable description of the feature
+
         """
         # Accept either a flag value (power-of-two) or a bit index
         if feature_bit <= 0:

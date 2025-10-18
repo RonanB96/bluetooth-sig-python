@@ -26,7 +26,6 @@ class DSTOffset(IntEnum):
     @property
     def description(self) -> str:
         """Human-readable description for this DST offset value."""
-
         return {
             DSTOffset.STANDARD: "Standard Time",
             DSTOffset.HALF_HOUR: "Half an hour Daylight Time",
@@ -38,7 +37,6 @@ class DSTOffset(IntEnum):
     @property
     def offset_hours(self) -> float | None:
         """Return the DST offset in hours (e.g. 0.5 for half hour), or None if unknown."""
-
         return {
             DSTOffset.STANDARD: 0.0,
             DSTOffset.HALF_HOUR: 0.5,
@@ -85,8 +83,13 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
         data: bytearray,
         ctx: CharacteristicContext | None = None,
     ) -> LocalTimeInformationData:
-        """Parse local time information data (2 bytes: time zone + DST
-        offset)."""
+        """Parse local time information data (2 bytes: time zone + DST offset).
+
+        Args:
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
+
+        """
         if len(data) < 2:
             raise ValueError("Local time information data must be at least 2 bytes")
 
@@ -162,6 +165,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the local time information
+
         """
         # Encode timezone (use raw value directly)
         timezone_byte = data.timezone.raw_value.to_bytes(1, byteorder="little", signed=True)

@@ -12,6 +12,8 @@ from .utils import BitFieldUtils, DataParser
 
 
 class WeightScaleBits:
+    """Weight scale bit field constants."""
+
     # pylint: disable=missing-class-docstring,too-few-public-methods
 
     # Weight Scale Feature bit field constants
@@ -42,6 +44,7 @@ class WeightMeasurementResolution(IntEnum):
     POINT_005_KG_OR_POINT_01_LB = 7
 
     def __str__(self) -> str:
+        """Return a human-readable description of the weight measurement resolution."""
         descriptions = {
             0: "not_specified",
             1: "0.5_kg_or_1_lb",
@@ -64,6 +67,7 @@ class HeightMeasurementResolution(IntEnum):
     POINT_001_M_OR_POINT_1_INCH = 3
 
     def __str__(self) -> str:
+        """Return a human-readable description of the height measurement resolution."""
         descriptions = {
             0: "not_specified",
             1: "0.01_m_or_1_inch",
@@ -103,20 +107,21 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
     max_length: int = 4  # Features(4) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> WeightScaleFeatureData:
-        """Parse weight scale feature data according to Bluetooth
-        specification.
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> WeightScaleFeatureData:
+        """Parse weight scale feature data according to Bluetooth specification.
 
-        Format: Features(4 bytes) - bitmask indicating supported features
+        Format: Features(4 bytes) - bitmask indicating supported features.
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            WeightScaleFeatureData containing parsed feature flags
+            WeightScaleFeatureData containing parsed feature flags.
 
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
+
         """
         if len(data) < 4:
             raise ValueError("Weight Scale Feature data must be at least 4 bytes")
@@ -141,6 +146,7 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the weight scale features (uint32)
+
         """
         # Reconstruct the features bitmap from individual flags
         features_bitmap = 0
@@ -175,6 +181,7 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
         Returns:
             WeightMeasurementResolution enum value
+
         """
         resolution_bits = BitFieldUtils.extract_bit_field(
             features,
@@ -194,6 +201,7 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
         Returns:
             HeightMeasurementResolution enum value
+
         """
         resolution_bits = BitFieldUtils.extract_bit_field(
             features,

@@ -18,6 +18,7 @@ def safe_get_device_info(device: Any) -> tuple[str, str, str | None]:  # noqa: A
 
     Returns:
         (name, address, rssi) tuple with safe fallbacks
+
     """
     name = getattr(device, "name", None) or "Unknown"
     address = getattr(device, "address", "Unknown")

@@ -35,6 +35,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
 
         Returns:
             DeviceAdvertiserData with parsed information
+
         """
         if self._is_extended_advertising_pdu(raw_data):
             return self._parse_extended_advertising(raw_data)
@@ -48,6 +49,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
 
         Returns:
             True if extended advertising PDU, False otherwise
+
         """
         if len(data) < PDUConstants.PDU_HEADER:
             return False
@@ -65,6 +67,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
 
         Returns:
             Parsed DeviceAdvertiserData
+
         """
         if len(raw_data) < PDUConstants.MIN_EXTENDED_PDU:
             return self._parse_legacy_advertising(raw_data)
@@ -103,6 +106,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
 
         Returns:
             Parsed BLEAdvertisingPDU or None if invalid
+
         """
         if len(data) < PDUConstants.MIN_EXTENDED_PDU:
             return None
@@ -154,6 +158,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
 
         Returns:
             Parsed BLEExtendedHeader or None if invalid
+
         """
         # pylint: disable=too-many-return-statements,too-many-branches
         if len(data) < 1:
@@ -229,6 +234,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
 
         Returns:
             List of auxiliary packets (currently returns empty list)
+
         """
         if len(aux_ptr) != PDUConstants.AUX_PTR:
             return []
@@ -243,6 +249,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
 
         Returns:
             Parsed DeviceAdvertiserData
+
         """
         manufacturer_data: dict[int, bytes] = {}
         service_uuids: list[str] = []
@@ -305,6 +312,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
 
         Returns:
             ParsedADStructures object with extracted data
+
         """
         # pylint: disable=too-many-branches,too-many-statements
         parsed = ParsedADStructures()

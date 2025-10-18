@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Basic usage example for the bluetooth_sig library.
+
+Demonstrates typical integration patterns and provides a runnable example for
+users to explore device connection and characteristic parsing.
+"""
+
 # Set up paths for imports
 import sys
 from pathlib import Path
@@ -29,8 +35,6 @@ except ImportError:
     from examples.utils.bleak_retry_integration import BleakRetryConnectionManager
 
     simplepyble_available = False
-
-"""Basic usage example for bluetooth_sig library."""
 
 
 async def main() -> None:

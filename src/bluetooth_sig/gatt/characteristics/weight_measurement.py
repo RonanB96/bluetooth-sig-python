@@ -52,20 +52,22 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 21  # + Timestamp(7) + UserID(1) + BMI(2) + Height(2) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> WeightMeasurementData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> WeightMeasurementData:  # pylint: disable=too-many-locals
         """Parse weight measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +
                 [BMI(2)] + [Height(2)]
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            WeightMeasurementData containing parsed weight measurement data
+            WeightMeasurementData containing parsed weight measurement data.
 
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
+
         """
         if len(data) < 3:
             raise ValueError("Weight Measurement data must be at least 3 bytes")
@@ -142,6 +144,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the weight measurement
+
         """
         # Build flags based on available data
         flags = WeightMeasurementFlags(0)

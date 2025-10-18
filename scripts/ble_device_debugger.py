@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-BLE Device Debugger Script
+"""BLE Device Debugger Script.
 
 Comprehensive tool for debugging BLE GATT devices including:
 - Service discovery
@@ -14,6 +13,7 @@ Usage:
 
 Example:
     python scripts/ble_device_debugger.py 50:FD:D5:58:21:79
+
 """
 
 import asyncio
@@ -29,11 +29,11 @@ from bleak import BleakClient, BleakScanner
 
 
 async def debug_ble_device(target_address: str) -> None:
-    """
-    Debug a BLE device by discovering services and characteristics.
+    """Debug a BLE device by discovering services and characteristics.
 
     Args:
         target_address: MAC address of the BLE device to debug
+
     """
     print("=== BLE Device Debugger ===")
     print(f"Target: {target_address}")

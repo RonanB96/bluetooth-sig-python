@@ -78,6 +78,7 @@ class IEEE11073Parser:
         Args:
             data: Raw bytes/bytearray
             offset: Offset in the data
+
         """
         if len(data) < offset + 2:
             raise InsufficientDataError("IEEE 11073 SFLOAT", data[offset:], 2)

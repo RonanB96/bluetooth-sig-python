@@ -24,8 +24,7 @@ class BloodPressureFlags(IntFlag):
 
 
 class BloodPressureMeasurementStatus(IntFlag):
-    """Blood Pressure Measurement Status flags as per Bluetooth SIG
-    specification."""
+    """Blood Pressure Measurement Status flags as per Bluetooth SIG specification."""
 
     BODY_MOVEMENT_DETECTED = 0x0001
     CUFF_TOO_LOOSE = 0x0002
@@ -90,11 +89,10 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
     allow_variable_length: bool = True  # Variable optional fields
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureData:  # pylint: disable=too-many-locals
-        """Parse blood pressure measurement data according to Bluetooth
-        specification.
+        """Parse blood pressure measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) + [Timestamp(7)] +
-        [Pulse Rate(2)] + [User ID(1)] + [Measurement Status(2)]
+        [Pulse Rate(2)] + [User ID(1)] + [Measurement Status(2)].
         All pressure values are IEEE-11073 16-bit SFLOAT.
 
         Args:
@@ -108,6 +106,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
         SIG Pattern:
         When context is available, can validate that measurement status flags are
         within the device's supported features as indicated by Blood Pressure Feature.
+
         """
         if len(data) < 7:
             raise ValueError("Blood Pressure Measurement data must be at least 7 bytes")
@@ -163,6 +162,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the blood pressure measurement
+
         """
         result = bytearray()
 

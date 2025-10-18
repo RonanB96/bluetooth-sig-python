@@ -16,7 +16,8 @@ class TestYAMLUnitParsing:
 
     def test_yaml_unit_loading_basic(self) -> None:
         """Test that units are loaded from YAML files for common
-        characteristics."""
+        characteristics.
+        """
         # Test Temperature characteristic - should get "°C" from YAML
         temp_info = uuid_registry.get_characteristic_info("Temperature")
         assert temp_info is not None, "Temperature characteristic should be found in registry"
@@ -71,7 +72,8 @@ class TestYAMLUnitParsing:
 
     def test_unit_conversion_mappings(self) -> None:
         """Test that Bluetooth SIG unit specifications are converted
-        correctly."""
+        correctly.
+        """
         # Test the conversion function directly (if accessible)
         registry_instance = uuid_registry
 
@@ -116,7 +118,8 @@ class TestYAMLUnitParsing:
 
     def test_characteristic_creation_with_yaml_units(self) -> None:
         """Test that characteristics created via registry get units
-        automatically."""
+        automatically.
+        """
         # Create characteristics using the registry
         battery_char = CharacteristicRegistry.create_characteristic("2A19")  # Battery Level UUID
         if battery_char:

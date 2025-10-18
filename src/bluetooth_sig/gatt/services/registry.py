@@ -140,6 +140,7 @@ class GattServiceRegistry:
         Raises:
             TypeError: If service_cls does not inherit from BaseGattService
             ValueError: If UUID conflicts with existing registration and override=False
+
         """
         # Runtime safety check retained in case of dynamic caller misuse despite type hints.
         if not _ServiceClassValidator.is_service_subclass(service_cls):
@@ -162,6 +163,7 @@ class GattServiceRegistry:
 
         Args:
             uuid: The service UUID to unregister
+
         """
         bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
         with cls._lock:
@@ -207,8 +209,7 @@ class GattServiceRegistry:
 
     @classmethod
     def get_service_class_by_uuid(cls, uuid: BluetoothUUID) -> type[BaseGattService] | None:
-        """Get the service class for a given UUID (alias for
-        get_service_class)."""
+        """Get the service class for a given UUID (alias for get_service_class)."""
         return cls.get_service_class(uuid)
 
     @classmethod
@@ -221,6 +222,7 @@ class GattServiceRegistry:
 
         Returns:
             Service instance if found, None otherwise
+
         """
         service_class = cls.get_service_class(uuid)
         if not service_class:
@@ -236,6 +238,7 @@ class GattServiceRegistry:
 
         Returns:
             List of all registered service classes
+
         """
         return cls._get_services().copy()
 

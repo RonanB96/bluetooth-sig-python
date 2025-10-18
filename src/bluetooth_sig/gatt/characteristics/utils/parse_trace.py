@@ -15,6 +15,7 @@ class ParseTrace:
         trace.append("Starting parse")
         trace.append("Validation complete")
         result = trace.get_trace()  # Returns list of strings
+
     """
 
     def __init__(self, enabled: bool = True) -> None:
@@ -22,6 +23,7 @@ class ParseTrace:
 
         Args:
             enabled: Whether to collect trace messages (default: True)
+
         """
         self._enabled = enabled
         self._trace: list[str] = []
@@ -31,6 +33,7 @@ class ParseTrace:
 
         Args:
             message: Trace message to append
+
         """
         if self._enabled:
             self._trace.append(message)
@@ -40,6 +43,7 @@ class ParseTrace:
 
         Returns:
             List of trace messages if enabled, empty list otherwise
+
         """
         return self._trace if self._enabled else []
 
@@ -49,5 +53,6 @@ class ParseTrace:
 
         Returns:
             True if tracing is enabled, False otherwise
+
         """
         return self._enabled

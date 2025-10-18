@@ -38,17 +38,19 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured ElectricCurrentRangeData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> ElectricCurrentRangeData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ElectricCurrentRangeData:
         """Parse current range data (2x uint16 in units of 0.01 A).
 
         Args:
-            data: Raw bytes from the characteristic read
+            data: Raw bytes from the characteristic read.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            ElectricCurrentRangeData with 'min' and 'max' current values in Amperes
+            ElectricCurrentRangeData with 'min' and 'max' current values in Amperes.
 
         Raises:
-            ValueError: If data is insufficient
+            ValueError: If data is insufficient.
+
         """
         if len(data) < 4:
             raise ValueError("Electric current range data must be at least 4 bytes")
@@ -67,6 +69,7 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the current range (2x uint16, 0.01 A resolution)
+
         """
         if not isinstance(data, ElectricCurrentRangeData):
             raise TypeError(

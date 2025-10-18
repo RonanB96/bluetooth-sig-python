@@ -1,5 +1,6 @@
 """Comprehensive test to validate all services and characteristics against
-YAML."""
+YAML.
+"""
 
 from __future__ import annotations
 
@@ -95,7 +96,8 @@ class TestCharacteristicRegistryValidation:
     @pytest.mark.parametrize("char_class", discover_characteristic_classes())
     def test_characteristic_uuid_resolution(self, char_class: type[BaseCharacteristic]) -> None:
         """Test that each characteristic can resolve its UUID from the
-        registry."""
+        registry.
+        """
         try:
             # Create an instance to trigger UUID resolution
             char = char_class()
@@ -122,7 +124,8 @@ class TestCharacteristicRegistryValidation:
     @pytest.mark.parametrize("char_class", discover_characteristic_classes())
     def test_characteristic_in_yaml_registry(self, char_class: type[BaseCharacteristic]) -> None:
         """Test that each characteristic exists in the YAML registry with
-        correct information."""
+        correct information.
+        """
         try:
             # Resolve UUID at class level without creating instance
             uuid = char_class._resolve_from_basic_registry_class()  # type: ignore[attr-defined]
@@ -211,7 +214,8 @@ class TestRegistryConsistency:
 
     def test_service_characteristic_consistency(self) -> None:
         """Test that characteristics referenced by services actually exist and
-        are valid."""
+        are valid.
+        """
         service_classes = discover_service_classes()
         char_classes = discover_characteristic_classes()
 
@@ -257,7 +261,8 @@ class TestRegistryConsistency:
 
     def test_yaml_completeness(self) -> None:
         """Test that all discovered classes have corresponding entries in YAML
-        files."""
+        files.
+        """
         service_classes = discover_service_classes()
         char_classes = discover_characteristic_classes()
 
@@ -303,11 +308,13 @@ class TestRegistryConsistency:
 
 class TestNameResolutionFallback:
     """Test name resolution fallback behavior when explicit names are not
-    set."""
+    set.
+    """
 
     def test_service_class_name_fallback(self) -> None:
         """Test that services without _service_name use class name
-        resolution."""
+        resolution.
+        """
         # Test with BatteryService which doesn't have _service_name set
         from bluetooth_sig.gatt.services.battery_service import BatteryService
 
@@ -327,7 +334,8 @@ class TestNameResolutionFallback:
 
     def test_characteristic_class_name_fallback(self) -> None:
         """Test that characteristics without _characteristic_name use class
-        name resolution."""
+        name resolution.
+        """
         # Create a test characteristic class without explicit name
         from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
 
@@ -372,7 +380,8 @@ class TestNameResolutionFallback:
 
     def test_service_explicit_name_override(self) -> None:
         """Test that services with _service_name override class name
-        resolution."""
+        resolution.
+        """
         from bluetooth_sig.gatt.services.generic_access import GenericAccessService
 
         service = GenericAccessService()
@@ -393,7 +402,8 @@ class TestNameResolutionFallback:
 
     def test_characteristic_explicit_name_override(self) -> None:
         """Test that characteristics with _characteristic_name override class
-        name resolution."""
+        name resolution.
+        """
         from bluetooth_sig.gatt.characteristics.uv_index import UVIndexCharacteristic
 
         char = UVIndexCharacteristic()
@@ -452,7 +462,8 @@ class TestNameResolutionFallback:
 
     def test_fallback_failure_handling(self) -> None:
         """Test behavior when neither explicit name nor class name resolution
-        works."""
+        works.
+        """
         from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
 
         class UnknownTestCharacteristic(CustomBaseCharacteristic):
@@ -483,7 +494,8 @@ class TestNameResolutionFallback:
 
     def test_current_services_name_resolution_strategy(self) -> None:
         """Test that current services use the expected name resolution
-        strategy."""
+        strategy.
+        """
         from bluetooth_sig.gatt.services.battery_service import BatteryService
         from bluetooth_sig.gatt.services.device_information import (
             DeviceInformationService,
@@ -532,7 +544,8 @@ class TestNameResolutionFallback:
 
     def test_current_characteristics_name_resolution_strategy(self) -> None:
         """Test that current characteristics use the expected name resolution
-        strategy."""
+        strategy.
+        """
         from bluetooth_sig.gatt.characteristics.battery_level import (
             BatteryLevelCharacteristic,
         )

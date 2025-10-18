@@ -48,20 +48,22 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "RSC Measurement"
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> RSCMeasurementData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RSCMeasurementData:
         """Parse RSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Instantaneous Speed(2) + Instantaneous Cadence(1) +
-        [Instantaneous Stride Length(2)] + [Total Distance(4)]
+        [Instantaneous Stride Length(2)] + [Total Distance(4)].
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            RSCMeasurementData containing parsed RSC data
+            RSCMeasurementData containing parsed RSC data.
 
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
+
         """
         if len(data) < 4:
             raise ValueError("RSC Measurement data must be at least 4 bytes")
@@ -108,6 +110,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the RSC measurement
+
         """
         if not isinstance(data, RSCMeasurementData):
             raise TypeError(f"RSC measurement data must be a RSCMeasurementData, got {type(data).__name__}")

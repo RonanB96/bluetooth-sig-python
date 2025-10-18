@@ -43,8 +43,7 @@ class DataParser:
         signed: bool = False,
         endian: Literal["little", "big"] = "little",
     ) -> int:
-        """Parse 16-bit integer with configurable endianness and signed
-        interpretation."""
+        """Parse 16-bit integer with configurable endianness and signed interpretation."""
         if len(data) < offset + 2:
             raise InsufficientDataError("int16", data[offset:], 2)
         return int.from_bytes(data[offset : offset + 2], byteorder=endian, signed=signed)
@@ -56,8 +55,7 @@ class DataParser:
         signed: bool = False,
         endian: Literal["little", "big"] = "little",
     ) -> int:
-        """Parse 32-bit integer with configurable endianness and signed
-        interpretation."""
+        """Parse 32-bit integer with configurable endianness and signed interpretation."""
         if len(data) < offset + 4:
             raise InsufficientDataError("int32", data[offset:], 4)
         return int.from_bytes(data[offset : offset + 4], byteorder=endian, signed=signed)
@@ -104,8 +102,7 @@ class DataParser:
 
     @staticmethod
     def encode_int16(value: int, signed: bool = False, endian: Literal["little", "big"] = "little") -> bytearray:
-        """Encode 16-bit integer with configurable endianness and
-        signed/unsigned validation."""
+        """Encode 16-bit integer with configurable endianness and signed/unsigned validation."""
         if signed:
             if not SINT16_MIN <= value <= SINT16_MAX:
                 raise ValueRangeError("sint16", value, SINT16_MIN, SINT16_MAX)
@@ -116,8 +113,7 @@ class DataParser:
 
     @staticmethod
     def encode_int32(value: int, signed: bool = False, endian: Literal["little", "big"] = "little") -> bytearray:
-        """Encode 32-bit integer with configurable endianness and
-        signed/unsigned validation."""
+        """Encode 32-bit integer with configurable endianness and signed/unsigned validation."""
         if signed:
             if not SINT32_MIN <= value <= SINT32_MAX:
                 raise ValueRangeError("sint32", value, SINT32_MIN, SINT32_MAX)

@@ -11,8 +11,7 @@ from .templates import Uint16Template
 
 # Special value constants for VOC Concentration characteristic
 class VOCConcentrationValues:  # pylint: disable=too-few-public-methods
-    """Special values for VOC Concentration characteristic per Bluetooth SIG
-    specification."""
+    """Special values for VOC Concentration characteristic per Bluetooth SIG specification."""
 
     VALUE_65534_OR_GREATER = 0xFFFE  # Indicates value is 65534 or greater
     VALUE_UNKNOWN = 0xFFFF  # Indicates value is not known

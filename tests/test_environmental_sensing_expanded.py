@@ -150,7 +150,8 @@ class TestEnvironmentalSensingExpanded:
 
     def test_environmental_sensing_service_expansion(self) -> None:
         """Test that Environmental Sensing Service includes all new
-        characteristics."""
+        characteristics.
+        """
         from bluetooth_sig.types.gatt_enums import CharacteristicName
 
         expected_chars = EnvironmentalSensingService.get_expected_characteristics()

@@ -183,8 +183,7 @@ class MedicationType(IntEnum):
 
 
 class GlucoseMeasurementContextExtendedFlags(IntEnum):
-    """Glucose Measurement Context Extended Flags constants as per Bluetooth
-    SIG specification.
+    """Glucose Measurement Context Extended Flags constants as per Bluetooth SIG specification.
 
     Currently all bits are reserved for future use.
     """
@@ -209,6 +208,7 @@ class GlucoseMeasurementContextExtendedFlags(IntEnum):
 
         Returns:
             Description string indicating all bits are reserved
+
         """
         if flags == 0:
             return "No extended flags set"
@@ -290,29 +290,29 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     )
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> GlucoseMeasurementContextData:
-        """Parse glucose measurement context data according to Bluetooth
-        specification.
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> GlucoseMeasurementContextData:  # pylint: disable=too-many-locals
+        """Parse glucose measurement context data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + [Extended Flags(1)] + [Carbohydrate ID(1) + Carb(2)] +
                 [Meal(1)] + [Tester-Health(1)] + [Exercise Duration(2) + Exercise Intensity(1)] +
-                [Medication ID(1) + Medication(2)] + [HbA1c(2)]
+                [Medication ID(1) + Medication(2)] + [HbA1c(2)].
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
             ctx: Optional context providing access to Glucose Measurement characteristic
-                for sequence number validation
+                for sequence number validation.
 
         Returns:
-            GlucoseMeasurementContextData containing parsed glucose context data
+            GlucoseMeasurementContextData containing parsed glucose context data.
 
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
 
         SIG Pattern:
         When context is available, validates that this context's sequence_number matches
         a Glucose Measurement sequence_number, following the SIG specification pattern
         where contexts are paired with measurements via sequence number matching.
+
         """
         if len(data) < 3:
             raise ValueError("Glucose Measurement Context data must be at least 3 bytes")
@@ -375,6 +375,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the measurement context
+
         """
         sequence_number = data.sequence_number
         if not 0 <= sequence_number <= 0xFFFF:
@@ -503,6 +504,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
 
         Returns:
             HbA1c percentage or None
+
         """
         hba1c_percent: float | None = None
         if GlucoseMeasurementContextFlags.HBA1C_PRESENT in flags and len(data) >= offset + 2:

@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Bleak-retry-connector integration example.
+
+Demonstrates robust BLE connections with retry logic combined with the
+bluetooth_sig translator for production-ready parsing patterns.
+"""
+
 from __future__ import annotations
 
 # Set up paths for imports
@@ -32,26 +38,6 @@ from examples.utils.bleak_retry_integration import (
     BleakRetryConnectionManager,
 )
 
-"""Bleak-retry-connector integration example - robust BLE connections with SIG parsing.
-
-This example demonstrates using bleak-retry-connector for reliable BLE connections
-combined with bluetooth_sig for standards-compliant data parsing. This is the
-recommended pattern for production applications.
-
-Benefits:
-- Automatic retry logic for unreliable BLE connections
-- Connection recovery and error handling
-- Pure SIG standards parsing
-- Production-ready robustness
-
-Requirements:
-    pip install bleak-retry-connector bleak
-
-Usage:
-    python with_bleak_retry.py --address 12:34:56:78:9A:BC
-    python with_bleak_retry.py --scan
-"""
-
 
 async def robust_device_reading(
     address: str, backend: str = "bleak-retry", retries: int = 3
@@ -65,6 +51,7 @@ async def robust_device_reading(
 
     Returns:
         Dictionary of parsed characteristic data
+
     """
     if backend != "bleak-retry":
         print(f"❌ Only bleak-retry backend is supported in this example. Got: {backend}")
@@ -125,6 +112,7 @@ async def robust_service_discovery(address: str) -> dict[str, object]:
 
     Returns:
         Dictionary of discovered services and characteristics
+
     """
     print(f"🔍 Service discovery with {address} - Feature not yet implemented")
     return {}
@@ -158,6 +146,7 @@ async def continuous_monitoring(address: str, duration: int = 60) -> None:  # py
     Args:
         address: BLE device address
         duration: Monitoring duration in seconds
+
     """
     print(f"📊 Starting continuous monitoring of {address} for {duration}s...")
     print("🔄 Auto-reconnection enabled")
@@ -186,6 +175,7 @@ async def notification_monitoring(address: str, duration: int = 60) -> None:
     Args:
         address: BLE device address
         duration: Monitoring duration in seconds
+
     """
     print(f"🔔 Notification monitoring with {address} for {duration}s - Feature not yet implemented")
 

@@ -34,6 +34,7 @@ class MagneticDeclinationCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the magnetic declination (uint16, 0.01 degrees resolution)
+
         """
         declination = float(data)
 

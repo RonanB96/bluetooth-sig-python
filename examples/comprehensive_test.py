@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Comprehensive test of all BLE examples functionality.
+
+Runs through the set of example utilities and verifies end-to-end
+behaviour for demo and test scenarios.
+"""
+
 # Set up paths for imports
 import sys
 from pathlib import Path
@@ -26,8 +32,6 @@ from examples.utils import (
     simplepyble_available,
 )
 
-"""Comprehensive test of all BLE examples functionality."""
-
 
 def print_separator(title: str) -> None:
     """Print a formatted separator."""
@@ -38,7 +42,6 @@ def print_separator(title: str) -> None:
 
 async def main() -> None:
     """Run comprehensive tests."""
-
     print_separator("Library Detection Test")
     show_library_availability()
 

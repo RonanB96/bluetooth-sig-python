@@ -23,6 +23,7 @@ async def parse_and_display_results(
 
     Returns:
         Dict of parsed results
+
     """
     translator = BluetoothSIGTranslator()
     parsed_results: dict[str, Any] = {}

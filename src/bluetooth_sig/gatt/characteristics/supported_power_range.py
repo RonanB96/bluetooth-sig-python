@@ -39,17 +39,19 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured SupportedPowerRangeData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> SupportedPowerRangeData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> SupportedPowerRangeData:
         """Parse supported power range data (2x sint16 in watts).
 
         Args:
-            data: Raw bytes from the characteristic read
+            data: Raw bytes from the characteristic read.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            SupportedPowerRangeData with minimum and maximum power values in Watts
+            SupportedPowerRangeData with minimum and maximum power values in Watts.
 
         Raises:
-            ValueError: If data is insufficient
+            ValueError: If data is insufficient.
+
         """
         if len(data) < 4:
             raise ValueError("Supported power range data must be at least 4 bytes")
@@ -68,6 +70,7 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the power range (2x sint16)
+
         """
         if not isinstance(data, SupportedPowerRangeData):
             raise TypeError(f"Supported power range data must be a SupportedPowerRangeData, got {type(data).__name__}")

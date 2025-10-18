@@ -202,7 +202,8 @@ class TestBatteryPowerStateCharacteristic:
 
     def test_flags_identifier_missing_raises(self) -> None:
         """If Flags indicate Identifier present but payload is too short,
-        raise."""
+        raise.
+        """
         char = BatteryPowerStateCharacteristic()
 
         # Flags=0x01 indicates Identifier present but no extra bytes follow

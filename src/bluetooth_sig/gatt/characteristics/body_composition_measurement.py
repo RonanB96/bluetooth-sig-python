@@ -62,8 +62,7 @@ class MassValue(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=t
 
 
 class BodyCompositionFlags(IntFlag):
-    """Body Composition Measurement flags as per Bluetooth SIG
-    specification."""
+    """Body Composition Measurement flags as per Bluetooth SIG specification."""
 
     IMPERIAL_UNITS = 0x001
     TIMESTAMP_PRESENT = 0x002
@@ -120,24 +119,22 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 50  # + Timestamp(7) + UserID(1) + Multiple measurements maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(
-        self, data: bytearray, _ctx: CharacteristicContext | None = None
-    ) -> BodyCompositionMeasurementData:
-        """Parse body composition measurement data according to Bluetooth
-        specification.
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BodyCompositionMeasurementData:
+        """Parse body composition measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Body Fat %(2) + [Timestamp(7)] + [User ID(1)] +
                 [Basal Metabolism(2)] + [Muscle Mass(2)] + [etc...]
 
         Args:
-            data: Raw bytearray from BLE characteristic
-            ctx: Optional context (unused in current implementation)
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            BodyCompositionMeasurementData containing parsed body composition data
+            BodyCompositionMeasurementData containing parsed body composition data.
 
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
+
         """
         if len(data) < 4:
             raise ValueError("Body Composition Measurement data must be at least 4 bytes")
@@ -179,6 +176,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the measurement (simplified implementation)
+
         """
         # This is a complex characteristic with many optional fields
         # Implementing a basic version that handles the core data
@@ -203,6 +201,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             FlagsAndBodyFat containing flags, body fat percentage, and offset
+
         """
         # Parse flags (2 bytes)
         flags = DataParser.parse_int16(data, 0, signed=False)
@@ -231,6 +230,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             BasicOptionalFields containing timestamp, user_id, basal_metabolism, and updated offset
+
         """
         timestamp: datetime | None = None
         user_id: int | None = None
@@ -272,6 +272,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         Returns:
             MassFields containing muscle_mass, muscle_mass_unit, muscle_percentage,
             fat_free_mass, soft_lean_mass, body_water_mass, and updated offset
+
         """
         muscle_mass: float | None = None
         muscle_mass_unit: str | None = None
@@ -333,6 +334,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             OtherMeasurements containing impedance, weight, and height
+
         """
         impedance: float | None = None
         weight: float | None = None
@@ -370,6 +372,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             MassValue containing mass value and unit string
+
         """
         mass_raw = DataParser.parse_int16(data, offset, signed=False)
         if BodyCompositionFlags.IMPERIAL_UNITS in flags:  # Imperial units

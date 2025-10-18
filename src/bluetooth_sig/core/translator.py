@@ -64,7 +64,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         ctx: CharacteristicContext | None = None,
         properties: set[str] | None = None,  # pylint: disable=unused-argument
     ) -> CharacteristicData:
-        """Parse a characteristic's raw data using Bluetooth SIG standards.
+        r"""Parse a characteristic's raw data using Bluetooth SIG standards.
 
         This method takes raw BLE characteristic data and converts it to structured,
         type-safe Python objects using official Bluetooth SIG specifications.
@@ -89,6 +89,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             result = translator.parse_characteristic("2A19", b"\\x64")
             print(f"Battery: {result.value}%")  # Battery: 100%
             ```
+
         """
         logger.debug("Parsing characteristic UUID=%s, data_len=%d", uuid, len(raw_data))
 
@@ -152,6 +153,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             if info:
                 print(f"Name: {info.name}")  # Name: Battery Level
             ```
+
         """
         try:
             bt_uuid = BluetoothUUID(uuid)
@@ -177,6 +179,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             Characteristic UUID or None if not found
+
         """
         char_class = CharacteristicRegistry.get_characteristic_class(name)
         if char_class:
@@ -195,6 +198,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             Service UUID or None if not found
+
         """
         # Try to find the service by name - use direct map access
         if isinstance(name, ServiceName):
@@ -224,6 +228,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             CharacteristicInfo if found, None otherwise
+
         """
         char_class = CharacteristicRegistry.get_characteristic_class(name)
         if char_class:
@@ -238,6 +243,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             ServiceInfo if found, None otherwise
+
         """
         # Use UUID registry for name-based lookup
         try:
@@ -257,6 +263,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             ServiceInfo with metadata or None if not found
+
         """
         service_class = GattServiceRegistry.get_service_class_by_uuid(BluetoothUUID(uuid))
         if not service_class:
@@ -282,6 +289,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             Dictionary mapping characteristic names to UUIDs
+
         """
         result: dict[str, str] = {}
         for name, char_class in CharacteristicRegistry.get_all_characteristics().items():
@@ -298,6 +306,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             Dictionary mapping service names to UUIDs
+
         """
         result: dict[str, str] = {}
         for service_class in GattServiceRegistry.get_all_services():
@@ -314,6 +323,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Args:
             services: Dictionary of service UUIDs to their characteristics
+
         """
         for uuid_str, service_data in services.items():
             uuid = BluetoothUUID(uuid_str)
@@ -348,6 +358,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             Service instance if found, None otherwise
+
         """
         return self._services.get(uuid)
 
@@ -357,6 +368,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             List of discovered service instances
+
         """
         return list(self._services.values())
 
@@ -372,6 +384,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             CharacteristicInfo or ServiceInfo if found, None otherwise
+
         """
         # Use the UUID registry for name-based lookups (string inputs).
         try:
@@ -408,6 +421,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             CharacteristicInfo or ServiceInfo if found, None otherwise
+
         """
         # Try characteristic first
         char_info = self.get_characteristic_info_by_uuid(uuid)
@@ -424,7 +438,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
     def parse_characteristics(
         self, char_data: dict[str, bytes], ctx: CharacteristicContext | None = None
     ) -> dict[str, CharacteristicData]:
-        """Parse multiple characteristics at once with dependency-aware ordering.
+        r"""Parse multiple characteristics at once with dependency-aware ordering.
 
         This method automatically handles multi-characteristic dependencies by parsing
         independent characteristics first, then parsing characteristics that depend on them.
@@ -461,6 +475,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             for uuid, result in results.items():
                 print(f"{uuid}: {result.value}")
             ```
+
         """
         logger.debug("Batch parsing %d characteristics", len(char_data))
         base_context = ctx
@@ -511,7 +526,6 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self, characteristic_data: Mapping[str, bytes]
     ) -> tuple[dict[str, BaseCharacteristic], dict[str, list[str]], dict[str, list[str]]]:
         """Instantiate characteristics once and collect declared dependencies."""
-
         uuid_to_characteristic: dict[str, BaseCharacteristic] = {}
         uuid_to_required_deps: dict[str, list[str]] = {}
         uuid_to_optional_deps: dict[str, list[str]] = {}
@@ -542,7 +556,6 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         uuid_to_optional_deps: Mapping[str, list[str]],
     ) -> list[str]:
         """Topologically sort characteristics based on declared dependencies."""
-
         try:
             sorter: TopologicalSorter[str] = TopologicalSorter()
             for uuid in characteristic_data:
@@ -566,7 +579,6 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         base_context: CharacteristicContext | None,
     ) -> list[str]:
         """Determine which required dependencies are unavailable for a characteristic."""
-
         if not required_deps:
             return []
 
@@ -601,7 +613,6 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         missing_required: list[str],
     ) -> CharacteristicData:
         """Create a failure result when required dependencies are absent."""
-
         char_name = characteristic.name if characteristic else "Unknown"
         error = MissingDependencyError(char_name, missing_required)
         logger.warning("Skipping %s due to missing required dependencies: %s", uuid, missing_required)
@@ -638,7 +649,6 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         base_context: CharacteristicContext | None,
     ) -> None:
         """Emit debug logs when optional dependencies are unavailable."""
-
         if not optional_deps:
             return
 
@@ -659,7 +669,6 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         results: Mapping[str, CharacteristicData],
     ) -> CharacteristicContext:
         """Construct the context passed to per-characteristic parsers."""
-
         results_mapping = cast(Mapping[str, CharacteristicDataProtocol], results)
 
         if base_context is not None:
@@ -681,6 +690,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             Dictionary mapping UUIDs to CharacteristicInfo
             (or None if not found)
+
         """
         results: dict[str, CharacteristicInfo | None] = {}
         for uuid in uuids:
@@ -696,6 +706,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             ValidationResult with validation details
+
         """
         try:
             # Attempt to parse the data - if it succeeds, format is valid
@@ -725,6 +736,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Returns:
             List of characteristic UUIDs for this service
+
         """
         service_class = GattServiceRegistry.get_service_class_by_uuid(BluetoothUUID(service_uuid))
         if not service_class:
@@ -755,6 +767,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Raises:
             TypeError: If cls does not inherit from BaseCharacteristic
             ValueError: If UUID conflicts with existing registration and override=False
+
         """
         # Register the class
         CharacteristicRegistry.register_characteristic_class(uuid_or_name, cls, override)
@@ -791,6 +804,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Raises:
             TypeError: If cls does not inherit from BaseGattService
             ValueError: If UUID conflicts with existing registration and override=False
+
         """
         # Register the class
         GattServiceRegistry.register_service_class(uuid_or_name, cls, override)

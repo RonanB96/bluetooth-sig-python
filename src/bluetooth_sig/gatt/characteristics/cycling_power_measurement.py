@@ -77,22 +77,27 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = "W"  # Watts unit for power measurement
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> CyclingPowerMeasurementData:
-        """Parse cycling power measurement data according to Bluetooth
-        specification.
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerMeasurementData:
+        """Parse cycling power measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +
         [Accumulated Energy(2)] + [Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +
         [Crank Revolutions(2)] + [Last Crank Event Time(2)]
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            CyclingPowerMeasurementData containing parsed power measurement data
+            CyclingPowerMeasurementData containing parsed power measurement data.
 
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
+
+        # `ctx` is part of the public decode_value signature but unused here.
+        # Mark as used to avoid pylint 'unused-argument'.
+        del ctx
+
         """
         if len(data) < 4:
             raise ValueError("Cycling Power Measurement data must be at least 4 bytes")
@@ -162,6 +167,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the power measurement
+
         """
         instantaneous_power = data.instantaneous_power
         pedal_power_balance = data.pedal_power_balance

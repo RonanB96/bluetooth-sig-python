@@ -29,6 +29,7 @@ def get_characteristic_info(char_class: type) -> tuple[str, str, str]:
 
     Returns:
         Tuple of (uuid, name, description)
+
     """
     try:
         # Get UUID from the class method
@@ -66,6 +67,7 @@ def get_service_info(service_class: type) -> tuple[str, str, str]:
 
     Returns:
         Tuple of (uuid, name, description)
+
     """
     try:
         # Get UUID from the class method
@@ -100,6 +102,7 @@ def discover_characteristics() -> list[tuple[str, str, str, str]]:
 
     Returns:
         List of tuples: (class_name, uuid, name, description)
+
     """
     characteristics = []
 
@@ -122,6 +125,7 @@ def discover_services() -> list[tuple[str, str, str, str]]:
 
     Returns:
         List of tuples: (class_name, uuid, name, description)
+
     """
     services = []
 
@@ -141,7 +145,6 @@ def discover_services() -> list[tuple[str, str, str, str]]:
 
 def generate_markdown() -> str:
     """Generate markdown documentation for characteristics and services."""
-
     characteristics = discover_characteristics()
     services = discover_services()
 
@@ -173,7 +176,7 @@ The library currently supports **{len(characteristics)}** GATT characteristics:
                         service_class = cls
                         break
 
-            if service_class and hasattr(service_class, 'service_characteristics'):
+            if service_class and hasattr(service_class, "service_characteristics"):
                 # Get the characteristics defined in this service
                 for char_name_enum in service_class.service_characteristics.keys():
                     # Convert enum to readable name

@@ -50,17 +50,21 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured VoltageStatisticsData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> VoltageStatisticsData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VoltageStatisticsData:
         """Parse voltage statistics data (3x uint16 in units of 1/64 V).
 
         Args:
-            data: Raw bytes from the characteristic read
+            data: Raw bytes from the characteristic read.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            VoltageStatisticsData with 'minimum', 'maximum', and 'average' voltage values in Volts
+            VoltageStatisticsData with 'minimum', 'maximum', and 'average' voltage values in Volts.
 
+        # `ctx` is intentionally unused for this characteristic; mark as used for linters.
+        del ctx
         Raises:
-            ValueError: If data is insufficient
+            ValueError: If data is insufficient.
+
         """
         if len(data) < 6:
             raise ValueError("Voltage statistics data must be at least 6 bytes")
@@ -84,6 +88,7 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the voltage statistics (3x uint16, 1/64 V resolution)
+
         """
         if not isinstance(data, VoltageStatisticsData):
             raise TypeError(f"Voltage statistics data must be a VoltageStatisticsData, got {type(data).__name__}")

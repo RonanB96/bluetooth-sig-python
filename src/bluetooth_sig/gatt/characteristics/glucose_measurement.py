@@ -14,6 +14,8 @@ from .utils import BitFieldUtils, DataParser, IEEE11073Parser
 
 
 class GlucoseMeasurementBits:
+    """Glucose measurement bit field constants."""
+
     # pylint: disable=missing-class-docstring,too-few-public-methods
 
     # Glucose Measurement bit field constants
@@ -128,20 +130,22 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 17  # Ensured consistency with GlucoseMeasurementData
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, _ctx: CharacteristicContext | None = None) -> GlucoseMeasurementData:  # pylint: disable=too-many-locals
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> GlucoseMeasurementData:  # pylint: disable=too-many-locals
         """Parse glucose measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + Base Time(7) + [Time Offset(2)] +
-                Glucose Concentration(2) + [Type-Sample Location(1)] + [Sensor Status(2)]
+                Glucose Concentration(2) + [Type-Sample Location(1)] + [Sensor Status(2)].
 
         Args:
-            data: Raw bytearray from BLE characteristic
+            data: Raw bytearray from BLE characteristic.
+            ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            GlucoseMeasurementData containing parsed glucose measurement data with metadata
+            GlucoseMeasurementData containing parsed glucose measurement data with metadata.
 
         Raises:
-            ValueError: If data format is invalid
+            ValueError: If data format is invalid.
+
         """
         if len(data) < 12:
             raise ValueError("Glucose Measurement data must be at least 12 bytes")
@@ -219,6 +223,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the glucose measurement
+
         """
         # Build flags based on available data
         flags = GlucoseMeasurementFlags(0)

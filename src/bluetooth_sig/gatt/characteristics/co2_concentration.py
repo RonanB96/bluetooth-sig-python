@@ -8,7 +8,7 @@ from .templates import ConcentrationTemplate
 
 
 class CO2ConcentrationCharacteristic(BaseCharacteristic):
-    """Carbon Dioxide concentration characteristic (0x2B8C).
+    r"""Carbon Dioxide concentration characteristic (0x2B8C).
 
     YAML registry name uses LaTeX subscript form ("CO\\textsubscript{2} Concentration").
     We restore explicit `_characteristic_name` so UUID resolution succeeds because

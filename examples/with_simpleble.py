@@ -1,4 +1,27 @@
 #!/usr/bin/env python3
+"""SimplePyBLE integration example.
+
+This example demonstrates using SimplePyBLE as an alternative BLE library combined
+with bluetooth_sig for standards-compliant data parsing. SimplePyBLE offers a
+different API design compared to Bleak.
+
+Benefits:
+- Cross-platform BLE library (Windows, macOS, Linux)
+- Synchronous API alternative to async libraries
+- Pure SIG standards parsing
+- Demonstrates framework-agnostic design
+
+Requirements:
+    pip install simplepyble  # Cross-platform (requires commercial license for commercial use)
+
+Note: SimplePyBLE requires a commercial license for commercial use since January 2025.
+Free for non-commercial use.
+
+Usage:
+    python with_simpleble.py --scan
+    python with_simpleble.py --address 12:34:56:78:9A:BC
+"""
+
 from __future__ import annotations
 
 # Set up paths for imports
@@ -30,7 +53,6 @@ from examples.utils import library_detection, simpleble_integration
 
 def parse_results(raw_results: dict[str, tuple[bytes, float]]) -> dict[str, Any]:
     """Typed wrapper around shared example parser."""
-
     return shared_utils.parse_results(raw_results)
 
 
@@ -40,13 +62,11 @@ async def read_characteristics_with_manager(
     timeout: float = 10.0,
 ) -> dict[str, tuple[bytes, float]]:
     """Typed wrapper delegating to shared characteristic reader."""
-
     return await shared_utils.read_characteristics_with_manager(connection_manager, target_uuids, timeout)
 
 
 def scan_devices_simpleble(simpleble_module: ModuleType, timeout: float = 10.0) -> list[dict[str, Any]]:
     """Wrapper ensuring precise typing for scanning helper."""
-
     return simpleble_integration.scan_devices_simpleble(simpleble_module, timeout)
 
 
@@ -55,13 +75,11 @@ def comprehensive_device_analysis_simpleble(
     simpleble_module: ModuleType,
 ) -> dict[BluetoothUUID, CharacteristicData]:
     """Wrapper ensuring precise typing for comprehensive analysis helper."""
-
     return simpleble_integration.comprehensive_device_analysis_simpleble(address, simpleble_module)
 
 
 def create_simpleble_connection_manager(address: str, simpleble_module: ModuleType) -> ConnectionManagerProtocol:
     """Factory returning a connection manager instance with explicit typing."""
-
     manager = simpleble_integration.SimplePyBLEConnectionManager(address, simpleble_module)
     return cast(ConnectionManagerProtocol, manager)
 
@@ -70,29 +88,6 @@ simplepyble_available_raw = getattr(library_detection, "simplepyble_available", 
 simplepyble_available: bool = bool(simplepyble_available_raw)
 simplepyble_module_attr = getattr(library_detection, "simplepyble_module", None)
 simplepyble_module = cast(ModuleType, simplepyble_module_attr)
-
-"""SimplePyBLE integration example
-
-This example demonstrates using SimplePyBLE as an alternative BLE library combined
-with bluetooth_sig for standards-compliant data parsing. SimplePyBLE offers a
-different API design compared to Bleak.
-
-Benefits:
-- Cross-platform BLE library (Windows, macOS, Linux)
-- Synchronous API alternative to async libraries
-- Pure SIG standards parsing
-- Demonstrates framework-agnostic design
-
-Requirements:
-    pip install simplepyble  # Cross-platform (requires commercial license for commercial use)
-
-Note: SimplePyBLE requires a commercial license for commercial use since January 2025.
-Free for non-commercial use.
-
-Usage:
-    python with_simpleble.py --scan
-    python with_simpleble.py --address 12:34:56:78:9A:BC
-"""
 
 
 def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:  # type: ignore
@@ -103,6 +98,7 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:  
 
     Returns:
         List of device dictionaries with address, name, and RSSI
+
     """
     if not simplepyble_available:  # type: ignore[possibly-unbound]
         print("❌ SimplePyBLE not available")
@@ -130,16 +126,7 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[dict[str, Any]]:  
 def read_and_parse_with_simpleble(
     address: str, target_uuids: list[str] | None = None
 ) -> dict[str, Any] | dict[BluetoothUUID, CharacteristicData]:
-    """Read characteristics from a BLE device using SimpleBLE and parse with
-    SIG standards.
-
-    Args:
-        address: BLE device address
-        target_uuids: List of characteristic UUIDs to read (if None, performs comprehensive analysis)
-
-    Returns:
-        Dictionary of parsed characteristic data or comprehensive analysis results
-    """
+    """Read characteristics from a BLE device using SimpleBLE and parse with SIG standards."""
     if not simplepyble_available:
         print("❌ SimplePyBLE not available")
         return {}

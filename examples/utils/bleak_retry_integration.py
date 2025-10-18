@@ -20,16 +20,27 @@ from examples.utils.device_scanning import safe_get_device_info
 
 
 class BleakRetryConnectionManager(ConnectionManagerProtocol):
-    """Connection manager using Bleak with retry connector for robust BLE
-    communication."""
+    """Connection manager using Bleak with retry connector for robust BLE communication."""
 
     def __init__(self, address: str, timeout: float = 30.0, max_attempts: int = 3) -> None:
+        """Initialize a Bleak-based connection manager with retry support.
+
+        Args:
+            address: Device address to connect to.
+            timeout: Connection timeout in seconds.
+            max_attempts: Number of retry attempts for establishing connection.
+
+        """
         self.address = address
         self.timeout = timeout
         self.max_attempts = max_attempts
         self.client = BleakClient(address, timeout=timeout)
 
     async def connect(self) -> None:
+        """Attempt to connect to the BLE device, retrying on transient errors.
+
+        Uses simple exponential backoff between retry attempts.
+        """
         last_exception = None
         for attempt in range(self.max_attempts):
             try:
@@ -43,6 +54,7 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
                     raise last_exception from None
 
     async def disconnect(self) -> None:
+        """Disconnect the Bleak client from the remote device."""
         await self.client.disconnect()
 
     @property
@@ -51,13 +63,28 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
         return self.client.is_connected
 
     async def read_gatt_char(self, char_uuid: str) -> bytes:
+        """Read a GATT characteristic identified by UUID and return raw bytes.
+
+        Args:
+            char_uuid: Characteristic UUID to read.
+
+        Returns:
+            The raw bytes read from the characteristic.
+        """
         raw_data = await self.client.read_gatt_char(char_uuid)
         return bytes(raw_data)
 
     async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
+        """Write raw bytes to the specified characteristic.
+
+        Args:
+            char_uuid: Characteristic UUID to write to.
+            data: Bytes to be written.
+        """
         await self.client.write_gatt_char(char_uuid, data)
 
     async def get_services(self) -> BleakGATTServiceCollection:
+        """Return the Bleak client's discovered services collection."""
         return self.client.services
 
     async def start_notify(
@@ -65,12 +92,20 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
         char_uuid: str,
         callback: Callable[[str, bytes], None],
     ) -> None:
+        """Start notifications for a characteristic and adapt the callback.
+
+        Args:
+            char_uuid: UUID of the characteristic to subscribe to.
+            callback: Callable that accepts (uuid, bytes) for each notification.
+        """
+
         def adapted_callback(characteristic: BleakGATTCharacteristic, data: bytearray) -> None:
             callback(characteristic.uuid, bytes(data))
 
         await self.client.start_notify(char_uuid, adapted_callback)
 
     async def stop_notify(self, char_uuid: str) -> None:
+        """Stop notifications for the specified characteristic."""
         await self.client.stop_notify(char_uuid)
 
 
@@ -90,6 +125,7 @@ async def read_characteristics_bleak_retry(
 
     Returns:
         Dict of {uuid: (data, timestamp)} for successful reads
+
     """
     if not uuids:
         uuids = ["2A19", "2A00"]  # Default: Battery Level, Device Name
@@ -154,6 +190,7 @@ async def scan_with_bleak_retry(timeout: float = 10.0) -> list[Any]:
 
     Returns:
         List of discovered devices
+
     """
     # For scanning, we can use regular BleakScanner since retry logic
     # is mainly for connections, not scanning
@@ -178,8 +215,7 @@ async def discover_services_bleak_retry(  # pylint: disable=too-many-locals
     timeout: float = 10.0,
     max_attempts: int = 3,
 ) -> dict[str, Any]:
-    """Discover services and characteristics from a BLE device using bleak-
-    retry.
+    """Discover services and characteristics from a BLE device using bleak-retry.
 
     Args:
         address: Device address
@@ -188,6 +224,7 @@ async def discover_services_bleak_retry(  # pylint: disable=too-many-locals
 
     Returns:
         Dict containing service and characteristic information
+
     """
     results: dict[str, Any] = {
         "services": [],
@@ -275,8 +312,7 @@ async def handle_notifications_bleak_retry(  # pylint: disable=too-many-locals,t
     timeout: float = 10.0,
     max_attempts: int = 3,
 ) -> None:
-    """Handle BLE notifications using bleak-retry with comprehensive retry
-    logic.
+    """Handle BLE notifications using bleak-retry with comprehensive retry logic.
 
     Args:
         address: BLE device address
@@ -288,6 +324,7 @@ async def handle_notifications_bleak_retry(  # pylint: disable=too-many-locals,t
     Raises:
         ImportError: If bleak-retry-connector not available
         Exception: If connection or notification setup fails
+
     """
     print(f"🔔 Setting up notifications from {address}")
     print(f"   📊 Characteristic: {characteristic_uuid}")

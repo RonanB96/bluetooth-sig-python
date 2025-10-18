@@ -59,6 +59,7 @@ class TimeZoneCharacteristic(BaseCharacteristic):
 
         Returns:
             Encoded bytes representing the time zone (sint8, 15-minute increments)
+
         """
         if isinstance(data, int):
             # Direct raw value

@@ -131,8 +131,7 @@ class PDUType(IntEnum):
 
 
 class BLEAdvertisementTypes(IntEnum):
-    """BLE Advertisement Data Types (AD Types) as defined in Bluetooth Core
-    Specification."""
+    """BLE Advertisement Data Types (AD Types) as defined in Bluetooth Core Specification."""
 
     # Legacy Advertising AD Types
     FLAGS = 0x01
