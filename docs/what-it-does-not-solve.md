@@ -31,7 +31,7 @@ For BLE connectivity, use dedicated BLE libraries:
 
 ```python
 from bleak import BleakClient
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 # bleak handles connection
 async with BleakClient(device_address) as client:
@@ -40,7 +40,7 @@ async with BleakClient(device_address) as client:
 
     # bluetooth-sig interprets the data
     translator = BluetoothSIGTranslator()
-    result = translator.parse_characteristic_data("2A19", raw_data)
+    result = translator.parse_characteristic("2A19", raw_data)
     print(f"Battery: {result.value}%")
 ```
 
@@ -213,8 +213,8 @@ These features are typically provided by:
 translator = BluetoothSIGTranslator()
 
 # Each parse call is stateless
-result1 = translator.parse_characteristic_data("2A19", data1)
-result2 = translator.parse_characteristic_data("2A19", data2)
+result1 = translator.parse_characteristic("2A19", data1)
+result2 = translator.parse_characteristic("2A19", data2)
 # No state maintained between calls
 ```
 
@@ -242,7 +242,7 @@ You can use this library as a foundation:
 ```python
 # Example: Flask web app
 from flask import Flask, jsonify
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 app = Flask(__name__)
 translator = BluetoothSIGTranslator()
@@ -251,7 +251,7 @@ translator = BluetoothSIGTranslator()
 def parse_data(uuid):
     # Your BLE read logic here
     raw_data = read_from_device(uuid)
-    result = translator.parse_characteristic_data(uuid, raw_data)
+    result = translator.parse_characteristic(uuid, raw_data)
     return jsonify({"value": result.value})
 ```
 
@@ -318,7 +318,7 @@ You can easily mock the parsing for testing:
 
 ```python
 import pytest
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 def test_battery_parsing():
     translator = BluetoothSIGTranslator()
@@ -326,7 +326,7 @@ def test_battery_parsing():
     # Mock raw data (no real BLE device needed)
     mock_battery_data = bytearray([85])
 
-    result = translator.parse_characteristic_data("2A19", mock_battery_data)
+    result = translator.parse_characteristic("2A19", mock_battery_data)
     assert result.value == 85
 ```
 

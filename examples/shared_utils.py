@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Shared utilities for bluetooth-sig examples."""
+
 from __future__ import annotations
 
 # Set up paths for imports
@@ -21,8 +23,6 @@ from typing import Any
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
 from examples.utils.device_scanning import safe_get_device_info
-
-"""Shared utilities for bluetooth-sig examples."""
 
 # Import Device class for advertising data parsing
 # from bluetooth_sig.device import Device
@@ -184,7 +184,6 @@ async def demo_basic_usage(address: str, connection_manager: ConnectionManagerPr
     """Demonstrate basic usage of the bluetooth_sig library."""
     print(f"Connecting to device: {address}")
 
-    from bluetooth_sig import BluetoothSIGTranslator
     from bluetooth_sig.device.device import Device
 
     translator = BluetoothSIGTranslator()
@@ -226,7 +225,6 @@ async def demo_service_discovery(address: str, connection_manager: ConnectionMan
     """Demonstrate service discovery using Device class."""
     print(f"Discovering services on device: {address}")
 
-    from bluetooth_sig import BluetoothSIGTranslator
     from bluetooth_sig.device.device import Device
 
     translator = BluetoothSIGTranslator()
@@ -245,7 +243,7 @@ async def demo_service_discovery(address: str, connection_manager: ConnectionMan
         parsed_chars = 0
 
         for service_uuid, service_info in services.items():
-            service_name = translator.get_service_info(service_uuid)
+            service_name = translator.get_service_info_by_uuid(service_uuid)
             if service_name:
                 print(f"  📋 {service_uuid}: {service_name.name}")
             else:
@@ -271,7 +269,7 @@ async def demo_service_discovery(address: str, connection_manager: ConnectionMan
                             print(f"        ✅ {short_uuid}: {char_name} = {value} {unit}")
                         else:
                             # Try to get name from translator
-                            char_info_obj = translator.get_characteristic_info(short_uuid)
+                            char_info_obj = translator.get_characteristic_info_by_uuid(short_uuid)
                             if char_info_obj:
                                 print(f"        • {short_uuid}: {char_info_obj.name} (read failed)")
                             else:
@@ -279,7 +277,7 @@ async def demo_service_discovery(address: str, connection_manager: ConnectionMan
                     except Exception as e:
                         # Try to get name from translator
                         short_uuid = char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
-                        char_info_obj = translator.get_characteristic_info(short_uuid)
+                        char_info_obj = translator.get_characteristic_info_by_uuid(short_uuid)
                         if char_info_obj:
                             print(f"        ❌ {short_uuid}: {char_info_obj.name} (error: {e})")
                         else:

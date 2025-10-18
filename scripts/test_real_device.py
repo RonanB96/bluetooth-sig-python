@@ -67,8 +67,8 @@ async def test_device_connection(mac_address: str):
 
             # Print services and characteristics
             for service in services:
-                service_info = translator.translate_service(service.uuid)
-                print(f"\n� Service: {service_info.name} ({service.uuid})")
+                service_info = translator.get_service_info_by_uuid(service.uuid)
+                print(f"\n� Service: {service_info.name if service_info else 'Unknown'} ({service.uuid})")
 
                 chars = service.characteristics
                 print(f"   └─ {len(chars)} characteristics:")
@@ -115,12 +115,13 @@ async def test_device_connection(mac_address: str):
             for char_uuid, data in values.items():
                 try:
                     # Parse the data using bluetooth_sig
-                    parsed_data = translator.parse_characteristic_data(char_uuid, data)
+                    parsed_data = translator.parse_characteristic(char_uuid, data)
 
                     if parsed_data.value is not None:
                         unit_str = f" {parsed_data.unit}" if parsed_data.unit else ""
-                        char_info = translator.translate_characteristic(char_uuid)
-                        print(f"  ✅ {char_info.name}: {parsed_data.value}{unit_str}")
+                        char_info = translator.get_characteristic_info_by_uuid(char_uuid)
+                        name = char_info.name if char_info else char_uuid
+                        print(f"  ✅ {name}: {parsed_data.value}{unit_str}")
                         parsed_count += 1
                 except Exception:
                     # Silently skip unparseable characteristics
@@ -139,11 +140,11 @@ async def test_device_connection(mac_address: str):
                 print(f"📊 Analyzing {len(discovered_uuids)} discovered " "characteristics:")
 
                 # Batch analysis
-                char_info = translator.get_characteristics_info(discovered_uuids)
+                char_info = translator.get_characteristics_info_by_uuids(discovered_uuids)
                 for uuid, info in char_info.items():
                     if info:
-                        name = info.get("name", "Unknown")
-                        data_type = info.get("data_type", "unknown")
+                        name = info.name
+                        data_type = info.value_type.value if hasattr(info, "value_type") else "unknown"
                         print(f"  📋 {uuid}: {name} [{data_type}]")
                     else:
                         print(f"  ❓ {uuid}: Unknown characteristic")
@@ -153,11 +154,11 @@ async def test_device_connection(mac_address: str):
                 valid_count = 0
                 for uuid, data in values.items():
                     if isinstance(data, (bytes, bytearray)):
-                        is_valid = translator.validate_characteristic_data(uuid, data)
-                        status = "✅" if is_valid else "⚠️"
-                        validity = "Valid" if is_valid else "Unknown format"
+                        validation = translator.validate_characteristic_data(uuid, data)
+                        status = "✅" if validation.is_valid else "⚠️"
+                        validity = "Valid" if validation.is_valid else "Unknown format"
                         print(f"  {status} {uuid}: {validity}")
-                        if is_valid:
+                        if validation.is_valid:
                             valid_count += 1
 
                 print(f"\n📈 Validation: {valid_count}/{len(values)} " "characteristics have known format")

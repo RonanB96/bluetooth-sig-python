@@ -2,9 +2,32 @@
 
 The registry system provides UUID resolution based on official Bluetooth SIG specifications.
 
-## UUID Registry
+## Overview
 
-The UUID registry is automatically loaded from official Bluetooth SIG YAML files.
+The registry system automatically loads UUID mappings from the official Bluetooth SIG assigned numbers repository. It provides bidirectional resolution between UUIDs, names, and enums.
+
+## Using the Registry
+
+The recommended way to use the registry is through the [Core API](core.md):
+
+```python
+from bluetooth_sig import BluetoothSIGTranslator
+
+translator = BluetoothSIGTranslator()
+
+```python
+# Resolve UUID to characteristic info
+char_info = translator.get_sig_info_by_uuid("2A19")
+print(char_info.name)  # "Battery Level"
+
+# Resolve name to characteristic info
+char_info = translator.get_sig_info_by_name("Battery Level")
+print(char_info.uuid)  # "0x2A19"
+```
+
+## Direct Registry Access
+
+For advanced use cases, you can access the UUID registry directly:
 
 ```python
 from bluetooth_sig.gatt.uuid_registry import uuid_registry
@@ -23,25 +46,51 @@ print(service_info.uuid)  # "180F"
 print(service_info.name)  # "Battery Service"
 ```
 
-## Name Resolution
+## Enumerations
 
-Resolve names to UUIDs:
+Use type-safe enums instead of string literals:
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName, ServiceName
+
+# Characteristics
+CharacteristicName.BATTERY_LEVEL     # "Battery Level"
+CharacteristicName.TEMPERATURE       # "Temperature"
+CharacteristicName.HUMIDITY          # "Humidity"
+
+# Services
+ServiceName.BATTERY_SERVICE          # "Battery Service"
+ServiceName.ENVIRONMENTAL_SENSING    # "Environmental Sensing"
+ServiceName.DEVICE_INFORMATION       # "Device Information"
+```
+
+See [CharacteristicData][bluetooth_sig.types.CharacteristicData], [CharacteristicInfo][bluetooth_sig.types.CharacteristicInfo], and [ServiceInfo][bluetooth_sig.types.ServiceInfo] in the [Core API](core.md) for type definitions.
+
+## Custom Registration
+
+Register custom characteristics and services:
+
+```python
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
-# Service name to UUID
-service = translator.resolve_by_name("Battery Service")
-print(service.uuid)  # "180F"
+# Register custom characteristic
+translator.register_custom_characteristic(
+    uuid="ACME0001",
+    characteristic_class=MyCustomCharacteristic
+)
 
-# Characteristic name to UUID
-char = translator.resolve_by_name("Battery Level")
-print(char.uuid)  # "2A19"
+# Register custom service
+translator.register_custom_service(
+    uuid="ACME1000",
+    service_class=MyCustomService
+)
 ```
+
+See [Adding Characteristics](../guides/adding-characteristics.md) for implementation details.
 
 ## See Also
 
-- [Core API](core.md) - Main API
-- [Types & Enums](types.md) - Type definitions
+- [Core API](core.md) - Main API with type definitions
+- [Adding Characteristics](../guides/adding-characteristics.md) - Custom implementation guide

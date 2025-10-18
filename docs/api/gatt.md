@@ -12,11 +12,59 @@ The GATT layer consists of:
 - **Validation logic** - Ensure data integrity
 - **Exception types** - Clear error reporting
 
-## Common Characteristics
+## Base Classes
 
-### Battery Level (0x2A19)
+### BaseCharacteristic
 
-Parse battery percentage (0-100%).
+::: bluetooth_sig.BaseCharacteristic
+    options:
+      show_root_heading: false
+      heading_level: 4
+      members:
+        - decode_value
+        - encode_value
+        - validate
+
+All characteristic implementations inherit from [BaseCharacteristic][].
+
+### BaseService
+
+::: bluetooth_sig.gatt.services.base.BaseGattService
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+All service definitions inherit from BaseGattService.
+
+## Registries
+
+### CharacteristicRegistry
+
+::: bluetooth_sig.gatt.characteristics.registry.CharacteristicRegistry
+    options:
+      show_root_heading: false
+      heading_level: 4
+      members:
+        - register
+        - get
+
+Use [CharacteristicRegistry][] to register custom characteristics.
+
+### GattServiceRegistry
+
+::: bluetooth_sig.gatt.services.registry.GattServiceRegistry
+    options:
+      show_root_heading: false
+      heading_level: 4
+      members:
+        - register
+        - get
+
+Use [GattServiceRegistry][] to register custom services.
+
+## Common Characteristic Examples
+
+### Battery Level
 
 ```python
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
@@ -26,9 +74,7 @@ value = char.decode_value(bytearray([85]))
 print(f"Battery: {value}%")  # Battery: 85%
 ```
 
-### Temperature (0x2A6E)
-
-Parse temperature in °C with 0.01°C resolution.
+### Temperature
 
 ```python
 from bluetooth_sig.gatt.characteristics import TemperatureCharacteristic
@@ -38,9 +84,7 @@ value = char.decode_value(bytearray([0x64, 0x09]))
 print(f"Temperature: {value}°C")  # Temperature: 24.36°C
 ```
 
-### Humidity (0x2A6F)
-
-Parse humidity percentage with 0.01% resolution.
+### Humidity
 
 ```python
 from bluetooth_sig.gatt.characteristics import HumidityCharacteristic
@@ -80,5 +124,7 @@ except ValueRangeError as e:
 
 ## See Also
 
-- [Core API](core.md) - High-level API
+- [Core API](core.md) - High-level `BluetoothSIGTranslator` API
+- [Supported Characteristics](../supported-characteristics.md) - Full list
 - [Architecture](../architecture.md) - Design details
+- [Adding Characteristics](../guides/adding-characteristics.md) - Custom implementations

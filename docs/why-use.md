@@ -39,7 +39,7 @@ This library handles all the complexity for you:
 ### ✅ Automatic Standards Interpretation
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
@@ -52,11 +52,11 @@ print(f"Temperature: {temp_data.value}°C")  # Temperature: 24.36°C
 
 ```python
 # Resolve UUIDs to names
-service_info = translator.resolve_by_uuid("180F")
+service_info = translator.get_sig_info_by_uuid("180F")
 print(service_info.name)  # "Battery Service"
 
 # Reverse lookup
-battery_service = translator.resolve_by_name("Battery Service")
+battery_service = translator.get_sig_info_by_name("Battery Service")
 print(battery_service.uuid)  # "180F"
 ```
 
@@ -174,7 +174,7 @@ UUID_MAP = {
 ### With bluetooth-sig
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 

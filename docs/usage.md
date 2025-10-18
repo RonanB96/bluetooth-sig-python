@@ -3,14 +3,14 @@
 To use Bluetooth SIG Standards Library in a project:
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 # Create translator instance
 translator = BluetoothSIGTranslator()
 
 # Resolve UUIDs to get information
-service_info = translator.resolve_by_uuid("180F")  # Battery Service
-char_info = translator.resolve_by_uuid("2A19")    # Battery Level
+service_info = translator.get_sig_info_by_uuid("180F")  # Battery Service
+char_info = translator.get_sig_info_by_uuid("2A19")    # Battery Level
 
 print(f"Service: {service_info.name}")
 print(f"Characteristic: {char_info.name}")
@@ -19,17 +19,17 @@ print(f"Characteristic: {char_info.name}")
 ## Basic Example
 
 ```python
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 def main():
     translator = BluetoothSIGTranslator()
 
     # UUID resolution
-    uuid_info = translator.resolve_by_uuid("180F")
+    uuid_info = translator.get_sig_info_by_uuid("180F")
     print(f"UUID 180F: {uuid_info.name}")
 
     # Name resolution
-    name_info = translator.resolve_by_name("Battery Level")
+    name_info = translator.get_sig_info_by_name("Battery Level")
     print(f"Battery Level UUID: {name_info.uuid}")
 
     # Data parsing

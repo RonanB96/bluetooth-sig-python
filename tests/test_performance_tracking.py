@@ -147,12 +147,12 @@ class TestPerformanceTracking:
 
         # Warmup
         for _ in range(10):
-            translator.get_characteristic_info("2A19")
+            translator.get_characteristic_info_by_uuid("2A19")
 
         # Measure
         start = time.perf_counter()
         for _ in range(iterations):
-            info = translator.get_characteristic_info("2A19")
+            info = translator.get_characteristic_info_by_uuid("2A19")
             assert info is not None
         elapsed = time.perf_counter() - start
 

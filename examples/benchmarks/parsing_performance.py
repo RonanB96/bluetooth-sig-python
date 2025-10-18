@@ -173,14 +173,14 @@ def benchmark_uuid_resolution(session: ProfilingSession) -> None:
 
     # UUID lookup
     uuid_lookup = benchmark_function(
-        lambda: translator.get_characteristic_info("2A19"),
+        lambda: translator.get_characteristic_info_by_uuid("2A19"),
         iterations=iterations,
         operation="UUID lookup",
     )
 
     # Name resolution
     name_resolution = benchmark_function(
-        lambda: translator.resolve_by_name("Battery Level"),
+        lambda: translator.get_sig_info_by_name("Battery Level"),
         iterations=iterations,
         operation="Name resolution",
     )

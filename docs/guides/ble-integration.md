@@ -28,7 +28,7 @@ pip install bluetooth-sig bleak
 ```python
 import asyncio
 from bleak import BleakClient, BleakScanner
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 async def main():
     translator = BluetoothSIGTranslator()
@@ -45,7 +45,7 @@ async def main():
         raw_data = await client.read_gatt_char("2A19")
 
         # Parse with bluetooth-sig
-    result = translator.parse_characteristic_data("2A19", raw_data)
+    result = translator.parse_characteristic("2A19", raw_data)
     print(
         f"Battery: {result.value}%"
     )
@@ -71,7 +71,7 @@ async def read_sensor_data(address: str):
         for name, uuid in characteristics.items():
             try:
                 raw_data = await client.read_gatt_char(uuid)
-                result = translator.parse_characteristic_data(uuid, raw_data)
+                result = translator.parse_characteristic(uuid, raw_data)
                 print(f"{name}: {result.value}")
             except Exception as e:
                 print(f"Failed to read {name}: {e}")
@@ -86,7 +86,7 @@ def notification_handler(sender, data):
 
     # Parse the notification data
     uuid = str(sender.uuid)
-    result = translator.parse_characteristic_data(uuid, data)
+    result = translator.parse_characteristic(uuid, data)
     print(f"Notification from {uuid}: {result.value}")
 
 async def subscribe_to_notifications(address: str):
@@ -117,7 +117,7 @@ pip install bluetooth-sig bleak-retry-connector
 ```python
 import asyncio
 from bleak_retry_connector import establish_connection
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 async def read_with_retry(address: str):
     translator = BluetoothSIGTranslator()
@@ -133,7 +133,7 @@ async def read_with_retry(address: str):
     try:
         # Read battery level
         raw_data = await client.read_gatt_char("2A19")
-        result = translator.parse_characteristic_data("2A19", raw_data)
+        result = translator.parse_characteristic("2A19", raw_data)
     print(f"Battery: {result.value}%")
     finally:
         await client.disconnect()
@@ -154,7 +154,7 @@ pip install bluetooth-sig simplepyble
 
 ```python
 from simplepyble import Adapter, Peripheral
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
 def main():
     translator = BluetoothSIGTranslator()
@@ -201,7 +201,7 @@ def main():
                     battery_service.uuid(),
                     battery_char.uuid()
                 )
-                result = translator.parse_characteristic_data(
+                result = translator.parse_characteristic(
                     "2A19",
                     bytearray(raw_data)
                 )
@@ -227,7 +227,7 @@ try:
     raw_data = await client.read_gatt_char(uuid)
 
     # Parse
-    result = translator.parse_characteristic_data(uuid, raw_data)
+    result = translator.parse_characteristic(uuid, raw_data)
 
 except BleakError as e:
     print(f"BLE error: {e}")
@@ -244,7 +244,7 @@ Use context managers for automatic cleanup:
 ```python
 # ✅ Good - automatic cleanup
 async with BleakClient(address) as client:
-    result = translator.parse_characteristic_data(uuid, data)
+    result = translator.parse_characteristic(uuid, data)
 
 # ❌ Bad - manual cleanup required
 client = BleakClient(address)
@@ -276,12 +276,12 @@ Create one translator instance and reuse it:
 # ✅ Good - reuse translator
 translator = BluetoothSIGTranslator()
 for uuid, data in sensor_data.items():
-    result = translator.parse_characteristic_data(uuid, data)
+    result = translator.parse_characteristic(uuid, data)
 
 # ❌ Bad - creating multiple instances
 for uuid, data in sensor_data.items():
     translator = BluetoothSIGTranslator()  # Wasteful
-    result = translator.parse_characteristic_data(uuid, data)
+    result = translator.parse_characteristic(uuid, data)
 ```
 
 ## Complete Example
@@ -291,7 +291,7 @@ Here's a complete production-ready example:
 ```python
 import asyncio
 from bleak import BleakClient
-from bluetooth_sig.core import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.gatt.exceptions import BluetoothSIGError
 
 class SensorReader:
@@ -305,7 +305,7 @@ class SensorReader:
         """Read battery level."""
         async with BleakClient(self.address) as client:
             raw_data = await client.read_gatt_char("2A19")
-            result = self.translator.parse_characteristic_data(
+            result = self.translator.parse_characteristic(
                 "2A19",
                 raw_data
             )
@@ -315,7 +315,7 @@ class SensorReader:
         """Read temperature in °C."""
         async with BleakClient(self.address) as client:
             raw_data = await client.read_gatt_char("2A6E")
-            result = self.translator.parse_characteristic_data(
+            result = self.translator.parse_characteristic(
                 "2A6E",
                 raw_data
             )
@@ -338,7 +338,7 @@ class SensorReader:
                         client.read_gatt_char(uuid),
                         timeout=5.0
                     )
-                    result = self.translator.parse_characteristic_data(
+                    result = self.translator.parse_characteristic(
                         uuid,
                         raw_data
                     )
