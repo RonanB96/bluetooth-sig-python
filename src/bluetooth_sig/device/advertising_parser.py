@@ -251,57 +251,47 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             Parsed DeviceAdvertiserData
 
         """
-        manufacturer_data: dict[int, bytes] = {}
-        service_uuids: list[str] = []
-        local_name: str = ""
-        tx_power: int | None = None
-        flags: int | None = None
-
-        i = 0
-        while i < len(raw_data):
-            if i + 1 >= len(raw_data):
-                break
-
-            length = raw_data[i]
-            if length == 0 or i + length + 1 > len(raw_data):
-                break
-
-            ad_type = raw_data[i + 1]
-            ad_data = raw_data[i + 2 : i + length + 1]
-
-            if ad_type == BLEAdvertisementTypes.FLAGS and len(ad_data) >= 1:
-                flags = ad_data[0]
-            elif ad_type in (
-                BLEAdvertisementTypes.INCOMPLETE_16BIT_SERVICE_UUIDS,
-                BLEAdvertisementTypes.COMPLETE_16BIT_SERVICE_UUIDS,
-            ):
-                for j in range(0, len(ad_data), 2):
-                    if j + 1 < len(ad_data):
-                        uuid_short = DataParser.parse_int16(ad_data, j, signed=False)
-                        service_uuids.append(f"{uuid_short:04X}")
-            elif ad_type in (
-                BLEAdvertisementTypes.SHORTENED_LOCAL_NAME,
-                BLEAdvertisementTypes.COMPLETE_LOCAL_NAME,
-            ):
-                try:
-                    local_name = ad_data.decode("utf-8")
-                except UnicodeDecodeError:
-                    local_name = ad_data.hex()
-            elif ad_type == BLEAdvertisementTypes.TX_POWER_LEVEL and len(ad_data) >= 1:
-                tx_power = int.from_bytes(ad_data[:1], byteorder="little", signed=True)
-            elif ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA and len(ad_data) >= 2:
-                company_id = DataParser.parse_int16(ad_data, 0, signed=False)
-                manufacturer_data[company_id] = ad_data[2:]
-
-            i += length + 1
+        parsed_data = self._parse_ad_structures(raw_data)
 
         return DeviceAdvertiserData(
             raw_data=raw_data,
-            local_name=local_name,
-            manufacturer_data=manufacturer_data,
-            service_uuids=service_uuids,
-            tx_power=tx_power,
-            flags=flags,
+            local_name=parsed_data.local_name,
+            manufacturer_data=parsed_data.manufacturer_data,
+            service_uuids=parsed_data.service_uuids,
+            tx_power=parsed_data.tx_power if parsed_data.tx_power != 0 else None,
+            flags=parsed_data.flags if parsed_data.flags != 0 else None,
+            appearance=parsed_data.appearance,
+            service_data=parsed_data.service_data,
+            solicited_service_uuids=parsed_data.solicited_service_uuids,
+            uri=parsed_data.uri,
+            indoor_positioning=parsed_data.indoor_positioning,
+            transport_discovery_data=parsed_data.transport_discovery_data,
+            le_supported_features=parsed_data.le_supported_features,
+            encrypted_advertising_data=parsed_data.encrypted_advertising_data,
+            periodic_advertising_response_timing=parsed_data.periodic_advertising_response_timing,
+            electronic_shelf_label=parsed_data.electronic_shelf_label,
+            three_d_information=parsed_data.three_d_information,
+            broadcast_name=parsed_data.broadcast_name,
+            biginfo=parsed_data.biginfo,
+            mesh_message=parsed_data.mesh_message,
+            mesh_beacon=parsed_data.mesh_beacon,
+            public_target_address=parsed_data.public_target_address,
+            random_target_address=parsed_data.random_target_address,
+            advertising_interval=parsed_data.advertising_interval,
+            advertising_interval_long=parsed_data.advertising_interval_long,
+            le_bluetooth_device_address=parsed_data.le_bluetooth_device_address,
+            le_role=parsed_data.le_role,
+            class_of_device=parsed_data.class_of_device,
+            simple_pairing_hash_c=parsed_data.simple_pairing_hash_c,
+            simple_pairing_randomizer_r=parsed_data.simple_pairing_randomizer_r,
+            security_manager_tk_value=parsed_data.security_manager_tk_value,
+            security_manager_out_of_band_flags=parsed_data.security_manager_out_of_band_flags,
+            slave_connection_interval_range=parsed_data.slave_connection_interval_range,
+            secure_connections_confirmation=parsed_data.secure_connections_confirmation,
+            secure_connections_random=parsed_data.secure_connections_random,
+            channel_map_update_indication=parsed_data.channel_map_update_indication,
+            pb_adv=parsed_data.pb_adv,
+            resolvable_set_identifier=parsed_data.resolvable_set_identifier,
         )
 
     def _parse_ad_structures(self, data: bytes) -> ParsedADStructures:

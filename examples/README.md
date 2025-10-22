@@ -53,7 +53,11 @@ python -m examples.notifications--address 12:34:56:78:9A:BC --characteristic 2A1
 Parses BLE advertising data packets using the AdvertisingParser.
 
 ```bash
+# Parse real advertising data
 python -m examples.advertising_parsing --data "02010605FF4C001005011C7261F4"
+
+# Use mock data for demonstration (no BLE hardware required)
+python -m examples.advertising_parsing --mock
 ```
 
 ### pure_sig_parsing.py

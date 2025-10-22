@@ -19,17 +19,17 @@ from __future__ import annotations
 # package when running from the examples/ directory. Scripts should call
 # `examples.ensure_example_import_paths()` before running example code if
 # they require the repository layout to be added to sys.path.
-# Re-export only small, safe helpers that don't depend on optional
-# third-party BLE backends.
+from .argparse_utils import CommonArgs, create_common_parser, create_connection_manager, validate_and_setup
 from .data_parsing import parse_and_display_results
-from .device_scanning import safe_get_device_info
-from .mock_data import get_default_characteristic_uuids, mock_ble_data
+from .notification_utils import handle_notifications_generic
 
 __all__ = [
+    "CommonArgs",
+    "create_common_parser",
+    "create_connection_manager",
+    "handle_notifications_generic",
     "parse_and_display_results",
-    "get_default_characteristic_uuids",
-    "mock_ble_data",
-    "safe_get_device_info",
+    "validate_and_setup",
 ]
 
 

@@ -1,26 +1,35 @@
 #!/usr/bin/env python3
-"""Notification handling example using bleak-retry integration.
+"""Notification handling example using generic connection manager support.
 
 This example demonstrates how to subscribe and handle BLE notifications
-using the bleak-retry-connector integration layered with the
-bluetooth_sig parsing utilities.
+using any supported connection manager (bleak-retry, simplepyble, etc.).
 """
 
-import argparse
 import asyncio
 
 
 async def main() -> None:
     """Main function for notification demonstration."""
-    from examples.connection_managers.bleak_utils import handle_notifications_bleak_retry
+    # Use common argparse utilities
+    from examples.utils import (
+        create_common_parser,
+        create_connection_manager,
+        handle_notifications_generic,
+        validate_and_setup,
+    )
 
-    parser = argparse.ArgumentParser(description="BLE notification handling")
-    parser.add_argument("--address", required=True, help="BLE device address")
+    parser = create_common_parser("BLE notification handling")
     parser.add_argument("--characteristic", required=True, help="Characteristic UUID for notifications")
     parser.add_argument("--duration", type=int, default=10, help="Duration to listen in seconds")
     args = parser.parse_args()
+    common_args = validate_and_setup(args)
 
-    await handle_notifications_bleak_retry(args.address, args.characteristic, duration=args.duration)
+    # Create connection manager using the common factory
+    connection_manager = create_connection_manager(common_args.connection_manager, common_args.address)
+    await connection_manager.connect()
+
+    # Handle notifications using the generic handler
+    await handle_notifications_generic(connection_manager, args.characteristic, args.duration)
 
 
 if __name__ == "__main__":

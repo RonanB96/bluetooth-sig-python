@@ -33,6 +33,7 @@ async def main() -> None:
     show_library_availability()
 
     print_separator("BLE Connection Test")
+    real_device_success = False
     if bleak_retry_available:
         print("✅ Bleak-retry-connector available")
         # Test with the Xiaomi sensor we found earlier
@@ -44,10 +45,15 @@ async def main() -> None:
             if results:
                 print("✅ Real device connection successful!")
                 await parse_and_display_results(results, "Real Device")
+                real_device_success = True
             else:
                 print("⚠️  No characteristics read (device may be unavailable)")
+                print("📝 This test still passes - library detection works, but device is not responding")
+                real_device_success = False
         except (OSError, ValueError, TimeoutError) as e:
             print(f"⚠️  Connection failed: {e}")
+            print("📝 This test still passes - library detection works, but device connection failed")
+            real_device_success = False
     else:
         print("❌ Bleak-retry not available")
 
@@ -60,7 +66,10 @@ async def main() -> None:
     print("✅ Library detection: PASSED")
     print("✅ SIG translation: PASSED")
     print("✅ Real device scan: PASSED")
-    print("✅ Real device connection: PASSED")
+    if real_device_success:
+        print("✅ Real device connection: PASSED")
+    else:
+        print("⚠️  Real device connection: FAILED (but library works)")
     print("✅ Multiple BLE libraries: SUPPORTED")
 
     print("\n🎉 All tests completed successfully!")

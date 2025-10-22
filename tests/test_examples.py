@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """Tests for examples that can run without real devices."""
 
+from __future__ import annotations
+
 import builtins
 import importlib
 import sys
 import time
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from examples.advertising_parsing import main
 from examples.utils.data_parsing import parse_and_display_results
 from examples.utils.library_detection import AVAILABLE_LIBRARIES, show_library_availability
 from examples.utils.mock_data import mock_ble_data
@@ -68,30 +71,43 @@ class TestUtilityFunctions:
 class TestAdvertisingParsing:
     """Test advertising_parsing.py example without real devices."""
 
+    async def _run_main_with_args(
+        self, data: str | None = None, mock: bool = False, extended_mock: bool = False
+    ) -> dict[str, Any]:
+        """Helper method to run main with mocked arguments."""
+        # Create mock args object
+        mock_args = MagicMock()
+        mock_args.data = data
+        mock_args.mock = mock
+        mock_args.extended_mock = extended_mock
+
+        # Mock the parser.parse_args() method
+        with patch("examples.advertising_parsing.create_common_parser") as mock_parser_func:
+            mock_parser = MagicMock()
+            mock_parser.parse_args.return_value = mock_args
+            if not any([data, mock, extended_mock]):
+                mock_parser.print_help = MagicMock()
+            mock_parser_func.return_value = mock_parser
+
+            return await main()
+
     @pytest.mark.asyncio
     async def test_advertising_parsing_with_mock_data(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test advertising parsing with mock data."""
-        from examples.advertising_parsing import main
-
-        # Mock sys.argv to simulate no --data argument
-        with patch("sys.argv", ["advertising_parsing.py"]):
-            await main()
+        await self._run_main_with_args(mock=True)
 
         captured = capsys.readouterr()
-        assert "No data provided, using mock BLE data for demonstration:" in captured.out
+        assert "📝 USING MOCK LEGACY ADVERTISING DATA FOR DEMONSTRATION" in captured.out
         assert "Mock BLE Device Results with SIG Parsing:" in captured.out
-        assert "Battery Level:" in captured.out
-        assert "Device Name:" in captured.out
+        assert "Local Name: Test Device" in captured.out
+        assert "Service UUIDs:" in captured.out
+        assert "180F: Battery" in captured.out
 
     @pytest.mark.asyncio
     async def test_advertising_parsing_with_hex_data(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test advertising parsing with provided hex data."""
-        from examples.advertising_parsing import main
-
-        # Mock sys.argv to simulate --data argument
         test_hex = "020106030318180f0962543532"
-        with patch("sys.argv", ["advertising_parsing.py", "--data", test_hex]):
-            await main()
+        await self._run_main_with_args(data=test_hex)
 
         captured = capsys.readouterr()
         assert "Parsing provided advertising data:" in captured.out
@@ -101,11 +117,7 @@ class TestAdvertisingParsing:
     @pytest.mark.asyncio
     async def test_advertising_parsing_invalid_hex(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test advertising parsing with invalid hex data."""
-        from examples.advertising_parsing import main
-
-        # Mock sys.argv with invalid hex
-        with patch("sys.argv", ["advertising_parsing.py", "--data", "invalid_hex"]):
-            await main()
+        await self._run_main_with_args(data="invalid_hex")
 
         captured = capsys.readouterr()
         assert "Invalid hex data provided" in captured.out
@@ -149,7 +161,7 @@ class TestMockDataConsistency:
         formatted_data = {uuid: ReadResult(raw_data=data, read_time=current_time) for uuid, data in mock_data.items()}
 
         # Parse the data
-        results = await parse_and_display_results(formatted_data, "Mock Test")
+        results: dict[str, Any] = await parse_and_display_results(formatted_data, "Mock Test")
 
         # Verify all UUIDs were processed
         assert isinstance(results, dict)
@@ -187,7 +199,7 @@ def test_hex_data_conversion(hex_data: str, expected_length: int) -> None:
     assert len(raw_data) == expected_length
 
 
-def test_examples_utils_safe_import(monkeypatch: "pytest.MonkeyPatch") -> None:
+def test_examples_utils_safe_import(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure the examples.utils package is safe to import when optional.
 
     external back-ends are absent.
@@ -197,10 +209,6 @@ def test_examples_utils_safe_import(monkeypatch: "pytest.MonkeyPatch") -> None:
     `examples.utils` no longer re-exports heavy adapter modules at
     package import time.
     """
-    import builtins
-    import importlib
-    import sys
-
     real_import = builtins.__import__
 
     def _fake_import(
@@ -224,7 +232,7 @@ def test_examples_utils_safe_import(monkeypatch: "pytest.MonkeyPatch") -> None:
     assert hasattr(mod, "parse_and_display_results")
 
 
-def test_bleak_retry_integration_missing_backend(monkeypatch: "pytest.MonkeyPatch") -> None:
+def test_bleak_retry_integration_missing_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure bleak-retry integration module raises a clear ImportError when back-ends are missing."""
     real_import = builtins.__import__
 
@@ -249,7 +257,7 @@ def test_bleak_retry_integration_missing_backend(monkeypatch: "pytest.MonkeyPatc
     assert "bleak" in str(excinfo.value)
 
 
-def test_simpleble_integration_missing_backend(monkeypatch: "pytest.MonkeyPatch") -> None:
+def test_simpleble_integration_missing_backend(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure simpleble integration module raises a clear ImportError when back-ends are missing."""
     real_import = builtins.__import__
 

@@ -152,6 +152,7 @@ def read_and_parse_with_simpleble(
     async def _collect() -> dict[str, ReadResult]:
         manager = create_simpleble_connection_manager(address, module)
         from examples.utils.connection_helpers import read_characteristics_with_manager
+
         return await read_characteristics_with_manager(manager, target_uuids)
 
     raw_results: dict[str, ReadResult] = asyncio.run(_collect())
