@@ -5,22 +5,10 @@ Demonstrates how to use the AdvertisingParser and Bluetooth SIG translator to
 interpret advertising PDUs and service data for examples and tests.
 """
 
-# Set up paths for imports
-import sys
-from pathlib import Path
-
-# pylint: disable=duplicate-code
-
-# Add src directory for bluetooth_sig imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Add parent directory for examples package imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Add examples directory for utils imports
-sys.path.insert(0, str(Path(__file__).parent))
+from __future__ import annotations
 
 import asyncio
+import sys
 from typing import cast
 
 from bluetooth_sig import BluetoothSIGTranslator

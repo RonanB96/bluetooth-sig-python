@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """Tests for examples that can run without real devices."""
 
+import builtins
+import importlib
+import sys
 import time
+from typing import Any
 from unittest.mock import patch
 
 import pytest
 
-# Import example modules and utilities via package
-from examples.utils import (
-    AVAILABLE_LIBRARIES,
-    mock_ble_data,
-    parse_and_display_results,
-    show_library_availability,
-)
+from examples.utils.data_parsing import parse_and_display_results
+from examples.utils.library_detection import AVAILABLE_LIBRARIES, show_library_availability
+from examples.utils.mock_data import mock_ble_data
+from examples.utils.models import ReadResult
 
 
 class TestUtilityFunctions:
@@ -38,8 +39,8 @@ class TestUtilityFunctions:
     async def test_parse_and_display_results(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test parsing and display of BLE results."""
         test_data = {
-            "2A19": (bytes([0x64]), time.time()),  # 100% battery
-            "2A00": (b"Test Device", time.time()),  # Device name
+            "2A19": ReadResult(raw_data=bytes([0x64]), read_time=time.time()),  # 100% battery
+            "2A00": ReadResult(raw_data=b"Test Device", read_time=time.time()),  # Device name
         }
 
         result = await parse_and_display_results(test_data, "Test Device")
@@ -145,7 +146,7 @@ class TestMockDataConsistency:
 
         # Format data for parsing
         current_time = time.time()
-        formatted_data = {uuid: (data, current_time) for uuid, data in mock_data.items()}
+        formatted_data = {uuid: ReadResult(raw_data=data, read_time=current_time) for uuid, data in mock_data.items()}
 
         # Parse the data
         results = await parse_and_display_results(formatted_data, "Mock Test")
@@ -184,6 +185,189 @@ def test_hex_data_conversion(hex_data: str, expected_length: int) -> None:
     raw_data = bytes.fromhex(clean_hex)
 
     assert len(raw_data) == expected_length
+
+
+def test_examples_utils_safe_import(monkeypatch: "pytest.MonkeyPatch") -> None:
+    """Ensure the examples.utils package is safe to import when optional.
+
+    external back-ends are absent.
+
+    This test simulates ImportError for optional back-end modules and then
+    imports the `examples.utils` package; the import must succeed because
+    `examples.utils` no longer re-exports heavy adapter modules at
+    package import time.
+    """
+    import builtins
+    import importlib
+    import sys
+
+    real_import = builtins.__import__
+
+    def _fake_import(
+        name: str,
+        globals_: dict[str, object] | None = None,
+        locals_: dict[str, object] | None = None,
+        fromlist: tuple[str, ...] = (),
+        level: int = 0,
+    ) -> object:
+        root = name.split(".")[0]
+        # Simulate missing optional back-ends
+        if root in ("bleak", "bleak_retry_connector", "simplepyble", "simpleble"):
+            raise ImportError(f"Simulated missing optional backend: {root}")
+        return real_import(name, globals_, locals_, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", _fake_import)
+    # Ensure a fresh import for the package under test
+    sys.modules.pop("examples.utils", None)
+
+    mod = importlib.import_module("examples.utils")
+    assert hasattr(mod, "parse_and_display_results")
+
+
+def test_bleak_retry_integration_missing_backend(monkeypatch: "pytest.MonkeyPatch") -> None:
+    """Ensure bleak-retry integration module raises a clear ImportError when back-ends are missing."""
+    real_import = builtins.__import__
+
+    def _fake_import(
+        name: str,
+        globals_: dict[str, Any] | None = None,
+        locals_: dict[str, Any] | None = None,
+        fromlist: tuple[str, ...] = (),
+        level: int = 0,
+    ) -> object:
+        root = name.split(".")[0]
+        if root in ("bleak", "bleak_retry_connector"):
+            raise ModuleNotFoundError(f"Simulated missing optional backend: {root}")
+        return real_import(name, globals_, locals_, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", _fake_import)
+    sys.modules.pop("examples.connection_managers.bleak_retry", None)
+
+    with pytest.raises(ModuleNotFoundError) as excinfo:
+        importlib.import_module("examples.connection_managers.bleak_retry")
+
+    assert "bleak" in str(excinfo.value)
+
+
+def test_simpleble_integration_missing_backend(monkeypatch: "pytest.MonkeyPatch") -> None:
+    """Ensure simpleble integration module raises a clear ImportError when back-ends are missing."""
+    real_import = builtins.__import__
+
+    def _fake_import(
+        name: str,
+        globals_: dict[str, Any] | None = None,
+        locals_: dict[str, Any] | None = None,
+        fromlist: tuple[str, ...] = (),
+        level: int = 0,
+    ) -> object:
+        root = name.split(".")[0]
+        if root == "simplepyble":
+            raise ModuleNotFoundError(f"Simulated missing optional backend: {root}")
+        return real_import(name, globals_, locals_, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", _fake_import)
+    sys.modules.pop("examples.utils.simpleble_integration", None)
+
+    with pytest.raises(ModuleNotFoundError) as excinfo:
+        importlib.import_module("examples.connection_managers.simpleble")
+
+    assert "simplepyble" in str(excinfo.value)
+
+
+class TestCanonicalShapes:
+    """Test that examples use canonical data shapes (CharacteristicData, ReadResult)."""
+
+    @pytest.mark.asyncio
+    async def test_robust_device_reading_success_canonical_shape(self) -> None:
+        """Test that robust_device_reading returns canonical CharacteristicData dict on success."""
+        # This would normally require a real device, but we're testing the shape
+        # In a real scenario, this would connect to a device and return parsed data
+        # For testing purposes, we verify the function signature and return type
+        import inspect
+
+        from examples.with_bleak_retry import robust_device_reading
+
+        sig = inspect.signature(robust_device_reading)
+        return_annotation = sig.return_annotation
+
+        # Verify return type annotation is canonical
+        assert str(return_annotation) == "dict[str, CharacteristicData]"
+
+    @pytest.mark.asyncio
+    async def test_robust_device_reading_parse_failure_handling(self) -> None:
+        """Test that robust_device_reading handles parse failures gracefully."""
+        # This test verifies that when parsing fails, the function doesn't crash
+        # and returns an empty or partial results dict
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        with patch("examples.connection_managers.bleak_retry.BleakRetryConnectionManager") as mock_manager_cls:
+            mock_manager = MagicMock()
+            mock_manager_cls.return_value = mock_manager
+
+            with patch("examples.with_bleak_retry.Device") as mock_device_cls:
+                mock_device = MagicMock()
+                mock_device_cls.return_value = mock_device
+
+                # Mock device methods
+                mock_device.connect = AsyncMock()
+                mock_device.disconnect = AsyncMock()
+                mock_device.discover_services = AsyncMock(return_value={})
+                mock_device.read = AsyncMock(side_effect=Exception("Parse failed"))
+
+                from examples.with_bleak_retry import robust_device_reading
+
+                # Should not raise exception, should handle parse failure gracefully
+                result = await robust_device_reading("00:11:22:33:44:55", retries=1)
+
+                # Should return dict even on failure
+                assert isinstance(result, dict)
+                # Should be empty since all reads failed
+                assert len(result) == 0
+
+    @pytest.mark.asyncio
+    async def test_robust_device_reading_connection_error_handling(self) -> None:
+        """Test that robust_device_reading handles connection errors gracefully."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        with patch("examples.connection_managers.bleak_retry.BleakRetryConnectionManager") as mock_manager_cls:
+            mock_manager = MagicMock()
+            mock_manager_cls.return_value = mock_manager
+
+            with patch("examples.with_bleak_retry.Device") as mock_device_cls:
+                mock_device = MagicMock()
+                mock_device_cls.return_value = mock_device
+
+                # Mock connection failure
+                mock_device.connect = AsyncMock(side_effect=ConnectionError("Connection failed"))
+
+                from examples.with_bleak_retry import robust_device_reading
+
+                # Should handle connection errors gracefully
+                with pytest.raises(ConnectionError):  # Connection failure should propagate
+                    await robust_device_reading("00:11:22:33:44:55", retries=1)
+
+    @pytest.mark.asyncio
+    async def test_robust_service_discovery_canonical_shape(self) -> None:
+        """Test that robust_service_discovery returns canonical CharacteristicData dict."""
+        from bluetooth_sig.types.data_types import CharacteristicData
+        from examples.with_bleak_retry import robust_service_discovery
+
+        # Currently returns empty dict, but should maintain canonical shape
+        result = await robust_service_discovery("00:11:22:33:44:55")
+
+        assert isinstance(result, dict)
+        # All values should be CharacteristicData instances if present
+        for value in result.values():
+            assert isinstance(value, CharacteristicData)
+
+    def test_canonical_shape_imports(self) -> None:
+        """Test that canonical shape types are properly imported."""
+        # Verify that CharacteristicData is imported and available
+        from bluetooth_sig.types.data_types import CharacteristicData
+
+        # Should be able to instantiate (basic smoke test)
+        # Note: This tests import availability, not full functionality
+        assert CharacteristicData is not None
 
 
 if __name__ == "__main__":

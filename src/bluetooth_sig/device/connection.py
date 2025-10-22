@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import Any, Callable, Protocol
 
+from bluetooth_sig.types.uuid import BluetoothUUID
+
 
 class ConnectionManagerProtocol(Protocol):
     """Protocol describing the transport operations Device expects.
@@ -32,11 +34,11 @@ class ConnectionManagerProtocol(Protocol):
         """Close the connection to the device."""
         raise NotImplementedError()
 
-    async def read_gatt_char(self, char_uuid: str) -> bytes:  # pragma: no cover
+    async def read_gatt_char(self, char_uuid: BluetoothUUID) -> bytes:  # pragma: no cover
         """Read the raw bytes of a characteristic identified by `char_uuid`."""
         raise NotImplementedError()
 
-    async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:  # pragma: no cover
+    async def write_gatt_char(self, char_uuid: BluetoothUUID, data: bytes) -> None:  # pragma: no cover
         """Write raw bytes to a characteristic identified by `char_uuid`."""
         raise NotImplementedError()
 
@@ -51,11 +53,13 @@ class ConnectionManagerProtocol(Protocol):
         """
         raise NotImplementedError()
 
-    async def start_notify(self, char_uuid: str, callback: Callable[[str, bytes], None]) -> None:  # pragma: no cover
+    async def start_notify(
+        self, char_uuid: BluetoothUUID, callback: Callable[[str, bytes], None]
+    ) -> None:  # pragma: no cover
         """Start notifications for `char_uuid` and invoke `callback(uuid, data)` on updates."""
         raise NotImplementedError()
 
-    async def stop_notify(self, char_uuid: str) -> None:  # pragma: no cover
+    async def stop_notify(self, char_uuid: BluetoothUUID) -> None:  # pragma: no cover
         """Stop notifications for `char_uuid`."""
         raise NotImplementedError()
 

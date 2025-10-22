@@ -1,44 +1,28 @@
 #!/usr/bin/env python3
-"""Basic usage example for the bluetooth_sig library.
+"""Basic usage example for the bluetooth_sig library."""
 
-Demonstrates typical integration patterns and provides a runnable example for
-users to explore device connection and characteristic parsing.
-"""
-
-# Set up paths for imports
-import sys
-from pathlib import Path
-
-# pylint: disable=duplicate-code
-
-# Add src directory for bluetooth_sig imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Add parent directory for examples package imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Add examples directory for utils imports
-sys.path.insert(0, str(Path(__file__).parent))
+from __future__ import annotations
 
 import argparse
 import asyncio
 
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
-from examples.shared_utils import demo_basic_usage
-
-try:
-    from examples.utils.bleak_retry_integration import BleakRetryConnectionManager
-    from examples.utils.simpleble_integration import SimplePyBLEConnectionManager
-
-    simplepyble_available = True
-except ImportError:
-    from examples.utils.bleak_retry_integration import BleakRetryConnectionManager
-
-    simplepyble_available = False
 
 
 async def main() -> None:
     """Main function for basic usage demonstration."""
+    # Runtime imports (may raise ImportError if optional extras are missing)
+    from examples.utils.demo_functions import demo_basic_usage as demo_basic_usage_fn
+
+    try:
+        from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+        from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
+
+        simplepyble_available = True
+    except ImportError:
+        from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+
+        simplepyble_available = False
     # pylint: disable=duplicate-code
     # NOTE: Argument parsing duplicates service_discovery.py CLI setup.
     # Duplication justified because:
@@ -67,7 +51,7 @@ async def main() -> None:
     else:
         connection_manager = BleakRetryConnectionManager(args.address)
 
-    await demo_basic_usage(args.address, connection_manager)
+    await demo_basic_usage_fn(args.address, connection_manager)
 
 
 if __name__ == "__main__":

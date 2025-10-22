@@ -59,11 +59,11 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         """Parse a single characteristic's raw bytes."""
 
     @abstractmethod
-    def get_characteristic_uuid_by_name(self, name: CharacteristicName) -> str | None:
+    def get_characteristic_uuid_by_name(self, name: CharacteristicName) -> BluetoothUUID | None:
         """Get the UUID for a characteristic name enum (enum-only API)."""
 
     @abstractmethod
-    def get_service_uuid_by_name(self, name: str | ServiceName) -> str | None:
+    def get_service_uuid_by_name(self, name: str | ServiceName) -> BluetoothUUID | None:
         """Get the UUID for a service name or enum."""
 
     def get_characteristic_info_by_name(self, name: CharacteristicName) -> Any | None:  # noqa: ANN401  # Adapter-specific characteristic info
@@ -154,10 +154,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         """
         # Resolve service UUID: accept UUID-like strings directly, else ask translator
-        # service_uuid can be a string or None (translator may return None)
-        service_uuid: str | None
+        # service_uuid can be a BluetoothUUID or None (translator may return None)
+        service_uuid: BluetoothUUID | None
         if isinstance(service_name, str) and _is_uuid_like(service_name):
-            service_uuid = service_name
+            service_uuid = BluetoothUUID(service_name)
         else:
             service_uuid = self.translator.get_service_uuid_by_name(service_name)
 
@@ -172,7 +172,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         service_class = GattServiceRegistry.get_service_class(service_uuid)
         service: BaseGattService
         if not service_class:
-            service = UnknownService(uuid=BluetoothUUID(service_uuid))
+            service = UnknownService(uuid=service_uuid)
         else:
             service = service_class()
 
@@ -253,7 +253,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         resolved_uuid = self._resolve_characteristic_name(char_name)
         raw = await self.connection_manager.read_gatt_char(resolved_uuid)
-        parsed = self.translator.parse_characteristic(resolved_uuid, raw)
+        parsed = self.translator.parse_characteristic(str(resolved_uuid), raw)
         return parsed
 
     async def write(self, char_name: str | CharacteristicName, data: bytes) -> None:
@@ -298,7 +298,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         await self.connection_manager.start_notify(resolved_uuid, _internal_cb)
 
-    def _resolve_characteristic_name(self, identifier: str | CharacteristicName) -> str:
+    def _resolve_characteristic_name(self, identifier: str | CharacteristicName) -> BluetoothUUID:
         """Resolve a characteristic name or enum to its UUID.
 
         Args:
@@ -321,7 +321,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             norm = identifier
         stripped = norm.replace("-", "")
         if len(stripped) in (4, 8, 32) and all(c in "0123456789abcdefABCDEF" for c in stripped):
-            return norm
+            return BluetoothUUID(norm)
 
         raise ValueError(f"Unknown characteristic name: '{identifier}'")
 
@@ -669,10 +669,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             try:
                 value = await self.read(char_name)
                 resolved_uuid = self._resolve_characteristic_name(char_name)
-                results[resolved_uuid] = value
+                results[str(resolved_uuid)] = value
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 resolved_uuid = self._resolve_characteristic_name(char_name)
-                results[resolved_uuid] = None
+                results[str(resolved_uuid)] = None
                 logging.warning("Failed to read characteristic %s: %s", char_name, exc)
 
         return results
@@ -698,10 +698,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             try:
                 await self.write(char_name, data)
                 resolved_uuid = self._resolve_characteristic_name(char_name)
-                results[resolved_uuid] = True
+                results[str(resolved_uuid)] = True
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 resolved_uuid = self._resolve_characteristic_name(char_name)
-                results[resolved_uuid] = False
+                results[str(resolved_uuid)] = False
                 logging.warning("Failed to write characteristic %s: %s", char_name, exc)
 
         return results
@@ -779,8 +779,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         service_uuid = self.translator.get_service_uuid_by_name(
             service_name if isinstance(service_name, str) else service_name.value
         )
-        if service_uuid and service_uuid in self.services:
-            return [self.services[service_uuid]]
+        if service_uuid and str(service_uuid) in self.services:
+            return [self.services[str(service_uuid)]]
         return []
 
     def list_characteristics(self, service_uuid: str | None = None) -> dict[str, list[str]]:

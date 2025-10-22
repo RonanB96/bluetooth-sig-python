@@ -5,13 +5,13 @@ All examples automatically have the src and examples directories added
 to the Python path.
 """
 
-# Set up path for imports from src directory and examples directory - centralized for all examples
+import os
 import sys
-from pathlib import Path
 
-# pylint: disable=duplicate-code
-# Add src directory for bluetooth_sig imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
-# Add examples directory for utils and shared_utils imports
-sys.path.insert(0, str(Path(__file__).parent))
+
+if __name__ == "__main__":
+    print("Examples package helper. Use the scripts in the examples/ directory to run demos.")

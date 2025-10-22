@@ -5,36 +5,10 @@ Demonstrates how to discover services and characteristics using the
 Bluetooth SIG translator together with a pluggable connection manager.
 """
 
-# Set up paths for imports
-import sys
-from pathlib import Path
-
-# pylint: disable=duplicate-code
-
-# Add src directory for bluetooth_sig imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Add parent directory for examples package imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Add examples directory for utils imports
-sys.path.insert(0, str(Path(__file__).parent))
-
 import argparse
 import asyncio
 
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
-from examples.shared_utils import demo_service_discovery
-
-try:
-    from examples.utils.bleak_retry_integration import BleakRetryConnectionManager
-    from examples.utils.simpleble_integration import SimplePyBLEConnectionManager
-
-    simplepyble_available = True
-except ImportError:
-    from examples.utils.bleak_retry_integration import BleakRetryConnectionManager
-
-    simplepyble_available = False
 
 
 async def main() -> None:
@@ -55,8 +29,20 @@ async def main() -> None:
     )
     args = parser.parse_args()
 
+    # Runtime imports
+    from examples.utils.demo_functions import demo_service_discovery
+
     # Create connection manager based on choice
     connection_manager: ConnectionManagerProtocol
+    try:
+        from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+        from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
+
+        simplepyble_available = True
+    except ImportError:
+        from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+
+        simplepyble_available = False
     if args.connection_manager == "simplepyble":
         if not simplepyble_available:
             print("SimplePyBLE not available. Install with: pip install simplepyble")

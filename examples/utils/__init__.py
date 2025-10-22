@@ -1,62 +1,42 @@
-"""Utilities package for bluetooth_sig examples.
+"""Utilities package for bluetooth-sig examples.
 
-This package contains utilities split by functionality to improve
-maintainability and reduce the size of individual modules.
+This package exposes only lightweight utilities that do not pull in
+heavy external BLE libraries at import time. Adapter-specific modules
+that require optional third-party backends live as submodules under
+``examples.utils`` and should be imported explicitly by example
+scripts (so imports fail fast when the environment is missing the
+required dependency).
+
+Note: This package intentionally avoids importing modules such as
+``bleak_retry_integration`` or ``library_detection`` here to prevent
+accidental import-time ImportError when unrelated example code is
+imported. Import those submodules directly where they are required.
 """
 
-# Set up path for imports from src directory
-import sys
-from pathlib import Path
+from __future__ import annotations
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+# Keep path helper so examples executed as scripts still find the src
+# package when running from the examples/ directory. Scripts should call
+# `examples.ensure_example_import_paths()` before running example code if
+# they require the repository layout to be added to sys.path.
+# Re-export only small, safe helpers that don't depend on optional
+# third-party BLE backends.
+from .data_parsing import parse_and_display_results
+from .device_scanning import safe_get_device_info
+from .mock_data import get_default_characteristic_uuids, mock_ble_data
 
-from .bleak_retry_integration import (
-    discover_services_bleak_retry,
-    handle_notifications_bleak_retry,
-    read_characteristics_bleak_retry,
-    scan_with_bleak_retry,
-)
-from .data_parsing import (
-    parse_and_display_results,
-)
-from .demo_functions import (
-    demo_library_comparison,
-)
-from .device_scanning import (
-    safe_get_device_info,
-)
-from .library_detection import (
-    AVAILABLE_LIBRARIES,
-    bleak_retry_available,
-    show_library_availability,
-    simplepyble_available,
-    simplepyble_module,
-)
-from .mock_data import (
-    get_default_characteristic_uuids,
-    mock_ble_data,
-)
-
-# Re-export most commonly used functions
 __all__ = [
-    # Library detection
-    "AVAILABLE_LIBRARIES",
-    "bleak_retry_available",
-    "simplepyble_available",
-    "simplepyble_module",
-    "show_library_availability",
-    # Bleak-retry integration
-    "discover_services_bleak_retry",
-    "handle_notifications_bleak_retry",
-    "read_characteristics_bleak_retry",
-    "scan_with_bleak_retry",
-    # Data parsing
     "parse_and_display_results",
-    # Device scanning
-    "safe_get_device_info",
-    # Mock data
-    "mock_ble_data",
     "get_default_characteristic_uuids",
-    # Demo functions
-    "demo_library_comparison",
+    "mock_ble_data",
+    "safe_get_device_info",
 ]
+
+
+def main() -> None:
+    """Print package information."""
+    print("Examples utilities package. Exports: ", ", ".join(__all__))
+
+
+if __name__ == "__main__":
+    main()

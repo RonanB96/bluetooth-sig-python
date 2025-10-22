@@ -6,29 +6,14 @@ using the bleak-retry-connector integration layered with the
 bluetooth_sig parsing utilities.
 """
 
-# Set up paths for imports
-import sys
-from pathlib import Path
-
-# pylint: disable=duplicate-code
-
-# Add src directory for bluetooth_sig imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Add parent directory for examples package imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Add examples directory for utils imports
-sys.path.insert(0, str(Path(__file__).parent))
-
 import argparse
 import asyncio
-
-from examples.utils.bleak_retry_integration import handle_notifications_bleak_retry
 
 
 async def main() -> None:
     """Main function for notification demonstration."""
+    from examples.connection_managers.bleak_utils import handle_notifications_bleak_retry
+
     parser = argparse.ArgumentParser(description="BLE notification handling")
     parser.add_argument("--address", required=True, help="BLE device address")
     parser.add_argument("--characteristic", required=True, help="Characteristic UUID for notifications")

@@ -9,21 +9,20 @@ from __future__ import annotations
 
 import asyncio
 import types
-from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
-from typing import Any
-
-import simplepyble
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
 from bluetooth_sig.types.data_types import CharacteristicData
-from bluetooth_sig.types.uuid import BluetoothUUID
+from examples.utils.models import DeviceInfo
+
+try:
+    from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
+except ImportError:
+    SimplePyBLEConnectionManager = None  # type: ignore
 
 
 def scan_devices_simpleble(  # pylint: disable=duplicate-code
     simpleble_module: types.ModuleType, timeout: float = 10.0
-) -> list[dict[str, Any]]:
+) -> list[DeviceInfo]:
     # NOTE: Device listing pattern duplicates bleak_retry_integration scan display logic.
     # Duplication justified because:
     # 1. SimplePyBLE API differs from Bleak (different method names, synchronous)
@@ -38,14 +37,14 @@ def scan_devices_simpleble(  # pylint: disable=duplicate-code
     adapter = adapters[0]
     adapter.scan_for(int(timeout * 1000))
 
-    devices: list[dict[str, Any]] = []
+    devices: list[DeviceInfo] = []
     for peripheral in adapter.scan_get_results():
-        info: dict[str, Any] = {
-            "peripheral": peripheral,
-            "name": peripheral.identifier(),
-            "address": peripheral.address(),
-            "rssi": peripheral.rssi(),
-        }
+        info = DeviceInfo(
+            name=peripheral.identifier(),
+            address=peripheral.address(),
+            rssi=peripheral.rssi(),
+            raw=peripheral,
+        )
         devices.append(info)
 
     return devices
@@ -89,153 +88,10 @@ class SimpleService:
         self.characteristics = characteristics or []
 
 
-class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
-    """Connection manager using SimplePyBLE for BLE communication."""
-
-    def __init__(self, address: str, simpleble_module: types.ModuleType, timeout: float = 30.0) -> None:
-        """Initialize the SimplePyBLE connection manager used by examples.
-
-        Args:
-            address: BLE peripheral address to connect to.
-            simpleble_module: The imported simplepyble module to use.
-            timeout: Timeout for connection operations in seconds.
-
-        """
-        self.address = address
-        self.timeout = timeout
-        self.simpleble_module = simpleble_module
-        self.adapter: simplepyble.Adapter  # type: ignore[no-any-unimported]
-        self.peripheral: simplepyble.Peripheral | None = None  # type: ignore[no-any-unimported]
-        self.executor = ThreadPoolExecutor(max_workers=1)
-
-    async def connect(self) -> None:
-        """Connect to the target peripheral and prepare the adapter state.
-
-        This method runs the blocking SimplePyBLE connection logic in a
-        thread pool executor to avoid blocking the asyncio event loop.
-        """
-
-        def _connect() -> None:
-            # NOTE: SimplePyBLE exposes dynamic attributes; stubs provide type safety
-            adapters = self.simpleble_module.Adapter.get_adapters()  # pylint: disable=no-member
-            if not adapters:
-                raise RuntimeError("No BLE adapters found")
-            self.adapter = adapters[0]
-
-            self.adapter.scan_for(2000)
-            for peripheral in self.adapter.scan_get_results():
-                if peripheral.address().upper() == self.address.upper():
-                    self.peripheral = peripheral
-                    break
-            if not self.peripheral:
-                raise RuntimeError(f"Device {self.address} not found")
-            self.peripheral.connect()
-
-        await asyncio.get_event_loop().run_in_executor(self.executor, _connect)
-
-    async def disconnect(self) -> None:
-        """Disconnect from the peripheral if connected.
-
-        Runs the SimplePyBLE disconnect call in the thread executor.
-        """
-        if self.peripheral:
-            await asyncio.get_event_loop().run_in_executor(self.executor, self.peripheral.disconnect)
-
-    async def read_gatt_char(self, char_uuid: str) -> bytes:
-        """Read a GATT characteristic from the connected peripheral.
-
-        Args:
-            char_uuid: The UUID of the characteristic to read.
-
-        Returns:
-            Raw bytes read from the characteristic.
-        """
-
-        def _read() -> bytes:
-            p = self.peripheral
-            assert p is not None
-            for service in p.services():
-                for char in service.characteristics():
-                    if char.uuid().upper() == char_uuid.upper():
-                        raw_value = char.read()
-                        return bytes(raw_value)
-            raise RuntimeError(f"Characteristic {char_uuid} not found")
-
-        return await asyncio.get_event_loop().run_in_executor(self.executor, _read)
-
-    async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
-        """Write raw bytes to a GATT characteristic on the peripheral.
-
-        Args:
-            char_uuid: The UUID of the characteristic to write.
-            data: Bytes to write to the characteristic.
-        """
-
-        def _write() -> None:
-            p = self.peripheral
-            assert p is not None
-            for service in p.services():
-                for char in service.characteristics():
-                    if char.uuid().upper() == char_uuid.upper():
-                        char.write(data)
-                        return
-            raise RuntimeError(f"Characteristic {char_uuid} not found")
-
-        await asyncio.get_event_loop().run_in_executor(self.executor, _write)
-
-    async def get_services(self) -> object:
-        """Retrieve and convert peripheral services into example objects.
-
-        Returns:
-            A list-like object containing SimpleService instances.
-        """
-
-        def _get_services() -> object:
-            p = self.peripheral
-            assert p is not None
-            # Convert SimplePyBLE services to the format expected by Device class
-            services: list[SimpleService] = []
-            for service in p.services():
-                service_obj = SimpleService(service.uuid())
-
-                for char in service.characteristics():
-                    char_obj = SimpleCharacteristic(char.uuid())
-                    service_obj.characteristics.append(char_obj)
-
-                services.append(service_obj)
-
-            return services
-
-        return await asyncio.get_event_loop().run_in_executor(self.executor, _get_services)
-
-    async def start_notify(self, char_uuid: str, callback: Callable[[str, bytes], None]) -> None:
-        """Start notifications for a given characteristic.
-
-        The example does not implement notification handling for SimplePyBLE
-        and raises NotImplementedError.
-        """
-        # Not implemented: SimplePyBLE notification support
-        raise NotImplementedError("Notification not supported in this example")
-
-    async def stop_notify(self, char_uuid: str) -> None:
-        """Stop notifications for a given characteristic.
-
-        The example does not implement notification handling for SimplePyBLE
-        and raises NotImplementedError.
-        """
-        # Not implemented: SimplePyBLE notification support
-        raise NotImplementedError("Notification not supported in this example")
-
-    @property
-    def is_connected(self) -> bool:
-        """Check if the connection is currently active."""
-        return self.peripheral is not None and self.peripheral.is_connected()
-
-
 def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,duplicate-code
     address: str,
     simpleble_module: types.ModuleType,
-) -> dict[BluetoothUUID, CharacteristicData]:
+) -> dict[str, CharacteristicData]:
     # NOTE: Result parsing pattern duplicates shared_utils and data_parsing display logic.
     # Duplication justified because:
     # 1. SimplePyBLE is synchronous, shared utils are async (different execution models)
@@ -251,71 +107,48 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,
         Mapping of short UUIDs to characteristic parse data
 
     """
-    print("📱 SimplePyBLE Comprehensive Device Analysis...")
-    results: dict[BluetoothUUID, CharacteristicData] = {}
+    # Reuse the canonical connection helper to read characteristics
+    # and then parse the results using the BluetoothSIGTranslator.
+    translator = BluetoothSIGTranslator()
 
-    try:
-        # Initialize SimplePyBLE adapter
-        adapters = simpleble_module.Adapter.get_adapters()
-        if not adapters:
-            print("   ❌ No BLE adapters found")
-            return {}
+    async def _collect() -> dict[str, CharacteristicData]:
+        manager = SimplePyBLEConnectionManager(address, simpleble_module)
+        try:
+            await manager.connect()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            raise RuntimeError(f"Failed to connect to {address}: {e}") from e
 
-        adapter = adapters[0]
-        print(f"   📡 Using adapter: {adapter.address()}")
+        try:
+            services = await manager.get_services()
 
-        # Scan for device
-        adapter.scan_for(2000)  # 2 seconds scan
-        peripherals = adapter.scan_get_results()
+            # Discover readable characteristics
+            target_uuids: list[str] = []
+            for service in services:  # type: ignore
+                for char in getattr(service, "characteristics", []):
+                    # If characteristic object exposes properties, check for 'read'
+                    props = getattr(char, "properties", None)
+                    if isinstance(props, (list, tuple)) and "read" in props:
+                        target_uuids.append(str(char.uuid))
 
-        target_peripheral = None
-        for peripheral in peripherals:
-            if peripheral.address().upper() == address.upper():
-                target_peripheral = peripheral
-                break
+            # Delegate reading to canonical helper
+            from examples.utils.connection_helpers import read_characteristics_with_manager
 
-        if not target_peripheral:
-            print(f"   ❌ Device {address} not found in scan")
-            return {}
+            read_results = await read_characteristics_with_manager(manager, target_uuids)
 
-        print(f"   🎯 Found target device: {target_peripheral.identifier()}")
-
-        # Connect to device
-        target_peripheral.connect()
-        print("   ✅ Connected successfully")
-
-        # Get services
-        services = target_peripheral.services()
-        print(f"   🔍 Found {len(services)} services")
-
-        # Process characteristics
-        translator = BluetoothSIGTranslator()
-        for service in services:
-            characteristics = service.characteristics()
-
-            for characteristic in characteristics:
-                char_uuid = characteristic.uuid()
-
+            parsed: dict[str, CharacteristicData] = {}
+            for short_uuid, read_result in read_results.items():
                 try:
-                    # Try to read characteristic
-                    raw_data = characteristic.read()
-                    char_uuid_short = BluetoothUUID(char_uuid)
-                    parse_outcome = translator.parse_characteristic(str(char_uuid_short), raw_data)
-                    results[char_uuid_short] = parse_outcome
-                    if parse_outcome.parse_success:
-                        unit_str = f" {parse_outcome.unit}" if parse_outcome.unit else ""
-                        print(f"   ✅ {parse_outcome.name}: {parse_outcome.value}{unit_str}")
-                    else:
-                        print(f"   ❌ {char_uuid_short}: Parse failed")
+                    parsed_outcome = translator.parse_characteristic(short_uuid, read_result.raw_data)
+                    parsed[short_uuid] = parsed_outcome
+                except Exception:  # pylint: disable=broad-exception-caught
+                    # Skip failed parses but continue processing
+                    continue
 
-                except Exception as e:  # pylint: disable=broad-exception-caught
-                    print(f"   ⚠️  {char_uuid}: {e}")
+            return parsed
+        finally:
+            try:
+                await manager.disconnect()
+            except Exception:
+                pass
 
-        # Disconnect
-        target_peripheral.disconnect()
-        print("   🔌 Disconnected")
-
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"   ❌ SimplePyBLE analysis failed: {e}")
-
-    return results
+    return asyncio.run(_collect())

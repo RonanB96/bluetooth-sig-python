@@ -5,32 +5,9 @@ Runs through the set of example utilities and verifies end-to-end
 behaviour for demo and test scenarios.
 """
 
-# Set up paths for imports
-import sys
-from pathlib import Path
-
-# pylint: disable=duplicate-code
-
-# Add src directory for bluetooth_sig imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Add parent directory for examples package imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Add examples directory for utils imports
-sys.path.insert(0, str(Path(__file__).parent))
+from __future__ import annotations
 
 import asyncio
-import time
-
-from examples.utils import (
-    bleak_retry_available,
-    mock_ble_data,
-    parse_and_display_results,
-    read_characteristics_bleak_retry,
-    show_library_availability,
-    simplepyble_available,
-)
 
 
 def print_separator(title: str) -> None:
@@ -42,14 +19,18 @@ def print_separator(title: str) -> None:
 
 async def main() -> None:
     """Run comprehensive tests."""
+    # Local imports performed when running tests/scripts to avoid import-time
+    # side-effects for tooling that imports this module.
+    from examples.connection_managers.bleak_utils import read_characteristics_bleak_retry
+    from examples.utils.data_parsing import parse_and_display_results
+    from examples.utils.library_detection import (
+        bleak_retry_available,
+        show_library_availability,
+        simplepyble_available,
+    )
+
     print_separator("Library Detection Test")
     show_library_availability()
-
-    print_separator("Mock Data Parsing Test")
-    mock_data = mock_ble_data()
-    # Convert to expected format (bytes, timestamp)
-    formatted_data = {uuid: (data, time.time()) for uuid, data in mock_data.items()}
-    await parse_and_display_results(formatted_data, "Mock Data Test")
 
     print_separator("BLE Connection Test")
     if bleak_retry_available:
@@ -77,7 +58,6 @@ async def main() -> None:
 
     print_separator("Test Summary")
     print("✅ Library detection: PASSED")
-    print("✅ Mock data parsing: PASSED")
     print("✅ SIG translation: PASSED")
     print("✅ Real device scan: PASSED")
     print("✅ Real device connection: PASSED")

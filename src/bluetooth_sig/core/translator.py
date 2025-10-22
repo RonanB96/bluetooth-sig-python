@@ -171,7 +171,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         except Exception:  # pylint: disable=broad-exception-caught
             return None
 
-    def get_characteristic_uuid_by_name(self, name: CharacteristicName) -> str | None:
+    def get_characteristic_uuid_by_name(self, name: CharacteristicName) -> BluetoothUUID | None:
         """Get the UUID for a characteristic name enum.
 
         Args:
@@ -185,12 +185,12 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         if char_class:
             try:
                 temp_char = char_class()
-                return str(temp_char.info.uuid)
+                return temp_char.info.uuid
             except Exception:  # pylint: disable=broad-exception-caught
                 pass
         return None
 
-    def get_service_uuid_by_name(self, name: str | ServiceName) -> str | None:
+    def get_service_uuid_by_name(self, name: str | ServiceName) -> BluetoothUUID | None:
         """Get the UUID for a service name or enum.
 
         Args:
@@ -214,7 +214,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         if service_class:
             try:
                 temp_service = service_class()
-                return str(temp_service.uuid)
+                return temp_service.uuid
             except Exception:  # pylint: disable=broad-exception-caught
                 pass
 
