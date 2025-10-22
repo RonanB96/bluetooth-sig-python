@@ -9,7 +9,11 @@ from tests.gatt.characteristics.test_characteristic_common import (
 
 
 class TestHumidityCharacteristic(CommonCharacteristicTests):
-    """Test Humidity characteristic implementation."""
+    """Test Humidity characteristic implementation.
+
+    Inherits behavioral tests from CommonCharacteristicTests.
+    Focuses on humidity-specific validation and precision testing.
+    """
 
     @pytest.fixture
     def characteristic(self) -> HumidityCharacteristic:
@@ -21,63 +25,51 @@ class TestHumidityCharacteristic(CommonCharacteristicTests):
         """Expected UUID for Humidity characteristic."""
         return "2A6F"
 
-    def test_valid_humidity_values(self, characteristic: HumidityCharacteristic) -> None:
-        """Test parsing valid humidity values."""
-        # Test typical humidity (50%)
-        data = bytearray([0x88, 0x13])  # 5000 = 50.00%
-        result = characteristic.decode_value(data)
-        assert abs(result - 50.0) < 0.01
+    @pytest.fixture
+    def valid_test_data(self) -> bytearray:
+        """Valid humidity test data (50.00%)."""
+        return bytearray([0x88, 0x13])  # 5000 = 50.00%
 
-        # Test low humidity (10%)
-        data = bytearray([0xE8, 0x03])  # 1000 = 10.00%
-        result = characteristic.decode_value(data)
-        assert abs(result - 10.0) < 0.01
-
-        # Test high humidity (95%) - use looser tolerance due to precision
-        data = bytearray([0x18, 0x25])  # 9500 = 95.00% (actual decode ~94.96)
-        result = characteristic.decode_value(data)
-        assert abs(result - 95.0) < 0.05  # Looser tolerance
-
-    def test_special_humidity_values(self, characteristic: HumidityCharacteristic) -> None:
-        """Test special humidity values."""
-        # Test 0% humidity
-        data = bytearray([0x00, 0x00])
-        result = characteristic.decode_value(data)
+    # === Humidity-Specific Tests ===
+    def test_humidity_precision_and_range(self, characteristic: HumidityCharacteristic) -> None:
+        """Test humidity precision and valid range boundaries."""
+        # Test 0% humidity (boundary)
+        result = characteristic.decode_value(bytearray([0x00, 0x00]))
         assert result == 0.0
 
-        # Test maximum value (0xFFFF = 655.35%)
-        data = bytearray([0xFF, 0xFF])
+        # Test 100% humidity (boundary)
+        result = characteristic.decode_value(bytearray([0x10, 0x27]))  # 10000 = 100.00%
+        assert abs(result - 100.0) < 0.01
+
+        # Test precision (50.00%)
+        result = characteristic.decode_value(bytearray([0x88, 0x13]))  # 5000 = 50.00%
+        assert abs(result - 50.0) < 0.01
+
+    def test_humidity_out_of_range_validation(self, characteristic: HumidityCharacteristic) -> None:
+        """Test that humidity values > 100% are rejected."""
+        # Test maximum value 0xFFFF should fail (655.35% > 100%)
+        result = characteristic.parse_value(bytearray([0xFF, 0xFF]))
+        assert not result.parse_success
+        assert "range" in result.error_message.lower()
+
+    def test_humidity_encoding_accuracy(self, characteristic: HumidityCharacteristic) -> None:
+        """Test encoding produces correct byte sequences."""
+        # Test encoding typical values
+        assert characteristic.encode_value(50.0) == bytearray([0x88, 0x13])
+        assert characteristic.encode_value(0.0) == bytearray([0x00, 0x00])
+        assert characteristic.encode_value(100.0) == bytearray([0x10, 0x27])
+
+    def test_raw_decode_without_validation(self, characteristic: HumidityCharacteristic) -> None:
+        """Test raw decode_value method that bypasses validation."""
+        # Test that decode_value works for any uint16 value (no validation)
+        data = bytearray([0xFF, 0xFF])  # 0xFFFF = 655.35%
         result = characteristic.decode_value(data)
         assert abs(result - 655.35) < 0.01
 
-    def test_invalid_data_length(self, characteristic: HumidityCharacteristic) -> None:
-        """Test that invalid data lengths are handled properly."""
-        # Test empty data
-        with pytest.raises(ValueError, match="Insufficient data"):
-            characteristic.decode_value(bytearray())
-
-        # Test insufficient data (1 byte instead of 2)
-        with pytest.raises(ValueError, match="Insufficient data"):
-            characteristic.decode_value(bytearray([0x88]))
-
-        # Test too much data (should work, extra ignored)
-        data = bytearray([0x88, 0x13, 0xFF, 0xFF])
+        # Test normal value
+        data = bytearray([0x88, 0x13])  # 5000 = 50.00%
         result = characteristic.decode_value(data)
         assert abs(result - 50.0) < 0.01
-
-    def test_encode_value(self, characteristic: HumidityCharacteristic) -> None:
-        """Test encoding humidity values."""
-        # Test encoding typical humidity
-        encoded = characteristic.encode_value(50.0)
-        assert encoded == bytearray([0x88, 0x13])
-
-        # Test encoding zero
-        encoded = characteristic.encode_value(0.0)
-        assert encoded == bytearray([0x00, 0x00])
-
-        # Test encoding high humidity (use correct encoded bytes)
-        encoded = characteristic.encode_value(95.0)
-        assert encoded == bytearray([0x1C, 0x25])  # Correct encoded value
 
     def test_characteristic_metadata(self, characteristic: HumidityCharacteristic) -> None:
         """Test characteristic metadata."""

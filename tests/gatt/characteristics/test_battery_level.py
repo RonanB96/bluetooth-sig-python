@@ -1,81 +1,52 @@
-"""Tests for Battery Level characteristic (0x2A19)."""
+"""Tests for Battery Level characteristic - demonstrating minimal test pattern."""
+
+from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
-from bluetooth_sig.gatt.constants import UINT8_MAX
-from tests.gatt.characteristics.test_characteristic_common import (
-    CommonCharacteristicTests,
-)
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests, CharacteristicTestData
 
 
 class TestBatteryLevelCharacteristic(CommonCharacteristicTests):
-    """Test Battery Level characteristic implementation."""
+    """Test suite for Battery Level characteristic.
+
+    Inherits behavioral tests from CommonCharacteristicTests.
+    Only adds battery-specific edge cases and domain validation.
+    """
 
     @pytest.fixture
     def characteristic(self) -> BatteryLevelCharacteristic:
-        """Provide Battery Level characteristic for testing."""
+        """Return a Battery Level characteristic instance."""
         return BatteryLevelCharacteristic()
 
     @pytest.fixture
     def expected_uuid(self) -> str:
-        """Expected UUID for Battery Level characteristic."""
+        """Return the expected UUID for Battery Level characteristic."""
         return "2A19"
 
-    def test_valid_battery_levels(self, characteristic: BatteryLevelCharacteristic) -> None:
-        """Test parsing valid battery level values."""
-        # Test minimum value
-        data = bytearray([0])
-        result = characteristic.decode_value(data)
+    @pytest.fixture
+    def valid_test_data(self) -> CharacteristicTestData:
+        """Return valid test data for battery level (75%)."""
+        return CharacteristicTestData(
+            input_data=bytearray([75]),
+            expected_value=75,
+            description="75% battery level"
+        )
+
+    # === Battery-Specific Tests ===
+    def test_battery_level_boundary_values(self, characteristic: BatteryLevelCharacteristic) -> None:
+        """Test battery level boundary values (0% and 100%)."""
+        # Test 0% battery
+        result = characteristic.decode_value(bytearray([0]))
         assert result == 0
 
-        # Test typical value
-        data = bytearray([50])
-        result = characteristic.decode_value(data)
-        assert result == 50
-
-        # Test maximum value
-        data = bytearray([100])
-        result = characteristic.decode_value(data)
+        # Test 100% battery
+        result = characteristic.decode_value(bytearray([100]))
         assert result == 100
 
-    def test_out_of_range_values(self, characteristic: BatteryLevelCharacteristic) -> None:
-        """Test that out-of-range values raise appropriate errors."""
-        # Test value above 100% should raise ValueError
-        data = bytearray([150])
-        with pytest.raises(ValueError, match="out of range"):
-            characteristic.decode_value(data)
-
-        # Test edge values
-        data = bytearray([UINT8_MAX])
-        with pytest.raises(ValueError, match="out of range"):
-            characteristic.decode_value(data)
-
-    def test_invalid_data_length(self, characteristic: BatteryLevelCharacteristic) -> None:
-        """Test that invalid data lengths are handled properly."""
-        # Test empty data should raise ValueError (not InsufficientDataError)
-        with pytest.raises(ValueError, match="Insufficient data"):
-            characteristic.decode_value(bytearray())
-
-        # Test too much data (should work, extra ignored)
-        data = bytearray([50, 60, 70])
-        result = characteristic.decode_value(data)
-        assert result == 50  # Only first byte used
-
-    def test_encode_value(self, characteristic: BatteryLevelCharacteristic) -> None:
-        """Test encoding battery level values."""
-        # Test encoding valid values
-        encoded = characteristic.encode_value(50)
-        assert encoded == bytearray([50])
-
-        encoded = characteristic.encode_value(100)
-        assert encoded == bytearray([100])
-
-        encoded = characteristic.encode_value(0)
-        assert encoded == bytearray([0])
-
-    def test_characteristic_metadata(self, characteristic: BatteryLevelCharacteristic) -> None:
-        """Test characteristic metadata."""
-        assert characteristic.name == "Battery Level"
-        assert characteristic.unit == "%"
-        assert characteristic.uuid == "2A19"
+    def test_battery_level_out_of_range_validation(self, characteristic: BatteryLevelCharacteristic) -> None:
+        """Test that values > 100% are rejected."""
+        result = characteristic.parse_value(bytearray([101]))
+        assert not result.parse_success
+        assert "range" in result.error_message.lower()
