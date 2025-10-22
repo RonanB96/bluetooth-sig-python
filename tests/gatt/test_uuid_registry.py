@@ -3,11 +3,12 @@
 # pylint: disable=redefined-outer-name  # pytest fixtures
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
+import msgspec
 import pytest
+from conftest import ROOT_DIR
 
 from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
 from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
@@ -18,6 +19,7 @@ from bluetooth_sig.gatt.services.environmental_sensing import (
 )
 from bluetooth_sig.gatt.uuid_registry import UuidRegistry
 from bluetooth_sig.types.gatt_services import ServiceDiscoveryData
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 @pytest.fixture(scope="session")
@@ -188,7 +190,7 @@ def test_invalid_uuid_lookup(mock_uuid_registry: UuidRegistry) -> None:
 
 def test_yaml_file_presence() -> None:
     """Test that required YAML files exist."""
-    base_path = Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
+    base_path = ROOT_DIR / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
     assert (base_path / "service_uuids.yaml").exists(), "Service UUIDs YAML file missing"
     assert (base_path / "characteristic_uuids.yaml").exists(), "Characteristic UUIDs YAML file missing"
@@ -197,9 +199,7 @@ def test_yaml_file_presence() -> None:
 @pytest.fixture(scope="session")
 def yaml_data() -> dict[str, Any]:
     """Load YAML data once per session for performance."""
-    import msgspec
-
-    base_path = Path(__file__).parent.parent / "bluetooth_sig" / "assigned_numbers" / "uuids"
+    base_path = ROOT_DIR / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
     # Load service data
     service_file = base_path / "service_uuids.yaml"
@@ -284,8 +284,6 @@ class TestBluetoothUUID:
 
     def test_sig_characteristic_uuid_detection(self) -> None:
         """Test SIG characteristic UUID detection logic."""
-        from bluetooth_sig.types.uuid import BluetoothUUID
-
         # Test SIG characteristic UUIDs (should return True)
         assert BluetoothUUID("2A19").is_sig_characteristic() is True  # Battery Level
         assert BluetoothUUID("2A37").is_sig_characteristic() is True  # Heart Rate
@@ -301,8 +299,6 @@ class TestBluetoothUUID:
 
     def test_bytes_property(self) -> None:
         """Test .bytes property for binary representation."""
-        from bluetooth_sig.types.uuid import BluetoothUUID
-
         # Test with short form UUID
         uuid_short = BluetoothUUID("180F")  # Battery Service
         expected_bytes = bytes.fromhex("0000180f00001000800000805f9b34fb")
@@ -323,8 +319,6 @@ class TestBluetoothUUID:
 
     def test_bytes_le_property(self) -> None:
         """Test .bytes_le property for little-endian binary representation."""
-        from bluetooth_sig.types.uuid import BluetoothUUID
-
         # Test with short form UUID
         uuid_short = BluetoothUUID("180F")
         expected_bytes_le = bytes.fromhex("fb349b5f80000080001000000f180000")
@@ -339,8 +333,6 @@ class TestBluetoothUUID:
 
     def test_bytes_roundtrip(self) -> None:
         """Test that UUID can be reconstructed from bytes."""
-        from bluetooth_sig.types.uuid import BluetoothUUID
-
         original = BluetoothUUID("2A37")  # Heart Rate Measurement
 
         # Reconstruct from bytes
