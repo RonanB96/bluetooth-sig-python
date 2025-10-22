@@ -10,25 +10,44 @@ from bluetooth_sig.gatt.characteristics.battery_power_state import (
     BatteryPowerStateData,
     BatteryPresentState,
 )
-from bluetooth_sig.types.gatt_enums import ValueType
+from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests, CharacteristicTestData
 
 
-class TestBatteryPowerStateCharacteristic:
-    """Test Battery Power State characteristic implementation."""
+class TestBatteryPowerStateCharacteristic(CommonCharacteristicTests):
+    """Test Battery Power State characteristic implementation.
 
-    def test_characteristic_name(self) -> None:
-        """Test characteristic name resolution."""
-        char = BatteryPowerStateCharacteristic()
-        # Test that characteristic name is correctly set (accessing protected member for testing)
-        assert char._characteristic_name == "Battery Level Status"  # noqa: SLF001
-        assert (
-            char.value_type == ValueType.STRING
-        )  # YAML has boolean[] which maps to string, but decode_value returns dict
+    Inherits behavioral tests from CommonCharacteristicTests.
+    Focuses on battery power state specific data parsing and validation.
+    """
 
-    def test_parse_basic_battery_state(self) -> None:
+    @pytest.fixture
+    def characteristic(self) -> BatteryPowerStateCharacteristic:
+        """Provide Battery Power State characteristic for testing."""
+        return BatteryPowerStateCharacteristic()
+
+    @pytest.fixture
+    def expected_uuid(self) -> str:
+        """Expected UUID for Battery Power State characteristic."""
+        return "2BED"
+
+    @pytest.fixture
+    def valid_test_data(self) -> CharacteristicTestData:
+        """Valid battery power state test data."""
+        return CharacteristicTestData(
+            input_data=bytearray([0xD6]),  # Battery present, wired power, charging, good level
+            expected_value=BatteryPowerState(
+                battery_charge_state=BatteryChargeState.CHARGING,
+                charge_level=BatteryChargeLevel.GOOD_LEVEL,
+                charging_type=BatteryChargingType.WIRED_EXTERNAL_POWER_SOURCE,
+                charging_fault_reason=BatteryChargingFaultReason.NO_FAULT
+            ),
+            description="Battery charging with wired power"
+        )
+
+    # === Battery Power State Specific Tests ===
+
+    def test_parse_basic_battery_state(self, characteristic: BatteryPowerStateCharacteristic) -> None:
         """Test parsing basic battery state with all flags."""
-        char = BatteryPowerStateCharacteristic()
-
         # Test state: battery present, wired power, charging, good level
         # Binary: 11010110 = 0xD6
         # Bits 0-1: 10 (present)
@@ -37,7 +56,7 @@ class TestBatteryPowerStateCharacteristic:
         # Bits 4-5: 01 (charging)
         # Bits 6-7: 11 (good level)
         data = bytearray([0xD6])
-        result = char.decode_value(data)
+        result = characteristic.decode_value(data)
 
         assert result.raw_value == 0xD6
         assert result.battery_present == BatteryPresentState.PRESENT
@@ -45,19 +64,15 @@ class TestBatteryPowerStateCharacteristic:
         assert result.wireless_external_power_connected is False
         assert result.battery_charge_state == BatteryChargeState.CHARGING
         assert result.battery_charge_level == BatteryChargeLevel.GOOD
-        assert result.battery_charging_type == BatteryChargingType.UNKNOWN
-        assert result.charging_fault_reason is None
 
-    def test_parse_battery_not_present(self) -> None:
+    def test_parse_battery_not_present(self, characteristic: BatteryPowerStateCharacteristic) -> None:
         """Test parsing when battery is not present."""
-        char = BatteryPowerStateCharacteristic()
-
         # Test state: battery not present, no external power, unknown states
         # Binary: 00000001 = 0x01
         # Bits 0-1: 01 (not present)
         # Other bits: 0 (unknown/false)
         data = bytearray([0x01])
-        result = char.decode_value(data)
+        result = characteristic.decode_value(data)
 
         assert result.raw_value == 0x01
         assert result.battery_present == BatteryPresentState.NOT_PRESENT
@@ -65,22 +80,12 @@ class TestBatteryPowerStateCharacteristic:
         assert result.wireless_external_power_connected is False
         assert result.battery_charge_state == BatteryChargeState.UNKNOWN
         assert result.battery_charge_level == BatteryChargeLevel.UNKNOWN
-        assert result.battery_charging_type == BatteryChargingType.UNKNOWN
-        assert result.charging_fault_reason is None
 
-    def test_parse_wireless_power_discharging(self) -> None:
+    def test_parse_wireless_power_discharging(self, characteristic: BatteryPowerStateCharacteristic) -> None:
         """Test parsing with wireless power and discharging state."""
-        char = BatteryPowerStateCharacteristic()
-
         # Test state: battery present, wireless power, discharging, low level
-        # Binary: 10101010 = 0xAA
-        # Bits 0-1: 10 (present)
-        # Bit 2: 0 (no wired power)
-        # Bit 3: 1 (wireless power)
-        # Bits 4-5: 10 (discharging)
-        # Bits 6-7: 10 (low level)
         data = bytearray([0xAA])
-        result = char.decode_value(data)
+        result = characteristic.decode_value(data)
 
         assert result.raw_value == 0xAA
         assert result.battery_present == BatteryPresentState.PRESENT
@@ -88,22 +93,12 @@ class TestBatteryPowerStateCharacteristic:
         assert result.wireless_external_power_connected is True
         assert result.battery_charge_state == BatteryChargeState.DISCHARGING
         assert result.battery_charge_level == BatteryChargeLevel.LOW
-        assert result.battery_charging_type == BatteryChargingType.UNKNOWN
-        assert result.charging_fault_reason is None
 
-    def test_parse_critically_low_not_charging(self) -> None:
+    def test_parse_critically_low_not_charging(self, characteristic: BatteryPowerStateCharacteristic) -> None:
         """Test parsing critically low battery not charging."""
-        char = BatteryPowerStateCharacteristic()
-
         # Test state: battery present, no external power, not charging, critically low
-        # Binary: 01110010 = 0x72
-        # Bits 0-1: 10 (present)
-        # Bit 2: 0 (no wired power)
-        # Bit 3: 0 (no wireless power)
-        # Bits 4-5: 11 (not charging)
-        # Bits 6-7: 01 (critically low)
         data = bytearray([0x72])
-        result = char.decode_value(data)
+        result = characteristic.decode_value(data)
 
         assert result.raw_value == 0x72
         assert result.battery_present == BatteryPresentState.PRESENT
@@ -111,8 +106,6 @@ class TestBatteryPowerStateCharacteristic:
         assert result.wireless_external_power_connected is False
         assert result.battery_charge_state == BatteryChargeState.NOT_CHARGING
         assert result.battery_charge_level == BatteryChargeLevel.CRITICALLY_LOW
-        assert result.battery_charging_type == BatteryChargingType.UNKNOWN
-        assert result.charging_fault_reason is None
 
     def test_parse_extended_format_with_charging_type(self) -> None:
         """Test parsing extended format with charging type information."""

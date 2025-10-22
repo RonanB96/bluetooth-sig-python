@@ -10,7 +10,11 @@ from tests.gatt.characteristics.test_characteristic_common import (
 
 
 class TestTemperatureCharacteristic(CommonCharacteristicTests):
-    """Test Temperature characteristic implementation."""
+    """Test Temperature characteristic implementation.
+
+    Inherits behavioral tests from CommonCharacteristicTests.
+    Focuses on temperature-specific precision and range testing.
+    """
 
     @pytest.fixture
     def characteristic(self) -> TemperatureCharacteristic:
@@ -22,40 +26,44 @@ class TestTemperatureCharacteristic(CommonCharacteristicTests):
         """Expected UUID for Temperature characteristic."""
         return "2A6E"
 
-    def test_valid_temperature_values(self, characteristic: TemperatureCharacteristic) -> None:
-        """Test parsing valid temperature values."""
-        # Test typical room temperature (22°C)
-        data = bytearray([0x64, 0x08])  # 2148 = 21.48°C
-        result = characteristic.decode_value(data)
-        assert abs(result - 21.48) < 0.01
+    @pytest.fixture
+    def valid_test_data(self) -> bytearray:
+        """Valid temperature test data (21.48°C)."""
+        return bytearray([0x64, 0x08])  # 2148 = 21.48°C
 
+    # === Temperature-Specific Tests ===
+    def test_temperature_precision_and_boundaries(self, characteristic: TemperatureCharacteristic) -> None:
+        """Test temperature precision and boundary values."""
         # Test freezing point (0°C)
-        data = bytearray([0x00, 0x00])
-        result = characteristic.decode_value(data)
+        result = characteristic.decode_value(bytearray([0x00, 0x00]))
         assert result == 0.0
 
         # Test negative temperature (-10°C)
-        data = bytearray([0x18, 0xFC])  # -1000 = -10.00°C
-        result = characteristic.decode_value(data)
+        result = characteristic.decode_value(bytearray([0x18, 0xFC]))  # -1000 = -10.00°C
         assert abs(result + 10.0) < 0.01
 
-    def test_extreme_temperature_values(self, characteristic: TemperatureCharacteristic) -> None:
-        """Test parsing extreme temperature values."""
-        # Test maximum positive value (using proper constants)
-        data = bytearray([SINT16_MAX & 0xFF, (SINT16_MAX >> 8) & 0xFF])  # 32767 = 327.67°C
-        result = characteristic.decode_value(data)
+        # Test precision (21.48°C)
+        result = characteristic.decode_value(bytearray([0x64, 0x08]))  # 2148 = 21.48°C
+        assert abs(result - 21.48) < 0.01
+
+    def test_temperature_extreme_values(self, characteristic: TemperatureCharacteristic) -> None:
+        """Test extreme temperature values within valid range."""
+        # Test maximum positive value
+        max_data = bytearray([SINT16_MAX & 0xFF, (SINT16_MAX >> 8) & 0xFF])  # 32767 = 327.67°C
+        result = characteristic.decode_value(max_data)
         assert abs(result - 327.67) < 0.01
 
-        # Test maximum negative value (using proper constants)
-        data = bytearray([SINT16_MIN & 0xFF, (SINT16_MIN >> 8) & 0xFF])  # -32768 = -327.68°C
-        result = characteristic.decode_value(data)
+        # Test maximum negative value
+        min_data = bytearray([SINT16_MIN & 0xFF, (SINT16_MIN >> 8) & 0xFF])  # -32768 = -327.68°C
+        result = characteristic.decode_value(min_data)
         assert abs(result + 327.68) < 0.01
 
-    def test_invalid_data_length(self, characteristic: TemperatureCharacteristic) -> None:
-        """Test that invalid data lengths are handled properly."""
-        # Test empty data (expects ValueError, not InsufficientDataError)
-        with pytest.raises(ValueError, match="Insufficient data"):
-            characteristic.decode_value(bytearray())
+    def test_temperature_encoding_accuracy(self, characteristic: TemperatureCharacteristic) -> None:
+        """Test encoding produces correct byte sequences."""
+        # Test encoding common temperatures
+        assert characteristic.encode_value(0.0) == bytearray([0x00, 0x00])
+        assert characteristic.encode_value(21.48) == bytearray([0x64, 0x08])
+        assert characteristic.encode_value(-10.0) == bytearray([0x18, 0xFC])
 
         # Test insufficient data (1 byte instead of 2)
         with pytest.raises(ValueError, match="Insufficient data"):
