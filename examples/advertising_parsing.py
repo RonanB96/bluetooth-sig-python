@@ -13,10 +13,14 @@ from typing import cast
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device.advertising_parser import AdvertisingParser
 from bluetooth_sig.types.advertising import DeviceAdvertiserData
-from examples.utils.argparse_utils import create_common_parser
 
 
-def display_advertising_data(parsed_data: DeviceAdvertiserData, translator: BluetoothSIGTranslator) -> None:
+def display_advertising_data(
+    parsed_data: DeviceAdvertiserData,
+    translator: BluetoothSIGTranslator,
+    show_not_found: bool = False,
+    show_debug: bool = False,
+) -> None:
     """Display advertising data in a structured format showing found fields first, then not found."""
     # Collect found and not found fields
     found_fields: list[str] = []
@@ -256,14 +260,14 @@ def display_advertising_data(parsed_data: DeviceAdvertiserData, translator: Blue
             print(f"  {field}")
         print()
 
-    # Print not found fields
-    if not_found_fields:
+    # Print not found fields if flag enabled
+    if show_not_found and not_found_fields:
         print("❌ NOT FOUND FIELDS:")
         for field in not_found_fields:
             print(f"  {field}")
         print()
 
-    # Extended advertising fields (only show if extended)
+    # Extended advertising fields (show automatically if present)
     if parsed_data.is_extended_advertising:
         extended_found: list[str] = []
         extended_not_found: list[str] = []
@@ -300,14 +304,16 @@ def display_advertising_data(parsed_data: DeviceAdvertiserData, translator: Blue
                 print(f"  {field}")
             print()
 
-        if extended_not_found:
+        if show_not_found and extended_not_found:
             print("🔄 EXTENDED ADVERTISING - NOT FOUND:")
             for field in extended_not_found:
                 print(f"  {field}")
             print()
 
-    print(f"Is Extended Advertising: {parsed_data.is_extended_advertising}")
-    print(f"Total Payload Size: {parsed_data.total_payload_size} bytes")
+    # Debug output if enabled
+    if show_debug:
+        print(f"Is Extended Advertising: {parsed_data.is_extended_advertising}")
+        print(f"Total Payload Size: {parsed_data.total_payload_size} bytes")
 
 
 def demo_advertising_parsing() -> None:
@@ -368,74 +374,42 @@ def demo_advertising_parsing() -> None:
         print(f"Error parsing advertising data: {e}")
 
 
-async def main() -> dict[str, object]:
+async def main(
+    data: str = "",
+    mock: bool = False,
+    extended_mock: bool = False,
+    show_not_found: bool = False,
+    show_debug: bool = False,
+) -> dict[str, object]:
     """Async main entrypoint for example scripts (imported by tests).
 
     Prints example output and returns a small results dict for tests.
     """
-    # Create parser with advertising-specific arguments
-    parser = create_common_parser(
-        "Advertising data parsing example",
-        require_address=False,  # This example doesn't need a device address
-        add_connection_manager=False,  # This example doesn't need connection managers
-    )
-
-    # Add advertising-specific arguments
-    parser.add_argument(
-        "--data",
-        help=(
-            "Hex string of advertising data to parse.\n"
-            "Example: '02010603020f180c095465737420446576696365020a7f05ff4c000102'\n"
-            "(flags, service UUIDs, local name, TX power, manufacturer data)"
-        ),
-    )
-    parser.add_argument(
-        "--mock",
-        action="store_true",
-        help="Use mock advertising data for demonstration",
-    )
-    parser.add_argument(
-        "--extended-mock",
-        action="store_true",
-        help="Use mock extended advertising data for demonstration",
-    )
-
-    # Parse arguments
-    args = parser.parse_args()
-
-    # Create translator for service name resolution
+    results: dict[str, object] = {}
+    parsed_data = None
     translator = BluetoothSIGTranslator()
 
-    results: dict[str, object] = {}
-
-    parsed_data: DeviceAdvertiserData | None = None
-
-    if args.data:
+    if data:
         try:
-            clean_hex = args.data.replace(" ", "").replace(":", "")
+            clean_hex = data.replace(" ", "").replace(":", "")
             raw_bytes = bytes.fromhex(clean_hex)
-
-            # Try to parse as advertising data
             advertising_parser = AdvertisingParser()
             parsed_data = advertising_parser.parse_advertising_data(raw_bytes)
-
             print("Parsing provided advertising data:")
-            print(f"Raw data: {args.data}")
+            print(f"Raw data: {data}")
             print("Provided Data Results with SIG Parsing:")
             print()
-
+            display_advertising_data(parsed_data, translator, show_not_found, show_debug)
             results["provided"] = True
         except ValueError as e:
             print(f"Invalid hex data provided: {e}")
             results["error"] = "invalid_hex"
             return results
-
-    elif args.mock:
+    elif mock:
         print("📝 USING MOCK LEGACY ADVERTISING DATA FOR DEMONSTRATION - No real BLE hardware required")
         print()
         print("Mock BLE Device Results with SIG Parsing:")
         print()
-
         parsed_data = DeviceAdvertiserData(
             raw_data=b"mock_data",
             local_name="Test Device",
@@ -449,17 +423,13 @@ async def main() -> dict[str, object]:
             appearance=0x03C0,  # Generic Computer
             service_data={"180F": b"\x64"},  # Battery level 100%
         )
-
-        display_advertising_data(parsed_data, translator)
-
+        display_advertising_data(parsed_data, translator, show_not_found, show_debug)
         results["used_mock"] = True
-
-    elif args.extended_mock:
+    elif extended_mock:
         print("🔄 USING MOCK EXTENDED ADVERTISING DATA FOR DEMONSTRATION - No real BLE hardware required")
         print()
         print("Mock Extended BLE Device Results with SIG Parsing:")
         print()
-
         parsed_data = DeviceAdvertiserData(
             raw_data=b"mock_extended_data",
             local_name="Extended Test Device",
@@ -477,20 +447,9 @@ async def main() -> dict[str, object]:
             periodic_advertising_data=b"\xaa\xbb\xcc\xdd",
             broadcast_code=b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff\x00",
         )
-
+        display_advertising_data(parsed_data, translator, show_not_found, show_debug)
         results["used_extended"] = True
 
-    try:
-        if parsed_data is not None:
-            display_advertising_data(parsed_data, translator)
-    except ValueError as e:
-        print(f"Invalid hex data provided: {e}")
-        results["error"] = "invalid_hex"
-    except Exception as e:
-        print(f"Error parsing advertising data: {e}")
-        results["error"] = "parse_error"
-
-    results["raw"] = args.data
     if parsed_data is not None:
         results["parsed"] = {
             "local_name": parsed_data.local_name,
@@ -515,4 +474,21 @@ async def main() -> dict[str, object]:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Advertising data parsing example using the AdvertisingParser.")
+    parser.add_argument("--show-not-found", action="store_true", help="Show fields not found in the advertising data")
+    parser.add_argument("--show-debug", action="store_true", help="Show debug information")
+    parser.add_argument("--mock", action="store_true", help="Use mock legacy advertising data")
+    parser.add_argument("--extended-mock", action="store_true", help="Use mock extended advertising data")
+    parser.add_argument("--data", type=str, help="Hex string of advertising data to parse")
+    args = parser.parse_args()
+    asyncio.run(
+        main(
+            data=args.data,
+            mock=args.mock,
+            extended_mock=args.extended_mock,
+            show_not_found=args.show_not_found,
+            show_debug=args.show_debug,
+        )
+    )

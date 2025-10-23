@@ -39,15 +39,15 @@ class CommonArgs:
 
 def create_common_parser(
     description: str,
-    require_address: bool = True,
-    add_connection_manager: bool = True,
+    require_address: bool = False,
+    add_connection_manager: bool = False,
 ) -> argparse.ArgumentParser:
     """Create a parser with common BLE example arguments.
 
     Args:
         description: Description for the argument parser
-        require_address: Whether --address is required
-        add_connection_manager: Whether to add connection manager selection
+        require_address: Whether to add --address argument (required when added)
+        add_connection_manager: Whether to add connection manager selection argument
 
     Returns:
         Configured ArgumentParser
@@ -59,12 +59,6 @@ def create_common_parser(
             "--address",
             "-a",
             required=True,
-            help="BLE device address (e.g., '12:34:56:78:9A:BC')",
-        )
-    else:
-        parser.add_argument(
-            "--address",
-            "-a",
             help="BLE device address (e.g., '12:34:56:78:9A:BC')",
         )
 
