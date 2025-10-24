@@ -64,7 +64,7 @@ class HeartRateData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disab
     sensor_contact: SensorContactState
     energy_expended: int | None = None  # kJ
     rr_intervals: tuple[float, ...] = ()  # R-R intervals in seconds, immutable tuple
-    flags: int = 0  # Raw flags byte for reference
+    flags: HeartRateMeasurementFlags = HeartRateMeasurementFlags(0)  # Raw flags byte for reference
 
     def __post_init__(self) -> None:
         """Validate heart rate measurement data."""
@@ -126,9 +126,9 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
         """
         if len(data) < 2:
-            raise ValueError("Heart Rate Measurement data must be at least 2 bytes")
+            raise ValueError("Heart rate measurement data must be at least 2 bytes")
 
-        flags = data[0]
+        flags = HeartRateMeasurementFlags(data[0])
         offset = 1
 
         # Parse heart rate value (8-bit or 16-bit depending on flag)

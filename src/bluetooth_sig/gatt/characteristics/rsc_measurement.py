@@ -28,7 +28,7 @@ class RSCMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: 
 
     instantaneous_speed: float  # m/s
     instantaneous_cadence: int  # steps per minute
-    flags: int
+    flags: RSCMeasurementFlags
     instantaneous_stride_length: float | None = None  # meters
     total_distance: float | None = None  # meters
 
@@ -45,8 +45,6 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
     Used to transmit running speed and cadence data.
     """
-
-    _characteristic_name: str = "RSC Measurement"
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RSCMeasurementData:
         """Parse RSC measurement data according to Bluetooth specification.

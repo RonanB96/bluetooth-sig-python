@@ -15,6 +15,7 @@ from .utils import IEEE11073Parser
 class TemperatureMeasurementFlags(IntFlag):
     """Temperature Measurement flags as per Bluetooth SIG specification."""
 
+    CELSIUS_UNIT = 0x00
     FAHRENHEIT_UNIT = 0x01
     TIMESTAMP_PRESENT = 0x02
     TEMPERATURE_TYPE_PRESENT = 0x04
@@ -25,7 +26,7 @@ class TemperatureMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # 
 
     temperature: float
     unit: str
-    flags: int
+    flags: TemperatureMeasurementFlags
     timestamp: datetime | None = None
     temperature_type: int | None = None
 
@@ -83,7 +84,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         return TemperatureMeasurementData(
             temperature=temp_value,
             unit=unit,
-            flags=int(flags),
+            flags=flags,
             timestamp=timestamp,
             temperature_type=temperature_type,
         )

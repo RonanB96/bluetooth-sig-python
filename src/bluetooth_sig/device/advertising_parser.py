@@ -10,6 +10,7 @@ from __future__ import annotations
 from ..gatt.characteristics.utils import DataParser
 from ..types import (
     BLEAdvertisementTypes,
+    BLEAdvertisingFlags,
     BLEAdvertisingPDU,
     BLEExtendedHeader,
     DeviceAdvertiserData,
@@ -301,7 +302,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             manufacturer_data=manufacturer_data,
             service_uuids=service_uuids,
             tx_power=tx_power,
-            flags=flags,
+            flags=BLEAdvertisingFlags(flags) if flags is not None else None,
         )
 
     def _parse_ad_structures(self, data: bytes) -> ParsedADStructures:
@@ -330,7 +331,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             ad_data = data[i + 2 : i + length + 1]
 
             if ad_type == BLEAdvertisementTypes.FLAGS and len(ad_data) >= 1:
-                parsed.flags = ad_data[0]
+                parsed.flags = BLEAdvertisingFlags(ad_data[0])
             elif ad_type in (
                 BLEAdvertisementTypes.INCOMPLETE_16BIT_SERVICE_UUIDS,
                 BLEAdvertisementTypes.COMPLETE_16BIT_SERVICE_UUIDS,
