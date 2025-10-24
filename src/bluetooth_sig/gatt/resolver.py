@@ -9,12 +9,12 @@ from __future__ import annotations
 import re
 from typing import Generic, TypeVar
 
-from ..types import CharacteristicInfo, ServiceInfo
+from ..types import CharacteristicInfo, DescriptorInfo, ServiceInfo
 from ..types.gatt_enums import ValueType
 from .uuid_registry import UuidInfo, uuid_registry
 
 # Generic type variables for resolver return types
-TInfo = TypeVar("TInfo", CharacteristicInfo, ServiceInfo)
+TInfo = TypeVar("TInfo", CharacteristicInfo, ServiceInfo, DescriptorInfo)
 
 
 class NameNormalizer:
@@ -196,6 +196,57 @@ class NameVariantGenerator:
                 result.append(v)
         return result
 
+    @staticmethod
+    def generate_descriptor_variants(class_name: str, explicit_name: str | None = None) -> list[str]:
+        """Generate all name variants to try for descriptor resolution.
+
+        Args:
+            class_name: The __name__ of the descriptor class
+            explicit_name: Optional explicit name override
+
+        Returns:
+            List of name variants ordered by likelihood of success
+
+        """
+        variants: list[str] = []
+
+        # If explicit name provided, try it first
+        if explicit_name:
+            variants.append(explicit_name)
+
+        # Remove 'Descriptor' suffix if present
+        base_name = NameNormalizer.remove_suffix(class_name, "Descriptor")
+
+        # Convert to space-separated display name
+        display_name = NameNormalizer.camel_case_to_display_name(base_name)
+
+        # Generate org format
+        words = display_name.split()
+        org_name = NameNormalizer.to_org_format(words, "descriptor")
+
+        # Order by hit rate (based on testing):
+        # 1. Space-separated display name
+        # 2. Base name without suffix
+        # 3. Org ID format (~0% hit rate but spec-compliant)
+        # 4. Full class name (fallback)
+        variants.extend(
+            [
+                display_name,
+                base_name,
+                org_name,
+                class_name,
+            ]
+        )
+
+        # Remove duplicates while preserving order
+        seen: set[str] = set()
+        result: list[str] = []
+        for v in variants:
+            if v not in seen:
+                seen.add(v)
+                result.append(v)
+        return result
+
 
 class RegistrySearchStrategy(Generic[TInfo]):  # pylint: disable=too-few-public-methods
     """Base strategy for searching registry with name variants.
@@ -270,4 +321,27 @@ class ServiceRegistrySearch(RegistrySearchStrategy[ServiceInfo]):  # pylint: dis
             uuid=uuid_info.uuid,
             name=uuid_info.name,
             description=uuid_info.summary or "",
+        )
+
+
+class DescriptorRegistrySearch(RegistrySearchStrategy[DescriptorInfo]):  # pylint: disable=too-few-public-methods
+    """Registry search strategy for descriptors."""
+
+    def _generate_variants(self, class_name: str, explicit_name: str | None) -> list[str]:
+        return NameVariantGenerator.generate_descriptor_variants(class_name, explicit_name)
+
+    def _lookup_in_registry(self, name: str) -> UuidInfo | None:
+        return uuid_registry.get_descriptor_info(name)
+
+    def _create_info(self, uuid_info: UuidInfo, class_obj: type) -> DescriptorInfo:
+        # Get structured data info from the class if available
+        has_structured_data = getattr(class_obj, "_has_structured_data", lambda: False)()
+        data_format = getattr(class_obj, "_get_data_format", lambda: "")()
+
+        return DescriptorInfo(
+            uuid=uuid_info.uuid,
+            name=uuid_info.name,
+            description=uuid_info.summary or "",
+            has_structured_data=has_structured_data,
+            data_format=data_format,
         )

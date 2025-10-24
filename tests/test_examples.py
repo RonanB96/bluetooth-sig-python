@@ -8,11 +8,9 @@ import importlib
 import sys
 import time
 from typing import Any
-from unittest.mock import MagicMock, patch
 
 import pytest
 
-from examples.advertising_parsing import main
 from examples.utils.data_parsing import parse_and_display_results
 from examples.utils.library_detection import AVAILABLE_LIBRARIES, show_library_availability
 from examples.utils.mock_data import mock_ble_data
@@ -75,21 +73,16 @@ class TestAdvertisingParsing:
         self, data: str | None = None, mock: bool = False, extended_mock: bool = False
     ) -> dict[str, Any]:
         """Helper method to run main with mocked arguments."""
-        # Create mock args object
-        mock_args = MagicMock()
-        mock_args.data = data
-        mock_args.mock = mock
-        mock_args.extended_mock = extended_mock
+        # Import the main function directly and call it with parameters
+        from examples.advertising_parsing import main
 
-        # Mock the parser.parse_args() method
-        with patch("examples.advertising_parsing.create_common_parser") as mock_parser_func:
-            mock_parser = MagicMock()
-            mock_parser.parse_args.return_value = mock_args
-            if not any([data, mock, extended_mock]):
-                mock_parser.print_help = MagicMock()
-            mock_parser_func.return_value = mock_parser
-
-            return await main()
+        return await main(
+            data=data or "",
+            mock=mock,
+            extended_mock=extended_mock,
+            show_not_found=False,
+            show_debug=False,
+        )
 
     @pytest.mark.asyncio
     async def test_advertising_parsing_with_mock_data(self, capsys: pytest.CaptureFixture[str]) -> None:

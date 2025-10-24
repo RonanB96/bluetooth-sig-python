@@ -24,6 +24,7 @@ from .data_types import (
     SIGInfo,
     ValidationResult,
 )
+from .descriptor_types import DescriptorData, DescriptorInfo
 from .protocols import CharacteristicDataProtocol
 
 # Device-related types are imported from device_types module to avoid cyclic imports
@@ -38,6 +39,8 @@ __all__ = [
     "CharacteristicDataProtocol",
     "CharacteristicInfo",
     "CharacteristicRegistration",
+    "DescriptorData",
+    "DescriptorInfo",
     "DeviceAdvertiserData",
     "DeviceInfo",
     "ExtendedHeaderMode",

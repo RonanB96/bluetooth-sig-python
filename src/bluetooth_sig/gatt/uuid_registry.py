@@ -116,14 +116,17 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         # Canonical storage: normalized_uuid -> UuidInfo (single source of truth)
         self._services: dict[str, UuidInfo] = {}
         self._characteristics: dict[str, UuidInfo] = {}
+        self._descriptors: dict[str, UuidInfo] = {}
 
         # Lightweight alias indices: alias -> normalized_uuid
         self._service_aliases: dict[str, str] = {}
         self._characteristic_aliases: dict[str, str] = {}
+        self._descriptor_aliases: dict[str, str] = {}
 
         # Preserve SIG entries overridden at runtime so we can restore them
         self._service_overrides: dict[str, UuidInfo] = {}
         self._characteristic_overrides: dict[str, UuidInfo] = {}
+        self._descriptor_overrides: dict[str, UuidInfo] = {}
 
         # Unit mappings
         self._unit_mappings: dict[str, str] = {}
@@ -160,6 +163,18 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         aliases = self._generate_aliases(info)
         for alias in aliases:
             self._characteristic_aliases[alias.lower()] = canonical_key
+
+    def _store_descriptor(self, info: UuidInfo) -> None:
+        """Store descriptor info with canonical storage + aliases."""
+        canonical_key = info.uuid.normalized
+
+        # Store once in canonical location
+        self._descriptors[canonical_key] = info
+
+        # Create lightweight alias mappings (normalized to lowercase)
+        aliases = self._generate_aliases(info)
+        for alias in aliases:
+            self._descriptor_aliases[alias.lower()] = canonical_key
 
     def _generate_aliases(self, info: UuidInfo) -> set[str]:
         """Generate name/ID-based alias keys for a UuidInfo (UUID variations handled by BluetoothUUID)."""
@@ -217,7 +232,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
         return typed_entries
 
-    def _load_uuids(self) -> None:
+    def _load_uuids(self) -> None:  # pylint: disable=too-many-branches
         """Load all UUIDs from YAML files."""
         # Try development location first (git submodule)
         project_root = Path(__file__).parent.parent.parent.parent
@@ -262,6 +277,22 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                     uuid=bt_uuid, name=uuid_info["name"], id=uuid_info["id"], origin=UuidOrigin.BLUETOOTH_SIG
                 )
                 self._store_characteristic(info)
+
+        # Load descriptor UUIDs
+        descriptor_yaml = base_path / "descriptors.yaml"
+        if descriptor_yaml.exists():
+            for uuid_info in self._load_yaml(descriptor_yaml):
+                uuid = uuid_info["uuid"]
+                if isinstance(uuid, str):
+                    uuid = uuid.replace("0x", "")
+                else:
+                    uuid = hex(uuid)[2:].upper()
+
+                bt_uuid = BluetoothUUID(uuid)
+                info = UuidInfo(
+                    uuid=bt_uuid, name=uuid_info["name"], id=uuid_info["id"], origin=UuidOrigin.BLUETOOTH_SIG
+                )
+                self._store_descriptor(info)
 
         # Load unit mappings and GSS specifications
         self._load_unit_mappings(base_path)
@@ -667,6 +698,34 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
             return None
 
+    def get_descriptor_info(self, identifier: str | BluetoothUUID) -> UuidInfo | None:
+        """Get information about a descriptor by UUID, name, or ID."""
+        with self._lock:
+            # Convert BluetoothUUID to canonical key
+            if isinstance(identifier, BluetoothUUID):
+                canonical_key = identifier.normalized
+                # Direct canonical lookup
+                if canonical_key in self._descriptors:
+                    return self._descriptors[canonical_key]
+            else:
+                search_key = str(identifier).strip()
+
+                # Try UUID normalization first
+                try:
+                    bt_uuid = BluetoothUUID(search_key)
+                    canonical_key = bt_uuid.normalized
+                    if canonical_key in self._descriptors:
+                        return self._descriptors[canonical_key]
+                except ValueError:
+                    pass
+
+                # Check alias index (normalized to lowercase)
+                alias_key = self._descriptor_aliases.get(search_key.lower())
+                if alias_key and alias_key in self._descriptors:
+                    return self._descriptors[alias_key]
+
+            return None
+
     def resolve_characteristic_spec(self, characteristic_name: str) -> CharacteristicSpec | None:  # pylint: disable=too-many-locals
         """Resolve characteristic specification with rich YAML metadata.
 
@@ -782,11 +841,14 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             # Remove runtime entries from canonical stores
             runtime_service_keys = [k for k, v in self._services.items() if v.origin == UuidOrigin.RUNTIME]
             runtime_char_keys = [k for k, v in self._characteristics.items() if v.origin == UuidOrigin.RUNTIME]
+            runtime_desc_keys = [k for k, v in self._descriptors.items() if v.origin == UuidOrigin.RUNTIME]
 
             for key in runtime_service_keys:
                 del self._services[key]
             for key in runtime_char_keys:
                 del self._characteristics[key]
+            for key in runtime_desc_keys:
+                del self._descriptors[key]
 
             # Remove corresponding aliases (alias -> canonical_key where canonical_key is runtime)
             runtime_service_aliases = [
@@ -795,11 +857,16 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             runtime_char_aliases = [
                 alias for alias, canonical in self._characteristic_aliases.items() if canonical in runtime_char_keys
             ]
+            runtime_desc_aliases = [
+                alias for alias, canonical in self._descriptor_aliases.items() if canonical in runtime_desc_keys
+            ]
 
             for alias in runtime_service_aliases:
                 del self._service_aliases[alias]
             for alias in runtime_char_aliases:
                 del self._characteristic_aliases[alias]
+            for alias in runtime_desc_aliases:
+                del self._descriptor_aliases[alias]
 
             # Restore any preserved SIG entries that were overridden
             for key in runtime_service_keys:
@@ -810,6 +877,10 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 original = self._characteristic_overrides.pop(key, None)
                 if original is not None:
                     self._store_characteristic(original)
+            for key in runtime_desc_keys:
+                original = self._descriptor_overrides.pop(key, None)
+                if original is not None:
+                    self._store_descriptor(original)
 
 
 # Global instance

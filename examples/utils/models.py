@@ -8,7 +8,7 @@ helpers to return structured data instead of opaque tuples and dicts.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Union
 
 
 @dataclass
@@ -47,7 +47,7 @@ class DeviceInfo:
 __all__ = ["ReadResult", "DeviceInfo"]
 
 
-ComparisonData = dict[str, ReadResult] | dict[str, Any]
+ComparisonData = Union[dict[str, ReadResult], dict[str, Any]]
 
 
 @dataclass

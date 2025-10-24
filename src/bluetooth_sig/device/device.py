@@ -145,12 +145,18 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         char_count = sum(len(service.characteristics) for service in self.services.values())
         return f"Device({self.address}, name={self.name}, {service_count} services, {char_count} characteristics)"
 
-    def add_service(self, service_name: str | ServiceName, characteristics: dict[str, bytes]) -> None:
-        """Add a service to the device with its characteristics.
+    def add_service(
+        self,
+        service_name: str | ServiceName,
+        characteristics: dict[str, bytes],
+        descriptors: dict[str, dict[str, bytes]] | None = None,
+    ) -> None:
+        """Add a service to the device with its characteristics and descriptors.
 
         Args:
             service_name: Name or enum of the service to add
             characteristics: Dictionary mapping characteristic UUIDs to raw data
+            descriptors: Optional nested dict mapping char_uuid -> desc_uuid -> raw data
 
         """
         # Resolve service UUID: accept UUID-like strings directly, else ask translator
@@ -190,10 +196,42 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         for char_data in parsed_characteristics.values():
             self.update_encryption_requirements(char_data)
 
+        # Process descriptors if provided
+        if descriptors:
+            self._process_descriptors(descriptors, parsed_characteristics)
+
         device_service = DeviceService(service=service, characteristics=parsed_characteristics)
 
         service_key = service_name if isinstance(service_name, str) else service_name.value
         self.services[service_key] = device_service
+
+    def _process_descriptors(
+        self, descriptors: dict[str, dict[str, bytes]], parsed_characteristics: dict[str, Any]
+    ) -> None:
+        """Process and store descriptor data for characteristics.
+
+        Args:
+            descriptors: Nested dict mapping char_uuid -> desc_uuid -> raw data
+            parsed_characteristics: Already parsed characteristic data
+        """
+        from bluetooth_sig.gatt.descriptors.registry import DescriptorRegistry
+
+        for char_uuid, char_descriptors in descriptors.items():
+            if char_uuid not in parsed_characteristics:
+                continue  # Skip descriptors for unknown characteristics
+
+            char_data = parsed_characteristics[char_uuid]
+            if not hasattr(char_data, "add_descriptor"):
+                continue  # Characteristic doesn't support descriptors
+
+            for desc_uuid, _desc_data in char_descriptors.items():
+                descriptor = DescriptorRegistry.create_descriptor(desc_uuid)
+                if descriptor:
+                    try:
+                        char_data.add_descriptor(descriptor)
+                    except Exception:  # pylint: disable=broad-exception-caught
+                        # Skip malformed descriptors
+                        continue
 
     def attach_connection_manager(self, manager: ConnectionManagerProtocol) -> None:
         """Attach a connection manager to handle BLE connections.
