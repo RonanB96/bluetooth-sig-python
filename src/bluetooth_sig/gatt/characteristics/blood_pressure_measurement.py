@@ -44,7 +44,7 @@ class BloodPressureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: d
     pulse_rate: float | None = None
     user_id: int | None = None
     measurement_status: int | None = None
-    flags: int = 0
+    flags: BloodPressureFlags = BloodPressureFlags(0)
 
     def __post_init__(self) -> None:
         """Validate blood pressure data."""
@@ -111,7 +111,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
         if len(data) < 7:
             raise ValueError("Blood Pressure Measurement data must be at least 7 bytes")
 
-        flags = data[0]
+        flags = BloodPressureFlags(data[0])
 
         # Parse required fields
         systolic = IEEE11073Parser.parse_sfloat(data, 1)

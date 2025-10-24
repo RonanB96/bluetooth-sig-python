@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from enum import IntFlag
+
 import msgspec
 
 from ..constants import UINT8_MAX
@@ -11,10 +13,17 @@ from .csc_feature import CSCFeatureCharacteristic, CSCFeatureData
 from .utils import DataParser
 
 
+class CSCMeasurementFlags(IntFlag):
+    """CSC Measurement flags as per Bluetooth SIG specification."""
+
+    WHEEL_REVOLUTION_DATA_PRESENT = 0x01
+    CRANK_REVOLUTION_DATA_PRESENT = 0x02
+
+
 class CSCMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed data from CSC Measurement characteristic."""
 
-    flags: int
+    flags: CSCMeasurementFlags
     cumulative_wheel_revolutions: int | None = None
     last_wheel_event_time: float | None = None
     cumulative_crank_revolutions: int | None = None
@@ -22,7 +31,7 @@ class CSCMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: 
 
     def __post_init__(self) -> None:
         """Validate CSC measurement data."""
-        if not 0 <= self.flags <= UINT8_MAX:
+        if not 0 <= int(self.flags) <= UINT8_MAX:
             raise ValueError("Flags must be a uint8 value (0-UINT8_MAX)")
 
 
@@ -34,10 +43,6 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
     # Override automatic name resolution because "CSC" is an acronym
     _characteristic_name: str | None = "CSC Measurement"
-
-    # CSC Measurement Flags (per Bluetooth SIG specification)
-    WHEEL_REVOLUTION_DATA_PRESENT = 0x01
-    CRANK_REVOLUTION_DATA_PRESENT = 0x02
 
     # Time resolution constants
     CSC_TIME_RESOLUTION = 1024.0  # 1/1024 second resolution for both wheel and crank event times
@@ -62,7 +67,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
         if len(data) < 1:
             raise ValueError("CSC Measurement data must be at least 1 byte")
 
-        flags = data[0]
+        flags = CSCMeasurementFlags(data[0])
         offset = 1
 
         # Initialize result data
@@ -72,7 +77,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
         last_crank_event_time = None
 
         # Parse optional wheel revolution data (6 bytes total) if present
-        if (flags & self.WHEEL_REVOLUTION_DATA_PRESENT) and len(data) >= offset + 6:
+        if (flags & CSCMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT) and len(data) >= offset + 6:
             wheel_revolutions = DataParser.parse_int32(data, offset, signed=False)
             wheel_event_time_raw = DataParser.parse_int16(data, offset + 4, signed=False)
             # Wheel event time is in 1/CSC_TIME_RESOLUTION second units
@@ -81,7 +86,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
             offset += 6
 
         # Parse optional crank revolution data (4 bytes total) if present
-        if (flags & self.CRANK_REVOLUTION_DATA_PRESENT) and len(data) >= offset + 4:
+        if (flags & CSCMeasurementFlags.CRANK_REVOLUTION_DATA_PRESENT) and len(data) >= offset + 4:
             crank_revolutions = DataParser.parse_int16(data, offset, signed=False)
             crank_event_time_raw = DataParser.parse_int16(data, offset + 2, signed=False)
             # Crank event time is in 1/CSC_TIME_RESOLUTION second units
@@ -183,12 +188,12 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
         # Update flags to match available data
         if has_wheel_data:
-            flags |= self.WHEEL_REVOLUTION_DATA_PRESENT
+            flags |= CSCMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT
         if has_crank_data:
-            flags |= self.CRANK_REVOLUTION_DATA_PRESENT
+            flags |= CSCMeasurementFlags.CRANK_REVOLUTION_DATA_PRESENT
 
         # Start with flags byte
-        result = bytearray([flags])
+        result = bytearray([int(flags)])
 
         # Add wheel revolution data if present
         if has_wheel_data:

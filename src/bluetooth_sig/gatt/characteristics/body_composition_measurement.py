@@ -17,7 +17,7 @@ from .utils import DataParser, IEEE11073Parser
 class FlagsAndBodyFat(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Flags and body fat percentage with parsing offset."""
 
-    flags: int
+    flags: BodyCompositionFlags
     body_fat_percentage: float
     offset: int
 
@@ -260,7 +260,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         """
         # Parse flags (2 bytes)
-        flags = DataParser.parse_int16(data, 0, signed=False)
+        flags = BodyCompositionFlags(DataParser.parse_int16(data, 0, signed=False))
 
         # Validate and parse body fat percentage data
         if len(data) < 4:
