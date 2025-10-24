@@ -6,7 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import OzoneConcentrationCharacteristic
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestOzoneConcentrationCharacteristic(CommonCharacteristicTests):
@@ -23,9 +23,11 @@ class TestOzoneConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BD4"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid ozone concentration test data."""
-        return bytearray([0x64, 0x00]), 100.0  # 100 ppb little endian
+        return CharacteristicTestData(
+            input_data=bytearray([0x64, 0x00]), expected_value=100.0, description="100.0 ppb ozone concentration"
+        )
 
     def test_ozone_concentration_parsing(self, characteristic: OzoneConcentrationCharacteristic) -> None:
         """Test ozone concentration characteristic parsing."""

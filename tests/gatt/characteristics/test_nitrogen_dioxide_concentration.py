@@ -3,7 +3,7 @@
 import pytest
 
 from bluetooth_sig.gatt.characteristics import NitrogenDioxideConcentrationCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestNitrogenDioxideConcentrationCharacteristic(CommonCharacteristicTests):
@@ -20,9 +20,11 @@ class TestNitrogenDioxideConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BD2"
 
     @pytest.fixture
-    def valid_test_data(self) -> bytearray:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid nitrogen dioxide concentration test data."""
-        return bytearray([0x32, 0x00])  # 50 ppb little endian
+        return CharacteristicTestData(
+            input_data=bytearray([0x32, 0x00]), expected_value=50, description="50 ppb nitrogen dioxide concentration"
+        )
 
     def test_nitrogen_dioxide_concentration_parsing(
         self, characteristic: NitrogenDioxideConcentrationCharacteristic

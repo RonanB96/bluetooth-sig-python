@@ -3,7 +3,7 @@
 import pytest
 
 from bluetooth_sig.gatt.characteristics import MethaneConcentrationCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestMethaneConcentrationCharacteristic(CommonCharacteristicTests):
@@ -20,9 +20,11 @@ class TestMethaneConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BD1"
 
     @pytest.fixture
-    def valid_test_data(self) -> bytearray:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid methane concentration test data."""
-        return bytearray([0x64, 0x00])  # 100 ppm little endian
+        return CharacteristicTestData(
+            input_data=bytearray([0x64, 0x00]), expected_value=100, description="100 ppm methane concentration"
+        )
 
     def test_methane_concentration_parsing(self, characteristic: MethaneConcentrationCharacteristic) -> None:
         """Test methane concentration characteristic parsing."""

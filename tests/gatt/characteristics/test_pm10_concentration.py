@@ -6,7 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import PM10ConcentrationCharacteristic
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestPM10ConcentrationCharacteristic(CommonCharacteristicTests):
@@ -23,9 +23,11 @@ class TestPM10ConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BD7"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid PM10 concentration test data."""
-        return bytearray([0x32, 0x00]), 50.0  # 50 µg/m³ little endian
+        return CharacteristicTestData(
+            input_data=bytearray([0x32, 0x00]), expected_value=50.0, description="50.0 µg/m³ PM10 concentration"
+        )
 
     def test_pm10_concentration_parsing(self, characteristic: PM10ConcentrationCharacteristic) -> None:
         """Test PM10 concentration characteristic parsing."""

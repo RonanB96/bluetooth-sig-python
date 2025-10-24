@@ -5,16 +5,13 @@ import pytest
 from bluetooth_sig.gatt.characteristics.temperature import TemperatureCharacteristic
 from bluetooth_sig.gatt.constants import SINT16_MAX, SINT16_MIN
 from tests.gatt.characteristics.test_characteristic_common import (
+    CharacteristicTestData,
     CommonCharacteristicTests,
 )
 
 
 class TestTemperatureCharacteristic(CommonCharacteristicTests):
-    """Test Temperature characteristic implementation.
-
-    Inherits behavioral tests from CommonCharacteristicTests.
-    Focuses on temperature-specific precision and range testing.
-    """
+    """Test Temperature characteristic implementation."""
 
     @pytest.fixture
     def characteristic(self) -> TemperatureCharacteristic:
@@ -27,9 +24,11 @@ class TestTemperatureCharacteristic(CommonCharacteristicTests):
         return "2A6E"
 
     @pytest.fixture
-    def valid_test_data(self) -> bytearray:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid temperature test data (21.48°C)."""
-        return bytearray([0x64, 0x08])  # 2148 = 21.48°C
+        return CharacteristicTestData(
+            input_data=bytearray([0x64, 0x08]), expected_value=21.48, description="21.48°C temperature"
+        )
 
     # === Temperature-Specific Tests ===
     def test_temperature_precision_and_boundaries(self, characteristic: TemperatureCharacteristic) -> None:

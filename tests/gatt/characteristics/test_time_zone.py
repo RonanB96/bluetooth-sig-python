@@ -8,7 +8,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import TimeZoneCharacteristic
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestTimeZoneCharacteristic(CommonCharacteristicTests):
@@ -25,9 +25,11 @@ class TestTimeZoneCharacteristic(CommonCharacteristicTests):
         return "2A0E"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, str]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid time zone test data."""
-        return bytearray(struct.pack("b", 4)), "UTC+01:00"  # +1 hour (4 * 15 minutes)
+        return CharacteristicTestData(
+            input_data=bytearray(struct.pack("b", 4)), expected_value="UTC+01:00", description="UTC+01:00 time zone"
+        )
 
     def test_time_zone_parsing(self, characteristic: TimeZoneCharacteristic) -> None:
         """Test Time Zone characteristic parsing."""

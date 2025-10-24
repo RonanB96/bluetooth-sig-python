@@ -6,7 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import PollenConcentrationCharacteristic
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestPollenConcentrationCharacteristic(CommonCharacteristicTests):
@@ -23,9 +23,13 @@ class TestPollenConcentrationCharacteristic(CommonCharacteristicTests):
         return "2A75"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid pollen concentration test data."""
-        return bytearray([0x40, 0xE2, 0x01]), 123456.0  # 123456 in 24-bit little endian
+        return CharacteristicTestData(
+            input_data=bytearray([0x40, 0xE2, 0x01]),
+            expected_value=123456.0,
+            description="123456.0 grains/m³ pollen concentration",
+        )
 
     def test_pollen_concentration_parsing(self, characteristic: PollenConcentrationCharacteristic) -> None:
         """Test Pollen Concentration characteristic parsing."""

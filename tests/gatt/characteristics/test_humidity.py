@@ -4,16 +4,13 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
 from tests.gatt.characteristics.test_characteristic_common import (
+    CharacteristicTestData,
     CommonCharacteristicTests,
 )
 
 
 class TestHumidityCharacteristic(CommonCharacteristicTests):
-    """Test Humidity characteristic implementation.
-
-    Inherits behavioral tests from CommonCharacteristicTests.
-    Focuses on humidity-specific validation and precision testing.
-    """
+    """Test Humidity characteristic implementation."""
 
     @pytest.fixture
     def characteristic(self) -> HumidityCharacteristic:
@@ -26,9 +23,11 @@ class TestHumidityCharacteristic(CommonCharacteristicTests):
         return "2A6F"
 
     @pytest.fixture
-    def valid_test_data(self) -> bytearray:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid humidity test data (50.00%)."""
-        return bytearray([0x88, 0x13])  # 5000 = 50.00%
+        return CharacteristicTestData(
+            input_data=bytearray([0x88, 0x13]), expected_value=50.0, description="50.00% humidity"
+        )
 
     # === Humidity-Specific Tests ===
     def test_humidity_precision_and_range(self, characteristic: HumidityCharacteristic) -> None:

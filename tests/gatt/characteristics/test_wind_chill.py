@@ -6,7 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.wind_chill import WindChillCharacteristic
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestWindChillCharacteristic(CommonCharacteristicTests):
@@ -23,9 +23,11 @@ class TestWindChillCharacteristic(CommonCharacteristicTests):
         return "2A79"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid wind chill test data."""
-        return bytearray([256 - 15]), -15.0  # -15°C
+        return CharacteristicTestData(
+            input_data=bytearray([256 - 15]), expected_value=-15.0, description="-15°C wind chill"
+        )
 
     def test_wind_chill_parsing(self, characteristic: WindChillCharacteristic) -> None:
         """Test wind chill characteristic parsing."""

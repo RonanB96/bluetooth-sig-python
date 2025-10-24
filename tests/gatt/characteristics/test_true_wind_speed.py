@@ -6,7 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.true_wind_speed import TrueWindSpeedCharacteristic
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestTrueWindSpeedCharacteristic(CommonCharacteristicTests):
@@ -23,9 +23,11 @@ class TestTrueWindSpeedCharacteristic(CommonCharacteristicTests):
         return "2A70"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid true wind speed test data."""
-        return bytearray([0x1A, 0x04]), 10.50  # 1050 * 0.01 = 10.50 m/s
+        return CharacteristicTestData(
+            input_data=bytearray([0x1A, 0x04]), expected_value=10.50, description="10.50 m/s true wind speed"
+        )
 
     def test_true_wind_speed_parsing(self, characteristic: TrueWindSpeedCharacteristic) -> None:
         """Test true wind speed characteristic parsing."""

@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import GlucoseMeasurementContextCharacteristic
 from bluetooth_sig.gatt.characteristics.glucose_measurement_context import (
     CarbohydrateType,
+    GlucoseMeasurementContextCharacteristic,
+    GlucoseMeasurementContextData,
     GlucoseMeasurementContextFlags,
     MealType,
 )
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
@@ -28,21 +29,193 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
         return "2A34"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
-        """Valid test data for glucose measurement context characteristic."""
-        # Create minimal test data: flags(1) + seq_num(2)
-        test_data = bytearray(
-            [
-                0x00,  # flags: no optional fields
-                0x2A,
-                0x00,  # sequence number = 42
-            ]
-        )
-        return test_data, 42.0
+    def valid_test_data(self) -> list[CharacteristicTestData]:
+        """Valid test data for glucose measurement context characteristic covering various flag combinations."""
+        return [
+            # Test 1: Basic context (no optional fields)
+            CharacteristicTestData(
+                input_data=bytearray(
+                    [
+                        0x00,  # flags: no optional fields
+                        0x2A,
+                        0x00,  # sequence number = 42
+                    ]
+                ),
+                expected_value=GlucoseMeasurementContextData(
+                    sequence_number=42,
+                    flags=GlucoseMeasurementContextFlags(0),
+                    extended_flags=None,
+                    carbohydrate_id=None,
+                    carbohydrate_kg=None,
+                    meal=None,
+                    tester=None,
+                    health=None,
+                    exercise_duration_seconds=None,
+                    exercise_intensity_percent=None,
+                    medication_id=None,
+                    medication_kg=None,
+                    hba1c_percent=None,
+                ),
+                description="Basic glucose context with sequence 42",
+            ),
+            # Test 2: Context with carbohydrate information
+            CharacteristicTestData(
+                input_data=bytearray(
+                    [
+                        0x02,  # flags: carbohydrate present
+                        0x15,
+                        0x00,  # sequence number = 21
+                        0x01,  # carbohydrate ID = 1 (Breakfast)
+                        0xF4,
+                        0xF1,  # carbohydrate: 50.0g as SFLOAT
+                    ]
+                ),
+                expected_value=GlucoseMeasurementContextData(
+                    sequence_number=21,
+                    flags=GlucoseMeasurementContextFlags.CARBOHYDRATE_PRESENT,
+                    extended_flags=None,
+                    carbohydrate_id=CarbohydrateType.BREAKFAST,
+                    carbohydrate_kg=50.0,
+                    meal=None,
+                    tester=None,
+                    health=None,
+                    exercise_duration_seconds=None,
+                    exercise_intensity_percent=None,
+                    medication_id=None,
+                    medication_kg=None,
+                    hba1c_percent=None,
+                ),
+                description="Context with breakfast carbohydrate data",
+            ),
+            # Test 3: Context with meal information
+            CharacteristicTestData(
+                input_data=bytearray(
+                    [
+                        0x04,  # flags: meal present
+                        0x07,
+                        0x00,  # sequence number = 7
+                        0x02,  # meal = 2 (Postprandial)
+                    ]
+                ),
+                expected_value=GlucoseMeasurementContextData(
+                    sequence_number=7,
+                    flags=GlucoseMeasurementContextFlags.MEAL_PRESENT,
+                    extended_flags=None,
+                    carbohydrate_id=None,
+                    carbohydrate_kg=None,
+                    meal=MealType.POSTPRANDIAL,
+                    tester=None,
+                    health=None,
+                    exercise_duration_seconds=None,
+                    exercise_intensity_percent=None,
+                    medication_id=None,
+                    medication_kg=None,
+                    hba1c_percent=None,
+                ),
+                description="Context with postprandial meal info",
+            ),
+            # Test 4: Context with exercise information
+            CharacteristicTestData(
+                input_data=bytearray(
+                    [
+                        0x10,  # flags: exercise present
+                        0x64,
+                        0x00,  # sequence number = 100
+                        0x84,
+                        0x03,  # exercise duration = 900 seconds (15 minutes)
+                        0x50,  # exercise intensity = 80%
+                    ]
+                ),
+                expected_value=GlucoseMeasurementContextData(
+                    sequence_number=100,
+                    flags=GlucoseMeasurementContextFlags.EXERCISE_PRESENT,
+                    extended_flags=None,
+                    carbohydrate_id=None,
+                    carbohydrate_kg=None,
+                    meal=None,
+                    tester=None,
+                    health=None,
+                    exercise_duration_seconds=900,
+                    exercise_intensity_percent=80,
+                    medication_id=None,
+                    medication_kg=None,
+                    hba1c_percent=None,
+                ),
+                description="Context with exercise data",
+            ),
+            # Test 5: Context with HbA1c information
+            CharacteristicTestData(
+                input_data=bytearray(
+                    [
+                        0x40,  # flags: HbA1c present
+                        0xFF,
+                        0x00,  # sequence number = 255
+                        0xBC,
+                        0xE2,  # HbA1c = 7.0% as SFLOAT
+                    ]
+                ),
+                expected_value=GlucoseMeasurementContextData(
+                    sequence_number=255,
+                    flags=GlucoseMeasurementContextFlags.HBA1C_PRESENT,
+                    extended_flags=None,
+                    carbohydrate_id=None,
+                    carbohydrate_kg=None,
+                    meal=None,
+                    tester=None,
+                    health=None,
+                    exercise_duration_seconds=None,
+                    exercise_intensity_percent=None,
+                    medication_id=None,
+                    medication_kg=None,
+                    hba1c_percent=7.0,
+                ),
+                description="Context with HbA1c data",
+            ),
+            # Test 6: Complex context with multiple fields
+            CharacteristicTestData(
+                input_data=bytearray(
+                    [
+                        0x16,  # flags: carbohydrate + meal + exercise present (0x02 + 0x04 + 0x10)
+                        0x2A,
+                        0x01,  # sequence number = 298
+                        0x02,  # carbohydrate ID = 2 (Lunch)
+                        0xEE,
+                        0xF2,  # carbohydrate: 75.0g as SFLOAT
+                        0x01,  # meal = 1 (Preprandial)
+                        0x58,
+                        0x02,  # exercise duration = 600 seconds (10 minutes)
+                        0x3C,  # exercise intensity = 60%
+                    ]
+                ),
+                expected_value=GlucoseMeasurementContextData(
+                    sequence_number=298,
+                    flags=(
+                        GlucoseMeasurementContextFlags.CARBOHYDRATE_PRESENT
+                        | GlucoseMeasurementContextFlags.MEAL_PRESENT
+                        | GlucoseMeasurementContextFlags.EXERCISE_PRESENT
+                    ),
+                    extended_flags=None,
+                    carbohydrate_id=CarbohydrateType.LUNCH,
+                    carbohydrate_kg=75.0,
+                    meal=MealType.PREPRANDIAL,
+                    tester=None,
+                    health=None,
+                    exercise_duration_seconds=600,
+                    exercise_intensity_percent=60,
+                    medication_id=None,
+                    medication_kg=None,
+                    hba1c_percent=None,
+                ),
+                description="Complex context with carb, meal, exercise",
+            ),
+        ]
 
-    def test_glucose_context_basic_parsing(self, characteristic: GlucoseMeasurementContextCharacteristic) -> None:
-        """Test basic glucose context data parsing."""
-        test_data, _ = self.valid_test_data()
+    def test_glucose_context_basic_parsing(
+        self, characteristic: GlucoseMeasurementContextCharacteristic, valid_test_data: list[CharacteristicTestData]
+    ) -> None:
+        """Test basic glucose measurement context data parsing."""
+        # Use the first test case (basic context)
+        test_data = valid_test_data[0].input_data
 
         result = characteristic.decode_value(test_data)
         assert result.sequence_number == 42

@@ -7,8 +7,9 @@ import struct
 import pytest
 
 from bluetooth_sig.gatt.characteristics import MagneticFluxDensity2DCharacteristic
+from bluetooth_sig.gatt.characteristics.templates import Vector2DData
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestMagneticFluxDensity2DCharacteristic(CommonCharacteristicTests):
@@ -25,9 +26,13 @@ class TestMagneticFluxDensity2DCharacteristic(CommonCharacteristicTests):
         return "2AA0"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid magnetic flux density 2D test data."""
-        return bytearray(struct.pack("<hh", 1000, -500)), 1e-4  # X=1000, Y=-500 (in 10^-7 Tesla units)
+        return CharacteristicTestData(
+            input_data=bytearray(struct.pack("<hh", 1000, -500)),
+            expected_value=Vector2DData(x_axis=1e-4, y_axis=-5e-5),
+            description="Magnetic flux density 2D X=1000, Y=-500",
+        )
 
     def test_magnetic_flux_density_2d_parsing(self, characteristic: MagneticFluxDensity2DCharacteristic) -> None:
         """Test Magnetic Flux Density 2D characteristic parsing."""

@@ -7,7 +7,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.dew_point import DewPointCharacteristic
 from bluetooth_sig.gatt.constants import SINT8_MAX, SINT8_MIN
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestDewPointCharacteristic(CommonCharacteristicTests):
@@ -24,9 +24,9 @@ class TestDewPointCharacteristic(CommonCharacteristicTests):
         return "2A7B"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid dew point test data."""
-        return bytearray([25]), 25.0  # 25°C
+        return CharacteristicTestData(input_data=bytearray([25]), expected_value=25.0, description="25°C dew point")
 
     def test_dew_point_parsing(self, characteristic: DewPointCharacteristic) -> None:
         """Test dew point characteristic parsing."""

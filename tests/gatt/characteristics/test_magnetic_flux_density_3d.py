@@ -6,9 +6,10 @@ import struct
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import MagneticFluxDensity3DCharacteristic
+from bluetooth_sig.gatt.characteristics.magnetic_flux_density_3d import MagneticFluxDensity3DCharacteristic
+from bluetooth_sig.gatt.characteristics.templates import VectorData
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestMagneticFluxDensity3DCharacteristic(CommonCharacteristicTests):
@@ -25,9 +26,13 @@ class TestMagneticFluxDensity3DCharacteristic(CommonCharacteristicTests):
         return "2AA1"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid magnetic flux density 3D test data."""
-        return bytearray(struct.pack("<hhh", 1000, -500, 2000)), 1e-4  # X=1000, Y=-500, Z=2000 (in 10^-7 Tesla units)
+        return CharacteristicTestData(
+            input_data=bytearray(struct.pack("<hhh", 1000, -500, 2000)),
+            expected_value=VectorData(x_axis=1e-4, y_axis=-5e-5, z_axis=2e-4),
+            description="Magnetic flux density 3D X=1000, Y=-500, Z=2000",
+        )
 
     def test_magnetic_flux_density_3d_parsing(self, characteristic: MagneticFluxDensity3DCharacteristic) -> None:
         """Test Magnetic Flux Density 3D characteristic parsing."""

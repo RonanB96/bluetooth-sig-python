@@ -5,7 +5,7 @@ import math
 import pytest
 
 from bluetooth_sig.gatt.characteristics import NonMethaneVOCConcentrationCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestNonMethaneVOCConcentrationCharacteristic(CommonCharacteristicTests):
@@ -22,9 +22,13 @@ class TestNonMethaneVOCConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BD3"
 
     @pytest.fixture
-    def valid_test_data(self) -> bytearray:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid Non-Methane VOC concentration test data."""
-        return bytearray([0x34, 0x12])  # IEEE 11073 SFLOAT little endian
+        return CharacteristicTestData(
+            input_data=bytearray([0x34, 0x12]),
+            expected_value=5640.0,
+            description="IEEE 11073 SFLOAT Non-Methane VOC concentration",
+        )
 
     def test_tvoc_concentration_parsing(self, characteristic: NonMethaneVOCConcentrationCharacteristic) -> None:
         """Test TVOC concentration characteristic parsing."""
