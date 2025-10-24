@@ -7,7 +7,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.heat_index import HeatIndexCharacteristic
 from bluetooth_sig.gatt.constants import UINT8_MAX
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestHeatIndexCharacteristic(CommonCharacteristicTests):
@@ -24,9 +24,9 @@ class TestHeatIndexCharacteristic(CommonCharacteristicTests):
         return "2A7A"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid heat index test data."""
-        return bytearray([35]), 35.0  # 35°C
+        return CharacteristicTestData(input_data=bytearray([35]), expected_value=35.0, description="35°C heat index")
 
     def test_heat_index_parsing(self, characteristic: HeatIndexCharacteristic) -> None:
         """Test heat index characteristic parsing."""

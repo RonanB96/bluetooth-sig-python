@@ -5,7 +5,7 @@ import struct
 import pytest
 
 from bluetooth_sig.gatt.characteristics import CyclingPowerFeatureCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestCyclingPowerFeatureCharacteristic(CommonCharacteristicTests):
@@ -22,9 +22,13 @@ class TestCyclingPowerFeatureCharacteristic(CommonCharacteristicTests):
         return "2A65"
 
     @pytest.fixture
-    def valid_test_data(self) -> bytearray:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid cycling power feature test data."""
-        return bytearray(struct.pack("<I", 0x0000001F))  # Multiple features enabled
+        return CharacteristicTestData(
+            input_data=bytearray(struct.pack("<I", 0x0000001F)),
+            expected_value=31,
+            description="Multiple features enabled",
+        )
 
     def test_cycling_power_feature_values(self, characteristic: CyclingPowerFeatureCharacteristic) -> None:
         """Test parsing cycling power feature values."""

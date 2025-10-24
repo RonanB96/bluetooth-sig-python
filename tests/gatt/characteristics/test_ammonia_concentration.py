@@ -3,7 +3,7 @@
 import pytest
 
 from bluetooth_sig.gatt.characteristics import AmmoniaConcentrationCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests, CharacteristicTestData
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestAmmoniaConcentrationCharacteristic(CommonCharacteristicTests):
@@ -24,8 +24,8 @@ class TestAmmoniaConcentrationCharacteristic(CommonCharacteristicTests):
         """Valid ammonia concentration test data."""
         return CharacteristicTestData(
             input_data=bytearray([0x34, 0x12]),  # IEEE 11073 SFLOAT little endian
-            expected_value=4660.0,  # Expected parsed concentration value
-            description="Valid ammonia concentration"
+            expected_value=5640.0,  # Expected parsed concentration value
+            description="Valid ammonia concentration",
         )
 
     def test_ammonia_concentration_parsing(self, characteristic: AmmoniaConcentrationCharacteristic) -> None:

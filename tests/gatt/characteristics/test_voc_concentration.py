@@ -3,7 +3,7 @@
 import pytest
 
 from bluetooth_sig.gatt.characteristics import VOCConcentrationCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestVOCConcentrationCharacteristic(CommonCharacteristicTests):
@@ -20,9 +20,11 @@ class TestVOCConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BE7"
 
     @pytest.fixture
-    def valid_test_data(self) -> bytearray:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid VOC concentration test data."""
-        return bytearray([0x00, 0x04])  # 1024 ppb
+        return CharacteristicTestData(
+            input_data=bytearray([0x00, 0x04]), expected_value=1024, description="1024 ppb VOC concentration"
+        )
 
     def test_voc_concentration_parsing(self, characteristic: VOCConcentrationCharacteristic) -> None:
         """Test VOC concentration characteristic parsing."""

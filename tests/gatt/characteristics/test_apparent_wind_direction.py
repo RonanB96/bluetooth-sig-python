@@ -6,7 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.apparent_wind_direction import ApparentWindDirectionCharacteristic
 
-from .test_characteristic_common import CommonCharacteristicTests, CharacteristicTestData
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestApparentWindDirectionCharacteristic(CommonCharacteristicTests):
@@ -28,7 +28,7 @@ class TestApparentWindDirectionCharacteristic(CommonCharacteristicTests):
         return CharacteristicTestData(
             input_data=bytearray([0x10, 0x27]),
             expected_value=100.0,  # 10000 * 0.01 = 100.0°
-            description="100° wind direction"
+            description="100° wind direction",
         )
 
     def test_apparent_wind_direction_parsing(self, characteristic: ApparentWindDirectionCharacteristic) -> None:

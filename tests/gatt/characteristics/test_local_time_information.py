@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import LocalTimeInformationCharacteristic
+from bluetooth_sig.gatt.characteristics.local_time_information import (
+    DSTOffsetInfo,
+    LocalTimeInformationCharacteristic,
+    LocalTimeInformationData,
+    TimezoneInfo,
+)
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -27,7 +32,11 @@ class TestLocalTimeInformationCharacteristic(CommonCharacteristicTests):
         """Returns valid test data for LocalTimeInformationCharacteristic."""
         return CharacteristicTestData(
             input_data=bytearray([8, 4]),  # timezone=+2h (8*15min), dst=+1h (value 4)
-            expected_value=3.0,  # total offset = 2h + 1h = 3h
+            expected_value=LocalTimeInformationData(
+                timezone=TimezoneInfo(description="UTC+02:00", offset_hours=2.0, raw_value=8),
+                dst_offset=DSTOffsetInfo(description="Daylight Time", offset_hours=1.0, raw_value=4),
+                total_offset_hours=3.0,
+            ),
             description="UTC+2 with DST (+1 hour) = total offset 3 hours",
         )
 

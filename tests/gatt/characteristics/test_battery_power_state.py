@@ -10,7 +10,7 @@ from bluetooth_sig.gatt.characteristics.battery_power_state import (
     BatteryPowerStateData,
     BatteryPresentState,
 )
-from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests, CharacteristicTestData
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestBatteryPowerStateCharacteristic(CommonCharacteristicTests):
@@ -31,18 +31,85 @@ class TestBatteryPowerStateCharacteristic(CommonCharacteristicTests):
         return "2BED"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
-        """Valid battery power state test data."""
-        return CharacteristicTestData(
-            input_data=bytearray([0xD6]),  # Battery present, wired power, charging, good level
-            expected_value=BatteryPowerState(
-                battery_charge_state=BatteryChargeState.CHARGING,
-                charge_level=BatteryChargeLevel.GOOD_LEVEL,
-                charging_type=BatteryChargingType.WIRED_EXTERNAL_POWER_SOURCE,
-                charging_fault_reason=BatteryChargingFaultReason.NO_FAULT
+    def valid_test_data(self) -> list[CharacteristicTestData]:
+        """Valid battery power state test data covering various battery states and power conditions."""
+        return [
+            # Test 1: Basic battery present, wired power, charging, good level
+            CharacteristicTestData(
+                input_data=bytearray([0xD6]),  # 11010110
+                expected_value=BatteryPowerStateData(
+                    raw_value=0xD6,
+                    battery_present=BatteryPresentState.PRESENT,
+                    wired_external_power_connected=True,
+                    wireless_external_power_connected=False,
+                    battery_charge_state=BatteryChargeState.CHARGING,
+                    battery_charge_level=BatteryChargeLevel.GOOD,
+                    battery_charging_type=BatteryChargingType.UNKNOWN,
+                    charging_fault_reason=None,
+                ),
+                description="Battery present, wired charging, good level",
             ),
-            description="Battery charging with wired power"
-        )
+            # Test 2: Battery not present
+            CharacteristicTestData(
+                input_data=bytearray([0x01]),  # 00000001
+                expected_value=BatteryPowerStateData(
+                    raw_value=0x01,
+                    battery_present=BatteryPresentState.NOT_PRESENT,
+                    wired_external_power_connected=False,
+                    wireless_external_power_connected=False,
+                    battery_charge_state=BatteryChargeState.UNKNOWN,
+                    battery_charge_level=BatteryChargeLevel.UNKNOWN,
+                    battery_charging_type=BatteryChargingType.UNKNOWN,
+                    charging_fault_reason=None,
+                ),
+                description="Battery not present",
+            ),
+            # Test 3: Wireless power, discharging, low level
+            CharacteristicTestData(
+                input_data=bytearray([0xAA]),  # 10101010
+                expected_value=BatteryPowerStateData(
+                    raw_value=0xAA,
+                    battery_present=BatteryPresentState.PRESENT,
+                    wired_external_power_connected=False,
+                    wireless_external_power_connected=True,
+                    battery_charge_state=BatteryChargeState.DISCHARGING,
+                    battery_charge_level=BatteryChargeLevel.LOW,
+                    battery_charging_type=BatteryChargingType.UNKNOWN,
+                    charging_fault_reason=None,
+                ),
+                description="Wireless power, discharging, low level",
+            ),
+            # Test 4: Not charging, critically low
+            CharacteristicTestData(
+                input_data=bytearray([0x72]),  # 01110010
+                expected_value=BatteryPowerStateData(
+                    raw_value=0x72,
+                    battery_present=BatteryPresentState.PRESENT,
+                    wired_external_power_connected=False,
+                    wireless_external_power_connected=False,
+                    battery_charge_state=BatteryChargeState.NOT_CHARGING,
+                    battery_charge_level=BatteryChargeLevel.CRITICALLY_LOW,
+                    battery_charging_type=BatteryChargingType.UNKNOWN,
+                    charging_fault_reason=None,
+                ),
+                description="Not charging, critically low level",
+            ),
+            # Test 5: Both power sources, charging, good level
+            CharacteristicTestData(
+                input_data=bytearray([0xDE]),  # 11011110
+                expected_value=BatteryPowerStateData(
+                    raw_value=0xDE,
+                    battery_present=BatteryPresentState.PRESENT,
+                    wired_external_power_connected=True,
+                    wireless_external_power_connected=True,
+                    battery_charge_state=BatteryChargeState.CHARGING,
+                    battery_charge_level=BatteryChargeLevel.GOOD,
+                    battery_charging_type=BatteryChargingType.UNKNOWN,
+                    charging_fault_reason=None,
+                ),
+                description="Both power sources, charging, good level",
+            ),
+        ]
 
     # === Battery Power State Specific Tests ===
 

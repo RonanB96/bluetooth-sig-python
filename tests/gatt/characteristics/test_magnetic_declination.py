@@ -6,7 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import MagneticDeclinationCharacteristic
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestMagneticDeclinationCharacteristic(CommonCharacteristicTests):
@@ -23,9 +23,11 @@ class TestMagneticDeclinationCharacteristic(CommonCharacteristicTests):
         return "2A2C"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid magnetic declination test data."""
-        return bytearray([0x40, 0x46]), 179.84  # 18000 in little endian uint16 = 179.84 degrees
+        return CharacteristicTestData(
+            input_data=bytearray([0x40, 0x46]), expected_value=179.84, description="179.84 degrees magnetic declination"
+        )
 
     def test_magnetic_declination_parsing(self, characteristic: MagneticDeclinationCharacteristic) -> None:
         """Test Magnetic Declination characteristic parsing."""

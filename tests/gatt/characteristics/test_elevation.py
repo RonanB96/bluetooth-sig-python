@@ -6,7 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import ElevationCharacteristic
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestElevationCharacteristic(CommonCharacteristicTests):
@@ -23,9 +23,11 @@ class TestElevationCharacteristic(CommonCharacteristicTests):
         return "2A6C"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid elevation test data."""
-        return bytearray([0x50, 0xC3, 0x00]), 500.0  # 50000 in 24-bit little endian = 500.0 meters
+        return CharacteristicTestData(
+            input_data=bytearray([0x50, 0xC3, 0x00]), expected_value=500.0, description="500.0 meters elevation"
+        )
 
     def test_elevation_parsing(self, characteristic: ElevationCharacteristic) -> None:
         """Test Elevation characteristic parsing."""

@@ -3,7 +3,7 @@
 import pytest
 
 from bluetooth_sig.gatt.characteristics import CO2ConcentrationCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests, CharacteristicTestData
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestCO2ConcentrationCharacteristic(CommonCharacteristicTests):
@@ -20,9 +20,11 @@ class TestCO2ConcentrationCharacteristic(CommonCharacteristicTests):
         return "2B8C"
 
     @pytest.fixture
-    def valid_test_data(self) -> bytearray:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid CO2 concentration test data."""
-        return bytearray([0x34, 0x12])  # 4660 ppm little endian
+        return CharacteristicTestData(
+            input_data=bytearray([0x34, 0x12]), expected_value=4660, description="4660 ppm CO2 concentration"
+        )
 
     def test_co2_concentration_boundary_values(self, characteristic: CO2ConcentrationCharacteristic) -> None:
         """Test CO2 concentration boundary values and validation."""

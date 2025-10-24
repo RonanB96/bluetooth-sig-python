@@ -10,7 +10,7 @@ from bluetooth_sig.gatt.characteristics.barometric_pressure_trend import (
 )
 from bluetooth_sig.gatt.constants import UINT8_MAX
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestBarometricPressureTrendCharacteristic(CommonCharacteristicTests):
@@ -27,9 +27,13 @@ class TestBarometricPressureTrendCharacteristic(CommonCharacteristicTests):
         return "2AA3"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, BarometricPressureTrend]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid barometric pressure trend test data."""
-        return bytearray([1]), BarometricPressureTrend.CONTINUOUSLY_FALLING
+        return CharacteristicTestData(
+            input_data=bytearray([1]),
+            expected_value=BarometricPressureTrend.CONTINUOUSLY_FALLING,
+            description="Continuously falling barometric pressure trend",
+        )
 
     def test_barometric_pressure_trend_parsing(self, characteristic: BarometricPressureTrendCharacteristic) -> None:
         """Test Barometric Pressure Trend characteristic parsing."""

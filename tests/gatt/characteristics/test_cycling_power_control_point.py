@@ -4,8 +4,13 @@ import struct
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import CyclingPowerControlPointCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests
+from bluetooth_sig.gatt.characteristics.cycling_power_control_point import (
+    CyclingPowerControlPointCharacteristic,
+    CyclingPowerControlPointData,
+    CyclingPowerOpCode,
+    CyclingPowerResponseValue,
+)
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestCyclingPowerControlPointCharacteristic(CommonCharacteristicTests):
@@ -22,9 +27,112 @@ class TestCyclingPowerControlPointCharacteristic(CommonCharacteristicTests):
         return "2A66"
 
     @pytest.fixture
-    def valid_test_data(self) -> bytearray:
-        """Valid cycling power control point test data."""
-        return bytearray([0x01])  # Set cumulative value command
+    def valid_test_data(self) -> list[CharacteristicTestData]:
+        """Valid cycling power control point test data covering various op codes and parameters."""
+        return [
+            # Test 1: Set Cumulative Value with parameter
+            CharacteristicTestData(
+                input_data=bytearray([0x01, 0x40, 0xE2, 0x01, 0x00]),  # op_code + 123456 (little endian)
+                expected_value=CyclingPowerControlPointData(
+                    op_code=CyclingPowerOpCode.SET_CUMULATIVE_VALUE,
+                    cumulative_value=123456,
+                    sensor_location=None,
+                    crank_length=None,
+                    chain_length=None,
+                    chain_weight=None,
+                    span_length=None,
+                    measurement_mask=None,
+                    request_op_code=None,
+                    response_value=None,
+                ),
+                description="Set cumulative value with parameter",
+            ),
+            # Test 2: Update Sensor Location
+            CharacteristicTestData(
+                input_data=bytearray([0x02, 0x05]),  # op_code + location
+                expected_value=CyclingPowerControlPointData(
+                    op_code=CyclingPowerOpCode.UPDATE_SENSOR_LOCATION,
+                    cumulative_value=None,
+                    sensor_location=5,
+                    crank_length=None,
+                    chain_length=None,
+                    chain_weight=None,
+                    span_length=None,
+                    measurement_mask=None,
+                    request_op_code=None,
+                    response_value=None,
+                ),
+                description="Update sensor location",
+            ),
+            # Test 3: Set Crank Length
+            CharacteristicTestData(
+                input_data=bytearray([0x04, 0x5E, 0x01]),  # op_code + 350 (175.0mm * 2)
+                expected_value=CyclingPowerControlPointData(
+                    op_code=CyclingPowerOpCode.SET_CRANK_LENGTH,
+                    cumulative_value=None,
+                    sensor_location=None,
+                    crank_length=175.0,
+                    chain_length=None,
+                    chain_weight=None,
+                    span_length=None,
+                    measurement_mask=None,
+                    request_op_code=None,
+                    response_value=None,
+                ),
+                description="Set crank length to 175.0mm",
+            ),
+            # Test 4: Set Chain Weight
+            CharacteristicTestData(
+                input_data=bytearray([0x08, 0xF4, 0x01]),  # op_code + 500 (50.0g * 10)
+                expected_value=CyclingPowerControlPointData(
+                    op_code=CyclingPowerOpCode.SET_CHAIN_WEIGHT,
+                    cumulative_value=None,
+                    sensor_location=None,
+                    crank_length=None,
+                    chain_length=None,
+                    chain_weight=50.0,
+                    span_length=None,
+                    measurement_mask=None,
+                    request_op_code=None,
+                    response_value=None,
+                ),
+                description="Set chain weight to 50.0g",
+            ),
+            # Test 5: Response Code
+            CharacteristicTestData(
+                input_data=bytearray([0x20, 0x03, 0x01]),  # Response + request_op + success
+                expected_value=CyclingPowerControlPointData(
+                    op_code=CyclingPowerOpCode.RESPONSE_CODE,
+                    cumulative_value=None,
+                    sensor_location=None,
+                    crank_length=None,
+                    chain_length=None,
+                    chain_weight=None,
+                    span_length=None,
+                    measurement_mask=None,
+                    request_op_code=CyclingPowerOpCode.REQUEST_SUPPORTED_SENSOR_LOCATIONS,
+                    response_value=CyclingPowerResponseValue.SUCCESS,
+                ),
+                description="Response code with success",
+            ),
+            # Test 6: Simple op code only (no parameters)
+            CharacteristicTestData(
+                input_data=bytearray([0x03]),  # Request Supported Sensor Locations
+                expected_value=CyclingPowerControlPointData(
+                    op_code=CyclingPowerOpCode.REQUEST_SUPPORTED_SENSOR_LOCATIONS,
+                    cumulative_value=None,
+                    sensor_location=None,
+                    crank_length=None,
+                    chain_length=None,
+                    chain_weight=None,
+                    span_length=None,
+                    measurement_mask=None,
+                    request_op_code=None,
+                    response_value=None,
+                ),
+                description="Request supported sensor locations (no parameters)",
+            ),
+        ]
 
     def test_cycling_power_control_point_basic(self) -> None:
         """Test basic cycling power control point parsing."""

@@ -3,7 +3,7 @@
 import pytest
 
 from bluetooth_sig.gatt.characteristics import PM25ConcentrationCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestPM25ConcentrationCharacteristic(CommonCharacteristicTests):
@@ -20,9 +20,11 @@ class TestPM25ConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BD6"
 
     @pytest.fixture
-    def valid_test_data(self) -> bytearray:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid PM2.5 concentration test data."""
-        return bytearray([0x19, 0x00])  # 25 µg/m³ little endian
+        return CharacteristicTestData(
+            input_data=bytearray([0x19, 0x00]), expected_value=25, description="25 µg/m³ PM2.5 concentration"
+        )
 
     def test_pm25_concentration_parsing(self, characteristic: PM25ConcentrationCharacteristic) -> None:
         """Test PM2.5 concentration characteristic parsing."""

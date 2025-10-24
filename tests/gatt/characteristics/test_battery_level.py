@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import CommonCharacteristicTests, CharacteristicTestData
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestBatteryLevelCharacteristic(CommonCharacteristicTests):
@@ -28,11 +28,7 @@ class TestBatteryLevelCharacteristic(CommonCharacteristicTests):
     @pytest.fixture
     def valid_test_data(self) -> CharacteristicTestData:
         """Return valid test data for battery level (75%)."""
-        return CharacteristicTestData(
-            input_data=bytearray([75]),
-            expected_value=75,
-            description="75% battery level"
-        )
+        return CharacteristicTestData(input_data=bytearray([75]), expected_value=75, description="75% battery level")
 
     # === Battery-Specific Tests ===
     def test_battery_level_boundary_values(self, characteristic: BatteryLevelCharacteristic) -> None:

@@ -5,8 +5,9 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import GlucoseFeatureCharacteristic, GlucoseFeatures
+from bluetooth_sig.gatt.characteristics.glucose_feature import GlucoseFeatureData
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestGlucoseFeatureCharacteristic(CommonCharacteristicTests):
@@ -23,15 +24,46 @@ class TestGlucoseFeatureCharacteristic(CommonCharacteristicTests):
         return "2A51"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid test data for glucose feature characteristic."""
         # Feature bitmap: 0x0403 = Low Battery + Sensor Malfunction + Multiple Bond
         test_data = bytearray([0x03, 0x04])  # Little endian 0x0403
-        return test_data, 3.0  # Number of enabled features
 
-    def test_glucose_feature_basic_parsing(self, characteristic: GlucoseFeatureCharacteristic) -> None:
+        # Expected parsed data structure
+        expected_value = GlucoseFeatureData(
+            features_bitmap=(
+                GlucoseFeatures.LOW_BATTERY_DETECTION
+                | GlucoseFeatures.SENSOR_MALFUNCTION_DETECTION
+                | GlucoseFeatures.MULTIPLE_BOND_SUPPORT
+            ),
+            low_battery_detection=True,
+            sensor_malfunction_detection=True,
+            sensor_sample_size=False,
+            sensor_strip_insertion_error=False,
+            sensor_strip_type_error=False,
+            sensor_result_high_low=False,
+            sensor_temperature_high_low=False,
+            sensor_read_interrupt=False,
+            general_device_fault=False,
+            time_fault=False,
+            multiple_bond_support=True,
+            enabled_features=(
+                GlucoseFeatures.LOW_BATTERY_DETECTION,
+                GlucoseFeatures.SENSOR_MALFUNCTION_DETECTION,
+                GlucoseFeatures.MULTIPLE_BOND_SUPPORT,
+            ),
+            feature_count=3,
+        )
+
+        return CharacteristicTestData(
+            input_data=test_data, expected_value=expected_value, description="Multiple glucose features enabled"
+        )
+
+    def test_glucose_feature_basic_parsing(
+        self, characteristic: GlucoseFeatureCharacteristic, valid_test_data: CharacteristicTestData
+    ) -> None:
         """Test basic glucose feature data parsing."""
-        test_data, _ = self.valid_test_data()
+        test_data = valid_test_data.input_data
 
         result = characteristic.decode_value(test_data)
         assert result.features_bitmap == GlucoseFeatures(0x0403)

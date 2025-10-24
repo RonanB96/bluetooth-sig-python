@@ -47,10 +47,10 @@ class CommonServiceTests:
         """Test that service defines its characteristics."""
         # Check if service has the attribute - some services may not have it
         if hasattr(service, "service_characteristics"):
-            # service_characteristics can be None or a list
+            # service_characteristics can be None or a dict
             service_chars = getattr(service, "service_characteristics", None)
             if service_chars is not None:
-                assert isinstance(service_chars, list)
+                assert isinstance(service_chars, dict)
 
     def test_service_process_characteristics_method(self, service: BaseGattService) -> None:
         """Test that service has process_characteristics method."""

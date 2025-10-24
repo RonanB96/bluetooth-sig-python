@@ -6,7 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import RainfallCharacteristic
 
-from .test_characteristic_common import CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestRainfallCharacteristic(CommonCharacteristicTests):
@@ -23,9 +23,11 @@ class TestRainfallCharacteristic(CommonCharacteristicTests):
         return "2A78"
 
     @pytest.fixture
-    def valid_test_data(self) -> tuple[bytearray, float]:
+    def valid_test_data(self) -> CharacteristicTestData:
         """Valid rainfall test data."""
-        return bytearray([0xE2, 0x04]), 1250.0  # 1250 in little endian uint16
+        return CharacteristicTestData(
+            input_data=bytearray([0xE2, 0x04]), expected_value=1250.0, description="1250.0 mm rainfall"
+        )
 
     def test_rainfall_parsing(self, characteristic: RainfallCharacteristic) -> None:
         """Test Rainfall characteristic parsing."""
