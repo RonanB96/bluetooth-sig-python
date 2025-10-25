@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import msgspec
 
 from bluetooth_sig.registry.base import BaseRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path, load_yaml_uuids, parse_bluetooth_uuid
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-@dataclass(frozen=True)
-class DeclarationInfo:
+class DeclarationInfo(msgspec.Struct, frozen=True, kw_only=True):
     """Information about a Bluetooth SIG GATT attribute declaration."""
 
     uuid: BluetoothUUID

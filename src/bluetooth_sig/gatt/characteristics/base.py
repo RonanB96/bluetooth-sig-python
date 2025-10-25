@@ -14,9 +14,10 @@ import msgspec
 
 from bluetooth_sig.gatt.characteristics.templates import CodingTemplate
 
+from ...registry import units_registry
 from ...types import CharacteristicData, CharacteristicInfo
 from ...types.data_types import ParseFieldError
-from ...types.gatt_enums import CharacteristicName, GattProperty, ValueType
+from ...types.gatt_enums import CharacteristicName, DataType, GattProperty, ValueType
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
 from ..descriptors import BaseDescriptor, CCCDDescriptor
@@ -109,36 +110,26 @@ class SIGCharacteristicResolver:
     def _create_info_from_yaml(
         yaml_spec: CharacteristicSpec, char_class: type[BaseCharacteristic]
     ) -> CharacteristicInfo:
-        """Create CharacteristicInfo from YAML spec."""
-        # Map GSS data types to our value types
-        type_mapping = {
-            "sint8": ValueType.INT,
-            "uint8": ValueType.INT,
-            "sint16": ValueType.INT,
-            "uint16": ValueType.INT,
-            "uint24": ValueType.INT,
-            "sint32": ValueType.INT,
-            "uint32": ValueType.INT,
-            "float32": ValueType.FLOAT,
-            "float64": ValueType.FLOAT,
-            "sfloat": ValueType.FLOAT,  # IEEE-11073 16-bit SFLOAT
-            "float": ValueType.FLOAT,  # IEEE-11073 32-bit FLOAT
-            "medfloat16": ValueType.FLOAT,  # Medical float 16-bit
-            "utf8s": ValueType.STRING,
-            "utf16s": ValueType.STRING,
-            "boolean": ValueType.BOOL,
-            "struct": ValueType.BYTES,
-            "variable": ValueType.BYTES,
-        }
+        """Create CharacteristicInfo from YAML spec, resolving metadata via registry classes."""
+        value_type = DataType.from_string(yaml_spec.data_type).to_value_type()
 
-        value_type = (
-            type_mapping.get(yaml_spec.data_type, ValueType.UNKNOWN) if yaml_spec.data_type else ValueType.UNKNOWN
-        )
+        # Resolve unit via registry if present
+        unit_info = None
+        unit_name = getattr(yaml_spec, "unit_symbol", None) or getattr(yaml_spec, "unit", None)
+        if unit_name:
+            unit_info = units_registry.get_unit_info_by_name(unit_name)
+        if unit_info:
+            # Prefer symbol, fallback to name, always ensure string
+            unit_symbol = str(getattr(unit_info, "symbol", getattr(unit_info, "name", unit_name)))
+        else:
+            unit_symbol = str(unit_name or "")
+
+        # TODO: Add similar logic for object types, service classes, etc. as needed
 
         return CharacteristicInfo(
             uuid=yaml_spec.uuid,
             name=yaml_spec.name or char_class.__name__,
-            unit=yaml_spec.unit_symbol or "",
+            unit=unit_symbol,
             value_type=value_type,
             properties=[],  # Properties will be resolved separately if needed
         )
@@ -1085,7 +1076,7 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
                 uuid=info.uuid,
                 name=f"Unknown Characteristic ({info.uuid})",
                 unit=info.unit or "",
-                value_type=info.value_type if info.value_type is not None else ValueType.UNKNOWN,
+                value_type=info.value_type,
                 properties=info.properties or [],
             )
 

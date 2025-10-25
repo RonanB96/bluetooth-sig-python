@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import threading
-from dataclasses import dataclass
+
+import msgspec
 
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 from .utils import find_bluetooth_sig_path, load_yaml_uuids, parse_bluetooth_uuid
 
 
-@dataclass(frozen=True)
-class ObjectTypeInfo:
+class ObjectTypeInfo(msgspec.Struct, frozen=True, kw_only=True):
     """Information about a Bluetooth SIG object type."""
 
     uuid: BluetoothUUID

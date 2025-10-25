@@ -70,6 +70,107 @@ class DataType(Enum):
     VARIOUS = "various"
     UNKNOWN = "unknown"
 
+    @classmethod
+    def from_string(cls, type_str: str | None) -> DataType:
+        """Convert string representation to DataType enum.
+
+        Args:
+            type_str: String representation of data type (case-insensitive)
+
+        Returns:
+            Corresponding DataType enum, or DataType.UNKNOWN if not found
+        """
+        if not type_str:
+            return cls.UNKNOWN
+
+        # Handle common aliases
+        type_str = type_str.lower()
+        aliases = {
+            "utf16s": cls.UTF8S,  # utf16s maps to UTF8S for now
+            "sfloat": cls.MEDFLOAT16,  # IEEE-11073 16-bit SFLOAT
+            "float": cls.FLOAT32,  # IEEE-11073 32-bit FLOAT
+            "variable": cls.STRUCT,  # variable maps to STRUCT
+        }
+
+        if type_str in aliases:
+            return aliases[type_str]
+
+        # Try direct match
+        for member in cls:
+            if member.value == type_str:
+                return member
+
+        return cls.UNKNOWN
+
+    def to_value_type(self) -> ValueType:
+        """Convert DataType to internal ValueType enum.
+
+        Returns:
+            Corresponding ValueType for this data type
+        """
+        mapping = {
+            # Integer types
+            self.SINT8: ValueType.INT,
+            self.UINT8: ValueType.INT,
+            self.SINT16: ValueType.INT,
+            self.UINT16: ValueType.INT,
+            self.UINT24: ValueType.INT,
+            self.SINT32: ValueType.INT,
+            self.UINT32: ValueType.INT,
+            self.UINT64: ValueType.INT,
+            self.SINT64: ValueType.INT,
+            # Float types
+            self.FLOAT32: ValueType.FLOAT,
+            self.FLOAT64: ValueType.FLOAT,
+            self.MEDFLOAT16: ValueType.FLOAT,
+            self.MEDFLOAT32: ValueType.FLOAT,
+            # String types
+            self.UTF8S: ValueType.STRING,
+            # Boolean type
+            self.BOOLEAN: ValueType.BOOL,
+            # Struct/opaque data
+            self.STRUCT: ValueType.BYTES,
+            # Meta types
+            self.VARIOUS: ValueType.VARIOUS,
+            self.UNKNOWN: ValueType.UNKNOWN,
+        }
+        return mapping.get(self, ValueType.UNKNOWN)
+
+    def to_python_type(self) -> str:
+        """Convert DataType to Python type string.
+
+        Returns:
+            Corresponding Python type string
+        """
+        mapping = {
+            # Integer types
+            self.UINT8: "int",
+            self.UINT16: "int",
+            self.UINT24: "int",
+            self.UINT32: "int",
+            self.UINT64: "int",
+            self.SINT8: "int",
+            self.SINT16: "int",
+            self.SINT24: "int",
+            self.SINT32: "int",
+            self.SINT64: "int",
+            # Float types
+            self.FLOAT32: "float",
+            self.FLOAT64: "float",
+            self.MEDFLOAT16: "float",
+            self.MEDFLOAT32: "float",
+            # String types
+            self.UTF8S: "string",
+            # Boolean type
+            self.BOOLEAN: "boolean",
+            # Struct/opaque data
+            self.STRUCT: "bytes",
+            # Meta types
+            self.VARIOUS: "various",
+            self.UNKNOWN: "unknown",
+        }
+        return mapping.get(self, "bytes")
+
 
 class CharacteristicName(Enum):
     """Enumeration of all supported GATT characteristic names."""

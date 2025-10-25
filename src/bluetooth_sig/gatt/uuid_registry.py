@@ -10,6 +10,7 @@ from typing import Any, cast
 
 import msgspec
 
+from bluetooth_sig.types.gatt_enums import DataType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 from ..registry.utils import find_bluetooth_sig_path, load_yaml_uuids, normalize_uuid_string
@@ -499,34 +500,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
     def _convert_yaml_type_to_python_type(self, yaml_type: str) -> str:
         """Convert YAML type to Python type string."""
-        type_mapping = {
-            # Integer types
-            "uint8": "int",
-            "uint16": "int",
-            "uint24": "int",
-            "uint32": "int",
-            "uint64": "int",
-            "sint8": "int",
-            "sint16": "int",
-            "sint24": "int",
-            "sint32": "int",
-            "sint64": "int",
-            # Float types
-            "float32": "float",
-            "float64": "float",
-            "sfloat": "float",
-            "float": "float",
-            "medfloat16": "float",
-            # String types
-            "utf8s": "string",
-            "utf16s": "string",
-            # Boolean type
-            "boolean": "boolean",
-            # Struct/opaque data
-            "struct": "bytes",
-            "variable": "bytes",
-        }
-        return type_mapping.get(yaml_type.lower(), "bytes")
+        return DataType.from_string(yaml_type).to_python_type()
 
     def _convert_bluetooth_unit_to_readable(self, unit_spec: str) -> str:
         """Convert Bluetooth SIG unit specification to human-readable format."""
