@@ -264,8 +264,6 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             return
 
         try:
-            from ..registry.utils import load_yaml_uuids
-
             units_data = load_yaml_uuids(units_yaml)
             for unit_info in units_data:
                 unit_id = unit_info.get("id", "")

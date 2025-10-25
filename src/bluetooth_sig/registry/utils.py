@@ -7,6 +7,8 @@ from typing import Any, cast
 
 import msgspec
 
+from bluetooth_sig.types.uuid import BluetoothUUID
+
 
 def load_yaml_uuids(file_path: Path) -> list[dict[str, Any]]:
     """Load UUID entries from a YAML file.
@@ -73,3 +75,24 @@ def find_bluetooth_sig_path() -> Path | None:
     base_path = pkg_root / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
     return base_path if base_path.exists() else None
+
+
+def parse_bluetooth_uuid(uuid: str | int | BluetoothUUID) -> BluetoothUUID:
+    """Parse various UUID formats into a BluetoothUUID.
+
+    Args:
+        uuid: UUID as string (with or without 0x), int, or BluetoothUUID
+
+    Returns:
+        BluetoothUUID instance
+
+    Raises:
+        ValueError: If UUID format is invalid
+    """
+    if isinstance(uuid, BluetoothUUID):
+        return uuid
+    if isinstance(uuid, int):
+        uuid_str = hex(uuid)[2:].upper()
+        return BluetoothUUID(uuid_str)
+    uuid_str = str(uuid).replace("0x", "").replace("0X", "")
+    return BluetoothUUID(uuid_str)

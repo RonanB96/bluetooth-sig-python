@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from bluetooth_sig.types.uuid import BluetoothUUID
 
-from .utils import find_bluetooth_sig_path, load_yaml_uuids, normalize_uuid_string
+from .utils import find_bluetooth_sig_path, load_yaml_uuids, normalize_uuid_string, parse_bluetooth_uuid
 
 
 @dataclass(frozen=True)
@@ -63,14 +63,7 @@ class MembersRegistry:
         """
         with self._lock:
             try:
-                if isinstance(uuid, BluetoothUUID):
-                    bt_uuid = uuid
-                elif isinstance(uuid, int):
-                    uuid_str = hex(uuid)[2:].upper()
-                    bt_uuid = BluetoothUUID(uuid_str)
-                else:
-                    uuid_str = str(uuid).replace("0x", "").replace("0X", "")
-                    bt_uuid = BluetoothUUID(uuid_str)
+                bt_uuid = parse_bluetooth_uuid(uuid)
 
                 # Get the short form (16-bit) for lookup
                 short_key = bt_uuid.short_form.upper()
