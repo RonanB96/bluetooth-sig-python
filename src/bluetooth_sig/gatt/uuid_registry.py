@@ -12,6 +12,8 @@ import msgspec
 
 from bluetooth_sig.types.uuid import BluetoothUUID
 
+from ..registry.utils import find_bluetooth_sig_path, load_yaml_uuids, normalize_uuid_string
+
 
 class FieldInfo(msgspec.Struct, frozen=True, kw_only=True):
     """Field-related metadata from YAML."""
@@ -209,52 +211,17 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         canonical_key = info.uuid.normalized
         return {alias for alias in aliases if alias and alias.strip() and alias != canonical_key}
 
-    def _load_yaml(self, file_path: Path) -> list[dict[str, Any]]:
-        """Load UUID entries from a YAML file."""
-        if not file_path.exists():
-            return []
-
-        with file_path.open("r", encoding="utf-8") as file_handle:
-            data = msgspec.yaml.decode(file_handle.read())
-
-        if not isinstance(data, dict):
-            return []
-
-        data_dict = cast(dict[str, Any], data)
-        uuid_entries = data_dict.get("uuids")
-        if not isinstance(uuid_entries, list):
-            return []
-
-        typed_entries: list[dict[str, Any]] = []
-        for entry in uuid_entries:
-            if isinstance(entry, dict):
-                typed_entries.append(cast(dict[str, Any], entry))
-
-        return typed_entries
-
     def _load_uuids(self) -> None:  # pylint: disable=too-many-branches
         """Load all UUIDs from YAML files."""
-        # Try development location first (git submodule)
-        project_root = Path(__file__).parent.parent.parent.parent
-        base_path = project_root / "bluetooth_sig" / "assigned_numbers" / "uuids"
-
-        if not base_path.exists():
-            # Try installed package location
-            pkg_root = Path(__file__).parent.parent
-            base_path = pkg_root / "bluetooth_sig" / "assigned_numbers" / "uuids"
-
-        if not base_path.exists():
+        base_path = find_bluetooth_sig_path()
+        if not base_path:
             return
 
         # Load service UUIDs
         service_yaml = base_path / "service_uuids.yaml"
         if service_yaml.exists():
-            for uuid_info in self._load_yaml(service_yaml):
-                uuid = uuid_info["uuid"]
-                if isinstance(uuid, str):
-                    uuid = uuid.replace("0x", "")
-                else:
-                    uuid = hex(uuid)[2:].upper()
+            for uuid_info in load_yaml_uuids(service_yaml):
+                uuid = normalize_uuid_string(uuid_info["uuid"])
 
                 bt_uuid = BluetoothUUID(uuid)
                 info = UuidInfo(
@@ -265,12 +232,8 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         # Load characteristic UUIDs
         characteristic_yaml = base_path / "characteristic_uuids.yaml"
         if characteristic_yaml.exists():
-            for uuid_info in self._load_yaml(characteristic_yaml):
-                uuid = uuid_info["uuid"]
-                if isinstance(uuid, str):
-                    uuid = uuid.replace("0x", "")
-                else:
-                    uuid = hex(uuid)[2:].upper()
+            for uuid_info in load_yaml_uuids(characteristic_yaml):
+                uuid = normalize_uuid_string(uuid_info["uuid"])
 
                 bt_uuid = BluetoothUUID(uuid)
                 info = UuidInfo(
@@ -281,12 +244,8 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         # Load descriptor UUIDs
         descriptor_yaml = base_path / "descriptors.yaml"
         if descriptor_yaml.exists():
-            for uuid_info in self._load_yaml(descriptor_yaml):
-                uuid = uuid_info["uuid"]
-                if isinstance(uuid, str):
-                    uuid = uuid.replace("0x", "")
-                else:
-                    uuid = hex(uuid)[2:].upper()
+            for uuid_info in load_yaml_uuids(descriptor_yaml):
+                uuid = normalize_uuid_string(uuid_info["uuid"])
 
                 bt_uuid = BluetoothUUID(uuid)
                 info = UuidInfo(
@@ -305,7 +264,9 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             return
 
         try:
-            units_data = self._load_yaml(units_yaml)
+            from ..registry.utils import load_yaml_uuids
+
+            units_data = load_yaml_uuids(units_yaml)
             for unit_info in units_data:
                 unit_id = unit_info.get("id", "")
                 unit_name = unit_info.get("name", "")

@@ -11,6 +11,7 @@ from .core import BluetoothSIGTranslator
 from .gatt import BaseCharacteristic, BaseGattService
 from .gatt.characteristics import CharacteristicRegistry
 from .gatt.services import GattServiceRegistry
+from .registry import members_registry
 from .types import (
     CharacteristicData,
     CharacteristicInfo,
@@ -32,4 +33,5 @@ __all__ = [
     "ServiceInfo",
     "SIGInfo",
     "ValidationResult",
+    "members_registry",
 ]

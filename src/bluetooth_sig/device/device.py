@@ -15,6 +15,7 @@ from typing import Any, Callable, Protocol
 
 from ..gatt.characteristics import CharacteristicName
 from ..gatt.context import CharacteristicContext, DeviceInfo
+from ..gatt.descriptors.registry import DescriptorRegistry
 from ..gatt.services import GattServiceRegistry, ServiceName
 from ..gatt.services.base import BaseGattService, UnknownService
 from ..types import (
@@ -214,8 +215,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             descriptors: Nested dict mapping char_uuid -> desc_uuid -> raw data
             parsed_characteristics: Already parsed characteristic data
         """
-        from bluetooth_sig.gatt.descriptors.registry import DescriptorRegistry
-
         for char_uuid, char_descriptors in descriptors.items():
             if char_uuid not in parsed_characteristics:
                 continue  # Skip descriptors for unknown characteristics

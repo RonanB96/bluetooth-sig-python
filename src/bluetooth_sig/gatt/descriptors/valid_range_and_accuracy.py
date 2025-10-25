@@ -60,21 +60,50 @@ class ValidRangeAndAccuracyDescriptor(BaseDescriptor):
         )
 
     def get_min_value(self, data: bytes) -> int | float:
-        """Get the minimum valid value."""
+        """Get the minimum valid value.
+
+        Args:
+            data: Raw descriptor data
+
+        Returns:
+            Minimum valid value for the characteristic
+        """
         parsed = self._parse_descriptor_value(data)
         return parsed.min_value
 
     def get_max_value(self, data: bytes) -> int | float:
-        """Get the maximum valid value."""
+        """Get the maximum valid value.
+
+        Args:
+            data: Raw descriptor data
+
+        Returns:
+            Maximum valid value for the characteristic
+        """
         parsed = self._parse_descriptor_value(data)
         return parsed.max_value
 
-    def get_accuracy(self, data: bytes) -> int | float:
-        """Get the accuracy value."""
-        parsed = self._parse_descriptor_value(data)
-        return parsed.accuracy
-
     def is_value_in_range(self, data: bytes, value: int | float) -> bool:
-        """Check if a value is within the valid range."""
+        """Check if a value is within the valid range.
+
+        Args:
+            data: Raw descriptor data
+            value: Value to check
+
+        Returns:
+            True if value is within [min_value, max_value] range
+        """
         parsed = self._parse_descriptor_value(data)
         return parsed.min_value <= value <= parsed.max_value
+
+    def get_accuracy(self, data: bytes) -> int | float:
+        """Get the accuracy value.
+
+        Args:
+            data: Raw descriptor data
+
+        Returns:
+            Accuracy value for the characteristic
+        """
+        parsed = self._parse_descriptor_value(data)
+        return parsed.accuracy
