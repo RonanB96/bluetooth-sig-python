@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import threading
 from dataclasses import dataclass
 
+from bluetooth_sig.registry.base import BaseRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path, load_yaml_uuids, parse_bluetooth_uuid
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -18,14 +18,12 @@ class ServiceClassInfo:
     id: str
 
 
-class ServiceClassesRegistry:
+class ServiceClassesRegistry(BaseRegistry[ServiceClassInfo]):
     """Registry for Bluetooth SIG service class definitions."""
-
-    _instance: ServiceClassesRegistry | None = None
-    _lock = threading.RLock()
 
     def __init__(self) -> None:
         """Initialize the service classes registry."""
+        super().__init__()
         self._service_classes: dict[str, ServiceClassInfo] = {}
         self._name_to_info: dict[str, ServiceClassInfo] = {}
         self._id_to_info: dict[str, ServiceClassInfo] = {}
@@ -46,11 +44,7 @@ class ServiceClassesRegistry:
                     name = item["name"]
                     service_class_id = item["id"]
 
-                    info = ServiceClassInfo(
-                        uuid=uuid,
-                        name=name,
-                        id=service_class_id
-                    )
+                    info = ServiceClassInfo(uuid=uuid, name=name, id=service_class_id)
 
                     # Store by UUID string for fast lookup
                     self._service_classes[uuid.short_form.upper()] = info
@@ -60,15 +54,6 @@ class ServiceClassesRegistry:
                 except (KeyError, ValueError):
                     # Skip malformed entries
                     continue
-
-    @classmethod
-    def get_instance(cls) -> ServiceClassesRegistry:
-        """Get the singleton instance of the service classes registry."""
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = cls()
-        return cls._instance
 
     def get_service_class_info(self, uuid: str | int | BluetoothUUID) -> ServiceClassInfo | None:
         """Get service class information by UUID.
