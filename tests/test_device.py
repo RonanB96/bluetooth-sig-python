@@ -10,6 +10,7 @@ from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
 from bluetooth_sig.types.device_types import DeviceEncryption
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 class MockConnectionManager:
@@ -36,20 +37,20 @@ class MockConnectionManager:
     def disconnect_sync(self) -> None:
         self._connected = False
 
-    async def read_gatt_char(self, char_uuid: str) -> bytes:
+    async def read_gatt_char(self, char_uuid: BluetoothUUID) -> bytes:
         return b""
 
-    async def write_gatt_char(self, char_uuid: str, data: bytes) -> None:
+    async def write_gatt_char(self, char_uuid: BluetoothUUID, data: bytes) -> None:
         pass
 
     async def get_services(self) -> Any:  # noqa: ANN401
         """Mock get_services - returns async."""
         return {}
 
-    async def start_notify(self, char_uuid: str, callback: Callable[[str, bytes], None]) -> None:
+    async def start_notify(self, char_uuid: BluetoothUUID, callback: Callable[[str, bytes], None]) -> None:
         """Mock start_notify with correct signature."""
 
-    async def stop_notify(self, char_uuid: str) -> None:
+    async def stop_notify(self, char_uuid: BluetoothUUID) -> None:
         pass
 
 

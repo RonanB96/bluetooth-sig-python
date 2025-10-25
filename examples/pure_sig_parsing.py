@@ -5,21 +5,9 @@ This module demonstrates parsing characteristic data using only the
 Bluetooth SIG translator without requiring BLE hardware.
 """
 
-# Set up paths for imports
+from __future__ import annotations
+
 import sys
-from pathlib import Path
-
-# pylint: disable=duplicate-code
-
-# Add src directory for bluetooth_sig imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Add parent directory for examples package imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Add examples directory for utils imports
-sys.path.insert(0, str(Path(__file__).parent))
-
 from typing import TypedDict
 
 from bluetooth_sig import BluetoothSIGTranslator
@@ -41,7 +29,6 @@ def demonstrate_pure_sig_parsing() -> None:
     print("This demo shows parsing raw characteristic data using official SIG standards.")
     print("No BLE hardware or connections required!\n")
 
-    # Initialize the SIG translator
     translator = BluetoothSIGTranslator()
 
     # Test data from SIG specifications (realistic device data)

@@ -1,41 +1,35 @@
 #!/usr/bin/env python3
-"""Notification handling example using bleak-retry integration.
+"""Notification handling example using generic connection manager support.
 
 This example demonstrates how to subscribe and handle BLE notifications
-using the bleak-retry-connector integration layered with the
-bluetooth_sig parsing utilities.
+using any supported connection manager (bleak-retry, simplepyble, etc.).
 """
 
-# Set up paths for imports
-import sys
-from pathlib import Path
-
-# pylint: disable=duplicate-code
-
-# Add src directory for bluetooth_sig imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Add parent directory for examples package imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Add examples directory for utils imports
-sys.path.insert(0, str(Path(__file__).parent))
-
-import argparse
 import asyncio
-
-from examples.utils.bleak_retry_integration import handle_notifications_bleak_retry
 
 
 async def main() -> None:
     """Main function for notification demonstration."""
-    parser = argparse.ArgumentParser(description="BLE notification handling")
-    parser.add_argument("--address", required=True, help="BLE device address")
+    # Use common argparse utilities
+    from examples.utils import (
+        create_common_parser,
+        create_connection_manager,
+        handle_notifications_generic,
+        validate_and_setup,
+    )
+
+    parser = create_common_parser("BLE notification handling")
     parser.add_argument("--characteristic", required=True, help="Characteristic UUID for notifications")
     parser.add_argument("--duration", type=int, default=10, help="Duration to listen in seconds")
     args = parser.parse_args()
+    common_args = validate_and_setup(args)
 
-    await handle_notifications_bleak_retry(args.address, args.characteristic, duration=args.duration)
+    # Create connection manager using the common factory
+    connection_manager = create_connection_manager(common_args.connection_manager, common_args.address)
+    await connection_manager.connect()
+
+    # Handle notifications using the generic handler
+    await handle_notifications_generic(connection_manager, args.characteristic, args.duration)
 
 
 if __name__ == "__main__":

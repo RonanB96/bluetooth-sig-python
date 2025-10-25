@@ -10,11 +10,14 @@ from __future__ import annotations
 from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.data_types import CharacteristicData
+from bluetooth_sig.types.uuid import BluetoothUUID
+from examples.utils.models import ReadResult
 
 
 async def parse_and_display_results(
-    raw_results: dict[str, tuple[bytes, float]], library_name: str = "BLE Library"
-) -> dict[str, Any]:
+    raw_results: dict[str, ReadResult], library_name: str = "BLE Library"
+) -> dict[str, ReadResult]:
     """Parse raw BLE data and display results using bluetooth_sig.
 
     Args:
@@ -26,39 +29,66 @@ async def parse_and_display_results(
 
     """
     translator = BluetoothSIGTranslator()
-    parsed_results: dict[str, Any] = {}
 
     print(f"\n📊 {library_name} Results with SIG Parsing:")
     print("=" * 50)
 
-    for uuid_short, (raw_data, read_time) in raw_results.items():
-        # pylint: disable=duplicate-code
-        # NOTE: Result parsing/display pattern duplicates shared_utils logic.
-        # Duplication justified because:
-        # 1. Common pattern for displaying BLE characteristic parse results
-        # 2. Simple dict construction, consolidation would over-engineer for 10 lines
-        # 3. Each utility module stays self-contained for clarity
+    for uuid_short, read_result in raw_results.items():
         try:
-            # Parse with bluetooth_sig (connection-agnostic)
-            result = translator.parse_characteristic(uuid_short, raw_data)
-
-            if result.parse_success:
-                unit_str = f" {result.unit}" if result.unit else ""
-                print(f"   ✅ {result.name}: {result.value}{unit_str}")
-                parsed_results[uuid_short] = {
-                    "name": result.name,
-                    "value": result.value,
-                    "unit": result.unit,
-                    "read_time": read_time,
-                    "raw_data": raw_data,
-                }
+            parse_outcome = translator.parse_characteristic(uuid_short, read_result.raw_data)
+            read_result.parsed = parse_outcome
+            if parse_outcome.parse_success:
+                unit_str = f" {parse_outcome.unit}" if parse_outcome.unit else ""
+                print(f"   ✅ {parse_outcome.name}: {parse_outcome.value}{unit_str}")
             else:
-                print(f"   ❌ {uuid_short}: Parse failed - {result.error_message}")
+                read_result.error = parse_outcome.error_message
+                print(f"   ❌ {uuid_short}: Parse failed - {parse_outcome.error_message}")
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            read_result.error = str(exc)
+            print(f"   💥 {uuid_short}: Exception - {exc}")
 
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            print(f"   💥 {uuid_short}: Exception - {e}")
+    return raw_results
 
-    return parsed_results
+
+# Legacy tuple-based parsing helper removed. Examples now use the
+# ReadResult dataclass and the canonical async/sync parsing helpers
+# (`parse_and_display_results` / `parse_and_display_results_sync`). This
+# avoids maintaining a second, divergent representation of read results
+# and eliminates soft typing in example APIs.
+
+
+def parse_and_display_results_sync(
+    raw_results: dict[str, ReadResult], library_name: str = "BLE Library"
+) -> dict[str, ReadResult]:
+    """Synchronous wrapper equivalent to :func:`parse_and_display_results`.
+
+    This helper is intended for examples and integration code that run in
+    synchronous contexts (e.g. SimplePyBLE helpers). It uses the same
+    canonical parsing core so behaviour and output are identical.
+    """
+    # Reuse the async implementation but keep a convenient synchronous
+    # wrapper for sync examples. The sync wrapper performs the same
+    # mutation on ReadResult instances.
+    translator = BluetoothSIGTranslator()
+
+    print(f"\n📊 {library_name} Results with SIG Parsing:")
+    print("=" * 50)
+
+    for uuid_short, read_result in raw_results.items():
+        try:
+            parse_outcome = translator.parse_characteristic(uuid_short, read_result.raw_data)
+            read_result.parsed = parse_outcome
+            if parse_outcome.parse_success:
+                unit_str = f" {parse_outcome.unit}" if parse_outcome.unit else ""
+                print(f"   ✅ {parse_outcome.name}: {parse_outcome.value}{unit_str}")
+            else:
+                read_result.error = parse_outcome.error_message
+                print(f"   ❌ {uuid_short}: Parse failed - {parse_outcome.error_message}")
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            read_result.error = str(exc)
+            print(f"   💥 {uuid_short}: Exception - {exc}")
+
+    return raw_results
 
 
 def _display_raw_data(_char_uuid_short: str, raw_bytes: bytes) -> None:
@@ -68,6 +98,52 @@ def _display_raw_data(_char_uuid_short: str, raw_bytes: bytes) -> None:
         print(f"     Raw: [{hex_data}]")
     else:
         print("     Raw: [Empty]")
+
+
+def display_parsed_results(
+    results: dict[str, dict[str, Any] | CharacteristicData] | dict[BluetoothUUID, CharacteristicData],
+    title: str = "Parsed Results",
+) -> None:
+    """Display parsed results when callers already have parsed output.
+
+    Accepts either the structured dict format produced by
+    :func:`parse_and_display_results` or a mapping from
+    :class:`BluetoothUUID` to :class:`CharacteristicData`.
+    """
+    print(f"\n🔎 {title}")
+    print("=" * 50)
+
+    # Normalize BluetoothUUID keys to short-string form if necessary
+    normalized: dict[str, dict[str, Any] | CharacteristicData] = {}
+    for key, value in results.items():
+        if isinstance(key, BluetoothUUID):
+            key_str = str(key)
+        else:
+            key_str = str(key)
+        normalized[key_str] = value
+
+    for uuid_short, result in normalized.items():
+        # CharacteristicData objects (from translator.parse_characteristic)
+        if isinstance(result, CharacteristicData):
+            if result.parse_success:
+                unit_str = f" {result.unit}" if result.unit else ""
+                print(f"   ✅ {result.name}: {result.value}{unit_str}")
+            else:
+                print(f"   ❌ {uuid_short}: Parse failed")
+
+        # Structured dict output matching parse_and_display_results
+        elif isinstance(result, dict):
+            if result.get("error"):
+                print(f"   ❌ {uuid_short}: {result.get('error')}")
+            else:
+                name = result.get("name", uuid_short)
+                value_val = result.get("value")
+                unit_val = result.get("unit")
+                unit_str = f" {unit_val}" if unit_val else ""
+                print(f"   ✅ {name}: {value_val}{unit_str}")
+        # All expected value shapes are handled above. If a caller provides
+        # an unexpected value type the behaviour is undefined — prefer a
+        # strict failure mode to masking bugs.
 
 
 def _parse_characteristic_data(

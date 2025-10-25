@@ -9,8 +9,8 @@ This directory contains clean, focused examples demonstrating the core functiona
 Demonstrates robust BLE connections using Bleak with retry logic and SIG parsing.
 
 ```bash
-python examples/with_bleak_retry.py --address 12:34:56:78:9A:BC
-python examples/with_bleak_retry.py --scan
+python -m examples.with_bleak_retry --address 12:34:56:78:9A:BC
+python -m examples.with_bleak_retry --scan
 ```
 
 ### with_simpleble.py
@@ -18,8 +18,8 @@ python examples/with_bleak_retry.py --scan
 Shows integration with SimplePyBLE (cross-platform synchronous BLE library) and SIG parsing.
 
 ```bash
-python examples/with_simpleble.py --address 12:34:56:78:9A:BC
-python examples/with_simpleble.py --scan
+python -m examples.with_simpleble --address 12:34:56:78:9A:BC
+python -m examples.with_simpleble --scan
 ```
 
 ## Core Examples
@@ -29,7 +29,7 @@ python examples/with_simpleble.py --scan
 Demonstrates basic read/write operations with the bluetooth_sig library.
 
 ```bash
-python examples/basic_usage.py --address 12:34:56:78:9A:BC
+python -m examples.basic_usage --address 12:34:56:78:9A:BC
 ```
 
 ### service_discovery.py
@@ -37,7 +37,7 @@ python examples/basic_usage.py --address 12:34:56:78:9A:BC
 Shows the Device class API for service and characteristic discovery.
 
 ```bash
-python examples/service_discovery.py --address 12:34:56:78:9A:BC
+python -m examples.service_discovery --address 12:34:56:78:9A:BC
 ```
 
 ### notifications.py
@@ -45,7 +45,7 @@ python examples/service_discovery.py --address 12:34:56:78:9A:BC
 Handles BLE notifications with characteristic parsing.
 
 ```bash
-python examples/notifications.py --address 12:34:56:78:9A:BC --characteristic 2A19
+python -m examples.notifications--address 12:34:56:78:9A:BC --characteristic 2A19
 ```
 
 ### advertising_parsing.py
@@ -53,7 +53,11 @@ python examples/notifications.py --address 12:34:56:78:9A:BC --characteristic 2A
 Parses BLE advertising data packets using the AdvertisingParser.
 
 ```bash
-python examples/advertising_parsing.py --data "02010605FF4C001005011C7261F4"
+# Parse real advertising data
+python -m examples.advertising_parsing --data "02010605FF4C001005011C7261F4"
+
+# Use mock data for demonstration (no BLE hardware required)
+python -m examples.advertising_parsing --mock
 ```
 
 ### pure_sig_parsing.py
@@ -61,7 +65,7 @@ python examples/advertising_parsing.py --data "02010605FF4C001005011C7261F4"
 Shows pure SIG standards parsing without any BLE connection library dependencies.
 
 ```bash
-python examples/pure_sig_parsing.py
+python -m examples.pure_sig_parsing
 ```
 
 ## Benchmarks
@@ -72,13 +76,13 @@ Comprehensive performance benchmark for parsing operations. Measures parse laten
 
 ```bash
 # Run full benchmark
-python examples/benchmarks/parsing_performance.py
+python -m examples.benchmarks.parsing_performance
 
 # Run with debug logging (shows overhead)
-python examples/benchmarks/parsing_performance.py --log-level=debug
+python -m examples.benchmarks.parsing_performance --log-level=debug
 
 # Quick benchmark with fewer iterations
-python examples/benchmarks/parsing_performance.py --quick
+python -m examples.benchmarks.parsing_performance --quick
 ```
 
 **Output includes:**
@@ -114,21 +118,16 @@ from utils import (
 )
 ```
 
-## Deprecated Files
-
-- **`shared_utils.py`** - Deprecated, use `utils/` package instead
-- **`ble_utils.py.bak`** - Backup of original large utilities file
-
 ## Running Examples
 
 All examples require a BLE device address. You can discover devices using:
 
 ```bash
 # Using bleak-retry example
-python examples/with_bleak_retry.py --scan
+python -m examples.with_bleak_retry --scan
 
 # Using SimplePyBLE example
-python examples/with_simpleble.py --scan
+python -m examples.with_simpleble --scan
 ```
 
 The examples will automatically use available BLE libraries and handle library availability gracefully.

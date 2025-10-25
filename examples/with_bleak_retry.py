@@ -7,41 +7,18 @@ bluetooth_sig translator for production-ready parsing patterns.
 
 from __future__ import annotations
 
-# Set up paths for imports
-import sys
-from pathlib import Path
-
-# pylint: disable=duplicate-code
-
-# Add src directory for bluetooth_sig imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-# Add parent directory for examples package imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Add examples directory for utils imports
-sys.path.insert(0, str(Path(__file__).parent))
-
 import argparse
 import asyncio
 import time
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.device.device import Device
-from examples.utils import (
-    bleak_retry_available,
-    get_default_characteristic_uuids,
-    read_characteristics_bleak_retry,
-    scan_with_bleak_retry,
-)
-from examples.utils.bleak_retry_integration import (
-    BleakRetryConnectionManager,
-)
+from bluetooth_sig.device import Device
+from bluetooth_sig.types.data_types import CharacteristicData
 
 
 async def robust_device_reading(
     address: str, backend: str = "bleak-retry", retries: int = 3
-) -> dict[str, dict[str, str | None]]:
+) -> dict[str, CharacteristicData]:
     """Robust device reading with automatic retry and error recovery.
 
     Args:
@@ -56,6 +33,10 @@ async def robust_device_reading(
     if backend != "bleak-retry":
         print(f"❌ Only bleak-retry backend is supported in this example. Got: {backend}")
         return {}
+
+    from examples.connection_managers.bleak_retry import BleakRetryConnectionManager  # type: ignore
+
+    from .utils.mock_data import get_default_characteristic_uuids  # type: ignore
 
     target_uuids = get_default_characteristic_uuids()
     translator = BluetoothSIGTranslator()
@@ -83,17 +64,14 @@ async def robust_device_reading(
     except Exception as e:
         print(f"⚠️ Service discovery failed, trying predefined characteristics: {e}")
 
-    results = {}
+    results: dict[str, CharacteristicData] = {}
     for uuid in target_uuids:
         try:
             parsed = await device.read(uuid)
             if parsed and getattr(parsed, "parse_success", False):
-                results[uuid] = {
-                    "name": getattr(parsed, "name", uuid),
-                    "value": getattr(parsed, "value", None),
-                    "unit": getattr(parsed, "unit", None),
-                }
-                print(f"✅ {uuid}: {results[uuid]}")
+                results[uuid] = parsed
+                unit_str = f" {parsed.unit}" if parsed.unit else ""
+                print(f"✅ {uuid}: {parsed.name}: {parsed.value}{unit_str}")
             else:
                 print(f"⚠️ {uuid}: Parse failed or no data")
         except Exception as e:
@@ -104,7 +82,7 @@ async def robust_device_reading(
     return results
 
 
-async def robust_service_discovery(address: str) -> dict[str, object]:
+async def robust_service_discovery(address: str) -> dict[str, CharacteristicData]:
     """Discover all services and characteristics with robust connection.
 
     Args:
@@ -121,14 +99,17 @@ async def robust_service_discovery(address: str) -> dict[str, object]:
 async def perform_single_reading(address: str, translator: BluetoothSIGTranslator, target_uuids: list[str]) -> bool:
     """Perform a single reading cycle and return success status."""
     try:
-        # Use robust connection with retry
-        raw_results = await read_characteristics_bleak_retry(address, target_uuids, max_attempts=3)
+        # Use robust connection with retry (import at runtime)
+        from examples.connection_managers.bleak_retry import BleakRetryConnectionManager  # type: ignore
+        from examples.utils.connection_helpers import read_characteristics_with_manager  # type: ignore
+
+        manager = BleakRetryConnectionManager(address)
+        raw_results = await read_characteristics_with_manager(manager, target_uuids)
 
         if raw_results:
             print(f"📊 Reading at {time.strftime('%H:%M:%S')}:")
-
-            for uuid_short, (raw_data, _) in raw_results.items():
-                result = translator.parse_characteristic(uuid_short, raw_data)
+            for uuid_short, read_result in raw_results.items():
+                result = translator.parse_characteristic(uuid_short, read_result.raw_data)
                 if result.parse_success:
                     unit_str = f" {result.unit}" if result.unit else ""
                     print(f"   {result.name}: {result.value}{unit_str}")
@@ -191,6 +172,10 @@ async def main() -> None:
     parser.add_argument("--duration", "-t", type=int, default=60, help="Duration for monitoring")
 
     args = parser.parse_args()
+
+    from examples.connection_managers.bleak_utils import scan_with_bleak_retry  # type: ignore
+
+    from .utils.library_detection import bleak_retry_available  # type: ignore
 
     if not bleak_retry_available:
         print("Bleak-retry not available. Install with: pip install bleak-retry-connector")

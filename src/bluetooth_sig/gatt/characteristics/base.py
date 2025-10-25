@@ -19,6 +19,7 @@ from ...types.data_types import ParseFieldError
 from ...types.gatt_enums import CharacteristicName, GattProperty, ValueType
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
+from ..descriptors import BaseDescriptor, CCCDDescriptor
 from ..exceptions import (
     BluetoothSIGError,
     InsufficientDataError,
@@ -321,6 +322,9 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # Dependency caches (resolved once per instance)
         self._resolved_required_dependencies: list[str] | None = None
         self._resolved_optional_dependencies: list[str] | None = None
+
+        # Descriptor support
+        self._descriptors: dict[str, BaseDescriptor] = {}
 
         # Call post-init to resolve characteristic info
         self.__post_init__()
@@ -888,6 +892,65 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         if data_type in ("float32", "float64"):
             return True
         return False
+
+    # Descriptor support methods
+
+    def add_descriptor(self, descriptor: BaseDescriptor) -> None:
+        """Add a descriptor to this characteristic.
+
+        Args:
+            descriptor: The descriptor instance to add
+        """
+        self._descriptors[str(descriptor.uuid)] = descriptor
+
+    def get_descriptor(self, uuid: str | BluetoothUUID) -> BaseDescriptor | None:
+        """Get a descriptor by UUID.
+
+        Args:
+            uuid: Descriptor UUID (string or BluetoothUUID)
+
+        Returns:
+            Descriptor instance if found, None otherwise
+        """
+        # Convert to BluetoothUUID for consistent handling
+        if isinstance(uuid, str):
+            try:
+                uuid_obj = BluetoothUUID(uuid)
+            except ValueError:
+                return None
+        else:
+            uuid_obj = uuid
+
+        return self._descriptors.get(uuid_obj.dashed_form)
+
+    def get_descriptors(self) -> dict[str, BaseDescriptor]:
+        """Get all descriptors for this characteristic.
+
+        Returns:
+            Dict mapping descriptor UUID strings to descriptor instances
+        """
+        return self._descriptors.copy()
+
+    def can_notify(self) -> bool:
+        """Check if this characteristic supports notifications.
+
+        Returns:
+            True if the characteristic has a CCCD descriptor, False otherwise
+        """
+        return self.get_cccd() is not None
+
+    def get_cccd(self) -> CCCDDescriptor | None:
+        """Get the Client Characteristic Configuration Descriptor (CCCD).
+
+        Returns:
+            CCCD descriptor instance if present, None otherwise
+        """
+        cccd_info = uuid_registry.get_descriptor_info("Client Characteristic Configuration")
+        if cccd_info:
+            descriptor = self.get_descriptor(cccd_info.uuid)
+            if descriptor is not None and isinstance(descriptor, CCCDDescriptor):
+                return descriptor
+        return None
 
     def get_byte_order_hint(self) -> str:
         """Get byte order hint (Bluetooth SIG uses little-endian by convention)."""
