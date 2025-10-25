@@ -40,11 +40,11 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
             Normalized ID string
         """
         # Convert to lowercase, replace spaces and special chars with underscores
-        normalized = re.sub(r'[^a-zA-Z0-9]', '_', name.lower())
+        normalized = re.sub(r"[^a-zA-Z0-9]", "_", name.lower())
         # Remove multiple consecutive underscores
-        normalized = re.sub(r'_+', '_', normalized)
+        normalized = re.sub(r"_+", "_", normalized)
         # Remove leading/trailing underscores
-        normalized = normalized.strip('_')
+        normalized = normalized.strip("_")
         return normalized
 
     def _load_sdo_uuids(self) -> None:
@@ -65,11 +65,7 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
                     normalized_name = self._normalize_name_for_id(name)
                     sdo_id = f"org.bluetooth.sdo.{normalized_name}"
 
-                    info = SdoInfo(
-                        uuid=uuid,
-                        name=name,
-                        id=sdo_id
-                    )
+                    info = SdoInfo(uuid=uuid, name=name, id=sdo_id)
 
                     # Store by UUID string for fast lookup
                     self._sdo_uuids[uuid.short_form.upper()] = info

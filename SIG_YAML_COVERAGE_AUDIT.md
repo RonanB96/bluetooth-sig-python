@@ -20,7 +20,7 @@ This document summarises the current coverage of Bluetooth SIG YAML data categor
 | Mesh Profiles              | Missing              | No implementation for `mesh_profile_uuids.yaml`      |
 | Browse Group Identifiers   | Present              | `src/bluetooth_sig/registry/browse_groups.py`|
 | SDO UUIDs                  | Present              | `src/bluetooth_sig/registry/sdo_uuids.py`|
-| Declarations               | Missing              | No implementation for `declarations.yaml`            |
+| Declarations               | Present              | `src/bluetooth_sig/registry/declarations.py`|
 
 ---
 
@@ -58,7 +58,7 @@ This document summarises the current coverage of Bluetooth SIG YAML data categor
 | Mesh Profiles              | Present              | `src/bluetooth_sig/registry/mesh_profiles.py` |
 | Browse Group Identifiers   | Present              | `src/bluetooth_sig/registry/browse_groups.py` |
 | SDO UUIDs                  | Present              | `src/bluetooth_sig/registry/sdo_uuids.py` |
-| Declarations               | Missing              | Low priority to add           |
+| Declarations               | Present              | `src/bluetooth_sig/registry/declarations.py` |
 
 ---
 
@@ -69,7 +69,7 @@ This document summarises the current coverage of Bluetooth SIG YAML data categor
 - **Mesh Profiles Registry**: Medium priority - implemented ✅
 - **Browse Group Identifiers Registry**: Medium priority - implemented ✅
 - **SDO UUIDs Registry**: Medium priority - implemented ✅
-- **Declarations Registry**: Low priority to add
+- **Declarations Registry**: Low priority - implemented ✅
 
 ---
 

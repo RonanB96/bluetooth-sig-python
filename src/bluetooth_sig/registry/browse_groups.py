@@ -44,11 +44,7 @@ class BrowseGroupsRegistry(BaseRegistry[BrowseGroupInfo]):
                     name = item["name"]
                     browse_group_id = item["id"]
 
-                    info = BrowseGroupInfo(
-                        uuid=uuid,
-                        name=name,
-                        id=browse_group_id
-                    )
+                    info = BrowseGroupInfo(uuid=uuid, name=name, id=browse_group_id)
 
                     # Store by UUID string for fast lookup
                     self._browse_groups[uuid.short_form.upper()] = info
