@@ -458,6 +458,7 @@ class TestCustomCharacteristicRegistration:
         result = translator.parse_characteristic(
             str(SimpleTemperatureSensor._info.uuid),
             bytes(data),
+            descriptor_data=None,
         )
 
         assert result.parse_success is True
@@ -493,6 +494,7 @@ class TestCustomCharacteristicRegistration:
         result = translator.parse_characteristic(
             str(MultiSensorCharacteristic._info.uuid),
             bytes(data),
+            descriptor_data=None,
         )
 
         assert result.parse_success is True

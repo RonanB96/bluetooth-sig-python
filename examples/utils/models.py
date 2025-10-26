@@ -7,12 +7,12 @@ helpers to return structured data instead of opaque tuples and dicts.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any, Union
 
+import msgspec
 
-@dataclass
-class ReadResult:
+
+class ReadResult(msgspec.Struct):
     """Structured result for a single characteristic read.
 
     Attributes:
@@ -30,8 +30,7 @@ class ReadResult:
     error: str | None = None
 
 
-@dataclass
-class DeviceInfo:
+class DeviceInfo(msgspec.Struct):
     """Structured information about a discovered BLE device.
 
     Keep this small and stable for example callers; adapters may provide
@@ -50,8 +49,7 @@ __all__ = ["ReadResult", "DeviceInfo"]
 ComparisonData = Union[dict[str, ReadResult], dict[str, Any]]
 
 
-@dataclass
-class LibraryComparisonResult:
+class LibraryComparisonResult(msgspec.Struct):
     """Structured result for library comparison demo helpers.
 
     Attributes:

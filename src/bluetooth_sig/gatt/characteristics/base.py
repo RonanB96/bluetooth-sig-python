@@ -5,34 +5,37 @@ from __future__ import annotations
 
 import os
 import re
-import struct
 from abc import ABC, ABCMeta
 from functools import lru_cache
 from typing import Any
 
 import msgspec
 
-from bluetooth_sig.gatt.characteristics.templates import CodingTemplate
-
-from ...types import CharacteristicData, CharacteristicInfo
-from ...types.data_types import ParseFieldError
-from ...types.gatt_enums import CharacteristicName, GattProperty, ValueType
+from ...registry import units_registry
+from ...types import CharacteristicData, CharacteristicInfo, DescriptorData
+from ...types import ParseFieldError as FieldError
+from ...types.gatt_enums import CharacteristicName, DataType, GattProperty, ValueType
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
-from ..descriptors import BaseDescriptor, CCCDDescriptor
+from ..descriptors import BaseDescriptor
+from ..descriptors.cccd import CCCDDescriptor
+from ..descriptors.characteristic_presentation_format import (
+    CharacteristicPresentationFormatData,
+    CharacteristicPresentationFormatDescriptor,
+)
+from ..descriptors.characteristic_user_description import (
+    CharacteristicUserDescriptionDescriptor,
+)
+from ..descriptors.valid_range import ValidRangeDescriptor
 from ..exceptions import (
-    BluetoothSIGError,
     InsufficientDataError,
-    TypeMismatchError,
+    ParseFieldError,
     UUIDResolutionError,
     ValueRangeError,
 )
-from ..exceptions import (
-    ParseFieldError as ParseFieldException,
-)
 from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
 from ..uuid_registry import CharacteristicSpec, uuid_registry
-from .utils.parse_trace import ParseTrace
+from .templates import CodingTemplate
 
 
 class ValidationConfig(msgspec.Struct, kw_only=True):
@@ -109,36 +112,26 @@ class SIGCharacteristicResolver:
     def _create_info_from_yaml(
         yaml_spec: CharacteristicSpec, char_class: type[BaseCharacteristic]
     ) -> CharacteristicInfo:
-        """Create CharacteristicInfo from YAML spec."""
-        # Map GSS data types to our value types
-        type_mapping = {
-            "sint8": ValueType.INT,
-            "uint8": ValueType.INT,
-            "sint16": ValueType.INT,
-            "uint16": ValueType.INT,
-            "uint24": ValueType.INT,
-            "sint32": ValueType.INT,
-            "uint32": ValueType.INT,
-            "float32": ValueType.FLOAT,
-            "float64": ValueType.FLOAT,
-            "sfloat": ValueType.FLOAT,  # IEEE-11073 16-bit SFLOAT
-            "float": ValueType.FLOAT,  # IEEE-11073 32-bit FLOAT
-            "medfloat16": ValueType.FLOAT,  # Medical float 16-bit
-            "utf8s": ValueType.STRING,
-            "utf16s": ValueType.STRING,
-            "boolean": ValueType.BOOL,
-            "struct": ValueType.BYTES,
-            "variable": ValueType.BYTES,
-        }
+        """Create CharacteristicInfo from YAML spec, resolving metadata via registry classes."""
+        value_type = DataType.from_string(yaml_spec.data_type).to_value_type()
 
-        value_type = (
-            type_mapping.get(yaml_spec.data_type, ValueType.UNKNOWN) if yaml_spec.data_type else ValueType.UNKNOWN
-        )
+        # Resolve unit via registry if present
+        unit_info = None
+        unit_name = getattr(yaml_spec, "unit_symbol", None) or getattr(yaml_spec, "unit", None)
+        if unit_name:
+            unit_info = units_registry.get_unit_info_by_name(unit_name)
+        if unit_info:
+            # Prefer symbol, fallback to name, always ensure string
+            unit_symbol = str(getattr(unit_info, "symbol", getattr(unit_info, "name", unit_name)))
+        else:
+            unit_symbol = str(unit_name or "")
+
+        # TODO: Add similar logic for object types, service classes, etc. as needed
 
         return CharacteristicInfo(
             uuid=yaml_spec.uuid,
             name=yaml_spec.name or char_class.__name__,
-            unit=yaml_spec.unit_symbol or "",
+            unit=unit_symbol,
             value_type=value_type,
             properties=[],  # Properties will be resolved separately if needed
         )
@@ -473,13 +466,13 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             class_uuid = dep_class.get_class_uuid()
             if class_uuid is not None:
                 return str(class_uuid)
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (ValueError, AttributeError, TypeError):
             pass
 
         try:
             temp_instance = dep_class()
             return str(temp_instance.info.uuid)
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (ValueError, AttributeError, TypeError):
             return None
 
     def _resolve_dependencies(self, attr_name: str) -> list[str]:
@@ -620,12 +613,26 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             return self._template.decode_value(data, offset=0, ctx=ctx)
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
-    def _validate_range(self, value: Any) -> None:  # noqa: ANN401  # Validates values of various numeric types
-        """Validate value is within min/max range."""
+    def _validate_range(self, value: Any, ctx: CharacteristicContext | None = None) -> None:  # noqa: ANN401  # Validates values of various numeric types
+        """Validate value is within min/max range from both class attributes and descriptors."""
+        # Check class-level validation attributes first
         if self.min_value is not None and value < self.min_value:
             raise ValueRangeError("value", value, self.min_value, self.max_value)
         if self.max_value is not None and value > self.max_value:
             raise ValueRangeError("value", value, self.min_value, self.max_value)
+
+        # Check descriptor-defined valid range if available
+        if isinstance(value, (int, float)):
+            valid_range = self.get_valid_range_from_context(ctx)
+            if valid_range:
+                min_val, max_val = valid_range
+                if not min_val <= value <= max_val:
+                    raise ValueRangeError("value", value, min_val, max_val)
+
+    def _validate_type(self, value: Any) -> None:  # noqa: ANN401  # Validates values of various types
+        """Validate value type matches expected_type if specified."""
+        if self.expected_type is not None and not isinstance(value, self.expected_type):
+            raise TypeError(f"expected type {self.expected_type.__name__}, got {type(value).__name__}")
 
     def _validate_length(self, data: bytes | bytearray) -> None:
         """Validate data length meets requirements."""
@@ -636,12 +643,6 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             raise InsufficientDataError("characteristic_data", data, self.min_length)
         if self.max_length is not None and length > self.max_length:
             raise ValueError(f"Maximum {self.max_length} bytes allowed, got {length}")
-
-    def _validate_value(self, value: Any) -> None:  # noqa: ANN401  # Validates values of various types
-        """Validate parsed value meets all requirements."""
-        if self.expected_type is not None and not isinstance(value, self.expected_type):
-            raise TypeMismatchError("parsed_value", value, self.expected_type)
-        self._validate_range(value)
 
     @staticmethod
     @lru_cache(maxsize=32)
@@ -702,9 +703,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         return ctx.other_characteristics.get(char_uuid)
 
-    @staticmethod
-    def _is_parse_trace_enabled() -> bool:
-        """Check if parse trace is enabled via environment variable or class default.
+    def _is_parse_trace_enabled(self) -> bool:
+        """Check if parse trace is enabled via environment variable or instance attribute.
 
         Returns:
             True if parse tracing is enabled, False otherwise
@@ -712,90 +712,103 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Environment Variables:
             BLUETOOTH_SIG_ENABLE_PARSE_TRACE: Set to "0", "false", or "no" to disable
 
+        Instance Attributes:
+            _enable_parse_trace: Set to False to disable tracing for this instance
         """
+        # Check environment variable first
         env_value = os.getenv("BLUETOOTH_SIG_ENABLE_PARSE_TRACE", "").lower()
         if env_value in ("0", "false", "no"):
             return False
-        # Default to class attribute if env var not set
+
+        if self._enable_parse_trace is False:
+            return False
+
+        # Default to enabled
         return True
 
-    def parse_value(self, data: bytes | bytearray, ctx: CharacteristicContext | None = None) -> CharacteristicData:  # noqa: ANN401  # Context type varies
-        """Parse characteristic data with automatic validation.
-
-        This method automatically validates input data length and parsed values
-        based on class-level validation attributes, then returns a CharacteristicData
-        object with rich metadata including field-level errors and parse traces.
-
-        Parse trace collection can be disabled by:
-        1. Setting BLUETOOTH_SIG_ENABLE_PARSE_TRACE environment variable to "0", "false", or "no"
-        2. Setting _enable_parse_trace = False on the characteristic class
+    def parse_value(self, data: bytes | bytearray, ctx: CharacteristicContext | None = None) -> CharacteristicData:
+        """Parse raw characteristic data into structured value with validation.
 
         Args:
             data: Raw bytes from the characteristic read
-            ctx: Optional context information for parsing
+            ctx: Optional context with descriptors and other characteristics
 
         Returns:
-            CharacteristicData object with parsed value, metadata, field errors, and parse trace
+            CharacteristicData object with parsed value
 
         """
-        # Check both environment variable and class attribute
-        trace_enabled = self._is_parse_trace_enabled() and self._enable_parse_trace
+        # Convert to bytearray for internal processing
+        data_bytes = bytearray(data)
+        enable_trace = self._is_parse_trace_enabled()
+        parse_trace: list[str] = []
+        if enable_trace:
+            parse_trace = ["Starting parse"]
+        field_errors: list[FieldError] = []
 
-        # Initialize trace and field error collection using ParseTrace class
-        trace = ParseTrace(enabled=trace_enabled)
-        field_errors: list[ParseFieldError] = []
-
-        # Call subclass implementation with validation
         try:
-            trace.append(f"Starting parse of {self._info.name}")
-
-            # Validate input data length
-            trace.append(f"Validating data length (got {len(data)} bytes)")
-            self._validate_length(data)
-
-            trace.append("Decoding value")
-            parsed_value = self.decode_value(bytearray(data), ctx)
-
-            # Validate parsed value
-            trace.append(f"Validating parsed value (type: {type(parsed_value).__name__})")
-            self._validate_value(parsed_value)
-
-            trace.append("Parse completed successfully")
-
+            if enable_trace:
+                parse_trace.append(f"Validating data length (got {len(data_bytes)} bytes)")
+            self._validate_length(data_bytes)
+            if enable_trace:
+                parse_trace.append("Decoding value")
+            parsed_value = self.decode_value(data_bytes, ctx)
+            if enable_trace:
+                parse_trace.append("Validating range")
+            self._validate_range(parsed_value, ctx)
+            if enable_trace:
+                parse_trace.append("Validating type")
+            self._validate_type(parsed_value)
+            if enable_trace:
+                parse_trace.append("completed successfully")
             return CharacteristicData(
-                info=self._info,  # Use _info as single source of truth
+                info=self._info,
                 value=parsed_value,
                 raw_data=bytes(data),
                 parse_success=True,
                 error_message="",
-                field_errors=[],
-                parse_trace=trace.get_trace(),
+                field_errors=field_errors,
+                parse_trace=parse_trace,
+                descriptors={},
             )
-        except (ValueError, TypeError, struct.error, BluetoothSIGError) as e:
-            # Extract field information from ParseFieldException if available
-            if isinstance(e, ParseFieldException):
-                field_errors.append(
-                    ParseFieldError(
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            if enable_trace:
+                if isinstance(e, ParseFieldError):
+                    parse_trace.append(f"Field error: {str(e)}")
+                    # Extract field error information
+                    field_error = FieldError(
                         field=e.field,
-                        reason=e.field_reason,  # Use field_reason which stores the original reason
+                        reason=e.field_reason,
                         offset=e.offset,
-                        raw_slice=bytes(data),
+                        raw_slice=bytes(e.data) if hasattr(e, "data") else None,
                     )
-                )
-                trace.append(f"Field error in '{e.field}': {e.field_reason}")
-            else:
-                # Generic error - report without trying to extract field details
-                trace.append(f"Parse failed: {str(e)}")
-
+                    field_errors.append(field_error)
+                else:
+                    parse_trace.append(f"Parse failed: {str(e)}")
             return CharacteristicData(
-                info=self._info,  # Use _info as single source of truth
+                info=self._info,
                 value=None,
                 raw_data=bytes(data),
                 parse_success=False,
                 error_message=str(e),
                 field_errors=field_errors,
-                parse_trace=trace.get_trace(),
+                parse_trace=parse_trace,
+                descriptors={},
             )
+
+    def get_descriptors_from_context(self, ctx: CharacteristicContext | None) -> dict[str, Any]:
+        """Extract descriptor data from the parsing context.
+
+        Args:
+            ctx: The characteristic context containing descriptor information
+
+        Returns:
+            Dictionary mapping descriptor UUIDs to DescriptorData objects
+        """
+        if not ctx or not ctx.descriptors:
+            return {}
+
+        # Return a copy of the descriptors from context
+        return dict(ctx.descriptors)
 
     def encode_value(self, data: Any) -> bytearray:  # noqa: ANN401  # Encodes various value types (int, float, dataclass, etc.)
         """Encode the characteristic's value to raw bytes.
@@ -931,6 +944,14 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         """
         return self._descriptors.copy()
 
+    def get_cccd(self) -> BaseDescriptor | None:
+        """Get the Client Characteristic Configuration Descriptor (CCCD).
+
+        Returns:
+            CCCD descriptor instance if present, None otherwise
+        """
+        return self.get_descriptor(CCCDDescriptor().uuid)
+
     def can_notify(self) -> bool:
         """Check if this characteristic supports notifications.
 
@@ -939,18 +960,129 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         """
         return self.get_cccd() is not None
 
-    def get_cccd(self) -> CCCDDescriptor | None:
-        """Get the Client Characteristic Configuration Descriptor (CCCD).
+    def get_descriptor_from_context(
+        self, ctx: CharacteristicContext | None, descriptor_class: type[BaseDescriptor]
+    ) -> DescriptorData | None:
+        """Get a descriptor of the specified type from the context.
+
+        Args:
+            ctx: Characteristic context containing descriptors
+            descriptor_class: The descriptor class to look for (e.g., ValidRangeDescriptor)
 
         Returns:
-            CCCD descriptor instance if present, None otherwise
+            DescriptorData if found, None otherwise
         """
-        cccd_info = uuid_registry.get_descriptor_info("Client Characteristic Configuration")
-        if cccd_info:
-            descriptor = self.get_descriptor(cccd_info.uuid)
-            if descriptor is not None and isinstance(descriptor, CCCDDescriptor):
-                return descriptor
+        if not ctx or not ctx.descriptors:
+            return None
+
+        # Get the UUID from the descriptor class
+        try:
+            descriptor_instance = descriptor_class()
+            descriptor_uuid = str(descriptor_instance.uuid)
+        except (ValueError, TypeError, AttributeError):
+            # If we can't create the descriptor instance, return None
+            return None
+
+        return ctx.descriptors.get(descriptor_uuid)
+
+    def get_valid_range_from_context(
+        self, ctx: CharacteristicContext | None = None
+    ) -> tuple[int | float, int | float] | None:
+        """Get valid range from descriptor context if available.
+
+        Args:
+            ctx: Characteristic context containing descriptors
+
+        Returns:
+            Tuple of (min, max) values if Valid Range descriptor present, None otherwise
+        """
+        descriptor_data = self.get_descriptor_from_context(ctx, ValidRangeDescriptor)
+        if descriptor_data and descriptor_data.value:
+            return descriptor_data.value.min_value, descriptor_data.value.max_value
         return None
+
+    def get_presentation_format_from_context(
+        self, ctx: CharacteristicContext | None = None
+    ) -> CharacteristicPresentationFormatData | None:
+        """Get presentation format from descriptor context if available.
+
+        Args:
+            ctx: Characteristic context containing descriptors
+
+        Returns:
+            CharacteristicPresentationFormatData if present, None otherwise
+        """
+        descriptor_data = self.get_descriptor_from_context(ctx, CharacteristicPresentationFormatDescriptor)
+        if descriptor_data and descriptor_data.value:
+            return descriptor_data.value  # type: ignore[no-any-return]
+        return None
+
+    def get_user_description_from_context(self, ctx: CharacteristicContext | None = None) -> str | None:
+        """Get user description from descriptor context if available.
+
+        Args:
+            ctx: Characteristic context containing descriptors
+
+        Returns:
+            User description string if present, None otherwise
+        """
+        descriptor_data = self.get_descriptor_from_context(ctx, CharacteristicUserDescriptionDescriptor)
+        if descriptor_data and descriptor_data.value:
+            return descriptor_data.value.description  # type: ignore[no-any-return]
+        return None
+
+    def validate_value_against_descriptor_range(
+        self, value: int | float, ctx: CharacteristicContext | None = None
+    ) -> bool:
+        """Validate a value against descriptor-defined valid range.
+
+        Args:
+            value: Value to validate
+            ctx: Characteristic context containing descriptors
+
+        Returns:
+            True if value is within valid range or no range defined, False otherwise
+        """
+        valid_range = self.get_valid_range_from_context(ctx)
+        if valid_range is None:
+            return True  # No range constraint, value is valid
+
+        min_val, max_val = valid_range
+        return min_val <= value <= max_val
+
+    def enhance_error_message_with_descriptors(
+        self, base_message: str, ctx: CharacteristicContext | None = None
+    ) -> str:
+        """Enhance error message with descriptor information for better debugging.
+
+        Args:
+            base_message: Original error message
+            ctx: Characteristic context containing descriptors
+
+        Returns:
+            Enhanced error message with descriptor context
+        """
+        enhancements = []
+
+        # Add valid range info if available
+        valid_range = self.get_valid_range_from_context(ctx)
+        if valid_range:
+            min_val, max_val = valid_range
+            enhancements.append(f"Valid range: {min_val}-{max_val}")
+
+        # Add user description if available
+        user_desc = self.get_user_description_from_context(ctx)
+        if user_desc:
+            enhancements.append(f"Description: {user_desc}")
+
+        # Add presentation format info if available
+        pres_format = self.get_presentation_format_from_context(ctx)
+        if pres_format:
+            enhancements.append(f"Format: {pres_format.format} ({pres_format.unit})")
+
+        if enhancements:
+            return f"{base_message} ({'; '.join(enhancements)})"
+        return base_message
 
     def get_byte_order_hint(self) -> str:
         """Get byte order hint (Bluetooth SIG uses little-endian by convention)."""
@@ -1085,7 +1217,7 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
                 uuid=info.uuid,
                 name=f"Unknown Characteristic ({info.uuid})",
                 unit=info.unit or "",
-                value_type=info.value_type if info.value_type is not None else ValueType.UNKNOWN,
+                value_type=info.value_type,
                 properties=info.properties or [],
             )
 

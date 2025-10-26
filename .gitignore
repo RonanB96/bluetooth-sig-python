@@ -222,3 +222,8 @@ docs/diagrams/
 docs/diagrams/svg/
 docs/diagrams/deps/
 docs/diagrams/.cache/
+
+# AI Agent operational policies and internal tool state
+AGENTS.md
+.serena/
+

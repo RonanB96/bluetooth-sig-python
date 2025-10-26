@@ -179,7 +179,7 @@ run_pylint() {
     fi
     # Use persistent cache for better performance
     # shellcheck disable=SC2086  # BLUETOOTH_SIG_FOLDERS is intentionally space-separated
-    run_capture "pylint --persistent=n $BLUETOOTH_SIG_FOLDERS"
+    run_capture "pylint --jobs=4 --persistent=n $BLUETOOTH_SIG_FOLDERS"
     PROD_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
 
     # Extract production score
@@ -233,7 +233,7 @@ run_pylint() {
     # W0221: arguments-differ - Test methods may have different signatures than base
     # E0401: import-error - Tests may import modules that aren't available in test environment
     # R0801: duplicate-code - Test fixtures may have similar boilerplate code
-    run_capture "pylint --persistent=n --disable=C0114,C0115,C0116,W0212,C0415,W0718,W0613,R0914,R0912,R0915,R1702,C1803,W0105,R0903,W0201,W0621,W0404,W0221,E0401,R0801 $TEST_FOLDERS $EXAMPLES_FOLDERS"
+    run_capture "pylint --jobs=4 --persistent=n --disable=C0114,C0115,C0116,W0212,C0415,W0718,W0613,R0914,R0912,R0915,R1702,C1803,W0105,R0903,W0201,W0621,W0404,W0221,E0401,R0801 $TEST_FOLDERS $EXAMPLES_FOLDERS"
     local TEST_PYLINT_EXIT_CODE=$?
     TEST_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
     local TEST_PYLINT_HAS_MESSAGES=0

@@ -13,6 +13,7 @@ from .advertising import (
     PDUFlags,
     PDUType,
 )
+from .base_types import SIGInfo
 from .context import CharacteristicContext, DeviceInfo
 from .data_types import (
     CharacteristicData,
@@ -21,7 +22,6 @@ from .data_types import (
     ParseFieldError,
     ServiceInfo,
     ServiceRegistration,
-    SIGInfo,
     ValidationResult,
 )
 from .descriptor_types import DescriptorData, DescriptorInfo
