@@ -12,7 +12,7 @@ applyTo: "**/*.py,**/pyproject.toml,**/requirements*.txt,**/setup.py"
 - ✅ **REQUIRED**: `def parse(data: bytes) -> BatteryLevelData` and `def get_value(self) -> int | None`
 - Return types are MANDATORY - no implicit returns
 - Use modern union syntax: `Type | None` not `Optional[Type]`
-- Use dataclasses for structured data - NEVER return raw `dict` or `tuple`
+- Use msgspec.Struct for structured data - NEVER return raw `dict` or `tuple`
 - `Any` type requires inline justification comment explaining why typing is impossible
 - No gradual typing - all parameters and returns must be typed from the start
 
@@ -43,20 +43,18 @@ def decode_value(self, data, ctx=None):  # ❌ No types!
 
 ## Data Modeling Standards
 
-**Use dataclasses for structured data:**
-- `@dataclass(frozen=True)` where immutability fits
+**Use msgspect.struct for structured data:**
 - Mutable only if justified with inline comment
-- Use `int`, `float`, `Decimal`, `Enum`, or purpose-specific dataclasses
+- Use `int`, `float`, `Decimal`, `Enum`, or purpose-specific structs
 - NO raw `dict` or `tuple` returns from public functions
 - Optional fields: `Type | None` not `Optional[Type]`
 - Include docstrings with physical units where applicable
 
 **Example:**
 ```python
-from dataclasses import dataclass
+from msgspec import Struct
 
-@dataclass(frozen=True)
-class TemperatureData:
+class TemperatureData(Struct):
     """Temperature measurement from BLE characteristic.
 
     Attributes:
@@ -81,9 +79,9 @@ Docstrings are the authoritative in-code documentation for this project. Because
   - Returns/Yields: describe the returned value(s), units, rounding/resolution, and sentinel mapping (e.g., 0xFFFF → None).
   - Raises: list the exceptions that will be raised and the conditions that cause them.
   - Examples: provide short, copy/paste runnable examples in doctest format where practical; include assertions or expected output so readers can self-verify.
-  - Attributes (for dataclasses): include an Attributes section with physical units and any invariants or constraints.
+  - Attributes (for msgspec.Struct): include an Attributes section with physical units and any invariants or constraints.
 
-- Semantics vs. types: because this project mandates PEP 484 type hints for all public functions and methods, docstrings SHOULD NOT repeat the type annotations except when doing so improves readability (for example when documenting returned structured dataclasses or complex union types). If a type is repeated in a docstring, it MUST match the source annotation exactly.
+- Semantics vs. types: because this project mandates PEP 484 type hints for all public functions and methods, docstrings SHOULD NOT repeat the type annotations except when doing so improves readability (for example when documenting returned structured msgspec.Struct or complex union types). If a type is repeated in a docstring, it MUST match the source annotation exactly.
 
  - Tooling and enforcement:
     - Use `pydocstyle` for enforcing docstring presence and high-level conventions (PEP 257) during CI and local checks. Configure `pydocstyle` rules in `pyproject.toml` or `setup.cfg` as project policy evolves.
@@ -217,7 +215,6 @@ from __future__ import annotations  # Always first for postponed annotations
 
 # Standard library
 import struct
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -235,8 +232,9 @@ from .base import BaseCharacteristic
 - Hardcoded UUIDs (use registry resolution)
 - Conditional imports for core logic
 - Untyped public function signatures
+- Using hasattr or getattr when direct attribute access is possible
 - Silent exception pass / bare `except:`
-- Returning unstructured `dict` / `tuple` when a dataclass fits
+- Returning unstructured `dict` / `tuple` when a msgspec.Struct fits
 - Magic numbers without an inline named constant or spec citation
 - Parsing without pre-validating length
 

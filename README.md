@@ -38,7 +38,7 @@ print(service_info.name)  # "Battery Service"
 ## Parse characteristic data
 
 ```python
-battery_data = translator.parse_characteristic("2A19", bytearray([85]))
+battery_data = translator.parse_characteristic("2A19", bytearray([85]), descriptor_data=None)
 print(f"Battery: {battery_data.value}%")  # "Battery: 85%"
 ```
 
@@ -48,11 +48,11 @@ print(f"Battery: {battery_data.value}%")  # "Battery: 85%"
 - ✅ **Resolve UUIDs** to human-readable service and characteristic names
 - ✅ **Provide type-safe data structures** for all parsed values
 - ✅ **Work with any BLE library** (bleak, simplepyble, etc.)
+- ✅ **Supports user created custom characteristics and services** by allowing users to register their own UUIDs and parsing logic.
 
 ## What This Library Does NOT Do
 
 - ❌ **BLE device connections** - Use bleak, simplepyble, or similar libraries
-- ❌ **Custom/proprietary protocols** - Only official Bluetooth SIG standards
 - ❌ **Firmware implementation** - This is a client-side library
 
 **[Learn more about what problems this solves →](https://ronanb96.github.io/bluetooth-sig-python/what-it-solves/)**
@@ -72,7 +72,7 @@ async with BleakClient(address) as client:
     raw_data = await client.read_gatt_char("2A19")
 
     # bluetooth-sig handles parsing
-    result = translator.parse_characteristic("2A19", raw_data)
+    result = translator.parse_characteristic("2A19", raw_data, descriptor_data=None)
     print(f"Battery: {result.value}%")
 ```
 

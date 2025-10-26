@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
+from .gatt_enums import GattProperty
+
 
 class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-methods
     """Minimal protocol describing the attributes used by parsers.
@@ -18,7 +20,7 @@ class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-me
     value: Any
     raw_data: bytes
     parse_success: bool
-    properties: list[str]
+    properties: list[GattProperty]
     name: str
     field_errors: list[Any]  # ParseFieldError, but avoid circular import
     parse_trace: list[str]

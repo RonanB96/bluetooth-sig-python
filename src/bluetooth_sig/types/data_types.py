@@ -6,7 +6,9 @@ from typing import Any
 
 import msgspec
 
+from .base_types import SIGInfo
 from .context import CharacteristicContext
+from .descriptor_types import DescriptorData
 from .gatt_enums import GattProperty, ValueType
 from .uuid import BluetoothUUID
 
@@ -29,14 +31,6 @@ class ParseFieldError(msgspec.Struct, frozen=True, kw_only=True):
     reason: str
     offset: int | None = None
     raw_slice: bytes | None = None
-
-
-class SIGInfo(msgspec.Struct, kw_only=True):
-    """Base information about Bluetooth SIG characteristics or services."""
-
-    uuid: BluetoothUUID
-    name: str
-    description: str = ""
 
 
 class CharacteristicInfo(SIGInfo):
@@ -72,6 +66,7 @@ class CharacteristicData(msgspec.Struct, kw_only=True):
     source_context: CharacteristicContext = msgspec.field(default_factory=CharacteristicContext)
     field_errors: list[ParseFieldError] = msgspec.field(default_factory=list)
     parse_trace: list[str] = msgspec.field(default_factory=list)
+    descriptors: dict[str, DescriptorData] = msgspec.field(default_factory=dict)
 
     @property
     def name(self) -> str:

@@ -6,6 +6,7 @@ from collections.abc import Mapping
 
 import msgspec
 
+from .descriptor_types import DescriptorData
 from .protocols import CharacteristicDataProtocol
 
 
@@ -28,6 +29,8 @@ class CharacteristicContext(msgspec.Struct, kw_only=True):
             previously-parsed characteristic result (typical value is
             `bluetooth_sig.core.CharacteristicData`). Parsers may consult this
             mapping to implement multi-characteristic decoding.
+        descriptors: Mapping from descriptor UUID string to parsed descriptor data.
+            Provides access to characteristic descriptors during parsing.
         raw_service: Optional raw service-level payload when applicable.
 
     """
@@ -35,4 +38,5 @@ class CharacteristicContext(msgspec.Struct, kw_only=True):
     device_info: DeviceInfo | None = None
     advertisement: bytes = b""
     other_characteristics: Mapping[str, CharacteristicDataProtocol] | None = None
+    descriptors: Mapping[str, DescriptorData] | None = None
     raw_service: bytes = b""

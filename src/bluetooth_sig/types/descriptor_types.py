@@ -6,7 +6,7 @@ from typing import Any
 
 import msgspec
 
-from .data_types import SIGInfo
+from .base_types import SIGInfo
 from .uuid import BluetoothUUID
 
 

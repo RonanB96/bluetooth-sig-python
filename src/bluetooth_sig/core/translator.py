@@ -7,14 +7,16 @@ from collections.abc import Mapping
 from graphlib import TopologicalSorter
 from typing import Any, cast
 
-from ..gatt.characteristics import CharacteristicName, CharacteristicRegistry
 from ..gatt.characteristics.base import BaseCharacteristic
-from ..gatt.context import CharacteristicContext
+from ..gatt.characteristics.registry import CharacteristicRegistry
+from ..gatt.descriptors import DescriptorRegistry
 from ..gatt.exceptions import MissingDependencyError
-from ..gatt.services import SERVICE_CLASS_MAP, GattServiceRegistry, ServiceName
+from ..gatt.services import ServiceName
 from ..gatt.services.base import BaseGattService
+from ..gatt.services.registry import GattServiceRegistry
 from ..gatt.uuid_registry import CustomUuidEntry, uuid_registry
 from ..types import (
+    CharacteristicContext,
     CharacteristicData,
     CharacteristicDataProtocol,
     CharacteristicInfo,
@@ -24,8 +26,12 @@ from ..types import (
     SIGInfo,
     ValidationResult,
 )
-from ..types.gatt_enums import ValueType
+from ..types.descriptor_types import DescriptorData, DescriptorInfo
+from ..types.gatt_enums import CharacteristicName, ValueType
 from ..types.uuid import BluetoothUUID
+
+# Type alias for characteristic data in process_services
+CharacteristicDataDict = dict[str, Any]
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +68,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         uuid: str,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-        properties: set[str] | None = None,  # pylint: disable=unused-argument
+        descriptor_data: dict[str, bytes] | None = None,
     ) -> CharacteristicData:
         r"""Parse a characteristic's raw data using Bluetooth SIG standards.
 
@@ -75,6 +81,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             ctx: Optional CharacteristicContext providing device-level info
                 and previously-parsed characteristics to the parser.
             properties: Optional set of characteristic properties (unused, kept for protocol compatibility)
+            descriptor_data: Optional dictionary mapping descriptor UUIDs to their raw data
 
         Returns:
             [CharacteristicData][bluetooth_sig.types.CharacteristicData] with parsed value and metadata
@@ -110,25 +117,61 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             else:
                 logger.warning("Parse failed for %s: %s", result.name, result.error_message)
 
-            return result
+        else:
+            # No parser found, return fallback result
+            logger.info("No parser available for UUID=%s", uuid)
+            fallback_info = CharacteristicInfo(
+                uuid=BluetoothUUID(uuid),
+                name="Unknown",
+                description="",
+                value_type=ValueType.UNKNOWN,
+                unit="",
+                properties=[],
+            )
+            result = CharacteristicData(
+                info=fallback_info,
+                value=raw_data,
+                raw_data=raw_data,
+                parse_success=False,
+                error_message="No parser available for this characteristic UUID",
+                descriptors={},  # No descriptors for unknown characteristics
+            )
 
-        # No parser found, return fallback result
-        logger.info("No parser available for UUID=%s", uuid)
-        fallback_info = CharacteristicInfo(
-            uuid=BluetoothUUID(uuid),
-            name="Unknown",
-            description="",
-            value_type=ValueType.UNKNOWN,
-            unit="",
-            properties=[],
-        )
-        return CharacteristicData(
-            info=fallback_info,
-            value=raw_data,
-            raw_data=raw_data,
-            parse_success=False,
-            error_message="No parser available for this characteristic UUID",
-        )
+        # Handle descriptors if provided
+        if descriptor_data:
+            parsed_descriptors: dict[str, DescriptorData] = {}
+            for desc_uuid, desc_raw_data in descriptor_data.items():
+                logger.debug("Parsing descriptor %s for characteristic %s", desc_uuid, uuid)
+                descriptor = DescriptorRegistry.create_descriptor(desc_uuid)
+                if descriptor:
+                    desc_result = descriptor.parse_value(desc_raw_data)
+                    if desc_result.parse_success:
+                        logger.debug("Successfully parsed descriptor %s: %s", desc_uuid, desc_result.value)
+                    else:
+                        logger.warning("Descriptor parse failed for %s: %s", desc_uuid, desc_result.error_message)
+                    parsed_descriptors[desc_uuid] = desc_result
+                else:
+                    logger.info("No parser available for descriptor UUID=%s", desc_uuid)
+                    # Create fallback descriptor data
+                    desc_fallback_info = DescriptorInfo(
+                        uuid=BluetoothUUID(desc_uuid),
+                        name="Unknown Descriptor",
+                        description="",
+                        has_structured_data=False,
+                        data_format="bytes",
+                    )
+                    parsed_descriptors[desc_uuid] = DescriptorData(
+                        info=desc_fallback_info,
+                        value=desc_raw_data,
+                        raw_data=desc_raw_data,
+                        parse_success=False,
+                        error_message="No parser available for this descriptor UUID",
+                    )
+
+            # Update result with parsed descriptors
+            result.descriptors = parsed_descriptors
+
+        return result
 
     def get_characteristic_info_by_uuid(self, uuid: str) -> CharacteristicInfo | None:
         """Get information about a characteristic by UUID.
@@ -181,14 +224,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             Characteristic UUID or None if not found
 
         """
-        char_class = CharacteristicRegistry.get_characteristic_class(name)
-        if char_class:
-            try:
-                temp_char = char_class()
-                return temp_char.info.uuid
-            except Exception:  # pylint: disable=broad-exception-caught
-                pass
-        return None
+        info = self.get_characteristic_info_by_name(name)
+        return info.uuid if info else None
 
     def get_service_uuid_by_name(self, name: str | ServiceName) -> BluetoothUUID | None:
         """Get the UUID for a service name or enum.
@@ -200,25 +237,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             Service UUID or None if not found
 
         """
-        # Try to find the service by name - use direct map access
-        if isinstance(name, ServiceName):
-            service_class = SERVICE_CLASS_MAP.get(name)
-        else:
-            # For string names, find the matching enum member
-            service_class = None
-            for enum_member in ServiceName:
-                if enum_member.value == name:
-                    service_class = SERVICE_CLASS_MAP.get(enum_member)
-                    break
-
-        if service_class:
-            try:
-                temp_service = service_class()
-                return temp_service.uuid
-            except Exception:  # pylint: disable=broad-exception-caught
-                pass
-
-        return None
+        info = self.get_service_info_by_name(str(name))
+        return info.uuid if info else None
 
     def get_characteristic_info_by_name(self, name: CharacteristicName) -> CharacteristicInfo | None:
         """Get characteristic info by enum name.
@@ -318,7 +338,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 continue
         return result
 
-    def process_services(self, services: dict[str, dict[str, dict[str, Any]]]) -> None:
+    def process_services(self, services: dict[str, dict[str, CharacteristicDataDict]]) -> None:
         """Process discovered services and their characteristics.
 
         Args:
@@ -436,7 +456,10 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         return None
 
     def parse_characteristics(
-        self, char_data: dict[str, bytes], ctx: CharacteristicContext | None = None
+        self,
+        char_data: dict[str, bytes],
+        descriptor_data: dict[str, dict[str, bytes]] | None = None,
+        ctx: CharacteristicContext | None = None,
     ) -> dict[str, CharacteristicData]:
         r"""Parse multiple characteristics at once with dependency-aware ordering.
 
@@ -451,11 +474,14 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Args:
             char_data: Dictionary mapping UUIDs to raw data bytes
+            descriptor_data: Optional nested dictionary mapping characteristic UUIDs to
+                dictionaries of descriptor UUIDs to raw descriptor data
             ctx: Optional CharacteristicContext used as the starting
                 device-level context for each parsed characteristic.
 
         Returns:
             Dictionary mapping UUIDs to [CharacteristicData][bluetooth_sig.types.CharacteristicData] results
+            with parsed descriptors included when descriptor_data is provided
 
         Raises:
             ValueError: If circular dependencies are detected
@@ -477,16 +503,29 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             ```
 
         """
-        logger.debug("Batch parsing %d characteristics", len(char_data))
-        base_context = ctx
+        return self._parse_characteristics_batch(char_data, descriptor_data, ctx)
 
-        (
-            uuid_to_characteristic,
-            uuid_to_required_deps,
-            uuid_to_optional_deps,
-        ) = self._prepare_characteristic_dependencies(char_data)
+    def _parse_characteristics_batch(
+        self,
+        char_data: dict[str, bytes],
+        descriptor_data: dict[str, dict[str, bytes]] | None,
+        ctx: CharacteristicContext | None,
+    ) -> dict[str, CharacteristicData]:
+        """Parse multiple characteristics with optional descriptors using dependency-aware ordering."""
+        logger.debug(
+            "Batch parsing %d characteristics%s", len(char_data), " with descriptors" if descriptor_data else ""
+        )
 
+        # Prepare characteristics and dependencies
+        uuid_to_characteristic, uuid_to_required_deps, uuid_to_optional_deps = (
+            self._prepare_characteristic_dependencies(char_data)
+        )
+
+        # Resolve dependency order
         sorted_uuids = self._resolve_dependency_order(char_data, uuid_to_required_deps, uuid_to_optional_deps)
+
+        # Build base context
+        base_context = ctx
 
         results: dict[str, CharacteristicData] = {}
         for uuid_str in sorted_uuids:
@@ -517,7 +556,14 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             )
 
             parse_context = self._build_parse_context(base_context, results)
-            results[uuid_str] = self.parse_characteristic(uuid_str, raw_data, ctx=parse_context)
+
+            # Choose parsing method based on whether descriptors are provided
+            if descriptor_data is None:
+                results[uuid_str] = self.parse_characteristic(uuid_str, raw_data, ctx=parse_context)
+            else:
+                results[uuid_str] = self.parse_characteristic(
+                    uuid_str, raw_data, ctx=parse_context, descriptor_data=descriptor_data.get(uuid_str, {})
+                )
 
         logger.debug("Batch parsing complete: %d results", len(results))
         return results
@@ -639,6 +685,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             raw_data=raw_data,
             parse_success=False,
             error_message=str(error),
+            descriptors={},  # No descriptors available for failed parsing
         )
 
     def _log_optional_dependency_gaps(
@@ -775,7 +822,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         # Register metadata if provided
         if metadata:
             # Convert ValueType enum to string for registry storage
-            vtype_str = metadata.value_type.value if hasattr(metadata.value_type, "value") else str(metadata.value_type)
+            vtype_str = metadata.value_type.value
             entry = CustomUuidEntry(
                 uuid=metadata.uuid,
                 name=metadata.name or cls.__name__,
@@ -820,5 +867,5 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             uuid_registry.register_service(entry, override)
 
 
-# Global instance for backward compatibility with gatt_manager
+# Global instance
 BluetoothSIG = BluetoothSIGTranslator()

@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import re
 from abc import abstractmethod
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Protocol, cast
 
 from ..gatt.characteristics import CharacteristicName
 from ..gatt.context import CharacteristicContext, DeviceInfo
@@ -45,8 +45,11 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
 
     @abstractmethod
     def parse_characteristics(
-        self, char_data: dict[str, bytes], ctx: CharacteristicContext | None = None
-    ) -> dict[str, Any]:
+        self,
+        char_data: dict[str, bytes],
+        descriptor_data: dict[str, dict[str, bytes]] | None = None,
+        ctx: CharacteristicContext | None = None,
+    ) -> dict[str, CharacteristicData]:
         """Parse multiple characteristics at once."""
 
     @abstractmethod
@@ -55,8 +58,8 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         uuid: str,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-        properties: set[str] | None = None,
-    ) -> Any:  # noqa: ANN401  # Returns characteristic-specific types (int, float, dataclass, etc.)
+        descriptor_data: dict[str, bytes] | None = None,
+    ) -> CharacteristicData:
         """Parse a single characteristic's raw bytes."""
 
     @abstractmethod
@@ -192,7 +195,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         base_ctx = CharacteristicContext(device_info=device_info)
 
-        parsed_characteristics = self.translator.parse_characteristics(characteristics, ctx=base_ctx)
+        parsed_characteristics = self.translator.parse_characteristics(characteristics, descriptors, ctx=base_ctx)
 
         for char_data in parsed_characteristics.values():
             self.update_encryption_requirements(char_data)
@@ -201,7 +204,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if descriptors:
             self._process_descriptors(descriptors, parsed_characteristics)
 
-        device_service = DeviceService(service=service, characteristics=parsed_characteristics)
+        characteristics_cast = cast(dict[str, CharacteristicDataProtocol], parsed_characteristics)
+        device_service = DeviceService(service=service, characteristics=characteristics_cast)
 
         service_key = service_name if isinstance(service_name, str) else service_name.value
         self.services[service_key] = device_service
@@ -290,7 +294,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         resolved_uuid = self._resolve_characteristic_name(char_name)
         raw = await self.connection_manager.read_gatt_char(resolved_uuid)
-        parsed = self.translator.parse_characteristic(str(resolved_uuid), raw)
+        parsed = self.translator.parse_characteristic(str(resolved_uuid), raw, descriptor_data=None)
         return parsed
 
     async def write(self, char_name: str | CharacteristicName, data: bytes) -> None:
@@ -327,7 +331,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         resolved_uuid = self._resolve_characteristic_name(char_name)
 
         def _internal_cb(sender: str, data: bytes) -> None:
-            parsed = self.translator.parse_characteristic(sender, data)
+            parsed = self.translator.parse_characteristic(sender, data, descriptor_data=None)
             try:
                 callback(parsed)
             except Exception as exc:  # pylint: disable=broad-exception-caught
