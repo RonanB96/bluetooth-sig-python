@@ -192,9 +192,18 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
         if data.height_supported:
             features_bitmap |= BodyCompositionFeatures.HEIGHT_SUPPORTED
 
-        # Note: For simplicity, we're not encoding the resolution fields back
-        # since they require reverse mapping. The raw_value could be used instead
-        # for full round-trip compatibility if needed.
+        features_bitmap = BitFieldUtils.set_bit_field(
+            features_bitmap,
+            data.mass_measurement_resolution.value,
+            BodyCompositionFeatureBits.MASS_RESOLUTION_START_BIT,
+            BodyCompositionFeatureBits.MASS_RESOLUTION_BIT_WIDTH,
+        )
+        features_bitmap = BitFieldUtils.set_bit_field(
+            features_bitmap,
+            data.height_measurement_resolution.value,
+            BodyCompositionFeatureBits.HEIGHT_RESOLUTION_START_BIT,
+            BodyCompositionFeatureBits.HEIGHT_RESOLUTION_BIT_WIDTH,
+        )
 
         # Pack as little-endian 32-bit integer
         return bytearray(DataParser.encode_int32(features_bitmap, signed=False))

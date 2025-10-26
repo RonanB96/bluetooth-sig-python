@@ -84,12 +84,12 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
     to transmit instantaneous heart rate plus optional energy expended and
     RR-Interval metrics.
 
-    Specification summary (flags byte bit assignments – see adopted spec & Errata 23224):
+    Specification summary (flags byte bit assignments - see adopted spec & Errata 23224):
       Bit 0 (0x01): Heart Rate Value Format (0 = uint8, 1 = uint16)
       Bit 1 (0x02): Sensor Contact Supported
       Bit 2 (0x04): Sensor Contact Detected (valid only when Bit1 set)
       Bit 3 (0x08): Energy Expended Present (adds 2 bytes, little-endian, in kilo Joules)
-      Bit 4 (0x10): RR-Interval(s) Present (sequence of 16‑bit values, units 1/1024 s)
+      Bit 4 (0x10): RR-Interval(s) Present (sequence of 16-bit values, units 1/1024 s)
       Bits 5-7: Reserved (must be 0)
 
     Parsing Rules:
@@ -102,7 +102,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
     Validation:
       * Heart rate validated within 0..UINT16_MAX (spec does not strictly define upper physiological bound)
-      * RR interval constrained to 0.0–65.535 s (fits 16-bit / 1024 scaling and guards against malformed data)
+      * RR interval constrained to 0.0-65.535 s (fits 16-bit / 1024 scaling and guards against malformed data)
       * Energy expended 0..UINT16_MAX
 
     References:

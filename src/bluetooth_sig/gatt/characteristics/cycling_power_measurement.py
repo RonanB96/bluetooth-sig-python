@@ -14,11 +14,8 @@ from ..constants import (
 )
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .cycling_power_feature import CyclingPowerFeatureCharacteristic, CyclingPowerFeatureData
 from .utils import DataParser
-
-# TODO: Implement CharacteristicContext support
-# This characteristic should access Cycling Power Feature (0x2A65) and Cycling Power Vector (0x2A63)
-# from ctx.other_characteristics to provide calibration data and additional power metrics
 
 
 class CyclingPowerMeasurementFlags(IntFlag):
@@ -77,7 +74,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = "W"  # Watts unit for power measurement
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerMeasurementData:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerMeasurementData:  # pylint: disable=too-many-locals # Complex parsing with many optional fields
         """Parse cycling power measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +
@@ -93,10 +90,6 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
         Raises:
             ValueError: If data format is invalid.
-
-        # `ctx` is part of the public decode_value signature but unused here.
-        # Mark as used to avoid pylint 'unused-argument'.
-        del ctx
 
         """
         if len(data) < 4:
@@ -146,6 +139,34 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             # Crank event time is in 1/CRANK_TIME_RESOLUTION second units
             last_crank_event_time = crank_event_time_raw / self.CRANK_TIME_RESOLUTION
             offset += 4
+
+        # Validate flags against Cycling Power Feature if available
+        if ctx is not None:
+            feature_char = self.get_context_characteristic(ctx, CyclingPowerFeatureCharacteristic)
+            if feature_char and feature_char.parse_success and feature_char.value is not None:
+                # feature_char.value is the CyclingPowerFeatureData struct
+                feature_data: CyclingPowerFeatureData = feature_char.value
+
+                # Check if reported features are supported
+                reported_features = int(flags)
+
+                # Validate that reported features are actually supported
+                if (
+                    reported_features & CyclingPowerMeasurementFlags.PEDAL_POWER_BALANCE_PRESENT
+                ) and not feature_data.pedal_power_balance_supported:
+                    raise ValueError("Pedal power balance reported but not supported by Cycling Power Feature")
+                if (
+                    reported_features & CyclingPowerMeasurementFlags.ACCUMULATED_ENERGY_PRESENT
+                ) and not feature_data.accumulated_energy_supported:
+                    raise ValueError("Accumulated energy reported but not supported by Cycling Power Feature")
+                if (
+                    reported_features & CyclingPowerMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT
+                ) and not feature_data.wheel_revolution_data_supported:
+                    raise ValueError("Wheel revolution data reported but not supported by Cycling Power Feature")
+                if (
+                    reported_features & CyclingPowerMeasurementFlags.CRANK_REVOLUTION_DATA_PRESENT
+                ) and not feature_data.crank_revolution_data_supported:
+                    raise ValueError("Crank revolution data reported but not supported by Cycling Power Feature")
 
         # Create struct with all parsed values
         return CyclingPowerMeasurementData(

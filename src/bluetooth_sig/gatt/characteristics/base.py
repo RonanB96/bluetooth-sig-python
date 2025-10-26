@@ -1223,7 +1223,7 @@ class UnknownCharacteristic(CustomBaseCharacteristic):
 
         super().__init__(info=info)
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bytes:  # noqa: ANN401  # Context type varies
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bytes:  # Context type varies
         """Return raw bytes for unknown characteristics.
 
         Args:

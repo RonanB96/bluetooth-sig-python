@@ -7,11 +7,8 @@ import msgspec
 from ..constants import UINT8_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .csc_feature import CSCFeatureCharacteristic, CSCFeatureData
 from .utils import DataParser
-
-# TODO: Implement CharacteristicContext support
-# This characteristic should access CSC Feature (0x2A5C) from ctx.other_characteristics
-# to determine which measurement fields are supported and apply appropriate scaling
 
 
 class CSCMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
@@ -90,6 +87,12 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
             # Crank event time is in 1/CSC_TIME_RESOLUTION second units
             cumulative_crank_revolutions = crank_revolutions
             last_crank_event_time = crank_event_time_raw / self.CSC_TIME_RESOLUTION
+
+        # Validate flags against CSC Feature if available
+        if ctx is not None:
+            feature_char = self.get_context_characteristic(ctx, CSCFeatureCharacteristic)
+            if feature_char and feature_char.parse_success and feature_char.value is not None:
+                self._validate_against_feature(flags, feature_char.value)
 
         return CSCMeasurementData(
             flags=flags,
@@ -196,3 +199,20 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
             result.extend(self._encode_crank_data(data))
 
         return result
+
+    def _validate_against_feature(self, flags: int, feature_data: CSCFeatureData) -> None:
+        """Validate measurement flags against CSC Feature characteristic.
+
+        Args:
+            flags: Measurement flags indicating which data is present
+            feature_data: CSCFeatureData from CSC Feature characteristic
+
+        Raises:
+            ValueError: If reported measurement fields are not supported by device features
+
+        """
+        # Validate that reported measurement fields are supported
+        if (flags & self.WHEEL_REVOLUTION_DATA_PRESENT) and not feature_data.wheel_revolution_data_supported:
+            raise ValueError("Wheel revolution data reported but not supported by CSC Feature")
+        if (flags & self.CRANK_REVOLUTION_DATA_PRESENT) and not feature_data.crank_revolution_data_supported:
+            raise ValueError("Crank revolution data reported but not supported by CSC Feature")

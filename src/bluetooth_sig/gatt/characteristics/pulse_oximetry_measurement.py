@@ -118,16 +118,6 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
             Encoded bytes representing the measurement
 
         """
-        # Convert to IEEE-11073 SFLOAT format (simplified as uint16)
-        spo2_raw = round(data.spo2 * 10)  # 0.1% resolution
-        pulse_rate_raw = round(data.pulse_rate)  # 1 bpm resolution
-
-        # Validate ranges
-        if not 0 <= spo2_raw <= 0xFFFF:
-            raise ValueError(f"SpO2 {spo2_raw} exceeds uint16 range")
-        if not 0 <= pulse_rate_raw <= 0xFFFF:
-            raise ValueError(f"Pulse rate {pulse_rate_raw} exceeds uint16 range")
-
         # Build flags
         flags = PulseOximetryFlags(0)
         if data.timestamp is not None:
@@ -141,8 +131,8 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
 
         # Build result
         result = bytearray([int(flags)])
-        result.extend(DataParser.encode_int16(spo2_raw, signed=False))
-        result.extend(DataParser.encode_int16(pulse_rate_raw, signed=False))
+        result.extend(IEEE11073Parser.encode_sfloat(data.spo2))
+        result.extend(IEEE11073Parser.encode_sfloat(data.pulse_rate))
 
         # Additional fields based on flags would be added (simplified)
         return result

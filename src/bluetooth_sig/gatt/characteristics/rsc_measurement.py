@@ -9,11 +9,8 @@ import msgspec
 from ..constants import UINT8_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .rsc_feature import RSCFeatureCharacteristic, RSCFeatureData
 from .utils import DataParser
-
-# TODO: Implement CharacteristicContext support
-# This characteristic should access RSC Feature (0x2A54) from ctx.other_characteristics
-# to determine which measurement fields are supported and apply appropriate scaling
 
 
 class RSCMeasurementFlags(IntFlag):
@@ -46,7 +43,32 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
     Used to transmit running speed and cadence data.
     """
 
-    _characteristic_name: str = "RSC Measurement"
+    def _validate_against_feature(self, data: RSCMeasurementData, ctx: CharacteristicContext) -> None:
+        """Validate RSC measurement data against supported features.
+
+        Args:
+            data: Parsed RSC measurement data to validate.
+            ctx: CharacteristicContext containing other characteristics.
+
+        Raises:
+            ValueError: If measurement reports unsupported features.
+
+        """
+        # Get RSC Feature characteristic from context
+        feature_char = self.get_context_characteristic(ctx, RSCFeatureCharacteristic)
+        if feature_char is None:
+            # No feature characteristic available, skip validation
+            return
+
+        # Decode the feature data
+        feature_data: RSCFeatureData = feature_char.decode_value(feature_char.value, ctx)
+
+        # Validate optional fields against supported features
+        if data.instantaneous_stride_length is not None and not feature_data.instantaneous_stride_length_supported:
+            raise ValueError("Instantaneous stride length reported but not supported by device features")
+
+        if data.total_distance is not None and not feature_data.total_distance_supported:
+            raise ValueError("Total distance reported but not supported by device features")
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RSCMeasurementData:
         """Parse RSC measurement data according to Bluetooth specification.
@@ -94,13 +116,19 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
             total_distance_raw = DataParser.parse_int32(data, offset, signed=False)
             total_distance = total_distance_raw / 10.0  # Convert to meters
 
-        return RSCMeasurementData(
+        measurement_data = RSCMeasurementData(
             instantaneous_speed=speed_ms,
             instantaneous_cadence=cadence,
             flags=flags,
             instantaneous_stride_length=instantaneous_stride_length,
             total_distance=total_distance,
         )
+
+        # Validate against feature characteristic if context is available
+        if ctx is not None:
+            self._validate_against_feature(measurement_data, ctx)
+
+        return measurement_data
 
     def encode_value(self, data: RSCMeasurementData) -> bytearray:
         """Encode RSC measurement value back to bytes.
