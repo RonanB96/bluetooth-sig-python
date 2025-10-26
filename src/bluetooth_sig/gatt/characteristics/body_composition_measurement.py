@@ -10,11 +10,8 @@ import msgspec
 from ..constants import PERCENTAGE_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .body_composition_feature import BodyCompositionFeatureCharacteristic, BodyCompositionFeatureData
 from .utils import DataParser, IEEE11073Parser
-
-# TODO: Implement CharacteristicContext support
-# This characteristic should access Body Composition Feature (0x2A9B) from ctx.other_characteristics
-# to determine which optional fields are supported and apply appropriate scaling factors
 
 
 class FlagsAndBodyFat(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
@@ -149,6 +146,12 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         mass = self._parse_mass_fields(data, flags_enum, basic.offset)
         other = self._parse_other_measurements(data, flags_enum, mass.offset)
 
+        # Validate against Body Composition Feature if context is available
+        if ctx is not None:
+            feature_char = self.get_context_characteristic(ctx, BodyCompositionFeatureCharacteristic)
+            if feature_char and feature_char.parse_success and feature_char.value:
+                self._validate_against_feature_characteristic(basic, mass, other, feature_char.value)
+
         # Create struct with all parsed values
         return BodyCompositionMeasurementData(
             body_fat_percentage=header.body_fat_percentage,
@@ -195,6 +198,59 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         # Additional fields would be added based on flags (simplified)
         return result
+
+    def _validate_against_feature_characteristic(
+        self,
+        basic: BasicOptionalFields,
+        mass: MassFields,
+        other: OtherMeasurements,
+        feature_data: BodyCompositionFeatureData,
+    ) -> None:
+        """Validate measurement data against Body Composition Feature characteristic.
+
+        Args:
+            basic: Basic optional fields (timestamp, user_id, basal_metabolism)
+            mass: Mass-related fields
+            other: Other measurements (impedance, weight, height)
+            feature_data: BodyCompositionFeatureData from feature characteristic
+
+        Raises:
+            ValueError: If measurement reports unsupported features
+
+        """
+        # Check that reported measurements are supported by device features
+        if basic.timestamp is not None and not feature_data.timestamp_supported:
+            raise ValueError("Timestamp reported but not supported by device features")
+
+        if basic.user_id is not None and not feature_data.multiple_users_supported:
+            raise ValueError("User ID reported but not supported by device features")
+
+        if basic.basal_metabolism is not None and not feature_data.basal_metabolism_supported:
+            raise ValueError("Basal metabolism reported but not supported by device features")
+
+        if mass.muscle_mass is not None and not feature_data.muscle_mass_supported:
+            raise ValueError("Muscle mass reported but not supported by device features")
+
+        if mass.muscle_percentage is not None and not feature_data.muscle_percentage_supported:
+            raise ValueError("Muscle percentage reported but not supported by device features")
+
+        if mass.fat_free_mass is not None and not feature_data.fat_free_mass_supported:
+            raise ValueError("Fat free mass reported but not supported by device features")
+
+        if mass.soft_lean_mass is not None and not feature_data.soft_lean_mass_supported:
+            raise ValueError("Soft lean mass reported but not supported by device features")
+
+        if mass.body_water_mass is not None and not feature_data.body_water_mass_supported:
+            raise ValueError("Body water mass reported but not supported by device features")
+
+        if other.impedance is not None and not feature_data.impedance_supported:
+            raise ValueError("Impedance reported but not supported by device features")
+
+        if other.weight is not None and not feature_data.weight_supported:
+            raise ValueError("Weight reported but not supported by device features")
+
+        if other.height is not None and not feature_data.height_supported:
+            raise ValueError("Height reported but not supported by device features")
 
     def _parse_flags_and_body_fat(self, data: bytearray) -> FlagsAndBodyFat:
         """Parse flags and body fat percentage from data.

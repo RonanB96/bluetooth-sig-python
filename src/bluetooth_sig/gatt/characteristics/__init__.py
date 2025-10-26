@@ -23,6 +23,7 @@ from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic
 from .body_composition_measurement import BodyCompositionMeasurementCharacteristic
 from .co2_concentration import CO2ConcentrationCharacteristic
+from .csc_feature import CSCFeatureCharacteristic
 from .csc_measurement import CSCMeasurementCharacteristic
 from .cycling_power_control_point import CyclingPowerControlPointCharacteristic
 from .cycling_power_feature import CyclingPowerFeatureCharacteristic
@@ -80,6 +81,7 @@ from .registry import (
     CharacteristicName,
     CharacteristicRegistry,
 )
+from .rsc_feature import RSCFeatureCharacteristic
 from .rsc_measurement import RSCMeasurementCharacteristic
 from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacteristic
 from .supported_power_range import SupportedPowerRangeCharacteristic
@@ -120,6 +122,7 @@ __all__ = [
     "BodyCompositionFeatureCharacteristic",
     "BodyCompositionMeasurementCharacteristic",
     "CO2ConcentrationCharacteristic",
+    "CSCFeatureCharacteristic",
     "CSCMeasurementCharacteristic",
     "CyclingPowerControlPointCharacteristic",
     "CyclingPowerFeatureCharacteristic",
@@ -164,6 +167,7 @@ __all__ = [
     "PulseOximetryMeasurementCharacteristic",
     "RainfallCharacteristic",
     "RSCMeasurementCharacteristic",
+    "RSCFeatureCharacteristic",
     "SerialNumberStringCharacteristic",
     "SoftwareRevisionStringCharacteristic",
     "NoiseCharacteristic",

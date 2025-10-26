@@ -141,9 +141,9 @@ celerybeat.pid
 # Environments
 .env
 .envrc
-.venv
+.venv*
 env/
-venv/
+venv*
 ENV/
 env.bak/
 venv.bak/
@@ -227,3 +227,4 @@ docs/diagrams/.cache/
 AGENTS.md
 .serena/
 
+.lint*/

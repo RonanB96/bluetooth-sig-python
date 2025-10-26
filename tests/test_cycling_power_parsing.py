@@ -22,18 +22,30 @@ class TestCyclingPowerParsing:
         # Test basic feature mask
         feature_data = struct.pack("<I", 0x0000001F)  # Multiple features enabled
         result = char.decode_value(bytearray(feature_data))
-        assert result == 31
+        assert result.features == 31
+        assert result.pedal_power_balance_supported is True
+        assert result.accumulated_energy_supported is True
+        assert result.wheel_revolution_data_supported is True
+        assert result.crank_revolution_data_supported is True
         assert char.unit == ""
 
         # Test single feature
         feature_data = struct.pack("<I", 0x00000001)  # Only pedal power balance
         result = char.decode_value(bytearray(feature_data))
-        assert result == 1
+        assert result.features == 1
+        assert result.pedal_power_balance_supported is True
+        assert result.accumulated_energy_supported is False
+        assert result.wheel_revolution_data_supported is False
+        assert result.crank_revolution_data_supported is False
 
         # Test no features
         feature_data = struct.pack("<I", 0x00000000)
         result = char.decode_value(bytearray(feature_data))
-        assert result == 0
+        assert result.features == 0
+        assert result.pedal_power_balance_supported is False
+        assert result.accumulated_energy_supported is False
+        assert result.wheel_revolution_data_supported is False
+        assert result.crank_revolution_data_supported is False
 
     def test_cycling_power_feature_invalid_data(self) -> None:
         """Test cycling power feature with invalid data."""

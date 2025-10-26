@@ -62,7 +62,7 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
 
     enum_class = BarometricPressureTrend
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BarometricPressureTrend:  # noqa: ANN401  # Context type varies
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BarometricPressureTrend:
         """Parse barometric pressure trend and return enum.
 
         Maps reserved value (0xFF) and invalid values to UNKNOWN.

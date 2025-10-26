@@ -10,7 +10,9 @@ import asyncio
 import types
 from typing import cast
 
+from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.device import Device
 from bluetooth_sig.types.data_types import CharacteristicData
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -32,9 +34,6 @@ async def demo_basic_usage(address: str, connection_manager: ConnectionManagerPr
     characteristics and displaying parsed results.
     """
     print(f"Connecting to device: {address}")
-
-    from bluetooth_sig import BluetoothSIGTranslator
-    from bluetooth_sig.device.device import Device
 
     translator = BluetoothSIGTranslator()
     device = Device(address, translator)
@@ -165,6 +164,50 @@ async def demo_service_discovery(address: str, connection_manager: ConnectionMan
         print("This may be due to device being unavailable or connection issues.")
 
 
+async def comprehensive_device_analysis_bleak_retry(
+    address: str, target_uuids: list[str]
+) -> dict[str, CharacteristicData]:
+    """Analyze a BLE device using Bleak-retry.
+
+    Args:
+        address: Device address
+        target_uuids: List of short UUIDs to read
+
+    Returns:
+        Mapping of short UUIDs to characteristic parse data
+
+    """
+    from bluetooth_sig import BluetoothSIGTranslator
+    from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+
+    translator = BluetoothSIGTranslator()
+    manager = BleakRetryConnectionManager(address)
+
+    try:
+        await manager.connect()
+
+        # Delegate reading to canonical helper
+        from examples.utils.connection_helpers import read_characteristics_with_manager
+
+        read_results = await read_characteristics_with_manager(manager, target_uuids)
+
+        parsed: dict[str, CharacteristicData] = {}
+        for short_uuid, read_result in read_results.items():
+            try:
+                parsed_outcome = translator.parse_characteristic(short_uuid, read_result.raw_data)
+                parsed[short_uuid] = parsed_outcome
+            except Exception:  # pylint: disable=broad-exception-caught
+                # Skip failed parses but continue processing
+                continue
+
+        return parsed
+    finally:
+        try:
+            await manager.disconnect()
+        except Exception:
+            pass
+
+
 async def demo_library_comparison(address: str, target_uuids: list[str] | None = None) -> LibraryComparisonResult:
     """Compare BLE libraries using comprehensive device analysis.
 
@@ -192,10 +235,8 @@ async def demo_library_comparison(address: str, target_uuids: list[str] | None =
             if target_uuids is None:
                 target_uuids = ["2A19", "2A00"]  # Default UUIDs for demo
 
-            # TODO: Add bleak-retry integration here — currently not implemented
-            print("❌ Bleak-retry integration not yet implemented")
-            comparison_results.status = "not_implemented"
-            comparison_results.note = "bleak-retry integration not implemented"
+            bleak_results = await comprehensive_device_analysis_bleak_retry(address, target_uuids)
+            comparison_results.data = bleak_results
         except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Bleak-retry analysis failed: {e}")
 
@@ -210,7 +251,11 @@ async def demo_library_comparison(address: str, target_uuids: list[str] | None =
                 address,
                 cast(types.ModuleType, simplepyble_module),
             )
-            comparison_results.data = simple_results
+            if comparison_results.data is None:
+                comparison_results.data = simple_results
+            else:
+                # Merge results if both succeeded
+                comparison_results.data.update(simple_results)  # type: ignore[arg-type]
         except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ SimplePyBLE analysis failed: {e}")
 

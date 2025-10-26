@@ -10,6 +10,7 @@ import msgspec
 from ..constants import SINT16_MAX, SINT16_MIN
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .glucose_feature import GlucoseFeatureCharacteristic, GlucoseFeatureData, GlucoseFeatures
 from .utils import BitFieldUtils, DataParser, IEEE11073Parser
 
 
@@ -79,11 +80,6 @@ class SampleLocation(IntEnum):
             self.NOT_AVAILABLE: "Sample Location value not available",
         }
         return names[self]
-
-
-# TODO: Implement CharacteristicContext support
-# This characteristic should access Glucose Feature (0x2A51) and Glucose Measurement Context (0x2A34)
-# from ctx.other_characteristics to provide calibration factors and additional measurement metadata
 
 
 class GlucoseMeasurementFlags(IntFlag):
@@ -202,6 +198,12 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
         if GlucoseMeasurementFlags.SENSOR_STATUS_ANNUNCIATION_PRESENT in flags and len(data) >= offset + 2:
             sensor_status = DataParser.parse_int16(data, offset, signed=False)
 
+        # Validate sensor status against Glucose Feature if available
+        if ctx is not None and sensor_status is not None:
+            feature_char = self.get_context_characteristic(ctx, GlucoseFeatureCharacteristic)
+            if feature_char and feature_char.parse_success and feature_char.value is not None:
+                self._validate_sensor_status_against_feature(sensor_status, feature_char.value)
+
         # Create result with all parsed values
         return GlucoseMeasurementData(
             sequence_number=sequence_number,
@@ -279,3 +281,45 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
             result.extend(DataParser.encode_int16(data.sensor_status, signed=False))
 
         return result
+
+    def _validate_sensor_status_against_feature(self, sensor_status: int, feature_data: GlucoseFeatureData) -> None:
+        """Validate sensor status bits against supported Glucose Features.
+
+        Args:
+            sensor_status: Raw sensor status bitmask from measurement
+            feature_data: GlucoseFeatureData from Glucose Feature characteristic
+
+        Raises:
+            ValueError: If reported sensor status bits are not supported by device features
+
+        """
+        # Sensor status bits correspond to Glucose Feature bits
+        # Check each status bit against corresponding feature support
+        if (sensor_status & GlucoseFeatures.LOW_BATTERY_DETECTION) and not feature_data.low_battery_detection:
+            raise ValueError("Low battery status reported but not supported by Glucose Feature")
+        if (
+            sensor_status & GlucoseFeatures.SENSOR_MALFUNCTION_DETECTION
+        ) and not feature_data.sensor_malfunction_detection:
+            raise ValueError("Sensor malfunction status reported but not supported by Glucose Feature")
+        if (sensor_status & GlucoseFeatures.SENSOR_SAMPLE_SIZE) and not feature_data.sensor_sample_size:
+            raise ValueError("Sensor sample size status reported but not supported by Glucose Feature")
+        if (
+            sensor_status & GlucoseFeatures.SENSOR_STRIP_INSERTION_ERROR
+        ) and not feature_data.sensor_strip_insertion_error:
+            raise ValueError("Sensor strip insertion error status reported but not supported by Glucose Feature")
+        if (sensor_status & GlucoseFeatures.SENSOR_STRIP_TYPE_ERROR) and not feature_data.sensor_strip_type_error:
+            raise ValueError("Sensor strip type error status reported but not supported by Glucose Feature")
+        if (sensor_status & GlucoseFeatures.SENSOR_RESULT_HIGH_LOW) and not feature_data.sensor_result_high_low:
+            raise ValueError("Sensor result high-low status reported but not supported by Glucose Feature")
+        if (
+            sensor_status & GlucoseFeatures.SENSOR_TEMPERATURE_HIGH_LOW
+        ) and not feature_data.sensor_temperature_high_low:
+            raise ValueError("Sensor temperature high-low status reported but not supported by Glucose Feature")
+        if (sensor_status & GlucoseFeatures.SENSOR_READ_INTERRUPT) and not feature_data.sensor_read_interrupt:
+            raise ValueError("Sensor read interrupt status reported but not supported by Glucose Feature")
+        if (sensor_status & GlucoseFeatures.GENERAL_DEVICE_FAULT) and not feature_data.general_device_fault:
+            raise ValueError("General device fault status reported but not supported by Glucose Feature")
+        if (sensor_status & GlucoseFeatures.TIME_FAULT) and not feature_data.time_fault:
+            raise ValueError("Time fault status reported but not supported by Glucose Feature")
+        if (sensor_status & GlucoseFeatures.MULTIPLE_BOND_SUPPORT) and not feature_data.multiple_bond_support:
+            raise ValueError("Multiple bond status reported but not supported by Glucose Feature")
