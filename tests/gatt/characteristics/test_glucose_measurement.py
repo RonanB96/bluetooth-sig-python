@@ -49,7 +49,7 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
                         0x1E,
                         0x2D,  # timestamp: 2024-03-15 14:30:45
                         0x78,
-                        0x00,  # glucose concentration 120.0 mg/dL as SFLOAT
+                        0x80,  # glucose concentration 120.0 mg/dL as SFLOAT
                     ]
                 ),
                 expected_value=GlucoseMeasurementData(
@@ -82,9 +82,9 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
                         0x00,
                         0x00,  # timestamp: 2024-06-20 08:00:00
                         0x5A,
-                        0x00,  # glucose concentration 9.0 mmol/L as SFLOAT
+                        0x00,  # time offset +90 minutes
                         0x1E,
-                        0x00,  # time offset +30 minutes
+                        0x80,  # glucose concentration 30.0 mmol/L as SFLOAT
                     ]
                 ),
                 expected_value=GlucoseMeasurementData(
@@ -118,7 +118,7 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
                         0x14,
                         0x28,  # timestamp: 2024-04-10 15:20:40
                         0xAA,
-                        0x00,  # glucose concentration 170.0 mg/dL as SFLOAT
+                        0x80,  # glucose concentration 170.0 mg/dL as SFLOAT
                         0x21,  # type=capillary plasma (2), location=finger (1)
                     ]
                 ),
@@ -152,7 +152,7 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
                         0x1E,
                         0x00,  # timestamp: 2024-05-31 12:30:00
                         0x64,
-                        0x00,  # glucose concentration 100.0 mg/dL as SFLOAT
+                        0x80,  # glucose concentration 100.0 mg/dL as SFLOAT
                         0x01,
                         0x00,  # sensor status = device battery low
                     ]
@@ -189,7 +189,7 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
                         0xEC,
                         0xFF,  # time offset -20 minutes (signed)
                         0x73,
-                        0x00,  # glucose concentration 115 as SFLOAT
+                        0x80,  # glucose concentration 115 as SFLOAT
                         0x33,  # type=venous whole blood (3), location=earlobe (3)
                         0x20,
                         0x00,  # sensor status = strip insertion error

@@ -7,6 +7,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.rsc_measurement import (
     RSCMeasurementCharacteristic,
     RSCMeasurementData,
+    RSCMeasurementFlags,
 )
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
@@ -42,7 +43,7 @@ class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
                 expected_value=RSCMeasurementData(
                     instantaneous_speed=2.5,
                     instantaneous_cadence=180,
-                    flags=0x00,
+                    flags=RSCMeasurementFlags(0x00),
                     instantaneous_stride_length=None,
                     total_distance=None,
                 ),
@@ -63,7 +64,7 @@ class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
                 expected_value=RSCMeasurementData(
                     instantaneous_speed=2.5,
                     instantaneous_cadence=180,
-                    flags=0x01,
+                    flags=RSCMeasurementFlags.INSTANTANEOUS_STRIDE_LENGTH_PRESENT,
                     instantaneous_stride_length=0.85,
                     total_distance=None,
                 ),
@@ -86,7 +87,7 @@ class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
                 expected_value=RSCMeasurementData(
                     instantaneous_speed=2.5,
                     instantaneous_cadence=180,
-                    flags=0x02,
+                    flags=RSCMeasurementFlags.TOTAL_DISTANCE_PRESENT,
                     instantaneous_stride_length=None,
                     total_distance=1000.0,
                 ),
@@ -111,7 +112,10 @@ class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
                 expected_value=RSCMeasurementData(
                     instantaneous_speed=2.5,
                     instantaneous_cadence=180,
-                    flags=0x03,
+                    flags=(
+                        RSCMeasurementFlags.INSTANTANEOUS_STRIDE_LENGTH_PRESENT
+                        | RSCMeasurementFlags.TOTAL_DISTANCE_PRESENT
+                    ),
                     instantaneous_stride_length=0.85,
                     total_distance=1000.0,
                 ),
@@ -130,7 +134,7 @@ class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
                 expected_value=RSCMeasurementData(
                     instantaneous_speed=5.5,
                     instantaneous_cadence=220,
-                    flags=0x00,
+                    flags=RSCMeasurementFlags(0x00),
                     instantaneous_stride_length=None,
                     total_distance=None,
                 ),
@@ -151,7 +155,7 @@ class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
                 expected_value=RSCMeasurementData(
                     instantaneous_speed=1.6015625,  # 410/256 exact value
                     instantaneous_cadence=120,
-                    flags=0x01,
+                    flags=RSCMeasurementFlags.INSTANTANEOUS_STRIDE_LENGTH_PRESENT,
                     instantaneous_stride_length=0.80,
                     total_distance=None,
                 ),

@@ -18,14 +18,14 @@ class TestIEEE11073SFLOATParser:
     def test_parse_basic_positive_value(self) -> None:
         """Test parsing basic positive SFLOAT value."""
         # 1.0 as SFLOAT: mantissa=10, exponent=-1 (10 * 10^-1 = 1.0)
-        data = bytearray([0x0A, 0xF0])  # 0xF00A
+        data = bytearray([0x0A, 0x70])  # 0x700A
         result = IEEE11073Parser.parse_sfloat(data)
         assert abs(result - 1.0) < 1e-6
 
     def test_parse_basic_negative_value(self) -> None:
         """Test parsing basic negative SFLOAT value."""
         # -1.0 as SFLOAT: mantissa=-10 (0xFF6), exponent=-1
-        data = bytearray([0xF6, 0xFF])  # 0xFFF6
+        data = bytearray([0xF6, 0x7F])  # 0x7FF6
         result = IEEE11073Parser.parse_sfloat(data)
         assert abs(result - (-1.0)) < 1e-6
 
@@ -51,7 +51,7 @@ class TestIEEE11073SFLOATParser:
 
     def test_parse_with_offset(self) -> None:
         """Test parsing SFLOAT with offset."""
-        data = bytearray([0x00, 0x00, 0x0A, 0xF0])  # Leading zeros + 1.0
+        data = bytearray([0x00, 0x00, 0x0A, 0x70])  # Leading zeros + 1.0
         result = IEEE11073Parser.parse_sfloat(data, offset=2)
         assert abs(result - 1.0) < 1e-6
 
@@ -104,14 +104,14 @@ class TestIEEE11073FLOAT32Parser:
     def test_parse_basic_positive_value(self) -> None:
         """Test parsing basic positive FLOAT32 value."""
         # 37.0 as FLOAT32: mantissa=370, exponent=-1 (370 * 10^-1 = 37.0)
-        data = bytearray([0x72, 0x01, 0x00, 0xFF])  # 0xFF000172
+        data = bytearray([0x72, 0x01, 0x00, 0x7F])  # 0x7F000172
         result = IEEE11073Parser.parse_float32(data)
         assert abs(result - 37.0) < 1e-6
 
     def test_parse_basic_negative_value(self) -> None:
         """Test parsing basic negative FLOAT32 value."""
         # -37.0 as FLOAT32: mantissa=-370, exponent=-1
-        data = bytearray([0x8E, 0xFE, 0xFF, 0xFF])  # Negative mantissa
+        data = bytearray([0x8E, 0xFE, 0xFF, 0x7F])  # Negative mantissa
         result = IEEE11073Parser.parse_float32(data)
         assert abs(result - (-37.0)) < 1e-6
 
@@ -137,7 +137,7 @@ class TestIEEE11073FLOAT32Parser:
 
     def test_parse_with_offset(self) -> None:
         """Test parsing FLOAT32 with offset."""
-        data = bytearray([0x00, 0x00, 0x72, 0x01, 0x00, 0xFF])  # Leading zeros + 37.0
+        data = bytearray([0x00, 0x00, 0x72, 0x01, 0x00, 0x7F])  # Leading zeros + 37.0
         result = IEEE11073Parser.parse_float32(data, offset=2)
         assert abs(result - 37.0) < 1e-6
 

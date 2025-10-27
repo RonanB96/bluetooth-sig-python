@@ -38,11 +38,11 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     [
                         0x00,  # flags: mmHg unit, no optional fields
                         0x78,
-                        0x00,  # systolic 120 mmHg as SFLOAT
+                        0x80,  # systolic 120 mmHg as SFLOAT
                         0x50,
-                        0x00,  # diastolic 80 mmHg as SFLOAT
+                        0x80,  # diastolic 80 mmHg as SFLOAT
                         0x5A,
-                        0x00,  # mean arterial pressure 90 mmHg as SFLOAT
+                        0x80,  # mean arterial pressure 90 mmHg as SFLOAT
                     ]
                 ),
                 expected_value=BloodPressureData(
@@ -50,7 +50,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     diastolic=80.0,
                     mean_arterial_pressure=90.0,
                     unit="mmHg",
-                    flags=0,
+                    flags=BloodPressureFlags(0),
                     timestamp=None,
                     pulse_rate=None,
                     user_id=None,
@@ -64,11 +64,11 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     [
                         0x01,  # flags: kPa unit
                         0x10,
-                        0x00,  # systolic 16.0 kPa as SFLOAT
+                        0x80,  # systolic 16.0 kPa as SFLOAT
                         0x0B,
-                        0x00,  # diastolic 11.0 kPa as SFLOAT
+                        0x80,  # diastolic 11.0 kPa as SFLOAT
                         0x0C,
-                        0x00,  # mean arterial pressure 12.0 kPa as SFLOAT
+                        0x80,  # mean arterial pressure 12.0 kPa as SFLOAT
                     ]
                 ),
                 expected_value=BloodPressureData(
@@ -90,11 +90,11 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     [
                         0x02,  # flags: timestamp present
                         0x8C,
-                        0x00,  # systolic 140 mmHg as SFLOAT
+                        0x80,  # systolic 140 mmHg as SFLOAT
                         0x5A,
-                        0x00,  # diastolic 90 mmHg as SFLOAT
+                        0x80,  # diastolic 90 mmHg as SFLOAT
                         0x6E,
-                        0x00,  # mean arterial pressure 110 mmHg as SFLOAT
+                        0x80,  # mean arterial pressure 110 mmHg as SFLOAT
                         0xE8,
                         0x07,
                         0x03,
@@ -123,13 +123,13 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     [
                         0x04,  # flags: pulse rate present
                         0x78,
-                        0x00,  # systolic 120 mmHg as SFLOAT
+                        0x80,  # systolic 120 mmHg as SFLOAT
                         0x50,
-                        0x00,  # diastolic 80 mmHg as SFLOAT
+                        0x80,  # diastolic 80 mmHg as SFLOAT
                         0x5A,
-                        0x00,  # mean arterial pressure 90 mmHg as SFLOAT
+                        0x80,  # mean arterial pressure 90 mmHg as SFLOAT
                         0x48,
-                        0x00,  # pulse rate 72 bpm as SFLOAT
+                        0x80,  # pulse rate 72 bpm as SFLOAT
                     ]
                 ),
                 expected_value=BloodPressureData(
@@ -151,11 +151,11 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     [
                         0x18,  # flags: user ID + measurement status present
                         0x78,
-                        0x00,  # systolic 120 mmHg as SFLOAT
+                        0x80,  # systolic 120 mmHg as SFLOAT
                         0x50,
-                        0x00,  # diastolic 80 mmHg as SFLOAT
+                        0x80,  # diastolic 80 mmHg as SFLOAT
                         0x5A,
-                        0x00,  # mean arterial pressure 90 mmHg as SFLOAT
+                        0x80,  # mean arterial pressure 90 mmHg as SFLOAT
                         0x05,  # user ID = 5
                         0x03,
                         0x00,  # measurement status: body movement + cuff loose
@@ -180,11 +180,11 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     [
                         0x1F,  # flags: all fields present + kPa unit
                         0x12,
-                        0x00,  # systolic 18.0 kPa as SFLOAT
+                        0x80,  # systolic 18.0 kPa as SFLOAT
                         0x0C,
-                        0x00,  # diastolic 12.0 kPa as SFLOAT
+                        0x80,  # diastolic 12.0 kPa as SFLOAT
                         0x0E,
-                        0x00,  # mean arterial pressure 14.0 kPa as SFLOAT
+                        0x80,  # mean arterial pressure 14.0 kPa as SFLOAT
                         0xE8,
                         0x07,
                         0x06,
@@ -193,7 +193,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                         0x2D,
                         0x0A,  # timestamp: 2024-06-20 16:45:10
                         0x54,
-                        0x00,  # pulse rate 84 bpm as SFLOAT
+                        0x80,  # pulse rate 84 bpm as SFLOAT
                         0x03,  # user ID = 3
                         0x1C,
                         0x00,  # measurement status: irregular pulse + rate out of range + improper position
@@ -229,11 +229,11 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
             [
                 0x00,  # flags: mmHg, no optional fields
                 0x78,
-                0x00,  # systolic 120
+                0x80,  # systolic 120
                 0x50,
-                0x00,  # diastolic 80
+                0x80,  # diastolic 80
                 0x5A,
-                0x00,  # MAP 90
+                0x80,  # MAP 90
             ]
         )
 
@@ -252,11 +252,11 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
             [
                 0x1E,  # flags: timestamp + pulse + user + status (no kPa)
                 0x78,
-                0x00,  # systolic 120
+                0x80,  # systolic 120
                 0x50,
-                0x00,  # diastolic 80
+                0x80,  # diastolic 80
                 0x5A,
-                0x00,  # MAP 90
+                0x80,  # MAP 90
                 0xE8,
                 0x07,
                 0x03,
@@ -265,7 +265,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                 0x1E,
                 0x2D,  # timestamp
                 0x48,
-                0x00,  # pulse rate 72
+                0x80,  # pulse rate 72
                 0x01,  # user ID 1
                 0x01,
                 0x00,  # status: body movement
@@ -286,11 +286,11 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
             [
                 0x01,  # flags: kPa units
                 0x10,
-                0x00,  # systolic 16.0 kPa
+                0x80,  # systolic 16.0 kPa
                 0x0B,
-                0x00,  # diastolic 11.0 kPa
+                0x80,  # diastolic 11.0 kPa
                 0x0C,
-                0x00,  # MAP 12.0 kPa
+                0x80,  # MAP 12.0 kPa
             ]
         )
 

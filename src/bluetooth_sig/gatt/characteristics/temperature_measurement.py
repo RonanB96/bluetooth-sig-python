@@ -9,7 +9,7 @@ import msgspec
 
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .utils import IEEE11073Parser
+from .utils import DataParser, IEEE11073Parser
 
 
 class TemperatureMeasurementFlags(IntFlag):
@@ -39,15 +39,15 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
     """
 
     # Declarative validation attributes
-    min_length: int | None = 5  # Flags(1) + Temperature(4) minimum
-    max_length: int | None = 13  # + Timestamp(7) + TemperatureType(1) maximum
+    min_length: int | None = 3  # Flags(1) + Temperature(2) minimum
+    max_length: int | None = 11  # + Timestamp(7) + TemperatureType(1) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
         """Parse temperature measurement data according to Bluetooth specification.
 
-        Format: Flags(1) + Temperature Value(4) + [Timestamp(7)] + [Temperature Type(1)].
-        Temperature is IEEE-11073 32-bit float.
+        Format: Flags(1) + Temperature Value(2) + [Timestamp(7)] + [Temperature Type(1)].
+        Temperature is sint16 with 0.01 °C resolution.
 
         Args:
             data: Raw bytearray from BLE characteristic.
@@ -57,13 +57,13 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
             TemperatureMeasurementData containing parsed temperature data with metadata.
 
         """
-        if len(data) < 5:
-            raise ValueError("Temperature Measurement data must be at least 5 bytes")
+        if len(data) < 3:
+            raise ValueError("Temperature Measurement data must be at least 3 bytes")
 
         flags = TemperatureMeasurementFlags(data[0])
 
-        # Parse temperature value (IEEE-11073 32-bit float)
-        temp_value = IEEE11073Parser.parse_float32(data, 1)
+        # Parse temperature value (sint16, 0.01 °C resolution)
+        temp_value = DataParser.parse_int16(data, 1, signed=True) * 0.01
 
         # Check temperature unit flag (bit 0)
         unit = "°F" if TemperatureMeasurementFlags.FAHRENHEIT_UNIT in flags else "°C"
@@ -71,7 +71,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         # Parse optional fields
         timestamp: datetime | None = None
         temperature_type: int | None = None
-        offset = 5
+        offset = 3
 
         if TemperatureMeasurementFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
             timestamp = IEEE11073Parser.parse_timestamp(data, offset)
@@ -111,8 +111,9 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         # Start with flags byte
         result = bytearray([int(flags)])
 
-        # Add temperature value (IEEE-11073 32-bit float)
-        temp_bytes = IEEE11073Parser.encode_float32(data.temperature)
+        # Add temperature value (sint16, 0.01 °C resolution)
+        temp_raw = int(data.temperature / 0.01)
+        temp_bytes = DataParser.encode_int16(temp_raw, signed=True)
         result.extend(temp_bytes)
 
         # Add optional timestamp (7 bytes) if present

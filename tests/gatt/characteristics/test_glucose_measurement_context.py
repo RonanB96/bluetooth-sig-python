@@ -66,8 +66,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                         0x15,
                         0x00,  # sequence number = 21
                         0x01,  # carbohydrate ID = 1 (Breakfast)
-                        0xF4,
-                        0xF1,  # carbohydrate: 50.0g as SFLOAT
+                        0x32,
+                        0x80,  # carbohydrate: 50.0g as SFLOAT
                     ]
                 ),
                 expected_value=GlucoseMeasurementContextData(
@@ -150,8 +150,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                         0x40,  # flags: HbA1c present
                         0xFF,
                         0x00,  # sequence number = 255
-                        0xBC,
-                        0xE2,  # HbA1c = 7.0% as SFLOAT
+                        0x07,
+                        0x80,  # HbA1c = 7.0% as SFLOAT
                     ]
                 ),
                 expected_value=GlucoseMeasurementContextData(
@@ -179,8 +179,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                         0x2A,
                         0x01,  # sequence number = 298
                         0x02,  # carbohydrate ID = 2 (Lunch)
-                        0xEE,
-                        0xF2,  # carbohydrate: 75.0g as SFLOAT
+                        0x4B,
+                        0x80,  # carbohydrate: 75.0g as SFLOAT
                         0x01,  # meal = 1 (Preprandial)
                         0x58,
                         0x02,  # exercise duration = 600 seconds (10 minutes)
@@ -230,8 +230,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                 0x01,
                 0x00,  # sequence number = 1
                 0x01,  # carbohydrate ID = 1 (Breakfast)
-                0x40,
-                0x1C,  # carbohydrate: 50.0g as SFLOAT
+                0x32,
+                0x80,  # carbohydrate: 50.0g as SFLOAT
             ]
         )
 

@@ -128,7 +128,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
             weight=weight,
             weight_unit=weight_unit,
             measurement_units=measurement_units,
-            flags=int(flags),
+            flags=flags,
             timestamp=timestamp,
             user_id=user_id,
             bmi=bmi,

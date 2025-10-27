@@ -37,10 +37,8 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x00,  # flags: no optional fields, Celsius
-                        0x20,
-                        0x75,
-                        0x38,
-                        0xFB,  # temperature = 37.0°C (IEEE-11073 float32)
+                        0x74,
+                        0x0E,  # temperature = 37.0°C (sint16, 0.01 °C resolution)
                     ]
                 ),
                 expected_value=TemperatureMeasurementData(
@@ -57,10 +55,8 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x01,  # flags: Fahrenheit unit
-                        0x90,
-                        0x0B,
-                        0x0F,
-                        0xFC,  # temperature = 98.6°F (IEEE-11073 float32)
+                        0x84,
+                        0x26,  # temperature = 98.6°F (sint16, 0.01 °F resolution)
                     ]
                 ),
                 expected_value=TemperatureMeasurementData(
@@ -77,10 +73,8 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x02,  # flags: timestamp present
-                        0x20,
-                        0x75,
-                        0x38,
-                        0xFB,  # temperature = 37.0°C
+                        0x74,
+                        0x0E,  # temperature = 37.0°C
                         0xE7,
                         0x07,  # year = 2023
                         0x0C,  # month = 12
@@ -104,10 +98,8 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x04,  # flags: temperature type present
-                        0x20,
-                        0x75,
-                        0x38,
-                        0xFB,  # temperature = 37.0°C
+                        0x74,
+                        0x0E,  # temperature = 37.0°C
                         0x01,  # temperature type = 1 (body)
                     ]
                 ),
@@ -125,10 +117,8 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x07,  # flags: Fahrenheit + timestamp + type (0x01 | 0x02 | 0x04)
-                        0x90,
-                        0x0B,
-                        0x0F,
-                        0xFC,  # temperature = 98.6°F
+                        0x84,
+                        0x26,  # temperature = 98.6°F
                         0xE7,
                         0x07,  # year = 2023
                         0x0C,  # month = 12
@@ -155,10 +145,8 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x00,  # flags: Celsius, no optional fields
-                        0x80,
-                        0xD0,
-                        0x3B,
-                        0xFB,  # temperature = 39.2°C (fever) (IEEE-11073 float32)
+                        0x50,
+                        0x0F,  # temperature = 39.2°C (fever) (sint16, 0.01 °C resolution)
                     ]
                 ),
                 expected_value=TemperatureMeasurementData(
@@ -175,9 +163,9 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
     def test_temperature_measurement_invalid_data(self, characteristic: TemperatureMeasurementCharacteristic) -> None:
         """Test temperature measurement error handling."""
         # Too short data
-        with pytest.raises(ValueError, match="Temperature Measurement data must be at least 5 bytes"):
-            characteristic.decode_value(bytearray([0x00, 0x01, 0x02, 0x03]))
+        with pytest.raises(ValueError, match="Temperature Measurement data must be at least 3 bytes"):
+            characteristic.decode_value(bytearray([0x00, 0x01]))
 
         # Missing temperature data
-        with pytest.raises(ValueError, match="Temperature Measurement data must be at least 5 bytes"):
+        with pytest.raises(ValueError, match="Temperature Measurement data must be at least 3 bytes"):
             characteristic.decode_value(bytearray([0x00]))

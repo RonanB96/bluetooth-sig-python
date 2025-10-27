@@ -8,6 +8,7 @@ from bluetooth_sig.gatt.characteristics.cycling_power_vector import (
     CrankRevolutionData,
     CyclingPowerVectorCharacteristic,
     CyclingPowerVectorData,
+    CyclingPowerVectorFlags,
 )
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -43,7 +44,7 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
                     ]
                 ),
                 expected_value=CyclingPowerVectorData(
-                    flags=0,
+                    flags=CyclingPowerVectorFlags(0),
                     crank_revolution_data=CrankRevolutionData(
                         crank_revolutions=1000,
                         last_crank_event_time=1.0,
@@ -74,7 +75,7 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
                     ]
                 ),
                 expected_value=CyclingPowerVectorData(
-                    flags=1,
+                    flags=CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT,
                     crank_revolution_data=CrankRevolutionData(
                         crank_revolutions=298,
                         last_crank_event_time=1.875,
@@ -103,7 +104,7 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
                     ]
                 ),
                 expected_value=CyclingPowerVectorData(
-                    flags=2,
+                    flags=CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT,
                     crank_revolution_data=CrankRevolutionData(
                         crank_revolutions=511,
                         last_crank_event_time=2.0,
@@ -134,7 +135,10 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
                     ]
                 ),
                 expected_value=CyclingPowerVectorData(
-                    flags=3,
+                    flags=(
+                        CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT
+                        | CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
+                    ),
                     crank_revolution_data=CrankRevolutionData(
                         crank_revolutions=1337,
                         last_crank_event_time=1.5625,
@@ -159,7 +163,7 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         test_data = struct.pack("<BHHH", flags, crank_revs, crank_time, first_angle)
         result = char.decode_value(bytearray(test_data))
 
-        assert result.flags == 0
+        assert result.flags == CyclingPowerVectorFlags(0)
         assert result.crank_revolution_data.crank_revolutions == 1234
         assert result.crank_revolution_data.last_crank_event_time == 1.0
         assert result.first_crank_measurement_angle == 0.5
@@ -179,7 +183,7 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, force1, force2)
         result = char.decode_value(bytearray(test_data))
 
-        assert result.flags == 1
+        assert result.flags == CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT
         assert result.crank_revolution_data.crank_revolutions == 1234
         assert result.crank_revolution_data.last_crank_event_time == 1.0
         assert result.first_crank_measurement_angle == 1.0
@@ -199,7 +203,7 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, torque1, torque2)
         result = char.decode_value(bytearray(test_data))
 
-        assert result.flags == 2
+        assert result.flags == CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
         assert result.crank_revolution_data.crank_revolutions == 1234
         assert result.crank_revolution_data.last_crank_event_time == 1.0
         assert result.first_crank_measurement_angle == 2.0

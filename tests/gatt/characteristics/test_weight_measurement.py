@@ -6,7 +6,11 @@ import datetime
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.weight_measurement import WeightMeasurementCharacteristic, WeightMeasurementData
+from bluetooth_sig.gatt.characteristics.weight_measurement import (
+    WeightMeasurementCharacteristic,
+    WeightMeasurementData,
+    WeightMeasurementFlags,
+)
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -41,7 +45,7 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                     weight=70.0,
                     weight_unit="kg",
                     measurement_units="metric",
-                    flags=0x00,
+                    flags=WeightMeasurementFlags(0x00),
                     timestamp=None,
                     user_id=None,
                     bmi=None,
@@ -63,7 +67,7 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                     weight=157.0,
                     weight_unit="lb",
                     measurement_units="imperial",
-                    flags=0x01,
+                    flags=WeightMeasurementFlags.IMPERIAL_UNITS,
                     timestamp=None,
                     user_id=None,
                     bmi=None,
@@ -92,7 +96,7 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                     weight=70.0,
                     weight_unit="kg",
                     measurement_units="metric",
-                    flags=0x02,
+                    flags=WeightMeasurementFlags.TIMESTAMP_PRESENT,
                     timestamp=datetime.datetime(2023, 12, 25, 14, 30, 45),
                     user_id=None,
                     bmi=None,
@@ -117,7 +121,7 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                     weight=70.0,
                     weight_unit="kg",
                     measurement_units="metric",
-                    flags=0x0C,
+                    flags=WeightMeasurementFlags.USER_ID_PRESENT | WeightMeasurementFlags.BMI_PRESENT,
                     timestamp=None,
                     user_id=5,
                     bmi=24.5,
@@ -141,7 +145,7 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                     weight=70.0,
                     weight_unit="kg",
                     measurement_units="metric",
-                    flags=0x10,
+                    flags=WeightMeasurementFlags.HEIGHT_PRESENT,
                     timestamp=None,
                     user_id=None,
                     bmi=None,
@@ -175,7 +179,13 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                     weight=157.0,
                     weight_unit="lb",
                     measurement_units="imperial",
-                    flags=0x1F,
+                    flags=(
+                        WeightMeasurementFlags.IMPERIAL_UNITS
+                        | WeightMeasurementFlags.TIMESTAMP_PRESENT
+                        | WeightMeasurementFlags.USER_ID_PRESENT
+                        | WeightMeasurementFlags.BMI_PRESENT
+                        | WeightMeasurementFlags.HEIGHT_PRESENT
+                    ),
                     timestamp=datetime.datetime(2023, 12, 25, 14, 30, 45),
                     user_id=3,
                     bmi=24.5,

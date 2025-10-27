@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -22,7 +21,7 @@ class CharacteristicTestData:
     description: str = ""
 
 
-class CommonCharacteristicTests(ABC):
+class CommonCharacteristicTests:
     """Base class for common characteristic test patterns.
 
     Inherit from this class in characteristic test files to get standard tests.
@@ -30,38 +29,41 @@ class CommonCharacteristicTests(ABC):
     Example:
         class TestBatteryLevelCharacteristic(CommonCharacteristicTests):
             @pytest.fixture
-            def characteristic(self):
+            def characteristic(self) -> BaseCharacteristic:
                 return BatteryLevelCharacteristic()
 
             @pytest.fixture
-            def expected_uuid(self):
+            def expected_uuid(self) -> str:
                 return "2A19"
 
             @pytest.fixture
-            def valid_test_data(self):
+            def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
                 return bytearray([75])  # 75% battery
     """
 
     @pytest.fixture
-    @abstractmethod
     def characteristic(self) -> BaseCharacteristic:
-        """Override this fixture in subclasses."""
-        raise NotImplementedError("Subclasses must provide characteristic fixture")
+        """Default: fail with clear error if not overridden in subclass."""
+        raise NotImplementedError(
+            f"Test incomplete: missing 'characteristic' fixture in {type(self).__name__}. "
+            "Override this fixture in your test class."
+        )
 
     @pytest.fixture
-    @abstractmethod
     def expected_uuid(self) -> str:
-        """Override this fixture in subclasses."""
-        raise NotImplementedError("Subclasses must provide expected_uuid fixture")
+        """Default: fail with clear error if not overridden in subclass."""
+        raise NotImplementedError(
+            f"Test incomplete: missing 'expected_uuid' fixture in {type(self).__name__}. "
+            "Override this fixture in your test class."
+        )
 
     @pytest.fixture
-    @abstractmethod
     def valid_test_data(self) -> CharacteristicTestData:
-        """Override this fixture in subclasses with representative valid data.
-
-        Must return CharacteristicTestData with input_data and expected_value.
-        """
-        raise NotImplementedError("Subclasses must provide valid_test_data fixture")
+        """Default: fail with clear error if not overridden in subclass."""
+        raise NotImplementedError(
+            f"Test incomplete: missing 'valid_test_data' fixture in {type(self).__name__}. "
+            "Override this fixture in your test class."
+        )
 
     # === Behavioral Tests ===
     def test_characteristic_uuid_matches_expected(self, characteristic: BaseCharacteristic, expected_uuid: str) -> None:
@@ -262,6 +264,18 @@ class CommonCharacteristicTests(ABC):
         if parse_result.parse_success:
             # If parsing succeeded, the values should be equivalent
             self._assert_values_equal(parse_result.value, decode_result, "parse vs decode consistency")
+
+    def test_round_trip(
+        self, characteristic: BaseCharacteristic, valid_test_data: CharacteristicTestData | list[CharacteristicTestData]
+    ) -> None:
+        """Test that encoding and decoding preserve data (round trip)."""
+        test_cases = valid_test_data if isinstance(valid_test_data, list) else [valid_test_data]
+
+        for i, test_case in enumerate(test_cases):
+            case_desc = f"Test case {i + 1} ({test_case.description})"
+            parsed = characteristic.decode_value(test_case.input_data)
+            encoded = characteristic.encode_value(parsed)
+            assert encoded == test_case.input_data, f"{case_desc}: Round trip failed - encoded data differs from input"
 
 
 def create_test_context(

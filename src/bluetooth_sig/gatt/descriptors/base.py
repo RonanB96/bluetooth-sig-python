@@ -120,3 +120,46 @@ class BaseDescriptor(ABC):
             NotImplementedError: If subclass doesn't implement parsing
         """
         raise NotImplementedError(f"{self.__class__.__name__} must implement _parse_descriptor_value()")
+
+
+class RangeDescriptorMixin:
+    """Mixin for descriptors that provide min/max value validation."""
+
+    def get_min_value(self, data: bytes) -> int | float:
+        """Get the minimum valid value.
+
+        Args:
+            data: Raw descriptor data
+
+        Returns:
+            Minimum valid value for the characteristic
+        """
+        parsed = self._parse_descriptor_value(data)  # type: ignore[attr-defined]
+        return parsed.min_value  # type: ignore[no-any-return]
+
+    def get_max_value(self, data: bytes) -> int | float:
+        """Get the maximum valid value.
+
+        Args:
+            data: Raw descriptor data
+
+        Returns:
+            Maximum valid value for the characteristic
+        """
+        parsed = self._parse_descriptor_value(data)  # type: ignore[attr-defined]
+        return parsed.max_value  # type: ignore[no-any-return]
+
+    def is_value_in_range(self, data: bytes, value: int | float) -> bool:
+        """Check if a value is within the valid range.
+
+        Args:
+            data: Raw descriptor data
+            value: Value to check
+
+        Returns:
+            True if value is within [min_value, max_value] range
+        """
+        parsed = self._parse_descriptor_value(data)  # type: ignore[attr-defined]
+        min_val = parsed.min_value
+        max_val = parsed.max_value
+        return bool(min_val <= value <= max_val)

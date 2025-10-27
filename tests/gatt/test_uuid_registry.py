@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import msgspec
 import pytest
-from conftest import ROOT_DIR
+from conftest import ROOT_DIR  # type: ignore[import-not-found]
 
 from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
 from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic

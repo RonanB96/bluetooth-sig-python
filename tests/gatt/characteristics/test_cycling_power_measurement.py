@@ -78,7 +78,7 @@ class TestCyclingPowerMeasurementCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 input_data=bytearray(
                     [0x10, 0x00, 0x4B, 0x01, 0x39, 0x30, 0x00, 0x00, 0x00, 0x08]
-                ),  # flags=16, power=331W, wheel_revs=12345, time=1s
+                ),  # flags=16, power=331W, wheel_revs=12345, time=2048 (2048/2048 = 1s)
                 expected_value=CyclingPowerMeasurementData(
                     flags=CyclingPowerMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT,
                     instantaneous_power=331,

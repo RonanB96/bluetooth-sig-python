@@ -19,7 +19,7 @@ class CommonServiceTests:
                 return BatteryService()
 
             @pytest.fixture
-            def expected_uuid(self):
+            def expected_uuid(self) -> str:
                 return "180F"
     """
 

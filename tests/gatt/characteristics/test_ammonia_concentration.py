@@ -23,7 +23,7 @@ class TestAmmoniaConcentrationCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> CharacteristicTestData:
         """Valid ammonia concentration test data."""
         return CharacteristicTestData(
-            input_data=bytearray([0x34, 0x12]),  # IEEE 11073 SFLOAT little endian
+            input_data=bytearray([0x34, 0x92]),  # IEEE 11073 SFLOAT little endian
             expected_value=5640.0,  # Expected parsed concentration value
             description="Valid ammonia concentration",
         )

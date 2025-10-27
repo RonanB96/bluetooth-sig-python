@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from bluetooth_sig.types.advertising import (
+    BLEAdvertisingFlags,
     BLEAdvertisingPDU,
     BLEExtendedHeader,
     ExtendedHeaderMode,
@@ -128,11 +129,11 @@ class TestParsedADStructures:
             service_uuids=["180F", "180A"],
             local_name="Test Device",
             tx_power=-50,
-            flags=0x06,
+            flags=BLEAdvertisingFlags(0x06),
         )
 
         assert parsed.manufacturer_data == {0x1234: b"test_data"}
         assert parsed.service_uuids == ["180F", "180A"]
         assert parsed.local_name == "Test Device"
         assert parsed.tx_power == -50
-        assert parsed.flags == 0x06
+        assert parsed.flags == BLEAdvertisingFlags(0x06)

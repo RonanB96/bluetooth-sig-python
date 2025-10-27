@@ -25,7 +25,7 @@ class TestNonMethaneVOCConcentrationCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> CharacteristicTestData:
         """Valid Non-Methane VOC concentration test data."""
         return CharacteristicTestData(
-            input_data=bytearray([0x34, 0x12]),
+            input_data=bytearray([0x34, 0x92]),
             expected_value=5640.0,
             description="IEEE 11073 SFLOAT Non-Methane VOC concentration",
         )
