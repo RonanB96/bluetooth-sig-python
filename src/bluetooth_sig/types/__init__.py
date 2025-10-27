@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .advertising import (
     BLEAdvertisementTypes,
+    BLEAdvertisingFlags,
     BLEAdvertisingPDU,
     BLEExtendedHeader,
     DeviceAdvertiserData,
@@ -32,6 +33,7 @@ from .protocols import CharacteristicDataProtocol
 
 __all__ = [
     "BLEAdvertisementTypes",
+    "BLEAdvertisingFlags",
     "BLEAdvertisingPDU",
     "BLEExtendedHeader",
     "CharacteristicContext",

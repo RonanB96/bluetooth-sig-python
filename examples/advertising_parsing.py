@@ -12,7 +12,7 @@ from typing import cast
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device.advertising_parser import AdvertisingParser
-from bluetooth_sig.types.advertising import DeviceAdvertiserData
+from bluetooth_sig.types.advertising import BLEAdvertisingFlags, DeviceAdvertiserData
 
 
 def display_advertising_data(
@@ -418,7 +418,7 @@ async def main(
             },
             service_uuids=["180F", "180A"],  # Battery and Device Info services
             tx_power=-50,
-            flags=0x06,
+            flags=BLEAdvertisingFlags(0x06),
             rssi=-45,
             appearance=0x03C0,  # Generic Computer
             service_data={"180F": b"\x64"},  # Battery level 100%
@@ -438,7 +438,7 @@ async def main(
             },
             service_uuids=["180F", "180A"],  # Battery and Device Info services
             tx_power=-40,
-            flags=0x06,
+            flags=BLEAdvertisingFlags(0x06),
             rssi=-35,
             appearance=0x03C1,  # Generic Computer with extended features
             service_data={"180F": b"\x64"},  # Battery level 100%

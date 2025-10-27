@@ -84,6 +84,44 @@ class NameNormalizer:
         """
         return f"org.bluetooth.{entity_type}." + "_".join(word.lower() for word in words)
 
+    @staticmethod
+    def snake_case_to_camel_case(s: str) -> str:
+        """Convert snake_case to CamelCase with acronym handling (for test file mapping)."""
+        acronyms = {
+            "co2",
+            "pm1",
+            "pm10",
+            "pm25",
+            "voc",
+            "rsc",
+            "cccd",
+            "ccc",
+            "2d",
+            "3d",
+            "pm",
+            "no2",
+            "so2",
+            "o3",
+            "nh3",
+            "ch4",
+            "co",
+            "o2",
+            "h2",
+            "n2",
+            "csc",
+            "uv",
+        }
+        parts = s.split("_")
+        result = []
+        for part in parts:
+            if part.lower() in acronyms:
+                result.append(part.upper())
+            elif any(c.isdigit() for c in part):
+                result.append("".join(c.upper() if c.isalpha() else c for c in part))
+            else:
+                result.append(part.capitalize())
+        return "".join(result)
+
 
 class NameVariantGenerator:
     """Generates name variants for registry lookups.

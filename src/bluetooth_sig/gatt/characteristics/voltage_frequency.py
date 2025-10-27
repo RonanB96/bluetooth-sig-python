@@ -12,7 +12,7 @@ class VoltageFrequencyCharacteristic(BaseCharacteristic):
     Measures voltage frequency with 1/256 Hz resolution.
     """
 
-    _template = ScaledUint16Template()
+    _template = ScaledUint16Template(scale_factor=1 / 256)
 
     _manual_unit: str = "Hz"  # Override template's "units" default
     resolution: float = 1 / 256

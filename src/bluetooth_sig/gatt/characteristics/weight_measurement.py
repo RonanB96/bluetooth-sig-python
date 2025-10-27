@@ -29,7 +29,7 @@ class WeightMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylin
     weight: float
     weight_unit: str
     measurement_units: str
-    flags: int
+    flags: WeightMeasurementFlags
     timestamp: datetime | None = None
     user_id: int | None = None
     bmi: float | None = None
@@ -128,7 +128,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
             weight=weight,
             weight_unit=weight_unit,
             measurement_units=measurement_units,
-            flags=int(flags),
+            flags=flags,
             timestamp=timestamp,
             user_id=user_id,
             bmi=bmi,
