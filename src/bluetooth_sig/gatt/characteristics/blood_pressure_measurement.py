@@ -7,6 +7,8 @@ from enum import IntFlag
 
 import msgspec
 
+from bluetooth_sig.types.units import PressureUnit
+
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .blood_pressure_feature import BloodPressureFeatureCharacteristic
@@ -39,7 +41,7 @@ class BloodPressureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: d
     systolic: float
     diastolic: float
     mean_arterial_pressure: float
-    unit: str
+    unit: PressureUnit
     timestamp: datetime | None = None
     pulse_rate: float | None = None
     user_id: int | None = None
@@ -48,10 +50,10 @@ class BloodPressureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: d
 
     def __post_init__(self) -> None:
         """Validate blood pressure data."""
-        if self.unit not in ("mmHg", "kPa"):
-            raise ValueError(f"Blood pressure unit must be 'mmHg' or 'kPa', got {self.unit}")
+        if self.unit not in (PressureUnit.MMHG, PressureUnit.KPA):
+            raise ValueError(f"Blood pressure unit must be MMHG or KPA, got {self.unit}")
 
-        if self.unit == "mmHg":
+        if self.unit == PressureUnit.MMHG:
             valid_range = (0, 300)
         else:  # kPa
             valid_range = (0, 40)
@@ -63,8 +65,8 @@ class BloodPressureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: d
         ]:
             if not valid_range[0] <= value <= valid_range[1]:
                 raise ValueError(
-                    f"{name} pressure {value} {self.unit} is outside valid range "
-                    f"({valid_range[0]}-{valid_range[1]} {self.unit})"
+                    f"{name} pressure {value} {self.unit.value} is outside valid range "
+                    f"({valid_range[0]}-{valid_range[1]} {self.unit.value})"
                 )
 
 
@@ -117,7 +119,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
         systolic = IEEE11073Parser.parse_sfloat(data, 1)
         diastolic = IEEE11073Parser.parse_sfloat(data, 3)
         mean_arterial_pressure = IEEE11073Parser.parse_sfloat(data, 5)
-        unit = "kPa" if flags & BloodPressureFlags.UNITS_KPA else "mmHg"
+        unit = PressureUnit.KPA if flags & BloodPressureFlags.UNITS_KPA else PressureUnit.MMHG
 
         # Parse optional fields
         timestamp: datetime | None = None
@@ -167,7 +169,7 @@ class BloodPressureMeasurementCharacteristic(BaseCharacteristic):
         result = bytearray()
 
         flags = 0
-        if data.unit == "kPa":
+        if data.unit == PressureUnit.KPA:
             flags |= BloodPressureFlags.UNITS_KPA
         if data.timestamp is not None:
             flags |= BloodPressureFlags.TIMESTAMP_PRESENT

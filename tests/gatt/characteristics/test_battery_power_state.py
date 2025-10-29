@@ -3,12 +3,15 @@
 import pytest
 
 from bluetooth_sig.gatt.characteristics.battery_power_state import (
-    BatteryChargeLevel,
-    BatteryChargeState,
-    BatteryChargingType,
     BatteryPowerStateCharacteristic,
     BatteryPowerStateData,
     BatteryPresentState,
+)
+from bluetooth_sig.types.battery import (
+    BatteryChargeLevel,
+    BatteryChargeState,
+    BatteryChargingType,
+    BatteryFaultReason,
 )
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -229,7 +232,7 @@ class TestBatteryPowerStateCharacteristic(CommonCharacteristicTests):
         assert result.battery_charge_state == BatteryChargeState.UNKNOWN
         assert result.battery_charge_level == BatteryChargeLevel.LOW
         assert result.battery_charging_type == BatteryChargingType.TRICKLE
-        assert result.charging_fault_reason == "battery_fault"
+        assert result.charging_fault_reason == BatteryFaultReason.BATTERY_FAULT
 
     def test_parse_extended_format_constant_voltage(self) -> None:
         """Test parsing with constant voltage charging type."""
@@ -283,7 +286,7 @@ class TestBatteryPowerStateCharacteristic(CommonCharacteristicTests):
         result = char.decode_value(data)
 
         assert result.battery_charging_type == BatteryChargingType.UNKNOWN
-        assert result.charging_fault_reason == "external_power_fault"
+        assert result.charging_fault_reason == BatteryFaultReason.EXTERNAL_POWER_FAULT
 
     def test_parse_all_unknown_states(self) -> None:
         """Test parsing with all states unknown."""

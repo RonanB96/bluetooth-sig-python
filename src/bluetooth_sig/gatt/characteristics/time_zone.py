@@ -9,7 +9,11 @@ from .base import BaseCharacteristic
 
 
 class TimeZoneCharacteristic(BaseCharacteristic):
-    """Time zone characteristic.
+    """Time Zone characteristic (0x2A0E).
+
+    org.bluetooth.characteristic.time_zone
+
+    Time zone characteristic.
 
     Represents the time difference in 15-minute increments between local
     standard time and UTC.

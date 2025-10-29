@@ -7,6 +7,11 @@ from .templates import Uint8Template
 
 
 class HeatIndexCharacteristic(BaseCharacteristic):
-    """Heat Index measurement characteristic."""
+    """Heat Index characteristic (0x2A7A).
+
+    org.bluetooth.characteristic.heat_index
+
+    Heat Index measurement characteristic.
+    """
 
     _template = Uint8Template()

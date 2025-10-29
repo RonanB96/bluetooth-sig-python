@@ -11,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.weight_measurement import (
     WeightMeasurementData,
     WeightMeasurementFlags,
 )
+from bluetooth_sig.types.units import HeightUnit, MeasurementSystem, WeightUnit
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -43,8 +44,8 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                 ),
                 expected_value=WeightMeasurementData(
                     weight=70.0,
-                    weight_unit="kg",
-                    measurement_units="metric",
+                    weight_unit=WeightUnit.KG,
+                    measurement_units=MeasurementSystem.METRIC,
                     flags=WeightMeasurementFlags(0x00),
                     timestamp=None,
                     user_id=None,
@@ -65,8 +66,8 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                 ),
                 expected_value=WeightMeasurementData(
                     weight=157.0,
-                    weight_unit="lb",
-                    measurement_units="imperial",
+                    weight_unit=WeightUnit.LB,
+                    measurement_units=MeasurementSystem.IMPERIAL,
                     flags=WeightMeasurementFlags.IMPERIAL_UNITS,
                     timestamp=None,
                     user_id=None,
@@ -94,8 +95,8 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                 ),
                 expected_value=WeightMeasurementData(
                     weight=70.0,
-                    weight_unit="kg",
-                    measurement_units="metric",
+                    weight_unit=WeightUnit.KG,
+                    measurement_units=MeasurementSystem.METRIC,
                     flags=WeightMeasurementFlags.TIMESTAMP_PRESENT,
                     timestamp=datetime.datetime(2023, 12, 25, 14, 30, 45),
                     user_id=None,
@@ -119,8 +120,8 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                 ),
                 expected_value=WeightMeasurementData(
                     weight=70.0,
-                    weight_unit="kg",
-                    measurement_units="metric",
+                    weight_unit=WeightUnit.KG,
+                    measurement_units=MeasurementSystem.METRIC,
                     flags=WeightMeasurementFlags.USER_ID_PRESENT | WeightMeasurementFlags.BMI_PRESENT,
                     timestamp=None,
                     user_id=5,
@@ -143,14 +144,14 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                 ),
                 expected_value=WeightMeasurementData(
                     weight=70.0,
-                    weight_unit="kg",
-                    measurement_units="metric",
+                    weight_unit=WeightUnit.KG,
+                    measurement_units=MeasurementSystem.METRIC,
                     flags=WeightMeasurementFlags.HEIGHT_PRESENT,
                     timestamp=None,
                     user_id=None,
                     bmi=None,
                     height=1.750,
-                    height_unit="m",
+                    height_unit=HeightUnit.METERS,
                 ),
                 description="Weight measurement with height (metric)",
             ),
@@ -177,8 +178,8 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                 ),
                 expected_value=WeightMeasurementData(
                     weight=157.0,
-                    weight_unit="lb",
-                    measurement_units="imperial",
+                    weight_unit=WeightUnit.LB,
+                    measurement_units=MeasurementSystem.IMPERIAL,
                     flags=(
                         WeightMeasurementFlags.IMPERIAL_UNITS
                         | WeightMeasurementFlags.TIMESTAMP_PRESENT
@@ -190,7 +191,7 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                     user_id=3,
                     bmi=24.5,
                     height=68.0,
-                    height_unit="in",
+                    height_unit=HeightUnit.INCHES,
                 ),
                 description="Full imperial measurement with all optional fields",
             ),

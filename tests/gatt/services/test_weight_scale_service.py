@@ -12,6 +12,7 @@ from bluetooth_sig.gatt.characteristics.weight_scale_feature import (
 )
 from bluetooth_sig.gatt.services.weight_scale import WeightScaleService
 from bluetooth_sig.types.gatt_enums import ValueType
+from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
 
 
 class TestWeightMeasurementCharacteristic:
@@ -33,8 +34,8 @@ class TestWeightMeasurementCharacteristic:
 
         assert hasattr(result, "weight")
         assert result.weight == pytest.approx(69.68, abs=0.01)  # 13936 * 0.005
-        assert result.weight_unit == "kg"
-        assert result.measurement_units == "metric"
+        assert result.weight_unit == WeightUnit.KG
+        assert result.measurement_units == MeasurementSystem.METRIC
 
     def test_parse_basic_weight_imperial(self) -> None:
         """Test parsing basic weight in imperial units."""
@@ -47,8 +48,8 @@ class TestWeightMeasurementCharacteristic:
 
         assert hasattr(result, "weight")
         assert result.weight == pytest.approx(150.0, abs=0.01)  # 15000 * 0.01
-        assert result.weight_unit == "lb"
-        assert result.measurement_units == "imperial"
+        assert result.weight_unit == WeightUnit.LB
+        assert result.measurement_units == MeasurementSystem.IMPERIAL
 
     def test_parse_weight_with_user_id(self) -> None:
         """Test parsing weight with user ID."""

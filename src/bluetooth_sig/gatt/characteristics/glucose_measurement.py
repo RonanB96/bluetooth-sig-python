@@ -107,6 +107,21 @@ class GlucoseMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pyli
     min_length: int = 12  # Aligned with GlucoseMeasurementCharacteristic
     max_length: int = 17  # Aligned with GlucoseMeasurementCharacteristic
 
+    def __post_init__(self) -> None:
+        """Validate glucose measurement data."""
+        if self.unit not in ("mg/dL", "mmol/L"):
+            raise ValueError(f"Glucose unit must be 'mg/dL' or 'mmol/L', got {self.unit}")
+
+        # Validate concentration range based on unit
+        if self.unit == "mg/dL":
+            # Allow any non-negative value (no SIG-specified range)
+            if self.glucose_concentration < 0:
+                raise ValueError(f"Glucose concentration must be non-negative, got {self.glucose_concentration}")
+        else:  # mmol/L
+            # Allow any non-negative value (no SIG-specified range)
+            if self.glucose_concentration < 0:
+                raise ValueError(f"Glucose concentration must be non-negative, got {self.glucose_concentration}")
+
     @staticmethod
     def is_reserved_range(value: int) -> bool:
         """Check if glucose type or sample location is in reserved range."""

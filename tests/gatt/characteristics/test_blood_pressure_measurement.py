@@ -11,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.blood_pressure_measurement import (
     BloodPressureFlags,
     BloodPressureMeasurementCharacteristic,
 )
+from bluetooth_sig.types.units import PressureUnit
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -49,7 +50,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     systolic=120.0,
                     diastolic=80.0,
                     mean_arterial_pressure=90.0,
-                    unit="mmHg",
+                    unit=PressureUnit.MMHG,
                     flags=BloodPressureFlags(0),
                     timestamp=None,
                     pulse_rate=None,
@@ -75,7 +76,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     systolic=16.0,
                     diastolic=11.0,
                     mean_arterial_pressure=12.0,
-                    unit="kPa",
+                    unit=PressureUnit.KPA,
                     flags=BloodPressureFlags.UNITS_KPA,
                     timestamp=None,
                     pulse_rate=None,
@@ -108,7 +109,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     systolic=140.0,
                     diastolic=90.0,
                     mean_arterial_pressure=110.0,
-                    unit="mmHg",
+                    unit=PressureUnit.MMHG,
                     flags=BloodPressureFlags.TIMESTAMP_PRESENT,
                     timestamp=datetime.datetime(2024, 3, 15, 14, 30, 45),
                     pulse_rate=None,
@@ -136,7 +137,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     systolic=120.0,
                     diastolic=80.0,
                     mean_arterial_pressure=90.0,
-                    unit="mmHg",
+                    unit=PressureUnit.MMHG,
                     flags=BloodPressureFlags.PULSE_RATE_PRESENT,
                     timestamp=None,
                     pulse_rate=72.0,
@@ -165,7 +166,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     systolic=120.0,
                     diastolic=80.0,
                     mean_arterial_pressure=90.0,
-                    unit="mmHg",
+                    unit=PressureUnit.MMHG,
                     flags=BloodPressureFlags.USER_ID_PRESENT | BloodPressureFlags.MEASUREMENT_STATUS_PRESENT,
                     timestamp=None,
                     pulse_rate=None,
@@ -203,7 +204,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     systolic=18.0,
                     diastolic=12.0,
                     mean_arterial_pressure=14.0,
-                    unit="kPa",
+                    unit=PressureUnit.KPA,
                     flags=(
                         BloodPressureFlags.UNITS_KPA
                         | BloodPressureFlags.TIMESTAMP_PRESENT
@@ -241,7 +242,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
         assert result.systolic == 120.0
         assert result.diastolic == 80.0
         assert result.mean_arterial_pressure == 90.0
-        assert result.unit == "mmHg"
+        assert result.unit == PressureUnit.MMHG
         assert result.timestamp is None
         assert result.pulse_rate is None
 
@@ -274,7 +275,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
 
         result: BloodPressureData = characteristic.decode_value(test_data)
         assert result.systolic == 120.0
-        assert result.unit == "mmHg"
+        assert result.unit == PressureUnit.MMHG
         assert result.timestamp is not None
         assert result.pulse_rate == 72.0
         assert result.user_id == 1
@@ -298,7 +299,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
         assert result.systolic == 16.0
         assert result.diastolic == 11.0
         assert result.mean_arterial_pressure == 12.0
-        assert result.unit == "kPa"
+        assert result.unit == PressureUnit.KPA
 
     def test_blood_pressure_invalid_data(self, characteristic: BloodPressureMeasurementCharacteristic) -> None:
         """Test blood pressure measurement with invalid data."""

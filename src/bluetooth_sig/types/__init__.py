@@ -15,6 +15,7 @@ from .advertising import (
     PDUType,
 )
 from .base_types import SIGInfo
+from .battery import BatteryChargeLevel, BatteryChargeState, BatteryChargingType, BatteryFaultReason
 from .context import CharacteristicContext, DeviceInfo
 from .data_types import (
     CharacteristicData,
@@ -27,11 +28,34 @@ from .data_types import (
 )
 from .descriptor_types import DescriptorData, DescriptorInfo
 from .protocols import CharacteristicDataProtocol
+from .units import (
+    AngleUnit,
+    ConcentrationUnit,
+    ElectricalUnit,
+    GlucoseConcentrationUnit,
+    HeightUnit,
+    LengthUnit,
+    MeasurementSystem,
+    PercentageUnit,
+    PhysicalUnit,
+    PressureUnit,
+    SoundUnit,
+    TemperatureUnit,
+    WeightUnit,
+)
+
+# Device-related types are imported from device_types module to avoid cyclic imports
+# Import them directly: from bluetooth_sig.types.device_types import DeviceService, DeviceEncryption
 
 # Device-related types are imported from device_types module to avoid cyclic imports
 # Import them directly: from bluetooth_sig.types.device_types import DeviceService, DeviceEncryption
 
 __all__ = [
+    "AngleUnit",
+    "BatteryChargeLevel",
+    "BatteryChargeState",
+    "BatteryChargingType",
+    "BatteryFaultReason",
     "BLEAdvertisementTypes",
     "BLEAdvertisingFlags",
     "BLEAdvertisingPDU",
@@ -41,18 +65,30 @@ __all__ = [
     "CharacteristicDataProtocol",
     "CharacteristicInfo",
     "CharacteristicRegistration",
+    "ConcentrationUnit",
     "DescriptorData",
     "DescriptorInfo",
     "DeviceAdvertiserData",
     "DeviceInfo",
+    "ElectricalUnit",
     "ExtendedHeaderMode",
+    "GlucoseConcentrationUnit",
+    "HeightUnit",
+    "LengthUnit",
+    "MeasurementSystem",
     "ParsedADStructures",
     "ParseFieldError",
     "PDUConstants",
     "PDUFlags",
     "PDUType",
+    "PercentageUnit",
+    "PhysicalUnit",
+    "PressureUnit",
     "ServiceInfo",
     "ServiceRegistration",
     "SIGInfo",
+    "SoundUnit",
+    "TemperatureUnit",
     "ValidationResult",
+    "WeightUnit",
 ]

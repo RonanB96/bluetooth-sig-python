@@ -42,7 +42,11 @@ class ElectricCurrentStatisticsData(msgspec.Struct, frozen=True, kw_only=True): 
 
 
 class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
-    """Electric Current Statistics characteristic.
+    """Electric Current Statistics characteristic (0x2AF1).
+
+    org.bluetooth.characteristic.electric_current_statistics
+
+    Electric Current Statistics characteristic.
 
     Provides statistical current data (min, max, average over time).
     """

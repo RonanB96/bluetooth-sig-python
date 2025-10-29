@@ -7,7 +7,12 @@ from .templates import PressureTemplate
 
 
 class PressureCharacteristic(BaseCharacteristic):
-    """Atmospheric pressure characteristic."""
+    """Pressure characteristic (0x2A6D).
+
+    org.bluetooth.characteristic.pressure
+
+    Atmospheric pressure characteristic.
+    """
 
     _template = PressureTemplate()
 

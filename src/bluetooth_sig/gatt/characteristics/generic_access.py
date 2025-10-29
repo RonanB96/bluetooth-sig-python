@@ -8,7 +8,12 @@ from .utils import DataParser
 
 
 class DeviceNameCharacteristic(BaseCharacteristic):
-    """Device Name characteristic."""
+    """Device Name characteristic (0x2A00).
+
+    org.bluetooth.characteristic.gap.device_name
+
+    Device Name characteristic.
+    """
 
     _characteristic_name: str = "Device Name"
     _manual_value_type = "string"  # Override since decode_value returns str
@@ -41,7 +46,12 @@ class DeviceNameCharacteristic(BaseCharacteristic):
 
 
 class AppearanceCharacteristic(BaseCharacteristic):
-    """Appearance characteristic."""
+    """Appearance characteristic (0x2A01).
+
+    org.bluetooth.characteristic.gap.appearance
+
+    Appearance characteristic.
+    """
 
     _characteristic_name: str = "Appearance"
     _manual_value_type = "int"  # Override since decode_value returns int

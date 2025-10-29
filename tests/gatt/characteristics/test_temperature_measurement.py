@@ -11,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.temperature_measurement import (
     TemperatureMeasurementData,
     TemperatureMeasurementFlags,
 )
+from bluetooth_sig.types.units import TemperatureUnit
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -37,13 +38,15 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x00,  # flags: no optional fields, Celsius
-                        0x74,
-                        0x0E,  # temperature = 37.0°C (sint16, 0.01 °C resolution)
+                        0x20,
+                        0x75,
+                        0x38,
+                        0x7B,  # temperature = 37.0°C (medfloat32)
                     ]
                 ),
                 expected_value=TemperatureMeasurementData(
                     temperature=37.0,
-                    unit="°C",
+                    unit=TemperatureUnit.CELSIUS,
                     flags=TemperatureMeasurementFlags.CELSIUS_UNIT,
                     timestamp=None,
                     temperature_type=None,
@@ -55,13 +58,15 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x01,  # flags: Fahrenheit unit
-                        0x84,
-                        0x26,  # temperature = 98.6°F (sint16, 0.01 °F resolution)
+                        0x90,
+                        0x0B,
+                        0x0F,
+                        0x7C,  # temperature = 98.6°F (medfloat32)
                     ]
                 ),
                 expected_value=TemperatureMeasurementData(
                     temperature=98.6,
-                    unit="°F",
+                    unit=TemperatureUnit.FAHRENHEIT,
                     flags=TemperatureMeasurementFlags.FAHRENHEIT_UNIT,
                     timestamp=None,
                     temperature_type=None,
@@ -73,8 +78,10 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x02,  # flags: timestamp present
-                        0x74,
-                        0x0E,  # temperature = 37.0°C
+                        0x20,
+                        0x75,
+                        0x38,
+                        0x7B,  # temperature = 37.0°C (medfloat32)
                         0xE7,
                         0x07,  # year = 2023
                         0x0C,  # month = 12
@@ -86,7 +93,7 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 ),
                 expected_value=TemperatureMeasurementData(
                     temperature=37.0,
-                    unit="°C",
+                    unit=TemperatureUnit.CELSIUS,
                     flags=TemperatureMeasurementFlags.TIMESTAMP_PRESENT,
                     timestamp=datetime.datetime(2023, 12, 25, 14, 30, 45),
                     temperature_type=None,
@@ -98,14 +105,16 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x04,  # flags: temperature type present
-                        0x74,
-                        0x0E,  # temperature = 37.0°C
+                        0x20,
+                        0x75,
+                        0x38,
+                        0x7B,  # temperature = 37.0°C (medfloat32)
                         0x01,  # temperature type = 1 (body)
                     ]
                 ),
                 expected_value=TemperatureMeasurementData(
                     temperature=37.0,
-                    unit="°C",
+                    unit=TemperatureUnit.CELSIUS,
                     flags=TemperatureMeasurementFlags.TEMPERATURE_TYPE_PRESENT,
                     timestamp=None,
                     temperature_type=1,
@@ -117,8 +126,10 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x07,  # flags: Fahrenheit + timestamp + type (0x01 | 0x02 | 0x04)
-                        0x84,
-                        0x26,  # temperature = 98.6°F
+                        0x90,
+                        0x0B,
+                        0x0F,
+                        0x7C,  # temperature = 98.6°F (medfloat32)
                         0xE7,
                         0x07,  # year = 2023
                         0x0C,  # month = 12
@@ -131,7 +142,7 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 ),
                 expected_value=TemperatureMeasurementData(
                     temperature=98.6,
-                    unit="°F",
+                    unit=TemperatureUnit.FAHRENHEIT,
                     flags=TemperatureMeasurementFlags.FAHRENHEIT_UNIT
                     | TemperatureMeasurementFlags.TIMESTAMP_PRESENT
                     | TemperatureMeasurementFlags.TEMPERATURE_TYPE_PRESENT,
@@ -145,13 +156,15 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray(
                     [
                         0x00,  # flags: Celsius, no optional fields
-                        0x50,
-                        0x0F,  # temperature = 39.2°C (fever) (sint16, 0.01 °C resolution)
+                        0x80,
+                        0xD0,
+                        0x3B,
+                        0x7B,  # temperature = 39.2°C (fever) (medfloat32)
                     ]
                 ),
                 expected_value=TemperatureMeasurementData(
                     temperature=39.2,
-                    unit="°C",
+                    unit=TemperatureUnit.CELSIUS,
                     flags=TemperatureMeasurementFlags.CELSIUS_UNIT,
                     timestamp=None,
                     temperature_type=None,
@@ -163,9 +176,9 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
     def test_temperature_measurement_invalid_data(self, characteristic: TemperatureMeasurementCharacteristic) -> None:
         """Test temperature measurement error handling."""
         # Too short data
-        with pytest.raises(ValueError, match="Temperature Measurement data must be at least 3 bytes"):
+        with pytest.raises(ValueError, match="Temperature Measurement data must be at least 5 bytes"):
             characteristic.decode_value(bytearray([0x00, 0x01]))
 
         # Missing temperature data
-        with pytest.raises(ValueError, match="Temperature Measurement data must be at least 3 bytes"):
+        with pytest.raises(ValueError, match="Temperature Measurement data must be at least 5 bytes"):
             characteristic.decode_value(bytearray([0x00]))
