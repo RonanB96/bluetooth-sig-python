@@ -13,6 +13,7 @@ from bluetooth_sig.gatt.characteristics.body_composition_measurement import (
 )
 from bluetooth_sig.gatt.services.body_composition import BodyCompositionService
 from bluetooth_sig.types.gatt_enums import ValueType
+from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
 
 
 class TestBodyCompositionMeasurementCharacteristic:
@@ -34,7 +35,7 @@ class TestBodyCompositionMeasurementCharacteristic:
 
         assert hasattr(result, "body_fat_percentage")
         assert result.body_fat_percentage == pytest.approx(25.0, abs=0.1)
-        assert result.measurement_units == "metric"
+        assert result.measurement_units == MeasurementSystem.METRIC
 
     def test_parse_body_fat_imperial(self) -> None:
         """Test parsing body fat percentage in imperial units."""
@@ -46,7 +47,7 @@ class TestBodyCompositionMeasurementCharacteristic:
 
         assert hasattr(result, "body_fat_percentage")
         assert result.body_fat_percentage == pytest.approx(18.0, abs=0.1)
-        assert result.measurement_units == "imperial"
+        assert result.measurement_units == MeasurementSystem.IMPERIAL
 
     def test_parse_with_user_id(self) -> None:
         """Test parsing with user ID."""
@@ -72,7 +73,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         assert hasattr(result, "body_fat_percentage")
         assert hasattr(result, "muscle_mass")
         assert result.muscle_mass == pytest.approx(50.0, abs=0.01)  # 10000 * 0.005
-        assert result.muscle_mass_unit == "kg"
+        assert result.muscle_mass_unit == WeightUnit.KG
 
     def test_parse_with_muscle_mass_imperial(self) -> None:
         """Test parsing with muscle mass in imperial units."""
@@ -86,7 +87,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         assert hasattr(result, "body_fat_percentage")
         assert hasattr(result, "muscle_mass")
         assert result.muscle_mass == pytest.approx(110.0, abs=0.01)  # 11000 * 0.01
-        assert result.muscle_mass_unit == "lb"
+        assert result.muscle_mass_unit == WeightUnit.LB
 
     def test_parse_invalid_data(self) -> None:
         """Test parsing with invalid data."""

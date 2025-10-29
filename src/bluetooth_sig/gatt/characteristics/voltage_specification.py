@@ -34,7 +34,11 @@ class VoltageSpecificationData(msgspec.Struct, frozen=True, kw_only=True):  # py
 
 
 class VoltageSpecificationCharacteristic(BaseCharacteristic):
-    """Voltage Specification characteristic.
+    """Voltage Specification characteristic (0x2B19).
+
+    org.bluetooth.characteristic.voltage_specification
+
+    Voltage Specification characteristic.
 
     Specifies minimum and maximum voltage values for electrical
     specifications.

@@ -19,7 +19,7 @@ class IlluminanceCharacteristic(BaseCharacteristic):
     Uses uint24 (3 bytes) with 0.01 lux resolution.
     """
 
-    _template = ScaledUint24Template(scale_factor=0.01)
+    _template = ScaledUint24Template(scale_factor=0.01, offset=0)
 
     _manual_unit: str = "lx"  # Override template's "units" default
     resolution: float = 0.01

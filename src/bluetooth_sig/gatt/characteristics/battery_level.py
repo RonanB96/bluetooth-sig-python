@@ -7,6 +7,11 @@ from .templates import PercentageTemplate
 
 
 class BatteryLevelCharacteristic(BaseCharacteristic):
-    """Battery level characteristic."""
+    """Battery Level characteristic (0x2A19).
+
+    org.bluetooth.characteristic.battery_level
+
+    Battery level characteristic.
+    """
 
     _template = PercentageTemplate()

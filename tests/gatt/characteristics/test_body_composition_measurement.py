@@ -11,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.body_composition_measurement import (
     BodyCompositionMeasurementCharacteristic,
     BodyCompositionMeasurementData,
 )
+from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -45,7 +46,7 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
                 expected_value=BodyCompositionMeasurementData(
                     body_fat_percentage=5.0,
                     flags=BodyCompositionFlags(0),
-                    measurement_units="metric",
+                    measurement_units=MeasurementSystem.METRIC,
                     timestamp=None,
                     user_id=None,
                     basal_metabolism=None,
@@ -81,7 +82,7 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
                 expected_value=BodyCompositionMeasurementData(
                     body_fat_percentage=15.0,
                     flags=BodyCompositionFlags.IMPERIAL_UNITS | BodyCompositionFlags.TIMESTAMP_PRESENT,
-                    measurement_units="imperial",
+                    measurement_units=MeasurementSystem.IMPERIAL,
                     timestamp=datetime.datetime(2024, 6, 20, 10, 30, 0),
                     user_id=None,
                     basal_metabolism=None,
@@ -113,7 +114,7 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
                 expected_value=BodyCompositionMeasurementData(
                     body_fat_percentage=12.0,
                     flags=BodyCompositionFlags.USER_ID_PRESENT | BodyCompositionFlags.BASAL_METABOLISM_PRESENT,
-                    measurement_units="metric",
+                    measurement_units=MeasurementSystem.METRIC,
                     timestamp=None,
                     user_id=5,
                     basal_metabolism=1600,
@@ -146,12 +147,12 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
                 expected_value=BodyCompositionMeasurementData(
                     body_fat_percentage=10.0,
                     flags=BodyCompositionFlags.MUSCLE_MASS_PRESENT | BodyCompositionFlags.MUSCLE_PERCENTAGE_PRESENT,
-                    measurement_units="metric",
+                    measurement_units=MeasurementSystem.METRIC,
                     timestamp=None,
                     user_id=None,
                     basal_metabolism=None,
                     muscle_mass=15.0,  # 3000 * 0.005 kg
-                    muscle_mass_unit="kg",
+                    muscle_mass_unit=WeightUnit.KG,
                     muscle_percentage=20.0,
                     fat_free_mass=None,
                     soft_lean_mass=None,
@@ -185,7 +186,7 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
                         | BodyCompositionFlags.SOFT_LEAN_MASS_PRESENT
                         | BodyCompositionFlags.BODY_WATER_MASS_PRESENT
                     ),
-                    measurement_units="metric",
+                    measurement_units=MeasurementSystem.METRIC,
                     timestamp=None,
                     user_id=None,
                     basal_metabolism=None,
@@ -224,7 +225,7 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
                         | BodyCompositionFlags.WEIGHT_PRESENT
                         | BodyCompositionFlags.HEIGHT_PRESENT
                     ),
-                    measurement_units="metric",
+                    measurement_units=MeasurementSystem.METRIC,
                     timestamp=None,
                     user_id=None,
                     basal_metabolism=None,
@@ -251,7 +252,7 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
 
         result: BodyCompositionMeasurementData = characteristic.decode_value(test_data)
         assert result.body_fat_percentage == 5.0
-        assert result.measurement_units == "metric"
+        assert result.measurement_units == MeasurementSystem.METRIC
         assert result.muscle_mass is None
         assert result.impedance is None
 
@@ -274,7 +275,7 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
         result = characteristic.decode_value(test_data)
         assert result.muscle_mass == 30.0
         assert result.muscle_percentage == 15.0
-        assert result.muscle_mass_unit == "kg"
+        assert result.muscle_mass_unit == WeightUnit.KG
 
     def test_body_composition_imperial_units(self, characteristic: BodyCompositionMeasurementCharacteristic) -> None:
         """Test body composition with imperial units."""
@@ -289,7 +290,7 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.decode_value(test_data)
-        assert result.measurement_units == "imperial"
+        assert result.measurement_units == MeasurementSystem.IMPERIAL
         assert result.body_fat_percentage == 12.0
 
     def test_body_composition_invalid_data(self, characteristic: BodyCompositionMeasurementCharacteristic) -> None:

@@ -7,6 +7,7 @@ from typing import Any
 
 import msgspec
 
+from ...types.battery import BatteryChargeLevel, BatteryChargeState, BatteryChargingType, BatteryFaultReason
 from ..constants import UINT8_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -80,78 +81,6 @@ class BatteryPresentState(IntEnum):
             return cls.UNKNOWN
 
 
-class BatteryChargeState(IntEnum):
-    """Battery charge state enumeration."""
-
-    UNKNOWN = 0
-    CHARGING = 1
-    DISCHARGING = 2
-    NOT_CHARGING = 3
-
-    def __str__(self) -> str:
-        """Return a human-readable representation of the battery charge state."""
-        return {0: "unknown", 1: "charging", 2: "discharging", 3: "not_charging"}[self.value]
-
-    @classmethod
-    def from_byte(cls, byte_val: int) -> BatteryChargeState:
-        """Create enum from byte value with fallback."""
-        try:
-            return cls(byte_val)
-        except ValueError:
-            return cls.UNKNOWN
-
-
-class BatteryChargeLevel(IntEnum):
-    """Battery charge level enumeration."""
-
-    UNKNOWN = 0
-    GOOD = 1
-    LOW = 2
-    CRITICALLY_LOW = 3
-
-    def __str__(self) -> str:
-        """Return a human-readable representation of the battery charge level."""
-        return {0: "unknown", 1: "good", 2: "low", 3: "critically_low"}[self.value]
-
-    @classmethod
-    def from_byte(cls, byte_val: int) -> BatteryChargeLevel:
-        """Create enum from byte value with fallback."""
-        try:
-            return cls(byte_val)
-        except ValueError:
-            return cls.UNKNOWN
-
-
-class BatteryChargingType(IntEnum):
-    """Battery charging type enumeration."""
-
-    UNKNOWN = 0
-    CONSTANT_CURRENT = 1
-    CONSTANT_VOLTAGE = 2
-    TRICKLE = 3
-    FLOAT = 4
-    CONSTANT_POWER = 5
-
-    def __str__(self) -> str:
-        """Return a human-readable representation of the battery charging type."""
-        return {
-            0: "unknown",
-            1: "constant_current",
-            2: "constant_voltage",
-            3: "trickle",
-            4: "float",
-            5: "constant_power",
-        }[self.value]
-
-    @classmethod
-    def from_byte(cls, byte_val: int) -> BatteryChargingType:
-        """Create enum from byte value with fallback."""
-        try:
-            return cls(byte_val)
-        except ValueError:
-            return cls.UNKNOWN
-
-
 class BatteryPowerStateData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     """Parsed data from Battery Power State characteristic."""
 
@@ -162,7 +91,7 @@ class BatteryPowerStateData(msgspec.Struct, frozen=True, kw_only=True):  # pylin
     battery_charge_state: BatteryChargeState
     battery_charge_level: BatteryChargeLevel
     battery_charging_type: BatteryChargingType
-    charging_fault_reason: str | tuple[str, ...] | None = None
+    charging_fault_reason: BatteryFaultReason | tuple[BatteryFaultReason, ...] | None = None
 
     def __post_init__(self) -> None:
         """Validate battery power state data."""
@@ -179,7 +108,7 @@ class BatteryPowerState(msgspec.Struct, frozen=True, kw_only=True):  # pylint: d
     battery_charge_state: BatteryChargeState
     battery_charge_level: BatteryChargeLevel
     battery_charging_type: BatteryChargingType = BatteryChargingType.UNKNOWN
-    charging_fault_reason: str | tuple[str, ...] | None = None
+    charging_fault_reason: BatteryFaultReason | tuple[BatteryFaultReason, ...] | None = None
 
 
 class BatteryPowerStateCharacteristic(BaseCharacteristic):
@@ -274,14 +203,16 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
                 BatteryPowerStateBits.FAULT_BYTE_NUM_BITS,
             )
             if fault_raw != 0:
-                fault_reasons: list[str] = []
+                fault_reasons: list[BatteryFaultReason] = []
                 if BitFieldUtils.test_bit(fault_raw, BatteryPowerStateBits.BATTERY_FAULT_BIT):
-                    fault_reasons.append("battery_fault")
+                    fault_reasons.append(BatteryFaultReason.BATTERY_FAULT)
                 if BitFieldUtils.test_bit(fault_raw, BatteryPowerStateBits.EXTERNAL_POWER_FAULT_BIT):
-                    fault_reasons.append("external_power_fault")
+                    fault_reasons.append(BatteryFaultReason.EXTERNAL_POWER_FAULT)
                 if BitFieldUtils.test_bit(fault_raw, BatteryPowerStateBits.OTHER_FAULT_BIT):
-                    fault_reasons.append("other_fault")
-                charging_fault_reason = fault_reasons[0] if len(fault_reasons) == 1 else tuple(fault_reasons)
+                    fault_reasons.append(BatteryFaultReason.OTHER_FAULT)
+                charging_fault_reason = (
+                    fault_reasons[0] if len(fault_reasons) == 1 else tuple(fault_reasons) if fault_reasons else None
+                )
 
             return BatteryPowerStateData(
                 raw_value=state_raw,
@@ -333,17 +264,23 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
         battery_present_bits = data.battery_present.value
 
         # Map charge state to bits 4-5
-        charge_state_bits = data.battery_charge_state.value
+        charge_state_mapping = {
+            BatteryChargeState.UNKNOWN: 0,
+            BatteryChargeState.CHARGING: 1,
+            BatteryChargeState.DISCHARGING: 2,
+            BatteryChargeState.NOT_CHARGING: 3,
+        }
+        charge_state_bits = charge_state_mapping.get(data.battery_charge_state, 0)
 
         # Map charge level to bits 6-7 (need to adjust mapping for basic format)
         # The basic format uses different ordering than the enum values
-        charge_level_bits = 0  # Default to UNKNOWN
-        if data.battery_charge_level == BatteryChargeLevel.CRITICALLY_LOW:
-            charge_level_bits = 1
-        elif data.battery_charge_level == BatteryChargeLevel.LOW:
-            charge_level_bits = 2
-        elif data.battery_charge_level == BatteryChargeLevel.GOOD:
-            charge_level_bits = 3
+        charge_level_mapping = {
+            BatteryChargeLevel.UNKNOWN: 0,
+            BatteryChargeLevel.CRITICALLY_LOW: 1,
+            BatteryChargeLevel.LOW: 2,
+            BatteryChargeLevel.GOOD: 3,
+        }
+        charge_level_bits = charge_level_mapping.get(data.battery_charge_level, 0)
 
         # Encode single byte
         encoded_byte = BitFieldUtils.merge_bit_fields(
@@ -439,13 +376,13 @@ class BatteryPowerStateCharacteristic(BaseCharacteristic):
             BatteryPowerStateBits.FAULT_BITS_START_BIT,
             BatteryPowerStateBits.FAULT_BITS_NUM_BITS,
         )
-        fault_reasons: list[str] = []
+        fault_reasons: list[BatteryFaultReason] = []
         if BitFieldUtils.test_bit(fault_bits, BatteryPowerStateBits.BATTERY_FAULT_BIT):
-            fault_reasons.append("battery_fault")
+            fault_reasons.append(BatteryFaultReason.BATTERY_FAULT)
         if BitFieldUtils.test_bit(fault_bits, BatteryPowerStateBits.EXTERNAL_POWER_FAULT_BIT):
-            fault_reasons.append("external_power_fault")
+            fault_reasons.append(BatteryFaultReason.EXTERNAL_POWER_FAULT)
         if BitFieldUtils.test_bit(fault_bits, BatteryPowerStateBits.OTHER_FAULT_BIT):
-            fault_reasons.append("other_fault")
+            fault_reasons.append(BatteryFaultReason.OTHER_FAULT)
 
         charging_fault_reason = fault_reasons[0] if len(fault_reasons) == 1 else (tuple(fault_reasons) or None)
 

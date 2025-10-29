@@ -16,6 +16,7 @@ from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.types import CharacteristicData, CharacteristicDataProtocol, CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import GattProperty, ValueType
+from bluetooth_sig.types.units import PressureUnit
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -335,7 +336,7 @@ class TestMultiCharacteristicDependencies:
             systolic=120.0,
             diastolic=80.0,
             mean_arterial_pressure=90.0,
-            unit="mmHg",
+            unit=PressureUnit.MMHG,
         )
         raw_bp = bytes(bp_char.encode_value(measurement))
         bp_uuid = str(bp_char.info.uuid)

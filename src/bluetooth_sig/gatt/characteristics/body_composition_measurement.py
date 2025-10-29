@@ -7,13 +7,14 @@ from enum import IntFlag
 
 import msgspec
 
+from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
+
 from ..constants import PERCENTAGE_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic, BodyCompositionFeatureData
 from .utils import DataParser, IEEE11073Parser
 
-# Body Composition Measurement resolution constants
 BODY_FAT_PERCENTAGE_RESOLUTION = 0.1  # 0.1% resolution
 MUSCLE_PERCENTAGE_RESOLUTION = 0.1  # 0.1% resolution
 IMPEDANCE_RESOLUTION = 0.1  # 0.1 ohm resolution
@@ -44,7 +45,7 @@ class MassFields(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=
     """Mass-related optional fields."""
 
     muscle_mass: float | None
-    muscle_mass_unit: str | None
+    muscle_mass_unit: WeightUnit | None
     muscle_percentage: float | None
     fat_free_mass: float | None
     soft_lean_mass: float | None
@@ -64,7 +65,7 @@ class MassValue(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=t
     """Single mass field with unit."""
 
     value: float
-    unit: str
+    unit: WeightUnit
 
 
 class BodyCompositionFlags(IntFlag):
@@ -89,12 +90,12 @@ class BodyCompositionMeasurementData(msgspec.Struct, frozen=True, kw_only=True):
 
     body_fat_percentage: float
     flags: BodyCompositionFlags
-    measurement_units: str
+    measurement_units: MeasurementSystem
     timestamp: datetime | None = None
     user_id: int | None = None
     basal_metabolism: int | None = None
     muscle_mass: float | None = None
-    muscle_mass_unit: str | None = None  # Added missing field
+    muscle_mass_unit: WeightUnit | None = None
     muscle_percentage: float | None = None
     fat_free_mass: float | None = None
     soft_lean_mass: float | None = None
@@ -103,12 +104,60 @@ class BodyCompositionMeasurementData(msgspec.Struct, frozen=True, kw_only=True):
     weight: float | None = None
     height: float | None = None
 
-    def __post_init__(self) -> None:
+    def __post_init__(self) -> None:  # pylint: disable=too-many-branches
         """Validate body composition measurement data."""
         if not 0.0 <= self.body_fat_percentage <= PERCENTAGE_MAX:
             raise ValueError("Body fat percentage must be between 0-100%")
         if not 0 <= self.flags <= 0xFFFF:
             raise ValueError("Flags must be a 16-bit value")
+
+        # Validate measurement_units
+        if not isinstance(self.measurement_units, MeasurementSystem):
+            raise ValueError(f"Invalid measurement_units: {self.measurement_units!r}")
+
+        # Validate mass fields units and ranges
+        mass_fields = [
+            ("muscle_mass", self.muscle_mass),
+            ("fat_free_mass", self.fat_free_mass),
+            ("soft_lean_mass", self.soft_lean_mass),
+            ("body_water_mass", self.body_water_mass),
+            ("weight", self.weight),
+        ]
+        for field_name, value in mass_fields:
+            if value is not None:
+                if not 0 <= value:
+                    raise ValueError(f"{field_name} must be non-negative")
+
+        # Validate muscle_mass_unit consistency
+        if self.muscle_mass is not None:
+            expected_unit = WeightUnit.KG if self.measurement_units == MeasurementSystem.METRIC else WeightUnit.LB
+            if self.muscle_mass_unit != expected_unit:
+                raise ValueError(f"muscle_mass_unit must be {expected_unit!r}, got {self.muscle_mass_unit!r}")
+
+        # Validate muscle_percentage
+        if self.muscle_percentage is not None:
+            if not 0 <= self.muscle_percentage:
+                raise ValueError("Muscle percentage must be non-negative")
+
+        # Validate impedance
+        if self.impedance is not None:
+            if not 0 <= self.impedance:
+                raise ValueError("Impedance must be non-negative")
+
+        # Validate height
+        if self.height is not None:
+            if not 0 <= self.height:
+                raise ValueError("Height must be non-negative")
+
+        # Validate basal_metabolism
+        if self.basal_metabolism is not None:
+            if not 0 <= self.basal_metabolism:
+                raise ValueError("Basal metabolism must be non-negative")
+
+        # Validate user_id
+        if self.user_id is not None:
+            if not 0 <= self.user_id <= 255:
+                raise ValueError(f"User ID must be 0-255, got {self.user_id}")
 
 
 class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
@@ -148,7 +197,11 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         # Parse flags and required body fat percentage
         header = self._parse_flags_and_body_fat(data)
         flags_enum = BodyCompositionFlags(header.flags)
-        measurement_units = "imperial" if BodyCompositionFlags.IMPERIAL_UNITS in flags_enum else "metric"
+        measurement_units = (
+            MeasurementSystem.IMPERIAL
+            if BodyCompositionFlags.IMPERIAL_UNITS in flags_enum
+            else MeasurementSystem.METRIC
+        )
 
         # Parse optional fields based on flags
         basic = self._parse_basic_optional_fields(data, flags_enum, header.offset)
@@ -291,7 +344,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         # Encode optional height if present
         if data.height is not None:
-            if data.measurement_units == "imperial":
+            if data.measurement_units == MeasurementSystem.IMPERIAL:
                 height_raw = round(data.height / HEIGHT_RESOLUTION_IMPERIAL)  # 0.1 inch resolution
             else:
                 height_raw = round(data.height / HEIGHT_RESOLUTION_METRIC)  # 0.001 m resolution
@@ -431,7 +484,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         """
         muscle_mass: float | None = None
-        muscle_mass_unit: str | None = None
+        muscle_mass_unit: WeightUnit | None = None
         muscle_percentage: float | None = None
         fat_free_mass: float | None = None
         soft_lean_mass: float | None = None
@@ -533,8 +586,8 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         mass_raw = DataParser.parse_int16(data, offset, signed=False)
         if BodyCompositionFlags.IMPERIAL_UNITS in flags:  # Imperial units
             mass = mass_raw * MASS_RESOLUTION_LB  # 0.01 lb resolution
-            mass_unit = "lb"
+            mass_unit = WeightUnit.LB
         else:  # SI units
             mass = mass_raw * MASS_RESOLUTION_KG  # 0.005 kg resolution
-            mass_unit = "kg"
+            mass_unit = WeightUnit.KG
         return MassValue(value=mass, unit=mass_unit)

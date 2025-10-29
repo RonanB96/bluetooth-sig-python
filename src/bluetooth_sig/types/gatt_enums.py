@@ -86,7 +86,7 @@ class DataType(Enum):
         # Handle common aliases
         type_str = type_str.lower()
         aliases = {
-            "utf16s": cls.UTF8S,  # utf16s maps to UTF8S for now
+            "utf16s": cls.UTF8S,  # TODO utf16s maps to UTF8S for now
             "sfloat": cls.MEDFLOAT16,  # IEEE-11073 16-bit SFLOAT
             "float": cls.FLOAT32,  # IEEE-11073 32-bit FLOAT
             "variable": cls.STRUCT,  # variable maps to STRUCT
