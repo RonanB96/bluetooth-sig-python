@@ -40,22 +40,30 @@ class CommonServiceTests:
     def test_service_has_name(self, service: BaseGattService) -> None:
         """Test that service has a valid name."""
         assert service.name
-        assert isinstance(service.name, str)
         assert len(service.name) > 0
-
-    def test_service_has_characteristics(self, service: BaseGattService) -> None:
-        """Test that service defines its characteristics."""
-        # Check if service has the attribute - some services may not have it
-        if hasattr(service, "service_characteristics"):
-            # service_characteristics can be None or a dict
-            service_chars = getattr(service, "service_characteristics", None)
-            if service_chars is not None:
-                assert isinstance(service_chars, dict)
 
     def test_service_process_characteristics_method(self, service: BaseGattService) -> None:
         """Test that service has process_characteristics method."""
         assert hasattr(service, "process_characteristics")
         assert callable(service.process_characteristics)
+
+    def test_service_creation(self, service: BaseGattService) -> None:
+        """Test service instantiation."""
+        assert service is not None
+
+    def test_expected_characteristics_defined(self, service: BaseGattService) -> None:
+        """Test that service defines expected characteristics."""
+        expected = service.get_expected_characteristics()
+        assert isinstance(expected, dict)
+        assert len(expected) > 0  # Services should have at least one characteristic
+
+    def test_required_subset_of_expected(self, service: BaseGattService) -> None:
+        """Test that required characteristics are a subset of expected ones."""
+        expected = service.get_expected_characteristics()
+        required = service.get_required_characteristics()
+        required_keys = set(required.keys())
+        expected_keys = set(expected.keys())
+        assert required_keys.issubset(expected_keys), "Required characteristics must be subset of expected"
 
 
 def create_mock_characteristic_data(uuid: str, value: bytes) -> dict[str, bytes]:

@@ -60,11 +60,15 @@ from .heat_index import HeatIndexCharacteristic
 from .high_voltage import HighVoltageCharacteristic
 from .humidity import HumidityCharacteristic
 from .illuminance import IlluminanceCharacteristic
+from .ln_control_point import LNControlPointCharacteristic
+from .ln_feature import LNFeatureCharacteristic
 from .local_time_information import LocalTimeInformationCharacteristic
+from .location_and_speed import LocationAndSpeedCharacteristic
 from .magnetic_declination import MagneticDeclinationCharacteristic
 from .magnetic_flux_density_2d import MagneticFluxDensity2DCharacteristic
 from .magnetic_flux_density_3d import MagneticFluxDensity3DCharacteristic
 from .methane_concentration import MethaneConcentrationCharacteristic
+from .navigation import NavigationCharacteristic
 from .nitrogen_dioxide_concentration import NitrogenDioxideConcentrationCharacteristic
 from .noise import NoiseCharacteristic
 from .non_methane_voc_concentration import NonMethaneVOCConcentrationCharacteristic
@@ -73,6 +77,7 @@ from .pm1_concentration import PM1ConcentrationCharacteristic
 from .pm10_concentration import PM10ConcentrationCharacteristic
 from .pm25_concentration import PM25ConcentrationCharacteristic
 from .pollen_concentration import PollenConcentrationCharacteristic
+from .position_quality import PositionQualityCharacteristic
 from .pressure import PressureCharacteristic
 from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
 from .rainfall import RainfallCharacteristic
@@ -150,12 +155,16 @@ __all__ = [
     "HardwareRevisionStringCharacteristic",
     "IlluminanceCharacteristic",
     "LocalTimeInformationCharacteristic",
+    "LocationAndSpeedCharacteristic",
+    "LNControlPointCharacteristic",
+    "LNFeatureCharacteristic",
     "MagneticDeclinationCharacteristic",
     "MagneticFluxDensity2DCharacteristic",
     "MagneticFluxDensity3DCharacteristic",
     "ManufacturerNameStringCharacteristic",
     "MethaneConcentrationCharacteristic",
     "ModelNumberStringCharacteristic",
+    "NavigationCharacteristic",
     "NitrogenDioxideConcentrationCharacteristic",
     "NonMethaneVOCConcentrationCharacteristic",
     "OzoneConcentrationCharacteristic",
@@ -163,6 +172,7 @@ __all__ = [
     "PM10ConcentrationCharacteristic",
     "PM25ConcentrationCharacteristic",
     "PollenConcentrationCharacteristic",
+    "PositionQualityCharacteristic",
     "PressureCharacteristic",
     "PulseOximetryMeasurementCharacteristic",
     "RainfallCharacteristic",

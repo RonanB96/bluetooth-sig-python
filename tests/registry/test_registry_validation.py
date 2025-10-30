@@ -69,6 +69,7 @@ def discover_characteristic_classes() -> list[type[BaseCharacteristic]]:
                         and issubclass(obj, BaseCharacteristic)
                         and obj.__module__ == module.__name__
                         and not getattr(obj, "_is_template", False)  # Exclude templates
+                        and not getattr(obj, "_is_base_class", False)  # Exclude base classes
                     ):
                         characteristic_classes.append(obj)
             except ImportError as e:

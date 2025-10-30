@@ -186,6 +186,7 @@ class CharacteristicName(Enum):
     POWER_SPECIFICATION = "Power Specification"
     HEART_RATE_MEASUREMENT = "Heart Rate Measurement"
     BLOOD_PRESSURE_MEASUREMENT = "Blood Pressure Measurement"
+    INTERMEDIATE_CUFF_PRESSURE = "Intermediate Cuff Pressure"
     BLOOD_PRESSURE_FEATURE = "Blood Pressure Feature"
     CSC_MEASUREMENT = "CSC Measurement"
     RSC_MEASUREMENT = "RSC Measurement"
@@ -254,8 +255,15 @@ class CharacteristicName(Enum):
     NOISE = "Noise"
     # Pulse oximetry
     PULSE_OXIMETRY_CONTINUOUS_MEASUREMENT = "Pulse Oximetry Continuous Measurement"
-    # Generic Access
-    TX_POWER_LEVEL = "Tx Power Level"
+    LOCATION_AND_SPEED = "Location and Speed"
+    NAVIGATION = "Navigation"
+    POSITION_QUALITY = "Position Quality"
+    LN_FEATURE = "LN Feature"
+    LN_CONTROL_POINT = "LN Control Point"
+    SERVICE_CHANGED = "Service Changed"
+    ALERT_STATUS = "Alert Status"
+    RINGER_SETTING = "Ringer Setting"
+    RINGER_CONTROL_POINT = "Ringer Control Point"
 
 
 class ServiceName(Enum):
@@ -266,6 +274,7 @@ class ServiceName(Enum):
     DEVICE_INFORMATION = "Device Information"
     BATTERY_SERVICE = "Battery Service"
     HEART_RATE = "Heart Rate"
+    BLOOD_PRESSURE = "Blood Pressure"
     HEALTH_THERMOMETER = "Health Thermometer"
     GLUCOSE = "Glucose"
     CYCLING_SPEED_AND_CADENCE = "Cycling Speed and Cadence"
@@ -275,3 +284,5 @@ class ServiceName(Enum):
     ENVIRONMENTAL_SENSING = "Environmental Sensing"
     BODY_COMPOSITION = "Body Composition"
     WEIGHT_SCALE = "Weight Scale"
+    LOCATION_AND_NAVIGATION = "Location and Navigation"
+    PHONE_ALERT_STATUS = "Phone Alert Status"
