@@ -15,6 +15,8 @@ from bluetooth_sig.gatt.services.body_composition import BodyCompositionService
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
 
+from .test_service_common import CommonServiceTests
+
 
 class TestBodyCompositionMeasurementCharacteristic:
     """Test Body Composition Measurement characteristic implementation."""
@@ -204,37 +206,15 @@ class TestBodyCompositionFeatureCharacteristic:
         assert encoded == original_data
 
 
-class TestBodyCompositionService:
+class TestBodyCompositionService(CommonServiceTests):
     """Test Body Composition Service implementation."""
 
-    def test_expected_characteristics(self) -> None:
-        """Test expected characteristics for the service."""
-        from bluetooth_sig.types.gatt_enums import CharacteristicName
+    @pytest.fixture
+    def service(self) -> BodyCompositionService:
+        """Provide the service instance."""
+        return BodyCompositionService()
 
-        expected = BodyCompositionService.get_expected_characteristics()
-
-        assert CharacteristicName.BODY_COMPOSITION_MEASUREMENT in expected
-        assert CharacteristicName.BODY_COMPOSITION_FEATURE in expected
-        assert (
-            expected[CharacteristicName.BODY_COMPOSITION_MEASUREMENT].char_class
-            == BodyCompositionMeasurementCharacteristic
-        )
-        assert expected[CharacteristicName.BODY_COMPOSITION_FEATURE].char_class == BodyCompositionFeatureCharacteristic
-
-    def test_required_characteristics(self) -> None:
-        """Test required characteristics for the service."""
-        from bluetooth_sig.types.gatt_enums import CharacteristicName
-
-        required = BodyCompositionService.get_required_characteristics()
-
-        assert CharacteristicName.BODY_COMPOSITION_MEASUREMENT in required
-        assert (
-            required[CharacteristicName.BODY_COMPOSITION_MEASUREMENT].char_class
-            == BodyCompositionMeasurementCharacteristic
-        )
-        # Body Composition Feature is not required
-
-    def test_service_creation(self) -> None:
-        """Test service instantiation."""
-        service = BodyCompositionService()
-        assert service is not None
+    @pytest.fixture
+    def expected_uuid(self) -> str:
+        """Expected UUID for Body Composition Service."""
+        return "181B"

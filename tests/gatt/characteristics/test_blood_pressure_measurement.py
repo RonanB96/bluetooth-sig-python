@@ -6,9 +6,12 @@ import datetime
 
 import pytest
 
+from bluetooth_sig.gatt.characteristics.blood_pressure_common import (
+    BloodPressureFlags,
+    BloodPressureOptionalFields,
+)
 from bluetooth_sig.gatt.characteristics.blood_pressure_measurement import (
     BloodPressureData,
-    BloodPressureFlags,
     BloodPressureMeasurementCharacteristic,
 )
 from bluetooth_sig.types.units import PressureUnit
@@ -51,11 +54,8 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     diastolic=80.0,
                     mean_arterial_pressure=90.0,
                     unit=PressureUnit.MMHG,
+                    optional_fields=BloodPressureOptionalFields(),
                     flags=BloodPressureFlags(0),
-                    timestamp=None,
-                    pulse_rate=None,
-                    user_id=None,
-                    measurement_status=None,
                 ),
                 description="Basic 120/80 mmHg measurement",
             ),
@@ -77,11 +77,8 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     diastolic=11.0,
                     mean_arterial_pressure=12.0,
                     unit=PressureUnit.KPA,
+                    optional_fields=BloodPressureOptionalFields(),
                     flags=BloodPressureFlags.UNITS_KPA,
-                    timestamp=None,
-                    pulse_rate=None,
-                    user_id=None,
-                    measurement_status=None,
                 ),
                 description="16.0/11.0 kPa measurement",
             ),
@@ -110,11 +107,8 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     diastolic=90.0,
                     mean_arterial_pressure=110.0,
                     unit=PressureUnit.MMHG,
+                    optional_fields=BloodPressureOptionalFields(timestamp=datetime.datetime(2024, 3, 15, 14, 30, 45)),
                     flags=BloodPressureFlags.TIMESTAMP_PRESENT,
-                    timestamp=datetime.datetime(2024, 3, 15, 14, 30, 45),
-                    pulse_rate=None,
-                    user_id=None,
-                    measurement_status=None,
                 ),
                 description="140/90 mmHg with timestamp",
             ),
@@ -138,11 +132,8 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     diastolic=80.0,
                     mean_arterial_pressure=90.0,
                     unit=PressureUnit.MMHG,
+                    optional_fields=BloodPressureOptionalFields(pulse_rate=72.0),
                     flags=BloodPressureFlags.PULSE_RATE_PRESENT,
-                    timestamp=None,
-                    pulse_rate=72.0,
-                    user_id=None,
-                    measurement_status=None,
                 ),
                 description="120/80 mmHg with 72 bpm pulse",
             ),
@@ -167,11 +158,11 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     diastolic=80.0,
                     mean_arterial_pressure=90.0,
                     unit=PressureUnit.MMHG,
+                    optional_fields=BloodPressureOptionalFields(
+                        user_id=5,
+                        measurement_status=3,  # Body movement + cuff loose
+                    ),
                     flags=BloodPressureFlags.USER_ID_PRESENT | BloodPressureFlags.MEASUREMENT_STATUS_PRESENT,
-                    timestamp=None,
-                    pulse_rate=None,
-                    user_id=5,
-                    measurement_status=3,  # Body movement + cuff loose
                 ),
                 description="120/80 mmHg with user ID and status flags",
             ),
@@ -205,6 +196,12 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                     diastolic=12.0,
                     mean_arterial_pressure=14.0,
                     unit=PressureUnit.KPA,
+                    optional_fields=BloodPressureOptionalFields(
+                        timestamp=datetime.datetime(2024, 6, 20, 16, 45, 10),
+                        pulse_rate=84.0,
+                        user_id=3,
+                        measurement_status=28,  # Multiple status flags
+                    ),
                     flags=(
                         BloodPressureFlags.UNITS_KPA
                         | BloodPressureFlags.TIMESTAMP_PRESENT
@@ -212,10 +209,6 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
                         | BloodPressureFlags.USER_ID_PRESENT
                         | BloodPressureFlags.MEASUREMENT_STATUS_PRESENT
                     ),
-                    timestamp=datetime.datetime(2024, 6, 20, 16, 45, 10),
-                    pulse_rate=84.0,
-                    user_id=3,
-                    measurement_status=28,  # Multiple status flags
                 ),
                 description="Complex 18.0/12.0 kPa measurement with all fields",
             ),
@@ -243,8 +236,8 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
         assert result.diastolic == 80.0
         assert result.mean_arterial_pressure == 90.0
         assert result.unit == PressureUnit.MMHG
-        assert result.timestamp is None
-        assert result.pulse_rate is None
+        assert result.optional_fields.timestamp is None
+        assert result.optional_fields.pulse_rate is None
 
     def test_blood_pressure_with_all_fields(self, characteristic: BloodPressureMeasurementCharacteristic) -> None:
         """Test blood pressure measurement with all optional fields."""
@@ -276,10 +269,10 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
         result: BloodPressureData = characteristic.decode_value(test_data)
         assert result.systolic == 120.0
         assert result.unit == PressureUnit.MMHG
-        assert result.timestamp is not None
-        assert result.pulse_rate == 72.0
-        assert result.user_id == 1
-        assert result.measurement_status == 1
+        assert result.optional_fields.timestamp is not None
+        assert result.optional_fields.pulse_rate == 72.0
+        assert result.optional_fields.user_id == 1
+        assert result.optional_fields.measurement_status == 1
 
     def test_blood_pressure_kpa_units(self, characteristic: BloodPressureMeasurementCharacteristic) -> None:
         """Test blood pressure measurement with kPa units."""

@@ -31,6 +31,24 @@ class TestBatteryLevelCharacteristic(CommonCharacteristicTests):
         return CharacteristicTestData(input_data=bytearray([75]), expected_value=75, description="75% battery level")
 
     # === Battery-Specific Tests ===
+    @pytest.mark.parametrize(
+        "battery_level",
+        [
+            0,  # Empty
+            1,  # 1%
+            25,  # Quarter
+            50,  # Half
+            75,  # Three quarters
+            99,  # Almost full
+            100,  # Full
+        ],
+    )
+    def test_battery_level_various_values(self, characteristic: BatteryLevelCharacteristic, battery_level: int) -> None:
+        """Test battery level with various valid values."""
+        data = bytearray([battery_level])
+        result = characteristic.decode_value(data)
+        assert result == battery_level
+
     def test_battery_level_boundary_values(self, characteristic: BatteryLevelCharacteristic) -> None:
         """Test battery level boundary values (0% and 100%)."""
         # Test 0% battery

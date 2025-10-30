@@ -21,4 +21,6 @@ class GenericAttributeService(BaseGattService):
     _service_name: str = "GATT"
 
     # This service has no standard characteristics defined yet
-    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {}
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.SERVICE_CHANGED: False,
+    }
