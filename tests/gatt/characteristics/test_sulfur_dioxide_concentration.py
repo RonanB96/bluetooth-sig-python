@@ -23,13 +23,20 @@ class TestSulfurDioxideConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BD8"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid sulfur dioxide concentration test data."""
-        return CharacteristicTestData(
-            input_data=bytearray([0x64, 0x00]),
-            expected_value=100.0,
-            description="100.0 ppb sulfur dioxide concentration",
-        )
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([0x14, 0x00]),
+                expected_value=20.0,
+                description="20.0 ppb (typical urban)",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x64, 0x00]),
+                expected_value=100.0,
+                description="100.0 ppb (moderate pollution)",
+            ),
+        ]
 
     def test_sulfur_dioxide_concentration_parsing(
         self, characteristic: SulfurDioxideConcentrationCharacteristic
@@ -42,3 +49,27 @@ class TestSulfurDioxideConcentrationCharacteristic(CommonCharacteristicTests):
         test_data = bytearray([0x64, 0x00])  # 100 ppb little endian
         parsed = characteristic.decode_value(test_data)
         assert parsed == 100
+
+    def test_sulfur_dioxide_concentration_boundary_values(
+        self, characteristic: SulfurDioxideConcentrationCharacteristic
+    ) -> None:
+        """Test boundary values for SO2 concentration."""
+        # Clean air
+        data_min = bytearray([0x00, 0x00])
+        assert characteristic.decode_value(data_min) == 0.0
+
+        # Maximum
+        data_max = bytearray([0xFF, 0xFF])
+        assert characteristic.decode_value(data_max) == 65535.0
+
+    def test_sulfur_dioxide_concentration_typical_levels(
+        self, characteristic: SulfurDioxideConcentrationCharacteristic
+    ) -> None:
+        """Test typical SO2 concentration levels."""
+        # Typical urban (20 ppb)
+        data_urban = bytearray([0x14, 0x00])
+        assert characteristic.decode_value(data_urban) == 20.0
+
+        # High pollution (500 ppb)
+        data_high = bytearray([0xF4, 0x01])
+        assert characteristic.decode_value(data_high) == 500.0

@@ -33,35 +33,44 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
         return "2A6B"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Return valid test data for LN control point (set cumulative value request)."""
-        # LN Control Point request: op_code(1) + parameter(4)
-        data = bytearray(
-            [
-                0x01,  # op_code (SET_CUMULATIVE_VALUE)
-                0x00,
-                0x00,
-                0x00,
-                0x00,  # parameter (0)
-            ]
-        )
-        return CharacteristicTestData(
-            input_data=data,
-            expected_value=LNControlPointData(
-                op_code=LNControlPointOpCode.SET_CUMULATIVE_VALUE,
-                cumulative_value=0,
-                content_mask=None,
-                navigation_control_value=None,
-                route_number=None,
-                route_name=None,
-                fix_rate=None,
-                elevation=None,
-                request_op_code=None,
-                response_value=None,
-                response_parameter=None,
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([0x01, 0xE8, 0x03, 0x00, 0x00]),  # SET_CUMULATIVE_VALUE, value=1000
+                expected_value=LNControlPointData(
+                    op_code=LNControlPointOpCode.SET_CUMULATIVE_VALUE,
+                    cumulative_value=1000,
+                    content_mask=None,
+                    navigation_control_value=None,
+                    route_number=None,
+                    route_name=None,
+                    fix_rate=None,
+                    elevation=None,
+                    request_op_code=None,
+                    response_value=None,
+                    response_parameter=None,
+                ),
+                description="LN Control Point set cumulative value to 1000",
             ),
-            description="LN Control Point set cumulative value request",
-        )
+            CharacteristicTestData(
+                input_data=bytearray([0x03, 0x01]),  # NAVIGATION_CONTROL, start navigation
+                expected_value=LNControlPointData(
+                    op_code=LNControlPointOpCode.NAVIGATION_CONTROL,
+                    cumulative_value=None,
+                    content_mask=None,
+                    navigation_control_value=1,
+                    route_number=None,
+                    route_name=None,
+                    fix_rate=None,
+                    elevation=None,
+                    request_op_code=None,
+                    response_value=None,
+                    response_parameter=None,
+                ),
+                description="LN Control Point start navigation",
+            ),
+        ]
 
     # === LN Control Point-Specific Tests ===
     @pytest.mark.parametrize(

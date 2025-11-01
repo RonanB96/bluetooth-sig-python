@@ -25,11 +25,18 @@ class TestTimeZoneCharacteristic(CommonCharacteristicTests):
         return "2A0E"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid time zone test data."""
-        return CharacteristicTestData(
-            input_data=bytearray(struct.pack("b", 4)), expected_value="UTC+01:00", description="UTC+01:00 time zone"
-        )
+        return [
+            CharacteristicTestData(
+                input_data=bytearray(struct.pack("b", 4)), expected_value="UTC+01:00", description="UTC+01:00 time zone"
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(struct.pack("b", -20)),
+                expected_value="UTC-05:00",
+                description="UTC-05:00 time zone",
+            ),
+        ]
 
     def test_time_zone_parsing(self, characteristic: TimeZoneCharacteristic) -> None:
         """Test Time Zone characteristic parsing."""

@@ -33,34 +33,40 @@ class TestPositionQualityCharacteristic(CommonCharacteristicTests):
         return "2A69"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Return valid test data for position quality (basic quality metrics)."""
-        # Position quality data: flags(2) + time_to_first_fix(2) + hdop(1) + vdop(1)
-        data = bytearray(
-            [
-                0x64,
-                0x00,  # flags (time_to_first_fix, hdop, vdop present)
-                0x10,
-                0x27,  # time_to_first_fix (1000 seconds)
-                0x04,  # hdop (2.0)
-                0x06,  # vdop (3.0)
-            ]
-        )
-        return CharacteristicTestData(
-            input_data=data,
-            expected_value=PositionQualityData(
-                flags=PositionQualityFlags(0x0064),
-                number_of_beacons_in_solution=None,
-                number_of_beacons_in_view=None,
-                time_to_first_fix=1000.0,  # 10000 / 10
-                ehpe=None,
-                evpe=None,
-                hdop=2.0,
-                vdop=3.0,
-                position_status=PositionStatus.NO_POSITION,
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([0x64, 0x00, 0x10, 0x27, 0x04, 0x06]),  # ttff, hdop, vdop
+                expected_value=PositionQualityData(
+                    flags=PositionQualityFlags(0x0064),
+                    number_of_beacons_in_solution=None,
+                    number_of_beacons_in_view=None,
+                    time_to_first_fix=1000.0,
+                    ehpe=None,
+                    evpe=None,
+                    hdop=2.0,
+                    vdop=3.0,
+                    position_status=PositionStatus.NO_POSITION,
+                ),
+                description="Position Quality with HDOP, VDOP, and time to first fix",
             ),
-            description="Position Quality with HDOP, VDOP, and time to first fix",
-        )
+            CharacteristicTestData(
+                input_data=bytearray([0x03, 0x00, 0x05, 0x0A]),  # beacon counts
+                expected_value=PositionQualityData(
+                    flags=PositionQualityFlags(0x0003),
+                    number_of_beacons_in_solution=5,
+                    number_of_beacons_in_view=10,
+                    time_to_first_fix=None,
+                    ehpe=None,
+                    evpe=None,
+                    hdop=None,
+                    vdop=None,
+                    position_status=PositionStatus.NO_POSITION,
+                ),
+                description="Position Quality with beacon counts",
+            ),
+        ]
 
     # === Position Quality-Specific Tests ===
     @pytest.mark.parametrize(

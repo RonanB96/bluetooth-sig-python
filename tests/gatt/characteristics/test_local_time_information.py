@@ -28,17 +28,28 @@ class TestLocalTimeInformationCharacteristic(CommonCharacteristicTests):
         return "2A0F"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Returns valid test data for LocalTimeInformationCharacteristic."""
-        return CharacteristicTestData(
-            input_data=bytearray([8, 4]),  # timezone=+2h (8*15min), dst=+1h (value 4)
-            expected_value=LocalTimeInformationData(
-                timezone=TimezoneInfo(description="UTC+02:00", offset_hours=2.0, raw_value=8),
-                dst_offset=DSTOffsetInfo(description="Daylight Time", offset_hours=1.0, raw_value=4),
-                total_offset_hours=3.0,
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([4, 4]),  # timezone=+1h (4*15min), dst=+1h (value 4)
+                expected_value=LocalTimeInformationData(
+                    timezone=TimezoneInfo(description="UTC+01:00", offset_hours=1.0, raw_value=4),
+                    dst_offset=DSTOffsetInfo(description="Daylight Time", offset_hours=1.0, raw_value=4),
+                    total_offset_hours=2.0,
+                ),
+                description="UTC+1 with DST (+1 hour) = total offset 2 hours",
             ),
-            description="UTC+2 with DST (+1 hour) = total offset 3 hours",
-        )
+            CharacteristicTestData(
+                input_data=bytearray([0xFC, 0]),  # timezone=-1h (-4*15min), dst=standard time (value 0)
+                expected_value=LocalTimeInformationData(
+                    timezone=TimezoneInfo(description="UTC-01:00", offset_hours=-1.0, raw_value=-4),
+                    dst_offset=DSTOffsetInfo(description="Standard Time", offset_hours=0.0, raw_value=0),
+                    total_offset_hours=-1.0,
+                ),
+                description="UTC-1 with standard time (no DST) = total offset -1 hour",
+            ),
+        ]
 
     def test_local_time_information_parsing(self, characteristic: LocalTimeInformationCharacteristic) -> None:
         """Test Local Time Information characteristic parsing."""

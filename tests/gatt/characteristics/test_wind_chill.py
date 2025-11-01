@@ -23,11 +23,16 @@ class TestWindChillCharacteristic(CommonCharacteristicTests):
         return "2A79"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid wind chill test data."""
-        return CharacteristicTestData(
-            input_data=bytearray([256 - 15]), expected_value=-15.0, description="-15°C wind chill"
-        )
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([256 - 15]), expected_value=-15.0, description="-15°C wind chill"
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([256 - 25]), expected_value=-25.0, description="-25°C wind chill"
+            ),
+        ]
 
     def test_wind_chill_parsing(self, characteristic: WindChillCharacteristic) -> None:
         """Test wind chill characteristic parsing."""

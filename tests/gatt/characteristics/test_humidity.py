@@ -23,11 +23,16 @@ class TestHumidityCharacteristic(CommonCharacteristicTests):
         return "2A6F"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
-        """Valid humidity test data (50.00%)."""
-        return CharacteristicTestData(
-            input_data=bytearray([0x88, 0x13]), expected_value=50.0, description="50.00% humidity"
-        )
+    def valid_test_data(self) -> list[CharacteristicTestData]:
+        """Valid humidity test data."""
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([0x88, 0x13]), expected_value=50.0, description="50.00% humidity"
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x58, 0x1B]), expected_value=70.0, description="70.00% humidity"
+            ),
+        ]
 
     # === Humidity-Specific Tests ===
     def test_humidity_precision_and_range(self, characteristic: HumidityCharacteristic) -> None:

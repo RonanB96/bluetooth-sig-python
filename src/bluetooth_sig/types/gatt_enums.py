@@ -7,7 +7,37 @@ alternatives.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, IntEnum
+
+
+class DayOfWeek(IntEnum):
+    """Day of week enumeration per ISO 8601.
+
+    Used by Current Time Service and other time-related characteristics.
+    Values follow ISO 8601 standard (Monday=1, Sunday=7, Unknown=0).
+    """
+
+    UNKNOWN = 0
+    MONDAY = 1
+    TUESDAY = 2
+    WEDNESDAY = 3
+    THURSDAY = 4
+    FRIDAY = 5
+    SATURDAY = 6
+    SUNDAY = 7
+
+
+class AdjustReason(IntEnum):
+    """Time adjustment reason flags.
+
+    Used by Current Time Service to indicate why time was adjusted.
+    Can be combined as bitfield flags.
+    """
+
+    MANUAL_TIME_UPDATE = 1 << 0  # Bit 0
+    EXTERNAL_REFERENCE_TIME_UPDATE = 1 << 1  # Bit 1
+    CHANGE_OF_TIME_ZONE = 1 << 2  # Bit 2
+    CHANGE_OF_DST = 1 << 3  # Bit 3
 
 
 class GattProperty(Enum):
@@ -264,6 +294,12 @@ class CharacteristicName(Enum):
     ALERT_STATUS = "Alert Status"
     RINGER_SETTING = "Ringer Setting"
     RINGER_CONTROL_POINT = "Ringer Control Point"
+    # Alert Notification Service characteristics
+    NEW_ALERT = "New Alert"
+    SUPPORTED_NEW_ALERT_CATEGORY = "Supported New Alert Category"
+    UNREAD_ALERT_STATUS = "Unread Alert Status"
+    SUPPORTED_UNREAD_ALERT_CATEGORY = "Supported Unread Alert Category"
+    ALERT_NOTIFICATION_CONTROL_POINT = "Alert Notification Control Point"
 
 
 class ServiceName(Enum):

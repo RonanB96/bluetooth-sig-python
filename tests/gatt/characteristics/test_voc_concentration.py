@@ -20,11 +20,16 @@ class TestVOCConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BE7"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid VOC concentration test data."""
-        return CharacteristicTestData(
-            input_data=bytearray([0x00, 0x04]), expected_value=1024, description="1024 ppb VOC concentration"
-        )
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([0x00, 0x04]), expected_value=1024, description="1024 ppb VOC concentration"
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0xC8, 0x00]), expected_value=200, description="200 ppb VOC concentration"
+            ),
+        ]
 
     def test_voc_concentration_parsing(self, characteristic: VOCConcentrationCharacteristic) -> None:
         """Test VOC concentration characteristic parsing."""

@@ -27,38 +27,70 @@ class TestLNFeatureCharacteristic(CommonCharacteristicTests):
         return "2A6A"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Return valid test data for LN feature (basic features enabled)."""
-        # Features bitmap with some basic features enabled
-        features_bitmap = 0x0000001F  # Instantaneous speed, total distance, location, elevation, heading
-        return CharacteristicTestData(
-            input_data=bytearray(features_bitmap.to_bytes(4, byteorder="little")),
-            expected_value=LNFeatureData(
-                features_bitmap=features_bitmap,
-                instantaneous_speed_supported=True,
-                total_distance_supported=True,
-                location_supported=True,
-                elevation_supported=True,
-                heading_supported=True,
-                rolling_time_supported=False,
-                utc_time_supported=False,
-                remaining_distance_supported=False,
-                remaining_vertical_distance_supported=False,
-                estimated_time_of_arrival_supported=False,
-                number_of_beacons_in_solution_supported=False,
-                number_of_beacons_in_view_supported=False,
-                time_to_first_fix_supported=False,
-                estimated_horizontal_position_error_supported=False,
-                estimated_vertical_position_error_supported=False,
-                horizontal_dilution_of_precision_supported=False,
-                vertical_dilution_of_precision_supported=False,
-                location_and_speed_characteristic_content_masking_supported=False,
-                fix_rate_setting_supported=False,
-                elevation_setting_supported=False,
-                position_status_supported=False,
+        # Test 1: Basic features
+        features_bitmap1 = 0x0000001F  # Instantaneous speed, total distance, location, elevation, heading
+        # Test 2: Advanced features
+        features_bitmap2 = 0x00000FE0  # Rolling time, UTC time, remaining distance, etc.
+        return [
+            CharacteristicTestData(
+                input_data=bytearray(features_bitmap1.to_bytes(4, byteorder="little")),
+                expected_value=LNFeatureData(
+                    features_bitmap=features_bitmap1,
+                    instantaneous_speed_supported=True,
+                    total_distance_supported=True,
+                    location_supported=True,
+                    elevation_supported=True,
+                    heading_supported=True,
+                    rolling_time_supported=False,
+                    utc_time_supported=False,
+                    remaining_distance_supported=False,
+                    remaining_vertical_distance_supported=False,
+                    estimated_time_of_arrival_supported=False,
+                    number_of_beacons_in_solution_supported=False,
+                    number_of_beacons_in_view_supported=False,
+                    time_to_first_fix_supported=False,
+                    estimated_horizontal_position_error_supported=False,
+                    estimated_vertical_position_error_supported=False,
+                    horizontal_dilution_of_precision_supported=False,
+                    vertical_dilution_of_precision_supported=False,
+                    location_and_speed_characteristic_content_masking_supported=False,
+                    fix_rate_setting_supported=False,
+                    elevation_setting_supported=False,
+                    position_status_supported=False,
+                ),
+                description="LN Feature with basic features enabled",
             ),
-            description="LN Feature with basic features enabled",
-        )
+            CharacteristicTestData(
+                input_data=bytearray(features_bitmap2.to_bytes(4, byteorder="little")),
+                expected_value=LNFeatureData(
+                    features_bitmap=features_bitmap2,
+                    instantaneous_speed_supported=False,
+                    total_distance_supported=False,
+                    location_supported=False,
+                    elevation_supported=False,
+                    heading_supported=False,
+                    rolling_time_supported=True,
+                    utc_time_supported=True,
+                    remaining_distance_supported=True,
+                    remaining_vertical_distance_supported=True,
+                    estimated_time_of_arrival_supported=True,
+                    number_of_beacons_in_solution_supported=True,
+                    number_of_beacons_in_view_supported=True,
+                    time_to_first_fix_supported=False,
+                    estimated_horizontal_position_error_supported=False,
+                    estimated_vertical_position_error_supported=False,
+                    horizontal_dilution_of_precision_supported=False,
+                    vertical_dilution_of_precision_supported=False,
+                    location_and_speed_characteristic_content_masking_supported=False,
+                    fix_rate_setting_supported=False,
+                    elevation_setting_supported=False,
+                    position_status_supported=False,
+                ),
+                description="LN Feature with advanced features enabled",
+            ),
+        ]
 
     # === LN Feature-Specific Tests ===
     @pytest.mark.parametrize(
