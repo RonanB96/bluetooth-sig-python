@@ -23,24 +23,37 @@ class TestCyclingPowerFeatureCharacteristic(CommonCharacteristicTests):
         return "2A65"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid cycling power feature test data."""
-        return CharacteristicTestData(
-            input_data=bytearray(struct.pack("<I", 0x0000000F)),
-            expected_value=CyclingPowerFeatureData(
-                features=(
-                    CyclingPowerFeatures.PEDAL_POWER_BALANCE_SUPPORTED
-                    | CyclingPowerFeatures.ACCUMULATED_ENERGY_SUPPORTED
-                    | CyclingPowerFeatures.WHEEL_REVOLUTION_DATA_SUPPORTED
-                    | CyclingPowerFeatures.CRANK_REVOLUTION_DATA_SUPPORTED
+        return [
+            CharacteristicTestData(
+                input_data=bytearray(struct.pack("<I", 0x0000000F)),
+                expected_value=CyclingPowerFeatureData(
+                    features=(
+                        CyclingPowerFeatures.PEDAL_POWER_BALANCE_SUPPORTED
+                        | CyclingPowerFeatures.ACCUMULATED_ENERGY_SUPPORTED
+                        | CyclingPowerFeatures.WHEEL_REVOLUTION_DATA_SUPPORTED
+                        | CyclingPowerFeatures.CRANK_REVOLUTION_DATA_SUPPORTED
+                    ),
+                    pedal_power_balance_supported=True,
+                    accumulated_energy_supported=True,
+                    wheel_revolution_data_supported=True,
+                    crank_revolution_data_supported=True,
                 ),
-                pedal_power_balance_supported=True,
-                accumulated_energy_supported=True,
-                wheel_revolution_data_supported=True,
-                crank_revolution_data_supported=True,
+                description="Multiple features enabled",
             ),
-            description="Multiple features enabled",
-        )
+            CharacteristicTestData(
+                input_data=bytearray(struct.pack("<I", 0x00000001)),
+                expected_value=CyclingPowerFeatureData(
+                    features=CyclingPowerFeatures.PEDAL_POWER_BALANCE_SUPPORTED,
+                    pedal_power_balance_supported=True,
+                    accumulated_energy_supported=False,
+                    wheel_revolution_data_supported=False,
+                    crank_revolution_data_supported=False,
+                ),
+                description="Only pedal power balance supported",
+            ),
+        ]
 
     def test_cycling_power_feature_values(self, characteristic: CyclingPowerFeatureCharacteristic) -> None:
         """Test parsing cycling power feature values."""

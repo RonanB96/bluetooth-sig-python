@@ -20,13 +20,20 @@ class TestAmmoniaConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BCF"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid ammonia concentration test data."""
-        return CharacteristicTestData(
-            input_data=bytearray([0x34, 0x92]),  # IEEE 11073 SFLOAT little endian
-            expected_value=5640.0,  # Expected parsed concentration value
-            description="Valid ammonia concentration",
-        )
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([0x0A, 0x80]),  # 10 in IEEE 11073 SFLOAT
+                expected_value=10.0,
+                description="10 ppm ammonia concentration",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x64, 0x80]),  # 100 in IEEE 11073 SFLOAT
+                expected_value=100.0,
+                description="100 ppm ammonia concentration",
+            ),
+        ]
 
     def test_ammonia_concentration_parsing(self, characteristic: AmmoniaConcentrationCharacteristic) -> None:
         """Test ammonia concentration characteristic parsing."""

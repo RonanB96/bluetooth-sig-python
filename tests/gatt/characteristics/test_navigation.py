@@ -35,36 +35,44 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
         return "2A68"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Return valid test data for navigation (bearing and heading)."""
-        # Navigation data: flags(2) + bearing(2) + heading(2)
-        data = bytearray(
-            [
-                0x00,
-                0x00,  # flags (no optional fields)
-                0x5A,
-                0x00,  # bearing (90.0 degrees)
-                0x2D,
-                0x01,  # heading (301.0 degrees)
-            ]
-        )
-        return CharacteristicTestData(
-            input_data=data,
-            expected_value=NavigationData(
-                flags=NavigationFlags(0),
-                bearing=0.9,  # 0x005A = 90 units of 0.01 degrees = 0.9 degrees
-                heading=3.01,  # 0x012D = 301 units of 0.01 degrees = 3.01 degrees
-                remaining_distance=None,
-                remaining_vertical_distance=None,
-                estimated_time_of_arrival=None,
-                position_status=PositionStatus.NO_POSITION,
-                heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
-                navigation_indicator_type=NavigationIndicatorType.TO_WAYPOINT,
-                waypoint_reached=False,
-                destination_reached=False,
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([0x00, 0x00, 0x5A, 0x00, 0x2D, 0x01]),  # bearing=90, heading=301
+                expected_value=NavigationData(
+                    flags=NavigationFlags(0),
+                    bearing=0.9,  # 90 units of 0.01 degrees = 0.9 degrees
+                    heading=3.01,  # 301 units of 0.01 degrees = 3.01 degrees
+                    remaining_distance=None,
+                    remaining_vertical_distance=None,
+                    estimated_time_of_arrival=None,
+                    position_status=PositionStatus.NO_POSITION,
+                    heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
+                    navigation_indicator_type=NavigationIndicatorType.TO_WAYPOINT,
+                    waypoint_reached=False,
+                    destination_reached=False,
+                ),
+                description="Navigation with bearing and heading",
             ),
-            description="Navigation with bearing and heading",
-        )
+            CharacteristicTestData(
+                input_data=bytearray([0x00, 0x00, 0xB4, 0x00, 0x68, 0x01]),  # bearing=180, heading=360
+                expected_value=NavigationData(
+                    flags=NavigationFlags(0),
+                    bearing=1.8,  # 180 units of 0.01 degrees = 1.8 degrees
+                    heading=3.6,  # 360 units of 0.01 degrees = 3.6 degrees
+                    remaining_distance=None,
+                    remaining_vertical_distance=None,
+                    estimated_time_of_arrival=None,
+                    position_status=PositionStatus.NO_POSITION,
+                    heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
+                    navigation_indicator_type=NavigationIndicatorType.TO_WAYPOINT,
+                    waypoint_reached=False,
+                    destination_reached=False,
+                ),
+                description="Navigation with bearing 180 and heading 360",
+            ),
+        ]
 
     # === Navigation-Specific Tests ===
     @pytest.mark.parametrize(

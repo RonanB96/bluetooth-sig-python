@@ -20,11 +20,16 @@ class TestCO2ConcentrationCharacteristic(CommonCharacteristicTests):
         return "2B8C"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid CO2 concentration test data."""
-        return CharacteristicTestData(
-            input_data=bytearray([0x34, 0x12]), expected_value=4660, description="4660 ppm CO2 concentration"
-        )
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([0x34, 0x12]), expected_value=4660, description="4660 ppm CO2 concentration"
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x90, 0x01]), expected_value=400, description="400 ppm typical outdoor CO2"
+            ),
+        ]
 
     def test_co2_concentration_boundary_values(self, characteristic: CO2ConcentrationCharacteristic) -> None:
         """Test CO2 concentration boundary values and validation."""

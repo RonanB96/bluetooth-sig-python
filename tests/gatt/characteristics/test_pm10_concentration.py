@@ -23,11 +23,16 @@ class TestPM10ConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BD7"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid PM10 concentration test data."""
-        return CharacteristicTestData(
-            input_data=bytearray([0x32, 0x00]), expected_value=50.0, description="50.0 µg/m³ PM10 concentration"
-        )
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([0x32, 0x00]), expected_value=50.0, description="50.0 µg/m³ PM10 concentration"
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x64, 0x00]), expected_value=100.0, description="100.0 µg/m³ PM10 concentration"
+            ),
+        ]
 
     def test_pm10_concentration_parsing(self, characteristic: PM10ConcentrationCharacteristic) -> None:
         """Test PM10 concentration characteristic parsing."""

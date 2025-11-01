@@ -22,13 +22,20 @@ class TestNonMethaneVOCConcentrationCharacteristic(CommonCharacteristicTests):
         return "2BD3"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid Non-Methane VOC concentration test data."""
-        return CharacteristicTestData(
-            input_data=bytearray([0x34, 0x92]),
-            expected_value=5640.0,
-            description="IEEE 11073 SFLOAT Non-Methane VOC concentration",
-        )
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([0x0A, 0x80]),  # 10 in IEEE 11073 SFLOAT
+                expected_value=10.0,
+                description="10 ppb Non-Methane VOC concentration",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x64, 0x80]),  # 100 in IEEE 11073 SFLOAT
+                expected_value=100.0,
+                description="100 ppb Non-Methane VOC concentration",
+            ),
+        ]
 
     def test_tvoc_concentration_parsing(self, characteristic: NonMethaneVOCConcentrationCharacteristic) -> None:
         """Test TVOC concentration characteristic parsing."""
