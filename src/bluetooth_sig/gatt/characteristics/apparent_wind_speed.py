@@ -7,6 +7,11 @@ from .templates import ScaledUint16Template
 
 
 class ApparentWindSpeedCharacteristic(BaseCharacteristic):
-    """Apparent Wind Speed measurement characteristic."""
+    """Apparent Wind Speed characteristic (0x2A72).
 
-    _template = ScaledUint16Template()
+    org.bluetooth.characteristic.apparent_wind_speed
+
+    Apparent Wind Speed measurement characteristic.
+    """
+
+    _template = ScaledUint16Template.from_letter_method(M=1, d=-2, b=0)

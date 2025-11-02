@@ -12,6 +12,7 @@ from .base import (
     ServiceValidationResult,
 )
 from .battery_service import BatteryService
+from .blood_pressure import BloodPressureService
 from .body_composition import BodyCompositionService
 from .cycling_power import CyclingPowerService
 from .cycling_speed_and_cadence import CyclingSpeedAndCadenceService
@@ -22,6 +23,8 @@ from .generic_attribute import GenericAttributeService
 from .glucose import GlucoseService
 from .health_thermometer import HealthThermometerService
 from .heart_rate import HeartRateService
+from .location_and_navigation import LocationAndNavigationService
+from .phone_alert_status import PhoneAlertStatusService
 from .registry import (
     SERVICE_CLASS_MAP,
     GattServiceRegistry,
@@ -44,6 +47,7 @@ __all__ = [
     # Individual service classes for backward compatibility
     "AutomationIOService",
     "BatteryService",
+    "BloodPressureService",
     "BodyCompositionService",
     "CyclingPowerService",
     "CyclingSpeedAndCadenceService",
@@ -54,6 +58,8 @@ __all__ = [
     "GlucoseService",
     "HealthThermometerService",
     "HeartRateService",
+    "LocationAndNavigationService",
+    "PhoneAlertStatusService",
     "RunningSpeedAndCadenceService",
     "WeightScaleService",
 ]

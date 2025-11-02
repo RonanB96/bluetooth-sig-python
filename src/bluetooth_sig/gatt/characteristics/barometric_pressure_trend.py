@@ -49,7 +49,11 @@ class BarometricPressureTrend(IntEnum):
 
 
 class BarometricPressureTrendCharacteristic(BaseCharacteristic):
-    """Barometric pressure trend characteristic.
+    """Barometric Pressure Trend characteristic (0x2AA3).
+
+    org.bluetooth.characteristic.barometric_pressure_trend
+
+    Barometric pressure trend characteristic.
 
     Represents the trend observed for barometric pressure using
     enumerated values.

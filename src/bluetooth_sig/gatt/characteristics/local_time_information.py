@@ -71,7 +71,11 @@ class LocalTimeInformationData(msgspec.Struct, frozen=True, kw_only=True):  # py
 
 
 class LocalTimeInformationCharacteristic(BaseCharacteristic):
-    """Local time information characteristic.
+    """Local Time Information characteristic (0x2A0F).
+
+    org.bluetooth.characteristic.local_time_information
+
+    Local time information characteristic.
 
     Represents the relation (offset) between local time and UTC.
     Contains time zone and Daylight Savings Time (DST) offset

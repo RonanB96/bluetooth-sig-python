@@ -42,7 +42,11 @@ class VoltageStatisticsData(msgspec.Struct, frozen=True, kw_only=True):  # pylin
 
 
 class VoltageStatisticsCharacteristic(BaseCharacteristic):
-    """Voltage Statistics characteristic.
+    """Voltage Statistics characteristic (0x2B1A).
+
+    org.bluetooth.characteristic.voltage_statistics
+
+    Voltage Statistics characteristic.
 
     Provides statistical voltage data over time.
     """

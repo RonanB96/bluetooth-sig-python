@@ -220,7 +220,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
         # Add optional fields based on flags
         if pedal_power_balance is not None:
-            balance = int(pedal_power_balance)
+            balance = int(pedal_power_balance * self.PEDAL_POWER_BALANCE_RESOLUTION)  # Convert back to raw value
             if not 0 <= balance <= UINT8_MAX:
                 raise ValueError(f"Pedal power balance {balance} exceeds uint8 range")
             result.append(balance)
@@ -233,7 +233,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
         if wheel_revolutions is not None and wheel_event_time is not None:
             wheel_rev = int(wheel_revolutions)
-            wheel_time = int(wheel_event_time)
+            wheel_time = round(wheel_event_time * self.WHEEL_TIME_RESOLUTION)
             if not 0 <= wheel_rev <= 0xFFFFFFFF:
                 raise ValueError(f"Wheel revolutions {wheel_rev} exceeds uint32 range")
             if not 0 <= wheel_time <= 0xFFFF:
@@ -243,7 +243,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
         if crank_revolutions is not None and crank_event_time is not None:
             crank_rev = int(crank_revolutions)
-            crank_time = int(crank_event_time)
+            crank_time = round(crank_event_time * self.CRANK_TIME_RESOLUTION)
             if not 0 <= crank_rev <= 0xFFFF:
                 raise ValueError(f"Crank revolutions {crank_rev} exceeds uint16 range")
             if not 0 <= crank_time <= 0xFFFF:
