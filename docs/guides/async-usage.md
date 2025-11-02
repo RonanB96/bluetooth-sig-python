@@ -148,15 +148,15 @@ async def monitor_sensor(client):
 
 The async API:
 
-- **Yields to event loop** - Uses `asyncio.sleep(0)` to allow other tasks to run
-- **Enables concurrent operations** - Multiple parse operations can run together
-- **No performance penalty** - Small operations have minimal overhead
-- **Chunks large batches** - Automatically splits >5 items into chunks of 10
+- **Async-compatible wrappers** - Methods can be awaited in async contexts
+- **Synchronous parsing** - Actual parsing is CPU-bound and runs synchronously
+- **No performance penalty** - Fast parsing operations with no overhead
+- **Enables async workflows** - Integrates seamlessly with async BLE libraries
 
 For optimal performance:
 
 - Use batch parsing for multiple characteristics
-- Let the library handle concurrency
+- Combine with async I/O operations (BLE reads/writes)
 - Don't create too many concurrent tasks (use `asyncio.Semaphore` if needed)
 
 ## API Reference
@@ -165,10 +165,10 @@ For optimal performance:
 
 All methods from [`BluetoothSIGTranslator`][bluetooth_sig.BluetoothSIGTranslator] are available, plus:
 
-- `parse_characteristic_async()` - Async version of [`parse_characteristic`][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic]
-- `parse_characteristics_async()` - Async version of [`parse_characteristics`][bluetooth_sig.BluetoothSIGTranslator.parse_characteristics]
-- `get_sig_info_by_uuid_async()` - Async version of [`get_sig_info_by_uuid`][bluetooth_sig.BluetoothSIGTranslator.get_sig_info_by_uuid]
-- `get_sig_info_by_name_async()` - Async version of [`get_sig_info_by_name`][bluetooth_sig.BluetoothSIGTranslator.get_sig_info_by_name]
+- `parse_characteristic_async()` - Async-compatible wrapper for [`parse_characteristic`][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic]
+- `parse_characteristics_async()` - Async-compatible wrapper for [`parse_characteristics`][bluetooth_sig.BluetoothSIGTranslator.parse_characteristics]
+
+Note: Use the inherited sync methods directly for simple lookups like `get_sig_info_by_uuid()` and `get_sig_info_by_name()` as they don't perform I/O.
 
 ### AsyncParsingSession
 

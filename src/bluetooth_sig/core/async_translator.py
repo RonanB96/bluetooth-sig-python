@@ -2,14 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from ..types import CharacteristicContext, CharacteristicData
 from ..types.uuid import BluetoothUUID
 from .translator import BluetoothSIGTranslator
-
-if TYPE_CHECKING:
-    from ..types import SIGInfo
 
 
 class AsyncBluetoothSIGTranslator(BluetoothSIGTranslator):
@@ -38,10 +33,11 @@ class AsyncBluetoothSIGTranslator(BluetoothSIGTranslator):
         ctx: CharacteristicContext | None = None,
         descriptor_data: dict[str, bytes] | None = None,
     ) -> CharacteristicData:
-        """Parse characteristic data asynchronously.
+        """Parse characteristic data in an async-compatible manner.
 
-        This is a non-blocking variant that yields control to the event loop
-        during parsing, allowing other tasks to run concurrently.
+        This is an async wrapper that allows characteristic parsing to be used
+        in async contexts. The actual parsing is performed synchronously as it's
+        a fast, CPU-bound operation that doesn't benefit from async I/O.
 
         Args:
             uuid: The characteristic UUID (string or BluetoothUUID)
@@ -72,10 +68,11 @@ class AsyncBluetoothSIGTranslator(BluetoothSIGTranslator):
         descriptor_data: dict[str, dict[str, bytes]] | None = None,
         ctx: CharacteristicContext | None = None,
     ) -> dict[str, CharacteristicData]:
-        """Parse multiple characteristics asynchronously.
+        """Parse multiple characteristics in an async-compatible manner.
 
-        Parses characteristics concurrently, yielding to the event loop
-        between parsing operations for better responsiveness.
+        This is an async wrapper for batch characteristic parsing. The parsing
+        is performed synchronously as it's a fast, CPU-bound operation. This method
+        allows batch parsing to be used naturally in async workflows.
 
         Args:
             char_data: Dictionary mapping UUIDs to raw data bytes
@@ -102,29 +99,6 @@ class AsyncBluetoothSIGTranslator(BluetoothSIGTranslator):
         # Delegate directly to sync implementation
         # The sync implementation already handles dependency ordering
         return self.parse_characteristics(char_data, descriptor_data, ctx)
-
-    async def get_sig_info_by_uuid_async(self, uuid: str | BluetoothUUID) -> SIGInfo | None:
-        """Get SIG info by UUID asynchronously.
-
-        Args:
-            uuid: UUID string or BluetoothUUID
-
-        Returns:
-            SIGInfo if found, None otherwise
-        """
-        uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
-        return self.get_sig_info_by_uuid(uuid_str)
-
-    async def get_sig_info_by_name_async(self, name: str) -> SIGInfo | None:
-        """Get SIG info by name asynchronously.
-
-        Args:
-            name: Characteristic or service name
-
-        Returns:
-            SIGInfo if found, None otherwise
-        """
-        return self.get_sig_info_by_name(name)
 
 
 # Convenience instance

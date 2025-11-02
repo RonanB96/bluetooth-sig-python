@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from types import TracebackType
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
-from ..types import CharacteristicContext
+from ..types import CharacteristicContext, CharacteristicData
+from ..types.protocols import CharacteristicDataProtocol
+from ..types.uuid import BluetoothUUID
 from .async_translator import AsyncBluetoothSIGTranslator
-
-if TYPE_CHECKING:
-    from ..types import CharacteristicData, CharacteristicDataProtocol
 
 
 class AsyncParsingSession:
@@ -57,7 +57,7 @@ class AsyncParsingSession:
 
     async def parse(
         self,
-        uuid: str,
+        uuid: str | BluetoothUUID,
         data: bytes,
         descriptor_data: dict[str, bytes] | None = None,
     ) -> CharacteristicData:
@@ -71,8 +71,10 @@ class AsyncParsingSession:
         Returns:
             CharacteristicData
         """
-        # Update context with previous results
-        results_mapping = cast("dict[str, CharacteristicDataProtocol]", self.results)
+        # Update context with previous results; cast to protocol mapping for typing
+        results_mapping: Mapping[str, CharacteristicDataProtocol] = cast(
+            Mapping[str, CharacteristicDataProtocol], self.results
+        )
 
         if self.context is None:
             self.context = CharacteristicContext(other_characteristics=results_mapping)
@@ -85,9 +87,10 @@ class AsyncParsingSession:
             )
 
         # Parse with context
-        result = await self.translator.parse_characteristic_async(uuid, data, self.context, descriptor_data)
+        uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
+        result = await self.translator.parse_characteristic_async(uuid_str, data, self.context, descriptor_data)
 
-        # Store result for future context
-        self.results[uuid] = result
+        # Store result for future context using string UUID key
+        self.results[uuid_str] = result
 
         return result

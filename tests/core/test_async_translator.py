@@ -88,24 +88,20 @@ class TestAsyncTranslator:
             assert result1.value == 85
             assert len(session.results) == 2
 
-    async def test_get_sig_info_by_uuid_async(self) -> None:
-        """Test async UUID info retrieval."""
+    async def test_inherited_sync_methods(self) -> None:
+        """Test that inherited sync methods work correctly."""
         translator = AsyncBluetoothSIGTranslator()
 
-        info = await translator.get_sig_info_by_uuid_async("2A19")
-
+        # Test get_sig_info_by_uuid (inherited sync method)
+        info = translator.get_sig_info_by_uuid("2A19")
         assert info is not None
         assert info.name == "Battery Level"
 
-    async def test_get_sig_info_by_name_async(self) -> None:
-        """Test async name info retrieval."""
-        translator = AsyncBluetoothSIGTranslator()
-
-        info = await translator.get_sig_info_by_name_async("Battery Level")
-
-        assert info is not None
+        # Test get_sig_info_by_name (inherited sync method)
+        info2 = translator.get_sig_info_by_name("Battery Level")
+        assert info2 is not None
         # UUID is returned in full format
-        assert "2A19" in str(info.uuid).upper()
+        assert "2A19" in str(info2.uuid).upper()
 
 
 @pytest.mark.asyncio
@@ -181,11 +177,12 @@ class TestAsyncErrorHandling:
         assert result.parse_success is False
         assert result.name == "Unknown"
 
-    async def test_async_get_info_for_unknown_uuid(self) -> None:
-        """Test async info retrieval for unknown UUID."""
+    async def test_sync_method_for_unknown_uuid(self) -> None:
+        """Test inherited sync method for unknown UUID."""
         translator = AsyncBluetoothSIGTranslator()
 
-        info = await translator.get_sig_info_by_uuid_async("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")
+        # Use inherited sync method
+        info = translator.get_sig_info_by_uuid("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")
 
         assert info is None
 

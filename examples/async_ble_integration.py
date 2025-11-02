@@ -18,11 +18,14 @@ from bluetooth_sig.types import CharacteristicData
 # Optional: Import bleak if available
 try:
     from bleak import BleakClient, BleakScanner
+    from bleak.exc import BleakError
 
     BLEAK_AVAILABLE = True
 except ImportError:
     BLEAK_AVAILABLE = False
     print("Warning: Bleak not installed. Install with: pip install bleak")
+    # Define a fallback if bleak not available for type hints
+    BleakError = Exception  # type: ignore[misc,assignment]
 
 
 async def scan_and_connect() -> None:
@@ -77,10 +80,10 @@ async def scan_and_connect() -> None:
                             else:
                                 print(f"  ❓ {char.uuid}: <unknown>")
 
-                        except Exception as e:  # pylint: disable=broad-exception-caught
+                        except (BleakError, asyncio.TimeoutError, OSError) as e:
                             print(f"  ❌ Error reading {char.uuid}: {e}")
 
-    except Exception as e:  # pylint: disable=broad-exception-caught
+    except (BleakError, asyncio.TimeoutError, OSError) as e:
         print(f"Connection error: {e}")
 
 
@@ -181,7 +184,7 @@ async def main() -> None:
         print("=" * 50)
         try:
             await scan_and_connect()
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        except (BleakError, asyncio.TimeoutError, OSError) as e:
             print(f"BLE scanning not available: {e}")
             print("This is expected in environments without Bluetooth hardware.")
     else:

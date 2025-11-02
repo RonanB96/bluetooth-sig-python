@@ -45,6 +45,19 @@ if __name__ == "__main__":
 
 For more basic usage examples, see the [Quick Start Guide](quickstart.md).
 
+### Async Usage
+
+If you are using an async BLE client (for example, bleak), you can await async wrappers without changing parsing logic:
+
+```python
+from bluetooth_sig.core.async_translator import AsyncBluetoothSIGTranslator
+
+translator = AsyncBluetoothSIGTranslator()
+result = await translator.parse_characteristic_async("2A19", bytes([85]))
+```
+
+Prefer the existing examples for full context: see `examples/async_ble_integration.py`. The async classes are also documented in the Core API via mkdocstrings: `AsyncBluetoothSIGTranslator` and `AsyncParsingSession`.
+
 ## Real-World Usage Patterns
 
 ### Pattern 1: Fitness Tracker (Heart Rate + Battery)
