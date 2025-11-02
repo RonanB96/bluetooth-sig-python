@@ -19,16 +19,29 @@ class TestCSCFeatureCharacteristic(CommonCharacteristicTests):
         return "2A5C"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         # Example: Wheel and Crank Revolution Data Supported (0x03)
-        bitmask = CSCFeatures.WHEEL_REVOLUTION_DATA_SUPPORTED | CSCFeatures.CRANK_REVOLUTION_DATA_SUPPORTED
-        return CharacteristicTestData(
-            input_data=bytearray(bitmask.to_bytes(2, "little")),
-            expected_value=CSCFeatureData(
-                features=bitmask,
-                wheel_revolution_data_supported=True,
-                crank_revolution_data_supported=True,
-                multiple_sensor_locations_supported=False,
+        bitmask1 = CSCFeatures.WHEEL_REVOLUTION_DATA_SUPPORTED | CSCFeatures.CRANK_REVOLUTION_DATA_SUPPORTED
+        bitmask2 = CSCFeatures.WHEEL_REVOLUTION_DATA_SUPPORTED | CSCFeatures.MULTIPLE_SENSOR_LOCATIONS_SUPPORTED
+        return [
+            CharacteristicTestData(
+                input_data=bytearray(bitmask1.to_bytes(2, "little")),
+                expected_value=CSCFeatureData(
+                    features=bitmask1,
+                    wheel_revolution_data_supported=True,
+                    crank_revolution_data_supported=True,
+                    multiple_sensor_locations_supported=False,
+                ),
+                description="Wheel and Crank Revolution Data Supported (0x03)",
             ),
-            description="Wheel and Crank Revolution Data Supported (0x03)",
-        )
+            CharacteristicTestData(
+                input_data=bytearray(bitmask2.to_bytes(2, "little")),
+                expected_value=CSCFeatureData(
+                    features=bitmask2,
+                    wheel_revolution_data_supported=True,
+                    crank_revolution_data_supported=False,
+                    multiple_sensor_locations_supported=True,
+                ),
+                description="Wheel Revolution and Multiple Locations Supported",
+            ),
+        ]

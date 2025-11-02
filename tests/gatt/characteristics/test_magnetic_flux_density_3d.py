@@ -26,13 +26,20 @@ class TestMagneticFluxDensity3DCharacteristic(CommonCharacteristicTests):
         return "2AA1"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid magnetic flux density 3D test data."""
-        return CharacteristicTestData(
-            input_data=bytearray(struct.pack("<hhh", 1000, -500, 2000)),
-            expected_value=VectorData(x_axis=1e-4, y_axis=-5e-5, z_axis=2e-4),
-            description="Magnetic flux density 3D X=1000, Y=-500, Z=2000",
-        )
+        return [
+            CharacteristicTestData(
+                input_data=bytearray(struct.pack("<hhh", 1000, -500, 2000)),
+                expected_value=VectorData(x_axis=1e-4, y_axis=-5e-5, z_axis=2e-4),
+                description="Magnetic flux density 3D X=1000, Y=-500, Z=2000",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(struct.pack("<hhh", 500, 750, -1000)),
+                expected_value=VectorData(x_axis=5e-5, y_axis=7.5e-5, z_axis=-1e-4),
+                description="Magnetic flux density 3D X=500, Y=750, Z=-1000",
+            ),
+        ]
 
     def test_magnetic_flux_density_3d_parsing(self, characteristic: MagneticFluxDensity3DCharacteristic) -> None:
         """Test Magnetic Flux Density 3D characteristic parsing."""

@@ -26,11 +26,21 @@ class TestBatteryLevelCharacteristic(CommonCharacteristicTests):
         return "2A19"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
-        """Return valid test data for battery level (75%)."""
-        return CharacteristicTestData(input_data=bytearray([75]), expected_value=75, description="75% battery level")
+    def valid_test_data(self) -> list[CharacteristicTestData]:
+        """Return valid test data for battery level."""
+        return [
+            CharacteristicTestData(input_data=bytearray([0]), expected_value=0, description="0% battery level (empty)"),
+            CharacteristicTestData(
+                input_data=bytearray([50]), expected_value=50, description="50% battery level (half)"
+            ),
+            CharacteristicTestData(input_data=bytearray([75]), expected_value=75, description="75% battery level"),
+            CharacteristicTestData(
+                input_data=bytearray([100]), expected_value=100, description="100% battery level (full)"
+            ),
+        ]
 
     # === Battery-Specific Tests ===
+
     @pytest.mark.parametrize(
         "battery_level",
         [

@@ -23,35 +23,56 @@ class TestCSCMeasurementCharacteristic(CommonCharacteristicTests):
         return "2A5B"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
-        # Example: Both wheel and crank data present
-        # Flags: 0x03 (both present)
-        # Cumulative Wheel Revolutions: 123456 (0x0001E240)
-        # Last Wheel Event Time: 10240 (10.0s, 0x2800)
-        # Cumulative Crank Revolutions: 321 (0x0141)
-        # Last Crank Event Time: 2048 (2.0s, 0x0800)
-        flags = CSCMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT | CSCMeasurementFlags.CRANK_REVOLUTION_DATA_PRESENT
-        wheel_revs = 123456
-        wheel_time = 10240  # 10.0s in 1/1024s units
-        crank_revs = 321
-        crank_time = 2048  # 2.0s in 1/1024s units
-        data = bytearray(
+    def valid_test_data(self) -> list[CharacteristicTestData]:
+        # Example 1: Both wheel and crank data present
+        flags1 = CSCMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT | CSCMeasurementFlags.CRANK_REVOLUTION_DATA_PRESENT
+        wheel_revs1 = 123456
+        wheel_time1 = 10240  # 10.0s in 1/1024s units
+        crank_revs1 = 321
+        crank_time1 = 2048  # 2.0s in 1/1024s units
+        data1 = bytearray(
             [
-                int(flags),
-                *wheel_revs.to_bytes(4, "little"),
-                *wheel_time.to_bytes(2, "little"),
-                *crank_revs.to_bytes(2, "little"),
-                *crank_time.to_bytes(2, "little"),
+                int(flags1),
+                *wheel_revs1.to_bytes(4, "little"),
+                *wheel_time1.to_bytes(2, "little"),
+                *crank_revs1.to_bytes(2, "little"),
+                *crank_time1.to_bytes(2, "little"),
             ]
         )
-        return CharacteristicTestData(
-            input_data=data,
-            expected_value=CSCMeasurementData(
-                flags=flags,
-                cumulative_wheel_revolutions=wheel_revs,
-                last_wheel_event_time=wheel_time / 1024.0,
-                cumulative_crank_revolutions=crank_revs,
-                last_crank_event_time=crank_time / 1024.0,
-            ),
-            description="Both wheel and crank data present",
+
+        # Example 2: Only wheel data present
+        flags2 = CSCMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT
+        wheel_revs2 = 50000
+        wheel_time2 = 5120  # 5.0s in 1/1024s units
+        data2 = bytearray(
+            [
+                int(flags2),
+                *wheel_revs2.to_bytes(4, "little"),
+                *wheel_time2.to_bytes(2, "little"),
+            ]
         )
+
+        return [
+            CharacteristicTestData(
+                input_data=data1,
+                expected_value=CSCMeasurementData(
+                    flags=flags1,
+                    cumulative_wheel_revolutions=wheel_revs1,
+                    last_wheel_event_time=wheel_time1 / 1024.0,
+                    cumulative_crank_revolutions=crank_revs1,
+                    last_crank_event_time=crank_time1 / 1024.0,
+                ),
+                description="Both wheel and crank data present",
+            ),
+            CharacteristicTestData(
+                input_data=data2,
+                expected_value=CSCMeasurementData(
+                    flags=flags2,
+                    cumulative_wheel_revolutions=wheel_revs2,
+                    last_wheel_event_time=wheel_time2 / 1024.0,
+                    cumulative_crank_revolutions=None,
+                    last_crank_event_time=None,
+                ),
+                description="Only wheel data present",
+            ),
+        ]

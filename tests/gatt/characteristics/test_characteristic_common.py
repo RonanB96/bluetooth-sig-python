@@ -58,7 +58,7 @@ class CommonCharacteristicTests:
         )
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Default: fail with clear error if not overridden in subclass."""
         raise NotImplementedError(
             f"Test incomplete: missing 'valid_test_data' fixture in {type(self).__name__}. "
@@ -71,13 +71,13 @@ class CommonCharacteristicTests:
         assert characteristic.uuid == expected_uuid
 
     def test_parse_valid_data_succeeds(
-        self, characteristic: BaseCharacteristic, valid_test_data: CharacteristicTestData | list[CharacteristicTestData]
+        self, characteristic: BaseCharacteristic, valid_test_data: list[CharacteristicTestData]
     ) -> None:
         """Test parsing valid data succeeds and returns meaningful result."""
         # Handle both single and multiple test cases
-        test_cases = valid_test_data if isinstance(valid_test_data, list) else [valid_test_data]
-
-        for i, test_case in enumerate(test_cases):
+        if len(valid_test_data) < 2:
+            raise ValueError("valid_test_data should be a list with at least two test cases for this test to work")
+        for i, test_case in enumerate(valid_test_data):
             input_data = test_case.input_data
 
             result = characteristic.parse_value(input_data)

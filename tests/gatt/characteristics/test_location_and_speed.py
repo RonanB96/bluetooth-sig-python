@@ -36,29 +36,49 @@ class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
         return "2A67"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData:
-        """Return valid test data for location and speed (minimal data)."""
-        # Minimal location and speed data: flags(2) + instantaneous_speed(2)
-        data = bytearray([0x01, 0x00, 0xE8, 0x03])  # flags=0x0001 (speed present), speed=0x03E8=1000 (10.00 m/s)
-        return CharacteristicTestData(
-            input_data=data,
-            expected_value=LocationAndSpeedData(
-                flags=LocationAndSpeedFlags.INSTANTANEOUS_SPEED_PRESENT,
-                instantaneous_speed=10.0,
-                total_distance=None,
-                latitude=None,
-                longitude=None,
-                elevation=None,
-                heading=None,
-                rolling_time=None,
-                utc_time=None,
-                position_status=PositionStatus.NO_POSITION,
-                speed_and_distance_format=SpeedAndDistanceFormat.FORMAT_2D,
-                elevation_source=ElevationSource.POSITIONING_SYSTEM,
-                heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
+    def valid_test_data(self) -> list[CharacteristicTestData]:
+        """Return valid test data for location and speed."""
+        return [
+            CharacteristicTestData(
+                input_data=bytearray([0x01, 0x00, 0xE8, 0x03]),  # flags=0x0001 (speed present), speed=1000 (10.00 m/s)
+                expected_value=LocationAndSpeedData(
+                    flags=LocationAndSpeedFlags.INSTANTANEOUS_SPEED_PRESENT,
+                    instantaneous_speed=10.0,
+                    total_distance=None,
+                    latitude=None,
+                    longitude=None,
+                    elevation=None,
+                    heading=None,
+                    rolling_time=None,
+                    utc_time=None,
+                    position_status=PositionStatus.NO_POSITION,
+                    speed_and_distance_format=SpeedAndDistanceFormat.FORMAT_2D,
+                    elevation_source=ElevationSource.POSITIONING_SYSTEM,
+                    heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
+                ),
+                description="Location and Speed with instantaneous speed only",
             ),
-            description="Location and Speed with instantaneous speed only",
-        )
+            CharacteristicTestData(
+                input_data=bytearray([0x03, 0x00, 0x90, 0x01, 0x10, 0x27, 0x00]),  # speed + distance
+                expected_value=LocationAndSpeedData(
+                    flags=LocationAndSpeedFlags.INSTANTANEOUS_SPEED_PRESENT
+                    | LocationAndSpeedFlags.TOTAL_DISTANCE_PRESENT,
+                    instantaneous_speed=4.0,  # 400 * 0.01 = 4.0 m/s
+                    total_distance=1000.0,  # 10000 * 0.1 = 1000.0 m
+                    latitude=None,
+                    longitude=None,
+                    elevation=None,
+                    heading=None,
+                    rolling_time=None,
+                    utc_time=None,
+                    position_status=PositionStatus.NO_POSITION,
+                    speed_and_distance_format=SpeedAndDistanceFormat.FORMAT_2D,
+                    elevation_source=ElevationSource.POSITIONING_SYSTEM,
+                    heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
+                ),
+                description="Location and Speed with speed and distance",
+            ),
+        ]
 
     # === Location and Speed-Specific Tests ===
     @pytest.mark.parametrize(
