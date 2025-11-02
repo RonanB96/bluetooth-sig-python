@@ -111,6 +111,7 @@ class NameNormalizer:
             "csc",
             "uv",
             "ln",
+            "plx",
         }
         parts = s.split("_")
         result = []

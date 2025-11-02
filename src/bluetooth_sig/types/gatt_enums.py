@@ -239,6 +239,7 @@ class CharacteristicName(Enum):
     WEIGHT_SCALE_FEATURE = "Weight Scale Feature"
     BODY_COMPOSITION_MEASUREMENT = "Body Composition Measurement"
     BODY_COMPOSITION_FEATURE = "Body Composition Feature"
+    BODY_SENSOR_LOCATION = "Body Sensor Location"
     # Environmental characteristics
     DEW_POINT = "Dew Point"
     HEAT_INDEX = "Heat Index"
@@ -285,6 +286,7 @@ class CharacteristicName(Enum):
     NOISE = "Noise"
     # Pulse oximetry
     PULSE_OXIMETRY_CONTINUOUS_MEASUREMENT = "Pulse Oximetry Continuous Measurement"
+    PLX_FEATURES = "PLX Features"
     LOCATION_AND_SPEED = "Location and Speed"
     NAVIGATION = "Navigation"
     POSITION_QUALITY = "Position Quality"
