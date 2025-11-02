@@ -80,7 +80,8 @@ class TestAsyncTranslator:
         """Test async parsing session context manager."""
         from bluetooth_sig.core.async_context import AsyncParsingSession
 
-        async with AsyncParsingSession() as session:
+        translator = AsyncBluetoothSIGTranslator()
+        async with AsyncParsingSession(translator) as session:
             result1 = await session.parse("2A19", bytes([85]))
             _ = await session.parse("2A6E", bytes([0x64, 0x09]))
 
@@ -113,16 +114,18 @@ class TestAsyncIntegrationPatterns:
 
     async def test_with_async_generator(self) -> None:
         """Test parsing with async generator."""
+        from collections.abc import AsyncGenerator
+
         translator = AsyncBluetoothSIGTranslator()
 
-        async def characteristic_stream():  # type: ignore[no-untyped-def]
+        async def characteristic_stream() -> AsyncGenerator[tuple[str, bytes], None]:
             """Simulate async characteristic stream."""
             for i in range(10):
                 await asyncio.sleep(0.01)  # Simulate delay
                 yield ("2A19", bytes([i * 10]))
 
         results = []
-        async for uuid, data in characteristic_stream():  # type: ignore[no-untyped-call]
+        async for uuid, data in characteristic_stream():
             result = await translator.parse_characteristic_async(uuid, data)
             results.append(result)
 
@@ -130,9 +133,11 @@ class TestAsyncIntegrationPatterns:
 
     async def test_with_task_group_gather(self) -> None:
         """Test parsing with asyncio.gather."""
+        from bluetooth_sig.types import CharacteristicData
+
         translator = AsyncBluetoothSIGTranslator()
 
-        async def parse_task(uuid: str, data: bytes):  # type: ignore[no-untyped-def]
+        async def parse_task(uuid: str, data: bytes) -> CharacteristicData:
             return await translator.parse_characteristic_async(uuid, data)
 
         # Use gather for concurrent parsing

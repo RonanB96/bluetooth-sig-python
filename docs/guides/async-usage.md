@@ -108,10 +108,11 @@ async def parse_multiple_devices(devices: list[str]):
 Maintain parsing context across multiple async operations:
 
 ```python
-from bluetooth_sig import AsyncParsingSession
+from bluetooth_sig import AsyncBluetoothSIGTranslator, AsyncParsingSession
 
 async def health_monitoring_session(client):
-    async with AsyncParsingSession() as session:
+    translator = AsyncBluetoothSIGTranslator()
+    async with AsyncParsingSession(translator) as session:
         # Context automatically shared between parses
         hr_data = await client.read_gatt_char("2A37")
         hr_result = await session.parse("2A37", hr_data)
@@ -173,7 +174,7 @@ All methods from [`BluetoothSIGTranslator`][bluetooth_sig.BluetoothSIGTranslator
 
 Context manager for maintaining parsing state:
 
-- `async with AsyncParsingSession() as session:` - Enter async context
+- `async with AsyncParsingSession(translator) as session:` - Enter async context with a translator
 - `await session.parse(uuid, data)` - Parse with accumulated context
 
 ## Examples

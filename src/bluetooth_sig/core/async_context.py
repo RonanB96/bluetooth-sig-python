@@ -5,10 +5,11 @@ from __future__ import annotations
 from types import TracebackType
 from typing import TYPE_CHECKING, cast
 
+from ..types import CharacteristicContext
 from .async_translator import AsyncBluetoothSIGTranslator
 
 if TYPE_CHECKING:
-    from ..types import CharacteristicContext, CharacteristicData, CharacteristicDataProtocol
+    from ..types import CharacteristicData, CharacteristicDataProtocol
 
 
 class AsyncParsingSession:
@@ -27,16 +28,16 @@ class AsyncParsingSession:
 
     def __init__(
         self,
+        translator: AsyncBluetoothSIGTranslator,
         ctx: CharacteristicContext | None = None,
-        translator: AsyncBluetoothSIGTranslator | None = None,
     ) -> None:
         """Initialize parsing session.
 
         Args:
+            translator: Translator instance to use for parsing
             ctx: Optional initial context
-            translator: Optional translator instance
         """
-        self.translator = translator or AsyncBluetoothSIGTranslator()
+        self.translator = translator
         self.context = ctx
         self.results: dict[str, CharacteristicData] = {}
 
@@ -70,9 +71,6 @@ class AsyncParsingSession:
         Returns:
             CharacteristicData
         """
-        # Import here to avoid circular dependency
-        from ..types import CharacteristicContext
-
         # Update context with previous results
         results_mapping = cast("dict[str, CharacteristicDataProtocol]", self.results)
 

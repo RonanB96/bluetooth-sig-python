@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import TYPE_CHECKING
 
 from ..types import CharacteristicContext, CharacteristicData
+from ..types.uuid import BluetoothUUID
 from .translator import BluetoothSIGTranslator
 
 if TYPE_CHECKING:
@@ -33,7 +33,7 @@ class AsyncBluetoothSIGTranslator(BluetoothSIGTranslator):
 
     async def parse_characteristic_async(
         self,
-        uuid: str,
+        uuid: str | BluetoothUUID,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
         descriptor_data: dict[str, bytes] | None = None,
@@ -44,7 +44,7 @@ class AsyncBluetoothSIGTranslator(BluetoothSIGTranslator):
         during parsing, allowing other tasks to run concurrently.
 
         Args:
-            uuid: The characteristic UUID
+            uuid: The characteristic UUID (string or BluetoothUUID)
             raw_data: Raw bytes from the characteristic
             ctx: Optional context providing device-level info
             descriptor_data: Optional descriptor data
@@ -60,11 +60,11 @@ class AsyncBluetoothSIGTranslator(BluetoothSIGTranslator):
                 print(f"Battery: {result.value}%")
             ```
         """
-        # Yield to event loop before CPU-intensive parsing
-        await asyncio.sleep(0)
+        # Convert to string for consistency with sync API
+        uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
 
         # Delegate to sync implementation
-        return self.parse_characteristic(uuid, raw_data, ctx, descriptor_data)
+        return self.parse_characteristic(uuid_str, raw_data, ctx, descriptor_data)
 
     async def parse_characteristics_async(
         self,
@@ -99,43 +99,21 @@ class AsyncBluetoothSIGTranslator(BluetoothSIGTranslator):
                     print(f"{uuid}: {result.value}")
             ```
         """
-        # For small batches, parse directly
-        if len(char_data) <= 5:
-            await asyncio.sleep(0)
-            return self.parse_characteristics(char_data, descriptor_data, ctx)
+        # Delegate directly to sync implementation
+        # The sync implementation already handles dependency ordering
+        return self.parse_characteristics(char_data, descriptor_data, ctx)
 
-        # For larger batches, parse in chunks to yield to event loop
-        results: dict[str, CharacteristicData] = {}
-        chunk_size = 10
-        items = list(char_data.items())
-
-        for i in range(0, len(items), chunk_size):
-            chunk = dict(items[i : i + chunk_size])
-
-            # Yield to event loop between chunks
-            await asyncio.sleep(0)
-
-            # Parse chunk
-            chunk_results = self.parse_characteristics(
-                chunk,
-                {k: v for k, v in (descriptor_data or {}).items() if k in chunk},
-                ctx,
-            )
-            results.update(chunk_results)
-
-        return results
-
-    async def get_sig_info_by_uuid_async(self, uuid: str) -> SIGInfo | None:
+    async def get_sig_info_by_uuid_async(self, uuid: str | BluetoothUUID) -> SIGInfo | None:
         """Get SIG info by UUID asynchronously.
 
         Args:
-            uuid: UUID string
+            uuid: UUID string or BluetoothUUID
 
         Returns:
             SIGInfo if found, None otherwise
         """
-        await asyncio.sleep(0)
-        return self.get_sig_info_by_uuid(uuid)
+        uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
+        return self.get_sig_info_by_uuid(uuid_str)
 
     async def get_sig_info_by_name_async(self, name: str) -> SIGInfo | None:
         """Get SIG info by name asynchronously.
@@ -146,7 +124,6 @@ class AsyncBluetoothSIGTranslator(BluetoothSIGTranslator):
         Returns:
             SIGInfo if found, None otherwise
         """
-        await asyncio.sleep(0)
         return self.get_sig_info_by_name(name)
 
 

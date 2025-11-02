@@ -13,6 +13,7 @@ Usage:
 import asyncio
 
 from bluetooth_sig import AsyncBluetoothSIGTranslator
+from bluetooth_sig.types import CharacteristicData
 
 # Optional: Import bleak if available
 try:
@@ -54,11 +55,12 @@ async def scan_and_connect() -> None:
             print("Connected!")
 
             # Discover services
-            services = await client.get_services()
-            print(f"\nDiscovered {len(services)} service(s)")
+            services = client.services
+            service_list = list(services)
+            print(f"\nDiscovered {len(service_list)} service(s)")
 
             # Read and parse characteristics
-            for service in services:
+            for service in service_list:
                 print(f"\n📦 Service: {service.uuid}")
 
                 for char in service.characteristics:
@@ -67,8 +69,8 @@ async def scan_and_connect() -> None:
                             # Read characteristic
                             data = await client.read_gatt_char(char.uuid)
 
-                            # Parse with async API
-                            result = await translator.parse_characteristic_async(str(char.uuid), data)
+                            # Parse with async API - convert bytearray to bytes
+                            result = await translator.parse_characteristic_async(str(char.uuid), bytes(data))
 
                             if result.parse_success:
                                 print(f"  ✅ {result.name}: {result.value} {result.unit}")
@@ -117,7 +119,7 @@ async def concurrent_parsing_example() -> None:
     print("Concurrent Parsing Example")
     print("=" * 50)
 
-    async def parse_battery(device_id: int, level: int):  # noqa: ANN202
+    async def parse_battery(device_id: int, level: int) -> tuple[int, CharacteristicData]:
         """Simulate parsing battery from a device."""
         await asyncio.sleep(0.1)  # Simulate network delay
         data = bytes([level])
@@ -145,7 +147,8 @@ async def context_manager_example() -> None:
 
     print("\nUsing AsyncParsingSession to maintain context...")
 
-    async with AsyncParsingSession() as session:
+    translator = AsyncBluetoothSIGTranslator()
+    async with AsyncParsingSession(translator) as session:
         # Parse multiple characteristics with shared context
         result1 = await session.parse("2A19", bytes([75]))
         print(f"  Battery Level: {result1.value}%")
