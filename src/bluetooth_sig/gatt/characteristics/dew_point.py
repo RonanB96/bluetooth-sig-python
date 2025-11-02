@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 from .base import BaseCharacteristic
-from .templates import Sint8Template
+from .templates import ScaledSint8Template
 
 
 class DewPointCharacteristic(BaseCharacteristic):
-    """Dew Point measurement characteristic."""
+    """Dew Point characteristic (0x2A7B).
 
-    _template = Sint8Template()
+    org.bluetooth.characteristic.dew_point
+
+    Dew Point measurement characteristic.
+    """
+
+    _template = ScaledSint8Template.from_letter_method(M=1, d=0, b=0)

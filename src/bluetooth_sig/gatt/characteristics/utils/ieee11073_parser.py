@@ -23,6 +23,7 @@ class IEEE11073Parser:
     SFLOAT_MANTISSA_MAX = 2048
     SFLOAT_EXPONENT_MIN = -8
     SFLOAT_EXPONENT_MAX = 7
+    SFLOAT_EXPONENT_BIAS = 8
     # Bit field positions and widths (no magic numbers)
     SFLOAT_MANTISSA_START_BIT = 0
     SFLOAT_MANTISSA_BIT_WIDTH = 12
@@ -47,8 +48,9 @@ class IEEE11073Parser:
     FLOAT32_EXPONENT_SIGN_BIT = 0x80
     FLOAT32_EXPONENT_CONVERSION = 0x100
     FLOAT32_MANTISSA_MAX = 8388608  # 2^23
-    FLOAT32_EXPONENT_MIN = -8
-    FLOAT32_EXPONENT_MAX = 7
+    FLOAT32_EXPONENT_MIN = -128
+    FLOAT32_EXPONENT_MAX = 127
+    FLOAT32_EXPONENT_BIAS = 128
     # Bit field positions and widths (no magic numbers)
     FLOAT32_MANTISSA_START_BIT = 0
     FLOAT32_MANTISSA_BIT_WIDTH = 24
@@ -104,8 +106,7 @@ class IEEE11073Parser:
             IEEE11073Parser.SFLOAT_EXPONENT_MASK,
             IEEE11073Parser.SFLOAT_EXPONENT_START_BIT,
         )
-        if exponent >= IEEE11073Parser.SFLOAT_EXPONENT_SIGN_BIT:  # Negative exponent
-            exponent = exponent - IEEE11073Parser.SFLOAT_EXPONENT_CONVERSION
+        exponent = exponent - IEEE11073Parser.SFLOAT_EXPONENT_BIAS
 
         return float(mantissa * (10.0**exponent))
 
@@ -137,8 +138,7 @@ class IEEE11073Parser:
             IEEE11073Parser.FLOAT32_EXPONENT_MASK,
             IEEE11073Parser.FLOAT32_EXPONENT_START_BIT,
         )
-        if exponent >= IEEE11073Parser.FLOAT32_EXPONENT_SIGN_BIT:  # Negative exponent
-            exponent = exponent - IEEE11073Parser.FLOAT32_EXPONENT_CONVERSION
+        exponent = exponent - IEEE11073Parser.FLOAT32_EXPONENT_BIAS
 
         return float(mantissa * (10**exponent))
 
@@ -167,8 +167,7 @@ class IEEE11073Parser:
         mantissa_int = int(round(mantissa))
 
         # Pack into 16-bit value
-        if exponent < 0:
-            exponent = exponent + IEEE11073Parser.SFLOAT_EXPONENT_CONVERSION
+        exponent += IEEE11073Parser.SFLOAT_EXPONENT_BIAS  # Add bias for storage
         if mantissa_int < 0:
             mantissa_int = mantissa_int + IEEE11073Parser.SFLOAT_MANTISSA_CONVERSION
 
@@ -246,9 +245,7 @@ class IEEE11073Parser:
         mantissa_unsigned = (
             best_mantissa if best_mantissa >= 0 else best_mantissa + IEEE11073Parser.FLOAT32_MANTISSA_CONVERSION
         )
-        exponent_unsigned = (
-            best_exponent if best_exponent >= 0 else best_exponent + IEEE11073Parser.FLOAT32_EXPONENT_CONVERSION
-        )
+        exponent_unsigned = best_exponent + IEEE11073Parser.FLOAT32_EXPONENT_BIAS  # Add bias for storage
 
         raw_value = BitFieldUtils.merge_bit_fields(
             (

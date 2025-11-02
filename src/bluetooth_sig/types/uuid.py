@@ -314,14 +314,3 @@ class BluetoothUUID:
             return self.SIG_SERVICE_MIN <= uuid_int <= self.SIG_SERVICE_MAX
         except ValueError:
             return False
-
-    def is_member_uuid(self) -> bool:
-        """Check if this UUID is assigned to a Bluetooth SIG member company.
-
-        Returns:
-            True if this UUID is registered to a member company, False otherwise
-        """
-        # Lazy import to avoid circular dependency
-        from ..registry.members import members_registry  # pylint: disable=import-outside-toplevel
-
-        return members_registry.is_member_uuid(self)

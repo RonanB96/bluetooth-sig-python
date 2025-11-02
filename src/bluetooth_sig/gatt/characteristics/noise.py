@@ -39,7 +39,7 @@ class NoiseCharacteristic(BaseCharacteristic):
 
     # Range constraints per SIG spec
     min_value: int | float | None = 0
-    max_value: int | float | None = MAX_NORMAL_VALUE
+    max_value: int | float | None = MAX_MEASURABLE_VALUE
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int | None:
         """Decode noise level with special value handling."""

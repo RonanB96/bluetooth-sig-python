@@ -25,7 +25,7 @@ class RSCMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: 
 
     instantaneous_speed: float  # m/s
     instantaneous_cadence: int  # steps per minute
-    flags: int
+    flags: RSCMeasurementFlags
     instantaneous_stride_length: float | None = None  # meters
     total_distance: float | None = None  # meters
 

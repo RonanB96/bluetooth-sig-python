@@ -30,4 +30,9 @@ class AutomationIOService(BaseGattService):
     _service_name: str = "Automation IO"
 
     # Will be populated as we implement each characteristic
-    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {}
+    service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.ELECTRIC_CURRENT: False,  # optional
+        CharacteristicName.VOLTAGE: False,  # optional
+        CharacteristicName.AVERAGE_CURRENT: False,  # optional
+        CharacteristicName.AVERAGE_VOLTAGE: False,  # optional
+    }

@@ -7,7 +7,37 @@ alternatives.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, IntEnum
+
+
+class DayOfWeek(IntEnum):
+    """Day of week enumeration per ISO 8601.
+
+    Used by Current Time Service and other time-related characteristics.
+    Values follow ISO 8601 standard (Monday=1, Sunday=7, Unknown=0).
+    """
+
+    UNKNOWN = 0
+    MONDAY = 1
+    TUESDAY = 2
+    WEDNESDAY = 3
+    THURSDAY = 4
+    FRIDAY = 5
+    SATURDAY = 6
+    SUNDAY = 7
+
+
+class AdjustReason(IntEnum):
+    """Time adjustment reason flags.
+
+    Used by Current Time Service to indicate why time was adjusted.
+    Can be combined as bitfield flags.
+    """
+
+    MANUAL_TIME_UPDATE = 1 << 0  # Bit 0
+    EXTERNAL_REFERENCE_TIME_UPDATE = 1 << 1  # Bit 1
+    CHANGE_OF_TIME_ZONE = 1 << 2  # Bit 2
+    CHANGE_OF_DST = 1 << 3  # Bit 3
 
 
 class GattProperty(Enum):
@@ -86,7 +116,7 @@ class DataType(Enum):
         # Handle common aliases
         type_str = type_str.lower()
         aliases = {
-            "utf16s": cls.UTF8S,  # utf16s maps to UTF8S for now
+            "utf16s": cls.UTF8S,  # TODO utf16s maps to UTF8S for now
             "sfloat": cls.MEDFLOAT16,  # IEEE-11073 16-bit SFLOAT
             "float": cls.FLOAT32,  # IEEE-11073 32-bit FLOAT
             "variable": cls.STRUCT,  # variable maps to STRUCT
@@ -186,6 +216,7 @@ class CharacteristicName(Enum):
     POWER_SPECIFICATION = "Power Specification"
     HEART_RATE_MEASUREMENT = "Heart Rate Measurement"
     BLOOD_PRESSURE_MEASUREMENT = "Blood Pressure Measurement"
+    INTERMEDIATE_CUFF_PRESSURE = "Intermediate Cuff Pressure"
     BLOOD_PRESSURE_FEATURE = "Blood Pressure Feature"
     CSC_MEASUREMENT = "CSC Measurement"
     RSC_MEASUREMENT = "RSC Measurement"
@@ -254,8 +285,21 @@ class CharacteristicName(Enum):
     NOISE = "Noise"
     # Pulse oximetry
     PULSE_OXIMETRY_CONTINUOUS_MEASUREMENT = "Pulse Oximetry Continuous Measurement"
-    # Generic Access
-    TX_POWER_LEVEL = "Tx Power Level"
+    LOCATION_AND_SPEED = "Location and Speed"
+    NAVIGATION = "Navigation"
+    POSITION_QUALITY = "Position Quality"
+    LN_FEATURE = "LN Feature"
+    LN_CONTROL_POINT = "LN Control Point"
+    SERVICE_CHANGED = "Service Changed"
+    ALERT_STATUS = "Alert Status"
+    RINGER_SETTING = "Ringer Setting"
+    RINGER_CONTROL_POINT = "Ringer Control Point"
+    # Alert Notification Service characteristics
+    NEW_ALERT = "New Alert"
+    SUPPORTED_NEW_ALERT_CATEGORY = "Supported New Alert Category"
+    UNREAD_ALERT_STATUS = "Unread Alert Status"
+    SUPPORTED_UNREAD_ALERT_CATEGORY = "Supported Unread Alert Category"
+    ALERT_NOTIFICATION_CONTROL_POINT = "Alert Notification Control Point"
 
 
 class ServiceName(Enum):
@@ -266,6 +310,7 @@ class ServiceName(Enum):
     DEVICE_INFORMATION = "Device Information"
     BATTERY_SERVICE = "Battery Service"
     HEART_RATE = "Heart Rate"
+    BLOOD_PRESSURE = "Blood Pressure"
     HEALTH_THERMOMETER = "Health Thermometer"
     GLUCOSE = "Glucose"
     CYCLING_SPEED_AND_CADENCE = "Cycling Speed and Cadence"
@@ -275,3 +320,5 @@ class ServiceName(Enum):
     ENVIRONMENTAL_SENSING = "Environmental Sensing"
     BODY_COMPOSITION = "Body Composition"
     WEIGHT_SCALE = "Weight Scale"
+    LOCATION_AND_NAVIGATION = "Location and Navigation"
+    PHONE_ALERT_STATUS = "Phone Alert Status"

@@ -134,5 +134,22 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
         result.extend(IEEE11073Parser.encode_sfloat(data.spo2))
         result.extend(IEEE11073Parser.encode_sfloat(data.pulse_rate))
 
-        # Additional fields based on flags would be added (simplified)
+        # Encode optional timestamp
+        if data.timestamp is not None:
+            result.extend(IEEE11073Parser.encode_timestamp(data.timestamp))
+
+        # Encode optional measurement status
+        if data.measurement_status is not None:
+            result.extend(DataParser.encode_int16(data.measurement_status, signed=False))
+
+        # Encode optional device status
+        if data.device_status is not None:
+            # Device status is 3 bytes (24-bit value)
+            device_status_bytes = DataParser.encode_int32(data.device_status, signed=False)[:3]
+            result.extend(device_status_bytes)
+
+        # Encode optional pulse amplitude index
+        if data.pulse_amplitude_index is not None:
+            result.extend(IEEE11073Parser.encode_sfloat(data.pulse_amplitude_index))
+
         return result

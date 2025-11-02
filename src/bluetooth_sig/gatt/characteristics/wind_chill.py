@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 from .base import BaseCharacteristic
-from .templates import Sint8Template
+from .templates import ScaledSint8Template
 
 
 class WindChillCharacteristic(BaseCharacteristic):
-    """Wind Chill measurement characteristic."""
+    """Wind Chill characteristic (0x2A79).
 
-    _template = Sint8Template()
+    org.bluetooth.characteristic.wind_chill
+
+    Wind Chill measurement characteristic.
+    """
+
+    _template = ScaledSint8Template.from_letter_method(M=1, d=0, b=0)

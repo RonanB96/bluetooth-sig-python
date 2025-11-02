@@ -32,7 +32,7 @@ class CyclingPowerVectorData(msgspec.Struct, frozen=True, kw_only=True):  # pyli
     Used for both parsing and encoding - all fields are properly typed.
     """
 
-    flags: int
+    flags: CyclingPowerVectorFlags
     crank_revolution_data: CrankRevolutionData
     first_crank_measurement_angle: float
     instantaneous_force_magnitude_array: tuple[float, ...] | None = None
@@ -40,7 +40,7 @@ class CyclingPowerVectorData(msgspec.Struct, frozen=True, kw_only=True):  # pyli
 
     def __post_init__(self) -> None:
         """Validate cycling power vector data."""
-        if not 0 <= self.flags <= UINT8_MAX:
+        if not 0 <= int(self.flags) <= UINT8_MAX:
             raise ValueError("Flags must be a uint8 value (0-UINT8_MAX)")
         if not 0 <= self.first_crank_measurement_angle <= 360:
             raise ValueError("First crank measurement angle must be 0-360 degrees")
@@ -79,7 +79,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
         if len(data) < 7:
             raise ValueError("Cycling Power Vector data must be at least 7 bytes")
 
-        flags = data[0]
+        flags = CyclingPowerVectorFlags(data[0])
 
         # Parse crank revolution data (2 bytes)
         crank_revolutions = DataParser.parse_int16(data, 1, signed=False)
@@ -173,7 +173,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
             raise ValueError(f"First angle {first_angle_raw} exceeds uint16 range")
 
         # Build result
-        result = bytearray([flags])
+        result = bytearray([int(flags)])
         result.extend(DataParser.encode_int16(crank_revolutions, signed=False))
         result.extend(DataParser.encode_int16(crank_event_time_raw, signed=False))
         result.extend(DataParser.encode_int16(first_angle_raw, signed=False))

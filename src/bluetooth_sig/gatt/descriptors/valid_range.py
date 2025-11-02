@@ -5,7 +5,7 @@ from __future__ import annotations
 import msgspec
 
 from ..characteristics.utils import DataParser
-from .base import BaseDescriptor
+from .base import BaseDescriptor, RangeDescriptorMixin
 
 
 class ValidRangeData(msgspec.Struct, frozen=True, kw_only=True):
@@ -15,7 +15,7 @@ class ValidRangeData(msgspec.Struct, frozen=True, kw_only=True):
     max_value: int | float
 
 
-class ValidRangeDescriptor(BaseDescriptor):
+class ValidRangeDescriptor(BaseDescriptor, RangeDescriptorMixin):
     """Valid Range Descriptor (0x2906).
 
     Defines the valid range for characteristic values.
@@ -58,40 +58,3 @@ class ValidRangeDescriptor(BaseDescriptor):
             min_value=min_value,
             max_value=max_value,
         )
-
-    def get_min_value(self, data: bytes) -> int | float:
-        """Get the minimum valid value.
-
-        Args:
-            data: Raw descriptor data
-
-        Returns:
-            Minimum valid value for the characteristic
-        """
-        parsed = self._parse_descriptor_value(data)
-        return parsed.min_value
-
-    def get_max_value(self, data: bytes) -> int | float:
-        """Get the maximum valid value.
-
-        Args:
-            data: Raw descriptor data
-
-        Returns:
-            Maximum valid value for the characteristic
-        """
-        parsed = self._parse_descriptor_value(data)
-        return parsed.max_value
-
-    def is_value_in_range(self, data: bytes, value: int | float) -> bool:
-        """Check if a value is within the valid range.
-
-        Args:
-            data: Raw descriptor data
-            value: Value to check
-
-        Returns:
-            True if value is within [min_value, max_value] range
-        """
-        parsed = self._parse_descriptor_value(data)
-        return parsed.min_value <= value <= parsed.max_value

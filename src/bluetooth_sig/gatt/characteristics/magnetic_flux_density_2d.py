@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ...types.gatt_enums import ValueType
+from ...types.units import PhysicalUnit
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .templates import Vector2DData
@@ -10,7 +11,11 @@ from .utils import DataParser
 
 
 class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
-    """Magnetic flux density 2D characteristic.
+    """Magnetic Flux Density - 2D characteristic (0x2AA0).
+
+    org.bluetooth.characteristic.magnetic_flux_density_2d
+
+    Magnetic flux density 2D characteristic.
 
     Represents measurements of magnetic flux density for two orthogonal
     axes: X and Y. Note that 1 x 10^-7 Tesla equals 0.001 Gauss.
@@ -21,7 +26,7 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
     _characteristic_name: str | None = "Magnetic Flux Density - 2D"
     # Override YAML since decode_value returns structured dict
     _manual_value_type: ValueType | str | None = ValueType.STRING  # Override since decode_value returns dict
-    _manual_unit: str | None = "T"  # Tesla
+    _manual_unit: str | None = PhysicalUnit.TESLA.value  # Tesla
 
     _vector_components: list[str] = ["x_axis", "y_axis"]
     resolution: float = 1e-7

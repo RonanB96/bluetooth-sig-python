@@ -11,6 +11,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
+# Export ROOT_DIR for tests that need to construct paths relative to project root
+ROOT_DIR = ROOT
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 

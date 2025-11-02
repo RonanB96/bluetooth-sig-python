@@ -9,6 +9,10 @@ from __future__ import annotations
 
 # Import the registry components from the dedicated registry module
 # Import all individual characteristic classes for backward compatibility
+from .alert_level import AlertLevelCharacteristic
+from .alert_notification_control_point import (
+    AlertNotificationControlPointCharacteristic,
+)
 from .ammonia_concentration import AmmoniaConcentrationCharacteristic
 from .apparent_wind_direction import ApparentWindDirectionCharacteristic
 from .apparent_wind_speed import ApparentWindSpeedCharacteristic
@@ -25,6 +29,7 @@ from .body_composition_measurement import BodyCompositionMeasurementCharacterist
 from .co2_concentration import CO2ConcentrationCharacteristic
 from .csc_feature import CSCFeatureCharacteristic
 from .csc_measurement import CSCMeasurementCharacteristic
+from .current_time import CurrentTimeCharacteristic
 from .cycling_power_control_point import CyclingPowerControlPointCharacteristic
 from .cycling_power_feature import CyclingPowerFeatureCharacteristic
 from .cycling_power_measurement import CyclingPowerMeasurementCharacteristic
@@ -60,11 +65,16 @@ from .heat_index import HeatIndexCharacteristic
 from .high_voltage import HighVoltageCharacteristic
 from .humidity import HumidityCharacteristic
 from .illuminance import IlluminanceCharacteristic
+from .ln_control_point import LNControlPointCharacteristic
+from .ln_feature import LNFeatureCharacteristic
 from .local_time_information import LocalTimeInformationCharacteristic
+from .location_and_speed import LocationAndSpeedCharacteristic
 from .magnetic_declination import MagneticDeclinationCharacteristic
 from .magnetic_flux_density_2d import MagneticFluxDensity2DCharacteristic
 from .magnetic_flux_density_3d import MagneticFluxDensity3DCharacteristic
 from .methane_concentration import MethaneConcentrationCharacteristic
+from .navigation import NavigationCharacteristic
+from .new_alert import NewAlertCharacteristic
 from .nitrogen_dioxide_concentration import NitrogenDioxideConcentrationCharacteristic
 from .noise import NoiseCharacteristic
 from .non_methane_voc_concentration import NonMethaneVOCConcentrationCharacteristic
@@ -73,9 +83,11 @@ from .pm1_concentration import PM1ConcentrationCharacteristic
 from .pm10_concentration import PM10ConcentrationCharacteristic
 from .pm25_concentration import PM25ConcentrationCharacteristic
 from .pollen_concentration import PollenConcentrationCharacteristic
+from .position_quality import PositionQualityCharacteristic
 from .pressure import PressureCharacteristic
 from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
 from .rainfall import RainfallCharacteristic
+from .reference_time_information import ReferenceTimeInformationCharacteristic
 from .registry import (
     CHARACTERISTIC_CLASS_MAP,
     CharacteristicName,
@@ -84,13 +96,18 @@ from .registry import (
 from .rsc_feature import RSCFeatureCharacteristic
 from .rsc_measurement import RSCMeasurementCharacteristic
 from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacteristic
+from .supported_new_alert_category import SupportedNewAlertCategoryCharacteristic
 from .supported_power_range import SupportedPowerRangeCharacteristic
+from .supported_unread_alert_category import (
+    SupportedUnreadAlertCategoryCharacteristic,
+)
 from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
 from .time_zone import TimeZoneCharacteristic
 from .true_wind_direction import TrueWindDirectionCharacteristic
 from .true_wind_speed import TrueWindSpeedCharacteristic
 from .tx_power_level import TxPowerLevelCharacteristic
+from .unread_alert_status import UnreadAlertStatusCharacteristic
 from .uv_index import UVIndexCharacteristic
 from .voc_concentration import VOCConcentrationCharacteristic
 from .voltage import VoltageCharacteristic
@@ -109,6 +126,8 @@ __all__ = [
     # Base characteristic
     "BaseCharacteristic",
     # Individual characteristic classes (for backward compatibility)
+    "AlertLevelCharacteristic",
+    "AlertNotificationControlPointCharacteristic",
     "AmmoniaConcentrationCharacteristic",
     "ApparentWindDirectionCharacteristic",
     "ApparentWindSpeedCharacteristic",
@@ -124,6 +143,7 @@ __all__ = [
     "CO2ConcentrationCharacteristic",
     "CSCFeatureCharacteristic",
     "CSCMeasurementCharacteristic",
+    "CurrentTimeCharacteristic",
     "CyclingPowerControlPointCharacteristic",
     "CyclingPowerFeatureCharacteristic",
     "CyclingPowerMeasurementCharacteristic",
@@ -150,12 +170,17 @@ __all__ = [
     "HardwareRevisionStringCharacteristic",
     "IlluminanceCharacteristic",
     "LocalTimeInformationCharacteristic",
+    "LocationAndSpeedCharacteristic",
+    "LNControlPointCharacteristic",
+    "LNFeatureCharacteristic",
     "MagneticDeclinationCharacteristic",
     "MagneticFluxDensity2DCharacteristic",
     "MagneticFluxDensity3DCharacteristic",
     "ManufacturerNameStringCharacteristic",
     "MethaneConcentrationCharacteristic",
     "ModelNumberStringCharacteristic",
+    "NavigationCharacteristic",
+    "NewAlertCharacteristic",
     "NitrogenDioxideConcentrationCharacteristic",
     "NonMethaneVOCConcentrationCharacteristic",
     "OzoneConcentrationCharacteristic",
@@ -163,22 +188,27 @@ __all__ = [
     "PM10ConcentrationCharacteristic",
     "PM25ConcentrationCharacteristic",
     "PollenConcentrationCharacteristic",
+    "PositionQualityCharacteristic",
     "PressureCharacteristic",
     "PulseOximetryMeasurementCharacteristic",
     "RainfallCharacteristic",
+    "ReferenceTimeInformationCharacteristic",
     "RSCMeasurementCharacteristic",
     "RSCFeatureCharacteristic",
     "SerialNumberStringCharacteristic",
     "SoftwareRevisionStringCharacteristic",
     "NoiseCharacteristic",
     "SulfurDioxideConcentrationCharacteristic",
+    "SupportedNewAlertCategoryCharacteristic",
     "SupportedPowerRangeCharacteristic",
+    "SupportedUnreadAlertCategoryCharacteristic",
     "TemperatureCharacteristic",
     "TemperatureMeasurementCharacteristic",
     "TimeZoneCharacteristic",
     "TrueWindDirectionCharacteristic",
     "TrueWindSpeedCharacteristic",
     "TxPowerLevelCharacteristic",
+    "UnreadAlertStatusCharacteristic",
     "UVIndexCharacteristic",
     "VOCConcentrationCharacteristic",
     "VoltageCharacteristic",

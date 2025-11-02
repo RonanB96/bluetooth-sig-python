@@ -30,7 +30,11 @@ class ElectricCurrentRangeData(msgspec.Struct, frozen=True, kw_only=True):  # py
 
 
 class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
-    """Electric Current Range characteristic.
+    """Electric Current Range characteristic (0x2AEF).
+
+    org.bluetooth.characteristic.electric_current_range
+
+    Electric Current Range characteristic.
 
     Specifies lower and upper current bounds (2x uint16).
     """

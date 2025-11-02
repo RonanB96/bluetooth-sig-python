@@ -7,17 +7,27 @@ from enum import IntFlag
 
 import msgspec
 
+from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
+
 from ..constants import PERCENTAGE_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic, BodyCompositionFeatureData
 from .utils import DataParser, IEEE11073Parser
 
+BODY_FAT_PERCENTAGE_RESOLUTION = 0.1  # 0.1% resolution
+MUSCLE_PERCENTAGE_RESOLUTION = 0.1  # 0.1% resolution
+IMPEDANCE_RESOLUTION = 0.1  # 0.1 ohm resolution
+MASS_RESOLUTION_KG = 0.005  # 0.005 kg resolution
+MASS_RESOLUTION_LB = 0.01  # 0.01 lb resolution
+HEIGHT_RESOLUTION_METRIC = 0.001  # 0.001 m resolution
+HEIGHT_RESOLUTION_IMPERIAL = 0.1  # 0.1 inch resolution
+
 
 class FlagsAndBodyFat(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Flags and body fat percentage with parsing offset."""
 
-    flags: int
+    flags: BodyCompositionFlags
     body_fat_percentage: float
     offset: int
 
@@ -35,7 +45,7 @@ class MassFields(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=
     """Mass-related optional fields."""
 
     muscle_mass: float | None
-    muscle_mass_unit: str | None
+    muscle_mass_unit: WeightUnit | None
     muscle_percentage: float | None
     fat_free_mass: float | None
     soft_lean_mass: float | None
@@ -55,7 +65,7 @@ class MassValue(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=t
     """Single mass field with unit."""
 
     value: float
-    unit: str
+    unit: WeightUnit
 
 
 class BodyCompositionFlags(IntFlag):
@@ -80,12 +90,12 @@ class BodyCompositionMeasurementData(msgspec.Struct, frozen=True, kw_only=True):
 
     body_fat_percentage: float
     flags: BodyCompositionFlags
-    measurement_units: str
+    measurement_units: MeasurementSystem
     timestamp: datetime | None = None
     user_id: int | None = None
     basal_metabolism: int | None = None
     muscle_mass: float | None = None
-    muscle_mass_unit: str | None = None  # Added missing field
+    muscle_mass_unit: WeightUnit | None = None
     muscle_percentage: float | None = None
     fat_free_mass: float | None = None
     soft_lean_mass: float | None = None
@@ -94,12 +104,60 @@ class BodyCompositionMeasurementData(msgspec.Struct, frozen=True, kw_only=True):
     weight: float | None = None
     height: float | None = None
 
-    def __post_init__(self) -> None:
+    def __post_init__(self) -> None:  # pylint: disable=too-many-branches
         """Validate body composition measurement data."""
         if not 0.0 <= self.body_fat_percentage <= PERCENTAGE_MAX:
             raise ValueError("Body fat percentage must be between 0-100%")
         if not 0 <= self.flags <= 0xFFFF:
             raise ValueError("Flags must be a 16-bit value")
+
+        # Validate measurement_units
+        if not isinstance(self.measurement_units, MeasurementSystem):
+            raise ValueError(f"Invalid measurement_units: {self.measurement_units!r}")
+
+        # Validate mass fields units and ranges
+        mass_fields = [
+            ("muscle_mass", self.muscle_mass),
+            ("fat_free_mass", self.fat_free_mass),
+            ("soft_lean_mass", self.soft_lean_mass),
+            ("body_water_mass", self.body_water_mass),
+            ("weight", self.weight),
+        ]
+        for field_name, value in mass_fields:
+            if value is not None:
+                if not 0 <= value:
+                    raise ValueError(f"{field_name} must be non-negative")
+
+        # Validate muscle_mass_unit consistency
+        if self.muscle_mass is not None:
+            expected_unit = WeightUnit.KG if self.measurement_units == MeasurementSystem.METRIC else WeightUnit.LB
+            if self.muscle_mass_unit != expected_unit:
+                raise ValueError(f"muscle_mass_unit must be {expected_unit!r}, got {self.muscle_mass_unit!r}")
+
+        # Validate muscle_percentage
+        if self.muscle_percentage is not None:
+            if not 0 <= self.muscle_percentage:
+                raise ValueError("Muscle percentage must be non-negative")
+
+        # Validate impedance
+        if self.impedance is not None:
+            if not 0 <= self.impedance:
+                raise ValueError("Impedance must be non-negative")
+
+        # Validate height
+        if self.height is not None:
+            if not 0 <= self.height:
+                raise ValueError("Height must be non-negative")
+
+        # Validate basal_metabolism
+        if self.basal_metabolism is not None:
+            if not 0 <= self.basal_metabolism:
+                raise ValueError("Basal metabolism must be non-negative")
+
+        # Validate user_id
+        if self.user_id is not None:
+            if not 0 <= self.user_id <= 255:
+                raise ValueError(f"User ID must be 0-255, got {self.user_id}")
 
 
 class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
@@ -139,7 +197,11 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         # Parse flags and required body fat percentage
         header = self._parse_flags_and_body_fat(data)
         flags_enum = BodyCompositionFlags(header.flags)
-        measurement_units = "imperial" if BodyCompositionFlags.IMPERIAL_UNITS in flags_enum else "metric"
+        measurement_units = (
+            MeasurementSystem.IMPERIAL
+            if BodyCompositionFlags.IMPERIAL_UNITS in flags_enum
+            else MeasurementSystem.METRIC
+        )
 
         # Parse optional fields based on flags
         basic = self._parse_basic_optional_fields(data, flags_enum, header.offset)
@@ -178,26 +240,117 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             data: BodyCompositionMeasurementData containing body composition measurement data
 
         Returns:
-            Encoded bytes representing the measurement (simplified implementation)
+            Encoded bytes representing the measurement
 
         """
-        # This is a complex characteristic with many optional fields
-        # Implementing a basic version that handles the core data
-        flags = data.flags
-        body_fat_percentage = data.body_fat_percentage
-
-        # Build basic result with flags and body fat percentage
         result = bytearray()
-        result.extend(DataParser.encode_int16(int(flags), signed=False))  # Flags (16-bit)
 
-        # Convert body fat percentage to uint16 with 0.1% resolution
-        body_fat_raw = round(body_fat_percentage * 10)
+        # Encode flags and body fat percentage
+        self._encode_flags_and_body_fat(result, data)
+
+        # Encode optional fields based on flags
+        self._encode_optional_fields(result, data)
+
+        return result
+
+    def _encode_flags_and_body_fat(self, result: bytearray, data: BodyCompositionMeasurementData) -> None:
+        """Encode flags and body fat percentage."""
+        # Encode flags (16-bit)
+        flags = int(data.flags)
+        result.extend(DataParser.encode_int16(flags, signed=False))
+
+        # Encode body fat percentage (uint16 with 0.1% resolution)
+        body_fat_raw = round(data.body_fat_percentage / BODY_FAT_PERCENTAGE_RESOLUTION)
         if not 0 <= body_fat_raw <= 0xFFFF:
             raise ValueError(f"Body fat percentage {body_fat_raw} exceeds uint16 range")
         result.extend(DataParser.encode_int16(body_fat_raw, signed=False))
 
-        # Additional fields would be added based on flags (simplified)
-        return result
+    def _encode_optional_fields(self, result: bytearray, data: BodyCompositionMeasurementData) -> None:
+        """Encode optional fields based on measurement data."""
+        # Encode optional timestamp if present
+        if data.timestamp is not None:
+            result.extend(IEEE11073Parser.encode_timestamp(data.timestamp))
+
+        # Encode optional user ID if present
+        if data.user_id is not None:
+            if not 0 <= data.user_id <= 0xFF:
+                raise ValueError(f"User ID {data.user_id} exceeds uint8 range")
+            result.append(data.user_id)
+
+        # Encode optional basal metabolism if present
+        if data.basal_metabolism is not None:
+            if not 0 <= data.basal_metabolism <= 0xFFFF:
+                raise ValueError(f"Basal metabolism {data.basal_metabolism} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(data.basal_metabolism, signed=False))
+
+        # Encode mass-related fields
+        self._encode_mass_fields(result, data)
+
+        # Encode other measurements
+        self._encode_other_measurements(result, data)
+
+    def _encode_mass_fields(self, result: bytearray, data: BodyCompositionMeasurementData) -> None:
+        """Encode mass-related optional fields."""
+        # Encode optional muscle mass if present
+        if data.muscle_mass is not None:
+            mass_raw = round(data.muscle_mass / MASS_RESOLUTION_KG)
+            if not 0 <= mass_raw <= 0xFFFF:
+                raise ValueError(f"Muscle mass raw value {mass_raw} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(mass_raw, signed=False))
+
+        # Encode optional muscle percentage if present
+        if data.muscle_percentage is not None:
+            muscle_pct_raw = round(data.muscle_percentage / MUSCLE_PERCENTAGE_RESOLUTION)
+            if not 0 <= muscle_pct_raw <= 0xFFFF:
+                raise ValueError(f"Muscle percentage raw value {muscle_pct_raw} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(muscle_pct_raw, signed=False))
+
+        # Encode optional fat free mass if present
+        if data.fat_free_mass is not None:
+            mass_raw = round(data.fat_free_mass / MASS_RESOLUTION_KG)
+            if not 0 <= mass_raw <= 0xFFFF:
+                raise ValueError(f"Fat free mass raw value {mass_raw} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(mass_raw, signed=False))
+
+        # Encode optional soft lean mass if present
+        if data.soft_lean_mass is not None:
+            mass_raw = round(data.soft_lean_mass / MASS_RESOLUTION_KG)
+            if not 0 <= mass_raw <= 0xFFFF:
+                raise ValueError(f"Soft lean mass raw value {mass_raw} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(mass_raw, signed=False))
+
+        # Encode optional body water mass if present
+        if data.body_water_mass is not None:
+            mass_raw = round(data.body_water_mass / MASS_RESOLUTION_KG)
+            if not 0 <= mass_raw <= 0xFFFF:
+                raise ValueError(f"Body water mass raw value {mass_raw} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(mass_raw, signed=False))
+
+    def _encode_other_measurements(self, result: bytearray, data: BodyCompositionMeasurementData) -> None:
+        """Encode impedance, weight, and height measurements."""
+        # Encode optional impedance if present
+        if data.impedance is not None:
+            impedance_raw = round(data.impedance / IMPEDANCE_RESOLUTION)
+            if not 0 <= impedance_raw <= 0xFFFF:
+                raise ValueError(f"Impedance raw value {impedance_raw} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(impedance_raw, signed=False))
+
+        # Encode optional weight if present
+        if data.weight is not None:
+            mass_raw = round(data.weight / MASS_RESOLUTION_KG)
+            if not 0 <= mass_raw <= 0xFFFF:
+                raise ValueError(f"Weight raw value {mass_raw} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(mass_raw, signed=False))
+
+        # Encode optional height if present
+        if data.height is not None:
+            if data.measurement_units == MeasurementSystem.IMPERIAL:
+                height_raw = round(data.height / HEIGHT_RESOLUTION_IMPERIAL)  # 0.1 inch resolution
+            else:
+                height_raw = round(data.height / HEIGHT_RESOLUTION_METRIC)  # 0.001 m resolution
+            if not 0 <= height_raw <= 0xFFFF:
+                raise ValueError(f"Height raw value {height_raw} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(height_raw, signed=False))
 
     def _validate_against_feature_characteristic(
         self,
@@ -260,14 +413,14 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         """
         # Parse flags (2 bytes)
-        flags = DataParser.parse_int16(data, 0, signed=False)
+        flags = BodyCompositionFlags(DataParser.parse_int16(data, 0, signed=False))
 
         # Validate and parse body fat percentage data
         if len(data) < 4:
             raise ValueError("Insufficient data for body fat percentage")
 
         body_fat_raw = DataParser.parse_int16(data, 2, signed=False)
-        body_fat_percentage = float(body_fat_raw) * 0.1  # 0.1% resolution
+        body_fat_percentage = float(body_fat_raw) * BODY_FAT_PERCENTAGE_RESOLUTION  # 0.1% resolution
 
         return FlagsAndBodyFat(flags=flags, body_fat_percentage=body_fat_percentage, offset=4)
 
@@ -331,7 +484,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
         """
         muscle_mass: float | None = None
-        muscle_mass_unit: str | None = None
+        muscle_mass_unit: WeightUnit | None = None
         muscle_percentage: float | None = None
         fat_free_mass: float | None = None
         soft_lean_mass: float | None = None
@@ -347,7 +500,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         # Parse optional muscle percentage
         if BodyCompositionFlags.MUSCLE_PERCENTAGE_PRESENT in flags and len(data) >= offset + 2:
             muscle_percentage_raw = DataParser.parse_int16(data, offset, signed=False)
-            muscle_percentage = muscle_percentage_raw * 0.1
+            muscle_percentage = muscle_percentage_raw * MUSCLE_PERCENTAGE_RESOLUTION
             offset += 2
 
         # Parse optional fat free mass
@@ -399,7 +552,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         # Parse optional impedance
         if BodyCompositionFlags.IMPEDANCE_PRESENT in flags and len(data) >= offset + 2:
             impedance_raw = DataParser.parse_int16(data, offset, signed=False)
-            impedance = impedance_raw * 0.1
+            impedance = impedance_raw * IMPEDANCE_RESOLUTION
             offset += 2
 
         # Parse optional weight
@@ -411,9 +564,9 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         if BodyCompositionFlags.HEIGHT_PRESENT in flags and len(data) >= offset + 2:
             height_raw = DataParser.parse_int16(data, offset, signed=False)
             if BodyCompositionFlags.IMPERIAL_UNITS in flags:  # Imperial units
-                height = height_raw * 0.1  # 0.1 inch resolution
+                height = height_raw * HEIGHT_RESOLUTION_IMPERIAL  # 0.1 inch resolution
             else:  # SI units
-                height = height_raw * 0.001  # 0.001 m resolution
+                height = height_raw * HEIGHT_RESOLUTION_METRIC  # 0.001 m resolution
             offset += 2
 
         return OtherMeasurements(impedance=impedance, weight=weight, height=height)
@@ -432,9 +585,9 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
         """
         mass_raw = DataParser.parse_int16(data, offset, signed=False)
         if BodyCompositionFlags.IMPERIAL_UNITS in flags:  # Imperial units
-            mass = mass_raw * 0.01  # 0.01 lb resolution
-            mass_unit = "lb"
+            mass = mass_raw * MASS_RESOLUTION_LB  # 0.01 lb resolution
+            mass_unit = WeightUnit.LB
         else:  # SI units
-            mass = mass_raw * 0.005  # 0.005 kg resolution
-            mass_unit = "kg"
+            mass = mass_raw * MASS_RESOLUTION_KG  # 0.005 kg resolution
+            mass_unit = WeightUnit.KG
         return MassValue(value=mass, unit=mass_unit)

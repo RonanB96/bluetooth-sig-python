@@ -29,7 +29,11 @@ class SupportedPowerRangeData(msgspec.Struct, frozen=True, kw_only=True):  # pyl
 
 
 class SupportedPowerRangeCharacteristic(BaseCharacteristic):
-    """Supported Power Range characteristic.
+    """Supported Power Range characteristic (0x2AD8).
+
+    org.bluetooth.characteristic.supported_power_range
+
+    Supported Power Range characteristic.
 
     Specifies minimum and maximum power values for power capability
     specification.
