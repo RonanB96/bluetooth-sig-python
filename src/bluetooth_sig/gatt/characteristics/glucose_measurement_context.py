@@ -381,14 +381,46 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         if not 0 <= sequence_number <= 0xFFFF:
             raise ValueError(f"Sequence number {sequence_number} exceeds uint16 range")
 
-        # Build flags based on available optional data (use provided flags)
+        # Use the flags from the data structure
         flags = data.flags
 
-        # Simplified implementation - just encode sequence number with provided flags
         result = bytearray([flags])
         result.extend(DataParser.encode_int16(sequence_number, signed=False))
 
-        # Additional context fields would be added based on flags (simplified)
+        # Encode optional extended flags
+        if data.extended_flags is not None:
+            result.append(data.extended_flags)
+
+        # Encode optional carbohydrate information
+        if data.carbohydrate_id is not None and data.carbohydrate_kg is not None:
+            result.append(int(data.carbohydrate_id))
+            result.extend(IEEE11073Parser.encode_sfloat(data.carbohydrate_kg))
+
+        # Encode optional meal information
+        if data.meal is not None:
+            result.append(int(data.meal))
+
+        # Encode optional tester/health information
+        if data.tester is not None and data.health is not None:
+            tester_health = (int(data.tester) << GlucoseMeasurementContextBits.TESTER_START_BIT) | (
+                int(data.health) << GlucoseMeasurementContextBits.HEALTH_START_BIT
+            )
+            result.append(tester_health)
+
+        # Encode optional exercise information
+        if data.exercise_duration_seconds is not None and data.exercise_intensity_percent is not None:
+            result.extend(DataParser.encode_int16(data.exercise_duration_seconds, signed=False))
+            result.append(data.exercise_intensity_percent)
+
+        # Encode optional medication information
+        if data.medication_id is not None and data.medication_kg is not None:
+            result.append(int(data.medication_id))
+            result.extend(IEEE11073Parser.encode_sfloat(data.medication_kg))
+
+        # Encode optional HbA1c information
+        if data.hba1c_percent is not None:
+            result.extend(IEEE11073Parser.encode_sfloat(data.hba1c_percent))
+
         return result
 
     def _parse_extended_flags(

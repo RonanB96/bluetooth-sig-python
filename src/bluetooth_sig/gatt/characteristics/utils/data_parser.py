@@ -61,6 +61,22 @@ class DataParser:
         return int.from_bytes(data[offset : offset + 4], byteorder=endian, signed=signed)
 
     @staticmethod
+    def parse_int24(
+        data: bytes | bytearray,
+        offset: int = 0,
+        signed: bool = False,
+        endian: Literal["little", "big"] = "little",
+    ) -> int:
+        """Parse 24-bit integer with configurable endianness and signed interpretation."""
+        if len(data) < offset + 3:
+            raise InsufficientDataError("int24", data[offset:], 3)
+        value = int.from_bytes(data[offset : offset + 3], byteorder=endian, signed=signed)
+        # For signed 24-bit, extend sign bit if needed
+        if signed and (value & 0x800000):
+            value -= 0x1000000
+        return value
+
+    @staticmethod
     def parse_float32(data: bytearray, offset: int = 0) -> float:
         """Parse IEEE-754 32-bit float (little-endian)."""
         if len(data) < offset + 4:
@@ -121,6 +137,17 @@ class DataParser:
             if not 0 <= value <= UINT32_MAX:
                 raise ValueRangeError("uint32", value, 0, UINT32_MAX)
         return bytearray(value.to_bytes(4, byteorder=endian, signed=signed))
+
+    @staticmethod
+    def encode_int24(value: int, signed: bool = False, endian: Literal["little", "big"] = "little") -> bytearray:
+        """Encode 24-bit integer with configurable endianness and signed/unsigned validation."""
+        if signed:
+            if not -0x800000 <= value <= 0x7FFFFF:
+                raise ValueRangeError("sint24", value, -0x800000, 0x7FFFFF)
+        else:
+            if not 0 <= value <= 0xFFFFFF:
+                raise ValueRangeError("uint24", value, 0, 0xFFFFFF)
+        return bytearray(value.to_bytes(3, byteorder=endian, signed=signed))
 
     @staticmethod
     def encode_float32(value: float) -> bytearray:

@@ -7,6 +7,8 @@ from enum import IntFlag
 
 import msgspec
 
+from bluetooth_sig.types.units import TemperatureUnit
+
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import IEEE11073Parser
@@ -15,6 +17,7 @@ from .utils import IEEE11073Parser
 class TemperatureMeasurementFlags(IntFlag):
     """Temperature Measurement flags as per Bluetooth SIG specification."""
 
+    CELSIUS_UNIT = 0x00
     FAHRENHEIT_UNIT = 0x01
     TIMESTAMP_PRESENT = 0x02
     TEMPERATURE_TYPE_PRESENT = 0x04
@@ -24,10 +27,15 @@ class TemperatureMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # 
     """Parsed temperature measurement data."""
 
     temperature: float
-    unit: str
-    flags: int
+    unit: TemperatureUnit
+    flags: TemperatureMeasurementFlags
     timestamp: datetime | None = None
     temperature_type: int | None = None
+
+    def __post_init__(self) -> None:
+        """Validate temperature measurement data."""
+        if self.unit not in (TemperatureUnit.CELSIUS, TemperatureUnit.FAHRENHEIT):
+            raise ValueError(f"Temperature unit must be CELSIUS or FAHRENHEIT, got {self.unit}")
 
 
 class TemperatureMeasurementCharacteristic(BaseCharacteristic):
@@ -46,7 +54,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         """Parse temperature measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Temperature Value(4) + [Timestamp(7)] + [Temperature Type(1)].
-        Temperature is IEEE-11073 32-bit float.
+        Temperature is medfloat32 (IEEE 11073 medical float format).
 
         Args:
             data: Raw bytearray from BLE characteristic.
@@ -61,11 +69,15 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
 
         flags = TemperatureMeasurementFlags(data[0])
 
-        # Parse temperature value (IEEE-11073 32-bit float)
+        # Parse temperature value (medfloat32 - IEEE 11073 medical float format)
         temp_value = IEEE11073Parser.parse_float32(data, 1)
 
         # Check temperature unit flag (bit 0)
-        unit = "°F" if TemperatureMeasurementFlags.FAHRENHEIT_UNIT in flags else "°C"
+        unit = (
+            TemperatureUnit.FAHRENHEIT
+            if TemperatureMeasurementFlags.FAHRENHEIT_UNIT in flags
+            else TemperatureUnit.CELSIUS
+        )
 
         # Parse optional fields
         timestamp: datetime | None = None
@@ -83,7 +95,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         return TemperatureMeasurementData(
             temperature=temp_value,
             unit=unit,
-            flags=int(flags),
+            flags=flags,
             timestamp=timestamp,
             temperature_type=temperature_type,
         )
@@ -100,7 +112,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         """
         # Build flags
         flags = TemperatureMeasurementFlags(0)
-        if data.unit == "°F":
+        if data.unit == TemperatureUnit.FAHRENHEIT:
             flags |= TemperatureMeasurementFlags.FAHRENHEIT_UNIT
         if data.timestamp is not None:
             flags |= TemperatureMeasurementFlags.TIMESTAMP_PRESENT
@@ -110,7 +122,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
         # Start with flags byte
         result = bytearray([int(flags)])
 
-        # Add temperature value (IEEE-11073 32-bit float)
+        # Add temperature value (medfloat32 - IEEE 11073 medical float format)
         temp_bytes = IEEE11073Parser.encode_float32(data.temperature)
         result.extend(temp_bytes)
 

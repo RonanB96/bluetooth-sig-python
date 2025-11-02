@@ -30,7 +30,11 @@ class ElectricCurrentSpecificationData(msgspec.Struct, frozen=True, kw_only=True
 
 
 class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic):
-    """Electric Current Specification characteristic.
+    """Electric Current Specification characteristic (0x2AF0).
+
+    org.bluetooth.characteristic.electric_current_specification
+
+    Electric Current Specification characteristic.
 
     Specifies minimum and maximum current values for electrical
     specifications.

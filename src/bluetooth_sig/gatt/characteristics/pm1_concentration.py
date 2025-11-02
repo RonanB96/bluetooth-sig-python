@@ -8,7 +8,11 @@ from .templates import ConcentrationTemplate
 
 
 class PM1ConcentrationCharacteristic(BaseCharacteristic):
-    """PM1 particulate matter concentration characteristic (0x2BD7).
+    """Particulate Matter - PM1 Concentration characteristic (0x2BD5).
+
+    org.bluetooth.characteristic.particulate_matter_pm1_concentration
+
+    PM1 particulate matter concentration characteristic (0x2BD7).
 
     Represents particulate matter PM1 concentration in micrograms per
     cubic meter with a resolution of 1 μg/m³.

@@ -24,7 +24,6 @@ from ..constants import (
     SINT16_MIN,
     SINT24_MAX,
     SINT24_MIN,
-    TEMPERATURE_RESOLUTION,
     UINT8_MAX,
     UINT16_MAX,
     UINT24_MAX,
@@ -213,169 +212,294 @@ class Uint32Template(CodingTemplate):
 # =============================================================================
 
 
-class ScaledUint16Template(CodingTemplate):
-    """Template for scaled 16-bit unsigned integer with configurable resolution.
+class ScaledTemplate(CodingTemplate):
+    """Base class for scaled integer templates.
 
-    Used for values that need decimal precision encoded as integers.
-    Example: Temperature 25.5°C stored as 2550 with scale_factor=0.01
+    Handles common scaling logic: value = (raw + offset) * scale_factor
+    Subclasses implement raw parsing/encoding and range checking.
     """
 
-    def __init__(self, scale_factor: float = 0.01) -> None:
-        """Initialize with scale factor.
-
-        Args:
-            scale_factor: Factor to multiply raw value by (e.g., 0.01 for 2 decimal places)
-
-        """
-        self.scale_factor = scale_factor
-
-    @property
-    def data_size(self) -> int:
-        """Size: 2 bytes."""
-        return 2
-
-    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
-        """Parse scaled 16-bit unsigned integer."""
-        if len(data) < offset + 2:
-            raise ValueError("Insufficient data for scaled uint16 parsing")
-        raw_value = DataParser.parse_int16(data, offset, signed=False)
-        return raw_value * self.scale_factor
-
-    def encode_value(self, value: float) -> bytearray:
-        """Encode scaled value to bytes."""
-        raw_value = int(value / self.scale_factor)
-        if not 0 <= raw_value <= UINT16_MAX:
-            raise ValueError(f"Scaled value {raw_value} out of range for uint16")
-        return DataParser.encode_int16(raw_value, signed=False)
-
-
-class ScaledSint16Template(CodingTemplate):
-    """Template for scaled 16-bit signed integer with configurable resolution.
-
-    Used for signed values that need decimal precision encoded as integers.
-    Example: Temperature -10.5°C stored as -1050 with scale_factor=0.01
-    """
-
-    def __init__(self, scale_factor: float = 0.01) -> None:
-        """Initialize with scale factor.
+    def __init__(self, scale_factor: float, offset: int) -> None:
+        """Initialize with scale factor and offset.
 
         Args:
             scale_factor: Factor to multiply raw value by
+            offset: Offset to add to raw value before scaling
 
         """
         self.scale_factor = scale_factor
+        self.offset = offset
+
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
+        """Parse scaled integer value."""
+        raw_value = self._parse_raw(data, offset)
+        return (raw_value + self.offset) * self.scale_factor
+
+    def encode_value(self, value: float) -> bytearray:
+        """Encode scaled value to bytes."""
+        raw_value = int((value / self.scale_factor) - self.offset)
+        self._check_range(raw_value)
+        return self._encode_raw(raw_value)
+
+    @abstractmethod
+    def _parse_raw(self, data: bytearray, offset: int) -> int:
+        """Parse raw integer value from data."""
+
+    @abstractmethod
+    def _encode_raw(self, raw: int) -> bytearray:
+        """Encode raw integer to bytes."""
+
+    @abstractmethod
+    def _check_range(self, raw: int) -> None:
+        """Check if raw value is in valid range."""
+
+    @classmethod
+    def from_scale_offset(cls, scale_factor: float, offset: int) -> ScaledTemplate:
+        """Create instance using scale factor and offset.
+
+        Args:
+            scale_factor: Factor to multiply raw value by
+            offset: Offset to add to raw value before scaling
+
+        Returns:
+            ScaledSint8Template instance
+
+        """
+        return cls(scale_factor=scale_factor, offset=offset)
+
+    @classmethod
+    def from_letter_method(cls, M: int, d: int, b: int) -> ScaledTemplate:
+        """Create instance using Bluetooth SIG M, d, b parameters.
+
+        Args:
+            M: Multiplier factor
+            d: Decimal exponent (10^d)
+            b: Offset to add to raw value before scaling
+
+        Returns:
+            ScaledUint16Template instance
+
+        """
+        scale_factor = M * (10**d)
+        return cls(scale_factor=scale_factor, offset=b)
+
+
+class ScaledUint16Template(ScaledTemplate):
+    """Template for scaled 16-bit unsigned integer.
+
+    Used for values that need decimal precision encoded as integers.
+    Can be initialized with scale_factor/offset or Bluetooth SIG M, d, b parameters.
+    Formula: value = scale_factor * (raw + offset) or value = M * 10^d * (raw + b)
+    Example: Temperature 25.5°C stored as 2550 with scale_factor=0.01, offset=0 or M=1, d=-2, b=0
+    """
+
+    def __init__(self, scale_factor: float = 1.0, offset: int = 0) -> None:
+        """Initialize with scale factor and offset.
+
+        Args:
+            scale_factor: Factor to multiply raw value by
+            offset: Offset to add to raw value before scaling
+
+        """
+        super().__init__(scale_factor, offset)
 
     @property
     def data_size(self) -> int:
         """Size: 2 bytes."""
         return 2
 
-    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
-        """Parse scaled 16-bit signed integer."""
+    def _parse_raw(self, data: bytearray, offset: int) -> int:
+        """Parse raw 16-bit unsigned integer."""
+        if len(data) < offset + 2:
+            raise ValueError("Insufficient data for scaled uint16 parsing")
+        return DataParser.parse_int16(data, offset, signed=False)
+
+    def _encode_raw(self, raw: int) -> bytearray:
+        """Encode raw 16-bit unsigned integer."""
+        return DataParser.encode_int16(raw, signed=False)
+
+    def _check_range(self, raw: int) -> None:
+        """Check range for uint16."""
+        if not 0 <= raw <= UINT16_MAX:
+            raise ValueError(f"Scaled value {raw} out of range for uint16")
+
+
+class ScaledSint16Template(ScaledTemplate):
+    """Template for scaled 16-bit signed integer.
+
+    Used for signed values that need decimal precision encoded as integers.
+    Can be initialized with scale_factor/offset or Bluetooth SIG M, d, b parameters.
+    Formula: value = scale_factor * (raw + offset) or value = M * 10^d * (raw + b)
+    Example: Temperature -10.5°C stored as -1050 with scale_factor=0.01, offset=0 or M=1, d=-2, b=0
+    """
+
+    def __init__(self, scale_factor: float = 0.01, offset: int = 0) -> None:
+        """Initialize with scale factor and offset.
+
+        Args:
+            scale_factor: Factor to multiply raw value by
+            offset: Offset to add to raw value before scaling
+
+        """
+        super().__init__(scale_factor, offset)
+
+    @property
+    def data_size(self) -> int:
+        """Size: 2 bytes."""
+        return 2
+
+    def _parse_raw(self, data: bytearray, offset: int) -> int:
+        """Parse raw 16-bit signed integer."""
         if len(data) < offset + 2:
             raise ValueError("Insufficient data for scaled sint16 parsing")
-        raw_value = DataParser.parse_int16(data, offset, signed=True)
-        return raw_value * self.scale_factor
+        return DataParser.parse_int16(data, offset, signed=True)
 
-    def encode_value(self, value: float) -> bytearray:
-        """Encode scaled value to bytes."""
-        raw_value = int(value / self.scale_factor)
-        if not SINT16_MIN <= raw_value <= SINT16_MAX:
-            raise ValueError(f"Scaled value {raw_value} out of range for sint16")
-        return DataParser.encode_int16(raw_value, signed=True)
+    def _encode_raw(self, raw: int) -> bytearray:
+        """Encode raw 16-bit signed integer."""
+        return DataParser.encode_int16(raw, signed=True)
+
+    def _check_range(self, raw: int) -> None:
+        """Check range for sint16."""
+        if not SINT16_MIN <= raw <= SINT16_MAX:
+            raise ValueError(f"Scaled value {raw} out of range for sint16")
 
 
-class ScaledUint32Template(CodingTemplate):
-    """Template for scaled 32-bit unsigned integer with configurable resolution."""
+class ScaledSint8Template(ScaledTemplate):
+    """Template for scaled 8-bit signed integer.
 
-    def __init__(self, scale_factor: float = 0.1) -> None:
-        """Initialize with scale factor.
+    Used for signed values that need decimal precision encoded as integers.
+    Can be initialized with scale_factor/offset or Bluetooth SIG M, d, b parameters.
+    Formula: value = scale_factor * (raw + offset) or value = M * 10^d * (raw + b)
+    Example: Temperature with scale_factor=0.01, offset=0 or M=1, d=-2, b=0
+    """
+
+    def __init__(self, scale_factor: float = 1.0, offset: int = 0) -> None:
+        """Initialize with scale factor and offset.
+
+        Args:
+            scale_factor: Factor to multiply raw value by
+            offset: Offset to add to raw value before scaling
+
+        """
+        super().__init__(scale_factor, offset)
+
+    @property
+    def data_size(self) -> int:
+        """Size: 1 byte."""
+        return 1
+
+    def _parse_raw(self, data: bytearray, offset: int) -> int:
+        """Parse raw 8-bit signed integer."""
+        if len(data) < offset + 1:
+            raise ValueError("Insufficient data for scaled sint8 parsing")
+        return DataParser.parse_int8(data, offset, signed=True)
+
+    def _encode_raw(self, raw: int) -> bytearray:
+        """Encode raw 8-bit signed integer."""
+        return DataParser.encode_int8(raw, signed=True)
+
+    def _check_range(self, raw: int) -> None:
+        """Check range for sint8."""
+        if not SINT8_MIN <= raw <= SINT8_MAX:
+            raise ValueError(f"Scaled value {raw} out of range for sint8")
+
+
+class ScaledUint32Template(ScaledTemplate):
+    """Template for scaled 32-bit unsigned integer with configurable resolution and offset."""
+
+    def __init__(self, scale_factor: float = 0.1, offset: int = 0) -> None:
+        """Initialize with scale factor and offset.
 
         Args:
             scale_factor: Factor to multiply raw value by (e.g., 0.1 for 1 decimal place)
+            offset: Offset to add to raw value before scaling
 
         """
-        self.scale_factor = scale_factor
+        super().__init__(scale_factor, offset)
 
     @property
     def data_size(self) -> int:
         """Size: 4 bytes."""
         return 4
 
-    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
-        """Parse scaled 32-bit unsigned integer."""
+    def _parse_raw(self, data: bytearray, offset: int) -> int:
+        """Parse raw 32-bit unsigned integer."""
         if len(data) < offset + 4:
             raise ValueError("Insufficient data for scaled uint32 parsing")
-        raw_value = DataParser.parse_int32(data, offset, signed=False)
-        return raw_value * self.scale_factor
+        return DataParser.parse_int32(data, offset, signed=False)
 
-    def encode_value(self, value: float) -> bytearray:
-        """Encode scaled value to bytes."""
-        raw_value = int(value / self.scale_factor)
-        if not 0 <= raw_value <= UINT32_MAX:
-            raise ValueError(f"Scaled value {raw_value} out of range for uint32")
-        return DataParser.encode_int32(raw_value, signed=False)
+    def _encode_raw(self, raw: int) -> bytearray:
+        """Encode raw 32-bit unsigned integer."""
+        return DataParser.encode_int32(raw, signed=False)
+
+    def _check_range(self, raw: int) -> None:
+        """Check range for uint32."""
+        if not 0 <= raw <= UINT32_MAX:
+            raise ValueError(f"Scaled value {raw} out of range for uint32")
 
 
-class ScaledUint24Template(CodingTemplate):
-    """Template for scaled 24-bit unsigned integer with configurable resolution.
+class ScaledUint24Template(ScaledTemplate):
+    """Template for scaled 24-bit unsigned integer with configurable resolution and offset.
 
     Used for values encoded in 3 bytes as unsigned integers.
-    Example: Illuminance 1000 lux stored as bytes with scale_factor=1.0
+    Example: Illuminance 1000 lux stored as bytes with scale_factor=1.0, offset=0
     """
 
-    def __init__(self, scale_factor: float = 1.0) -> None:
-        """Initialize with scale factor.
+    def __init__(self, scale_factor: float = 1.0, offset: int = 0) -> None:
+        """Initialize with scale factor and offset.
 
         Args:
             scale_factor: Factor to multiply raw value by
+            offset: Offset to add to raw value before scaling
 
         """
-        self.scale_factor = scale_factor
+        super().__init__(scale_factor, offset)
 
     @property
     def data_size(self) -> int:
         """Size: 3 bytes."""
         return 3
 
-    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
-        """Parse scaled 24-bit unsigned integer."""
+    def _parse_raw(self, data: bytearray, offset: int) -> int:
+        """Parse raw 24-bit unsigned integer."""
         if len(data) < offset + 3:
             raise ValueError("Insufficient data for scaled uint24 parsing")
-        raw_value = int.from_bytes(data[offset : offset + 3], byteorder="little", signed=False)
-        return raw_value * self.scale_factor
+        return int.from_bytes(data[offset : offset + 3], byteorder="little", signed=False)
 
-    def encode_value(self, value: float) -> bytearray:
-        """Encode scaled value to 3 bytes."""
-        raw_value = int(value / self.scale_factor)
-        if not 0 <= raw_value <= UINT24_MAX:
-            raise ValueError(f"Scaled value {raw_value} out of range for uint24")
-        return bytearray(raw_value.to_bytes(3, byteorder="little", signed=False))
+    def _encode_raw(self, raw: int) -> bytearray:
+        """Encode raw 24-bit unsigned integer."""
+        return bytearray(raw.to_bytes(3, byteorder="little", signed=False))
+
+    def _check_range(self, raw: int) -> None:
+        """Check range for uint24."""
+        if not 0 <= raw <= UINT24_MAX:
+            raise ValueError(f"Scaled value {raw} out of range for uint24")
 
 
-class ScaledSint24Template(CodingTemplate):
-    """Template for scaled 24-bit signed integer with configurable resolution.
+class ScaledSint24Template(ScaledTemplate):
+    """Template for scaled 24-bit signed integer with configurable resolution and offset.
 
     Used for signed values encoded in 3 bytes.
-    Example: Elevation 500.00m stored as bytes with scale_factor=0.01
+    Example: Elevation 500.00m stored as bytes with scale_factor=0.01, offset=0
     """
 
-    def __init__(self, scale_factor: float = 0.01) -> None:
-        """Initialize with scale factor.
+    def __init__(self, scale_factor: float = 0.01, offset: int = 0) -> None:
+        """Initialize with scale factor and offset.
 
         Args:
             scale_factor: Factor to multiply raw value by
+            offset: Offset to add to raw value before scaling
 
         """
-        self.scale_factor = scale_factor
+        super().__init__(scale_factor, offset)
 
     @property
     def data_size(self) -> int:
         """Size: 3 bytes."""
         return 3
 
-    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
-        """Parse scaled 24-bit signed integer."""
+    def _parse_raw(self, data: bytearray, offset: int) -> int:
+        """Parse raw 24-bit signed integer."""
         if len(data) < offset + 3:
             raise ValueError("Insufficient data for scaled sint24 parsing")
         # Parse as unsigned first
@@ -385,19 +509,21 @@ class ScaledSint24Template(CodingTemplate):
             raw_value = raw_unsigned - 0x1000000  # 2^24
         else:
             raw_value = raw_unsigned
-        return raw_value * self.scale_factor
+        return raw_value
 
-    def encode_value(self, value: float) -> bytearray:
-        """Encode scaled value to 3 bytes."""
-        raw_value = int(value / self.scale_factor)
-        if not SINT24_MIN <= raw_value <= SINT24_MAX:
-            raise ValueError(f"Scaled value {raw_value} out of range for sint24")
+    def _encode_raw(self, raw: int) -> bytearray:
+        """Encode raw 24-bit signed integer."""
         # Convert to unsigned representation if negative
-        if raw_value < 0:
-            raw_unsigned = raw_value + 0x1000000  # 2^24
+        if raw < 0:
+            raw_unsigned = raw + 0x1000000  # 2^24
         else:
-            raw_unsigned = raw_value
+            raw_unsigned = raw
         return bytearray(raw_unsigned.to_bytes(3, byteorder="little", signed=False))
+
+    def _check_range(self, raw: int) -> None:
+        """Check range for sint24."""
+        if not SINT24_MIN <= raw <= SINT24_MAX:
+            raise ValueError(f"Scaled value {raw} out of range for sint24")
 
 
 # =============================================================================
@@ -434,7 +560,7 @@ class TemperatureTemplate(CodingTemplate):
 
     def __init__(self) -> None:
         """Initialize with standard temperature resolution."""
-        self._scaled_template = ScaledSint16Template(scale_factor=TEMPERATURE_RESOLUTION)
+        self._scaled_template = ScaledSint16Template.from_letter_method(1, -2, 0)
 
     @property
     def data_size(self) -> int:
@@ -463,7 +589,37 @@ class ConcentrationTemplate(CodingTemplate):
             resolution: Measurement resolution (e.g., 1.0 for integer ppm, 0.1 for 0.1 ppm)
 
         """
-        self._scaled_template = ScaledUint16Template(scale_factor=resolution)
+        # Convert resolution to M, d, b parameters when it fits the pattern
+        # resolution = M * 10^d, so we find M and d such that M * 10^d = resolution
+        if resolution == 1.0:
+            # resolution = 1 * 10^0
+            self._scaled_template = ScaledUint16Template.from_letter_method(M=1, d=0, b=0)
+        elif resolution == 0.1:
+            # resolution = 1 * 10^-1
+            self._scaled_template = ScaledUint16Template.from_letter_method(M=1, d=-1, b=0)
+        elif resolution == 0.01:
+            # resolution = 1 * 10^-2
+            self._scaled_template = ScaledUint16Template.from_letter_method(M=1, d=-2, b=0)
+        else:
+            # Fallback to scale_factor for resolutions that don't fit M * 10^d pattern
+            self._scaled_template = ScaledUint16Template(scale_factor=resolution)
+
+    @classmethod
+    def from_letter_method(cls, M: int, d: int, b: int = 0) -> ConcentrationTemplate:
+        """Create instance using Bluetooth SIG M, d, b parameters.
+
+        Args:
+            M: Multiplier factor
+            d: Decimal exponent (10^d)
+            b: Offset to add to raw value before scaling
+
+        Returns:
+            ConcentrationTemplate instance
+
+        """
+        instance = cls.__new__(cls)
+        instance._scaled_template = ScaledUint16Template.from_letter_method(M=M, d=d, b=b)
+        return instance
 
     @property
     def data_size(self) -> int:
@@ -664,6 +820,7 @@ __all__ = [
     # Scaled templates
     "ScaledUint16Template",
     "ScaledSint16Template",
+    "ScaledSint8Template",
     "ScaledUint32Template",
     "ScaledUint24Template",
     "ScaledSint24Template",
