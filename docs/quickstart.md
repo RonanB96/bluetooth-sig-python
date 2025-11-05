@@ -189,6 +189,8 @@ Humidity: 49.42%
 
 The library is designed to work with any BLE connection library. See the [BLE Integration Guide](guides/ble-integration.md) for detailed examples with bleak, simplepyble, and other libraries.
 
+For step-by-step adoption from existing code (before/after examples), see the [Migration Guide](guides/migration.md). It also references example connection managers and adapters you can copy and update as needed.
+
 ## Common Use Cases
 
 For examples of reading multiple sensors and advanced usage patterns, see the [Usage Guide](usage.md).

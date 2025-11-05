@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from enum import IntEnum, IntFlag
 
 import msgspec
@@ -10,8 +11,10 @@ from ...types.gatt_enums import CharacteristicName
 from ..constants import UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .body_sensor_location import BodySensorLocation
+from .body_sensor_location import BodySensorLocation, BodySensorLocationCharacteristic
 from .utils import DataParser
+
+logger = logging.getLogger(__name__)
 
 # RR-Interval resolution: 1/1024 seconds per unit
 RR_INTERVAL_RESOLUTION = 1024.0
@@ -125,6 +128,8 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
     """
 
+    _optional_dependencies = [BodySensorLocationCharacteristic]
+
     # RR-Interval resolution: 1/1024 seconds per unit
     RR_INTERVAL_RESOLUTION = RR_INTERVAL_RESOLUTION
 
@@ -186,12 +191,14 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
             sensor_location_char = self.get_context_characteristic(ctx, CharacteristicName.BODY_SENSOR_LOCATION)
             if sensor_location_char and sensor_location_char.parse_success:
                 # Body Sensor Location is a uint8 enum value (0-6)
-                location_value = sensor_location_char.value
+                location_value: int = sensor_location_char.value
                 try:
                     sensor_location = BodySensorLocation(location_value)
                 except ValueError:
                     # Invalid value outside enum range, leave as None
-                    pass
+                    logger.warning(
+                        f"Invalid Body Sensor Location value {location_value} in context (valid range: 0-6), ignoring"
+                    )
 
         return HeartRateData(
             heart_rate=heart_rate,

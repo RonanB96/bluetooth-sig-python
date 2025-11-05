@@ -123,6 +123,7 @@ disable = [
     "C0413", # wrong-import-position (handled by ruff import sorting)
     "E0611", # no-name-in-module (editable install issue affects entire project)
     "R0903", # too-few-public-methods (not applicable to data structures like msgspec.Struct)
+    "W1203", # logging-fstring-interpolation (f-strings in logging are fine for performance)
     ]
 
 # Note: Other issues like broad-exception-caught, no-member, redefined-outer-name

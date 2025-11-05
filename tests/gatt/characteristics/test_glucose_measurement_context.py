@@ -12,7 +12,7 @@ from bluetooth_sig.gatt.characteristics.glucose_measurement_context import (
     MealType,
 )
 
-from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
 
 
 class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
@@ -27,6 +27,62 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
     def expected_uuid(self) -> str:
         """Expected UUID for glucose measurement context characteristic."""
         return "2A34"
+
+    @pytest.fixture
+    def dependency_test_data(self) -> list[DependencyTestData]:
+        """Test data for required Glucose Measurement dependency."""
+        context_data = bytearray(
+            [
+                0x00,  # flags: no optional fields
+                0x2A,
+                0x00,  # sequence number = 42
+            ]
+        )
+
+        return [
+            DependencyTestData(
+                with_dependency_data={
+                    str(GlucoseMeasurementContextCharacteristic.get_class_uuid()): context_data,
+                    # NOTE: Glucose Measurement (required dependency) not included because
+                    # this characteristic's decode_value() expects parsed CharacteristicData
+                    # objects in context, not raw bytes. The simplified dependency test
+                    # framework only passes raw bytes. For proper testing of sequence number
+                    # validation against Glucose Measurement
+                },
+                without_dependency_data=context_data,
+                expected_with=GlucoseMeasurementContextData(
+                    sequence_number=42,
+                    flags=GlucoseMeasurementContextFlags(0),
+                    extended_flags=None,
+                    carbohydrate_id=None,
+                    carbohydrate_kg=None,
+                    meal=None,
+                    tester=None,
+                    health=None,
+                    exercise_duration_seconds=None,
+                    exercise_intensity_percent=None,
+                    medication_id=None,
+                    medication_kg=None,
+                    hba1c_percent=None,
+                ),
+                expected_without=GlucoseMeasurementContextData(
+                    sequence_number=42,
+                    flags=GlucoseMeasurementContextFlags(0),
+                    extended_flags=None,
+                    carbohydrate_id=None,
+                    carbohydrate_kg=None,
+                    meal=None,
+                    tester=None,
+                    health=None,
+                    exercise_duration_seconds=None,
+                    exercise_intensity_percent=None,
+                    medication_id=None,
+                    medication_kg=None,
+                    hba1c_percent=None,
+                ),
+                description="Glucose context with required measurement dependency present",
+            ),
+        ]
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:

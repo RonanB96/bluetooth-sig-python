@@ -111,6 +111,7 @@ nav:
   - How-to guides:
     - Using the Library: usage.md
     - BLE Integration: guides/ble-integration.md
+    - Migration Guide: guides/migration.md
     - Adding New Characteristics: guides/adding-characteristics.md
     - Performance Optimization: guides/performance.md
     - Contributing: contributing.md

@@ -137,6 +137,8 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = "mg/dL or mmol/L"  # Unit depends on flags
 
+    _optional_dependencies = [GlucoseFeatureCharacteristic]
+
     min_length: int = 12  # Ensured consistency with GlucoseMeasurementData
     max_length: int = 17  # Ensured consistency with GlucoseMeasurementData
     allow_variable_length: bool = True  # Variable optional fields

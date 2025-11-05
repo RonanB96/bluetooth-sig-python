@@ -80,9 +80,7 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         # Use full UUID format to match translator behavior
         plx_features_uuid = BluetoothUUID("2A60").dashed_form
         ctx = CharacteristicContext(
-            other_characteristics={
-                plx_features_uuid: cast(CharacteristicDataProtocol, plx_features)
-            }
+            other_characteristics={plx_features_uuid: cast(CharacteristicDataProtocol, plx_features)}
         )
 
         # Parse with context
@@ -131,9 +129,7 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
             # Use full UUID format to match translator behavior
             plx_features_uuid = BluetoothUUID("2A60").dashed_form
             ctx = CharacteristicContext(
-                other_characteristics={
-                    plx_features_uuid: cast(CharacteristicDataProtocol, plx_features)
-                }
+                other_characteristics={plx_features_uuid: cast(CharacteristicDataProtocol, plx_features)}
             )
 
             plx_data = bytearray([0x00, 0x5F, 0x80, 0x4C, 0x80])  # SpO2=95%, pulse=76 bpm

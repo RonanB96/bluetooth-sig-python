@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import pytest
 
+from bluetooth_sig.gatt.characteristics.rsc_feature import RSCFeatureCharacteristic
 from bluetooth_sig.gatt.characteristics.rsc_measurement import (
     RSCMeasurementCharacteristic,
     RSCMeasurementData,
     RSCMeasurementFlags,
 )
 
-from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
 
 
 class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
@@ -25,6 +26,45 @@ class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
     def expected_uuid(self) -> str:
         """Expected UUID for RSC measurement characteristic."""
         return "2A53"
+
+    @pytest.fixture
+    def dependency_test_data(self) -> list[DependencyTestData]:
+        """Test data for optional RSC Feature dependency."""
+        measurement_data = bytearray(
+            [
+                0x00,  # flags: no optional fields
+                0x80,
+                0x02,  # speed = 2.5 m/s (640 * 1/256)
+                0xB4,  # cadence = 180 steps/min
+            ]
+        )
+
+        return [
+            DependencyTestData(
+                with_dependency_data={
+                    str(RSCMeasurementCharacteristic.get_class_uuid()): measurement_data,  # RSC Measurement
+                    str(RSCFeatureCharacteristic.get_class_uuid()): bytearray(
+                        [0x01, 0x00]
+                    ),  # RSC Feature: instantaneous stride length supported
+                },
+                without_dependency_data=measurement_data,
+                expected_with=RSCMeasurementData(
+                    instantaneous_speed=2.5,
+                    instantaneous_cadence=180,
+                    flags=RSCMeasurementFlags(0x00),
+                    instantaneous_stride_length=None,
+                    total_distance=None,
+                ),
+                expected_without=RSCMeasurementData(
+                    instantaneous_speed=2.5,
+                    instantaneous_cadence=180,
+                    flags=RSCMeasurementFlags(0x00),
+                    instantaneous_stride_length=None,
+                    total_distance=None,
+                ),
+                description="RSC measurement with optional feature characteristic present",
+            ),
+        ]
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
@@ -189,3 +229,26 @@ class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
         test_data = bytearray([0x02, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00])  # distance = 0.1 m
         result = characteristic.decode_value(test_data)
         assert result.total_distance == 0.1
+
+    def test_rsc_measurement_declares_dependencies(self) -> None:
+        """Test that RSC Measurement declares RSC Feature as optional dependency.
+
+        This is critical for ensuring proper parsing order in batch operations.
+        Without this declaration, RSC Feature might be parsed AFTER RSC Measurement,
+        preventing cross-validation.
+        """
+        from bluetooth_sig.gatt.characteristics.rsc_feature import RSCFeatureCharacteristic
+
+        char = RSCMeasurementCharacteristic()
+        feature_uuid = str(RSCFeatureCharacteristic.get_class_uuid())
+
+        # Verify optional dependency is declared
+        assert char.optional_dependencies, "RSC Measurement should declare optional dependencies"
+        assert feature_uuid.upper() in [dep.upper() for dep in char.optional_dependencies], (
+            f"RSC Measurement should declare dependency on RSC Feature ({feature_uuid})"
+        )
+
+        # Verify it's optional, not required (measurement can work without feature)
+        assert not char.required_dependencies or feature_uuid.upper() not in [
+            dep.upper() for dep in char.required_dependencies
+        ], "RSC Feature should be optional, not required"

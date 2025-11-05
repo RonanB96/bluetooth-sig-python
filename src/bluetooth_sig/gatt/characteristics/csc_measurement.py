@@ -44,6 +44,10 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
     # Override automatic name resolution because "CSC" is an acronym
     _characteristic_name: str | None = "CSC Measurement"
 
+    # Declare optional dependency on CSC Feature for validation
+    # This ensures CSC Feature is parsed first when both are present
+    _optional_dependencies = [CSCFeatureCharacteristic]
+
     # Time resolution constants
     CSC_TIME_RESOLUTION = 1024.0  # 1/1024 second resolution for both wheel and crank event times
 

@@ -21,6 +21,25 @@ class CharacteristicTestData:
     description: str = ""
 
 
+@dataclass
+class DependencyTestData:
+    """Test data for dependency validation tests.
+
+    Attributes:
+        with_dependency_data: Test data when dependency is present (dict of UUID -> bytes)
+        without_dependency_data: Test data when dependency is absent
+        expected_with: Expected result when dependency present
+        expected_without: Expected result when dependency absent (may be None if should fail)
+        description: Description of this dependency scenario
+    """
+
+    with_dependency_data: dict[str, bytearray]
+    without_dependency_data: bytearray
+    expected_with: Any
+    expected_without: Any | None
+    description: str = ""
+
+
 class CommonCharacteristicTests:
     """Base class for common characteristic test patterns.
 
@@ -64,6 +83,18 @@ class CommonCharacteristicTests:
             f"Test incomplete: missing 'valid_test_data' fixture in {type(self).__name__}. "
             "Override this fixture in your test class."
         )
+
+    @pytest.fixture
+    def dependency_test_data(self) -> list[DependencyTestData] | None:
+        """Optional: Provide dependency test data if characteristic has dependencies.
+
+        Return None (default) if characteristic has no dependencies.
+        Return list of DependencyTestData if characteristic has required/optional dependencies.
+
+        This will be checked automatically - if dependencies exist but no test data provided,
+        the test will fail with a clear error message.
+        """
+        return None
 
     # === Behavioral Tests ===
     def test_characteristic_uuid_matches_expected(self, characteristic: BaseCharacteristic, expected_uuid: str) -> None:
@@ -276,6 +307,177 @@ class CommonCharacteristicTests:
             parsed = characteristic.decode_value(test_case.input_data)
             encoded = characteristic.encode_value(parsed)
             assert encoded == test_case.input_data, f"{case_desc}: Round trip failed - encoded data differs from input"
+
+    # === Dependency Tests ===
+    def test_dependency_declarations_have_tests(
+        self,
+        characteristic: BaseCharacteristic,
+        dependency_test_data: list[DependencyTestData] | None,
+    ) -> None:
+        """Verify that characteristics with dependencies have dependency tests.
+
+        This test ensures that if a characteristic declares required or optional dependencies,
+        the test class MUST provide dependency_test_data fixture with appropriate test cases.
+
+        Why this matters:
+        - Dependencies affect parsing order (topological sort in translator)
+        - Dependencies enable cross-characteristic validation
+        - Missing dependency tests = untested critical functionality
+        """
+        has_dependencies = bool(characteristic.required_dependencies or characteristic.optional_dependencies)
+
+        if has_dependencies:
+            # Characteristic declares dependencies - MUST have tests
+            assert dependency_test_data is not None, (
+                f"\n{'=' * 80}\n"
+                f"TEST COVERAGE FAILURE: {type(characteristic).__name__} declares dependencies "
+                f"but has no dependency tests!\n"
+                f"\n"
+                f"Required dependencies: {characteristic.required_dependencies}\n"
+                f"Optional dependencies: {characteristic.optional_dependencies}\n"
+                f"\n"
+                f"ACTION REQUIRED: Add dependency_test_data fixture to your test class:\n"
+                f"\n"
+                f"@pytest.fixture\n"
+                f"def dependency_test_data(self) -> list[DependencyTestData]:\n"
+                f"    return [\n"
+                f"        DependencyTestData(\n"
+                f"            with_dependency_data={{\n"
+                f"                '<measurement_uuid>': bytearray([...]),  # This characteristic's data\n"
+                f"                '<dependency_uuid>': bytearray([...]),   # Dependency characteristic data\n"
+                f"            }},\n"
+                f"            without_dependency_data=bytearray([...]),   # Same data, no dependency\n"
+                f"            expected_with=<expected_result>,            # Expected when dependency present\n"
+                f"            expected_without=<expected_result>,         # Expected when dependency absent\n"
+                f"            description='Test scenario description',\n"
+                f"        ),\n"
+                f"        # Add more test cases as needed\n"
+                f"    ]\n"
+                f"\n"
+                f"See test_characteristic_dependencies.py for working examples (RSC, CSC).\n"
+                f"{'=' * 80}\n"
+            )
+
+            assert len(dependency_test_data) > 0, (
+                f"{type(characteristic).__name__} has dependencies but dependency_test_data is empty. "
+                f"Provide at least one test case for dependency validation."
+            )
+        else:
+            # No dependencies declared - dependency tests optional
+            if dependency_test_data is not None:
+                pytest.skip(f"{type(characteristic).__name__} has no dependencies, skipping dependency tests")
+
+    def test_dependency_parsing_with_dependencies_present(
+        self,
+        characteristic: BaseCharacteristic,
+        dependency_test_data: list[DependencyTestData] | None,
+    ) -> None:
+        """Test characteristic parsing when dependencies are present in context.
+
+        This verifies:
+        1. Characteristic parses successfully with dependencies
+        2. Cross-validation with dependencies works correctly
+        3. Context is properly utilized during parsing
+
+        Note: This is a simplified test that passes raw bytes in context.
+        For full integration testing with proper CharacteristicData objects,
+        use tests/integration/test_characteristic_dependencies.py with translator.
+        """
+        if dependency_test_data is None:
+            pytest.skip("No dependency test data provided")
+
+        for i, test_case in enumerate(dependency_test_data):
+            case_desc = f"Test case {i + 1} ({test_case.description})"
+
+            # Get this characteristic's UUID and data
+            char_uuid = str(characteristic.uuid).upper()
+            char_data = test_case.with_dependency_data.get(char_uuid)
+
+            if char_data is None:
+                # Try to find by matching any key
+                matching_keys = [k for k in test_case.with_dependency_data.keys() if k.upper() == char_uuid]
+                if matching_keys:
+                    char_data = test_case.with_dependency_data[matching_keys[0]]
+                else:
+                    pytest.fail(
+                        f"{case_desc}: with_dependency_data must include data for this characteristic "
+                        f"(UUID: {char_uuid})"
+                    )
+
+            # Build context with other characteristics (dependencies)
+            # NOTE: We pass raw bytes here for simplicity. This is sufficient for basic
+            # dependency testing. For full integration tests with proper CharacteristicData
+            # objects, use the translator in integration tests.
+            other_chars = {k: v for k, v in test_case.with_dependency_data.items() if k.upper() != char_uuid}
+
+            ctx = CharacteristicContext(other_characteristics=other_chars) if other_chars else None  # type: ignore[arg-type]
+
+            # Parse with context
+            result = characteristic.decode_value(char_data, ctx=ctx)
+
+            # Should parse successfully and match expected value
+            assert result is not None, f"{case_desc}: decode_value returned None when dependencies present"
+            self._assert_values_equal(result, test_case.expected_with, f"{case_desc} with dependencies")
+
+    def test_dependency_parsing_without_dependencies(
+        self,
+        characteristic: BaseCharacteristic,
+        dependency_test_data: list[DependencyTestData] | None,
+    ) -> None:
+        """Test characteristic parsing when optional dependencies are absent.
+
+        This verifies:
+        1. Optional dependencies don't break parsing when absent
+        2. Required dependencies (if any) properly fail or degrade gracefully
+        3. Characteristic handles missing context appropriately
+        """
+        if dependency_test_data is None:
+            pytest.skip("No dependency test data provided")
+
+        has_required = bool(characteristic.required_dependencies)
+
+        for i, test_case in enumerate(dependency_test_data):
+            case_desc = f"Test case {i + 1} ({test_case.description})"
+
+            # Parse without context (no dependencies available)
+            if has_required:
+                # Required dependencies missing - might fail or degrade
+                if test_case.expected_without is None:
+                    # Test expects failure - use broad exception since different characteristics
+                    # may raise different exceptions (InsufficientDataError, ValueRangeError, etc.)
+                    with pytest.raises(Exception):  # noqa: B017
+                        characteristic.decode_value(test_case.without_dependency_data, ctx=None)
+                else:
+                    # Test expects degraded parsing (still works but limited)
+                    result = characteristic.decode_value(test_case.without_dependency_data, ctx=None)
+                    self._assert_values_equal(result, test_case.expected_without, f"{case_desc} without dependencies")
+            else:
+                # Only optional dependencies - should always work
+                result = characteristic.decode_value(test_case.without_dependency_data, ctx=None)
+                assert result is not None, f"{case_desc}: Should parse without optional dependencies"
+                self._assert_values_equal(result, test_case.expected_without, f"{case_desc} without dependencies")
+
+    def test_dependency_uuids_are_valid(
+        self,
+        characteristic: BaseCharacteristic,
+    ) -> None:
+        """Verify that declared dependency UUIDs are valid and resolvable.
+
+        This catches typos in dependency declarations and ensures dependencies
+        reference real characteristics.
+        """
+        all_deps = characteristic.required_dependencies + characteristic.optional_dependencies
+
+        for dep_uuid in all_deps:
+            # UUID should be properly formatted
+            assert dep_uuid, "Dependency UUID cannot be empty"
+            assert len(dep_uuid) >= 4, f"Dependency UUID '{dep_uuid}' is too short"
+
+            # Should be hex string (allowing hyphens for full UUIDs)
+            cleaned = dep_uuid.replace("-", "")
+            assert all(c in "0123456789ABCDEFabcdef" for c in cleaned), (
+                f"Dependency UUID '{dep_uuid}' contains invalid characters"
+            )
 
 
 def create_test_context(

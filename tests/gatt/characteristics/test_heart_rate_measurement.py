@@ -113,9 +113,7 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
         # Store with full UUID format to match how translator builds context
         sensor_location_uuid = BluetoothUUID("2A38").dashed_form
         ctx = CharacteristicContext(
-            other_characteristics={
-                sensor_location_uuid: cast(CharacteristicDataProtocol, sensor_location)
-            }
+            other_characteristics={sensor_location_uuid: cast(CharacteristicDataProtocol, sensor_location)}
         )
 
         # Parse with context
@@ -159,9 +157,7 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
             # Use full UUID format to match translator behavior
             sensor_location_uuid = BluetoothUUID("2A38").dashed_form
             ctx = CharacteristicContext(
-                other_characteristics={
-                    sensor_location_uuid: cast(CharacteristicDataProtocol, sensor_location)
-                }
+                other_characteristics={sensor_location_uuid: cast(CharacteristicDataProtocol, sensor_location)}
             )
 
             hr_data = bytearray([0x00, 0x46])  # 70 BPM

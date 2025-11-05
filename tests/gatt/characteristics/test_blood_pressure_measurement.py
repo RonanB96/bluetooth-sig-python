@@ -10,13 +10,14 @@ from bluetooth_sig.gatt.characteristics.blood_pressure_common import (
     BloodPressureFlags,
     BloodPressureOptionalFields,
 )
+from bluetooth_sig.gatt.characteristics.blood_pressure_feature import BloodPressureFeatureCharacteristic
 from bluetooth_sig.gatt.characteristics.blood_pressure_measurement import (
     BloodPressureData,
     BloodPressureMeasurementCharacteristic,
 )
 from bluetooth_sig.types.units import PressureUnit
 
-from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
 
 
 class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
@@ -31,6 +32,58 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
     def expected_uuid(self) -> str:
         """Expected UUID for blood pressure measurement characteristic."""
         return "2A35"
+
+    @pytest.fixture
+    def dependency_test_data(self) -> list[DependencyTestData]:
+        """Test data for optional Blood Pressure Feature dependency."""
+        return [
+            DependencyTestData(
+                with_dependency_data={
+                    str(BloodPressureMeasurementCharacteristic.get_class_uuid()): bytearray(
+                        [
+                            0x00,  # flags: mmHg unit, no optional fields
+                            0x78,
+                            0x80,  # systolic 120 mmHg
+                            0x50,
+                            0x80,  # diastolic 80 mmHg
+                            0x5A,
+                            0x80,  # mean arterial pressure 90 mmHg
+                        ]
+                    ),
+                    str(BloodPressureFeatureCharacteristic.get_class_uuid()): bytearray(
+                        [0x01, 0x00]
+                    ),  # Blood Pressure Feature: body movement detection
+                },
+                without_dependency_data=bytearray(
+                    [
+                        0x00,  # flags: mmHg unit, no optional fields
+                        0x78,
+                        0x80,  # systolic 120 mmHg
+                        0x50,
+                        0x80,  # diastolic 80 mmHg
+                        0x5A,
+                        0x80,  # mean arterial pressure 90 mmHg
+                    ]
+                ),
+                expected_with=BloodPressureData(
+                    systolic=120.0,
+                    diastolic=80.0,
+                    mean_arterial_pressure=90.0,
+                    unit=PressureUnit.MMHG,
+                    optional_fields=BloodPressureOptionalFields(),
+                    flags=BloodPressureFlags(0),
+                ),
+                expected_without=BloodPressureData(
+                    systolic=120.0,
+                    diastolic=80.0,
+                    mean_arterial_pressure=90.0,
+                    unit=PressureUnit.MMHG,
+                    optional_fields=BloodPressureOptionalFields(),
+                    flags=BloodPressureFlags(0),
+                ),
+                description="Blood pressure measurement with optional feature characteristic present",
+            ),
+        ]
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:

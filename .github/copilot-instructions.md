@@ -85,7 +85,8 @@ The translation layer must remain framework-agnostic to support multiple backend
 **All linting must pass before claiming completion.**
 - Run `./scripts/lint.sh --all` before every completion
 - Fix issues, don't suppress them unless documented
-- Never hide real problems with blanket disables
+- Never hide real problems with disables
+- If fixing linting errors, rerun only that linting tool to speed up iteration, i.e. `./scripts/lint.sh --mypy`. Then rerun all at the end.
 
 ### 9. Documentation Policy
 **Do NOT generate or update summary documentation unless explicitly requested.**

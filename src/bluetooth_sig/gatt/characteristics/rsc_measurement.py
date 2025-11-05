@@ -43,6 +43,10 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
     Used to transmit running speed and cadence data.
     """
 
+    # Declare optional dependency on RSC Feature for validation
+    # This ensures RSC Feature is parsed first when both are present
+    _optional_dependencies = [RSCFeatureCharacteristic]
+
     def _validate_against_feature(self, data: RSCMeasurementData, ctx: CharacteristicContext) -> None:
         """Validate RSC measurement data against supported features.
 
@@ -56,12 +60,12 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
         """
         # Get RSC Feature characteristic from context
         feature_char = self.get_context_characteristic(ctx, RSCFeatureCharacteristic)
-        if feature_char is None:
+        if feature_char is None or not feature_char.parse_success or feature_char.value is None:
             # No feature characteristic available, skip validation
             return
 
-        # Decode the feature data
-        feature_data: RSCFeatureData = feature_char.decode_value(feature_char.value, ctx)
+        # Get the already-parsed feature data from context
+        feature_data: RSCFeatureData = feature_char.value
 
         # Validate optional fields against supported features
         if data.instantaneous_stride_length is not None and not feature_data.instantaneous_stride_length_supported:
@@ -140,9 +144,6 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
             Encoded bytes representing the RSC measurement
 
         """
-        if not isinstance(data, RSCMeasurementData):
-            raise TypeError(f"RSC measurement data must be a RSCMeasurementData, got {type(data).__name__}")
-
         # Build flags based on available optional data
         flags = RSCMeasurementFlags(data.flags)
         has_stride_length = data.instantaneous_stride_length is not None

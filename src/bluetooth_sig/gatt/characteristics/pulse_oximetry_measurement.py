@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from enum import IntFlag
 
@@ -10,8 +11,10 @@ import msgspec
 from ...types.gatt_enums import CharacteristicName
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .plx_features import PLXFeatureFlags
+from .plx_features import PLXFeatureFlags, PLXFeaturesCharacteristic
 from .utils import DataParser, IEEE11073Parser
+
+logger = logging.getLogger(__name__)
 
 
 class PulseOximetryFlags(IntFlag):
@@ -53,6 +56,8 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "PLX Continuous Measurement"
+
+    _optional_dependencies = [PLXFeaturesCharacteristic]
 
     # Declarative validation (automatic)
     min_length: int | None = 5  # Flags(1) + SpO2(2) + PulseRate(2) minimum
@@ -115,7 +120,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
             pulse_amplitude_index = IEEE11073Parser.parse_sfloat(data, offset)
 
         # Context enhancement: PLX Features
-        supported_features = None
+        supported_features: PLXFeatureFlags | None = None
         if ctx:
             plx_features_char = self.get_context_characteristic(ctx, CharacteristicName.PLX_FEATURES)
             if plx_features_char and plx_features_char.parse_success:
