@@ -64,23 +64,19 @@ asyncio.run(read_sensor_data("AA:BB:CC:DD:EE:FF"))
 
 ## Batch Parsing
 
-The async API automatically optimizes batch parsing:
+Batch parse multiple characteristics in a single async call:
 
 ```python
 async def parse_many_characteristics():
     translator = AsyncBluetoothSIGTranslator()
     
-    # Small batch (≤5 items) - parsed directly
-    small_batch = {
+    # Parse any number of characteristics
+    char_data = {
         "2A19": battery_data,
         "2A6E": temp_data,
+        "2A6F": humidity_data,
     }
-    results = await translator.parse_characteristics_async(small_batch)
-    
-    # Large batch (>5 items) - automatically chunked
-    # Yields to event loop every 10 characteristics
-    large_batch = {f"uuid_{i}": data_i for i in range(50)}
-    results = await translator.parse_characteristics_async(large_batch)
+    results = await translator.parse_characteristics_async(char_data)
 ```
 
 ## Concurrent Parsing
@@ -205,7 +201,7 @@ Both sync and async methods are available on `AsyncBluetoothSIGTranslator`, so y
 translator = AsyncBluetoothSIGTranslator()
 
 # Sync method still works
-info = translator.get_characteristic_info_by_uuid("2A19")
+info = translator.get_sig_info_by_uuid("2A19")
 
 # Async method
 result = await translator.parse_characteristic_async("2A19", data)

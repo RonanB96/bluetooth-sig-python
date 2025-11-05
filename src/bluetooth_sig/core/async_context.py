@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from types import TracebackType
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
-from ..types import CharacteristicContext, CharacteristicData
+from ..types import CharacteristicContext
 from ..types.protocols import CharacteristicDataProtocol
 from ..types.uuid import BluetoothUUID
 from .async_translator import AsyncBluetoothSIGTranslator
+
+if TYPE_CHECKING:
+    from ..types import CharacteristicData
 
 
 class AsyncParsingSession:
@@ -39,6 +42,8 @@ class AsyncParsingSession:
         """
         self.translator = translator
         self.context = ctx
+        # CharacteristicData implements CharacteristicDataProtocol structurally
+        # Store as concrete type for clarity, compatible with protocol at usage
         self.results: dict[str, CharacteristicData] = {}
 
     async def __aenter__(self) -> AsyncParsingSession:
@@ -71,18 +76,17 @@ class AsyncParsingSession:
         Returns:
             CharacteristicData
         """
-        # Update context with previous results; cast to protocol mapping for typing
-        results_mapping: Mapping[str, CharacteristicDataProtocol] = cast(
-            Mapping[str, CharacteristicDataProtocol], self.results
-        )
+        # Update context with previous results
+        # Cast dict to Mapping to satisfy CharacteristicContext type requirements
+        results_as_mapping = cast(Mapping[str, CharacteristicDataProtocol], self.results)
 
         if self.context is None:
-            self.context = CharacteristicContext(other_characteristics=results_mapping)
+            self.context = CharacteristicContext(other_characteristics=results_as_mapping)
         else:
             self.context = CharacteristicContext(
                 device_info=self.context.device_info,
                 advertisement=self.context.advertisement,
-                other_characteristics=results_mapping,
+                other_characteristics=results_as_mapping,
                 raw_service=self.context.raw_service,
             )
 
