@@ -9,14 +9,78 @@ installed fails fast and provides a clear diagnostic.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
+from typing import Any, Protocol
 
 import simplepyble
 
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.types.io import RawCharacteristicBatch, RawCharacteristicRead
 from bluetooth_sig.types.uuid import BluetoothUUID
+
+
+class _DescriptorLike(Protocol):
+    uuid: object
+    value: bytes | bytearray | None
+
+
+class _CharacteristicLike(Protocol):
+    uuid: object
+    properties: Sequence[str] | None
+    descriptors: Iterable[_DescriptorLike] | None
+    value: bytes | bytearray | None
+
+
+class _ServiceLike(Protocol):
+    characteristics: Iterable[_CharacteristicLike] | None
+
+
+def simpleble_services_to_batch(
+    services: Iterable[_ServiceLike] | None,
+    values_by_uuid: Mapping[str, bytes] | None = None,
+) -> RawCharacteristicBatch:
+    """Build a RawCharacteristicBatch from SimpleBLE service metadata.
+
+    Duck-typed similarly to the Bleak helper. Many SimpleBLE wrappers
+    expose `service.characteristics` where each characteristic has a `.uuid`
+    and optionally `.properties` and `.descriptors` with `.uuid`/`.value`.
+    Provide `values_by_uuid` if you've read characteristic values separately.
+    """
+    items: list[RawCharacteristicRead] = []
+
+    for service in services or []:
+        chars = getattr(service, "characteristics", [])
+        for char in chars:
+            uuid = str(char.uuid)
+            raw: bytes | None = None
+
+            # Prefer explicit values map if provided
+            if values_by_uuid is not None:
+                raw = values_by_uuid.get(uuid) or values_by_uuid.get(uuid.upper()) or values_by_uuid.get(uuid.lower())
+
+            # Fallback to attribute commonly present on some wrappers
+            if raw is None:
+                raw = getattr(char, "value", None)
+
+            if raw is None:
+                continue  # skip characteristics without a value
+
+            props = list(getattr(char, "properties", []) or [])
+
+            # Collect descriptor raw values when available
+            desc_bytes: dict[str, bytes] = {}
+            for desc in getattr(char, "descriptors", []) or []:
+                d_uuid = str(getattr(desc, "uuid", ""))
+                d_val = getattr(desc, "value", None)
+                if d_uuid and isinstance(d_val, (bytes, bytearray)):
+                    desc_bytes[d_uuid] = bytes(d_val)
+
+            items.append(
+                RawCharacteristicRead(uuid=uuid, raw_data=bytes(raw), descriptors=desc_bytes, properties=props)
+            )
+
+    return RawCharacteristicBatch(items=items)
 
 
 class SimplePyBLEConnectionManager(ConnectionManagerProtocol):

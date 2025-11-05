@@ -2,21 +2,22 @@
 
 from __future__ import annotations
 
+import logging
 from enum import IntEnum, IntFlag
 
 import msgspec
 
+from ...types.gatt_enums import CharacteristicName
 from ..constants import UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .body_sensor_location import BodySensorLocation, BodySensorLocationCharacteristic
 from .utils import DataParser
+
+logger = logging.getLogger(__name__)
 
 # RR-Interval resolution: 1/1024 seconds per unit
 RR_INTERVAL_RESOLUTION = 1024.0
-
-# TODO: Implement CharacteristicContext support
-# This characteristic should access Heart Rate Control Point (0x2A39) from ctx.other_characteristics
-# to provide calibration factors and control commands for enhanced heart rate monitoring
 
 
 class HeartRateMeasurementFlags(IntFlag):
@@ -61,13 +62,23 @@ class SensorContactState(IntEnum):
 
 
 class HeartRateData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
-    """Parsed data from Heart Rate Measurement characteristic."""
+    """Parsed data from Heart Rate Measurement characteristic.
+
+    Attributes:
+        heart_rate: Heart rate in beats per minute (0-UINT16_MAX)
+        sensor_contact: State of sensor contact detection
+        energy_expended: Optional energy expended in kilojoules
+        rr_intervals: Tuple of R-R intervals in seconds (immutable)
+        flags: Raw flags byte for reference
+        sensor_location: Optional body sensor location from context (BodySensorLocation enum)
+    """
 
     heart_rate: int  # BPM (0-UINT16_MAX)
     sensor_contact: SensorContactState
     energy_expended: int | None = None  # kJ
     rr_intervals: tuple[float, ...] = ()  # R-R intervals in seconds, immutable tuple
     flags: HeartRateMeasurementFlags = HeartRateMeasurementFlags(0)  # Raw flags byte for reference
+    sensor_location: BodySensorLocation | None = None  # Body sensor location from context (0x2A38)
 
     def __post_init__(self) -> None:
         """Validate heart rate measurement data."""
@@ -117,20 +128,29 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
 
     """
 
+    _optional_dependencies = [BodySensorLocationCharacteristic]
+
     # RR-Interval resolution: 1/1024 seconds per unit
     RR_INTERVAL_RESOLUTION = RR_INTERVAL_RESOLUTION
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> HeartRateData:
+    def decode_value(  # pylint: disable=too-many-branches  # Branches needed for spec-compliant parsing
+        self, data: bytearray, ctx: CharacteristicContext | None = None
+    ) -> HeartRateData:
         """Parse heart rate measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Heart Rate Value(1-2) + [Energy Expended(2)] + [RR-Intervals(2*n)]
+
+        Context Enhancement:
+            If ctx is provided, this method will attempt to enhance the parsed data with:
+            - Body Sensor Location (0x2A38): Location where the sensor is positioned
 
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            HeartRateData containing parsed heart rate data with metadata.
+            HeartRateData containing parsed heart rate data with metadata and optional
+            context-enhanced information.
 
         """
         if len(data) < 2:
@@ -165,12 +185,28 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
                 rr_intervals.append(rr_interval_raw / RR_INTERVAL_RESOLUTION)
                 offset += 2
 
+        # Context enhancement: Body Sensor Location
+        sensor_location = None
+        if ctx:
+            sensor_location_char = self.get_context_characteristic(ctx, CharacteristicName.BODY_SENSOR_LOCATION)
+            if sensor_location_char and sensor_location_char.parse_success:
+                # Body Sensor Location is a uint8 enum value (0-6)
+                location_value: int = sensor_location_char.value
+                try:
+                    sensor_location = BodySensorLocation(location_value)
+                except ValueError:
+                    # Invalid value outside enum range, leave as None
+                    logger.warning(
+                        f"Invalid Body Sensor Location value {location_value} in context (valid range: 0-6), ignoring"
+                    )
+
         return HeartRateData(
             heart_rate=heart_rate,
             sensor_contact=sensor_contact,
             energy_expended=energy_expended,
             rr_intervals=tuple(rr_intervals),  # Convert list to tuple for immutable struct
             flags=flags,
+            sensor_location=sensor_location,
         )
 
     def encode_value(self, data: HeartRateData) -> bytearray:

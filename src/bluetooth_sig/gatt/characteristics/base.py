@@ -12,7 +12,7 @@ from typing import Any
 import msgspec
 
 from ...registry import units_registry
-from ...types import CharacteristicData, CharacteristicInfo, DescriptorData
+from ...types import CharacteristicData, CharacteristicDataProtocol, CharacteristicInfo, DescriptorData
 from ...types import ParseFieldError as FieldError
 from ...types.gatt_enums import CharacteristicName, DataType, GattProperty, ValueType
 from ...types.uuid import BluetoothUUID
@@ -661,7 +661,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         self,
         ctx: CharacteristicContext | None,
         characteristic_name: CharacteristicName | str | type[BaseCharacteristic],
-    ) -> Any | None:  # noqa: ANN401  # Returns various characteristic types from context
+    ) -> CharacteristicDataProtocol | None:
         """Find a characteristic in a context by name or class.
 
         Args:

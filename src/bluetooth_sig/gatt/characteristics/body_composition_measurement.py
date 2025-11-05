@@ -170,6 +170,8 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = "various"  # Multiple units in measurement
 
+    _optional_dependencies = [BodyCompositionFeatureCharacteristic]
+
     min_length: int = 4  # Flags(2) + BodyFat(2) minimum
     max_length: int = 50  # + Timestamp(7) + UserID(1) + Multiple measurements maximum
     allow_variable_length: bool = True  # Variable optional fields

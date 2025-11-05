@@ -12,10 +12,81 @@ from __future__ import annotations
 
 import asyncio
 import importlib
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Protocol
 
+from bluetooth_sig.types.io import RawCharacteristicBatch, RawCharacteristicRead
 from examples.utils.connection_helpers import read_characteristics_with_manager
 from examples.utils.device_scanning import safe_get_device_info
 from examples.utils.models import DeviceInfo, ReadResult
+
+
+class _DescriptorLike(Protocol):
+    uuid: object
+    value: bytes | bytearray | None
+
+
+class _CharacteristicLike(Protocol):
+    uuid: object
+    properties: Sequence[str] | None
+    descriptors: Iterable[_DescriptorLike] | None
+    value: bytes | bytearray | None
+
+
+class _ServiceLike(Protocol):
+    characteristics: Iterable[_CharacteristicLike] | None
+
+
+def bleak_services_to_batch(
+    services: Iterable[_ServiceLike] | None,
+    values_by_uuid: Mapping[str, bytes] | None = None,
+) -> RawCharacteristicBatch:
+    """Build a RawCharacteristicBatch from Bleak service metadata.
+
+    This function avoids a hard dependency on Bleak by using duck typing. It
+    expects an iterable of service-like objects, each having a `.characteristics`
+    iterable with items that expose a `.uuid` attribute and (optionally)
+    `.properties` and `.descriptors`.
+
+    The function does not perform I/O. Provide `values_by_uuid` if you have
+    separate read results keyed by characteristic UUID (short or full form).
+    Descriptors are included when characteristic descriptors expose both
+    `.uuid` and `.value` bytes.
+    """
+    items: list[RawCharacteristicRead] = []
+
+    for service in services or []:
+        chars = getattr(service, "characteristics", [])
+        for char in chars:
+            uuid = str(char.uuid)
+            raw: bytes | None = None
+
+            # Prefer explicit values map if provided
+            if values_by_uuid is not None:
+                raw = values_by_uuid.get(uuid) or values_by_uuid.get(uuid.upper()) or values_by_uuid.get(uuid.lower())
+
+            # Fallback to attribute commonly present on some wrappers
+            if raw is None:
+                raw = getattr(char, "value", None)
+
+            if raw is None:
+                continue  # skip characteristics without a value
+
+            props = list(getattr(char, "properties", []) or [])
+
+            # Collect descriptor raw values when available
+            desc_bytes: dict[str, bytes] = {}
+            for desc in getattr(char, "descriptors", []) or []:
+                d_uuid = str(getattr(desc, "uuid", ""))
+                d_val = getattr(desc, "value", None)
+                if d_uuid and isinstance(d_val, (bytes, bytearray)):
+                    desc_bytes[d_uuid] = bytes(d_val)
+
+            items.append(
+                RawCharacteristicRead(uuid=uuid, raw_data=bytes(raw), descriptors=desc_bytes, properties=props)
+            )
+
+    return RawCharacteristicBatch(items=items)
 
 
 async def scan_with_bleak_retry(timeout: float = 10.0) -> list[DeviceInfo]:

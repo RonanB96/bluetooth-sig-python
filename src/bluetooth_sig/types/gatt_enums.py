@@ -219,7 +219,9 @@ class CharacteristicName(Enum):
     INTERMEDIATE_CUFF_PRESSURE = "Intermediate Cuff Pressure"
     BLOOD_PRESSURE_FEATURE = "Blood Pressure Feature"
     CSC_MEASUREMENT = "CSC Measurement"
+    CSC_FEATURE = "CSC Feature"
     RSC_MEASUREMENT = "RSC Measurement"
+    RSC_FEATURE = "RSC Feature"
     CYCLING_POWER_MEASUREMENT = "Cycling Power Measurement"
     CYCLING_POWER_FEATURE = "Cycling Power Feature"
     CYCLING_POWER_VECTOR = "Cycling Power Vector"
@@ -239,6 +241,7 @@ class CharacteristicName(Enum):
     WEIGHT_SCALE_FEATURE = "Weight Scale Feature"
     BODY_COMPOSITION_MEASUREMENT = "Body Composition Measurement"
     BODY_COMPOSITION_FEATURE = "Body Composition Feature"
+    BODY_SENSOR_LOCATION = "Body Sensor Location"
     # Environmental characteristics
     DEW_POINT = "Dew Point"
     HEAT_INDEX = "Heat Index"
@@ -258,7 +261,7 @@ class CharacteristicName(Enum):
     LOCAL_TIME_INFORMATION = "Local Time Information"
     # Gas sensor characteristics
     AMMONIA_CONCENTRATION = "Ammonia Concentration"
-    CO2_CONCENTRATION = "Carbon Dioxide Concentration"
+    CO2_CONCENTRATION = r"CO\textsubscript{2} Concentration"
     METHANE_CONCENTRATION = "Methane Concentration"
     NITROGEN_DIOXIDE_CONCENTRATION = "Nitrogen Dioxide Concentration"
     NON_METHANE_VOC_CONCENTRATION = "Non-Methane Volatile Organic Compounds Concentration"
@@ -267,7 +270,7 @@ class CharacteristicName(Enum):
     PM10_CONCENTRATION = "Particulate Matter - PM10 Concentration"
     PM25_CONCENTRATION = "Particulate Matter - PM2.5 Concentration"
     SULFUR_DIOXIDE_CONCENTRATION = "Sulfur Dioxide Concentration"
-    VOC_CONCENTRATION = "Volatile Organic Compounds Concentration"
+    VOC_CONCENTRATION = "VOC Concentration"
     # Power characteristics
     ELECTRIC_CURRENT = "Electric Current"
     ELECTRIC_CURRENT_RANGE = "Electric Current Range"
@@ -284,13 +287,15 @@ class CharacteristicName(Enum):
     # Audio characteristics
     NOISE = "Noise"
     # Pulse oximetry
-    PULSE_OXIMETRY_CONTINUOUS_MEASUREMENT = "Pulse Oximetry Continuous Measurement"
+    PLX_CONTINUOUS_MEASUREMENT = "PLX Continuous Measurement"
+    PLX_FEATURES = "PLX Features"
     LOCATION_AND_SPEED = "Location and Speed"
     NAVIGATION = "Navigation"
     POSITION_QUALITY = "Position Quality"
     LN_FEATURE = "LN Feature"
     LN_CONTROL_POINT = "LN Control Point"
     SERVICE_CHANGED = "Service Changed"
+    ALERT_LEVEL = "Alert Level"
     ALERT_STATUS = "Alert Status"
     RINGER_SETTING = "Ringer Setting"
     RINGER_CONTROL_POINT = "Ringer Control Point"
@@ -300,15 +305,20 @@ class CharacteristicName(Enum):
     UNREAD_ALERT_STATUS = "Unread Alert Status"
     SUPPORTED_UNREAD_ALERT_CATEGORY = "Supported Unread Alert Category"
     ALERT_NOTIFICATION_CONTROL_POINT = "Alert Notification Control Point"
+    # Time characteristics
+    CURRENT_TIME = "Current Time"
+    REFERENCE_TIME_INFORMATION = "Reference Time Information"
+    # Power level
+    TX_POWER_LEVEL = "Tx Power Level"
 
 
 class ServiceName(Enum):
     """Enumeration of all supported GATT service names."""
 
-    GENERIC_ACCESS = "Generic Access"
-    GENERIC_ATTRIBUTE = "Generic Attribute"
+    GAP = "GAP"
+    GATT = "GATT"
     DEVICE_INFORMATION = "Device Information"
-    BATTERY_SERVICE = "Battery Service"
+    BATTERY = "Battery"
     HEART_RATE = "Heart Rate"
     BLOOD_PRESSURE = "Blood Pressure"
     HEALTH_THERMOMETER = "Health Thermometer"

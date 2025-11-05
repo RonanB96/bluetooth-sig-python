@@ -26,6 +26,7 @@ from .blood_pressure_feature import BloodPressureFeatureCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic
 from .body_composition_measurement import BodyCompositionMeasurementCharacteristic
+from .body_sensor_location import BodySensorLocation, BodySensorLocationCharacteristic
 from .co2_concentration import CO2ConcentrationCharacteristic
 from .csc_feature import CSCFeatureCharacteristic
 from .csc_measurement import CSCMeasurementCharacteristic
@@ -79,6 +80,7 @@ from .nitrogen_dioxide_concentration import NitrogenDioxideConcentrationCharacte
 from .noise import NoiseCharacteristic
 from .non_methane_voc_concentration import NonMethaneVOCConcentrationCharacteristic
 from .ozone_concentration import OzoneConcentrationCharacteristic
+from .plx_features import PLXFeatureFlags, PLXFeaturesCharacteristic
 from .pm1_concentration import PM1ConcentrationCharacteristic
 from .pm10_concentration import PM10ConcentrationCharacteristic
 from .pm25_concentration import PM25ConcentrationCharacteristic
@@ -140,6 +142,8 @@ __all__ = [
     "BloodPressureMeasurementCharacteristic",
     "BodyCompositionFeatureCharacteristic",
     "BodyCompositionMeasurementCharacteristic",
+    "BodySensorLocation",
+    "BodySensorLocationCharacteristic",
     "CO2ConcentrationCharacteristic",
     "CSCFeatureCharacteristic",
     "CSCMeasurementCharacteristic",
@@ -187,6 +191,8 @@ __all__ = [
     "PM1ConcentrationCharacteristic",
     "PM10ConcentrationCharacteristic",
     "PM25ConcentrationCharacteristic",
+    "PLXFeatureFlags",
+    "PLXFeaturesCharacteristic",
     "PollenConcentrationCharacteristic",
     "PositionQualityCharacteristic",
     "PressureCharacteristic",

@@ -4,13 +4,14 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import CSCMeasurementCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.csc_feature import CSCFeatureCharacteristic
 from bluetooth_sig.gatt.characteristics.csc_measurement import (
     CSCMeasurementCharacteristic,
     CSCMeasurementData,
     CSCMeasurementFlags,
 )
 
-from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
 
 
 class TestCSCMeasurementCharacteristic(CommonCharacteristicTests):
@@ -21,6 +22,47 @@ class TestCSCMeasurementCharacteristic(CommonCharacteristicTests):
     @pytest.fixture
     def expected_uuid(self) -> str:
         return "2A5B"
+
+    @pytest.fixture
+    def dependency_test_data(self) -> list[DependencyTestData]:
+        """Test data for optional CSC Feature dependency."""
+        flags = CSCMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT
+        wheel_revs = 50000
+        wheel_time = 5120  # 5.0s in 1/1024s units
+        measurement_data = bytearray(
+            [
+                int(flags),
+                *wheel_revs.to_bytes(4, "little"),
+                *wheel_time.to_bytes(2, "little"),
+            ]
+        )
+
+        return [
+            DependencyTestData(
+                with_dependency_data={
+                    str(CSCMeasurementCharacteristic.get_class_uuid()): measurement_data,  # CSC Measurement
+                    str(CSCFeatureCharacteristic.get_class_uuid()): bytearray(
+                        [0x01, 0x00]
+                    ),  # CSC Feature: wheel revolution data supported
+                },
+                without_dependency_data=measurement_data,
+                expected_with=CSCMeasurementData(
+                    flags=flags,
+                    cumulative_wheel_revolutions=wheel_revs,
+                    last_wheel_event_time=wheel_time / 1024.0,
+                    cumulative_crank_revolutions=None,
+                    last_crank_event_time=None,
+                ),
+                expected_without=CSCMeasurementData(
+                    flags=flags,
+                    cumulative_wheel_revolutions=wheel_revs,
+                    last_wheel_event_time=wheel_time / 1024.0,
+                    cumulative_crank_revolutions=None,
+                    last_crank_event_time=None,
+                ),
+                description="CSC measurement with optional feature characteristic present",
+            ),
+        ]
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:

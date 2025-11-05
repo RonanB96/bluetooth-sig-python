@@ -74,6 +74,8 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = "W"  # Watts unit for power measurement
 
+    _optional_dependencies = [CyclingPowerFeatureCharacteristic]
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerMeasurementData:  # pylint: disable=too-many-locals # Complex parsing with many optional fields
         """Parse cycling power measurement data according to Bluetooth specification.
 

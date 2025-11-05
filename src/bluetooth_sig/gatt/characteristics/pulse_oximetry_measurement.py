@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from enum import IntFlag
 
 import msgspec
 
+from ...types.gatt_enums import CharacteristicName
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .plx_features import PLXFeatureFlags, PLXFeaturesCharacteristic
 from .utils import DataParser, IEEE11073Parser
 
-# TODO: Implement CharacteristicContext support
-# This characteristic should access Pulse Oximetry Control Point (0x2A60) and Pulse Oximetry Features (0x2A61)
-# from ctx.other_characteristics to determine supported measurement types and calibration data
+logger = logging.getLogger(__name__)
 
 
 class PulseOximetryFlags(IntFlag):
@@ -26,7 +27,17 @@ class PulseOximetryFlags(IntFlag):
 
 
 class PulseOximetryData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
-    """Parsed pulse oximetry measurement data."""
+    """Parsed pulse oximetry measurement data.
+
+    Attributes:
+        spo2: Blood oxygen saturation percentage (SpO2)
+        pulse_rate: Pulse rate in beats per minute
+        timestamp: Optional timestamp of the measurement
+        measurement_status: Optional measurement status flags
+        device_status: Optional device status flags
+        pulse_amplitude_index: Optional pulse amplitude index value
+        supported_features: Optional PLX features from context (PLXFeatureFlags enum)
+    """
 
     spo2: float
     pulse_rate: float
@@ -34,6 +45,7 @@ class PulseOximetryData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: d
     measurement_status: int | None = None
     device_status: int | None = None
     pulse_amplitude_index: float | None = None
+    supported_features: PLXFeatureFlags | None = None  # PLX Features from context (0x2A60)
 
 
 class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
@@ -45,24 +57,33 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "PLX Continuous Measurement"
 
+    _optional_dependencies = [PLXFeaturesCharacteristic]
+
     # Declarative validation (automatic)
     min_length: int | None = 5  # Flags(1) + SpO2(2) + PulseRate(2) minimum
     max_length: int | None = 16  # + Timestamp(7) + MeasurementStatus(2) + DeviceStatus(3) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PulseOximetryData:  # pylint: disable=too-many-locals
+    def decode_value(  # pylint: disable=too-many-locals,too-many-branches  # Complexity needed for spec parsing
+        self, data: bytearray, ctx: CharacteristicContext | None = None
+    ) -> PulseOximetryData:
         """Parse pulse oximetry measurement data according to Bluetooth specification.
 
         Format: Flags(1) + SpO2(2) + Pulse Rate(2) + [Timestamp(7)] +
         [Measurement Status(2)] + [Device Status(3)] + [Pulse Amplitude Index(2)]
         SpO2 and Pulse Rate are IEEE-11073 16-bit SFLOAT.
 
+        Context Enhancement:
+            If ctx is provided, this method will attempt to enhance the parsed data with:
+            - PLX Features (0x2A60): Device capabilities and supported measurement types
+
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            PulseOximetryData containing parsed pulse oximetry data.
+            PulseOximetryData containing parsed pulse oximetry data with optional
+            context-enhanced information.
 
         """
         if len(data) < 5:
@@ -98,6 +119,14 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
         if PulseOximetryFlags.PULSE_AMPLITUDE_INDEX_PRESENT in flags and len(data) >= offset + 2:
             pulse_amplitude_index = IEEE11073Parser.parse_sfloat(data, offset)
 
+        # Context enhancement: PLX Features
+        supported_features: PLXFeatureFlags | None = None
+        if ctx:
+            plx_features_char = self.get_context_characteristic(ctx, CharacteristicName.PLX_FEATURES)
+            if plx_features_char and plx_features_char.parse_success:
+                # PLX Features returns PLXFeatureFlags enum
+                supported_features = plx_features_char.value
+
         # Create immutable struct with all values
         return PulseOximetryData(
             spo2=spo2,
@@ -106,6 +135,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
             measurement_status=measurement_status,
             device_status=device_status,
             pulse_amplitude_index=pulse_amplitude_index,
+            supported_features=supported_features,
         )
 
     def encode_value(self, data: PulseOximetryData) -> bytearray:
