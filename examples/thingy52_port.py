@@ -84,8 +84,6 @@ from examples.vendor_characteristics import (
     decode_thingy_temperature,
 )
 
-# Import SIG characteristic parsing from bluetooth-sig library
-
 
 def generate_mock_thingy_data() -> dict[str, bytes]:
     """Generate mock Thingy:52 sensor data for demonstration.

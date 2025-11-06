@@ -10,7 +10,13 @@ This directory contains a complete port of the Nordic Thingy:52 BluePy example t
   - No hardcoded UUID strings - all defined as constants
   - Full documentation with examples
 
-- **`thingy52_port.py`**: Demonstration script
+- **`thingy52_bluepy.py`**: **Real device connection using BluePy** (NEW!)
+  - BluePy-based connection manager for real Thingy:52 devices
+  - Complete API for reading all sensors
+  - Command-line interface with flexible sensor selection
+  - Continuous reading mode with configurable interval
+
+- **`thingy52_port.py`**: Mock data demonstration script
   - Shows how to parse all Thingy:52 sensors
   - Demonstrates API consistency between SIG and vendor characteristics
   - Runs with mock data (no device required)
@@ -23,7 +29,27 @@ This directory contains a complete port of the Nordic Thingy:52 BluePy example t
 
 ## Quick Start
 
-Run the example with mock data (no device required):
+### With Real Thingy:52 Device (BluePy)
+
+**Requirements**: `pip install bluepy bluetooth-sig`
+
+```bash
+cd examples
+
+# Read all sensors once
+python thingy52_bluepy.py AA:BB:CC:DD:EE:FF
+
+# Read specific sensors
+python thingy52_bluepy.py AA:BB:CC:DD:EE:FF --temperature --humidity --battery
+
+# Continuous reading (10 times, 2 second intervals)
+python thingy52_bluepy.py AA:BB:CC:DD:EE:FF --all --count 10 --interval 2.0
+
+# Continuous reading until interrupted (Ctrl+C)
+python thingy52_bluepy.py AA:BB:CC:DD:EE:FF --all --count 0
+```
+
+### With Mock Data (No Device Required)
 
 ```bash
 cd examples
