@@ -8,7 +8,7 @@ Key Concepts Demonstrated:
 1. Creating custom characteristic classes extending CustomBaseCharacteristic
 2. Registering custom characteristics with CharacteristicRegistry
 3. Using Device class for unified access to SIG and vendor characteristics
-4. Implementing ConnectionManagerProtocol for BluePy integration
+4. Using reusable BluePy connection manager from connection_managers module
 
 Requirements:
     pip install bluepy bluetooth-sig
@@ -32,7 +32,7 @@ import argparse
 import asyncio
 import sys
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 # Add project root to path
 if __name__ == "__main__":
@@ -40,14 +40,13 @@ if __name__ == "__main__":
     sys.path.insert(0, str(project_root))
 
 try:
-    from bluepy.btle import ADDR_TYPE_RANDOM, UUID, Peripheral  # type: ignore[import-not-found]
+    from examples.connection_managers.bluepy import BluePyConnectionManager
 except ImportError:
     print("ERROR: bluepy library not installed. Install with: pip install bluepy")
     sys.exit(1)
 
 from bluetooth_sig import BluetoothSIGTranslator  # noqa: E402
 from bluetooth_sig.device import Device  # noqa: E402
-from bluetooth_sig.device.connection import ConnectionManagerProtocol  # noqa: E402
 from bluetooth_sig.types import CharacteristicRegistration  # noqa: E402
 from bluetooth_sig.types.gatt_enums import ValueType  # noqa: E402
 from bluetooth_sig.types.uuid import BluetoothUUID  # noqa: E402
@@ -64,143 +63,6 @@ from examples.thingy52_characteristics import (  # noqa: E402
     ThingyPressureCharacteristic,
     ThingyTemperatureCharacteristic,
 )
-
-
-class BluePyConnectionManager(ConnectionManagerProtocol):
-    """BluePy connection manager for Nordic Thingy:52.
-
-    Implements ConnectionManagerProtocol to integrate BluePy with
-    the bluetooth-sig-python Device class.
-    """
-
-    def __init__(self, address: str) -> None:
-        """Initialize connection manager.
-
-        Args:
-            address: BLE MAC address
-        """
-        self.address = address
-        self.periph: Peripheral | None = None  # type: ignore[no-any-unimported]
-
-    async def connect(self) -> None:
-        """Connect to device."""
-        print(f"Connecting to {self.address}...")
-        self.periph = Peripheral(self.address, addrType=ADDR_TYPE_RANDOM)
-        print("✅ Connected successfully")
-
-    async def disconnect(self) -> None:
-        """Disconnect from device."""
-        if self.periph:
-            self.periph.disconnect()
-            self.periph = None
-            print("Disconnected")
-
-    async def read_characteristic(self, uuid: str) -> bytes:
-        """Read characteristic value.
-
-        Args:
-            uuid: Characteristic UUID
-
-        Returns:
-            Raw characteristic bytes
-
-        Raises:
-            RuntimeError: If not connected or read fails
-        """
-        if not self.periph:
-            raise RuntimeError("Not connected")
-
-        try:
-            # Find characteristic by UUID
-            characteristics = self.periph.getCharacteristics(uuid=UUID(uuid))  # type: ignore[union-attr]
-            if not characteristics:
-                raise RuntimeError(f"Characteristic {uuid} not found")
-
-            char = characteristics[0]
-            return char.read()  # type: ignore[no-any-return]
-        except Exception as e:
-            raise RuntimeError(f"Failed to read characteristic {uuid}: {e}") from e
-
-    async def read_gatt_char(self, char_uuid: BluetoothUUID) -> bytes:
-        """Read GATT characteristic (ConnectionManagerProtocol method).
-
-        Args:
-            char_uuid: Characteristic UUID
-
-        Returns:
-            Raw characteristic bytes
-        """
-        return await self.read_characteristic(str(char_uuid))
-
-    async def write_characteristic(self, uuid: str, data: bytes) -> None:
-        """Write characteristic value.
-
-        Args:
-            uuid: Characteristic UUID
-            data: Data to write
-
-        Raises:
-            RuntimeError: If not connected or write fails
-        """
-        if not self.periph:
-            raise RuntimeError("Not connected")
-
-        try:
-            characteristics = self.periph.getCharacteristics(uuid=UUID(uuid))  # type: ignore[union-attr]
-            if not characteristics:
-                raise RuntimeError(f"Characteristic {uuid} not found")
-
-            char = characteristics[0]
-            char.write(data)  # type: ignore[attr-defined]
-        except Exception as e:
-            raise RuntimeError(f"Failed to write characteristic {uuid}: {e}") from e
-
-    async def write_gatt_char(self, char_uuid: BluetoothUUID, data: bytes) -> None:
-        """Write GATT characteristic (ConnectionManagerProtocol method).
-
-        Args:
-            char_uuid: Characteristic UUID
-            data: Data to write
-        """
-        await self.write_characteristic(str(char_uuid), data)
-
-    async def get_services(self) -> Any:  # noqa: ANN401
-        """Get services from device (ConnectionManagerProtocol method).
-
-        Returns:
-            Services structure from BluePy
-        """
-        if not self.periph:
-            raise RuntimeError("Not connected")
-        return self.periph.getServices()  # type: ignore[no-any-return,union-attr]
-
-    async def start_notify(
-        self, char_uuid: BluetoothUUID, callback: Callable[[str, bytes], None]
-    ) -> None:
-        """Start notifications (not implemented for this example).
-
-        Args:
-            char_uuid: Characteristic UUID
-            callback: Notification callback
-        """
-        raise NotImplementedError("Notifications not implemented in this example")
-
-    async def stop_notify(self, char_uuid: BluetoothUUID) -> None:
-        """Stop notifications (not implemented for this example).
-
-        Args:
-            char_uuid: Characteristic UUID
-        """
-        raise NotImplementedError("Notifications not implemented in this example")
-
-    @property
-    def is_connected(self) -> bool:
-        """Check if connected.
-
-        Returns:
-            True if connected
-        """
-        return self.periph is not None
 
 
 def register_thingy52_characteristics(translator: BluetoothSIGTranslator) -> None:
@@ -330,7 +192,7 @@ async def read_thingy52_sensors(
     for sensor_name, uuid in sensor_uuids.items():
         try:
             # Read raw data from device
-            raw_data = await connection_manager.read_characteristic(uuid)
+            raw_data = await connection_manager.read_gatt_char(BluetoothUUID(uuid))
 
             # Parse using registered characteristic (SIG or vendor)
             parsed = device.translator.parse_characteristic(uuid, raw_data)
@@ -389,13 +251,14 @@ async def main() -> int:
     # Register Nordic Thingy:52 custom characteristics
     register_thingy52_characteristics(translator)
 
-    # Create connection manager
+    # Create connection manager (reusable BluePy adapter)
     connection_manager = BluePyConnectionManager(args.address)
     device.connection_manager = connection_manager
 
     try:
         # Connect to device
         await connection_manager.connect()
+        print(f"✅ Connected to {args.address}\n")
 
         # Build sensor list
         sensor_uuids: dict[str, str] = {}
@@ -428,15 +291,15 @@ async def main() -> int:
             sensor_uuids["Heading"] = NORDIC_UUID_BASE % 0x0409
 
         # Read sensors
-        print(f"\n{'=' * 70}")
+        print(f"{'='*70}")
         print("Nordic Thingy:52 Sensor Readings")
-        print(f"{'=' * 70}\n")
+        print(f"{'='*70}\n")
 
         results = await read_thingy52_sensors(device, connection_manager, sensor_uuids)
 
-        print(f"\n{'=' * 70}")
+        print(f"\n{'='*70}")
         print(f"✅ Successfully read {len([v for v in results.values() if not isinstance(v, str)])} sensors")
-        print(f"{'=' * 70}\n")
+        print(f"{'='*70}\n")
 
         # Disconnect
         await connection_manager.disconnect()
@@ -450,7 +313,7 @@ async def main() -> int:
 
     except Exception as e:
         print(f"\n❌ Error: {e}")
-        if connection_manager.periph:
+        if connection_manager.is_connected:
             await connection_manager.disconnect()
         return 1
 

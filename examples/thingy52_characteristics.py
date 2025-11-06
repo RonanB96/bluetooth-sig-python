@@ -2,7 +2,7 @@
 
 This module provides custom characteristic implementations for Nordic Thingy:52
 vendor-specific characteristics. These extend the bluetooth-sig-python library's
-BaseCharacteristic class and integrate with the characteristic registry.
+CustomBaseCharacteristic class and integrate with the characteristic registry.
 
 All Nordic Thingy:52 vendor characteristics use the UUID base:
 EF68XXXX-9B35-4933-9B10-52FFA9740042
@@ -14,16 +14,52 @@ References:
 
 from __future__ import annotations
 
-import struct
+import msgspec
 
 from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+from bluetooth_sig.gatt.characteristics.templates import Sint8Template, Uint8Template, Uint16Template, Uint32Template
+from bluetooth_sig.gatt.characteristics.utils import DataParser
 from bluetooth_sig.gatt.context import CharacteristicContext
+from bluetooth_sig.gatt.exceptions import InsufficientDataError, ValueRangeError
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 # Nordic UUID base
 NORDIC_UUID_BASE = "EF68%04X-9B35-4933-9B10-52FFA9740042"
+
+
+# ============================================================================
+# Data Structures (msgspec.Struct for structured returns)
+# ============================================================================
+
+
+class ThingyGasData(msgspec.Struct, frozen=True, kw_only=True):
+    """Gas sensor data from Nordic Thingy:52.
+
+    Attributes:
+        eco2_ppm: eCO2 concentration in parts per million
+        tvoc_ppb: TVOC concentration in parts per billion
+    """
+
+    eco2_ppm: int
+    tvoc_ppb: int
+
+
+class ThingyColorData(msgspec.Struct, frozen=True, kw_only=True):
+    """Color sensor data from Nordic Thingy:52.
+
+    Attributes:
+        red: Red channel value (0-65535)
+        green: Green channel value (0-65535)
+        blue: Blue channel value (0-65535)
+        clear: Clear channel value (0-65535)
+    """
+
+    red: int
+    green: int
+    blue: int
+    clear: int
 
 
 # ============================================================================
@@ -46,6 +82,9 @@ class ThingyTemperatureCharacteristic(CustomBaseCharacteristic):
         properties=[],
     )
 
+    _int_template = Sint8Template()
+    _dec_template = Uint8Template()
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
         """Decode temperature from Nordic Thingy:52 format.
 
@@ -57,16 +96,17 @@ class ThingyTemperatureCharacteristic(CustomBaseCharacteristic):
             Temperature in degrees Celsius
 
         Raises:
-            ValueError: If data length is invalid
+            InsufficientDataError: If data length is not exactly 2 bytes
+            ValueRangeError: If decimal value is not in range 0-99
         """
         if len(data) != 2:
-            raise ValueError(f"Temperature data must be 2 bytes, got {len(data)}")
+            raise InsufficientDataError("Thingy Temperature", data, 2)
 
-        temp_int = struct.unpack("<b", data[0:1])[0]  # signed int8
-        temp_dec = data[1]  # unsigned int8
+        temp_int = self._int_template.decode_value(data, offset=0)
+        temp_dec = self._dec_template.decode_value(data, offset=1)
 
         if temp_dec > 99:
-            raise ValueError(f"Temperature decimal must be 0-99, got {temp_dec}")
+            raise ValueRangeError("temperature_decimal", temp_dec, 0, 99)
 
         return float(temp_int + (temp_dec / 100.0))
 
@@ -81,7 +121,7 @@ class ThingyTemperatureCharacteristic(CustomBaseCharacteristic):
         """
         temp_int = int(data)
         temp_dec = int((data - temp_int) * 100)
-        return bytearray([temp_int & 0xFF, temp_dec & 0xFF])
+        return self._int_template.encode_value(temp_int) + self._dec_template.encode_value(temp_dec)
 
 
 class ThingyPressureCharacteristic(CustomBaseCharacteristic):
@@ -99,6 +139,9 @@ class ThingyPressureCharacteristic(CustomBaseCharacteristic):
         properties=[],
     )
 
+    _int_template = Uint32Template()
+    _dec_template = Uint8Template()
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
         """Decode pressure from Nordic Thingy:52 format.
 
@@ -110,16 +153,17 @@ class ThingyPressureCharacteristic(CustomBaseCharacteristic):
             Pressure in hectopascals (hPa)
 
         Raises:
-            ValueError: If data length is invalid
+            InsufficientDataError: If data length is not exactly 5 bytes
+            ValueRangeError: If decimal value is not in range 0-99
         """
         if len(data) != 5:
-            raise ValueError(f"Pressure data must be 5 bytes, got {len(data)}")
+            raise InsufficientDataError("Thingy Pressure", data, 5)
 
-        pressure_int = struct.unpack("<I", data[0:4])[0]  # uint32 little-endian
-        pressure_dec = data[4]  # uint8
+        pressure_int = self._int_template.decode_value(data, offset=0)
+        pressure_dec = self._dec_template.decode_value(data, offset=4)
 
         if pressure_dec > 99:
-            raise ValueError(f"Pressure decimal must be 0-99, got {pressure_dec}")
+            raise ValueRangeError("pressure_decimal", pressure_dec, 0, 99)
 
         # Convert Pa to hPa
         pressure_pa = pressure_int + (pressure_dec / 100.0)
@@ -137,7 +181,7 @@ class ThingyPressureCharacteristic(CustomBaseCharacteristic):
         pressure_pa = data * 100.0  # Convert hPa to Pa
         pressure_int = int(pressure_pa)
         pressure_dec = int((pressure_pa - pressure_int) * 100)
-        return bytearray(struct.pack("<I", pressure_int)) + bytearray([pressure_dec & 0xFF])
+        return self._int_template.encode_value(pressure_int) + self._dec_template.encode_value(pressure_dec)
 
 
 class ThingyHumidityCharacteristic(CustomBaseCharacteristic):
@@ -154,6 +198,8 @@ class ThingyHumidityCharacteristic(CustomBaseCharacteristic):
         properties=[],
     )
 
+    _template = Uint8Template()
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
         """Decode humidity from Nordic Thingy:52 format.
 
@@ -165,15 +211,16 @@ class ThingyHumidityCharacteristic(CustomBaseCharacteristic):
             Relative humidity percentage (0-100)
 
         Raises:
-            ValueError: If data length is invalid or value out of range
+            InsufficientDataError: If data length is not exactly 1 byte
+            ValueRangeError: If humidity value is not in range 0-100
         """
         if len(data) != 1:
-            raise ValueError(f"Humidity data must be 1 byte, got {len(data)}")
+            raise InsufficientDataError("Thingy Humidity", data, 1)
 
-        humidity = data[0]
+        humidity = self._template.decode_value(data)
 
         if humidity > 100:
-            raise ValueError(f"Humidity must be 0-100%, got {humidity}")
+            raise ValueRangeError("humidity", humidity, 0, 100)
 
         return humidity
 
@@ -187,15 +234,15 @@ class ThingyHumidityCharacteristic(CustomBaseCharacteristic):
             Encoded bytes (1 byte)
         """
         if not 0 <= data <= 100:
-            raise ValueError(f"Humidity must be 0-100%, got {data}")
-        return bytearray([data & 0xFF])
+            raise ValueRangeError("humidity", data, 0, 100)
+        return self._template.encode_value(data)
 
 
 class ThingyGasCharacteristic(CustomBaseCharacteristic):
     """Nordic Thingy:52 Gas sensor characteristic (EF680204).
 
     Gas data contains eCO2 (ppm) and TVOC (ppb) as two uint16 values.
-    Returns dict with 'eco2_ppm' and 'tvoc_ppb' keys.
+    Returns ThingyGasData msgspec.Struct.
     """
 
     _info = CharacteristicInfo(
@@ -206,7 +253,9 @@ class ThingyGasCharacteristic(CustomBaseCharacteristic):
         properties=[],
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, int]:
+    _template = Uint16Template()
+
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ThingyGasData:
         """Decode gas sensor data from Nordic Thingy:52 format.
 
         Args:
@@ -214,38 +263,36 @@ class ThingyGasCharacteristic(CustomBaseCharacteristic):
             ctx: Optional context
 
         Returns:
-            Dictionary with 'eco2_ppm' and 'tvoc_ppb' keys
+            ThingyGasData with eco2_ppm and tvoc_ppb fields
 
         Raises:
-            ValueError: If data length is invalid
+            InsufficientDataError: If data length is not exactly 4 bytes
         """
         if len(data) != 4:
-            raise ValueError(f"Gas data must be 4 bytes, got {len(data)}")
+            raise InsufficientDataError("Thingy Gas", data, 4)
 
-        eco2 = struct.unpack("<H", data[0:2])[0]  # uint16 little-endian
-        tvoc = struct.unpack("<H", data[2:4])[0]  # uint16 little-endian
+        eco2 = self._template.decode_value(data, offset=0)
+        tvoc = self._template.decode_value(data, offset=2)
 
-        return {"eco2_ppm": eco2, "tvoc_ppb": tvoc}
+        return ThingyGasData(eco2_ppm=eco2, tvoc_ppb=tvoc)
 
-    def encode_value(self, data: dict[str, int]) -> bytearray:
+    def encode_value(self, data: ThingyGasData) -> bytearray:
         """Encode gas sensor data to Nordic Thingy:52 format.
 
         Args:
-            data: Dictionary with 'eco2_ppm' and 'tvoc_ppb' keys
+            data: ThingyGasData with eco2_ppm and tvoc_ppb fields
 
         Returns:
             Encoded bytes (4 bytes)
         """
-        eco2 = data.get("eco2_ppm", 0)
-        tvoc = data.get("tvoc_ppb", 0)
-        return bytearray(struct.pack("<HH", eco2, tvoc))
+        return self._template.encode_value(data.eco2_ppm) + self._template.encode_value(data.tvoc_ppb)
 
 
 class ThingyColorCharacteristic(CustomBaseCharacteristic):
     """Nordic Thingy:52 Color sensor characteristic (EF680205).
 
     Color data contains Red, Green, Blue, Clear as four uint16 values.
-    Returns dict with 'red', 'green', 'blue', 'clear' keys.
+    Returns ThingyColorData msgspec.Struct.
     """
 
     _info = CharacteristicInfo(
@@ -256,7 +303,9 @@ class ThingyColorCharacteristic(CustomBaseCharacteristic):
         properties=[],
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, int]:
+    _template = Uint16Template()
+
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ThingyColorData:
         """Decode color sensor data from Nordic Thingy:52 format.
 
         Args:
@@ -264,35 +313,36 @@ class ThingyColorCharacteristic(CustomBaseCharacteristic):
             ctx: Optional context
 
         Returns:
-            Dictionary with 'red', 'green', 'blue', 'clear' keys
+            ThingyColorData with red, green, blue, clear fields
 
         Raises:
-            ValueError: If data length is invalid
+            InsufficientDataError: If data length is not exactly 8 bytes
         """
         if len(data) != 8:
-            raise ValueError(f"Color data must be 8 bytes, got {len(data)}")
+            raise InsufficientDataError("Thingy Color", data, 8)
 
-        red = struct.unpack("<H", data[0:2])[0]
-        green = struct.unpack("<H", data[2:4])[0]
-        blue = struct.unpack("<H", data[4:6])[0]
-        clear = struct.unpack("<H", data[6:8])[0]
+        red = self._template.decode_value(data, offset=0)
+        green = self._template.decode_value(data, offset=2)
+        blue = self._template.decode_value(data, offset=4)
+        clear = self._template.decode_value(data, offset=6)
 
-        return {"red": red, "green": green, "blue": blue, "clear": clear}
+        return ThingyColorData(red=red, green=green, blue=blue, clear=clear)
 
-    def encode_value(self, data: dict[str, int]) -> bytearray:
+    def encode_value(self, data: ThingyColorData) -> bytearray:
         """Encode color sensor data to Nordic Thingy:52 format.
 
         Args:
-            data: Dictionary with 'red', 'green', 'blue', 'clear' keys
+            data: ThingyColorData with red, green, blue, clear fields
 
         Returns:
             Encoded bytes (8 bytes)
         """
-        red = data.get("red", 0)
-        green = data.get("green", 0)
-        blue = data.get("blue", 0)
-        clear = data.get("clear", 0)
-        return bytearray(struct.pack("<HHHH", red, green, blue, clear))
+        result = bytearray()
+        result.extend(self._template.encode_value(data.red))
+        result.extend(self._template.encode_value(data.green))
+        result.extend(self._template.encode_value(data.blue))
+        result.extend(self._template.encode_value(data.clear))
+        return result
 
 
 # ============================================================================
@@ -314,6 +364,8 @@ class ThingyButtonCharacteristic(CustomBaseCharacteristic):
         properties=[],
     )
 
+    _template = Uint8Template()
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bool:
         """Decode button state from Nordic Thingy:52 format.
 
@@ -325,15 +377,16 @@ class ThingyButtonCharacteristic(CustomBaseCharacteristic):
             True if button is pressed, False if released
 
         Raises:
-            ValueError: If data length is invalid or value is invalid
+            InsufficientDataError: If data length is not exactly 1 byte
+            ValueRangeError: If button state is not 0 or 1
         """
         if len(data) != 1:
-            raise ValueError(f"Button data must be 1 byte, got {len(data)}")
+            raise InsufficientDataError("Thingy Button", data, 1)
 
-        state = data[0]
+        state = self._template.decode_value(data)
 
         if state > 1:
-            raise ValueError(f"Button state must be 0 or 1, got {state}")
+            raise ValueRangeError("button_state", state, 0, 1)
 
         return bool(state)
 
@@ -346,7 +399,7 @@ class ThingyButtonCharacteristic(CustomBaseCharacteristic):
         Returns:
             Encoded bytes (1 byte)
         """
-        return bytearray([1 if data else 0])
+        return self._template.encode_value(1 if data else 0)
 
 
 # ============================================================================
@@ -373,6 +426,8 @@ class ThingyOrientationCharacteristic(CustomBaseCharacteristic):
 
     ORIENTATIONS = ["Portrait", "Landscape", "Reverse Portrait"]
 
+    _template = Uint8Template()
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
         """Decode orientation from Nordic Thingy:52 format.
 
@@ -384,15 +439,16 @@ class ThingyOrientationCharacteristic(CustomBaseCharacteristic):
             Orientation string
 
         Raises:
-            ValueError: If data length is invalid or value invalid
+            InsufficientDataError: If data length is not exactly 1 byte
+            ValueRangeError: If orientation value is not in range 0-2
         """
         if len(data) != 1:
-            raise ValueError(f"Orientation data must be 1 byte, got {len(data)}")
+            raise InsufficientDataError("Thingy Orientation", data, 1)
 
-        orientation = data[0]
+        orientation = self._template.decode_value(data)
 
         if orientation > 2:
-            raise ValueError(f"Orientation must be 0-2, got {orientation}")
+            raise ValueRangeError("orientation", orientation, 0, 2)
 
         return self.ORIENTATIONS[orientation]
 
@@ -407,7 +463,7 @@ class ThingyOrientationCharacteristic(CustomBaseCharacteristic):
         """
         try:
             index = self.ORIENTATIONS.index(data)
-            return bytearray([index])
+            return self._template.encode_value(index)
         except ValueError as e:
             raise ValueError(f"Invalid orientation: {data}") from e
 
@@ -438,12 +494,12 @@ class ThingyHeadingCharacteristic(CustomBaseCharacteristic):
             Heading in degrees (0-360)
 
         Raises:
-            ValueError: If data length is invalid
+            InsufficientDataError: If data length is not exactly 4 bytes
         """
         if len(data) != 4:
-            raise ValueError(f"Heading data must be 4 bytes, got {len(data)}")
+            raise InsufficientDataError("Thingy Heading", data, 4)
 
-        heading_raw = struct.unpack("<i", data[0:4])[0]
+        heading_raw = DataParser.parse_int32(data, offset=0, signed=True)
         return float(heading_raw / 65536.0)
 
     def encode_value(self, data: float) -> bytearray:
@@ -456,4 +512,4 @@ class ThingyHeadingCharacteristic(CustomBaseCharacteristic):
             Encoded bytes (4 bytes)
         """
         heading_raw = int(data * 65536)
-        return bytearray(struct.pack("<i", heading_raw))
+        return DataParser.encode_int32(heading_raw, signed=True)
