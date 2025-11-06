@@ -701,7 +701,17 @@ def decode_thingy_rotation_matrix(data: bytes) -> ThingyRotationMatrixData:
     m32 = struct.unpack("<h", data[14:16])[0]
     m33 = struct.unpack("<h", data[16:18])[0]
 
-    return ThingyRotationMatrixData(m11=m11, m12=m12, m13=m13, m21=m21, m22=m22, m23=m23, m31=m31, m32=m32, m33=m33)
+    return ThingyRotationMatrixData(
+        m11=m11,
+        m12=m12,
+        m13=m13,
+        m21=m21,
+        m22=m22,
+        m23=m23,
+        m31=m31,
+        m32=m32,
+        m33=m33,
+    )
 
 
 class ThingyHeadingData(msgspec.Struct, frozen=True):
