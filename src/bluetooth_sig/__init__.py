@@ -7,7 +7,7 @@ resolution.
 
 from __future__ import annotations
 
-from .core import BluetoothSIGTranslator
+from .core import AsyncBluetoothSIGTranslator, AsyncParsingSession, BluetoothSIGTranslator
 from .gatt import BaseCharacteristic, BaseGattService
 from .gatt.characteristics import CharacteristicRegistry
 from .gatt.services import GattServiceRegistry
@@ -23,6 +23,8 @@ from .types import (
 __version__ = "0.3.0"
 
 __all__ = [
+    "AsyncBluetoothSIGTranslator",
+    "AsyncParsingSession",
     "BluetoothSIGTranslator",
     "BaseCharacteristic",
     "BaseGattService",
