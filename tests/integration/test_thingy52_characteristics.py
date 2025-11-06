@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-import struct
-
 import pytest
 
+from bluetooth_sig.gatt.exceptions import InsufficientDataError, ValueRangeError
 from examples.thingy52_characteristics import (
     ThingyButtonCharacteristic,
     ThingyColorCharacteristic,
+    ThingyColorData,
     ThingyGasCharacteristic,
+    ThingyGasData,
     ThingyHeadingCharacteristic,
     ThingyHumidityCharacteristic,
     ThingyOrientationCharacteristic,
@@ -44,19 +45,15 @@ class TestThingyTemperatureCharacteristic:
         """Test error on insufficient data."""
         char = ThingyTemperatureCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InsufficientDataError):
             char.decode_value(bytearray([0x17]))
-
-        assert "must be 2 bytes" in str(exc_info.value).lower()
 
     def test_decode_invalid_decimal(self) -> None:
         """Test error on invalid decimal value."""
         char = ThingyTemperatureCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueRangeError):
             char.decode_value(bytearray([0x17, 0x64]))  # decimal = 100
-
-        assert "decimal must be 0-99" in str(exc_info.value).lower()
 
 
 class TestThingyPressureCharacteristic:
@@ -75,19 +72,15 @@ class TestThingyPressureCharacteristic:
         """Test error on insufficient data."""
         char = ThingyPressureCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InsufficientDataError):
             char.decode_value(bytearray([0xE0, 0x8A, 0x01, 0x00]))
-
-        assert "must be 5 bytes" in str(exc_info.value).lower()
 
     def test_decode_invalid_decimal(self) -> None:
         """Test error on invalid decimal value."""
         char = ThingyPressureCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueRangeError):
             char.decode_value(bytearray([0xE0, 0x8A, 0x01, 0x00, 0x64]))  # decimal = 100
-
-        assert "decimal must be 0-99" in str(exc_info.value).lower()
 
 
 class TestThingyHumidityCharacteristic:
@@ -113,19 +106,15 @@ class TestThingyHumidityCharacteristic:
         """Test error on insufficient data."""
         char = ThingyHumidityCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InsufficientDataError):
             char.decode_value(bytearray([]))
-
-        assert "must be 1 byte" in str(exc_info.value).lower()
 
     def test_decode_out_of_range(self) -> None:
         """Test error on out-of-range value."""
         char = ThingyHumidityCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueRangeError):
             char.decode_value(bytearray([0x65]))  # 101%
-
-        assert "must be 0-100" in str(exc_info.value).lower()
 
 
 class TestThingyGasCharacteristic:
@@ -138,22 +127,21 @@ class TestThingyGasCharacteristic:
 
         result = char.decode_value(data)
 
-        assert result["eco2_ppm"] == 400
-        assert result["tvoc_ppb"] == 50
+        assert isinstance(result, ThingyGasData)
+        assert result.eco2_ppm == 400
+        assert result.tvoc_ppb == 50
 
     def test_decode_insufficient_data(self) -> None:
         """Test error on insufficient data."""
         char = ThingyGasCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InsufficientDataError):
             char.decode_value(bytearray([0x90, 0x01, 0x32]))
-
-        assert "must be 4 bytes" in str(exc_info.value).lower()
 
     def test_encode_gas_data(self) -> None:
         """Test encoding gas data."""
         char = ThingyGasCharacteristic()
-        data = {"eco2_ppm": 400, "tvoc_ppb": 50}
+        data = ThingyGasData(eco2_ppm=400, tvoc_ppb=50)
 
         result = char.encode_value(data)
 
@@ -170,19 +158,18 @@ class TestThingyColorCharacteristic:
 
         result = char.decode_value(data)
 
-        assert result["red"] == 255
-        assert result["green"] == 128
-        assert result["blue"] == 64
-        assert result["clear"] == 256
+        assert isinstance(result, ThingyColorData)
+        assert result.red == 255
+        assert result.green == 128
+        assert result.blue == 64
+        assert result.clear == 256
 
     def test_decode_insufficient_data(self) -> None:
         """Test error on insufficient data."""
         char = ThingyColorCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InsufficientDataError):
             char.decode_value(bytearray([0xFF] * 7))
-
-        assert "must be 8 bytes" in str(exc_info.value).lower()
 
 
 class TestThingyButtonCharacteristic:
@@ -210,19 +197,15 @@ class TestThingyButtonCharacteristic:
         """Test error on insufficient data."""
         char = ThingyButtonCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InsufficientDataError):
             char.decode_value(bytearray([]))
-
-        assert "must be 1 byte" in str(exc_info.value).lower()
 
     def test_decode_invalid_state(self) -> None:
         """Test error on invalid button state."""
         char = ThingyButtonCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueRangeError):
             char.decode_value(bytearray([0x02]))
-
-        assert "must be 0 or 1" in str(exc_info.value).lower()
 
 
 class TestThingyOrientationCharacteristic:
@@ -240,19 +223,15 @@ class TestThingyOrientationCharacteristic:
         """Test error on insufficient data."""
         char = ThingyOrientationCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InsufficientDataError):
             char.decode_value(bytearray([]))
-
-        assert "must be 1 byte" in str(exc_info.value).lower()
 
     def test_decode_invalid_orientation(self) -> None:
         """Test error on invalid orientation value."""
         char = ThingyOrientationCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueRangeError):
             char.decode_value(bytearray([0x03]))
-
-        assert "must be 0-2" in str(exc_info.value).lower()
 
 
 class TestThingyHeadingCharacteristic:
@@ -262,7 +241,7 @@ class TestThingyHeadingCharacteristic:
         """Test decoding valid heading."""
         char = ThingyHeadingCharacteristic()
         # 90 degrees = 90 * 65536 = 5898240
-        data = bytearray(struct.pack("<i", 5898240))
+        data = bytearray([0x00, 0x00, 0x5A, 0x00])  # Little-endian int32
 
         result = char.decode_value(data)
 
@@ -281,7 +260,5 @@ class TestThingyHeadingCharacteristic:
         """Test error on insufficient data."""
         char = ThingyHeadingCharacteristic()
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(InsufficientDataError):
             char.decode_value(bytearray([0x00, 0x00, 0x01]))
-
-        assert "must be 4 bytes" in str(exc_info.value).lower()
