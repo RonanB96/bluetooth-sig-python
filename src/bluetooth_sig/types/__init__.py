@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .advertising import (
-    BLEAdvertisementTypes,
+    ADTypeInfo,
     BLEAdvertisingFlags,
     BLEAdvertisingPDU,
     BLEExtendedHeader,
@@ -78,11 +78,11 @@ __all__ = [
     "AlertNotificationCommandID",
     "validate_category_id",
     "AngleUnit",
+    "ADTypeInfo",
     "BatteryChargeLevel",
     "BatteryChargeState",
     "BatteryChargingType",
     "BatteryFaultReason",
-    "BLEAdvertisementTypes",
     "BLEAdvertisingFlags",
     "BLEAdvertisingPDU",
     "BLEExtendedHeader",
