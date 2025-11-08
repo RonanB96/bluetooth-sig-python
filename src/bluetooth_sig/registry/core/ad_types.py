@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-import threading
+import logging
 
 import msgspec
 
 from bluetooth_sig.registry.base import BaseRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_core_path
 from bluetooth_sig.types.advertising import ADTypeInfo
+
+logger = logging.getLogger(__name__)
 
 
 class ADTypesRegistry(BaseRegistry[ADTypeInfo]):
@@ -22,30 +24,38 @@ class ADTypesRegistry(BaseRegistry[ADTypeInfo]):
     def __init__(self) -> None:
         """Initialize the AD types registry."""
         super().__init__()
-        self._lock = threading.RLock()
         self._ad_types: dict[int, ADTypeInfo] = {}
         self._ad_types_by_name: dict[str, ADTypeInfo] = {}
 
         try:
             self._load_ad_types()
-        except (FileNotFoundError, Exception):  # pylint: disable=broad-exception-caught
-            # If YAML loading fails, continue with empty registry
-            pass
+        except (FileNotFoundError, OSError, msgspec.DecodeError, KeyError) as e:
+            # Log warning if YAML loading fails, continue with empty registry
+            logger.warning(
+                "Failed to load AD types from YAML: %s. Registry will be empty.",
+                e,
+            )
 
     def _load_ad_types(self) -> None:
         """Load AD types from YAML file."""
         base_path = find_bluetooth_sig_core_path()
         if not base_path:
+            logger.warning("Bluetooth SIG core path not found. AD types registry will be empty.")
             return
 
         yaml_path = base_path / "ad_types.yaml"
         if not yaml_path.exists():
+            logger.warning(
+                "AD types YAML file not found at %s. Registry will be empty.",
+                yaml_path,
+            )
             return
 
         with yaml_path.open("r", encoding="utf-8") as f:
             data = msgspec.yaml.decode(f.read())
 
         if not data or "ad_types" not in data:
+            logger.warning("Invalid AD types YAML format. Registry will be empty.")
             return
 
         for item in data["ad_types"]:
@@ -68,6 +78,8 @@ class ADTypesRegistry(BaseRegistry[ADTypeInfo]):
 
             self._ad_types[value] = ad_type_info
             self._ad_types_by_name[name.lower()] = ad_type_info
+
+        logger.info("Loaded %d AD types from specification", len(self._ad_types))
 
     def get_ad_type_info(self, ad_type: int) -> ADTypeInfo | None:
         """Get AD type info by value.

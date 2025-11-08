@@ -325,9 +325,9 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             ad_type = data[i + 1]
             ad_data = data[i + 2 : i + length + 1]
 
-            # Log unknown AD types for debugging
+            # Warn about unknown AD types
             if not ad_types_registry.is_known_ad_type(ad_type):
-                logger.debug("Unknown AD type encountered: 0x%02X", ad_type)
+                logger.warning("Unknown AD type encountered: 0x%02X", ad_type)
 
             if ad_type == BLEAdvertisementTypes.FLAGS and len(ad_data) >= 1:
                 parsed.flags = BLEAdvertisingFlags(ad_data[0])
