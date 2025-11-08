@@ -56,7 +56,7 @@ class AppearanceCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Appearance"
-    _manual_value_type = "AppearanceData"  # Override since decode_value returns dataclass
+    _manual_value_type = "dict"  # Override since decode_value returns structured data
 
     min_length = 2  # Appearance(2) fixed length
     max_length = 2  # Appearance(2) fixed length
