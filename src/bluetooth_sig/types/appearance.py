@@ -44,6 +44,44 @@ class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):
     raw_value: int
     info: AppearanceInfo | None = None
 
+    @classmethod
+    def from_category(cls, category: str, subcategory: str | None = None) -> AppearanceData:
+        """Create AppearanceData from category and subcategory strings.
+
+        This helper validates the strings and finds the correct raw_value by
+        searching the registry. Useful when creating appearance data from
+        user-provided human-readable names.
+
+        Args:
+            category: Device category name (e.g., "Heart Rate Sensor")
+            subcategory: Optional subcategory name (e.g., "Heart Rate Belt")
+
+        Returns:
+            AppearanceData with validated info and correct raw_value
+
+        Raises:
+            ValueError: If category/subcategory combination is not found in registry
+
+        Example:
+            >>> data = AppearanceData.from_category("Heart Rate Sensor", "Heart Rate Belt")
+            >>> data.raw_value
+            833
+        """
+        from bluetooth_sig.registry import appearance_values_registry
+
+        # Force registry to load
+        appearance_values_registry._ensure_loaded()
+
+        # Search for matching appearance
+        for code, info in appearance_values_registry._appearances.items():
+            if info.category == category and info.subcategory == subcategory:
+                return cls(raw_value=code, info=info)
+
+        # If not found, raise error
+        if subcategory:
+            raise ValueError(f"Unknown appearance: {category}: {subcategory}")
+        raise ValueError(f"Unknown appearance: {category}")
+
     @property
     def category(self) -> str | None:
         """Get device category name.

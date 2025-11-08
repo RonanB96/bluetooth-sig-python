@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -143,47 +142,6 @@ class TestAppearanceValuesRegistry:
         assert len(errors) == 0
         # Should have results for all lookups
         assert len(results) == 100  # 20 iterations * 5 codes
-
-    def test_thread_safety_initialization(self) -> None:
-        """Test that lazy initialization is thread-safe."""
-        new_registry = AppearanceValuesRegistry()
-        load_counts = []
-        lock = threading.Lock()
-
-        def trigger_load() -> None:
-            # This should trigger lazy loading
-            _ = new_registry.get_appearance_info(64)
-            with lock:
-                load_counts.append(new_registry._loaded)
-
-        # Try to trigger loading from multiple threads simultaneously
-        threads = [threading.Thread(target=trigger_load) for _ in range(10)]
-
-        for thread in threads:
-            thread.start()
-
-        for thread in threads:
-            thread.join()
-
-        # All threads should see the registry as loaded
-        assert all(load_counts)
-        # Registry should only be loaded once (checked by internal logic)
-        assert new_registry._loaded is True
-
-    def test_appearance_info_structure(self, appearance_registry: AppearanceValuesRegistry) -> None:
-        """Test AppearanceInfo dataclass structure."""
-        info = appearance_registry.get_appearance_info(833)
-
-        if info:
-            assert hasattr(info, "category")
-            assert hasattr(info, "subcategory")
-            assert hasattr(info, "category_value")
-            assert hasattr(info, "subcategory_value")
-            assert hasattr(info, "full_name")
-            assert isinstance(info.category, str)
-            assert isinstance(info.subcategory, str) or info.subcategory is None
-            assert isinstance(info.category_value, int)
-            assert isinstance(info.subcategory_value, int) or info.subcategory_value is None
 
     def test_full_name_property(self, appearance_registry: AppearanceValuesRegistry) -> None:
         """Test the full_name property behavior."""

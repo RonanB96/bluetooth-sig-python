@@ -19,23 +19,21 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
 
     @pytest.fixture
     def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
-        # Create AppearanceData objects as expected values
-        from bluetooth_sig.registry import appearance_values_registry
-
+        # Create AppearanceData objects using from_category to test validation
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x00]),
-                expected_value=AppearanceData(raw_value=0, info=appearance_values_registry.get_appearance_info(0)),
+                expected_value=AppearanceData.from_category("Unknown"),
                 description="Unknown appearance (0x0000)",
             ),
             CharacteristicTestData(
                 input_data=bytearray([0x40, 0x00]),
-                expected_value=AppearanceData(raw_value=64, info=appearance_values_registry.get_appearance_info(64)),
+                expected_value=AppearanceData.from_category("Phone"),
                 description="Phone (0x0040)",
             ),
             CharacteristicTestData(
                 input_data=bytearray([0x41, 0x03]),
-                expected_value=AppearanceData(raw_value=833, info=appearance_values_registry.get_appearance_info(833)),
+                expected_value=AppearanceData.from_category("Heart Rate Sensor", "Heart Rate Belt"),
                 description="Heart Rate Sensor Belt (0x0341)",
             ),
         ]
@@ -100,6 +98,34 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
         # Encode it back
         encoded = characteristic.encode_value(appearance_data)
         assert encoded == data
+
+    def test_from_category_helper(self, characteristic: AppearanceCharacteristic) -> None:
+        """Test creating AppearanceData from human-readable category strings."""
+        # Create from category only
+        phone_data = AppearanceData.from_category("Phone")
+        assert phone_data.raw_value == 64
+        assert phone_data.category == "Phone"
+        assert phone_data.subcategory is None
+
+        # Create from category + subcategory
+        hr_belt_data = AppearanceData.from_category("Heart Rate Sensor", "Heart Rate Belt")
+        assert hr_belt_data.raw_value == 833
+        assert hr_belt_data.category == "Heart Rate Sensor"
+        assert hr_belt_data.subcategory == "Heart Rate Belt"
+
+        # Encode and decode round-trip with human-readable data
+        encoded = characteristic.encode_value(hr_belt_data)
+        decoded = characteristic.decode_value(encoded)
+        assert decoded.full_name == hr_belt_data.full_name
+        assert decoded.raw_value == hr_belt_data.raw_value
+
+    def test_from_category_invalid(self) -> None:
+        """Test that from_category raises ValueError for invalid categories."""
+        with pytest.raises(ValueError, match="Unknown appearance"):
+            AppearanceData.from_category("NonexistentCategory")
+
+        with pytest.raises(ValueError, match="Unknown appearance"):
+            AppearanceData.from_category("Phone", "NonexistentSubcategory")
 
     def test_properties_with_no_info(self, characteristic: AppearanceCharacteristic) -> None:
         """Test that properties return None when no registry info available."""
