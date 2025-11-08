@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 
 class TestRegistryImportPaths:
     """Test that registry modules can be imported from new paths."""
@@ -80,10 +78,10 @@ class TestRegistryImportPaths:
     def test_subdirectory_init_imports(self) -> None:
         """Test that subdirectory __init__.py modules are importable."""
         # These should not raise ImportError even though they're currently empty
-        import bluetooth_sig.registry.core
         import bluetooth_sig.registry.company_identifiers
-        import bluetooth_sig.registry.service_discovery
+        import bluetooth_sig.registry.core
         import bluetooth_sig.registry.profiles
+        import bluetooth_sig.registry.service_discovery
         import bluetooth_sig.registry.uuids
 
         # Verify they're not None
