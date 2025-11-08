@@ -7,6 +7,20 @@ from enum import IntEnum, IntFlag
 import msgspec
 
 
+class ADTypeInfo(msgspec.Struct, frozen=True, kw_only=True):
+    """AD Type information from Bluetooth SIG spec.
+
+    Attributes:
+        value: The AD type value (e.g., 0x01 for Flags)
+        name: Human-readable name from the specification
+        reference: Optional specification reference
+    """
+
+    value: int
+    name: str
+    reference: str | None = None
+
+
 class PDUFlags(IntFlag):
     """BLE PDU parsing bit masks for header operations.
 

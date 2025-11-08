@@ -77,6 +77,26 @@ def find_bluetooth_sig_path() -> Path | None:
     return base_path if base_path.exists() else None
 
 
+def find_bluetooth_sig_core_path() -> Path | None:
+    """Find the Bluetooth SIG assigned_numbers/core directory.
+
+    Returns:
+        Path to the core directory, or None if not found
+    """
+    # Try development location first (git submodule)
+    project_root = Path(__file__).parent.parent.parent.parent
+    base_path = project_root / "bluetooth_sig" / "assigned_numbers" / "core"
+
+    if base_path.exists():
+        return base_path
+
+    # Try installed package location
+    pkg_root = Path(__file__).parent.parent
+    base_path = pkg_root / "bluetooth_sig" / "assigned_numbers" / "core"
+
+    return base_path if base_path.exists() else None
+
+
 def parse_bluetooth_uuid(uuid: str | int | BluetoothUUID) -> BluetoothUUID:
     """Parse various UUID formats into a BluetoothUUID.
 
