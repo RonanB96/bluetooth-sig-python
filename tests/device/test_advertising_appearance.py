@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.device.advertising_parser import AdvertisingParser
-from bluetooth_sig.types import BLEAdvertisementTypes
+from bluetooth_sig.types import AppearanceData, BLEAdvertisementTypes
 
 
 class TestAdvertisingParserAppearance:
@@ -33,12 +33,14 @@ class TestAdvertisingParserAppearance:
 
         result = parser.parse_advertising_data(bytes(ad_data))
 
-        assert result.appearance == 833
+        assert result.appearance is not None
+        assert isinstance(result.appearance, AppearanceData)
+        assert result.appearance.raw_value == 833
         # If registry loaded, should have appearance_info
-        if result.appearance_info:
-            assert result.appearance_info.category == "Heart Rate Sensor"
-            assert result.appearance_info.subcategory == "Heart Rate Belt"
-            assert result.appearance_info.full_name == "Heart Rate Sensor: Heart Rate Belt"
+        if result.appearance.info:
+            assert result.appearance.info.category == "Heart Rate Sensor"
+            assert result.appearance.info.subcategory == "Heart Rate Belt"
+            assert result.appearance.info.full_name == "Heart Rate Sensor: Heart Rate Belt"
 
     def test_parse_appearance_category_only(self, parser: AdvertisingParser) -> None:
         """Test parsing appearance with category only (no subcategory)."""
@@ -54,11 +56,13 @@ class TestAdvertisingParserAppearance:
 
         result = parser.parse_advertising_data(bytes(ad_data))
 
-        assert result.appearance == 64
-        if result.appearance_info:
-            assert result.appearance_info.category == "Phone"
-            assert result.appearance_info.subcategory is None
-            assert result.appearance_info.full_name == "Phone"
+        assert result.appearance is not None
+        assert isinstance(result.appearance, AppearanceData)
+        assert result.appearance.raw_value == 64
+        if result.appearance.info:
+            assert result.appearance.info.category == "Phone"
+            assert result.appearance.info.subcategory is None
+            assert result.appearance.info.full_name == "Phone"
 
     def test_parse_appearance_unknown(self, parser: AdvertisingParser) -> None:
         """Test parsing unknown appearance value."""
@@ -74,9 +78,10 @@ class TestAdvertisingParserAppearance:
 
         result = parser.parse_advertising_data(bytes(ad_data))
 
-        assert result.appearance == 0
-        if result.appearance_info:
-            assert result.appearance_info.category == "Unknown"
+        assert result.appearance is not None
+        assert result.appearance.raw_value == 0
+        if result.appearance.info:
+            assert result.appearance.info.category == "Unknown"
 
     def test_parse_appearance_not_in_registry(self, parser: AdvertisingParser) -> None:
         """Test parsing appearance value not in registry."""
@@ -92,9 +97,9 @@ class TestAdvertisingParserAppearance:
 
         result = parser.parse_advertising_data(bytes(ad_data))
 
-        assert result.appearance == 65535
-        # appearance_info should be None for unknown codes
-        # (depending on whether 65535 is in the registry)
+        assert result.appearance is not None
+        assert result.appearance.raw_value == 65535
+        # appearance.info should be None for unknown codes
 
     def test_parse_no_appearance_field(self, parser: AdvertisingParser) -> None:
         """Test parsing advertising data without appearance field."""
@@ -114,7 +119,6 @@ class TestAdvertisingParserAppearance:
         result = parser.parse_advertising_data(bytes(ad_data))
 
         assert result.appearance is None
-        assert result.appearance_info is None
 
     def test_parse_multiple_fields_with_appearance(self, parser: AdvertisingParser) -> None:
         """Test parsing advertising data with multiple fields including appearance."""
@@ -141,9 +145,10 @@ class TestAdvertisingParserAppearance:
         result = parser.parse_advertising_data(bytes(ad_data))
 
         assert result.local_name is not None
-        assert result.appearance == 833
-        if result.appearance_info:
-            assert result.appearance_info.full_name == "Heart Rate Sensor: Heart Rate Belt"
+        assert result.appearance is not None
+        assert result.appearance.raw_value == 833
+        if result.appearance.info:
+            assert result.appearance.info.full_name == "Heart Rate Sensor: Heart Rate Belt"
 
     def test_parse_computer_subcategories(self, parser: AdvertisingParser) -> None:
         """Test parsing various computer subcategories."""
@@ -151,16 +156,18 @@ class TestAdvertisingParserAppearance:
         ad_data_desktop = bytearray([3, BLEAdvertisementTypes.APPEARANCE, 0x81, 0x00])
         result_desktop = parser.parse_advertising_data(bytes(ad_data_desktop))
 
-        assert result_desktop.appearance == 129
-        if result_desktop.appearance_info:
-            assert result_desktop.appearance_info.category == "Computer"
-            assert result_desktop.appearance_info.subcategory == "Desktop Workstation"
+        assert result_desktop.appearance is not None
+        assert result_desktop.appearance.raw_value == 129
+        if result_desktop.appearance.info:
+            assert result_desktop.appearance.info.category == "Computer"
+            assert result_desktop.appearance.info.subcategory == "Desktop Workstation"
 
         # Laptop: (2 << 6) | 3 = 131 (0x0083)
         ad_data_laptop = bytearray([3, BLEAdvertisementTypes.APPEARANCE, 0x83, 0x00])
         result_laptop = parser.parse_advertising_data(bytes(ad_data_laptop))
 
-        assert result_laptop.appearance == 131
-        if result_laptop.appearance_info:
-            assert result_laptop.appearance_info.category == "Computer"
-            assert result_laptop.appearance_info.subcategory == "Laptop"
+        assert result_laptop.appearance is not None
+        assert result_laptop.appearance.raw_value == 131
+        if result_laptop.appearance.info:
+            assert result_laptop.appearance.info.category == "Computer"
+            assert result_laptop.appearance.info.subcategory == "Laptop"

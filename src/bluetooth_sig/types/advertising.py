@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 from enum import IntEnum, IntFlag
-from typing import TYPE_CHECKING
 
 import msgspec
 
-if TYPE_CHECKING:
-    from bluetooth_sig.types.appearance import AppearanceInfo
+from bluetooth_sig.types.appearance import AppearanceData
 
 
 class ADTypeInfo(msgspec.Struct, frozen=True, kw_only=True):
@@ -256,8 +254,7 @@ class ParsedADStructures(msgspec.Struct, kw_only=True):
     local_name: str = ""
     tx_power: int = 0
     flags: BLEAdvertisingFlags = BLEAdvertisingFlags(0)
-    appearance: int | None = None
-    appearance_info: AppearanceInfo | None = None  # NOTE: Must import after TYPE_CHECKING
+    appearance: AppearanceData | None = None
     service_data: dict[str, bytes] = msgspec.field(default_factory=dict)
     solicited_service_uuids: list[str] = msgspec.field(default_factory=list)
     uri: str = ""
@@ -304,8 +301,7 @@ class DeviceAdvertiserData(msgspec.Struct, kw_only=True):
     flags: BLEAdvertisingFlags | None = None
 
     # Additional parsed fields
-    appearance: int | None = None
-    appearance_info: AppearanceInfo | None = None  # NOTE: Must import after TYPE_CHECKING
+    appearance: AppearanceData | None = None
     service_data: dict[str, bytes] = msgspec.field(default_factory=dict)
     solicited_service_uuids: list[str] = msgspec.field(default_factory=list)
     uri: str = ""

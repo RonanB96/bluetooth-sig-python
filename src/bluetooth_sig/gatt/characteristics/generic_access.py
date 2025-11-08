@@ -74,10 +74,10 @@ class AppearanceCharacteristic(BaseCharacteristic):
 
         Example:
             >>> char = AppearanceCharacteristic()
-            >>> result = char.decode_value(bytearray([0x40, 0x03]))  # 832
+            >>> result = char.decode_value(bytearray([0x41, 0x03]))  # 833
             >>> print(result.full_name)  # "Heart Rate Sensor: Heart Rate Belt"
-            >>> print(result.raw_value)  # 832
-            >>> print(int(result))  # 832
+            >>> print(result.raw_value)  # 833
+            >>> print(int(result))  # 833
 
         """
         raw_value = DataParser.parse_int16(data, 0, signed=False)
@@ -88,21 +88,17 @@ class AppearanceCharacteristic(BaseCharacteristic):
             info=appearance_info,
         )
 
-    def encode_value(self, data: AppearanceData | int) -> bytearray:
+    def encode_value(self, data: AppearanceData) -> bytearray:
         """Encode appearance value back to bytes.
 
         Args:
-            data: Appearance value as AppearanceData or integer
+            data: Appearance value as AppearanceData
 
         Returns:
             Encoded bytes representing the appearance
 
         """
-        if isinstance(data, AppearanceData):
-            appearance = data.raw_value
-        else:
-            appearance = int(data)
-        return DataParser.encode_int16(appearance, signed=False)
+        return DataParser.encode_int16(data.raw_value, signed=False)
 
 
 class ServiceChangedCharacteristic(BaseCharacteristic):

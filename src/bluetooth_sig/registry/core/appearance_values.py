@@ -34,7 +34,7 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
 
     Example:
         >>> registry = AppearanceValuesRegistry()
-        >>> info = registry.get_appearance_info(832)
+        >>> info = registry.get_appearance_info(833)
         >>> if info:
         ...     print(info.full_name)  # "Heart Rate Sensor: Heart Rate Belt"
         ...     print(info.category)  # "Heart Rate Sensor"
@@ -151,7 +151,7 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
 
         Example:
             >>> registry = AppearanceValuesRegistry()
-            >>> info = registry.get_appearance_info(832)
+            >>> info = registry.get_appearance_info(833)
             >>> if info:
             ...     print(info.full_name)  # "Heart Rate Sensor: Heart Rate Belt"
         """

@@ -13,6 +13,8 @@ from ..gatt.characteristics.utils import DataParser
 from ..registry import ad_types_registry
 from ..registry import appearance_values_registry
 from ..types import (
+    AppearanceData,
+    BLEAdvertisementTypes,
     BLEAdvertisingFlags,
     BLEAdvertisingPDU,
     BLEExtendedHeader,
@@ -268,7 +270,6 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             tx_power=parsed_data.tx_power if parsed_data.tx_power != 0 else None,
             flags=parsed_data.flags if parsed_data.flags != 0 else None,
             appearance=parsed_data.appearance,
-            appearance_info=parsed_data.appearance_info,
             service_data=parsed_data.service_data,
             solicited_service_uuids=parsed_data.solicited_service_uuids,
             uri=parsed_data.uri,
@@ -355,6 +356,9 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 parsed.appearance = DataParser.parse_int16(ad_data, 0, signed=False)
                 if parsed.appearance is not None:
                     parsed.appearance_info = appearance_values_registry.get_appearance_info(parsed.appearance)
+            elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_data) >= 2:
+                service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
+                parsed.service_data[service_uuid] = ad_data[2:]
             elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_data) >= 2:
                 service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
                 parsed.service_data[service_uuid] = ad_data[2:]

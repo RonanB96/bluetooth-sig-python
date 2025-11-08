@@ -33,7 +33,7 @@ class AppearanceInfo(msgspec.Struct, frozen=True, kw_only=True):
         return self.category
 
 
-class AppearanceData(msgspec.Struct, kw_only=True):
+class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):
     """Appearance characteristic data with human-readable info.
 
     Attributes:
