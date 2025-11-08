@@ -7,14 +7,14 @@ import logging
 import msgspec
 
 from bluetooth_sig.registry.base import BaseRegistry
-from bluetooth_sig.registry.utils import find_bluetooth_sig_core_path
+from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.advertising import ADTypeInfo
 
 logger = logging.getLogger(__name__)
 
 
 class ADTypesRegistry(BaseRegistry[ADTypeInfo]):
-    """Registry for Bluetooth advertising data types.
+    """Registry for Bluetooth advertising data types with lazy loading.
 
     This registry loads AD type definitions from the official Bluetooth SIG
     assigned_numbers YAML file, providing authoritative AD type information
@@ -26,63 +26,74 @@ class ADTypesRegistry(BaseRegistry[ADTypeInfo]):
         super().__init__()
         self._ad_types: dict[int, ADTypeInfo] = {}
         self._ad_types_by_name: dict[str, ADTypeInfo] = {}
+        self._loaded = False
 
-        try:
-            self._load_ad_types()
-        except (FileNotFoundError, OSError, msgspec.DecodeError, KeyError) as e:
-            # Log warning if YAML loading fails, continue with empty registry
-            logger.warning(
-                "Failed to load AD types from YAML: %s. Registry will be empty.",
-                e,
-            )
-
-    def _load_ad_types(self) -> None:
-        """Load AD types from YAML file."""
-        base_path = find_bluetooth_sig_core_path()
-        if not base_path:
-            logger.warning("Bluetooth SIG core path not found. AD types registry will be empty.")
+    def _ensure_loaded(self) -> None:
+        """Lazy load: only parse YAML when first lookup happens."""
+        if self._loaded:
             return
 
-        yaml_path = base_path / "ad_types.yaml"
-        if not yaml_path.exists():
-            logger.warning(
-                "AD types YAML file not found at %s. Registry will be empty.",
-                yaml_path,
-            )
-            return
+        with self._lock:
+            # Double-check after acquiring lock for thread safety
+            if self._loaded:
+                return
 
-        with yaml_path.open("r", encoding="utf-8") as f:
-            data = msgspec.yaml.decode(f.read())
+            base_path = find_bluetooth_sig_path()
+            if not base_path:
+                logger.warning("Bluetooth SIG path not found. AD types registry will be empty.")
+                self._loaded = True
+                return
 
-        if not data or "ad_types" not in data:
-            logger.warning("Invalid AD types YAML format. Registry will be empty.")
-            return
+            yaml_path = base_path.parent / "core" / "ad_types.yaml"
+            if not yaml_path.exists():
+                logger.warning(
+                    "AD types YAML file not found at %s. Registry will be empty.",
+                    yaml_path,
+                )
+                self._loaded = True
+                return
 
-        for item in data["ad_types"]:
-            value = item.get("value")
-            name = item.get("name")
-            reference = item.get("reference")
+            try:
+                with yaml_path.open("r", encoding="utf-8") as f:
+                    data = msgspec.yaml.decode(f.read())
 
-            if value is None or not name:
-                continue
+                if not data or "ad_types" not in data:
+                    logger.warning("Invalid AD types YAML format. Registry will be empty.")
+                    self._loaded = True
+                    return
 
-            # Handle hex values in YAML (e.g., 0x01)
-            if isinstance(value, str):
-                value = int(value, 16)
+                for item in data["ad_types"]:
+                    value = item.get("value")
+                    name = item.get("name")
+                    reference = item.get("reference")
 
-            ad_type_info = ADTypeInfo(
-                value=value,
-                name=name,
-                reference=reference,
-            )
+                    if value is None or not name:
+                        continue
 
-            self._ad_types[value] = ad_type_info
-            self._ad_types_by_name[name.lower()] = ad_type_info
+                    # Handle hex values in YAML (e.g., 0x01)
+                    if isinstance(value, str):
+                        value = int(value, 16)
 
-        logger.info("Loaded %d AD types from specification", len(self._ad_types))
+                    ad_type_info = ADTypeInfo(
+                        value=value,
+                        name=name,
+                        reference=reference,
+                    )
+
+                    self._ad_types[value] = ad_type_info
+                    self._ad_types_by_name[name.lower()] = ad_type_info
+
+                logger.info("Loaded %d AD types from specification", len(self._ad_types))
+            except (FileNotFoundError, OSError, msgspec.DecodeError, KeyError) as e:
+                logger.warning(
+                    "Failed to load AD types from YAML: %s. Registry will be empty.",
+                    e,
+                )
+            finally:
+                self._loaded = True
 
     def get_ad_type_info(self, ad_type: int) -> ADTypeInfo | None:
-        """Get AD type info by value.
+        """Get AD type info by value (lazy loads on first call).
 
         Args:
             ad_type: The AD type value (e.g., 0x01 for Flags)
@@ -90,11 +101,12 @@ class ADTypesRegistry(BaseRegistry[ADTypeInfo]):
         Returns:
             ADTypeInfo object, or None if not found
         """
+        self._ensure_loaded()
         with self._lock:
             return self._ad_types.get(ad_type)
 
     def get_ad_type_by_name(self, name: str) -> ADTypeInfo | None:
-        """Get AD type info by name.
+        """Get AD type info by name (lazy loads on first call).
 
         Args:
             name: AD type name (case-insensitive)
@@ -102,11 +114,12 @@ class ADTypesRegistry(BaseRegistry[ADTypeInfo]):
         Returns:
             ADTypeInfo object, or None if not found
         """
+        self._ensure_loaded()
         with self._lock:
             return self._ad_types_by_name.get(name.lower())
 
     def is_known_ad_type(self, ad_type: int) -> bool:
-        """Check if AD type is known.
+        """Check if AD type is known (lazy loads on first call).
 
         Args:
             ad_type: The AD type value to check
@@ -114,15 +127,17 @@ class ADTypesRegistry(BaseRegistry[ADTypeInfo]):
         Returns:
             True if the AD type is registered, False otherwise
         """
+        self._ensure_loaded()
         with self._lock:
             return ad_type in self._ad_types
 
     def get_all_ad_types(self) -> dict[int, ADTypeInfo]:
-        """Get all registered AD types.
+        """Get all registered AD types (lazy loads on first call).
 
         Returns:
             Dictionary mapping AD type values to ADTypeInfo objects
         """
+        self._ensure_loaded()
         with self._lock:
             return self._ad_types.copy()
 

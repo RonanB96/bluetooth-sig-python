@@ -57,45 +57,24 @@ def normalize_uuid_string(uuid: str | int) -> str:
     return uuid
 
 
-def _find_bluetooth_sig_subpath(subpath: str) -> Path | None:
-    """Find a subdirectory within Bluetooth SIG assigned_numbers.
-
-    Args:
-        subpath: Subdirectory path relative to assigned_numbers (e.g., "uuids", "core")
-
-    Returns:
-        Path to the subdirectory, or None if not found
-    """
-    # Try development location first (git submodule)
-    project_root = Path(__file__).parent.parent.parent.parent
-    base_path = project_root / "bluetooth_sig" / "assigned_numbers" / subpath
-
-    if base_path.exists():
-        return base_path
-
-    # Try installed package location
-    pkg_root = Path(__file__).parent.parent
-    base_path = pkg_root / "bluetooth_sig" / "assigned_numbers" / subpath
-
-    return base_path if base_path.exists() else None
-
-
 def find_bluetooth_sig_path() -> Path | None:
     """Find the Bluetooth SIG assigned_numbers directory.
 
     Returns:
         Path to the uuids directory, or None if not found
     """
-    return _find_bluetooth_sig_subpath("uuids")
+    # Try development location first (git submodule)
+    project_root = Path(__file__).parent.parent.parent.parent
+    base_path = project_root / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
+    if base_path.exists():
+        return base_path
 
-def find_bluetooth_sig_core_path() -> Path | None:
-    """Find the Bluetooth SIG assigned_numbers/core directory.
+    # Try installed package location
+    pkg_root = Path(__file__).parent.parent
+    base_path = pkg_root / "bluetooth_sig" / "assigned_numbers" / "uuids"
 
-    Returns:
-        Path to the core directory, or None if not found
-    """
-    return _find_bluetooth_sig_subpath("core")
+    return base_path if base_path.exists() else None
 
 
 def parse_bluetooth_uuid(uuid: str | int | BluetoothUUID) -> BluetoothUUID:

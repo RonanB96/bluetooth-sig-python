@@ -30,13 +30,15 @@ class TestADTypesRegistry:
             assert all(isinstance(info, ADTypeInfo) for info in ad_types.values())
 
     def test_lazy_loading(self) -> None:
-        """Test that registry loads during initialization."""
+        """Test that YAML is not loaded until first access."""
         # Create a fresh registry instance
         fresh_registry = ADTypesRegistry()
-        # Registry should have loaded during __init__
-        ad_types = fresh_registry.get_all_ad_types()
-        # Should have data if YAML is available
-        assert isinstance(ad_types, dict)
+        # _loaded should be False initially (lazy loading)
+        assert not fresh_registry._loaded
+        # Access should trigger loading
+        _ = fresh_registry.is_known_ad_type(0x01)
+        # Now _loaded should be True
+        assert fresh_registry._loaded
 
     def test_get_ad_type_info_by_value(self, registry: ADTypesRegistry) -> None:
         """Test lookup by AD type value."""
