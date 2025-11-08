@@ -1,18 +1,5 @@
-"""Bluetooth SIG registries mirroring official assigned_numbers structure.
+"""UUID-based registries from assigned_numbers/uuids/."""
 
-Structure mirrors bluetooth_sig/assigned_numbers/:
-- core/ - Core specification registries (AD types, appearance, CoD, etc.)
-- company_identifiers/ - Manufacturer company IDs
-- uuids/ - All UUID-based registries (services, characteristics, protocols, etc.)
-- service_discovery/ - SDP attribute IDs
-- profiles/ - Profile-specific registries
-
-All existing registries are re-exported from this module for backward compatibility.
-"""
-
-from bluetooth_sig.registry.base import BaseRegistry
-
-# UUID registries (from assigned_numbers/uuids/)
 from bluetooth_sig.registry.uuids.browse_groups import browse_groups_registry
 from bluetooth_sig.registry.uuids.declarations import declarations_registry
 from bluetooth_sig.registry.uuids.members import members_registry
@@ -23,8 +10,6 @@ from bluetooth_sig.registry.uuids.service_classes import service_classes_registr
 from bluetooth_sig.registry.uuids.units import units_registry
 
 __all__ = [
-    "BaseRegistry",
-    # UUID registries
     "browse_groups_registry",
     "declarations_registry",
     "members_registry",

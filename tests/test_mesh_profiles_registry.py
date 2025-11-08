@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.mesh_profiles import MeshProfileInfo, MeshProfilesRegistry
+from bluetooth_sig.registry.uuids.mesh_profiles import MeshProfileInfo, MeshProfilesRegistry
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
