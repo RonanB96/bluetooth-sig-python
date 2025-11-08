@@ -28,6 +28,7 @@ from .alert import (
     AlertNotificationCommandID,
     validate_category_id,
 )
+from .appearance import AppearanceData, AppearanceInfo
 from .base_types import SIGInfo
 from .battery import BatteryChargeLevel, BatteryChargeState, BatteryChargingType, BatteryFaultReason
 from .context import CharacteristicContext, DeviceInfo
@@ -79,6 +80,8 @@ __all__ = [
     "validate_category_id",
     "AngleUnit",
     "ADTypeInfo",
+    "AppearanceData",
+    "AppearanceInfo",
     "BatteryChargeLevel",
     "BatteryChargeState",
     "BatteryChargingType",

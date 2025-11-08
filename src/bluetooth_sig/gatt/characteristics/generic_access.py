@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from ...registry import appearance_values_registry
+from ...types.appearance import AppearanceData
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -50,40 +52,56 @@ class AppearanceCharacteristic(BaseCharacteristic):
 
     org.bluetooth.characteristic.gap.appearance
 
-    Appearance characteristic.
+    Appearance characteristic with human-readable device type information.
     """
 
     _characteristic_name: str = "Appearance"
-    _manual_value_type = "int"  # Override since decode_value returns int
+    _manual_value_type = "AppearanceData"  # Override since decode_value returns dataclass
 
     min_length = 2  # Appearance(2) fixed length
     max_length = 2  # Appearance(2) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
-        """Parse appearance value (uint16).
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AppearanceData:
+        """Parse appearance value with human-readable info.
 
         Args:
-            data: Raw bytearray from BLE characteristic.
+            data: Raw bytearray from BLE characteristic (2 bytes).
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            Parsed appearance as integer.
+            AppearanceData with raw value and optional human-readable info.
+
+        Example:
+            >>> char = AppearanceCharacteristic()
+            >>> result = char.decode_value(bytearray([0x40, 0x03]))  # 832
+            >>> print(result.full_name)  # "Heart Rate Sensor: Heart Rate Belt"
+            >>> print(result.raw_value)  # 832
+            >>> print(int(result))  # 832
 
         """
-        return DataParser.parse_int16(data, 0, signed=False)
+        raw_value = DataParser.parse_int16(data, 0, signed=False)
+        appearance_info = appearance_values_registry.get_appearance_info(raw_value)
 
-    def encode_value(self, data: int) -> bytearray:
+        return AppearanceData(
+            raw_value=raw_value,
+            info=appearance_info,
+        )
+
+    def encode_value(self, data: AppearanceData | int) -> bytearray:
         """Encode appearance value back to bytes.
 
         Args:
-            data: Appearance value as integer
+            data: Appearance value as AppearanceData or integer
 
         Returns:
             Encoded bytes representing the appearance
 
         """
-        appearance = int(data)
+        if isinstance(data, AppearanceData):
+            appearance = data.raw_value
+        else:
+            appearance = int(data)
         return DataParser.encode_int16(appearance, signed=False)
 
 

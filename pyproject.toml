@@ -277,3 +277,7 @@ convention = "google"
 # Prevent inheriting a parent pydocstyle config which could change the
 # effective set of checked codes; keep the repository config deterministic.
 inherit = false
+
+[[tool.mypy.overrides]]
+module = "bluetooth_sig.registry.core.appearance_values"
+warn_unreachable = false
