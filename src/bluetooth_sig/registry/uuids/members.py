@@ -6,9 +6,13 @@ import threading
 
 import msgspec
 
+from bluetooth_sig.registry.utils import (
+    find_bluetooth_sig_path,
+    load_yaml_uuids,
+    normalize_uuid_string,
+    parse_bluetooth_uuid,
+)
 from bluetooth_sig.types.uuid import BluetoothUUID
-
-from .utils import find_bluetooth_sig_path, load_yaml_uuids, normalize_uuid_string, parse_bluetooth_uuid
 
 
 class MemberInfo(msgspec.Struct, frozen=True, kw_only=True):

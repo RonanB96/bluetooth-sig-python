@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.sdo_uuids import SdoInfo, SdoUuidsRegistry
+from bluetooth_sig.registry.uuids.sdo_uuids import SdoInfo, SdoUuidsRegistry
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 

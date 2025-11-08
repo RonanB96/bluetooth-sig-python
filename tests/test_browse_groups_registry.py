@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.browse_groups import BrowseGroupInfo, BrowseGroupsRegistry
+from bluetooth_sig.registry.uuids.browse_groups import BrowseGroupInfo, BrowseGroupsRegistry
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
