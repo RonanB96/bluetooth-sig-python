@@ -96,6 +96,29 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
 
         return DeviceAdvertiserData(
             raw_data=raw_data,
+            parsed_structures=parsed_data,
+            local_name=parsed_data.local_name,
+            manufacturer_data=parsed_data.manufacturer_data,
+            service_uuids=parsed_data.service_uuids,
+            tx_power=parsed_data.tx_power if parsed_data.tx_power != 0 else None,
+            flags=parsed_data.flags if parsed_data.flags != 0 else None,
+            appearance=parsed_data.appearance,
+            extended_payload=pdu.payload,
+            auxiliary_packets=auxiliary_packets,
+        )
+
+        parsed_data = ParsedADStructures()
+
+        if pdu.payload:
+            parsed_data = self._parse_ad_structures(pdu.payload)
+
+        auxiliary_packets: list[BLEAdvertisingPDU] = []
+        if pdu.extended_header and pdu.extended_header.auxiliary_pointer:
+            aux_packets = self._parse_auxiliary_packets(pdu.extended_header.auxiliary_pointer)
+            auxiliary_packets.extend(aux_packets)
+
+        return DeviceAdvertiserData(
+            raw_data=raw_data,
             local_name=parsed_data.local_name,
             manufacturer_data=parsed_data.manufacturer_data,
             service_uuids=parsed_data.service_uuids,
@@ -292,47 +315,15 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
 
         """
         parsed_data = self._parse_ad_structures(raw_data)
-
         return DeviceAdvertiserData(
             raw_data=raw_data,
+            parsed_structures=parsed_data,
             local_name=parsed_data.local_name,
             manufacturer_data=parsed_data.manufacturer_data,
             service_uuids=parsed_data.service_uuids,
             tx_power=parsed_data.tx_power if parsed_data.tx_power != 0 else None,
             flags=parsed_data.flags if parsed_data.flags != 0 else None,
             appearance=parsed_data.appearance,
-            service_data=parsed_data.service_data,
-            solicited_service_uuids=parsed_data.solicited_service_uuids,
-            uri=parsed_data.uri,
-            indoor_positioning=parsed_data.indoor_positioning,
-            transport_discovery_data=parsed_data.transport_discovery_data,
-            le_supported_features=parsed_data.le_supported_features,
-            encrypted_advertising_data=parsed_data.encrypted_advertising_data,
-            periodic_advertising_response_timing=parsed_data.periodic_advertising_response_timing,
-            electronic_shelf_label=parsed_data.electronic_shelf_label,
-            three_d_information=parsed_data.three_d_information,
-            broadcast_name=parsed_data.broadcast_name,
-            biginfo=parsed_data.biginfo,
-            mesh_message=parsed_data.mesh_message,
-            mesh_beacon=parsed_data.mesh_beacon,
-            public_target_address=parsed_data.public_target_address,
-            random_target_address=parsed_data.random_target_address,
-            advertising_interval=parsed_data.advertising_interval,
-            advertising_interval_long=parsed_data.advertising_interval_long,
-            le_bluetooth_device_address=parsed_data.le_bluetooth_device_address,
-            le_role=parsed_data.le_role,
-            class_of_device=parsed_data.class_of_device,
-            class_of_device_info=parsed_data.class_of_device_info,
-            simple_pairing_hash_c=parsed_data.simple_pairing_hash_c,
-            simple_pairing_randomizer_r=parsed_data.simple_pairing_randomizer_r,
-            security_manager_tk_value=parsed_data.security_manager_tk_value,
-            security_manager_out_of_band_flags=parsed_data.security_manager_out_of_band_flags,
-            slave_connection_interval_range=parsed_data.slave_connection_interval_range,
-            secure_connections_confirmation=parsed_data.secure_connections_confirmation,
-            secure_connections_random=parsed_data.secure_connections_random,
-            channel_map_update_indication=parsed_data.channel_map_update_indication,
-            pb_adv=parsed_data.pb_adv,
-            resolvable_set_identifier=parsed_data.resolvable_set_identifier,
         )
 
     def _parse_ad_structures(self, data: bytes) -> ParsedADStructures:

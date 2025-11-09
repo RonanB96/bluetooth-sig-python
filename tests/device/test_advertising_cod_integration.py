@@ -37,10 +37,10 @@ class TestAdvertisingParserClassOfDevice:
         result = parser.parse_advertising_data(ad_data)
 
         assert isinstance(result, DeviceAdvertiserData)
-        assert result.class_of_device == 0x02010C
-        assert result.class_of_device_info is not None
+        assert result.parsed_structures.class_of_device == 0x02010C
+        assert result.parsed_structures.class_of_device_info is not None
 
-        cod_info = result.class_of_device_info
+        cod_info = result.parsed_structures.class_of_device_info
         assert "Computer" in cod_info.major_class
         assert cod_info.minor_class == "Laptop"
         assert len(cod_info.service_classes) == 1
@@ -68,10 +68,10 @@ class TestAdvertisingParserClassOfDevice:
 
         result = parser.parse_advertising_data(ad_data)
 
-        assert result.class_of_device == 0x00020C
-        assert result.class_of_device_info is not None
+        assert result.parsed_structures.class_of_device == 0x00020C
+        assert result.parsed_structures.class_of_device_info is not None
 
-        cod_info = result.class_of_device_info
+        cod_info = result.parsed_structures.class_of_device_info
         assert "Phone" in cod_info.major_class
         assert cod_info.minor_class == "Smartphone"
         assert cod_info.service_classes == []
@@ -89,10 +89,10 @@ class TestAdvertisingParserClassOfDevice:
 
         result = parser.parse_advertising_data(ad_data)
 
-        assert result.class_of_device == 0x22010C
-        assert result.class_of_device_info is not None
+        assert result.parsed_structures.class_of_device == 0x22010C
+        assert result.parsed_structures.class_of_device_info is not None
 
-        cod_info = result.class_of_device_info
+        cod_info = result.parsed_structures.class_of_device_info
         assert "Computer" in cod_info.major_class
         assert cod_info.minor_class == "Laptop"
         assert len(cod_info.service_classes) == 2
@@ -106,8 +106,8 @@ class TestAdvertisingParserClassOfDevice:
 
         result = parser.parse_advertising_data(ad_data)
 
-        assert result.class_of_device is None
-        assert result.class_of_device_info is None
+        assert result.parsed_structures.class_of_device is None
+        assert result.parsed_structures.class_of_device_info is None
 
     def test_parse_class_of_device_with_other_fields(
         self, parser: AdvertisingParser
@@ -121,8 +121,8 @@ class TestAdvertisingParserClassOfDevice:
             bytes([2, 0x01, 0x06])  # Flags
             + bytes([4, 0x0D])
             + cod_bytes  # CoD
-            + bytes([9, 0x09])
-            + b"TestDev"  # Name
+            + bytes([8, 0x09])
+            + b"TestDev"  # Name (length = 1 + 7 = 8)
         )
 
         result = parser.parse_advertising_data(ad_data)
@@ -130,9 +130,9 @@ class TestAdvertisingParserClassOfDevice:
         # All fields should be parsed
         assert result.flags is not None
         assert result.local_name == "TestDev"
-        assert result.class_of_device == 0x02010C
-        assert result.class_of_device_info is not None
-        assert "Computer" in result.class_of_device_info.major_class
+        assert result.parsed_structures.class_of_device == 0x02010C
+        assert result.parsed_structures.class_of_device_info is not None
+        assert "Computer" in result.parsed_structures.class_of_device_info.major_class
 
     def test_parse_class_of_device_invalid_length(
         self, parser: AdvertisingParser
@@ -144,8 +144,8 @@ class TestAdvertisingParserClassOfDevice:
         result = parser.parse_advertising_data(ad_data)
 
         # Should not parse CoD if length is wrong
-        assert result.class_of_device is None
-        assert result.class_of_device_info is None
+        assert result.parsed_structures.class_of_device is None
+        assert result.parsed_structures.class_of_device_info is None
 
     def test_parse_class_of_device_health_device(
         self, parser: AdvertisingParser
@@ -162,8 +162,8 @@ class TestAdvertisingParserClassOfDevice:
 
         result = parser.parse_advertising_data(ad_data)
 
-        assert result.class_of_device_info is not None
-        cod_info = result.class_of_device_info
+        assert result.parsed_structures.class_of_device_info is not None
+        cod_info = result.parsed_structures.class_of_device_info
         assert "Health" in cod_info.major_class
         assert cod_info.minor_class is not None
         assert "Pressure" in cod_info.minor_class
@@ -184,8 +184,8 @@ class TestAdvertisingParserClassOfDevice:
 
         result = parser.parse_advertising_data(ad_data)
 
-        assert result.class_of_device_info is not None
-        cod_info = result.class_of_device_info
+        assert result.parsed_structures.class_of_device_info is not None
+        cod_info = result.parsed_structures.class_of_device_info
         assert "Audio" in cod_info.major_class or "Video" in cod_info.major_class
         assert cod_info.minor_class is not None
         assert "Headset" in cod_info.minor_class

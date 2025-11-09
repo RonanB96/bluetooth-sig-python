@@ -7,6 +7,7 @@ including major/minor device classes and service classes.
 
 from __future__ import annotations
 
+from enum import IntFlag
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,30 @@ from bluetooth_sig.types.class_of_device import (
     MinorDeviceClassInfo,
     ServiceClassInfo,
 )
+
+
+class CoDBitMask(IntFlag):
+    """Bit masks for extracting Class of Device fields.
+
+    CoD Structure (24 bits):
+        Bits 23-13: Service Class (11 bits, bit mask)
+        Bits 12-8:  Major Device Class (5 bits)
+        Bits 7-2:   Minor Device Class (6 bits)
+        Bits 1-0:   Format Type (always 0b00)
+    """
+
+    SERVICE_CLASS = 0x7FF << 13  # Bits 23-13: 11-bit mask
+    MAJOR_CLASS = 0x1F << 8  # Bits 12-8: 5-bit mask
+    MINOR_CLASS = 0x3F << 2  # Bits 7-2: 6-bit mask
+    FORMAT_TYPE = 0x03  # Bits 1-0: format type (always 00)
+
+
+class CoDBitShift(IntFlag):
+    """Bit shift values for Class of Device fields."""
+
+    SERVICE_CLASS = 13
+    MAJOR_CLASS = 8
+    MINOR_CLASS = 2
 
 
 class ClassOfDeviceRegistry(BaseRegistry[ClassOfDeviceInfo]):
@@ -196,17 +221,17 @@ class ClassOfDeviceRegistry(BaseRegistry[ClassOfDeviceInfo]):
         """
         self._ensure_loaded()
 
-        # Extract fields using bit masks
-        service_class_bits = (cod >> 13) & 0x7FF  # Bits 23-13 (11 bits)
-        major_class = (cod >> 8) & 0x1F  # Bits 12-8 (5 bits)
-        minor_class = (cod >> 2) & 0x3F  # Bits 7-2 (6 bits)
+        # Extract fields using bit masks and shifts
+        service_class_bits = (cod & CoDBitMask.SERVICE_CLASS) >> CoDBitShift.SERVICE_CLASS
+        major_class = (cod & CoDBitMask.MAJOR_CLASS) >> CoDBitShift.MAJOR_CLASS
+        minor_class = (cod & CoDBitMask.MINOR_CLASS) >> CoDBitShift.MINOR_CLASS
 
         # Decode service classes (bit mask - multiple bits can be set)
         service_classes = []
         for bit_pos in range(11):
             if service_class_bits & (1 << bit_pos):
                 # Map bit position 0-10 to actual bit positions 13-23
-                actual_bit_pos = bit_pos + 13
+                actual_bit_pos = bit_pos + CoDBitShift.SERVICE_CLASS
                 service_info = self._service_classes.get(actual_bit_pos)
                 if service_info:
                     service_classes.append(service_info.name)

@@ -297,48 +297,18 @@ class DeviceAdvertiserData(msgspec.Struct, kw_only=True):
     """Parsed advertiser data from device discovery."""
 
     raw_data: bytes
+    parsed_structures: ParsedADStructures = msgspec.field(default_factory=ParsedADStructures)
+
+    # Frequently accessed fields (for backward compatibility and convenience)
     local_name: str = ""
     manufacturer_data: dict[int, bytes] = msgspec.field(default_factory=dict)
     service_uuids: list[str] = msgspec.field(default_factory=list)
     tx_power: int | None = None
     rssi: int | None = None
     flags: BLEAdvertisingFlags | None = None
-
-    # Additional parsed fields
     appearance: AppearanceData | None = None
-    service_data: dict[str, bytes] = msgspec.field(default_factory=dict)
-    solicited_service_uuids: list[str] = msgspec.field(default_factory=list)
-    uri: str = ""
-    indoor_positioning: bytes = b""
-    transport_discovery_data: bytes = b""
-    le_supported_features: bytes = b""
-    encrypted_advertising_data: bytes = b""
-    periodic_advertising_response_timing: bytes = b""
-    electronic_shelf_label: bytes = b""
-    three_d_information: bytes = b""
-    broadcast_name: str = ""
-    biginfo: bytes = b""
-    mesh_message: bytes = b""
-    mesh_beacon: bytes = b""
-    public_target_address: list[str] = msgspec.field(default_factory=list)
-    random_target_address: list[str] = msgspec.field(default_factory=list)
-    advertising_interval: int | None = None
-    advertising_interval_long: int | None = None
-    le_bluetooth_device_address: str = ""
-    le_role: int | None = None
-    class_of_device: int | None = None
-    class_of_device_info: ClassOfDeviceInfo | None = None
-    simple_pairing_hash_c: bytes = b""
-    simple_pairing_randomizer_r: bytes = b""
-    security_manager_tk_value: bytes = b""
-    security_manager_out_of_band_flags: bytes = b""
-    slave_connection_interval_range: bytes = b""
-    secure_connections_confirmation: bytes = b""
-    secure_connections_random: bytes = b""
-    channel_map_update_indication: bytes = b""
-    pb_adv: bytes = b""
-    resolvable_set_identifier: bytes = b""
 
+    # Extended advertising specific fields
     extended_payload: bytes = b""
     auxiliary_packets: list[BLEAdvertisingPDU] = msgspec.field(default_factory=list)
     periodic_advertising_data: bytes = b""

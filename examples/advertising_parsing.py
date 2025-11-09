@@ -15,6 +15,7 @@ from bluetooth_sig.device.advertising_parser import AdvertisingParser
 from bluetooth_sig.types.advertising import (
     BLEAdvertisingFlags,
     DeviceAdvertiserData,
+    ParsedADStructures,
 )
 from bluetooth_sig.types.appearance import AppearanceData
 
@@ -77,125 +78,125 @@ def display_advertising_data(
     else:
         not_found_fields.append("Appearance")
 
-    if parsed_data.service_data:
+    if parsed_data.parsed_structures.service_data:
         service_data_lines = ["Service Data:"]
-        for service_uuid, data in parsed_data.service_data.items():
+        for service_uuid, data in parsed_data.parsed_structures.service_data.items():
             service_data_lines.append(f"  Service {service_uuid}: {data.hex()}")
         found_fields.extend(service_data_lines)
     else:
         not_found_fields.append("Service Data")
 
     # Additional legacy fields
-    if parsed_data.solicited_service_uuids:
+    if parsed_data.parsed_structures.solicited_service_uuids:
         solicited_lines = ["Solicited Service UUIDs:"]
-        for uuid in parsed_data.solicited_service_uuids:
+        for uuid in parsed_data.parsed_structures.solicited_service_uuids:
             solicited_lines.append(f"  {uuid}")
         found_fields.extend(solicited_lines)
     else:
         not_found_fields.append("Solicited Service UUIDs")
 
-    if parsed_data.uri:
-        found_fields.append(f"URI: {parsed_data.uri}")
+    if parsed_data.parsed_structures.uri:
+        found_fields.append(f"URI: {parsed_data.parsed_structures.uri}")
     else:
         not_found_fields.append("URI")
 
     # Positioning and discovery
-    if parsed_data.indoor_positioning:
-        found_fields.append(f"Indoor Positioning: {parsed_data.indoor_positioning.hex()}")
+    if parsed_data.parsed_structures.indoor_positioning:
+        found_fields.append(f"Indoor Positioning: {parsed_data.parsed_structures.indoor_positioning.hex()}")
     else:
         not_found_fields.append("Indoor Positioning")
 
-    if parsed_data.transport_discovery_data:
-        found_fields.append(f"Transport Discovery Data: {parsed_data.transport_discovery_data.hex()}")
+    if parsed_data.parsed_structures.transport_discovery_data:
+        found_fields.append(f"Transport Discovery Data: {parsed_data.parsed_structures.transport_discovery_data.hex()}")
     else:
         not_found_fields.append("Transport Discovery Data")
 
     # LE features and security
-    if parsed_data.le_supported_features:
-        found_fields.append(f"LE Supported Features: {parsed_data.le_supported_features.hex()}")
+    if parsed_data.parsed_structures.le_supported_features:
+        found_fields.append(f"LE Supported Features: {parsed_data.parsed_structures.le_supported_features.hex()}")
     else:
         not_found_fields.append("LE Supported Features")
 
-    if parsed_data.encrypted_advertising_data:
-        found_fields.append(f"Encrypted Advertising Data: {parsed_data.encrypted_advertising_data.hex()}")
+    if parsed_data.parsed_structures.encrypted_advertising_data:
+        found_fields.append(f"Encrypted Advertising Data: {parsed_data.parsed_structures.encrypted_advertising_data.hex()}")
     else:
         not_found_fields.append("Encrypted Advertising Data")
 
-    if parsed_data.periodic_advertising_response_timing:
+    if parsed_data.parsed_structures.periodic_advertising_response_timing:
         found_fields.append(
-            f"Periodic Advertising Response Timing: {parsed_data.periodic_advertising_response_timing.hex()}"
+            f"Periodic Advertising Response Timing: {parsed_data.parsed_structures.periodic_advertising_response_timing.hex()}"
         )
     else:
         not_found_fields.append("Periodic Advertising Response Timing")
 
     # Labels and 3D info
-    if parsed_data.electronic_shelf_label:
-        found_fields.append(f"Electronic Shelf Label: {parsed_data.electronic_shelf_label.hex()}")
+    if parsed_data.parsed_structures.electronic_shelf_label:
+        found_fields.append(f"Electronic Shelf Label: {parsed_data.parsed_structures.electronic_shelf_label.hex()}")
     else:
         not_found_fields.append("Electronic Shelf Label")
 
-    if parsed_data.three_d_information:
-        found_fields.append(f"3D Information: {parsed_data.three_d_information.hex()}")
+    if parsed_data.parsed_structures.three_d_information:
+        found_fields.append(f"3D Information: {parsed_data.parsed_structures.three_d_information.hex()}")
     else:
         not_found_fields.append("3D Information")
 
-    if parsed_data.broadcast_name:
-        found_fields.append(f"Broadcast Name: {parsed_data.broadcast_name}")
+    if parsed_data.parsed_structures.broadcast_name:
+        found_fields.append(f"Broadcast Name: {parsed_data.parsed_structures.broadcast_name}")
     else:
         not_found_fields.append("Broadcast Name")
 
     # Mesh and broadcast
-    if parsed_data.biginfo:
-        found_fields.append(f"BIGInfo: {parsed_data.biginfo.hex()}")
+    if parsed_data.parsed_structures.biginfo:
+        found_fields.append(f"BIGInfo: {parsed_data.parsed_structures.biginfo.hex()}")
     else:
         not_found_fields.append("BIGInfo")
 
-    if parsed_data.mesh_message:
-        found_fields.append(f"Mesh Message: {parsed_data.mesh_message.hex()}")
+    if parsed_data.parsed_structures.mesh_message:
+        found_fields.append(f"Mesh Message: {parsed_data.parsed_structures.mesh_message.hex()}")
     else:
         not_found_fields.append("Mesh Message")
 
-    if parsed_data.mesh_beacon:
-        found_fields.append(f"Mesh Beacon: {parsed_data.mesh_beacon.hex()}")
+    if parsed_data.parsed_structures.mesh_beacon:
+        found_fields.append(f"Mesh Beacon: {parsed_data.parsed_structures.mesh_beacon.hex()}")
     else:
         not_found_fields.append("Mesh Beacon")
 
     # Target addresses
-    if parsed_data.public_target_address:
+    if parsed_data.parsed_structures.public_target_address:
         target_lines = ["Public Target Address:"]
-        for addr in parsed_data.public_target_address:
+        for addr in parsed_data.parsed_structures.public_target_address:
             target_lines.append(f"  {addr}")
         found_fields.extend(target_lines)
     else:
         not_found_fields.append("Public Target Address")
 
-    if parsed_data.random_target_address:
+    if parsed_data.parsed_structures.random_target_address:
         random_lines = ["Random Target Address:"]
-        for addr in parsed_data.random_target_address:
+        for addr in parsed_data.parsed_structures.random_target_address:
             random_lines.append(f"  {addr}")
         found_fields.extend(random_lines)
     else:
         not_found_fields.append("Random Target Address")
 
     # Advertising intervals
-    if parsed_data.advertising_interval is not None:
-        found_fields.append(f"Advertising Interval: {parsed_data.advertising_interval} ms")
+    if parsed_data.parsed_structures.advertising_interval is not None:
+        found_fields.append(f"Advertising Interval: {parsed_data.parsed_structures.advertising_interval} ms")
     else:
         not_found_fields.append("Advertising Interval")
 
-    if parsed_data.advertising_interval_long is not None:
-        found_fields.append(f"Advertising Interval Long: {parsed_data.advertising_interval_long} ms")
+    if parsed_data.parsed_structures.advertising_interval_long is not None:
+        found_fields.append(f"Advertising Interval Long: {parsed_data.parsed_structures.advertising_interval_long} ms")
     else:
         not_found_fields.append("Advertising Interval Long")
 
     # Device addresses and roles
-    if parsed_data.le_bluetooth_device_address:
-        found_fields.append(f"LE Bluetooth Device Address: {parsed_data.le_bluetooth_device_address}")
+    if parsed_data.parsed_structures.le_bluetooth_device_address:
+        found_fields.append(f"LE Bluetooth Device Address: {parsed_data.parsed_structures.le_bluetooth_device_address}")
     else:
         not_found_fields.append("LE Bluetooth Device Address")
 
-    if parsed_data.le_role is not None:
-        found_fields.append(f"LE Role: {parsed_data.le_role}")
+    if parsed_data.parsed_structures.le_role is not None:
+        found_fields.append(f"LE Role: {parsed_data.parsed_structures.le_role}")
     else:
         not_found_fields.append("LE Role")
 
@@ -205,24 +206,24 @@ def display_advertising_data(
         not_found_fields.append("Class of Device")
 
     # Pairing and security
-    if parsed_data.simple_pairing_hash_c:
-        found_fields.append(f"Simple Pairing Hash C: {parsed_data.simple_pairing_hash_c.hex()}")
+    if parsed_data.parsed_structures.simple_pairing_hash_c:
+        found_fields.append(f"Simple Pairing Hash C: {parsed_data.parsed_structures.simple_pairing_hash_c.hex()}")
     else:
         not_found_fields.append("Simple Pairing Hash C")
 
-    if parsed_data.simple_pairing_randomizer_r:
-        found_fields.append(f"Simple Pairing Randomizer R: {parsed_data.simple_pairing_randomizer_r.hex()}")
+    if parsed_data.parsed_structures.simple_pairing_randomizer_r:
+        found_fields.append(f"Simple Pairing Randomizer R: {parsed_data.parsed_structures.simple_pairing_randomizer_r.hex()}")
     else:
         not_found_fields.append("Simple Pairing Randomizer R")
 
-    if parsed_data.security_manager_tk_value:
-        found_fields.append(f"Security Manager TK Value: {parsed_data.security_manager_tk_value.hex()}")
+    if parsed_data.parsed_structures.security_manager_tk_value:
+        found_fields.append(f"Security Manager TK Value: {parsed_data.parsed_structures.security_manager_tk_value.hex()}")
     else:
         not_found_fields.append("Security Manager TK Value")
 
-    if parsed_data.security_manager_out_of_band_flags:
+    if parsed_data.parsed_structures.security_manager_out_of_band_flags:
         found_fields.append(
-            f"Security Manager Out of Band Flags: {parsed_data.security_manager_out_of_band_flags.hex()}"
+            f"Security Manager Out of Band Flags: {parsed_data.parsed_structures.security_manager_out_of_band_flags.hex()}"
         )
     else:
         not_found_fields.append("Security Manager Out of Band Flags")
@@ -416,6 +417,15 @@ async def main(
         print()
         parsed_data = DeviceAdvertiserData(
             raw_data=b"mock_data",
+            parsed_structures=ParsedADStructures(
+                local_name="Test Device",
+                manufacturer_data={
+                    0x004C: b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
+                },
+                service_uuids=["180F", "180A"],  # Battery and Device Info services
+                appearance=AppearanceData(raw_value=0x03C0, info=None),  # Generic Computer
+                service_data={"180F": b"\x64"},  # Battery level 100%
+            ),
             local_name="Test Device",
             manufacturer_data={
                 0x004C: b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
@@ -425,7 +435,6 @@ async def main(
             flags=BLEAdvertisingFlags(0x06),
             rssi=-45,
             appearance=AppearanceData(raw_value=0x03C0, info=None),  # Generic Computer
-            service_data={"180F": b"\x64"},  # Battery level 100%
         )
         display_advertising_data(parsed_data, translator, show_not_found, show_debug)
         results["used_mock"] = True
@@ -436,6 +445,15 @@ async def main(
         print()
         parsed_data = DeviceAdvertiserData(
             raw_data=b"mock_extended_data",
+            parsed_structures=ParsedADStructures(
+                local_name="Extended Test Device",
+                manufacturer_data={
+                    0x004C: b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
+                },
+                service_uuids=["180F", "180A"],  # Battery and Device Info services
+                appearance=AppearanceData(raw_value=0x03C1, info=None),  # Generic Computer with extended features
+                service_data={"180F": b"\x64"},  # Battery level 100%
+            ),
             local_name="Extended Test Device",
             manufacturer_data={
                 0x004C: b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
@@ -445,7 +463,6 @@ async def main(
             flags=BLEAdvertisingFlags(0x06),
             rssi=-35,
             appearance=AppearanceData(raw_value=0x03C1, info=None),  # Generic Computer with extended features
-            service_data={"180F": b"\x64"},  # Battery level 100%
             # Extended advertising specific fields
             extended_payload=b"\x01\x02\x03\x04\x05",
             periodic_advertising_data=b"\xaa\xbb\xcc\xdd",
