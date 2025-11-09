@@ -11,6 +11,7 @@ import logging
 
 from ..gatt.characteristics.utils import DataParser
 from ..registry import ad_types_registry, appearance_values_registry, class_of_device_registry
+from ..registry import ad_types_registry, appearance_values_registry, company_identifiers_registry
 from ..types import (
     BLEAdvertisingFlags,
     BLEAdvertisingPDU,
@@ -99,6 +100,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             parsed_structures=parsed_data,
             local_name=parsed_data.local_name,
             manufacturer_data=parsed_data.manufacturer_data,
+            manufacturer_name=parsed_data.manufacturer_name,
             service_uuids=parsed_data.service_uuids,
             tx_power=parsed_data.tx_power if parsed_data.tx_power != 0 else None,
             flags=parsed_data.flags if parsed_data.flags != 0 else None,
@@ -266,6 +268,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             parsed_structures=parsed_data,
             local_name=parsed_data.local_name,
             manufacturer_data=parsed_data.manufacturer_data,
+            manufacturer_name=parsed_data.manufacturer_name,
             service_uuids=parsed_data.service_uuids,
             tx_power=parsed_data.tx_power if parsed_data.tx_power != 0 else None,
             flags=parsed_data.flags if parsed_data.flags != 0 else None,
@@ -321,6 +324,9 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             elif ad_type == ADType.MANUFACTURER_SPECIFIC_DATA and len(ad_data) >= 2:
                 company_id = DataParser.parse_int16(ad_data, 0, signed=False)
                 parsed.manufacturer_data[company_id] = ad_data[2:]
+                # Resolve company name from registry if not already set
+                if parsed.manufacturer_name is None:
+                    parsed.manufacturer_name = company_identifiers_registry.get_company_name(company_id)
             elif ad_type == ADType.APPEARANCE and len(ad_data) >= 2:
                 raw_value = DataParser.parse_int16(ad_data, 0, signed=False)
                 appearance_info = appearance_values_registry.get_appearance_info(raw_value)

@@ -12,6 +12,9 @@ All existing registries are re-exported from this module for backward compatibil
 
 from bluetooth_sig.registry.base import BaseRegistry
 
+# Company identifiers registry (from assigned_numbers/company_identifiers/)
+from bluetooth_sig.registry.company_identifiers import company_identifiers_registry
+
 # Core registries (from assigned_numbers/core/)
 from bluetooth_sig.registry.core import ad_types_registry
 from bluetooth_sig.registry.core.appearance_values import appearance_values_registry
@@ -33,6 +36,8 @@ __all__ = [
     "ad_types_registry",
     "appearance_values_registry",
     "class_of_device_registry",
+    # Company identifiers
+    "company_identifiers_registry",
     # UUID registries
     "browse_groups_registry",
     "declarations_registry",
