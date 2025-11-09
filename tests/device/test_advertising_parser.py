@@ -118,7 +118,7 @@ class TestParsedADStructures:
         """Test creation of ParsedADStructures dataclass."""
         parsed = ParsedADStructures()
         assert parsed.manufacturer_data == {}
-        assert parsed.manufacturer_name is None
+        assert parsed.manufacturer_names == {}
         assert parsed.service_uuids == []
         assert parsed.local_name == ""
         assert parsed.tx_power == 0
@@ -128,7 +128,7 @@ class TestParsedADStructures:
         """Test ParsedADStructures with populated data."""
         parsed = ParsedADStructures(
             manufacturer_data={0x1234: b"test_data"},
-            manufacturer_name="Test Company",
+            manufacturer_names={0x1234: "Test Company"},
             service_uuids=["180F", "180A"],
             local_name="Test Device",
             tx_power=-50,
@@ -136,7 +136,7 @@ class TestParsedADStructures:
         )
 
         assert parsed.manufacturer_data == {0x1234: b"test_data"}
-        assert parsed.manufacturer_name == "Test Company"
+        assert parsed.manufacturer_names == {0x1234: "Test Company"}
         assert parsed.service_uuids == ["180F", "180A"]
         assert parsed.local_name == "Test Device"
         assert parsed.tx_power == -50
@@ -170,12 +170,13 @@ class TestAdvertisingParserWithManufacturerData:
         result = parser.parse_advertising_data(bytes(ad_data))
 
         # Verify manufacturer data was parsed
-        assert 0x004C in result.manufacturer_data
-        assert result.manufacturer_data[0x004C] == b"\x12\x02\x00\x00"
+        assert 0x004C in result.parsed_structures.manufacturer_data
+        assert result.parsed_structures.manufacturer_data[0x004C] == b"\x12\x02\x00\x00"
 
         # Verify company name was resolved (if YAML loaded)
-        if result.manufacturer_name:
-            assert result.manufacturer_name == "Apple, Inc."
+        if result.parsed_structures.manufacturer_names:
+            assert 0x004C in result.parsed_structures.manufacturer_names
+            assert result.parsed_structures.manufacturer_names[0x004C] == "Apple, Inc."
 
     def test_parse_microsoft_manufacturer_data(self) -> None:
         """Test parsing advertising data with Microsoft manufacturer data."""
@@ -196,12 +197,13 @@ class TestAdvertisingParserWithManufacturerData:
         result = parser.parse_advertising_data(bytes(ad_data))
 
         # Verify manufacturer data was parsed
-        assert 0x0006 in result.manufacturer_data
-        assert result.manufacturer_data[0x0006] == b"\xaa\xbb"
+        assert 0x0006 in result.parsed_structures.manufacturer_data
+        assert result.parsed_structures.manufacturer_data[0x0006] == b"\xaa\xbb"
 
         # Verify company name was resolved (if YAML loaded)
-        if result.manufacturer_name:
-            assert result.manufacturer_name == "Microsoft"
+        if result.parsed_structures.manufacturer_names:
+            assert 0x0006 in result.parsed_structures.manufacturer_names
+            assert result.parsed_structures.manufacturer_names[0x0006] == "Microsoft"
 
     def test_parse_google_manufacturer_data(self) -> None:
         """Test parsing advertising data with Google manufacturer data."""
@@ -221,12 +223,13 @@ class TestAdvertisingParserWithManufacturerData:
         result = parser.parse_advertising_data(bytes(ad_data))
 
         # Verify manufacturer data was parsed
-        assert 0x00E0 in result.manufacturer_data
-        assert result.manufacturer_data[0x00E0] == b"\x01"
+        assert 0x00E0 in result.parsed_structures.manufacturer_data
+        assert result.parsed_structures.manufacturer_data[0x00E0] == b"\x01"
 
         # Verify company name was resolved (if YAML loaded)
-        if result.manufacturer_name:
-            assert result.manufacturer_name == "Google"
+        if result.parsed_structures.manufacturer_names:
+            assert 0x00E0 in result.parsed_structures.manufacturer_names
+            assert result.parsed_structures.manufacturer_names[0x00E0] == "Google"
 
     def test_parse_unknown_manufacturer_data(self) -> None:
         """Test parsing advertising data with unknown manufacturer ID."""
@@ -246,11 +249,53 @@ class TestAdvertisingParserWithManufacturerData:
         result = parser.parse_advertising_data(bytes(ad_data))
 
         # Verify manufacturer data was parsed
-        assert 0xFFFF in result.manufacturer_data
-        assert result.manufacturer_data[0xFFFF] == b"\x99"
+        assert 0xFFFF in result.parsed_structures.manufacturer_data
+        assert result.parsed_structures.manufacturer_data[0xFFFF] == b"\x99"
 
-        # Verify company name is None for unknown IDs
-        assert result.manufacturer_name is None
+        # Verify company name not resolved for unknown IDs
+        assert len(result.parsed_structures.manufacturer_names) == 0
+
+    def test_parse_multiple_manufacturer_data(self) -> None:
+        """Test parsing advertising data with multiple manufacturer data entries."""
+        parser = AdvertisingParser()
+
+        # Construct advertising data with multiple manufacturer data entries
+        # Apple (0x004C) and Microsoft (0x0006)
+        ad_data = bytearray(
+            [
+                # Apple manufacturer data
+                0x07,  # Length: 7 bytes total
+                0xFF,  # AD Type: Manufacturer Specific Data
+                0x4C,
+                0x00,  # Company ID: 0x004C (Apple) - little-endian
+                0x12,
+                0x02,
+                0x00,
+                0x00,  # Arbitrary manufacturer data
+                # Microsoft manufacturer data
+                0x05,  # Length: 5 bytes total
+                0xFF,  # AD Type: Manufacturer Specific Data
+                0x06,
+                0x00,  # Company ID: 0x0006 (Microsoft) - little-endian
+                0xAA,
+                0xBB,  # Arbitrary manufacturer data
+            ]
+        )
+
+        result = parser.parse_advertising_data(bytes(ad_data))
+
+        # Verify both manufacturer data entries were parsed
+        assert 0x004C in result.parsed_structures.manufacturer_data
+        assert result.parsed_structures.manufacturer_data[0x004C] == b"\x12\x02\x00\x00"
+        assert 0x0006 in result.parsed_structures.manufacturer_data
+        assert result.parsed_structures.manufacturer_data[0x0006] == b"\xaa\xbb"
+
+        # Verify both company names were resolved (if YAML loaded)
+        if result.parsed_structures.manufacturer_names:
+            assert 0x004C in result.parsed_structures.manufacturer_names
+            assert result.parsed_structures.manufacturer_names[0x004C] == "Apple, Inc."
+            assert 0x0006 in result.parsed_structures.manufacturer_names
+            assert result.parsed_structures.manufacturer_names[0x0006] == "Microsoft"
 
     def test_parse_advertising_without_manufacturer_data(self) -> None:
         """Test parsing advertising data without manufacturer data."""
@@ -276,6 +321,6 @@ class TestAdvertisingParserWithManufacturerData:
         result = parser.parse_advertising_data(bytes(ad_data))
 
         # Verify no manufacturer data
-        assert len(result.manufacturer_data) == 0
-        assert result.manufacturer_name is None
-        assert result.local_name == "TestName"
+        assert len(result.parsed_structures.manufacturer_data) == 0
+        assert len(result.parsed_structures.manufacturer_names) == 0
+        assert result.parsed_structures.local_name == "TestName"
