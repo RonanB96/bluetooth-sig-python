@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 
 from ..gatt.characteristics.utils import DataParser
-from ..registry import ad_types_registry
+from ..registry import ad_types_registry, appearance_values_registry
 from ..types import (
     BLEAdvertisingFlags,
     BLEAdvertisingPDU,
@@ -22,6 +22,7 @@ from ..types import (
     PDUType,
 )
 from ..types.ad_types_constants import ADType
+from ..types.appearance import AppearanceData
 
 logger = logging.getLogger(__name__)
 
@@ -350,7 +351,12 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 company_id = DataParser.parse_int16(ad_data, 0, signed=False)
                 parsed.manufacturer_data[company_id] = ad_data[2:]
             elif ad_type == ADType.APPEARANCE and len(ad_data) >= 2:
-                parsed.appearance = DataParser.parse_int16(ad_data, 0, signed=False)
+                raw_value = DataParser.parse_int16(ad_data, 0, signed=False)
+                appearance_info = appearance_values_registry.get_appearance_info(raw_value)
+                parsed.appearance = AppearanceData(raw_value=raw_value, info=appearance_info)
+            elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_data) >= 2:
+                service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
+                parsed.service_data[service_uuid] = ad_data[2:]
             elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_data) >= 2:
                 service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
                 parsed.service_data[service_uuid] = ad_data[2:]

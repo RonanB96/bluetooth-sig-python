@@ -8,6 +8,7 @@ Adapters should provide async implementations of the methods below. For
 sync-only libraries an adapter can run sync calls in a thread and expose
 an async interface.
 """
+# pylint: disable=duplicate-code  # Pattern repetition is expected for protocol definitions
 
 from __future__ import annotations
 

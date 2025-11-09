@@ -12,7 +12,11 @@ from typing import cast
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device.advertising_parser import AdvertisingParser
-from bluetooth_sig.types.advertising import BLEAdvertisingFlags, DeviceAdvertiserData
+from bluetooth_sig.types.advertising import (
+    BLEAdvertisingFlags,
+    DeviceAdvertiserData,
+)
+from bluetooth_sig.types.appearance import AppearanceData
 
 
 def display_advertising_data(
@@ -420,7 +424,7 @@ async def main(
             tx_power=-50,
             flags=BLEAdvertisingFlags(0x06),
             rssi=-45,
-            appearance=0x03C0,  # Generic Computer
+            appearance=AppearanceData(raw_value=0x03C0, info=None),  # Generic Computer
             service_data={"180F": b"\x64"},  # Battery level 100%
         )
         display_advertising_data(parsed_data, translator, show_not_found, show_debug)
@@ -440,7 +444,7 @@ async def main(
             tx_power=-40,
             flags=BLEAdvertisingFlags(0x06),
             rssi=-35,
-            appearance=0x03C1,  # Generic Computer with extended features
+            appearance=AppearanceData(raw_value=0x03C1, info=None),  # Generic Computer with extended features
             service_data={"180F": b"\x64"},  # Battery level 100%
             # Extended advertising specific fields
             extended_payload=b"\x01\x02\x03\x04\x05",

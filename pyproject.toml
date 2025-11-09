@@ -260,12 +260,6 @@ module = "pydantic.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "bluetooth_sig.registry.core.ad_types"
-# Double-checked locking pattern causes false positive unreachable warning
-# The second check inside the lock is necessary for thread safety
-warn_unreachable = false
-
-[[tool.mypy.overrides]]
 module = "simplepyble.*"
 # Simplepyble is an optional external dependency used in examples; it does not ship
 # type stubs. Allow missing imports for it so example code mypy checks do not fail.

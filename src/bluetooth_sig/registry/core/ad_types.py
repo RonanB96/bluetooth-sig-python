@@ -30,14 +30,9 @@ class ADTypesRegistry(BaseRegistry[ADTypeInfo]):
 
     def _ensure_loaded(self) -> None:
         """Lazy load: only parse YAML when first lookup happens."""
-        if self._loaded:
-            return
 
-        with self._lock:
-            # Double-check after acquiring lock for thread safety
-            if self._loaded:
-                return
-
+        def _load() -> None:
+            """Perform the actual loading."""
             base_path = find_bluetooth_sig_path()
             if not base_path:
                 logger.warning("Bluetooth SIG path not found. AD types registry will be empty.")
@@ -89,8 +84,10 @@ class ADTypesRegistry(BaseRegistry[ADTypeInfo]):
                     "Failed to load AD types from YAML: %s. Registry will be empty.",
                     e,
                 )
-            finally:
-                self._loaded = True
+
+            self._loaded = True
+
+        self._lazy_load(self._loaded, _load)
 
     def get_ad_type_info(self, ad_type: int) -> ADTypeInfo | None:
         """Get AD type info by value (lazy loads on first call).

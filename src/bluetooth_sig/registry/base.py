@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from typing import Generic, TypeVar
+from typing import Callable, Generic, TypeVar
 
 T = TypeVar("T")
 
@@ -26,3 +26,24 @@ class BaseRegistry(Generic[T]):
                 if cls._instance is None:
                     cls._instance = cls()
         return cls._instance
+
+    def _lazy_load(self, loaded_flag: bool, loader: Callable[[], None]) -> bool:
+        """Thread-safe lazy loading helper using double-checked locking pattern.
+
+        Args:
+            loaded_flag: Boolean indicating if data is already loaded
+            loader: Callable that performs the actual loading
+
+        Returns:
+            True if loading was performed, False if already loaded
+        """
+        if loaded_flag:
+            return False
+
+        with self._lock:
+            # Double-check after acquiring lock for thread safety
+            if loaded_flag:
+                return False  # type: ignore[unreachable]  # Double-checked locking pattern
+
+            loader()
+            return True
