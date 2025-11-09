@@ -49,8 +49,13 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
 
     def _ensure_loaded(self) -> None:
         """Ensure the registry is loaded (thread-safe lazy loading)."""
-        def _load() -> None:
-            """Load SDO UUIDs from the Bluetooth SIG YAML file."""
+        if self._loaded:
+            return
+        
+        with self._lock:
+            if self._loaded:
+                return
+            
             base_path = find_bluetooth_sig_path()
             if not base_path:
                 self._loaded = True
@@ -79,8 +84,6 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
                         # Skip malformed entries
                         continue
             self._loaded = True
-
-        self._lazy_load(self._loaded, _load)
 
     def get_sdo_info(self, uuid: str | int | BluetoothUUID) -> SdoInfo | None:
         """Get SDO information by UUID.

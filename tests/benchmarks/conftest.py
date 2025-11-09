@@ -22,13 +22,13 @@ def battery_level_data():
 @pytest.fixture
 def temperature_data():
     """Valid temperature characteristic data."""
-    return bytearray([0x64, 0x09])  # 24.36°C
+    return bytearray([0x64, 0x09])  # 24.04°C
 
 
 @pytest.fixture
 def humidity_data():
     """Valid humidity characteristic data."""
-    return bytearray([0x3A, 0x13])  # 49.46%
+    return bytearray([0x3A, 0x13])  # 49.22%
 
 
 @pytest.fixture

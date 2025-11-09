@@ -30,8 +30,13 @@ class ObjectTypesRegistry(BaseRegistry[ObjectTypeInfo]):
 
     def _ensure_loaded(self) -> None:
         """Ensure the registry is loaded (thread-safe lazy loading)."""
-        def _load() -> None:
-            """Load object type UUIDs from YAML file."""
+        if self._loaded:
+            return
+        
+        with self._lock:
+            if self._loaded:
+                return
+            
             base_path = find_bluetooth_sig_path()
             if not base_path:
                 self._loaded = True
@@ -55,8 +60,6 @@ class ObjectTypesRegistry(BaseRegistry[ObjectTypeInfo]):
                         # Skip malformed entries
                         continue
             self._loaded = True
-
-        self._lazy_load(self._loaded, _load)
 
     def get_object_type_info(self, uuid: str | int | BluetoothUUID) -> ObjectTypeInfo | None:
         """Get object type information by UUID.

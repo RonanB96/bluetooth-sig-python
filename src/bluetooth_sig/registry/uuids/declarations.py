@@ -30,8 +30,13 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
 
     def _ensure_loaded(self) -> None:
         """Ensure the registry is loaded (thread-safe lazy loading)."""
-        def _load() -> None:
-            """Load declarations from the Bluetooth SIG YAML file."""
+        if self._loaded:
+            return
+        
+        with self._lock:
+            if self._loaded:
+                return
+            
             base_path = find_bluetooth_sig_path()
             if not base_path:
                 self._loaded = True
@@ -57,8 +62,6 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
                         # Skip malformed entries
                         continue
             self._loaded = True
-
-        self._lazy_load(self._loaded, _load)
 
     def get_declaration_info(self, uuid: str | int | BluetoothUUID) -> DeclarationInfo | None:
         """Get declaration information by UUID.

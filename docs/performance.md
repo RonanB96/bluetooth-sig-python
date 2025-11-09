@@ -91,7 +91,7 @@ For most applications, this overhead is negligible compared to BLE I/O latency (
 Based on benchmark observations:
 - **Translator instance**: Lightweight (registries use lazy loading)
 - **Per-parse overhead**: Minimal (msgspec structs are efficient)
-- **No memory leaks**: Validated with 1M+ parses (200 seconds for 1000 parses)
+- **No memory leaks**: Validated with 1M+ parses (200 seconds for 1M parses)
 
 ## Real-World Scenarios
 

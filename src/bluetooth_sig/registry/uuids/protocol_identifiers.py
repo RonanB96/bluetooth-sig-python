@@ -40,8 +40,13 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
 
     def _ensure_loaded(self) -> None:
         """Ensure the registry is loaded (thread-safe lazy loading)."""
-        def _load() -> None:
-            """Load protocol identifiers from the Bluetooth SIG YAML file."""
+        if self._loaded:
+            return
+        
+        with self._lock:
+            if self._loaded:
+                return
+            
             base_path = find_bluetooth_sig_path()
             if not base_path:
                 self._loaded = True
@@ -65,8 +70,6 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
                         # Skip malformed entries
                         continue
             self._loaded = True
-
-        self._lazy_load(self._loaded, _load)
 
     def get_protocol_info(self, identifier: str | int | BluetoothUUID) -> ProtocolInfo | None:
         """Get protocol information by UUID or name.

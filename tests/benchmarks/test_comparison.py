@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 
 class TestLibraryVsManual:
     """Compare library performance vs manual parsing."""
