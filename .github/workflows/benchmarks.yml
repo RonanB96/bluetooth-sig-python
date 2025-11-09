@@ -1,0 +1,57 @@
+name: Performance Benchmarks
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Required for bluetooth_sig submodule
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-benchmark msgspec pyyaml typing_extensions
+
+    - name: Set consistent Python hash seed
+      run: echo "PYTHONHASHSEED=0" >> $GITHUB_ENV
+
+    - name: Run benchmarks
+      run: |
+        export PYTHONPATH=$GITHUB_WORKSPACE/src:$PYTHONPATH
+        python -m pytest tests/benchmarks/ \
+          --benchmark-only \
+          --benchmark-json=benchmark.json \
+          --benchmark-columns=min,max,mean,stddev \
+          --benchmark-sort=name
+
+    - name: Store benchmark result
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'pytest'
+        output-file-path: benchmark.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        alert-threshold: '200%'
+        comment-on-alert: true
+        fail-on-alert: true
+        gh-pages-branch: gh-pages
+        benchmark-data-dir-path: dev/bench
+
+    - name: Upload benchmark artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: benchmark.json
