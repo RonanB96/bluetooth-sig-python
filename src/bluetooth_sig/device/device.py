@@ -19,8 +19,8 @@ from ..gatt.descriptors.registry import DescriptorRegistry
 from ..gatt.services import GattServiceRegistry, ServiceName
 from ..gatt.services.base import BaseGattService, UnknownService
 from ..types import (
+    AdvertisingData,
     CharacteristicDataProtocol,
-    DeviceAdvertiserData,
 )
 from ..types.data_types import CharacteristicData
 from ..types.device_types import DeviceEncryption, DeviceService
@@ -126,7 +126,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self._name: str = ""
         self.services: dict[str, DeviceService] = {}
         self.encryption = DeviceEncryption()
-        self.advertiser_data = DeviceAdvertiserData(raw_data=b"")
+        self.advertiser_data = AdvertisingData(raw_data=b"")
 
         # Advertising parser for handling advertising data
         self.advertising_parser = AdvertisingParser()
@@ -185,8 +185,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         device_info = DeviceInfo(
             address=self.address,
             name=self.name,
-            manufacturer_data=self.advertiser_data.parsed_structures.manufacturer_data,
-            service_uuids=self.advertiser_data.parsed_structures.service_uuids,
+            manufacturer_data=self.advertiser_data.ad_structures.core.manufacturer_data,
+            service_uuids=self.advertiser_data.ad_structures.core.service_uuids,
         )
 
         base_ctx = CharacteristicContext(device_info=device_info)
@@ -386,8 +386,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.advertiser_data = parsed_data
 
         # Update device name if not set
-        if parsed_data.parsed_structures.local_name and not self.name:
-            self.name = parsed_data.parsed_structures.local_name
+        if parsed_data.ad_structures.core.local_name and not self.name:
+            self.name = parsed_data.ad_structures.core.local_name
 
     def get_characteristic_data(
         self, service_name: str | ServiceName, char_uuid: str
@@ -551,14 +551,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             self._device_info_cache = DeviceInfo(
                 address=self.address,
                 name=self.name,
-                manufacturer_data=self.advertiser_data.parsed_structures.manufacturer_data,
-                service_uuids=self.advertiser_data.parsed_structures.service_uuids,
+                manufacturer_data=self.advertiser_data.ad_structures.core.manufacturer_data,
+                service_uuids=self.advertiser_data.ad_structures.core.service_uuids,
             )
         else:
             # Update existing cache object with current data
             self._device_info_cache.name = self.name
-            self._device_info_cache.manufacturer_data = self.advertiser_data.parsed_structures.manufacturer_data
-            self._device_info_cache.service_uuids = self.advertiser_data.parsed_structures.service_uuids
+            self._device_info_cache.manufacturer_data = self.advertiser_data.ad_structures.core.manufacturer_data
+            self._device_info_cache.service_uuids = self.advertiser_data.ad_structures.core.service_uuids
         return self._device_info_cache
 
     @property

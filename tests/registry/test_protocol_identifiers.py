@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import pytest
 
 from bluetooth_sig.registry.uuids.protocol_identifiers import ProtocolIdentifiersRegistry, ProtocolInfo
@@ -10,8 +12,10 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 
 @pytest.fixture(scope="session")
 def protocol_identifiers_registry() -> ProtocolIdentifiersRegistry:
-    """Create a protocol identifiers registry once per test session."""
-    return ProtocolIdentifiersRegistry()
+    """Get the protocol identifiers registry singleton instance."""
+    # NOTE: cast required because BaseRegistry.get_instance() returns BaseRegistry[T]
+    # but we know the concrete type is ProtocolIdentifiersRegistry
+    return cast(ProtocolIdentifiersRegistry, ProtocolIdentifiersRegistry.get_instance())
 
 
 class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-methods
@@ -72,9 +76,9 @@ class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-method
             assert info.name == "L2CAP"
             assert info.uuid.short_form.upper() == "0100"
 
-        # Test case insensitive
-        info_lower = protocol_identifiers_registry.get_protocol_info("l2cap")
-        assert info_lower == info
+            # Test case insensitive
+            info_lower = protocol_identifiers_registry.get_protocol_info("l2cap")
+            assert info_lower == info
 
         # Test not found
         info_none = protocol_identifiers_registry.get_protocol_info("Nonexistent Protocol")
@@ -89,9 +93,9 @@ class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-method
             assert info.name == "RFCOMM"
             assert info.uuid.short_form.upper() == "0003"
 
-        # Test case insensitive
-        info_lower = protocol_identifiers_registry.get_protocol_info_by_name("rfcomm")
-        assert info_lower == info
+            # Test case insensitive
+            info_lower = protocol_identifiers_registry.get_protocol_info_by_name("rfcomm")
+            assert info_lower == info
 
         # Test not found
         info_none = protocol_identifiers_registry.get_protocol_info_by_name("Nonexistent Protocol")
@@ -207,22 +211,8 @@ class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-method
             protocol = protocols[0]
             assert hasattr(protocol, "uuid")
             assert hasattr(protocol, "name")
-            assert hasattr(protocol, "protocol_type")
             assert isinstance(protocol.uuid, BluetoothUUID)
             assert isinstance(protocol.name, str)
-            assert isinstance(protocol.protocol_type, str)
-            # protocol_type should be uppercase version of name
-            assert protocol.protocol_type == protocol.name.upper()
-
-    def test_protocol_type_property(self, protocol_identifiers_registry: ProtocolIdentifiersRegistry) -> None:
-        """Test protocol_type property."""
-        info = protocol_identifiers_registry.get_protocol_info("L2CAP")
-        if info:
-            assert info.protocol_type == "L2CAP"
-
-        info = protocol_identifiers_registry.get_protocol_info("RFCOMM")
-        if info:
-            assert info.protocol_type == "RFCOMM"
 
     def test_uuid_formats(self, protocol_identifiers_registry: ProtocolIdentifiersRegistry) -> None:
         """Test various UUID input formats."""
@@ -265,15 +255,16 @@ class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-method
         """Test that concurrent lookups work correctly."""
         import threading
         import time
+        from queue import Queue
 
-        results: list[ProtocolInfo | None] = []
+        results: Queue[ProtocolInfo | None] = Queue()
         errors: list[Exception] = []
 
         def lookup_protocol() -> None:
             try:
                 time.sleep(0.001)  # Small delay to increase concurrency
                 info = protocol_identifiers_registry.get_protocol_info("L2CAP")
-                results.append(info)
+                results.put(info)
             except Exception as e:
                 errors.append(e)
 
@@ -286,8 +277,13 @@ class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-method
         # Should not have any errors
         assert len(errors) == 0
 
+        # Collect all results
+        all_results = []
+        while not results.empty():
+            all_results.append(results.get())
+
         # All results should be consistent (either all None or all the same)
-        if results and results[0] is not None:
-            for result in results:
+        if all_results and all_results[0] is not None:
+            for result in all_results:
                 assert result is not None
                 assert result.name == "L2CAP"

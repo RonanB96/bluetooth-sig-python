@@ -17,13 +17,14 @@ from ..registry import (
     company_identifiers_registry,
 )
 from ..types import (
+    AdvertisingData,
+    AdvertisingDataStructures,
     BLEAdvertisingFlags,
     BLEAdvertisingPDU,
     BLEExtendedHeader,
-    DeviceAdvertiserData,
-    ParsedADStructures,
-    PDUConstants,
-    PDUFlags,
+    ExtendedAdvertisingData,
+    PDUHeaderFlags,
+    PDULayout,
     PDUType,
 )
 from ..types.ad_types_constants import ADType
@@ -39,14 +40,14 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
     device information, manufacturer data, and service UUIDs.
     """
 
-    def parse_advertising_data(self, raw_data: bytes) -> DeviceAdvertiserData:
+    def parse_advertising_data(self, raw_data: bytes) -> AdvertisingData:
         """Parse raw advertising data and return structured information.
 
         Args:
             raw_data: Raw bytes from BLE advertising packet
 
         Returns:
-            DeviceAdvertiserData with parsed information
+            AdvertisingData with parsed information
 
         """
         if self._is_extended_advertising_pdu(raw_data):
@@ -63,25 +64,25 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             True if extended advertising PDU, False otherwise
 
         """
-        if len(data) < PDUConstants.PDU_HEADER:
+        if len(data) < PDULayout.PDU_HEADER:
             return False
 
         pdu_header = data[0]
-        pdu_type = pdu_header & PDUFlags.TYPE_MASK
+        pdu_type = pdu_header & PDUHeaderFlags.TYPE_MASK
 
         return pdu_type in (PDUType.ADV_EXT_IND.value, PDUType.ADV_AUX_IND.value)
 
-    def _parse_extended_advertising(self, raw_data: bytes) -> DeviceAdvertiserData:
+    def _parse_extended_advertising(self, raw_data: bytes) -> AdvertisingData:
         """Parse extended advertising data.
 
         Args:
             raw_data: Raw extended advertising data
 
         Returns:
-            Parsed DeviceAdvertiserData
+            Parsed AdvertisingData
 
         """
-        if len(raw_data) < PDUConstants.MIN_EXTENDED_PDU:
+        if len(raw_data) < PDULayout.MIN_EXTENDED_PDU:
             return self._parse_legacy_advertising(raw_data)
 
         pdu = self._parse_extended_pdu(raw_data)
@@ -89,7 +90,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
         if not pdu:
             return self._parse_legacy_advertising(raw_data)
 
-        parsed_data = ParsedADStructures()
+        parsed_data = AdvertisingDataStructures()
 
         if pdu.payload:
             parsed_data = self._parse_ad_structures(pdu.payload)
@@ -99,11 +100,13 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             aux_packets = self._parse_auxiliary_packets(pdu.extended_header.auxiliary_pointer)
             auxiliary_packets.extend(aux_packets)
 
-        return DeviceAdvertiserData(
+        return AdvertisingData(
             raw_data=raw_data,
-            parsed_structures=parsed_data,
-            extended_payload=pdu.payload,
-            auxiliary_packets=auxiliary_packets,
+            ad_structures=parsed_data,
+            extended=ExtendedAdvertisingData(
+                extended_payload=pdu.payload,
+                auxiliary_packets=auxiliary_packets,
+            ),
         )
 
     def _parse_extended_pdu(self, data: bytes) -> BLEAdvertisingPDU | None:
@@ -116,28 +119,28 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             Parsed BLEAdvertisingPDU or None if invalid
 
         """
-        if len(data) < PDUConstants.MIN_EXTENDED_PDU:
+        if len(data) < PDULayout.MIN_EXTENDED_PDU:
             return None
 
-        header = int.from_bytes(data[0 : PDUConstants.PDU_HEADER], byteorder="little")
-        pdu_type = header & PDUFlags.TYPE_MASK
-        tx_add = bool(header & PDUFlags.TX_ADD_MASK)
-        rx_add = bool(header & PDUFlags.RX_ADD_MASK)
+        header = int.from_bytes(data[0 : PDULayout.PDU_HEADER], byteorder="little")
+        pdu_type = header & PDUHeaderFlags.TYPE_MASK
+        tx_add = bool(header & PDUHeaderFlags.TX_ADD_MASK)
+        rx_add = bool(header & PDUHeaderFlags.RX_ADD_MASK)
 
-        length = data[PDUConstants.PDU_LENGTH_OFFSET]
+        length = data[PDULayout.PDU_LENGTH_OFFSET]
 
-        if len(data) < PDUConstants.MIN_EXTENDED_PDU + length:
+        if len(data) < PDULayout.MIN_EXTENDED_PDU + length:
             return None
 
-        extended_header_start = PDUConstants.EXTENDED_HEADER_START
+        extended_header_start = PDULayout.EXTENDED_HEADER_START
 
         extended_header = self._parse_extended_header(data[extended_header_start:])
 
         if not extended_header:
             return None
 
-        payload_start = extended_header_start + extended_header.extended_header_length + PDUConstants.EXT_HEADER_LENGTH
-        payload_length = length - (extended_header.extended_header_length + PDUConstants.EXT_HEADER_LENGTH)
+        payload_start = extended_header_start + extended_header.extended_header_length + PDULayout.EXT_HEADER_LENGTH
+        payload_length = length - (extended_header.extended_header_length + PDULayout.EXT_HEADER_LENGTH)
 
         if payload_start + payload_length > len(data):
             return None
@@ -181,53 +184,53 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
         adv_mode = data[1]
         header.adv_mode = adv_mode
 
-        offset = PDUConstants.ADV_ADDR_OFFSET  # Start after length and mode bytes
+        offset = PDULayout.ADV_ADDR_OFFSET  # Start after length and mode bytes
 
         if header.has_extended_advertiser_address:
-            if offset + PDUConstants.BLE_ADDR > len(data):
+            if offset + PDULayout.BLE_ADDR > len(data):
                 return None
-            header.extended_advertiser_address = data[offset : offset + PDUConstants.BLE_ADDR]
-            offset += PDUConstants.BLE_ADDR
+            header.extended_advertiser_address = data[offset : offset + PDULayout.BLE_ADDR]
+            offset += PDULayout.BLE_ADDR
 
         if header.has_extended_target_address:
-            if offset + PDUConstants.BLE_ADDR > len(data):
+            if offset + PDULayout.BLE_ADDR > len(data):
                 return None
-            header.extended_target_address = data[offset : offset + PDUConstants.BLE_ADDR]
-            offset += PDUConstants.BLE_ADDR
+            header.extended_target_address = data[offset : offset + PDULayout.BLE_ADDR]
+            offset += PDULayout.BLE_ADDR
 
         if header.has_cte_info:
-            if offset + PDUConstants.CTE_INFO > len(data):
+            if offset + PDULayout.CTE_INFO > len(data):
                 return None
-            header.cte_info = data[offset : offset + PDUConstants.CTE_INFO]
-            offset += PDUConstants.CTE_INFO
+            header.cte_info = data[offset : offset + PDULayout.CTE_INFO]
+            offset += PDULayout.CTE_INFO
 
         if header.has_advertising_data_info:
-            if offset + PDUConstants.ADV_DATA_INFO > len(data):
+            if offset + PDULayout.ADV_DATA_INFO > len(data):
                 return None
-            header.advertising_data_info = data[offset : offset + PDUConstants.ADV_DATA_INFO]
-            offset += PDUConstants.ADV_DATA_INFO
+            header.advertising_data_info = data[offset : offset + PDULayout.ADV_DATA_INFO]
+            offset += PDULayout.ADV_DATA_INFO
 
         if header.has_auxiliary_pointer:
-            if offset + PDUConstants.AUX_PTR > len(data):
+            if offset + PDULayout.AUX_PTR > len(data):
                 return None
-            header.auxiliary_pointer = data[offset : offset + PDUConstants.AUX_PTR]
-            offset += PDUConstants.AUX_PTR
+            header.auxiliary_pointer = data[offset : offset + PDULayout.AUX_PTR]
+            offset += PDULayout.AUX_PTR
 
         if header.has_sync_info:
-            if offset + PDUConstants.SYNC_INFO > len(data):
+            if offset + PDULayout.SYNC_INFO > len(data):
                 return None
-            header.sync_info = data[offset : offset + PDUConstants.SYNC_INFO]
-            offset += PDUConstants.SYNC_INFO
+            header.sync_info = data[offset : offset + PDULayout.SYNC_INFO]
+            offset += PDULayout.SYNC_INFO
 
         if header.has_tx_power:
-            if offset + PDUConstants.TX_POWER > len(data):
+            if offset + PDULayout.TX_POWER > len(data):
                 return None
             header.tx_power = int.from_bytes(
-                data[offset : offset + PDUConstants.TX_POWER],
+                data[offset : offset + PDULayout.TX_POWER],
                 byteorder="little",
                 signed=True,
             )
-            offset += PDUConstants.TX_POWER
+            offset += PDULayout.TX_POWER
 
         if header.has_additional_controller_data:
             header.additional_controller_advertising_data = data[offset:]
@@ -244,54 +247,54 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             List of auxiliary packets (currently returns empty list)
 
         """
-        if len(aux_ptr) != PDUConstants.AUX_PTR:
+        if len(aux_ptr) != PDULayout.AUX_PTR:
             return []
 
         return []
 
-    def _parse_legacy_advertising(self, raw_data: bytes) -> DeviceAdvertiserData:
+    def _parse_legacy_advertising(self, raw_data: bytes) -> AdvertisingData:
         """Parse legacy advertising data.
 
         Args:
             raw_data: Raw legacy advertising data
 
         Returns:
-            Parsed DeviceAdvertiserData
+            Parsed AdvertisingData
 
         """
         parsed_data = self._parse_ad_structures(raw_data)
-        return DeviceAdvertiserData(
+        return AdvertisingData(
             raw_data=raw_data,
-            parsed_structures=parsed_data,
+            ad_structures=parsed_data,
         )
 
-    def _parse_manufacturer_data(self, ad_data: bytes, parsed: ParsedADStructures) -> None:
+    def _parse_manufacturer_data(self, ad_data: bytes, parsed: AdvertisingDataStructures) -> None:
         """Parse manufacturer-specific data and resolve company name.
 
         Args:
             ad_data: Raw manufacturer-specific data bytes
-            parsed: ParsedADStructures object to update
+            parsed: AdvertisingDataStructures object to update
 
         """
         company_id = DataParser.parse_int16(ad_data, 0, signed=False)
-        parsed.manufacturer_data[company_id] = ad_data[2:]
+        parsed.core.manufacturer_data[company_id] = ad_data[2:]
         # Resolve company name from registry
         company_name = company_identifiers_registry.get_company_name(company_id)
         if company_name is not None:
-            parsed.manufacturer_names[company_id] = company_name
+            parsed.core.manufacturer_names[company_id] = company_name
 
-    def _parse_ad_structures(self, data: bytes) -> ParsedADStructures:
+    def _parse_ad_structures(self, data: bytes) -> AdvertisingDataStructures:
         """Parse advertising data structures from raw bytes.
 
         Args:
             data: Raw advertising data payload
 
         Returns:
-            ParsedADStructures object with extracted data
+            AdvertisingDataStructures object with extracted data
 
         """
         # pylint: disable=too-many-branches,too-many-statements
-        parsed = ParsedADStructures()
+        parsed = AdvertisingDataStructures()
 
         i = 0
         while i < len(data):
@@ -310,7 +313,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 logger.warning("Unknown AD type encountered: 0x%02X", ad_type)
 
             if ad_type == ADType.FLAGS and len(ad_data) >= 1:
-                parsed.flags = BLEAdvertisingFlags(ad_data[0])
+                parsed.properties.flags = BLEAdvertisingFlags(ad_data[0])
             elif ad_type in (
                 ADType.INCOMPLETE_16BIT_SERVICE_UUIDS,
                 ADType.COMPLETE_16BIT_SERVICE_UUIDS,
@@ -318,106 +321,110 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 for j in range(0, len(ad_data), 2):
                     if j + 1 < len(ad_data):
                         uuid_short = DataParser.parse_int16(ad_data, j, signed=False)
-                        parsed.service_uuids.append(f"{uuid_short:04X}")
+                        parsed.core.service_uuids.append(f"{uuid_short:04X}")
             elif ad_type in (ADType.SHORTENED_LOCAL_NAME, ADType.COMPLETE_LOCAL_NAME):
                 try:
-                    parsed.local_name = ad_data.decode("utf-8")
+                    parsed.core.local_name = ad_data.decode("utf-8")
                 except UnicodeDecodeError:
-                    parsed.local_name = ad_data.hex()
+                    parsed.core.local_name = ad_data.hex()
             elif ad_type == ADType.TX_POWER_LEVEL and len(ad_data) >= 1:
-                parsed.tx_power = int.from_bytes(ad_data[:1], byteorder="little", signed=True)
+                parsed.properties.tx_power = int.from_bytes(ad_data[:1], byteorder="little", signed=True)
             elif ad_type == ADType.MANUFACTURER_SPECIFIC_DATA and len(ad_data) >= 2:
                 self._parse_manufacturer_data(ad_data, parsed)
             elif ad_type == ADType.APPEARANCE and len(ad_data) >= 2:
                 raw_value = DataParser.parse_int16(ad_data, 0, signed=False)
                 appearance_info = appearance_values_registry.get_appearance_info(raw_value)
-                parsed.appearance = AppearanceData(raw_value=raw_value, info=appearance_info)
+                parsed.properties.appearance = AppearanceData(raw_value=raw_value, info=appearance_info)
             elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_data) >= 2:
                 service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
-                parsed.service_data[service_uuid] = ad_data[2:]
+                parsed.core.service_data[service_uuid] = ad_data[2:]
             elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_data) >= 2:
                 service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
-                parsed.service_data[service_uuid] = ad_data[2:]
+                parsed.core.service_data[service_uuid] = ad_data[2:]
             elif ad_type == ADType.URI:
                 try:
-                    parsed.uri = ad_data.decode("utf-8")
+                    parsed.core.uri = ad_data.decode("utf-8")
                 except UnicodeDecodeError:
-                    parsed.uri = ad_data.hex()
+                    parsed.core.uri = ad_data.hex()
             elif ad_type == ADType.INDOOR_POSITIONING:
-                parsed.indoor_positioning = ad_data
+                parsed.location.indoor_positioning = ad_data
             elif ad_type == ADType.TRANSPORT_DISCOVERY_DATA:
-                parsed.transport_discovery_data = ad_data
+                parsed.location.transport_discovery_data = ad_data
             elif ad_type == ADType.LE_SUPPORTED_FEATURES:
-                parsed.le_supported_features = ad_data
+                parsed.properties.le_supported_features = ad_data
             elif ad_type == ADType.ENCRYPTED_ADVERTISING_DATA:
-                parsed.encrypted_advertising_data = ad_data
+                parsed.security.encrypted_advertising_data = ad_data
             elif ad_type == ADType.PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION:
-                parsed.periodic_advertising_response_timing = ad_data
+                parsed.mesh.periodic_advertising_response_timing = ad_data
             elif ad_type == ADType.ELECTRONIC_SHELF_LABEL:
-                parsed.electronic_shelf_label = ad_data
+                parsed.mesh.electronic_shelf_label = ad_data
             elif ad_type == ADType.THREE_D_INFORMATION_DATA:
-                parsed.three_d_information = ad_data
+                parsed.location.three_d_information = ad_data
             elif ad_type == ADType.BROADCAST_NAME:
                 try:
-                    parsed.broadcast_name = ad_data.decode("utf-8")
+                    parsed.mesh.broadcast_name = ad_data.decode("utf-8")
                 except UnicodeDecodeError:
-                    parsed.broadcast_name = ad_data.hex()
+                    parsed.mesh.broadcast_name = ad_data.hex()
             elif ad_type == ADType.BROADCAST_CODE:
-                parsed.broadcast_code = ad_data
+                parsed.mesh.broadcast_code = ad_data
             elif ad_type == ADType.BIGINFO:
-                parsed.biginfo = ad_data
+                parsed.mesh.biginfo = ad_data
             elif ad_type == ADType.MESH_MESSAGE:
-                parsed.mesh_message = ad_data
+                parsed.mesh.mesh_message = ad_data
             elif ad_type == ADType.MESH_BEACON:
-                parsed.mesh_beacon = ad_data
+                parsed.mesh.mesh_beacon = ad_data
             elif ad_type == ADType.PUBLIC_TARGET_ADDRESS:
                 for j in range(0, len(ad_data), 6):
                     if j + 5 < len(ad_data):
                         addr_bytes = ad_data[j : j + 6]
                         addr_str = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
-                        parsed.public_target_address.append(addr_str)
+                        parsed.connection.public_target_address.append(addr_str)
             elif ad_type == ADType.RANDOM_TARGET_ADDRESS:
                 for j in range(0, len(ad_data), 6):
                     if j + 5 < len(ad_data):
                         addr_bytes = ad_data[j : j + 6]
                         addr_str = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
-                        parsed.random_target_address.append(addr_str)
+                        parsed.connection.random_target_address.append(addr_str)
             elif ad_type == ADType.ADVERTISING_INTERVAL and len(ad_data) >= 2:
-                parsed.advertising_interval = DataParser.parse_int16(ad_data, 0, signed=False)
+                parsed.connection.advertising_interval = DataParser.parse_int16(ad_data, 0, signed=False)
             elif ad_type == ADType.ADVERTISING_INTERVAL_LONG and len(ad_data) >= 3:
-                parsed.advertising_interval_long = int.from_bytes(ad_data[:3], byteorder="little", signed=False)
+                parsed.connection.advertising_interval_long = int.from_bytes(
+                    ad_data[:3], byteorder="little", signed=False
+                )
             elif ad_type == ADType.LE_BLUETOOTH_DEVICE_ADDRESS and len(ad_data) >= 6:
                 addr_bytes = ad_data[:6]
-                parsed.le_bluetooth_device_address = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
+                parsed.connection.le_bluetooth_device_address = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
             elif ad_type == ADType.LE_ROLE and len(ad_data) >= 1:
-                parsed.le_role = ad_data[0]
+                parsed.properties.le_role = ad_data[0]
             elif ad_type == ADType.CLASS_OF_DEVICE and len(ad_data) >= 3:
-                parsed.class_of_device = int.from_bytes(ad_data[:3], byteorder="little", signed=False)
+                parsed.properties.class_of_device = int.from_bytes(ad_data[:3], byteorder="little", signed=False)
             elif ad_type == ADType.SIMPLE_PAIRING_HASH_C:
-                parsed.simple_pairing_hash_c = ad_data
+                parsed.connection.simple_pairing_hash_c = ad_data
             elif ad_type == ADType.SIMPLE_PAIRING_RANDOMIZER_R:
-                parsed.simple_pairing_randomizer_r = ad_data
+                parsed.connection.simple_pairing_randomizer_r = ad_data
             elif ad_type == ADType.SECURITY_MANAGER_TK_VALUE:
-                parsed.security_manager_tk_value = ad_data
+                parsed.connection.security_manager_tk_value = ad_data
             elif ad_type == ADType.SECURITY_MANAGER_OUT_OF_BAND_FLAGS:
-                parsed.security_manager_out_of_band_flags = ad_data
+                parsed.connection.security_manager_out_of_band_flags = ad_data
             elif ad_type == ADType.SLAVE_CONNECTION_INTERVAL_RANGE:
-                parsed.slave_connection_interval_range = ad_data
+                parsed.connection.slave_connection_interval_range = ad_data
             elif ad_type == ADType.SECURE_CONNECTIONS_CONFIRMATION_VALUE:
-                parsed.secure_connections_confirmation = ad_data
+                parsed.connection.secure_connections_confirmation = ad_data
             elif ad_type == ADType.SECURE_CONNECTIONS_RANDOM_VALUE:
-                parsed.secure_connections_random = ad_data
+                parsed.connection.secure_connections_random = ad_data
             elif ad_type == ADType.CHANNEL_MAP_UPDATE_INDICATION:
-                parsed.channel_map_update_indication = ad_data
+                parsed.location.channel_map_update_indication = ad_data
             elif ad_type == ADType.PB_ADV:
-                parsed.pb_adv = ad_data
+                parsed.mesh.pb_adv = ad_data
             elif ad_type == ADType.RESOLVABLE_SET_IDENTIFIER:
-                parsed.resolvable_set_identifier = ad_data
+                parsed.security.resolvable_set_identifier = ad_data
 
             i += length + 1
 
         # Decode class_of_device if present
-        if parsed.class_of_device is not None:
-            parsed.class_of_device_info = class_of_device_registry.decode_class_of_device(parsed.class_of_device)
+        if parsed.properties.class_of_device is not None:
+            parsed.properties.class_of_device_info = class_of_device_registry.decode_class_of_device(
+                parsed.properties.class_of_device
+            )
 
         return parsed
