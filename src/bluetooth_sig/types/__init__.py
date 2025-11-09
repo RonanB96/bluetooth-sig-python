@@ -32,6 +32,7 @@ from .appearance import AppearanceData
 from .appearance_info import AppearanceInfo
 from .base_types import SIGInfo
 from .battery import BatteryChargeLevel, BatteryChargeState, BatteryChargingType, BatteryFaultReason
+from .class_of_device import ClassOfDeviceInfo
 from .context import CharacteristicContext, DeviceInfo
 from .data_types import (
     CharacteristicData,
@@ -95,6 +96,7 @@ __all__ = [
     "CharacteristicDataProtocol",
     "CharacteristicInfo",
     "CharacteristicRegistration",
+    "ClassOfDeviceInfo",
     "ConcentrationUnit",
     "DescriptorData",
     "DescriptorInfo",

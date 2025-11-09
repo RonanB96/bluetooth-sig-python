@@ -15,6 +15,7 @@ from bluetooth_sig.registry.base import BaseRegistry
 # Core registries (from assigned_numbers/core/)
 from bluetooth_sig.registry.core import ad_types_registry
 from bluetooth_sig.registry.core.appearance_values import appearance_values_registry
+from bluetooth_sig.registry.core.class_of_device import class_of_device_registry
 
 # UUID registries (from assigned_numbers/uuids/)
 from bluetooth_sig.registry.uuids.browse_groups import browse_groups_registry
@@ -31,6 +32,7 @@ __all__ = [
     # Core registries
     "ad_types_registry",
     "appearance_values_registry",
+    "class_of_device_registry",
     # UUID registries
     "browse_groups_registry",
     "declarations_registry",

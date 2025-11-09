@@ -9,6 +9,7 @@ import msgspec
 
 if TYPE_CHECKING:
     from bluetooth_sig.types.appearance import AppearanceData
+    from bluetooth_sig.types.class_of_device import ClassOfDeviceInfo
 
 
 class ADTypeInfo(msgspec.Struct, frozen=True, kw_only=True):
@@ -279,6 +280,7 @@ class ParsedADStructures(msgspec.Struct, kw_only=True):
     le_bluetooth_device_address: str = ""
     le_role: int | None = None
     class_of_device: int | None = None
+    class_of_device_info: ClassOfDeviceInfo | None = None
     simple_pairing_hash_c: bytes = b""
     simple_pairing_randomizer_r: bytes = b""
     security_manager_tk_value: bytes = b""
@@ -325,6 +327,7 @@ class DeviceAdvertiserData(msgspec.Struct, kw_only=True):
     le_bluetooth_device_address: str = ""
     le_role: int | None = None
     class_of_device: int | None = None
+    class_of_device_info: ClassOfDeviceInfo | None = None
     simple_pairing_hash_c: bytes = b""
     simple_pairing_randomizer_r: bytes = b""
     security_manager_tk_value: bytes = b""
