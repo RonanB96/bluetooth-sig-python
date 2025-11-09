@@ -93,6 +93,9 @@ def parse_bluetooth_uuid(uuid: str | int | BluetoothUUID) -> BluetoothUUID:
         return uuid
     if isinstance(uuid, int):
         uuid_str = hex(uuid)[2:].upper()
+        # Pad to 4 characters only for 16-bit UUIDs (0x0000 - 0xFFFF)
+        if 0 <= uuid <= 0xFFFF:
+            uuid_str = uuid_str.zfill(4)
         return BluetoothUUID(uuid_str)
     uuid_str = str(uuid).replace("0x", "").replace("0X", "")
     return BluetoothUUID(uuid_str)

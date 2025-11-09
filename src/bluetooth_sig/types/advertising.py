@@ -1,4 +1,12 @@
-"""BLE Advertising data types and parsing utilities."""
+"""BLE Advertising data types and parsing utilities.
+
+Organization:
+    1. Core PDU Types and Enums - Low-level PDU structure definitions
+    2. Advertising Data Type Registry - AD Type metadata
+    3. Advertising Flags - Device discovery and capabilities flags
+    4. PDU and Header Structures - Structured PDU representations
+    5. Parsed Advertising Data - High-level parsed advertisement content
+"""
 
 from __future__ import annotations
 
@@ -12,22 +20,40 @@ if TYPE_CHECKING:
     from bluetooth_sig.types.class_of_device import ClassOfDeviceInfo
 
 
-class ADTypeInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """AD Type information from Bluetooth SIG spec.
+class PDUType(IntEnum):
+    """BLE Advertising PDU Types (Core Spec Vol 6, Part B, Section 2.3)."""
 
-    Attributes:
-        value: The AD type value (e.g., 0x01 for Flags)
-        name: Human-readable name from the specification
-        reference: Optional specification reference
-    """
+    ADV_IND = 0x00
+    ADV_DIRECT_IND = 0x01
+    ADV_NONCONN_IND = 0x02
+    SCAN_REQ = 0x03
+    SCAN_RSP = 0x04
+    CONNECT_IND = 0x05
+    ADV_SCAN_IND = 0x06
+    ADV_EXT_IND = 0x07
+    ADV_AUX_IND = 0x08
 
-    value: int
-    name: str
-    reference: str | None = None
+    @property
+    def is_extended_advertising(self) -> bool:
+        """Check if this is an extended advertising PDU."""
+        return self in (PDUType.ADV_EXT_IND, PDUType.ADV_AUX_IND)
+
+    @property
+    def is_legacy_advertising(self) -> bool:
+        """Check if this is a legacy advertising PDU."""
+        return self in (
+            PDUType.ADV_IND,
+            PDUType.ADV_DIRECT_IND,
+            PDUType.ADV_NONCONN_IND,
+            PDUType.SCAN_REQ,
+            PDUType.SCAN_RSP,
+            PDUType.CONNECT_IND,
+            PDUType.ADV_SCAN_IND,
+        )
 
 
-class PDUFlags(IntFlag):
-    """BLE PDU parsing bit masks for header operations.
+class PDUHeaderFlags(IntFlag):
+    """BLE PDU header bit masks for parsing operations.
 
     These masks are pre-positioned to their correct bit locations,
     eliminating the need for shifts during extraction.
@@ -73,11 +99,11 @@ class PDUFlags(IntFlag):
         return bool(cls.extract_bits(header, cls.RX_ADD_MASK))
 
 
-class PDUConstants:
-    """BLE PDU parsing constants for sizes and offsets.
+class PDULayout:
+    """BLE PDU structure size and offset constants.
 
-    Following best practices, this uses a class for related
-    constants rather than mixing them with enums/flags.
+    Defines the sizes and offsets of fields within BLE PDU structures
+    following Bluetooth Core Spec Vol 6, Part B.
     """
 
     # PDU Size constants
@@ -104,8 +130,12 @@ class PDUConstants:
     PDU_LENGTH_OFFSET: int = 2
 
 
-class ExtendedHeaderMode(IntEnum):
-    """Extended Header Mode bit masks (BLE 5.0+)."""
+class ExtendedHeaderFlags(IntEnum):
+    """Extended advertising header field presence flags (BLE 5.0+).
+
+    Each flag indicates whether a corresponding field is present
+    in the extended advertising header.
+    """
 
     ADV_ADDR = 0x01
     TARGET_ADDR = 0x02
@@ -117,40 +147,22 @@ class ExtendedHeaderMode(IntEnum):
     ACAD = 0x80
 
 
-class PDUType(IntEnum):
-    """BLE Advertising PDU Types."""
+class ADTypeInfo(msgspec.Struct, frozen=True, kw_only=True):
+    """AD Type information from Bluetooth SIG assigned numbers.
 
-    ADV_IND = 0x00
-    ADV_DIRECT_IND = 0x01
-    ADV_NONCONN_IND = 0x02
-    SCAN_REQ = 0x03
-    SCAN_RSP = 0x04
-    CONNECT_IND = 0x05
-    ADV_SCAN_IND = 0x06
-    ADV_EXT_IND = 0x07
-    ADV_AUX_IND = 0x08
+    Attributes:
+        value: The AD type value (e.g., 0x01 for Flags)
+        name: Human-readable name from the specification
+        reference: Optional specification reference
+    """
 
-    @property
-    def is_extended_advertising(self) -> bool:
-        """Check if this is an extended advertising PDU."""
-        return self in (PDUType.ADV_EXT_IND, PDUType.ADV_AUX_IND)
-
-    @property
-    def is_legacy_advertising(self) -> bool:
-        """Check if this is a legacy advertising PDU."""
-        return self in (
-            PDUType.ADV_IND,
-            PDUType.ADV_DIRECT_IND,
-            PDUType.ADV_NONCONN_IND,
-            PDUType.SCAN_REQ,
-            PDUType.SCAN_RSP,
-            PDUType.CONNECT_IND,
-            PDUType.ADV_SCAN_IND,
-        )
+    value: int
+    name: str
+    reference: str | None = None
 
 
 class BLEAdvertisingFlags(IntFlag):
-    """BLE Advertising Flags as defined in Bluetooth Core Specification Supplement.
+    """BLE Advertising Flags (Core Spec Supplement, Part A, Section 1.3).
 
     These flags indicate the discoverable mode and capabilities of the advertising device.
     """
@@ -183,42 +195,42 @@ class BLEExtendedHeader(msgspec.Struct, kw_only=True):
     @property
     def has_extended_advertiser_address(self) -> bool:
         """Check if extended advertiser address is present."""
-        return bool(self.adv_mode & ExtendedHeaderMode.ADV_ADDR)
+        return bool(self.adv_mode & ExtendedHeaderFlags.ADV_ADDR)
 
     @property
     def has_extended_target_address(self) -> bool:
         """Check if extended target address is present."""
-        return bool(self.adv_mode & ExtendedHeaderMode.TARGET_ADDR)
+        return bool(self.adv_mode & ExtendedHeaderFlags.TARGET_ADDR)
 
     @property
     def has_cte_info(self) -> bool:
         """Check if CTE info is present."""
-        return bool(self.adv_mode & ExtendedHeaderMode.CTE_INFO)
+        return bool(self.adv_mode & ExtendedHeaderFlags.CTE_INFO)
 
     @property
     def has_advertising_data_info(self) -> bool:
         """Check if advertising data info is present."""
-        return bool(self.adv_mode & ExtendedHeaderMode.ADV_DATA_INFO)
+        return bool(self.adv_mode & ExtendedHeaderFlags.ADV_DATA_INFO)
 
     @property
     def has_auxiliary_pointer(self) -> bool:
         """Check if auxiliary pointer is present."""
-        return bool(self.adv_mode & ExtendedHeaderMode.AUX_PTR)
+        return bool(self.adv_mode & ExtendedHeaderFlags.AUX_PTR)
 
     @property
     def has_sync_info(self) -> bool:
         """Check if sync info is present."""
-        return bool(self.adv_mode & ExtendedHeaderMode.SYNC_INFO)
+        return bool(self.adv_mode & ExtendedHeaderFlags.SYNC_INFO)
 
     @property
     def has_tx_power(self) -> bool:
         """Check if TX power is present."""
-        return bool(self.adv_mode & ExtendedHeaderMode.TX_POWER)
+        return bool(self.adv_mode & ExtendedHeaderFlags.TX_POWER)
 
     @property
     def has_additional_controller_data(self) -> bool:
         """Check if additional controller advertising data is present."""
-        return bool(self.adv_mode & ExtendedHeaderMode.ACAD)
+        return bool(self.adv_mode & ExtendedHeaderFlags.ACAD)
 
 
 class BLEAdvertisingPDU(msgspec.Struct, kw_only=True):
@@ -249,90 +261,196 @@ class BLEAdvertisingPDU(msgspec.Struct, kw_only=True):
         return self.pdu_type.name
 
 
-class ParsedADStructures(msgspec.Struct, kw_only=True):
-    """Parsed Advertising Data structures from advertisement payload."""
+class CoreAdvertisingData(msgspec.Struct, kw_only=True):
+    """Core advertising data - device identification and services.
+
+    Attributes:
+        manufacturer_data: Manufacturer-specific data keyed by company ID
+        manufacturer_names: Resolved company names keyed by company ID
+        service_uuids: List of advertised service UUIDs
+        service_data: Service-specific data keyed by service UUID
+        solicited_service_uuids: List of service UUIDs the device is seeking
+        local_name: Device's local name (complete or shortened)
+        uri: Uniform Resource Identifier
+    """
 
     manufacturer_data: dict[int, bytes] = msgspec.field(default_factory=dict)
     manufacturer_names: dict[int, str] = msgspec.field(default_factory=dict)
     service_uuids: list[str] = msgspec.field(default_factory=list)
-    local_name: str = ""
-    tx_power: int = 0
-    flags: BLEAdvertisingFlags = BLEAdvertisingFlags(0)
-    appearance: AppearanceData | None = None
     service_data: dict[str, bytes] = msgspec.field(default_factory=dict)
     solicited_service_uuids: list[str] = msgspec.field(default_factory=list)
+    local_name: str = ""
     uri: str = ""
-    indoor_positioning: bytes = b""
-    transport_discovery_data: bytes = b""
+
+
+class DeviceProperties(msgspec.Struct, kw_only=True):
+    """Device capability and appearance properties.
+
+    Attributes:
+        flags: BLE advertising flags (discoverable mode, capabilities)
+        appearance: Device appearance category and subcategory
+        tx_power: Transmission power level in dBm
+        le_role: LE role (peripheral, central, etc.)
+        le_supported_features: LE supported features bit field
+        class_of_device: Classic Bluetooth Class of Device value
+        class_of_device_info: Parsed Class of Device information
+    """
+
+    flags: BLEAdvertisingFlags = BLEAdvertisingFlags(0)
+    appearance: AppearanceData | None = None
+    tx_power: int = 0
+    le_role: int | None = None
     le_supported_features: bytes = b""
-    encrypted_advertising_data: bytes = b""
-    periodic_advertising_response_timing: bytes = b""
-    electronic_shelf_label: bytes = b""
+    class_of_device: int | None = None
+    class_of_device_info: ClassOfDeviceInfo | None = None
+
+
+class ConnectionData(msgspec.Struct, kw_only=True):
+    """Connection and pairing related advertising data.
+
+    Attributes:
+        public_target_address: List of public device addresses
+        random_target_address: List of random device addresses
+        le_bluetooth_device_address: LE Bluetooth device address
+        advertising_interval: Advertising interval (0.625ms units)
+        advertising_interval_long: Long advertising interval
+        slave_connection_interval_range: Preferred connection interval range
+        simple_pairing_hash_c: Simple Pairing Hash C (P-192)
+        simple_pairing_randomizer_r: Simple Pairing Randomizer R (P-192)
+        secure_connections_confirmation: Secure Connections Confirmation Value
+        secure_connections_random: Secure Connections Random Value
+        security_manager_tk_value: Security Manager TK Value
+        security_manager_out_of_band_flags: SM Out of Band Flags
+    """
+
+    public_target_address: list[str] = msgspec.field(default_factory=list)
+    random_target_address: list[str] = msgspec.field(default_factory=list)
+    le_bluetooth_device_address: str = ""
+    advertising_interval: int | None = None
+    advertising_interval_long: int | None = None
+    slave_connection_interval_range: bytes = b""
+    simple_pairing_hash_c: bytes = b""
+    simple_pairing_randomizer_r: bytes = b""
+    secure_connections_confirmation: bytes = b""
+    secure_connections_random: bytes = b""
+    security_manager_tk_value: bytes = b""
+    security_manager_out_of_band_flags: bytes = b""
+
+
+class LocationAndSensingData(msgspec.Struct, kw_only=True):
+    """Location, positioning, and sensing related data.
+
+    Attributes:
+        indoor_positioning: Indoor positioning data
+        three_d_information: 3D information data
+        transport_discovery_data: Transport Discovery Data
+        channel_map_update_indication: Channel Map Update Indication
+    """
+
+    indoor_positioning: bytes = b""
     three_d_information: bytes = b""
+    transport_discovery_data: bytes = b""
+    channel_map_update_indication: bytes = b""
+
+
+class MeshAndBroadcastData(msgspec.Struct, kw_only=True):
+    """Bluetooth Mesh and audio broadcast related data.
+
+    Attributes:
+        mesh_message: Mesh Message
+        mesh_beacon: Mesh Beacon
+        pb_adv: Provisioning Bearer over advertising
+        broadcast_name: Broadcast name
+        broadcast_code: Broadcast Code for encrypted audio
+        biginfo: BIG Info for Broadcast Isochronous Groups
+        periodic_advertising_response_timing: Periodic Advertising Response Timing Info
+        electronic_shelf_label: Electronic Shelf Label data
+    """
+
+    mesh_message: bytes = b""
+    mesh_beacon: bytes = b""
+    pb_adv: bytes = b""
     broadcast_name: str = ""
     broadcast_code: bytes = b""
     biginfo: bytes = b""
-    mesh_message: bytes = b""
-    mesh_beacon: bytes = b""
-    public_target_address: list[str] = msgspec.field(default_factory=list)
-    random_target_address: list[str] = msgspec.field(default_factory=list)
-    advertising_interval: int | None = None
-    advertising_interval_long: int | None = None
-    le_bluetooth_device_address: str = ""
-    le_role: int | None = None
-    class_of_device: int | None = None
-    class_of_device_info: ClassOfDeviceInfo | None = None
-    simple_pairing_hash_c: bytes = b""
-    simple_pairing_randomizer_r: bytes = b""
-    security_manager_tk_value: bytes = b""
-    security_manager_out_of_band_flags: bytes = b""
-    slave_connection_interval_range: bytes = b""
-    secure_connections_confirmation: bytes = b""
-    secure_connections_random: bytes = b""
-    channel_map_update_indication: bytes = b""
-    pb_adv: bytes = b""
+    periodic_advertising_response_timing: bytes = b""
+    electronic_shelf_label: bytes = b""
+
+
+class SecurityData(msgspec.Struct, kw_only=True):
+    """Security and encryption related advertising data.
+
+    Attributes:
+        encrypted_advertising_data: Encrypted Advertising Data
+        resolvable_set_identifier: Resolvable Set Identifier
+    """
+
+    encrypted_advertising_data: bytes = b""
     resolvable_set_identifier: bytes = b""
 
 
-class DeviceAdvertiserData(msgspec.Struct, kw_only=True):
-    """Parsed advertiser data from device discovery.
+class ExtendedAdvertisingData(msgspec.Struct, kw_only=True):
+    """Extended advertising data (BLE 5.0+).
 
     Attributes:
-        raw_data: Raw bytes from the advertising packet
-        local_name: Device's local name (short or complete)
-        manufacturer_data: Manufacturer-specific data keyed by company ID
-        manufacturer_names: Resolved company names for all manufacturer data entries, keyed by company ID
-        service_uuids: List of advertised service UUIDs
-        tx_power: Transmission power level in dBm
-        rssi: Received signal strength indicator in dBm
-        flags: BLE advertising flags
-        appearance: Device appearance information
-        service_data: Service data keyed by UUID
-        solicited_service_uuids: List of solicited service UUIDs
-        uri: Uniform Resource Identifier
+        extended_payload: Extended advertising payload bytes
+        auxiliary_packets: List of auxiliary advertising packets
+        periodic_advertising_data: Periodic advertising data bytes
+        broadcast_code: Broadcast audio code
     """
 
-    raw_data: bytes
-    parsed_structures: ParsedADStructures = msgspec.field(default_factory=ParsedADStructures)
-    rssi: int | None = None
-
-    # Extended advertising specific fields
     extended_payload: bytes = b""
     auxiliary_packets: list[BLEAdvertisingPDU] = msgspec.field(default_factory=list)
     periodic_advertising_data: bytes = b""
     broadcast_code: bytes = b""
 
+
+class AdvertisingDataStructures(msgspec.Struct, kw_only=True):
+    """Complete parsed advertising data structures organized by category.
+
+    Attributes:
+        core: Core device identification and service information
+        properties: Device capabilities and appearance
+        connection: Connection and pairing related data
+        location: Location and sensing data
+        mesh: Mesh and broadcast audio data
+        security: Security and encryption data
+    """
+
+    core: CoreAdvertisingData = msgspec.field(default_factory=CoreAdvertisingData)
+    properties: DeviceProperties = msgspec.field(default_factory=DeviceProperties)
+    connection: ConnectionData = msgspec.field(default_factory=ConnectionData)
+    location: LocationAndSensingData = msgspec.field(default_factory=LocationAndSensingData)
+    mesh: MeshAndBroadcastData = msgspec.field(default_factory=MeshAndBroadcastData)
+    security: SecurityData = msgspec.field(default_factory=SecurityData)
+
+
+class AdvertisingData(msgspec.Struct, kw_only=True):
+    """Complete BLE advertising data with device information and metadata.
+
+    Attributes:
+        raw_data: Raw bytes from the advertising packet
+        ad_structures: Parsed AD structures organized by category
+        extended: Extended advertising data (BLE 5.0+)
+        rssi: Received signal strength indicator in dBm
+    """
+
+    raw_data: bytes
+    ad_structures: AdvertisingDataStructures = msgspec.field(default_factory=AdvertisingDataStructures)
+    extended: ExtendedAdvertisingData = msgspec.field(default_factory=ExtendedAdvertisingData)
+    rssi: int | None = None
+
     @property
     def is_extended_advertising(self) -> bool:
         """Check if this advertisement uses extended advertising."""
-        return bool(self.extended_payload) or bool(self.auxiliary_packets)
+        return bool(self.extended.extended_payload) or bool(self.extended.auxiliary_packets)
 
     @property
     def total_payload_size(self) -> int:
         """Get total payload size including extended data."""
         base_size = len(self.raw_data)
-        if self.extended_payload:
-            base_size += len(self.extended_payload)
-        for aux_packet in self.auxiliary_packets:
+        if self.extended.extended_payload:
+            base_size += len(self.extended.extended_payload)
+        for aux_packet in self.extended.auxiliary_packets:
             base_size += len(aux_packet.payload)
         return base_size

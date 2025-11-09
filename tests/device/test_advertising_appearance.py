@@ -34,14 +34,14 @@ class TestAdvertisingParserAppearance:
 
         result = parser.parse_advertising_data(bytes(ad_data))
 
-        assert result.parsed_structures.appearance is not None
-        assert isinstance(result.parsed_structures.appearance, AppearanceData)
-        assert result.parsed_structures.appearance.raw_value == 833
+        assert result.ad_structures.properties.appearance is not None
+        assert isinstance(result.ad_structures.properties.appearance, AppearanceData)
+        assert result.ad_structures.properties.appearance.raw_value == 833
         # If registry loaded, should have appearance_info
-        if result.parsed_structures.appearance.info:
-            assert result.parsed_structures.appearance.info.category == "Heart Rate Sensor"
-            assert result.parsed_structures.appearance.info.subcategory == "Heart Rate Belt"
-            assert result.parsed_structures.appearance.info.full_name == "Heart Rate Sensor: Heart Rate Belt"
+        if result.ad_structures.properties.appearance.info:
+            assert result.ad_structures.properties.appearance.info.category == "Heart Rate Sensor"
+            assert result.ad_structures.properties.appearance.info.subcategory == "Heart Rate Belt"
+            assert result.ad_structures.properties.appearance.info.full_name == "Heart Rate Sensor: Heart Rate Belt"
 
     def test_parse_appearance_category_only(self, parser: AdvertisingParser) -> None:
         """Test parsing appearance with category only (no subcategory)."""
@@ -57,13 +57,13 @@ class TestAdvertisingParserAppearance:
 
         result = parser.parse_advertising_data(bytes(ad_data))
 
-        assert result.parsed_structures.appearance is not None
-        assert isinstance(result.parsed_structures.appearance, AppearanceData)
-        assert result.parsed_structures.appearance.raw_value == 64
-        if result.parsed_structures.appearance.info:
-            assert result.parsed_structures.appearance.info.category == "Phone"
-            assert result.parsed_structures.appearance.info.subcategory is None
-            assert result.parsed_structures.appearance.info.full_name == "Phone"
+        assert result.ad_structures.properties.appearance is not None
+        assert isinstance(result.ad_structures.properties.appearance, AppearanceData)
+        assert result.ad_structures.properties.appearance.raw_value == 64
+        if result.ad_structures.properties.appearance.info:
+            assert result.ad_structures.properties.appearance.info.category == "Phone"
+            assert result.ad_structures.properties.appearance.info.subcategory is None
+            assert result.ad_structures.properties.appearance.info.full_name == "Phone"
 
     def test_parse_appearance_unknown(self, parser: AdvertisingParser) -> None:
         """Test parsing unknown appearance value."""
@@ -79,10 +79,10 @@ class TestAdvertisingParserAppearance:
 
         result = parser.parse_advertising_data(bytes(ad_data))
 
-        assert result.parsed_structures.appearance is not None
-        assert result.parsed_structures.appearance.raw_value == 0
-        if result.parsed_structures.appearance.info:
-            assert result.parsed_structures.appearance.info.category == "Unknown"
+        assert result.ad_structures.properties.appearance is not None
+        assert result.ad_structures.properties.appearance.raw_value == 0
+        if result.ad_structures.properties.appearance.info:
+            assert result.ad_structures.properties.appearance.info.category == "Unknown"
 
     def test_parse_appearance_not_in_registry(self, parser: AdvertisingParser) -> None:
         """Test parsing appearance value not in registry."""
@@ -98,8 +98,8 @@ class TestAdvertisingParserAppearance:
 
         result = parser.parse_advertising_data(bytes(ad_data))
 
-        assert result.parsed_structures.appearance is not None
-        assert result.parsed_structures.appearance.raw_value == 65535
+        assert result.ad_structures.properties.appearance is not None
+        assert result.ad_structures.properties.appearance.raw_value == 65535
         # appearance.info should be None for unknown codes
 
     def test_parse_no_appearance_field(self, parser: AdvertisingParser) -> None:
@@ -119,7 +119,7 @@ class TestAdvertisingParserAppearance:
 
         result = parser.parse_advertising_data(bytes(ad_data))
 
-        assert result.parsed_structures.appearance is None
+        assert result.ad_structures.properties.appearance is None
 
     def test_parse_multiple_fields_with_appearance(self, parser: AdvertisingParser) -> None:
         """Test parsing advertising data with multiple fields including appearance."""
@@ -145,11 +145,11 @@ class TestAdvertisingParserAppearance:
 
         result = parser.parse_advertising_data(bytes(ad_data))
 
-        assert result.parsed_structures.local_name is not None
-        assert result.parsed_structures.appearance is not None
-        assert result.parsed_structures.appearance.raw_value == 833
-        if result.parsed_structures.appearance.info:
-            assert result.parsed_structures.appearance.info.full_name == "Heart Rate Sensor: Heart Rate Belt"
+        assert result.ad_structures.core.local_name is not None
+        assert result.ad_structures.properties.appearance is not None
+        assert result.ad_structures.properties.appearance.raw_value == 833
+        if result.ad_structures.properties.appearance.info:
+            assert result.ad_structures.properties.appearance.info.full_name == "Heart Rate Sensor: Heart Rate Belt"
 
     def test_parse_computer_subcategories(self, parser: AdvertisingParser) -> None:
         """Test parsing various computer subcategories."""
@@ -157,18 +157,18 @@ class TestAdvertisingParserAppearance:
         ad_data_desktop = bytearray([3, ADType.APPEARANCE, 0x81, 0x00])
         result_desktop = parser.parse_advertising_data(bytes(ad_data_desktop))
 
-        assert result_desktop.parsed_structures.appearance is not None
-        assert result_desktop.parsed_structures.appearance.raw_value == 129
-        if result_desktop.parsed_structures.appearance.info:
-            assert result_desktop.parsed_structures.appearance.info.category == "Computer"
-            assert result_desktop.parsed_structures.appearance.info.subcategory == "Desktop Workstation"
+        assert result_desktop.ad_structures.properties.appearance is not None
+        assert result_desktop.ad_structures.properties.appearance.raw_value == 129
+        if result_desktop.ad_structures.properties.appearance.info:
+            assert result_desktop.ad_structures.properties.appearance.info.category == "Computer"
+            assert result_desktop.ad_structures.properties.appearance.info.subcategory == "Desktop Workstation"
 
         # Laptop: (2 << 6) | 3 = 131 (0x0083)
         ad_data_laptop = bytearray([3, ADType.APPEARANCE, 0x83, 0x00])
         result_laptop = parser.parse_advertising_data(bytes(ad_data_laptop))
 
-        assert result_laptop.parsed_structures.appearance is not None
-        assert result_laptop.parsed_structures.appearance.raw_value == 131
-        if result_laptop.parsed_structures.appearance.info:
-            assert result_laptop.parsed_structures.appearance.info.category == "Computer"
-            assert result_laptop.parsed_structures.appearance.info.subcategory == "Laptop"
+        assert result_laptop.ad_structures.properties.appearance is not None
+        assert result_laptop.ad_structures.properties.appearance.raw_value == 131
+        if result_laptop.ad_structures.properties.appearance.info:
+            assert result_laptop.ad_structures.properties.appearance.info.category == "Computer"
+            assert result_laptop.ad_structures.properties.appearance.info.subcategory == "Laptop"
