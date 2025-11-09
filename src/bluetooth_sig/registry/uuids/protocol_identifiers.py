@@ -36,31 +36,37 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
         super().__init__()
         self._protocols: dict[str, ProtocolInfo] = {}
         self._name_to_info: dict[str, ProtocolInfo] = {}
-        self._load_protocols()
+        self._loaded = False
 
-    def _load_protocols(self) -> None:
-        """Load protocol identifiers from the Bluetooth SIG YAML file."""
-        base_path = find_bluetooth_sig_path()
-        if not base_path:
-            return
+    def _ensure_loaded(self) -> None:
+        """Ensure the registry is loaded (thread-safe lazy loading)."""
+        def _load() -> None:
+            """Load protocol identifiers from the Bluetooth SIG YAML file."""
+            base_path = find_bluetooth_sig_path()
+            if not base_path:
+                self._loaded = True
+                return
 
-        # Load protocol identifier UUIDs
-        protocol_identifiers_yaml = base_path / "protocol_identifiers.yaml"
-        if protocol_identifiers_yaml.exists():
-            for item in load_yaml_uuids(protocol_identifiers_yaml):
-                try:
-                    uuid = parse_bluetooth_uuid(item["uuid"])
-                    name = item["name"]
+            # Load protocol identifier UUIDs
+            protocol_identifiers_yaml = base_path / "protocol_identifiers.yaml"
+            if protocol_identifiers_yaml.exists():
+                for item in load_yaml_uuids(protocol_identifiers_yaml):
+                    try:
+                        uuid = parse_bluetooth_uuid(item["uuid"])
+                        name = item["name"]
 
-                    info = ProtocolInfo(uuid=uuid, name=name)
+                        info = ProtocolInfo(uuid=uuid, name=name)
 
-                    # Store by UUID short form for fast lookup
-                    self._protocols[uuid.short_form.upper()] = info
-                    self._name_to_info[name.lower()] = info
+                        # Store by UUID short form for fast lookup
+                        self._protocols[uuid.short_form.upper()] = info
+                        self._name_to_info[name.lower()] = info
 
-                except (KeyError, ValueError):
-                    # Skip malformed entries
-                    continue
+                    except (KeyError, ValueError):
+                        # Skip malformed entries
+                        continue
+            self._loaded = True
+
+        self._lazy_load(self._loaded, _load)
 
     def get_protocol_info(self, identifier: str | int | BluetoothUUID) -> ProtocolInfo | None:
         """Get protocol information by UUID or name.
@@ -80,6 +86,7 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
             >>> if info:
             ...     print(info.uuid.short_form)  # "0003"
         """
+        self._ensure_loaded()
         # Try as UUID first
         try:
             bt_uuid = parse_bluetooth_uuid(identifier)
@@ -102,6 +109,7 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
         Returns:
             ProtocolInfo if found, None otherwise
         """
+        self._ensure_loaded()
         return self._name_to_info.get(name.lower())
 
     def is_known_protocol(self, uuid: str | int | BluetoothUUID) -> bool:
@@ -113,6 +121,7 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
         Returns:
             True if the UUID is a known protocol, False otherwise
         """
+        self._ensure_loaded()
         return self.get_protocol_info(uuid) is not None
 
     def get_all_protocols(self) -> list[ProtocolInfo]:
@@ -121,6 +130,7 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
         Returns:
             List of all ProtocolInfo objects
         """
+        self._ensure_loaded()
         return list(self._protocols.values())
 
     def is_l2cap(self, uuid: str | int | BluetoothUUID) -> bool:
@@ -132,6 +142,7 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
         Returns:
             True if the UUID is L2CAP (0x0100), False otherwise
         """
+        self._ensure_loaded()
         info = self.get_protocol_info(uuid)
         return info is not None and info.name.upper() == "L2CAP"
 
@@ -144,6 +155,7 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
         Returns:
             True if the UUID is RFCOMM (0x0003), False otherwise
         """
+        self._ensure_loaded()
         info = self.get_protocol_info(uuid)
         return info is not None and info.name.upper() == "RFCOMM"
 
@@ -156,6 +168,7 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
         Returns:
             True if the UUID is AVDTP (0x0019), False otherwise
         """
+        self._ensure_loaded()
         info = self.get_protocol_info(uuid)
         return info is not None and info.name.upper() == "AVDTP"
 
@@ -168,6 +181,7 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
         Returns:
             True if the UUID is BNEP (0x000F), False otherwise
         """
+        self._ensure_loaded()
         info = self.get_protocol_info(uuid)
         return info is not None and info.name.upper() == "BNEP"
 

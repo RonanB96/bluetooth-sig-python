@@ -26,33 +26,39 @@ class BrowseGroupsRegistry(BaseRegistry[BrowseGroupInfo]):
         self._browse_groups: dict[str, BrowseGroupInfo] = {}
         self._name_to_info: dict[str, BrowseGroupInfo] = {}
         self._id_to_info: dict[str, BrowseGroupInfo] = {}
-        self._load_browse_groups()
+        self._loaded = False
 
-    def _load_browse_groups(self) -> None:
-        """Load browse groups from the Bluetooth SIG YAML file."""
-        base_path = find_bluetooth_sig_path()
-        if not base_path:
-            return
+    def _ensure_loaded(self) -> None:
+        """Ensure the registry is loaded (thread-safe lazy loading)."""
+        def _load() -> None:
+            """Load browse groups from the Bluetooth SIG YAML file."""
+            base_path = find_bluetooth_sig_path()
+            if not base_path:
+                self._loaded = True
+                return
 
-        # Load browse group UUIDs
-        browse_groups_yaml = base_path / "uuids" / "browse_group_identifiers.yaml"
-        if browse_groups_yaml.exists():
-            for item in load_yaml_uuids(browse_groups_yaml):
-                try:
-                    uuid = parse_bluetooth_uuid(item["uuid"])
-                    name = item["name"]
-                    browse_group_id = item["id"]
+            # Load browse group UUIDs
+            browse_groups_yaml = base_path / "uuids" / "browse_group_identifiers.yaml"
+            if browse_groups_yaml.exists():
+                for item in load_yaml_uuids(browse_groups_yaml):
+                    try:
+                        uuid = parse_bluetooth_uuid(item["uuid"])
+                        name = item["name"]
+                        browse_group_id = item["id"]
 
-                    info = BrowseGroupInfo(uuid=uuid, name=name, id=browse_group_id)
+                        info = BrowseGroupInfo(uuid=uuid, name=name, id=browse_group_id)
 
-                    # Store by UUID string for fast lookup
-                    self._browse_groups[uuid.short_form.upper()] = info
-                    self._name_to_info[name.lower()] = info
-                    self._id_to_info[browse_group_id] = info
+                        # Store by UUID string for fast lookup
+                        self._browse_groups[uuid.short_form.upper()] = info
+                        self._name_to_info[name.lower()] = info
+                        self._id_to_info[browse_group_id] = info
 
-                except (KeyError, ValueError):
-                    # Skip malformed entries
-                    continue
+                    except (KeyError, ValueError):
+                        # Skip malformed entries
+                        continue
+            self._loaded = True
+
+        self._lazy_load(self._loaded, _load)
 
     def get_browse_group_info(self, uuid: str | int | BluetoothUUID) -> BrowseGroupInfo | None:
         """Get browse group information by UUID.
@@ -63,6 +69,7 @@ class BrowseGroupsRegistry(BaseRegistry[BrowseGroupInfo]):
         Returns:
             BrowseGroupInfo if found, None otherwise
         """
+        self._ensure_loaded()
         try:
             bt_uuid = parse_bluetooth_uuid(uuid)
             return self._browse_groups.get(bt_uuid.short_form.upper())
@@ -78,6 +85,7 @@ class BrowseGroupsRegistry(BaseRegistry[BrowseGroupInfo]):
         Returns:
             BrowseGroupInfo if found, None otherwise
         """
+        self._ensure_loaded()
         return self._name_to_info.get(name.lower())
 
     def get_browse_group_info_by_id(self, browse_group_id: str) -> BrowseGroupInfo | None:
@@ -89,6 +97,7 @@ class BrowseGroupsRegistry(BaseRegistry[BrowseGroupInfo]):
         Returns:
             BrowseGroupInfo if found, None otherwise
         """
+        self._ensure_loaded()
         return self._id_to_info.get(browse_group_id)
 
     def is_browse_group_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
@@ -100,6 +109,7 @@ class BrowseGroupsRegistry(BaseRegistry[BrowseGroupInfo]):
         Returns:
             True if the UUID is a known browse group, False otherwise
         """
+        self._ensure_loaded()
         return self.get_browse_group_info(uuid) is not None
 
     def get_all_browse_groups(self) -> list[BrowseGroupInfo]:
@@ -108,6 +118,7 @@ class BrowseGroupsRegistry(BaseRegistry[BrowseGroupInfo]):
         Returns:
             List of all BrowseGroupInfo objects
         """
+        self._ensure_loaded()
         return list(self._browse_groups.values())
 
 
