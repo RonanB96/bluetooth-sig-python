@@ -16,9 +16,7 @@ class TestAdvertisingParserClassOfDevice:
         """Create an advertising parser instance."""
         return AdvertisingParser()
 
-    def test_parse_class_of_device_computer_laptop_networking(
-        self, parser: AdvertisingParser
-    ) -> None:
+    def test_parse_class_of_device_computer_laptop_networking(self, parser: AdvertisingParser) -> None:
         """Test parsing CoD for Computer: Laptop with Networking service.
 
         CoD 0x02010C breakdown:
@@ -52,9 +50,7 @@ class TestAdvertisingParserClassOfDevice:
         assert "Laptop" in cod_info.full_description
         assert "Networking" in cod_info.full_description
 
-    def test_parse_class_of_device_phone_smartphone(
-        self, parser: AdvertisingParser
-    ) -> None:
+    def test_parse_class_of_device_phone_smartphone(self, parser: AdvertisingParser) -> None:
         """Test parsing CoD for Phone: Smartphone.
 
         CoD 0x00020C breakdown:
@@ -76,9 +72,7 @@ class TestAdvertisingParserClassOfDevice:
         assert cod_info.minor_class == "Smartphone"
         assert cod_info.service_classes == []
 
-    def test_parse_class_of_device_with_multiple_services(
-        self, parser: AdvertisingParser
-    ) -> None:
+    def test_parse_class_of_device_with_multiple_services(self, parser: AdvertisingParser) -> None:
         """Test parsing CoD with multiple service classes.
 
         CoD 0x22010C - Computer: Laptop with Networking + Audio services
@@ -109,9 +103,7 @@ class TestAdvertisingParserClassOfDevice:
         assert result.parsed_structures.class_of_device is None
         assert result.parsed_structures.class_of_device_info is None
 
-    def test_parse_class_of_device_with_other_fields(
-        self, parser: AdvertisingParser
-    ) -> None:
+    def test_parse_class_of_device_with_other_fields(self, parser: AdvertisingParser) -> None:
         """Test parsing CoD alongside other advertising data fields."""
         # Multiple AD structures
         cod_value = 0x02010C
@@ -134,9 +126,7 @@ class TestAdvertisingParserClassOfDevice:
         assert result.parsed_structures.class_of_device_info is not None
         assert "Computer" in result.parsed_structures.class_of_device_info.major_class
 
-    def test_parse_class_of_device_invalid_length(
-        self, parser: AdvertisingParser
-    ) -> None:
+    def test_parse_class_of_device_invalid_length(self, parser: AdvertisingParser) -> None:
         """Test parsing CoD with invalid length (should be ignored)."""
         # CoD should be 3 bytes, provide only 2
         ad_data = bytes([3, 0x0D, 0x0C, 0x01])
@@ -147,9 +137,7 @@ class TestAdvertisingParserClassOfDevice:
         assert result.parsed_structures.class_of_device is None
         assert result.parsed_structures.class_of_device_info is None
 
-    def test_parse_class_of_device_health_device(
-        self, parser: AdvertisingParser
-    ) -> None:
+    def test_parse_class_of_device_health_device(self, parser: AdvertisingParser) -> None:
         """Test parsing CoD for Health: Blood Pressure Monitor.
 
         CoD for Health: Blood Pressure Monitor:
@@ -168,9 +156,7 @@ class TestAdvertisingParserClassOfDevice:
         assert cod_info.minor_class is not None
         assert "Pressure" in cod_info.minor_class
 
-    def test_parse_class_of_device_audio_headset(
-        self, parser: AdvertisingParser
-    ) -> None:
+    def test_parse_class_of_device_audio_headset(self, parser: AdvertisingParser) -> None:
         """Test parsing CoD for Audio/Video: Wearable Headset with Audio service.
 
         CoD with Audio service (bit 21), Audio/Video major (0x04), Headset (0x01)

@@ -118,14 +118,15 @@ def display_advertising_data(
         not_found_fields.append("LE Supported Features")
 
     if parsed_data.parsed_structures.encrypted_advertising_data:
-        found_fields.append(f"Encrypted Advertising Data: {parsed_data.parsed_structures.encrypted_advertising_data.hex()}")
+        found_fields.append(
+            f"Encrypted Advertising Data: {parsed_data.parsed_structures.encrypted_advertising_data.hex()}"
+        )
     else:
         not_found_fields.append("Encrypted Advertising Data")
 
     if parsed_data.parsed_structures.periodic_advertising_response_timing:
-        found_fields.append(
-            f"Periodic Advertising Response Timing: {parsed_data.parsed_structures.periodic_advertising_response_timing.hex()}"
-        )
+        timing_hex = parsed_data.parsed_structures.periodic_advertising_response_timing.hex()
+        found_fields.append(f"Periodic Advertising Response Timing: {timing_hex}")
     else:
         not_found_fields.append("Periodic Advertising Response Timing")
 
@@ -200,8 +201,8 @@ def display_advertising_data(
     else:
         not_found_fields.append("LE Role")
 
-    if parsed_data.class_of_device is not None:
-        found_fields.append(f"Class of Device: 0x{parsed_data.class_of_device:06X}")
+    if parsed_data.parsed_structures.class_of_device is not None:
+        found_fields.append(f"Class of Device: 0x{parsed_data.parsed_structures.class_of_device:06X}")
     else:
         not_found_fields.append("Class of Device")
 
@@ -212,49 +213,62 @@ def display_advertising_data(
         not_found_fields.append("Simple Pairing Hash C")
 
     if parsed_data.parsed_structures.simple_pairing_randomizer_r:
-        found_fields.append(f"Simple Pairing Randomizer R: {parsed_data.parsed_structures.simple_pairing_randomizer_r.hex()}")
+        found_fields.append(
+            f"Simple Pairing Randomizer R: {parsed_data.parsed_structures.simple_pairing_randomizer_r.hex()}"
+        )
     else:
         not_found_fields.append("Simple Pairing Randomizer R")
 
     if parsed_data.parsed_structures.security_manager_tk_value:
-        found_fields.append(f"Security Manager TK Value: {parsed_data.parsed_structures.security_manager_tk_value.hex()}")
+        found_fields.append(
+            f"Security Manager TK Value: {parsed_data.parsed_structures.security_manager_tk_value.hex()}"
+        )
     else:
         not_found_fields.append("Security Manager TK Value")
 
     if parsed_data.parsed_structures.security_manager_out_of_band_flags:
-        found_fields.append(
-            f"Security Manager Out of Band Flags: {parsed_data.parsed_structures.security_manager_out_of_band_flags.hex()}"
-        )
+        oob_hex = parsed_data.parsed_structures.security_manager_out_of_band_flags.hex()
+        found_fields.append(f"Security Manager Out of Band Flags: {oob_hex}")
     else:
         not_found_fields.append("Security Manager Out of Band Flags")
 
-    if parsed_data.slave_connection_interval_range:
-        found_fields.append(f"Slave Connection Interval Range: {parsed_data.slave_connection_interval_range.hex()}")
+    if parsed_data.parsed_structures.slave_connection_interval_range:
+        found_fields.append(
+            f"Slave Connection Interval Range: {parsed_data.parsed_structures.slave_connection_interval_range.hex()}"
+        )
     else:
         not_found_fields.append("Slave Connection Interval Range")
 
-    if parsed_data.secure_connections_confirmation:
-        found_fields.append(f"Secure Connections Confirmation: {parsed_data.secure_connections_confirmation.hex()}")
+    if parsed_data.parsed_structures.secure_connections_confirmation:
+        found_fields.append(
+            f"Secure Connections Confirmation: {parsed_data.parsed_structures.secure_connections_confirmation.hex()}"
+        )
     else:
         not_found_fields.append("Secure Connections Confirmation")
 
-    if parsed_data.secure_connections_random:
-        found_fields.append(f"Secure Connections Random: {parsed_data.secure_connections_random.hex()}")
+    if parsed_data.parsed_structures.secure_connections_random:
+        found_fields.append(
+            f"Secure Connections Random: {parsed_data.parsed_structures.secure_connections_random.hex()}"
+        )
     else:
         not_found_fields.append("Secure Connections Random")
 
-    if parsed_data.channel_map_update_indication:
-        found_fields.append(f"Channel Map Update Indication: {parsed_data.channel_map_update_indication.hex()}")
+    if parsed_data.parsed_structures.channel_map_update_indication:
+        found_fields.append(
+            f"Channel Map Update Indication: {parsed_data.parsed_structures.channel_map_update_indication.hex()}"
+        )
     else:
         not_found_fields.append("Channel Map Update Indication")
 
-    if parsed_data.pb_adv:
-        found_fields.append(f"PB-ADV: {parsed_data.pb_adv.hex()}")
+    if parsed_data.parsed_structures.pb_adv:
+        found_fields.append(f"PB-ADV: {parsed_data.parsed_structures.pb_adv.hex()}")
     else:
         not_found_fields.append("PB-ADV")
 
-    if parsed_data.resolvable_set_identifier:
-        found_fields.append(f"Resolvable Set Identifier: {parsed_data.resolvable_set_identifier.hex()}")
+    if parsed_data.parsed_structures.resolvable_set_identifier:
+        found_fields.append(
+            f"Resolvable Set Identifier: {parsed_data.parsed_structures.resolvable_set_identifier.hex()}"
+        )
     else:
         not_found_fields.append("Resolvable Set Identifier")
 
@@ -420,7 +434,9 @@ async def main(
             parsed_structures=ParsedADStructures(
                 local_name="Test Device",
                 manufacturer_data={
-                    0x004C: b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
+                    0x004C: (
+                        b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
+                    )
                 },
                 service_uuids=["180F", "180A"],  # Battery and Device Info services
                 appearance=AppearanceData(raw_value=0x03C0, info=None),  # Generic Computer
@@ -448,7 +464,9 @@ async def main(
             parsed_structures=ParsedADStructures(
                 local_name="Extended Test Device",
                 manufacturer_data={
-                    0x004C: b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
+                    0x004C: (
+                        b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
+                    )
                 },
                 service_uuids=["180F", "180A"],  # Battery and Device Info services
                 appearance=AppearanceData(raw_value=0x03C1, info=None),  # Generic Computer with extended features

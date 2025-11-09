@@ -7,7 +7,7 @@ including major/minor device classes and service classes.
 
 from __future__ import annotations
 
-from enum import IntFlag
+from enum import IntEnum, IntFlag
 from pathlib import Path
 from typing import Any
 
@@ -39,7 +39,7 @@ class CoDBitMask(IntFlag):
     FORMAT_TYPE = 0x03  # Bits 1-0: format type (always 00)
 
 
-class CoDBitShift(IntFlag):
+class CoDBitShift(IntEnum):
     """Bit shift values for Class of Device fields."""
 
     SERVICE_CLASS = 13
@@ -91,6 +91,11 @@ class ClassOfDeviceRegistry(BaseRegistry[ClassOfDeviceInfo]):
         This method is thread-safe and ensures the YAML is only loaded once,
         even when called concurrently from multiple threads.
         """
+        # pylint: disable=duplicate-code
+        # NOTE: This lazy-loading pattern is intentionally shared across all registries
+        # for consistency. Each registry loads from different YAML files in different
+        # locations, so extraction to a common base method would add complexity without
+        # benefit. See appearance_values.py for the same pattern.
 
         def _load() -> None:
             """Perform the actual loading."""
