@@ -1,8 +1,15 @@
 """Company identifier registries from assigned_numbers/company_identifiers/.
 
-This module will contain the registry for manufacturer company IDs.
-
-This registry is currently not implemented but is planned for future releases.
+This module contains the registry for manufacturer company IDs, allowing
+resolution of Bluetooth SIG company identifiers to company names.
 """
 
-__all__: list[str] = []
+from bluetooth_sig.registry.company_identifiers.company_identifiers_registry import (
+    CompanyIdentifiersRegistry,
+    company_identifiers_registry,
+)
+
+__all__ = [
+    "CompanyIdentifiersRegistry",
+    "company_identifiers_registry",
+]

@@ -139,8 +139,8 @@ class TestDevice:
 
         assert self.device.advertiser_data is not None
         assert self.device.advertiser_data.raw_data == adv_data
-        assert self.device.advertiser_data.local_name == "Test Device"
-        assert self.device.advertiser_data.flags == 0x06
+        assert self.device.advertiser_data.parsed_structures.local_name == "Test Device"
+        assert self.device.advertiser_data.parsed_structures.flags == 0x06
         assert self.device.name == "Test Device"  # Should update device name
 
     def test_parse_advertiser_data_manufacturer(self) -> None:
@@ -161,7 +161,7 @@ class TestDevice:
         self.device.parse_advertiser_data(adv_data)
 
         assert self.device.advertiser_data is not None
-        assert self.device.advertiser_data.manufacturer_data[0x004C] == b"\x01\x02\x03"
+        assert self.device.advertiser_data.parsed_structures.manufacturer_data[0x004C] == b"\x01\x02\x03"
 
     def test_parse_advertiser_data_service_uuids(self) -> None:
         """Test advertiser data parsing with service UUIDs."""
@@ -178,7 +178,7 @@ class TestDevice:
         self.device.parse_advertiser_data(adv_data)
 
         assert self.device.advertiser_data is not None
-        assert "180F" in self.device.advertiser_data.service_uuids
+        assert "180F" in self.device.advertiser_data.parsed_structures.service_uuids
 
     def test_parse_advertiser_data_tx_power(self) -> None:
         """Test advertiser data parsing with TX power."""
@@ -194,7 +194,7 @@ class TestDevice:
         self.device.parse_advertiser_data(adv_data)
 
         assert self.device.advertiser_data is not None
-        assert self.device.advertiser_data.tx_power == -4
+        assert self.device.advertiser_data.parsed_structures.tx_power == -4
 
     def test_add_service_known_service(self) -> None:
         """Test adding a service with known service type."""

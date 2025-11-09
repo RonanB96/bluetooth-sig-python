@@ -120,8 +120,8 @@ class TestAdvertisingParserClassOfDevice:
         result = parser.parse_advertising_data(ad_data)
 
         # All fields should be parsed
-        assert result.flags is not None
-        assert result.local_name == "TestDev"
+        assert result.parsed_structures.flags is not None
+        assert result.parsed_structures.local_name == "TestDev"
         assert result.parsed_structures.class_of_device == 0x02010C
         assert result.parsed_structures.class_of_device_info is not None
         assert "Computer" in result.parsed_structures.class_of_device_info.major_class

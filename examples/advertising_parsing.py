@@ -32,14 +32,14 @@ def display_advertising_data(
     not_found_fields: list[str] = []
 
     # Basic device information
-    if parsed_data.local_name:
-        found_fields.append(f"Local Name: {parsed_data.local_name}")
+    if parsed_data.parsed_structures.local_name:
+        found_fields.append(f"Local Name: {parsed_data.parsed_structures.local_name}")
     else:
         not_found_fields.append("Local Name")
 
-    if parsed_data.service_uuids:
+    if parsed_data.parsed_structures.service_uuids:
         service_lines = ["Service UUIDs:"]
-        for uuid in parsed_data.service_uuids:
+        for uuid in parsed_data.parsed_structures.service_uuids:
             service_info = translator.get_service_info_by_uuid(uuid)
             if service_info:
                 service_lines.append(f"  {uuid}: {service_info.name}")
@@ -49,21 +49,21 @@ def display_advertising_data(
     else:
         not_found_fields.append("Service UUIDs")
 
-    if parsed_data.manufacturer_data:
+    if parsed_data.parsed_structures.manufacturer_data:
         manufacturer_lines = ["Manufacturer Data:"]
-        for company_id, data in parsed_data.manufacturer_data.items():
+        for company_id, data in parsed_data.parsed_structures.manufacturer_data.items():
             manufacturer_lines.append(f"  Company 0x{company_id:04X}: {data.hex()}")
         found_fields.extend(manufacturer_lines)
     else:
         not_found_fields.append("Manufacturer Data")
 
-    if parsed_data.tx_power is not None:
-        found_fields.append(f"TX Power: {parsed_data.tx_power} dBm")
+    if parsed_data.parsed_structures.tx_power != 0:
+        found_fields.append(f"TX Power: {parsed_data.parsed_structures.tx_power} dBm")
     else:
         not_found_fields.append("TX Power")
 
-    if parsed_data.flags is not None:
-        found_fields.append(f"Flags: 0x{parsed_data.flags:02X}")
+    if parsed_data.parsed_structures.flags != 0:
+        found_fields.append(f"Flags: 0x{parsed_data.parsed_structures.flags:02X}")
     else:
         not_found_fields.append("Flags")
 
@@ -73,8 +73,8 @@ def display_advertising_data(
         not_found_fields.append("RSSI")
 
     # Appearance and service data
-    if parsed_data.appearance is not None:
-        found_fields.append(f"Appearance: 0x{parsed_data.appearance:04X}")
+    if parsed_data.parsed_structures.appearance is not None:
+        found_fields.append(f"Appearance: 0x{parsed_data.parsed_structures.appearance.raw_value:04X}")
     else:
         not_found_fields.append("Appearance")
 
@@ -441,16 +441,10 @@ async def main(
                 service_uuids=["180F", "180A"],  # Battery and Device Info services
                 appearance=AppearanceData(raw_value=0x03C0, info=None),  # Generic Computer
                 service_data={"180F": b"\x64"},  # Battery level 100%
+                tx_power=-50,
+                flags=BLEAdvertisingFlags(0x06),
             ),
-            local_name="Test Device",
-            manufacturer_data={
-                0x004C: b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
-            },
-            service_uuids=["180F", "180A"],  # Battery and Device Info services
-            tx_power=-50,
-            flags=BLEAdvertisingFlags(0x06),
             rssi=-45,
-            appearance=AppearanceData(raw_value=0x03C0, info=None),  # Generic Computer
         )
         display_advertising_data(parsed_data, translator, show_not_found, show_debug)
         results["used_mock"] = True
@@ -471,16 +465,10 @@ async def main(
                 service_uuids=["180F", "180A"],  # Battery and Device Info services
                 appearance=AppearanceData(raw_value=0x03C1, info=None),  # Generic Computer with extended features
                 service_data={"180F": b"\x64"},  # Battery level 100%
+                tx_power=-40,
+                flags=BLEAdvertisingFlags(0x06),
             ),
-            local_name="Extended Test Device",
-            manufacturer_data={
-                0x004C: b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
-            },
-            service_uuids=["180F", "180A"],  # Battery and Device Info services
-            tx_power=-40,
-            flags=BLEAdvertisingFlags(0x06),
             rssi=-35,
-            appearance=AppearanceData(raw_value=0x03C1, info=None),  # Generic Computer with extended features
             # Extended advertising specific fields
             extended_payload=b"\x01\x02\x03\x04\x05",
             periodic_advertising_data=b"\xaa\xbb\xcc\xdd",
@@ -491,11 +479,11 @@ async def main(
 
     if parsed_data is not None:
         results["parsed"] = {
-            "local_name": parsed_data.local_name,
-            "service_uuids": parsed_data.service_uuids,
-            "manufacturer_data": {k: v.hex() for k, v in parsed_data.manufacturer_data.items()},
-            "tx_power": parsed_data.tx_power,
-            "flags": parsed_data.flags,
+            "local_name": parsed_data.parsed_structures.local_name,
+            "service_uuids": parsed_data.parsed_structures.service_uuids,
+            "manufacturer_data": {k: v.hex() for k, v in parsed_data.parsed_structures.manufacturer_data.items()},
+            "tx_power": parsed_data.parsed_structures.tx_power,
+            "flags": parsed_data.parsed_structures.flags,
             "rssi": parsed_data.rssi,
             "extended_payload": parsed_data.extended_payload.hex() if parsed_data.extended_payload else "",
             "auxiliary_packets_count": len(parsed_data.auxiliary_packets),

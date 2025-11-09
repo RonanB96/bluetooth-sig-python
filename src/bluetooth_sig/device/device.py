@@ -185,8 +185,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         device_info = DeviceInfo(
             address=self.address,
             name=self.name,
-            manufacturer_data=self.advertiser_data.manufacturer_data,
-            service_uuids=self.advertiser_data.service_uuids,
+            manufacturer_data=self.advertiser_data.parsed_structures.manufacturer_data,
+            service_uuids=self.advertiser_data.parsed_structures.service_uuids,
         )
 
         base_ctx = CharacteristicContext(device_info=device_info)
@@ -386,8 +386,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.advertiser_data = parsed_data
 
         # Update device name if not set
-        if parsed_data.local_name and not self.name:
-            self.name = parsed_data.local_name
+        if parsed_data.parsed_structures.local_name and not self.name:
+            self.name = parsed_data.parsed_structures.local_name
 
     def get_characteristic_data(
         self, service_name: str | ServiceName, char_uuid: str
@@ -551,14 +551,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             self._device_info_cache = DeviceInfo(
                 address=self.address,
                 name=self.name,
-                manufacturer_data=self.advertiser_data.manufacturer_data,
-                service_uuids=self.advertiser_data.service_uuids,
+                manufacturer_data=self.advertiser_data.parsed_structures.manufacturer_data,
+                service_uuids=self.advertiser_data.parsed_structures.service_uuids,
             )
         else:
             # Update existing cache object with current data
             self._device_info_cache.name = self.name
-            self._device_info_cache.manufacturer_data = self.advertiser_data.manufacturer_data
-            self._device_info_cache.service_uuids = self.advertiser_data.service_uuids
+            self._device_info_cache.manufacturer_data = self.advertiser_data.parsed_structures.manufacturer_data
+            self._device_info_cache.service_uuids = self.advertiser_data.parsed_structures.service_uuids
         return self._device_info_cache
 
     @property

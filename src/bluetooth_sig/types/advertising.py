@@ -253,6 +253,7 @@ class ParsedADStructures(msgspec.Struct, kw_only=True):
     """Parsed Advertising Data structures from advertisement payload."""
 
     manufacturer_data: dict[int, bytes] = msgspec.field(default_factory=dict)
+    manufacturer_names: dict[int, str] = msgspec.field(default_factory=dict)
     service_uuids: list[str] = msgspec.field(default_factory=list)
     local_name: str = ""
     tx_power: int = 0
@@ -294,19 +295,26 @@ class ParsedADStructures(msgspec.Struct, kw_only=True):
 
 
 class DeviceAdvertiserData(msgspec.Struct, kw_only=True):
-    """Parsed advertiser data from device discovery."""
+    """Parsed advertiser data from device discovery.
+
+    Attributes:
+        raw_data: Raw bytes from the advertising packet
+        local_name: Device's local name (short or complete)
+        manufacturer_data: Manufacturer-specific data keyed by company ID
+        manufacturer_names: Resolved company names for all manufacturer data entries, keyed by company ID
+        service_uuids: List of advertised service UUIDs
+        tx_power: Transmission power level in dBm
+        rssi: Received signal strength indicator in dBm
+        flags: BLE advertising flags
+        appearance: Device appearance information
+        service_data: Service data keyed by UUID
+        solicited_service_uuids: List of solicited service UUIDs
+        uri: Uniform Resource Identifier
+    """
 
     raw_data: bytes
     parsed_structures: ParsedADStructures = msgspec.field(default_factory=ParsedADStructures)
-
-    # Frequently accessed fields (for backward compatibility and convenience)
-    local_name: str = ""
-    manufacturer_data: dict[int, bytes] = msgspec.field(default_factory=dict)
-    service_uuids: list[str] = msgspec.field(default_factory=list)
-    tx_power: int | None = None
     rssi: int | None = None
-    flags: BLEAdvertisingFlags | None = None
-    appearance: AppearanceData | None = None
 
     # Extended advertising specific fields
     extended_payload: bytes = b""
