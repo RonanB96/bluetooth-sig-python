@@ -7,6 +7,20 @@ from enum import IntEnum, IntFlag
 import msgspec
 
 
+class ADTypeInfo(msgspec.Struct, frozen=True, kw_only=True):
+    """AD Type information from Bluetooth SIG spec.
+
+    Attributes:
+        value: The AD type value (e.g., 0x01 for Flags)
+        name: Human-readable name from the specification
+        reference: Optional specification reference
+    """
+
+    value: int
+    name: str
+    reference: str | None = None
+
+
 class PDUFlags(IntFlag):
     """BLE PDU parsing bit masks for header operations.
 
@@ -128,61 +142,6 @@ class PDUType(IntEnum):
             PDUType.CONNECT_IND,
             PDUType.ADV_SCAN_IND,
         )
-
-
-class BLEAdvertisementTypes(IntEnum):
-    """BLE Advertisement Data Types (AD Types) as defined in Bluetooth Core Specification."""
-
-    # Legacy Advertising AD Types
-    FLAGS = 0x01
-    INCOMPLETE_16BIT_SERVICE_UUIDS = 0x02
-    COMPLETE_16BIT_SERVICE_UUIDS = 0x03
-    INCOMPLETE_32BIT_SERVICE_UUIDS = 0x04
-    COMPLETE_32BIT_SERVICE_UUIDS = 0x05
-    INCOMPLETE_128BIT_SERVICE_UUIDS = 0x06
-    COMPLETE_128BIT_SERVICE_UUIDS = 0x07
-    SHORTENED_LOCAL_NAME = 0x08
-    COMPLETE_LOCAL_NAME = 0x09
-    TX_POWER_LEVEL = 0x0A
-    CLASS_OF_DEVICE = 0x0D
-    SIMPLE_PAIRING_HASH_C = 0x0E
-    SIMPLE_PAIRING_RANDOMIZER_R = 0x0F
-    SECURITY_MANAGER_TK_VALUE = 0x10
-    SECURITY_MANAGER_OUT_OF_BAND_FLAGS = 0x11
-    SLAVE_CONNECTION_INTERVAL_RANGE = 0x12
-    SOLICITED_SERVICE_UUIDS_16BIT = 0x14
-    SOLICITED_SERVICE_UUIDS_128BIT = 0x15
-    SERVICE_DATA_16BIT = 0x16
-    PUBLIC_TARGET_ADDRESS = 0x17
-    RANDOM_TARGET_ADDRESS = 0x18
-    APPEARANCE = 0x19
-    ADVERTISING_INTERVAL = 0x1A
-    LE_BLUETOOTH_DEVICE_ADDRESS = 0x1B
-    LE_ROLE = 0x1C
-    SIMPLE_PAIRING_HASH_C256 = 0x1D
-    SIMPLE_PAIRING_RANDOMIZER_R256 = 0x1E
-    SERVICE_DATA_32BIT = 0x20
-    SERVICE_DATA_128BIT = 0x21
-    SECURE_CONNECTIONS_CONFIRMATION_VALUE = 0x22
-    SECURE_CONNECTIONS_RANDOM_VALUE = 0x23
-    URI = 0x24
-    INDOOR_POSITIONING = 0x25
-    TRANSPORT_DISCOVERY_DATA = 0x26
-    LE_SUPPORTED_FEATURES = 0x27
-    CHANNEL_MAP_UPDATE_INDICATION = 0x28
-    PB_ADV = 0x29
-    MESH_MESSAGE = 0x2A
-    MESH_BEACON = 0x2B
-    BIGINFO = 0x2C
-    BROADCAST_CODE = 0x2D
-    RESOLVABLE_SET_IDENTIFIER = 0x2E
-    ADVERTISING_INTERVAL_LONG = 0x2F
-    BROADCAST_NAME = 0x30
-    ENCRYPTED_ADVERTISING_DATA = 0x31
-    PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION = 0x32
-    ELECTRONIC_SHELF_LABEL = 0x34
-    THREE_D_INFORMATION_DATA = 0x3D
-    MANUFACTURER_SPECIFIC_DATA = 0xFF
 
 
 class BLEAdvertisingFlags(IntFlag):

@@ -1,0 +1,91 @@
+"""AD Type constants from Bluetooth SIG specification.
+
+These constants are organized into logical groups for better discoverability.
+Values are from Bluetooth Core Specification Supplement, Part A.
+"""
+
+from __future__ import annotations
+
+
+class ADType:
+    """Bluetooth Advertising Data Type constants organized by category."""
+
+    # Core Advertising Data
+    FLAGS = 0x01
+    TX_POWER_LEVEL = 0x0A
+    APPEARANCE = 0x19
+
+    # Device Identification
+    SHORTENED_LOCAL_NAME = 0x08
+    COMPLETE_LOCAL_NAME = 0x09
+    CLASS_OF_DEVICE = 0x0D
+
+    # Service UUIDs - 16-bit
+    INCOMPLETE_16BIT_SERVICE_UUIDS = 0x02
+    COMPLETE_16BIT_SERVICE_UUIDS = 0x03
+    SOLICITED_SERVICE_UUIDS_16BIT = 0x14
+
+    # Service UUIDs - 32-bit
+    INCOMPLETE_32BIT_SERVICE_UUIDS = 0x04
+    COMPLETE_32BIT_SERVICE_UUIDS = 0x05
+    SOLICITED_SERVICE_UUIDS_32BIT = 0x1F
+
+    # Service UUIDs - 128-bit
+    INCOMPLETE_128BIT_SERVICE_UUIDS = 0x06
+    COMPLETE_128BIT_SERVICE_UUIDS = 0x07
+    SOLICITED_SERVICE_UUIDS_128BIT = 0x15
+
+    # Service Data
+    SERVICE_DATA_16BIT = 0x16
+    SERVICE_DATA_32BIT = 0x20
+    SERVICE_DATA_128BIT = 0x21
+
+    # Security & Pairing
+    SIMPLE_PAIRING_HASH_C = 0x0E
+    SIMPLE_PAIRING_RANDOMIZER_R = 0x0F
+    SIMPLE_PAIRING_HASH_C256 = 0x1D
+    SIMPLE_PAIRING_RANDOMIZER_R256 = 0x1E
+    SECURITY_MANAGER_TK_VALUE = 0x10
+    SECURITY_MANAGER_OUT_OF_BAND_FLAGS = 0x11
+    SECURE_CONNECTIONS_CONFIRMATION_VALUE = 0x22
+    SECURE_CONNECTIONS_RANDOM_VALUE = 0x23
+
+    # Connection Parameters
+    SLAVE_CONNECTION_INTERVAL_RANGE = 0x12
+    LE_BLUETOOTH_DEVICE_ADDRESS = 0x1B
+    LE_ROLE = 0x1C
+
+    # Addressing
+    PUBLIC_TARGET_ADDRESS = 0x17
+    RANDOM_TARGET_ADDRESS = 0x18
+
+    # Timing & Intervals
+    ADVERTISING_INTERVAL = 0x1A
+    ADVERTISING_INTERVAL_LONG = 0x2F
+    PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION = 0x32
+
+    # Location & Positioning
+    INDOOR_POSITIONING = 0x25
+    THREE_D_INFORMATION_DATA = 0x3D
+
+    # Mesh Networking
+    PB_ADV = 0x29
+    MESH_MESSAGE = 0x2A
+    MESH_BEACON = 0x2B
+
+    # Extended Features
+    LE_SUPPORTED_FEATURES = 0x27
+    CHANNEL_MAP_UPDATE_INDICATION = 0x28
+    BIGINFO = 0x2C
+    BROADCAST_CODE = 0x2D
+    RESOLVABLE_SET_IDENTIFIER = 0x2E
+    BROADCAST_NAME = 0x30
+    ENCRYPTED_ADVERTISING_DATA = 0x31
+    ELECTRONIC_SHELF_LABEL = 0x34
+
+    # Data Transport
+    URI = 0x24
+    TRANSPORT_DISCOVERY_DATA = 0x26
+
+    # Vendor-Specific
+    MANUFACTURER_SPECIFIC_DATA = 0xFF

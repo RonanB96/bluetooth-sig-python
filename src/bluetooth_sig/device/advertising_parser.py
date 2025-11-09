@@ -7,9 +7,11 @@ UUIDs from both legacy and extended advertising formats.
 
 from __future__ import annotations
 
+import logging
+
 from ..gatt.characteristics.utils import DataParser
+from ..registry import ad_types_registry
 from ..types import (
-    BLEAdvertisementTypes,
     BLEAdvertisingFlags,
     BLEAdvertisingPDU,
     BLEExtendedHeader,
@@ -19,6 +21,9 @@ from ..types import (
     PDUFlags,
     PDUType,
 )
+from ..types.ad_types_constants import ADType
+
+logger = logging.getLogger(__name__)
 
 
 class AdvertisingParser:  # pylint: disable=too-few-public-methods
@@ -320,108 +325,109 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             ad_type = data[i + 1]
             ad_data = data[i + 2 : i + length + 1]
 
-            if ad_type == BLEAdvertisementTypes.FLAGS and len(ad_data) >= 1:
+            # Warn about unknown AD types
+            if not ad_types_registry.is_known_ad_type(ad_type):
+                logger.warning("Unknown AD type encountered: 0x%02X", ad_type)
+
+            if ad_type == ADType.FLAGS and len(ad_data) >= 1:
                 parsed.flags = BLEAdvertisingFlags(ad_data[0])
             elif ad_type in (
-                BLEAdvertisementTypes.INCOMPLETE_16BIT_SERVICE_UUIDS,
-                BLEAdvertisementTypes.COMPLETE_16BIT_SERVICE_UUIDS,
+                ADType.INCOMPLETE_16BIT_SERVICE_UUIDS,
+                ADType.COMPLETE_16BIT_SERVICE_UUIDS,
             ):
                 for j in range(0, len(ad_data), 2):
                     if j + 1 < len(ad_data):
                         uuid_short = DataParser.parse_int16(ad_data, j, signed=False)
                         parsed.service_uuids.append(f"{uuid_short:04X}")
-            elif ad_type in (
-                BLEAdvertisementTypes.SHORTENED_LOCAL_NAME,
-                BLEAdvertisementTypes.COMPLETE_LOCAL_NAME,
-            ):
+            elif ad_type in (ADType.SHORTENED_LOCAL_NAME, ADType.COMPLETE_LOCAL_NAME):
                 try:
                     parsed.local_name = ad_data.decode("utf-8")
                 except UnicodeDecodeError:
                     parsed.local_name = ad_data.hex()
-            elif ad_type == BLEAdvertisementTypes.TX_POWER_LEVEL and len(ad_data) >= 1:
+            elif ad_type == ADType.TX_POWER_LEVEL and len(ad_data) >= 1:
                 parsed.tx_power = int.from_bytes(ad_data[:1], byteorder="little", signed=True)
-            elif ad_type == BLEAdvertisementTypes.MANUFACTURER_SPECIFIC_DATA and len(ad_data) >= 2:
+            elif ad_type == ADType.MANUFACTURER_SPECIFIC_DATA and len(ad_data) >= 2:
                 company_id = DataParser.parse_int16(ad_data, 0, signed=False)
                 parsed.manufacturer_data[company_id] = ad_data[2:]
-            elif ad_type == BLEAdvertisementTypes.APPEARANCE and len(ad_data) >= 2:
+            elif ad_type == ADType.APPEARANCE and len(ad_data) >= 2:
                 parsed.appearance = DataParser.parse_int16(ad_data, 0, signed=False)
-            elif ad_type == BLEAdvertisementTypes.SERVICE_DATA_16BIT and len(ad_data) >= 2:
+            elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_data) >= 2:
                 service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
                 parsed.service_data[service_uuid] = ad_data[2:]
-            elif ad_type == BLEAdvertisementTypes.URI:
+            elif ad_type == ADType.URI:
                 try:
                     parsed.uri = ad_data.decode("utf-8")
                 except UnicodeDecodeError:
                     parsed.uri = ad_data.hex()
-            elif ad_type == BLEAdvertisementTypes.INDOOR_POSITIONING:
+            elif ad_type == ADType.INDOOR_POSITIONING:
                 parsed.indoor_positioning = ad_data
-            elif ad_type == BLEAdvertisementTypes.TRANSPORT_DISCOVERY_DATA:
+            elif ad_type == ADType.TRANSPORT_DISCOVERY_DATA:
                 parsed.transport_discovery_data = ad_data
-            elif ad_type == BLEAdvertisementTypes.LE_SUPPORTED_FEATURES:
+            elif ad_type == ADType.LE_SUPPORTED_FEATURES:
                 parsed.le_supported_features = ad_data
-            elif ad_type == BLEAdvertisementTypes.ENCRYPTED_ADVERTISING_DATA:
+            elif ad_type == ADType.ENCRYPTED_ADVERTISING_DATA:
                 parsed.encrypted_advertising_data = ad_data
-            elif ad_type == BLEAdvertisementTypes.PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION:
+            elif ad_type == ADType.PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION:
                 parsed.periodic_advertising_response_timing = ad_data
-            elif ad_type == BLEAdvertisementTypes.ELECTRONIC_SHELF_LABEL:
+            elif ad_type == ADType.ELECTRONIC_SHELF_LABEL:
                 parsed.electronic_shelf_label = ad_data
-            elif ad_type == BLEAdvertisementTypes.THREE_D_INFORMATION_DATA:
+            elif ad_type == ADType.THREE_D_INFORMATION_DATA:
                 parsed.three_d_information = ad_data
-            elif ad_type == BLEAdvertisementTypes.BROADCAST_NAME:
+            elif ad_type == ADType.BROADCAST_NAME:
                 try:
                     parsed.broadcast_name = ad_data.decode("utf-8")
                 except UnicodeDecodeError:
                     parsed.broadcast_name = ad_data.hex()
-            elif ad_type == BLEAdvertisementTypes.BROADCAST_CODE:
+            elif ad_type == ADType.BROADCAST_CODE:
                 parsed.broadcast_code = ad_data
-            elif ad_type == BLEAdvertisementTypes.BIGINFO:
+            elif ad_type == ADType.BIGINFO:
                 parsed.biginfo = ad_data
-            elif ad_type == BLEAdvertisementTypes.MESH_MESSAGE:
+            elif ad_type == ADType.MESH_MESSAGE:
                 parsed.mesh_message = ad_data
-            elif ad_type == BLEAdvertisementTypes.MESH_BEACON:
+            elif ad_type == ADType.MESH_BEACON:
                 parsed.mesh_beacon = ad_data
-            elif ad_type == BLEAdvertisementTypes.PUBLIC_TARGET_ADDRESS:
+            elif ad_type == ADType.PUBLIC_TARGET_ADDRESS:
                 for j in range(0, len(ad_data), 6):
                     if j + 5 < len(ad_data):
                         addr_bytes = ad_data[j : j + 6]
                         addr_str = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
                         parsed.public_target_address.append(addr_str)
-            elif ad_type == BLEAdvertisementTypes.RANDOM_TARGET_ADDRESS:
+            elif ad_type == ADType.RANDOM_TARGET_ADDRESS:
                 for j in range(0, len(ad_data), 6):
                     if j + 5 < len(ad_data):
                         addr_bytes = ad_data[j : j + 6]
                         addr_str = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
                         parsed.random_target_address.append(addr_str)
-            elif ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL and len(ad_data) >= 2:
+            elif ad_type == ADType.ADVERTISING_INTERVAL and len(ad_data) >= 2:
                 parsed.advertising_interval = DataParser.parse_int16(ad_data, 0, signed=False)
-            elif ad_type == BLEAdvertisementTypes.ADVERTISING_INTERVAL_LONG and len(ad_data) >= 3:
+            elif ad_type == ADType.ADVERTISING_INTERVAL_LONG and len(ad_data) >= 3:
                 parsed.advertising_interval_long = int.from_bytes(ad_data[:3], byteorder="little", signed=False)
-            elif ad_type == BLEAdvertisementTypes.LE_BLUETOOTH_DEVICE_ADDRESS and len(ad_data) >= 6:
+            elif ad_type == ADType.LE_BLUETOOTH_DEVICE_ADDRESS and len(ad_data) >= 6:
                 addr_bytes = ad_data[:6]
                 parsed.le_bluetooth_device_address = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
-            elif ad_type == BLEAdvertisementTypes.LE_ROLE and len(ad_data) >= 1:
+            elif ad_type == ADType.LE_ROLE and len(ad_data) >= 1:
                 parsed.le_role = ad_data[0]
-            elif ad_type == BLEAdvertisementTypes.CLASS_OF_DEVICE and len(ad_data) >= 3:
+            elif ad_type == ADType.CLASS_OF_DEVICE and len(ad_data) >= 3:
                 parsed.class_of_device = int.from_bytes(ad_data[:3], byteorder="little", signed=False)
-            elif ad_type == BLEAdvertisementTypes.SIMPLE_PAIRING_HASH_C:
+            elif ad_type == ADType.SIMPLE_PAIRING_HASH_C:
                 parsed.simple_pairing_hash_c = ad_data
-            elif ad_type == BLEAdvertisementTypes.SIMPLE_PAIRING_RANDOMIZER_R:
+            elif ad_type == ADType.SIMPLE_PAIRING_RANDOMIZER_R:
                 parsed.simple_pairing_randomizer_r = ad_data
-            elif ad_type == BLEAdvertisementTypes.SECURITY_MANAGER_TK_VALUE:
+            elif ad_type == ADType.SECURITY_MANAGER_TK_VALUE:
                 parsed.security_manager_tk_value = ad_data
-            elif ad_type == BLEAdvertisementTypes.SECURITY_MANAGER_OUT_OF_BAND_FLAGS:
+            elif ad_type == ADType.SECURITY_MANAGER_OUT_OF_BAND_FLAGS:
                 parsed.security_manager_out_of_band_flags = ad_data
-            elif ad_type == BLEAdvertisementTypes.SLAVE_CONNECTION_INTERVAL_RANGE:
+            elif ad_type == ADType.SLAVE_CONNECTION_INTERVAL_RANGE:
                 parsed.slave_connection_interval_range = ad_data
-            elif ad_type == BLEAdvertisementTypes.SECURE_CONNECTIONS_CONFIRMATION_VALUE:
+            elif ad_type == ADType.SECURE_CONNECTIONS_CONFIRMATION_VALUE:
                 parsed.secure_connections_confirmation = ad_data
-            elif ad_type == BLEAdvertisementTypes.SECURE_CONNECTIONS_RANDOM_VALUE:
+            elif ad_type == ADType.SECURE_CONNECTIONS_RANDOM_VALUE:
                 parsed.secure_connections_random = ad_data
-            elif ad_type == BLEAdvertisementTypes.CHANNEL_MAP_UPDATE_INDICATION:
+            elif ad_type == ADType.CHANNEL_MAP_UPDATE_INDICATION:
                 parsed.channel_map_update_indication = ad_data
-            elif ad_type == BLEAdvertisementTypes.PB_ADV:
+            elif ad_type == ADType.PB_ADV:
                 parsed.pb_adv = ad_data
-            elif ad_type == BLEAdvertisementTypes.RESOLVABLE_SET_IDENTIFIER:
+            elif ad_type == ADType.RESOLVABLE_SET_IDENTIFIER:
                 parsed.resolvable_set_identifier = ad_data
 
             i += length + 1
