@@ -95,28 +95,30 @@ Based on benchmark observations:
 
 ## Real-World Scenarios
 
+These scenarios assume a modern multi-core CPU (e.g., Intel Core i5/i7 or equivalent) where 1 core = 100% CPU.
+
 ### Scenario 1: Environmental Sensor (1 Hz)
 ```
 Temperature (1 Hz) + Humidity (1 Hz) + Pressure (1 Hz)
-= 3 parses/second × 200 μs/parse = 600 μs/second CPU
-= 0.06% CPU utilization
+= 3 parses/second × 200 μs/parse = 600 μs/second CPU time
+= 0.06% of one CPU core
 ```
 
 ### Scenario 2: Fitness Tracker (10 Hz notifications)
 ```
 Heart Rate (10 Hz) + Running Speed (10 Hz)
-= 20 parses/second × 700 μs/parse = 14 ms/second CPU
-= 1.4% CPU utilization
+= 20 parses/second × 700 μs/parse = 14 ms/second CPU time
+= 1.4% of one CPU core
 ```
 
 ### Scenario 3: Multi-Device Dashboard (100 devices)
 ```
 100 devices × 5 characteristics × 1 Hz = 500 parses/second
-= 500 × 200 μs = 100 ms/second CPU
-= 10% CPU utilization
+= 500 × 200 μs = 100 ms/second CPU time
+= 10% of one CPU core
 ```
 
-**Conclusion**: The library is suitable for moderate-scale BLE applications with typical update rates (<100 Hz).
+**Note**: CPU utilization percentages are theoretical estimates based on parsing time alone. Actual utilization will include BLE I/O overhead, framework overhead, and other application logic. BLE I/O typically dominates at 10-100ms per operation.
 
 ## Optimization Guidelines
 
