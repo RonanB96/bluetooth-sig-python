@@ -5,7 +5,8 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.device.advertising_parser import AdvertisingParser
-from bluetooth_sig.types import AppearanceData, BLEAdvertisementTypes
+from bluetooth_sig.types import AppearanceData
+from bluetooth_sig.types.ad_types_constants import ADType
 
 
 class TestAdvertisingParserAppearance:
@@ -25,7 +26,7 @@ class TestAdvertisingParserAppearance:
         ad_data = bytearray(
             [
                 3,  # Length
-                BLEAdvertisementTypes.APPEARANCE,  # Type 0x19
+                ADType.APPEARANCE,  # Type 0x19
                 0x41,
                 0x03,  # Appearance value 833
             ]
@@ -48,7 +49,7 @@ class TestAdvertisingParserAppearance:
         ad_data = bytearray(
             [
                 3,  # Length
-                BLEAdvertisementTypes.APPEARANCE,  # Type 0x19
+                ADType.APPEARANCE,  # Type 0x19
                 0x40,
                 0x00,  # Appearance value 64
             ]
@@ -70,7 +71,7 @@ class TestAdvertisingParserAppearance:
         ad_data = bytearray(
             [
                 3,  # Length
-                BLEAdvertisementTypes.APPEARANCE,  # Type 0x19
+                ADType.APPEARANCE,  # Type 0x19
                 0x00,
                 0x00,  # Appearance value 0
             ]
@@ -89,7 +90,7 @@ class TestAdvertisingParserAppearance:
         ad_data = bytearray(
             [
                 3,  # Length
-                BLEAdvertisementTypes.APPEARANCE,  # Type 0x19
+                ADType.APPEARANCE,  # Type 0x19
                 0xFF,
                 0xFF,  # Appearance value 65535
             ]
@@ -107,7 +108,7 @@ class TestAdvertisingParserAppearance:
         ad_data = bytearray(
             [
                 6,  # Length
-                BLEAdvertisementTypes.COMPLETE_LOCAL_NAME,  # Type 0x09
+                ADType.COMPLETE_LOCAL_NAME,  # Type 0x09
                 ord("T"),
                 ord("e"),
                 ord("s"),
@@ -126,17 +127,17 @@ class TestAdvertisingParserAppearance:
         ad_data = bytearray(
             [
                 2,  # Length
-                BLEAdvertisementTypes.FLAGS,  # Type 0x01
+                ADType.FLAGS,  # Type 0x01
                 0x06,  # Flags value
                 6,  # Length
-                BLEAdvertisementTypes.COMPLETE_LOCAL_NAME,  # Type 0x09
+                ADType.COMPLETE_LOCAL_NAME,  # Type 0x09
                 ord("T"),
                 ord("e"),
                 ord("s"),
                 ord("t"),
                 0,
                 3,  # Length
-                BLEAdvertisementTypes.APPEARANCE,  # Type 0x19
+                ADType.APPEARANCE,  # Type 0x19
                 0x41,
                 0x03,  # Heart Rate Belt
             ]
@@ -153,7 +154,7 @@ class TestAdvertisingParserAppearance:
     def test_parse_computer_subcategories(self, parser: AdvertisingParser) -> None:
         """Test parsing various computer subcategories."""
         # Desktop: (2 << 6) | 1 = 129 (0x0081)
-        ad_data_desktop = bytearray([3, BLEAdvertisementTypes.APPEARANCE, 0x81, 0x00])
+        ad_data_desktop = bytearray([3, ADType.APPEARANCE, 0x81, 0x00])
         result_desktop = parser.parse_advertising_data(bytes(ad_data_desktop))
 
         assert result_desktop.appearance is not None
@@ -163,7 +164,7 @@ class TestAdvertisingParserAppearance:
             assert result_desktop.appearance.info.subcategory == "Desktop Workstation"
 
         # Laptop: (2 << 6) | 3 = 131 (0x0083)
-        ad_data_laptop = bytearray([3, BLEAdvertisementTypes.APPEARANCE, 0x83, 0x00])
+        ad_data_laptop = bytearray([3, ADType.APPEARANCE, 0x83, 0x00])
         result_laptop = parser.parse_advertising_data(bytes(ad_data_laptop))
 
         assert result_laptop.appearance is not None

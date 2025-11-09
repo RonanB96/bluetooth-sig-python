@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 from bluetooth_sig.registry.core.appearance_values import AppearanceValuesRegistry
-from bluetooth_sig.types.appearance import AppearanceInfo
+from bluetooth_sig.types.appearance_info import AppearanceInfo
 
 
 @pytest.fixture(scope="session")

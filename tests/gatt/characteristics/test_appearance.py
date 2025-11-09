@@ -19,21 +19,48 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
 
     @pytest.fixture
     def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
-        # Create AppearanceData objects using from_category to test validation
+        # Create AppearanceData objects directly with raw values to avoid registry dependency
+        # This makes tests deterministic and independent of registry state
+        from bluetooth_sig.types.appearance_info import AppearanceInfo
+
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x00]),
-                expected_value=AppearanceData.from_category("Unknown"),
+                expected_value=AppearanceData(
+                    raw_value=0,
+                    info=AppearanceInfo(
+                        category="Unknown",
+                        subcategory=None,
+                        category_value=0,
+                        subcategory_value=None,
+                    ),
+                ),
                 description="Unknown appearance (0x0000)",
             ),
             CharacteristicTestData(
                 input_data=bytearray([0x40, 0x00]),
-                expected_value=AppearanceData.from_category("Phone"),
+                expected_value=AppearanceData(
+                    raw_value=64,
+                    info=AppearanceInfo(
+                        category="Phone",
+                        subcategory=None,
+                        category_value=1,
+                        subcategory_value=None,
+                    ),
+                ),
                 description="Phone (0x0040)",
             ),
             CharacteristicTestData(
                 input_data=bytearray([0x41, 0x03]),
-                expected_value=AppearanceData.from_category("Heart Rate Sensor", "Heart Rate Belt"),
+                expected_value=AppearanceData(
+                    raw_value=833,
+                    info=AppearanceInfo(
+                        category="Heart Rate Sensor",
+                        subcategory="Heart Rate Belt",
+                        category_value=13,
+                        subcategory_value=1,
+                    ),
+                ),
                 description="Heart Rate Sensor Belt (0x0341)",
             ),
         ]

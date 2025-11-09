@@ -7,14 +7,13 @@ characteristics.
 
 from __future__ import annotations
 
-import threading
 from pathlib import Path
 
 import msgspec
 
 from bluetooth_sig.registry.base import BaseRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
-from bluetooth_sig.types.appearance import AppearanceInfo
+from bluetooth_sig.types.appearance_info import AppearanceInfo
 
 
 class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
@@ -46,7 +45,6 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
         super().__init__()
         self._appearances: dict[int, AppearanceInfo] = {}
         self._loaded = False
-        self._lock = threading.RLock()
 
     def _ensure_loaded(self) -> None:
         """Lazy load appearance values from YAML on first access.
@@ -54,28 +52,27 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
         This method is thread-safe and ensures the YAML is only loaded once,
         even when called concurrently from multiple threads.
         """
-        if self._loaded:
-            return
 
-        with self._lock:
-            # Double-check locking pattern: check again inside lock
-            # NOTE: This pattern is correct but confuses mypy's reachability analysis
-            if self._loaded:
-                return
-
-            base_path = find_bluetooth_sig_path()
-            if not base_path:
+        def _load() -> None:
+            """Perform the actual loading."""
+            # Get path to uuids/ directory
+            uuids_path = find_bluetooth_sig_path()
+            if not uuids_path:
                 self._loaded = True
                 return
 
-            # Appearance values are in core/ directory, not uuids/
-            yaml_path = base_path.parent / "core" / "appearance_values.yaml"
+            # Appearance values are in core/ directory (sibling of uuids/)
+            # Navigate from uuids/ to assigned_numbers/ then to core/
+            assigned_numbers_path = uuids_path.parent
+            yaml_path = assigned_numbers_path / "core" / "appearance_values.yaml"
             if not yaml_path.exists():
                 self._loaded = True
                 return
 
             self._load_yaml(yaml_path)
             self._loaded = True
+
+        self._lazy_load(self._loaded, _load)
 
     def _load_yaml(self, yaml_path: Path) -> None:
         """Load and parse the appearance values YAML file.
@@ -144,10 +141,13 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
         This method lazily loads the YAML file on first call.
 
         Args:
-            appearance_code: 16-bit appearance value from BLE
+            appearance_code: 16-bit appearance value from BLE (0-65535)
 
         Returns:
             AppearanceInfo with decoded information, or None if code not found
+
+        Raises:
+            ValueError: If appearance_code is outside valid range (0-65535)
 
         Example:
             >>> registry = AppearanceValuesRegistry()
@@ -155,8 +155,40 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
             >>> if info:
             ...     print(info.full_name)  # "Heart Rate Sensor: Heart Rate Belt"
         """
+        # Validate input range for 16-bit appearance code
+        if not 0 <= appearance_code <= 65535:
+            raise ValueError(f"Appearance code must be in range 0-65535, got {appearance_code}")
+
         self._ensure_loaded()
         return self._appearances.get(appearance_code)
+
+    def find_by_category_subcategory(self, category: str, subcategory: str | None = None) -> AppearanceInfo | None:
+        """Find appearance info by category and subcategory names.
+
+        This method searches the registry for an appearance that matches
+        the given category and subcategory names.
+
+        Args:
+            category: Device category name (e.g., "Heart Rate Sensor")
+            subcategory: Optional subcategory name (e.g., "Heart Rate Belt")
+
+        Returns:
+            AppearanceInfo if found, None otherwise
+
+        Example:
+            >>> registry = AppearanceValuesRegistry()
+            >>> info = registry.find_by_category_subcategory("Heart Rate Sensor", "Heart Rate Belt")
+            >>> if info:
+            ...     print(info.category_value)  # Category value for lookup
+        """
+        self._ensure_loaded()
+
+        # Search for matching appearance
+        for info in self._appearances.values():
+            if info.category == category and info.subcategory == subcategory:
+                return info
+
+        return None
 
 
 # Singleton instance for global use

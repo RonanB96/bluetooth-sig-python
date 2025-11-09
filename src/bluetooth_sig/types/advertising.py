@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from enum import IntEnum, IntFlag
+from typing import TYPE_CHECKING
 
 import msgspec
 
-from bluetooth_sig.types.appearance import AppearanceData
+if TYPE_CHECKING:
+    from bluetooth_sig.types.appearance import AppearanceData
 
 
 class ADTypeInfo(msgspec.Struct, frozen=True, kw_only=True):

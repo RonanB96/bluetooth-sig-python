@@ -4,33 +4,8 @@ from __future__ import annotations
 
 import msgspec
 
-
-class AppearanceInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Decoded appearance information from registry.
-
-    Attributes:
-        category: Human-readable device category name (e.g., "Heart Rate Sensor")
-        subcategory: Optional subcategory name (e.g., "Heart Rate Belt")
-        category_value: Category value (upper 10 bits of appearance code)
-        subcategory_value: Optional subcategory value (lower 6 bits of appearance code)
-    """
-
-    category: str
-    subcategory: str | None = None
-    category_value: int
-    subcategory_value: int | None = None
-
-    @property
-    def full_name(self) -> str:
-        """Get full appearance name.
-
-        Returns:
-            Full name with category and optional subcategory
-            (e.g., "Heart Rate Sensor: Heart Rate Belt" or "Phone")
-        """
-        if self.subcategory:
-            return f"{self.category}: {self.subcategory}"
-        return self.category
+from bluetooth_sig.registry import appearance_values_registry
+from bluetooth_sig.types.appearance_info import AppearanceInfo
 
 
 class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):
@@ -67,20 +42,18 @@ class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):
             >>> data.raw_value
             833
         """
-        from bluetooth_sig.registry import appearance_values_registry
+        # Use public method to find appearance info
+        info = appearance_values_registry.find_by_category_subcategory(category, subcategory)
 
-        # Force registry to load
-        appearance_values_registry._ensure_loaded()
+        if info is None:
+            # If not found, raise error
+            if subcategory:
+                raise ValueError(f"Unknown appearance: {category}: {subcategory}")
+            raise ValueError(f"Unknown appearance: {category}")
 
-        # Search for matching appearance
-        for code, info in appearance_values_registry._appearances.items():
-            if info.category == category and info.subcategory == subcategory:
-                return cls(raw_value=code, info=info)
-
-        # If not found, raise error
-        if subcategory:
-            raise ValueError(f"Unknown appearance: {category}: {subcategory}")
-        raise ValueError(f"Unknown appearance: {category}")
+        # Calculate raw_value from category and subcategory values
+        raw_value = (info.category_value << 6) | (info.subcategory_value or 0)
+        return cls(raw_value=raw_value, info=info)
 
     @property
     def category(self) -> str | None:
@@ -116,3 +89,22 @@ class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):
             Raw appearance value as integer
         """
         return self.raw_value
+
+    def __format__(self, format_spec: str) -> str:
+        """Format appearance value for backward compatibility.
+
+        Supports hex formatting for backward compatibility with code that
+        used raw int appearance values: f"{appearance:04X}"
+
+        Args:
+            format_spec: Format specification (e.g., "04X" for zero-padded uppercase hex)
+
+        Returns:
+            Formatted raw_value as string
+
+        Example:
+            >>> data = AppearanceData(raw_value=833, info=None)
+            >>> f"{data:04X}"
+            '0341'
+        """
+        return format(self.raw_value, format_spec)
