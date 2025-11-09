@@ -322,6 +322,14 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                     if j + 1 < len(ad_data):
                         uuid_short = DataParser.parse_int16(ad_data, j, signed=False)
                         parsed.core.service_uuids.append(f"{uuid_short:04X}")
+            elif ad_type in (
+                ADType.INCOMPLETE_128BIT_SERVICE_UUIDS,
+                ADType.COMPLETE_128BIT_SERVICE_UUIDS,
+            ):
+                for j in range(0, len(ad_data), 16):
+                    if j + 15 < len(ad_data):
+                        uuid_128 = ad_data[j : j + 16].hex().upper()
+                        parsed.core.service_uuids.append(uuid_128)
             elif ad_type in (ADType.SHORTENED_LOCAL_NAME, ADType.COMPLETE_LOCAL_NAME):
                 try:
                     parsed.core.local_name = ad_data.decode("utf-8")
@@ -338,9 +346,9 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_data) >= 2:
                 service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
                 parsed.core.service_data[service_uuid] = ad_data[2:]
-            elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_data) >= 2:
-                service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
-                parsed.core.service_data[service_uuid] = ad_data[2:]
+            elif ad_type == ADType.SERVICE_DATA_128BIT and len(ad_data) >= 16:
+                service_uuid = ad_data[:16].hex().upper()
+                parsed.core.service_data[service_uuid] = ad_data[16:]
             elif ad_type == ADType.URI:
                 try:
                     parsed.core.uri = ad_data.decode("utf-8")
