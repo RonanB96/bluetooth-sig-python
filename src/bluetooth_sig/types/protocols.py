@@ -41,3 +41,36 @@ class CharacteristicProtocol(Protocol):
     def encode_value(self, value: Any) -> bytearray:  # noqa: ANN401
         """Encode characteristic value into raw data."""
         ...  # pylint: disable=unnecessary-ellipsis  # Ellipsis is required for Protocol method stubs
+
+
+# Import at the end to avoid circular import issues
+try:
+    import msgspec
+
+    from .uuid import BluetoothUUID
+
+    class ProtocolInfo(msgspec.Struct, frozen=True, kw_only=True):
+        """Information about a Bluetooth protocol identifier.
+
+        Attributes:
+            uuid: The protocol's Bluetooth UUID
+            name: Human-readable protocol name (e.g., "L2CAP", "RFCOMM")
+        """
+
+        uuid: BluetoothUUID
+        name: str
+
+        @property
+        def protocol_type(self) -> str:
+            """Extract protocol type from name.
+
+            Returns the uppercase version of the protocol name for consistency.
+
+            Returns:
+                Protocol type as uppercase string (e.g., "L2CAP", "RFCOMM")
+            """
+            return self.name.upper()
+
+except ImportError:
+    # Fallback if msgspec or uuid not available (shouldn't happen in normal use)
+    pass

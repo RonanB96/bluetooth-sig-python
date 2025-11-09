@@ -44,7 +44,7 @@ from .data_types import (
     ValidationResult,
 )
 from .descriptor_types import DescriptorData, DescriptorInfo
-from .protocols import CharacteristicDataProtocol
+from .protocols import CharacteristicDataProtocol, ProtocolInfo
 from .units import (
     AngleUnit,
     ConcentrationUnit,
@@ -116,6 +116,7 @@ __all__ = [
     "PercentageUnit",
     "PhysicalUnit",
     "PressureUnit",
+    "ProtocolInfo",
     "ServiceInfo",
     "ServiceRegistration",
     "SIGInfo",
