@@ -25,7 +25,6 @@ class CompanyIdentifiersRegistry(BaseRegistry[str]):
         """Initialize the company identifiers registry."""
         super().__init__()
         self._companies: dict[int, str] = {}
-        self._loaded = False
 
     def _load_company_identifiers(self, yaml_path: Path) -> None:
         """Load company identifiers from YAML file.
@@ -55,37 +54,28 @@ class CompanyIdentifiersRegistry(BaseRegistry[str]):
                 if company_id is not None and company_name:
                     self._companies[company_id] = company_name
 
-    def _ensure_loaded(self) -> None:
-        """Lazy load: only parse YAML when first lookup happens.
-
-        Uses the base class _lazy_load helper for thread-safe lazy loading.
-        The YAML file is only loaded once, on the first call to get_company_name().
-        """
-
-        def _load() -> None:
-            """Load company identifiers from YAML."""
-            # Use find_bluetooth_sig_path and navigate to company_identifiers
-            uuids_path = find_bluetooth_sig_path()
-            if not uuids_path:
-                self._loaded = True
-                return
-
-            # Navigate from uuids/ to company_identifiers/
-            base_path = uuids_path.parent / "company_identifiers"
-            if not base_path.exists():
-                self._loaded = True
-                return
-
-            yaml_path = base_path / "company_identifiers.yaml"
-            if not yaml_path.exists():
-                self._loaded = True
-                return
-
-            # Load company identifiers from YAML
-            self._load_company_identifiers(yaml_path)
+    def _load(self) -> None:
+        """Perform the actual loading of company identifiers data."""
+        # Use find_bluetooth_sig_path and navigate to company_identifiers
+        uuids_path = find_bluetooth_sig_path()
+        if not uuids_path:
             self._loaded = True
+            return
 
-        self._lazy_load(self._loaded, _load)
+        # Navigate from uuids/ to company_identifiers/
+        base_path = uuids_path.parent / "company_identifiers"
+        if not base_path.exists():
+            self._loaded = True
+            return
+
+        yaml_path = base_path / "company_identifiers.yaml"
+        if not yaml_path.exists():
+            self._loaded = True
+            return
+
+        # Load company identifiers from YAML
+        self._load_company_identifiers(yaml_path)
+        self._loaded = True
 
     def get_company_name(self, company_id: int) -> str | None:
         """Get company name by ID (lazy loads on first call).

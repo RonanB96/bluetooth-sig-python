@@ -36,46 +36,38 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
         super().__init__()
         self._protocols: dict[str, ProtocolInfo] = {}
         self._name_to_info: dict[str, ProtocolInfo] = {}
-        self._loaded = False
 
-    def _ensure_loaded(self) -> None:
-        """Ensure the registry is loaded (thread-safe lazy loading)."""
-        if self._loaded:
-            return
-        
-        with self._lock:
-            if self._loaded:
-                return
-            
-            base_path = find_bluetooth_sig_path()
-            if not base_path:
-                self._loaded = True
-                return
-
-            # Load protocol identifier UUIDs
-            protocol_identifiers_yaml = base_path / "protocol_identifiers.yaml"
-            if protocol_identifiers_yaml.exists():
-                for item in load_yaml_uuids(protocol_identifiers_yaml):
-                    try:
-                        uuid = parse_bluetooth_uuid(item["uuid"])
-                        name = item["name"]
-
-                        info = ProtocolInfo(uuid=uuid, name=name)
-
-                        # Store by UUID short form for fast lookup
-                        self._protocols[uuid.short_form.upper()] = info
-                        self._name_to_info[name.lower()] = info
-
-                    except (KeyError, ValueError):
-                        # Skip malformed entries
-                        continue
+    def _load(self) -> None:
+        """Perform the actual loading of protocol identifiers data."""
+        base_path = find_bluetooth_sig_path()
+        if not base_path:
             self._loaded = True
+            return
 
-    def get_protocol_info(self, identifier: str | int | BluetoothUUID) -> ProtocolInfo | None:
+        # Load protocol identifier UUIDs
+        protocol_identifiers_yaml = base_path / "protocol_identifiers.yaml"
+        if protocol_identifiers_yaml.exists():
+            for item in load_yaml_uuids(protocol_identifiers_yaml):
+                try:
+                    uuid = parse_bluetooth_uuid(item["uuid"])
+                    name = item["name"]
+
+                    info = ProtocolInfo(uuid=uuid, name=name)
+
+                    # Store by UUID short form for fast lookup
+                    self._protocols[uuid.short_form.upper()] = info
+                    self._name_to_info[name.lower()] = info
+
+                except (KeyError, ValueError):
+                    # Skip malformed entries
+                    continue
+        self._loaded = True
+
+    def get_protocol_info(self, uuid: str | int | BluetoothUUID) -> ProtocolInfo | None:
         """Get protocol information by UUID or name.
 
         Args:
-            identifier: Protocol UUID (string, int, or BluetoothUUID) or protocol name
+            uuid: Protocol UUID (string, int, or BluetoothUUID) or protocol name
 
         Returns:
             ProtocolInfo if found, None otherwise
@@ -92,14 +84,14 @@ class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):
         self._ensure_loaded()
         # Try as UUID first
         try:
-            bt_uuid = parse_bluetooth_uuid(identifier)
+            bt_uuid = parse_bluetooth_uuid(uuid)
             return self._protocols.get(bt_uuid.short_form.upper())
         except (ValueError, TypeError):
             pass
 
         # Try as name (case-insensitive)
-        if isinstance(identifier, str):
-            return self._name_to_info.get(identifier.lower())
+        if isinstance(uuid, str):
+            return self._name_to_info.get(uuid.lower())
 
         return None
 

@@ -26,42 +26,34 @@ class ServiceClassesRegistry(BaseRegistry[ServiceClassInfo]):
         self._service_classes: dict[str, ServiceClassInfo] = {}
         self._name_to_info: dict[str, ServiceClassInfo] = {}
         self._id_to_info: dict[str, ServiceClassInfo] = {}
-        self._loaded = False
 
-    def _ensure_loaded(self) -> None:
-        """Ensure the registry is loaded (thread-safe lazy loading)."""
-        if self._loaded:
-            return
-        
-        with self._lock:
-            if self._loaded:
-                return
-            
-            base_path = find_bluetooth_sig_path()
-            if not base_path:
-                self._loaded = True
-                return
-
-            # Load service class UUIDs
-            service_classes_yaml = base_path / "service_classes.yaml"
-            if service_classes_yaml.exists():
-                for item in load_yaml_uuids(service_classes_yaml):
-                    try:
-                        uuid = parse_bluetooth_uuid(item["uuid"])
-                        name = item["name"]
-                        service_class_id = item["id"]
-
-                        info = ServiceClassInfo(uuid=uuid, name=name, id=service_class_id)
-
-                        # Store by UUID string for fast lookup
-                        self._service_classes[uuid.short_form.upper()] = info
-                        self._name_to_info[name.lower()] = info
-                        self._id_to_info[service_class_id] = info
-
-                    except (KeyError, ValueError):
-                        # Skip malformed entries
-                        continue
+    def _load(self) -> None:
+        """Perform the actual loading of service classes data."""
+        base_path = find_bluetooth_sig_path()
+        if not base_path:
             self._loaded = True
+            return
+
+        # Load service class UUIDs
+        service_classes_yaml = base_path / "service_classes.yaml"
+        if service_classes_yaml.exists():
+            for item in load_yaml_uuids(service_classes_yaml):
+                try:
+                    uuid = parse_bluetooth_uuid(item["uuid"])
+                    name = item["name"]
+                    service_class_id = item["id"]
+
+                    info = ServiceClassInfo(uuid=uuid, name=name, id=service_class_id)
+
+                    # Store by UUID string for fast lookup
+                    self._service_classes[uuid.short_form.upper()] = info
+                    self._name_to_info[name.lower()] = info
+                    self._id_to_info[service_class_id] = info
+
+                except (KeyError, ValueError):
+                    # Skip malformed entries
+                    continue
+        self._loaded = True
 
     def get_service_class_info(self, uuid: str | int | BluetoothUUID) -> ServiceClassInfo | None:
         """Get service class information by UUID.

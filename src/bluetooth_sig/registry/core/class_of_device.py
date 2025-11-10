@@ -83,39 +83,24 @@ class ClassOfDeviceRegistry(BaseRegistry[ClassOfDeviceInfo]):
         self._service_classes: dict[int, ServiceClassInfo] = {}
         self._major_classes: dict[int, MajorDeviceClassInfo] = {}
         self._minor_classes: dict[tuple[int, int], MinorDeviceClassInfo] = {}
-        self._loaded = False
 
-    def _ensure_loaded(self) -> None:
-        """Lazy load Class of Device data from YAML on first access.
-
-        This method is thread-safe and ensures the YAML is only loaded once,
-        even when called concurrently from multiple threads.
-        """
-        # pylint: disable=duplicate-code
-        # NOTE: This lazy-loading pattern is intentionally shared across all registries
-        # for consistency. Each registry loads from different YAML files in different
-        # locations, so extraction to a common base method would add complexity without
-        # benefit. See appearance_values.py for the same pattern.
-
-        def _load() -> None:
-            """Perform the actual loading."""
-            # Get path to uuids/ directory
-            uuids_path = find_bluetooth_sig_path()
-            if not uuids_path:
-                self._loaded = True
-                return
-
-            # CoD values are in core/ directory (sibling of uuids/)
-            assigned_numbers_path = uuids_path.parent
-            yaml_path = assigned_numbers_path / "core" / "class_of_device.yaml"
-            if not yaml_path.exists():
-                self._loaded = True
-                return
-
-            self._load_yaml(yaml_path)
+    def _load(self) -> None:
+        """Perform the actual loading of Class of Device data."""
+        # Get path to uuids/ directory
+        uuids_path = find_bluetooth_sig_path()
+        if not uuids_path:
             self._loaded = True
+            return
 
-        self._lazy_load(self._loaded, _load)
+        # CoD values are in core/ directory (sibling of uuids/)
+        assigned_numbers_path = uuids_path.parent
+        yaml_path = assigned_numbers_path / "core" / "class_of_device.yaml"
+        if not yaml_path.exists():
+            self._loaded = True
+            return
+
+        self._load_yaml(yaml_path)
+        self._loaded = True
 
     def _load_yaml(self, yaml_path: Path) -> None:
         """Load and parse the class_of_device.yaml file.

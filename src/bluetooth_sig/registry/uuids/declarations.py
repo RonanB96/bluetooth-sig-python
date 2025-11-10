@@ -26,42 +26,34 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
         self._declarations: dict[str, DeclarationInfo] = {}
         self._name_to_info: dict[str, DeclarationInfo] = {}
         self._id_to_info: dict[str, DeclarationInfo] = {}
-        self._loaded = False
 
-    def _ensure_loaded(self) -> None:
-        """Ensure the registry is loaded (thread-safe lazy loading)."""
-        if self._loaded:
-            return
-        
-        with self._lock:
-            if self._loaded:
-                return
-            
-            base_path = find_bluetooth_sig_path()
-            if not base_path:
-                self._loaded = True
-                return
-
-            # Load declaration UUIDs
-            declarations_yaml = base_path / "uuids" / "declarations.yaml"
-            if declarations_yaml.exists():
-                for item in load_yaml_uuids(declarations_yaml):
-                    try:
-                        uuid = parse_bluetooth_uuid(item["uuid"])
-                        name = item["name"]
-                        declaration_id = item["id"]
-
-                        info = DeclarationInfo(uuid=uuid, name=name, id=declaration_id)
-
-                        # Store by UUID string for fast lookup
-                        self._declarations[uuid.short_form.upper()] = info
-                        self._name_to_info[name.lower()] = info
-                        self._id_to_info[declaration_id] = info
-
-                    except (KeyError, ValueError):
-                        # Skip malformed entries
-                        continue
+    def _load(self) -> None:
+        """Perform the actual loading of declarations data."""
+        base_path = find_bluetooth_sig_path()
+        if not base_path:
             self._loaded = True
+            return
+
+        # Load declaration UUIDs
+        declarations_yaml = base_path / "uuids" / "declarations.yaml"
+        if declarations_yaml.exists():
+            for item in load_yaml_uuids(declarations_yaml):
+                try:
+                    uuid = parse_bluetooth_uuid(item["uuid"])
+                    name = item["name"]
+                    declaration_id = item["id"]
+
+                    info = DeclarationInfo(uuid=uuid, name=name, id=declaration_id)
+
+                    # Store by UUID string for fast lookup
+                    self._declarations[uuid.short_form.upper()] = info
+                    self._name_to_info[name.lower()] = info
+                    self._id_to_info[declaration_id] = info
+
+                except (KeyError, ValueError):
+                    # Skip malformed entries
+                    continue
+        self._loaded = True
 
     def get_declaration_info(self, uuid: str | int | BluetoothUUID) -> DeclarationInfo | None:
         """Get declaration information by UUID.

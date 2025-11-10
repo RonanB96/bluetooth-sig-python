@@ -31,40 +31,32 @@ class UnitsRegistry(BaseRegistry[UnitInfo]):
         self._units: dict[str, UnitInfo] = {}  # normalized_uuid -> UnitInfo
         self._units_by_name: dict[str, UnitInfo] = {}  # lower_name -> UnitInfo
         self._units_by_id: dict[str, UnitInfo] = {}  # id -> UnitInfo
-        self._loaded = False
 
-    def _ensure_loaded(self) -> None:
-        """Ensure the registry is loaded (thread-safe lazy loading)."""
-        if self._loaded:
-            return
-        
-        with self._lock:
-            if self._loaded:
-                return
-            
-            base_path = find_bluetooth_sig_path()
-            if not base_path:
-                self._loaded = True
-                return
-
-            # Load unit UUIDs
-            units_yaml = base_path / "units.yaml"
-            if units_yaml.exists():
-                for unit_info in load_yaml_uuids(units_yaml):
-                    try:
-                        uuid = normalize_uuid_string(unit_info["uuid"])
-
-                        bt_uuid = BluetoothUUID(uuid)
-                        info = UnitInfo(uuid=bt_uuid, name=unit_info["name"], id=unit_info["id"])
-                        # Store using short form as key for easy lookup
-                        self._units[bt_uuid.short_form.upper()] = info
-                        # Also store by name and id for reverse lookup
-                        self._units_by_name[unit_info["name"].lower()] = info
-                        self._units_by_id[unit_info["id"]] = info
-                    except (KeyError, ValueError):
-                        # Skip malformed entries
-                        continue
+    def _load(self) -> None:
+        """Perform the actual loading of units data."""
+        base_path = find_bluetooth_sig_path()
+        if not base_path:
             self._loaded = True
+            return
+
+        # Load unit UUIDs
+        units_yaml = base_path / "units.yaml"
+        if units_yaml.exists():
+            for unit_info in load_yaml_uuids(units_yaml):
+                try:
+                    uuid = normalize_uuid_string(unit_info["uuid"])
+
+                    bt_uuid = BluetoothUUID(uuid)
+                    info = UnitInfo(uuid=bt_uuid, name=unit_info["name"], id=unit_info["id"])
+                    # Store using short form as key for easy lookup
+                    self._units[bt_uuid.short_form.upper()] = info
+                    # Also store by name and id for reverse lookup
+                    self._units_by_name[unit_info["name"].lower()] = info
+                    self._units_by_id[unit_info["id"]] = info
+                except (KeyError, ValueError):
+                    # Skip malformed entries
+                    continue
+        self._loaded = True
 
     def get_unit_info(self, uuid: str | int | BluetoothUUID) -> UnitInfo | None:
         """Get unit information by UUID.

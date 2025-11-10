@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import threading
-
 import msgspec
 
 from bluetooth_sig.registry.base import BaseRegistry
@@ -31,39 +29,31 @@ class MembersRegistry(BaseRegistry[MemberInfo]):
         super().__init__()
         self._members: dict[str, MemberInfo] = {}  # normalized_uuid -> MemberInfo
         self._members_by_name: dict[str, MemberInfo] = {}  # lower_name -> MemberInfo
-        self._loaded = False
 
-    def _ensure_loaded(self) -> None:
-        """Ensure the registry is loaded (thread-safe lazy loading)."""
-        if self._loaded:
-            return
-        
-        with self._lock:
-            if self._loaded:
-                return
-            
-            base_path = find_bluetooth_sig_path()
-            if not base_path:
-                self._loaded = True
-                return
-
-            # Load member UUIDs
-            member_yaml = base_path / "member_uuids.yaml"
-            if member_yaml.exists():
-                for uuid_info in load_yaml_uuids(member_yaml):
-                    try:
-                        uuid = normalize_uuid_string(uuid_info["uuid"])
-
-                        bt_uuid = BluetoothUUID(uuid)
-                        info = MemberInfo(uuid=bt_uuid, name=uuid_info["name"])
-                        # Store using short form as key for easy lookup
-                        self._members[bt_uuid.short_form.upper()] = info
-                        # Also store by name for reverse lookup
-                        self._members_by_name[uuid_info["name"].lower()] = info
-                    except (KeyError, ValueError):
-                        # Skip malformed entries
-                        continue
+    def _load(self) -> None:
+        """Perform the actual loading of members data."""
+        base_path = find_bluetooth_sig_path()
+        if not base_path:
             self._loaded = True
+            return
+
+        # Load member UUIDs
+        member_yaml = base_path / "member_uuids.yaml"
+        if member_yaml.exists():
+            for uuid_info in load_yaml_uuids(member_yaml):
+                try:
+                    uuid = normalize_uuid_string(uuid_info["uuid"])
+
+                    bt_uuid = BluetoothUUID(uuid)
+                    info = MemberInfo(uuid=bt_uuid, name=uuid_info["name"])
+                    # Store using short form as key for easy lookup
+                    self._members[bt_uuid.short_form.upper()] = info
+                    # Also store by name for reverse lookup
+                    self._members_by_name[uuid_info["name"].lower()] = info
+                except (KeyError, ValueError):
+                    # Skip malformed entries
+                    continue
+        self._loaded = True
 
     def get_member_name(self, uuid: str | int | BluetoothUUID) -> str | None:
         """Get member company name by UUID.

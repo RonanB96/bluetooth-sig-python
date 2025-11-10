@@ -26,42 +26,34 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
         self._mesh_profiles: dict[str, MeshProfileInfo] = {}
         self._name_to_info: dict[str, MeshProfileInfo] = {}
         self._id_to_info: dict[str, MeshProfileInfo] = {}
-        self._loaded = False
 
-    def _ensure_loaded(self) -> None:
-        """Ensure the registry is loaded (thread-safe lazy loading)."""
-        if self._loaded:
-            return
-        
-        with self._lock:
-            if self._loaded:
-                return
-            
-            base_path = find_bluetooth_sig_path()
-            if not base_path:
-                self._loaded = True
-                return
-
-            # Load mesh profile UUIDs
-            mesh_profiles_yaml = base_path / "mesh_profiles.yaml"
-            if mesh_profiles_yaml.exists():
-                for item in load_yaml_uuids(mesh_profiles_yaml):
-                    try:
-                        uuid = parse_bluetooth_uuid(item["uuid"])
-                        name = item["name"]
-                        mesh_profile_id = item["id"]
-
-                        info = MeshProfileInfo(uuid=uuid, name=name, id=mesh_profile_id)
-
-                        # Store by UUID string for fast lookup
-                        self._mesh_profiles[uuid.short_form.upper()] = info
-                        self._name_to_info[name.lower()] = info
-                        self._id_to_info[mesh_profile_id] = info
-
-                    except (KeyError, ValueError):
-                        # Skip malformed entries
-                        continue
+    def _load(self) -> None:
+        """Perform the actual loading of mesh profiles data."""
+        base_path = find_bluetooth_sig_path()
+        if not base_path:
             self._loaded = True
+            return
+
+        # Load mesh profile UUIDs
+        mesh_profiles_yaml = base_path / "mesh_profiles.yaml"
+        if mesh_profiles_yaml.exists():
+            for item in load_yaml_uuids(mesh_profiles_yaml):
+                try:
+                    uuid = parse_bluetooth_uuid(item["uuid"])
+                    name = item["name"]
+                    mesh_profile_id = item["id"]
+
+                    info = MeshProfileInfo(uuid=uuid, name=name, id=mesh_profile_id)
+
+                    # Store by UUID string for fast lookup
+                    self._mesh_profiles[uuid.short_form.upper()] = info
+                    self._name_to_info[name.lower()] = info
+                    self._id_to_info[mesh_profile_id] = info
+
+                except (KeyError, ValueError):
+                    # Skip malformed entries
+                    continue
+        self._loaded = True
 
     def get_mesh_profile_info(self, uuid: str | int | BluetoothUUID) -> MeshProfileInfo | None:
         """Get mesh profile information by UUID.

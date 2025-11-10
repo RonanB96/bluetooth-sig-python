@@ -228,3 +228,7 @@ AGENTS.md
 .serena/
 
 .lint*/
+
+# Benchmark results
+benchmark.json
+docs/benchmarks/*.json

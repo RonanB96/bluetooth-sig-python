@@ -26,40 +26,32 @@ class ObjectTypesRegistry(BaseRegistry[ObjectTypeInfo]):
         self._object_types: dict[str, ObjectTypeInfo] = {}  # normalized_uuid -> ObjectTypeInfo
         self._object_types_by_name: dict[str, ObjectTypeInfo] = {}  # lower_name -> ObjectTypeInfo
         self._object_types_by_id: dict[str, ObjectTypeInfo] = {}  # id -> ObjectTypeInfo
-        self._loaded = False
 
-    def _ensure_loaded(self) -> None:
-        """Ensure the registry is loaded (thread-safe lazy loading)."""
-        if self._loaded:
-            return
-        
-        with self._lock:
-            if self._loaded:
-                return
-            
-            base_path = find_bluetooth_sig_path()
-            if not base_path:
-                self._loaded = True
-                return
-
-            # Load object type UUIDs
-            object_types_yaml = base_path / "object_types.yaml"
-            if object_types_yaml.exists():
-                for object_type_info in load_yaml_uuids(object_types_yaml):
-                    try:
-                        uuid = object_type_info["uuid"]
-
-                        bt_uuid = BluetoothUUID(uuid)
-                        info = ObjectTypeInfo(uuid=bt_uuid, name=object_type_info["name"], id=object_type_info["id"])
-                        # Store using short form as key for easy lookup
-                        self._object_types[bt_uuid.short_form.upper()] = info
-                        # Also store by name and id for reverse lookup
-                        self._object_types_by_name[object_type_info["name"].lower()] = info
-                        self._object_types_by_id[object_type_info["id"]] = info
-                    except (KeyError, ValueError):
-                        # Skip malformed entries
-                        continue
+    def _load(self) -> None:
+        """Perform the actual loading of object types data."""
+        base_path = find_bluetooth_sig_path()
+        if not base_path:
             self._loaded = True
+            return
+
+        # Load object type UUIDs
+        object_types_yaml = base_path / "object_types.yaml"
+        if object_types_yaml.exists():
+            for object_type_info in load_yaml_uuids(object_types_yaml):
+                try:
+                    uuid = object_type_info["uuid"]
+
+                    bt_uuid = BluetoothUUID(uuid)
+                    info = ObjectTypeInfo(uuid=bt_uuid, name=object_type_info["name"], id=object_type_info["id"])
+                    # Store using short form as key for easy lookup
+                    self._object_types[bt_uuid.short_form.upper()] = info
+                    # Also store by name and id for reverse lookup
+                    self._object_types_by_name[object_type_info["name"].lower()] = info
+                    self._object_types_by_id[object_type_info["id"]] = info
+                except (KeyError, ValueError):
+                    # Skip malformed entries
+                    continue
+        self._loaded = True
 
     def get_object_type_info(self, uuid: str | int | BluetoothUUID) -> ObjectTypeInfo | None:
         """Get object type information by UUID.

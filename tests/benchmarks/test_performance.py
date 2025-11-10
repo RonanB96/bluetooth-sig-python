@@ -2,32 +2,34 @@
 
 from __future__ import annotations
 
+from typing import Any
 
+import pytest
+
+from bluetooth_sig.core.translator import BluetoothSIGTranslator
+from bluetooth_sig.types.data_types import CharacteristicData
+
+
+@pytest.mark.benchmark
 class TestUUIDResolutionPerformance:
     """Benchmark UUID resolution operations."""
 
-    def test_uuid_to_info_short_form(self, benchmark, translator):
+    def test_uuid_to_info_short_form(self, benchmark: Any, translator: BluetoothSIGTranslator) -> None:
         """Benchmark UUID to info lookup (short form)."""
         result = benchmark(translator.get_sig_info_by_uuid, "2A19")
         assert result is not None
 
-    def test_uuid_to_info_long_form(self, benchmark, translator):
+    def test_uuid_to_info_long_form(self, benchmark: Any, translator: BluetoothSIGTranslator) -> None:
         """Benchmark UUID to info lookup (long form)."""
-        result = benchmark(
-            translator.get_sig_info_by_uuid,
-            "00002a19-0000-1000-8000-00805f9b34fb"
-        )
+        result = benchmark(translator.get_sig_info_by_uuid, "00002a19-0000-1000-8000-00805f9b34fb")
         assert result is not None
 
-    def test_name_to_uuid(self, benchmark, translator):
+    def test_name_to_uuid(self, benchmark: Any, translator: BluetoothSIGTranslator) -> None:
         """Benchmark name to UUID lookup."""
-        result = benchmark(
-            translator.get_sig_info_by_name,
-            "Battery Level"
-        )
+        result = benchmark(translator.get_sig_info_by_name, "Battery Level")
         assert result is not None
 
-    def test_uuid_resolution_cached(self, benchmark, translator):
+    def test_uuid_resolution_cached(self, benchmark: Any, translator: BluetoothSIGTranslator) -> None:
         """Benchmark cached UUID resolution."""
         # Warm up cache
         translator.get_sig_info_by_uuid("2A19")
@@ -40,94 +42,98 @@ class TestUUIDResolutionPerformance:
 class TestCharacteristicParsingPerformance:
     """Benchmark characteristic parsing operations."""
 
-    def test_parse_simple_uint8(self, benchmark, translator, battery_level_data):
+    def test_parse_simple_uint8(
+        self, benchmark: Any, translator: BluetoothSIGTranslator, battery_level_data: bytearray
+    ) -> None:
         """Benchmark simple uint8 characteristic (Battery Level)."""
-        result = benchmark(
-            translator.parse_characteristic,
-            "2A19",
-            battery_level_data
-        )
+        result = benchmark(translator.parse_characteristic, "2A19", battery_level_data)
         assert result.parse_success
 
-    def test_parse_simple_sint16(self, benchmark, translator, temperature_data):
+    def test_parse_simple_sint16(
+        self, benchmark: Any, translator: BluetoothSIGTranslator, temperature_data: bytearray
+    ) -> None:
         """Benchmark simple sint16 characteristic (Temperature)."""
-        result = benchmark(
-            translator.parse_characteristic,
-            "2A6E",
-            temperature_data
-        )
+        result = benchmark(translator.parse_characteristic, "2A6E", temperature_data)
         assert result.parse_success
 
-    def test_parse_complex_flags(self, benchmark, translator, heart_rate_data):
+    def test_parse_complex_flags(
+        self, benchmark: Any, translator: BluetoothSIGTranslator, heart_rate_data: bytearray
+    ) -> None:
         """Benchmark complex characteristic with flags (Heart Rate)."""
-        result = benchmark(
-            translator.parse_characteristic,
-            "2A37",
-            heart_rate_data
-        )
+        result = benchmark(translator.parse_characteristic, "2A37", heart_rate_data)
         assert result.parse_success
 
 
+@pytest.mark.benchmark
 class TestBatchParsingPerformance:
     """Benchmark batch parsing operations."""
 
-    def test_batch_parse_small(self, benchmark, translator, batch_characteristics_small):
+    def test_batch_parse_small(
+        self, benchmark: Any, translator: BluetoothSIGTranslator, batch_characteristics_small: dict[str, bytearray]
+    ) -> None:
         """Benchmark batch parsing (3 characteristics)."""
-        result = benchmark(
-            translator.parse_characteristics,
-            batch_characteristics_small
-        )
+        result = benchmark(translator.parse_characteristics, batch_characteristics_small)
         assert len(result) == 3
 
-    def test_batch_parse_medium(self, benchmark, translator, batch_characteristics_medium):
+    def test_batch_parse_medium(
+        self, benchmark: Any, translator: BluetoothSIGTranslator, batch_characteristics_medium: dict[str, bytearray]
+    ) -> None:
         """Benchmark batch parsing (10 characteristics)."""
-        result = benchmark(
-            translator.parse_characteristics,
-            batch_characteristics_medium
-        )
+        result = benchmark(translator.parse_characteristics, batch_characteristics_medium)
         assert len(result) == 10
 
-    def test_batch_vs_individual(self, benchmark, translator, batch_characteristics_small):
+    def test_batch_vs_individual(
+        self, benchmark: Any, translator: BluetoothSIGTranslator, batch_characteristics_small: dict[str, bytearray]
+    ) -> None:
         """Compare batch vs individual parsing."""
-        def batch_parse():
-            return translator.parse_characteristics(batch_characteristics_small)
+
+        def batch_parse() -> dict[str, CharacteristicData]:
+            return translator.parse_characteristics(batch_characteristics_small)  # type: ignore[arg-type]
 
         # Benchmark batch parsing
         batch_result = benchmark(batch_parse)
         assert len(batch_result) == 3
 
 
+@pytest.mark.benchmark
 class TestMemoryEfficiency:
     """Benchmark memory usage."""
 
-    def test_translator_memory_footprint(self, benchmark):
+    def test_translator_memory_footprint(self, benchmark: Any) -> None:
         """Measure translator instance memory footprint."""
         from bluetooth_sig import BluetoothSIGTranslator
 
-        def create_translator():
+        def create_translator() -> BluetoothSIGTranslator:
             return BluetoothSIGTranslator()
 
         translator = benchmark(create_translator)
         assert translator is not None
 
-    def test_parse_no_memory_leak(self, benchmark, translator, battery_level_data):
+    def test_parse_no_memory_leak(
+        self, benchmark: Any, translator: BluetoothSIGTranslator, battery_level_data: bytearray
+    ) -> None:
         """Ensure parsing doesn't leak memory."""
-        def parse_many():
+
+        def parse_many() -> None:
             for _ in range(1000):
-                translator.parse_characteristic("2A19", battery_level_data)
+                translator.parse_characteristic("2A19", battery_level_data)  # type: ignore[arg-type]
 
         benchmark(parse_many)
 
 
+@pytest.mark.benchmark
 class TestThroughput:
     """Benchmark overall throughput."""
 
-    def test_single_characteristic_throughput(self, benchmark, translator, battery_level_data):
+    def test_single_characteristic_throughput(
+        self, benchmark: Any, translator: BluetoothSIGTranslator, battery_level_data: bytearray
+    ) -> None:
         """Measure single characteristic parsing throughput."""
-        def parse_loop():
-            results = []
+
+        def parse_loop() -> list[CharacteristicData]:
+            results: list[CharacteristicData] = []
             for _ in range(100):
-                result = translator.parse_characteristic("2A19", battery_level_data)
+                result = translator.parse_characteristic("2A19", battery_level_data)  # type: ignore[arg-type]
                 results.append(result)
             return results
 
@@ -135,12 +141,15 @@ class TestThroughput:
         assert len(results) == 100
         assert all(r.parse_success for r in results)
 
-    def test_batch_throughput(self, benchmark, translator, batch_characteristics_small):
+    def test_batch_throughput(
+        self, benchmark: Any, translator: BluetoothSIGTranslator, batch_characteristics_small: dict[str, bytearray]
+    ) -> None:
         """Measure batch parsing throughput."""
-        def batch_loop():
-            results = []
+
+        def batch_loop() -> list[dict[str, CharacteristicData]]:
+            results: list[dict[str, CharacteristicData]] = []
             for _ in range(100):
-                result = translator.parse_characteristics(batch_characteristics_small)
+                result = translator.parse_characteristics(batch_characteristics_small)  # type: ignore[arg-type]
                 results.append(result)
             return results
 

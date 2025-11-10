@@ -85,6 +85,10 @@ docs = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "-m 'not benchmark'"
+markers = [
+    "benchmark: marks benchmark tests (deselected by default)"
+]
 
 [tool.hatch.build]
 exclude = ["tests/*", "scripts/*"]
@@ -106,6 +110,10 @@ persistent = true
 jobs = 0
 output-format = "colorized"
 msg-template = "{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
+
+[tool.pylint.DESIGN]
+# Allow registries to have similar patterns - they inherit from base class
+min-similarity-lines = 10
 
 [tool.pylint.FORMAT]
 # Line length is handled by ruff - DO NOT SET max-line-length
@@ -181,6 +189,8 @@ ignore = [
     # "redefined outer name" style diagnostics from static analyzers like
     # Pyflakes/Ruff. Allow this pattern in tests explicitly.
     "F811",
+    # pytest-benchmark doesn't have type stubs, so we must use Any for benchmark fixtures
+    "ANN401",
 ]
 
 [tool.ruff.lint.pydocstyle]

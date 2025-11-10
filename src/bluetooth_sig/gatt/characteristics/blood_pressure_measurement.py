@@ -133,15 +133,8 @@ class BloodPressureMeasurementCharacteristic(BaseBloodPressureCharacteristic):
             Encoded bytes representing the blood pressure measurement
 
         """
-        result = bytearray()
-
-        flags = self._encode_blood_pressure_flags(data, data.optional_fields)
-        result.append(flags)
-
-        result.extend(IEEE11073Parser.encode_sfloat(data.systolic))
-        result.extend(IEEE11073Parser.encode_sfloat(data.diastolic))
-        result.extend(IEEE11073Parser.encode_sfloat(data.mean_arterial_pressure))
-
-        self._encode_optional_fields(result, data.optional_fields)
-
-        return result
+        return self._encode_blood_pressure_base(
+            data,
+            data.optional_fields,
+            [data.systolic, data.diastolic, data.mean_arterial_pressure],
+        )

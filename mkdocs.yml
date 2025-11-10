@@ -121,6 +121,7 @@ nav:
     - GATT Layer: api/gatt.md
     - Registry System: api/registry.md
     - Performance Benchmarks: performance.md
+    - Live Benchmark Results: benchmarks.md
     - Supported Characteristics: supported-characteristics.md
   - Explanation:
     - Why Use This Library: why-use.md
