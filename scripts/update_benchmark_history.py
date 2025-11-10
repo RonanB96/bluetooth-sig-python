@@ -15,8 +15,15 @@ def extract_summary(benchmark_data: dict[str, Any]) -> dict[str, Any]:
     """Extract minimal summary data from full benchmark results."""
     benchmarks = benchmark_data.get("benchmarks", [])
 
+    # Ensure datetime is always serialized as ISO format string
+    timestamp = benchmark_data.get("datetime")
+    if isinstance(timestamp, datetime):
+        timestamp = timestamp.isoformat()
+    elif not isinstance(timestamp, str):
+        timestamp = datetime.now().astimezone().isoformat()
+
     summary = {
-        "timestamp": benchmark_data.get("datetime", datetime.now().astimezone().isoformat()),
+        "timestamp": timestamp,
         "commit": benchmark_data.get("commit_info", {}).get("id", "unknown")[:8],
         "results": {}
     }
@@ -49,7 +56,7 @@ def update_history(current_json_path: Path, history_json_path: Path) -> None:
     summary = extract_summary(current_data)
 
     # Read existing history or create new
-    history = [dict[str, Any]]
+    history = []
     if history_json_path.exists():
         with open(history_json_path, encoding="utf-8") as f:
             history = json.load(f)
