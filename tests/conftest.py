@@ -21,6 +21,15 @@ if SRC.exists() and str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    # Skip all tests marked 'benchmark' unless -m benchmark is passed
+    if not config.getoption("-m"):
+        skip_benchmark = pytest.mark.skip(reason="Skipped by default. Use -m benchmark to run benchmarks.")
+        for item in items:
+            if "benchmark" in item.keywords:
+                item.add_marker(skip_benchmark)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def clear_module_level_registrations() -> None:
     """Clear custom registrations that happened during module import/collection.

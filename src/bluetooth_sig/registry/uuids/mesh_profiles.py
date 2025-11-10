@@ -26,12 +26,12 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
         self._mesh_profiles: dict[str, MeshProfileInfo] = {}
         self._name_to_info: dict[str, MeshProfileInfo] = {}
         self._id_to_info: dict[str, MeshProfileInfo] = {}
-        self._load_mesh_profiles()
 
-    def _load_mesh_profiles(self) -> None:
-        """Load mesh profiles from the Bluetooth SIG YAML file."""
+    def _load(self) -> None:
+        """Perform the actual loading of mesh profiles data."""
         base_path = find_bluetooth_sig_path()
         if not base_path:
+            self._loaded = True
             return
 
         # Load mesh profile UUIDs
@@ -53,6 +53,7 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
                 except (KeyError, ValueError):
                     # Skip malformed entries
                     continue
+        self._loaded = True
 
     def get_mesh_profile_info(self, uuid: str | int | BluetoothUUID) -> MeshProfileInfo | None:
         """Get mesh profile information by UUID.
@@ -63,6 +64,7 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
         Returns:
             MeshProfileInfo if found, None otherwise
         """
+        self._ensure_loaded()
         try:
             bt_uuid = parse_bluetooth_uuid(uuid)
             return self._mesh_profiles.get(bt_uuid.short_form.upper())
@@ -78,6 +80,7 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
         Returns:
             MeshProfileInfo if found, None otherwise
         """
+        self._ensure_loaded()
         return self._name_to_info.get(name.lower())
 
     def get_mesh_profile_info_by_id(self, mesh_profile_id: str) -> MeshProfileInfo | None:
@@ -89,6 +92,7 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
         Returns:
             MeshProfileInfo if found, None otherwise
         """
+        self._ensure_loaded()
         return self._id_to_info.get(mesh_profile_id)
 
     def is_mesh_profile_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
@@ -100,6 +104,7 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
         Returns:
             True if the UUID is a known mesh profile, False otherwise
         """
+        self._ensure_loaded()
         return self.get_mesh_profile_info(uuid) is not None
 
     def get_all_mesh_profiles(self) -> list[MeshProfileInfo]:
@@ -108,6 +113,7 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
         Returns:
             List of all MeshProfileInfo objects
         """
+        self._ensure_loaded()
         return list(self._mesh_profiles.values())
 
 

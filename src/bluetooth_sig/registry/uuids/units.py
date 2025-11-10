@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import threading
-
 import msgspec
 
+from bluetooth_sig.registry.base import BaseRegistry
 from bluetooth_sig.registry.utils import (
     find_bluetooth_sig_path,
     load_yaml_uuids,
@@ -23,41 +22,41 @@ class UnitInfo(msgspec.Struct, frozen=True, kw_only=True):
     id: str
 
 
-class UnitsRegistry:
+class UnitsRegistry(BaseRegistry[UnitInfo]):
     """Registry for Bluetooth SIG unit UUIDs."""
 
     def __init__(self) -> None:
         """Initialize the units registry."""
-        self._lock = threading.RLock()
+        super().__init__()
         self._units: dict[str, UnitInfo] = {}  # normalized_uuid -> UnitInfo
         self._units_by_name: dict[str, UnitInfo] = {}  # lower_name -> UnitInfo
         self._units_by_id: dict[str, UnitInfo] = {}  # id -> UnitInfo
 
-        try:
-            self._load_units()
-        except (FileNotFoundError, Exception):  # pylint: disable=broad-exception-caught
-            # If YAML loading fails, continue with empty registry
-            pass
-
-    def _load_units(self) -> None:
-        """Load unit UUIDs from YAML file."""
+    def _load(self) -> None:
+        """Perform the actual loading of units data."""
         base_path = find_bluetooth_sig_path()
         if not base_path:
+            self._loaded = True
             return
 
         # Load unit UUIDs
         units_yaml = base_path / "units.yaml"
         if units_yaml.exists():
             for unit_info in load_yaml_uuids(units_yaml):
-                uuid = normalize_uuid_string(unit_info["uuid"])
+                try:
+                    uuid = normalize_uuid_string(unit_info["uuid"])
 
-                bt_uuid = BluetoothUUID(uuid)
-                info = UnitInfo(uuid=bt_uuid, name=unit_info["name"], id=unit_info["id"])
-                # Store using short form as key for easy lookup
-                self._units[bt_uuid.short_form.upper()] = info
-                # Also store by name and id for reverse lookup
-                self._units_by_name[unit_info["name"].lower()] = info
-                self._units_by_id[unit_info["id"]] = info
+                    bt_uuid = BluetoothUUID(uuid)
+                    info = UnitInfo(uuid=bt_uuid, name=unit_info["name"], id=unit_info["id"])
+                    # Store using short form as key for easy lookup
+                    self._units[bt_uuid.short_form.upper()] = info
+                    # Also store by name and id for reverse lookup
+                    self._units_by_name[unit_info["name"].lower()] = info
+                    self._units_by_id[unit_info["id"]] = info
+                except (KeyError, ValueError):
+                    # Skip malformed entries
+                    continue
+        self._loaded = True
 
     def get_unit_info(self, uuid: str | int | BluetoothUUID) -> UnitInfo | None:
         """Get unit information by UUID.
@@ -68,6 +67,7 @@ class UnitsRegistry:
         Returns:
             UnitInfo object, or None if not found
         """
+        self._ensure_loaded()
         with self._lock:
             try:
                 bt_uuid = parse_bluetooth_uuid(uuid)
@@ -87,6 +87,7 @@ class UnitsRegistry:
         Returns:
             UnitInfo object, or None if not found
         """
+        self._ensure_loaded()
         with self._lock:
             return self._units_by_name.get(name.lower())
 
@@ -99,6 +100,7 @@ class UnitsRegistry:
         Returns:
             UnitInfo object, or None if not found
         """
+        self._ensure_loaded()
         with self._lock:
             return self._units_by_id.get(unit_id)
 
@@ -111,6 +113,7 @@ class UnitsRegistry:
         Returns:
             True if the UUID is a unit UUID, False otherwise
         """
+        self._ensure_loaded()
         return self.get_unit_info(uuid) is not None
 
     def get_all_units(self) -> list[UnitInfo]:
@@ -119,6 +122,7 @@ class UnitsRegistry:
         Returns:
             List of all UnitInfo objects
         """
+        self._ensure_loaded()
         with self._lock:
             return list(self._units.values())
 

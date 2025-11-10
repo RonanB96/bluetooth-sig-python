@@ -26,12 +26,12 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
         self._declarations: dict[str, DeclarationInfo] = {}
         self._name_to_info: dict[str, DeclarationInfo] = {}
         self._id_to_info: dict[str, DeclarationInfo] = {}
-        self._load_declarations()
 
-    def _load_declarations(self) -> None:
-        """Load declarations from the Bluetooth SIG YAML file."""
+    def _load(self) -> None:
+        """Perform the actual loading of declarations data."""
         base_path = find_bluetooth_sig_path()
         if not base_path:
+            self._loaded = True
             return
 
         # Load declaration UUIDs
@@ -53,6 +53,7 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
                 except (KeyError, ValueError):
                     # Skip malformed entries
                     continue
+        self._loaded = True
 
     def get_declaration_info(self, uuid: str | int | BluetoothUUID) -> DeclarationInfo | None:
         """Get declaration information by UUID.
@@ -63,6 +64,7 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
         Returns:
             DeclarationInfo if found, None otherwise
         """
+        self._ensure_loaded()
         try:
             bt_uuid = parse_bluetooth_uuid(uuid)
             return self._declarations.get(bt_uuid.short_form.upper())
@@ -78,6 +80,7 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
         Returns:
             DeclarationInfo if found, None otherwise
         """
+        self._ensure_loaded()
         return self._name_to_info.get(name.lower())
 
     def get_declaration_info_by_id(self, declaration_id: str) -> DeclarationInfo | None:
@@ -89,6 +92,7 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
         Returns:
             DeclarationInfo if found, None otherwise
         """
+        self._ensure_loaded()
         return self._id_to_info.get(declaration_id)
 
     def is_declaration_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
@@ -100,6 +104,7 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
         Returns:
             True if the UUID is a known declaration, False otherwise
         """
+        self._ensure_loaded()
         return self.get_declaration_info(uuid) is not None
 
     def get_all_declarations(self) -> list[DeclarationInfo]:
@@ -108,6 +113,7 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
         Returns:
             List of all DeclarationInfo objects
         """
+        self._ensure_loaded()
         return list(self._declarations.values())
 
 

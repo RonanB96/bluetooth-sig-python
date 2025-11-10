@@ -28,7 +28,6 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
         self._sdo_uuids: dict[str, SdoInfo] = {}
         self._name_to_info: dict[str, SdoInfo] = {}
         self._id_to_info: dict[str, SdoInfo] = {}
-        self._load_sdo_uuids()
 
     def _normalize_name_for_id(self, name: str) -> str:
         """Normalize a name to create a valid ID string.
@@ -47,10 +46,11 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
         normalized = normalized.strip("_")
         return normalized
 
-    def _load_sdo_uuids(self) -> None:
-        """Load SDO UUIDs from the Bluetooth SIG YAML file."""
+    def _load(self) -> None:
+        """Perform the actual loading of SDO UUIDs data."""
         base_path = find_bluetooth_sig_path()
         if not base_path:
+            self._loaded = True
             return
 
         # Load SDO UUIDs
@@ -75,6 +75,7 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
                 except (KeyError, ValueError):
                     # Skip malformed entries
                     continue
+        self._loaded = True
 
     def get_sdo_info(self, uuid: str | int | BluetoothUUID) -> SdoInfo | None:
         """Get SDO information by UUID.
@@ -85,6 +86,7 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
         Returns:
             SdoInfo if found, None otherwise
         """
+        self._ensure_loaded()
         try:
             bt_uuid = parse_bluetooth_uuid(uuid)
             return self._sdo_uuids.get(bt_uuid.short_form.upper())
@@ -100,6 +102,7 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
         Returns:
             SdoInfo if found, None otherwise
         """
+        self._ensure_loaded()
         return self._name_to_info.get(name.lower())
 
     def get_sdo_info_by_id(self, sdo_id: str) -> SdoInfo | None:
@@ -111,6 +114,7 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
         Returns:
             SdoInfo if found, None otherwise
         """
+        self._ensure_loaded()
         return self._id_to_info.get(sdo_id)
 
     def is_sdo_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
@@ -122,6 +126,7 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
         Returns:
             True if the UUID is a known SDO, False otherwise
         """
+        self._ensure_loaded()
         return self.get_sdo_info(uuid) is not None
 
     def get_all_sdo_uuids(self) -> list[SdoInfo]:
@@ -130,6 +135,7 @@ class SdoUuidsRegistry(BaseRegistry[SdoInfo]):
         Returns:
             List of all SdoInfo objects
         """
+        self._ensure_loaded()
         return list(self._sdo_uuids.values())
 
 

@@ -44,35 +44,25 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
         """Initialize the registry with lazy loading."""
         super().__init__()
         self._appearances: dict[int, AppearanceInfo] = {}
-        self._loaded = False
 
-    def _ensure_loaded(self) -> None:
-        """Lazy load appearance values from YAML on first access.
-
-        This method is thread-safe and ensures the YAML is only loaded once,
-        even when called concurrently from multiple threads.
-        """
-
-        def _load() -> None:
-            """Perform the actual loading."""
-            # Get path to uuids/ directory
-            uuids_path = find_bluetooth_sig_path()
-            if not uuids_path:
-                self._loaded = True
-                return
-
-            # Appearance values are in core/ directory (sibling of uuids/)
-            # Navigate from uuids/ to assigned_numbers/ then to core/
-            assigned_numbers_path = uuids_path.parent
-            yaml_path = assigned_numbers_path / "core" / "appearance_values.yaml"
-            if not yaml_path.exists():
-                self._loaded = True
-                return
-
-            self._load_yaml(yaml_path)
+    def _load(self) -> None:
+        """Perform the actual loading of appearance values data."""
+        # Get path to uuids/ directory
+        uuids_path = find_bluetooth_sig_path()
+        if not uuids_path:
             self._loaded = True
+            return
 
-        self._lazy_load(self._loaded, _load)
+        # Appearance values are in core/ directory (sibling of uuids/)
+        # Navigate from uuids/ to assigned_numbers/ then to core/
+        assigned_numbers_path = uuids_path.parent
+        yaml_path = assigned_numbers_path / "core" / "appearance_values.yaml"
+        if not yaml_path.exists():
+            self._loaded = True
+            return
+
+        self._load_yaml(yaml_path)
+        self._loaded = True
 
     def _load_yaml(self, yaml_path: Path) -> None:
         """Load and parse the appearance values YAML file.

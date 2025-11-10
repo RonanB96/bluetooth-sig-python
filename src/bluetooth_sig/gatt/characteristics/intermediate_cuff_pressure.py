@@ -112,16 +112,9 @@ class IntermediateCuffPressureCharacteristic(BaseBloodPressureCharacteristic):
             Encoded bytes representing the intermediate cuff pressure
 
         """
-        result = bytearray()
-
-        flags = self._encode_blood_pressure_flags(data, data.optional_fields)
-        result.append(flags)
-
-        result.extend(IEEE11073Parser.encode_sfloat(data.current_cuff_pressure))
-        # Add unused fields as NaN
-        result.extend(IEEE11073Parser.encode_sfloat(float("nan")))
-        result.extend(IEEE11073Parser.encode_sfloat(float("nan")))
-
-        self._encode_optional_fields(result, data.optional_fields)
-
-        return result
+        # Intermediate cuff pressure only uses current pressure, other fields are NaN
+        return self._encode_blood_pressure_base(
+            data,
+            data.optional_fields,
+            [data.current_cuff_pressure, float("nan"), float("nan")],
+        )

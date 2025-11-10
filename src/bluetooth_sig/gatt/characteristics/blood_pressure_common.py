@@ -44,7 +44,6 @@ class BloodPressureDataProtocol(Protocol):
     @property
     def unit(self) -> PressureUnit:
         """Pressure unit for blood pressure measurement."""
-        ...
 
 
 class BaseBloodPressureCharacteristic(BaseCharacteristic):
@@ -136,3 +135,31 @@ class BaseBloodPressureCharacteristic(BaseCharacteristic):
 
         if optional_fields.measurement_status is not None:
             result.extend(DataParser.encode_int16(optional_fields.measurement_status, signed=False))
+
+    def _encode_blood_pressure_base(
+        self,
+        data: BloodPressureDataProtocol,
+        optional_fields: BloodPressureOptionalFields,
+        pressure_values: list[float],
+    ) -> bytearray:
+        """Common encoding logic for blood pressure characteristics.
+
+        Args:
+            data: Blood pressure data with unit field
+            optional_fields: Optional fields to encode
+            pressure_values: List of pressure values to encode (1-3 SFLOAT values)
+
+        Returns:
+            Encoded bytearray
+        """
+        result = bytearray()
+
+        flags = self._encode_blood_pressure_flags(data, optional_fields)
+        result.append(flags)
+
+        for value in pressure_values:
+            result.extend(IEEE11073Parser.encode_sfloat(value))
+
+        self._encode_optional_fields(result, optional_fields)
+
+        return result
