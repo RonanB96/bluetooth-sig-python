@@ -35,6 +35,7 @@ The library is optimized for typical BLE use cases: periodic sensor reads, on-de
 | Complex (flags) | ~710 μs | ±15 μs | Heart Rate with flags parsing |
 
 **Components of parsing time:**
+
 - UUID resolution: ~190 μs
 - Data validation: ~220 ns
 - Value decoding: varies by complexity
@@ -48,6 +49,7 @@ The library is optimized for typical BLE use cases: periodic sensor reads, on-de
 | 10 chars | ~19 ms | ~1.9 ms | Same as individual |
 
 **Analysis**: Batch parsing doesn't provide significant speedup because:
+
 - Each characteristic requires UUID resolution (~190 μs each)
 - No significant fixed overhead to amortize
 - Best use case: organizational/API convenience, not performance
@@ -61,6 +63,7 @@ The library is optimized for typical BLE use cases: periodic sensor reads, on-de
 | Humidity | ~339 ns | ~751 μs | 2215x |
 
 **Analysis**: The library overhead includes:
+
 - UUID resolution (~190 μs)
 - Characteristic lookup and validation
 - Type conversion and structured data creation
@@ -89,6 +92,7 @@ For most applications, this overhead is negligible compared to BLE I/O latency (
 ## Memory Usage
 
 Based on benchmark observations:
+
 - **Translator instance**: Lightweight (registries use lazy loading)
 - **Per-parse overhead**: Minimal (msgspec structs are efficient)
 - **No memory leaks**: Validated with 1M parses (200 seconds for 1M parses)
@@ -98,6 +102,7 @@ Based on benchmark observations:
 These scenarios assume a modern multi-core CPU (e.g., Intel Core i5/i7 or equivalent) where 1 core = 100% CPU.
 
 ### Scenario 1: Environmental Sensor (1 Hz)
+
 ```
 Temperature (1 Hz) + Humidity (1 Hz) + Pressure (1 Hz)
 = 3 parses/second × 200 μs/parse = 600 μs/second CPU time
@@ -105,6 +110,7 @@ Temperature (1 Hz) + Humidity (1 Hz) + Pressure (1 Hz)
 ```
 
 ### Scenario 2: Fitness Tracker (10 Hz notifications)
+
 ```
 Heart Rate (10 Hz) + Running Speed (10 Hz)
 = 20 parses/second × 700 μs/parse = 14 ms/second CPU time
@@ -112,6 +118,7 @@ Heart Rate (10 Hz) + Running Speed (10 Hz)
 ```
 
 ### Scenario 3: Multi-Device Dashboard (100 devices)
+
 ```
 100 devices × 5 characteristics × 1 Hz = 500 parses/second
 = 500 × 200 μs = 100 ms/second CPU time
@@ -123,6 +130,7 @@ Heart Rate (10 Hz) + Running Speed (10 Hz)
 ## Optimization Guidelines
 
 ### When Performance Matters
+
 - Profile first - identify actual bottlenecks
 - Consider caching characteristic instances
 - Parse only needed characteristics
@@ -130,6 +138,7 @@ Heart Rate (10 Hz) + Running Speed (10 Hz)
 - For high-frequency applications (>100 Hz), consider manual parsing
 
 ### When Performance Doesn't Matter
+
 - Single device, low frequency (<10 Hz)
 - Small number of characteristics (<10)
 - BLE I/O dominates (typically 10-100ms per operation)
@@ -138,6 +147,7 @@ Heart Rate (10 Hz) + Running Speed (10 Hz)
 ## Regression Detection
 
 CI runs benchmarks on every commit and fails if:
+
 - Any operation >2x slower than baseline (200% threshold)
 - Consistent degradation across multiple operations
 - Memory usage increases significantly
@@ -167,6 +177,7 @@ python -m pytest tests/benchmarks/ --benchmark-only --benchmark-compare=0001 --b
 ## Future Optimizations
 
 Potential improvements (if needed):
+
 1. **Cython compilation** for critical parsing paths
 2. **Registry caching** for frequently-used characteristics
 3. **Pre-compiled struct parsing** for fixed-format characteristics
@@ -177,9 +188,10 @@ Potential improvements (if needed):
 
 ## Historical Performance Tracking
 
-View historical benchmark data: [GitHub Pages Dashboard](https://RonanB96.github.io/bluetooth-sig-python/dev/bench/)
+View historical benchmark data: [GitHub Pages Dashboard](https://ronanb96.github.io/bluetooth-sig-python/benchmarks/)
 
 The dashboard provides:
+
 - Interactive charts showing performance trends
 - Commit-level drill-down for regression analysis
 - Comparison across different test runs
@@ -188,6 +200,7 @@ The dashboard provides:
 ## Benchmark Maintenance
 
 To ensure benchmark reliability:
+
 - Run on consistent hardware (GitHub Actions standard runners)
 - Use fixed Python hash seed (`PYTHONHASHSEED=0`)
 - Avoid external I/O during benchmarks

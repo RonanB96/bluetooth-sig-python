@@ -80,7 +80,6 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             raw_data: Raw bytes from the characteristic
             ctx: Optional CharacteristicContext providing device-level info
                 and previously-parsed characteristics to the parser.
-            properties: Optional set of characteristic properties (unused, kept for protocol compatibility)
             descriptor_data: Optional dictionary mapping descriptor UUIDs to their raw data
 
         Returns:
@@ -93,7 +92,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             from bluetooth_sig import BluetoothSIGTranslator
 
             translator = BluetoothSIGTranslator()
-            result = translator.parse_characteristic("2A19", b"\\x64")
+            result = translator.parse_characteristic("2A19", b"\x64")
             print(f"Battery: {result.value}%")  # Battery: 100%
             ```
 

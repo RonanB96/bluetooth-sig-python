@@ -96,7 +96,7 @@ See the **[BLE Integration Guide](https://ronanb96.github.io/bluetooth-sig-pytho
 - **[Full Documentation](https://ronanb96.github.io/bluetooth-sig-python/)** - Complete guides and API reference
 - **[Quick Start Guide](https://ronanb96.github.io/bluetooth-sig-python/quickstart/)** - Get started in 5 minutes
 - **[API Reference](https://ronanb96.github.io/bluetooth-sig-python/api/core/)** - Detailed API documentation
-- **[Examples](https://github.com/RonanB96/bluetooth-sig-python/tree/main/examples)** - Integration examples with various BLE libraries
+- **[Examples](https://github.com/ronanb96/bluetooth-sig-python/tree/main/examples)** - Integration examples with various BLE libraries
 
 ## Contributing
 
@@ -104,12 +104,12 @@ Contributions are welcome! Please see the **[Contributing Guide](https://ronanb9
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/RonanB96/bluetooth-sig-python/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/ronanb96/bluetooth-sig-python/blob/main/LICENSE) file for details.
 
 ## Links
 
 - **PyPI**: <https://pypi.org/project/bluetooth-sig/>
 - **Documentation**: <https://ronanb96.github.io/bluetooth-sig-python/>
-- **Source Code**: <https://github.com/RonanB96/bluetooth-sig-python>
-- **Issue Tracker**: <https://github.com/RonanB96/bluetooth-sig-python/issues>
-- **Changelog**: <https://github.com/RonanB96/bluetooth-sig-python/blob/main/HISTORY.md>
+- **Source Code**: <https://github.com/ronanb96/bluetooth-sig-python>
+- **Issue Tracker**: <https://github.com/ronanb96/bluetooth-sig-python/issues>
+- **Changelog**: <https://github.com/ronanb96/bluetooth-sig-python/blob/main/HISTORY.md>

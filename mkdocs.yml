@@ -111,6 +111,7 @@ nav:
   - How-to guides:
     - Using the Library: usage.md
     - BLE Integration: guides/ble-integration.md
+    - Async Usage: guides/async-usage.md
     - Migration Guide: guides/migration.md
     - Adding New Characteristics: guides/adding-characteristics.md
     - Performance Optimization: guides/performance.md
@@ -123,6 +124,7 @@ nav:
     - Performance Benchmarks: performance.md
     - Live Benchmark Results: benchmarks.md
     - Supported Characteristics: supported-characteristics.md
+    - BluetoothSIGTranslator: api/core.md
   - Explanation:
     - Why Use This Library: why-use.md
     - What Problems It Solves: what-it-solves.md

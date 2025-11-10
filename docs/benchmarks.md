@@ -5,7 +5,7 @@ This page displays performance benchmark results for the bluetooth-sig-python li
 ## Historical Trends
 
 <div id="benchmark-trends">
-<p>Loading historical benchmark data...</p>
+<p>Historical trends will be available once benchmarks are published.</p>
 </div>
 
 ## Latest Results
@@ -235,6 +235,37 @@ tr:hover {
 .benchmark-metadata p {
   margin: 0.25em 0;
 }
+
+/* Adjust table styles for dark mode */
+body[data-md-color-scheme="slate"] table {
+  background-color: #1e1e2f;
+  color: #e0e0e0;
+}
+
+body[data-md-color-scheme="slate"] th {
+  background-color: #2a2a3f;
+  color: #ffffff;
+}
+
+body[data-md-color-scheme="slate"] tr:hover {
+  background-color: #33334f;
+}
+
+/* Adjust chart wrapper styles for dark mode */
+body[data-md-color-scheme="slate"] .chart-wrapper {
+  background: #2a2a3f;
+  border-color: #44445f;
+}
+
+body[data-md-color-scheme="slate"] .chart-wrapper h3 {
+  color: #ffffff;
+}
+
+/* Adjust metadata styles for dark mode */
+body[data-md-color-scheme="slate"] .benchmark-metadata {
+  background-color: #2a2a3f;
+  color: #e0e0e0;
+}
 </style>
 
 ## About These Benchmarks
@@ -247,4 +278,4 @@ These benchmarks measure the performance of key operations in the bluetooth-sig-
 
 Benchmarks are run automatically on every push to the main branch using pytest-benchmark. Results from pull requests are compared against the main branch baseline, and alerts are raised if performance regresses by more than 200%.
 
-For the complete benchmark suite and methodology, see the [tests/benchmarks/](https://github.com/ronan/bluetooth-sig-python/tree/main/tests/benchmarks) directory.
+For the complete benchmark suite and methodology, see the [tests/benchmarks/](https://github.com/RonanB96/bluetooth-sig-python/tree/main/tests/benchmarks) directory.
