@@ -192,5 +192,5 @@ The parsing overhead is negligible compared to BLE operations (typically
 ## See Also
 
 - [BLE Integration](ble-integration.md) - Optimize BLE operations
-- [Architecture](../architecture.md) - Understand the design
+- [Architecture](../architecture/index.md) - Understand the design
 - [Testing Guide](../testing.md) - Performance testing

@@ -20,7 +20,7 @@ python -m pytest tests/benchmarks/ --benchmark-only --benchmark-compare=0001
 ## Benchmark Suite
 
 - **UUID resolution** - Registry lookup performance
-- **Characteristic parsing** - Simple and complex characteristics  
+- **Characteristic parsing** - Simple and complex characteristics
 - **Batch operations** - Multiple characteristics at once
 - **Memory efficiency** - No leaks validation
 - **Library vs manual** - Performance comparison
@@ -31,4 +31,4 @@ See [docs/performance.md](../../docs/performance.md) for detailed performance an
 
 ## CI Integration
 
-Benchmarks run automatically on every PR with regression detection and historical tracking on [GitHub Pages](https://RonanB96.github.io/bluetooth-sig-python/dev/bench/).
+Benchmarks run automatically on every PR with regression detection and historical tracking on [GitHub Pages](https://ronanb96.github.io/bluetooth-sig-python/benchmarks/).

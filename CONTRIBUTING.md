@@ -8,7 +8,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at <https://github.com/RonanB96/bluetooth_sig_python/issues>.
+Report bugs at <https://github.com/ronanb96/bluetooth-sig-python/issues>.
 
 If you are reporting a bug, please include:
 
@@ -30,7 +30,7 @@ Bluetooth SIG Python could always use more documentation, whether as part of the
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at <https://github.com/RonanB96/bluetooth_sig_python/issues>.
+The best way to send feedback is to file an issue at <https://github.com/ronanb96/bluetooth-sig-python/issues>.
 
 If you are proposing a feature:
 
@@ -47,13 +47,13 @@ Ready to contribute? Here's how to set up `bluetooth_sig_python` for local devel
 1. Clone your fork locally:
 
    ```sh
-   git clone git@github.com:your_name_here/bluetooth_sig_python.git
+   git clone git@github.com:your_name_here/bluetooth-sig-python.git
    ```
 
 1. Install your local copy into a virtualenv:
 
    ```sh
-   cd bluetooth_sig_python/
+   cd bluetooth-sig-python/
    python -m venv .venv
    source .venv/bin/activate  # On Linux/Mac
    # Windows: .venv\Scripts\activate

@@ -21,7 +21,7 @@ from bluetooth_sig import AsyncBluetoothSIGTranslator
 
 async def main():
     translator = AsyncBluetoothSIGTranslator()
-    
+
     # Single characteristic parsing
     result = await translator.parse_characteristic_async("2A19", data)
     print(f"Battery: {result.value}%")
@@ -40,22 +40,22 @@ from bluetooth_sig import AsyncBluetoothSIGTranslator
 
 async def read_sensor_data(address: str):
     translator = AsyncBluetoothSIGTranslator()
-    
+
     async with BleakClient(address) as client:
         # Read multiple characteristics
         battery_data = await client.read_gatt_char("2A19")
         temp_data = await client.read_gatt_char("2A6E")
         humidity_data = await client.read_gatt_char("2A6F")
-        
+
         # Parse all together
         char_data = {
             "2A19": battery_data,
             "2A6E": temp_data,
             "2A6F": humidity_data,
         }
-        
+
         results = await translator.parse_characteristics_async(char_data)
-        
+
         for uuid, result in results.items():
             print(f"{result.name}: {result.value}")
 
@@ -69,7 +69,7 @@ Batch parse multiple characteristics in a single async call:
 ```python
 async def parse_many_characteristics():
     translator = AsyncBluetoothSIGTranslator()
-    
+
     # Parse any number of characteristics
     char_data = {
         "2A19": battery_data,
@@ -86,16 +86,16 @@ Parse multiple characteristics concurrently using `asyncio.gather`:
 ```python
 async def parse_multiple_devices(devices: list[str]):
     translator = AsyncBluetoothSIGTranslator()
-    
+
     async def read_device(address: str):
         async with BleakClient(address) as client:
             data = await client.read_gatt_char("2A19")
             return await translator.parse_characteristic_async("2A19", data)
-    
+
     # Parse all devices concurrently
     tasks = [read_device(addr) for addr in devices]
     results = await asyncio.gather(*tasks)
-    
+
     return results
 ```
 
@@ -112,10 +112,10 @@ async def health_monitoring_session(client):
         # Context automatically shared between parses
         hr_data = await client.read_gatt_char("2A37")
         hr_result = await session.parse("2A37", hr_data)
-        
+
         location_data = await client.read_gatt_char("2A38")
         location_result = await session.parse("2A38", location_data)
-        
+
         # location_result has context from hr_result
         print(f"HR: {hr_result.value} at {location_result.value}")
 ```
@@ -127,14 +127,14 @@ Process streaming characteristic data:
 ```python
 async def monitor_sensor(client):
     translator = AsyncBluetoothSIGTranslator()
-    
+
     async def characteristic_stream():
         """Stream characteristic notifications."""
         while True:
             data = await client.read_gatt_char("2A19")
             yield ("2A19", data)
             await asyncio.sleep(1.0)
-    
+
     async for uuid, data in characteristic_stream():
         result = await translator.parse_characteristic_async(uuid, data)
         print(f"Battery: {result.value}%")
@@ -159,10 +159,10 @@ For optimal performance:
 
 ### AsyncBluetoothSIGTranslator
 
-All methods from [`BluetoothSIGTranslator`][bluetooth_sig.BluetoothSIGTranslator] are available, plus:
+All methods from [`BluetoothSIGTranslator`](../api/core.md) are available, plus:
 
-- `parse_characteristic_async()` - Async-compatible wrapper for [`parse_characteristic`][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic]
-- `parse_characteristics_async()` - Async-compatible wrapper for [`parse_characteristics`][bluetooth_sig.BluetoothSIGTranslator.parse_characteristics]
+- `parse_characteristic_async()` - Async-compatible wrapper for `parse_characteristic`
+- `parse_characteristics_async()` - Async-compatible wrapper for `parse_characteristics`
 
 Note: Use the inherited sync methods directly for simple lookups like `get_sig_info_by_uuid()` and `get_sig_info_by_name()` as they don't perform I/O.
 
@@ -175,7 +175,7 @@ Context manager for maintaining parsing state:
 
 ## Examples
 
-See the [async BLE integration example](../../examples/async_ble_integration.py) for a complete working example.
+See the [async BLE integration example](../examples/async_ble_integration.py) for a complete working example.
 
 ## Migration from Sync API
 

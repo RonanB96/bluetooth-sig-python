@@ -432,7 +432,7 @@ for service in peripheral.services():
 ## Next Steps
 
 - See [Usage Guide](../usage.md) for detailed API documentation
-- Check [examples/](../../examples/) for complete working applications
+- Check [examples/](https://github.com/RonanB96/bluetooth-sig-python/tree/main/examples) for complete working applications
 - Review [supported characteristics](../supported-characteristics.md) to see what's available
 
 ## Pairing Dependent Characteristics (Blood Pressure Example)
