@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.utils import DebugUtils
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.exceptions import ParseFieldError as ParseFieldException
@@ -27,7 +27,6 @@ class MultiFieldCharacteristic(CustomBaseCharacteristic):
         name="Multi Field Test",
         unit="various",
         value_type=ValueType.DICT,
-        properties=[],
     )
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
@@ -281,7 +280,6 @@ class TestGenericErrorExtraction:
                 name="Generic Error Test",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             expected_type: type | None = int
@@ -371,7 +369,6 @@ class TestTraceControlPerformance:
                 name="No Trace Test",
                 unit="test",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             # Disable trace collection for performance
@@ -408,7 +405,6 @@ class TestTraceControlPerformance:
                 name="Default Trace Test",
                 unit="test",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             # Don't set _enable_parse_trace - should default to True
@@ -443,7 +439,6 @@ class TestTraceControlPerformance:
                 name="Environment Trace Test",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:

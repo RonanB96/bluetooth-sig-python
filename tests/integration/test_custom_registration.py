@@ -8,11 +8,11 @@ from typing import Any
 import pytest
 
 from bluetooth_sig.core.translator import BluetoothSIGTranslator
-from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.utils import DataParser
 from bluetooth_sig.gatt.context import CharacteristicContext
-from bluetooth_sig.gatt.services.base import CustomBaseGattService
+from bluetooth_sig.gatt.services.custom import CustomBaseGattService
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 from bluetooth_sig.gatt.uuid_registry import CustomUuidEntry, uuid_registry
 from bluetooth_sig.types import CharacteristicInfo, CharacteristicRegistration, ServiceRegistration
@@ -29,7 +29,6 @@ class CustomCharacteristicImpl(CustomBaseCharacteristic):
         name="CustomCharacteristicImpl",
         unit="",
         value_type=ValueType.INT,
-        properties=[],
     )
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
@@ -53,7 +52,6 @@ class CustomCharacteristicImpl(CustomBaseCharacteristic):
             name="CustomCharacteristicImpl",
             unit="",
             value_type=ValueType.INT,
-            properties=list(properties or []),
         )
 
         return cls(info=info)
@@ -271,7 +269,6 @@ class TestRuntimeRegistration:
                             name="Unauthorized SIG Override",
                             unit="%",
                             value_type=ValueType.INT,
-                            properties=[],
                         ),
                     }
                 )
@@ -313,7 +310,6 @@ class TestRuntimeRegistration:
                 name="Authorized SIG Override",
                 unit="%",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(  # pylint: disable=duplicate-code

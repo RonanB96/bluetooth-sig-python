@@ -30,8 +30,14 @@ class MembersRegistry(BaseRegistry[MemberInfo]):
         self._members: dict[str, MemberInfo] = {}  # normalized_uuid -> MemberInfo
         self._members_by_name: dict[str, MemberInfo] = {}  # lower_name -> MemberInfo
 
-    def _load(self) -> None:
-        """Perform the actual loading of members data."""
+        try:  # pylint: disable=duplicate-code  # Standard exception handling pattern for registry YAML loading
+            self._load_members()
+        except (FileNotFoundError, Exception):  # pylint: disable=broad-exception-caught
+            # If YAML loading fails, continue with empty registry
+            pass
+
+    def _load_members(self) -> None:
+        """Load member UUIDs from YAML file."""
         base_path = find_bluetooth_sig_path()
         if not base_path:
             self._loaded = True

@@ -42,7 +42,6 @@ from .battery import BatteryChargeLevel, BatteryChargeState, BatteryChargingType
 from .class_of_device import ClassOfDeviceInfo
 from .context import CharacteristicContext, DeviceInfo
 from .data_types import (
-    CharacteristicData,
     CharacteristicInfo,
     CharacteristicRegistration,
     ParseFieldError,
@@ -51,6 +50,7 @@ from .data_types import (
     ValidationResult,
 )
 from .descriptor_types import DescriptorData, DescriptorInfo
+from .location import PositionStatus
 from .protocols import CharacteristicDataProtocol
 from .units import (
     AngleUnit,
@@ -100,7 +100,6 @@ __all__ = [
     "BLEAdvertisingPDU",
     "BLEExtendedHeader",
     "CharacteristicContext",
-    "CharacteristicData",
     "CharacteristicDataProtocol",
     "CharacteristicInfo",
     "CharacteristicRegistration",
@@ -127,6 +126,7 @@ __all__ = [
     "PDUType",
     "PercentageUnit",
     "PhysicalUnit",
+    "PositionStatus",
     "PressureUnit",
     "SecurityData",
     "ServiceInfo",

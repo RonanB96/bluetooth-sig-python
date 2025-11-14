@@ -267,7 +267,14 @@ def test_simpleble_integration_missing_backend(monkeypatch: pytest.MonkeyPatch) 
         return real_import(name, globals_, locals_, fromlist, level)
 
     monkeypatch.setattr(builtins, "__import__", _fake_import)
-    sys.modules.pop("examples.utils.simpleble_integration", None)
+
+    # Clear all related modules from cache to force re-import
+    modules_to_clear = [
+        "examples.utils.simpleble_integration",
+        "examples.connection_managers.simpleble",
+    ]
+    for module_name in modules_to_clear:
+        sys.modules.pop(module_name, None)
 
     with pytest.raises(ModuleNotFoundError) as excinfo:
         importlib.import_module("examples.connection_managers.simpleble")
@@ -350,7 +357,7 @@ class TestCanonicalShapes:
     @pytest.mark.asyncio
     async def test_robust_service_discovery_canonical_shape(self) -> None:
         """Test that robust_service_discovery returns canonical CharacteristicData dict."""
-        from bluetooth_sig.types.data_types import CharacteristicData
+        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
         from examples.with_bleak_retry import robust_service_discovery
 
         # Currently returns empty dict, but should maintain canonical shape
@@ -364,7 +371,7 @@ class TestCanonicalShapes:
     def test_canonical_shape_imports(self) -> None:
         """Test that canonical shape types are properly imported."""
         # Verify that CharacteristicData is imported and available
-        from bluetooth_sig.types.data_types import CharacteristicData
+        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 
         # Should be able to instantiate (basic smoke test)
         # Note: This tests import availability, not full functionality

@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.data_types import CharacteristicData
+from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from bluetooth_sig.types.uuid import BluetoothUUID
 from examples.utils.models import ReadResult
 

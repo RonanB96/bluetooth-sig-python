@@ -13,7 +13,7 @@ from collections.abc import Hashable
 from typing import Callable
 
 from ..core.translator import BluetoothSIGTranslator
-from ..types import CharacteristicData
+from ..gatt.characteristics.base import CharacteristicData
 
 
 class DependencyPairingBuffer:

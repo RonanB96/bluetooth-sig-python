@@ -16,8 +16,8 @@ from ...types.gatt_services import (
 )
 from ...types.uuid import BluetoothUUID
 from ..characteristics import BaseCharacteristic, CharacteristicRegistry
-from ..characteristics.base import UnknownCharacteristic
 from ..characteristics.registry import CharacteristicName
+from ..characteristics.unknown import UnknownCharacteristic
 from ..exceptions import UUIDResolutionError
 from ..resolver import ServiceRegistrySearch
 from ..uuid_registry import UuidInfo, uuid_registry
@@ -365,10 +365,22 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             characteristics: Dict mapping UUID to characteristic info
 
         """
-        for uuid, _ in characteristics.items():
-            char = CharacteristicRegistry.create_characteristic(uuid=uuid)
-            if char:
-                self.characteristics[uuid] = char
+        for uuid_obj, char_info in characteristics.items():
+            char_instance = CharacteristicRegistry.create_characteristic(uuid=uuid_obj.normalized)
+
+            if char_instance is None:
+                # Create UnknownCharacteristic for unregistered characteristics
+                char_instance = UnknownCharacteristic(
+                    info=BaseCharacteristicInfo(
+                        uuid=uuid_obj,
+                        name=char_info.name or f"Unknown Characteristic ({uuid_obj})",
+                        unit=char_info.unit or "",
+                        value_type=char_info.value_type,
+                    ),
+                    properties=[],
+                )
+
+            self.characteristics[uuid_obj] = char_instance
 
     def get_characteristic(self, uuid: BluetoothUUID) -> GattCharacteristic | None:
         """Get a characteristic by UUID."""
@@ -381,8 +393,6 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         """Get the set of characteristic UUIDs supported by this service."""
         # Return set of characteristic instances, not UUID strings
         return set(self.characteristics.values())
-
-    # New enhanced methods for service validation and health
 
     @classmethod
     def get_optional_characteristics(cls) -> ServiceCharacteristicCollection:
@@ -721,140 +731,3 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         """
         validation = self.validate_service()
         return (not validation.missing_required) and (validation.status != ServiceHealthStatus.INCOMPLETE)
-
-
-class CustomBaseGattService(BaseGattService):
-    """Helper base class for custom service implementations.
-
-    This class provides a wrapper around custom services that are not
-    defined in the Bluetooth SIG specification. It supports both manual info passing
-    and automatic class-level _info binding via __init_subclass__.
-    """
-
-    _is_custom = True
-    _configured_info: ServiceInfo | None = None  # Stores class-level _info
-    _allows_sig_override = False  # Default: no SIG override permission
-
-    # pylint: disable=duplicate-code
-    # NOTE: __init_subclass__ and __init__ patterns are intentionally similar to CustomBaseCharacteristic.
-    # This is by design - both custom characteristic and service classes need identical validation
-    # and info management patterns. Consolidation not possible due to different base types and info types.
-    def __init_subclass__(cls, allow_sig_override: bool = False, **kwargs: Any) -> None:  # noqa: ANN401  # Receives subclass kwargs
-        """Automatically set up _info if provided as class attribute.
-
-        Args:
-            allow_sig_override: Set to True when intentionally overriding SIG UUIDs
-            **kwargs: Additional keyword arguments for subclassing.
-
-        Raises:
-            ValueError: If class uses SIG UUID without override permission
-
-        """
-        super().__init_subclass__(**kwargs)
-
-        cls._allows_sig_override = allow_sig_override
-
-        info = cls._info
-        if info is not None:
-            if not allow_sig_override and info.uuid.is_sig_service():
-                raise ValueError(
-                    f"{cls.__name__} uses SIG UUID {info.uuid} without override flag. "
-                    "Use custom UUID or add allow_sig_override=True parameter."
-                )
-            cls._configured_info = info
-
-    def __init__(
-        self,
-        info: ServiceInfo | None = None,
-    ) -> None:
-        """Initialize a custom service with automatic _info resolution.
-
-        Args:
-            info: Optional override for class-configured _info
-
-        Raises:
-            ValueError: If no valid info available from class or parameter
-
-        """
-        # Use provided info, or fall back to class-configured _info
-        final_info = info or self.__class__._configured_info
-
-        if not final_info:
-            raise ValueError(f"{self.__class__.__name__} requires either 'info' parameter or '_info' class attribute")
-
-        if not final_info.uuid or str(final_info.uuid) == "0000":
-            raise ValueError("Valid UUID is required for custom services")
-
-        # Call parent constructor with our info to maintain consistency
-        super().__init__(info=final_info)
-
-    def __post_init__(self) -> None:
-        """Initialise custom service info management for CustomBaseGattService.
-
-        Manages _info manually from provided or configured info,
-        bypassing SIG resolution that would fail for custom services.
-        """
-        # Use provided info if available (from manual override), otherwise use configured info
-        if hasattr(self, "_provided_info") and self._provided_info:
-            self._info = self._provided_info
-        elif self.__class__._configured_info:  # pylint: disable=protected-access
-            # Access to _configured_info is intentional for class-level info management
-            self._info = self.__class__._configured_info  # pylint: disable=protected-access
-        else:
-            # This shouldn't happen if class setup is correct
-            raise ValueError(f"CustomBaseGattService {self.__class__.__name__} has no valid info source")
-
-    def process_characteristics(self, characteristics: ServiceDiscoveryData) -> None:
-        """Process discovered characteristics for this service.
-
-        Handles both Bluetooth SIG-defined characteristics and custom non-SIG characteristics.
-        SIG characteristics are parsed using registered parsers, while non-SIG characteristics
-        are stored as generic UnknownCharacteristic instances.
-
-        Args:
-            characteristics: Dictionary mapping characteristic UUIDs to CharacteristicInfo
-
-        """
-        # Store characteristics for later access
-        for uuid_obj, char_info in characteristics.items():
-            # Try to create SIG-defined characteristic first
-            char_instance = CharacteristicRegistry.create_characteristic(uuid=uuid_obj.normalized)
-
-            # If no SIG characteristic found, create generic unknown characteristic
-            if char_instance is None:
-                char_instance = UnknownCharacteristic(
-                    info=BaseCharacteristicInfo(
-                        uuid=uuid_obj,
-                        name=char_info.name or f"Unknown Characteristic ({uuid_obj})",
-                        unit=char_info.unit or "",
-                        value_type=char_info.value_type,
-                        properties=char_info.properties or [],
-                    )
-                )
-
-            if char_instance:
-                self.characteristics[uuid_obj] = char_instance
-
-
-class UnknownService(CustomBaseGattService):
-    """Generic service for unknown/unregistered service UUIDs.
-
-    This class is used for services discovered at runtime that are not
-    in the Bluetooth SIG specification or custom registry. It provides
-    basic functionality while allowing characteristic processing.
-    """
-
-    def __init__(self, uuid: BluetoothUUID, name: str | None = None) -> None:
-        """Initialize an unknown service with minimal info.
-
-        Args:
-            uuid: The service UUID
-            name: Optional custom name (defaults to "Unknown Service (UUID)")
-
-        """
-        info = ServiceInfo(
-            uuid=uuid,
-            name=name or f"Unknown Service ({uuid})",
-            description="",
-        )
-        super().__init__(info=info)

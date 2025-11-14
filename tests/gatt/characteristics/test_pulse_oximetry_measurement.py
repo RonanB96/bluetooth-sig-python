@@ -59,22 +59,26 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         """Test pulse oximetry parsing with PLX features from context."""
         from typing import cast
 
+        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+        from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
         from bluetooth_sig.gatt.context import CharacteristicContext
-        from bluetooth_sig.types import CharacteristicData, CharacteristicDataProtocol, CharacteristicInfo
+        from bluetooth_sig.types import CharacteristicDataProtocol, CharacteristicInfo
         from bluetooth_sig.types.uuid import BluetoothUUID
 
         # Mock context with PLX Features (0x2A60)
         # Example features: 0x0003 = Measurement Status Support + Device Status Support
-        plx_features = CharacteristicData(
+        plx_features_char = UnknownCharacteristic(
             info=CharacteristicInfo(
                 uuid=BluetoothUUID("2A60"),
                 name="PLX Features",
-            ),
+            )
+        )
+        plx_features = CharacteristicData(
+            characteristic=plx_features_char,
             value=PLXFeatureFlags.MEASUREMENT_STATUS_SUPPORT | PLXFeatureFlags.DEVICE_AND_SENSOR_STATUS_SUPPORT,
             raw_data=bytes([0x03, 0x00]),
             parse_success=True,
             error_message="",
-            descriptors={},
         )
 
         # Use full UUID format to match translator behavior
@@ -98,8 +102,10 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         """Test pulse oximetry with various PLX feature flags."""
         from typing import cast
 
+        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+        from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
         from bluetooth_sig.gatt.context import CharacteristicContext
-        from bluetooth_sig.types import CharacteristicData, CharacteristicDataProtocol, CharacteristicInfo
+        from bluetooth_sig.types import CharacteristicDataProtocol, CharacteristicInfo
         from bluetooth_sig.types.uuid import BluetoothUUID
 
         # Test various feature combinations
@@ -114,16 +120,18 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         ]
 
         for feature_value in feature_values:
-            plx_features = CharacteristicData(
+            plx_features_char = UnknownCharacteristic(
                 info=CharacteristicInfo(
                     uuid=BluetoothUUID("2A60"),
                     name="PLX Features",
-                ),
+                )
+            )
+            plx_features = CharacteristicData(
+                characteristic=plx_features_char,
                 value=feature_value,
                 raw_data=int(feature_value).to_bytes(2, byteorder="little"),
                 parse_success=True,
                 error_message="",
-                descriptors={},
             )
 
             # Use full UUID format to match translator behavior

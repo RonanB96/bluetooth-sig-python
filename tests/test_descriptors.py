@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.descriptors import (
     CCCDDescriptor,
@@ -257,7 +257,6 @@ class TestDescriptorIntegration:
                 name="Test Characteristic",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
@@ -290,7 +289,6 @@ class TestDescriptorIntegration:
                 name="Test Characteristic 2",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:

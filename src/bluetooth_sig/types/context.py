@@ -20,14 +20,17 @@ class DeviceInfo(msgspec.Struct, kw_only=True):
 
 
 class CharacteristicContext(msgspec.Struct, kw_only=True):
-    """Runtime context passed into parsers.
+    """Runtime context passed into parsers - INPUT only.
+
+    This provides the parsing context (device info, other characteristics for
+    dependencies, etc.) but does NOT contain output fields. Descriptors have
+    their own separate parsing flow.
 
     Attributes:
         device_info: Basic device metadata (address, name, manufacturer data).
         advertisement: Raw advertisement bytes if available.
         other_characteristics: Mapping from characteristic UUID string to
-            previously-parsed characteristic result (typical value is
-            `bluetooth_sig.core.CharacteristicData`). Parsers may consult this
+            previously-parsed characteristic result. Parsers may consult this
             mapping to implement multi-characteristic decoding.
         descriptors: Mapping from descriptor UUID string to parsed descriptor data.
             Provides access to characteristic descriptors during parsing.

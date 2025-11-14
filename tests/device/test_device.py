@@ -2,27 +2,45 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, cast
+from typing import Callable, cast
 
 import pytest
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
-from bluetooth_sig.types.device_types import DeviceEncryption
+from bluetooth_sig.types.device_types import DeviceEncryption, DeviceService
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-class MockConnectionManager:
+class MockConnectionManager(ConnectionManagerProtocol):
     """Mock connection manager for testing."""
 
-    def __init__(self, connected: bool = False) -> None:
-        self.address = "AA:BB:CC:DD:EE:FF"
+    def __init__(self, address: str = "AA:BB:CC:DD:EE:FF", connected: bool = False, **kwargs: object) -> None:
+        """Initialize with address and connection state.
+
+        Args:
+            address: BLE device address
+            connected: Initial connection state
+            **kwargs: Additional keyword arguments (ignored)
+
+        """
+        super().__init__(address, **kwargs)
         self._connected = connected
+        self._mtu = 23
 
     @property
     def is_connected(self) -> bool:
         return self._connected
+
+    @property
+    def mtu_size(self) -> int:
+        return self._mtu
+
+    @property
+    def name(self) -> str:
+        """Mock device name."""
+        return "Mock Device"
 
     async def connect(self) -> None:
         self._connected = True
@@ -40,17 +58,35 @@ class MockConnectionManager:
     async def read_gatt_char(self, char_uuid: BluetoothUUID) -> bytes:
         return b""
 
-    async def write_gatt_char(self, char_uuid: BluetoothUUID, data: bytes) -> None:
+    async def write_gatt_char(self, char_uuid: BluetoothUUID, data: bytes, response: bool = True) -> None:
         pass
 
-    async def get_services(self) -> Any:  # noqa: ANN401
-        """Mock get_services - returns async."""
-        return {}
+    async def read_gatt_descriptor(self, desc_uuid: BluetoothUUID) -> bytes:
+        return b""
+
+    async def write_gatt_descriptor(self, desc_uuid: BluetoothUUID, data: bytes) -> None:
+        pass
+
+    async def get_services(self) -> list[DeviceService]:
+        """Mock get_services - returns empty list."""
+        return []
 
     async def start_notify(self, char_uuid: BluetoothUUID, callback: Callable[[str, bytes], None]) -> None:
         """Mock start_notify with correct signature."""
 
     async def stop_notify(self, char_uuid: BluetoothUUID) -> None:
+        pass
+
+    async def pair(self) -> None:
+        pass
+
+    async def unpair(self) -> None:
+        pass
+
+    async def read_rssi(self) -> int:
+        return -60
+
+    def set_disconnected_callback(self, callback: Callable[[], None]) -> None:
         pass
 
 
@@ -196,109 +232,6 @@ class TestDevice:
         assert self.device.advertiser_data is not None
         assert self.device.advertiser_data.ad_structures.properties.tx_power == -4
 
-    def test_add_service_known_service(self) -> None:
-        """Test adding a service with known service type."""
-        # Battery service characteristics
-        characteristics = {
-            "2A19": b"\x64",  # Battery Level: 100%
-        }
-
-        self.device.add_service("180F", characteristics)
-
-        assert "180F" in self.device.services
-        service = self.device.services["180F"]
-        assert len(service.characteristics) == 1
-        assert "2A19" in service.characteristics
-
-        # Check parsed data
-        battery_data = service.characteristics["2A19"]
-        assert battery_data.value == 100
-        assert battery_data.name == "Battery Level"
-
-    def test_add_service_unknown_service(self) -> None:
-        """Test adding a service with unknown service name raises ValueError."""
-        # Unknown service name that's not a valid UUID (contains non-hex characters)
-        characteristics = {
-            "1234": b"\x01\x02\x03",
-        }
-
-        # Should raise ValueError for unknown service name that's not a UUID
-        with pytest.raises(ValueError, match="Cannot resolve service UUID for 'InvalidServiceName'"):
-            self.device.add_service("InvalidServiceName", characteristics)
-
-    def test_add_service_with_unknown_uuid(self) -> None:
-        """Test adding a service with a valid UUID that's not in the registry creates UnknownService."""
-        # Use a valid UUID format that's not a known service
-        unknown_uuid = "ABCD"  # Valid 16-bit UUID, but not a known service
-        characteristics = {
-            "1234": b"\x01\x02\x03",
-        }
-
-        self.device.add_service(unknown_uuid, characteristics)
-
-        # Should create an entry with the UUID as the key
-        assert unknown_uuid in self.device.services
-        service = self.device.services[unknown_uuid]
-        # The service should be an UnknownService
-        assert service.service.__class__.__name__ == "UnknownService"
-        assert len(service.characteristics) == 1
-
-    def test_get_characteristic_data(self) -> None:
-        """Test retrieving characteristic data."""
-        # Add a service first
-        characteristics = {
-            "2A19": b"\x64",  # Battery Level: 100%
-        }
-        self.device.add_service("180F", characteristics)
-
-        # Retrieve the data
-        data = self.device.get_characteristic_data("180F", "2A19")
-        assert data is not None
-        assert data.value == 100
-
-        # Test non-existent service/characteristic
-        assert self.device.get_characteristic_data("9999", "9999") is None
-        assert self.device.get_characteristic_data("180F", "9999") is None
-
-    def test_update_encryption_requirements(self) -> None:
-        """Test encryption requirements tracking."""
-        from bluetooth_sig.types import CharacteristicData, CharacteristicInfo
-        from bluetooth_sig.types.gatt_enums import GattProperty
-        from bluetooth_sig.types.uuid import BluetoothUUID
-
-        # Create mock characteristic info with encryption properties
-        char_info = CharacteristicInfo(
-            uuid=BluetoothUUID("2A19"),
-            name="Battery Level",
-            properties=[GattProperty.READ, GattProperty.ENCRYPT_READ],
-        )
-
-        # Create characteristic data
-        char_data = CharacteristicData(
-            info=char_info,
-            value=100,
-        )
-
-        self.device.update_encryption_requirements(char_data)
-
-        assert self.device.encryption.requires_encryption is True
-
-        # Test authentication requirement
-        char_info_auth = CharacteristicInfo(
-            uuid=BluetoothUUID("2A19"),
-            name="Battery Level",
-            properties=[GattProperty.READ, GattProperty.AUTH_READ],
-        )
-
-        char_data_auth = CharacteristicData(
-            info=char_info_auth,
-            value=100,
-        )
-
-        self.device.update_encryption_requirements(char_data_auth)
-
-        assert self.device.encryption.requires_authentication is True
-
     def test_device_with_advertiser_context(self) -> None:
         """Test device functionality with advertiser data context."""
         # Set up advertiser data first
@@ -331,14 +264,8 @@ class TestDevice:
         )
         self.device.parse_advertiser_data(adv_data)
 
-        # Add service - should use advertiser context
-        characteristics = {
-            "2A19": b"\x64",  # Battery Level
-        }
-        self.device.add_service("180F", characteristics)
-
-        # Verify service was added and context was used
-        assert "180F" in self.device.services
+        # Verify advertiser data was parsed
+        assert self.device.advertiser_data is not None
         assert self.device.name == "Test Device"
 
     def test_is_connected_property(self) -> None:

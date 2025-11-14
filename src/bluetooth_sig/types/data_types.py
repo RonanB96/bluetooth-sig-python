@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import msgspec
 
 from .base_types import SIGInfo
-from .context import CharacteristicContext
-from .descriptor_types import DescriptorData
-from .gatt_enums import GattProperty, ValueType
+from .gatt_enums import ValueType
 from .uuid import BluetoothUUID
 
 
@@ -34,59 +30,21 @@ class ParseFieldError(msgspec.Struct, frozen=True, kw_only=True):
 
 
 class CharacteristicInfo(SIGInfo):
-    """Information about a Bluetooth characteristic."""
+    """Information about a Bluetooth characteristic from SIG/YAML specifications.
+
+    This contains only static metadata resolved from YAML or SIG specs.
+    Runtime properties (read/write/notify capabilities) are stored separately
+    on the BaseCharacteristic instance as they're discovered from the actual device.
+    """
 
     value_type: ValueType = ValueType.UNKNOWN
     unit: str = ""
-    properties: list[GattProperty] = msgspec.field(default_factory=list)
 
 
 class ServiceInfo(SIGInfo):
     """Information about a Bluetooth service."""
 
     characteristics: list[CharacteristicInfo] = msgspec.field(default_factory=list)
-
-
-class CharacteristicData(msgspec.Struct, kw_only=True):
-    """Parsed characteristic data with validation results.
-
-    Provides structured error reporting with field-level diagnostics and parse traces
-    to help identify exactly where and why parsing failed.
-
-    NOTE: This struct intentionally has more attributes than the standard limit
-    to provide complete diagnostic information. The additional fields (field_errors,
-    parse_trace) are essential for actionable error reporting and debugging.
-    """
-
-    info: CharacteristicInfo
-    value: Any | None = None
-    raw_data: bytes = b""
-    parse_success: bool = False
-    error_message: str = ""
-    source_context: CharacteristicContext = msgspec.field(default_factory=CharacteristicContext)
-    field_errors: list[ParseFieldError] = msgspec.field(default_factory=list)
-    parse_trace: list[str] = msgspec.field(default_factory=list)
-    descriptors: dict[str, DescriptorData] = msgspec.field(default_factory=dict)
-
-    @property
-    def name(self) -> str:
-        """Get the characteristic name from info."""
-        return self.info.name
-
-    @property
-    def properties(self) -> list[GattProperty]:
-        """Get the properties as strings for protocol compatibility."""
-        return self.info.properties
-
-    @property
-    def uuid(self) -> BluetoothUUID:
-        """Get the characteristic UUID from info."""
-        return self.info.uuid
-
-    @property
-    def unit(self) -> str:
-        """Get the characteristic unit from info."""
-        return self.info.unit
 
 
 class ValidationResult(SIGInfo):

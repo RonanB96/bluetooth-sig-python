@@ -83,11 +83,10 @@ def demonstrate_pure_sig_parsing() -> None:
         result = translator.parse_characteristic(test_case["uuid"], test_case["data"])
 
         if result.parse_success:
-            unit_str = f" {result.unit}" if result.unit else ""
+            unit_str = f" {result.characteristic.unit}" if result.characteristic.unit else ""
             print(f"   ✅ Parsed value: {result.value}{unit_str}")
-            # Value type is available on the CharacteristicInfo attached to the result
-            if getattr(result.info, "value_type", None):
-                print(f"   📋 Value type: {result.info.value_type}")
+            if getattr(result.characteristic.info, "value_type", None):
+                print(f"   📋 Value type: {result.characteristic.info.value_type}")
         else:
             print(f"   ❌ Parse failed: {result.error_message}")
 
@@ -154,9 +153,9 @@ def demonstrate_batch_parsing() -> None:
     results = translator.parse_characteristics(sensor_data)
 
     for _uuid, result in results.items():
-        char_name = result.name if hasattr(result, "name") else "Unknown"
+        char_name = result.characteristic.name
         if result.parse_success:
-            unit_str = f" {result.unit}" if result.unit else ""
+            unit_str = f" {result.characteristic.unit}" if result.characteristic.unit else ""
             print(f"📊 {char_name}: {result.value}{unit_str}")
         else:
             print(f"❌ {char_name}: Parse failed - {result.error_message}")

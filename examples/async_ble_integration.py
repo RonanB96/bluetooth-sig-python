@@ -1,6 +1,6 @@
 """Example: Async BLE integration with bluetooth-sig library.
 
-This example demonstrates how to use the AsyncBluetoothSIGTranslator
+This example demonstrates how to use the BluetoothSIGTranslator
 with the Bleak BLE library for non-blocking characteristic parsing.
 
 Requirements:
@@ -12,8 +12,8 @@ Usage:
 
 import asyncio
 
-from bluetooth_sig import AsyncBluetoothSIGTranslator
-from bluetooth_sig.types import CharacteristicData
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 
 # Optional: Import bleak if available
 try:
@@ -34,7 +34,7 @@ async def scan_and_connect() -> None:
         print("Bleak is required for this example.")
         return
 
-    translator = AsyncBluetoothSIGTranslator()
+    translator = BluetoothSIGTranslator()
 
     # Scan for devices
     print("Scanning for BLE devices...")
@@ -89,7 +89,7 @@ async def scan_and_connect() -> None:
 
 async def batch_parsing_example() -> None:
     """Demonstrate batch parsing of multiple characteristics."""
-    translator = AsyncBluetoothSIGTranslator()
+    translator = BluetoothSIGTranslator()
 
     print("\n" + "=" * 50)
     print("Batch Parsing Example")
@@ -116,7 +116,7 @@ async def batch_parsing_example() -> None:
 
 async def concurrent_parsing_example() -> None:
     """Demonstrate concurrent parsing of multiple devices."""
-    translator = AsyncBluetoothSIGTranslator()
+    translator = BluetoothSIGTranslator()
 
     print("\n" + "=" * 50)
     print("Concurrent Parsing Example")
@@ -150,7 +150,7 @@ async def context_manager_example() -> None:
 
     print("\nUsing AsyncParsingSession to maintain context...")
 
-    translator = AsyncBluetoothSIGTranslator()
+    translator = BluetoothSIGTranslator()
     async with AsyncParsingSession(translator) as session:
         # Parse multiple characteristics with shared context
         result1 = await session.parse("2A19", bytes([75]))

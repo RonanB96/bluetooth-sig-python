@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.exceptions import InsufficientDataError, ValueRangeError
-from examples.thingy52_characteristics import (
+from examples.thingy52.thingy52_characteristics import (
     ThingyButtonCharacteristic,
     ThingyColorCharacteristic,
     ThingyColorData,

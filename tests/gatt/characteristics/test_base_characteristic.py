@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import ValueType
@@ -23,7 +23,6 @@ class ValidationHelperCharacteristic(CustomBaseCharacteristic):
         name="Test Validation",
         unit="",
         value_type=ValueType.INT,
-        properties=[],
     )
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
@@ -45,7 +44,6 @@ class NoValidationCharacteristic(CustomBaseCharacteristic):
         name="No Validation",
         unit="",
         value_type=ValueType.INT,
-        properties=[],
     )
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
@@ -110,7 +108,6 @@ class TestBaseCharacteristicValidation:
                 name="Min Value Test",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
@@ -139,7 +136,6 @@ class TestBaseCharacteristicValidation:
                 name="Type Test",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(
@@ -180,7 +176,6 @@ class TestBaseCharacteristicValidation:
                 name="Min Length Test",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
@@ -212,7 +207,6 @@ class TestBaseCharacteristicValidation:
                 name="Max Length Test",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
@@ -242,7 +236,6 @@ class TestBaseCharacteristicValidation:
                 name="Exception Test",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
@@ -270,7 +263,6 @@ class TestBaseCharacteristicValidation:
                 name="Struct Error Test",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:

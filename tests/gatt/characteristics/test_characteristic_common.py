@@ -8,7 +8,9 @@ from typing import Any
 import pytest
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.context import CharacteristicContext
+from bluetooth_sig.types import CharacteristicDataProtocol
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -120,7 +122,9 @@ class CommonCharacteristicTests:
             )
             assert result.parse_success, f"{case_desc}: parse_success should be True for valid data"
             assert result.value is not None, f"{case_desc}: Parsed value should not be None for valid data"
-            assert result.info.uuid == characteristic.uuid, f"{case_desc}: Result info should match characteristic"
+            assert result.characteristic.info.uuid == characteristic.uuid, (
+                f"{case_desc}: Result info should match characteristic"
+            )
 
             # CRITICAL: Validate that the parsed value matches expected value
             self._assert_values_equal(
@@ -405,12 +409,24 @@ class CommonCharacteristicTests:
                     )
 
             # Build context with other characteristics (dependencies)
-            # NOTE: We pass raw bytes here for simplicity. This is sufficient for basic
-            # dependency testing. For full integration tests with proper CharacteristicData
-            # objects, use the translator in integration tests.
-            other_chars = {k: v for k, v in test_case.with_dependency_data.items() if k.upper() != char_uuid}
+            # Parse dependency characteristics through their proper parsers to get CharacteristicData objects
+            other_chars: dict[str, CharacteristicDataProtocol] = {}
+            for dep_uuid, dep_data in test_case.with_dependency_data.items():
+                if dep_uuid.upper() == char_uuid:
+                    continue  # Skip the main characteristic
 
-            ctx = CharacteristicContext(other_characteristics=other_chars) if other_chars else None  # type: ignore[arg-type]
+                # Get the characteristic class for this UUID and parse the data
+                dep_char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(dep_uuid)
+                if dep_char_class:
+                    dep_instance = dep_char_class()
+                    dep_parsed = dep_instance.parse_value(dep_data)
+                    other_chars[dep_uuid] = dep_parsed
+                else:
+                    # If we can't find the class, skip this dependency
+                    # (this shouldn't happen in well-formed tests)
+                    continue
+
+            ctx = CharacteristicContext(other_characteristics=other_chars) if other_chars else None
 
             # Parse with context
             result = characteristic.decode_value(char_data, ctx=ctx)

@@ -40,6 +40,7 @@ def discover_service_classes() -> list[type[BaseGattService]]:
                         obj != BaseGattService
                         and issubclass(obj, BaseGattService)
                         and obj.__module__ == module.__name__
+                        and not getattr(obj, "_is_base_class", False)  # Exclude base classes
                     ):
                         service_classes.append(obj)
             except ImportError as e:
@@ -338,7 +339,7 @@ class TestNameResolutionFallback:
         name resolution.
         """
         # Create a test characteristic class without explicit name
-        from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+        from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 
         class TemperatureCharacteristic(CustomBaseCharacteristic):
             """Test characteristic without explicit name."""
@@ -348,7 +349,6 @@ class TestNameResolutionFallback:
                 name="Temperature",
                 unit="°C",
                 value_type=ValueType.FLOAT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
@@ -425,7 +425,7 @@ class TestNameResolutionFallback:
 
     def test_class_name_parsing_edge_cases(self) -> None:
         """Test edge cases in class name parsing."""
-        from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+        from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 
         # Test characteristic with complex class name
         class ModelNumberStringCharacteristic(CustomBaseCharacteristic):
@@ -436,7 +436,6 @@ class TestNameResolutionFallback:
                 name="Model Number String",
                 unit="",
                 value_type=ValueType.STRING,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
@@ -465,7 +464,7 @@ class TestNameResolutionFallback:
         """Test behavior when neither explicit name nor class name resolution
         works.
         """
-        from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+        from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 
         class UnknownTestCharacteristic(CustomBaseCharacteristic):
             """Test characteristic that shouldn't exist in registry."""
@@ -475,7 +474,6 @@ class TestNameResolutionFallback:
                 name="Test Unknown Characteristic",
                 unit="",
                 value_type=ValueType.STRING,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:

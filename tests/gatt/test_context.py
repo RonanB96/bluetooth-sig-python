@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import msgspec
 
+from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext, DeviceInfo
-from bluetooth_sig.types import CharacteristicData, CharacteristicInfo
+from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -43,15 +45,16 @@ class MeasurementCharacteristic:
 
 
 def test_context_parsing_simple() -> None:
-    # Create fake parsed calibration
+    # Create fake parsed calibration using a mock characteristic
+
     calib_info = CharacteristicInfo(
         uuid=BluetoothUUID("2A19"),  # Use a valid UUID format
         name="Calibration",
         value_type=ValueType.INT,
         unit="",
-        properties=[],
     )
-    calib_data = CharacteristicData(info=calib_info, value=2, raw_data=b"\x02")
+    calib_char = UnknownCharacteristic(info=calib_info)
+    calib_data = CharacteristicData(characteristic=calib_char, value=2, raw_data=b"\x02", parse_success=True)
 
     ctx = CharacteristicContext(
         device_info=DeviceInfo(address="00:11:22:33:44:55"),

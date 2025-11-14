@@ -13,7 +13,7 @@ from typing import cast
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
 from bluetooth_sig.device.device import Device
-from bluetooth_sig.types.data_types import CharacteristicData
+from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 from .data_parsing import display_parsed_results

@@ -60,6 +60,7 @@ test = [
     "bleak>=0.21.0",
     "bleak-retry-connector>=2.13.1,<3",
     "simplepyble>=0.10.3",
+    "bluepy>=1.3.0",
 ]
 examples = [
     # BLE libraries for example integrations (now required in main dependencies)
@@ -67,6 +68,7 @@ examples = [
     "bleak>=0.21.0",
     "bleak-retry-connector>=2.13.1,<3",
     "simplepyble>=0.10.3",
+    "bluepy>=1.3.0",
 ]
 docs = [
     "mkdocs>=1.6.0",
@@ -263,6 +265,7 @@ module = "examples.*"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 warn_unused_ignores = false  # Allow extra type: ignore comments for flexibility
+disallow_any_unimported = false  # Allow untyped optional dependencies in examples
 
 [[tool.mypy.overrides]]
 module = "pydantic.*"
@@ -274,6 +277,14 @@ module = "simplepyble.*"
 # Simplepyble is an optional external dependency used in examples; it does not ship
 # type stubs. Allow missing imports for it so example code mypy checks do not fail.
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "bluepy.*"
+# BluePy is an optional external dependency used in examples; it does not ship
+# type stubs or py.typed marker. Allow mypy to treat it as untyped and disable
+# strict checks that would fail due to untyped imports.
+ignore_missing_imports = true
+disallow_any_unimported = false
 
 [tool.pydocstyle]
 # Enforce Google-style docstrings as mandated by project standards

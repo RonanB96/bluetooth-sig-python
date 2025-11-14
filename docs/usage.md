@@ -50,13 +50,13 @@ For more basic usage examples, see the [Quick Start Guide](quickstart.md).
 If you are using an async BLE client (for example, bleak), you can await async wrappers without changing parsing logic:
 
 ```python
-from bluetooth_sig.core.async_translator import AsyncBluetoothSIGTranslator
+from bluetooth_sig.core.async_translator import BluetoothSIGTranslator
 
-translator = AsyncBluetoothSIGTranslator()
+translator = BluetoothSIGTranslator()
 result = await translator.parse_characteristic_async("2A19", bytes([85]))
 ```
 
-Prefer the existing examples for full context: see `examples/async_ble_integration.py`. The async classes are also documented in the Core API via mkdocstrings: `AsyncBluetoothSIGTranslator` and `AsyncParsingSession`.
+Prefer the existing examples for full context: see `examples/async_ble_integration.py`. The async classes are also documented in the Core API via mkdocstrings: `BluetoothSIGTranslator` and `AsyncParsingSession`.
 
 ## Real-World Usage Patterns
 
@@ -308,10 +308,10 @@ The `Device` class provides a high-level abstraction for grouping BLE device ser
 ### Basic Device Usage
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator, CharacteristicName
 from bluetooth_sig.device import Device
 
-def main():
+async def main():
     # Create translator and device
     translator = BluetoothSIGTranslator()
     device = Device("AA:BB:CC:DD:EE:FF", translator)
@@ -323,14 +323,12 @@ def main():
     device.parse_advertiser_data(adv_data)
     print(f"Device name: {device.name}")
 
-    # Add services with characteristics
-    battery_service = {
-        "2A19": b'\x64',  # Battery Level: 100%
-    }
-    device.add_service("180F", battery_service)
+    # Discover services (real workflow with connection manager)
+    await device.discover_services()
 
-    # Access parsed characteristic data
-    battery_level = device.get_characteristic_data("180F", "2A19")
+    # Read characteristic data using high-level enum
+    battery_uuid = CharacteristicName.BATTERY_LEVEL.get_uuid()
+    battery_level = await device.read(battery_uuid)
     print(f"Battery level: {battery_level.value}%")
 
     # Check encryption requirements
@@ -338,7 +336,8 @@ def main():
     print(f"Requires authentication: {device.encryption.requires_authentication}")
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())
 ```
 
 ### Device with BLE Connection Library
@@ -348,7 +347,7 @@ The Device class integrates with any BLE connection library:
 ```python
 import asyncio
 from bleak import BleakClient
-from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator, CharacteristicName
 from bluetooth_sig.device import Device
 
 async def discover_device(device_address):
@@ -364,14 +363,12 @@ async def discover_device(device_address):
 
         for service in services:
             # Collect characteristics for this service
-            char_data = {}
             for char in service.characteristics:
-                # Read characteristic value
-                value = await client.read_gatt_char(char.uuid)
-                char_data[char.uuid] = value
-
-            # Add service to device
-            device.add_service(service.uuid, char_data)
+                # Read characteristic value using device.read()
+                # Convert UUID string to BluetoothUUID
+                char_uuid = BluetoothUUID(char.uuid)
+                char_data = await device.read(char_uuid)
+                print(f"Characteristic {char.uuid}: {char_data.value}")
 
     # Now you have a complete device representation
     print(f"Device: {device}")

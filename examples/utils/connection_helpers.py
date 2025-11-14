@@ -63,7 +63,7 @@ async def read_characteristics_with_manager(
                     for char in service.characteristics:
                         try:
                             if hasattr(char, "properties") and "read" in char.properties:
-                                discovered.append(str(char.uuid))
+                                discovered.append(str(char.uuid))  # type: ignore[attr-defined]
                         except Exception:
                             # Be resilient to unusual service/char shapes
                             continue

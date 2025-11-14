@@ -13,7 +13,7 @@ import time
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
-from bluetooth_sig.types.data_types import CharacteristicData
+from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 
 
 async def robust_device_reading(
