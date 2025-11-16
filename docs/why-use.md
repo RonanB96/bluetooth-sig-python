@@ -7,7 +7,9 @@ When working with Bluetooth Low Energy (BLE) devices, you typically encounter ra
 ### Challenge 1: Complex Data Formats
 
 ```python
-# Raw BLE characteristic data
+# ============================================
+# SIMULATED DATA - Example raw bytes
+# ============================================
 raw_data = bytearray([0x64, 0x09])  # What does this mean? 🤔
 ```
 
@@ -36,23 +38,16 @@ Each characteristic has specific parsing rules:
 
 This library handles all the complexity for you:
 
-### ✅ Automatic Standards Interpretation
-
-```python
-from bluetooth_sig import BluetoothSIGTranslator
-
-translator = BluetoothSIGTranslator()
-
-# Parse according to official specifications
-temp_data = translator.parse_characteristic("2A6E", bytearray([0x64, 0x09]))
-print(f"Temperature: {temp_data.value}°C")  # Temperature: 24.36°C
-```
-
 ### ✅ UUID Resolution
 
 ```python
+# ============================================
+# EXAMPLE UUIDs - From your BLE library
+# ============================================
+BATTERY_SERVICE_UUID = "180F"  # UUID from BLE device discovery
+
 # Resolve UUIDs to names
-service_info = translator.get_sig_info_by_uuid("180F")
+service_info = translator.get_sig_info_by_uuid(BATTERY_SERVICE_UUID)
 print(service_info.name)  # "Battery Service"
 
 # Reverse lookup
@@ -63,12 +58,47 @@ print(battery_service.uuid)  # "180F"
 ### ✅ Type-Safe Data Structures
 
 ```python
-# Get structured data, not raw bytes
-battery_data = translator.parse_characteristic("2A19", bytearray([85]))
+# ============================================
+# SIMULATED DATA - Replace with actual BLE read
+# ============================================
+SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
+BATTERY_LEVEL_UUID = "2A19"  # UUID from your BLE library
 
-# battery_data is a typed dataclass with validation
+# Get structured data, not raw bytes
+battery_data = translator.parse_characteristic(BATTERY_LEVEL_UUID, SIMULATED_BATTERY_DATA)
+
+# battery_data is a typed msgspec struct with validation
 assert battery_data.value == 85
 assert 0 <= battery_data.value <= 100  # Automatically validated
+```
+
+### ✅ Complete Parsing Example
+
+```python
+# ============================================
+# COMPLETE EXAMPLE - From BLE device to parsed data
+# ============================================
+from bluetooth_sig import BluetoothSIGTranslator
+
+# Initialize the translator (loads all SIG definitions)
+translator = BluetoothSIGTranslator()
+
+# Example: Reading temperature from a BLE environmental sensor
+TEMPERATURE_UUID = "2A6E"  # Official SIG UUID for Temperature
+SERVICE_UUID = "181A"     # Environmental Sensing Service
+
+# Step 1: Connect to device (using your BLE library)
+# raw_bytes = await your_ble_client.read_gatt_char(TEMPERATURE_UUID)
+
+# Step 2: Simulate real BLE data for this example
+raw_temperature_bytes = bytearray([0x0A, 0x01])  # 266 = 0x010A in little-endian
+
+# Step 3: Parse with bluetooth-sig (handles all complexity)
+temperature_data = translator.parse_characteristic(TEMPERATURE_UUID, raw_temperature_bytes)
+
+# Result: Fully typed, validated data structure
+print(f"Temperature: {temperature_data.value}°C")  # "Temperature: 26.6°C"
+print(f"Units: {temperature_data.unit}")           # "Units: celsius"
 ```
 
 ## When Should You Use This Library?
@@ -99,15 +129,22 @@ Built directly from official Bluetooth SIG specifications. Every characteristic 
 Works with **any** BLE connection library:
 
 ```python
+# SKIP: Example requires BLE hardware access and external libraries
+# ============================================
+# EXAMPLE UUIDs - From your BLE library
+# ============================================
+CHAR_UUID = "2A19"  # Characteristic UUID from device discovery
+SERVICE_UUID = "180F"  # Service UUID from device discovery
+
 # Works with bleak
 from bleak import BleakClient
-raw_data = await client.read_gatt_char(uuid)
-parsed = translator.parse_characteristic(uuid, raw_data)
+raw_data = await client.read_gatt_char(CHAR_UUID)
+parsed = translator.parse_characteristic(CHAR_UUID, raw_data)
 
 # Works with simplepyble
 from simplepyble import Peripheral
-raw_data = peripheral.read(service_uuid, char_uuid)
-parsed = translator.parse_characteristic(char_uuid, raw_data)
+raw_data = peripheral.read(SERVICE_UUID, CHAR_UUID)
+parsed = translator.parse_characteristic(CHAR_UUID, raw_data)
 
 # Works with ANY BLE library
 ```
@@ -176,10 +213,16 @@ UUID_MAP = {
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 
+# ============================================
+# SIMULATED DATA - Replace with actual BLE read
+# ============================================
+BATTERY_LEVEL_UUID = "2A19"  # UUID from your BLE library
+data = bytearray([85])  # Simulated battery data
+
 translator = BluetoothSIGTranslator()
 
 # One line, standards-compliant, type-safe
-result = translator.parse_characteristic("2A19", data)
+result = translator.parse_characteristic(BATTERY_LEVEL_UUID, data)
 ```
 
 ## Next Steps

@@ -83,7 +83,8 @@ jobs:
     - name: 'Install system dependencies'
       run: |
         sudo apt-get update
-        sudo apt-get install -y shellcheck
+        # Install build deps to compile C extensions like bluepy
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config libdbus-1-dev libglib2.0-dev libudev-dev libbluetooth-dev python3-dev
 
     - name: 'Install Python dependencies'
       run: |

@@ -1,5 +1,7 @@
 """Unknown service implementation for unregistered service UUIDs."""
 
+from __future__ import annotations
+
 from ...types import ServiceInfo
 from ...types.uuid import BluetoothUUID
 from .base import BaseGattService

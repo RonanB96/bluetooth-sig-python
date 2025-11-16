@@ -83,8 +83,9 @@ The translation layer must remain framework-agnostic to support multiple backend
 
 ### 8. Quality Gates Must Pass
 **All linting must pass before claiming completion.**
-- Run `./scripts/lint.sh --all` before every completion
+- Run `./scripts/lint.sh --all` before every completion, docs don't need this linter script to be ran
 - Fix issues, don't suppress them unless documented
+- The linter script is slow, so grepping or tailing the output is banned, pipe it to a file and read the file instead
 - Never hide real problems with disables
 - If fixing linting errors, rerun only that linting tool to speed up iteration, i.e. `./scripts/lint.sh --mypy`. Then rerun all at the end.
 

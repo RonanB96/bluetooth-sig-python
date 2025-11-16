@@ -14,7 +14,35 @@ from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.types.data_types import CharacteristicInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
-from examples.thingy52.thingy52_characteristics import ThingyTemperatureCharacteristic
+
+
+# A small self-contained test characteristic used only for these tests.
+class LocalTemperatureCharacteristic(CustomBaseCharacteristic):
+    """Simple custom characteristic used by auto-registration tests.
+
+    This is intentionally minimal — it's only used to validate auto-registration
+    logic (manual registration, auto-registration idempotence and parse). The
+    decode/encode methods are trivial.
+    """
+
+    _info = CharacteristicInfo(
+        uuid=BluetoothUUID("12345678-1234-5678-1234-567812345671"),
+        name="Local Temperature Characteristic",
+    )
+
+    def decode_value(self, data: bytearray, ctx: Any = None) -> float:  # noqa: ANN401
+        # Expect 2-byte format: int8 (whole degrees) + uint8 decimal (00-99)
+        if len(data) != 2:
+            # For test, accept single byte too
+            return float(int(data[0])) if data else 0.0
+        whole = int(data[0])
+        dec = int(data[1])
+        return float(whole + dec / 100.0)
+
+    def encode_value(self, data: float) -> bytearray:
+        whole = int(data)
+        dec = int((data - whole) * 100)
+        return bytearray([whole & 0xFF, dec & 0xFF])
 
 
 @pytest.fixture(autouse=True)
@@ -36,12 +64,12 @@ class TestAutoRegistration:
         translator = BluetoothSIGTranslator.get_instance()
 
         # Create characteristic without auto-registration
-        char = ThingyTemperatureCharacteristic(auto_register=False)
+        char = LocalTemperatureCharacteristic(auto_register=False)
 
         # Manually register with override=True since parse_characteristic will instantiate and try to auto-register
         info = char.__class__.get_configured_info()
         assert info is not None
-        translator.register_custom_characteristic_class(str(info.uuid), ThingyTemperatureCharacteristic, override=True)
+        translator.register_custom_characteristic_class(str(info.uuid), LocalTemperatureCharacteristic, override=True)
 
         # Verify it's registered
         raw_data = bytes([0x18, 0x32])  # 24.50°C (24 whole + 50 decimal)
@@ -51,7 +79,7 @@ class TestAutoRegistration:
     def test_auto_registration_on_init(self) -> None:
         """Test that characteristic auto-registers when instantiated."""
         # Create characteristic with auto-registration (uses global singleton)
-        char = ThingyTemperatureCharacteristic(auto_register=True)
+        char = LocalTemperatureCharacteristic(auto_register=True)
 
         # Verify it's registered by parsing data using the singleton
         translator = BluetoothSIGTranslator.get_instance()
@@ -65,9 +93,9 @@ class TestAutoRegistration:
     def test_auto_registration_idempotent(self) -> None:
         """Test that multiple instantiations don't cause duplicate registrations."""
         # Create multiple instances with auto-registration
-        char1 = ThingyTemperatureCharacteristic(auto_register=True)
-        ThingyTemperatureCharacteristic(auto_register=True)  # char2
-        ThingyTemperatureCharacteristic(auto_register=True)  # char3
+        char1 = LocalTemperatureCharacteristic(auto_register=True)
+        LocalTemperatureCharacteristic(auto_register=True)  # char2
+        LocalTemperatureCharacteristic(auto_register=True)  # char3
 
         # Verify parsing still works (no errors from duplicate registration)
         translator = BluetoothSIGTranslator.get_instance()
@@ -81,7 +109,7 @@ class TestAutoRegistration:
     def test_default_auto_register_is_true(self) -> None:
         """Test that auto_register defaults to True."""
         # Should auto-register when no auto_register parameter provided
-        char = ThingyTemperatureCharacteristic()
+        char = LocalTemperatureCharacteristic()
 
         # Verify characteristic was created and registered
         assert char is not None

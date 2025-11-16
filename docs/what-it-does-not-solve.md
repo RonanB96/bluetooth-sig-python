@@ -30,17 +30,24 @@ For BLE connectivity, use dedicated BLE libraries:
 ### How They Work Together
 
 ```python
+# SKIP: Example requires BLE hardware access
 from bleak import BleakClient
 from bluetooth_sig import BluetoothSIGTranslator
+
+# ============================================
+# EXAMPLE UUIDs - From your BLE library
+# ============================================
+BATTERY_LEVEL_UUID = "2A19"  # UUID from device discovery
+device_address = "AA:BB:CC:DD:EE:FF"  # Device MAC address
 
 # bleak handles connection
 async with BleakClient(device_address) as client:
     # bleak reads the raw data
-    raw_data = await client.read_gatt_char("2A19")
+    raw_data = await client.read_gatt_char(BATTERY_LEVEL_UUID)
 
     # bluetooth-sig interprets the data
     translator = BluetoothSIGTranslator()
-    result = translator.parse_characteristic("2A19", raw_data)
+    result = translator.parse_characteristic(BATTERY_LEVEL_UUID, raw_data)
     print(f"Battery: {result.value}%")
 ```
 
@@ -89,11 +96,12 @@ While the library provides **70+ official Bluetooth SIG standard characteristics
 The library provides a clean API for extending with your own characteristics:
 
 ```python
-from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
+from bluetooth_sig import BluetoothSIGTranslator
 
-class MyCustomCharacteristic(BaseCharacteristic):
+class MyCustomCharacteristic(CustomBaseCharacteristic):
     """Your custom characteristic."""
 
     _info = CharacteristicInfo(
@@ -105,9 +113,16 @@ class MyCustomCharacteristic(BaseCharacteristic):
         """Your parsing logic."""
         return int(data[0])
 
-# Use it just like standard characteristics
+# Auto-registers when first instantiated!
 custom_char = MyCustomCharacteristic()
-value = custom_char.decode_value(bytearray([42]))
+
+# Use it just like standard characteristics
+# Option 1: Through the translator (recommended for most use cases)
+result = translator.parse_characteristic("ABCD", bytearray([42]))
+value = result.value
+
+# Option 2: Direct method call on the characteristic instance
+direct_value = custom_char.decode_value(bytearray([42]))
 ```
 
 **See the [Adding New Characteristics Guide](guides/adding-characteristics.md) for complete examples.**
@@ -209,12 +224,21 @@ These features are typically provided by:
 1. **Platform services** (OS-level Bluetooth management)
 
 ```python
+from bluetooth_sig import BluetoothSIGTranslator
+
+# ============================================
+# SIMULATED DATA - Replace with actual BLE reads
+# ============================================
+BATTERY_LEVEL_UUID = "2A19"  # UUID from your BLE library
+data1 = bytearray([85])  # First reading
+data2 = bytearray([75])  # Second reading
+
 # This library doesn't maintain device state
 translator = BluetoothSIGTranslator()
 
 # Each parse call is stateless
-result1 = translator.parse_characteristic("2A19", data1)
-result2 = translator.parse_characteristic("2A19", data2)
+result1 = translator.parse_characteristic(BATTERY_LEVEL_UUID, data1)
+result2 = translator.parse_characteristic(BATTERY_LEVEL_UUID, data2)
 # No state maintained between calls
 ```
 
@@ -240,6 +264,7 @@ This is a **library**, not an application.
 You can use this library as a foundation:
 
 ```python
+# SKIP: Example requires Flask web framework and hardware access
 # Example: Flask web app
 from flask import Flask, jsonify
 from bluetooth_sig import BluetoothSIGTranslator
@@ -321,12 +346,14 @@ import pytest
 from bluetooth_sig import BluetoothSIGTranslator
 
 def test_battery_parsing():
+    # ============================================
+    # SIMULATED DATA - For testing without device
+    # ============================================
+    BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
+    mock_battery_data = bytearray([85])  # 85% battery
+
     translator = BluetoothSIGTranslator()
-
-    # Mock raw data (no real BLE device needed)
-    mock_battery_data = bytearray([85])
-
-    result = translator.parse_characteristic("2A19", mock_battery_data)
+    result = translator.parse_characteristic(BATTERY_LEVEL_UUID, mock_battery_data)
     assert result.value == 85
 ```
 

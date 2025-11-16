@@ -61,6 +61,17 @@ class MembersRegistry(BaseRegistry[MemberInfo]):
                     continue
         self._loaded = True
 
+    def _load(self) -> None:  # pragma: no cover - small wrapper to fulfil BaseRegistry contract
+        """Load registry data (BaseRegistry API).
+
+        This wrapper delegates to the existing private loader used by this
+        registry and is required by BaseRegistry to satisfy the abstract
+        contract for lazy loading behaviour.
+        """
+        # Delegate to the existing implementation which already sets
+        # self._loaded = True on completion.
+        self._load_members()
+
     def get_member_name(self, uuid: str | int | BluetoothUUID) -> str | None:
         """Get member company name by UUID.
 

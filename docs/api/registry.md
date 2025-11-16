@@ -35,15 +35,15 @@ from bluetooth_sig.types.gatt_enums import CharacteristicName, ServiceName
 
 # Get characteristic info
 char_info = uuid_registry.get_characteristic_info(
-    CharacteristicName.BATTERY_LEVEL
+    CharacteristicName.BATTERY_LEVEL.value
 )
 print(char_info.uuid)  # "2A19"
 print(char_info.name)  # "Battery Level"
 
 # Get service info
-service_info = uuid_registry.get_service_info(ServiceName.BATTERY_SERVICE)
+service_info = uuid_registry.get_service_info(ServiceName.BATTERY.value)
 print(service_info.uuid)  # "180F"
-print(service_info.name)  # "Battery Service"
+print(service_info.name)  # "Battery"
 ```
 
 ## Enumerations
@@ -59,31 +59,32 @@ CharacteristicName.TEMPERATURE       # "Temperature"
 CharacteristicName.HUMIDITY          # "Humidity"
 
 # Services
-ServiceName.BATTERY_SERVICE          # "Battery Service"
+ServiceName.BATTERY                  # "Battery"
 ServiceName.ENVIRONMENTAL_SENSING    # "Environmental Sensing"
 ServiceName.DEVICE_INFORMATION       # "Device Information"
 ```
 
-See [CharacteristicData][bluetooth_sig.types.CharacteristicData], [CharacteristicInfo][bluetooth_sig.types.CharacteristicInfo], and [ServiceInfo][bluetooth_sig.types.ServiceInfo] in the [Core API](core.md) for type definitions.
+See [CharacteristicData][bluetooth_sig.gatt.characteristics.base.CharacteristicData], [CharacteristicInfo][bluetooth_sig.types.CharacteristicInfo], and [ServiceInfo][bluetooth_sig.types.ServiceInfo] in the [Core API](core.md) for type definitions.
 
 ## Custom Registration
 
 Register custom characteristics and services:
 
 ```python
+# SKIP: Example of custom registration API - requires custom classes to be defined
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
 # Register custom characteristic
-translator.register_custom_characteristic(
-    uuid="ACME0001",
+translator.register_custom_characteristic_class(
+    uuid="12345678",
     characteristic_class=MyCustomCharacteristic
 )
 
 # Register custom service
-translator.register_custom_service(
-    uuid="ACME1000",
+translator.register_custom_service_class(
+    uuid="ABCD1234",
     service_class=MyCustomService
 )
 ```

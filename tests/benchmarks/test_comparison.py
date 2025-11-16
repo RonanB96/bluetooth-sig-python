@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from bluetooth_sig.core.translator import BluetoothSIGTranslator
+from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 
 
 @pytest.mark.benchmark
@@ -113,7 +114,21 @@ class TestOverheadAnalysis:
 
     def test_struct_creation_overhead(self, benchmark: Any) -> None:
         """Measure overhead of creating result structures."""
-        from bluetooth_sig.types.data_types import CharacteristicData, CharacteristicInfo
+        # CharacteristicData is a gatt-level ParseResult that holds a `characteristic`
+        # reference. Construct a minimal fake characteristic instance for the test.
+        from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+        from bluetooth_sig.types.data_types import CharacteristicInfo
+
+        class _FakeCharacteristic:
+            properties: list[object]
+
+            def __init__(self, info: CharacteristicInfo) -> None:
+                self.info = info
+                self.name = info.name
+                self.uuid = info.uuid
+                self.unit = info.unit
+                self.properties = []
+
         from bluetooth_sig.types.gatt_enums import ValueType
         from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -124,9 +139,17 @@ class TestOverheadAnalysis:
                 description="",
                 value_type=ValueType.INT,
                 unit="%",
-                properties=[],
             )
-            return CharacteristicData(info=info, value=85, raw_data=bytes([85]), parse_success=True)
+            fake_char = _FakeCharacteristic(info)
+            # Cast to BaseCharacteristic for type checker compatibility
+            from typing import cast
+
+            return CharacteristicData(
+                characteristic=cast(BaseCharacteristic, fake_char),
+                value=85,
+                raw_data=bytes([85]),
+                parse_success=True,
+            )
 
         result = benchmark(create_result)
         assert result.value == 85

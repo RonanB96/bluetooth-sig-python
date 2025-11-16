@@ -15,15 +15,26 @@ The core API provides the main entry point for using the Bluetooth SIG Standards
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 
+# ============================================
+# SIMULATED DATA - Replace with actual BLE read
+# ============================================
+SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
+
 translator = BluetoothSIGTranslator()
 
-# Parse battery level - returns CharacteristicData
-result = translator.parse_characteristic("2A19", bytearray([85]))
+# Parse battery level using UUID from your BLE library - returns CharacteristicData
+result = translator.parse_characteristic("2A19", SIMULATED_BATTERY_DATA)
 print(f"Battery: {result.value}%")  # Battery: 85%
 print(f"Unit: {result.info.unit}")  # Unit: %
+
+# Alternative: Use CharacteristicName enum - convert to UUID first
+from bluetooth_sig.types.gatt_enums import CharacteristicName
+battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+if battery_uuid:
+    result2 = translator.parse_characteristic(str(battery_uuid), SIMULATED_BATTERY_DATA)
 ```
 
-The [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] method returns a [CharacteristicData][bluetooth_sig.types.CharacteristicData] object.
+The [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] method returns a [CharacteristicData][bluetooth_sig.gatt.characteristics.base.CharacteristicData] object.
 
 ### UUID Resolution
 
@@ -81,7 +92,7 @@ except ValueRangeError:
 
 These types are returned by the core API methods:
 
-::: bluetooth_sig.types.CharacteristicData
+::: bluetooth_sig.gatt.characteristics.base.CharacteristicData
     options:
       show_root_heading: true
       heading_level: 3

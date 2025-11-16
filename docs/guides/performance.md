@@ -27,6 +27,9 @@ The parsing itself is rarely the bottleneck.
 ### 1. Reuse Translator Instance
 
 ```python
+# SKIP: Example requires external sensor_readings and uuid variables
+from bluetooth_sig import BluetoothSIGTranslator
+
 # ✅ Good - create once, reuse
 translator = BluetoothSIGTranslator()
 for data in sensor_readings:
@@ -43,6 +46,9 @@ for data in sensor_readings:
 When reading multiple characteristics, batch the BLE operations:
 
 ```python
+# SKIP: Example requires BLE hardware access and external uuids variable
+from bluetooth_sig import BluetoothSIGTranslator
+
 # ✅ Good - batch read, then parse
 async with BleakClient(address) as client:
     # Read all characteristics at once
@@ -67,6 +73,7 @@ for uuid in uuids:
 For repeated parsing of the same characteristic type:
 
 ```python
+# SKIP: Example requires external battery_readings variable
 # ✅ Good - direct characteristic access
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 
@@ -97,6 +104,7 @@ result = translator.parse_characteristic("2A19", bytearray(data))
 To identify bottlenecks in your application:
 
 ```python
+# SKIP: Profiling example that creates files and performs extensive operations
 import cProfile
 import pstats
 from bluetooth_sig import BluetoothSIGTranslator
@@ -135,8 +143,10 @@ cleanup needed.
 The library is thread-safe for reading operations:
 
 ```python
+# SKIP: Example requires external sensor_data variable
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
@@ -163,6 +173,7 @@ In typical applications:
 
 ```python
 import time
+from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 

@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from bluetooth_sig.core.translator import BluetoothSIGTranslator
-from bluetooth_sig.types.data_types import CharacteristicData
+from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 
 
 @pytest.mark.benchmark
