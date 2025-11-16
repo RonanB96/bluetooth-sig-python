@@ -4,6 +4,19 @@ applyTo: "**/*.py,**/pyproject.toml,**/requirements*.txt,**/setup.py"
 
 # Python Implementation Guidelines
 
+## CRITICAL MUST READ - Prohibited Practices
+
+- Hardcoded UUIDs (use registry resolution)
+- Conditional imports for core logic
+- Use of TYPE_CHECKING
+- Non top-level or lazy imports
+- Untyped public function signatures
+- Using hasattr or getattr when direct attribute access is possible
+- Silent exception pass / bare `except:`
+- Returning unstructured `dict` / `tuple` when a msgspec.Struct fits
+- Magic numbers without an inline named constant or spec citation
+- Parsing without pre-validating length
+
 ## Type Safety (ABSOLUTE REQUIREMENT)
 
 **Every public function MUST have complete, explicit type hints.**
@@ -11,7 +24,7 @@ applyTo: "**/*.py,**/pyproject.toml,**/requirements*.txt,**/setup.py"
 - ❌ **FORBIDDEN**: `def parse(data)` or `def get_value(self)`
 - ✅ **REQUIRED**: `def parse(data: bytes) -> BatteryLevelData` and `def get_value(self) -> int | None`
 - Return types are MANDATORY - no implicit returns
-- Use modern union syntax: `Type | None` not `Optional[Type]`
+- Use modern union syntax: `Type | None` not `Optional[Type]`. Use `from __future__ import annotations` for forward refs.
 - Use msgspec.Struct for structured data - NEVER return raw `dict` or `tuple`
 - `Any` type requires inline justification comment explaining why typing is impossible
 - No gradual typing - all parameters and returns must be typed from the start
@@ -226,17 +239,6 @@ from bluetooth_sig.gatt.exceptions import InsufficientDataError
 from bluetooth_sig.types import CharacteristicContext
 from .base import BaseCharacteristic
 ```
-
-## Prohibited Practices
-
-- Hardcoded UUIDs (use registry resolution)
-- Conditional imports for core logic
-- Untyped public function signatures
-- Using hasattr or getattr when direct attribute access is possible
-- Silent exception pass / bare `except:`
-- Returning unstructured `dict` / `tuple` when a msgspec.Struct fits
-- Magic numbers without an inline named constant or spec citation
-- Parsing without pre-validating length
 
 ## Quality Gates
 

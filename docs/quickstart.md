@@ -22,42 +22,78 @@ from bluetooth_sig import BluetoothSIGTranslator
 translator = BluetoothSIGTranslator()
 ```
 
-### 2. Resolve UUIDs
+### 2. Look Up SIG Standards by Name
+
+**You don't need to memorize UUIDs!** Use human-readable names to look up official Bluetooth SIG standards:
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
-# Get service information
-service_info = translator.get_sig_info_by_uuid("180F")
+# Look up by name (recommended - no UUIDs to remember!)
+service_info = translator.get_sig_info_by_name("Battery Service")
 print(f"Service: {service_info.name}")  # "Battery Service"
+print(f"UUID: {service_info.uuid}")      # "180F"
 
-# Get characteristic information
-char_info = translator.get_sig_info_by_uuid("2A19")
+char_info = translator.get_sig_info_by_name("Battery Level")
 print(f"Characteristic: {char_info.name}")  # "Battery Level"
-print(f"Unit: {char_info.unit}")  # "percentage"
+print(f"UUID: {char_info.uuid}")            # "2A19"
+print(f"Unit: {char_info.unit}")            # "%"
+
+# Or look up by UUID (if you already have it from your BLE library)
+char_from_uuid = translator.get_sig_info_by_uuid("2A19")
+print(f"Name: {char_from_uuid.name}")  # "Battery Level"
 ```
 
-### 3. Parse Characteristic Data
+### 3. Parse Characteristic Data Automatically
 
-The [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] method returns a [CharacteristicData][bluetooth_sig.types.CharacteristicData] object with parsed values:
+**The library automatically recognizes and parses standard Bluetooth SIG characteristics** - just pass the UUID and raw data:
 
 ```python
-# Parse battery level (0-100%)
-battery_data = translator.parse_characteristic("2A19", bytearray([85]))
-print(f"Battery: {battery_data.value}%")  # Battery: 85%
+from bluetooth_sig import BluetoothSIGTranslator
 
-# Parse temperature (°C)
-temp_data = translator.parse_characteristic("2A6E", bytearray([0x64, 0x09]))
-print(f"Temperature: {temp_data.value}°C")  # Temperature: 24.36°C
+translator = BluetoothSIGTranslator()
 
-# Parse humidity (%)
-humidity_data = translator.parse_characteristic("2A6F", bytearray([0x3A, 0x13]))
-print(f"Humidity: {humidity_data.value}%")  # Humidity: 49.42%
+# ============================================
+# SIMULATED DATA - Replace with actual BLE reads
+# ============================================
+# These are example values for demonstration purposes.
+# In a real application, you would get these from your BLE library (bleak, simplepyble, etc.)
+SIMULATED_BATTERY_DATA = bytearray([85])           # Simulates 85% battery level
+SIMULATED_TEMP_DATA = bytearray([0x64, 0x09])     # Simulates 24.04°C temperature
+SIMULATED_HUMIDITY_DATA = bytearray([0x3A, 0x13]) # Simulates 49.22% humidity
+
+# Get UUID from your BLE library (bleak, simplepyble, etc.)
+# The translator automatically recognizes standard SIG UUIDs and parses accordingly
+# If you know what you're looking for, you can use CharacteristicName enum
+
+# Parse battery level using UUID from BLE library
+battery_data = translator.parse_characteristic("2A19", SIMULATED_BATTERY_DATA)
+print(f"What is this? {battery_data.info.name}")  # "Battery Level" - auto-recognized!
+print(f"Battery: {battery_data.value}%")          # Battery: 85%
+
+# Parse temperature - library knows the encoding (sint16, 0.01°C)
+temp_data = translator.parse_characteristic("2A6E", SIMULATED_TEMP_DATA)
+print(f"What is this? {temp_data.info.name}")     # "Temperature" - auto-recognized!
+print(f"Temperature: {temp_data.value}°C")        # Temperature: 24.04°C
+
+# Parse humidity - library knows the format (uint16, 0.01%)
+humidity_data = translator.parse_characteristic("2A6F", SIMULATED_HUMIDITY_DATA)
+print(f"What is this? {humidity_data.info.name}")  # "Humidity" - auto-recognized!
+print(f"Humidity: {humidity_data.value}%")         # Humidity: 49.22%
+
+# Alternative: If you know the characteristic name, convert enum to UUID first
+from bluetooth_sig.types.gatt_enums import CharacteristicName
+battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+if battery_uuid:
+    result = translator.parse_characteristic(str(battery_uuid), SIMULATED_BATTERY_DATA)
+    print(f"Using enum: {result.value}%")  # Using enum: 85%
 ```
 
-The [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] method returns a [CharacteristicData][bluetooth_sig.types.CharacteristicData] object containing:
+**Key point**: You get UUIDs from your BLE connection library, then this library automatically identifies what they are and parses the data correctly.
+
+The [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] method returns a [CharacteristicData][bluetooth_sig.gatt.characteristics.base.CharacteristicData] object containing:
 
 - `value` - The parsed, human-readable value
 - `info` - [CharacteristicInfo][bluetooth_sig.types.CharacteristicInfo] with UUID, name, unit, and properties
@@ -69,13 +105,19 @@ The [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteri
 
 ### CharacteristicData Result Object
 
-Every call to [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] returns a [CharacteristicData][bluetooth_sig.types.CharacteristicData] object:
+Every call to [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] returns a [CharacteristicData][bluetooth_sig.gatt.characteristics.base.CharacteristicData] object:
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 
+# ============================================
+# SIMULATED DATA - Replace with actual BLE read
+# ============================================
+SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery level
+
 translator = BluetoothSIGTranslator()
-result = translator.parse_characteristic("2A19", bytearray([85]))
+# Use UUID string from your BLE library
+result = translator.parse_characteristic("2A19", SIMULATED_BATTERY_DATA)
 
 # Access parsed value
 print(result.value)          # 85
@@ -91,7 +133,7 @@ print(result.parse_success)  # True
 print(result.error_message)  # None
 ```
 
-See the [CharacteristicData][bluetooth_sig.types.CharacteristicData] API reference for complete details.
+See the [CharacteristicData][bluetooth_sig.gatt.characteristics.base.CharacteristicData] API reference for complete details.
 
 ### Using Enums for Type Safety
 
@@ -106,7 +148,7 @@ CharacteristicName.TEMPERATURE    # "Temperature"
 CharacteristicName.HUMIDITY       # "Humidity"
 
 # Service enums
-ServiceName.BATTERY_SERVICE           # "Battery Service"
+ServiceName.BATTERY                   # "Battery"
 ServiceName.ENVIRONMENTAL_SENSING     # "Environmental Sensing"
 ServiceName.DEVICE_INFORMATION        # "Device Information"
 ```
@@ -118,6 +160,9 @@ These enums provide autocomplete and prevent typos when resolving by name.
 When validation fails, check the [ValidationResult][bluetooth_sig.types.ValidationResult]:
 
 ```python
+from bluetooth_sig import BluetoothSIGTranslator
+
+translator = BluetoothSIGTranslator()
 result = translator.parse_characteristic("2A19", bytearray([200]))  # Invalid: >100%
 
 if not result.parse_success:
@@ -126,64 +171,6 @@ if not result.parse_success:
 ```
 
 See the [ValidationResult][bluetooth_sig.types.ValidationResult] API reference for all validation fields.
-
-## Complete Example
-
-Here's a complete working example:
-
-```python
-from bluetooth_sig import BluetoothSIGTranslator
-
-def main():
-    # Create translator
-    translator = BluetoothSIGTranslator()
-
-    # UUID Resolution
-    print("=== UUID Resolution ===")
-    service_info = translator.get_sig_info_by_uuid("180F")
-    print(f"UUID 180F: {service_info.name}")
-
-    # Name Resolution
-    print("\n=== Name Resolution ===")
-    battery_level = translator.get_sig_info_by_name("Battery Level")
-    print(f"Battery Level: {battery_level.uuid}")
-
-    # Data Parsing
-    print("\n=== Data Parsing ===")
-
-
-    # Battery level
-    battery_data = translator.parse_characteristic("2A19", bytearray([75]))
-    print(f"Battery: {battery_data.value}%")
-
-    # Temperature
-    temp_data = translator.parse_characteristic("2A6E", bytearray([0x64, 0x09]))
-    print(f"Temperature: {temp_data.value}°C")
-
-    # Humidity
-    humidity_data = translator.parse_characteristic("2A6F", bytearray([0x3A, 0x13]))
-    print(f"Humidity: {humidity_data.value}%")
-
-
-if __name__ == '__main__':
-    main()
-
-```
-
-**Output:**
-
-```text
-=== UUID Resolution ===
-UUID 180F: Battery Service (service)
-
-=== Name Resolution ===
-Battery Level: 2A19
-
-=== Data Parsing ===
-Battery: 75%
-Temperature: 24.36°C
-Humidity: 49.42%
-```
 
 ## Integration with BLE Libraries
 

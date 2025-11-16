@@ -69,18 +69,22 @@ The library follows these core principles:
 
 ## Layer Breakdown
 
+The library is organized into four main layers, each with a specific responsibility. This layered architecture ensures clean separation of concerns, making the codebase maintainable and extensible.
+
 ### 1. Core API Layer (`src/bluetooth_sig/core/translator.py`)
 
-**Purpose**: High-level, user-facing API
+**Purpose**: High-level, user-facing API that provides the main entry points for parsing Bluetooth SIG data.
+
+This layer acts as the primary interface for users of the library. It coordinates between the lower layers and provides a simple, consistent API for common operations like parsing characteristic data and resolving UUIDs to human-readable names.
 
 **Key Class**: `BluetoothSIGTranslator` - see [Core API](../api/core.md)
 
 **Responsibilities**:
 
-- UUID ↔ Name resolution
-- Characteristic data parsing
-- Service information lookup
-- Type conversion and validation
+- UUID ↔ Name resolution (converting between Bluetooth UUIDs and descriptive names)
+- Characteristic data parsing (taking raw bytes and returning structured, typed data)
+- Service information lookup (providing metadata about Bluetooth services)
+- Type conversion and validation (ensuring data conforms to Bluetooth SIG specifications)
 
 **Example Usage**:
 
@@ -93,7 +97,9 @@ result = translator.parse_characteristic("2A19", data)
 
 ### 2. GATT Layer (`src/bluetooth_sig/gatt/`)
 
-**Purpose**: Bluetooth GATT specification implementation
+**Purpose**: Implements the Bluetooth GATT (Generic Attribute Profile) specifications for parsing individual characteristics and services.
+
+This layer contains the actual parsing logic for each Bluetooth SIG characteristic. Each characteristic has its own parser class that handles the specific encoding, validation, and data extraction rules defined in the official Bluetooth specifications.
 
 **Structure**:
 
@@ -116,6 +122,8 @@ gatt/
 
 #### Base Characteristic
 
+All characteristic parsers inherit from a common base class that provides standard validation and error handling:
+
 ```python
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 
@@ -132,15 +140,19 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
 
 #### Characteristic Features
 
-- **Length validation** - Ensures correct data size
-- **Range validation** - Enforces spec limits
-- **Type conversion** - Raw bytes → typed values
-- **Unit handling** - Applies correct scaling
-- **Error handling** - Clear, specific exceptions
+Each characteristic implementation provides:
+
+- **Length validation** - Ensures the raw data has the correct number of bytes
+- **Range validation** - Checks that parsed values are within specification limits
+- **Type conversion** - Converts raw bytes to appropriate Python types (int, float, etc.)
+- **Unit handling** - Applies correct scaling factors and units (%, °C, etc.)
+- **Error handling** - Raises specific exceptions for different failure modes
 
 ### 3. Registry System (`src/bluetooth_sig/registry/`)
 
-**Purpose**: UUID and name resolution based on official Bluetooth SIG registry
+**Purpose**: Manages the mapping between Bluetooth UUIDs and their human-readable names, based on official Bluetooth SIG specifications.
+
+The registry system loads and caches the official Bluetooth SIG UUID registry from YAML files. This allows the library to automatically identify characteristics and services without requiring users to memorize cryptic UUID strings.
 
 **Structure**:
 
@@ -159,26 +171,28 @@ registry/
 **Capabilities**:
 
 ```python
+from bluetooth_sig.gatt.uuid_registry import uuid_registry
+
 # UUID to information
-info = registry.get_characteristic_info("2A19")
+info = uuid_registry.get_characteristic_info("2A19")
 # Returns: CharacteristicInfo(uuid="2A19", name="Battery Level")
 
-# Name to UUID
-uuid = registry.get_sig_info_by_name("Battery Level")
-# Returns: "2A19"
-
 # Handles both short and long UUID formats
-info = registry.get_service_info("180F")
-info = registry.get_service_info("0000180f-0000-1000-8000-00805f9b34fb")
+info = uuid_registry.get_service_info("180F")
+info = uuid_registry.get_service_info("0000180f-0000-1000-8000-00805f9b34fb")
 ```
 
 ### 4. Type System (`src/bluetooth_sig/types/`)
 
-**Purpose**: Type definitions, enums, and data structures
+**Purpose**: Defines the data structures, enums, and type hints used throughout the library for type safety and consistency.
+
+This layer provides strongly-typed representations of Bluetooth concepts, ensuring that data is validated at both runtime and compile-time (with mypy).
 
 **Key Components**:
 
 #### Enums
+
+Type-safe enumerations for characteristic and service names:
 
 ```python
 from bluetooth_sig.types.gatt_enums import (
@@ -188,58 +202,34 @@ from bluetooth_sig.types.gatt_enums import (
 
 # Strongly-typed enum values
 CharacteristicName.BATTERY_LEVEL  # "Battery Level"
-ServiceName.BATTERY_SERVICE        # "Battery Service"
+ServiceName.BATTERY               # "Battery"
 ```
 
 #### Data Structures
 
-```python
-from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class BatteryLevelData:
-     value: int
-     unit: str = "%"
-```
-
-
-### 2. GATT Layer (`src/bluetooth_sig/gatt/`)
-
-**Purpose**: Bluetooth GATT specification implementation
-
-**Structure**:
-
-```text
-gatt/
-├── characteristics/    # 70+ characteristic implementations
-│   ├── base.py        # Base characteristic class
-│   ├── battery_level.py
-│   ├── temperature.py
-│   ├── humidity.py
-│   └── ...
-├── services/          # Service definitions
-│   ├── base.py
-│   ├── battery_service.py
-│   └── ...
-└── exceptions.py      # GATT-specific exceptions
-```
-
-**Key Components**:
-
-#### Base Characteristic
+Immutable msgspec structs for parsed characteristic data:
 
 ```python
-from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+import msgspec
 
-class BatteryLevelCharacteristic(BaseCharacteristic):
-     def decode_value(self, data: bytearray) -> int:
-          # Standards-compliant parsing
-          if len(data) != 1:
-               raise InsufficientDataError("Battery Level requires 1 byte")
-          value = int(data[0])
-          if not 0 <= value <= 100:
-               raise ValueRangeError("Battery must be 0-100%")
-          return value
+class CharacteristicData(msgspec.Struct, kw_only=True):
+    """Parse result container with back-reference to characteristic."""
+    characteristic: BaseCharacteristic
+    value: Any | None = None  # Parsed value (int, float, or complex struct)
+    raw_data: bytes = b""
+    parse_success: bool = False
+    error_message: str = ""
+```
+
+For complex characteristics, the `value` field contains specialized structs:
+
+```python
+class HeartRateData(msgspec.Struct, frozen=True, kw_only=True):
+    """Parsed heart rate measurement data."""
+    heart_rate: int  # BPM
+    sensor_contact: SensorContactState
+    energy_expended: int | None = None  # kJ
+    rr_intervals: tuple[float, ...] = ()  # R-R intervals in seconds
 ```
 
 ## Data Flow
@@ -259,7 +249,7 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
    ├─ Range validation
    └─ Type conversion
    ↓
-5. Typed Result (dataclass/primitive)
+5. Typed Result (msgspec struct/primitive)
 ```
 
 ### Example Data Flow
@@ -301,10 +291,12 @@ class BaseCharacteristic:
 class BatteryLevelCharacteristic(BaseCharacteristic):
      def decode_value(self, data: bytearray) -> int:
           # Battery-specific parsing
+          return data[0]
 
 class TemperatureCharacteristic(BaseCharacteristic):
      def decode_value(self, data: bytearray) -> float:
           # Temperature-specific parsing
+          return int.from_bytes(data, byteorder='little') * 0.01
 ```
 
 ### 2. Registry Pattern
@@ -312,10 +304,10 @@ class TemperatureCharacteristic(BaseCharacteristic):
 Central registry for UUID → implementation mapping:
 
 ```python
-registry = UUIDRegistry()
-char_class = registry.get_characteristic_class("2A19")
-parser = char_class()
-result = parser.decode_value(data)
+from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
+
+char_class = CharacteristicRegistry.create_characteristic("2A19")
+result = char_class.decode_value(data)
 ```
 
 ### 3. Validation Pattern
@@ -343,6 +335,7 @@ def decode_value(self, data: bytearray) -> int:
 ### Adding Custom Characteristics
 
 ```python
+# SKIP: Example code with placeholder UUID - not executable
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -361,9 +354,9 @@ class MyCustomCharacteristic(BaseCharacteristic):
 ### Custom Services
 
 ```python
-from bluetooth_sig.gatt.services.base import BaseService
+from bluetooth_sig.gatt.services.base import BaseGattService
 
-class MyCustomService(BaseService):
+class MyCustomService(BaseGattService):
      def __init__(self):
           super().__init__()
           self.my_char = MyCustomCharacteristic()
@@ -402,6 +395,7 @@ def test_battery_parsing():
 
 ### Optimizations
 
+- **msgspec structs** - High-performance serialization/deserialization
 - **Registry caching** - UUID lookups cached after first resolution
 - **Minimal allocations** - Direct parsing without intermediate objects
 - **Type hints** - Enable JIT optimization

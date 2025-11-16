@@ -20,8 +20,17 @@ class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-me
     value: Any
     raw_data: bytes
     parse_success: bool
-    properties: list[GattProperty]
-    name: str
+
+    @property
+    def properties(self) -> list[GattProperty]:
+        """BLE GATT properties."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def name(self) -> str:
+        """Characteristic name."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
     field_errors: list[Any]  # ParseFieldError, but avoid circular import
     parse_trace: list[str]
 

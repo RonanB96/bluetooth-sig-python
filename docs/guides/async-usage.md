@@ -17,49 +17,79 @@ The async API maintains full backward compatibility - all sync methods remain av
 
 ```python
 import asyncio
-from bluetooth_sig import AsyncBluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
+
+# ============================================
+# SIMULATED DATA - Replace with actual BLE read
+# ============================================
+SIMULATED_BATTERY_DATA = bytes([75])  # Simulates 75% battery level
 
 async def main():
-    translator = AsyncBluetoothSIGTranslator()
+    translator = BluetoothSIGTranslator()
 
-    # Single characteristic parsing
-    result = await translator.parse_characteristic_async("2A19", data)
-    print(f"Battery: {result.value}%")
+    # You get UUIDs from your BLE library - you don't need to know what they mean!
+    # The library will auto-identify them
+    battery_uuid = "2A19"  # From BLE scan/discovery
+
+    # Parse and auto-identify
+    result = await translator.parse_characteristic_async(battery_uuid, SIMULATED_BATTERY_DATA)
+    print(f"Discovered: {result.info.name}")  # "Battery Level"
+    print(f"{result.info.name}: {result.value}%")
+
+    # Alternative: If you know the characteristic, convert enum to UUID first
+    from bluetooth_sig.types.gatt_enums import CharacteristicName
+    battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+    if battery_uuid:
+        result2 = await translator.parse_characteristic_async(str(battery_uuid), SIMULATED_BATTERY_DATA)
+        print(f"Using enum: {result2.info.name} = {result2.value}%")
 
 asyncio.run(main())
 ```
 
 ## Integration with Bleak
 
-[Bleak](https://github.com/hbldh/bleak) is the most popular Python BLE library. Here's how to integrate it with the async translator:
+[Bleak](https://github.com/hbldh/bleak) is the most popular Python BLE library. Here's how to integrate it:
 
 ```python
 import asyncio
 from bleak import BleakClient
-from bluetooth_sig import AsyncBluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
 
+# SKIP: Async function with parameters - callback pattern
 async def read_sensor_data(address: str):
-    translator = AsyncBluetoothSIGTranslator()
+    translator = BluetoothSIGTranslator()
 
     async with BleakClient(address) as client:
-        # Read multiple characteristics
-        battery_data = await client.read_gatt_char("2A19")
-        temp_data = await client.read_gatt_char("2A6E")
-        humidity_data = await client.read_gatt_char("2A6F")
+        # Bleak gives you UUIDs from device discovery - you don't need to know what they are!
+        battery_uuid = "2A19"  # From client.services
+        battery_data = await client.read_gatt_char(battery_uuid)
 
-        # Parse all together
+        # bluetooth-sig auto-identifies and parses
+        result = await translator.parse_characteristic_async(battery_uuid, battery_data)
+        print(f"Discovered: {result.info.name}")  # "Battery Level"
+        print(f"{result.info.name}: {result.value}%")
+
+        # Batch parsing multiple characteristics
+        temp_uuid = "2A6E"       # From client.services
+        humidity_uuid = "2A6F"   # From client.services
+
         char_data = {
-            "2A19": battery_data,
-            "2A6E": temp_data,
-            "2A6F": humidity_data,
+            battery_uuid: await client.read_gatt_char(battery_uuid),
+            temp_uuid: await client.read_gatt_char(temp_uuid),
+            humidity_uuid: await client.read_gatt_char(humidity_uuid),
         }
 
         results = await translator.parse_characteristics_async(char_data)
 
         for uuid, result in results.items():
-            print(f"{result.name}: {result.value}")
+            print(f"{result.name}: {result.value} {result.unit or ''}")
 
-asyncio.run(read_sensor_data("AA:BB:CC:DD:EE:FF"))
+# ============================================
+# SIMULATED DATA - Replace with actual device
+# ============================================
+SIMULATED_DEVICE_ADDRESS = "AA:BB:CC:DD:EE:FF"  # Example MAC address - use your actual device
+
+asyncio.run(read_sensor_data(SIMULATED_DEVICE_ADDRESS))
 ```
 
 ## Batch Parsing
@@ -67,30 +97,46 @@ asyncio.run(read_sensor_data("AA:BB:CC:DD:EE:FF"))
 Batch parse multiple characteristics in a single async call:
 
 ```python
-async def parse_many_characteristics():
-    translator = AsyncBluetoothSIGTranslator()
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
 
-    # Parse any number of characteristics
+async def parse_many_characteristics():
+    translator = BluetoothSIGTranslator()
+
+    # Get UUIDs from enums
+    battery_uuid = "2A19"
+    temp_uuid = "2A6E"
+    humidity_uuid = "2A6F"
+
+    # Parse multiple characteristics together
     char_data = {
-        "2A19": battery_data,
-        "2A6E": temp_data,
-        "2A6F": humidity_data,
+        battery_uuid: battery_data,
+        temp_uuid: temp_data,
+        humidity_uuid: humidity_data,
     }
     results = await translator.parse_characteristics_async(char_data)
+
+    for uuid, result in results.items():
+        print(f"{result.name}: {result.value} {result.unit or ''}")
 ```
 
 ## Concurrent Parsing
 
-Parse multiple characteristics concurrently using `asyncio.gather`:
+Parse multiple devices concurrently using `asyncio.gather`:
 
 ```python
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
+from bleak import BleakClient
+
 async def parse_multiple_devices(devices: list[str]):
-    translator = AsyncBluetoothSIGTranslator()
+    translator = BluetoothSIGTranslator()
+    battery_uuid = "2A19"
 
     async def read_device(address: str):
         async with BleakClient(address) as client:
-            data = await client.read_gatt_char("2A19")
-            return await translator.parse_characteristic_async("2A19", data)
+            data = await client.read_gatt_char(battery_uuid)
+            return await translator.parse_characteristic_async(battery_uuid, data)
 
     # Parse all devices concurrently
     tasks = [read_device(addr) for addr in devices]
@@ -104,19 +150,24 @@ async def parse_multiple_devices(devices: list[str]):
 Maintain parsing context across multiple async operations:
 
 ```python
-from bluetooth_sig import AsyncBluetoothSIGTranslator, AsyncParsingSession
+from bluetooth_sig import BluetoothSIGTranslator, AsyncParsingSession
+from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 async def health_monitoring_session(client):
-    translator = AsyncBluetoothSIGTranslator()
+    translator = BluetoothSIGTranslator()
+
     async with AsyncParsingSession(translator) as session:
+        # Get UUIDs from enums
+        hr_uuid = "2A37"
+        location_uuid = CharacteristicName.BODY_SENSOR_LOCATION.get_uuid()
+
+        hr_data = await client.read_gatt_char(hr_uuid)
+        hr_result = await session.parse(hr_uuid, hr_data)
+
+        location_data = await client.read_gatt_char(location_uuid)
+        location_result = await session.parse(location_uuid, location_data)
+
         # Context automatically shared between parses
-        hr_data = await client.read_gatt_char("2A37")
-        hr_result = await session.parse("2A37", hr_data)
-
-        location_data = await client.read_gatt_char("2A38")
-        location_result = await session.parse("2A38", location_data)
-
-        # location_result has context from hr_result
         print(f"HR: {hr_result.value} at {location_result.value}")
 ```
 
@@ -125,19 +176,23 @@ async def health_monitoring_session(client):
 Process streaming characteristic data:
 
 ```python
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
+
 async def monitor_sensor(client):
-    translator = AsyncBluetoothSIGTranslator()
+    translator = BluetoothSIGTranslator()
+    battery_uuid = "2A19"
 
     async def characteristic_stream():
         """Stream characteristic notifications."""
         while True:
-            data = await client.read_gatt_char("2A19")
-            yield ("2A19", data)
+            data = await client.read_gatt_char(battery_uuid)
+            yield (battery_uuid, data)
             await asyncio.sleep(1.0)
 
     async for uuid, data in characteristic_stream():
         result = await translator.parse_characteristic_async(uuid, data)
-        print(f"Battery: {result.value}%")
+        print(f"{result.name}: {result.value}%")
 ```
 
 ## Performance Considerations
@@ -157,7 +212,7 @@ For optimal performance:
 
 ## API Reference
 
-### AsyncBluetoothSIGTranslator
+### BluetoothSIGTranslator
 
 All methods from [`BluetoothSIGTranslator`](../api/core.md) are available, plus:
 
@@ -175,7 +230,7 @@ Context manager for maintaining parsing state:
 
 ## Examples
 
-See the [async BLE integration example](../examples/async_ble_integration.py) for a complete working example.
+See the [async BLE integration example](https://github.com/RonanB96/bluetooth-sig-python/blob/main/examples/async_ble_integration.py) for a complete working example.
 
 ## Migration from Sync API
 
@@ -184,25 +239,33 @@ Migrating is straightforward - just add `async`/`await`:
 ```python
 # Before (sync)
 from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
-result = translator.parse_characteristic("2A19", data)
+battery_uuid = "2A19"
+result = translator.parse_characteristic(battery_uuid, data)
 
 # After (async)
-from bluetooth_sig import AsyncBluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
 
-translator = AsyncBluetoothSIGTranslator()
-result = await translator.parse_characteristic_async("2A19", data)
+translator = BluetoothSIGTranslator()
+battery_uuid = "2A19"
+result = await translator.parse_characteristic_async(battery_uuid, data)
 ```
 
-Both sync and async methods are available on `AsyncBluetoothSIGTranslator`, so you can mix them:
+Both sync and async methods are available on `BluetoothSIGTranslator`, so you can mix them:
 
 ```python
-translator = AsyncBluetoothSIGTranslator()
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
+
+translator = BluetoothSIGTranslator()
+battery_uuid = "2A19"
 
 # Sync method still works
-info = translator.get_sig_info_by_uuid("2A19")
+info = translator.get_characteristic_info_by_uuid(battery_uuid)
 
 # Async method
-result = await translator.parse_characteristic_async("2A19", data)
+result = await translator.parse_characteristic_async(battery_uuid, data)
 ```

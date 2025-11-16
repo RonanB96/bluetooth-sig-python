@@ -4,15 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from types import TracebackType
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
+from ..gatt.characteristics.base import CharacteristicData
 from ..types import CharacteristicContext
 from ..types.protocols import CharacteristicDataProtocol
 from ..types.uuid import BluetoothUUID
-from .async_translator import AsyncBluetoothSIGTranslator
-
-if TYPE_CHECKING:
-    from ..types import CharacteristicData
+from .translator import BluetoothSIGTranslator
 
 
 class AsyncParsingSession:
@@ -31,7 +29,7 @@ class AsyncParsingSession:
 
     def __init__(
         self,
-        translator: AsyncBluetoothSIGTranslator,
+        translator: BluetoothSIGTranslator,
         ctx: CharacteristicContext | None = None,
     ) -> None:
         """Initialize parsing session.
@@ -64,7 +62,6 @@ class AsyncParsingSession:
         self,
         uuid: str | BluetoothUUID,
         data: bytes,
-        descriptor_data: dict[str, bytes] | None = None,
     ) -> CharacteristicData:
         """Parse characteristic with accumulated context.
 
@@ -92,7 +89,7 @@ class AsyncParsingSession:
 
         # Parse with context
         uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
-        result = await self.translator.parse_characteristic_async(uuid_str, data, self.context, descriptor_data)
+        result = await self.translator.parse_characteristic_async(uuid_str, data, self.context)
 
         # Store result for future context using string UUID key
         self.results[uuid_str] = result

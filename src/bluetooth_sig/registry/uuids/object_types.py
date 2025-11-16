@@ -27,8 +27,14 @@ class ObjectTypesRegistry(BaseRegistry[ObjectTypeInfo]):
         self._object_types_by_name: dict[str, ObjectTypeInfo] = {}  # lower_name -> ObjectTypeInfo
         self._object_types_by_id: dict[str, ObjectTypeInfo] = {}  # id -> ObjectTypeInfo
 
-    def _load(self) -> None:
-        """Perform the actual loading of object types data."""
+        try:  # pylint: disable=duplicate-code  # Standard exception handling pattern for registry YAML loading
+            self._load_object_types()
+        except (FileNotFoundError, Exception):  # pylint: disable=broad-exception-caught
+            # If YAML loading fails, continue with empty registry
+            pass
+
+    def _load_object_types(self) -> None:
+        """Load object type UUIDs from YAML file."""
         base_path = find_bluetooth_sig_path()
         if not base_path:
             self._loaded = True
@@ -52,6 +58,17 @@ class ObjectTypesRegistry(BaseRegistry[ObjectTypeInfo]):
                     # Skip malformed entries
                     continue
         self._loaded = True
+
+    def _load(self) -> None:  # pragma: no cover - small wrapper to fulfil BaseRegistry contract
+        """Load registry data (BaseRegistry API).
+
+        This wrapper delegates to the existing private loader used by this
+        registry and is required by BaseRegistry to satisfy the abstract
+        contract for lazy loading behaviour.
+        """
+        # Delegate to the existing implementation which already sets
+        # self._loaded = True on completion.
+        self._load_object_types()
 
     def get_object_type_info(self, uuid: str | int | BluetoothUUID) -> ObjectTypeInfo | None:
         """Get object type information by UUID.

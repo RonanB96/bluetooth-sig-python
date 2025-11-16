@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from enum import IntEnum, IntFlag
+from enum import IntFlag
 
 import msgspec
 
 from ...types.gatt_enums import ValueType
+from ...types.location import PositionStatus
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -36,15 +37,6 @@ class PositionQualityData(msgspec.Struct, frozen=True, kw_only=True):  # pylint:
     hdop: float | None = None
     vdop: float | None = None
     position_status: PositionStatus | None = None
-
-
-class PositionStatus(IntEnum):
-    """Position status enumeration."""
-
-    NO_POSITION = 0
-    POSITION_OK = 1
-    ESTIMATED_POSITION = 2
-    LAST_KNOWN_POSITION = 3
 
 
 class PositionQualityCharacteristic(BaseCharacteristic):

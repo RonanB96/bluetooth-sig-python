@@ -40,7 +40,7 @@ __all__ = [
     # Company identifiers
     "company_identifiers_registry",
     # UUID registries
-    "browse_groups_registry",
+    "browse_groups_registry",  # pylint: disable=duplicate-code  # Intentional re-export from uuids submodule
     "declarations_registry",
     "members_registry",
     "mesh_profiles_registry",

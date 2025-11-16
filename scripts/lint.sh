@@ -186,6 +186,9 @@ run_pylint() {
     PROD_SCORE=$(echo "$PROD_PYLINT_OUTPUT" | sed -n 's/.*rated at \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
 
     if [ "$is_parallel" != "true" ]; then
+        echo "Production pylint output:"
+        echo "$PROD_PYLINT_OUTPUT"
+        echo ""
         echo "Production pylint score: $PROD_SCORE/10"
     fi
 

@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from .device import Device, SIGTranslatorProtocol, UnknownService
+from .device import Device, SIGTranslatorProtocol
 
-__all__ = ["Device", "SIGTranslatorProtocol", "UnknownService"]
+__all__ = ["Device", "SIGTranslatorProtocol"]

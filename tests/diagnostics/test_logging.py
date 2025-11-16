@@ -19,7 +19,7 @@ class TestTranslatorLogging:
         translator = BluetoothSIGTranslator()
         battery_data = bytes([0x64])  # 100%
 
-        result = translator.parse_characteristic("2A19", battery_data, descriptor_data=None)
+        result = translator.parse_characteristic("2A19", battery_data)
 
         assert result.parse_success
         # Check that debug logs were captured
@@ -33,7 +33,7 @@ class TestTranslatorLogging:
         translator = BluetoothSIGTranslator()
         battery_data = bytes([0x64])
 
-        translator.parse_characteristic("2A19", battery_data, descriptor_data=None)
+        translator.parse_characteristic("2A19", battery_data)
 
         debug_messages = [r.message for r in caplog.records if r.levelno == logging.DEBUG]
         assert len(debug_messages) >= 2  # At least parsing start and success
@@ -48,9 +48,7 @@ class TestTranslatorLogging:
         unknown_data = bytes([0x01, 0x02])
 
         # Use a valid UUID format for an unknown characteristic
-        result = translator.parse_characteristic(
-            "00001234-0000-1000-8000-00805F9B34FB", unknown_data, descriptor_data=None
-        )
+        result = translator.parse_characteristic("00001234-0000-1000-8000-00805F9B34FB", unknown_data)
 
         assert not result.parse_success
         info_messages = [r.message for r in caplog.records if r.levelno == logging.INFO]
@@ -64,7 +62,7 @@ class TestTranslatorLogging:
         # Invalid data that should fail parsing (too short for battery level)
         invalid_data = bytes([])
 
-        translator.parse_characteristic("2A19", invalid_data, descriptor_data=None)
+        translator.parse_characteristic("2A19", invalid_data)
 
         # Should have warning about parse failure
         # May or may not have warnings depending on characteristic implementation
@@ -93,7 +91,7 @@ class TestTranslatorLogging:
         translator = BluetoothSIGTranslator()
         battery_data = bytes([0x64])
 
-        translator.parse_characteristic("2A19", battery_data, descriptor_data=None)
+        translator.parse_characteristic("2A19", battery_data)
 
         # Should have no debug messages at WARNING level
         debug_messages = [r.message for r in caplog.records if r.levelno == logging.DEBUG]
@@ -110,14 +108,14 @@ class TestTranslatorLogging:
         logging.getLogger("bluetooth_sig.core.translator").setLevel(logging.ERROR)
         start = time.perf_counter()
         for _ in range(1000):
-            translator.parse_characteristic("2A19", battery_data, descriptor_data=None)
+            translator.parse_characteristic("2A19", battery_data)
         time_without_logging = time.perf_counter() - start
 
         # Reset logging to INFO level
         logging.getLogger("bluetooth_sig.core.translator").setLevel(logging.INFO)
         start = time.perf_counter()
         for _ in range(1000):
-            translator.parse_characteristic("2A19", battery_data, descriptor_data=None)
+            translator.parse_characteristic("2A19", battery_data)
         time_with_logging = time.perf_counter() - start
 
         # Logging overhead should be less than 50% (very generous)

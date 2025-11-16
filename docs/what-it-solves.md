@@ -125,7 +125,6 @@ print(battery_service.uuid)  # "180F"
 
 # Get full information
 print(info.name)  # "Battery Service"
-print(info.type)  # "service"
 print(info.uuid)  # "180F"
 ```
 
@@ -150,6 +149,7 @@ Raw BLE data is just bytes. Without proper typing:
 ### Untyped Approach
 
 ```python
+# SKIP: Example demonstrates problems with manual parsing and uses undefined variables
 # What does this return?
 def parse_battery(data: bytes):
     return data[0]
@@ -163,11 +163,18 @@ result = parse_battery(some_data)
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
+
+# ============================================
+# SIMULATED DATA - Replace with actual BLE read
+# ============================================
+SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
 
 translator = BluetoothSIGTranslator()
-result = translator.parse_characteristic("2A19", bytearray([85]))
+battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+result = translator.parse_characteristic(str(battery_uuid), SIMULATED_BATTERY_DATA)
 
-# result is a typed dataclass
+# result is a typed msgspec struct
 # IDE autocomplete works
 # Type checkers (mypy) validate usage
 print(result.value)  # 85
@@ -175,7 +182,7 @@ print(result.unit)   # "%"
 
 # For complex characteristics
 temp_result = translator.parse_characteristic("2A1C", data)
-# Returns TemperatureMeasurement dataclass with:
+# Returns TemperatureMeasurement msgspec struct with:
 #   - value: float
 #   - unit: str
 #   - timestamp: datetime | None
@@ -183,7 +190,7 @@ temp_result = translator.parse_characteristic("2A1C", data)
 ```
 
 - **Full type hints** - Every function and return type annotated
-- **Dataclass returns** - Structured data, not dictionaries
+- **msgspec struct returns** - Structured data, not dictionaries
 - **IDE support** - Autocomplete and inline documentation
 - **Type checking** - Works with mypy, pyright, etc.
 
@@ -205,6 +212,7 @@ Many BLE libraries combine connection management with data parsing, forcing you 
 **Framework-agnostic design** - Parse data from any BLE library:
 
 ```python
+# SKIP: Example requires BLE hardware access and external libraries
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
@@ -311,7 +319,7 @@ from bluetooth_sig import BluetoothSIGTranslator
 translator = BluetoothSIGTranslator()
 result = translator.parse_characteristic("2A1C", data)
 
-# Returns TemperatureMeasurement dataclass with all fields parsed
+# Returns TemperatureMeasurement msgspec struct with all fields parsed
 # Handles all flag combinations automatically
 # Returns type-safe structured data
 ```
@@ -324,7 +332,7 @@ ______________________________________________________________________
 |---------|----------------|------------------------|
 | Standards interpretation | Implement specs manually | Automatic, validated parsing |
 | UUID management | Maintain mappings | Official registry with auto-resolution |
-| Type safety | Raw bytes/dicts | Typed dataclasses |
+| Type safety | Raw bytes/dicts | Typed msgspec structs |
 | Framework lock-in | Library-specific APIs | Works with any BLE library |
 | Maintenance | You maintain | Community maintained |
 | Complex parsing | Custom logic for each | Built-in for 70+ characteristics |

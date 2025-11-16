@@ -9,31 +9,49 @@ parsing while providing a unified view of device state.
 from __future__ import annotations
 
 import logging
-import re
 from abc import abstractmethod
-from typing import Any, Callable, Protocol, cast
+from enum import Enum
+from typing import Any, Callable, Protocol
 
 from ..gatt.characteristics import CharacteristicName
+from ..gatt.characteristics.base import BaseCharacteristic, CharacteristicData
+from ..gatt.characteristics.registry import CharacteristicRegistry
+from ..gatt.characteristics.unknown import UnknownCharacteristic
 from ..gatt.context import CharacteristicContext, DeviceInfo
+from ..gatt.descriptors.base import BaseDescriptor
 from ..gatt.descriptors.registry import DescriptorRegistry
-from ..gatt.services import GattServiceRegistry, ServiceName
-from ..gatt.services.base import BaseGattService, UnknownService
+from ..gatt.services import ServiceName
 from ..types import (
     AdvertisingData,
     CharacteristicDataProtocol,
+    CharacteristicInfo,
+    DescriptorData,
+    DescriptorInfo,
 )
-from ..types.data_types import CharacteristicData
-from ..types.device_types import DeviceEncryption, DeviceService
-from ..types.gatt_enums import GattProperty
+from ..types.device_types import DeviceEncryption, DeviceService, ScannedDevice
 from ..types.uuid import BluetoothUUID
 from .advertising_parser import AdvertisingParser
 from .connection import ConnectionManagerProtocol
 
 __all__ = [
     "Device",
+    "DependencyResolutionMode",
     "SIGTranslatorProtocol",
-    "UnknownService",
 ]
+
+
+class DependencyResolutionMode(Enum):
+    """Mode for automatic dependency resolution during characteristic reads.
+
+    Attributes:
+        NORMAL: Auto-resolve dependencies, use cache when available
+        SKIP_DEPENDENCIES: Skip dependency resolution and validation
+        FORCE_REFRESH: Re-read dependencies from device, ignoring cache
+    """
+
+    NORMAL = "normal"
+    SKIP_DEPENDENCIES = "skip_dependencies"
+    FORCE_REFRESH = "force_refresh"
 
 
 class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
@@ -43,7 +61,6 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
     def parse_characteristics(
         self,
         char_data: dict[str, bytes],
-        descriptor_data: dict[str, dict[str, bytes]] | None = None,
         ctx: CharacteristicContext | None = None,
     ) -> dict[str, CharacteristicData]:
         """Parse multiple characteristics at once."""
@@ -54,7 +71,6 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         uuid: str,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-        descriptor_data: dict[str, bytes] | None = None,
     ) -> CharacteristicData:
         """Parse a single characteristic's raw bytes."""
 
@@ -70,13 +86,6 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         """Get characteristic info by enum name (optional method)."""
 
 
-def _is_uuid_like(value: str) -> bool:
-    """Check if a string looks like a Bluetooth UUID."""
-    # Remove dashes and check if it's a valid hex string of UUID length
-    clean = value.replace("-", "")
-    return bool(re.match(r"^[0-9A-Fa-f]+$", clean)) and len(clean) in [4, 8, 32]
-
-
 class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     r"""High-level BLE device abstraction.
 
@@ -87,7 +96,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     Key features:
     - Parse advertiser data from BLE scan results
-    - Add and manage GATT services with their characteristics
+    - Discover GATT services and characteristics via connection manager
     - Access parsed characteristic data by UUID
     - Handle device encryption requirements
     - Cache device information for performance
@@ -96,16 +105,19 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Create and configure a device:
 
         ```python
-        from bluetooth_sig import BluetoothSIGTranslator, Device
+        from bluetooth_sig import BluetoothSIGTranslator
+        from bluetooth_sig.device import Device
 
         translator = BluetoothSIGTranslator()
         device = Device("AA:BB:CC:DD:EE:FF", translator)
 
-        # Add a service
-        device.add_service("180F", {"2A19": b"\\x64"})  # Battery service
+        # Attach connection manager and discover services
+        device.attach_connection_manager(manager)
+        await device.connect()
+        await device.discover_services()
 
-        # Get parsed data
-        battery = device.get_characteristic_data("2A19")
+        # Read characteristic
+        battery = await device.read("battery_level")
         print(f"Battery: {battery.value}%")
         ```
 
@@ -145,93 +157,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         char_count = sum(len(service.characteristics) for service in self.services.values())
         return f"Device({self.address}, name={self.name}, {service_count} services, {char_count} characteristics)"
 
-    def add_service(
-        self,
-        service_name: str | ServiceName,
-        characteristics: dict[str, bytes],
-        descriptors: dict[str, dict[str, bytes]] | None = None,
-    ) -> None:
-        """Add a service to the device with its characteristics and descriptors.
-
-        Args:
-            service_name: Name or enum of the service to add
-            characteristics: Dictionary mapping characteristic UUIDs to raw data
-            descriptors: Optional nested dict mapping char_uuid -> desc_uuid -> raw data
-
-        """
-        # Resolve service UUID: accept UUID-like strings directly, else ask translator
-        # service_uuid can be a BluetoothUUID or None (translator may return None)
-        service_uuid: BluetoothUUID | None
-        if isinstance(service_name, str) and _is_uuid_like(service_name):
-            service_uuid = BluetoothUUID(service_name)
-        else:
-            service_uuid = self.translator.get_service_uuid_by_name(service_name)
-
-        if not service_uuid:
-            # No UUID found - this is an error condition
-            service_name_str = service_name if isinstance(service_name, str) else service_name.value
-            raise ValueError(
-                f"Cannot resolve service UUID for '{service_name_str}'. "
-                "Service name not found in registry and not a valid UUID format."
-            )
-
-        service_class = GattServiceRegistry.get_service_class(service_uuid)
-        service: BaseGattService
-        if not service_class:
-            service = UnknownService(uuid=service_uuid)
-        else:
-            service = service_class()
-
-        device_info = DeviceInfo(
-            address=self.address,
-            name=self.name,
-            manufacturer_data=self.advertiser_data.ad_structures.core.manufacturer_data,
-            service_uuids=self.advertiser_data.ad_structures.core.service_uuids,
-        )
-
-        base_ctx = CharacteristicContext(device_info=device_info)
-
-        parsed_characteristics = self.translator.parse_characteristics(characteristics, descriptors, ctx=base_ctx)
-
-        for char_data in parsed_characteristics.values():
-            self.update_encryption_requirements(char_data)
-
-        # Process descriptors if provided
-        if descriptors:
-            self._process_descriptors(descriptors, parsed_characteristics)
-
-        characteristics_cast = cast(dict[str, CharacteristicDataProtocol], parsed_characteristics)
-        device_service = DeviceService(service=service, characteristics=characteristics_cast)
-
-        service_key = service_name if isinstance(service_name, str) else service_name.value
-        self.services[service_key] = device_service
-
-    def _process_descriptors(
-        self, descriptors: dict[str, dict[str, bytes]], parsed_characteristics: dict[str, Any]
-    ) -> None:
-        """Process and store descriptor data for characteristics.
-
-        Args:
-            descriptors: Nested dict mapping char_uuid -> desc_uuid -> raw data
-            parsed_characteristics: Already parsed characteristic data
-        """
-        for char_uuid, char_descriptors in descriptors.items():
-            if char_uuid not in parsed_characteristics:
-                continue  # Skip descriptors for unknown characteristics
-
-            char_data = parsed_characteristics[char_uuid]
-            if not hasattr(char_data, "add_descriptor"):
-                continue  # Characteristic doesn't support descriptors
-
-            for desc_uuid, _desc_data in char_descriptors.items():
-                descriptor = DescriptorRegistry.create_descriptor(desc_uuid)
-                if descriptor:
-                    try:
-                        char_data.add_descriptor(descriptor)
-                    except Exception:  # pylint: disable=broad-exception-caught
-                        # Skip malformed descriptors
-                        continue
-
     def attach_connection_manager(self, manager: ConnectionManagerProtocol) -> None:
         """Attach a connection manager to handle BLE connections.
 
@@ -249,6 +174,41 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if self.connection_manager:
             await self.disconnect()
         self.connection_manager = None
+
+    @staticmethod
+    async def scan(manager_class: type[ConnectionManagerProtocol], timeout: float = 5.0) -> list[ScannedDevice]:
+        """Scan for nearby BLE devices using a specific connection manager.
+
+        This is a static method that doesn't require a Device instance.
+        Use it to discover devices before creating Device instances.
+
+        Args:
+            manager_class: The connection manager class to use for scanning
+                          (e.g., BleakRetryConnectionManager)
+            timeout: Scan duration in seconds (default: 5.0)
+
+        Returns:
+            List of discovered devices
+
+        Raises:
+            NotImplementedError: If the connection manager doesn't support scanning
+
+        Example:
+            ```python
+            from bluetooth_sig.device import Device
+            from connection_managers.bleak_retry import BleakRetryConnectionManager
+
+            # Scan for devices
+            devices = await Device.scan(BleakRetryConnectionManager, timeout=10.0)
+
+            # Create Device instance for first discovered device
+            if devices:
+                translator = BluetoothSIGTranslator()
+                device = Device(devices[0].address, translator)
+            ```
+
+        """
+        return await manager_class.scan(timeout)
 
     async def connect(self) -> None:
         """Connect to the BLE device.
@@ -272,33 +232,251 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             raise RuntimeError("No connection manager attached to Device")
         await self.connection_manager.disconnect()
 
-    async def read(self, char_name: str | CharacteristicName) -> Any | None:  # noqa: ANN401  # Returns characteristic-specific types
+    def _get_cached_characteristic(self, char_uuid: BluetoothUUID) -> BaseCharacteristic | None:
+        """Get cached characteristic instance from services.
+
+        Single source of truth for characteristics - searches across all services.
+        Access parsed data via characteristic.last_parsed property.
+
+        Args:
+            char_uuid: UUID of the characteristic to find
+
+        Returns:
+            BaseCharacteristic instance if found, None otherwise
+
+        """
+        char_uuid_str = str(char_uuid)
+        for service in self.services.values():
+            if char_uuid_str in service.characteristics:
+                return service.characteristics[char_uuid_str]
+        return None
+
+    def _cache_characteristic(self, char_uuid: BluetoothUUID, char_instance: BaseCharacteristic) -> None:
+        """Store characteristic instance in services cache.
+
+        Only updates existing characteristic entries - does not create new services.
+        Characteristics must belong to a discovered service.
+
+        Args:
+            char_uuid: UUID of the characteristic
+            char_instance: BaseCharacteristic instance to cache
+
+        """
+        char_uuid_str = str(char_uuid)
+        # Find existing service that should contain this characteristic
+        for service in self.services.values():
+            if char_uuid_str in service.characteristics:
+                service.characteristics[char_uuid_str] = char_instance
+                return
+        # Characteristic not in any discovered service - warn about missing service
+        logging.warning(
+            "Cannot cache characteristic %s - not found in any discovered service. Run discover_services() first.",
+            char_uuid_str,
+        )
+
+    def _create_unknown_characteristic(self, dep_uuid: BluetoothUUID) -> BaseCharacteristic:
+        """Create an unknown characteristic instance for a UUID not in registry.
+
+        Args:
+            dep_uuid: UUID of the unknown characteristic
+
+        Returns:
+            UnknownCharacteristic instance
+
+        """
+        dep_uuid_str = str(dep_uuid)
+        char_info = CharacteristicInfo(uuid=dep_uuid, name=f"Unknown-{dep_uuid_str}")
+        return UnknownCharacteristic(info=char_info)
+
+    async def _resolve_single_dependency(
+        self,
+        dep_uuid: BluetoothUUID,
+        is_required: bool,
+        dep_class: type[BaseCharacteristic],
+    ) -> CharacteristicDataProtocol | None:
+        """Resolve a single dependency by reading and parsing it.
+
+        Args:
+            dep_uuid: UUID of the dependency characteristic
+            is_required: Whether this is a required dependency
+            dep_class: The dependency characteristic class
+
+        Returns:
+            Parsed characteristic data, or None if optional and failed
+
+        Raises:
+            ValueError: If required dependency fails to read
+
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached")
+
+        dep_uuid_str = str(dep_uuid)
+
+        try:
+            raw_data = await self.connection_manager.read_gatt_char(dep_uuid)
+
+            # Get or create characteristic instance
+            char_instance = self._get_cached_characteristic(dep_uuid)
+            if char_instance is None:
+                # Create a new characteristic instance using registry
+                char_class_or_none = CharacteristicRegistry.get_characteristic_class_by_uuid(dep_uuid)
+                if char_class_or_none:
+                    char_instance = char_class_or_none()
+                else:
+                    char_instance = self._create_unknown_characteristic(dep_uuid)
+
+                # Cache the instance
+                self._cache_characteristic(dep_uuid, char_instance)
+
+            # Parse using the characteristic instance
+            return char_instance.parse_value(raw_data)
+
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            if is_required:
+                raise ValueError(
+                    f"Failed to read required dependency {dep_class.__name__} ({dep_uuid_str}): {e}"
+                ) from e
+            # Optional dependency failed, log and continue
+            logging.warning("Failed to read optional dependency %s: %s", dep_class.__name__, e)
+            return None
+
+    async def _ensure_dependencies_resolved(
+        self,
+        char_class: type[BaseCharacteristic],
+        resolution_mode: DependencyResolutionMode,
+    ) -> CharacteristicContext:
+        """Ensure all dependencies for a characteristic are resolved.
+
+        This method automatically reads feature characteristics needed for validation
+        of measurement characteristics. Feature characteristics are cached after first read.
+
+        Args:
+            char_class: The characteristic class to resolve dependencies for
+            resolution_mode: How to handle dependency resolution
+
+        Returns:
+            CharacteristicContext with resolved dependencies
+
+        Raises:
+            RuntimeError: If no connection manager is attached
+
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        # Get dependency declarations from characteristic class
+        optional_deps = getattr(char_class, "_optional_dependencies", [])
+        required_deps = getattr(char_class, "_required_dependencies", [])
+
+        # Build context with resolved dependencies
+        context_chars: dict[str, CharacteristicDataProtocol] = {}
+
+        for dep_class in required_deps + optional_deps:
+            is_required = dep_class in required_deps
+
+            # Get UUID for dependency characteristic
+            dep_uuid = dep_class.get_class_uuid()
+            if not dep_uuid:
+                if is_required:
+                    raise ValueError(f"Required dependency {dep_class.__name__} has no UUID")
+                continue
+
+            dep_uuid_str = str(dep_uuid)
+
+            # Check resolution mode
+            if resolution_mode == DependencyResolutionMode.SKIP_DEPENDENCIES:
+                continue  # Skip all dependency resolution
+
+            # Check cache (unless force refresh)
+            if resolution_mode != DependencyResolutionMode.FORCE_REFRESH:
+                cached_char = self._get_cached_characteristic(dep_uuid)
+                if cached_char is not None and cached_char.last_parsed is not None:
+                    # Use the last_parsed data from the cached characteristic
+                    context_chars[dep_uuid_str] = cached_char.last_parsed
+                    continue
+
+            # Read and parse dependency from device
+            parsed_data = await self._resolve_single_dependency(dep_uuid, is_required, dep_class)
+            if parsed_data is not None:
+                context_chars[dep_uuid_str] = parsed_data
+
+        # Create context with device info and resolved dependencies
+        device_info = DeviceInfo(
+            address=self.address,
+            name=self.name,
+            manufacturer_data=self.advertiser_data.ad_structures.core.manufacturer_data,
+            service_uuids=self.advertiser_data.ad_structures.core.service_uuids,
+        )
+
+        return CharacteristicContext(
+            device_info=device_info,
+            other_characteristics=context_chars,
+        )
+
+    async def read(
+        self,
+        char_name: str | CharacteristicName,
+        resolution_mode: DependencyResolutionMode = DependencyResolutionMode.NORMAL,
+    ) -> Any | None:  # noqa: ANN401  # Returns characteristic-specific types
         """Read a characteristic value from the device.
 
         Args:
             char_name: Name or enum of the characteristic to read
+            resolution_mode: How to handle automatic dependency resolution:
+                - NORMAL: Auto-resolve dependencies, use cache when available (default)
+                - SKIP_DEPENDENCIES: Skip dependency resolution and validation
+                - FORCE_REFRESH: Re-read dependencies from device, ignoring cache
 
         Returns:
             Parsed characteristic value or None if read fails
 
         Raises:
             RuntimeError: If no connection manager is attached
+            ValueError: If required dependencies cannot be resolved
+
+        Example:
+            ```python
+            # Read RSC Measurement - automatically reads/caches RSC Feature first
+            measurement = await device.read(CharacteristicName.RSC_MEASUREMENT)
+
+            # Read again - uses cached RSC Feature, no redundant BLE read
+            measurement2 = await device.read(CharacteristicName.RSC_MEASUREMENT)
+
+            # Force fresh read of feature characteristic
+            measurement3 = await device.read(
+                CharacteristicName.RSC_MEASUREMENT, resolution_mode=DependencyResolutionMode.FORCE_REFRESH
+            )
+            ```
 
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
 
         resolved_uuid = self._resolve_characteristic_name(char_name)
+
+        char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(resolved_uuid)
+
+        # Resolve dependencies if characteristic class is known
+        ctx: CharacteristicContext | None = None
+        if char_class and resolution_mode != DependencyResolutionMode.SKIP_DEPENDENCIES:
+            ctx = await self._ensure_dependencies_resolved(char_class, resolution_mode)
+
+        # Read the characteristic
         raw = await self.connection_manager.read_gatt_char(resolved_uuid)
-        parsed = self.translator.parse_characteristic(str(resolved_uuid), raw, descriptor_data=None)
+        parsed = self.translator.parse_characteristic(str(resolved_uuid), raw, ctx=ctx)
+
         return parsed
 
-    async def write(self, char_name: str | CharacteristicName, data: bytes) -> None:
+    async def write(self, char_name: str | CharacteristicName, data: bytes, response: bool = True) -> None:
         """Write data to a characteristic on the device.
 
         Args:
             char_name: Name or enum of the characteristic to write to
             data: Raw bytes to write
+            response: If True, use write-with-response (wait for acknowledgment).
+                     If False, use write-without-response (faster but no confirmation).
+                     Default is True for reliability.
 
         Raises:
             RuntimeError: If no connection manager is attached
@@ -308,7 +486,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             raise RuntimeError("No connection manager attached to Device")
 
         resolved_uuid = self._resolve_characteristic_name(char_name)
-        await self.connection_manager.write_gatt_char(resolved_uuid, data)
+        await self.connection_manager.write_gatt_char(resolved_uuid, data, response=response)
 
     async def start_notify(self, char_name: str | CharacteristicName, callback: Callable[[Any], None]) -> None:
         """Start notifications for a characteristic.
@@ -327,7 +505,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         resolved_uuid = self._resolve_characteristic_name(char_name)
 
         def _internal_cb(sender: str, data: bytes) -> None:
-            parsed = self.translator.parse_characteristic(sender, data, descriptor_data=None)
+            parsed = self.translator.parse_characteristic(sender, data)
             try:
                 callback(parsed)
             except Exception as exc:  # pylint: disable=broad-exception-caught
@@ -375,6 +553,148 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         resolved_uuid = self._resolve_characteristic_name(char_name)
         await self.connection_manager.stop_notify(resolved_uuid)
 
+    async def read_descriptor(self, desc_uuid: BluetoothUUID | BaseDescriptor) -> DescriptorData:
+        """Read a descriptor value from the device.
+
+        Args:
+            desc_uuid: UUID of the descriptor to read or BaseDescriptor instance
+
+        Returns:
+            Parsed descriptor data with metadata
+
+        Raises:
+            RuntimeError: If no connection manager is attached
+
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        # Extract UUID from BaseDescriptor if needed
+        if isinstance(desc_uuid, BaseDescriptor):
+            uuid = desc_uuid.uuid
+        else:
+            uuid = desc_uuid
+
+        raw_data = await self.connection_manager.read_gatt_descriptor(uuid)
+
+        # Try to create a descriptor instance and parse the data
+        descriptor = DescriptorRegistry.create_descriptor(str(uuid))
+        if descriptor:
+            return descriptor.parse_value(raw_data)
+
+        # If no registered descriptor found, return unparsed DescriptorData
+        return DescriptorData(
+            info=DescriptorInfo(uuid=uuid, name="Unknown Descriptor", description=""),
+            value=raw_data,
+            raw_data=raw_data,
+            parse_success=False,
+            error_message="Unknown descriptor UUID - no parser available",
+        )
+
+    async def write_descriptor(self, desc_uuid: BluetoothUUID | BaseDescriptor, data: bytes | DescriptorData) -> None:
+        """Write data to a descriptor on the device.
+
+        Args:
+            desc_uuid: UUID of the descriptor to write to or BaseDescriptor instance
+            data: Either raw bytes to write, or a DescriptorData object.
+                 If DescriptorData is provided, its raw_data will be written.
+
+        Raises:
+            RuntimeError: If no connection manager is attached
+
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        # Extract UUID from BaseDescriptor if needed
+        if isinstance(desc_uuid, BaseDescriptor):
+            uuid = desc_uuid.uuid
+        else:
+            uuid = desc_uuid
+
+        # Extract raw bytes from DescriptorData if needed
+        raw_data: bytes
+        if isinstance(data, DescriptorData):
+            raw_data = data.raw_data
+        else:
+            raw_data = data
+
+        await self.connection_manager.write_gatt_descriptor(uuid, raw_data)
+
+    async def pair(self) -> None:
+        """Pair with the device.
+
+        Raises an exception if pairing fails.
+
+        Raises:
+            RuntimeError: If no connection manager is attached
+
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        await self.connection_manager.pair()
+
+    async def unpair(self) -> None:
+        """Unpair from the device.
+
+        Raises an exception if unpairing fails.
+
+        Raises:
+            RuntimeError: If no connection manager is attached
+
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        await self.connection_manager.unpair()
+
+    async def read_rssi(self) -> int:
+        """Read the RSSI (signal strength) of the connection.
+
+        Returns:
+            RSSI value in dBm (typically negative, e.g., -60)
+
+        Raises:
+            RuntimeError: If no connection manager is attached
+
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        return await self.connection_manager.read_rssi()
+
+    def set_disconnected_callback(self, callback: Callable[[], None]) -> None:
+        """Set a callback to be invoked when the device disconnects.
+
+        Args:
+            callback: Function to call when disconnection occurs
+
+        Raises:
+            RuntimeError: If no connection manager is attached
+
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        self.connection_manager.set_disconnected_callback(callback)
+
+    @property
+    def mtu_size(self) -> int:
+        """Get the negotiated MTU size in bytes.
+
+        Returns:
+            The MTU size negotiated for this connection (typically 23-512 bytes)
+
+        Raises:
+            RuntimeError: If no connection manager is attached
+
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        return self.connection_manager.mtu_size
+
     def parse_advertiser_data(self, raw_data: bytes) -> None:
         """Parse raw advertising data and update device information.
 
@@ -389,52 +709,75 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if parsed_data.ad_structures.core.local_name and not self.name:
             self.name = parsed_data.ad_structures.core.local_name
 
-    def get_characteristic_data(
-        self, service_name: str | ServiceName, char_uuid: str
-    ) -> CharacteristicDataProtocol | None:
-        """Get parsed characteristic data for a specific service and characteristic.
+    def get_characteristic_data(self, char_uuid: BluetoothUUID) -> CharacteristicData | None:
+        """Get parsed characteristic data - single source of truth via characteristic.last_parsed.
+
+        Searches across all services to find the characteristic by UUID.
 
         Args:
-            service_name: Name or enum of the service
             char_uuid: UUID of the characteristic
 
         Returns:
-            Parsed characteristic data or None if not found.
+            CharacteristicData (last parsed result) if found, None otherwise.
+
+        Example:
+            ```python
+            # Search for characteristic across all services
+            battery_data = device.get_characteristic_data(BluetoothUUID("2A19"))
+            if battery_data:
+                print(f"Battery: {battery_data.value}%")
+            ```
 
         """
-        service_key = service_name if isinstance(service_name, str) else service_name.value
-        service = self.services.get(service_key)
-        if service:
-            return service.characteristics.get(char_uuid)
+        char_instance = self._get_cached_characteristic(char_uuid)
+        if char_instance is not None:
+            return char_instance.last_parsed
         return None
 
-    def update_encryption_requirements(self, char_data: CharacteristicData) -> None:
-        """Update device encryption requirements based on characteristic properties.
-
-        Args:
-            char_data: The parsed characteristic data with properties
-
-        """
-        properties = char_data.properties
-
-        # Check for encryption requirements
-        encrypt_props = [GattProperty.ENCRYPT_READ, GattProperty.ENCRYPT_WRITE, GattProperty.ENCRYPT_NOTIFY]
-        if any(prop in properties for prop in encrypt_props):
-            self.encryption.requires_encryption = True
-
-        # Check for authentication requirements
-        auth_props = [GattProperty.AUTH_READ, GattProperty.AUTH_WRITE, GattProperty.AUTH_NOTIFY]
-        if any(prop in properties for prop in auth_props):
-            self.encryption.requires_authentication = True
-
     async def discover_services(self) -> dict[str, Any]:
-        """Discover all services and characteristics from the device.
+        """Discover services and characteristics from the connected BLE device.
+
+        This method performs BLE service discovery using the attached connection
+        manager, retrieving the device's service structure with characteristics
+        and their runtime properties (READ, WRITE, NOTIFY, etc.).
+
+        The discovered services are stored in `self.services` as DeviceService
+        objects with properly instantiated characteristic classes from the registry.
+
+        This implements the standard BLE workflow:
+            1. await device.connect()
+            2. await device.discover_services()  # This method
+            3. value = await device.read("battery_level")
+
+        Note:
+            - This method discovers the SERVICE STRUCTURE (what services/characteristics
+              exist and their properties), but does NOT read characteristic VALUES.
+            - Use `read()` to retrieve actual characteristic values after discovery.
+            - Services are cached in `self.services` keyed by service UUID string.
 
         Returns:
-            Dictionary mapping service UUIDs to service information
+            Dictionary mapping service UUIDs to DeviceService objects
 
         Raises:
             RuntimeError: If no connection manager is attached
+
+        Example:
+            ```python
+            device = Device(address, translator)
+            device.attach_connection_manager(manager)
+
+            await device.connect()
+            services = await device.discover_services()  # Discover structure
+
+            # Now services are available
+            for service_uuid, device_service in services.items():
+                print(f"Service: {service_uuid}")
+                for char_uuid, char_instance in device_service.characteristics.items():
+                    print(f"  Characteristic: {char_uuid}")
+
+            # Read characteristic values
+            battery = await device.read("battery_level")
+            ```
 
         """
         if not self.connection_manager:
@@ -444,17 +787,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         # Store discovered services in our internal structure
         for service_info in services_data:
-            service_uuid = service_info.uuid
+            service_uuid = str(service_info.service.uuid)
             if service_uuid not in self.services:
-                # Create a service instance - we'll use UnknownService for undiscovered services
-                service_instance = UnknownService(uuid=BluetoothUUID(service_uuid))
-                device_service = DeviceService(service=service_instance, characteristics={})
-                self.services[service_uuid] = device_service
-
-            # Add characteristics to the service
-            for char_info in service_info.characteristics:
-                char_uuid = char_info.uuid
-                self.services[service_uuid].characteristics[char_uuid] = char_info
+                # Store the service directly from connection manager
+                self.services[service_uuid] = service_info
 
         return dict(self.services)
 
@@ -476,8 +812,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         services_data = await self.connection_manager.get_services()
         for service_info in services_data:
-            for char_info in service_info.characteristics:
-                if char_info.uuid == char_uuid:
+            for char_uuid_key, char_info in service_info.characteristics.items():
+                if char_uuid_key == char_uuid:
                     return char_info
         return None
 
@@ -510,11 +846,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return results
 
-    async def write_multiple(self, data_map: dict[str | CharacteristicName, bytes]) -> dict[str, bool]:
+    async def write_multiple(
+        self, data_map: dict[str | CharacteristicName, bytes], response: bool = True
+    ) -> dict[str, bool]:
         """Write to multiple characteristics in batch.
 
         Args:
             data_map: Dictionary mapping characteristic names/enums to data bytes
+            response: If True, use write-with-response for all writes.
+                     If False, use write-without-response for all writes.
 
         Returns:
             Dictionary mapping characteristic UUIDs to success status
@@ -529,7 +869,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         results: dict[str, bool] = {}
         for char_name, data in data_map.items():
             try:
-                await self.write(char_name, data)
+                await self.write(char_name, data, response=response)
                 resolved_uuid = self._resolve_characteristic_name(char_name)
                 results[str(resolved_uuid)] = True
             except Exception as exc:  # pylint: disable=broad-exception-caught

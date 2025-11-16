@@ -101,6 +101,8 @@ class ModuleDiscovery:
                     continue
                 if obj is base_class or getattr(obj, "_is_template", False):
                     continue
+                if getattr(obj, "_is_base_class", False):
+                    continue  # Skip base classes that require parameters
                 if obj.__module__ != module.__name__:
                     continue
 

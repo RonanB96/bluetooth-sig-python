@@ -18,12 +18,12 @@ import msgspec
 import pytest
 
 from bluetooth_sig.core.translator import BluetoothSIGTranslator
-from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.templates import ScaledUint16Template, Uint8Template
 from bluetooth_sig.gatt.characteristics.utils import DataParser
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.types import CharacteristicInfo, CharacteristicRegistration
-from bluetooth_sig.types.gatt_enums import GattProperty, ValueType
+from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 # ==============================================================================
@@ -44,7 +44,6 @@ class SimpleTemperatureSensor(CustomBaseCharacteristic):
         name="Simple Temperature Sensor",
         unit="°C",
         value_type=ValueType.INT,
-        properties=[GattProperty.READ, GattProperty.NOTIFY],
     )
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
@@ -73,7 +72,6 @@ class PrecisionHumiditySensor(CustomBaseCharacteristic):
         name="Precision Humidity Sensor",
         unit="%",
         value_type=ValueType.FLOAT,
-        properties=[GattProperty.READ, GattProperty.NOTIFY],
     )
 
 
@@ -101,7 +99,6 @@ class MultiSensorCharacteristic(CustomBaseCharacteristic):
         name="Multi-Sensor Environmental",
         unit="various",
         value_type=ValueType.BYTES,
-        properties=[GattProperty.READ, GattProperty.NOTIFY],
     )
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> EnvironmentalReading:
@@ -148,7 +145,6 @@ class DeviceSerialNumberCharacteristic(CustomBaseCharacteristic):
         name="Device Serial Number",
         unit="",
         value_type=ValueType.STRING,
-        properties=[GattProperty.READ],
     )
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
@@ -176,7 +172,6 @@ class DeviceStatusFlags(CustomBaseCharacteristic):
         name="Device Status Flags",
         unit="",
         value_type=ValueType.INT,
-        properties=[GattProperty.READ, GattProperty.NOTIFY],
     )
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, bool]:
@@ -226,7 +221,7 @@ class TestCustomCharacteristicVariants:
         result = sensor.parse_value(data)
         assert result.parse_success is True
         assert result.value == 20
-        assert result.info.unit == "°C"
+        assert result.characteristic.info.unit == "°C"
 
         # Test parsing negative temperature
         data = bytearray([0xF6, 0xFF])  # -10°C
@@ -258,11 +253,11 @@ class TestCustomCharacteristicVariants:
         sensor = PrecisionHumiditySensor()
 
         # Test parsing: 5000 * 0.01 = 50.00%
-        data = bytearray([0x88, 0x13])  # 5000 in little endian
+        data = bytearray([0x88, 0x13])
         result = sensor.parse_value(data)
         assert result.parse_success is True
         assert result.value == 50.0
-        assert result.info.unit == "%"
+        assert result.characteristic.info.unit == "%"
 
         # Test max humidity
         data = bytearray([0x10, 0x27])  # 10000 * 0.01 = 100.0%
@@ -318,9 +313,8 @@ class TestCustomCharacteristicVariants:
         result = char.parse_value(data)
         assert result.parse_success is True
         assert result.value == "SN123456789"
-        assert result.info.value_type == ValueType.STRING
+        assert result.characteristic.info.value_type == ValueType.STRING
 
-        # Test round-trip
         encoded = char.encode_value("TEST12345")
         result = char.parse_value(encoded)
         assert result.value == "TEST12345"
@@ -380,7 +374,6 @@ class TestCustomCharacteristicVariants:
                 name="Custom Battery Level",
                 unit="%",
                 value_type=ValueType.INT,
-                properties=[GattProperty.READ, GattProperty.NOTIFY],
             )
 
         char = CustomBatteryLevel()
@@ -411,7 +404,6 @@ class TestCustomCharacteristicVariants:
                 name="Custom Battery Level",
                 unit="%",
                 value_type=ValueType.INT,
-                properties=[GattProperty.READ, GattProperty.NOTIFY],
             )
 
         assert SimpleTemperatureSensor._is_custom is True
@@ -420,18 +412,6 @@ class TestCustomCharacteristicVariants:
         assert DeviceSerialNumberCharacteristic._is_custom is True
         assert DeviceStatusFlags._is_custom is True
         assert CustomBatteryLevel._is_custom is True
-
-    def test_custom_characteristic_properties(self) -> None:
-        """Test that properties are properly defined."""
-        # Simple temperature has READ and NOTIFY
-        temp = SimpleTemperatureSensor()
-        assert GattProperty.READ in temp.info.properties
-        assert GattProperty.NOTIFY in temp.info.properties
-
-        # Serial number is READ only
-        serial = DeviceSerialNumberCharacteristic()
-        assert GattProperty.READ in serial.info.properties
-        assert GattProperty.NOTIFY not in serial.info.properties
 
 
 class TestCustomCharacteristicRegistration:
@@ -458,7 +438,6 @@ class TestCustomCharacteristicRegistration:
         result = translator.parse_characteristic(
             str(SimpleTemperatureSensor._info.uuid),
             bytes(data),
-            descriptor_data=None,
         )
 
         assert result.parse_success is True
@@ -494,7 +473,6 @@ class TestCustomCharacteristicRegistration:
         result = translator.parse_characteristic(
             str(MultiSensorCharacteristic._info.uuid),
             bytes(data),
-            descriptor_data=None,
         )
 
         assert result.parse_success is True
@@ -528,7 +506,6 @@ class TestCustomCharacteristicErrorHandling:
                     name="Unauthorized Battery",
                     unit="%",
                     value_type=ValueType.INT,
-                    properties=[],
                 )
 
                 def decode_value(  # pylint: disable=duplicate-code
@@ -641,7 +618,6 @@ class TestCustomBaseCharacteristicAPI:
                 name="Auto Info Test",
                 unit="units",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
@@ -676,7 +652,6 @@ class TestCustomBaseCharacteristicAPI:
                 name="Original Name",
                 unit="units",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
@@ -691,7 +666,6 @@ class TestCustomBaseCharacteristicAPI:
             name="Override Name",
             unit="override_units",
             value_type=ValueType.FLOAT,
-            properties=[],
         )
 
         char = OverridableCharacteristic(info=override_info)
@@ -712,7 +686,6 @@ class TestCustomBaseCharacteristicAPI:
                     name="Bad Override",
                     unit="%",
                     value_type=ValueType.INT,
-                    properties=[],
                 )
 
                 def decode_value(  # pylint: disable=duplicate-code
@@ -751,7 +724,6 @@ class TestCustomBaseCharacteristicAPI:
                 name="Allowed Override",
                 unit="%",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(  # pylint: disable=duplicate-code
@@ -801,7 +773,6 @@ class TestCustomBaseCharacteristicAPI:
                 name="Custom Characteristic",
                 unit="custom",
                 value_type=ValueType.INT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:

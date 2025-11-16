@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.utils import DebugUtils
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.exceptions import ParseFieldError as ParseFieldException
@@ -25,7 +25,6 @@ class LoggingTestCharacteristic(CustomBaseCharacteristic):
         name="Logging Test Characteristic",
         unit="test",
         value_type=ValueType.DICT,
-        properties=[],
     )
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
@@ -153,7 +152,6 @@ class TestLoggingFieldErrors:
                 name="Multi Error Test",
                 unit="test",
                 value_type=ValueType.DICT,
-                properties=[],
             )
 
             def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:

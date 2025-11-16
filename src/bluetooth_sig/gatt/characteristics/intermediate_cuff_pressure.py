@@ -90,7 +90,7 @@ class IntermediateCuffPressureCharacteristic(BaseBloodPressureCharacteristic):
         timestamp, pulse_rate, user_id, measurement_status = self._parse_optional_fields(data, flags)
 
         # Create immutable struct with all values
-        return IntermediateCuffPressureData(
+        return IntermediateCuffPressureData(  # pylint: disable=duplicate-code  # Similar structure in blood_pressure_measurement (same optional fields by spec)
             current_cuff_pressure=current_cuff_pressure,
             unit=unit,
             optional_fields=BloodPressureOptionalFields(

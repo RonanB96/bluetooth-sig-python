@@ -12,9 +12,9 @@ from bluetooth_sig.gatt.characteristics.location_and_speed import (
     HeadingSource,
     LocationAndSpeedData,
     LocationAndSpeedFlags,
-    PositionStatus,
     SpeedAndDistanceFormat,
 )
+from bluetooth_sig.types import PositionStatus
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 

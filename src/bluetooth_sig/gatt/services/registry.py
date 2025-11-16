@@ -16,6 +16,7 @@ from typing_extensions import TypeGuard
 from ...types.gatt_enums import ServiceName
 from ...types.gatt_services import ServiceDiscoveryData
 from ...types.uuid import BluetoothUUID
+from ..exceptions import UUIDResolutionError
 from ..registry_utils import ModuleDiscovery, TypeValidator
 from ..uuid_registry import uuid_registry
 from .base import BaseGattService
@@ -76,7 +77,8 @@ class _ServiceClassMapBuilder:
             # Get UUID from class
             try:
                 uuid_obj = service_cls.get_class_uuid()
-            except (AttributeError, ValueError):
+            except (AttributeError, ValueError, UUIDResolutionError):
+                # Skip classes that can't resolve a UUID (e.g., abstract base classes)
                 continue
 
             # Find the corresponding enum member by UUID

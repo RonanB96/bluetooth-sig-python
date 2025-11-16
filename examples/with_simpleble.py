@@ -26,20 +26,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from types import ModuleType
-from typing import Any, Callable, cast
+from typing import Any
 
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
-from bluetooth_sig.types.data_types import CharacteristicData
+import simplepyble
+
+from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from bluetooth_sig.types.uuid import BluetoothUUID
 from examples.utils.models import DeviceInfo, ReadResult
-
-# Avoid importing examples.shared_utils at module import time to keep this
-# module side-effect free and avoid confusing type checkers that may not
-# include the examples/ path in their search paths.
-
-# Type alias for the scanning helper imported from the SimplePyBLE integration
-ScanFunc = Callable[[ModuleType, float], list[DeviceInfo]]
 
 
 def parse_results(raw_results: dict[str, ReadResult]) -> dict[str, ReadResult]:
@@ -51,35 +44,7 @@ def parse_results(raw_results: dict[str, ReadResult]) -> dict[str, ReadResult]:
     return parse_and_display_results_sync(raw_results, library_name="SimplePyBLE")
 
 
-def scan_devices_simpleble(simpleble_module: ModuleType, timeout: float = 10.0) -> list[DeviceInfo]:
-    """Wrapper ensuring precise typing for scanning helper."""
-    from .utils.simpleble_integration import scan_devices_simpleble as _scan
-
-    _scan_fn = cast(ScanFunc, _scan)
-    return _scan_fn(simpleble_module, timeout)
-
-
-def comprehensive_device_analysis_simpleble(
-    address: str,
-    simpleble_module: ModuleType,
-) -> dict[str, CharacteristicData]:
-    """Wrapper ensuring precise typing for comprehensive analysis helper."""
-    from .utils.simpleble_integration import comprehensive_device_analysis_simpleble as _analysis
-
-    AnalysisFunc = Callable[[str, ModuleType], dict[str, CharacteristicData]]
-    analysis_fn = cast(AnalysisFunc, _analysis)
-    return analysis_fn(address, simpleble_module)
-
-
-def create_simpleble_connection_manager(address: str, simpleble_module: ModuleType) -> ConnectionManagerProtocol:
-    """Factory returning a connection manager instance with explicit typing."""
-    from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
-
-    manager = SimplePyBLEConnectionManager(address, simpleble_module)
-    return cast(ConnectionManagerProtocol, manager)
-
-
-def scan_for_devices_simpleble(timeout: float = 10.0) -> list[DeviceInfo]:  # type: ignore
+def scan_for_devices_simpleble(timeout: float = 10.0) -> list[DeviceInfo]:
     """Scan for BLE devices using SimpleBLE.
 
     Args:
@@ -89,24 +54,10 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[DeviceInfo]:  # ty
         List of device dictionaries with address, name, and RSSI
 
     """
-    # Determine backend availability at runtime to avoid import-time errors
-    from .utils import library_detection
-
-    simplepyble_available = getattr(library_detection, "simplepyble_available", False)
-    simplepyble_module = getattr(library_detection, "simplepyble_module", None)
-
-    if not simplepyble_available:  # type: ignore[possibly-unbound]
-        print("❌ SimplePyBLE not available")
-        return []
-
-    assert simplepyble_module is not None
+    from .utils.simpleble_integration import scan_devices_simpleble
 
     print(f"🔍 Scanning for BLE devices ({timeout}s)...")
-    from .utils.simpleble_integration import scan_devices_simpleble as _scan
-
-    scan_func = cast(ScanFunc, _scan)
-
-    devices = scan_func(simplepyble_module, timeout)
+    devices = scan_devices_simpleble(simplepyble, timeout)
 
     if not devices:
         print("❌ No BLE adapters found or scan failed")
@@ -126,31 +77,17 @@ def read_and_parse_with_simpleble(
     address: str, target_uuids: list[str] | None = None
 ) -> dict[str, ReadResult] | dict[str, CharacteristicData]:
     """Read characteristics from a BLE device using SimpleBLE and parse with SIG standards."""
-    from .utils import library_detection
+    from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
 
-    if not getattr(library_detection, "simplepyble_available", False):
-        print("❌ SimplePyBLE not available")
-        return {}
-
-    simplepyble_module = getattr(library_detection, "simplepyble_module", None)
+    from .utils.simpleble_integration import comprehensive_device_analysis_simpleble
 
     if target_uuids is None:
         # Use comprehensive device analysis for real device discovery
         print("🔍 Using comprehensive device analysis...")
-        if simplepyble_module is None:
-            print("❌ SimplePyBLE module not available for analysis")
-            return {}
-        return comprehensive_device_analysis_simpleble(address, simplepyble_module)
-
-    # At this point simplepyble_module may be None; ensure it's a ModuleType for downstream calls
-    if simplepyble_module is None:
-        print("❌ SimplePyBLE module not available for reading")
-        return {}
-
-    module = cast(ModuleType, simplepyble_module)
+        return comprehensive_device_analysis_simpleble(address, simplepyble)
 
     async def _collect() -> dict[str, ReadResult]:
-        manager = create_simpleble_connection_manager(address, module)
+        manager = SimplePyBLEConnectionManager(address, timeout=10.0)
         from examples.utils.connection_helpers import read_characteristics_with_manager
 
         return await read_characteristics_with_manager(manager, target_uuids)
@@ -244,17 +181,6 @@ def main() -> None:  # pylint: disable=too-many-nested-blocks
     parser.add_argument("--uuids", "-u", nargs="+", help="Specific characteristic UUIDs to read")
 
     args = parser.parse_args()
-
-    from .utils import library_detection
-
-    simplepyble_available = getattr(library_detection, "simplepyble_available", False)
-
-    if not simplepyble_available:
-        print("❌ SimplePyBLE is not available on this system.")
-        print("This example requires SimplePyBLE which needs C++ build tools.")
-        print("Install with: pip install simplepyble")
-        print("Note: Requires commercial license for commercial use since January 2025.")
-        return
 
     try:
         if args.scan or not args.address:

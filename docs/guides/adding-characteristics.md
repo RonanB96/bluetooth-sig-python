@@ -117,16 +117,16 @@ class LightLevelCharacteristic(BaseCharacteristic):
 For characteristics with multiple fields:
 
 ```python
-from dataclasses import dataclass
+import msgspec
 from datetime import datetime
 
-@dataclass(frozen=True)
-class SensorReading:
+class SensorReading(msgspec.Struct, frozen=True, kw_only=True):
     """Multi-field sensor reading."""
     temperature: float
     humidity: float
     pressure: float
     timestamp: datetime
+```
 
 class MultiSensorCharacteristic(BaseCharacteristic):
     """Multi-sensor characteristic with multiple fields."""
@@ -163,9 +163,10 @@ class MultiSensorCharacteristic(BaseCharacteristic):
         press_raw = int.from_bytes(data[4:8], byteorder='little', signed=False)
         pressure = press_raw * 0.1
 
+        # SKIP: Incomplete class definition example
         # Parse timestamp
         ts_raw = int.from_bytes(data[8:16], byteorder='little', signed=False)
-        timestamp = datetime.fromtimestamp(ts_raw)
+        timestamp = ts_raw  # Unix timestamp
 
         return SensorReading(
             temperature=temperature,

@@ -8,6 +8,7 @@ from enum import IntEnum, IntFlag
 import msgspec
 
 from ...types.gatt_enums import ValueType
+from ...types.location import PositionStatus
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
@@ -23,15 +24,6 @@ class LocationAndSpeedFlags(IntFlag):
     HEADING_PRESENT = 0x0010
     ROLLING_TIME_PRESENT = 0x0020
     UTC_TIME_PRESENT = 0x0040
-
-
-class PositionStatus(IntEnum):
-    """Position status enumeration."""
-
-    NO_POSITION = 0
-    POSITION_OK = 1
-    ESTIMATED_POSITION = 2
-    LAST_KNOWN_POSITION = 3
 
 
 class SpeedAndDistanceFormat(IntEnum):

@@ -15,7 +15,7 @@ The **Bluetooth SIG Standards Library** provides comprehensive GATT characterist
 
 - ✅ **Standards-Based**: Official Bluetooth SIG YAML registry with automatic UUID resolution
 - ✅ **Type-Safe**: Convert raw Bluetooth data to meaningful sensor values with comprehensive typing
-- ✅ **Modern Python**: Dataclass-based design with Python 3.9+ compatibility
+- ✅ **Modern Python**: msgspec-based design with Python 3.9+ compatibility
 - ✅ **Comprehensive**: Support for 70+ GATT characteristics across multiple service categories
 - ✅ **Production Ready**: Extensive validation, perfect code quality scores, and comprehensive testing
 - ✅ **Framework Agnostic**: Works with any BLE connection library (bleak, simplepyble, etc.)

@@ -14,7 +14,7 @@ A pure Python library for Bluetooth SIG standards interpretation, providing comp
 
 - ✅ **Standards-Based**: Official Bluetooth SIG YAML registry with automatic UUID resolution
 - ✅ **Type-Safe**: Convert raw Bluetooth data to meaningful values with comprehensive typing
-- ✅ **Modern Python**: Dataclass-based design with Python 3.9+ compatibility
+- ✅ **Modern Python**: msgspec-based design with Python 3.9+ compatibility
 - ✅ **Comprehensive**: Support for 70+ GATT characteristics across multiple service categories
 - ✅ **Production Ready**: Extensive validation and comprehensive testing
 - ✅ **Framework Agnostic**: Works with any BLE library (bleak, simplepyble, etc.)
@@ -38,8 +38,23 @@ print(service_info.name)  # "Battery Service"
 ## Parse characteristic data
 
 ```python
-battery_data = translator.parse_characteristic("2A19", bytearray([85]), descriptor_data=None)
+# ============================================
+# SIMULATED DATA - Replace with actual BLE read
+# ============================================
+SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
+
+# Use UUID from your BLE library
+battery_data = translator.parse_characteristic(
+    "2A19",  # UUID from your BLE library
+    SIMULATED_BATTERY_DATA
+)
 print(f"Battery: {battery_data.value}%")  # "Battery: 85%"
+
+# Alternative: Use CharacteristicName enum - convert to UUID first
+from bluetooth_sig.types.gatt_enums import CharacteristicName
+battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+if battery_uuid:
+    result2 = translator.parse_characteristic(str(battery_uuid), SIMULATED_BATTERY_DATA)
 ```
 
 ## What This Library Does
@@ -62,6 +77,7 @@ print(f"Battery: {battery_data.value}%")  # "Battery: 85%"
 Works seamlessly with any BLE connection library:
 
 ```python
+# SKIP: Requires BLE hardware and connection setup
 from bleak import BleakClient
 from bluetooth_sig import BluetoothSIGTranslator
 
@@ -72,7 +88,7 @@ async with BleakClient(address) as client:
     raw_data = await client.read_gatt_char("2A19")
 
     # bluetooth-sig handles parsing
-    result = translator.parse_characteristic("2A19", raw_data, descriptor_data=None)
+    result = translator.parse_characteristic("2A19", raw_data)
     print(f"Battery: {result.value}%")
 ```
 

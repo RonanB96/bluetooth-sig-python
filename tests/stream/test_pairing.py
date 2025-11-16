@@ -9,8 +9,8 @@ from bluetooth_sig.gatt.characteristics import (
     HumidityCharacteristic,
     TemperatureCharacteristic,
 )
+from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from bluetooth_sig.stream import DependencyPairingBuffer
-from bluetooth_sig.types import CharacteristicData
 
 
 def _glucose_measurement_bytes(seq: int) -> bytes:

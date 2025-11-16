@@ -1,5 +1,7 @@
 """GATT descriptors package."""
 
+from __future__ import annotations
+
 from .base import BaseDescriptor
 from .cccd import CCCDData, CCCDDescriptor
 from .characteristic_aggregate_format import CharacteristicAggregateFormatData, CharacteristicAggregateFormatDescriptor
@@ -66,6 +68,7 @@ DescriptorRegistry.register(MeasurementDescriptionDescriptor)
 DescriptorRegistry.register(ManufacturerLimitsDescriptor)
 DescriptorRegistry.register(ProcessTolerancesDescriptor)
 DescriptorRegistry.register(IMDTriggerSettingDescriptor)
+
 
 __all__ = [
     "BaseDescriptor",

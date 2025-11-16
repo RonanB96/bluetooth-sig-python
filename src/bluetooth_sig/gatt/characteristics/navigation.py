@@ -8,6 +8,7 @@ from enum import IntEnum, IntFlag
 import msgspec
 
 from ...types.gatt_enums import ValueType
+from ...types.location import PositionStatus
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
@@ -42,15 +43,6 @@ class NavigationData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disa
     navigation_indicator_type: NavigationIndicatorType | None = None
     waypoint_reached: bool | None = None
     destination_reached: bool | None = None
-
-
-class PositionStatus(IntEnum):
-    """Position status enumeration."""
-
-    NO_POSITION = 0
-    POSITION_OK = 1
-    ESTIMATED_POSITION = 2
-    LAST_KNOWN_POSITION = 3
 
 
 class HeadingSource(IntEnum):

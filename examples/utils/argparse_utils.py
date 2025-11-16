@@ -123,6 +123,11 @@ def create_connection_manager(
 
         return SimplePyBLEConnectionManager(address, simplepyble)
 
+    if manager_name == "bluepy":
+        from examples.connection_managers.bluepy import BluePyConnectionManager
+
+        return BluePyConnectionManager(address)
+
     if manager_name == "bleak":
         # Basic bleak without retry logic
         from examples.connection_managers.bleak_retry import BleakRetryConnectionManager

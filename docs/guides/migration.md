@@ -17,6 +17,7 @@ The library stays backend-agnostic: **you keep your connection code** (Bleak, Si
 **Before** (manual parsing - typical fitness app pattern):
 
 ```python
+# SKIP: Migration "before" example (anti-pattern)
 # Common pattern from real fitness app integrations
 async with BleakClient(device_address) as client:
     def heart_rate_handler(sender, data: bytearray):
@@ -52,13 +53,21 @@ async with BleakClient(device_address) as client:
 **After** (with bluetooth-sig-python):
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator, CharacteristicName
+import asyncio
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
 
-translator = BluetoothSIGTranslator()
+# ============================================
+# SIMULATED DATA - Replace with actual device
+# ============================================
+SIMULATED_DEVICE_ADDRESS = "AA:BB:CC:DD:EE:FF"
 
-async with BleakClient(device_address) as client:
+async def main():
+    translator = BluetoothSIGTranslator()
+
+    # Note: This is a simplified example - in production, use actual BleakClient
     def heart_rate_handler(sender, data: bytearray):
-        parsed = translator.parse_characteristic(str(sender.uuid), data)
+        parsed = translator.parse_characteristic("2A37", data)
         if parsed.parse_success:
             hr_data = parsed.value  # HeartRateMeasurementData
             print(f"HR: {hr_data.heart_rate} bpm")
@@ -67,8 +76,10 @@ async with BleakClient(device_address) as client:
             if hr_data.rr_intervals:
                 print(f"RR intervals: {hr_data.rr_intervals} seconds")
 
-    hr_uuid = CharacteristicName.HEART_RATE_MEASUREMENT.get_uuid()
-    await client.start_notify(hr_uuid, heart_rate_handler)
+    # Test with sample data
+    heart_rate_handler(None, bytearray([0x00, 0x55]))
+
+asyncio.run(main())
 ```
 
 **What improved**:
@@ -85,6 +96,7 @@ async with BleakClient(device_address) as client:
 **Before** (manual parsing - typical home automation pattern):
 
 ```python
+# SKIP: Migration "before" example (anti-pattern)
 # Common pattern from home automation projects (Home Assistant, openHAB)
 async with BleakClient(device_address) as client:
     # Read battery level
@@ -106,31 +118,42 @@ async with BleakClient(device_address) as client:
 **After** (with bluetooth-sig-python):
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator, CharacteristicName
+import asyncio
+from bluetooth_sig import BluetoothSIGTranslator
 
-translator = BluetoothSIGTranslator()
+async def main():
+    translator = BluetoothSIGTranslator()
 
-async with BleakClient(device_address) as client:
-    # Get UUIDs from registry
-    battery_uuid = CharacteristicName.BATTERY_LEVEL.get_uuid()
-    temp_uuid = CharacteristicName.TEMPERATURE.get_uuid()
-    humidity_uuid = CharacteristicName.HUMIDITY.get_uuid()
+    # ============================================
+    # SIMULATED DATA - Replace with actual BLE reads
+    # ============================================
+    SIMULATED_BATTERY_DATA = bytearray([85])           # Simulates 85% battery
+    SIMULATED_TEMP_DATA = bytearray([0x64, 0x09])     # Simulates 24.04°C
+    SIMULATED_HUMIDITY_DATA = bytearray([0x3A, 0x13]) # Simulates 49.22%
 
-    # Read all values
-    battery_bytes = await client.read_gatt_char(battery_uuid)
-    temp_bytes = await client.read_gatt_char(temp_uuid)
-    humidity_bytes = await client.read_gatt_char(humidity_uuid)
+    # Example with mock data - you can use UUIDs or CharacteristicName string names
+    from bluetooth_sig.types.gatt_enums import CharacteristicName
+
+    # Using UUIDs from your BLE library
+    battery_uuid = "2A19"
+    temp_uuid = "2A6E"
+    humidity_uuid = "2A6F"
+
+    # Or using CharacteristicName enum for string names (both work!)
+    # battery_name = CharacteristicName.BATTERY_LEVEL  # Resolves to "Battery Level"
 
     # Parse all at once
     results = translator.parse_characteristics({
-        battery_uuid: battery_bytes,
-        temp_uuid: temp_bytes,
-        humidity_uuid: humidity_bytes,
+        battery_uuid: SIMULATED_BATTERY_DATA,
+        temp_uuid: SIMULATED_TEMP_DATA,
+        humidity_uuid: SIMULATED_HUMIDITY_DATA,
     })
 
-    print(f"Battery: {results[battery_uuid].value}{results[battery_uuid].unit}")
-    print(f"Temp: {results[temp_uuid].value}{results[temp_uuid].unit}")
-    print(f"Humidity: {results[humidity_uuid].value}{results[humidity_uuid].unit}")
+    print(f"Battery: {results[battery_uuid].value}{results[battery_uuid].info.unit or ''}")
+    print(f"Temp: {results[temp_uuid].value}{results[temp_uuid].info.unit or ''}")
+    print(f"Humidity: {results[humidity_uuid].value}{results[humidity_uuid].info.unit or ''}")
+
+asyncio.run(main())
 ```
 
 **What improved**:
@@ -147,6 +170,7 @@ async with BleakClient(device_address) as client:
 **Before** (manual pairing logic):
 
 ```python
+# SKIP: Migration "before" example (anti-pattern)
 # Typical medical device integration pattern
 async with BleakClient(device_address) as client:
     measurements = {}
@@ -177,16 +201,19 @@ async with BleakClient(device_address) as client:
 **After** (with automatic dependency resolution):
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator, CharacteristicName
+# SKIP: Async function needs completion
+import asyncio
+from bluetooth_sig import BluetoothSIGTranslator
 
-translator = BluetoothSIGTranslator()
-gm_uuid = CharacteristicName.GLUCOSE_MEASUREMENT.get_uuid()
-gmc_uuid = CharacteristicName.GLUCOSE_MEASUREMENT_CONTEXT.get_uuid()
+async def main():
+    translator = BluetoothSIGTranslator()
+    gm_uuid = "2A18"
+    gmc_uuid = "2A34"
 
-measurements_cache = {}
-contexts_cache = {}
+    measurements_cache = {}
+    contexts_cache = {}
 
-async with BleakClient(device_address) as client:
+    # Example of handling paired characteristics
     def combined_handler(char_uuid: str, data: bytearray):
         # Parse immediately to get the sequence number
         parsed = translator.parse_characteristic(char_uuid, data)
@@ -237,6 +264,7 @@ async with BleakClient(device_address) as client:
 **Before** (reading and manually parsing all characteristics):
 
 ```python
+# SKIP: Migration "before" example (anti-pattern)
 # Common pattern from BLE exploration tools
 async with BleakClient(device_address) as client:
     for service in client.services:
@@ -260,25 +288,32 @@ async with BleakClient(device_address) as client:
 **After** (with automatic parsing):
 
 ```python
+import asyncio
 from bluetooth_sig import BluetoothSIGTranslator
 
-translator = BluetoothSIGTranslator()
+# ============================================
+# SIMULATED DATA - Replace with actual BLE reads
+# ============================================
+SIMULATED_BATTERY_DATA = bytearray([85])         # Simulates 85% battery
+SIMULATED_HR_DATA = bytearray([0x00, 0x55])     # Simulates heart rate measurement
 
-async with BleakClient(device_address) as client:
-    for service in client.services:
-        print(f"[Service] {service.uuid}")
-        for char in service.characteristics:
-            if "read" in char.properties:
-                try:
-                    value = await client.read_gatt_char(char)
-                    parsed = translator.parse_characteristic(char.uuid, value)
+async def main():
+    translator = BluetoothSIGTranslator()
 
-                    if parsed.parse_success:
-                        print(f"  {parsed.name}: {parsed.value} {parsed.unit}")
-                    else:
-                        print(f"  {char.uuid}: {value.hex()} (unknown)")
-                except Exception as e:
-                    print(f"  Error: {e}")
+    # Example: parse known characteristics using UUIDs
+    characteristics = {
+        "2A19": SIMULATED_BATTERY_DATA,     # Battery
+        "2A37": SIMULATED_HR_DATA,          # Heart Rate
+    }
+
+    for uuid, value in characteristics.items():
+        parsed = translator.parse_characteristic(uuid, value)
+        if parsed.parse_success:
+            print(f"  {parsed.info.name}: {parsed.value} {parsed.info.unit or ''}")
+        else:
+            print(f"  {uuid}: {value.hex()} (unknown)")
+
+asyncio.run(main())
 ```
 
 **What improved**:
@@ -295,12 +330,19 @@ If characteristics depend on each other (e.g., Glucose Measurement + Context), p
 ### Minimal path (no adapters)
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator, CharacteristicName
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
+
+# ============================================
+# SIMULATED DATA - Replace with actual BLE reads
+# ============================================
+gm_bytes = bytearray([0x00, 0x01, 0x02])  # Simulated glucose measurement
+gmc_bytes = bytearray([0x03, 0x04])       # Simulated glucose context
 
 translator = BluetoothSIGTranslator()
 
-gm_uuid = CharacteristicName.GLUCOSE_MEASUREMENT.get_uuid()
-gmc_uuid = CharacteristicName.GLUCOSE_MEASUREMENT_CONTEXT.get_uuid()
+gm_uuid = "2A18"
+gmc_uuid = "2A34"
 
 values = {
     gm_uuid: gm_bytes,
@@ -309,18 +351,43 @@ values = {
 results = translator.parse_characteristics(values)
 ```
 
+### With Connection Managers
+
+Example adapters are provided in `examples/connection_managers/` as references.
+
+```python
+from bluetooth_sig import BluetoothSIGTranslator
+
+# ============================================
+# SIMULATED DATA - Replace with actual BLE reads
+# ============================================
+glucose_measurement_bytes = bytearray([0x00, 0x01, 0x02])  # Simulated glucose measurement
+glucose_context_bytes = bytearray([0x03, 0x04])            # Simulated glucose context
+
+translator = BluetoothSIGTranslator()
+
+# Simple batch parsing
+char_data = {
+    "2A18": glucose_measurement_bytes,
+    "2A34": glucose_context_bytes,
+}
+
+results = translator.parse_characteristics(char_data)
+```
+
 ### With descriptors/services (adapters in examples)
 
 - Bleak: `examples/connection_managers/bleak_utils.py`
 - SimplePyBLE: `examples/connection_managers/simpleble.py`
 
 ```python
+# SKIP: Requires external modules
 from bluetooth_sig import CharacteristicName
 from bluetooth_sig.types.io import to_parse_inputs
 from examples.connection_managers.bleak_utils import bleak_services_to_batch
 
-gm_uuid = CharacteristicName.GLUCOSE_MEASUREMENT.get_uuid()
-gmc_uuid = CharacteristicName.GLUCOSE_MEASUREMENT_CONTEXT.get_uuid()
+gm_uuid = "2A18"
+gmc_uuid = "2A34"
 
 services = client.services
 values = {gm_uuid: gm_bytes, gmc_uuid: gmc_bytes}
@@ -337,7 +404,9 @@ results = translator.parse_characteristics(char_data, descriptor_data=desc_data)
 For applications managing multiple devices or complex workflows, use the Device pattern:
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator, CharacteristicName
+# SKIP: Needs real BLE device
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
 from bluetooth_sig.device import Device
 
 translator = BluetoothSIGTranslator()
@@ -350,7 +419,7 @@ manager = BleakRetryConnectionManager(address)
 device.attach_connection_manager(manager)
 await device.connect()
 
-battery_uuid = CharacteristicName.BATTERY_LEVEL.get_uuid()
+battery_uuid = "2A19"
 parsed = await device.read(battery_uuid)
 await device.disconnect()
 ```
@@ -375,15 +444,17 @@ These adapters are intentionally kept in examples to avoid hard dependencies. Co
 ### Home Assistant Integration Pattern
 
 ```python
+# SKIP: Requires Home Assistant
 from homeassistant.components import bluetooth
-from bluetooth_sig import BluetoothSIGTranslator, CharacteristicName
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
 
 class MySensorEntity(SensorEntity):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._temp_uuid = CharacteristicName.TEMPERATURE.get_uuid()
+        self._temp_uuid = "2A6E"
 
     def _async_handle_bluetooth_event(
         self, service_info: BluetoothServiceInfoBleak, change: BluetoothChange
@@ -402,6 +473,7 @@ class MySensorEntity(SensorEntity):
 ### SimplePyBLE Pattern
 
 ```python
+# SKIP: Requires SimplePyBLE
 import simplepyble
 from bluetooth_sig import BluetoothSIGTranslator
 
@@ -451,8 +523,8 @@ from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
 
-bpm_uuid = CharacteristicName.BLOOD_PRESSURE_MEASUREMENT.get_uuid()
-icp_uuid = CharacteristicName.INTERMEDIATE_CUFF_PRESSURE.get_uuid()
+bpm_uuid = "2A35"
+icp_uuid = "2A36"
 
 def group_by_timestamp(uuid: str, parsed) -> datetime:
     """Group notifications by their timestamp - same session = same timestamp."""
@@ -507,14 +579,15 @@ async with BleakClient(device_address) as client:
 For Glucose monitors, pair by sequence number and validate in your callback:
 
 ```python
+# SKIP: Stream example needs completion
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.stream import DependencyPairingBuffer
 from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
 
-gm_uuid = CharacteristicName.GLUCOSE_MEASUREMENT.get_uuid()
-gmc_uuid = CharacteristicName.GLUCOSE_MEASUREMENT_CONTEXT.get_uuid()
+gm_uuid = "2A18"
+gmc_uuid = "2A34"
 
 def group_by_sequence(uuid: str, parsed) -> int:
     """Both measurement and context have sequence_number field."""

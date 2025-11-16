@@ -12,10 +12,11 @@ from typing import Any, cast
 import pytest
 
 from bluetooth_sig.core import BluetoothSIGTranslator
-from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext
-from bluetooth_sig.types import CharacteristicData, CharacteristicDataProtocol, CharacteristicInfo
-from bluetooth_sig.types.gatt_enums import GattProperty, ValueType
+from bluetooth_sig.types import CharacteristicDataProtocol, CharacteristicInfo
+from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.units import PressureUnit
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -33,7 +34,6 @@ class CalibrationCharacteristic(CustomBaseCharacteristic):
         name="Calibration Factor",
         unit="unitless",
         value_type=ValueType.FLOAT,
-        properties=[GattProperty.READ],
     )
 
     min_length = 4
@@ -71,7 +71,6 @@ class SensorReadingCharacteristic(CustomBaseCharacteristic):
         name="Sensor Reading",
         unit="calibrated units",
         value_type=ValueType.FLOAT,
-        properties=[GattProperty.READ, GattProperty.NOTIFY],
     )
 
     # Reference calibration directly (no hardcoded UUIDs)
@@ -125,7 +124,6 @@ class SequenceNumberCharacteristic(CustomBaseCharacteristic):
         name="Sequence Number",
         unit="",
         value_type=ValueType.INT,
-        properties=[GattProperty.READ],
     )
 
     min_length = 2
@@ -153,7 +151,6 @@ class SequencedDataCharacteristic(CustomBaseCharacteristic):
         name="Sequenced Data",
         unit="various",
         value_type=ValueType.BYTES,
-        properties=[GattProperty.READ, GattProperty.NOTIFY],
     )
 
     # Declare dependency using direct class reference (following Django ForeignKey pattern)
@@ -403,7 +400,7 @@ class TestMultiCharacteristicDependencies:
 
     def test_context_direct_access(self) -> None:
         """Test CharacteristicContext direct access to other_characteristics."""
-        from bluetooth_sig.types import CharacteristicData
+        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 
         # Create mock characteristic data
         calib_info = CharacteristicInfo(
@@ -411,12 +408,15 @@ class TestMultiCharacteristicDependencies:
             name="Calibration",
             unit="",
             value_type=ValueType.FLOAT,
-            properties=[],
         )
+        from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
+
+        calib_char = UnknownCharacteristic(info=calib_info)
         calib_data = CharacteristicData(
-            info=calib_info,
+            characteristic=calib_char,
             value=2.5,
             raw_data=b"\x00\x00\x20\x40",
+            parse_success=True,
         )
 
         # Create context
@@ -461,7 +461,6 @@ class TestMultiCharacteristicDependencies:
                 name="Char A",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
             # Forward reference will be resolved after CharB is defined
             _required_dependencies = []
@@ -478,7 +477,6 @@ class TestMultiCharacteristicDependencies:
                 name="Char B",
                 unit="",
                 value_type=ValueType.INT,
-                properties=[],
             )
             # Reference CharA directly (no hardcoding)
             _required_dependencies = [CharA]
@@ -565,7 +563,6 @@ class TestRequiredOptionalDependencies:
                 name="Measurement",
                 unit="units",
                 value_type=ValueType.INT,
-                properties=[GattProperty.READ],
             )
 
             min_length = 2
@@ -585,7 +582,6 @@ class TestRequiredOptionalDependencies:
                 name="Context",
                 unit="various",
                 value_type=ValueType.DICT,
-                properties=[GattProperty.READ],
             )
 
             _required_dependencies = [MeasurementCharacteristic]
@@ -617,7 +613,6 @@ class TestRequiredOptionalDependencies:
                 name="Enrichment",
                 unit="factor",
                 value_type=ValueType.FLOAT,
-                properties=[GattProperty.READ],
             )
 
             min_length = 4
@@ -642,7 +637,6 @@ class TestRequiredOptionalDependencies:
                 name="Data",
                 unit="various",
                 value_type=ValueType.DICT,
-                properties=[GattProperty.READ],
             )
 
             _optional_dependencies = [EnrichmentCharacteristic]
@@ -674,7 +668,6 @@ class TestRequiredOptionalDependencies:
                 name="Multi Dependency",
                 unit="composite",
                 value_type=ValueType.DICT,
-                properties=[GattProperty.READ],
             )
 
             _required_dependencies = [MeasurementCharacteristic, ContextCharacteristic]
@@ -769,8 +762,8 @@ class TestRequiredOptionalDependencies:
         assert context_result.parse_success is False
         assert "missing dependencies" in context_result.error_message.lower()
         assert "0EA50001-0000-1000-8000-00805F9B34FB" in context_result.error_message
-        assert context_result.info.uuid == BluetoothUUID("C0111E11-0000-1000-8000-00805F9B34FB")
-        assert context_result.info.name == "Context"
+        assert context_result.characteristic.info.uuid == BluetoothUUID("C0111E11-0000-1000-8000-00805F9B34FB")
+        assert context_result.characteristic.info.name == "Context"
 
     def test_optional_dependency_absent_still_succeeds(self, translator: BluetoothSIGTranslator) -> None:
         """Test that missing optional dependencies don't prevent parsing."""

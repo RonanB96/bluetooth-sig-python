@@ -92,22 +92,26 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
         """Test heart rate parsing with sensor location from context."""
         from typing import cast
 
+        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+        from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
         from bluetooth_sig.gatt.context import CharacteristicContext
-        from bluetooth_sig.types import CharacteristicData, CharacteristicDataProtocol, CharacteristicInfo
+        from bluetooth_sig.types import CharacteristicDataProtocol, CharacteristicInfo
         from bluetooth_sig.types.uuid import BluetoothUUID
 
         # Mock context with sensor location (Body Sensor Location = 0x2A38)
         # Use full UUID format as that's what get_context_characteristic expects
-        sensor_location = CharacteristicData(
+        sensor_location_char = UnknownCharacteristic(
             info=CharacteristicInfo(
                 uuid=BluetoothUUID("2A38"),
                 name="Body Sensor Location",
-            ),
+            )
+        )
+        sensor_location = CharacteristicData(
+            characteristic=sensor_location_char,
             value=2,  # 2 = Wrist
             raw_data=bytes([0x02]),
             parse_success=True,
             error_message="",
-            descriptors={},
         )
 
         # Store with full UUID format to match how translator builds context
@@ -127,8 +131,10 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
         """Test heart rate with various sensor locations."""
         from typing import cast
 
+        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+        from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
         from bluetooth_sig.gatt.context import CharacteristicContext
-        from bluetooth_sig.types import CharacteristicData, CharacteristicDataProtocol, CharacteristicInfo
+        from bluetooth_sig.types import CharacteristicDataProtocol, CharacteristicInfo
         from bluetooth_sig.types.uuid import BluetoothUUID
 
         location_map = {
@@ -142,16 +148,18 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
         }
 
         for location_value, expected_enum in location_map.items():
-            sensor_location = CharacteristicData(
+            sensor_location_char = UnknownCharacteristic(
                 info=CharacteristicInfo(
                     uuid=BluetoothUUID("2A38"),
                     name="Body Sensor Location",
-                ),
+                )
+            )
+            sensor_location = CharacteristicData(
+                characteristic=sensor_location_char,
                 value=location_value,
                 raw_data=bytes([location_value]),
                 parse_success=True,
                 error_message="",
-                descriptors={},
             )
 
             # Use full UUID format to match translator behavior

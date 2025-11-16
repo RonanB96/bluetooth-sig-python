@@ -1,7 +1,9 @@
 """Test Bluetooth SIG Translator functionality."""
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types import CharacteristicData, ValidationResult
+from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+from bluetooth_sig.types import ValidationResult
+from bluetooth_sig.types.gatt_enums import CharacteristicName, ServiceName
 
 
 class TestBluetoothSIGTranslator:
@@ -223,3 +225,96 @@ class TestBluetoothSIGTranslator:
         # Test with unknown service
         chars = translator.get_service_characteristics("FFFF")
         assert chars == []
+
+    def test_get_characteristic_uuid_by_name(self) -> None:
+        """Test getting characteristic UUID from CharacteristicName enum."""
+        translator = BluetoothSIGTranslator()
+
+        # Test known characteristic - Battery Level
+        uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+        assert uuid is not None, "Should find UUID for BATTERY_LEVEL"
+        assert str(uuid) == "00002A19-0000-1000-8000-00805F9B34FB"
+
+        # Test another known characteristic - Heart Rate Measurement
+        uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.HEART_RATE_MEASUREMENT)
+        assert uuid is not None, "Should find UUID for HEART_RATE_MEASUREMENT"
+        assert str(uuid) == "00002A37-0000-1000-8000-00805F9B34FB"
+
+        # Test Temperature characteristic
+        uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.TEMPERATURE)
+        assert uuid is not None, "Should find UUID for TEMPERATURE"
+        assert str(uuid) == "00002A6E-0000-1000-8000-00805F9B34FB"
+
+    def test_get_characteristic_info_by_name(self) -> None:
+        """Test getting characteristic info from CharacteristicName enum."""
+        translator = BluetoothSIGTranslator()
+
+        # Test known characteristic - Battery Level
+        info = translator.get_characteristic_info_by_name(CharacteristicName.BATTERY_LEVEL)
+        assert info is not None, "Should find info for BATTERY_LEVEL"
+        assert info.name == "Battery Level"
+        assert str(info.uuid) == "00002A19-0000-1000-8000-00805F9B34FB"
+        assert info.unit == "%"
+
+        # Test Heart Rate Measurement
+        info = translator.get_characteristic_info_by_name(CharacteristicName.HEART_RATE_MEASUREMENT)
+        assert info is not None, "Should find info for HEART_RATE_MEASUREMENT"
+        assert info.name == "Heart Rate Measurement"
+        assert str(info.uuid) == "00002A37-0000-1000-8000-00805F9B34FB"
+
+        # Test Temperature
+        info = translator.get_characteristic_info_by_name(CharacteristicName.TEMPERATURE)
+        assert info is not None, "Should find info for TEMPERATURE"
+        assert info.name == "Temperature"
+        assert str(info.uuid) == "00002A6E-0000-1000-8000-00805F9B34FB"
+
+    def test_get_service_uuid_by_name(self) -> None:
+        """Test getting service UUID from ServiceName enum."""
+        translator = BluetoothSIGTranslator()
+
+        # Test known service - Battery Service
+        uuid = translator.get_service_uuid_by_name(ServiceName.BATTERY)
+        assert uuid is not None, "Should find UUID for BATTERY"
+        assert str(uuid) == "0000180F-0000-1000-8000-00805F9B34FB"
+
+        # Test Heart Rate service
+        uuid = translator.get_service_uuid_by_name(ServiceName.HEART_RATE)
+        assert uuid is not None, "Should find UUID for HEART_RATE"
+        assert str(uuid) == "0000180D-0000-1000-8000-00805F9B34FB"
+
+        # Test Device Information service
+        uuid = translator.get_service_uuid_by_name(ServiceName.DEVICE_INFORMATION)
+        assert uuid is not None, "Should find UUID for DEVICE_INFORMATION"
+        assert str(uuid) == "0000180A-0000-1000-8000-00805F9B34FB"
+
+    def test_enum_based_workflow(self) -> None:
+        """Test the complete workflow using enum-based lookups (as shown in docs)."""
+        translator = BluetoothSIGTranslator()
+
+        # Step 1: Get UUID from enum (what's documented in usage.md)
+        found_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+        assert found_uuid is not None, "Should find Battery Level UUID"
+
+        # Step 2: Use that UUID to parse data
+        simulated_data = bytearray([85])  # 85% battery
+        result = translator.parse_characteristic(str(found_uuid), simulated_data)
+
+        # Step 3: Verify the result
+        assert result.parse_success is True
+        assert result.value == 85
+        assert result.info.name == "Battery Level"
+        assert result.info.unit == "%"
+
+        # Test that multiple UUID formats work (as documented)
+        formats = [
+            str(found_uuid),  # Full 128-bit from enum lookup
+            "0x2A19",  # Hex prefix
+            "00002a19-0000-1000-8000-00805f9b34fb",  # Lowercase
+            "00002A19-0000-1000-8000-00805F9B34FB",  # Uppercase
+        ]
+
+        for uuid_format in formats:
+            result = translator.parse_characteristic(uuid_format, simulated_data)
+            assert result.parse_success is True, f"Should parse with format: {uuid_format}"
+            assert result.value == 85
+            assert result.info.name == "Battery Level"

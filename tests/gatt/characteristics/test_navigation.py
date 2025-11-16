@@ -12,8 +12,8 @@ from bluetooth_sig.gatt.characteristics.navigation import (
     NavigationData,
     NavigationFlags,
     NavigationIndicatorType,
-    PositionStatus,
 )
+from bluetooth_sig.types import PositionStatus
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 

@@ -224,6 +224,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
         wheel_flag = int(CSCMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT)
         if (flags & wheel_flag) and not feature_data.wheel_revolution_data_supported:
             raise ValueError("Wheel revolution data reported but not supported by CSC Feature")
+
         crank_flag = int(CSCMeasurementFlags.CRANK_REVOLUTION_DATA_PRESENT)
         if (flags & crank_flag) and not feature_data.crank_revolution_data_supported:
             raise ValueError("Crank revolution data reported but not supported by CSC Feature")

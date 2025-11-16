@@ -48,6 +48,9 @@ if bleak_retry_available:
 
 # Detect SimplePyBLE
 simplepyble_available: bool = bool(importlib_util.find_spec("simplepyble"))
+
+# Detect BluePy
+bluepy_available: bool = bool(importlib_util.find_spec("bluepy"))
 simplepyble_module: object | None = None
 if simplepyble_available:
     try:
@@ -55,6 +58,15 @@ if simplepyble_available:
     except ImportError:
         simplepyble_available = False
         simplepyble_module = None
+
+# Import BluePy module only when available
+bluepy_module: object | None = None
+if bluepy_available:
+    try:
+        bluepy_module = importlib.import_module("bluepy")
+    except ImportError:
+        bluepy_available = False
+        bluepy_module = None
 
 # Populate the user-friendly AVAILABLE_LIBRARIES mapping
 if bleak_retry_available:
@@ -75,6 +87,13 @@ if simplepyble_available:
         "module": "simplepyble",
         "async": False,
         "description": "Cross-platform BLE library (requires commercial license for commercial use)",
+    }
+
+if bluepy_available:
+    AVAILABLE_LIBRARIES["bluepy"] = {
+        "module": "bluepy",
+        "async": False,
+        "description": "BluePy - Python Bluetooth LE interface (Linux only)",
     }
 
 
@@ -104,6 +123,8 @@ __all__ = [
     "AVAILABLE_LIBRARIES",
     "bleak_available",
     "bleak_retry_available",
+    "bluepy_available",
+    "bluepy_module",
     "show_library_availability",
     "simplepyble_available",
     "simplepyble_module",

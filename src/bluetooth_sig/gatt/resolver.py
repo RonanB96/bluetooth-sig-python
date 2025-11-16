@@ -343,7 +343,6 @@ class CharacteristicRegistrySearch(RegistrySearchStrategy[CharacteristicInfo]): 
             name=uuid_info.name,
             unit=uuid_info.unit or "",
             value_type=ValueType(uuid_info.value_type) if uuid_info.value_type else ValueType.UNKNOWN,
-            properties=[],
         )
 
 
