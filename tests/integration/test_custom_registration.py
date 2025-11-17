@@ -15,7 +15,7 @@ from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.services.custom import CustomBaseGattService
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 from bluetooth_sig.gatt.uuid_registry import CustomUuidEntry, uuid_registry
-from bluetooth_sig.types import CharacteristicInfo, CharacteristicRegistration, ServiceRegistration
+from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
 from bluetooth_sig.types.gatt_enums import GattProperty, ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -60,7 +60,11 @@ class CustomCharacteristicImpl(CustomBaseCharacteristic):
 class CustomServiceImpl(CustomBaseGattService):
     """Test custom service implementation."""
 
-    _service_name = "Test Service"
+    _info = ServiceInfo(
+        uuid=BluetoothUUID("12345678-1234-1234-1234-123456789abc"),
+        name="Test Service",
+        description="Test custom service",
+    )
 
 
 class TestRuntimeRegistration:
@@ -127,18 +131,26 @@ class TestRuntimeRegistration:
         """Test translator convenience method for registering custom characteristic."""
         translator = BluetoothSIGTranslator()
 
-        translator.register_custom_characteristic_class(
-            "abcd1234-0000-1000-8000-00805f9b34fb",
-            CustomCharacteristicImpl,
-            metadata=CharacteristicRegistration(
+        # Create a test class with _info
+        class TestChar(CustomBaseCharacteristic):
+            _info = CharacteristicInfo(
                 uuid=BluetoothUUID("abcd1234-0000-1000-8000-00805f9b34fb"),
                 name="Test Characteristic",
                 unit="°C",
                 value_type=ValueType.INT,
-            ),
-        )  # Verify class registration
+            )
+
+            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+                return data[0]
+
+            def encode_value(self, data: int) -> bytearray:
+                return bytearray([data])
+
+        translator.register_custom_characteristic_class(TestChar)
+
+        # Verify class registration
         cls = CharacteristicRegistry.get_characteristic_class_by_uuid("abcd1234-0000-1000-8000-00805f9b34fb")
-        assert cls == CustomCharacteristicImpl
+        assert cls == TestChar
 
         # Verify metadata registration
         info = uuid_registry.get_characteristic_info("abcd1234-0000-1000-8000-00805f9b34fb")
@@ -150,15 +162,7 @@ class TestRuntimeRegistration:
         """Test translator convenience method for registering custom service."""
         translator = BluetoothSIGTranslator()
 
-        translator.register_custom_service_class(
-            "12345678-1234-1234-1234-123456789abc",
-            CustomServiceImpl,
-            metadata=ServiceRegistration(
-                uuid=BluetoothUUID("12345678-1234-1234-1234-123456789abc"),
-                name="Test Service",
-                summary="Test custom service",
-            ),
-        )
+        translator.register_custom_service_class(CustomServiceImpl)
 
         # Verify class registration
         cls = GattServiceRegistry.get_service_class("12345678-1234-1234-1234-123456789abc")
@@ -168,15 +172,14 @@ class TestRuntimeRegistration:
         info = uuid_registry.get_service_info("12345678-1234-1234-1234-123456789abc")
         assert info is not None
         assert info.name == "Test Service"
+        assert info.summary == "Test custom service"
 
     def test_parse_custom_characteristic(self) -> None:
         """Test parsing data with a custom characteristic."""
         translator = BluetoothSIGTranslator()
 
-        # Register custom characteristic
-        translator.register_custom_characteristic_class(
-            "abcd1234-0000-1000-8000-00805f9b34fb", CustomCharacteristicImpl
-        )
+        # Register custom characteristic using the new API
+        translator.register_custom_characteristic_class(CustomCharacteristicImpl)
 
         # Parse data
         test_data = bytes([0x34, 0x12])  # 0x1234 = 4660

@@ -6,7 +6,6 @@ import msgspec
 
 from .base_types import SIGInfo
 from .gatt_enums import ValueType
-from .uuid import BluetoothUUID
 
 
 class ParseFieldError(msgspec.Struct, frozen=True, kw_only=True):
@@ -54,23 +53,3 @@ class ValidationResult(SIGInfo):
     expected_length: int | None = None
     actual_length: int | None = None
     error_message: str = ""
-
-
-class CharacteristicRegistration(msgspec.Struct, kw_only=True):
-    """Unified metadata for custom UUID registration."""
-
-    uuid: BluetoothUUID
-    name: str = ""
-    id: str | None = None
-    summary: str = ""
-    unit: str = ""
-    value_type: ValueType = ValueType.STRING
-
-
-class ServiceRegistration(msgspec.Struct, kw_only=True):
-    """Unified metadata for custom UUID registration."""
-
-    uuid: BluetoothUUID
-    name: str = ""
-    id: str | None = None
-    summary: str = ""

@@ -18,6 +18,16 @@ class CustomBaseGattService(BaseGattService):
     _configured_info: ServiceInfo | None = None
     _allows_sig_override = False
 
+    @classmethod
+    def get_configured_info(cls) -> ServiceInfo | None:
+        """Get the class-level configured ServiceInfo.
+
+        Returns:
+            ServiceInfo if configured, None otherwise
+
+        """
+        return cls._configured_info
+
     def __init_subclass__(cls, allow_sig_override: bool = False, **kwargs: object) -> None:
         """Set up _info if provided as class attribute.
 
