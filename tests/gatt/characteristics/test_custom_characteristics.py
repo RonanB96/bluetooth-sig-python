@@ -22,7 +22,7 @@ from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.templates import ScaledUint16Template, Uint8Template
 from bluetooth_sig.gatt.characteristics.utils import DataParser
 from bluetooth_sig.gatt.context import CharacteristicContext
-from bluetooth_sig.types import CharacteristicInfo, CharacteristicRegistration
+from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -421,17 +421,8 @@ class TestCustomCharacteristicRegistration:
         """Test registering a simple custom characteristic."""
         translator = BluetoothSIGTranslator()
 
-        # Register the characteristic
-        translator.register_custom_characteristic_class(
-            str(SimpleTemperatureSensor._info.uuid),
-            SimpleTemperatureSensor,
-            metadata=CharacteristicRegistration(
-                uuid=SimpleTemperatureSensor._info.uuid,
-                name="Simple Temperature Sensor",
-                unit="°C",
-                value_type=ValueType.INT,
-            ),
-        )
+        # Register the characteristic using the new class-only API
+        translator.register_custom_characteristic_class(SimpleTemperatureSensor)
 
         # Parse data using the registered characteristic
         data = bytearray([0x14, 0x00])  # 20°C
@@ -447,10 +438,7 @@ class TestCustomCharacteristicRegistration:
         """Test registering multi-field characteristic."""
         translator = BluetoothSIGTranslator()
 
-        translator.register_custom_characteristic_class(
-            str(MultiSensorCharacteristic._info.uuid),
-            MultiSensorCharacteristic,
-        )
+        translator.register_custom_characteristic_class(MultiSensorCharacteristic)
 
         # Create test data
         data = bytearray(

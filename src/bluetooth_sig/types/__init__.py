@@ -43,10 +43,8 @@ from .class_of_device import ClassOfDeviceInfo
 from .context import CharacteristicContext, DeviceInfo
 from .data_types import (
     CharacteristicInfo,
-    CharacteristicRegistration,
     ParseFieldError,
     ServiceInfo,
-    ServiceRegistration,
     ValidationResult,
 )
 from .descriptor_types import DescriptorData, DescriptorInfo
@@ -102,7 +100,6 @@ __all__ = [
     "CharacteristicContext",
     "CharacteristicDataProtocol",
     "CharacteristicInfo",
-    "CharacteristicRegistration",
     "ClassOfDeviceInfo",
     "ConcentrationUnit",
     "ConnectionData",
@@ -130,7 +127,6 @@ __all__ = [
     "PressureUnit",
     "SecurityData",
     "ServiceInfo",
-    "ServiceRegistration",
     "SIGInfo",
     "SoundUnit",
     "TemperatureUnit",

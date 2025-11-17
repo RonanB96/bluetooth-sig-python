@@ -8,20 +8,20 @@ from graphlib import TopologicalSorter
 from typing import Any, cast
 
 from ..gatt.characteristics.base import BaseCharacteristic, CharacteristicData
+from ..gatt.characteristics.custom import CustomBaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
 from ..gatt.characteristics.unknown import UnknownCharacteristic
 from ..gatt.exceptions import MissingDependencyError
 from ..gatt.services import ServiceName
 from ..gatt.services.base import BaseGattService
+from ..gatt.services.custom import CustomBaseGattService
 from ..gatt.services.registry import GattServiceRegistry
 from ..gatt.uuid_registry import CustomUuidEntry, uuid_registry
 from ..types import (
     CharacteristicContext,
     CharacteristicDataProtocol,
     CharacteristicInfo,
-    CharacteristicRegistration,
     ServiceInfo,
-    ServiceRegistration,
     SIGInfo,
     ValidationResult,
 )
@@ -789,73 +789,81 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
     def register_custom_characteristic_class(
         self,
-        uuid_or_name: str,
-        cls: type[BaseCharacteristic],
-        metadata: CharacteristicRegistration | None = None,
+        characteristic_class: type[CustomBaseCharacteristic],
         override: bool = False,
     ) -> None:
         """Register a custom characteristic class at runtime.
 
         Args:
-            uuid_or_name: The characteristic UUID or name
-            cls: The characteristic class to register
-            metadata: Optional metadata dataclass with name, unit, value_type, summary
+            characteristic_class: The characteristic class to register
             override: Whether to override existing registrations
 
         Raises:
             TypeError: If cls does not inherit from BaseCharacteristic
-            ValueError: If UUID conflicts with existing registration and override=False
+            ValueError: If class has no valid _info with UUID
 
         """
-        # Register the class
-        CharacteristicRegistry.register_characteristic_class(uuid_or_name, cls, override)
-
-        # Register metadata if provided
-        if metadata:
-            # Convert ValueType enum to string for registry storage
-            vtype_str = metadata.value_type.value
-            entry = CustomUuidEntry(
-                uuid=metadata.uuid,
-                name=metadata.name or cls.__name__,
-                id=metadata.id,
-                summary=metadata.summary,
-                unit=metadata.unit,
-                value_type=vtype_str,
+        # Extract UUID from class._info
+        configured_info = characteristic_class.get_configured_info()
+        if not configured_info or not configured_info.uuid:
+            raise ValueError(
+                f"Cannot register {characteristic_class.__name__}: class has no valid _info with UUID. "
+                "Ensure the class has a _info class attribute with a valid CharacteristicInfo."
             )
-            uuid_registry.register_characteristic(entry, override)
+        uuid_str = str(configured_info.uuid)
+
+        # Register the class
+        CharacteristicRegistry.register_characteristic_class(uuid_str, characteristic_class, override)
+
+        # Register metadata in UUID registry
+        entry = CustomUuidEntry(
+            uuid=configured_info.uuid,
+            name=configured_info.name,
+            summary=configured_info.description or "",
+            unit=configured_info.unit,
+            value_type=(
+                configured_info.value_type.value
+                if isinstance(configured_info.value_type, ValueType)
+                else str(configured_info.value_type)
+            ),
+        )
+        uuid_registry.register_characteristic(entry, override)
 
     def register_custom_service_class(
         self,
-        uuid_or_name: str,
-        cls: type[BaseGattService],
-        metadata: ServiceRegistration | None = None,
+        service_class: type[CustomBaseGattService],
         override: bool = False,
     ) -> None:
         """Register a custom service class at runtime.
 
         Args:
-            uuid_or_name: The service UUID or name
-            cls: The service class to register
-            metadata: Optional metadata dataclass with name, summary
+            service_class: The service class to register
             override: Whether to override existing registrations
 
         Raises:
-            TypeError: If cls does not inherit from BaseGattService
-            ValueError: If UUID conflicts with existing registration and override=False
+            TypeError: If cls does not inherit from CustomGattService
+            ValueError: If class has no valid _info with UUID
 
         """
-        # Register the class
-        GattServiceRegistry.register_service_class(uuid_or_name, cls, override)
-
-        # Register metadata if provided
-        if metadata:
-            entry = CustomUuidEntry(
-                uuid=metadata.uuid,
-                name=metadata.name or cls.__name__,
-                id=metadata.id,
-                summary=metadata.summary,
+        # Extract UUID from class._info
+        configured_info = service_class.get_configured_info()
+        if not configured_info or not configured_info.uuid:
+            raise ValueError(
+                f"Cannot register {service_class.__name__}: class has no valid _info with UUID. "
+                "Ensure the class has a _info class attribute with a valid ServiceInfo."
             )
-            uuid_registry.register_service(entry, override)
+        uuid_str = str(configured_info.uuid)
+
+        # Register the class
+        GattServiceRegistry.register_service_class(uuid_str, service_class, override)
+
+        # Register metadata in UUID registry
+        entry = CustomUuidEntry(
+            uuid=configured_info.uuid,
+            name=configured_info.name,
+            summary=configured_info.description or "",
+        )
+        uuid_registry.register_service(entry, override)
 
     # Async methods for non-blocking operation in async contexts
 

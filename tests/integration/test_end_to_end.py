@@ -206,22 +206,18 @@ class TestMultiCharacteristicDependencies:
 
         # Register custom characteristics (with override=True for test re-runs)
         translator.register_custom_characteristic_class(
-            CALIBRATION_UUID,
             CalibrationCharacteristic,
             override=True,
         )
         translator.register_custom_characteristic_class(
-            SENSOR_READING_UUID,
             SensorReadingCharacteristic,
             override=True,
         )
         translator.register_custom_characteristic_class(
-            SEQUENCE_NUMBER_UUID,
             SequenceNumberCharacteristic,
             override=True,
         )
         translator.register_custom_characteristic_class(
-            SEQUENCED_DATA_UUID,
             SequencedDataCharacteristic,
             override=True,
         )
@@ -491,8 +487,8 @@ class TestMultiCharacteristicDependencies:
         CharA._required_dependencies = [CharB]
 
         # Register characteristics
-        translator.register_custom_characteristic_class(str(CharA._info.uuid), CharA)
-        translator.register_custom_characteristic_class(str(CharB._info.uuid), CharB)
+        translator.register_custom_characteristic_class(CharA)
+        translator.register_custom_characteristic_class(CharB)
 
         # Try to parse with circular dependencies
         # Topological sort will fail, fallback to original order
@@ -520,12 +516,10 @@ class TestMultiCharacteristicExamples:
 
         # Register custom characteristics
         translator.register_custom_characteristic_class(
-            str(CalibrationCharacteristic._info.uuid),
             CalibrationCharacteristic,
             override=True,
         )
         translator.register_custom_characteristic_class(
-            str(SensorReadingCharacteristic._info.uuid),
             SensorReadingCharacteristic,
             override=True,
         )
@@ -534,15 +528,15 @@ class TestMultiCharacteristicExamples:
 
         # Prepare characteristic data
         char_data = {
-            str(CalibrationCharacteristic._info.uuid): struct.pack("<f", 2.5),
-            str(SensorReadingCharacteristic._info.uuid): (100).to_bytes(2, byteorder="little", signed=True),
+            str(CalibrationCharacteristic.get_class_uuid()): struct.pack("<f", 2.5),
+            str(SensorReadingCharacteristic.get_class_uuid()): (100).to_bytes(2, byteorder="little", signed=True),
         }
 
         # Parse all characteristics (dependencies handled automatically)
         results = translator.parse_characteristics(char_data)
 
         # Access parsed results
-        sensor_result = results[str(SensorReadingCharacteristic._info.uuid)]
+        sensor_result = results[str(SensorReadingCharacteristic.get_class_uuid())]
         assert sensor_result.value == pytest.approx(250.0)  # 100 * 2.5
 
 
@@ -730,21 +724,11 @@ class TestRequiredOptionalDependencies:
                 )
 
         # Register all characteristics
-        translator.register_custom_characteristic_class(
-            str(MeasurementCharacteristic().info.uuid), MeasurementCharacteristic, override=True
-        )
-        translator.register_custom_characteristic_class(
-            str(ContextCharacteristic().info.uuid), ContextCharacteristic, override=True
-        )
-        translator.register_custom_characteristic_class(
-            str(EnrichmentCharacteristic().info.uuid), EnrichmentCharacteristic, override=True
-        )
-        translator.register_custom_characteristic_class(
-            str(DataCharacteristic().info.uuid), DataCharacteristic, override=True
-        )
-        translator.register_custom_characteristic_class(
-            str(MultiDependencyCharacteristic().info.uuid), MultiDependencyCharacteristic, override=True
-        )
+        translator.register_custom_characteristic_class(MeasurementCharacteristic, override=True)
+        translator.register_custom_characteristic_class(ContextCharacteristic, override=True)
+        translator.register_custom_characteristic_class(EnrichmentCharacteristic, override=True)
+        translator.register_custom_characteristic_class(DataCharacteristic, override=True)
+        translator.register_custom_characteristic_class(MultiDependencyCharacteristic, override=True)
 
         return translator
 

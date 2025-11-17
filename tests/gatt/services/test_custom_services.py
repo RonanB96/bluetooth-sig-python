@@ -25,7 +25,7 @@ from bluetooth_sig.gatt.services.base import BaseGattService
 from bluetooth_sig.gatt.services.custom import CustomBaseGattService
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 from bluetooth_sig.gatt.services.unknown import UnknownService
-from bluetooth_sig.types import CharacteristicInfo, ServiceInfo, ServiceRegistration
+from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -454,15 +454,7 @@ class TestServiceRegistration:
         translator = BluetoothSIGTranslator()
         service = CustomService()
 
-        translator.register_custom_service_class(
-            str(service.uuid),
-            CustomService,
-            metadata=ServiceRegistration(
-                uuid=service.uuid,
-                name="Custom",
-                summary="Custom service",
-            ),
-        )
+        translator.register_custom_service_class(CustomService)
 
         retrieved_cls = GattServiceRegistry.get_service_class(str(service.uuid))
         assert retrieved_cls == CustomService

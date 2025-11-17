@@ -15,22 +15,15 @@ class CustomBaseCharacteristic(BaseCharacteristic):
     defined in the Bluetooth SIG specification. It supports both manual info passing
     and automatic class-level _info binding via __init_subclass__.
 
-    Auto-Registration:
+    Registration:
         Custom characteristics automatically register themselves with the global
-        BluetoothSIGTranslator singleton when first instantiated. No manual
-        registration needed!
+        BluetoothSIGTranslator singleton when first instantiated.
 
     Examples:
         >>> from bluetooth_sig.types.data_types import CharacteristicInfo
         >>> from bluetooth_sig.types.uuid import BluetoothUUID
         >>> class MyCharacteristic(CustomBaseCharacteristic):
         ...     _info = CharacteristicInfo(uuid=BluetoothUUID("AAAA"), name="My Char")
-        >>> # Auto-registers with singleton on first instantiation
-        >>> char = MyCharacteristic()  # Auto-registered!
-        >>> # Now accessible via the global translator
-        >>> from bluetooth_sig import BluetoothSIGTranslator
-        >>> translator = BluetoothSIGTranslator.get_instance()
-        >>> result = translator.parse_characteristic("AAAA", b"\x42")
     """
 
     _is_custom = True
@@ -87,13 +80,11 @@ class CustomBaseCharacteristic(BaseCharacteristic):
     def __init__(
         self,
         info: CharacteristicInfo | None = None,
-        auto_register: bool = True,
     ) -> None:
         """Initialize a custom characteristic with automatic _info resolution and registration.
 
         Args:
             info: Optional override for class-configured _info
-            auto_register: If True (default), automatically register with global translator singleton
 
         Raises:
             ValueError: If no valid info available from class or parameter
@@ -113,29 +104,6 @@ class CustomBaseCharacteristic(BaseCharacteristic):
 
         if not final_info.uuid or str(final_info.uuid) == "0000":
             raise ValueError("Valid UUID is required for custom characteristics")
-
-        # Auto-register if requested and not already registered
-        if auto_register:
-            # TODO
-            # NOTE: Import here to avoid circular import (translator imports characteristics)
-            from ...core.translator import BluetoothSIGTranslator  # pylint: disable=import-outside-toplevel
-
-            # Get the singleton translator instance
-            translator = BluetoothSIGTranslator.get_instance()
-
-            # Track registration to avoid duplicate registrations
-            uuid_str = str(final_info.uuid)
-            registry_key = f"{id(translator)}:{uuid_str}"
-
-            if registry_key not in CustomBaseCharacteristic._registry_tracker:
-                # Register this characteristic class with the translator
-                # Use override=True to allow re-registration (idempotent behavior)
-                translator.register_custom_characteristic_class(
-                    uuid_str,
-                    self.__class__,
-                    override=True,  # Allow override for idempotent registration
-                )
-                CustomBaseCharacteristic._registry_tracker.add(registry_key)
 
         # Call parent constructor with our info to maintain consistency
         super().__init__(info=final_info)

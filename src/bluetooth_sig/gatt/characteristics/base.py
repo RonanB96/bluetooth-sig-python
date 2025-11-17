@@ -616,8 +616,36 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return cls._resolve_class_uuid()
 
     @classmethod
+    def get_name(cls) -> str:
+        """Get the characteristic name for this class without creating an instance.
+
+        Returns:
+            The characteristic name as registered in the UUID registry.
+
+        """
+        # Try configured info first (for custom characteristics)
+        configured_info = cls.get_configured_info()
+        if configured_info:
+            return configured_info.name
+
+        # For SIG characteristics, resolve from registry
+        uuid = cls.get_class_uuid()
+        if uuid:
+            char_info = uuid_registry.get_characteristic_info(uuid)
+            if char_info:
+                return char_info.name
+
+        # Fallback to class name
+        return cls.__name__
+
+    @classmethod
     def _resolve_class_uuid(cls) -> BluetoothUUID | None:
         """Resolve the characteristic UUID for this class without creating an instance."""
+        # Try configured info first (for custom characteristics)
+        configured_info = cls.get_configured_info()
+        if configured_info:
+            return configured_info.uuid
+
         # Try cross-file resolution first
         yaml_spec = cls._resolve_yaml_spec_class()
         if yaml_spec:
