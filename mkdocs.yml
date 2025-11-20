@@ -71,7 +71,11 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - admonition
@@ -129,7 +133,12 @@ nav:
     - Why Use This Library: why-use.md
     - What Problems It Solves: what-it-solves.md
     - What It Does NOT Solve: what-it-does-not-solve.md
-    - Architecture Overview: architecture/index.md
+    - Architecture:
+      - Overview: architecture/overview.md
+      - Design Decisions: architecture/decisions.md
+      - Deep Dive:
+        - Internal Architecture: architecture/deep-dive/internals.md
+        - Registry System: architecture/deep-dive/registry-system.md
   - Community:
     - Code of Conduct: code-of-conduct.md
     - GitHub README: github-readme.md
@@ -138,6 +147,9 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/RonanB96/bluetooth-sig-python
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
 
 copyright: Copyright &copy; 2025 RonanB96
 

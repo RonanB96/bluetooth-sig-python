@@ -18,12 +18,22 @@ logger = logging.getLogger(__name__)
 class BaseDescriptor(ABC):
     """Base class for all GATT descriptors.
 
-    Automatically resolves UUID and name from Bluetooth SIG specifications.
+    Automatically resolves UUID and name from Bluetooth SIG registry.
     Provides parsing capabilities for descriptor values.
+
+    Attributes:
+        _descriptor_name: Optional explicit descriptor name for registry lookup.
+        _writable: Whether this descriptor type supports write operations.
+            Override to True in writable descriptor subclasses (CCCD, SCCD).
+
+    Note:
+        Most descriptors are read-only per Bluetooth SIG specification.
+        Some like CCCD (0x2902) and SCCD (0x2903) support writes.
     """
 
     # Class attributes for explicit overrides
     _descriptor_name: str | None = None
+    _writable: bool = False  # Override to True in writable descriptor subclasses
     _info: DescriptorInfo  # Populated in __post_init__
 
     def __init__(self) -> None:
@@ -105,6 +115,18 @@ class BaseDescriptor(ABC):
                 parse_success=False,
                 error_message=str(e),
             )
+
+    def is_writable(self) -> bool:
+        """Check if descriptor type supports write operations.
+
+        Returns:
+            True if descriptor type supports writes, False otherwise.
+
+        Note:
+            Only checks descriptor type, not runtime permissions or security.
+            Example writable descriptors (CCCD, SCCD) override `_writable = True`.
+        """
+        return self._writable
 
     @abstractmethod
     def _parse_descriptor_value(self, data: bytes) -> Any:  # noqa: ANN401  # Descriptors can return various types

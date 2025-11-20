@@ -32,6 +32,7 @@ class CCCDDescriptor(BaseDescriptor):
     """
 
     _descriptor_name = "Client Characteristic Configuration"
+    _writable = True  # CCCD is always writable
 
     def _has_structured_data(self) -> bool:
         return True

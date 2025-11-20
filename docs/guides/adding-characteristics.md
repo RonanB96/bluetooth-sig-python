@@ -228,6 +228,6 @@ See [Contributing Guide](../contributing.md) for details.
 
 ## See Also
 
-- [Architecture](../architecture/index.md) - Understand the design
+- [Architecture](../architecture/overview.md) - Understand the design
 - [Testing Guide](../testing.md) - Testing best practices
 - [API Reference](../api/gatt.md) - GATT layer details

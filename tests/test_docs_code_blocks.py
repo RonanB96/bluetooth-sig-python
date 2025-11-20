@@ -256,7 +256,6 @@ def create_mock_ble_context() -> dict[str, Any]:
         from bleak.exc import BleakError  # type: ignore
     except Exception:  # pragma: no cover - optional dependency
         BleakError = Exception  # type: ignore
-
     # Create a singleton translator so doc code can use translator without explicit creation
     try:
         from bluetooth_sig import BluetoothSIGTranslator
@@ -333,7 +332,7 @@ def collect_code_blocks() -> list[tuple[Path, int, str]]:
     Returns:
         List of tuples: (file_path, block_number, code)
     """
-    code_blocks = []
+    code_blocks: list[tuple[Path, int, str]] = []
 
     for doc_file in DOC_FILES:
         if not doc_file.exists():
