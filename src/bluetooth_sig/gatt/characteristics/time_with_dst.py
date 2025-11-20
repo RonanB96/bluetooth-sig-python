@@ -1,10 +1,10 @@
-"""Current Time characteristic (0x2A2B) implementation.
+"""Time with DST characteristic (0x2A11) implementation.
 
-Represents exact time with date, time, fractions, and adjustment reasons.
-Used by Current Time Service (0x1805).
+Represents the date and time of the next Daylight Saving Time change.
+Used by Next DST Change Service (0x1807).
 
 Based on Bluetooth SIG GATT Specification:
-- Current Time: 10 bytes (Date Time + Day of Week + Fractions256 + Adjust Reason)
+- Time with DST: 10 bytes (same structure as Current Time)
 - Date Time: Year (uint16) + Month + Day + Hours + Minutes + Seconds (7 bytes)
 - Day of Week: uint8 (1=Monday to 7=Sunday, 0=Unknown)
 - Fractions256: uint8 (0-255, representing 1/256 fractions of a second)
@@ -17,11 +17,10 @@ from .base import BaseCharacteristic
 from .templates import TimeDataTemplate
 
 
-class CurrentTimeCharacteristic(BaseCharacteristic):
-    """Current Time characteristic (0x2A2B).
+class TimeWithDstCharacteristic(BaseCharacteristic):
+    """Time with DST characteristic (0x2A11).
 
-    Represents exact time with date, time, fractions, and adjustment reasons.
-    Used by Current Time Service (0x1805).
+    Represents the date and time when the next Daylight Saving Time change occurs.
 
     Structure (10 bytes):
     - Year: uint16 (1582-9999, 0=unknown)
@@ -36,6 +35,6 @@ class CurrentTimeCharacteristic(BaseCharacteristic):
     """
 
     def __init__(self) -> None:
-        """Initialize the Current Time characteristic."""
+        """Initialize the Time with DST characteristic."""
         super().__init__()
         self._template = TimeDataTemplate()

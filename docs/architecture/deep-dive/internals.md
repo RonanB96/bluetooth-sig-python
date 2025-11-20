@@ -245,6 +245,9 @@ sequenceDiagram
 Instead of manual validation in `decode_value()`, characteristics declare constraints as class attributes:
 
 ```python
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.exceptions import InsufficientDataError, ValueRangeError
+
 # Before: Manual validation (verbose, error-prone)
 class BatteryLevelCharacteristic(BaseCharacteristic):
     def decode_value(self, data: bytearray) -> int:
@@ -273,6 +276,8 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
 Templates are reusable parsing strategies that can be composed into characteristics via the `_template` attribute:
 
 ```python
+from abc import ABC, abstractmethod
+
 class CodingTemplate(ABC):
     """Abstract base for reusable parsing strategies."""
 
@@ -301,6 +306,9 @@ class CodingTemplate(ABC):
 **Usage Example**:
 
 ```python
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.templates import Uint16Template
+
 # Simple characteristic using template composition
 class ApparentWindSpeedCharacteristic(BaseCharacteristic):
     _template = Uint16Template()  # Reuse template, no decode_value() needed
@@ -310,6 +318,11 @@ class ApparentWindSpeedCharacteristic(BaseCharacteristic):
 ### CharacteristicData: Parse Result Container
 
 ```python
+import msgspec
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.types import ParseFieldError
+from bluetooth_sig.types.uuid import BluetoothUUID
+
 class CharacteristicData(msgspec.Struct, kw_only=True):
     """Parse result with back-reference to characteristic."""
 
@@ -318,7 +331,7 @@ class CharacteristicData(msgspec.Struct, kw_only=True):
     raw_data: bytes = b""              # Original bytes
     parse_success: bool = False        # Success flag
     error_message: str = ""            # Error description
-    field_errors: list[FieldError] = []  # Field-level errors
+    field_errors: list[ParseFieldError] = []  # Field-level errors
     parse_trace: list[str] = []        # Debug trace steps
 
     # Convenience properties (proxy to characteristic)
@@ -348,6 +361,11 @@ The `CharacteristicRegistry` provides:
 ### Data Structures
 
 ```python
+import threading
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
+from bluetooth_sig.gatt.uuid_registry import UuidInfo
+
 # Core registry mapping
 CHARACTERISTIC_CLASS_MAP: dict[CharacteristicName, type[BaseCharacteristic]] = {}
 
@@ -386,6 +404,8 @@ class CharacteristicRegistry:
 ### Lookup Methods
 
 ```python
+from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry, CharacteristicName
+
 # Create characteristic instance from UUID
 char = CharacteristicRegistry.create_characteristic("2A19")
 
@@ -440,14 +460,30 @@ bluetooth_sig/assigned_numbers/
 ### CharacteristicSpec Structure
 
 ```python
+import msgspec
+from bluetooth_sig.types.uuid import BluetoothUUID
+from bluetooth_sig.gatt.uuid_registry import FieldInfo, UnitInfo
+
 class CharacteristicSpec(msgspec.Struct, kw_only=True):
     """Characteristic specification from cross-file YAML references."""
 
     uuid: BluetoothUUID
     name: str
-    field_info: FieldInfo  # data_type, field_size
-    unit_info: UnitInfo    # unit_symbol, base_unit, resolution
+    field_info: FieldInfo    # data_type, field_size
+    unit_info: UnitInfo      # unit_symbol, base_unit, resolution
     description: str | None = None
+
+class FieldInfo(msgspec.Struct, frozen=True, kw_only=True):
+    """Field-related metadata from YAML."""
+    data_type: str | None = None
+    field_size: str | None = None
+
+class UnitInfo(msgspec.Struct, frozen=True, kw_only=True):
+    """Unit-related metadata from YAML."""
+    unit_id: str | None = None
+    unit_symbol: str | None = None
+    base_unit: str | None = None
+    resolution_text: str | None = None
 ```
 
 ### Lazy Loading with Caching
@@ -636,6 +672,8 @@ The library supports 4 progressive levels of sophistication:
 **Minimum implementation** - just implement `decode_value()`:
 
 ```python
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+
 class MinimalCharacteristic(BaseCharacteristic):
     def decode_value(self, data: bytearray) -> int:
         return data[0]
@@ -646,6 +684,8 @@ class MinimalCharacteristic(BaseCharacteristic):
 **Add validation attributes**:
 
 ```python
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+
 class ValidatedCharacteristic(BaseCharacteristic):
     expected_length = 2
     min_value = 0
@@ -661,6 +701,9 @@ class ValidatedCharacteristic(BaseCharacteristic):
 **Use reusable template**:
 
 ```python
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.templates import Uint16Template
+
 class TemplatedCharacteristic(BaseCharacteristic):
     _template = Uint16Template()
     # No decode_value() needed - template handles it
@@ -671,13 +714,18 @@ class TemplatedCharacteristic(BaseCharacteristic):
 **Multi-characteristic parsing**:
 
 ```python
+# SKIP: Conceptual example - ContextInfoCharacteristic would be a real characteristic class
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.context import CharacteristicContext
+
 class DependentCharacteristic(BaseCharacteristic):
     _required_dependencies = [ContextInfoCharacteristic]
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext) -> Result:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext) -> int:
         # Access dependency from context
         context_info = ctx.dependencies.get("context_info")
         # Use dependency to enrich parsing
+        return data[0] if context_info else 0
 ```
 
 ## Descriptor System
@@ -689,6 +737,13 @@ BLE descriptors provide runtime metadata about characteristics. The library inte
 ### Descriptor Types
 
 ```python
+from bluetooth_sig.gatt.descriptors import (
+    CCCDDescriptor,
+    CharacteristicPresentationFormatDescriptor,
+    ValidRangeDescriptor,
+    CharacteristicUserDescriptionDescriptor
+)
+
 # Client Characteristic Configuration Descriptor (CCCD)
 cccd = CCCDDescriptor()
 
@@ -699,7 +754,7 @@ format_desc = CharacteristicPresentationFormatDescriptor()
 range_desc = ValidRangeDescriptor()
 
 # User Description Descriptor
-description_desc = UserDescriptionDescriptor()
+description_desc = CharacteristicUserDescriptionDescriptor()
 ```
 
 ### Descriptor Access Pattern

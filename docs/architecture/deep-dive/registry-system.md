@@ -15,7 +15,7 @@ graph TB
         UR[UuidRegistry<br/>Singleton]
         BR[BaseRegistry<br/>Generic Base]
         RU[Registry Utils<br/>YAML Loading]
-        
+
         subgraph "Specialized Registries"
             SR[Service Registry]
             CR[Characteristic Registry]
@@ -23,7 +23,7 @@ graph TB
             AR[AdTypes Registry]
             CMR[Company Registry]
         end
-        
+
         subgraph "Data Sources"
             YF[YAML Files<br/>bluetooth_sig/]
             CHAR_YAML[characteristic_uuids.yaml]
@@ -31,23 +31,23 @@ graph TB
             DESC_YAML[descriptors.yaml]
         end
     end
-    
+
     UR -->|inherits| BR
     SR -->|inherits| BR
     CR -->|inherits| BR
     DR -->|inherits| BR
     AR -->|inherits| BR
     CMR -->|inherits| BR
-    
+
     UR -->|uses| RU
     SR -->|uses| RU
     CR -->|uses| RU
-    
+
     RU -->|loads| YF
     YF -.contains.- CHAR_YAML
     YF -.contains.- SVC_YAML
     YF -.contains.- DESC_YAML
-    
+
     style UR fill:#e1f5ff
     style BR fill:#fff3cd
     style YF fill:#d4edda
@@ -63,21 +63,21 @@ sequenceDiagram
     participant UuidReg as UuidRegistry
     participant YAML as YAML Files
     participant Cache as Cache Storage
-    
+
     User->>Trans: parse_characteristic("2A19", data)
     Trans->>CharReg: get_characteristic_class("2A19")
-    
+
     alt First Access (Cold Start)
         CharReg->>UuidReg: get_characteristic_info("2A19")
         UuidReg->>UuidReg: _ensure_loaded()
-        
+
         alt Not Loaded
             UuidReg->>YAML: load characteristic_uuids.yaml
             YAML-->>UuidReg: UUID entries
             UuidReg->>Cache: Store in _characteristics{}
             UuidReg->>Cache: Generate aliases
         end
-        
+
         UuidReg->>Cache: Lookup "2A19"
         Cache-->>UuidReg: UuidInfo(Battery Level)
         UuidReg-->>CharReg: UuidInfo
@@ -87,7 +87,7 @@ sequenceDiagram
         Cache-->>CharReg: BatteryLevelCharacteristic
         CharReg-->>Trans: BatteryLevelCharacteristic
     end
-    
+
     Trans->>Trans: char.parse_value(data)
     Trans-->>User: CharacteristicData(value=85)
 ```
@@ -159,6 +159,10 @@ def find_bluetooth_sig_path() -> Path | None:
 ### Data Structures
 
 ```python
+import threading
+from bluetooth_sig.registry.base import BaseRegistry
+from bluetooth_sig.gatt.uuid_registry import UuidInfo, UnitInfo
+
 class UuidRegistry(BaseRegistry):
     """Central UUID registry for all Bluetooth SIG UUIDs."""
 
@@ -185,6 +189,10 @@ class UuidRegistry(BaseRegistry):
 ### UuidInfo Structure
 
 ```python
+import msgspec
+from bluetooth_sig.types.uuid import BluetoothUUID
+from bluetooth_sig.gatt.uuid_registry import UuidOrigin
+
 class UuidInfo(msgspec.Struct, frozen=True, kw_only=True):
     """Information about a UUID."""
 
@@ -202,6 +210,10 @@ class UuidInfo(msgspec.Struct, frozen=True, kw_only=True):
 For characteristics, a richer `CharacteristicSpec` is available:
 
 ```python
+import msgspec
+from bluetooth_sig.types.uuid import BluetoothUUID
+from bluetooth_sig.gatt.uuid_registry import FieldInfo, UnitInfo
+
 class CharacteristicSpec(msgspec.Struct, kw_only=True):
     """Characteristic specification from cross-file YAML references."""
 
@@ -236,13 +248,13 @@ def _ensure_loaded(self) -> None:
     # First check: no lock (fast path)
     if self._loaded:
         return
-    
+
     # Acquire lock for initialization
     with self._lock:
         # Second check: after lock (prevent race condition)
         if self._loaded:
             return
-        
+
         # Perform actual loading
         self._load()
         self._loaded = True
@@ -256,28 +268,28 @@ stateDiagram-v2
     Uninitialized --> CheckingLoad : First Access
     CheckingLoad --> AcquiringLock : Not Loaded
     CheckingLoad --> Loaded : Already Loaded (Fast Path)
-    
+
     AcquiringLock --> DoubleCheck : Lock Acquired
     DoubleCheck --> Loading : Still Not Loaded
     DoubleCheck --> Loaded : Another Thread Loaded
-    
+
     Loading --> ParsingYAML : Read Files
     ParsingYAML --> BuildingIndex : Parse Entries
     BuildingIndex --> GeneratingAliases : Create Mappings
     GeneratingAliases --> Loaded : Set _loaded=True
-    
+
     Loaded --> [*]
-    
+
     note right of CheckingLoad
         Lock-free check
         O(1) constant time
     end note
-    
+
     note right of Loading
         Only happens once
         10-50ms typical
     end note
-    
+
     note right of Loaded
         All future accesses
         Skip directly here
@@ -401,54 +413,54 @@ flowchart TD
     EnsureLoad{Registry<br/>Loaded?}
     LoadData[Load YAML Files]
     CheckType{identifier<br/>type?}
-    
+
     IsUUID[BluetoothUUID]
     IsString[String]
-    
+
     TryParse{Parse as<br/>UUID?}
     ParseSuccess[Extract normalized UUID]
     ParseFail[Not a UUID]
-    
+
     UUIDLookup[Lookup in _characteristics]
     AliasLookup[Lookup in _characteristic_aliases]
-    
+
     GetCanonical[Get canonical key]
     FetchData[Fetch from _characteristics]
-    
+
     CheckCustom[Check _custom_characteristics]
-    
+
     ReturnInfo([Return UuidInfo])
     ReturnNone([Return None])
-    
+
     Start --> EnsureLoad
     EnsureLoad -->|No| LoadData
     LoadData --> CheckType
     EnsureLoad -->|Yes| CheckType
-    
+
     CheckType -->|BluetoothUUID| IsUUID
     CheckType -->|str| IsString
-    
+
     IsUUID --> ParseSuccess
     IsString --> TryParse
-    
+
     TryParse -->|Success| ParseSuccess
     TryParse -->|ValueError| ParseFail
-    
+
     ParseSuccess --> UUIDLookup
     ParseFail --> AliasLookup
-    
+
     UUIDLookup -->|Found| ReturnInfo
     UUIDLookup -->|Not Found| CheckCustom
-    
+
     AliasLookup -->|Found| GetCanonical
     AliasLookup -->|Not Found| ReturnNone
-    
+
     GetCanonical --> FetchData
     FetchData --> ReturnInfo
-    
+
     CheckCustom -->|Found| ReturnInfo
     CheckCustom -->|Not Found| ReturnNone
-    
+
     style Start fill:#e1f5ff
     style ReturnInfo fill:#d4edda
     style ReturnNone fill:#f8d7da
@@ -459,7 +471,7 @@ flowchart TD
 def get_characteristic_info(self, identifier: str | BluetoothUUID) -> UuidInfo | None:
     """Get characteristic info by UUID or name."""
     self._ensure_loaded()
-    
+
     # Try UUID lookup first
     if isinstance(identifier, BluetoothUUID):
         uuid_key = identifier.normalized
@@ -475,12 +487,12 @@ def get_characteristic_info(self, identifier: str | BluetoothUUID) -> UuidInfo |
             if canonical_key:
                 return self._characteristics.get(canonical_key)
             return None
-    
+
     # Check canonical storage
     info = self._characteristics.get(uuid_key)
     if info:
         return info
-    
+
     # Check custom registrations
     return self._custom_characteristics.get(uuid_key)
 ```## BaseRegistry Pattern
@@ -490,6 +502,11 @@ def get_characteristic_info(self, identifier: str | BluetoothUUID) -> UuidInfo |
 All specialized registries inherit from `BaseRegistry[T]`:
 
 ```python
+from typing import Generic, TypeVar, Callable, Any
+import threading
+
+T = TypeVar('T')
+
 class BaseRegistry(Generic[T]):
     """Base class for Bluetooth SIG registries with singleton pattern and thread safety."""
 
@@ -531,6 +548,7 @@ class BaseRegistry(Generic[T]):
 **Thread-Safe Singleton Creation**:
 
 ```python
+# SKIP: Conceptual example showing thread safety - not executable
 # Multiple threads calling get_instance() simultaneously
 thread1: registry = AdTypesRegistry.get_instance()
 thread2: registry = AdTypesRegistry.get_instance()
@@ -540,6 +558,7 @@ thread2: registry = AdTypesRegistry.get_instance()
 **Lazy Loading Guarantees**:
 
 ```python
+# SKIP: Conceptual example showing lazy loading - not executable
 # Multiple threads accessing data simultaneously
 thread1: data = registry.get_ad_type("0x01")
 thread2: data = registry.get_ad_type("0x09")
@@ -553,17 +572,23 @@ thread2: data = registry.get_ad_type("0x09")
 **Location**: `src/bluetooth_sig/registry/core/`
 
 ```python
+from bluetooth_sig.registry.core.ad_types import ADTypesRegistry
+from bluetooth_sig.registry.core.appearance_values import AppearanceValuesRegistry
+from bluetooth_sig.registry.core.class_of_device import ClassOfDeviceRegistry
+
 # Advertising Data Types
-ad_types_registry = AdTypesRegistry.get_instance()
-ad_type_info = ad_types_registry.get_ad_type("0x01")  # Flags
+ad_types_registry = ADTypesRegistry.get_instance()
+ad_type_info = ad_types_registry.get_ad_type_info(0x01)  # Flags
 
 # Appearance Values
 appearance_registry = AppearanceValuesRegistry.get_instance()
-appearance_info = appearance_registry.get_appearance(832)  # Heart Rate Sensor
+heart_rate_sensor_appearance = 832  # Simulated appearance value for Heart Rate Sensor
+appearance_info = appearance_registry.get_appearance_info(heart_rate_sensor_appearance)
 
 # Class of Device
 cod_registry = ClassOfDeviceRegistry.get_instance()
-cod_info = cod_registry.get_class_of_device("0x080204")  # Audio/Video
+audio_video_cod = 0x080204  # Simulated class of device value for Audio/Video
+cod_info = cod_registry.decode_class_of_device(audio_video_cod)
 ```
 
 ### Company Identifiers
@@ -571,8 +596,10 @@ cod_info = cod_registry.get_class_of_device("0x080204")  # Audio/Video
 **Location**: `src/bluetooth_sig/registry/company_identifiers/`
 
 ```python
+from bluetooth_sig.registry.company_identifiers import CompanyIdentifiersRegistry
+
 company_registry = CompanyIdentifiersRegistry.get_instance()
-company_info = company_registry.get_company(0x004C)  # Apple Inc.
+company_name = company_registry.get_company_name(0x004C)  # Apple Inc.
 ```
 
 ### UUID Registries
@@ -668,6 +695,7 @@ def reload(self) -> None:
 ### Runtime Registration
 
 ```python
+# SKIP: API demonstration - requires proper BaseCharacteristic/BaseGattService subclasses
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator.get_instance()
@@ -796,6 +824,7 @@ def get_characteristic_info(self, identifier: str) -> UuidInfo | None:
 **Caller Responsibility**:
 
 ```python
+# SKIP: Conceptual example showing error handling - not executable
 info = uuid_registry.get_characteristic_info("2A19")
 if info is None:
     # Handle unknown UUID
@@ -863,8 +892,7 @@ else:
 ```python
 from bluetooth_sig.gatt.uuid_registry import uuid_registry
 
-# Force load
-uuid_registry._ensure_loaded()
+# Registry is loaded automatically in __init__, no need to call _ensure_loaded()
 
 # Check counts
 print(f"Services: {len(uuid_registry._services)}")
