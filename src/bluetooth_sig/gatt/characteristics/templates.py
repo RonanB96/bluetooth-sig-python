@@ -12,10 +12,12 @@ and custom characteristics through composition.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any
 
 import msgspec
 
+from ...types.gatt_enums import AdjustReason, DayOfWeek
 from ..constants import (
     PERCENTAGE_MAX,
     SINT8_MAX,
@@ -30,6 +32,7 @@ from ..constants import (
     UINT32_MAX,
 )
 from ..context import CharacteristicContext
+from ..exceptions import InsufficientDataError, ValueRangeError
 from .utils import DataParser, IEEE11073Parser
 
 # =============================================================================
@@ -95,6 +98,15 @@ class Vector2DData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disabl
 
     x_axis: float
     y_axis: float
+
+
+class TimeData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
+    """Time characteristic data structure."""
+
+    date_time: datetime | None
+    day_of_week: DayOfWeek
+    fractions256: int
+    adjust_reason: AdjustReason
 
 
 # =============================================================================
@@ -656,6 +668,83 @@ class PressureTemplate(CodingTemplate):
         return self._scaled_template.encode_value(value)
 
 
+class TimeDataTemplate(CodingTemplate):
+    """Template for Bluetooth SIG time data parsing (10 bytes).
+
+    Used for Current Time and Time with DST characteristics.
+    Structure: Date Time (7 bytes) + Day of Week (1) + Fractions256 (1) + Adjust Reason (1)
+    """
+
+    LENGTH = 10
+    DAY_OF_WEEK_MAX = 7
+    FRACTIONS256_MAX = 255
+    ADJUST_REASON_MAX = 255
+
+    @property
+    def data_size(self) -> int:
+        """Size: 10 bytes."""
+        return self.LENGTH
+
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> TimeData:
+        """Parse time data from bytes."""
+        if len(data) < offset + self.LENGTH:
+            raise InsufficientDataError("time data", data[offset:], self.LENGTH)
+
+        # Parse Date Time (7 bytes)
+        year = DataParser.parse_int16(data, offset, signed=False)
+        month = data[offset + 2]
+        day = data[offset + 3]
+
+        if year == 0 or month == 0 or day == 0:
+            date_time = None
+        else:
+            date_time = IEEE11073Parser.parse_timestamp(data, offset)
+
+        # Parse Day of Week (1 byte)
+        day_of_week_raw = data[offset + 7]
+        if day_of_week_raw > self.DAY_OF_WEEK_MAX:
+            raise ValueRangeError("day_of_week", day_of_week_raw, 0, self.DAY_OF_WEEK_MAX)
+        day_of_week = DayOfWeek(day_of_week_raw)
+
+        # Parse Fractions256 (1 byte)
+        fractions256 = data[offset + 8]
+
+        # Parse Adjust Reason (1 byte)
+        adjust_reason = AdjustReason.from_raw(data[offset + 9])
+
+        return TimeData(
+            date_time=date_time, day_of_week=day_of_week, fractions256=fractions256, adjust_reason=adjust_reason
+        )
+
+    def encode_value(self, value: TimeData) -> bytearray:
+        """Encode time data to bytes."""
+        result = bytearray()
+
+        # Encode Date Time (7 bytes)
+        if value.date_time is None:
+            result.extend(bytearray(IEEE11073Parser.TIMESTAMP_LENGTH))
+        else:
+            result.extend(IEEE11073Parser.encode_timestamp(value.date_time))
+
+        # Encode Day of Week (1 byte)
+        day_of_week_value = int(value.day_of_week)
+        if day_of_week_value > self.DAY_OF_WEEK_MAX:
+            raise ValueRangeError("day_of_week", day_of_week_value, 0, self.DAY_OF_WEEK_MAX)
+        result.append(day_of_week_value)
+
+        # Encode Fractions256 (1 byte)
+        if value.fractions256 > self.FRACTIONS256_MAX:
+            raise ValueRangeError("fractions256", value.fractions256, 0, self.FRACTIONS256_MAX)
+        result.append(value.fractions256)
+
+        # Encode Adjust Reason (1 byte)
+        if int(value.adjust_reason) > self.ADJUST_REASON_MAX:
+            raise ValueRangeError("adjust_reason", int(value.adjust_reason), 0, self.ADJUST_REASON_MAX)
+        result.append(int(value.adjust_reason))
+
+        return result
+
+
 class IEEE11073FloatTemplate(CodingTemplate):
     """Template for IEEE 11073 SFLOAT format (16-bit medical device float)."""
 
@@ -811,6 +900,7 @@ __all__ = [
     # Data structures
     "VectorData",
     "Vector2DData",
+    "TimeData",
     # Basic integer templates
     "Uint8Template",
     "Sint8Template",
@@ -829,6 +919,7 @@ __all__ = [
     "TemperatureTemplate",
     "ConcentrationTemplate",
     "PressureTemplate",
+    "TimeDataTemplate",
     "IEEE11073FloatTemplate",
     "Float32Template",
     # String templates

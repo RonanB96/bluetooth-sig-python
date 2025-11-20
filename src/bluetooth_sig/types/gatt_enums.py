@@ -7,7 +7,10 @@ alternatives.
 
 from __future__ import annotations
 
-from enum import Enum, IntEnum
+import logging
+from enum import Enum, IntEnum, IntFlag
+
+logger = logging.getLogger(__name__)
 
 
 class DayOfWeek(IntEnum):
@@ -27,7 +30,7 @@ class DayOfWeek(IntEnum):
     SUNDAY = 7
 
 
-class AdjustReason(IntEnum):
+class AdjustReason(IntFlag):
     """Time adjustment reason flags.
 
     Used by Current Time Service to indicate why time was adjusted.
@@ -38,6 +41,16 @@ class AdjustReason(IntEnum):
     EXTERNAL_REFERENCE_TIME_UPDATE = 1 << 1  # Bit 1
     CHANGE_OF_TIME_ZONE = 1 << 2  # Bit 2
     CHANGE_OF_DST = 1 << 3  # Bit 3
+    # Bits 4-7: Reserved for future use
+
+    @classmethod
+    def from_raw(cls, value: int) -> AdjustReason:
+        """Create AdjustReason from raw byte value, masking reserved bits."""
+        if value & 0xF0:
+            logger.warning("AdjustReason: Reserved bits set in raw value %d, masking to valid bits only", value)
+        # Only bits 0-3 are defined, mask out bits 4-7 for forward compatibility
+        masked_value = value & 0x0F
+        return cls(masked_value)
 
 
 class GattProperty(Enum):
@@ -288,6 +301,7 @@ class CharacteristicName(Enum):
     NOISE = "Noise"
     # Pulse oximetry
     PLX_CONTINUOUS_MEASUREMENT = "PLX Continuous Measurement"
+    PLX_SPOT_CHECK_MEASUREMENT = "PLX Spot-Check Measurement"
     PLX_FEATURES = "PLX Features"
     LOCATION_AND_SPEED = "Location and Speed"
     NAVIGATION = "Navigation"
@@ -308,8 +322,39 @@ class CharacteristicName(Enum):
     # Time characteristics
     CURRENT_TIME = "Current Time"
     REFERENCE_TIME_INFORMATION = "Reference Time Information"
+    TIME_WITH_DST = "Time with DST"
+    TIME_UPDATE_CONTROL_POINT = "Time Update Control Point"
+    TIME_UPDATE_STATE = "Time Update State"
     # Power level
     TX_POWER_LEVEL = "Tx Power Level"
+    SCAN_INTERVAL_WINDOW = "Scan Interval Window"
+    BOND_MANAGEMENT_FEATURE = "Bond Management Feature"
+    BOND_MANAGEMENT_CONTROL_POINT = "Bond Management Control Point"
+    # Indoor positioning characteristics
+    INDOOR_POSITIONING_CONFIGURATION = "Indoor Positioning Configuration"
+    LATITUDE = "Latitude"
+    LONGITUDE = "Longitude"
+    FLOOR_NUMBER = "Floor Number"
+    LOCATION_NAME = "Location Name"
+    HID_INFORMATION = "HID Information"
+    REPORT_MAP = "Report Map"
+    HID_CONTROL_POINT = "HID Control Point"
+    REPORT = "Report"
+    PROTOCOL_MODE = "Protocol Mode"
+    FITNESS_MACHINE_FEATURE = "Fitness Machine Feature"
+    TREADMILL_DATA = "Treadmill Data"
+    CROSS_TRAINER_DATA = "Cross Trainer Data"
+    STEP_CLIMBER_DATA = "Step Climber Data"
+    STAIR_CLIMBER_DATA = "Stair Climber Data"
+    ROWER_DATA = "Rower Data"
+    INDOOR_BIKE_DATA = "Indoor Bike Data"
+    TRAINING_STATUS = "Training Status"
+    SUPPORTED_SPEED_RANGE = "Supported Speed Range"
+    SUPPORTED_INCLINATION_RANGE = "Supported Inclination Range"
+    SUPPORTED_RESISTANCE_LEVEL_RANGE = "Supported Resistance Level Range"
+    SUPPORTED_HEART_RATE_RANGE = "Supported Heart Rate Range"
+    FITNESS_MACHINE_CONTROL_POINT = "Fitness Machine Control Point"
+    FITNESS_MACHINE_STATUS = "Fitness Machine Status"
 
 
 class ServiceName(Enum):
@@ -317,6 +362,10 @@ class ServiceName(Enum):
 
     GAP = "GAP"
     GATT = "GATT"
+    IMMEDIATE_ALERT = "Immediate Alert"
+    LINK_LOSS = "Link Loss"
+    TX_POWER = "Tx Power"
+    NEXT_DST_CHANGE = "Next DST Change"
     DEVICE_INFORMATION = "Device Information"
     BATTERY = "Battery"
     HEART_RATE = "Heart Rate"
@@ -328,7 +377,16 @@ class ServiceName(Enum):
     RUNNING_SPEED_AND_CADENCE = "Running Speed and Cadence"
     AUTOMATION_IO = "Automation IO"
     ENVIRONMENTAL_SENSING = "Environmental Sensing"
+    ALERT_NOTIFICATION = "Alert Notification"
     BODY_COMPOSITION = "Body Composition"
     WEIGHT_SCALE = "Weight Scale"
     LOCATION_AND_NAVIGATION = "Location and Navigation"
     PHONE_ALERT_STATUS = "Phone Alert Status"
+    REFERENCE_TIME_UPDATE = "Reference Time Update"
+    CURRENT_TIME = "Current Time"
+    SCAN_PARAMETERS = "Scan Parameters"
+    BOND_MANAGEMENT = "Bond Management"
+    INDOOR_POSITIONING = "Indoor Positioning"
+    HUMAN_INTERFACE_DEVICE = "Human Interface Device"
+    PULSE_OXIMETER = "Pulse Oximeter"
+    FITNESS_MACHINE = "Fitness Machine"

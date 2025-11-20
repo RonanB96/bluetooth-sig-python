@@ -8,8 +8,8 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.current_time import (
     CurrentTimeCharacteristic,
-    CurrentTimeData,
 )
+from bluetooth_sig.gatt.characteristics.templates import TimeData
 from bluetooth_sig.types.gatt_enums import AdjustReason, DayOfWeek
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -49,7 +49,7 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
                 0x01,  # Adjust Reason: Manual time update
             ]
         )
-        expected = CurrentTimeData(
+        expected = TimeData(
             date_time=datetime(2025, 1, 15, 14, 30, 45),
             day_of_week=DayOfWeek.WEDNESDAY,
             fractions256=33,
@@ -58,16 +58,16 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
 
         # Midnight on Monday with no adjustments
         data_midnight = bytearray([0xE9, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00])
-        expected_midnight = CurrentTimeData(
+        expected_midnight = TimeData(
             date_time=datetime(2025, 1, 1, 0, 0, 0),
             day_of_week=DayOfWeek.MONDAY,
             fractions256=0,
-            adjust_reason=0,
+            adjust_reason=AdjustReason.from_raw(0),
         )
 
         # End of day with multiple adjust reasons (external ref + timezone change)
         data_eod = bytearray([0xE9, 0x07, 0x0C, 0x1F, 0x17, 0x3B, 0x3B, 0x07, 0xFF, 0x06])
-        expected_eod = CurrentTimeData(
+        expected_eod = TimeData(
             date_time=datetime(2025, 12, 31, 23, 59, 59),
             day_of_week=DayOfWeek.SUNDAY,
             fractions256=255,
@@ -173,7 +173,7 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
         data = bytearray([0xE9, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00])  # Day of Week: 8
         result = characteristic.parse_value(data)
         assert not result.parse_success
-        assert "day of week" in result.error_message.lower()
+        assert "day_of_week" in result.error_message.lower()
 
     @pytest.mark.parametrize(
         "day_of_week,expected_enum",
@@ -213,7 +213,7 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
 
     def test_current_time_roundtrip(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that encode/decode are inverse operations."""
-        original = CurrentTimeData(
+        original = TimeData(
             date_time=datetime(2025, 11, 1, 14, 30, 45),
             day_of_week=DayOfWeek.SATURDAY,
             fractions256=128,
