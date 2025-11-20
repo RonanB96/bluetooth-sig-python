@@ -27,6 +27,8 @@ from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic
 from .body_composition_measurement import BodyCompositionMeasurementCharacteristic
 from .body_sensor_location import BodySensorLocation, BodySensorLocationCharacteristic
+from .bond_management_control_point import BondManagementControlPointCharacteristic
+from .bond_management_feature import BondManagementFeatureCharacteristic
 from .co2_concentration import CO2ConcentrationCharacteristic
 from .csc_feature import CSCFeatureCharacteristic
 from .csc_measurement import CSCMeasurementCharacteristic
@@ -51,7 +53,7 @@ from .electric_current_range import ElectricCurrentRangeCharacteristic
 from .electric_current_specification import ElectricCurrentSpecificationCharacteristic
 from .electric_current_statistics import ElectricCurrentStatisticsCharacteristic
 from .elevation import ElevationCharacteristic
-from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic
+from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic, ServiceChangedCharacteristic
 from .glucose_feature import GlucoseFeatureCharacteristic, GlucoseFeatures
 from .glucose_measurement import (
     GlucoseMeasurementCharacteristic,
@@ -66,10 +68,14 @@ from .heat_index import HeatIndexCharacteristic
 from .high_voltage import HighVoltageCharacteristic
 from .humidity import HumidityCharacteristic
 from .illuminance import IlluminanceCharacteristic
+from .indoor_positioning_configuration import IndoorPositioningConfigurationCharacteristic
+from .latitude import LatitudeCharacteristic
 from .ln_control_point import LNControlPointCharacteristic
 from .ln_feature import LNFeatureCharacteristic
 from .local_time_information import LocalTimeInformationCharacteristic
 from .location_and_speed import LocationAndSpeedCharacteristic
+from .location_name import LocationNameCharacteristic
+from .longitude import LongitudeCharacteristic
 from .magnetic_declination import MagneticDeclinationCharacteristic
 from .magnetic_flux_density_2d import MagneticFluxDensity2DCharacteristic
 from .magnetic_flux_density_3d import MagneticFluxDensity3DCharacteristic
@@ -97,6 +103,7 @@ from .registry import (
 )
 from .rsc_feature import RSCFeatureCharacteristic
 from .rsc_measurement import RSCMeasurementCharacteristic
+from .scan_interval_window import ScanIntervalWindowCharacteristic
 from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacteristic
 from .supported_new_alert_category import SupportedNewAlertCategoryCharacteristic
 from .supported_power_range import SupportedPowerRangeCharacteristic
@@ -105,6 +112,14 @@ from .supported_unread_alert_category import (
 )
 from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
+from .time_update_control_point import TimeUpdateControlPointCharacteristic
+from .time_update_state import (
+    TimeUpdateCurrentState,
+    TimeUpdateResult,
+    TimeUpdateState,
+    TimeUpdateStateCharacteristic,
+)
+from .time_with_dst import TimeWithDstCharacteristic
 from .time_zone import TimeZoneCharacteristic
 from .true_wind_direction import TrueWindDirectionCharacteristic
 from .true_wind_speed import TrueWindSpeedCharacteristic
@@ -144,6 +159,8 @@ __all__ = [
     "BodyCompositionMeasurementCharacteristic",
     "BodySensorLocation",
     "BodySensorLocationCharacteristic",
+    "BondManagementControlPointCharacteristic",
+    "BondManagementFeatureCharacteristic",
     "CO2ConcentrationCharacteristic",
     "CSCFeatureCharacteristic",
     "CSCMeasurementCharacteristic",
@@ -173,8 +190,12 @@ __all__ = [
     "HumidityCharacteristic",
     "HardwareRevisionStringCharacteristic",
     "IlluminanceCharacteristic",
+    "IndoorPositioningConfigurationCharacteristic",
     "LocalTimeInformationCharacteristic",
+    "LatitudeCharacteristic",
     "LocationAndSpeedCharacteristic",
+    "LocationNameCharacteristic",
+    "LongitudeCharacteristic",
     "LNControlPointCharacteristic",
     "LNFeatureCharacteristic",
     "MagneticDeclinationCharacteristic",
@@ -202,14 +223,22 @@ __all__ = [
     "RSCMeasurementCharacteristic",
     "RSCFeatureCharacteristic",
     "SerialNumberStringCharacteristic",
+    "ServiceChangedCharacteristic",
     "SoftwareRevisionStringCharacteristic",
     "NoiseCharacteristic",
     "SulfurDioxideConcentrationCharacteristic",
+    "ScanIntervalWindowCharacteristic",
     "SupportedNewAlertCategoryCharacteristic",
     "SupportedPowerRangeCharacteristic",
     "SupportedUnreadAlertCategoryCharacteristic",
     "TemperatureCharacteristic",
     "TemperatureMeasurementCharacteristic",
+    "TimeUpdateControlPointCharacteristic",
+    "TimeUpdateCurrentState",
+    "TimeUpdateResult",
+    "TimeUpdateState",
+    "TimeUpdateStateCharacteristic",
+    "TimeWithDstCharacteristic",
     "TimeZoneCharacteristic",
     "TrueWindDirectionCharacteristic",
     "TrueWindSpeedCharacteristic",

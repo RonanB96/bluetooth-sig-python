@@ -69,6 +69,10 @@ class SIGServiceResolver:
             UUIDResolutionError: If no UUID can be resolved for the class
 
         """
+        # Try configured info first (for custom services)
+        if hasattr(service_class, "_info") and service_class._info is not None:  # pylint: disable=protected-access
+            return service_class._info
+
         # Try registry resolution
         registry_info = SIGServiceResolver.resolve_from_registry(service_class)
         if registry_info:
@@ -251,6 +255,27 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         """
         info = SIGServiceResolver.resolve_for_class(cls)
         return info.uuid
+
+    @classmethod
+    def get_name(cls) -> str:
+        """Get the service name for this class without creating an instance.
+
+        Returns:
+            The service name as registered in the UUID registry.
+
+        """
+        # Try configured info first (for custom services)
+        if hasattr(cls, "_info") and cls._info is not None:  # pylint: disable=protected-access
+            return cls._info.name  # pylint: disable=protected-access
+
+        # For SIG services, resolve from registry
+        uuid = cls.get_class_uuid()
+        service_info = uuid_registry.get_service_info(uuid)
+        if service_info:
+            return service_info.name
+
+        # Fallback to class name
+        return cls.__name__
 
     @classmethod
     def matches_uuid(cls, uuid: str | BluetoothUUID) -> bool:

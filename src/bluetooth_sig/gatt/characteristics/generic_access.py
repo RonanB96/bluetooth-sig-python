@@ -2,11 +2,25 @@
 
 from __future__ import annotations
 
+import msgspec
+
 from ...registry import appearance_values_registry
 from ...types.appearance import AppearanceData
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
+
+
+class ServiceChangedData(msgspec.Struct, frozen=True, kw_only=True):
+    """Service Changed characteristic data.
+
+    Attributes:
+        start_handle: Starting handle of the affected service range
+        end_handle: Ending handle of the affected service range
+    """
+
+    start_handle: int
+    end_handle: int
 
 
 class DeviceNameCharacteristic(BaseCharacteristic):
@@ -110,13 +124,13 @@ class ServiceChangedCharacteristic(BaseCharacteristic):
     """
 
     _characteristic_name: str = "Service Changed"
-    _manual_value_type = "bytes"  # Raw bytes for handle range
+    _manual_value_type = "ServiceChangedData"  # Override since decode_value returns structured data
 
     min_length = 4  # Start Handle(2) + End Handle(2)
     max_length = 4  # Fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, int]:
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ServiceChangedData:
         """Parse service changed value.
 
         Args:
@@ -124,26 +138,30 @@ class ServiceChangedCharacteristic(BaseCharacteristic):
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
 
         Returns:
-            Dict with start_handle and end_handle.
+            ServiceChangedData with start_handle and end_handle.
+
+        Raises:
+            ValueError: If data length is not exactly 4 bytes.
 
         """
+        if len(data) != 4:
+            raise ValueError(f"Service Changed characteristic requires 4 bytes, got {len(data)}")
+
         start_handle = DataParser.parse_int16(data, 0, signed=False)
         end_handle = DataParser.parse_int16(data, 2, signed=False)
-        return {"start_handle": start_handle, "end_handle": end_handle}
+        return ServiceChangedData(start_handle=start_handle, end_handle=end_handle)
 
-    def encode_value(self, data: dict[str, int]) -> bytearray:
+    def encode_value(self, data: ServiceChangedData) -> bytearray:
         """Encode service changed value back to bytes.
 
         Args:
-            data: Dict with start_handle and end_handle
+            data: ServiceChangedData with start_handle and end_handle
 
         Returns:
             Encoded bytes
 
         """
-        start_handle = int(data["start_handle"])
-        end_handle = int(data["end_handle"])
         result = bytearray()
-        result.extend(DataParser.encode_int16(start_handle, signed=False))
-        result.extend(DataParser.encode_int16(end_handle, signed=False))
+        result.extend(DataParser.encode_int16(data.start_handle, signed=False))
+        result.extend(DataParser.encode_int16(data.end_handle, signed=False))
         return result
