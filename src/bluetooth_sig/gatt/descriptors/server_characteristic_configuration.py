@@ -29,6 +29,8 @@ class ServerCharacteristicConfigurationDescriptor(BaseDescriptor):
     Currently only supports broadcast enable/disable.
     """
 
+    _writable = True  # SCCD is always writable
+
     def _has_structured_data(self) -> bool:
         return True
 
