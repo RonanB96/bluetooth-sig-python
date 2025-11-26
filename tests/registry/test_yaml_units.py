@@ -65,7 +65,7 @@ class TestYAMLUnitParsing:
         assert unit == "µg/m³", f"PM25 unit should be manual (µg/m³) from class definition, got {unit}"
 
     def test_unknown_characteristic_unit(self) -> None:
-        """Test behavior with characteristics not in YAML."""
+        """Test behaviour with characteristics not in YAML."""
         # Try to get info for a characteristic that doesn't exist
         unknown_info = uuid_registry.get_characteristic_info("NonExistentCharacteristic")
         assert unknown_info is None, "Unknown characteristic should return None"

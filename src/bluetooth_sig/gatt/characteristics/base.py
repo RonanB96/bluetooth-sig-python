@@ -14,8 +14,8 @@ import msgspec
 from ...registry import units_registry
 from ...types import CharacteristicDataProtocol, CharacteristicInfo
 from ...types import ParseFieldError as FieldError
-from ...types.descriptor_types import DescriptorData
 from ...types.gatt_enums import CharacteristicName, DataType, GattProperty, ValueType
+from ...types.registry.descriptor_types import DescriptorData
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
 from ..descriptor_utils import (

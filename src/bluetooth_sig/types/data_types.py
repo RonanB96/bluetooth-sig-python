@@ -29,6 +29,14 @@ class ParseFieldError(msgspec.Struct, frozen=True, kw_only=True):
     raw_slice: bytes | None = None
 
 
+class DateData(msgspec.Struct, frozen=True, kw_only=True):
+    """Shared data type for date values with year, month, and day fields."""
+
+    year: int
+    month: int
+    day: int
+
+
 class CharacteristicInfo(SIGInfo):
     """Information about a Bluetooth characteristic from SIG/YAML specifications.
 

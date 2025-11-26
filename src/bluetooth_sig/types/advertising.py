@@ -17,7 +17,7 @@ import msgspec
 
 if TYPE_CHECKING:
     from bluetooth_sig.types.appearance import AppearanceData
-    from bluetooth_sig.types.class_of_device import ClassOfDeviceInfo
+    from bluetooth_sig.types.registry.class_of_device import ClassOfDeviceInfo
 
 
 class PDUType(IntEnum):
@@ -158,7 +158,7 @@ class ADTypeInfo(msgspec.Struct, frozen=True, kw_only=True):
 
     value: int
     name: str
-    reference: str | None = None
+    reference: str
 
 
 class BLEAdvertisingFlags(IntFlag):

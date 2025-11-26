@@ -2,25 +2,12 @@
 
 from __future__ import annotations
 
-import msgspec
-
 from bluetooth_sig.registry.base import BaseRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path, load_yaml_uuids, parse_bluetooth_uuid
+from bluetooth_sig.types.registry.protocol_identifiers import ProtocolInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 __all__ = ["ProtocolIdentifiersRegistry", "ProtocolInfo", "protocol_identifiers_registry"]
-
-
-class ProtocolInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Information about a Bluetooth protocol identifier.
-
-    Attributes:
-        uuid: The protocol's Bluetooth UUID
-        name: Human-readable protocol name (e.g., "L2CAP", "RFCOMM")
-    """
-
-    uuid: BluetoothUUID
-    name: str
 
 
 class ProtocolIdentifiersRegistry(BaseRegistry[ProtocolInfo]):

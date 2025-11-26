@@ -17,7 +17,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
     """Test suite for Current Time characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Adds current time-specific validation and edge cases.
     """
 

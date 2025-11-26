@@ -100,7 +100,7 @@ print(f"Temperature: {result}°C")  # Temperature: 25.6°C
 **Consequences**:
 
 - ✅ Reduced boilerplate in characteristic implementations
-- ✅ Consistent validation behavior
+- ✅ Consistent validation behaviour
 - ✅ Easy to understand constraints
 - ⚠️ Less flexibility for complex conditional validation
 

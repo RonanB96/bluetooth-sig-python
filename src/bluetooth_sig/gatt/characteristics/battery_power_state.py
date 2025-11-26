@@ -112,14 +112,12 @@ class BatteryPowerState(msgspec.Struct, frozen=True, kw_only=True):  # pylint: d
 
 
 class BatteryPowerStateCharacteristic(BaseCharacteristic):
-    """Battery Level Status characteristic (0x2BED).
+    """Battery Power State characteristic (0x2BED).
 
     This characteristic encodes battery presence, external power
     sources, charging state, charge level and optional extended charging
     information.
     """
-
-    _characteristic_name: str | None = "Battery Level Status"
 
     # YAML describes this as boolean[] which maps to 'string' in the registry;
     # decode_value returns a dict, but tests and registry expect the declared

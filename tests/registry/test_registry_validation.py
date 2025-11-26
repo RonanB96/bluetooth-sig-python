@@ -309,7 +309,7 @@ class TestRegistryConsistency:
 
 
 class TestNameResolutionFallback:
-    """Test name resolution fallback behavior when explicit names are not
+    """Test name resolution fallback behaviour when explicit names are not
     set.
     """
 
@@ -461,7 +461,7 @@ class TestNameResolutionFallback:
         assert name == "Model Number String", f"Expected 'Model Number String', got '{name}'"
 
     def test_fallback_failure_handling(self) -> None:
-        """Test behavior when neither explicit name nor class name resolution
+        """Test behaviour when neither explicit name nor class name resolution
         works.
         """
         from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic

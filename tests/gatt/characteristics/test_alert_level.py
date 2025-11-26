@@ -11,7 +11,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestAlertLevelCharacteristic(CommonCharacteristicTests):
     """Test suite for Alert Level characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Adds alert-specific edge cases and enum validation.
     """
 

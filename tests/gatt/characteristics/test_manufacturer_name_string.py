@@ -37,3 +37,15 @@ class TestManufacturerNameStringCharacteristic(CommonCharacteristicTests):
             ),
             CharacteristicTestData(input_data=bytearray(b""), expected_value="", description="Empty manufacturer name"),
         ]
+
+    def test_invalid_utf8_raises_value_error(self, characteristic: BaseCharacteristic) -> None:
+        """Test that invalid UTF-8 data raises ValueError."""
+        invalid_utf8 = bytearray([0xFF, 0xFE, 0xFD])  # Invalid UTF-8 sequence
+        with pytest.raises(ValueError, match="Invalid UTF-8 string data"):
+            characteristic.decode_value(invalid_utf8)
+
+    def test_null_terminated_string_handling(self, characteristic: BaseCharacteristic) -> None:
+        """Test that null-terminated strings are handled correctly."""
+        data_with_null = bytearray(b"Test\x00Extra")
+        result = characteristic.decode_value(data_with_null)
+        assert result == "Test"  # Should stop at null terminator

@@ -6,14 +6,14 @@ import logging
 
 import msgspec
 
-from bluetooth_sig.registry.base import BaseRegistry
+from bluetooth_sig.registry.base import BaseGenericRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.advertising import ADTypeInfo
 
 logger = logging.getLogger(__name__)
 
 
-class ADTypesRegistry(BaseRegistry[ADTypeInfo]):
+class ADTypesRegistry(BaseGenericRegistry[ADTypeInfo]):
     """Registry for Bluetooth advertising data types with lazy loading.
 
     This registry loads AD type definitions from the official Bluetooth SIG

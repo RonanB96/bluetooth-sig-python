@@ -11,7 +11,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestServiceChangedCharacteristic(CommonCharacteristicTests):
     """Test suite for Service Changed characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Adds service changed-specific validation and edge cases.
     """
 

@@ -29,7 +29,7 @@ class RingerControlPointCharacteristic(BaseCharacteristic):
     org.bluetooth.characteristic.ringer_control_point
 
     The Ringer Control Point characteristic defines the Control Point of Ringer.
-    This is a write-only characteristic used to control ringer behavior.
+    This is a write-only characteristic used to control ringer behaviour.
 
     Commands:
     - 1: Silent Mode (sets ringer to silent)

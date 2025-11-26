@@ -732,7 +732,7 @@ class DependentCharacteristic(BaseCharacteristic):
 
 **Location**: `src/bluetooth_sig/gatt/descriptor_utils.py`
 
-BLE descriptors provide runtime metadata about characteristics. The library integrates descriptors for enhanced validation and dynamic behavior.
+BLE descriptors provide runtime metadata about characteristics. The library integrates descriptors for enhanced validation and dynamic behaviour.
 
 ### Descriptor Types
 

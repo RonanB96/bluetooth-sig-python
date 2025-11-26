@@ -12,7 +12,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestLocationNameCharacteristic(CommonCharacteristicTests):
     """Test suite for Location Name characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Tests UTF-8 string parsing for location names.
     """
 

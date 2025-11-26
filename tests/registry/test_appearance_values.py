@@ -144,7 +144,7 @@ class TestAppearanceValuesRegistry:
         assert len(results) == 100  # 20 iterations * 5 codes
 
     def test_full_name_property(self, appearance_registry: AppearanceValuesRegistry) -> None:
-        """Test the full_name property behavior."""
+        """Test the full_name property behaviour."""
         # Category only
         phone = appearance_registry.get_appearance_info(64)
         if phone:

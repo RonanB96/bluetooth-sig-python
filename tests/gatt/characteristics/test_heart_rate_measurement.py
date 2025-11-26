@@ -162,7 +162,7 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
                 error_message="",
             )
 
-            # Use full UUID format to match translator behavior
+            # Use full UUID format to match translator behaviour
             sensor_location_uuid = BluetoothUUID("2A38").dashed_form
             ctx = CharacteristicContext(
                 other_characteristics={sensor_location_uuid: cast(CharacteristicDataProtocol, sensor_location)}

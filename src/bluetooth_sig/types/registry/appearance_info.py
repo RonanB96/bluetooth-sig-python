@@ -10,6 +10,18 @@ from __future__ import annotations
 import msgspec
 
 
+class AppearanceSubcategoryInfo(msgspec.Struct, frozen=True, kw_only=True):
+    """Decoded appearance subcategory information.
+
+    Attributes:
+        name: Human-readable subcategory name (e.g., "Heart Rate Belt")
+        value: Subcategory value (0-63)
+    """
+
+    name: str
+    value: int
+
+
 class AppearanceInfo(msgspec.Struct, frozen=True, kw_only=True):
     """Decoded appearance information from registry.
 
@@ -26,9 +38,8 @@ class AppearanceInfo(msgspec.Struct, frozen=True, kw_only=True):
     """
 
     category: str
-    subcategory: str | None = None
     category_value: int
-    subcategory_value: int | None = None
+    subcategories: list[AppearanceSubcategoryInfo] | None = None
 
     @property
     def full_name(self) -> str:
@@ -38,6 +49,7 @@ class AppearanceInfo(msgspec.Struct, frozen=True, kw_only=True):
             Full name with category and optional subcategory
             (e.g., "Heart Rate Sensor: Heart Rate Belt" or "Phone")
         """
-        if self.subcategory:
-            return f"{self.category}: {self.subcategory}"
+        if self.subcategories:
+            subcategory_names = ", ".join(sub.name for sub in self.subcategories)
+            return f"{self.category}: {subcategory_names}"
         return self.category

@@ -17,7 +17,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
     """Test suite for Time with DST characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Adds time with DST-specific validation and edge cases.
     """
 

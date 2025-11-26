@@ -19,7 +19,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestBatteryPowerStateCharacteristic(CommonCharacteristicTests):
     """Test Battery Power State characteristic implementation.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Focuses on battery power state specific data parsing and validation.
     """
 

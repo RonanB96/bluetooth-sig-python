@@ -292,7 +292,7 @@ pytest -x
 **All tests must be deterministic:**
 - No reliance on live devices (unless explicitly marked and skipped by default)
 - No network calls (mock them)
-- No time-dependent behavior (mock datetime)
+- No time-dependent behaviour (mock datetime)
 - Use fixed random seeds if randomness needed
 - Tests should pass in any order
 

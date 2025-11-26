@@ -11,7 +11,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestLatitudeCharacteristic(CommonCharacteristicTests):
     """Test suite for Latitude characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Tests latitude coordinate parsing and validation.
     """
 

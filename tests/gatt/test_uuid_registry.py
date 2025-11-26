@@ -183,7 +183,7 @@ def test_full_uuid_lookup(mock_uuid_registry: UuidRegistry) -> None:
 
 
 def test_invalid_uuid_lookup(mock_uuid_registry: UuidRegistry) -> None:
-    """Test lookup behavior with invalid UUIDs."""
+    """Test lookup behaviour with invalid UUIDs."""
     assert mock_uuid_registry.get_service_info("0000") is None, "Should return None for invalid service"
     assert mock_uuid_registry.get_characteristic_info("0000") is None, "Should return None for invalid characteristic"
 

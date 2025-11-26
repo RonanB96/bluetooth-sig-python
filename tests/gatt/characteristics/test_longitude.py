@@ -11,7 +11,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestLongitudeCharacteristic(CommonCharacteristicTests):
     """Test suite for Longitude characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Tests longitude coordinate parsing and validation.
     """
 

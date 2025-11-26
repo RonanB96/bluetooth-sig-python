@@ -2,57 +2,44 @@
 
 from __future__ import annotations
 
-import msgspec
-
 from bluetooth_sig.registry.base import BaseRegistry
-from bluetooth_sig.registry.utils import find_bluetooth_sig_path, load_yaml_uuids, parse_bluetooth_uuid
+from bluetooth_sig.registry.utils import find_bluetooth_sig_path
+from bluetooth_sig.types.registry.declarations import DeclarationInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
-
-
-class DeclarationInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Information about a Bluetooth SIG GATT attribute declaration."""
-
-    uuid: BluetoothUUID
-    name: str
-    id: str
 
 
 class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
     """Registry for Bluetooth SIG GATT attribute declarations."""
 
-    def __init__(self) -> None:
-        """Initialize the declarations registry."""
-        super().__init__()
-        self._declarations: dict[str, DeclarationInfo] = {}
-        self._name_to_info: dict[str, DeclarationInfo] = {}
-        self._id_to_info: dict[str, DeclarationInfo] = {}
+    def _load_yaml_path(self) -> str:
+        """Return the YAML file path relative to bluetooth_sig/ root."""
+        return "assigned_numbers/uuids/declarations.yaml"
+
+    def _create_info_from_yaml(self, uuid_data: dict[str, str], uuid: BluetoothUUID) -> DeclarationInfo:
+        """Create DeclarationInfo from YAML data."""
+        return DeclarationInfo(
+            uuid=uuid,
+            name=uuid_data["name"],
+            id=uuid_data["id"],
+            summary="",
+        )
+
+    def _create_runtime_info(self, entry: object, uuid: BluetoothUUID) -> DeclarationInfo:
+        """Create runtime DeclarationInfo from entry."""
+        return DeclarationInfo(
+            uuid=uuid,
+            name=getattr(entry, "name", ""),
+            id=getattr(entry, "id", ""),
+            summary=getattr(entry, "summary", ""),
+        )
 
     def _load(self) -> None:
         """Perform the actual loading of declarations data."""
         base_path = find_bluetooth_sig_path()
-        if not base_path:
-            self._loaded = True
-            return
-
-        # Load declaration UUIDs
-        declarations_yaml = base_path / "uuids" / "declarations.yaml"
-        if declarations_yaml.exists():
-            for item in load_yaml_uuids(declarations_yaml):
-                try:
-                    uuid = parse_bluetooth_uuid(item["uuid"])
-                    name = item["name"]
-                    declaration_id = item["id"]
-
-                    info = DeclarationInfo(uuid=uuid, name=name, id=declaration_id)
-
-                    # Store by UUID string for fast lookup
-                    self._declarations[uuid.short_form.upper()] = info
-                    self._name_to_info[name.lower()] = info
-                    self._id_to_info[declaration_id] = info
-
-                except (KeyError, ValueError):
-                    # Skip malformed entries
-                    continue
+        if base_path:
+            yaml_path = base_path / self._load_yaml_path()
+            if yaml_path.exists():
+                self._load_from_yaml(yaml_path)
         self._loaded = True
 
     def get_declaration_info(self, uuid: str | int | BluetoothUUID) -> DeclarationInfo | None:
@@ -64,12 +51,7 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
         Returns:
             DeclarationInfo if found, None otherwise
         """
-        self._ensure_loaded()
-        try:
-            bt_uuid = parse_bluetooth_uuid(uuid)
-            return self._declarations.get(bt_uuid.short_form.upper())
-        except ValueError:
-            return None
+        return self.get_info(uuid)
 
     def get_declaration_info_by_name(self, name: str) -> DeclarationInfo | None:
         """Get declaration information by name (case insensitive).
@@ -81,7 +63,10 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
             DeclarationInfo if found, None otherwise
         """
         self._ensure_loaded()
-        return self._name_to_info.get(name.lower())
+        for info in self._canonical_store.values():
+            if info.name.lower() == name.lower():
+                return info
+        return None
 
     def get_declaration_info_by_id(self, declaration_id: str) -> DeclarationInfo | None:
         """Get declaration information by declaration ID.
@@ -93,7 +78,10 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
             DeclarationInfo if found, None otherwise
         """
         self._ensure_loaded()
-        return self._id_to_info.get(declaration_id)
+        for info in self._canonical_store.values():
+            if info.id == declaration_id:
+                return info
+        return None
 
     def is_declaration_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
         """Check if a UUID corresponds to a known declaration.
@@ -104,8 +92,7 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
         Returns:
             True if the UUID is a known declaration, False otherwise
         """
-        self._ensure_loaded()
-        return self.get_declaration_info(uuid) is not None
+        return self.get_info(uuid) is not None
 
     def get_all_declarations(self) -> list[DeclarationInfo]:
         """Get all declarations in the registry.
@@ -114,7 +101,7 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
             List of all DeclarationInfo objects
         """
         self._ensure_loaded()
-        return list(self._declarations.values())
+        return list(self._canonical_store.values())
 
 
 # Global instance for convenience

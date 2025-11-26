@@ -14,7 +14,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestTimeUpdateControlPointCharacteristic(CommonCharacteristicTests):
     """Test suite for Time Update Control Point characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Adds time update control point-specific validation and edge cases.
     """
 

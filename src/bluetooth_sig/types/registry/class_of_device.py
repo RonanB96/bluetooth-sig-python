@@ -60,8 +60,8 @@ class ClassOfDeviceInfo(msgspec.Struct, frozen=True, kw_only=True):
         raw_value: Original 24-bit CoD value
     """
 
-    major_class: str
-    minor_class: str | None
+    major_class: list[MajorDeviceClassInfo] | None
+    minor_class: list[MinorDeviceClassInfo] | None
     service_classes: list[str]
     raw_value: int
 
@@ -74,7 +74,10 @@ class ClassOfDeviceInfo(msgspec.Struct, frozen=True, kw_only=True):
 
         Examples:
             >>> info = ClassOfDeviceInfo(
-            ...     major_class="Computer", minor_class="Laptop", service_classes=["Networking"], raw_value=0x02010C
+            ...     major_class=[MajorDeviceClassInfo(value=1, name="Computer")],
+            ...     minor_class=[MinorDeviceClassInfo(value=3, name="Laptop", major_class=1)],
+            ...     service_classes=["Networking"],
+            ...     raw_value=0x02010C,
             ... )
             >>> info.full_description
             'Computer: Laptop (Networking)'

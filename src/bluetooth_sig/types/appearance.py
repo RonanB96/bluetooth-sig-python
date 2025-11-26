@@ -5,7 +5,7 @@ from __future__ import annotations
 import msgspec
 
 from bluetooth_sig.registry import appearance_values_registry
-from bluetooth_sig.types.appearance_info import AppearanceInfo
+from bluetooth_sig.types.registry.appearance_info import AppearanceInfo
 
 
 class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):

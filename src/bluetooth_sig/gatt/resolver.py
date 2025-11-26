@@ -28,15 +28,13 @@ class NameNormalizer:
     def camel_case_to_display_name(name: str) -> str:
         """Convert camelCase class name to space-separated display name.
 
-        Uses industry-standard two-step regex pattern to handle acronyms correctly:
-        - Step 1: Handle consecutive capitals followed by lowercase (VOCConcentration -> VOC Concentration)
-        - Step 2: Handle lowercase/digit followed by capital (camelCase -> camel Case)
+        Uses regex to find word boundaries at capital letters and numbers.
 
         Args:
-            name: CamelCase name (e.g., "VOCConcentration", "BatteryLevel")
+            name: CamelCase name (e.g., "VOCConcentration", "BatteryLevel", "ApparentEnergy32")
 
         Returns:
-            Space-separated display name (e.g., "VOC Concentration", "Battery Level")
+            Space-separated display name (e.g., "VOC Concentration", "Battery Level", "Apparent Energy 32")
 
         Examples:
             >>> NameNormalizer.camel_case_to_display_name("VOCConcentration")
@@ -45,14 +43,12 @@ class NameNormalizer:
             "CO2 Concentration"
             >>> NameNormalizer.camel_case_to_display_name("BatteryLevel")
             "Battery Level"
+            >>> NameNormalizer.camel_case_to_display_name("ApparentEnergy32")
+            "Apparent Energy 32"
 
         """
-        # Step 1: Handle consecutive capitals followed by lowercase
-        # e.g., "VOCConcentration" -> "VOC Concentration"
-        s1 = re.sub("([A-Z]+)([A-Z][a-z])", r"\1 \2", name)
-        # Step 2: Handle lowercase/digit followed by capital
-        # e.g., "camelCase" -> "camel Case", "PM25Concentration" -> "PM25 Concentration"
-        return re.sub("([a-z0-9])([A-Z])", r"\1 \2", s1)
+        words = re.findall(r"[A-Z]+[a-z0-9]*|[0-9]+", name)
+        return " ".join(words)
 
     @staticmethod
     def remove_suffix(name: str, suffix: str) -> str:
@@ -292,7 +288,7 @@ class RegistrySearchStrategy(Generic[TInfo]):  # pylint: disable=too-few-public-
     """Base strategy for searching registry with name variants.
 
     This class implements the Template Method pattern, allowing subclasses
-    to customize the search behavior for different entity types.
+    to customize the search behaviour for different entity types.
     """
 
     def search(self, class_obj: type, explicit_name: str | None = None) -> TInfo | None:

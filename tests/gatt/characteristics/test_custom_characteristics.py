@@ -361,7 +361,7 @@ class TestCustomCharacteristicVariants:
         class CustomBatteryLevel(CustomBaseCharacteristic, allow_sig_override=True):
             """Custom battery level implementation that overrides SIG UUID.
 
-            This demonstrates intentional SIG UUID override with custom behavior.
+            This demonstrates intentional SIG UUID override with custom behaviour.
             Requires explicit allow_sig_override=True.
             """
 

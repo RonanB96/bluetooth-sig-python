@@ -2,75 +2,45 @@
 
 from __future__ import annotations
 
-import msgspec
-
 from bluetooth_sig.registry.base import BaseRegistry
-from bluetooth_sig.registry.utils import (
-    find_bluetooth_sig_path,
-    load_yaml_uuids,
-    normalize_uuid_string,
-    parse_bluetooth_uuid,
-)
+from bluetooth_sig.registry.utils import find_bluetooth_sig_path
+from bluetooth_sig.types.registry.member_uuids import MemberInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
-
-
-class MemberInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Information about a Bluetooth SIG member company."""
-
-    uuid: BluetoothUUID
-    name: str
 
 
 class MembersRegistry(BaseRegistry[MemberInfo]):
     """Registry for Bluetooth SIG member company UUIDs."""
 
-    def __init__(self) -> None:
-        """Initialize the members registry."""
-        super().__init__()
-        self._members: dict[str, MemberInfo] = {}  # normalized_uuid -> MemberInfo
-        self._members_by_name: dict[str, MemberInfo] = {}  # lower_name -> MemberInfo
+    def _load_yaml_path(self) -> str:
+        """Return the YAML file path relative to bluetooth_sig/ root."""
+        return "assigned_numbers/uuids/member_uuids.yaml"
 
-        try:  # pylint: disable=duplicate-code  # Standard exception handling pattern for registry YAML loading
-            self._load_members()
-        except (FileNotFoundError, Exception):  # pylint: disable=broad-exception-caught
-            # If YAML loading fails, continue with empty registry
-            pass
+    def _create_info_from_yaml(self, uuid_data: dict[str, str], uuid: BluetoothUUID) -> MemberInfo:
+        """Create MemberInfo from YAML data."""
+        return MemberInfo(
+            uuid=uuid,
+            name=uuid_data["name"],
+            id=uuid_data["name"],  # Use name as id since no separate id field
+            summary="",
+        )
 
-    def _load_members(self) -> None:
-        """Load member UUIDs from YAML file."""
+    def _create_runtime_info(self, entry: object, uuid: BluetoothUUID) -> MemberInfo:
+        """Create runtime MemberInfo from entry."""
+        return MemberInfo(
+            uuid=uuid,
+            name=getattr(entry, "name", ""),
+            id=getattr(entry, "name", ""),
+            summary=getattr(entry, "summary", ""),
+        )
+
+    def _load(self) -> None:
+        """Perform the actual loading of members data."""
         base_path = find_bluetooth_sig_path()
-        if not base_path:
-            self._loaded = True
-            return
-
-        # Load member UUIDs
-        member_yaml = base_path / "member_uuids.yaml"
-        if member_yaml.exists():
-            for uuid_info in load_yaml_uuids(member_yaml):
-                try:
-                    uuid = normalize_uuid_string(uuid_info["uuid"])
-
-                    bt_uuid = BluetoothUUID(uuid)
-                    info = MemberInfo(uuid=bt_uuid, name=uuid_info["name"])
-                    # Store using short form as key for easy lookup
-                    self._members[bt_uuid.short_form.upper()] = info
-                    # Also store by name for reverse lookup
-                    self._members_by_name[uuid_info["name"].lower()] = info
-                except (KeyError, ValueError):
-                    # Skip malformed entries
-                    continue
+        if base_path:
+            yaml_path = base_path / self._load_yaml_path()
+            if yaml_path.exists():
+                self._load_from_yaml(yaml_path)
         self._loaded = True
-
-    def _load(self) -> None:  # pragma: no cover - small wrapper to fulfil BaseRegistry contract
-        """Load registry data (BaseRegistry API).
-
-        This wrapper delegates to the existing private loader used by this
-        registry and is required by BaseRegistry to satisfy the abstract
-        contract for lazy loading behaviour.
-        """
-        # Delegate to the existing implementation which already sets
-        # self._loaded = True on completion.
-        self._load_members()
 
     def get_member_name(self, uuid: str | int | BluetoothUUID) -> str | None:
         """Get member company name by UUID.
@@ -81,19 +51,8 @@ class MembersRegistry(BaseRegistry[MemberInfo]):
         Returns:
             Member company name, or None if not found
         """
-        self._ensure_loaded()
-        with self._lock:
-            try:
-                bt_uuid = parse_bluetooth_uuid(uuid)
-
-                # Get the short form (16-bit) for lookup
-                short_key = bt_uuid.short_form.upper()
-                if short_key in self._members:
-                    return self._members[short_key].name
-
-                return None
-            except ValueError:
-                return None
+        info = self.get_info(uuid)
+        return info.name if info else None
 
     def is_member_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
         """Check if a UUID is a registered member company UUID.
@@ -104,8 +63,7 @@ class MembersRegistry(BaseRegistry[MemberInfo]):
         Returns:
             True if the UUID is a member UUID, False otherwise
         """
-        self._ensure_loaded()
-        return self.get_member_name(uuid) is not None
+        return self.get_info(uuid) is not None
 
     def get_all_members(self) -> list[MemberInfo]:
         """Get all registered member companies.
@@ -114,8 +72,7 @@ class MembersRegistry(BaseRegistry[MemberInfo]):
             List of all MemberInfo objects
         """
         self._ensure_loaded()
-        with self._lock:
-            return list(self._members.values())
+        return list(self._canonical_store.values())
 
     def get_member_info_by_name(self, name: str) -> MemberInfo | None:
         """Get member information by company name.
@@ -127,9 +84,11 @@ class MembersRegistry(BaseRegistry[MemberInfo]):
             MemberInfo object, or None if not found
         """
         self._ensure_loaded()
-        with self._lock:
-            return self._members_by_name.get(name.lower())
+        for info in self._canonical_store.values():
+            if info.name.lower() == name.lower():
+                return info
+        return None
 
 
 # Global instance
-members_registry = MembersRegistry()
+members_registry = MembersRegistry.get_instance()

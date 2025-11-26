@@ -98,7 +98,7 @@ class CommonCharacteristicTests:
         """
         return None
 
-    # === Behavioral Tests ===
+    # === behavioural Tests ===
     def test_characteristic_uuid_matches_expected(self, characteristic: BaseCharacteristic, expected_uuid: str) -> None:
         """Test that characteristic UUID matches the expected value."""
         assert characteristic.uuid == expected_uuid

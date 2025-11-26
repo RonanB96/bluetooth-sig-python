@@ -18,7 +18,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestPositionQualityCharacteristic(CommonCharacteristicTests):
     """Test suite for Position Quality characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Only adds position quality-specific edge cases and domain validation.
     """
 

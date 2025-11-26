@@ -71,7 +71,10 @@ class SIGServiceResolver:
         """
         # Try configured info first (for custom services)
         if hasattr(service_class, "_info") and service_class._info is not None:  # pylint: disable=protected-access
-            return service_class._info
+            # NOTE: _info is a class attribute used for custom characteristic/service definitions
+            # This is the established pattern in the codebase for providing static metadata
+            # Protected access is necessary to maintain API consistency
+            return service_class._info  # pylint: disable=protected-access
 
         # Try registry resolution
         registry_info = SIGServiceResolver.resolve_from_registry(service_class)

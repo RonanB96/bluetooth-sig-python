@@ -102,7 +102,7 @@ class FaultyManager:
 
 
 class IncompleteManager:
-    """Manager missing protocol methods used to test fallback behavior."""
+    """Manager missing protocol methods used to test fallback behaviour."""
 
     def __init__(self) -> None:
         self.address = "AA:BB:CC:DD:EE:FF"
@@ -269,7 +269,7 @@ class TestDevice:
         assert self.device.name == "Test Device"
 
     def test_is_connected_property(self) -> None:
-        """Test is_connected property behavior."""
+        """Test is_connected property behaviour."""
         # Test with no connection manager
         assert self.device.is_connected is False
 

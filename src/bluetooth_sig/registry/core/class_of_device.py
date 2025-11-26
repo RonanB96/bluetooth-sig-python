@@ -13,9 +13,9 @@ from typing import Any
 
 import msgspec
 
-from bluetooth_sig.registry.base import BaseRegistry
+from bluetooth_sig.registry.base import BaseGenericRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
-from bluetooth_sig.types.class_of_device import (
+from bluetooth_sig.types.registry.class_of_device import (
     ClassOfDeviceInfo,
     MajorDeviceClassInfo,
     MinorDeviceClassInfo,
@@ -47,7 +47,7 @@ class CoDBitShift(IntEnum):
     MINOR_CLASS = 2
 
 
-class ClassOfDeviceRegistry(BaseRegistry[ClassOfDeviceInfo]):
+class ClassOfDeviceRegistry(BaseGenericRegistry[ClassOfDeviceInfo]):
     """Registry for Class of Device decoding with lazy loading.
 
     This registry loads Class of Device mappings from the Bluetooth SIG

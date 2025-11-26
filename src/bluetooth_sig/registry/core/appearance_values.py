@@ -8,15 +8,16 @@ characteristics.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 
 import msgspec
 
-from bluetooth_sig.registry.base import BaseRegistry
+from bluetooth_sig.registry.base import BaseGenericRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
-from bluetooth_sig.types.appearance_info import AppearanceInfo
+from bluetooth_sig.types.registry.appearance_info import AppearanceInfo
 
 
-class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
+class AppearanceValuesRegistry(BaseGenericRegistry[AppearanceInfo]):
     """Registry for Bluetooth appearance values with lazy loading.
 
     This registry loads appearance values from the Bluetooth SIG assigned_numbers
@@ -182,4 +183,4 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
 
 
 # Singleton instance for global use
-appearance_values_registry = AppearanceValuesRegistry()
+appearance_values_registry = cast(AppearanceValuesRegistry, AppearanceValuesRegistry.get_instance())

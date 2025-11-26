@@ -181,5 +181,5 @@ class TestServiceValidationEdgeCasesExtended:
                 # Should have minimum functionality now
                 assert service.has_minimum_functionality() is True
             except Exception:
-                # If creation fails, that's okay - service-specific behavior
+                # If creation fails, that's okay - service-specific behaviour
                 pass

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests for connection manager implementations.
 
-These tests verify actual behavior of connection managers.
+These tests verify actual behaviour of connection managers.
 No skips allowed - if imports fail, the test fails.
 """
 

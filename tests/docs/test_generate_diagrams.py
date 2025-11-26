@@ -83,7 +83,7 @@ def test_generate_class_puml_api_and_files(  # noqa: F811
 def test_generate_class_puml_missing_tools(  # noqa: F811
     missing_package: Path, missing_output_puml_dir: Path, monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
 ) -> None:
-    """Test behavior when pyreverse tools are not available."""
+    """Test behaviour when pyreverse tools are not available."""
     # Simulate pyreverse entrypoints not being available.
     monkeypatch.setattr(gen, "_try_pyreverse", _mock_pyreverse_none)
 
@@ -106,7 +106,7 @@ def test_generate_class_puml_pyreverse_success(  # noqa: F811
 
 
 def test_generate_all_diagrams_strict_mode(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
-    """Test strict mode behavior when no packages are found."""
+    """Test strict mode behaviour when no packages are found."""
     # No actual packages discovered and strict mode -> exit_code should be 1
     monkeypatch.setenv("STRICT_DIAGRAMS", "1")
     rc, _ = gen.generate_all_diagrams(src_root=tmp_path / "src_empty")

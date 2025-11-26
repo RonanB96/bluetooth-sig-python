@@ -8,7 +8,7 @@ This test suite focuses on testing the ACTUAL LIBRARY CODE for custom services:
 - UnknownService creation and usage
 - service_characteristics class variable usage
 - Error handling and validation
-- Info property access and override behavior
+- Info property access and override behaviour
 """
 
 from __future__ import annotations
@@ -158,7 +158,7 @@ class TestInitSubclassValidation:
 
 
 # ==============================================================================
-# Test: __init__ and __post_init__ Behavior
+# Test: __init__ and __post_init__ behaviour
 # ==============================================================================
 
 

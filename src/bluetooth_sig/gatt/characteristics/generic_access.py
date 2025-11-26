@@ -8,6 +8,7 @@ from ...registry import appearance_values_registry
 from ...types.appearance import AppearanceData
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .templates import Utf8StringTemplate
 from .utils import DataParser
 
 
@@ -31,34 +32,7 @@ class DeviceNameCharacteristic(BaseCharacteristic):
     Device Name characteristic.
     """
 
-    _characteristic_name: str = "Device Name"
-    _manual_value_type = "string"  # Override since decode_value returns str
-
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
-        """Parse device name string.
-
-        Args:
-            data: Raw bytearray from BLE characteristic.
-            ctx: Optional CharacteristicContext providing surrounding context (may be None).
-
-        Returns:
-            Decoded device name string.
-
-        """
-        return DataParser.parse_utf8_string(data)
-
-    def encode_value(self, data: str) -> bytearray:
-        """Encode device name value back to bytes.
-
-        Args:
-            data: Device name as string
-
-        Returns:
-            Encoded bytes representing the device name (UTF-8)
-
-        """
-        # Encode as UTF-8 bytes
-        return bytearray(data.encode("utf-8"))
+    _template = Utf8StringTemplate()
 
 
 class AppearanceCharacteristic(BaseCharacteristic):
@@ -69,7 +43,6 @@ class AppearanceCharacteristic(BaseCharacteristic):
     Appearance characteristic with human-readable device type information.
     """
 
-    _characteristic_name: str = "Appearance"
     _manual_value_type = "AppearanceData"  # Override since decode_value returns structured data
 
     min_length = 2  # Appearance(2) fixed length
@@ -123,7 +96,6 @@ class ServiceChangedCharacteristic(BaseCharacteristic):
     Service Changed characteristic.
     """
 
-    _characteristic_name: str = "Service Changed"
     _manual_value_type = "ServiceChangedData"  # Override since decode_value returns structured data
 
     min_length = 4  # Start Handle(2) + End Handle(2)
