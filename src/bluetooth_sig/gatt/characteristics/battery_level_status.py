@@ -58,6 +58,8 @@ class BatteryLevelStatusCharacteristic(BaseCharacteristic):
     org.bluetooth.characteristic.battery_level_status
     """
 
+    _manual_unit: str | None = None  # Bitfield, no units
+
     # Bit field constants for power state
     BIT_START_BATTERY_PRESENT = 0
     BIT_WIDTH_BATTERY_PRESENT = 1

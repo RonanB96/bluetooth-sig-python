@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.uuids.service_classes import ServiceClassesRegistry, ServiceClassInfo
+from bluetooth_sig.registry.uuids.service_classes import ServiceClassesRegistry
+from bluetooth_sig.types.registry.service_class import ServiceClassInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -124,7 +125,7 @@ class TestServiceClassesRegistry:
 
     def test_uuid_formats(self, service_classes_registry: ServiceClassesRegistry) -> None:
         """Test various UUID input formats."""
-        formats: list[str | int] = ["1800", "0x1800", "0X1800", 0x1800]
+        formats: list[str | BluetoothUUID] = ["1800", "0x1800", "0X1800", BluetoothUUID("1800")]
         for fmt in formats:
             info = service_classes_registry.get_service_class_info(fmt)
             if service_classes_registry.is_service_class_uuid("1800"):

@@ -149,7 +149,7 @@ class TestADTypesRegistry:
 
     def test_singleton_instance(self) -> None:
         """Test that ad_types_registry is a singleton."""
-        from bluetooth_sig.registry import ad_types_registry as imported_registry
+        from bluetooth_sig.registry.core.ad_types import ad_types_registry as imported_registry
 
         # Should be the same instance
         assert ad_types_registry is imported_registry

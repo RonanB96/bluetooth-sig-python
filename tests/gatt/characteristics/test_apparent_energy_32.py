@@ -6,10 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.apparent_energy_32 import ApparentEnergy32Characteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import (
-    CharacteristicTestData,
-    CommonCharacteristicTests,
-)
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestApparentEnergy32Characteristic(CommonCharacteristicTests):
@@ -23,7 +20,7 @@ class TestApparentEnergy32Characteristic(CommonCharacteristicTests):
     @pytest.fixture
     def expected_uuid(self) -> str:
         """Expected UUID for Apparent Energy 32 characteristic."""
-        return "2B83"
+        return "2B89"
 
     @pytest.fixture
     def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
@@ -53,7 +50,7 @@ class TestApparentEnergy32Characteristic(CommonCharacteristicTests):
         assert result == 0.0
 
         # Test positive energy (100.5 kVAh)
-        result = characteristic.decode_value(bytearray([0x32, 0xC8, 0x01, 0x00]))  # 100500 = 100.5 kVAh
+        result = characteristic.decode_value(bytearray([0x94, 0x88, 0x01, 0x00]))  # 100500 = 100.5 kVAh
         assert abs(result - 100.5) < 0.001
 
         # Test maximum energy
@@ -87,13 +84,13 @@ class TestApparentEnergy32Characteristic(CommonCharacteristicTests):
         # Test encoding common energies
         assert characteristic.encode_value(0.0) == bytearray([0x00, 0x00, 0x00, 0x00])
         assert characteristic.encode_value(1.0) == bytearray([0xE8, 0x03, 0x00, 0x00])
-        assert characteristic.encode_value(100.5) == bytearray([0x32, 0xC8, 0x01, 0x00])
+        assert characteristic.encode_value(100.5) == bytearray([0x94, 0x88, 0x01, 0x00])
 
     def test_encode_value(self, characteristic: ApparentEnergy32Characteristic) -> None:
         """Test encoding apparent energy 32 values."""
         # Test encoding positive energy
         encoded = characteristic.encode_value(100.5)
-        assert encoded == bytearray([0x32, 0xC8, 0x01, 0x00])
+        assert encoded == bytearray([0x94, 0x88, 0x01, 0x00])
 
         # Test encoding zero
         encoded = characteristic.encode_value(0.0)
@@ -107,4 +104,4 @@ class TestApparentEnergy32Characteristic(CommonCharacteristicTests):
         """Test characteristic metadata."""
         assert characteristic.name == "Apparent Energy 32"
         assert characteristic.unit == "kVAh"
-        assert characteristic.uuid == "2B83"
+        assert characteristic.uuid == "2B89"

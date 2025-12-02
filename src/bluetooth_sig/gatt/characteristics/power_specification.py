@@ -71,14 +71,15 @@ class PowerSpecificationCharacteristic(BaseCharacteristic):
             maximum=_convert_value(maximum_raw),
         )
 
-    def encode_value(self, data: PowerSpecificationData) -> bytearray:
+    def encode_value(self, data: PowerSpecificationData) -> bytearray:  # noqa: D202
         """Encode the power specification values."""
 
         # Convert float values to uint24 with 0.1 W resolution, handling special values
         def _convert_to_raw(value: float | None) -> int:
+            # NOTE: D202 disabled on method - blank line required by black formatter for nested function
             if value is None:
                 return VALUE_UNKNOWN  # Use "not known" as default for None
-            return int(value / 0.1)
+            return round(value / 0.1)
 
         minimum_raw = _convert_to_raw(data.minimum)
         typical_raw = _convert_to_raw(data.typical)

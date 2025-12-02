@@ -6,8 +6,8 @@ from typing import Any
 
 import msgspec
 
-from .base_types import SIGInfo
-from .uuid import BluetoothUUID
+from bluetooth_sig.types.base_types import SIGInfo
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 class DescriptorInfo(SIGInfo):

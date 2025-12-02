@@ -9,7 +9,7 @@ from __future__ import annotations
 import msgspec
 
 
-class ServiceClassInfo(msgspec.Struct, frozen=True, kw_only=True):
+class CodServiceClassInfo(msgspec.Struct, frozen=True, kw_only=True):
     """Service class information from Class of Device field.
 
     Attributes:
@@ -82,9 +82,9 @@ class ClassOfDeviceInfo(msgspec.Struct, frozen=True, kw_only=True):
             >>> info.full_description
             'Computer: Laptop (Networking)'
         """
-        desc = self.major_class
+        desc = self.major_class[0].name if self.major_class else "Unknown"
         if self.minor_class:
-            desc += f": {self.minor_class}"
+            desc += f": {self.minor_class[0].name}"
         if self.service_classes:
             desc += f" ({', '.join(self.service_classes)})"
         return desc

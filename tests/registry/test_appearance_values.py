@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 from bluetooth_sig.registry.core.appearance_values import AppearanceValuesRegistry
-from bluetooth_sig.types.appearance_info import AppearanceInfo
+from bluetooth_sig.types.registry.appearance_info import AppearanceInfo
 
 
 @pytest.fixture(scope="session")
@@ -48,7 +48,6 @@ class TestAppearanceValuesRegistry:
             assert info.category == "Phone"
             assert info.subcategory is None
             assert info.category_value == 0x001
-            assert info.subcategory_value is None
             assert info.full_name == "Phone"
 
     def test_get_category_with_subcategory(self, appearance_registry: AppearanceValuesRegistry) -> None:
@@ -61,9 +60,10 @@ class TestAppearanceValuesRegistry:
         if info:  # Only if YAML loaded
             assert isinstance(info, AppearanceInfo)
             assert info.category == "Heart Rate Sensor"
-            assert info.subcategory == "Heart Rate Belt"
+            assert info.subcategory is not None
+            assert info.subcategory.name == "Heart Rate Belt"
+            assert info.subcategory.value == 0x01
             assert info.category_value == 0x00D
-            assert info.subcategory_value == 0x01
             assert info.full_name == "Heart Rate Sensor: Heart Rate Belt"
 
     def test_get_appearance_info_not_found(self, appearance_registry: AppearanceValuesRegistry) -> None:
@@ -80,9 +80,10 @@ class TestAppearanceValuesRegistry:
 
         if info:
             assert info.category == "Computer"
-            assert info.subcategory == "Desktop Workstation"
+            assert info.subcategory is not None
+            assert info.subcategory.name == "Desktop Workstation"
+            assert info.subcategory.value == 0x01
             assert info.category_value == 0x002
-            assert info.subcategory_value == 0x01
 
     def test_watch_subcategories(self, appearance_registry: AppearanceValuesRegistry) -> None:
         """Test watch category with different subcategories."""
@@ -93,12 +94,14 @@ class TestAppearanceValuesRegistry:
         sports_watch = appearance_registry.get_appearance_info(193)
         if sports_watch:
             assert sports_watch.category == "Watch"
-            assert sports_watch.subcategory == "Sports Watch"
+            assert sports_watch.subcategory is not None
+            assert sports_watch.subcategory.name == "Sports Watch"
 
         smartwatch = appearance_registry.get_appearance_info(194)
         if smartwatch:
             assert smartwatch.category == "Watch"
-            assert smartwatch.subcategory == "Smartwatch"
+            assert smartwatch.subcategory is not None
+            assert smartwatch.subcategory.name == "Smartwatch"
 
     def test_unknown_category(self, appearance_registry: AppearanceValuesRegistry) -> None:
         """Test the Unknown category (0x000)."""
@@ -154,7 +157,8 @@ class TestAppearanceValuesRegistry:
         # Category + subcategory
         hr_belt = appearance_registry.get_appearance_info(833)
         if hr_belt:
-            assert hr_belt.full_name == f"{hr_belt.category}: {hr_belt.subcategory}"
+            assert hr_belt.subcategory is not None
+            assert hr_belt.full_name == f"{hr_belt.category}: {hr_belt.subcategory.name}"
             assert ":" in hr_belt.full_name
 
     def test_multiple_computers(self, appearance_registry: AppearanceValuesRegistry) -> None:
@@ -165,17 +169,20 @@ class TestAppearanceValuesRegistry:
         desktop = appearance_registry.get_appearance_info(129)  # (2 << 6) | 1
         if desktop:
             assert desktop.category == "Computer"
-            assert desktop.subcategory == "Desktop Workstation"
+            assert desktop.subcategory is not None
+            assert desktop.subcategory.name == "Desktop Workstation"
 
         laptop = appearance_registry.get_appearance_info(131)  # (2 << 6) | 3
         if laptop:
             assert laptop.category == "Computer"
-            assert laptop.subcategory == "Laptop"
+            assert laptop.subcategory is not None
+            assert laptop.subcategory.name == "Laptop"
 
         tablet = appearance_registry.get_appearance_info(135)  # (2 << 6) | 7
         if tablet:
             assert tablet.category == "Computer"
-            assert tablet.subcategory == "Tablet"
+            assert tablet.subcategory is not None
+            assert tablet.subcategory.name == "Tablet"
 
     def test_thermometer_with_subcategory(self, appearance_registry: AppearanceValuesRegistry) -> None:
         """Test Thermometer category."""
@@ -189,7 +196,8 @@ class TestAppearanceValuesRegistry:
         ear_thermometer = appearance_registry.get_appearance_info(769)  # (12 << 6) | 1
         if ear_thermometer:
             assert ear_thermometer.category == "Thermometer"
-            assert ear_thermometer.subcategory == "Ear Thermometer"
+            assert ear_thermometer.subcategory is not None
+            assert ear_thermometer.subcategory.name == "Ear Thermometer"
 
     def test_zero_subcategory_matches_category_only(self, appearance_registry: AppearanceValuesRegistry) -> None:
         """Test that subcategory 0 matches category-only appearance."""

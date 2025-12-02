@@ -118,9 +118,7 @@ class TestGlucoseFeatureCharacteristic(CommonCharacteristicTests):
 
     def test_glucose_feature_encode_value(self, characteristic: GlucoseFeatureCharacteristic) -> None:
         """Test encoding GlucoseFeatureData back to bytes."""
-        from bluetooth_sig.gatt.characteristics.glucose_feature import (
-            GlucoseFeatureData,
-        )
+        from bluetooth_sig.gatt.characteristics.glucose_feature import GlucoseFeatureData
 
         # Create test data
         test_data = GlucoseFeatureData(

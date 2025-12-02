@@ -7,10 +7,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.linear_position import LinearPositionCharacteristic
 from bluetooth_sig.gatt.constants import SINT32_MAX
-from tests.gatt.characteristics.test_characteristic_common import (
-    CharacteristicTestData,
-    CommonCharacteristicTests,
-)
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestLinearPositionCharacteristic(CommonCharacteristicTests):
@@ -34,10 +31,10 @@ class TestLinearPositionCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray([0x00, 0x00, 0x00, 0x00]), expected_value=0.0, description="0 m (zero position)"
             ),
             CharacteristicTestData(
-                input_data=bytearray([0xE8, 0x03, 0x00, 0x00]), expected_value=1.0, description="1.0 m (one meter)"
+                input_data=bytearray([0x80, 0x96, 0x98, 0x00]), expected_value=1.0, description="1.0 m (one meter)"
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x18, 0xFC, 0xFF, 0xFF]),
+                input_data=bytearray([0x80, 0x69, 0x67, 0xFF]),
                 expected_value=-1.0,
                 description="-1.0 m (negative position)",
             ),
@@ -61,11 +58,11 @@ class TestLinearPositionCharacteristic(CommonCharacteristicTests):
         assert result == 0.0
 
         # Test positive position (0.5 m)
-        result = characteristic.decode_value(bytearray([0x80, 0x1A, 0x06, 0x00]))  # 5000000 = 0.5 m
+        result = characteristic.decode_value(bytearray([0x40, 0x4B, 0x4C, 0x00]))  # 5000000 = 0.5 m
         assert abs(result - 0.5) < 1e-7
 
         # Test negative position (-0.25 m)
-        result = characteristic.decode_value(bytearray([0x00, 0xE6, 0xF9, 0xFF]))  # -2500000 = -0.25 m
+        result = characteristic.decode_value(bytearray([0x60, 0xDA, 0xD9, 0xFF]))  # -2500000 = -0.25 m
         assert abs(result + 0.25) < 1e-7
 
     def test_linear_position_extreme_values(self, characteristic: BaseCharacteristic) -> None:
@@ -93,14 +90,14 @@ class TestLinearPositionCharacteristic(CommonCharacteristicTests):
         """Test encoding produces correct byte sequences."""
         # Test encoding common positions
         assert characteristic.encode_value(0.0) == bytearray([0x00, 0x00, 0x00, 0x00])
-        assert characteristic.encode_value(1.0) == bytearray([0xE8, 0x03, 0x00, 0x00])
-        assert characteristic.encode_value(-1.0) == bytearray([0x18, 0xFC, 0xFF, 0xFF])
+        assert characteristic.encode_value(1.0) == bytearray([0x80, 0x96, 0x98, 0x00])
+        assert characteristic.encode_value(-1.0) == bytearray([0x80, 0x69, 0x67, 0xFF])
 
     def test_encode_value(self, characteristic: LinearPositionCharacteristic) -> None:
         """Test encoding linear position values."""
         # Test encoding positive position
         encoded = characteristic.encode_value(0.5)
-        assert encoded == bytearray([0x80, 0x1A, 0x06, 0x00])
+        assert encoded == bytearray([0x40, 0x4B, 0x4C, 0x00])
 
         # Test encoding zero
         encoded = characteristic.encode_value(0.0)
@@ -108,7 +105,7 @@ class TestLinearPositionCharacteristic(CommonCharacteristicTests):
 
         # Test encoding negative position
         encoded = characteristic.encode_value(-0.25)
-        assert encoded == bytearray([0x00, 0xE6, 0xF9, 0xFF])
+        assert encoded == bytearray([0x60, 0xDA, 0xD9, 0xFF])
 
     def test_characteristic_metadata(self, characteristic: LinearPositionCharacteristic) -> None:
         """Test characteristic metadata."""

@@ -7,6 +7,7 @@ API clarity and extensibility.
 
 from __future__ import annotations
 
+from .acceleration import AccelerationCharacteristic
 from .activity_goal import ActivityGoalCharacteristic
 from .aerobic_heart_rate_lower_limit import AerobicHeartRateLowerLimitCharacteristic
 from .aerobic_heart_rate_upper_limit import AerobicHeartRateUpperLimitCharacteristic
@@ -15,21 +16,25 @@ from .age import AgeCharacteristic
 
 # Import the registry components from the dedicated registry module
 # Import all individual characteristic classes for backward compatibility
+from .alert_category_id import AlertCategoryIdCharacteristic
+from .alert_category_id_bit_mask import AlertCategoryIdBitMaskCharacteristic
 from .alert_level import AlertLevelCharacteristic
-from .alert_notification_control_point import (
-    AlertNotificationControlPointCharacteristic,
-)
+from .alert_notification_control_point import AlertNotificationControlPointCharacteristic
 from .ammonia_concentration import AmmoniaConcentrationCharacteristic
 from .anaerobic_heart_rate_lower_limit import AnaerobicHeartRateLowerLimitCharacteristic
+from .anaerobic_heart_rate_upper_limit import AnaerobicHeartRateUpperLimitCharacteristic
 from .anaerobic_threshold import AnaerobicThresholdCharacteristic
+from .apparent_energy_32 import ApparentEnergy32Characteristic
+from .apparent_power import ApparentPowerCharacteristic
 from .apparent_wind_direction import ApparentWindDirectionCharacteristic
 from .apparent_wind_speed import ApparentWindSpeedCharacteristic
 from .average_current import AverageCurrentCharacteristic
 from .average_voltage import AverageVoltageCharacteristic
 from .barometric_pressure_trend import BarometricPressureTrendCharacteristic
 from .base import BaseCharacteristic
+from .battery_critical_status import BatteryCriticalStatusCharacteristic
 from .battery_level import BatteryLevelCharacteristic
-from .battery_power_state import BatteryPowerStateCharacteristic
+from .battery_level_status import BatteryLevelStatusCharacteristic
 from .blood_pressure_feature import BloodPressureFeatureCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .body_composition_feature import BodyCompositionFeatureCharacteristic
@@ -65,18 +70,13 @@ from .fat_burn_heart_rate_lower_limit import FatBurnHeartRateLowerLimitCharacter
 from .fat_burn_heart_rate_upper_limit import FatBurnHeartRateUpperLimitCharacteristic
 from .first_name import FirstNameCharacteristic
 from .five_zone_heart_rate_limits import FiveZoneHeartRateLimitsCharacteristic
+from .force import ForceCharacteristic
 from .four_zone_heart_rate_limits import FourZoneHeartRateLimitsCharacteristic
 from .gender import Gender, GenderCharacteristic
 from .generic_access import AppearanceCharacteristic, DeviceNameCharacteristic, ServiceChangedCharacteristic
 from .glucose_feature import GlucoseFeatureCharacteristic, GlucoseFeatures
-from .glucose_measurement import (
-    GlucoseMeasurementCharacteristic,
-    GlucoseMeasurementFlags,
-)
-from .glucose_measurement_context import (
-    GlucoseMeasurementContextCharacteristic,
-    GlucoseMeasurementContextFlags,
-)
+from .glucose_measurement import GlucoseMeasurementCharacteristic, GlucoseMeasurementFlags
+from .glucose_measurement_context import GlucoseMeasurementContextCharacteristic, GlucoseMeasurementContextFlags
 from .handedness import Handedness, HandednessCharacteristic
 from .heart_rate_max import HeartRateMaxCharacteristic
 from .heart_rate_measurement import HeartRateMeasurementCharacteristic
@@ -92,6 +92,7 @@ from .indoor_positioning_configuration import IndoorPositioningConfigurationChar
 from .language import LanguageCharacteristic
 from .last_name import LastNameCharacteristic
 from .latitude import LatitudeCharacteristic
+from .linear_position import LinearPositionCharacteristic
 from .ln_control_point import LNControlPointCharacteristic
 from .ln_feature import LNFeatureCharacteristic
 from .local_time_information import LocalTimeInformationCharacteristic
@@ -124,12 +125,9 @@ from .pressure import PressureCharacteristic
 from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
 from .rainfall import RainfallCharacteristic
 from .reference_time_information import ReferenceTimeInformationCharacteristic
-from .registry import (
-    CHARACTERISTIC_CLASS_MAP,
-    CharacteristicName,
-    CharacteristicRegistry,
-)
+from .registry import CHARACTERISTIC_CLASS_MAP, CharacteristicName, CharacteristicRegistry
 from .resting_heart_rate import RestingHeartRateCharacteristic
+from .rotational_speed import RotationalSpeedCharacteristic
 from .rsc_feature import RSCFeatureCharacteristic
 from .rsc_measurement import RSCMeasurementCharacteristic
 from .scan_interval_window import ScanIntervalWindowCharacteristic
@@ -143,19 +141,12 @@ from .stride_length import StrideLengthCharacteristic
 from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacteristic
 from .supported_new_alert_category import SupportedNewAlertCategoryCharacteristic
 from .supported_power_range import SupportedPowerRangeCharacteristic
-from .supported_unread_alert_category import (
-    SupportedUnreadAlertCategoryCharacteristic,
-)
+from .supported_unread_alert_category import SupportedUnreadAlertCategoryCharacteristic
 from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
 from .three_zone_heart_rate_limits import ThreeZoneHeartRateLimitsCharacteristic
 from .time_update_control_point import TimeUpdateControlPointCharacteristic
-from .time_update_state import (
-    TimeUpdateCurrentState,
-    TimeUpdateResult,
-    TimeUpdateState,
-    TimeUpdateStateCharacteristic,
-)
+from .time_update_state import TimeUpdateCurrentState, TimeUpdateResult, TimeUpdateState, TimeUpdateStateCharacteristic
 from .time_with_dst import TimeWithDstCharacteristic
 from .time_zone import TimeZoneCharacteristic
 from .true_wind_direction import TrueWindDirectionCharacteristic
@@ -184,23 +175,30 @@ __all__ = [
     # Base characteristic
     "BaseCharacteristic",
     # Individual characteristic classes (for backward compatibility)
-    "AlertLevelCharacteristic",
-    "AlertNotificationControlPointCharacteristic",
-    "AgeCharacteristic",
-    "AmmoniaConcentrationCharacteristic",
-    "AnaerobicHeartRateLowerLimitCharacteristic",
-    "AnaerobicThresholdCharacteristic",
+    "AccelerationCharacteristic",
+    "ActivityGoalCharacteristic",
     "AerobicHeartRateLowerLimitCharacteristic",
     "AerobicHeartRateUpperLimitCharacteristic",
     "AerobicThresholdCharacteristic",
+    "AgeCharacteristic",
+    "AlertCategoryIdBitMaskCharacteristic",
+    "AlertCategoryIdCharacteristic",
+    "AlertLevelCharacteristic",
+    "AlertNotificationControlPointCharacteristic",
+    "AmmoniaConcentrationCharacteristic",
+    "AnaerobicHeartRateLowerLimitCharacteristic",
+    "AnaerobicHeartRateUpperLimitCharacteristic",
+    "AnaerobicThresholdCharacteristic",
+    "ApparentEnergy32Characteristic",
+    "ApparentPowerCharacteristic",
     "ApparentWindDirectionCharacteristic",
     "ApparentWindSpeedCharacteristic",
     "AverageCurrentCharacteristic",
     "AverageVoltageCharacteristic",
-    "ActivityGoalCharacteristic",
     "BarometricPressureTrendCharacteristic",
+    "BatteryCriticalStatusCharacteristic",
     "BatteryLevelCharacteristic",
-    "BatteryPowerStateCharacteristic",
+    "BatteryLevelStatusCharacteristic",
     "BloodPressureFeatureCharacteristic",
     "BloodPressureMeasurementCharacteristic",
     "BodyCompositionFeatureCharacteristic",
@@ -234,6 +232,7 @@ __all__ = [
     "FatBurnHeartRateUpperLimitCharacteristic",
     "FirstNameCharacteristic",
     "FiveZoneHeartRateLimitsCharacteristic",
+    "ForceCharacteristic",
     "FourZoneHeartRateLimitsCharacteristic",
     "Gender",
     "GenderCharacteristic",
@@ -258,22 +257,23 @@ __all__ = [
     "HardwareRevisionStringCharacteristic",
     "IlluminanceCharacteristic",
     "IndoorPositioningConfigurationCharacteristic",
-    "LocalTimeInformationCharacteristic",
-    "LatitudeCharacteristic",
-    "LanguageCharacteristic",
     "LastNameCharacteristic",
-    "MiddleNameCharacteristic",
+    "LatitudeCharacteristic",
+    "LinearPositionCharacteristic",
+    "LNControlPointCharacteristic",
+    "LNFeatureCharacteristic",
+    "LocalTimeInformationCharacteristic",
     "LocationAndSpeedCharacteristic",
     "LocationNameCharacteristic",
     "LongitudeCharacteristic",
-    "LNControlPointCharacteristic",
-    "LNFeatureCharacteristic",
+    "LanguageCharacteristic",
     "MagneticDeclinationCharacteristic",
     "MagneticFluxDensity2DCharacteristic",
     "MagneticFluxDensity3DCharacteristic",
     "ManufacturerNameStringCharacteristic",
     "MaximumRecommendedHeartRateCharacteristic",
     "MethaneConcentrationCharacteristic",
+    "MiddleNameCharacteristic",
     "ModelNumberStringCharacteristic",
     "NavigationCharacteristic",
     "NewAlertCharacteristic",
@@ -295,8 +295,9 @@ __all__ = [
     "RainfallCharacteristic",
     "ReferenceTimeInformationCharacteristic",
     "RestingHeartRateCharacteristic",
-    "RSCMeasurementCharacteristic",
+    "RotationalSpeedCharacteristic",
     "RSCFeatureCharacteristic",
+    "RSCMeasurementCharacteristic",
     "SerialNumberStringCharacteristic",
     "ServiceChangedCharacteristic",
     "SoftwareRevisionStringCharacteristic",

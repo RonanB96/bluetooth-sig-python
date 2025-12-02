@@ -16,12 +16,16 @@ class ApparentEnergy32Values:  # pylint: disable=too-few-public-methods
 
 
 class ApparentEnergy32Characteristic(BaseCharacteristic):
-    """Apparent Energy 32 characteristic (0x2B11).
+    """Apparent Energy 32 characteristic (0x2B89).
 
     org.bluetooth.characteristic.apparent_energy_32
 
     The Apparent Energy 32 characteristic is used to represent the integral of Apparent Power over a time interval.
     """
+
+    _manual_unit: str | None = (
+        "kVAh"  # YAML: electrical_apparent_energy.kilovolt_ampere_hour, units.yaml: energy.kilovolt_ampere_hour
+    )
 
     expected_length = 4
 

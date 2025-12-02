@@ -14,9 +14,7 @@ from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharact
 from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
 from bluetooth_sig.gatt.characteristics.temperature import TemperatureCharacteristic
 from bluetooth_sig.gatt.services.battery_service import BatteryService
-from bluetooth_sig.gatt.services.environmental_sensing import (
-    EnvironmentalSensingService,
-)
+from bluetooth_sig.gatt.services.environmental_sensing import EnvironmentalSensingService
 from bluetooth_sig.gatt.uuid_registry import UuidRegistry
 from bluetooth_sig.types.gatt_services import ServiceDiscoveryData
 from bluetooth_sig.types.uuid import BluetoothUUID

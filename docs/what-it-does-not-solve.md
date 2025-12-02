@@ -32,6 +32,7 @@ For BLE connectivity, use dedicated BLE libraries:
 ```python
 # SKIP: Example requires BLE hardware access
 from bleak import BleakClient
+
 from bluetooth_sig import BluetoothSIGTranslator
 
 # ============================================
@@ -96,22 +97,24 @@ While the library provides **70+ official Bluetooth SIG standard characteristics
 The library provides a clean API for extending with your own characteristics:
 
 ```python
+from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
-from bluetooth_sig import BluetoothSIGTranslator
+
 
 class MyCustomCharacteristic(CustomBaseCharacteristic):
     """Your custom characteristic."""
 
     _info = CharacteristicInfo(
         uuid=BluetoothUUID("ABCD"),  # Your UUID
-        name="My Custom Characteristic"
+        name="My Custom Characteristic",
     )
 
     def decode_value(self, data: bytearray) -> int:
         """Your parsing logic."""
         return int(data[0])
+
 
 # Auto-registers when first instantiated!
 custom_char = MyCustomCharacteristic()
@@ -267,12 +270,14 @@ You can use this library as a foundation:
 # SKIP: Example requires Flask web framework and hardware access
 # Example: Flask web app
 from flask import Flask, jsonify
+
 from bluetooth_sig import BluetoothSIGTranslator
 
 app = Flask(__name__)
 translator = BluetoothSIGTranslator()
 
-@app.route('/parse/<uuid>')
+
+@app.route("/parse/<uuid>")
 def parse_data(uuid):
     # Your BLE read logic here
     raw_data = read_from_device(uuid)
@@ -343,7 +348,9 @@ You can easily mock the parsing for testing:
 
 ```python
 import pytest
+
 from bluetooth_sig import BluetoothSIGTranslator
+
 
 def test_battery_parsing():
     # ============================================
@@ -353,7 +360,9 @@ def test_battery_parsing():
     mock_battery_data = bytearray([85])  # 85% battery
 
     translator = BluetoothSIGTranslator()
-    result = translator.parse_characteristic(BATTERY_LEVEL_UUID, mock_battery_data)
+    result = translator.parse_characteristic(
+        BATTERY_LEVEL_UUID, mock_battery_data
+    )
     assert result.value == 85
 ```
 

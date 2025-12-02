@@ -496,12 +496,8 @@ class TestNameResolutionFallback:
         strategy.
         """
         from bluetooth_sig.gatt.services.battery_service import BatteryService
-        from bluetooth_sig.gatt.services.device_information import (
-            DeviceInformationService,
-        )
-        from bluetooth_sig.gatt.services.environmental_sensing import (
-            EnvironmentalSensingService,
-        )
+        from bluetooth_sig.gatt.services.device_information import DeviceInformationService
+        from bluetooth_sig.gatt.services.environmental_sensing import EnvironmentalSensingService
         from bluetooth_sig.gatt.services.generic_access import GenericAccessService
 
         # Services without explicit names (should use class name resolution)
@@ -545,9 +541,7 @@ class TestNameResolutionFallback:
         """Test that current characteristics use the expected name resolution
         strategy.
         """
-        from bluetooth_sig.gatt.characteristics.battery_level import (
-            BatteryLevelCharacteristic,
-        )
+        from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
         from bluetooth_sig.gatt.characteristics.uv_index import UVIndexCharacteristic
 
         # Characteristics with explicit names (should use explicit name resolution)

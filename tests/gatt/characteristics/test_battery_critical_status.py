@@ -9,10 +9,7 @@ from bluetooth_sig.gatt.characteristics.battery_critical_status import (
     BatteryCriticalStatus,
     BatteryCriticalStatusCharacteristic,
 )
-from tests.gatt.characteristics.test_characteristic_common import (
-    CharacteristicTestData,
-    CommonCharacteristicTests,
-)
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestBatteryCriticalStatusCharacteristic(CommonCharacteristicTests):
@@ -141,5 +138,5 @@ class TestBatteryCriticalStatusCharacteristic(CommonCharacteristicTests):
     def test_characteristic_metadata(self, characteristic: BatteryCriticalStatusCharacteristic) -> None:
         """Test characteristic metadata."""
         assert characteristic.name == "Battery Critical Status"
-        assert characteristic.unit is None
+        assert characteristic.unit == ""
         assert characteristic.uuid == "2BE9"  # type: ignore[unreachable]

@@ -18,10 +18,7 @@ from bluetooth_sig.types.battery import (
     PowerConnectionState,
     ServiceRequiredState,
 )
-from tests.gatt.characteristics.test_characteristic_common import (
-    CharacteristicTestData,
-    CommonCharacteristicTests,
-)
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
@@ -40,36 +37,58 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
     @pytest.fixture
     def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
         """Valid battery level status test data."""
-        return CharacteristicTestData(
-            input_data=bytearray(
-                [
-                    0x07,  # flags: identifier present, battery level present, additional status present
-                    0x01,
-                    0x00,  # power state: battery present, others default
-                    0x12,
-                    0x34,  # identifier: 0x3412
-                    0x64,  # battery level: 100
-                    0x05,  # additional status: service required=1, battery fault=1
-                ]
+        return [
+            CharacteristicTestData(
+                input_data=bytearray(
+                    [
+                        0x07,  # flags: identifier present, battery level present, additional status present
+                        0x01,
+                        0x00,  # power state: battery present, others default
+                        0x12,
+                        0x34,  # identifier: 0x3412
+                        0x64,  # battery level: 100
+                        0x05,  # additional status: service required=1, battery fault=1
+                    ]
+                ),
+                expected_value=BatteryLevelStatus(
+                    flags=BatteryLevelStatusFlags(0x07),
+                    battery_present=True,
+                    wired_external_power_connected=PowerConnectionState.NO,
+                    wireless_external_power_connected=PowerConnectionState.NO,
+                    battery_charge_state=BatteryChargeState.UNKNOWN,
+                    battery_charge_level=BatteryChargeLevel.UNKNOWN,
+                    charging_type=BatteryChargingType.UNKNOWN,
+                    charging_fault_battery=False,
+                    charging_fault_external_power=False,
+                    charging_fault_other=False,
+                    identifier=0x3412,
+                    battery_level=100,
+                    service_required=ServiceRequiredState.TRUE,
+                    battery_fault=True,
+                ),
+                description="All fields present",
             ),
-            expected_value=BatteryLevelStatus(
-                flags=BatteryLevelStatusFlags(0x07),
-                battery_present=True,
-                wired_external_power_connected=PowerConnectionState.NO,
-                wireless_external_power_connected=PowerConnectionState.NO,
-                battery_charge_state=BatteryChargeState.UNKNOWN,
-                battery_charge_level=BatteryChargeLevel.UNKNOWN,
-                charging_type=BatteryChargingType.UNKNOWN,
-                charging_fault_battery=False,
-                charging_fault_external_power=False,
-                charging_fault_other=False,
-                identifier=0x3412,
-                battery_level=100,
-                service_required=ServiceRequiredState.TRUE,
-                battery_fault=True,
+            CharacteristicTestData(
+                input_data=bytearray([0x00, 0x01, 0x00]),  # minimal: no optional fields, battery present
+                expected_value=BatteryLevelStatus(
+                    flags=BatteryLevelStatusFlags(0x00),
+                    battery_present=True,
+                    wired_external_power_connected=PowerConnectionState.NO,
+                    wireless_external_power_connected=PowerConnectionState.NO,
+                    battery_charge_state=BatteryChargeState.UNKNOWN,
+                    battery_charge_level=BatteryChargeLevel.UNKNOWN,
+                    charging_type=BatteryChargingType.UNKNOWN,
+                    charging_fault_battery=False,
+                    charging_fault_external_power=False,
+                    charging_fault_other=False,
+                    identifier=None,
+                    battery_level=None,
+                    service_required=None,  # Not present when additional status flag is 0
+                    battery_fault=None,  # Not present when additional status flag is 0
+                ),
+                description="Minimal fields",
             ),
-            description="All fields present",
-        )
+        ]
 
     # === Battery Level Status-Specific Tests ===
 
@@ -103,21 +122,33 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
 
     def test_battery_level_status_power_state_bits(self, characteristic: BaseCharacteristic) -> None:
         """Test power state bit field parsing."""
-        # Set various power state bits
+        # Construct power state with specific valid enum values
+        # Power state is uint16: bits laid out as:
+        # bit 0: battery_present (1)
+        # bits 1-2: wired_external_power_connected (10 = 2 = UNKNOWN)
+        # bits 3-4: wireless_external_power_connected (10 = 2 = UNKNOWN)
+        # bits 5-6: battery_charge_state (00 = 0 = UNKNOWN)
+        # bits 7-8: battery_charge_level (00 = 0 = UNKNOWN)
+        # bits 9-11: charging_type (100 = 4 = FLOAT)
+        # bit 12: charging_fault_battery (1)
+        # bit 13: charging_fault_external_power (1)
+        # bit 14: charging_fault_other (1)
+        # bit 15: RFU (0)
+        # Binary: 0111 1000 0001 0101 = 0x7815
         data = bytearray(
             [
-                0x00,  # no optional
-                0xFF,
-                0x7F,  # all bits set except RFU
+                0x00,  # no optional fields
+                0x15,  # Low byte of power state
+                0x78,  # High byte of power state
             ]
         )
         result = characteristic.decode_value(data)
         assert result.battery_present is True
-        assert result.wired_external_power_connected == 3  # bits 1-2
-        assert result.wireless_external_power_connected == 3  # bits 3-4
-        assert result.battery_charge_state == 3  # bits 5-6
-        assert result.battery_charge_level == 3  # bits 7-8
-        assert result.charging_type == 7  # bits 9-11
+        assert result.wired_external_power_connected == PowerConnectionState.UNKNOWN
+        assert result.wireless_external_power_connected == PowerConnectionState.UNKNOWN
+        assert result.battery_charge_state == BatteryChargeState.UNKNOWN
+        assert result.battery_charge_level == BatteryChargeLevel.UNKNOWN
+        assert result.charging_type == BatteryChargingType.FLOAT
         assert result.charging_fault_battery is True
         assert result.charging_fault_external_power is True
         assert result.charging_fault_other is True
@@ -149,8 +180,8 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
         expected = bytearray(
             [
                 0x07,  # flags
-                0x29,
-                0x4A,  # power state: 0x4A29 = 0100101000101001
+                0xAB,
+                0x53,  # power state: 0x53AB = 0101001110101011
                 0x34,
                 0x12,  # identifier little-endian
                 0x32,  # battery level
@@ -203,5 +234,5 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
     def test_characteristic_metadata(self, characteristic: BatteryLevelStatusCharacteristic) -> None:
         """Test characteristic metadata."""
         assert characteristic.name == "Battery Level Status"
-        assert characteristic.unit is None
+        assert characteristic.unit == ""
         assert characteristic.uuid == "2BED"  # type: ignore[unreachable]

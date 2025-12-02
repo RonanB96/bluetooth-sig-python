@@ -6,10 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.apparent_power import ApparentPowerCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import (
-    CharacteristicTestData,
-    CommonCharacteristicTests,
-)
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestApparentPowerCharacteristic(CommonCharacteristicTests):
@@ -23,7 +20,7 @@ class TestApparentPowerCharacteristic(CommonCharacteristicTests):
     @pytest.fixture
     def expected_uuid(self) -> str:
         """Expected UUID for Apparent Power characteristic."""
-        return "2B80"
+        return "2B8A"
 
     @pytest.fixture
     def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
@@ -33,7 +30,7 @@ class TestApparentPowerCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray([0x00, 0x00, 0x00]), expected_value=0.0, description="0 VA (no power)"
             ),
             CharacteristicTestData(
-                input_data=bytearray([0xE8, 0x03, 0x00]), expected_value=1.0, description="1.0 VA (one VA)"
+                input_data=bytearray([0x0A, 0x00, 0x00]), expected_value=1.0, description="1.0 VA (one VA)"
             ),
             CharacteristicTestData(
                 input_data=bytearray([0xFD, 0xFF, 0xFF]), expected_value=1677721.3, description="Maximum power"
@@ -53,7 +50,7 @@ class TestApparentPowerCharacteristic(CommonCharacteristicTests):
         assert result == 0.0
 
         # Test positive power (500.5 VA)
-        result = characteristic.decode_value(bytearray([0xF9, 0x0F, 0x01]))  # 5005 = 500.5 VA
+        result = characteristic.decode_value(bytearray([0x8D, 0x13, 0x00]))  # 5005 = 500.5 VA
         assert abs(result - 500.5) < 0.001
 
         # Test maximum power
@@ -86,14 +83,14 @@ class TestApparentPowerCharacteristic(CommonCharacteristicTests):
         """Test encoding produces correct byte sequences."""
         # Test encoding common powers
         assert characteristic.encode_value(0.0) == bytearray([0x00, 0x00, 0x00])
-        assert characteristic.encode_value(1.0) == bytearray([0xE8, 0x03, 0x00])
-        assert characteristic.encode_value(500.5) == bytearray([0xF9, 0x0F, 0x01])
+        assert characteristic.encode_value(1.0) == bytearray([0x0A, 0x00, 0x00])
+        assert characteristic.encode_value(500.5) == bytearray([0x8D, 0x13, 0x00])
 
     def test_encode_value(self, characteristic: ApparentPowerCharacteristic) -> None:
         """Test encoding apparent power values."""
         # Test encoding positive power
         encoded = characteristic.encode_value(500.5)
-        assert encoded == bytearray([0xF9, 0x0F, 0x01])
+        assert encoded == bytearray([0x8D, 0x13, 0x00])
 
         # Test encoding zero
         encoded = characteristic.encode_value(0.0)
@@ -107,4 +104,4 @@ class TestApparentPowerCharacteristic(CommonCharacteristicTests):
         """Test characteristic metadata."""
         assert characteristic.name == "Apparent Power"
         assert characteristic.unit == "VA"
-        assert characteristic.uuid == "2B80"
+        assert characteristic.uuid == "2B8A"

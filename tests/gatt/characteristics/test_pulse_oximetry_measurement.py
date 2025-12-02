@@ -4,9 +4,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import PLXFeatureFlags, PulseOximetryMeasurementCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-from bluetooth_sig.gatt.characteristics.pulse_oximetry_measurement import (
-    PulseOximetryData,
-)
+from bluetooth_sig.gatt.characteristics.pulse_oximetry_measurement import PulseOximetryData
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 

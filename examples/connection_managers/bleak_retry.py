@@ -164,7 +164,6 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
                         char_info = CharacteristicInfo(
                             uuid=char_uuid,
                             name=char.description or f"Unknown Characteristic ({char_uuid.short_form}...)",
-                            description=char.description or "",
                         )
                         char_instance = UnknownCharacteristic(info=char_info, properties=properties)
                         characteristics[str(char_uuid)] = char_instance

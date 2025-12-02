@@ -3,10 +3,7 @@
 import pytest
 
 from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import (
-    CharacteristicTestData,
-    CommonCharacteristicTests,
-)
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestHumidityCharacteristic(CommonCharacteristicTests):

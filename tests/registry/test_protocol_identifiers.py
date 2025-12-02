@@ -115,13 +115,13 @@ class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-method
     def test_get_protocol_info_by_int(self, protocol_identifiers_registry: ProtocolIdentifiersRegistry) -> None:
         """Test lookup by integer UUID."""
         # Test with RFCOMM as integer (0x0003 = 3)
-        info = protocol_identifiers_registry.get_protocol_info(3)
+        info = protocol_identifiers_registry.get_protocol_info("0003")
         if info:  # Only if YAML loaded
             assert isinstance(info, ProtocolInfo)
             assert info.name == "RFCOMM"
 
         # Test with L2CAP as integer (0x0100 = 256)
-        info = protocol_identifiers_registry.get_protocol_info(256)
+        info = protocol_identifiers_registry.get_protocol_info("0100")
         if info:  # Only if YAML loaded
             assert isinstance(info, ProtocolInfo)
             assert info.name == "L2CAP"
@@ -145,50 +145,6 @@ class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-method
 
         # Invalid UUID
         assert not protocol_identifiers_registry.is_known_protocol("invalid")
-
-    def test_is_l2cap(self, protocol_identifiers_registry: ProtocolIdentifiersRegistry) -> None:
-        """Test L2CAP helper method."""
-        has_protocols = bool(protocol_identifiers_registry.get_all_protocols())
-
-        # Test with L2CAP UUID
-        assert protocol_identifiers_registry.is_l2cap("0x0100") or not has_protocols
-        assert protocol_identifiers_registry.is_l2cap(256) or not has_protocols
-
-        # Test with non-L2CAP UUID
-        assert not protocol_identifiers_registry.is_l2cap("0x0003")  # RFCOMM
-
-    def test_is_rfcomm(self, protocol_identifiers_registry: ProtocolIdentifiersRegistry) -> None:
-        """Test RFCOMM helper method."""
-        has_protocols = bool(protocol_identifiers_registry.get_all_protocols())
-
-        # Test with RFCOMM UUID
-        assert protocol_identifiers_registry.is_rfcomm("0x0003") or not has_protocols
-        assert protocol_identifiers_registry.is_rfcomm(3) or not has_protocols
-
-        # Test with non-RFCOMM UUID
-        assert not protocol_identifiers_registry.is_rfcomm("0x0100")  # L2CAP
-
-    def test_is_avdtp(self, protocol_identifiers_registry: ProtocolIdentifiersRegistry) -> None:
-        """Test AVDTP helper method."""
-        has_protocols = bool(protocol_identifiers_registry.get_all_protocols())
-
-        # Test with AVDTP UUID
-        assert protocol_identifiers_registry.is_avdtp("0x0019") or not has_protocols
-        assert protocol_identifiers_registry.is_avdtp(25) or not has_protocols  # 0x19 = 25
-
-        # Test with non-AVDTP UUID
-        assert not protocol_identifiers_registry.is_avdtp("0x0003")  # RFCOMM
-
-    def test_is_bnep(self, protocol_identifiers_registry: ProtocolIdentifiersRegistry) -> None:
-        """Test BNEP helper method."""
-        has_protocols = bool(protocol_identifiers_registry.get_all_protocols())
-
-        # Test with BNEP UUID
-        assert protocol_identifiers_registry.is_bnep("0x000F") or not has_protocols
-        assert protocol_identifiers_registry.is_bnep(15) or not has_protocols  # 0x0F = 15
-
-        # Test with non-BNEP UUID
-        assert not protocol_identifiers_registry.is_bnep("0x0003")  # RFCOMM
 
     def test_get_all_protocols(self, protocol_identifiers_registry: ProtocolIdentifiersRegistry) -> None:
         """Test getting all protocols."""
@@ -216,7 +172,7 @@ class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-method
 
     def test_uuid_formats(self, protocol_identifiers_registry: ProtocolIdentifiersRegistry) -> None:
         """Test various UUID input formats."""
-        formats: list[str | int] = ["0100", "0x0100", "0X0100", 0x0100, 256]
+        formats: list[str | BluetoothUUID] = ["0100", "0x0100", "0X0100", BluetoothUUID(256)]
         for fmt in formats:
             info = protocol_identifiers_registry.get_protocol_info(fmt)
             if protocol_identifiers_registry.is_known_protocol("0100"):
@@ -225,10 +181,6 @@ class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-method
 
     def test_well_known_protocols(self, protocol_identifiers_registry: ProtocolIdentifiersRegistry) -> None:
         """Test that well-known Bluetooth protocols are present if YAML loaded."""
-        protocols = protocol_identifiers_registry.get_all_protocols()
-        if not protocols:
-            pytest.skip("YAML not loaded, skipping well-known protocol check")
-
         # Check for some well-known protocols
         expected_protocols = {
             "SDP": "0001",
@@ -278,7 +230,7 @@ class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-method
         assert len(errors) == 0
 
         # Collect all results
-        all_results = []
+        all_results: list[ProtocolInfo | None] = []
         while not results.empty():
             all_results.append(results.get())
 

@@ -182,9 +182,7 @@ def test_blood_pressure_pairing_multiple_sessions() -> None:
     from datetime import datetime
 
     from bluetooth_sig.gatt.characteristics import BloodPressureMeasurementCharacteristic
-    from bluetooth_sig.gatt.characteristics.intermediate_cuff_pressure import (
-        IntermediateCuffPressureCharacteristic,
-    )
+    from bluetooth_sig.gatt.characteristics.intermediate_cuff_pressure import IntermediateCuffPressureCharacteristic
 
     translator = BluetoothSIGTranslator()
     bpm_uuid = str(BloodPressureMeasurementCharacteristic().uuid)

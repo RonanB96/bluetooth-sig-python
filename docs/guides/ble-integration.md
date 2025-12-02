@@ -29,12 +29,14 @@ pip install bluetooth-sig bleak
 
 ```python
 import asyncio
+
 from bluetooth_sig import BluetoothSIGTranslator
 
 # ============================================
 # SIMULATED DATA - Replace with actual BLE read
 # ============================================
 SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery level
+
 
 async def main():
     translator = BluetoothSIGTranslator()
@@ -43,16 +45,24 @@ async def main():
     battery_uuid = "2A19"  # From your BLE library
 
     # bluetooth-sig automatically identifies it and parses correctly
-    result = translator.parse_characteristic(battery_uuid, SIMULATED_BATTERY_DATA)
+    result = translator.parse_characteristic(
+        battery_uuid, SIMULATED_BATTERY_DATA
+    )
     print(f"Discovered: {result.info.name}")  # "Battery Level"
     print(f"Battery: {result.value}%")  # 85%
 
     # Alternative: If you know the characteristic, convert enum to UUID first
     from bluetooth_sig.types.gatt_enums import CharacteristicName
-    battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+
+    battery_uuid = translator.get_characteristic_uuid_by_name(
+        CharacteristicName.BATTERY_LEVEL
+    )
     if battery_uuid:
-        result2 = translator.parse_characteristic(str(battery_uuid), SIMULATED_BATTERY_DATA)
+        result2 = translator.parse_characteristic(
+            str(battery_uuid), SIMULATED_BATTERY_DATA
+        )
         print(f"Using enum: {result2.info.name} = {result2.value}%")
+
 
 asyncio.run(main())
 ```
@@ -61,14 +71,16 @@ asyncio.run(main())
 
 ```python
 import asyncio
+
 from bluetooth_sig import BluetoothSIGTranslator
 
 # ============================================
 # SIMULATED DATA - Replace with actual BLE reads
 # ============================================
-SIMULATED_BATTERY_DATA = bytearray([85])           # Simulates 85% battery
-SIMULATED_TEMP_DATA = bytearray([0x64, 0x09])     # Simulates 24.04°C
-SIMULATED_HUMIDITY_DATA = bytearray([0x3A, 0x13]) # Simulates 49.22%
+SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
+SIMULATED_TEMP_DATA = bytearray([0x64, 0x09])  # Simulates 24.04°C
+SIMULATED_HUMIDITY_DATA = bytearray([0x3A, 0x13])  # Simulates 49.22%
+
 
 async def read_sensor_data():
     translator = BluetoothSIGTranslator()
@@ -85,6 +97,7 @@ async def read_sensor_data():
         result = translator.parse_characteristic(uuid, raw_data)
         if result.parse_success:
             print(f"{name}: {result.value}{result.info.unit or ''}")
+
 
 asyncio.run(read_sensor_data())
 ```
@@ -117,6 +130,7 @@ asyncio.run(example())
 
         # Unsubscribe
         await client.stop_notify("2A37")
+
 ```
 
 ## Integration with bleak-retry-connector
@@ -135,7 +149,9 @@ pip install bluetooth-sig bleak-retry-connector
 ```python
 # SKIP: Example pattern only
 import asyncio
+
 from bluetooth_sig import BluetoothSIGTranslator
+
 
 async def read_with_retry():
     translator = BluetoothSIGTranslator()
@@ -144,6 +160,7 @@ async def read_with_retry():
     raw_data = bytearray([85])
     result = translator.parse_characteristic("2A19", raw_data)
     print(f"Battery: {result.value}%")
+
 
 asyncio.run(read_with_retry())
 ```
@@ -163,7 +180,9 @@ pip install bluetooth-sig simplepyble
 
 ```python
 from simplepyble import Adapter, Peripheral
+
 from bluetooth_sig import BluetoothSIGTranslator
+
 
 def main():
     translator = BluetoothSIGTranslator()
@@ -192,27 +211,27 @@ def main():
         # Find battery service
         services = peripheral.services()
         battery_service = next(
-            (s for s in services if s.uuid() == "180F"),
-            None
+            (s for s in services if s.uuid() == "180F"), None
         )
 
         if battery_service:
             # Find battery level characteristic
             battery_char = next(
-                (c for c in battery_service.characteristics()
-                 if c.uuid() == "2A19"),
-                None
+                (
+                    c
+                    for c in battery_service.characteristics()
+                    if c.uuid() == "2A19"
+                ),
+                None,
             )
 
             if battery_char:
                 # Read and parse
                 raw_data = peripheral.read(
-                    battery_service.uuid(),
-                    battery_char.uuid()
+                    battery_service.uuid(), battery_char.uuid()
                 )
                 result = translator.parse_characteristic(
-                    "2A19",
-                    bytearray(raw_data)
+                    "2A19", bytearray(raw_data)
                 )
                 print(f"Battery: {result.value}%")
     finally:
@@ -268,10 +287,7 @@ Always specify timeouts:
 
 ```python
 # ✅ Good - with timeout
-raw_data = await asyncio.wait_for(
-    client.read_gatt_char(uuid),
-    timeout=10.0
-)
+raw_data = await asyncio.wait_for(client.read_gatt_char(uuid), timeout=10.0)
 
 # ❌ Bad - no timeout (could hang forever)
 raw_data = await client.read_gatt_char(uuid)
@@ -307,9 +323,12 @@ Here's a complete production-ready example:
 ```python
 # SKIP: Requires actual BLE device connection
 import asyncio
+
 from bleak import BleakClient
+
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.gatt.exceptions import BluetoothSIGError
+
 
 class SensorReader:
     """Read and parse BLE sensor data."""
@@ -322,20 +341,14 @@ class SensorReader:
         """Read battery level."""
         async with BleakClient(self.address) as client:
             raw_data = await client.read_gatt_char("2A19")
-            result = self.translator.parse_characteristic(
-                "2A19",
-                raw_data
-            )
+            result = self.translator.parse_characteristic("2A19", raw_data)
             return result.value
 
     async def read_temperature(self) -> float:
         """Read temperature in °C."""
         async with BleakClient(self.address) as client:
             raw_data = await client.read_gatt_char("2A6E")
-            result = self.translator.parse_characteristic(
-                "2A6E",
-                raw_data
-            )
+            result = self.translator.parse_characteristic("2A6E", raw_data)
             return result.value
 
     async def read_all(self) -> dict:
@@ -352,12 +365,10 @@ class SensorReader:
             for name, uuid in sensors.items():
                 try:
                     raw_data = await asyncio.wait_for(
-                        client.read_gatt_char(uuid),
-                        timeout=5.0
+                        client.read_gatt_char(uuid), timeout=5.0
                     )
                     result = self.translator.parse_characteristic(
-                        uuid,
-                        raw_data
+                        uuid, raw_data
                     )
                     results[name] = result.value
                 except BluetoothSIGError as e:
@@ -367,10 +378,12 @@ class SensorReader:
 
         return results
 
+
 # ============================================
 # SIMULATED DATA - Replace with actual device
 # ============================================
 SIMULATED_DEVICE_ADDRESS = "AA:BB:CC:DD:EE:FF"  # Example MAC address
+
 
 async def main():
     reader = SensorReader(SIMULATED_DEVICE_ADDRESS)
@@ -382,9 +395,8 @@ async def main():
     # Read all sensors
     data = await reader.read_all()
     for name, value in data.items():
-        print(
-            f"{name}: {value}"
-        )
+        print(f"{name}: {value}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

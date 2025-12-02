@@ -32,11 +32,7 @@ from .location_and_navigation import LocationAndNavigationService
 from .next_dst_change import NextDstChangeService
 from .phone_alert_status import PhoneAlertStatusService
 from .reference_time_update import ReferenceTimeUpdateService
-from .registry import (
-    SERVICE_CLASS_MAP,
-    GattServiceRegistry,
-    ServiceName,
-)
+from .registry import SERVICE_CLASS_MAP, GattServiceRegistry, ServiceName
 from .running_speed_and_cadence import RunningSpeedAndCadenceService
 from .scan_parameters import ScanParametersService
 from .tx_power import TxPowerService

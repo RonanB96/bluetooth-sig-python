@@ -107,7 +107,9 @@ To identify bottlenecks in your application:
 # SKIP: Profiling example that creates files and performs extensive operations
 import cProfile
 import pstats
+
 from bluetooth_sig import BluetoothSIGTranslator
+
 
 def profile_parsing():
     translator = BluetoothSIGTranslator()
@@ -117,12 +119,13 @@ def profile_parsing():
     for _ in range(10000):
         translator.parse_characteristic("2A19", data)
 
+
 # Profile
-cProfile.run('profile_parsing()', 'stats.prof')
+cProfile.run("profile_parsing()", "stats.prof")
 
 # View results
-stats = pstats.Stats('stats.prof')
-stats.sort_stats('cumulative')
+stats = pstats.Stats("stats.prof")
+stats.sort_stats("cumulative")
 stats.print_stats(10)
 ```
 
@@ -146,22 +149,23 @@ The library is thread-safe for reading operations:
 # SKIP: Example requires external sensor_data variable
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 
+
 def parse_in_thread(uuid, data):
     return translator.parse_characteristic(uuid, data)
 
+
 # Parallel parsing (though rarely needed)
 with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = [
-            executor.submit(parse_in_thread, uuid, data)
-            for uuid, data in sensor_data.items()
-        ]
-        results = [
-            f.result() for f in futures
-        ]
+    futures = [
+        executor.submit(parse_in_thread, uuid, data)
+        for uuid, data in sensor_data.items()
+    ]
+    results = [f.result() for f in futures]
 ```
 
 **Note**: Parsing is so fast that parallelization rarely provides benefits.
@@ -173,6 +177,7 @@ In typical applications:
 
 ```python
 import time
+
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
@@ -184,9 +189,7 @@ for _ in range(1000):
 elapsed = time.perf_counter() - start
 
 print(f"1000 parses in {elapsed:.3f}s")
-print(
-    f"Average: {elapsed * 1000:.1f}μs per parse"
-)
+print(f"Average: {elapsed * 1000:.1f}μs per parse")
 # Typical output: "1000 parses in 0.050s" (50μs avg)
 ```
 

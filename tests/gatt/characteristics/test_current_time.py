@@ -6,9 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.current_time import (
-    CurrentTimeCharacteristic,
-)
+from bluetooth_sig.gatt.characteristics.current_time import CurrentTimeCharacteristic
 from bluetooth_sig.gatt.characteristics.templates import TimeData
 from bluetooth_sig.types.gatt_enums import AdjustReason, DayOfWeek
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests

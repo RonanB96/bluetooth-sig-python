@@ -160,17 +160,20 @@ def find_bluetooth_sig_path() -> Path | None:
 
 ```python
 import threading
-from bluetooth_sig.registry.base import BaseRegistry
-from bluetooth_sig.gatt.uuid_registry import UuidInfo, UnitInfo
 
-class UuidRegistry(BaseRegistry):
+from bluetooth_sig.registry.base import BaseUUIDRegistry
+from bluetooth_sig.types.data_types import CharacteristicInfo, ServiceInfo
+from bluetooth_sig.types.registry.common import UnitMetadata
+
+
+class UuidRegistry(BaseUUIDRegistry):
     """Central UUID registry for all Bluetooth SIG UUIDs."""
 
     # Core storage (canonical keys)
-    _services: dict[str, UuidInfo] = {}
-    _characteristics: dict[str, UuidInfo] = {}
-    _descriptors: dict[str, UuidInfo] = {}
-    _units: dict[str, UnitInfo] = {}
+    _services: dict[str, ServiceInfo] = {}
+    _characteristics: dict[str, CharacteristicInfo] = {}
+    _descriptors: dict[str, CharacteristicInfo] = {}
+    _units: dict[str, UnitMetadata] = {}
 
     # Alias mappings (lightweight, point to canonical keys)
     _service_aliases: dict[str, str] = {}
@@ -178,8 +181,8 @@ class UuidRegistry(BaseRegistry):
     _descriptor_aliases: dict[str, str] = {}
 
     # Custom registrations (runtime)
-    _custom_characteristics: dict[str, UuidInfo] = {}
-    _custom_services: dict[str, UuidInfo] = {}
+    _custom_characteristics: dict[str, CharacteristicInfo] = {}
+    _custom_services: dict[str, ServiceInfo] = {}
 
     # Thread safety
     _lock = threading.RLock()
@@ -190,19 +193,16 @@ class UuidRegistry(BaseRegistry):
 
 ```python
 import msgspec
+
+from bluetooth_sig.types.base_types import SIGInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
-from bluetooth_sig.gatt.uuid_registry import UuidOrigin
 
-class UuidInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Information about a UUID."""
 
-    uuid: BluetoothUUID  # Normalized UUID
-    name: str            # Display name (e.g., "Battery Level")
-    id: str              # Org ID (e.g., "org.bluetooth.characteristic.battery_level")
-    summary: str = ""    # Brief description
-    unit: str | None = None       # Unit of measurement
-    value_type: str | None = None # Data type
-    origin: UuidOrigin = UuidOrigin.BLUETOOTH_SIG
+class CharacteristicInfo(SIGInfo):
+    """Information about a Bluetooth characteristic from SIG/YAML specifications."""
+
+    value_type: str = "UNKNOWN"
+    unit: str = ""
 ```
 
 ### CharacteristicSpec Structure
@@ -211,29 +211,19 @@ For characteristics, a richer `CharacteristicSpec` is available:
 
 ```python
 import msgspec
+
+from bluetooth_sig.types.registry.common import FieldInfo, UnitMetadata
 from bluetooth_sig.types.uuid import BluetoothUUID
-from bluetooth_sig.gatt.uuid_registry import FieldInfo, UnitInfo
+
 
 class CharacteristicSpec(msgspec.Struct, kw_only=True):
     """Characteristic specification from cross-file YAML references."""
 
     uuid: BluetoothUUID
     name: str
-    field_info: FieldInfo    # data_type, field_size
-    unit_info: UnitInfo      # unit_symbol, base_unit, resolution
+    field_info: FieldInfo | None = None
+    unit_metadata: UnitMetadata | None = None
     description: str | None = None
-
-class FieldInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Field-related metadata from YAML."""
-    data_type: str | None = None
-    field_size: str | None = None
-
-class UnitInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Unit-related metadata from YAML."""
-    unit_id: str | None = None
-    unit_symbol: str | None = None
-    base_unit: str | None = None
-    resolution_text: str | None = None
 ```
 
 ## Lazy Loading Pattern
@@ -327,7 +317,7 @@ def _load_uuids(self) -> None:
                 uuid=bt_uuid,
                 name=uuid_info["name"],
                 id=uuid_info["id"],
-                origin=UuidOrigin.BLUETOOTH_SIG
+                origin=UuidOrigin.BLUETOOTH_SIG,
             )
             self._store_service(info)
 
@@ -384,15 +374,15 @@ def _store_characteristic(self, info: UuidInfo) -> None:
 def _generate_aliases(self, info: UuidInfo) -> set[str]:
     """Generate name/ID-based alias keys for a UuidInfo."""
     aliases: set[str] = {
-        info.name.lower(),          # "battery level"
-        info.id,                    # "org.bluetooth.characteristic.battery_level"
+        info.name.lower(),  # "battery level"
+        info.id,  # "org.bluetooth.characteristic.battery_level"
     }
 
     # Add service/characteristic-specific name variations
     if "characteristic" in info.id:
         char_name = info.id.replace("org.bluetooth.characteristic.", "")
         char_name = char_name.replace("_", " ").title()
-        aliases.add(char_name)      # "Battery Level"
+        aliases.add(char_name)  # "Battery Level"
 
     # Add space-separated words from name
     name_words = info.name.replace("_", " ").replace("-", " ")
@@ -402,7 +392,11 @@ def _generate_aliases(self, info: UuidInfo) -> set[str]:
 
     # Remove empty strings and canonical key
     canonical_key = info.uuid.normalized
-    return {alias for alias in aliases if alias and alias.strip() and alias != canonical_key}
+    return {
+        alias
+        for alias in aliases
+        if alias and alias.strip() and alias != canonical_key
+    }
 ```
 
 ### Lookup Process
@@ -468,7 +462,9 @@ flowchart TD
 ```
 
 ```python
-def get_characteristic_info(self, identifier: str | BluetoothUUID) -> UuidInfo | None:
+def get_characteristic_info(
+    self, identifier: str | BluetoothUUID
+) -> UuidInfo | None:
     """Get characteristic info by UUID or name."""
     self._ensure_loaded()
 
@@ -502,10 +498,11 @@ def get_characteristic_info(self, identifier: str | BluetoothUUID) -> UuidInfo |
 All specialized registries inherit from `BaseRegistry[T]`:
 
 ```python
-from typing import Generic, TypeVar, Callable, Any
 import threading
+from typing import Any, Callable, Generic, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 class BaseRegistry(Generic[T]):
     """Base class for Bluetooth SIG registries with singleton pattern and thread safety."""
@@ -522,7 +519,9 @@ class BaseRegistry(Generic[T]):
                     cls._instance = cls()
         return cls._instance
 
-    def _lazy_load(self, loaded_check: Callable[[], bool], loader: Callable[[], None]) -> bool:
+    def _lazy_load(
+        self, loaded_check: Callable[[], bool], loader: Callable[[], None]
+    ) -> bool:
         """Thread-safe lazy loading helper using double-checked locking pattern."""
         if loaded_check():
             return False
@@ -573,7 +572,9 @@ thread2: data = registry.get_ad_type("0x09")
 
 ```python
 from bluetooth_sig.registry.core.ad_types import ADTypesRegistry
-from bluetooth_sig.registry.core.appearance_values import AppearanceValuesRegistry
+from bluetooth_sig.registry.core.appearance_values import (
+    AppearanceValuesRegistry,
+)
 from bluetooth_sig.registry.core.class_of_device import ClassOfDeviceRegistry
 
 # Advertising Data Types
@@ -582,8 +583,12 @@ ad_type_info = ad_types_registry.get_ad_type_info(0x01)  # Flags
 
 # Appearance Values
 appearance_registry = AppearanceValuesRegistry.get_instance()
-heart_rate_sensor_appearance = 832  # Simulated appearance value for Heart Rate Sensor
-appearance_info = appearance_registry.get_appearance_info(heart_rate_sensor_appearance)
+heart_rate_sensor_appearance = (
+    832  # Simulated appearance value for Heart Rate Sensor
+)
+appearance_info = appearance_registry.get_appearance_info(
+    heart_rate_sensor_appearance
+)
 
 # Class of Device
 cod_registry = ClassOfDeviceRegistry.get_instance()
@@ -596,7 +601,9 @@ cod_info = cod_registry.decode_class_of_device(audio_video_cod)
 **Location**: `src/bluetooth_sig/registry/company_identifiers/`
 
 ```python
-from bluetooth_sig.registry.company_identifiers import CompanyIdentifiersRegistry
+from bluetooth_sig.registry.company_identifiers import (
+    CompanyIdentifiersRegistry,
+)
 
 company_registry = CompanyIdentifiersRegistry.get_instance()
 company_name = company_registry.get_company_name(0x004C)  # Apple Inc.
@@ -704,14 +711,12 @@ translator = BluetoothSIGTranslator.get_instance()
 translator.register_custom_characteristic(
     uuid="ABCD1234",
     char_cls=MyCustomCharacteristic,
-    override=False  # Set True to override SIG characteristics
+    override=False,  # Set True to override SIG characteristics
 )
 
 # Register custom service
 translator.register_custom_service(
-    uuid="ABCD5678",
-    service_cls=MyCustomService,
-    override=False
+    uuid="ABCD5678", service_cls=MyCustomService, override=False
 )
 ```
 
@@ -730,7 +735,7 @@ class UuidRegistry:
             uuid=entry.uuid,
             name=entry.name,
             id=entry.id or f"custom.{entry.name.lower().replace(' ', '_')}",
-            origin=UuidOrigin.RUNTIME
+            origin=UuidOrigin.RUNTIME,
         )
 
         # Store in custom registry (separate from SIG registry)
@@ -777,11 +782,14 @@ def find_bluetooth_sig_path() -> Path | None:
     # ... search logic ...
     return base_path if base_path.exists() else None
 
+
 def _load_uuids(self) -> None:
     """Load all UUIDs from YAML files."""
     base_path = find_bluetooth_sig_path()
     if not base_path:
-        logger.warning("Bluetooth SIG submodule not found - UUID resolution will be limited")
+        logger.warning(
+            "Bluetooth SIG submodule not found - UUID resolution will be limited"
+        )
         return  # Graceful degradation
 ```
 

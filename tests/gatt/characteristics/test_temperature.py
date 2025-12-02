@@ -7,10 +7,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.temperature import TemperatureCharacteristic
 from bluetooth_sig.gatt.constants import SINT16_MAX
-from tests.gatt.characteristics.test_characteristic_common import (
-    CharacteristicTestData,
-    CommonCharacteristicTests,
-)
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestTemperatureCharacteristic(CommonCharacteristicTests):

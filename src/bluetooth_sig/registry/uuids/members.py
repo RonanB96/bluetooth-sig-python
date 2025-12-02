@@ -1,14 +1,14 @@
-"""Member UUID registry for Bluetooth SIG member companies."""
+"""Members registry for Bluetooth SIG member UUIDs."""
 
 from __future__ import annotations
 
-from bluetooth_sig.registry.base import BaseRegistry
+from bluetooth_sig.registry.base import BaseUUIDRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.registry.member_uuids import MemberInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-class MembersRegistry(BaseRegistry[MemberInfo]):
+class MembersRegistry(BaseUUIDRegistry[MemberInfo]):
     """Registry for Bluetooth SIG member company UUIDs."""
 
     def _load_yaml_path(self) -> str:
@@ -20,8 +20,6 @@ class MembersRegistry(BaseRegistry[MemberInfo]):
         return MemberInfo(
             uuid=uuid,
             name=uuid_data["name"],
-            id=uuid_data["name"],  # Use name as id since no separate id field
-            summary="",
         )
 
     def _create_runtime_info(self, entry: object, uuid: BluetoothUUID) -> MemberInfo:
@@ -29,8 +27,6 @@ class MembersRegistry(BaseRegistry[MemberInfo]):
         return MemberInfo(
             uuid=uuid,
             name=getattr(entry, "name", ""),
-            id=getattr(entry, "name", ""),
-            summary=getattr(entry, "summary", ""),
         )
 
     def _load(self) -> None:
@@ -42,7 +38,7 @@ class MembersRegistry(BaseRegistry[MemberInfo]):
                 self._load_from_yaml(yaml_path)
         self._loaded = True
 
-    def get_member_name(self, uuid: str | int | BluetoothUUID) -> str | None:
+    def get_member_name(self, uuid: str | BluetoothUUID) -> str | None:
         """Get member company name by UUID.
 
         Args:
@@ -54,7 +50,7 @@ class MembersRegistry(BaseRegistry[MemberInfo]):
         info = self.get_info(uuid)
         return info.name if info else None
 
-    def is_member_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
+    def is_member_uuid(self, uuid: str | BluetoothUUID) -> bool:
         """Check if a UUID is a registered member company UUID.
 
         Args:

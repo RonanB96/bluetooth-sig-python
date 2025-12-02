@@ -1,3 +1,5 @@
+"""Types for Bluetooth SIG Device Property IDs registry."""
+
 from __future__ import annotations
 
 import msgspec

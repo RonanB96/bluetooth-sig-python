@@ -5,9 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import BarometricPressureTrendCharacteristic
-from bluetooth_sig.gatt.characteristics.barometric_pressure_trend import (
-    BarometricPressureTrend,
-)
+from bluetooth_sig.gatt.characteristics.barometric_pressure_trend import BarometricPressureTrend
 from bluetooth_sig.gatt.constants import UINT8_MAX
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
@@ -55,7 +53,7 @@ class TestBarometricPressureTrendCharacteristic(CommonCharacteristicTests):
     def test_barometric_pressure_trend_parsing(self, characteristic: BarometricPressureTrendCharacteristic) -> None:
         """Test Barometric Pressure Trend characteristic parsing."""
         # Test metadata
-        assert characteristic.unit == ""
+        assert characteristic.unit == ""  # Enum, no units
         assert characteristic._manual_value_type == "BarometricPressureTrend"
 
         # Test known trend values

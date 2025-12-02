@@ -7,10 +7,7 @@ from typing import Any
 import pytest
 
 from bluetooth_sig.gatt.characteristics import PositionQualityCharacteristic
-from bluetooth_sig.gatt.characteristics.position_quality import (
-    PositionQualityData,
-    PositionQualityFlags,
-)
+from bluetooth_sig.gatt.characteristics.position_quality import PositionQualityData, PositionQualityFlags
 from bluetooth_sig.types import PositionStatus
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 

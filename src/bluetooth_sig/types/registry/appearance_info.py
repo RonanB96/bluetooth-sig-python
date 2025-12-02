@@ -32,14 +32,13 @@ class AppearanceInfo(msgspec.Struct, frozen=True, kw_only=True):
 
     Attributes:
         category: Human-readable device category name (e.g., "Heart Rate Sensor")
-        subcategory: Optional subcategory name (e.g., "Heart Rate Belt")
         category_value: Category value (upper 10 bits of appearance code)
-        subcategory_value: Optional subcategory value (lower 6 bits of appearance code)
+        subcategory: Optional subcategory information (e.g., "Heart Rate Belt")
     """
 
     category: str
     category_value: int
-    subcategories: list[AppearanceSubcategoryInfo] | None = None
+    subcategory: AppearanceSubcategoryInfo | None = None
 
     @property
     def full_name(self) -> str:
@@ -49,7 +48,6 @@ class AppearanceInfo(msgspec.Struct, frozen=True, kw_only=True):
             Full name with category and optional subcategory
             (e.g., "Heart Rate Sensor: Heart Rate Belt" or "Phone")
         """
-        if self.subcategories:
-            subcategory_names = ", ".join(sub.name for sub in self.subcategories)
-            return f"{self.category}: {subcategory_names}"
+        if self.subcategory:
+            return f"{self.category}: {self.subcategory.name}"
         return self.category

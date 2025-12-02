@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.common import UuidInfo
 from bluetooth_sig.registry.uuids.units import UnitsRegistry
+from bluetooth_sig.types.registry import UuidIdInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -26,14 +26,14 @@ class TestUnitsRegistry:
         assert isinstance(units, list)
         # If submodule is initialized, should have units
         if units:
-            assert all(isinstance(u, UuidInfo) for u in units)
+            assert all(isinstance(u, UuidIdInfo) for u in units)
 
     def test_get_unit_info(self, units_registry: UnitsRegistry) -> None:
         """Test lookup by UUID string."""
         # Test with a known unit UUID (unitless)
         info = units_registry.get_unit_info("0x2700")
         if info:  # Only if YAML loaded
-            assert isinstance(info, UuidInfo)
+            assert isinstance(info, UuidIdInfo)
             assert info.name == "unitless"
             assert info.id == "org.bluetooth.unit.unitless"
 
@@ -42,7 +42,7 @@ class TestUnitsRegistry:
         # Test with known unit name (unitless)
         info = units_registry.get_unit_info_by_name("unitless")
         if info:  # Only if YAML loaded
-            assert isinstance(info, UuidInfo)
+            assert isinstance(info, UuidIdInfo)
             assert info.name == "unitless"
             assert info.uuid.short_form.upper() == "2700"
 
@@ -59,7 +59,7 @@ class TestUnitsRegistry:
         # Test with known unit ID
         info = units_registry.get_unit_info_by_id("org.bluetooth.unit.unitless")
         if info:  # Only if YAML loaded
-            assert isinstance(info, UuidInfo)
+            assert isinstance(info, UuidIdInfo)
             assert info.name == "unitless"
             assert info.uuid.short_form.upper() == "2700"
 
@@ -73,7 +73,7 @@ class TestUnitsRegistry:
         bt_uuid = BluetoothUUID("2700")
         info = units_registry.get_unit_info(bt_uuid)
         if info:  # Only if YAML loaded
-            assert isinstance(info, UuidInfo)
+            assert isinstance(info, UuidIdInfo)
             assert info.name == "unitless"
 
     def test_get_unit_info_not_found(self, units_registry: UnitsRegistry) -> None:
@@ -103,7 +103,7 @@ class TestUnitsRegistry:
         if units:
             # If loaded, check structure
             for unit in units:
-                assert isinstance(unit, UuidInfo)
+                assert isinstance(unit, UuidIdInfo)
                 assert isinstance(unit.name, str)
                 assert isinstance(unit.uuid, BluetoothUUID)
                 assert isinstance(unit.id, str)
@@ -111,7 +111,7 @@ class TestUnitsRegistry:
                 assert len(unit.uuid.short_form) == 4
 
     def test_unit_info_structure(self, units_registry: UnitsRegistry) -> None:
-        """Test UuidInfo dataclass structure."""
+        """Test UuidIdInfo dataclass structure."""
         units = units_registry.get_all_units()
         if units:
             unit = units[0]

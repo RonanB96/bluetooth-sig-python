@@ -54,13 +54,7 @@ class BaseDescriptor(ABC):
         for variant in variants:
             info = uuid_registry.get_descriptor_info(variant)
             if info:
-                return DescriptorInfo(
-                    uuid=info.uuid,
-                    name=info.name,
-                    description=info.summary or "",
-                    has_structured_data=self._has_structured_data(),
-                    data_format=self._get_data_format(),
-                )
+                return info
 
         # No resolution found
         raise UUIDResolutionError(self.__class__.__name__, [self.__class__.__name__])

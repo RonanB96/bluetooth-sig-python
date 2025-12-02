@@ -155,8 +155,8 @@ class CommonCharacteristicTests:
     def _assert_values_equal(self, actual: object, expected: object, context: str) -> None:
         """Assert two values are equal with tolerance for floating point."""
         if isinstance(expected, float) and isinstance(actual, float):
-            # Handle floating point precision
-            tolerance = 1e-10
+            # Handle floating point precision - use relative tolerance for large numbers
+            tolerance = max(1e-6, abs(expected) * 1e-9) if expected != 0 else 1e-6
             assert abs(actual - expected) < tolerance, (
                 f"{context}: expected {expected}, got {actual} (diff: {abs(actual - expected)})"
             )

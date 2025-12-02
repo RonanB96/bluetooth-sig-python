@@ -246,7 +246,11 @@ Instead of manual validation in `decode_value()`, characteristics declare constr
 
 ```python
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-from bluetooth_sig.gatt.exceptions import InsufficientDataError, ValueRangeError
+from bluetooth_sig.gatt.exceptions import (
+    InsufficientDataError,
+    ValueRangeError,
+)
+
 
 # Before: Manual validation (verbose, error-prone)
 class BatteryLevelCharacteristic(BaseCharacteristic):
@@ -257,6 +261,7 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
         if not 0 <= level <= 100:
             raise ValueRangeError(f"Battery level must be 0-100, got {level}")
         return level
+
 
 # After: Declarative validation (concise, consistent)
 class BatteryLevelCharacteristic(BaseCharacteristic):
@@ -278,12 +283,17 @@ Templates are reusable parsing strategies that can be composed into characterist
 ```python
 from abc import ABC, abstractmethod
 
+
 class CodingTemplate(ABC):
     """Abstract base for reusable parsing strategies."""
 
     @abstractmethod
-    def decode_value(self, data: bytearray, offset: int = 0,
-                     ctx: CharacteristicContext | None = None) -> Any:
+    def decode_value(
+        self,
+        data: bytearray,
+        offset: int = 0,
+        ctx: CharacteristicContext | None = None,
+    ) -> Any:
         """Decode raw bytes to typed value."""
 
     @abstractmethod
@@ -309,6 +319,7 @@ class CodingTemplate(ABC):
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.templates import Uint16Template
 
+
 # Simple characteristic using template composition
 class ApparentWindSpeedCharacteristic(BaseCharacteristic):
     _template = Uint16Template()  # Reuse template, no decode_value() needed
@@ -319,20 +330,22 @@ class ApparentWindSpeedCharacteristic(BaseCharacteristic):
 
 ```python
 import msgspec
+
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.types import ParseFieldError
 from bluetooth_sig.types.uuid import BluetoothUUID
+
 
 class CharacteristicData(msgspec.Struct, kw_only=True):
     """Parse result with back-reference to characteristic."""
 
     characteristic: BaseCharacteristic  # Back-reference
-    value: Any | None = None           # Parsed value
-    raw_data: bytes = b""              # Original bytes
-    parse_success: bool = False        # Success flag
-    error_message: str = ""            # Error description
+    value: Any | None = None  # Parsed value
+    raw_data: bytes = b""  # Original bytes
+    parse_success: bool = False  # Success flag
+    error_message: str = ""  # Error description
     field_errors: list[ParseFieldError] = []  # Field-level errors
-    parse_trace: list[str] = []        # Debug trace steps
+    parse_trace: list[str] = []  # Debug trace steps
 
     # Convenience properties (proxy to characteristic)
     @property
@@ -362,12 +375,15 @@ The `CharacteristicRegistry` provides:
 
 ```python
 import threading
+
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
-from bluetooth_sig.gatt.uuid_registry import UuidInfo
+from bluetooth_sig.types.data_types import CharacteristicInfo
 
 # Core registry mapping
-CHARACTERISTIC_CLASS_MAP: dict[CharacteristicName, type[BaseCharacteristic]] = {}
+CHARACTERISTIC_CLASS_MAP: dict[
+    CharacteristicName, type[BaseCharacteristic]
+] = {}
 
 # UUID lookup cache (built lazily)
 _uuid_to_enum_cache: dict[str, CharacteristicName] = {}
@@ -404,7 +420,10 @@ class CharacteristicRegistry:
 ### Lookup Methods
 
 ```python
-from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry, CharacteristicName
+from bluetooth_sig.gatt.characteristics.registry import (
+    CharacteristicName,
+    CharacteristicRegistry,
+)
 
 # Create characteristic instance from UUID
 char = CharacteristicRegistry.create_characteristic("2A19")
@@ -461,29 +480,19 @@ bluetooth_sig/assigned_numbers/
 
 ```python
 import msgspec
+
+from bluetooth_sig.types.registry.common import FieldInfo, UnitMetadata
 from bluetooth_sig.types.uuid import BluetoothUUID
-from bluetooth_sig.gatt.uuid_registry import FieldInfo, UnitInfo
+
 
 class CharacteristicSpec(msgspec.Struct, kw_only=True):
     """Characteristic specification from cross-file YAML references."""
 
     uuid: BluetoothUUID
     name: str
-    field_info: FieldInfo    # data_type, field_size
-    unit_info: UnitInfo      # unit_symbol, base_unit, resolution
+    field_info: FieldInfo | None = None
+    unit_metadata: UnitMetadata | None = None
     description: str | None = None
-
-class FieldInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Field-related metadata from YAML."""
-    data_type: str | None = None
-    field_size: str | None = None
-
-class UnitInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Unit-related metadata from YAML."""
-    unit_id: str | None = None
-    unit_symbol: str | None = None
-    base_unit: str | None = None
-    resolution_text: str | None = None
 ```
 
 ### Lazy Loading with Caching
@@ -561,7 +570,9 @@ Generates all possible name variations for lookup:
 ```python
 class NameVariantGenerator:
     @staticmethod
-    def generate_characteristic_variants(class_name: str, display_name: str) -> list[str]:
+    def generate_characteristic_variants(
+        class_name: str, display_name: str
+    ) -> list[str]:
         """Generate lookup keys for a characteristic.
 
         Example:
@@ -584,7 +595,9 @@ Fuzzy matching for characteristic lookup:
 ```python
 class CharacteristicRegistrySearch:
     @staticmethod
-    def find_characteristic_by_fuzzy_name(search_term: str) -> type[BaseCharacteristic] | None:
+    def find_characteristic_by_fuzzy_name(
+        search_term: str,
+    ) -> type[BaseCharacteristic] | None:
         """Search registry with fuzzy matching.
 
         Handles:
@@ -622,7 +635,7 @@ def parse_characteristic(
     self,
     uuid: str | BluetoothUUID,
     data: bytes | bytearray,
-    ctx: CharacteristicContext | None = None
+    ctx: CharacteristicContext | None = None,
 ) -> CharacteristicData:
     """Parse characteristic data using SIG specifications."""
 ```
@@ -630,10 +643,15 @@ def parse_characteristic(
 **UUID Resolution**:
 
 ```python
-def get_characteristic_info(self, identifier: str | BluetoothUUID) -> CharacteristicInfo | None:
+def get_characteristic_info(
+    self, identifier: str | BluetoothUUID
+) -> CharacteristicInfo | None:
     """Get characteristic metadata by UUID or name."""
 
-def get_characteristic_uuid_by_name(self, name: CharacteristicName) -> BluetoothUUID | None:
+
+def get_characteristic_uuid_by_name(
+    self, name: CharacteristicName
+) -> BluetoothUUID | None:
     """Resolve characteristic name to UUID."""
 ```
 
@@ -643,10 +661,11 @@ def get_characteristic_uuid_by_name(self, name: CharacteristicName) -> Bluetooth
 def create_service(self, uuid: str | BluetoothUUID) -> BaseGattService:
     """Create service instance from UUID."""
 
+
 def process_services(
     self,
     services: Mapping[str, Mapping[str, bytes]],
-    ctx: CharacteristicContext | None = None
+    ctx: CharacteristicContext | None = None,
 ) -> dict[str, dict[str, CharacteristicData]]:
     """Parse all characteristics in all services."""
 ```
@@ -655,10 +674,7 @@ def process_services(
 
 ```python
 def register_custom_characteristic(
-    self,
-    uuid: str,
-    char_cls: type[BaseCharacteristic],
-    override: bool = False
+    self, uuid: str, char_cls: type[BaseCharacteristic], override: bool = False
 ) -> None:
     """Register custom characteristic at runtime."""
 ```
@@ -674,6 +690,7 @@ The library supports 4 progressive levels of sophistication:
 ```python
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 
+
 class MinimalCharacteristic(BaseCharacteristic):
     def decode_value(self, data: bytearray) -> int:
         return data[0]
@@ -686,6 +703,7 @@ class MinimalCharacteristic(BaseCharacteristic):
 ```python
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 
+
 class ValidatedCharacteristic(BaseCharacteristic):
     expected_length = 2
     min_value = 0
@@ -693,7 +711,7 @@ class ValidatedCharacteristic(BaseCharacteristic):
     expected_type = int
 
     def decode_value(self, data: bytearray) -> int:
-        return int.from_bytes(data, byteorder='little')
+        return int.from_bytes(data, byteorder="little")
 ```
 
 ### Level 3: Template Composition (Optional)
@@ -703,6 +721,7 @@ class ValidatedCharacteristic(BaseCharacteristic):
 ```python
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.templates import Uint16Template
+
 
 class TemplatedCharacteristic(BaseCharacteristic):
     _template = Uint16Template()
@@ -717,6 +736,7 @@ class TemplatedCharacteristic(BaseCharacteristic):
 # SKIP: Conceptual example - ContextInfoCharacteristic would be a real characteristic class
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext
+
 
 class DependentCharacteristic(BaseCharacteristic):
     _required_dependencies = [ContextInfoCharacteristic]
@@ -740,8 +760,8 @@ BLE descriptors provide runtime metadata about characteristics. The library inte
 from bluetooth_sig.gatt.descriptors import (
     CCCDDescriptor,
     CharacteristicPresentationFormatDescriptor,
+    CharacteristicUserDescriptionDescriptor,
     ValidRangeDescriptor,
-    CharacteristicUserDescriptionDescriptor
 )
 
 # Client Characteristic Configuration Descriptor (CCCD)
@@ -767,11 +787,15 @@ def _validate_range(self, value: float, ctx: CharacteristicContext) -> None:
     if valid_range:
         min_val, max_val = valid_range
         if not (min_val <= value <= max_val):
-            raise ValueRangeError(f"Value {value} outside valid range [{min_val}, {max_val}]")
+            raise ValueRangeError(
+                f"Value {value} outside valid range [{min_val}, {max_val}]"
+            )
     else:
         # Fallback to declarative validation
         if self.min_value is not None and value < self.min_value:
-            raise ValueRangeError(f"Value {value} below minimum {self.min_value}")
+            raise ValueRangeError(
+                f"Value {value} below minimum {self.min_value}"
+            )
 ```
 
 ## Exception Hierarchy
@@ -782,29 +806,39 @@ def _validate_range(self, value: float, ctx: CharacteristicContext) -> None:
 class GattError(Exception):
     """Base exception for GATT layer."""
 
+
 class ParseFieldError(GattError):
     """Field-level parsing error."""
+
     field_name: str
     field_value: Any
     expected_type: type | None
 
+
 class InsufficientDataError(GattError):
     """Not enough bytes to parse."""
+
     required_bytes: int
     available_bytes: int
 
+
 class ValueRangeError(GattError):
     """Value outside valid range."""
+
     value: Any
     min_value: Any | None
     max_value: Any | None
 
+
 class UUIDResolutionError(GattError):
     """UUID not found in registry."""
+
     uuid: str
+
 
 class MissingDependencyError(GattError):
     """Required dependent characteristic not available."""
+
     dependency_uuid: str
 ```
 

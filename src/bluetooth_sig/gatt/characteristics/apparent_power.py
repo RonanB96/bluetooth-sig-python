@@ -12,6 +12,8 @@ VALUE_UNKNOWN = 0xFFFFFF  # Indicates value is not known
 class ApparentPowerCharacteristic(BaseCharacteristic):
     """Apparent Power characteristic."""
 
+    _manual_unit: str | None = "VA"  # YAML: electrical_apparent_power.volt_ampere, units.yaml: power.volt_ampere
+
     expected_length = 3
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:

@@ -27,7 +27,7 @@ from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 service_info = translator.get_sig_info_by_uuid("180F")  # Battery
-char_info = translator.get_sig_info_by_uuid("2A19")    # Battery Level
+char_info = translator.get_sig_info_by_uuid("2A19")  # Battery Level
 ```
 
 ## Getting Started

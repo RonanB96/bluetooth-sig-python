@@ -7,10 +7,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.acceleration import AccelerationCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.constants import SINT32_MAX
-from tests.gatt.characteristics.test_characteristic_common import (
-    CharacteristicTestData,
-    CommonCharacteristicTests,
-)
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestAccelerationCharacteristic(CommonCharacteristicTests):

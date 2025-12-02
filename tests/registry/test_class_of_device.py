@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 from bluetooth_sig.registry.core.class_of_device import ClassOfDeviceRegistry
-from bluetooth_sig.types.class_of_device import ClassOfDeviceInfo
+from bluetooth_sig.types.registry.class_of_device import ClassOfDeviceInfo
 
 
 @pytest.fixture(scope="session")
@@ -47,8 +47,8 @@ class TestClassOfDeviceRegistry:
         info = cod_registry.decode_class_of_device(0x02010C)
 
         assert isinstance(info, ClassOfDeviceInfo)
-        assert "Computer" in info.major_class
-        assert info.minor_class == "Laptop"
+        assert info.major_class and "Computer" in info.major_class[0].name
+        assert info.minor_class and info.minor_class[0].name == "Laptop"
         # Service class names include full description from YAML
         assert len(info.service_classes) == 1
         assert any("Networking" in s for s in info.service_classes)
@@ -68,7 +68,7 @@ class TestClassOfDeviceRegistry:
         info = cod_registry.decode_class_of_device(0x000100)
 
         assert isinstance(info, ClassOfDeviceInfo)
-        assert "Computer" in info.major_class
+        assert info.major_class and "Computer" in info.major_class[0].name
         # Minor class 0 might be "Uncategorized" or None depending on YAML
         assert info.service_classes == []
         assert info.raw_value == 0x000100
@@ -84,8 +84,8 @@ class TestClassOfDeviceRegistry:
         info = cod_registry.decode_class_of_device(0x00020C)
 
         assert isinstance(info, ClassOfDeviceInfo)
-        assert "Phone" in info.major_class
-        assert info.minor_class == "Smartphone"
+        assert info.major_class and "Phone" in info.major_class[0].name
+        assert info.minor_class and info.minor_class[0].name == "Smartphone"
         assert info.service_classes == []
 
     def test_decode_multiple_service_classes(self, cod_registry: ClassOfDeviceRegistry) -> None:
@@ -95,14 +95,14 @@ class TestClassOfDeviceRegistry:
         - Bit 17 (Networking) = position 4 in service field
         - Bit 21 (Audio) = position 8 in service field
         - Service bits = 0x110 (bits 4 and 8 set in 11-bit field)
-        - CoD = (0x110 << 13) | (0x01 << 8) | (0x03 << 2) = 0x22010C
+        - CoD = (0x110 << 13) | (0x04 << 8) | (0x01 << 2) = 0x220404
         """
-        cod_value = 0x22010C  # Networking + Audio, Computer, Laptop
+        cod_value = 0x220404  # Networking + Audio, Audio/Video, Wearable Headset
         info = cod_registry.decode_class_of_device(cod_value)
 
         assert isinstance(info, ClassOfDeviceInfo)
-        assert "Computer" in info.major_class
-        assert info.minor_class == "Laptop"
+        assert info.major_class and ("Audio" in info.major_class[0].name or "Video" in info.major_class[0].name)
+        assert info.minor_class and "Headset" in info.minor_class[0].name
         # Should have both Networking and Audio (both contain descriptive text)
         assert len(info.service_classes) == 2
         assert any("Networking" in s for s in info.service_classes)
@@ -119,9 +119,9 @@ class TestClassOfDeviceRegistry:
         info = cod_registry.decode_class_of_device(cod_value)
 
         assert isinstance(info, ClassOfDeviceInfo)
-        assert "Audio" in info.major_class or "Video" in info.major_class
+        assert info.major_class and ("Audio" in info.major_class[0].name or "Video" in info.major_class[0].name)
         assert info.minor_class is not None
-        assert "Headset" in info.minor_class
+        assert info.minor_class and "Headset" in info.minor_class[0].name
 
     def test_decode_unknown_major_class(self, cod_registry: ClassOfDeviceRegistry) -> None:
         """Test decoding unknown major class value."""
@@ -131,7 +131,7 @@ class TestClassOfDeviceRegistry:
 
         assert isinstance(info, ClassOfDeviceInfo)
         # Should return "Unknown (0xNN)" format
-        assert "Unknown" in info.major_class or "0x1E" in info.major_class
+        assert info.major_class and ("Unknown" in info.major_class[0].name or "0x1E" in info.major_class[0].name)
 
     def test_decode_no_services(self, cod_registry: ClassOfDeviceRegistry) -> None:
         """Test decoding CoD with no service classes."""
@@ -200,9 +200,9 @@ class TestClassOfDeviceRegistry:
         info = cod_registry.decode_class_of_device(cod_value)
 
         assert isinstance(info, ClassOfDeviceInfo)
-        assert "Health" in info.major_class
+        assert info.major_class and "Health" in info.major_class[0].name
         assert info.minor_class is not None
-        assert "Blood Pressure" in info.minor_class or "Pressure" in info.minor_class
+        assert info.minor_class and any("Blood" in m.name or "Pressure" in m.name for m in info.minor_class)
 
     def test_bit_extraction_correctness(self, cod_registry: ClassOfDeviceRegistry) -> None:
         """Test that bit extraction is done correctly.
@@ -216,8 +216,8 @@ class TestClassOfDeviceRegistry:
         cod_value = 0x2000 | 0x100 | 0x0C
         info = cod_registry.decode_class_of_device(cod_value)
 
-        assert "Computer" in info.major_class
-        assert info.minor_class == "Laptop"
+        assert info.major_class and "Computer" in info.major_class[0].name
+        assert info.minor_class and info.minor_class[0].name == "Laptop"
         # Bit 13 should map to "Limited Discoverable Mode"
         assert len(info.service_classes) >= 1
 
@@ -232,9 +232,9 @@ class TestClassOfDeviceRegistry:
         info = cod_registry.decode_class_of_device(cod_value)
 
         assert isinstance(info, ClassOfDeviceInfo)
-        assert "Toy" in info.major_class
+        assert info.major_class and "Toy" in info.major_class[0].name
         assert info.minor_class is not None
-        assert "Robot" in info.minor_class
+        assert info.minor_class and "Robot" in info.minor_class[0].name
 
     def test_decode_wearable_watch(self, cod_registry: ClassOfDeviceRegistry) -> None:
         """Test decoding Wearable: Wristwatch.
@@ -247,9 +247,11 @@ class TestClassOfDeviceRegistry:
         info = cod_registry.decode_class_of_device(cod_value)
 
         assert isinstance(info, ClassOfDeviceInfo)
-        assert "Wearable" in info.major_class
+        assert info.major_class and "Wearable" in info.major_class[0].name
         assert info.minor_class is not None
-        assert "watch" in info.minor_class.lower() or "Wristwatch" in info.minor_class
+        has_watch = info.major_class and "watch" in info.major_class[0].name.lower()
+        has_wristwatch = info.minor_class and "Wristwatch" in info.minor_class[0].name
+        assert has_watch or has_wristwatch
 
     def test_raw_value_preserved(self, cod_registry: ClassOfDeviceRegistry) -> None:
         """Test that raw CoD value is preserved in the result."""

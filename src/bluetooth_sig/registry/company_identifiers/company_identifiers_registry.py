@@ -106,7 +106,8 @@ class CompanyIdentifiersRegistry(BaseGenericRegistry[CompanyIdentifierInfo]):
         """
         self._ensure_loaded()
         with self._lock:
-            return self._companies.get(company_id)
+            info = self._companies.get(company_id)
+            return info.name if info else None
 
 
 # Singleton instance for global use

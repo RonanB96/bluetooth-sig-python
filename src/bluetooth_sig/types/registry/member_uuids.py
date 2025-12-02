@@ -1,24 +1,12 @@
-from __future__ import annotations
+"""Types for Bluetooth SIG member UUID registry."""
 
-import msgspec
+from __future__ import annotations
 
 from bluetooth_sig.types.registry import BaseUuidInfo
 
 
-class MemberUuidEntry(msgspec.Struct, frozen=True):
-    """Entry for member UUIDs from YAML."""
-
-    uuid: str
-    name: str
-
-
-class MemberUuidsData(msgspec.Struct):
-    """Top-level data structure for member_uuids.yaml."""
-
-    uuids: list[MemberUuidEntry]
-
-
 class MemberInfo(BaseUuidInfo, frozen=True, kw_only=True):
-    """Information about a Bluetooth SIG member company."""
+    """Information about a Bluetooth SIG member UUID.
 
-    summary: str = ""
+    Member UUIDs only have uuid and name in the YAML.
+    """

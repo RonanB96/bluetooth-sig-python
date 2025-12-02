@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from bluetooth_sig.registry.base import BaseRegistry
+from bluetooth_sig.registry.base import BaseUUIDRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.registry.mesh_profile_uuids import MeshProfileInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
+class MeshProfilesRegistry(BaseUUIDRegistry[MeshProfileInfo]):
     """Registry for Bluetooth SIG mesh profile definitions."""
 
     def _load_yaml_path(self) -> str:
@@ -20,8 +20,6 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
         return MeshProfileInfo(
             uuid=uuid,
             name=uuid_data["name"],
-            id=uuid_data["id"],
-            summary="",
         )
 
     def _create_runtime_info(self, entry: object, uuid: BluetoothUUID) -> MeshProfileInfo:
@@ -29,8 +27,6 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
         return MeshProfileInfo(
             uuid=uuid,
             name=getattr(entry, "name", ""),
-            id=getattr(entry, "id", ""),
-            summary=getattr(entry, "summary", ""),
         )
 
     def _load(self) -> None:
@@ -42,7 +38,7 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
                 self._load_from_yaml(yaml_path)
         self._loaded = True
 
-    def get_mesh_profile_info(self, uuid: str | int | BluetoothUUID) -> MeshProfileInfo | None:
+    def get_mesh_profile_info(self, uuid: str | BluetoothUUID) -> MeshProfileInfo | None:
         """Get mesh profile information by UUID.
 
         Args:
@@ -68,22 +64,7 @@ class MeshProfilesRegistry(BaseRegistry[MeshProfileInfo]):
                 return info
         return None
 
-    def get_mesh_profile_info_by_id(self, mesh_profile_id: str) -> MeshProfileInfo | None:
-        """Get mesh profile information by mesh profile ID.
-
-        Args:
-            mesh_profile_id: The mesh profile ID to look up
-
-        Returns:
-            MeshProfileInfo if found, None otherwise
-        """
-        self._ensure_loaded()
-        for info in self._canonical_store.values():
-            if info.id == mesh_profile_id:
-                return info
-        return None
-
-    def is_mesh_profile_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
+    def is_mesh_profile_uuid(self, uuid: str | BluetoothUUID) -> bool:
         """Check if a UUID corresponds to a known mesh profile.
 
         Args:

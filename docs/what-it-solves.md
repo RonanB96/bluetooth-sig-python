@@ -31,7 +31,7 @@ def parse_temperature(data: bytes) -> float | None:
     if len(data) != 2:
         raise ValueError("Temperature requires 2 bytes")
 
-    raw_value = int.from_bytes(data, byteorder='little', signed=True)
+    raw_value = int.from_bytes(data, byteorder="little", signed=True)
 
     if raw_value == -32768:  # 0x8000
         return None  # Not available
@@ -96,6 +96,7 @@ CHARACTERISTIC_UUIDS = {
     # ... hundreds more
 }
 
+
 # Handling lookups
 def resolve_by_name(uuid: str) -> str:
     # Short form?
@@ -117,7 +118,9 @@ translator = BluetoothSIGTranslator()
 
 # Automatic UUID resolution (short or long form)
 info = translator.get_sig_info_by_uuid("180F")
-info = translator.get_sig_info_by_uuid("0000180f-0000-1000-8000-00805f9b34fb")  # Same result
+info = translator.get_sig_info_by_uuid(
+    "0000180f-0000-1000-8000-00805f9b34fb"
+)  # Same result
 
 # Reverse lookup
 battery_service = translator.get_sig_info_by_name("Battery Service")
@@ -154,6 +157,7 @@ Raw BLE data is just bytes. Without proper typing:
 def parse_battery(data: bytes):
     return data[0]
 
+
 # Is it a dict? A tuple? An int?
 result = parse_battery(some_data)
 # No type hints, no validation, no structure
@@ -171,14 +175,18 @@ from bluetooth_sig.types.gatt_enums import CharacteristicName
 SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
 
 translator = BluetoothSIGTranslator()
-battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
-result = translator.parse_characteristic(str(battery_uuid), SIMULATED_BATTERY_DATA)
+battery_uuid = translator.get_characteristic_uuid_by_name(
+    CharacteristicName.BATTERY_LEVEL
+)
+result = translator.parse_characteristic(
+    str(battery_uuid), SIMULATED_BATTERY_DATA
+)
 
 # result is a typed msgspec struct
 # IDE autocomplete works
 # Type checkers (mypy) validate usage
 print(result.value)  # 85
-print(result.unit)   # "%"
+print(result.unit)  # "%"
 
 # For complex characteristics
 temp_result = translator.parse_characteristic("2A1C", data)
@@ -219,12 +227,14 @@ translator = BluetoothSIGTranslator()
 
 # Works with bleak
 from bleak import BleakClient
+
 async with BleakClient(address) as client:
     data = await client.read_gatt_char(uuid)
     result = translator.parse_characteristic(uuid, data)
 
 # Works with simplepyble
 from simplepyble import Peripheral
+
 peripheral = Peripheral(adapter, address)
 data = peripheral.read(service_uuid, char_uuid)
 result = translator.parse_characteristic(char_uuid, data)
@@ -289,14 +299,14 @@ def parse_temp_measurement(data: bytes) -> dict:
     offset = 1
 
     # Parse temperature (IEEE-11073 SFLOAT - complex format)
-    temp_bytes = data[offset:offset+4]
+    temp_bytes = data[offset : offset + 4]
     temp_value = parse_ieee_sfloat(temp_bytes)  # Another complex function
     offset += 4
 
     # Conditional fields
     timestamp = None
     if flags & 0x02:
-        timestamp = parse_timestamp(data[offset:offset+7])
+        timestamp = parse_timestamp(data[offset : offset + 7])
         offset += 7
 
     temp_type = None
@@ -307,7 +317,7 @@ def parse_temp_measurement(data: bytes) -> dict:
         "value": temp_value,
         "unit": "°F" if flags & 0x01 else "°C",
         "timestamp": timestamp,
-        "type": temp_type
+        "type": temp_type,
     }
 ```
 

@@ -7,10 +7,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.rotational_speed import RotationalSpeedCharacteristic
 from bluetooth_sig.gatt.constants import SINT32_MAX
-from tests.gatt.characteristics.test_characteristic_common import (
-    CharacteristicTestData,
-    CommonCharacteristicTests,
-)
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestRotationalSpeedCharacteristic(CommonCharacteristicTests):
@@ -65,7 +62,7 @@ class TestRotationalSpeedCharacteristic(CommonCharacteristicTests):
         assert abs(result - 1500.0) < 0.001
 
         # Test negative speed (-500 RPM)
-        result = characteristic.decode_value(bytearray([0x1C, 0xFE, 0xFF, 0xFF]))  # -500 = -500 RPM
+        result = characteristic.decode_value(bytearray([0x0C, 0xFE, 0xFF, 0xFF]))  # -500 = -500 RPM
         assert abs(result + 500.0) < 0.001
 
     def test_rotational_speed_extreme_values(self, characteristic: BaseCharacteristic) -> None:
@@ -108,7 +105,7 @@ class TestRotationalSpeedCharacteristic(CommonCharacteristicTests):
 
         # Test encoding negative speed
         encoded = characteristic.encode_value(-500.0)
-        assert encoded == bytearray([0x1C, 0xFE, 0xFF, 0xFF])
+        assert encoded == bytearray([0x0C, 0xFE, 0xFF, 0xFF])
 
     def test_characteristic_metadata(self, characteristic: RotationalSpeedCharacteristic) -> None:
         """Test characteristic metadata."""

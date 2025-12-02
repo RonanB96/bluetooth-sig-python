@@ -1,14 +1,14 @@
-"""Declarations registry for Bluetooth SIG GATT attribute declarations."""
+"""Declarations registry for Bluetooth SIG declaration UUIDs."""
 
 from __future__ import annotations
 
-from bluetooth_sig.registry.base import BaseRegistry
+from bluetooth_sig.registry.base import BaseUUIDRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.registry.declarations import DeclarationInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
+class DeclarationsRegistry(BaseUUIDRegistry[DeclarationInfo]):
     """Registry for Bluetooth SIG GATT attribute declarations."""
 
     def _load_yaml_path(self) -> str:
@@ -21,7 +21,6 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
             uuid=uuid,
             name=uuid_data["name"],
             id=uuid_data["id"],
-            summary="",
         )
 
     def _create_runtime_info(self, entry: object, uuid: BluetoothUUID) -> DeclarationInfo:
@@ -30,7 +29,6 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
             uuid=uuid,
             name=getattr(entry, "name", ""),
             id=getattr(entry, "id", ""),
-            summary=getattr(entry, "summary", ""),
         )
 
     def _load(self) -> None:
@@ -42,7 +40,7 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
                 self._load_from_yaml(yaml_path)
         self._loaded = True
 
-    def get_declaration_info(self, uuid: str | int | BluetoothUUID) -> DeclarationInfo | None:
+    def get_declaration_info(self, uuid: str | BluetoothUUID) -> DeclarationInfo | None:
         """Get declaration information by UUID.
 
         Args:
@@ -83,7 +81,7 @@ class DeclarationsRegistry(BaseRegistry[DeclarationInfo]):
                 return info
         return None
 
-    def is_declaration_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
+    def is_declaration_uuid(self, uuid: str | BluetoothUUID) -> bool:
         """Check if a UUID corresponds to a known declaration.
 
         Args:

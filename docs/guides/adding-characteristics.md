@@ -16,7 +16,11 @@ Every characteristic follows this pattern:
 
 ```python
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-from bluetooth_sig.gatt.exceptions import InsufficientDataError, ValueRangeError
+from bluetooth_sig.gatt.exceptions import (
+    InsufficientDataError,
+    ValueRangeError,
+)
+
 
 class MyCharacteristic(BaseCharacteristic):
     """My Custom Characteristic (UUID: XXXX).
@@ -60,9 +64,13 @@ Let's add a custom "Light Level" characteristic that reports brightness as a per
 
 ```python
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-from bluetooth_sig.gatt.exceptions import InsufficientDataError, ValueRangeError
+from bluetooth_sig.gatt.exceptions import (
+    InsufficientDataError,
+    ValueRangeError,
+)
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
+
 
 class LightLevelCharacteristic(BaseCharacteristic):
     """Light Level characteristic.
@@ -77,7 +85,7 @@ class LightLevelCharacteristic(BaseCharacteristic):
 
     _info = CharacteristicInfo(
         uuid=BluetoothUUID("ABCD"),  # Your custom UUID
-        name="Light Level"
+        name="Light Level",
     )
 
     def decode_value(self, data: bytearray) -> int:
@@ -100,9 +108,7 @@ class LightLevelCharacteristic(BaseCharacteristic):
 
         # Validate range
         if not 0 <= value <= 100:
-            raise ValueRangeError(
-                f"Light level must be 0-100%, got {value}%"
-            )
+            raise ValueRangeError(f"Light level must be 0-100%, got {value}%")
 
         return value
 
@@ -117,11 +123,14 @@ class LightLevelCharacteristic(BaseCharacteristic):
 For characteristics with multiple fields:
 
 ```python
-import msgspec
 from datetime import datetime
+
+import msgspec
+
 
 class SensorReading(msgspec.Struct, frozen=True, kw_only=True):
     """Multi-field sensor reading."""
+
     temperature: float
     humidity: float
     pressure: float
@@ -182,7 +191,12 @@ Always add tests for your custom characteristic:
 
 ```python
 import pytest
-from bluetooth_sig.gatt.exceptions import InsufficientDataError, ValueRangeError
+
+from bluetooth_sig.gatt.exceptions import (
+    InsufficientDataError,
+    ValueRangeError,
+)
+
 
 class TestLightLevelCharacteristic:
     """Test Light Level characteristic."""
@@ -209,9 +223,7 @@ class TestLightLevelCharacteristic:
         """Test error on out-of-range value."""
         char = LightLevelCharacteristic()
         with pytest.raises(ValueRangeError):
-            char.decode_value(
-                bytearray([101])
-            )
+            char.decode_value(bytearray([101]))
 ```
 
 ## Contributing Back

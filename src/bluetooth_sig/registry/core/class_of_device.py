@@ -17,9 +17,9 @@ from bluetooth_sig.registry.base import BaseGenericRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.registry.class_of_device import (
     ClassOfDeviceInfo,
+    CodServiceClassInfo,
     MajorDeviceClassInfo,
     MinorDeviceClassInfo,
-    ServiceClassInfo,
 )
 
 
@@ -80,7 +80,7 @@ class ClassOfDeviceRegistry(BaseGenericRegistry[ClassOfDeviceInfo]):
     def __init__(self) -> None:
         """Initialize the registry with lazy loading."""
         super().__init__()
-        self._service_classes: dict[int, ServiceClassInfo] = {}
+        self._service_classes: dict[int, CodServiceClassInfo] = {}
         self._major_classes: dict[int, MajorDeviceClassInfo] = {}
         self._minor_classes: dict[tuple[int, int], MinorDeviceClassInfo] = {}
 
@@ -108,10 +108,11 @@ class ClassOfDeviceRegistry(BaseGenericRegistry[ClassOfDeviceInfo]):
         Args:
             yaml_path: Path to the class_of_device.yaml file
         """
+        data: dict[str, Any] = {}
         with yaml_path.open("r", encoding="utf-8") as f:
             data = msgspec.yaml.decode(f.read())
 
-        if not data or not isinstance(data, dict):
+        if not data:
             return
 
         self._load_service_classes(data)
@@ -123,18 +124,15 @@ class ClassOfDeviceRegistry(BaseGenericRegistry[ClassOfDeviceInfo]):
         Args:
             data: Parsed YAML data dictionary
         """
-        cod_services = data.get("cod_services")
+        cod_services: list[dict[str, Any]] | None = data.get("cod_services")
         if not isinstance(cod_services, list):
             return
 
         for item in cod_services:
-            if not isinstance(item, dict):
-                continue
-
             bit_pos = item.get("bit")
             name = item.get("name")
             if bit_pos is not None and name:
-                self._service_classes[bit_pos] = ServiceClassInfo(
+                self._service_classes[bit_pos] = CodServiceClassInfo(
                     bit_position=bit_pos,
                     name=name,
                 )
@@ -145,14 +143,11 @@ class ClassOfDeviceRegistry(BaseGenericRegistry[ClassOfDeviceInfo]):
         Args:
             data: Parsed YAML data dictionary
         """
-        cod_device_class = data.get("cod_device_class")
+        cod_device_class: list[dict[str, Any]] | None = data.get("cod_device_class")
         if not isinstance(cod_device_class, list):
             return
 
         for item in cod_device_class:
-            if not isinstance(item, dict):
-                continue
-
             major_val = item.get("major")
             major_name = item.get("name")
             if major_val is not None and major_name:
@@ -169,14 +164,11 @@ class ClassOfDeviceRegistry(BaseGenericRegistry[ClassOfDeviceInfo]):
             major_val: Major device class value
             major_item: Dictionary containing major class data including minor classes
         """
-        minor_list = major_item.get("minor")
+        minor_list: list[dict[str, Any]] | None = major_item.get("minor")
         if not isinstance(minor_list, list):
             return
 
         for minor_item in minor_list:
-            if not isinstance(minor_item, dict):
-                continue
-
             minor_val = minor_item.get("value")
             minor_name = minor_item.get("name")
             if minor_val is not None and minor_name:
@@ -217,7 +209,7 @@ class ClassOfDeviceRegistry(BaseGenericRegistry[ClassOfDeviceInfo]):
         minor_class = (cod & CoDBitMask.MINOR_CLASS) >> CoDBitShift.MINOR_CLASS
 
         # Decode service classes (bit mask - multiple bits can be set)
-        service_classes = []
+        service_classes: list[str] = []
         for bit_pos in range(11):
             if service_class_bits & (1 << bit_pos):
                 # Map bit position 0-10 to actual bit positions 13-23
@@ -228,15 +220,32 @@ class ClassOfDeviceRegistry(BaseGenericRegistry[ClassOfDeviceInfo]):
 
         # Decode major class
         major_info = self._major_classes.get(major_class)
-        major_name = major_info.name if major_info else f"Unknown (0x{major_class:02X})"
+        if major_info:
+            major_list = [major_info]
+        else:
+            # Create Unknown info for unknown major class
+            unknown_major = MajorDeviceClassInfo(
+                value=major_class,
+                name=f"Unknown (0x{major_class:02X})",
+            )
+            major_list = [unknown_major]
 
         # Decode minor class
         minor_info = self._minor_classes.get((major_class, minor_class))
-        minor_name = minor_info.name if minor_info else None
+        minor_list = [minor_info] if minor_info else None
+
+        if minor_info:
+            minor_list = [minor_info]
+        else:
+            # Create Unknown info for unknown major class
+            unknown_minor = MinorDeviceClassInfo(
+                value=minor_class, name=f"Unknown (0x{minor_class:02X})", major_class=major_class
+            )
+            minor_list = [unknown_minor]
 
         return ClassOfDeviceInfo(
-            major_class=major_name,
-            minor_class=minor_name,
+            major_class=major_list,
+            minor_class=minor_list,
             service_classes=service_classes,
             raw_value=cod,
         )

@@ -29,9 +29,14 @@ print(f"Unit: {result.info.unit}")  # Unit: %
 
 # Alternative: Use CharacteristicName enum - convert to UUID first
 from bluetooth_sig.types.gatt_enums import CharacteristicName
-battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+
+battery_uuid = translator.get_characteristic_uuid_by_name(
+    CharacteristicName.BATTERY_LEVEL
+)
 if battery_uuid:
-    result2 = translator.parse_characteristic(str(battery_uuid), SIMULATED_BATTERY_DATA)
+    result2 = translator.parse_characteristic(
+        str(battery_uuid), SIMULATED_BATTERY_DATA
+    )
 ```
 
 The [parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic] method returns a [CharacteristicData][bluetooth_sig.gatt.characteristics.base.CharacteristicData] object.
@@ -67,8 +72,8 @@ print(battery_level.uuid)  # "2A19"
 
 ```python
 from bluetooth_sig.gatt.exceptions import (
-    UUIDResolutionError,
     InsufficientDataError,
+    UUIDResolutionError,
     ValueRangeError,
 )
 

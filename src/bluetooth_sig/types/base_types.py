@@ -12,4 +12,4 @@ class SIGInfo(msgspec.Struct, kw_only=True):
 
     uuid: BluetoothUUID
     name: str
-    description: str = ""
+    id: str = ""

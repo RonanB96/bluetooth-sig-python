@@ -17,12 +17,14 @@ The async API maintains full backward compatibility - all sync methods remain av
 
 ```python
 import asyncio
+
 from bluetooth_sig import BluetoothSIGTranslator
 
 # ============================================
 # SIMULATED DATA - Replace with actual BLE read
 # ============================================
 SIMULATED_BATTERY_DATA = bytes([75])  # Simulates 75% battery level
+
 
 async def main():
     translator = BluetoothSIGTranslator()
@@ -32,16 +34,24 @@ async def main():
     battery_uuid = "2A19"  # From BLE scan/discovery
 
     # Parse and auto-identify
-    result = await translator.parse_characteristic_async(battery_uuid, SIMULATED_BATTERY_DATA)
+    result = await translator.parse_characteristic_async(
+        battery_uuid, SIMULATED_BATTERY_DATA
+    )
     print(f"Discovered: {result.info.name}")  # "Battery Level"
     print(f"{result.info.name}: {result.value}%")
 
     # Alternative: If you know the characteristic, convert enum to UUID first
     from bluetooth_sig.types.gatt_enums import CharacteristicName
-    battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+
+    battery_uuid = translator.get_characteristic_uuid_by_name(
+        CharacteristicName.BATTERY_LEVEL
+    )
     if battery_uuid:
-        result2 = await translator.parse_characteristic_async(str(battery_uuid), SIMULATED_BATTERY_DATA)
+        result2 = await translator.parse_characteristic_async(
+            str(battery_uuid), SIMULATED_BATTERY_DATA
+        )
         print(f"Using enum: {result2.info.name} = {result2.value}%")
+
 
 asyncio.run(main())
 ```
@@ -52,8 +62,11 @@ asyncio.run(main())
 
 ```python
 import asyncio
+
 from bleak import BleakClient
+
 from bluetooth_sig import BluetoothSIGTranslator
+
 
 # SKIP: Async function with parameters - callback pattern
 async def read_sensor_data(address: str):
@@ -65,13 +78,15 @@ async def read_sensor_data(address: str):
         battery_data = await client.read_gatt_char(battery_uuid)
 
         # bluetooth-sig auto-identifies and parses
-        result = await translator.parse_characteristic_async(battery_uuid, battery_data)
+        result = await translator.parse_characteristic_async(
+            battery_uuid, battery_data
+        )
         print(f"Discovered: {result.info.name}")  # "Battery Level"
         print(f"{result.info.name}: {result.value}%")
 
         # Batch parsing multiple characteristics
-        temp_uuid = "2A6E"       # From client.services
-        humidity_uuid = "2A6F"   # From client.services
+        temp_uuid = "2A6E"  # From client.services
+        humidity_uuid = "2A6F"  # From client.services
 
         char_data = {
             battery_uuid: await client.read_gatt_char(battery_uuid),
@@ -84,10 +99,13 @@ async def read_sensor_data(address: str):
         for uuid, result in results.items():
             print(f"{result.name}: {result.value} {result.unit or ''}")
 
+
 # ============================================
 # SIMULATED DATA - Replace with actual device
 # ============================================
-SIMULATED_DEVICE_ADDRESS = "AA:BB:CC:DD:EE:FF"  # Example MAC address - use your actual device
+SIMULATED_DEVICE_ADDRESS = (
+    "AA:BB:CC:DD:EE:FF"  # Example MAC address - use your actual device
+)
 
 asyncio.run(read_sensor_data(SIMULATED_DEVICE_ADDRESS))
 ```
@@ -99,6 +117,7 @@ Batch parse multiple characteristics in a single async call:
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.types.gatt_enums import CharacteristicName
+
 
 async def parse_many_characteristics():
     translator = BluetoothSIGTranslator()
@@ -125,9 +144,11 @@ async def parse_many_characteristics():
 Parse multiple devices concurrently using `asyncio.gather`:
 
 ```python
+from bleak import BleakClient
+
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.types.gatt_enums import CharacteristicName
-from bleak import BleakClient
+
 
 async def parse_multiple_devices(devices: list[str]):
     translator = BluetoothSIGTranslator()
@@ -136,7 +157,9 @@ async def parse_multiple_devices(devices: list[str]):
     async def read_device(address: str):
         async with BleakClient(address) as client:
             data = await client.read_gatt_char(battery_uuid)
-            return await translator.parse_characteristic_async(battery_uuid, data)
+            return await translator.parse_characteristic_async(
+                battery_uuid, data
+            )
 
     # Parse all devices concurrently
     tasks = [read_device(addr) for addr in devices]
@@ -150,8 +173,9 @@ async def parse_multiple_devices(devices: list[str]):
 Maintain parsing context across multiple async operations:
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator, AsyncParsingSession
+from bluetooth_sig import AsyncParsingSession, BluetoothSIGTranslator
 from bluetooth_sig.types.gatt_enums import CharacteristicName
+
 
 async def health_monitoring_session(client):
     translator = BluetoothSIGTranslator()
@@ -178,6 +202,7 @@ Process streaming characteristic data:
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.types.gatt_enums import CharacteristicName
+
 
 async def monitor_sensor(client):
     translator = BluetoothSIGTranslator()

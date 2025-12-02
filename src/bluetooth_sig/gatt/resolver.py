@@ -7,11 +7,11 @@ duplication between characteristic and service resolvers.
 from __future__ import annotations
 
 import re
+from abc import abstractmethod
 from typing import Generic, TypeVar
 
 from ..types import CharacteristicInfo, DescriptorInfo, ServiceInfo
-from ..types.gatt_enums import ValueType
-from .uuid_registry import UuidInfo, uuid_registry
+from .uuid_registry import uuid_registry
 
 # Generic type variables for resolver return types
 TInfo = TypeVar("TInfo", CharacteristicInfo, ServiceInfo, DescriptorInfo)
@@ -47,8 +47,14 @@ class NameNormalizer:
             "Apparent Energy 32"
 
         """
-        words = re.findall(r"[A-Z]+[a-z0-9]*|[0-9]+", name)
-        return " ".join(words)
+        # Standard camelCase splitting pattern
+        # Insert space before uppercase letters preceded by any character followed by lowercase
+        result = re.sub(r"(.)([A-Z][a-z]+)", r"\1 \2", name)
+        # Insert space before uppercase that follows lowercase or digit
+        result = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", result)
+        # Insert space before trailing numbers
+        result = re.sub(r"([a-z])(\d+)", r"\1 \2", result)
+        return result
 
     @staticmethod
     def remove_suffix(name: str, suffix: str) -> str:
@@ -307,21 +313,17 @@ class RegistrySearchStrategy(Generic[TInfo]):  # pylint: disable=too-few-public-
         for variant in variants:
             info = self._lookup_in_registry(variant)
             if info:
-                return self._create_info(info, class_obj)
+                return info
 
         return None
 
+    @abstractmethod
     def _generate_variants(self, class_name: str, explicit_name: str | None) -> list[str]:
         """Generate name variants for this entity type."""
-        raise NotImplementedError
 
-    def _lookup_in_registry(self, name: str) -> UuidInfo | None:
-        """Lookup name in registry."""
-        raise NotImplementedError
-
-    def _create_info(self, uuid_info: UuidInfo, class_obj: type) -> TInfo:
-        """Create Info object from registry UuidInfo."""
-        raise NotImplementedError
+    @abstractmethod
+    def _lookup_in_registry(self, name: str) -> TInfo | None:
+        """Lookup name in registry and return domain type."""
 
 
 class CharacteristicRegistrySearch(RegistrySearchStrategy[CharacteristicInfo]):  # pylint: disable=too-few-public-methods
@@ -330,16 +332,8 @@ class CharacteristicRegistrySearch(RegistrySearchStrategy[CharacteristicInfo]): 
     def _generate_variants(self, class_name: str, explicit_name: str | None) -> list[str]:
         return NameVariantGenerator.generate_characteristic_variants(class_name, explicit_name)
 
-    def _lookup_in_registry(self, name: str) -> UuidInfo | None:
+    def _lookup_in_registry(self, name: str) -> CharacteristicInfo | None:
         return uuid_registry.get_characteristic_info(name)
-
-    def _create_info(self, uuid_info: UuidInfo, class_obj: type) -> CharacteristicInfo:
-        return CharacteristicInfo(
-            uuid=uuid_info.uuid,
-            name=uuid_info.name,
-            unit=uuid_info.unit or "",
-            value_type=ValueType(uuid_info.value_type) if uuid_info.value_type else ValueType.UNKNOWN,
-        )
 
 
 class ServiceRegistrySearch(RegistrySearchStrategy[ServiceInfo]):  # pylint: disable=too-few-public-methods
@@ -348,15 +342,8 @@ class ServiceRegistrySearch(RegistrySearchStrategy[ServiceInfo]):  # pylint: dis
     def _generate_variants(self, class_name: str, explicit_name: str | None) -> list[str]:
         return NameVariantGenerator.generate_service_variants(class_name, explicit_name)
 
-    def _lookup_in_registry(self, name: str) -> UuidInfo | None:
+    def _lookup_in_registry(self, name: str) -> ServiceInfo | None:
         return uuid_registry.get_service_info(name)
-
-    def _create_info(self, uuid_info: UuidInfo, class_obj: type) -> ServiceInfo:
-        return ServiceInfo(
-            uuid=uuid_info.uuid,
-            name=uuid_info.name,
-            description=uuid_info.summary or "",
-        )
 
 
 class DescriptorRegistrySearch(RegistrySearchStrategy[DescriptorInfo]):  # pylint: disable=too-few-public-methods
@@ -365,18 +352,5 @@ class DescriptorRegistrySearch(RegistrySearchStrategy[DescriptorInfo]):  # pylin
     def _generate_variants(self, class_name: str, explicit_name: str | None) -> list[str]:
         return NameVariantGenerator.generate_descriptor_variants(class_name, explicit_name)
 
-    def _lookup_in_registry(self, name: str) -> UuidInfo | None:
+    def _lookup_in_registry(self, name: str) -> DescriptorInfo | None:
         return uuid_registry.get_descriptor_info(name)
-
-    def _create_info(self, uuid_info: UuidInfo, class_obj: type) -> DescriptorInfo:
-        # Get structured data info from the class if available
-        has_structured_data = getattr(class_obj, "_has_structured_data", lambda: False)()
-        data_format = getattr(class_obj, "_get_data_format", lambda: "")()
-
-        return DescriptorInfo(
-            uuid=uuid_info.uuid,
-            name=uuid_info.name,
-            description=uuid_info.summary or "",
-            has_structured_data=has_structured_data,
-            data_format=data_format,
-        )

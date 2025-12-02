@@ -2,15 +2,8 @@ from __future__ import annotations
 
 from typing import cast
 
-from bluetooth_sig.gatt.characteristics import (
-    BaseCharacteristic,
-    BatteryLevelCharacteristic,
-)
-from bluetooth_sig.gatt.services import (
-    BatteryService,
-    CharacteristicStatus,
-    ServiceHealthStatus,
-)
+from bluetooth_sig.gatt.characteristics import BaseCharacteristic, BatteryLevelCharacteristic
+from bluetooth_sig.gatt.services import BatteryService, CharacteristicStatus, ServiceHealthStatus
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 

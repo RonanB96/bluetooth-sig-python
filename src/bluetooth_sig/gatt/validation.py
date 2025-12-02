@@ -19,11 +19,7 @@ from .constants import (
     MAX_TEMPERATURE_CELSIUS,
     PERCENTAGE_MAX,
 )
-from .exceptions import (
-    DataValidationError,
-    TypeMismatchError,
-    ValueRangeError,
-)
+from .exceptions import DataValidationError, TypeMismatchError, ValueRangeError
 
 T = TypeVar("T")
 

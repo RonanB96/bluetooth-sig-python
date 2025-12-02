@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.uuids.members import MemberInfo, MembersRegistry
+from bluetooth_sig.registry.uuids.members import MembersRegistry
+from bluetooth_sig.types.registry.member_uuids import MemberInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -106,7 +107,7 @@ class TestMembersRegistry:
 
     def test_uuid_formats(self, members_registry: MembersRegistry) -> None:
         """Test various UUID input formats."""
-        formats: list[str | int] = ["FEFF", "0xFEFF", "0XFEFF", 0xFEFF]
+        formats: list[str | BluetoothUUID] = ["FEFF", "0xFEFF", "0XFEFF", BluetoothUUID("FEFF")]
         for fmt in formats:
             name = members_registry.get_member_name(fmt)
             if members_registry.is_member_uuid("FEFF"):

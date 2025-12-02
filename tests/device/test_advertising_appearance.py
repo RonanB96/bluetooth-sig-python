@@ -40,7 +40,9 @@ class TestAdvertisingParserAppearance:
         # If registry loaded, should have appearance_info
         if result.ad_structures.properties.appearance.info:
             assert result.ad_structures.properties.appearance.info.category == "Heart Rate Sensor"
-            assert result.ad_structures.properties.appearance.info.subcategory == "Heart Rate Belt"
+            # Access subcategory directly
+            assert result.ad_structures.properties.appearance.info.subcategory is not None
+            assert result.ad_structures.properties.appearance.info.subcategory.name == "Heart Rate Belt"
             assert result.ad_structures.properties.appearance.info.full_name == "Heart Rate Sensor: Heart Rate Belt"
 
     def test_parse_appearance_category_only(self, parser: AdvertisingParser) -> None:
@@ -161,7 +163,8 @@ class TestAdvertisingParserAppearance:
         assert result_desktop.ad_structures.properties.appearance.raw_value == 129
         if result_desktop.ad_structures.properties.appearance.info:
             assert result_desktop.ad_structures.properties.appearance.info.category == "Computer"
-            assert result_desktop.ad_structures.properties.appearance.info.subcategory == "Desktop Workstation"
+            assert result_desktop.ad_structures.properties.appearance.info.subcategory is not None
+            assert result_desktop.ad_structures.properties.appearance.info.subcategory.name == "Desktop Workstation"
 
         # Laptop: (2 << 6) | 3 = 131 (0x0083)
         ad_data_laptop = bytearray([3, ADType.APPEARANCE, 0x83, 0x00])
@@ -171,4 +174,5 @@ class TestAdvertisingParserAppearance:
         assert result_laptop.ad_structures.properties.appearance.raw_value == 131
         if result_laptop.ad_structures.properties.appearance.info:
             assert result_laptop.ad_structures.properties.appearance.info.category == "Computer"
-            assert result_laptop.ad_structures.properties.appearance.info.subcategory == "Laptop"
+            assert result_laptop.ad_structures.properties.appearance.info.subcategory is not None
+            assert result_laptop.ad_structures.properties.appearance.info.subcategory.name == "Laptop"

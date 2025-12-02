@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import msgspec
 
-from ...registry import appearance_values_registry
+from ...registry.core.appearance_values import appearance_values_registry
 from ...types.appearance import AppearanceData
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic

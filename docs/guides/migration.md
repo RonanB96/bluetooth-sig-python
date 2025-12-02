@@ -20,6 +20,7 @@ The library stays backend-agnostic: **you keep your connection code** (Bleak, Si
 # SKIP: Migration "before" example (anti-pattern)
 # Common pattern from real fitness app integrations
 async with BleakClient(device_address) as client:
+
     def heart_rate_handler(sender, data: bytearray):
         # Manual bit manipulation from BLE Heart Rate spec
         flags = data[0]
@@ -28,20 +29,20 @@ async with BleakClient(device_address) as client:
             heart_rate = data[1]
             offset = 2
         else:
-            heart_rate = int.from_bytes(data[1:3], 'little')
+            heart_rate = int.from_bytes(data[1:3], "little")
             offset = 3
 
         # Energy expended (if present)
         energy = None
         if flags & 0x08:
-            energy = int.from_bytes(data[offset:offset+2], 'little')
+            energy = int.from_bytes(data[offset : offset + 2], "little")
             offset += 2
 
         # RR intervals (if present)
         rr_intervals = []
         if flags & 0x10:
             while offset < len(data):
-                rr = int.from_bytes(data[offset:offset+2], 'little')
+                rr = int.from_bytes(data[offset : offset + 2], "little")
                 rr_intervals.append(rr / 1024.0)  # Convert to seconds
                 offset += 2
 
@@ -54,6 +55,7 @@ async with BleakClient(device_address) as client:
 
 ```python
 import asyncio
+
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.types.gatt_enums import CharacteristicName
 
@@ -61,6 +63,7 @@ from bluetooth_sig.types.gatt_enums import CharacteristicName
 # SIMULATED DATA - Replace with actual device
 # ============================================
 SIMULATED_DEVICE_ADDRESS = "AA:BB:CC:DD:EE:FF"
+
 
 async def main():
     translator = BluetoothSIGTranslator()
@@ -78,6 +81,7 @@ async def main():
 
     # Test with sample data
     heart_rate_handler(None, bytearray([0x00, 0x55]))
+
 
 asyncio.run(main())
 ```
@@ -105,12 +109,12 @@ async with BleakClient(device_address) as client:
 
     # Read temperature
     temp_bytes = await client.read_gatt_char("2A6E")
-    temp_raw = int.from_bytes(temp_bytes[0:2], 'little', signed=True)
+    temp_raw = int.from_bytes(temp_bytes[0:2], "little", signed=True)
     temperature = temp_raw / 100.0  # Convert to °C
 
     # Read humidity
     humidity_bytes = await client.read_gatt_char("2A6F")
-    humidity = int.from_bytes(humidity_bytes[0:2], 'little') / 100.0
+    humidity = int.from_bytes(humidity_bytes[0:2], "little") / 100.0
 
     print(f"Battery: {battery}%, Temp: {temperature}°C, Humidity: {humidity}%")
 ```
@@ -119,7 +123,9 @@ async with BleakClient(device_address) as client:
 
 ```python
 import asyncio
+
 from bluetooth_sig import BluetoothSIGTranslator
+
 
 async def main():
     translator = BluetoothSIGTranslator()
@@ -127,9 +133,9 @@ async def main():
     # ============================================
     # SIMULATED DATA - Replace with actual BLE reads
     # ============================================
-    SIMULATED_BATTERY_DATA = bytearray([85])           # Simulates 85% battery
-    SIMULATED_TEMP_DATA = bytearray([0x64, 0x09])     # Simulates 24.04°C
-    SIMULATED_HUMIDITY_DATA = bytearray([0x3A, 0x13]) # Simulates 49.22%
+    SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
+    SIMULATED_TEMP_DATA = bytearray([0x64, 0x09])  # Simulates 24.04°C
+    SIMULATED_HUMIDITY_DATA = bytearray([0x3A, 0x13])  # Simulates 49.22%
 
     # Example with mock data - you can use UUIDs or CharacteristicName string names
     from bluetooth_sig.types.gatt_enums import CharacteristicName
@@ -143,15 +149,24 @@ async def main():
     # battery_name = CharacteristicName.BATTERY_LEVEL  # Resolves to "Battery Level"
 
     # Parse all at once
-    results = translator.parse_characteristics({
-        battery_uuid: SIMULATED_BATTERY_DATA,
-        temp_uuid: SIMULATED_TEMP_DATA,
-        humidity_uuid: SIMULATED_HUMIDITY_DATA,
-    })
+    results = translator.parse_characteristics(
+        {
+            battery_uuid: SIMULATED_BATTERY_DATA,
+            temp_uuid: SIMULATED_TEMP_DATA,
+            humidity_uuid: SIMULATED_HUMIDITY_DATA,
+        }
+    )
 
-    print(f"Battery: {results[battery_uuid].value}{results[battery_uuid].info.unit or ''}")
-    print(f"Temp: {results[temp_uuid].value}{results[temp_uuid].info.unit or ''}")
-    print(f"Humidity: {results[humidity_uuid].value}{results[humidity_uuid].info.unit or ''}")
+    print(
+        f"Battery: {results[battery_uuid].value}{results[battery_uuid].info.unit or ''}"
+    )
+    print(
+        f"Temp: {results[temp_uuid].value}{results[temp_uuid].info.unit or ''}"
+    )
+    print(
+        f"Humidity: {results[humidity_uuid].value}{results[humidity_uuid].info.unit or ''}"
+    )
+
 
 asyncio.run(main())
 ```
@@ -177,25 +192,29 @@ async with BleakClient(device_address) as client:
     contexts = {}
 
     def measurement_handler(sender, data: bytearray):
-        seq = int.from_bytes(data[1:3], 'little')
+        seq = int.from_bytes(data[1:3], "little")
         # Complex flag parsing...
-        glucose = int.from_bytes(data[3:5], 'little')
+        glucose = int.from_bytes(data[3:5], "little")
         measurements[seq] = glucose / 100000.0  # mg/dL conversion
 
     def context_handler(sender, data: bytearray):
-        seq = int.from_bytes(data[1:3], 'little')
+        seq = int.from_bytes(data[1:3], "little")
         # More flag parsing...
         carbs = data[3]
         contexts[seq] = carbs
 
-    await client.start_notify("2A18", measurement_handler)  # Glucose Measurement
-    await client.start_notify("2A34", context_handler)      # Glucose Context
+    await client.start_notify(
+        "2A18", measurement_handler
+    )  # Glucose Measurement
+    await client.start_notify("2A34", context_handler)  # Glucose Context
 
     # Manual pairing logic
     await asyncio.sleep(5)
     for seq in measurements:
         if seq in contexts:
-            print(f"Seq {seq}: {measurements[seq]} mg/dL, Carbs: {contexts[seq]}g")
+            print(
+                f"Seq {seq}: {measurements[seq]} mg/dL, Carbs: {contexts[seq]}g"
+            )
 ```
 
 **After** (with automatic dependency resolution):
@@ -203,7 +222,9 @@ async with BleakClient(device_address) as client:
 ```python
 # SKIP: Async function needs completion
 import asyncio
+
 from bluetooth_sig import BluetoothSIGTranslator
+
 
 async def main():
     translator = BluetoothSIGTranslator()
@@ -230,24 +251,34 @@ async def main():
             contexts_cache[seq] = data
 
         # Parse pairs when we have matching sequence numbers
-        matching_seqs = set(measurements_cache.keys()) & set(contexts_cache.keys())
+        matching_seqs = set(measurements_cache.keys()) & set(
+            contexts_cache.keys()
+        )
         for seq in matching_seqs:
-            results = translator.parse_characteristics({
-                gm_uuid: measurements_cache[seq],
-                gmc_uuid: contexts_cache[seq],
-            })
+            results = translator.parse_characteristics(
+                {
+                    gm_uuid: measurements_cache[seq],
+                    gmc_uuid: contexts_cache[seq],
+                }
+            )
 
             gm = results[gm_uuid].value  # GlucoseMeasurementData
             gmc = results[gmc_uuid].value  # GlucoseMeasurementContextData
-            print(f"Seq {seq}: Glucose {gm.concentration} {results[gm_uuid].unit}")
+            print(
+                f"Seq {seq}: Glucose {gm.concentration} {results[gm_uuid].unit}"
+            )
             print(f"Seq {seq}: Carbs {gmc.carbohydrate} g")
 
             # Remove processed entries
             del measurements_cache[seq]
             del contexts_cache[seq]
 
-    await client.start_notify(gm_uuid, lambda s, d: combined_handler(gm_uuid, d))
-    await client.start_notify(gmc_uuid, lambda s, d: combined_handler(gmc_uuid, d))
+    await client.start_notify(
+        gm_uuid, lambda s, d: combined_handler(gm_uuid, d)
+    )
+    await client.start_notify(
+        gmc_uuid, lambda s, d: combined_handler(gmc_uuid, d)
+    )
 ```
 
 **What improved**:
@@ -289,29 +320,34 @@ async with BleakClient(device_address) as client:
 
 ```python
 import asyncio
+
 from bluetooth_sig import BluetoothSIGTranslator
 
 # ============================================
 # SIMULATED DATA - Replace with actual BLE reads
 # ============================================
-SIMULATED_BATTERY_DATA = bytearray([85])         # Simulates 85% battery
-SIMULATED_HR_DATA = bytearray([0x00, 0x55])     # Simulates heart rate measurement
+SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
+SIMULATED_HR_DATA = bytearray([0x00, 0x55])  # Simulates heart rate measurement
+
 
 async def main():
     translator = BluetoothSIGTranslator()
 
     # Example: parse known characteristics using UUIDs
     characteristics = {
-        "2A19": SIMULATED_BATTERY_DATA,     # Battery
-        "2A37": SIMULATED_HR_DATA,          # Heart Rate
+        "2A19": SIMULATED_BATTERY_DATA,  # Battery
+        "2A37": SIMULATED_HR_DATA,  # Heart Rate
     }
 
     for uuid, value in characteristics.items():
         parsed = translator.parse_characteristic(uuid, value)
         if parsed.parse_success:
-            print(f"  {parsed.info.name}: {parsed.value} {parsed.info.unit or ''}")
+            print(
+                f"  {parsed.info.name}: {parsed.value} {parsed.info.unit or ''}"
+            )
         else:
             print(f"  {uuid}: {value.hex()} (unknown)")
+
 
 asyncio.run(main())
 ```
@@ -337,7 +373,7 @@ from bluetooth_sig.types.gatt_enums import CharacteristicName
 # SIMULATED DATA - Replace with actual BLE reads
 # ============================================
 gm_bytes = bytearray([0x00, 0x01, 0x02])  # Simulated glucose measurement
-gmc_bytes = bytearray([0x03, 0x04])       # Simulated glucose context
+gmc_bytes = bytearray([0x03, 0x04])  # Simulated glucose context
 
 translator = BluetoothSIGTranslator()
 
@@ -361,8 +397,10 @@ from bluetooth_sig import BluetoothSIGTranslator
 # ============================================
 # SIMULATED DATA - Replace with actual BLE reads
 # ============================================
-glucose_measurement_bytes = bytearray([0x00, 0x01, 0x02])  # Simulated glucose measurement
-glucose_context_bytes = bytearray([0x03, 0x04])            # Simulated glucose context
+glucose_measurement_bytes = bytearray(
+    [0x00, 0x01, 0x02]
+)  # Simulated glucose measurement
+glucose_context_bytes = bytearray([0x03, 0x04])  # Simulated glucose context
 
 translator = BluetoothSIGTranslator()
 
@@ -394,7 +432,9 @@ values = {gm_uuid: gm_bytes, gmc_uuid: gmc_bytes}
 
 batch = bleak_services_to_batch(services, values_by_uuid=values)
 char_data, desc_data = to_parse_inputs(batch)
-results = translator.parse_characteristics(char_data, descriptor_data=desc_data)
+results = translator.parse_characteristics(
+    char_data, descriptor_data=desc_data
+)
 ```
 
 **Note**: Example adapters are provided as references; update them as needed for your project/backend versions.
@@ -406,14 +446,16 @@ For applications managing multiple devices or complex workflows, use the Device 
 ```python
 # SKIP: Needs real BLE device
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 from bluetooth_sig.device import Device
+from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
 device = Device(address, translator)
 
 # Your manager implements ConnectionManagerProtocol (connect/read/write/notify/etc.)
-from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+from examples.connection_managers.bleak_retry import (
+    BleakRetryConnectionManager,
+)
 
 manager = BleakRetryConnectionManager(address)
 device.attach_connection_manager(manager)
@@ -446,10 +488,12 @@ These adapters are intentionally kept in examples to avoid hard dependencies. Co
 ```python
 # SKIP: Requires Home Assistant
 from homeassistant.components import bluetooth
+
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
+
 
 class MySensorEntity(SensorEntity):
     def __init__(self, *args, **kwargs):
@@ -475,6 +519,7 @@ class MySensorEntity(SensorEntity):
 ```python
 # SKIP: Requires SimplePyBLE
 import simplepyble
+
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
@@ -486,7 +531,9 @@ for service in peripheral.services():
     for characteristic in service.characteristics():
         try:
             data = peripheral.read(service.uuid(), characteristic.uuid())
-            result = translator.parse_characteristic(characteristic.uuid(), data)
+            result = translator.parse_characteristic(
+                characteristic.uuid(), data
+            )
             if result.parse_success:
                 print(f"{result.name}: {result.value} {result.unit}")
         except Exception as e:
@@ -517,6 +564,7 @@ The `DependencyPairingBuffer` helper buffers notifications and groups them using
 
 ```python
 from datetime import datetime
+
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.stream import DependencyPairingBuffer
 from bluetooth_sig.types.gatt_enums import CharacteristicName
@@ -525,6 +573,7 @@ translator = BluetoothSIGTranslator()
 
 bpm_uuid = "2A35"
 icp_uuid = "2A36"
+
 
 def group_by_timestamp(uuid: str, parsed) -> datetime:
     """Group notifications by their timestamp - same session = same timestamp."""
@@ -538,15 +587,21 @@ def group_by_timestamp(uuid: str, parsed) -> datetime:
     # Fallback: use current time or synthetic session tracking
     raise ValueError("Timestamp required for grouping")
 
+
 def on_measurement_complete(results):
     """Called when both BPM and ICP arrive for the same timestamp."""
     bpm = results[bpm_uuid].value
     icp = results[icp_uuid].value
 
-    print(f"Blood Pressure: {bpm.systolic}/{bpm.diastolic} {results[bpm_uuid].unit}")
-    print(f"Max Cuff Pressure: {icp.current_cuff_pressure} {results[icp_uuid].unit}")
+    print(
+        f"Blood Pressure: {bpm.systolic}/{bpm.diastolic} {results[bpm_uuid].unit}"
+    )
+    print(
+        f"Max Cuff Pressure: {icp.current_cuff_pressure} {results[icp_uuid].unit}"
+    )
 
     # Store to database, update UI, etc.
+
 
 buffer = DependencyPairingBuffer(
     translator=translator,
@@ -557,8 +612,12 @@ buffer = DependencyPairingBuffer(
 
 # In your notification handlers (notifications arrive in any order)
 async with BleakClient(device_address) as client:
-    await client.start_notify(bpm_uuid, lambda s, d: buffer.ingest(bpm_uuid, d))
-    await client.start_notify(icp_uuid, lambda s, d: buffer.ingest(icp_uuid, d))
+    await client.start_notify(
+        bpm_uuid, lambda s, d: buffer.ingest(bpm_uuid, d)
+    )
+    await client.start_notify(
+        icp_uuid, lambda s, d: buffer.ingest(icp_uuid, d)
+    )
 
     # Buffer automatically pairs when both arrive with matching timestamps
     await asyncio.sleep(30)  # Wait for measurements
@@ -589,11 +648,13 @@ translator = BluetoothSIGTranslator()
 gm_uuid = "2A18"
 gmc_uuid = "2A34"
 
+
 def group_by_sequence(uuid: str, parsed) -> int:
     """Both measurement and context have sequence_number field."""
     if not parsed.parse_success or parsed.value is None:
         raise ValueError("Unable to derive grouping key: parse failed")
     return int(parsed.value.sequence_number)
+
 
 def on_glucose_pair(results):
     gm = results[gm_uuid].value
@@ -608,6 +669,7 @@ def on_glucose_pair(results):
 
     print(f"Glucose: {gm.glucose_concentration} {results[gm_uuid].unit}")
     print(f"Carbs: {gmc.carbohydrate} g, Meal: {gmc.meal}")
+
 
 buffer = DependencyPairingBuffer(
     translator=translator,

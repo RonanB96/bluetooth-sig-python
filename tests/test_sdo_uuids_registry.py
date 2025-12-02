@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.uuids.sdo_uuids import SdoInfo, SdoUuidsRegistry
+from bluetooth_sig.registry.uuids.sdo_uuids import SdoUuidsRegistry
+from bluetooth_sig.types.registry.sdo_uuids import SdoUuidInfo as SdoInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -34,7 +35,6 @@ class TestSdoUuidsRegistry:
         if info:  # Only if YAML loaded
             assert isinstance(info, SdoInfo)
             assert info.name == "Wireless Power Transfer"
-            assert info.id == "org.bluetooth.sdo.wireless_power_transfer"
 
     def test_get_sdo_info_by_name(self, sdo_uuids_registry: SdoUuidsRegistry) -> None:
         """Test lookup by SDO name."""
@@ -106,11 +106,8 @@ class TestSdoUuidsRegistry:
                 assert isinstance(sdo, SdoInfo)
                 assert isinstance(sdo.name, str)
                 assert isinstance(sdo.uuid, BluetoothUUID)
-                assert isinstance(sdo.id, str)
                 # Should be 16-bit UUIDs
                 assert len(sdo.uuid.short_form) == 4
-                # ID should start with org.bluetooth.sdo.
-                assert sdo.id.startswith("org.bluetooth.sdo.")
 
     def test_sdo_info_structure(self, sdo_uuids_registry: SdoUuidsRegistry) -> None:
         """Test SdoInfo dataclass structure."""
@@ -122,11 +119,10 @@ class TestSdoUuidsRegistry:
             assert hasattr(sdo, "id")
             assert isinstance(sdo.uuid, BluetoothUUID)
             assert isinstance(sdo.name, str)
-            assert isinstance(sdo.id, str)
 
     def test_uuid_formats(self, sdo_uuids_registry: SdoUuidsRegistry) -> None:
         """Test various UUID input formats."""
-        formats: list[str | int] = ["FFFE", "0xFFFE", "0XFFFE", 0xFFFE]
+        formats: list[str | BluetoothUUID] = ["FFFE", "0xFFFE", "0XFFFE", BluetoothUUID("FFFE")]
         for fmt in formats:
             info = sdo_uuids_registry.get_sdo_info(fmt)
             if sdo_uuids_registry.is_sdo_uuid("FFFE"):
@@ -147,20 +143,3 @@ class TestSdoUuidsRegistry:
         for name, expected_suffix in test_cases:
             normalized = sdo_uuids_registry._normalize_name_for_id(name)
             assert normalized == expected_suffix
-            expected_id = f"org.bluetooth.sdo.{expected_suffix}"
-
-            # Check if this SDO exists and has the expected ID
-            info = sdo_uuids_registry.get_sdo_info_by_name(name)
-            if info:
-                assert info.id == expected_id
-
-    def test_synthetic_id_generation(self, sdo_uuids_registry: SdoUuidsRegistry) -> None:
-        """Test that synthetic IDs are generated correctly."""
-        sdo_uuids = sdo_uuids_registry.get_all_sdo_uuids()
-        if sdo_uuids:
-            for sdo in sdo_uuids:
-                # All IDs should start with the expected prefix
-                assert sdo.id.startswith("org.bluetooth.sdo.")
-                # ID should be lowercase and contain only valid characters
-                assert sdo.id.islower()
-                assert all(c.isalnum() or c in "._" for c in sdo.id)

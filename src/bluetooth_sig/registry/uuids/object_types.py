@@ -1,14 +1,14 @@
-"""Object types registry for Bluetooth SIG OTS object type definitions."""
+"""Object types registry for Bluetooth SIG object type definitions."""
 
 from __future__ import annotations
 
-from bluetooth_sig.registry.base import BaseRegistry
+from bluetooth_sig.registry.base import BaseUUIDRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.registry.object_types import ObjectTypeInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-class ObjectTypesRegistry(BaseRegistry[ObjectTypeInfo]):
+class ObjectTypesRegistry(BaseUUIDRegistry[ObjectTypeInfo]):
     """Registry for Bluetooth SIG Object Transfer Service (OTS) object types."""
 
     def _load_yaml_path(self) -> str:
@@ -21,7 +21,6 @@ class ObjectTypesRegistry(BaseRegistry[ObjectTypeInfo]):
             uuid=uuid,
             name=uuid_data["name"],
             id=uuid_data["id"],
-            summary="",
         )
 
     def _create_runtime_info(self, entry: object, uuid: BluetoothUUID) -> ObjectTypeInfo:
@@ -30,7 +29,6 @@ class ObjectTypesRegistry(BaseRegistry[ObjectTypeInfo]):
             uuid=uuid,
             name=getattr(entry, "name", ""),
             id=getattr(entry, "id", ""),
-            summary=getattr(entry, "summary", ""),
         )
 
     def _load(self) -> None:
@@ -42,11 +40,11 @@ class ObjectTypesRegistry(BaseRegistry[ObjectTypeInfo]):
                 self._load_from_yaml(yaml_path)
         self._loaded = True
 
-    def get_object_type_info(self, uuid: str | int | BluetoothUUID) -> ObjectTypeInfo | None:
+    def get_object_type_info(self, uuid: str | BluetoothUUID) -> ObjectTypeInfo | None:
         """Get object type information by UUID.
 
         Args:
-            uuid: 16-bit UUID as string (with or without 0x), int, or BluetoothUUID
+            uuid: 16-bit UUID as string (with or without 0x) or BluetoothUUID
 
         Returns:
             ObjectTypeInfo object, or None if not found
@@ -83,7 +81,7 @@ class ObjectTypesRegistry(BaseRegistry[ObjectTypeInfo]):
                 return info
         return None
 
-    def is_object_type_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
+    def is_object_type_uuid(self, uuid: str | BluetoothUUID) -> bool:
         """Check if a UUID is a registered object type UUID.
 
         Args:

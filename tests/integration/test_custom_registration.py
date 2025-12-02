@@ -14,8 +14,8 @@ from bluetooth_sig.gatt.characteristics.utils import DataParser
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.services.custom import CustomBaseGattService
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
-from bluetooth_sig.gatt.uuid_registry import CustomUuidEntry, uuid_registry
-from bluetooth_sig.types import CharacteristicInfo, CharacteristicRegistration, ServiceRegistration
+from bluetooth_sig.gatt.uuid_registry import uuid_registry
+from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
 from bluetooth_sig.types.gatt_enums import GattProperty, ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -72,38 +72,31 @@ class TestRuntimeRegistration:
 
     def test_register_custom_characteristic_metadata(self) -> None:
         """Test registering custom characteristic metadata."""
-        entry = CustomUuidEntry(
+        uuid_registry.register_characteristic(
             uuid=BluetoothUUID("abcd1234-0000-1000-8000-00805f9b34fb"),
             name="Test Characteristic",
             unit="°C",
-            value_type="float",
-            summary="Test temperature characteristic",
+            value_type=ValueType.FLOAT,
         )
-
-        uuid_registry.register_characteristic(entry)
 
         # Verify registration
         info = uuid_registry.get_characteristic_info("abcd1234-0000-1000-8000-00805f9b34fb")
         assert info is not None
         assert info.name == "Test Characteristic"
         assert info.unit == "°C"
-        assert info.value_type == "float"
+        assert info.value_type == ValueType.FLOAT
 
     def test_register_custom_service_metadata(self) -> None:
         """Test registering custom service metadata."""
-        entry = CustomUuidEntry(
+        uuid_registry.register_service(
             uuid=BluetoothUUID("12345678-1234-1234-1234-123456789abc"),
             name="Test Service",
-            summary="Test custom service",
         )
-
-        uuid_registry.register_service(entry)
 
         # Verify registration
         info = uuid_registry.get_service_info("12345678-1234-1234-1234-123456789abc")
         assert info is not None
         assert info.name == "Test Service"
-        assert info.summary == "Test custom service"
 
     def test_register_characteristic_class(self) -> None:
         """Test registering a custom characteristic class."""
@@ -130,7 +123,7 @@ class TestRuntimeRegistration:
         translator.register_custom_characteristic_class(
             "abcd1234-0000-1000-8000-00805f9b34fb",
             CustomCharacteristicImpl,
-            metadata=CharacteristicRegistration(
+            info=CharacteristicInfo(
                 uuid=BluetoothUUID("abcd1234-0000-1000-8000-00805f9b34fb"),
                 name="Test Characteristic",
                 unit="°C",
@@ -153,10 +146,9 @@ class TestRuntimeRegistration:
         translator.register_custom_service_class(
             "12345678-1234-1234-1234-123456789abc",
             CustomServiceImpl,
-            metadata=ServiceRegistration(
+            info=ServiceInfo(
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789abc"),
                 name="Test Service",
-                summary="Test custom service",
             ),
         )
 
@@ -189,27 +181,24 @@ class TestRuntimeRegistration:
     def test_conflict_detection(self) -> None:
         """Test that conflicts with SIG entries are detected."""
         # Try to register a known SIG UUID without override
-        entry = CustomUuidEntry(
-            uuid=BluetoothUUID("2A19"),  # Battery Level UUID
-            name="Custom Battery",
-            unit="%",
-            value_type="int",
-        )
-
         with pytest.raises(ValueError, match="conflicts with existing SIG"):
-            uuid_registry.register_characteristic(entry)
+            uuid_registry.register_characteristic(
+                uuid=BluetoothUUID("2A19"),  # Battery Level UUID
+                name="Custom Battery",
+                unit="%",
+                value_type=ValueType.INT,
+            )
 
     def test_override_allowed(self) -> None:
         """Test that override=True allows replacing SIG entries."""
-        entry = CustomUuidEntry(
+        # Should not raise with override=True
+        uuid_registry.register_characteristic(
             uuid=BluetoothUUID("2A19"),  # Battery Level UUID
             name="Custom Battery",
             unit="%",
-            value_type="int",
+            value_type=ValueType.INT,
+            override=True,
         )
-
-        # Should not raise with override=True
-        uuid_registry.register_characteristic(entry, override=True)
 
         # Verify override worked
         info = uuid_registry.get_characteristic_info("2A19")

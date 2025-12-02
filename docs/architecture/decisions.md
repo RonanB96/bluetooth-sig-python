@@ -73,9 +73,11 @@ This document explains key architectural decisions made in the bluetooth-sig-pyt
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.templates import ScaledSint16Template
 
+
 class Temperature(BaseCharacteristic):
     _template = ScaledSint16Template(scale_factor=0.01)  # Composition
     expected_length = 2
+
 
 # Actually: raw value 256, (256 + 0) * 0.01 = 2.56°C
 # For 25.6°C: 2560 * 0.01 = 25.6, so 0x00, 0x0A (2560)

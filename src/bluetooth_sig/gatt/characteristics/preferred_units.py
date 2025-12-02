@@ -2,8 +2,8 @@
 
 import msgspec
 
-from ...registry import units_registry
-from ...registry.uuids.units import UnitInfo
+from ...registry.uuids.units import units_registry
+from ...types.registry.units import UnitInfo
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
 from ..exceptions import InsufficientDataError

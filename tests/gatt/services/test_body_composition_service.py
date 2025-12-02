@@ -8,9 +8,7 @@ from bluetooth_sig.gatt.characteristics.body_composition_feature import (
     HeightMeasurementResolution,
     MassMeasurementResolution,
 )
-from bluetooth_sig.gatt.characteristics.body_composition_measurement import (
-    BodyCompositionMeasurementCharacteristic,
-)
+from bluetooth_sig.gatt.characteristics.body_composition_measurement import BodyCompositionMeasurementCharacteristic
 from bluetooth_sig.gatt.services.body_composition import BodyCompositionService
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
@@ -160,9 +158,7 @@ class TestBodyCompositionFeatureCharacteristic:
         """Test encoding BodyCompositionFeatureData back to bytes."""
         char = BodyCompositionFeatureCharacteristic()
 
-        from bluetooth_sig.gatt.characteristics.body_composition_feature import (
-            BodyCompositionFeatureData,
-        )
+        from bluetooth_sig.gatt.characteristics.body_composition_feature import BodyCompositionFeatureData
 
         # Create test data with basic features enabled
         test_data = BodyCompositionFeatureData(

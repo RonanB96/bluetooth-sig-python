@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.uuids.declarations import DeclarationInfo, DeclarationsRegistry
+from bluetooth_sig.registry.uuids.declarations import DeclarationsRegistry
+from bluetooth_sig.types.registry.declarations import DeclarationInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -126,7 +127,7 @@ class TestDeclarationsRegistry:
 
     def test_uuid_formats(self, declarations_registry: DeclarationsRegistry) -> None:
         """Test various UUID input formats."""
-        formats: list[str | int] = ["2800", "0x2800", "0X2800", 0x2800]
+        formats: list[str | BluetoothUUID] = ["2800", "0x2800", "0X2800", BluetoothUUID("2800")]
         for fmt in formats:
             info = declarations_registry.get_declaration_info(fmt)
             if declarations_registry.is_declaration_uuid("2800"):

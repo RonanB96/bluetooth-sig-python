@@ -274,7 +274,7 @@ class TestServiceRegistrySearch:
         assert result is not None
         assert hasattr(result, "uuid")
         assert hasattr(result, "name")
-        assert hasattr(result, "description")
+        assert hasattr(result, "id")
 
 
 class TestResolverIntegration:

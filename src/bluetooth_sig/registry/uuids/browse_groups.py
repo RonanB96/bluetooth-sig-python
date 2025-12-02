@@ -1,4 +1,4 @@
-"""Browse group identifiers registry for Bluetooth SIG browse group identifiers."""
+"""Browse groups registry for Bluetooth SIG browse group definitions."""
 
 from __future__ import annotations
 
@@ -13,23 +13,22 @@ class BrowseGroupsRegistry(BaseUUIDRegistry[BrowseGroupInfo]):
 
     def _load_yaml_path(self) -> str:
         """Return the YAML file path relative to bluetooth_sig/ root."""
-        return "assigned_numbers/uuids/browse_group_identifiers.yaml"
+        return "assigned_numbers/uuids/browse_groups.yaml"
 
-    def _create_info_from_yaml(self, uuid_data: dict[str, str], bt_uuid: BluetoothUUID) -> BrowseGroupInfo:
+    def _create_info_from_yaml(self, uuid_data: dict[str, str], uuid: BluetoothUUID) -> BrowseGroupInfo:
         """Create BrowseGroupInfo from YAML data."""
         return BrowseGroupInfo(
-            uuid=bt_uuid,
+            uuid=uuid,
             name=uuid_data["name"],
             id=uuid_data["id"],
         )
 
-    def _create_runtime_info(self, entry: object, bt_uuid: BluetoothUUID) -> BrowseGroupInfo:
+    def _create_runtime_info(self, entry: object, uuid: BluetoothUUID) -> BrowseGroupInfo:
         """Create runtime BrowseGroupInfo from entry."""
         return BrowseGroupInfo(
-            uuid=bt_uuid,
+            uuid=uuid,
             name=getattr(entry, "name", ""),
             id=getattr(entry, "id", ""),
-            summary=getattr(entry, "summary", ""),
         )
 
     def _load(self) -> None:
@@ -41,7 +40,7 @@ class BrowseGroupsRegistry(BaseUUIDRegistry[BrowseGroupInfo]):
                 self._load_from_yaml(yaml_path)
         self._loaded = True
 
-    def get_browse_group_info(self, uuid: str | int | BluetoothUUID) -> BrowseGroupInfo | None:
+    def get_browse_group_info(self, uuid: str | BluetoothUUID) -> BrowseGroupInfo | None:
         """Get browse group information by UUID.
 
         Args:
@@ -83,7 +82,7 @@ class BrowseGroupsRegistry(BaseUUIDRegistry[BrowseGroupInfo]):
                 return info
         return None
 
-    def is_browse_group_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
+    def is_browse_group_uuid(self, uuid: str | BluetoothUUID) -> bool:
         """Check if a UUID corresponds to a known browse group.
 
         Args:

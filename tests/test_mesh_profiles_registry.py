@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.uuids.mesh_profiles import MeshProfileInfo, MeshProfilesRegistry
+from bluetooth_sig.registry.uuids.mesh_profiles import MeshProfilesRegistry
+from bluetooth_sig.types.registry.mesh_profile_uuids import MeshProfileInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -34,7 +35,6 @@ class TestMeshProfilesRegistry:
         if info:  # Only if YAML loaded
             assert isinstance(info, MeshProfileInfo)
             assert info.name == "Generic OnOff Server"
-            assert info.id == "org.bluetooth.mesh.model.generic_on_off_server"
 
     def test_get_mesh_profile_info_by_name(self, mesh_profiles_registry: MeshProfilesRegistry) -> None:
         """Test lookup by mesh profile name."""
@@ -51,19 +51,6 @@ class TestMeshProfilesRegistry:
 
         # Test not found
         info_none = mesh_profiles_registry.get_mesh_profile_info_by_name("Nonexistent Mesh Profile")
-        assert info_none is None
-
-    def test_get_mesh_profile_info_by_id(self, mesh_profiles_registry: MeshProfilesRegistry) -> None:
-        """Test lookup by mesh profile ID."""
-        # Test with known mesh profile ID
-        info = mesh_profiles_registry.get_mesh_profile_info_by_id("org.bluetooth.mesh.model.generic_on_off_server")
-        if info:  # Only if YAML loaded
-            assert isinstance(info, MeshProfileInfo)
-            assert info.name == "Generic OnOff Server"
-            assert info.uuid.short_form.upper() == "1000"
-
-        # Test not found
-        info_none = mesh_profiles_registry.get_mesh_profile_info_by_id("org.bluetooth.mesh.model.nonexistent")
         assert info_none is None
 
     def test_get_mesh_profile_info_by_bluetooth_uuid(self, mesh_profiles_registry: MeshProfilesRegistry) -> None:
@@ -106,7 +93,6 @@ class TestMeshProfilesRegistry:
                 assert isinstance(mesh_profile, MeshProfileInfo)
                 assert isinstance(mesh_profile.name, str)
                 assert isinstance(mesh_profile.uuid, BluetoothUUID)
-                assert isinstance(mesh_profile.id, str)
                 # Should be 16-bit UUIDs
                 assert len(mesh_profile.uuid.short_form) == 4
 
@@ -120,11 +106,10 @@ class TestMeshProfilesRegistry:
             assert hasattr(mesh_profile, "id")
             assert isinstance(mesh_profile.uuid, BluetoothUUID)
             assert isinstance(mesh_profile.name, str)
-            assert isinstance(mesh_profile.id, str)
 
     def test_uuid_formats(self, mesh_profiles_registry: MeshProfilesRegistry) -> None:
         """Test various UUID input formats."""
-        formats: list[str | int] = ["1000", "0x1000", "0X1000", 0x1000]
+        formats: list[str | BluetoothUUID] = ["1000", "0x1000", "0X1000", BluetoothUUID("1000")]
         for fmt in formats:
             info = mesh_profiles_registry.get_mesh_profile_info(fmt)
             if mesh_profiles_registry.is_mesh_profile_uuid("1000"):

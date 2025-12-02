@@ -14,8 +14,6 @@ The recommended way to use the registry is through the [Core API](core.md):
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
-
-```python
 # Resolve UUID to characteristic info
 char_info = translator.get_sig_info_by_uuid("2A19")
 print(char_info.name)  # "Battery Level"
@@ -54,14 +52,14 @@ Use type-safe enums instead of string literals:
 from bluetooth_sig.types.gatt_enums import CharacteristicName, ServiceName
 
 # Characteristics
-CharacteristicName.BATTERY_LEVEL     # "Battery Level"
-CharacteristicName.TEMPERATURE       # "Temperature"
-CharacteristicName.HUMIDITY          # "Humidity"
+CharacteristicName.BATTERY_LEVEL  # "Battery Level"
+CharacteristicName.TEMPERATURE  # "Temperature"
+CharacteristicName.HUMIDITY  # "Humidity"
 
 # Services
-ServiceName.BATTERY                  # "Battery"
-ServiceName.ENVIRONMENTAL_SENSING    # "Environmental Sensing"
-ServiceName.DEVICE_INFORMATION       # "Device Information"
+ServiceName.BATTERY  # "Battery"
+ServiceName.ENVIRONMENTAL_SENSING  # "Environmental Sensing"
+ServiceName.DEVICE_INFORMATION  # "Device Information"
 ```
 
 See [CharacteristicData][bluetooth_sig.gatt.characteristics.base.CharacteristicData], [CharacteristicInfo][bluetooth_sig.types.CharacteristicInfo], and [ServiceInfo][bluetooth_sig.types.ServiceInfo] in the [Core API](core.md) for type definitions.
@@ -78,14 +76,12 @@ translator = BluetoothSIGTranslator()
 
 # Register custom characteristic
 translator.register_custom_characteristic_class(
-    uuid="12345678",
-    characteristic_class=MyCustomCharacteristic
+    uuid="12345678", characteristic_class=MyCustomCharacteristic
 )
 
 # Register custom service
 translator.register_custom_service_class(
-    uuid="ABCD1234",
-    service_class=MyCustomService
+    uuid="ABCD1234", service_class=MyCustomService
 )
 ```
 

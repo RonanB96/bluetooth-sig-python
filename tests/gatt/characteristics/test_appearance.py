@@ -21,7 +21,7 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
         # Create AppearanceData objects directly with raw values to avoid registry dependency
         # This makes tests deterministic and independent of registry state
-        from bluetooth_sig.types.appearance_info import AppearanceInfo
+        from bluetooth_sig.types.registry.appearance_info import AppearanceInfo, AppearanceSubcategoryInfo
 
         return [
             CharacteristicTestData(
@@ -30,9 +30,8 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
                     raw_value=0,
                     info=AppearanceInfo(
                         category="Unknown",
-                        subcategory=None,
                         category_value=0,
-                        subcategory_value=None,
+                        subcategory=None,
                     ),
                 ),
                 description="Unknown appearance (0x0000)",
@@ -43,9 +42,8 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
                     raw_value=64,
                     info=AppearanceInfo(
                         category="Phone",
-                        subcategory=None,
                         category_value=1,
-                        subcategory_value=None,
+                        subcategory=None,
                     ),
                 ),
                 description="Phone (0x0040)",
@@ -56,9 +54,8 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
                     raw_value=833,
                     info=AppearanceInfo(
                         category="Heart Rate Sensor",
-                        subcategory="Heart Rate Belt",
                         category_value=13,
-                        subcategory_value=1,
+                        subcategory=AppearanceSubcategoryInfo(name="Heart Rate Belt", value=1),
                     ),
                 ),
                 description="Heart Rate Sensor Belt (0x0341)",

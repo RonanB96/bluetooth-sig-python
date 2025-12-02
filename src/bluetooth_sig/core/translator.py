@@ -14,14 +14,12 @@ from ..gatt.exceptions import MissingDependencyError
 from ..gatt.services import ServiceName
 from ..gatt.services.base import BaseGattService
 from ..gatt.services.registry import GattServiceRegistry
-from ..gatt.uuid_registry import CustomUuidEntry, uuid_registry
+from ..gatt.uuid_registry import uuid_registry
 from ..types import (
     CharacteristicContext,
     CharacteristicDataProtocol,
     CharacteristicInfo,
-    CharacteristicRegistration,
     ServiceInfo,
-    ServiceRegistration,
     SIGInfo,
     ValidationResult,
 )
@@ -149,7 +147,6 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             fallback_info = CharacteristicInfo(
                 uuid=BluetoothUUID(uuid),
                 name="Unknown",
-                description="",
                 value_type=ValueType.UNKNOWN,
                 unit="",
             )
@@ -664,7 +661,6 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 failure_info = CharacteristicInfo(
                     uuid=BluetoothUUID(uuid),
                     name=char_name,
-                    description="",
                     value_type=ValueType.UNKNOWN,
                     unit="",
                 )
@@ -749,20 +745,26 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         try:
             # Attempt to parse the data - if it succeeds, format is valid
             parsed = self.parse_characteristic(uuid, data)
+            expected = parsed.characteristic.expected_length
             return ValidationResult(
-                uuid=BluetoothUUID(uuid),
-                name=parsed.characteristic.name,
                 is_valid=parsed.parse_success,
                 actual_length=len(data),
+                expected_length=expected,
                 error_message=parsed.error_message,
             )
         except Exception as e:  # pylint: disable=broad-exception-caught
             # If parsing failed, data format is invalid
+            # Try to get expected_length even on failure
+            try:
+                bt_uuid = BluetoothUUID(uuid)
+                char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(bt_uuid)
+                expected = char_class.expected_length if char_class else None
+            except Exception:  # pylint: disable=broad-exception-caught
+                expected = None
             return ValidationResult(
-                uuid=BluetoothUUID(uuid),
-                name="Unknown",
                 is_valid=False,
                 actual_length=len(data),
+                expected_length=expected,
                 error_message=str(e),
             )
 
@@ -791,7 +793,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self,
         uuid_or_name: str,
         cls: type[BaseCharacteristic],
-        metadata: CharacteristicRegistration | None = None,
+        info: CharacteristicInfo | None = None,
         override: bool = False,
     ) -> None:
         """Register a custom characteristic class at runtime.
@@ -799,36 +801,48 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Args:
             uuid_or_name: The characteristic UUID or name
             cls: The characteristic class to register
-            metadata: Optional metadata dataclass with name, unit, value_type, summary
+            info: Optional CharacteristicInfo with metadata (name, unit, value_type)
             override: Whether to override existing registrations
 
         Raises:
             TypeError: If cls does not inherit from BaseCharacteristic
             ValueError: If UUID conflicts with existing registration and override=False
 
+        Example:
+            ```python
+            from bluetooth_sig import BluetoothSIGTranslator, CharacteristicInfo, ValueType
+            from bluetooth_sig.types import BluetoothUUID
+
+            translator = BluetoothSIGTranslator()
+            info = CharacteristicInfo(
+                uuid=BluetoothUUID("12345678-1234-1234-1234-123456789abc"),
+                name="Custom Temperature",
+                unit="°C",
+                value_type=ValueType.FLOAT,
+            )
+            translator.register_custom_characteristic_class(str(info.uuid), MyCustomCharacteristic, info=info)
+            ```
+
         """
         # Register the class
         CharacteristicRegistry.register_characteristic_class(uuid_or_name, cls, override)
 
-        # Register metadata if provided
-        if metadata:
-            # Convert ValueType enum to string for registry storage
-            vtype_str = metadata.value_type.value
-            entry = CustomUuidEntry(
-                uuid=metadata.uuid,
-                name=metadata.name or cls.__name__,
-                id=metadata.id,
-                summary=metadata.summary,
-                unit=metadata.unit,
-                value_type=vtype_str,
+        # Register metadata in uuid_registry if provided
+        if info:
+            uuid_registry.register_characteristic(
+                uuid=info.uuid,
+                name=info.name or cls.__name__,
+                identifier=info.id,
+                unit=info.unit,
+                value_type=info.value_type,
+                override=override,
             )
-            uuid_registry.register_characteristic(entry, override)
 
     def register_custom_service_class(
         self,
         uuid_or_name: str,
         cls: type[BaseGattService],
-        metadata: ServiceRegistration | None = None,
+        info: ServiceInfo | None = None,
         override: bool = False,
     ) -> None:
         """Register a custom service class at runtime.
@@ -836,26 +850,35 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Args:
             uuid_or_name: The service UUID or name
             cls: The service class to register
-            metadata: Optional metadata dataclass with name, summary
+            info: Optional ServiceInfo with metadata (name)
             override: Whether to override existing registrations
 
         Raises:
             TypeError: If cls does not inherit from BaseGattService
             ValueError: If UUID conflicts with existing registration and override=False
 
+        Example:
+            ```python
+            from bluetooth_sig import BluetoothSIGTranslator, ServiceInfo
+            from bluetooth_sig.types import BluetoothUUID
+
+            translator = BluetoothSIGTranslator()
+            info = ServiceInfo(uuid=BluetoothUUID("12345678-1234-1234-1234-123456789abc"), name="Custom Service")
+            translator.register_custom_service_class(str(info.uuid), MyCustomService, info=info)
+            ```
+
         """
         # Register the class
         GattServiceRegistry.register_service_class(uuid_or_name, cls, override)
 
-        # Register metadata if provided
-        if metadata:
-            entry = CustomUuidEntry(
-                uuid=metadata.uuid,
-                name=metadata.name or cls.__name__,
-                id=metadata.id,
-                summary=metadata.summary,
+        # Register metadata in uuid_registry if provided
+        if info:
+            uuid_registry.register_service(
+                uuid=info.uuid,
+                name=info.name or cls.__name__,
+                identifier=info.id,
+                override=override,
             )
-            uuid_registry.register_service(entry, override)
 
     # Async methods for non-blocking operation in async contexts
 

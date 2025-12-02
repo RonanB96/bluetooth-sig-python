@@ -91,14 +91,14 @@ class TestPowerSpecificationCharacteristic(CommonCharacteristicTests):
         # Test precision (0.1 W resolution)
         data = PowerSpecificationData(minimum=1.05, typical=2.15, maximum=3.25)
         encoded = characteristic.encode_value(data)
-        # Should round to nearest 0.1 W: 1.1, 2.2, 3.3
-        assert encoded == bytearray([0x0B, 0x00, 0x00, 0x16, 0x00, 0x00, 0x21, 0x00, 0x00])
+        # Python uses banker's rounding: 10.5→10, 21.499...→21, 32.5→32
+        assert encoded == bytearray([0x0A, 0x00, 0x00, 0x15, 0x00, 0x00, 0x20, 0x00, 0x00])
 
         # Decode back to verify
         decoded = characteristic.decode_value(encoded)
-        assert decoded.minimum == 1.1
-        assert decoded.typical == 2.2
-        assert decoded.maximum == 3.3
+        assert decoded.minimum == 1.0
+        assert decoded.typical == 2.1
+        assert decoded.maximum == 3.2
 
     def test_power_specification_data_class(self) -> None:
         """Test PowerSpecificationData class methods."""

@@ -25,7 +25,7 @@ from bluetooth_sig.gatt.services.base import BaseGattService
 from bluetooth_sig.gatt.services.custom import CustomBaseGattService
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 from bluetooth_sig.gatt.services.unknown import UnknownService
-from bluetooth_sig.types import CharacteristicInfo, ServiceInfo, ServiceRegistration
+from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -69,7 +69,6 @@ def service_class_factory() -> Callable[..., type[CustomBaseGattService]]:
                 _info = ServiceInfo(
                     uuid=BluetoothUUID(uuid_str),
                     name=name,
-                    description=description,
                 )
 
             return TestServiceWithOverride
@@ -78,7 +77,6 @@ def service_class_factory() -> Callable[..., type[CustomBaseGattService]]:
             _info = ServiceInfo(
                 uuid=BluetoothUUID(uuid_str),
                 name=name,
-                description=description,
             )
 
         return TestService
@@ -101,7 +99,7 @@ class TestInitSubclassValidation:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("AA000001-0000-1000-8000-00805F9B34FB"),
                 name="Custom Service",
-                description="Uses custom UUID",
+                # description="Uses custom UUID",
             )
 
         # Should create without error
@@ -116,7 +114,7 @@ class TestInitSubclassValidation:
                 namespace["_info"] = ServiceInfo(
                     uuid=BluetoothUUID("180F"),  # Battery Service (SIG)
                     name="Unauthorized",
-                    description="Should fail",
+                    # description="Should fail",
                 )
 
             new_class(
@@ -133,7 +131,7 @@ class TestInitSubclassValidation:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("180A"),  # Device Information (SIG)
                 name="Authorized Override",
-                description="Should work",
+                # description="Should work",
             )
 
         service = AuthorizedSIGService()
@@ -148,7 +146,7 @@ class TestInitSubclassValidation:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("BB000001-0000-1000-8000-00805F9B34FB"),
                 name="Test Service",
-                description="Test",
+                # description="Test",
             )
 
         # pylint: disable=protected-access
@@ -167,30 +165,27 @@ class TestInitAndPostInit:
 
     def test_info_from_class_attribute(self, service_class_factory: Callable[..., type[CustomBaseGattService]]) -> None:
         """Test that _info class attribute is used automatically."""
-        service_cls = service_class_factory(name="Auto Info", description="Automatic info binding")
+        service_cls = service_class_factory(name="Auto Info")
         service = service_cls()
 
         assert service.name == "Auto Info"
-        assert service.summary == "Automatic info binding"
         assert isinstance(service.uuid, BluetoothUUID)
 
     def test_info_parameter_overrides_class_attribute(
         self, service_class_factory: Callable[..., type[CustomBaseGattService]]
     ) -> None:
         """Test that info parameter overrides _info class attribute."""
-        service_cls = service_class_factory(name="Original", description="Original description")
+        service_cls = service_class_factory(name="Original")
 
         override_info = ServiceInfo(
             uuid=BluetoothUUID("EE000001-0000-1000-8000-00805F9B34FB"),
             name="Override",
-            description="Overridden description",
         )
 
         service = service_cls(info=override_info)
 
         assert service.uuid == BluetoothUUID("EE000001-0000-1000-8000-00805F9B34FB")
         assert service.name == "Override"
-        assert service.summary == "Overridden description"
 
     def test_missing_info_raises_error(self) -> None:
         """Test that missing _info and no parameter raises ValueError."""
@@ -210,7 +205,7 @@ class TestInitAndPostInit:
         manual_info = ServiceInfo(
             uuid=BluetoothUUID("FF000002-0000-1000-8000-00805F9B34FB"),
             name="Manual",
-            description="Manual info",
+            # description="Manual info",
         )
 
         service = service_cls(info=manual_info)
@@ -410,7 +405,7 @@ class TestServiceRegistration:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("AA001000-0000-1000-8000-00805F9B34FB"),
                 name="Custom",
-                description="Custom service",
+                # description="Custom service",
             )
 
         # pylint: disable=protected-access
@@ -427,7 +422,7 @@ class TestServiceRegistration:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("AA001001-0000-1000-8000-00805F9B34FB"),
                 name="Custom",
-                description="Custom service",
+                # description="Custom service",
             )
 
         # pylint: disable=protected-access
@@ -448,7 +443,7 @@ class TestServiceRegistration:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("AA001002-0000-1000-8000-00805F9B34FB"),
                 name="Custom",
-                description="Custom service",
+                # description="Custom service",
             )
 
         translator = BluetoothSIGTranslator()
@@ -457,10 +452,9 @@ class TestServiceRegistration:
         translator.register_custom_service_class(
             str(service.uuid),
             CustomService,
-            metadata=ServiceRegistration(
+            info=ServiceInfo(
                 uuid=service.uuid,
                 name="Custom",
-                summary="Custom service",
             ),
         )
 
@@ -503,11 +497,6 @@ class TestInfoPropertyAccess:
         service = service_class_factory(name="Test Service Name")()
         assert service.name == "Test Service Name"
 
-    def test_summary_property(self, service_class_factory: Callable[..., type[CustomBaseGattService]]) -> None:
-        """Test summary property returns description."""
-        service = service_class_factory(description="Test description here")()
-        assert service.summary == "Test description here"
-
     def test_info_property(self, service_class_factory: Callable[..., type[CustomBaseGattService]]) -> None:
         """Test info property returns ServiceInfo object."""
         service = service_class_factory()()
@@ -516,7 +505,6 @@ class TestInfoPropertyAccess:
         assert isinstance(info, ServiceInfo)
         assert info.uuid == service.uuid
         assert info.name == service.name
-        assert info.description == service.summary
 
 
 # ==============================================================================
@@ -684,12 +672,5 @@ class TestEdgeCases:
             _ = ServiceInfo(
                 uuid=BluetoothUUID(""),  # Empty UUID
                 name="Bad",
-                description="Bad",
+                # description="Bad",
             )
-
-    def test_service_with_none_description(
-        self, service_class_factory: Callable[..., type[CustomBaseGattService]]
-    ) -> None:
-        """Test service can have empty description."""
-        service = service_class_factory(description="")()
-        assert service.summary == ""

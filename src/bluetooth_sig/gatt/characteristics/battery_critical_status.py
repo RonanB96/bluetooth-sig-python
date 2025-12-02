@@ -26,7 +26,7 @@ class BatteryCriticalStatusValues(IntFlag):  # pylint: disable=too-few-public-me
 class BatteryCriticalStatusCharacteristic(BaseCharacteristic):
     """Battery Critical Status characteristic."""
 
-    _manual_unit = "dict"
+    _manual_unit: str | None = None  # Bitfield, no units
 
     expected_length = 1
 

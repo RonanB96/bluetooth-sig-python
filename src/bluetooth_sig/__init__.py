@@ -12,13 +12,8 @@ from .gatt import BaseCharacteristic, BaseGattService
 from .gatt.characteristics import CharacteristicRegistry
 from .gatt.characteristics.base import CharacteristicData
 from .gatt.services import GattServiceRegistry
-from .registry import members_registry
-from .types import (
-    CharacteristicInfo,
-    ServiceInfo,
-    SIGInfo,
-    ValidationResult,
-)
+from .registry.uuids.members import members_registry
+from .types import CharacteristicInfo, ServiceInfo, SIGInfo, ValidationResult
 
 __version__ = "0.3.0"
 

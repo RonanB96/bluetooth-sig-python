@@ -2,37 +2,31 @@
 
 from __future__ import annotations
 
-from bluetooth_sig.registry.base import BaseRegistry
-from bluetooth_sig.registry.common import BaseUuidInfo
+from bluetooth_sig.registry.base import BaseUUIDRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
+from bluetooth_sig.types.registry.units import UnitInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-class UnitInfo(BaseUuidInfo, frozen=True, kw_only=True):
-    """Information about a Bluetooth SIG unit."""
-
-    id: str
-
-
-class UnitsRegistry(BaseRegistry[UnitInfo]):
+class UnitsRegistry(BaseUUIDRegistry[UnitInfo]):
     """Registry for Bluetooth SIG unit UUIDs."""
 
     def _load_yaml_path(self) -> str:
         """Return the YAML file path relative to bluetooth_sig/ root."""
         return "units.yaml"
 
-    def _create_info_from_yaml(self, uuid_data: dict[str, str], bt_uuid: BluetoothUUID) -> UnitInfo:
+    def _create_info_from_yaml(self, uuid_data: dict[str, str], uuid: BluetoothUUID) -> UnitInfo:
         """Create UnitInfo from YAML data."""
         return UnitInfo(
-            uuid=bt_uuid,
+            uuid=uuid,
             name=uuid_data["name"],
             id=uuid_data["id"],
         )
 
-    def _create_runtime_info(self, entry: object, bt_uuid: BluetoothUUID) -> UnitInfo:
+    def _create_runtime_info(self, entry: object, uuid: BluetoothUUID) -> UnitInfo:
         """Create runtime UnitInfo from entry."""
         return UnitInfo(
-            uuid=bt_uuid,
+            uuid=uuid,
             name=getattr(entry, "name", ""),
             id=getattr(entry, "id", ""),
         )
@@ -46,11 +40,11 @@ class UnitsRegistry(BaseRegistry[UnitInfo]):
                 self._load_from_yaml(yaml_path)
         self._loaded = True
 
-    def get_unit_info(self, uuid: str | int | BluetoothUUID) -> UnitInfo | None:
+    def get_unit_info(self, uuid: str | BluetoothUUID) -> UnitInfo | None:
         """Get unit information by UUID.
 
         Args:
-            uuid: 16-bit UUID as string (with or without 0x), int, or BluetoothUUID
+            uuid: 16-bit UUID as string (with or without 0x) or BluetoothUUID
 
         Returns:
             UnitInfo object, or None if not found
@@ -79,7 +73,7 @@ class UnitsRegistry(BaseRegistry[UnitInfo]):
         """
         return self.get_info(unit_id)
 
-    def is_unit_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
+    def is_unit_uuid(self, uuid: str | BluetoothUUID) -> bool:
         """Check if a UUID is a registered unit UUID.
 
         Args:

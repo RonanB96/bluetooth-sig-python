@@ -23,6 +23,8 @@ class RotationalSpeedCharacteristic(BaseCharacteristic):
     rotating around a device-specific axis.
     """
 
+    _manual_unit: str | None = "RPM"  # YAML ID mismatch: has rotational_speed.*, should be angular_velocity.*
+
     expected_length = 4
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:

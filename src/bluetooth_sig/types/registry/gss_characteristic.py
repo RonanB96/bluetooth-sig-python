@@ -1,9 +1,11 @@
+"""Types for Bluetooth SIG GSS Characteristic registry."""
+
 from __future__ import annotations
 
 import msgspec
 
 
-class FieldSpec(msgspec.Struct, frozen=True):
+class FieldSpec(msgspec.Struct, frozen=True, kw_only=True):
     """Specification for a field in a characteristic structure."""
 
     field: str
@@ -12,7 +14,7 @@ class FieldSpec(msgspec.Struct, frozen=True):
     description: str
 
 
-class CharacteristicSpec(msgspec.Struct, frozen=True):
+class CharacteristicSpec(msgspec.Struct, frozen=True, kw_only=True):
     """Specification for a Bluetooth SIG characteristic from GSS."""
 
     identifier: str
@@ -21,7 +23,7 @@ class CharacteristicSpec(msgspec.Struct, frozen=True):
     structure: list[FieldSpec]
 
 
-class GssCharacteristicData(msgspec.Struct):
+class GssCharacteristicData(msgspec.Struct, frozen=True, kw_only=True):
     """Top-level data structure for GSS characteristic YAML files."""
 
     characteristic: CharacteristicSpec

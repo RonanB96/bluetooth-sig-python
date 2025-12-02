@@ -65,7 +65,9 @@ SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
 BATTERY_LEVEL_UUID = "2A19"  # UUID from your BLE library
 
 # Get structured data, not raw bytes
-battery_data = translator.parse_characteristic(BATTERY_LEVEL_UUID, SIMULATED_BATTERY_DATA)
+battery_data = translator.parse_characteristic(
+    BATTERY_LEVEL_UUID, SIMULATED_BATTERY_DATA
+)
 
 # battery_data is a typed msgspec struct with validation
 assert battery_data.value == 85
@@ -85,20 +87,24 @@ translator = BluetoothSIGTranslator()
 
 # Example: Reading temperature from a BLE environmental sensor
 TEMPERATURE_UUID = "2A6E"  # Official SIG UUID for Temperature
-SERVICE_UUID = "181A"     # Environmental Sensing Service
+SERVICE_UUID = "181A"  # Environmental Sensing Service
 
 # Step 1: Connect to device (using your BLE library)
 # raw_bytes = await your_ble_client.read_gatt_char(TEMPERATURE_UUID)
 
 # Step 2: Simulate real BLE data for this example
-raw_temperature_bytes = bytearray([0x0A, 0x01])  # 266 = 0x010A in little-endian
+raw_temperature_bytes = bytearray(
+    [0x0A, 0x01]
+)  # 266 = 0x010A in little-endian
 
 # Step 3: Parse with bluetooth-sig (handles all complexity)
-temperature_data = translator.parse_characteristic(TEMPERATURE_UUID, raw_temperature_bytes)
+temperature_data = translator.parse_characteristic(
+    TEMPERATURE_UUID, raw_temperature_bytes
+)
 
 # Result: Fully typed, validated data structure
 print(f"Temperature: {temperature_data.value}°C")  # "Temperature: 26.6°C"
-print(f"Units: {temperature_data.unit}")           # "Units: celsius"
+print(f"Units: {temperature_data.unit}")  # "Units: celsius"
 ```
 
 ## When Should You Use This Library?
@@ -138,11 +144,13 @@ SERVICE_UUID = "180F"  # Service UUID from device discovery
 
 # Works with bleak
 from bleak import BleakClient
+
 raw_data = await client.read_gatt_char(CHAR_UUID)
 parsed = translator.parse_characteristic(CHAR_UUID, raw_data)
 
 # Works with simplepyble
 from simplepyble import Peripheral
+
 raw_data = peripheral.read(SERVICE_UUID, CHAR_UUID)
 parsed = translator.parse_characteristic(CHAR_UUID, raw_data)
 
@@ -199,6 +207,7 @@ def parse_battery_level(data: bytes) -> int:
     if value > 100:
         raise ValueError("Invalid range")
     return value
+
 
 # Manual UUID mapping
 UUID_MAP = {

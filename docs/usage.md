@@ -11,23 +11,33 @@ from bluetooth_sig.types.gatt_enums import CharacteristicName
 # ============================================
 SIMULATED_HEART_RATE_DATA = bytearray([72])  # Simulates 72 bpm heart rate
 # Example UUID from your BLE library - in reality you'd get this from device discovery
-UNKNOWN_UUID = "2A37"  # Heart Rate Measurement - you don't know what this is yet!
+UNKNOWN_UUID = (
+    "2A37"  # Heart Rate Measurement - you don't know what this is yet!
+)
 
 # Create translator instance
 translator = BluetoothSIGTranslator()
 
 # Get UUID from your BLE library, let the translator identify it
-result = translator.parse_characteristic(UNKNOWN_UUID, SIMULATED_HEART_RATE_DATA)
+result = translator.parse_characteristic(
+    UNKNOWN_UUID, SIMULATED_HEART_RATE_DATA
+)
 
 # The library tells you what it is and parses it correctly
 print(f"This UUID is: {result.info.name}")  # "Heart Rate Measurement"
 print(f"Value: {result.value}")  # HeartRateData(heart_rate=72, ...)
 
 # Alternative: If you know what characteristic you want, convert enum to UUID
-hr_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.HEART_RATE_MEASUREMENT)
+hr_uuid = translator.get_characteristic_uuid_by_name(
+    CharacteristicName.HEART_RATE_MEASUREMENT
+)
 if hr_uuid:
-    result2 = translator.parse_characteristic(str(hr_uuid), SIMULATED_HEART_RATE_DATA)
-    print(f"Heart Rate: {result2.value.heart_rate} bpm")  # Same result - library resolves enum to UUID
+    result2 = translator.parse_characteristic(
+        str(hr_uuid), SIMULATED_HEART_RATE_DATA
+    )
+    print(
+        f"Heart Rate: {result2.value.heart_rate} bpm"
+    )  # Same result - library resolves enum to UUID
 ```
 
 ## Basic Example: Understanding BLE Library Output
@@ -35,8 +45,10 @@ if hr_uuid:
 BLE libraries like bleak and simplepyble give you UUIDs in various formats. Here's what you actually receive and how to parse it:
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator
 from bleak import BleakClient
+
+from bluetooth_sig import BluetoothSIGTranslator
+
 
 async def discover_device_characteristics(address: str):
     """Real-world example: What you get from bleak and how to parse it."""
@@ -67,12 +79,15 @@ async def discover_device_characteristics(address: str):
                     print(f"    Raw bytes: {raw_data.hex()}")
 
                     # Let bluetooth-sig identify and parse it
-                    result = translator.parse_characteristic(char.uuid, raw_data)
+                    result = translator.parse_characteristic(
+                        char.uuid, raw_data
+                    )
                     print(f"    → Identified as: {result.info.name}")
                     print(f"    → Parsed value: {result.value}")
 
                 except Exception as e:
                     print(f"    Could not read: {e}")
+
 
 # Example output you'd see:
 # Service UUID: 0000180f-0000-1000-8000-00805f9b34fb
@@ -98,17 +113,21 @@ SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery level
 
 translator = BluetoothSIGTranslator()
 
-found_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+found_uuid = translator.get_characteristic_uuid_by_name(
+    CharacteristicName.BATTERY_LEVEL
+)
 # These all work - the library normalizes them internally
 formats = [
-    str(found_uuid),                                # uuid found from Enum name
-    "0x2A19",                                       # Hex prefix
-    "00002a19-0000-1000-8000-00805f9b34fb",         # Full 128-bit (what bleak gives you)
-    "00002A19-0000-1000-8000-00805F9B34FB",         # Uppercase variant
+    str(found_uuid),  # uuid found from Enum name
+    "0x2A19",  # Hex prefix
+    "00002a19-0000-1000-8000-00805f9b34fb",  # Full 128-bit (what bleak gives you)
+    "00002A19-0000-1000-8000-00805F9B34FB",  # Uppercase variant
 ]
 
 for uuid_format in formats:
-    result = translator.parse_characteristic(str(uuid_format), SIMULATED_BATTERY_DATA)
+    result = translator.parse_characteristic(
+        str(uuid_format), SIMULATED_BATTERY_DATA
+    )
     print(f"{uuid_format:45} → {result.info.name}")
 
 # Output:
@@ -140,11 +159,13 @@ Prefer the existing examples for full context: see `examples/async_ble_integrati
 Common in: Polar sensors, Fitbit devices, smartwatches
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 from bleak import BleakClient
 
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.types.gatt_enums import CharacteristicName
+
 translator = BluetoothSIGTranslator()
+
 
 async def monitor_fitness_device(address: str):
     async with BleakClient(address) as client:
@@ -179,6 +200,7 @@ from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
 
+
 async def read_environmental_sensors(devices: list[str]):
     """Read temp/humidity from multiple sensors"""
     for address in devices:
@@ -192,11 +214,13 @@ async def read_environmental_sensors(devices: list[str]):
             humidity_data = await client.read_gatt_char(humidity_uuid)
             battery_data = await client.read_gatt_char(battery_uuid)
 
-            results = translator.parse_characteristics({
-                temp_uuid: temp_data,
-                humidity_uuid: humidity_data,
-                battery_uuid: battery_data,
-            })
+            results = translator.parse_characteristics(
+                {
+                    temp_uuid: temp_data,
+                    humidity_uuid: humidity_data,
+                    battery_uuid: battery_data,
+                }
+            )
 
             print(f"Sensor {address}:")
             print(f"  Temp: {results[temp_uuid].value}°C")
@@ -210,10 +234,11 @@ Common in: Omron blood pressure monitors, A&D medical devices, iHealth monitors
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 from bluetooth_sig.stream.pairing import DependencyPairingBuffer
+from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
+
 
 async def monitor_blood_pressure(address: str):
     """
@@ -244,16 +269,22 @@ async def monitor_blood_pressure(address: str):
                 "2A35",
                 "2A36",
             },
-            group_key=lambda data: data.value.timestamp if hasattr(data.value, 'timestamp') else None,
-            on_pair=on_complete_reading
+            group_key=lambda data: data.value.timestamp
+            if hasattr(data.value, "timestamp")
+            else None,
+            on_pair=on_complete_reading,
         )
 
         # Subscribe to both characteristics
         bpm_uuid = "2A35"
         icp_uuid = "2A36"
 
-        await client.start_notify(bpm_uuid, lambda _, data: buffer.ingest(bpm_uuid, data))
-        await client.start_notify(icp_uuid, lambda _, data: buffer.ingest(icp_uuid, data))
+        await client.start_notify(
+            bpm_uuid, lambda _, data: buffer.ingest(bpm_uuid, data)
+        )
+        await client.start_notify(
+            icp_uuid, lambda _, data: buffer.ingest(icp_uuid, data)
+        )
 
         await asyncio.sleep(60)  # Monitor for 1 minute
 
@@ -287,7 +318,9 @@ bpm_result = results[bpm_uuid]
 icp_result = results[icp_uuid]
 
 if bpm_result.parse_success and icp_result.parse_success:
-    print(f"Blood Pressure: {bpm_result.value.systolic}/{bpm_result.value.diastolic} mmHg")
+    print(
+        f"Blood Pressure: {bpm_result.value.systolic}/{bpm_result.value.diastolic} mmHg"
+    )
     print(f"Peak Cuff Pressure: {icp_result.value.systolic} mmHg")
 ```
 
@@ -306,15 +339,23 @@ Example:
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.types.gatt_enums import CharacteristicName
-from bluetooth_sig.types.io import RawCharacteristicRead, RawCharacteristicBatch, to_parse_inputs
+from bluetooth_sig.types.io import (
+    RawCharacteristicBatch,
+    RawCharacteristicRead,
+    to_parse_inputs,
+)
 
 bpm_uuid = "2A35"
 icp_uuid = "2A36"
 
 batch = RawCharacteristicBatch(
     items=[
-        RawCharacteristicRead(uuid=bpm_uuid, raw_data=blood_pressure_measurement_bytes),
-        RawCharacteristicRead(uuid=icp_uuid, raw_data=intermediate_cuff_pressure_bytes),
+        RawCharacteristicRead(
+            uuid=bpm_uuid, raw_data=blood_pressure_measurement_bytes
+        ),
+        RawCharacteristicRead(
+            uuid=icp_uuid, raw_data=intermediate_cuff_pressure_bytes
+        ),
     ]
 )
 
@@ -365,7 +406,7 @@ translator = BluetoothSIGTranslator()
 # Get raw bytes from SimpleBLE reads
 char_data = {
     "2A19": battery_bytes,  # From SimpleBLE read
-    "2A6E": temp_bytes,     # From SimpleBLE read
+    "2A6E": temp_bytes,  # From SimpleBLE read
 }
 
 results = translator.parse_characteristics(char_data)
@@ -394,17 +435,34 @@ The `Device` class provides a high-level abstraction for grouping BLE device ser
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 from bluetooth_sig.device import Device
+from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 # ============================================
 # SIMULATED DATA - Replace with actual device
 # ============================================
-SIMULATED_DEVICE_ADDRESS = "AA:BB:CC:DD:EE:FF"  # Example MAC address - use your actual device address
+SIMULATED_DEVICE_ADDRESS = (
+    "AA:BB:CC:DD:EE:FF"  # Example MAC address - use your actual device address
+)
 # Advertisement data encoding "Test Device" as local name
-SIMULATED_ADV_DATA = bytes([
-    0x0C, 0x09, 0x54, 0x65, 0x73, 0x74, 0x20, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65,  # Local Name
-])
+SIMULATED_ADV_DATA = bytes(
+    [
+        0x0C,
+        0x09,
+        0x54,
+        0x65,
+        0x73,
+        0x74,
+        0x20,
+        0x44,
+        0x65,
+        0x76,
+        0x69,
+        0x63,
+        0x65,  # Local Name
+    ]
+)
+
 
 async def main():
     # Create translator and device
@@ -426,10 +484,14 @@ async def main():
 
     # Check encryption requirements
     print(f"Requires encryption: {device.encryption.requires_encryption}")
-    print(f"Requires authentication: {device.encryption.requires_authentication}")
+    print(
+        f"Requires authentication: {device.encryption.requires_authentication}"
+    )
+
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
 ```
 
@@ -439,10 +501,13 @@ The Device class integrates with any BLE connection library:
 
 ```python
 import asyncio
+
 from bleak import BleakClient
+
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 from bluetooth_sig.device import Device
+from bluetooth_sig.types.gatt_enums import CharacteristicName
+
 
 async def discover_device(device_address):
     translator = BluetoothSIGTranslator()
@@ -467,7 +532,9 @@ async def discover_device(device_address):
     # Now you have a complete device representation
     print(f"Device: {device}")
     for service_uuid, service_data in device.services.items():
-        print(f"Service {service_uuid}: {len(service_data.characteristics)} characteristics")
+        print(
+            f"Service {service_uuid}: {len(service_data.characteristics)} characteristics"
+        )
 
     return device
 ```

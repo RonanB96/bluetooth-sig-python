@@ -7,11 +7,11 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Generic, TypeVar
 
-from bluetooth_sig.registry.common import BaseUuidInfo, UuidOrigin, generate_basic_aliases
 from bluetooth_sig.registry.utils import load_yaml_uuids, normalize_uuid_string
+from bluetooth_sig.types.registry import BaseUuidInfo, generate_basic_aliases
 from bluetooth_sig.types.uuid import BluetoothUUID
 
-U = TypeVar("T")
+T = TypeVar("T")
 
 
 class BaseGenericRegistry(ABC, Generic[T]):
@@ -102,7 +102,6 @@ class BaseUUIDRegistry(ABC, Generic[U]):
         Default implementation does nothing.
         Subclasses can override for enrichment (e.g., cross-references).
         """
-        pass
 
     def _store_info(self, info: U) -> None:
         """Store info with canonical key and generate aliases."""
@@ -149,7 +148,7 @@ class BaseUUIDRegistry(ABC, Generic[U]):
         with self._lock:
             # Handle BluetoothUUID directly
             if isinstance(identifier, BluetoothUUID):
-                canonical_key = identifier.normalized
+                canonical_key = identifier.full_form
                 return self._canonical_store.get(canonical_key)
 
             # Normalize string identifier
@@ -158,7 +157,7 @@ class BaseUUIDRegistry(ABC, Generic[U]):
             # Try UUID normalization first
             try:
                 bt_uuid = BluetoothUUID(search_key)
-                canonical_key = bt_uuid.normalized
+                canonical_key = bt_uuid.full_form
                 if canonical_key in self._canonical_store:
                     return self._canonical_store[canonical_key]
             except ValueError:
@@ -186,10 +185,8 @@ class BaseUUIDRegistry(ABC, Generic[U]):
             canonical_key = bt_uuid.normalized
 
             # Preserve original SIG info if we're overriding it
-            if (
-                canonical_key in self._canonical_store
-                and getattr(self._canonical_store[canonical_key], "origin", None) == UuidOrigin.BLUETOOTH_SIG
-            ):
+            # Assume entries in canonical_store that aren't in runtime_overrides are SIG entries
+            if canonical_key in self._canonical_store and canonical_key not in self._runtime_overrides:
                 self._runtime_overrides[canonical_key] = self._canonical_store[canonical_key]
 
             # Create runtime info
@@ -214,13 +211,12 @@ class BaseUUIDRegistry(ABC, Generic[U]):
                 self._store_info(original_info)
             elif normalized_uuid in self._canonical_store:
                 # Remove runtime entry entirely
-                info = self._canonical_store[normalized_uuid]
-                if getattr(info, "origin", None) == UuidOrigin.RUNTIME:
-                    del self._canonical_store[normalized_uuid]
-                    # Remove associated aliases
-                    aliases_to_remove = [alias for alias, key in self._alias_index.items() if key == normalized_uuid]
-                    for alias in aliases_to_remove:
-                        del self._alias_index[alias]
+                # NOTE: Runtime tracking is registry-specific (e.g., uuid_registry uses _runtime_uuids set)
+                del self._canonical_store[normalized_uuid]
+                # Remove associated aliases
+                aliases_to_remove = [alias for alias, key in self._alias_index.items() if key == normalized_uuid]
+                for alias in aliases_to_remove:
+                    del self._alias_index[alias]
 
     def list_registered(self) -> list[str]:
         """List all registered normalized UUIDs."""
@@ -235,7 +231,7 @@ class BaseUUIDRegistry(ABC, Generic[U]):
             return [alias for alias, key in self._alias_index.items() if key == uuid.normalized]
 
     @classmethod
-    def get_instance(cls) -> BaseRegistry[U]:
+    def get_instance(cls) -> BaseUUIDRegistry[U]:
         """Get the singleton instance of the registry."""
         if cls._instance is None:
             with cls._lock:

@@ -37,7 +37,9 @@ One of the key advantages of this library's architecture is that you can test BL
 
 ```python
 import pytest
+
 from bluetooth_sig import BluetoothSIGTranslator
+
 
 class TestBLEParsing:
     """Test BLE characteristic parsing without hardware."""
@@ -78,10 +80,12 @@ class TestBLEParsing:
 
 ```python
 import pytest
+
 from bluetooth_sig.gatt.exceptions import (
     InsufficientDataError,
-    ValueRangeError
+    ValueRangeError,
 )
+
 
 class TestErrorHandling:
     """Test error handling without hardware."""
@@ -102,7 +106,9 @@ class TestErrorHandling:
 
         # Battery level > 100%
         with pytest.raises(ValueRangeError):
-            translator.parse_characteristic(BATTERY_LEVEL_UUID, bytearray([150]))
+            translator.parse_characteristic(
+                BATTERY_LEVEL_UUID, bytearray([150])
+            )
 ```
 
 ## Mocking BLE Interactions
@@ -112,17 +118,21 @@ When integrating with BLE libraries, you can mock the BLE operations:
 ### Mocking bleak
 
 ```python
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from bluetooth_sig import BluetoothSIGTranslator
+
 
 @pytest.fixture
 def mock_bleak_client():
     """Mock BleakClient for testing."""
-    with patch('bleak.BleakClient') as mock:
+    with patch("bleak.BleakClient") as mock:
         client = AsyncMock()
         mock.return_value.__aenter__.return_value = client
         yield client
+
 
 @pytest.mark.asyncio
 async def test_read_battery_with_mock(mock_bleak_client):
@@ -143,13 +153,16 @@ async def test_read_battery_with_mock(mock_bleak_client):
 
     # Assert
     assert result.value == 85
-    mock_bleak_client.read_gatt_char.assert_called_once_with(BATTERY_LEVEL_UUID)
+    mock_bleak_client.read_gatt_char.assert_called_once_with(
+        BATTERY_LEVEL_UUID
+    )
 ```
 
 ### Mocking simplepyble
 
 ```python
 from unittest.mock import Mock, patch
+
 
 def test_read_battery_simplepyble_mock():
     """Test reading battery with mocked simplepyble."""
@@ -167,7 +180,9 @@ def test_read_battery_simplepyble_mock():
     # Your application code
     translator = BluetoothSIGTranslator()
     raw_data = mock_peripheral.read(SERVICE_UUID, BATTERY_LEVEL_UUID)
-    result = translator.parse_characteristic(BATTERY_LEVEL_UUID, bytearray(raw_data))
+    result = translator.parse_characteristic(
+        BATTERY_LEVEL_UUID, bytearray(raw_data)
+    )
 
     # Assert
     assert result.value == 75
@@ -193,14 +208,15 @@ class TestDataFactory:
         """Create temperature test data."""
         # Temperature encoded as sint16 with 0.01°C resolution
         value = int(celsius * 100)
-        return bytearray(value.to_bytes(2, byteorder='little', signed=True))
+        return bytearray(value.to_bytes(2, byteorder="little", signed=True))
 
     @staticmethod
     def humidity(percentage: float) -> bytearray:
         """Create humidity test data."""
         # Humidity encoded as uint16 with 0.01% resolution
         value = int(percentage * 100)
-        return bytearray(value.to_bytes(2, byteorder='little', signed=False))
+        return bytearray(value.to_bytes(2, byteorder="little", signed=False))
+
 
 # Usage
 def test_with_factory():
@@ -219,9 +235,14 @@ def test_with_factory():
     humidity_data = TestDataFactory.humidity(49.42)
 
     # Test parsing
-    assert translator.parse_characteristic(BATTERY_UUID, battery_data).value == 85
+    assert (
+        translator.parse_characteristic(BATTERY_UUID, battery_data).value == 85
+    )
     assert translator.parse_characteristic(TEMP_UUID, temp_data).value == 24.36
-    assert translator.parse_characteristic(HUMIDITY_UUID, humidity_data).value == 49.42
+    assert (
+        translator.parse_characteristic(HUMIDITY_UUID, humidity_data).value
+        == 49.42
+    )
 ```
 
 ## Parametrized Testing
@@ -231,13 +252,17 @@ Test multiple scenarios efficiently:
 ```python
 import pytest
 
-@pytest.mark.parametrize("battery_level,expected", [
-    (0, 0),
-    (25, 25),
-    (50, 50),
-    (75, 75),
-    (100, 100),
-])
+
+@pytest.mark.parametrize(
+    "battery_level,expected",
+    [
+        (0, 0),
+        (25, 25),
+        (50, 50),
+        (75, 75),
+        (100, 100),
+    ],
+)
 def test_battery_levels(battery_level, expected):
     """Test various battery levels."""
     BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
@@ -246,11 +271,15 @@ def test_battery_levels(battery_level, expected):
     result = translator.parse_characteristic(BATTERY_LEVEL_UUID, data)
     assert result.value == expected
 
-@pytest.mark.parametrize("invalid_data", [
-    bytearray([]),      # Too short
-    bytearray([101]),   # Too high
-    bytearray([255]),   # Way too high
-])
+
+@pytest.mark.parametrize(
+    "invalid_data",
+    [
+        bytearray([]),  # Too short
+        bytearray([101]),  # Too high
+        bytearray([255]),  # Way too high
+    ],
+)
 def test_invalid_battery_data(invalid_data):
     """Test error handling for invalid data."""
     BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
@@ -265,27 +294,34 @@ def test_invalid_battery_data(invalid_data):
 
 ```python
 import pytest
+
 from bluetooth_sig import BluetoothSIGTranslator
+
 
 @pytest.fixture
 def translator():
     """Provide a translator instance."""
     return BluetoothSIGTranslator()
 
+
 @pytest.fixture
 def valid_battery_data():
     """Provide valid battery level data."""
     return bytearray([75])
+
 
 @pytest.fixture
 def valid_temp_data():
     """Provide valid temperature data."""
     return bytearray([0x64, 0x09])  # 24.36°C
 
+
 def test_with_fixtures(translator, valid_battery_data):
     """Test using fixtures."""
     BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
-    result = translator.parse_characteristic(BATTERY_LEVEL_UUID, valid_battery_data)
+    result = translator.parse_characteristic(
+        BATTERY_LEVEL_UUID, valid_battery_data
+    )
     assert result.value == 75
 ```
 
@@ -310,8 +346,8 @@ class TestIntegration:
 
         # Simulate reading multiple characteristics
         sensor_data = {
-            BATTERY_UUID: bytearray([85]),           # Battery: 85%
-            TEMP_UUID: bytearray([0x64, 0x09]),      # Temp: 24.36°C
+            BATTERY_UUID: bytearray([85]),  # Battery: 85%
+            TEMP_UUID: bytearray([0x64, 0x09]),  # Temp: 24.36°C
             HUMIDITY_UUID: bytearray([0x3A, 0x13]),  # Humidity: 49.42%
         }
 
@@ -338,13 +374,17 @@ class TestIntegration:
         assert battery_uuid.uuid == BATTERY_LEVEL_UUID
 
         # Round-trip
-        assert translator.get_sig_info_by_uuid(battery_uuid.uuid).name == char_info.name
+        assert (
+            translator.get_sig_info_by_uuid(battery_uuid.uuid).name
+            == char_info.name
+        )
 ```
 
 ## Performance Testing
 
 ```python
 import time
+
 
 def test_parsing_performance():
     """Test parsing performance."""
@@ -365,7 +405,9 @@ def test_parsing_performance():
 
     # Should be fast (< 100μs per parse)
     avg_time = elapsed / iterations
-    assert avg_time < 0.0001, f"Parsing too slow: {avg_time:.6f}s per iteration"
+    assert avg_time < 0.0001, (
+        f"Parsing too slow: {avg_time:.6f}s per iteration"
+    )
     print(f"Average parse time: {avg_time * 1000000:.1f}μs")
 ```
 
@@ -438,14 +480,18 @@ jobs:
 def test_battery_valid_value():
     BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
     translator = BluetoothSIGTranslator()
-    result = translator.parse_characteristic(BATTERY_LEVEL_UUID, bytearray([75]))
+    result = translator.parse_characteristic(
+        BATTERY_LEVEL_UUID, bytearray([75])
+    )
     assert result.value == 75
+
 
 def test_battery_invalid_value():
     BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
     translator = BluetoothSIGTranslator()
     with pytest.raises(ValueRangeError):
         translator.parse_characteristic(BATTERY_LEVEL_UUID, bytearray([150]))
+
 
 # ❌ Bad - tests multiple things
 def test_battery_everything():
@@ -458,12 +504,11 @@ def test_battery_everything():
 
 ```python
 # ✅ Good
-def test_battery_level_rejects_value_above_100():
-    ...
+def test_battery_level_rejects_value_above_100(): ...
+
 
 # ❌ Bad
-def test_battery_1():
-    ...
+def test_battery_1(): ...
 ```
 
 ### 3. Arrange-Act-Assert Pattern
