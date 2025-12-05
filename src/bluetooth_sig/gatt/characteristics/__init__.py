@@ -125,7 +125,7 @@ from .pressure import PressureCharacteristic
 from .pulse_oximetry_measurement import PulseOximetryMeasurementCharacteristic
 from .rainfall import RainfallCharacteristic
 from .reference_time_information import ReferenceTimeInformationCharacteristic
-from .registry import CHARACTERISTIC_CLASS_MAP, CharacteristicName, CharacteristicRegistry
+from .registry import CharacteristicName, CharacteristicRegistry, get_characteristic_class_map
 from .resting_heart_rate import RestingHeartRateCharacteristic
 from .rotational_speed import RotationalSpeedCharacteristic
 from .rsc_feature import RSCFeatureCharacteristic
@@ -171,7 +171,7 @@ __all__ = [
     # Registry components
     "CharacteristicName",
     "CharacteristicRegistry",
-    "CHARACTERISTIC_CLASS_MAP",
+    "get_characteristic_class_map",
     # Base characteristic
     "BaseCharacteristic",
     # Individual characteristic classes (for backward compatibility)

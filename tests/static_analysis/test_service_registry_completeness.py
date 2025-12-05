@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.services.registry import _ServiceClassDiscovery
+from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 from bluetooth_sig.gatt.uuid_registry import uuid_registry
 from bluetooth_sig.types.gatt_enums import ServiceName
 
@@ -28,7 +28,8 @@ class TestServiceEnumCompleteness:
         - Cannot be referenced by name in code
         """
         # Discover all service classes
-        discovered_classes = _ServiceClassDiscovery.discover_classes()
+        registry = GattServiceRegistry.get_instance()
+        discovered_classes = list(registry._discover_sig_classes())
 
         # Get all UUID->name mappings from the enum
         enum_uuids = set()
@@ -127,7 +128,8 @@ class TestServiceEnumCompleteness:
         This catches copy-paste errors where someone duplicates a class
         but forgets to update the UUID.
         """
-        discovered_classes = _ServiceClassDiscovery.discover_classes()
+        registry = GattServiceRegistry.get_instance()
+        discovered_classes = list(registry._discover_sig_classes())
 
         uuid_to_classes: dict[str, list[str]] = {}
         for service_cls in discovered_classes:
@@ -163,7 +165,8 @@ class TestServiceRegistryIntegrity:
         - Broken UUID resolution
         - Missing dependencies in __init__
         """
-        discovered_classes = _ServiceClassDiscovery.discover_classes()
+        registry = GattServiceRegistry.get_instance()
+        discovered_classes = list(registry._discover_sig_classes())
 
         instantiation_failures = []
         for service_cls in discovered_classes:
@@ -197,7 +200,8 @@ class TestServiceRegistryIntegrity:
         SIG UUIDs should be in format: 0000XXXX-0000-1000-8000-00805F9B34FB
         where XXXX is a 16-bit assigned number.
         """
-        discovered_classes = _ServiceClassDiscovery.discover_classes()
+        registry = GattServiceRegistry.get_instance()
+        discovered_classes = list(registry._discover_sig_classes())
 
         invalid_uuids = []
         for service_cls in discovered_classes:

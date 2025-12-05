@@ -42,7 +42,7 @@ class BluetoothUUID:
     UUID_SHORT_LEN = 4
     UUID_FULL_LEN = 32
 
-    def __init__(self, uuid: str | int) -> None:
+    def __init__(self, uuid: str | int | BluetoothUUID) -> None:
         """Initialize BluetoothUUID from a UUID string or integer.
 
         Args:
@@ -52,6 +52,9 @@ class BluetoothUUID:
             ValueError: If UUID format is invalid
 
         """
+        if isinstance(uuid, BluetoothUUID):
+            return
+
         if isinstance(uuid, int):
             self._normalized = self._normalize_uuid_from_int(uuid)
         else:

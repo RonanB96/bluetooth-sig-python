@@ -113,7 +113,9 @@ class TestGlucoseFeatureCharacteristic(CommonCharacteristicTests):
 
     def test_glucose_feature_invalid_data(self, characteristic: GlucoseFeatureCharacteristic) -> None:
         """Test glucose feature with invalid data."""
-        with pytest.raises(ValueError, match="must be at least 2 bytes"):
+        from bluetooth_sig.gatt.exceptions import InsufficientDataError
+
+        with pytest.raises(InsufficientDataError, match="int16"):
             characteristic.decode_value(bytearray([0x00]))
 
     def test_glucose_feature_encode_value(self, characteristic: GlucoseFeatureCharacteristic) -> None:

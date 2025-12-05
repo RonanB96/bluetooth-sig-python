@@ -68,7 +68,6 @@ class AsyncParsingSession:
         Args:
             uuid: Characteristic UUID
             data: Raw bytes
-            descriptor_data: Optional descriptor data
 
         Returns:
             CharacteristicData

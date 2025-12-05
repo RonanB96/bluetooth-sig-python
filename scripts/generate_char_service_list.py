@@ -15,10 +15,82 @@ from pathlib import Path
 repo_root = Path(__file__).parent.parent
 sys.path.insert(0, str(repo_root / "src"))
 
-from bluetooth_sig.gatt.characteristics import CHARACTERISTIC_CLASS_MAP  # noqa: E402
+from bluetooth_sig.gatt.characteristics import get_characteristic_class_map  # noqa: E402
 from bluetooth_sig.gatt.resolver import NameNormalizer  # noqa: E402
-from bluetooth_sig.gatt.services import SERVICE_CLASS_MAP  # noqa: E402
+from bluetooth_sig.gatt.services import get_service_class_map  # noqa: E402
 from bluetooth_sig.gatt.uuid_registry import uuid_registry  # noqa: E402
+
+
+def clean_description(description: str) -> str:
+    """Clean description text for markdown display.
+
+    Args:
+        description: Raw description from YAML or docstring
+
+    Returns:
+        Cleaned description suitable for markdown table
+    """
+    if not description:
+        return ""
+
+    # Replace LaTeX formatting with Unicode/HTML equivalents
+    replacements = {
+        r"\textsubscript{2}": "₂",
+        r"\textsubscript{3}": "₃",
+        r"\textsubscript{1}": "₁",
+        r"\textsubscript{0}": "₀",
+        r"\textsubscript{": "<sub>",
+        r"}": "</sub>",  # Only for subscripts
+        r"\autoref{": "",  # Remove LaTeX reference commands
+    }
+
+    cleaned = description
+    for pattern, replacement in replacements.items():
+        cleaned = cleaned.replace(pattern, replacement)
+
+    # Remove newlines and extra whitespace
+    cleaned = " ".join(cleaned.split())
+
+    # Get first sentence only (up to first period followed by space or end)
+    # But avoid matching decimals like "PM2.5" or "0.1"
+    import re
+    match = re.search(r'^(.*?)\.\s', cleaned)  # Period followed by space
+    if match:
+        cleaned = match.group(1).strip() + "."
+    elif cleaned and not cleaned.endswith("."):
+        # If no sentence-ending period found, add one
+        cleaned = cleaned + "."
+
+    return cleaned
+
+
+def clean_name(name: str) -> str:
+    """Clean name text for markdown display (LaTeX only, no sentence extraction).
+
+    Args:
+        name: Raw name from YAML
+
+    Returns:
+        Cleaned name suitable for markdown
+    """
+    if not name:
+        return ""
+
+    # Replace LaTeX formatting with Unicode/HTML equivalents
+    replacements = {
+        r"\textsubscript{2}": "₂",
+        r"\textsubscript{3}": "₃",
+        r"\textsubscript{1}": "₁",
+        r"\textsubscript{0}": "₀",
+        r"\textsubscript{": "<sub>",
+        r"}": "</sub>",
+    }
+
+    cleaned = name
+    for pattern, replacement in replacements.items():
+        cleaned = cleaned.replace(pattern, replacement)
+
+    return cleaned
 
 
 def get_characteristic_info(char_class: type) -> tuple[str, str, str]:
@@ -39,19 +111,16 @@ def get_characteristic_info(char_class: type) -> tuple[str, str, str]:
         # Try to get name from registry first (most accurate)
         registry_info = uuid_registry.get_characteristic_info(uuid_obj) if uuid_obj else None
         if registry_info:
-            name = registry_info.name
-            # Get description from docstring if registry doesn't have summary
-            description = registry_info.summary or ""
-            if not description:
-                doc = inspect.getdoc(char_class)
-                if doc:
-                    description = doc.split("\n")[0].strip()
+            name = clean_name(registry_info.name)  # Clean LaTeX from name (no sentence extraction)
+            # Try to get description from YAML via resolve_characteristic_spec
+            char_spec = uuid_registry.resolve_characteristic_spec(registry_info.name)
+            raw_description = char_spec.description.strip() if char_spec and char_spec.description else ""
+            description = clean_description(raw_description)
         else:
             # Fallback to class name processing
             base_name = NameNormalizer.remove_suffix(char_class.__name__, "Characteristic")
             name = NameNormalizer.camel_case_to_display_name(base_name)
-            doc = inspect.getdoc(char_class)
-            description = doc.split("\n")[0].strip() if doc else ""
+            description = ""
 
         return uuid, name, description
     except Exception as e:
@@ -77,19 +146,15 @@ def get_service_info(service_class: type) -> tuple[str, str, str]:
         # Try to get name from registry first (most accurate)
         registry_info = uuid_registry.get_service_info(uuid_obj) if uuid_obj else None
         if registry_info:
-            name = registry_info.name
-            # Get description from docstring if registry doesn't have summary
-            description = registry_info.summary or ""
-            if not description:
-                doc = inspect.getdoc(service_class)
-                if doc:
-                    description = doc.split("\n")[0].strip()
+            name = clean_name(registry_info.name)  # Clean LaTeX from name (no sentence extraction)
+            doc = inspect.getdoc(service_class)
+            raw_description = doc.split("\n")[0].strip() if doc else ""
+            description = clean_description(raw_description)
         else:
             # Fallback to class name processing
             base_name = NameNormalizer.remove_suffix(service_class.__name__, "Service")
             name = NameNormalizer.camel_case_to_display_name(base_name)
-            doc = inspect.getdoc(service_class)
-            description = doc.split("\n")[0].strip() if doc else ""
+            description = ""
 
         return uuid, name, description
     except Exception as e:
@@ -108,7 +173,7 @@ def discover_characteristics() -> list[tuple[str, str, str, str]]:
 
     try:
         # Use the characteristic class map directly
-        for _char_name, char_class in CHARACTERISTIC_CLASS_MAP.items():
+        for _char_name, char_class in get_characteristic_class_map().items():
             uuid, name, description = get_characteristic_info(char_class)
             characteristics.append((char_class.__name__, uuid, name, description))
 
@@ -131,7 +196,7 @@ def discover_services() -> list[tuple[str, str, str, str]]:
 
     try:
         # Use the service class map directly
-        for _service_name, service_class in SERVICE_CLASS_MAP.items():
+        for _service_name, service_class in get_service_class_map().items():
             uuid, name, description = get_service_info(service_class)
             services.append((service_class.__name__, uuid, name, description))
 
@@ -153,8 +218,10 @@ def generate_markdown() -> str:
 This page lists all GATT characteristics and services currently supported by the library.
 
 !!! note "Auto-Generated"
-    This page is automatically generated from the codebase. The list is updated when new
-    characteristics or services are added.
+    This page is automatically generated from the codebase by `scripts/generate_char_service_list.py`.
+    The list is updated when new characteristics or services are added. See
+    [Adding Characteristics](../how-to/adding-characteristics.md) to learn how to contribute
+    new characteristics.
 
 ## Characteristics
 
@@ -168,10 +235,10 @@ The library currently supports **{len(characteristics)}** GATT characteristics:
     for service_class_name, service_uuid, service_name, _service_description in services:
         # Get the actual service class to access its service_characteristics
         try:
-            service_class = SERVICE_CLASS_MAP.get(service_name.replace(" ", "").upper())
+            service_class = get_service_class_map().get(service_name.replace(" ", "").upper())
             if service_class is None:
                 # Try alternative lookup
-                for _key, cls in SERVICE_CLASS_MAP.items():
+                for _key, cls in get_service_class_map().items():
                     if cls.__name__ == service_class_name:
                         service_class = cls
                         break
@@ -217,9 +284,6 @@ The library currently supports **{len(characteristics)}** GATT characteristics:
         md += "|----------------|------|-------------|\n"
 
         for _class_name, uuid, name, description in sorted(chars_in_service, key=lambda x: x[2]):
-            # Truncate long descriptions
-            if len(description) > 80:
-                description = description[:77] + "..."
             md += f"| **{name}** | `{uuid}` | {description} |\n"
 
     # Add ungrouped characteristics if any
@@ -229,8 +293,6 @@ The library currently supports **{len(characteristics)}** GATT characteristics:
         md += "|----------------|------|-------------|\n"
 
         for _class_name, uuid, name, description in sorted(ungrouped_chars, key=lambda x: x[2]):
-            if len(description) > 80:
-                description = description[:77] + "..."
             md += f"| **{name}** | `{uuid}` | {description} |\n"
 
     md += "\n## Services\n\n"
@@ -239,8 +301,6 @@ The library currently supports **{len(characteristics)}** GATT characteristics:
     md += "|---------|------|-------------|\n"
 
     for _class_name, uuid, name, description in services:
-        if len(description) > 100:
-            description = description[:97] + "..."
         md += f"| **{name}** | `{uuid}` | {description} |\n"
 
     md += """
@@ -248,9 +308,9 @@ The library currently supports **{len(characteristics)}** GATT characteristics:
 
 To add support for a new characteristic:
 
-1. See the [Adding New Characteristics](guides/adding-characteristics.md) guide
+1. See the [Adding Characteristics](../how-to/adding-characteristics.md) guide
 2. Follow the existing patterns in `src/bluetooth_sig/gatt/characteristics/`
-3. Add tests for your new characteristic
+3. Add tests for your new characteristic in `tests/gatt/characteristics/`
 4. Submit a pull request
 
 ## Official Bluetooth SIG Registry
@@ -264,7 +324,7 @@ registry. The UUID registry is loaded from YAML files in the `bluetooth_sig` sub
 
 def main() -> None:
     """Main entry point."""
-    output_file = repo_root / "docs" / "supported-characteristics.md"
+    output_file = repo_root / "docs" / "reference" / "characteristics.md"
 
     print("Generating characteristics and services list...")
     markdown = generate_markdown()

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.registry import _CharacteristicClassDiscovery
+from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.uuid_registry import uuid_registry
 from bluetooth_sig.types.gatt_enums import CharacteristicName
 
@@ -32,7 +32,8 @@ class TestCharacteristicEnumCompleteness:
         BUT still fail in integration because they're not discoverable by the registry!
         """
         # Discover all characteristic classes
-        discovered_classes = _CharacteristicClassDiscovery.discover_classes()
+        registry = CharacteristicRegistry.get_instance()
+        discovered_classes = list(registry._discover_sig_classes())
 
         # Get all UUID->name mappings from the enum
         enum_uuids = set()
@@ -133,7 +134,8 @@ class TestCharacteristicEnumCompleteness:
         This catches copy-paste errors where someone duplicates a class
         but forgets to update the UUID.
         """
-        discovered_classes = _CharacteristicClassDiscovery.discover_classes()
+        registry = CharacteristicRegistry.get_instance()
+        discovered_classes = list(registry._discover_sig_classes())
 
         uuid_to_classes: dict[str, list[str]] = {}
         for char_cls in discovered_classes:
@@ -171,7 +173,8 @@ class TestCharacteristicRegistryIntegrity:
         - Broken UUID resolution
         - Missing dependencies in __init__
         """
-        discovered_classes = _CharacteristicClassDiscovery.discover_classes()
+        registry = CharacteristicRegistry.get_instance()
+        discovered_classes = list(registry._discover_sig_classes())
 
         instantiation_failures = []
         for char_cls in discovered_classes:
@@ -205,7 +208,8 @@ class TestCharacteristicRegistryIntegrity:
         SIG UUIDs should be in format: 0000XXXX-0000-1000-8000-00805F9B34FB
         where XXXX is a 16-bit assigned number.
         """
-        discovered_classes = _CharacteristicClassDiscovery.discover_classes()
+        registry = CharacteristicRegistry.get_instance()
+        discovered_classes = list(registry._discover_sig_classes())
 
         invalid_uuids = []
         for char_cls in discovered_classes:

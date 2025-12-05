@@ -1,14 +1,16 @@
+# Site metadata
 site_name: Bluetooth SIG Standards Library
 site_description: Pure Python library for Bluetooth SIG standards interpretation, providing comprehensive GATT characteristic and service parsing
 site_url: https://ronanb96.github.io/bluetooth-sig-python/
 repo_url: https://github.com/RonanB96/bluetooth-sig-python
 repo_name: RonanB96/bluetooth-sig-python
-edit_uri: edit/main/docs/
+edit_uri: edit/main/docs/  # Allows "Edit on GitHub" links to work correctly
 
 theme:
   name: material
   palette:
-    # Palette toggle for light mode
+    # Dual theme support: respects user's OS preference for light/dark mode
+    # Blue color scheme chosen to align with Bluetooth branding
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: blue
@@ -16,7 +18,6 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-    # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: blue
@@ -25,133 +26,239 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.expand
-    - navigation.top
-    - navigation.tracking
-    - navigation.indexes
-    - search.suggest
-    - search.highlight
-    - search.share
-    - content.code.copy
-    - content.code.annotate
-    - content.tooltips
-    - content.tabs.link
+    # Navigation features - improve discoverability and UX for large documentation
+    - navigation.tabs              # Top-level tabs for main sections (Tutorials, How-to, etc.)
+    - navigation.tabs.sticky       # Keep tabs visible when scrolling (critical for deep pages)
+    - navigation.sections          # Group navigation items into collapsible sections
+    - navigation.expand            # Auto-expand sections (helpful for API exploration)
+    - navigation.top               # "Back to top" button for long pages (many characteristics)
+    - navigation.tracking          # Update URL with current heading (shareable deep links)
+    - navigation.indexes           # Allow index.md files to have content + serve as section pages
+    - navigation.path              # Breadcrumb navigation (essential for deep API hierarchy)
+    - navigation.footer            # Previous/Next page links (improves tutorial flow)
+    - navigation.instant           # SPA-like navigation without full page reloads (faster UX)
+
+    # Search features - useful for finding specific characteristics/services
+    - search.suggest               # Show search suggestions while typing
+    - search.highlight             # Highlight search terms in results
+    - search.share                 # Shareable search result links
+
+    # Content features - improve code example usability
+    - content.code.copy            # Copy button on code blocks (crucial for examples)
+    - content.code.annotate        # Allow inline code annotations with numbered markers
+    - content.tooltips             # Hover tooltips for abbreviations and cross-references
+    - content.tabs.link            # Synchronized tabs across page (e.g., Python 3.10 vs 3.11 examples)
 
 plugins:
-  - search
+  # Core plugins for API documentation generation and cross-referencing
+
+  - search  # Built-in full-text search (no configuration needed)
+
+  # gen-files: Auto-generate API reference pages at build time
+  # Runs scripts/gen_ref_pages.py to create markdown files for 331 Python modules
+  # Uses timestamp-based caching to only regenerate changed files (performance optimization)
+  - gen-files:
+      scripts:
+        - scripts/gen_ref_pages.py
+
+  # section-index: Allows index.md files to be both navigation containers AND content pages
+  # Required for our Diátaxis structure where tutorials/index.md has content + lists sub-pages
+  - section-index
+
+  # autorefs: Automatic cross-referencing between documentation pages
+  # Enables [SomeClass][] syntax to auto-link to API documentation
   - autorefs
+
+  # mkdocstrings: Extract API documentation from Python docstrings
+  # Renders Google-style docstrings into formatted HTML with type hints
   - mkdocstrings:
       handlers:
         python:
-          paths: [src]
+          paths: [src]  # Look for Python modules in src/ directory
+
+          # Cross-reference to Python stdlib docs for built-in types (e.g., int, str, List)
+          inventories:
+            - https://docs.python.org/3/objects.inv
+
           options:
-            docstring_style: google
-            show_source: true
-            show_root_heading: true
-            show_root_toc_entry: false
-            heading_level: 2
-            inherited_members: true
-            show_labels: true
-            show_symbol_type_heading: true
-            show_symbol_type_toc: true
-            signature_crossrefs: true
-            separate_signature: true
-            show_signature_annotations: true
-            merge_init_into_class: true
+            # Docstring parsing
+            docstring_style: google  # Project uses Google-style docstrings (Args:, Returns:, Raises:)
 
+            # Source code display
+            show_source: false  # Don't show source code by default (for performance)
+
+            # Heading configuration
+            show_root_heading: true       # Show class/function name as heading
+            show_root_toc_entry: false    # Don't duplicate in TOC (already in navigation)
+            heading_level: 3              # Use ## for API members (consistent hierarchy)
+
+            # Member organization
+            members_order: source         # Preserve source file order (intentional grouping by author)
+            filters: ["!^_[^_]"]          # Hide private members (_foo) but show dunder methods (__init__)
+            group_by_category: true       # Group into Classes, Functions, Attributes sections
+            show_category_heading: true   # Show "Classes", "Functions" headers
+
+            # Inheritance display
+            inherited_members: false      # Don't show inherited methods (for performance)
+            show_bases: true              # Show base classes (e.g., "Inherits from BaseCharacteristic")
+            show_inheritance_diagram: false  # No UML diagrams (simple inheritance doesn't need it)
+
+            # Type hints and signatures
+            show_labels: true                    # Show [property], [classmethod] labels
+            show_symbol_type_heading: true       # Add emoji/icon for type (🔧 function, 📦 class)
+            show_symbol_type_toc: true           # Include type in TOC entries
+            signature_crossrefs: true            # Make types in signatures clickable links
+            separate_signature: true             # Signature on separate line (better readability for long sigs)
+            show_signature_annotations: true     # Show type hints in signatures
+
+            # Class documentation
+            merge_init_into_class: true    # Merge __init__ docstring into class docstring (less redundancy)
+
+            # Docstring section styling
+            docstring_section_style: list  # Use list format for Args/Returns (more scannable than table)
+
+            # Content filtering
+            summary: true                  # Show summary line in module index pages
+            show_if_no_docstring: false    # Hide undocumented members (enforce documentation standards)
+
+            # Performance optimization
+            preload_modules:
+              - bluetooth_sig  # Preload main module to speed up cross-reference resolution
+
+# Custom build hooks for advanced processing
 hooks:
-  - docs_hooks.py
+  - docs_hooks.py  # Custom Python hooks for build-time logic (e.g., supported characteristics list)
 
+# Markdown extensions - enable advanced syntax and formatting
 markdown_extensions:
+  # Code highlighting extensions
   - pymdownx.highlight:
-      anchor_linenums: true
-      line_spans: __span
-      pygments_lang_class: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
+      anchor_linenums: true       # Linkable line numbers in code blocks
+      line_spans: __span          # Wrap each line for CSS styling
+      pygments_lang_class: true   # Add language class for syntax-specific styling
+  - pymdownx.inlinehilite         # Inline code highlighting: `#!python range(10)`
+  - pymdownx.snippets             # Include external code files (useful for tested examples)
+
+  # Advanced code blocks
   - pymdownx.superfences:
       custom_fences:
-        - name: mermaid
+        - name: mermaid           # Mermaid diagrams for architecture visualizations
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+
+  # Content organization
   - pymdownx.tabbed:
-      alternate_style: true
-  - admonition
-  - pymdownx.details
+      alternate_style: true       # Material-style tabs for multi-language examples
+  - admonition                    # Note/warning/tip boxes (critical for documentation)
+  - pymdownx.details              # Collapsible admonitions (<details> HTML element)
+
+  # Icons and visual elements
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-  - attr_list
-  - md_in_html
+
+  # HTML/CSS customization
+  - attr_list                     # Add HTML attributes to elements (e.g., {: .custom-class})
+  - md_in_html                    # Use Markdown inside HTML blocks (for complex layouts)
+
+  # Navigation and linking
   - toc:
-      permalink: true
+      permalink: true             # Add ¶ link to headings for easy sharing
+
+  # Math and special formatting
   - pymdownx.arithmatex:
-      generic: true
+      generic: true               # LaTeX math support (for performance formulas if needed)
   - pymdownx.betterem:
-      smart_enable: all
-  - pymdownx.caret
-  - pymdownx.mark
-  - pymdownx.tilde
+      smart_enable: all           # Better emphasis handling (e.g., *word* vs word_with_underscores)
+  - pymdownx.caret                # Superscript: ^^text^^
+  - pymdownx.mark                 # Highlight: ==marked text==
+  - pymdownx.tilde                # Subscript: ~text~ and strikethrough: ~~text~~
+
+  # Task lists and interactive elements
   - pymdownx.tasklist:
-      custom_checkbox: true
+      custom_checkbox: true       # GitHub-style checkboxes [ ] and [x]
+
+  # Smart linking
   - pymdownx.magiclink:
-      normalize_issue_symbols: true
-      repo_url_shorthand: true
+      normalize_issue_symbols: true    # Convert #123 to issue links
+      repo_url_shorthand: true         # Enable @user and user/repo shortcuts
       user: RonanB96
       repo: bluetooth-sig-python
-  - pymdownx.smartsymbols
-  - meta
 
+  # Typography
+  - pymdownx.smartsymbols         # Convert -- to em-dash, (c) to ©, etc.
+
+  # Metadata
+  - meta                          # Front-matter metadata support (YAML header in markdown)
+
+# Exclude certain paths from navigation (but still build them)
+# coverage/** contains test coverage reports - accessible by direct link but not in sidebar
 not_in_nav: |
   coverage/**
 
+# Navigation structure follows Diátaxis framework:
+# - Tutorials: Learning-oriented (getting started)
+# - How-to: Task-oriented (solve specific problems)
+# - Reference: Information-oriented (look up facts)
+# - Explanation: Understanding-oriented (concepts and architecture)
 nav:
   - Home: index.md
   - Tutorials:
-    - Installation: installation.md
-    - Quick Start: quickstart.md
-  - How-to guides:
-    - Using the Library: usage.md
-    - BLE Integration: guides/ble-integration.md
-    - Async Usage: guides/async-usage.md
-    - Migration Guide: guides/migration.md
-    - Adding New Characteristics: guides/adding-characteristics.md
-    - Performance Optimization: guides/performance.md
-    - Contributing: contributing.md
-    - Testing: testing.md
+      - tutorials/index.md
+      - Installation: tutorials/installation.md
+      - Quick Start: tutorials/quickstart.md
+  - How-to Guides:
+      - how-to/index.md
+      - Basic Usage: how-to/usage.md
+      - BLE Integration: how-to/ble-integration.md
+      - Async Usage: how-to/async-usage.md
+      - Adding Characteristics: how-to/adding-characteristics.md
+      - Performance Tuning: how-to/performance-tuning.md
+      - Testing: how-to/testing.md
+      - Migration Guide: how-to/migration.md
+      - Contributing: how-to/contributing.md
   - Reference:
-    - Core API: api/core.md
-    - GATT Layer: api/gatt.md
-    - Registry System: api/registry.md
-    - Performance Benchmarks: performance.md
-    - Live Benchmark Results: benchmarks.md
-    - Supported Characteristics: supported-characteristics.md
-    - BluetoothSIGTranslator: api/core.md
+      - reference/index.md
+      - Characteristics: reference/characteristics.md
+      - Performance Data: reference/performance-data.md
+      - Live Benchmarks: reference/benchmarks.md
+      - API:
+          - reference/bluetooth_sig/index.md
+          - Core: reference/bluetooth_sig/core/index.md
+          - Device: reference/bluetooth_sig/device/index.md
+          - GATT:
+              - reference/bluetooth_sig/gatt/index.md
+              - Characteristics: reference/bluetooth_sig/gatt/characteristics/index.md
+              - Services: reference/bluetooth_sig/gatt/services/index.md
+              - Descriptors: reference/bluetooth_sig/gatt/descriptors/index.md
+          - Registry: reference/bluetooth_sig/registry/index.md
+          - Types: reference/bluetooth_sig/types/index.md
+          - Stream: reference/bluetooth_sig/stream/index.md
+          - Utils: reference/bluetooth_sig/utils/index.md
   - Explanation:
-    - Why Use This Library: why-use.md
-    - What Problems It Solves: what-it-solves.md
-    - What It Does NOT Solve: what-it-does-not-solve.md
-    - Architecture:
-      - Overview: architecture/overview.md
-      - Design Decisions: architecture/decisions.md
-      - Deep Dive:
-        - Internal Architecture: architecture/deep-dive/internals.md
-        - Registry System: architecture/deep-dive/registry-system.md
+      - explanation/index.md
+      - Why Use This Library: explanation/why-use.md
+      - What It Solves: explanation/what-it-solves.md
+      - Limitations: explanation/limitations.md
+      - Architecture:
+          - Overview: explanation/architecture/overview.md
+          - Design Decisions: explanation/architecture/decisions.md
+          - C4 Model: explanation/architecture/c4-model.md
+          - Internals: explanation/architecture/internals.md
+          - Registry System: explanation/architecture/registry-system.md
   - Community:
-    - Code of Conduct: code-of-conduct.md
-    - GitHub README: github-readme.md
+      - community/index.md
+      - Code of Conduct: community/code-of-conduct.md
 
+# Extra configuration
 extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/RonanB96/bluetooth-sig-python
+      # Social links appear in footer for community engagement
 
+# External JavaScript libraries
 extra_javascript:
-  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js  # Mermaid diagram rendering (C4 architecture diagrams)
 
 copyright: Copyright &copy; 2025 RonanB96
-
-# Coverage report integration - served at /coverage/
-# Generated by GitHub Actions from pytest-cov

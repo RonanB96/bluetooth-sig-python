@@ -32,7 +32,7 @@ from .location_and_navigation import LocationAndNavigationService
 from .next_dst_change import NextDstChangeService
 from .phone_alert_status import PhoneAlertStatusService
 from .reference_time_update import ReferenceTimeUpdateService
-from .registry import SERVICE_CLASS_MAP, GattServiceRegistry, ServiceName
+from .registry import GattServiceRegistry, ServiceName, get_service_class_map
 from .running_speed_and_cadence import RunningSpeedAndCadenceService
 from .scan_parameters import ScanParametersService
 from .tx_power import TxPowerService
@@ -41,7 +41,7 @@ from .weight_scale import WeightScaleService
 __all__ = [
     # Registry components
     "GattServiceRegistry",
-    "SERVICE_CLASS_MAP",
+    "get_service_class_map",
     "ServiceName",
     # Service validation and status classes
     "ServiceHealthStatus",

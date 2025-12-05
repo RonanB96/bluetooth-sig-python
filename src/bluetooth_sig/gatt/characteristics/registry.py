@@ -8,11 +8,10 @@ types.gatt_enums to avoid circular imports.
 from __future__ import annotations
 
 import re
-import threading
-from functools import lru_cache
 
 from typing_extensions import TypeGuard
 
+from ...registry.base import BaseUUIDClassRegistry
 from ...types.gatt_enums import CharacteristicName
 from ...types.uuid import BluetoothUUID
 from ..registry_utils import ModuleDiscovery, TypeValidator
@@ -21,19 +20,19 @@ from ..uuid_registry import uuid_registry
 from .base import BaseCharacteristic
 
 # Export for other modules to import
-__all__ = ["CharacteristicName", "CharacteristicRegistry"]
+__all__ = ["CharacteristicName", "get_characteristic_class_map", "CharacteristicRegistry"]
 
 
-class _CharacteristicClassValidator:  # pylint: disable=too-few-public-methods
-    """Utility class for validating characteristic classes.
+def _is_characteristic_subclass(candidate: object) -> TypeGuard[type[BaseCharacteristic]]:
+    """Type guard to check if candidate is a BaseCharacteristic subclass.
 
-    Note: Single-purpose validator class - pylint disable justified.
+    Args:
+        candidate: Object to check
+
+    Returns:
+        True if candidate is a subclass of BaseCharacteristic
     """
-
-    @staticmethod
-    def is_characteristic_subclass(candidate: object) -> TypeGuard[type[BaseCharacteristic]]:
-        """Return True when candidate is a BaseCharacteristic subclass."""
-        return TypeValidator.is_subclass_of(candidate, BaseCharacteristic)
+    return TypeValidator.is_subclass_of(candidate, BaseCharacteristic)
 
 
 class _RegistryKeyBuilder:
@@ -83,274 +82,190 @@ class _RegistryKeyBuilder:
         return uuid_to_enum
 
 
-class _CharacteristicClassDiscovery:
-    """Handles discovery and validation of characteristic classes in the package."""
+def get_characteristic_class_map() -> dict[CharacteristicName, type[BaseCharacteristic]]:
+    """Get the current characteristic class map.
+
+    Backward compatibility function that returns the current registry state.
+
+    Returns:
+        Dictionary mapping CharacteristicName enum to characteristic classes
+    """
+    return CharacteristicRegistry.get_instance()._get_enum_map()  # pylint: disable=protected-access
+
+
+class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseCharacteristic]):
+    """Encapsulates all GATT characteristic registry operations."""
 
     _MODULE_EXCLUSIONS = {"__main__", "__init__", "base", "registry", "templates"}
+    _NON_ALPHANUMERIC_RE = re.compile(r"[^a-z0-9]+")
 
-    @classmethod
-    def iter_module_names(cls) -> list[str]:
-        """Return sorted characteristic module names discovered via pkgutil.walk_packages.
+    def _get_base_class(self) -> type[BaseCharacteristic]:
+        """Return the base class for characteristic validation."""
+        return BaseCharacteristic
 
-        References:
-            Python standard library documentation, pkgutil.walk_packages,
-            https://docs.python.org/3/library/pkgutil.html#pkgutil.walk_packages
-
-        """
+    def _discover_sig_classes(self) -> list[type[BaseCharacteristic]]:
+        """Discover all SIG-defined characteristic classes in the package."""
         package_name = __package__ or "bluetooth_sig.gatt.characteristics"
-        return ModuleDiscovery.iter_module_names(package_name, cls._MODULE_EXCLUSIONS)
+        module_names = ModuleDiscovery.iter_module_names(package_name, self._MODULE_EXCLUSIONS)
 
-    @classmethod
-    def discover_classes(cls) -> list[type[BaseCharacteristic]]:
-        """Discover all concrete characteristic classes defined in the package.
-
-        Validates that discovered classes have required methods for proper operation.
-        """
-        module_names = cls.iter_module_names()
         return ModuleDiscovery.discover_classes(
             module_names,
             BaseCharacteristic,
-            _CharacteristicClassValidator.is_characteristic_subclass,
+            _is_characteristic_subclass,
         )
 
+    def _build_uuid_to_enum_map(self) -> dict[str, CharacteristicName]:
+        """Create a mapping from normalized UUID string to CharacteristicName."""
+        uuid_to_enum: dict[str, CharacteristicName] = {}
 
-class _CharacteristicMapBuilder:
-    """Builds and caches the characteristic class map."""
+        for enum_member in CharacteristicName:
+            for candidate in _RegistryKeyBuilder.generate_candidate_keys(enum_member):
+                info = uuid_registry.get_characteristic_info(candidate)
+                if info is None:
+                    continue
+                uuid_to_enum[info.uuid.normalized] = enum_member
+                break
 
-    @staticmethod
-    def build_map() -> dict[CharacteristicName, type[BaseCharacteristic]]:
-        """Build the characteristic class mapping lazily using runtime discovery."""
+        # Handle special cases (CO2, etc.) - access via static method to avoid protected access
+        special_cases = {
+            "CO\\textsubscript{2} Concentration": CharacteristicName.CO2_CONCENTRATION,
+        }
+        for info_name, enum_member in special_cases.items():
+            info = uuid_registry.get_characteristic_info(info_name)
+            if info is None:
+                continue
+            uuid_to_enum.setdefault(info.uuid.normalized, enum_member)
+
+        return uuid_to_enum
+
+    def _build_enum_map(self) -> dict[CharacteristicName, type[BaseCharacteristic]]:
+        """Build the enum → class mapping using runtime discovery."""
         mapping: dict[CharacteristicName, type[BaseCharacteristic]] = {}
-        uuid_to_enum = _RegistryKeyBuilder.build_uuid_to_enum_map()
+        uuid_to_enum = self._build_uuid_to_enum_map()
 
-        for char_cls in _CharacteristicClassDiscovery.discover_classes():
-            uuid_obj = char_cls.get_class_uuid()
+        for char_cls in self._discover_sig_classes():
+            try:
+                uuid_obj = char_cls.get_class_uuid()
+            except (AttributeError, ValueError):
+                continue
+
             if uuid_obj is None:
                 continue
+
             enum_member = uuid_to_enum.get(uuid_obj.normalized)
             if enum_member is None:
                 continue
+
             existing = mapping.get(enum_member)
             if existing is not None and existing is not char_cls:
                 raise RuntimeError(
-                    f"Multiple characteristic classes resolved for {enum_member.name}:"
-                    f" {existing.__name__} and {char_cls.__name__}"
+                    f"Multiple characteristic classes resolved for {enum_member.name}: "
+                    f"{existing.__name__} and {char_cls.__name__}"
                 )
+
             mapping[enum_member] = char_cls
 
         return mapping
 
-    @staticmethod
-    @lru_cache(maxsize=1)
-    def get_cached_map() -> dict[CharacteristicName, type[BaseCharacteristic]]:
-        """Return the cached characteristic class map."""
-        return _CharacteristicMapBuilder.build_map()
+    def _load(self) -> None:
+        """Perform the actual loading of registry data."""
+        # Trigger cache building
+        _ = self._get_enum_map()
+        _ = self._get_sig_classes_map()
+        self._loaded = True
 
-    @staticmethod
-    def clear_cache() -> None:
-        """Clear the characteristic class map cache."""
-        _CharacteristicMapBuilder.get_cached_map.cache_clear()
-
-
-# Public API - enum-keyed map
-CHARACTERISTIC_CLASS_MAP = _CharacteristicMapBuilder.get_cached_map()
-
-
-class CharacteristicRegistry:
-    """Encapsulates all GATT characteristic registry operations."""
-
-    _lock = threading.RLock()
-    _custom_characteristic_classes: dict[BluetoothUUID, type[BaseCharacteristic]] = {}
+    # Backward compatibility aliases for existing API
 
     @classmethod
-    def register_characteristic_class(cls, uuid: str | BluetoothUUID, char_cls: object, override: bool = False) -> None:
+    def register_characteristic_class(
+        cls, uuid: str | BluetoothUUID | int, char_cls: type[BaseCharacteristic], override: bool = False
+    ) -> None:
         """Register a custom characteristic class at runtime.
 
-        Args:
-            uuid: The characteristic UUID (string or BluetoothUUID)
-            char_cls: The characteristic class to register
-            override: Whether to override existing registrations
-
-        Raises:
-            TypeError: If char_cls does not inherit from BaseCharacteristic
-            ValueError: If UUID conflicts with existing registration and override=False
-
+        Backward compatibility wrapper for register_class().
         """
-        # Runtime safety check retained in case of dynamic caller misuse despite type hints.
-        if not _CharacteristicClassValidator.is_characteristic_subclass(char_cls):
-            raise TypeError(f"Class {char_cls!r} must inherit from BaseCharacteristic")
-
-        characteristic_cls: type[BaseCharacteristic] = char_cls
-
-        # Always normalize UUID to BluetoothUUID
-        bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
-
-        # Determine if this UUID is already represented by a SIG (built-in) characteristic
-        def _find_sig_class_for_uuid(target: BluetoothUUID) -> type[BaseCharacteristic] | None:
-            for candidate in _CharacteristicMapBuilder.get_cached_map().values():
-                resolved_uuid_obj = candidate.get_class_uuid()
-                if resolved_uuid_obj and resolved_uuid_obj == target:
-                    return candidate
-            return None
-
-        sig_cls = _find_sig_class_for_uuid(bt_uuid)
-
-        with cls._lock:
-            # Prevent duplicate custom registration unless override explicitly requested
-            if not override and bt_uuid in cls._custom_characteristic_classes:
-                raise ValueError(f"UUID {bt_uuid} already registered. Use override=True to replace.")
-
-            # If collides with a SIG characteristic, enforce explicit override + permission flag
-            if sig_cls is not None:
-                if not override:
-                    raise ValueError(
-                        f"UUID {bt_uuid} conflicts with existing SIG characteristic {sig_cls.__name__}. "
-                        "Use override=True to replace."
-                    )
-                # Require an explicit opt‑in marker on the custom class
-                allows_override = characteristic_cls.get_allows_sig_override()
-                if not allows_override:
-                    raise ValueError(
-                        "Override of SIG characteristic "
-                        f"{sig_cls.__name__} requires _allows_sig_override=True on {characteristic_cls.__name__}."
-                    )
-
-            cls._custom_characteristic_classes[bt_uuid] = characteristic_cls
+        instance = cls.get_instance()
+        instance.register_class(uuid, char_cls, override)
 
     @classmethod
-    def unregister_characteristic_class(cls, uuid: str | BluetoothUUID) -> None:
+    def unregister_characteristic_class(cls, uuid: str | BluetoothUUID | int) -> None:
         """Unregister a custom characteristic class.
 
-        Args:
-            uuid: The characteristic UUID to unregister (string or BluetoothUUID)
-
+        Backward compatibility wrapper for unregister_class().
         """
-        bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
-        with cls._lock:
-            cls._custom_characteristic_classes.pop(bt_uuid, None)
+        instance = cls.get_instance()
+        instance.unregister_class(uuid)
 
-    @staticmethod
-    def get_characteristic_class(
-        name: CharacteristicName,
-    ) -> type[BaseCharacteristic] | None:
+    @classmethod
+    def get_characteristic_class(cls, name: CharacteristicName) -> type[BaseCharacteristic] | None:
         """Get the characteristic class for a given CharacteristicName enum.
 
-        This API is enum-only. Callers must pass a `CharacteristicName`.
+        Backward compatibility wrapper for get_class_by_enum().
         """
-        return _CharacteristicMapBuilder.get_cached_map().get(name)
+        instance = cls.get_instance()
+        return instance.get_class_by_enum(name)
+
+    @classmethod
+    def get_characteristic_class_by_uuid(cls, uuid: str | BluetoothUUID | int) -> type[BaseCharacteristic] | None:
+        """Get the characteristic class for a given UUID.
+
+        Backward compatibility wrapper for get_class_by_uuid().
+        """
+        instance = cls.get_instance()
+        return instance.get_class_by_uuid(uuid)
+
+    @classmethod
+    def create_characteristic(cls, uuid: str | BluetoothUUID | int) -> BaseCharacteristic | None:
+        """Create a characteristic instance from a UUID.
+
+        Args:
+            uuid: The characteristic UUID (string, BluetoothUUID, or int)
+
+        Returns:
+            Characteristic instance if found, None if UUID not registered
+
+        Raises:
+            ValueError: If uuid format is invalid
+        """
+        # Normalize to BluetoothUUID (let ValueError propagate for invalid format)
+        if isinstance(uuid, BluetoothUUID):
+            uuid_obj = uuid
+        else:
+            uuid_obj = BluetoothUUID(uuid)
+
+        instance = cls.get_instance()
+        char_cls = instance.get_class_by_uuid(uuid_obj)
+        if char_cls is None:
+            return None
+
+        return char_cls()
 
     @staticmethod
     def list_all_characteristic_names() -> list[str]:
-        """List all supported characteristic names as strings.
-
-        Returns:
-            List of all characteristic names.
-
-        """
+        """List all supported characteristic names as strings."""
         return [e.value for e in CharacteristicName]
 
     @staticmethod
     def list_all_characteristic_enums() -> list[CharacteristicName]:
-        """List all supported characteristic names as enum values.
-
-        Returns:
-            List of all characteristic enum values.
-
-        """
+        """List all supported characteristic names as enum values."""
         return list(CharacteristicName)
 
     @classmethod
-    def create_characteristic(
-        cls,
-        uuid: str | BluetoothUUID,
-    ) -> BaseCharacteristic | None:
-        """Create a characteristic instance from a UUID.
-
-        Args:
-            uuid: The characteristic UUID (string or BluetoothUUID).
-
-        Returns:
-            Characteristic instance if found, None otherwise.
-
-        """
-        # Handle UUID input
-        if isinstance(uuid, BluetoothUUID):
-            uuid_obj = uuid
-        else:
-            try:
-                uuid_obj = BluetoothUUID(uuid)
-            except ValueError:
-                # Invalid UUID format, cannot create characteristic
-                return None
-
-        # Check custom registry first
-        with cls._lock:
-            if custom_cls := cls._custom_characteristic_classes.get(uuid_obj):
-                return custom_cls()
-
-        # Look up by UUID at class level (no instantiation needed)
-        for _, char_cls in _CharacteristicMapBuilder.get_cached_map().items():
-            resolved_uuid = char_cls.get_class_uuid()
-            if resolved_uuid and resolved_uuid == uuid_obj:
-                return char_cls()
-
-        return None
-
-    @classmethod
-    def get_characteristic_class_by_uuid(cls, uuid: str | BluetoothUUID) -> type[BaseCharacteristic] | None:
-        """Get the characteristic class for a given UUID.
-
-        Args:
-            uuid: The characteristic UUID (with or without dashes).
-
-        Returns:
-            The characteristic class if found, None otherwise.
-
-        """
-        # Always normalize UUID to BluetoothUUID
-        try:
-            bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
-        except ValueError:
-            return None
-
-        # Check custom registry first
-        with cls._lock:
-            if custom_cls := cls._custom_characteristic_classes.get(bt_uuid):
-                return custom_cls
-
-        # Look up by UUID at class level (no instantiation needed)
-        for char_cls in _CharacteristicMapBuilder.get_cached_map().values():
-            resolved_uuid = char_cls.get_class_uuid()
-            if resolved_uuid and resolved_uuid == bt_uuid:
-                return char_cls
-
-        return None
-
-    @staticmethod
-    def get_all_characteristics() -> dict[CharacteristicName, type[BaseCharacteristic]]:
-        """Get all registered characteristic classes.
-
-        Returns:
-            Dictionary mapping characteristic names to classes
-
-        """
-        result: dict[CharacteristicName, type[BaseCharacteristic]] = {}
-        for name, char_cls in _CharacteristicMapBuilder.get_cached_map().items():
-            result[name] = char_cls
-        return result
+    def get_all_characteristics(cls) -> dict[CharacteristicName, type[BaseCharacteristic]]:
+        """Get all registered characteristic classes."""
+        instance = cls.get_instance()
+        return instance._get_enum_map().copy()  # pylint: disable=protected-access
 
     @classmethod
     def clear_custom_registrations(cls) -> None:
         """Clear all custom characteristic registrations (for testing)."""
-        with cls._lock:
-            cls._custom_characteristic_classes.clear()
+        instance = cls.get_instance()
+        for uuid in list(instance.list_custom_uuids()):
+            instance.unregister_class(uuid)
 
-    @staticmethod
-    def clear_cache() -> None:
-        """Clear the characteristic class map cache (for testing).
-
-        This forces the registry to be rebuilt on next access.
-        Use sparingly - primarily for testing scenarios where
-        characteristic classes are modified at runtime.
-        """
-        _CharacteristicMapBuilder.clear_cache()
+    @classmethod
+    def clear_cache(cls) -> None:
+        """Clear the characteristic class map cache (for testing)."""
+        instance = cls.get_instance()
+        instance.clear_enum_map_cache()
+        instance._load()  # Reload to repopulate  # pylint: disable=protected-access
