@@ -12,7 +12,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestScanIntervalWindowCharacteristic(CommonCharacteristicTests):
     """Test suite for Scan Interval Window characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Only adds scan interval window-specific edge cases and domain validation.
     """
 

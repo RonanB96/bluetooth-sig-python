@@ -5,4 +5,6 @@ This module will contain registries for SDP (Service Discovery Protocol) attribu
 These registries are currently not implemented but are planned for future releases.
 """
 
+from __future__ import annotations
+
 __all__: list[str] = []

@@ -244,7 +244,6 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
                             char_info = CharacteristicInfo(
                                 uuid=char_uuid,
                                 name=f"Unknown Characteristic ({char_uuid.short_form}...)",
-                                description="",
                             )
                             char_instance = UnknownCharacteristic(info=char_info, properties=properties)
                             characteristics[str(char_uuid)] = char_instance

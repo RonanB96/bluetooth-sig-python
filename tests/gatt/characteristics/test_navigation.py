@@ -20,7 +20,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestNavigationCharacteristic(CommonCharacteristicTests):
     """Test suite for Navigation characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Only adds navigation-specific edge cases and domain validation.
     """
 

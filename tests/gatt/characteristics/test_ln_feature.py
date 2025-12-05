@@ -12,7 +12,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestLNFeatureCharacteristic(CommonCharacteristicTests):
     """Test suite for LN Feature characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Only adds LN feature-specific edge cases and domain validation.
     """
 

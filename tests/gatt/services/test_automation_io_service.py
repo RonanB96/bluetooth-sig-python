@@ -1,5 +1,7 @@
 """Tests for Automation IO Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.automation_io import AutomationIOService

@@ -5,9 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import BondManagementControlPointCharacteristic
-from bluetooth_sig.gatt.characteristics.bond_management_control_point import (
-    BondManagementCommand,
-)
+from bluetooth_sig.gatt.characteristics.bond_management_control_point import BondManagementCommand
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 

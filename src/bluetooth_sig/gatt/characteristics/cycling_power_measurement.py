@@ -6,12 +6,7 @@ from enum import IntFlag
 
 import msgspec
 
-from ..constants import (
-    SINT16_MAX,
-    SINT16_MIN,
-    UINT8_MAX,
-    UINT16_MAX,
-)
+from ..constants import SINT16_MAX, SINT16_MIN, UINT8_MAX, UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .cycling_power_feature import CyclingPowerFeatureCharacteristic, CyclingPowerFeatureData

@@ -1,5 +1,7 @@
 """Tests for Device Information Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.device_information import DeviceInformationService

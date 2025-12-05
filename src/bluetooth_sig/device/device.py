@@ -21,13 +21,7 @@ from ..gatt.context import CharacteristicContext, DeviceInfo
 from ..gatt.descriptors.base import BaseDescriptor
 from ..gatt.descriptors.registry import DescriptorRegistry
 from ..gatt.services import ServiceName
-from ..types import (
-    AdvertisingData,
-    CharacteristicDataProtocol,
-    CharacteristicInfo,
-    DescriptorData,
-    DescriptorInfo,
-)
+from ..types import AdvertisingData, CharacteristicDataProtocol, CharacteristicInfo, DescriptorData, DescriptorInfo
 from ..types.device_types import DeviceEncryption, DeviceService, ScannedDevice
 from ..types.uuid import BluetoothUUID
 from .advertising_parser import AdvertisingParser
@@ -584,7 +578,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         # If no registered descriptor found, return unparsed DescriptorData
         return DescriptorData(
-            info=DescriptorInfo(uuid=uuid, name="Unknown Descriptor", description=""),
+            info=DescriptorInfo(uuid=uuid, name="Unknown Descriptor"),
             value=raw_data,
             raw_data=raw_data,
             parse_success=False,

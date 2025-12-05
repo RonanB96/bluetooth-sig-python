@@ -26,6 +26,7 @@ class ScanIntervalWindowCharacteristic(BaseCharacteristic):
     _characteristic_name = "Scan Interval Window"
     _manual_value_type = "ScanIntervalWindowData"  # Override since decode_value returns structured data
 
+    expected_length = 4  # Scan Interval(2) + Scan Window(2)
     min_length = 4  # Scan Interval(2) + Scan Window(2)
     max_length = 4  # Fixed length
     allow_variable_length: bool = False  # Fixed length
@@ -40,13 +41,7 @@ class ScanIntervalWindowCharacteristic(BaseCharacteristic):
         Returns:
             ScanIntervalWindowData with parsed scan parameters.
 
-        Raises:
-            ValueError: If data length is not exactly 4 bytes.
-
         """
-        if len(data) != 4:
-            raise ValueError(f"Scan Interval Window characteristic requires 4 bytes, got {len(data)}")
-
         scan_interval = DataParser.parse_int16(data, 0, signed=False)
         scan_window = DataParser.parse_int16(data, 2, signed=False)
 

@@ -16,7 +16,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestTimeUpdateStateCharacteristic(CommonCharacteristicTests):
     """Test suite for Time Update State characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Adds time update state-specific validation and edge cases.
     """
 

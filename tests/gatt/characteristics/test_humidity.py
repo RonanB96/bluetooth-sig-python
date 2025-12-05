@@ -1,12 +1,11 @@
 """Tests for Humidity characteristic (0x2A6F)."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
-from tests.gatt.characteristics.test_characteristic_common import (
-    CharacteristicTestData,
-    CommonCharacteristicTests,
-)
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestHumidityCharacteristic(CommonCharacteristicTests):
@@ -43,18 +42,19 @@ class TestHumidityCharacteristic(CommonCharacteristicTests):
 
         # Test 100% humidity (boundary)
         result = characteristic.decode_value(bytearray([0x10, 0x27]))  # 10000 = 100.00%
+        assert result is not None
         assert abs(result - 100.0) < 0.01
 
         # Test precision (50.00%)
         result = characteristic.decode_value(bytearray([0x88, 0x13]))  # 5000 = 50.00%
+        assert result is not None
         assert abs(result - 50.0) < 0.01
 
     def test_humidity_out_of_range_validation(self, characteristic: HumidityCharacteristic) -> None:
-        """Test that humidity values > 100% are rejected."""
-        # Test maximum value 0xFFFF should fail (655.35% > 100%)
-        result = characteristic.parse_value(bytearray([0xFF, 0xFF]))
-        assert not result.parse_success
-        assert "range" in result.error_message.lower()
+        """Test that special value 0xFFFF returns None."""
+        # Test special value 0xFFFF should return None (value is not known)
+        result = characteristic.decode_value(bytearray([0xFF, 0xFF]))
+        assert result is None
 
     def test_humidity_encoding_accuracy(self, characteristic: HumidityCharacteristic) -> None:
         """Test encoding produces correct byte sequences."""
@@ -64,15 +64,11 @@ class TestHumidityCharacteristic(CommonCharacteristicTests):
         assert characteristic.encode_value(100.0) == bytearray([0x10, 0x27])
 
     def test_raw_decode_without_validation(self, characteristic: HumidityCharacteristic) -> None:
-        """Test raw decode_value method that bypasses validation."""
-        # Test that decode_value works for any uint16 value (no validation)
-        data = bytearray([0xFF, 0xFF])  # 0xFFFF = 655.35%
-        result = characteristic.decode_value(data)
-        assert abs(result - 655.35) < 0.01
-
+        """Test raw decode_value method works for normal values."""
         # Test normal value
         data = bytearray([0x88, 0x13])  # 5000 = 50.00%
         result = characteristic.decode_value(data)
+        assert result is not None
         assert abs(result - 50.0) < 0.01
 
     def test_characteristic_metadata(self, characteristic: HumidityCharacteristic) -> None:

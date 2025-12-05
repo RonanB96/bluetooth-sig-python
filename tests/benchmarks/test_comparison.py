@@ -136,9 +136,8 @@ class TestOverheadAnalysis:
             info = CharacteristicInfo(
                 uuid=BluetoothUUID("2A19"),
                 name="Battery Level",
-                description="",
-                value_type=ValueType.INT,
                 unit="%",
+                value_type=ValueType.INT,
             )
             fake_char = _FakeCharacteristic(info)
             # Cast to BaseCharacteristic for type checker compatibility

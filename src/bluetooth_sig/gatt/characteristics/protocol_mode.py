@@ -27,6 +27,8 @@ class ProtocolModeCharacteristic(BaseCharacteristic):
     Protocol Mode characteristic.
     """
 
+    expected_length = PROTOCOL_MODE_DATA_LENGTH
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ProtocolMode:
         """Parse protocol mode data.
 
@@ -37,8 +39,6 @@ class ProtocolModeCharacteristic(BaseCharacteristic):
         Returns:
             Protocol mode.
         """
-        if len(data) != PROTOCOL_MODE_DATA_LENGTH:
-            raise ValueError(f"Protocol Mode data must be exactly {PROTOCOL_MODE_DATA_LENGTH} byte, got {len(data)}")
         value = DataParser.parse_int8(data, 0, signed=False)
         return ProtocolMode(value)
 

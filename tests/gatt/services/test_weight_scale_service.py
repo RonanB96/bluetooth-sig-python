@@ -1,11 +1,11 @@
 """Tests for Weight Scale Service and related characteristics."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
-from bluetooth_sig.gatt.characteristics.weight_measurement import (
-    WeightMeasurementCharacteristic,
-)
+from bluetooth_sig.gatt.characteristics.weight_measurement import WeightMeasurementCharacteristic
 from bluetooth_sig.gatt.characteristics.weight_scale_feature import (
     WeightMeasurementResolution,
     WeightScaleFeatureCharacteristic,

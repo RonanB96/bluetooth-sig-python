@@ -1,5 +1,7 @@
 """UUID-based registries from assigned_numbers/uuids/."""
 
+from __future__ import annotations
+
 from bluetooth_sig.registry.uuids.browse_groups import browse_groups_registry
 from bluetooth_sig.registry.uuids.declarations import declarations_registry
 from bluetooth_sig.registry.uuids.members import members_registry

@@ -22,7 +22,7 @@ from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.templates import ScaledUint16Template, Uint8Template
 from bluetooth_sig.gatt.characteristics.utils import DataParser
 from bluetooth_sig.gatt.context import CharacteristicContext
-from bluetooth_sig.types import CharacteristicInfo, CharacteristicRegistration
+from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -361,7 +361,7 @@ class TestCustomCharacteristicVariants:
         class CustomBatteryLevel(CustomBaseCharacteristic, allow_sig_override=True):
             """Custom battery level implementation that overrides SIG UUID.
 
-            This demonstrates intentional SIG UUID override with custom behavior.
+            This demonstrates intentional SIG UUID override with custom behaviour.
             Requires explicit allow_sig_override=True.
             """
 
@@ -420,13 +420,15 @@ class TestCustomCharacteristicRegistration:
     def test_register_simple_characteristic(self) -> None:
         """Test registering a simple custom characteristic."""
         translator = BluetoothSIGTranslator()
+        uuid = SimpleTemperatureSensor.get_class_uuid()
+        assert uuid
 
         # Register the characteristic
         translator.register_custom_characteristic_class(
-            str(SimpleTemperatureSensor._info.uuid),
+            str(uuid),
             SimpleTemperatureSensor,
-            metadata=CharacteristicRegistration(
-                uuid=SimpleTemperatureSensor._info.uuid,
+            info=CharacteristicInfo(
+                uuid=uuid,
                 name="Simple Temperature Sensor",
                 unit="°C",
                 value_type=ValueType.INT,
@@ -436,7 +438,7 @@ class TestCustomCharacteristicRegistration:
         # Parse data using the registered characteristic
         data = bytearray([0x14, 0x00])  # 20°C
         result = translator.parse_characteristic(
-            str(SimpleTemperatureSensor._info.uuid),
+            str(SimpleTemperatureSensor.get_class_uuid()),
             bytes(data),
         )
 
@@ -448,7 +450,7 @@ class TestCustomCharacteristicRegistration:
         translator = BluetoothSIGTranslator()
 
         translator.register_custom_characteristic_class(
-            str(MultiSensorCharacteristic._info.uuid),
+            str(MultiSensorCharacteristic.get_class_uuid()),
             MultiSensorCharacteristic,
         )
 
@@ -471,7 +473,7 @@ class TestCustomCharacteristicRegistration:
         )
 
         result = translator.parse_characteristic(
-            str(MultiSensorCharacteristic._info.uuid),
+            str(MultiSensorCharacteristic.get_class_uuid()),
             bytes(data),
         )
 

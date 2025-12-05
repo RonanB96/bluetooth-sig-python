@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import msgspec
 
-from bluetooth_sig.registry import appearance_values_registry
-from bluetooth_sig.types.appearance_info import AppearanceInfo
+from bluetooth_sig.registry.core.appearance_values import appearance_values_registry
+from bluetooth_sig.types.registry.appearance_info import AppearanceInfo
 
 
 class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):
@@ -52,7 +52,8 @@ class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):
             raise ValueError(f"Unknown appearance: {category}")
 
         # Calculate raw_value from category and subcategory values
-        raw_value = (info.category_value << 6) | (info.subcategory_value or 0)
+        subcategory_value = info.subcategory.value if info.subcategory else 0
+        raw_value = (info.category_value << 6) | subcategory_value
         return cls(raw_value=raw_value, info=info)
 
     @property
@@ -71,7 +72,9 @@ class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):
         Returns:
             Subcategory name or None if not available
         """
-        return self.info.subcategory if self.info else None
+        if self.info and self.info.subcategory:
+            return self.info.subcategory.name
+        return None
 
     @property
     def full_name(self) -> str | None:

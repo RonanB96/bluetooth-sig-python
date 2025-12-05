@@ -6,10 +6,7 @@ import datetime
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.blood_pressure_common import (
-    BloodPressureFlags,
-    BloodPressureOptionalFields,
-)
+from bluetooth_sig.gatt.characteristics.blood_pressure_common import BloodPressureFlags, BloodPressureOptionalFields
 from bluetooth_sig.gatt.characteristics.blood_pressure_feature import BloodPressureFeatureCharacteristic
 from bluetooth_sig.gatt.characteristics.blood_pressure_measurement import (
     BloodPressureData,

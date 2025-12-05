@@ -4,9 +4,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import PLXFeatureFlags, PulseOximetryMeasurementCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-from bluetooth_sig.gatt.characteristics.pulse_oximetry_measurement import (
-    PulseOximetryData,
-)
+from bluetooth_sig.gatt.characteristics.pulse_oximetry_measurement import PulseOximetryData
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -81,7 +79,7 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
             error_message="",
         )
 
-        # Use full UUID format to match translator behavior
+        # Use full UUID format to match translator behaviour
         plx_features_uuid = BluetoothUUID("2A60").dashed_form
         ctx = CharacteristicContext(
             other_characteristics={plx_features_uuid: cast(CharacteristicDataProtocol, plx_features)}
@@ -134,7 +132,7 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
                 error_message="",
             )
 
-            # Use full UUID format to match translator behavior
+            # Use full UUID format to match translator behaviour
             plx_features_uuid = BluetoothUUID("2A60").dashed_form
             ctx = CharacteristicContext(
                 other_characteristics={plx_features_uuid: cast(CharacteristicDataProtocol, plx_features)}

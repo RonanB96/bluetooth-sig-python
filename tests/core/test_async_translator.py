@@ -1,5 +1,7 @@
 """Tests for async translator."""
 
+from __future__ import annotations
+
 import asyncio
 
 import pytest

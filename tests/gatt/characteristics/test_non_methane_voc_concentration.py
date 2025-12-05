@@ -1,5 +1,7 @@
 """Test Non-Methane VOC concentration characteristic parsing."""
 
+from __future__ import annotations
+
 import math
 
 import pytest

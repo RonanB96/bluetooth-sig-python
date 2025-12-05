@@ -1,5 +1,7 @@
 """Tests for Reference Time Update Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.reference_time_update import ReferenceTimeUpdateService

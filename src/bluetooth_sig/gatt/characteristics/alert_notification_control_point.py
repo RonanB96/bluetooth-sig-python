@@ -11,12 +11,7 @@ from __future__ import annotations
 
 import msgspec
 
-from ...types import (
-    ALERT_COMMAND_MAX,
-    AlertCategoryID,
-    AlertNotificationCommandID,
-    validate_category_id,
-)
+from ...types import ALERT_COMMAND_MAX, AlertCategoryID, AlertNotificationCommandID, validate_category_id
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser

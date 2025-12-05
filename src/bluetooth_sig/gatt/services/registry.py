@@ -8,11 +8,9 @@ of keeping __init__.py files lightweight.
 
 from __future__ import annotations
 
-import threading
-from functools import lru_cache
-
 from typing_extensions import TypeGuard
 
+from ...registry.base import BaseUUIDClassRegistry
 from ...types.gatt_enums import ServiceName
 from ...types.gatt_services import ServiceDiscoveryData
 from ...types.uuid import BluetoothUUID
@@ -23,58 +21,57 @@ from .base import BaseGattService
 
 __all__ = [
     "ServiceName",
-    "SERVICE_CLASS_MAP",
+    "get_service_class_map",
     "GattServiceRegistry",
 ]
 
 
-class _ServiceClassValidator:  # pylint: disable=too-few-public-methods
-    """Utility class for validating service classes.
+def _is_service_subclass(candidate: object) -> TypeGuard[type[BaseGattService]]:
+    """Type guard to check if candidate is a BaseGattService subclass.
 
-    Note: Single-purpose validator class - pylint disable justified.
+    Args:
+        candidate: Object to check
+
+    Returns:
+        True if candidate is a subclass of BaseGattService
     """
-
-    @staticmethod
-    def is_service_subclass(candidate: object) -> TypeGuard[type[BaseGattService]]:
-        """Return True when candidate is a BaseGattService subclass."""
-        return TypeValidator.is_subclass_of(candidate, BaseGattService)
+    return TypeValidator.is_subclass_of(candidate, BaseGattService)
 
 
-class _ServiceClassDiscovery:
-    """Handles discovery and validation of service classes in the package."""
+def get_service_class_map() -> dict[ServiceName, type[BaseGattService]]:
+    """Get the current service class map.
+
+    Returns:
+        Dictionary mapping ServiceName enum to service classes
+    """
+    return GattServiceRegistry.get_instance()._get_enum_map()  # pylint: disable=protected-access
+
+
+class GattServiceRegistry(BaseUUIDClassRegistry[ServiceName, BaseGattService]):
+    """Registry for all supported GATT services."""
 
     _MODULE_EXCLUSIONS = {"__main__", "__init__", "base", "registry"}
 
-    @classmethod
-    def iter_module_names(cls) -> list[str]:
-        """Return sorted service module names discovered via pkgutil.walk_packages."""
+    def _get_base_class(self) -> type[BaseGattService]:
+        """Return the base class for service validation."""
+        return BaseGattService
+
+    def _discover_sig_classes(self) -> list[type[BaseGattService]]:
+        """Discover all SIG-defined service classes in the package."""
         package_name = __package__ or "bluetooth_sig.gatt.services"
-        return ModuleDiscovery.iter_module_names(package_name, cls._MODULE_EXCLUSIONS)
+        module_names = ModuleDiscovery.iter_module_names(package_name, self._MODULE_EXCLUSIONS)
 
-    @classmethod
-    def discover_classes(cls) -> list[type[BaseGattService]]:
-        """Discover all concrete service classes defined in the package.
-
-        Validates that discovered classes have required methods for proper operation.
-        """
-        module_names = cls.iter_module_names()
         return ModuleDiscovery.discover_classes(
             module_names,
             BaseGattService,
-            _ServiceClassValidator.is_service_subclass,
+            _is_service_subclass,
         )
 
-
-class _ServiceClassMapBuilder:
-    """Builds and caches the service class map using dynamic discovery."""
-
-    @staticmethod
-    def build_enum_map() -> dict[ServiceName, type[BaseGattService]]:
-        """Build the service class mapping using runtime discovery."""
+    def _build_enum_map(self) -> dict[ServiceName, type[BaseGattService]]:
+        """Build the enum → class mapping using runtime discovery."""
         mapping: dict[ServiceName, type[BaseGattService]] = {}
 
-        for service_cls in _ServiceClassDiscovery.discover_classes():
-            # Get UUID from class
+        for service_cls in self._discover_sig_classes():
             try:
                 uuid_obj = service_cls.get_class_uuid()
             except (AttributeError, ValueError, UUIDResolutionError):
@@ -95,43 +92,25 @@ class _ServiceClassMapBuilder:
             existing = mapping.get(enum_member)
             if existing is not None and existing is not service_cls:
                 raise RuntimeError(
-                    f"Multiple service classes resolved for {enum_member.name}:"
-                    f" {existing.__name__} and {service_cls.__name__}"
+                    f"Multiple service classes resolved for {enum_member.name}: "
+                    f"{existing.__name__} and {service_cls.__name__}"
                 )
             mapping[enum_member] = service_cls
 
         return mapping
 
-    @staticmethod
-    @lru_cache(maxsize=1)
-    def get_cached_enum_map() -> dict[ServiceName, type[BaseGattService]]:
-        """Return the cached enum-keyed service class map."""
-        return _ServiceClassMapBuilder.build_enum_map()
+    def _load(self) -> None:
+        """Perform the actual loading of registry data."""
+        _ = self._get_enum_map()
+        _ = self._get_sig_classes_map()
+        self._loaded = True
 
-    @staticmethod
-    def clear_cache() -> None:
-        """Clear the service class map cache."""
-        _ServiceClassMapBuilder.get_cached_enum_map.cache_clear()
-
-
-# Public API functions for backward compatibility
-def get_service_class_map() -> dict[ServiceName, type[BaseGattService]]:
-    """Get the service class map, building it if necessary."""
-    return _ServiceClassMapBuilder.get_cached_enum_map()
-
-
-# Public API - backward compatibility globals
-SERVICE_CLASS_MAP = _ServiceClassMapBuilder.get_cached_enum_map()
-
-
-class GattServiceRegistry:
-    """Registry for all supported GATT services."""
-
-    _lock = threading.RLock()
-    _custom_service_classes: dict[BluetoothUUID, type[BaseGattService]] = {}
+    # Backward compatibility aliases
 
     @classmethod
-    def register_service_class(cls, uuid: str | BluetoothUUID, service_cls: object, override: bool = False) -> None:
+    def register_service_class(
+        cls, uuid: str | BluetoothUUID | int, service_cls: type[BaseGattService], override: bool = False
+    ) -> None:
         """Register a custom service class at runtime.
 
         Args:
@@ -142,55 +121,51 @@ class GattServiceRegistry:
         Raises:
             TypeError: If service_cls does not inherit from BaseGattService
             ValueError: If UUID conflicts with existing registration and override=False
-
         """
-        # Runtime safety check retained in case of dynamic caller misuse despite type hints.
-        if not _ServiceClassValidator.is_service_subclass(service_cls):
-            raise TypeError(f"Class {service_cls!r} must inherit from BaseGattService")
-
-        # Always normalize UUID to BluetoothUUID
-        bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
-
-        with cls._lock:
-            # Check for conflicts
-            if not override:
-                if bt_uuid in cls._custom_service_classes:
-                    raise ValueError(f"UUID {bt_uuid} already registered. Use override=True to replace.")
-
-            cls._custom_service_classes[bt_uuid] = service_cls
+        instance = cls.get_instance()
+        instance.register_class(uuid, service_cls, override)
 
     @classmethod
-    def unregister_service_class(cls, uuid: str | BluetoothUUID) -> None:
+    def unregister_service_class(cls, uuid: str | BluetoothUUID | int) -> None:
         """Unregister a custom service class.
 
         Args:
             uuid: The service UUID to unregister
-
         """
-        bt_uuid = BluetoothUUID(uuid) if not isinstance(uuid, BluetoothUUID) else uuid
-        with cls._lock:
-            cls._custom_service_classes.pop(bt_uuid, None)
+        instance = cls.get_instance()
+        instance.unregister_class(uuid)
 
     @classmethod
     def _get_services(cls) -> list[type[BaseGattService]]:
         """Get the list of service classes."""
-        return list(get_service_class_map().values())
+        instance = cls.get_instance()
+        return list(instance._get_enum_map().values())  # pylint: disable=protected-access
 
     @classmethod
-    def get_service_class(cls, uuid: str | BluetoothUUID) -> type[BaseGattService] | None:
-        """Get the service class for a given UUID."""
-        try:
-            if isinstance(uuid, str):
-                bt_uuid = BluetoothUUID(uuid)
-            else:
-                bt_uuid = uuid
-        except ValueError:
-            return None
-        # Check custom registry first
-        with cls._lock:
-            if custom_cls := cls._custom_service_classes.get(bt_uuid):
-                return custom_cls
+    def get_service_class(cls, uuid: str | BluetoothUUID | int) -> type[BaseGattService] | None:
+        """Get the service class for a given UUID.
 
+        Args:
+            uuid: The service UUID
+
+        Returns:
+            Service class if found, None otherwise
+
+        Raises:
+            ValueError: If uuid format is invalid
+        """
+        # Normalize to BluetoothUUID (let ValueError propagate)
+        if isinstance(uuid, BluetoothUUID):
+            bt_uuid = uuid
+        else:
+            bt_uuid = BluetoothUUID(uuid)
+
+        instance = cls.get_instance()
+        service_cls = instance.get_class_by_uuid(bt_uuid)
+        if service_cls:
+            return service_cls
+
+        # Fallback: check if any service matches this UUID via matches_uuid()
         for service_class in cls._get_services():
             if service_class.matches_uuid(bt_uuid):
                 return service_class
@@ -207,15 +182,19 @@ class GattServiceRegistry:
                     break
             else:
                 return None  # No matching enum found
-        return get_service_class_map().get(name)
+
+        instance = cls.get_instance()
+        return instance.get_class_by_enum(name)
 
     @classmethod
-    def get_service_class_by_uuid(cls, uuid: BluetoothUUID) -> type[BaseGattService] | None:
+    def get_service_class_by_uuid(cls, uuid: str | BluetoothUUID | int) -> type[BaseGattService] | None:
         """Get the service class for a given UUID (alias for get_service_class)."""
         return cls.get_service_class(uuid)
 
     @classmethod
-    def create_service(cls, uuid: BluetoothUUID, characteristics: ServiceDiscoveryData) -> BaseGattService | None:
+    def create_service(
+        cls, uuid: str | BluetoothUUID | int, characteristics: ServiceDiscoveryData
+    ) -> BaseGattService | None:
         """Create a service instance for the given UUID and characteristics.
 
         Args:
@@ -225,6 +204,8 @@ class GattServiceRegistry:
         Returns:
             Service instance if found, None otherwise
 
+        Raises:
+            ValueError: If uuid format is invalid
         """
         service_class = cls.get_service_class(uuid)
         if not service_class:
@@ -242,7 +223,7 @@ class GattServiceRegistry:
             List of all registered service classes
 
         """
-        return cls._get_services().copy()
+        return cls._get_services()
 
     @classmethod
     def supported_services(cls) -> list[str]:
@@ -257,5 +238,6 @@ class GattServiceRegistry:
     @classmethod
     def clear_custom_registrations(cls) -> None:
         """Clear all custom service registrations (for testing)."""
-        with cls._lock:
-            cls._custom_service_classes.clear()
+        instance = cls.get_instance()
+        for uuid in list(instance.list_custom_uuids()):
+            instance.unregister_class(uuid)

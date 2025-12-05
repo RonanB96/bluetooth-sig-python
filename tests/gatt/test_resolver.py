@@ -4,6 +4,8 @@ This module tests the name normalization, variant generation, and registry searc
 strategies that are shared between characteristic and service resolution.
 """
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.resolver import (
@@ -274,7 +276,7 @@ class TestServiceRegistrySearch:
         assert result is not None
         assert hasattr(result, "uuid")
         assert hasattr(result, "name")
-        assert hasattr(result, "description")
+        assert hasattr(result, "id")
 
 
 class TestResolverIntegration:

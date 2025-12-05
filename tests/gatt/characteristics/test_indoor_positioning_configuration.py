@@ -13,7 +13,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestIndoorPositioningConfigurationCharacteristic(CommonCharacteristicTests):
     """Test suite for Indoor Positioning Configuration characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Tests configuration values for indoor positioning systems.
     """
 

@@ -2,15 +2,8 @@ from __future__ import annotations
 
 from typing import cast
 
-from bluetooth_sig.gatt.characteristics import (
-    BaseCharacteristic,
-    BatteryLevelCharacteristic,
-)
-from bluetooth_sig.gatt.services import (
-    BatteryService,
-    CharacteristicStatus,
-    ServiceHealthStatus,
-)
+from bluetooth_sig.gatt.characteristics import BaseCharacteristic, BatteryLevelCharacteristic
+from bluetooth_sig.gatt.services import BatteryService, CharacteristicStatus, ServiceHealthStatus
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -181,5 +174,5 @@ class TestServiceValidationEdgeCasesExtended:
                 # Should have minimum functionality now
                 assert service.has_minimum_functionality() is True
             except Exception:
-                # If creation fails, that's okay - service-specific behavior
+                # If creation fails, that's okay - service-specific behaviour
                 pass

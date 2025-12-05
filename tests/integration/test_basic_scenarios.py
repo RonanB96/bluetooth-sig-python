@@ -1,5 +1,7 @@
 """Minimal tests for data parsing to ensure file parses correctly."""
 
+from __future__ import annotations
+
 from typing import Any
 
 import pytest

@@ -6,7 +6,6 @@ import msgspec
 
 from .base_types import SIGInfo
 from .gatt_enums import ValueType
-from .uuid import BluetoothUUID
 
 
 class ParseFieldError(msgspec.Struct, frozen=True, kw_only=True):
@@ -29,6 +28,14 @@ class ParseFieldError(msgspec.Struct, frozen=True, kw_only=True):
     raw_slice: bytes | None = None
 
 
+class DateData(msgspec.Struct, frozen=True, kw_only=True):
+    """Shared data type for date values with year, month, and day fields."""
+
+    year: int
+    month: int
+    day: int
+
+
 class CharacteristicInfo(SIGInfo):
     """Information about a Bluetooth characteristic from SIG/YAML specifications.
 
@@ -44,33 +51,27 @@ class CharacteristicInfo(SIGInfo):
 class ServiceInfo(SIGInfo):
     """Information about a Bluetooth service."""
 
-    characteristics: list[CharacteristicInfo] = msgspec.field(default_factory=list)
+    characteristics: list[CharacteristicInfo] = msgspec.field(default_factory=list[CharacteristicInfo])
 
 
-class ValidationResult(SIGInfo):
-    """Result of data validation."""
+class ValidationResult(msgspec.Struct, frozen=True, kw_only=True):
+    """Result of characteristic data validation.
 
-    is_valid: bool = True
+    Provides diagnostic information about whether characteristic data
+    matches the expected format per Bluetooth SIG specifications.
+
+    This is a lightweight validation result, NOT SIG registry metadata.
+    For characteristic metadata (uuid, name, description), query the
+    characteristic's info directly.
+
+    Attributes:
+        is_valid: Whether the data format is valid per SIG specs
+        actual_length: Number of bytes in the data
+        expected_length: Expected bytes for fixed-length characteristics, None for variable
+        error_message: Description of validation failure, empty string if valid
+    """
+
+    is_valid: bool
+    actual_length: int
     expected_length: int | None = None
-    actual_length: int | None = None
     error_message: str = ""
-
-
-class CharacteristicRegistration(msgspec.Struct, kw_only=True):
-    """Unified metadata for custom UUID registration."""
-
-    uuid: BluetoothUUID
-    name: str = ""
-    id: str | None = None
-    summary: str = ""
-    unit: str = ""
-    value_type: ValueType = ValueType.STRING
-
-
-class ServiceRegistration(msgspec.Struct, kw_only=True):
-    """Unified metadata for custom UUID registration."""
-
-    uuid: BluetoothUUID
-    name: str = ""
-    id: str | None = None
-    summary: str = ""

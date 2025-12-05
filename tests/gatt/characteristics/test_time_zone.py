@@ -41,7 +41,7 @@ class TestTimeZoneCharacteristic(CommonCharacteristicTests):
     def test_time_zone_parsing(self, characteristic: TimeZoneCharacteristic) -> None:
         """Test Time Zone characteristic parsing."""
         # Test metadata
-        assert characteristic.unit == ""
+        assert characteristic.unit == ""  # Enum, no units
 
         # Test normal time zones
         test_cases = [

@@ -58,7 +58,7 @@ print_warning() {
 # return its exit code without causing the script to exit (wraps set +e/-e).
 run_capture() {
     CAPTURE_OUTPUT=""
-    # Temporarily disable all error exit behaviors to properly capture command output
+    # Temporarily disable all error exit behaviours to properly capture command output
     local old_opts
     old_opts=$(set +o)
     set +euo pipefail
@@ -604,6 +604,35 @@ run_pydocstyle() {
     fi
 }
 
+# Clean linting caches
+clean_caches() {
+    print_header "Cleaning linting caches"
+
+    local cleaned=0
+
+    if [ -d ".ruff_cache" ]; then
+        rm -rf ".ruff_cache"
+        print_success "Removed .ruff_cache"
+        cleaned=1
+    else
+        echo "No .ruff_cache found"
+    fi
+
+    if [ -d ".mypy_cache" ]; then
+        rm -rf ".mypy_cache"
+        print_success "Removed .mypy_cache"
+        cleaned=1
+    else
+        echo "No .mypy_cache found"
+    fi
+
+    if [ $cleaned -eq 1 ]; then
+        print_success "Cache cleaning complete"
+    else
+        print_warning "No caches found to clean"
+    fi
+}
+
 # Run all linting checks
 run_all_checks() {
     print_header "Running all linting checks"
@@ -844,6 +873,10 @@ while [[ $# -gt 0 ]]; do
             run_pydocstyle
             exit $?
             ;;
+        --clean-cache)
+            clean_caches
+            exit $?
+            ;;
         --help|-h)
             echo "Usage: $0 [OPTION]"
             echo ""
@@ -861,16 +894,18 @@ while [[ $# -gt 0 ]]; do
             echo "  --mypy              Run mypy type checking (production: strict, tests: lenient)"
             echo "  --shellcheck        Run shellcheck shell script analysis"
             echo "  --doc               Run pydocstyle docstring analysis (Google style)"
+            echo "  --clean-cache       Remove linting caches (.ruff_cache, .mypy_cache)"
             echo ""
             echo "Examples:"
-            echo "  $0                  # Run all comprehensive checks in parallel (~16s - fastest)"
+            echo "  $0                  # Run all comprehensive checks in parallel"
             echo "  $0 --all            # Same as above (parallel by default)"
-            echo "  $0 --sequential     # Run all comprehensive checks sequentially (~17s - with detailed output)"
+            echo "  $0 --sequential     # Run all comprehensive checks sequentially"
             echo "  $0 --ruff           # Run only ruff"
             echo "  $0 --pylint         # Run only pylint"
             echo "  $0 --mypy           # Run only mypy"
             echo "  $0 --shellcheck     # Run only shellcheck"
-            echo "  $0 --doc     # Run only pydocstyle"
+            echo "  $0 --doc            # Run only pydocstyle"
+            echo "  $0 --clean-cache    # Clean linting caches"
             echo ""
             echo "Note: For formatting, use ./scripts/format.sh"
             echo ""

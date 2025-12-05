@@ -6,39 +6,6 @@ from .base import BaseCharacteristic
 from .templates import Utf8StringTemplate
 
 
-class ManufacturerNameStringCharacteristic(BaseCharacteristic):
-    """Manufacturer Name String characteristic (0x2A29).
-
-    org.bluetooth.characteristic.manufacturer_name_string
-
-    Manufacturer Name String characteristic.
-    """
-
-    _template = Utf8StringTemplate()
-
-
-class ModelNumberStringCharacteristic(BaseCharacteristic):
-    """Model Number String characteristic (0x2A24).
-
-    org.bluetooth.characteristic.model_number_string
-
-    Model Number String characteristic.
-    """
-
-    _template = Utf8StringTemplate()
-
-
-class SerialNumberStringCharacteristic(BaseCharacteristic):
-    """Serial Number String characteristic (0x2A25).
-
-    org.bluetooth.characteristic.serial_number_string
-
-    Serial Number String characteristic.
-    """
-
-    _template = Utf8StringTemplate()
-
-
 class FirmwareRevisionStringCharacteristic(BaseCharacteristic):
     """Firmware Revision String characteristic (0x2A26).
 

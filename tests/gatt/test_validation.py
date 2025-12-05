@@ -1,18 +1,12 @@
 """Tests for the validation module."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.constants import MAX_CONCENTRATION_PPM, MAX_POWER_WATTS
-from bluetooth_sig.gatt.exceptions import (
-    DataValidationError,
-    TypeMismatchError,
-    ValueRangeError,
-)
-from bluetooth_sig.gatt.validation import (
-    CommonValidators,
-    StrictValidator,
-    ValidationRule,
-)
+from bluetooth_sig.gatt.exceptions import DataValidationError, TypeMismatchError, ValueRangeError
+from bluetooth_sig.gatt.validation import CommonValidators, StrictValidator, ValidationRule
 
 
 class TestValidationRule:

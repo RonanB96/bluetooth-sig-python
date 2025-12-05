@@ -39,8 +39,8 @@ class TestAdvertisingParserClassOfDevice:
         assert result.ad_structures.properties.class_of_device_info is not None
 
         cod_info = result.ad_structures.properties.class_of_device_info
-        assert "Computer" in cod_info.major_class
-        assert cod_info.minor_class == "Laptop"
+        assert cod_info.major_class and "Computer" in cod_info.major_class[0].name
+        assert cod_info.minor_class and cod_info.minor_class[0].name == "Laptop"
         assert len(cod_info.service_classes) == 1
         assert any("Networking" in s for s in cod_info.service_classes)
         assert cod_info.raw_value == 0x02010C
@@ -68,8 +68,8 @@ class TestAdvertisingParserClassOfDevice:
         assert result.ad_structures.properties.class_of_device_info is not None
 
         cod_info = result.ad_structures.properties.class_of_device_info
-        assert "Phone" in cod_info.major_class
-        assert cod_info.minor_class == "Smartphone"
+        assert cod_info.major_class and "Phone" in cod_info.major_class[0].name
+        assert cod_info.minor_class and cod_info.minor_class[0].name == "Smartphone"
         assert cod_info.service_classes == []
 
     def test_parse_class_of_device_with_multiple_services(self, parser: AdvertisingParser) -> None:
@@ -87,8 +87,8 @@ class TestAdvertisingParserClassOfDevice:
         assert result.ad_structures.properties.class_of_device_info is not None
 
         cod_info = result.ad_structures.properties.class_of_device_info
-        assert "Computer" in cod_info.major_class
-        assert cod_info.minor_class == "Laptop"
+        assert cod_info.major_class and "Computer" in cod_info.major_class[0].name
+        assert cod_info.minor_class and cod_info.minor_class[0].name == "Laptop"
         assert len(cod_info.service_classes) == 2
         assert any("Networking" in s for s in cod_info.service_classes)
         assert any("Audio" in s for s in cod_info.service_classes)
@@ -124,7 +124,8 @@ class TestAdvertisingParserClassOfDevice:
         assert result.ad_structures.core.local_name == "TestDev"
         assert result.ad_structures.properties.class_of_device == 0x02010C
         assert result.ad_structures.properties.class_of_device_info is not None
-        assert "Computer" in result.ad_structures.properties.class_of_device_info.major_class
+        cod_info = result.ad_structures.properties.class_of_device_info
+        assert cod_info.major_class and "Computer" in cod_info.major_class[0].name
 
     def test_parse_class_of_device_invalid_length(self, parser: AdvertisingParser) -> None:
         """Test parsing CoD with invalid length (should be ignored)."""
@@ -152,9 +153,9 @@ class TestAdvertisingParserClassOfDevice:
 
         assert result.ad_structures.properties.class_of_device_info is not None
         cod_info = result.ad_structures.properties.class_of_device_info
-        assert "Health" in cod_info.major_class
+        assert cod_info.major_class and "Health" in cod_info.major_class[0].name
         assert cod_info.minor_class is not None
-        assert "Pressure" in cod_info.minor_class
+        assert cod_info.minor_class and "Pressure" in cod_info.minor_class[0].name
 
     def test_parse_class_of_device_audio_headset(self, parser: AdvertisingParser) -> None:
         """Test parsing CoD for Audio/Video: Wearable Headset with Audio service.
@@ -172,7 +173,12 @@ class TestAdvertisingParserClassOfDevice:
 
         assert result.ad_structures.properties.class_of_device_info is not None
         cod_info = result.ad_structures.properties.class_of_device_info
-        assert "Audio" in cod_info.major_class or "Video" in cod_info.major_class
+        assert (
+            cod_info.major_class
+            and "Audio" in cod_info.major_class[0].name
+            or cod_info.major_class
+            and "Video" in cod_info.major_class[0].name
+        )
         assert cod_info.minor_class is not None
-        assert "Headset" in cod_info.minor_class
+        assert cod_info.minor_class and "Headset" in cod_info.minor_class[0].name
         assert any("Audio" in s for s in cod_info.service_classes)

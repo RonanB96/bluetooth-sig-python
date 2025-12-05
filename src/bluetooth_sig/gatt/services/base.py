@@ -7,20 +7,15 @@ from typing import Any, TypeVar, cast
 
 import msgspec
 
-from ...types import CharacteristicInfo as BaseCharacteristicInfo
-from ...types import ServiceInfo
-from ...types.gatt_services import (
-    CharacteristicCollection,
-    CharacteristicSpec,
-    ServiceDiscoveryData,
-)
+from ...types import CharacteristicInfo, ServiceInfo
+from ...types.gatt_services import CharacteristicCollection, CharacteristicSpec, ServiceDiscoveryData
 from ...types.uuid import BluetoothUUID
 from ..characteristics import BaseCharacteristic, CharacteristicRegistry
 from ..characteristics.registry import CharacteristicName
 from ..characteristics.unknown import UnknownCharacteristic
 from ..exceptions import UUIDResolutionError
 from ..resolver import ServiceRegistrySearch
-from ..uuid_registry import UuidInfo, uuid_registry
+from ..uuid_registry import uuid_registry
 
 # Type aliases
 GattCharacteristic = BaseCharacteristic
@@ -71,7 +66,10 @@ class SIGServiceResolver:
         """
         # Try configured info first (for custom services)
         if hasattr(service_class, "_info") and service_class._info is not None:  # pylint: disable=protected-access
-            return service_class._info
+            # NOTE: _info is a class attribute used for custom characteristic/service definitions
+            # This is the established pattern in the codebase for providing static metadata
+            # Protected access is necessary to maintain API consistency
+            return service_class._info  # pylint: disable=protected-access
 
         # Try registry resolution
         registry_info = SIGServiceResolver.resolve_from_registry(service_class)
@@ -131,7 +129,7 @@ class ServiceValidationResult(msgspec.Struct, kw_only=True):
         return len(self.errors) > 0 or len(self.missing_required) > 0
 
 
-class ServiceCharacteristicInfo(BaseCharacteristicInfo):
+class ServiceCharacteristicInfo(CharacteristicInfo):
     """Service-specific information about a characteristic with context about its presence.
 
     Provides status, requirement, and class context for a characteristic within a service.
@@ -226,12 +224,6 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         """Get the service name from _info."""
         assert self._info is not None, "Service info should be initialized in __post_init__"
         return self._info.name
-
-    @property
-    def summary(self) -> str:
-        """Get the service summary from _info."""
-        assert self._info is not None, "Service info should be initialized in __post_init__"
-        return self._info.description
 
     @property
     def info(self) -> ServiceInfo:
@@ -396,7 +388,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             if char_instance is None:
                 # Create UnknownCharacteristic for unregistered characteristics
                 char_instance = UnknownCharacteristic(
-                    info=BaseCharacteristicInfo(
+                    info=CharacteristicInfo(
                         uuid=uuid_obj,
                         name=char_info.name or f"Unknown Characteristic ({uuid_obj})",
                         unit=char_info.unit or "",
@@ -640,7 +632,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         return is_required, is_conditional, condition_desc
 
-    def _get_characteristic_status(self, char_info: UuidInfo) -> CharacteristicStatus:
+    def _get_characteristic_status(self, char_info: CharacteristicInfo) -> CharacteristicStatus:
         """Get the status of a characteristic (present, missing, or invalid).
 
         Returns the status of the characteristic for reporting and validation.

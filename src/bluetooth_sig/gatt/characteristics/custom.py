@@ -129,7 +129,7 @@ class CustomBaseCharacteristic(BaseCharacteristic):
 
             if registry_key not in CustomBaseCharacteristic._registry_tracker:
                 # Register this characteristic class with the translator
-                # Use override=True to allow re-registration (idempotent behavior)
+                # Use override=True to allow re-registration (idempotent behaviour)
                 translator.register_custom_characteristic_class(
                     uuid_str,
                     self.__class__,

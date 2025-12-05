@@ -11,10 +11,7 @@ from __future__ import annotations
 
 import msgspec
 
-from ...types import (
-    AlertCategoryID,
-    validate_category_id,
-)
+from ...types import AlertCategoryID, validate_category_id
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser

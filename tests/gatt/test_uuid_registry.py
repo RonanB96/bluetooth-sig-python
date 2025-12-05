@@ -14,9 +14,7 @@ from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharact
 from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
 from bluetooth_sig.gatt.characteristics.temperature import TemperatureCharacteristic
 from bluetooth_sig.gatt.services.battery_service import BatteryService
-from bluetooth_sig.gatt.services.environmental_sensing import (
-    EnvironmentalSensingService,
-)
+from bluetooth_sig.gatt.services.environmental_sensing import EnvironmentalSensingService
 from bluetooth_sig.gatt.uuid_registry import UuidRegistry
 from bluetooth_sig.types.gatt_services import ServiceDiscoveryData
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -183,7 +181,7 @@ def test_full_uuid_lookup(mock_uuid_registry: UuidRegistry) -> None:
 
 
 def test_invalid_uuid_lookup(mock_uuid_registry: UuidRegistry) -> None:
-    """Test lookup behavior with invalid UUIDs."""
+    """Test lookup behaviour with invalid UUIDs."""
     assert mock_uuid_registry.get_service_info("0000") is None, "Should return None for invalid service"
     assert mock_uuid_registry.get_characteristic_info("0000") is None, "Should return None for invalid characteristic"
 

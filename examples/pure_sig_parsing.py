@@ -119,7 +119,6 @@ def demonstrate_uuid_resolution() -> None:
         char_info = translator.get_characteristic_info_by_uuid(uuid)
         if char_info:
             print(f"   ✅ Name: {char_info.name}")
-            print(f"   📝 Description: {char_info.description or 'N/A'}")
             print(f"   🏷️  Type: {char_info.value_type}")
             print(f"   📏 Unit: {char_info.unit if char_info.unit else 'N/A'}")
         else:

@@ -87,7 +87,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
     allow_variable_length: bool = False  # Fixed length
 
     def decode_value(  # pylint: disable=too-many-locals
-        self, data: bytearray, _ctx: CharacteristicContext | None = None
+        self, data: bytearray, ctx: CharacteristicContext | None = None
     ) -> GlucoseFeatureData:
         """Parse glucose feature data according to Bluetooth specification.
 
@@ -104,9 +104,6 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
             ValueError: If data format is invalid
 
         """
-        if len(data) < 2:
-            raise ValueError("Glucose Feature data must be at least 2 bytes")
-
         features_bitmap = DataParser.parse_int16(data, 0, signed=False)
         features = GlucoseFeatures(features_bitmap)
 

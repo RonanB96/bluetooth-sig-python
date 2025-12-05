@@ -11,11 +11,7 @@ from __future__ import annotations
 
 import msgspec
 
-from ...types import (
-    ALERT_TEXT_MAX_LENGTH,
-    AlertCategoryID,
-    validate_category_id,
-)
+from ...types import ALERT_TEXT_MAX_LENGTH, AlertCategoryID, validate_category_id
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser

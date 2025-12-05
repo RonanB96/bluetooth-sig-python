@@ -166,7 +166,7 @@ class TestYAMLCrossReference:
             if humidity_data_type and humidity_data_type == "uint16":
                 assert not humidity_is_signed, "Humidity (uint16) should not be signed"
 
-    def test_yaml_automation_fallback_behavior(self) -> None:
+    def test_yaml_automation_fallback_behaviour(self) -> None:
         """Test that characteristics work correctly when YAML automation is not
         available.
         """

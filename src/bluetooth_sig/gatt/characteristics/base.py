@@ -11,42 +11,23 @@ from typing import Any
 
 import msgspec
 
-from ...registry import units_registry
+from ...registry.uuids.units import units_registry
 from ...types import CharacteristicDataProtocol, CharacteristicInfo
 from ...types import ParseFieldError as FieldError
-from ...types.descriptor_types import DescriptorData
 from ...types.gatt_enums import CharacteristicName, DataType, GattProperty, ValueType
+from ...types.registry.descriptor_types import DescriptorData
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
-from ..descriptor_utils import (
-    enhance_error_message_with_descriptors as _enhance_error_message,
-)
-from ..descriptor_utils import (
-    get_descriptor_from_context as _get_descriptor,
-)
-from ..descriptor_utils import (
-    get_presentation_format_from_context as _get_presentation_format,
-)
-from ..descriptor_utils import (
-    get_user_description_from_context as _get_user_description,
-)
-from ..descriptor_utils import (
-    get_valid_range_from_context as _get_valid_range,
-)
-from ..descriptor_utils import (
-    validate_value_against_descriptor_range as _validate_value_range,
-)
+from ..descriptor_utils import enhance_error_message_with_descriptors as _enhance_error_message
+from ..descriptor_utils import get_descriptor_from_context as _get_descriptor
+from ..descriptor_utils import get_presentation_format_from_context as _get_presentation_format
+from ..descriptor_utils import get_user_description_from_context as _get_user_description
+from ..descriptor_utils import get_valid_range_from_context as _get_valid_range
+from ..descriptor_utils import validate_value_against_descriptor_range as _validate_value_range
 from ..descriptors import BaseDescriptor
 from ..descriptors.cccd import CCCDDescriptor
-from ..descriptors.characteristic_presentation_format import (
-    CharacteristicPresentationFormatData,
-)
-from ..exceptions import (
-    InsufficientDataError,
-    ParseFieldError,
-    UUIDResolutionError,
-    ValueRangeError,
-)
+from ..descriptors.characteristic_presentation_format import CharacteristicPresentationFormatData
+from ..exceptions import InsufficientDataError, ParseFieldError, UUIDResolutionError, ValueRangeError
 from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
 from ..uuid_registry import CharacteristicSpec, uuid_registry
 from .templates import CodingTemplate
@@ -349,6 +330,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         # Instance variables (will be set in __post_init__)
         self._info: CharacteristicInfo
+        self._spec: CharacteristicSpec | None = None
 
         # Runtime properties (from actual device, not YAML)
         self.properties: list[GattProperty] = properties if properties is not None else []
@@ -398,6 +380,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         else:
             # Resolve characteristic information using proper resolver
             self._info = SIGCharacteristicResolver.resolve_for_class(type(self))
+
+        # Resolve GSS spec for description and detailed metadata
+        # NOTE: Custom characteristics will have _spec=None since they're not in GSS files.
+        # The spec and description properties gracefully handle None/empty values.
+        self._spec = self._resolve_yaml_spec()
         # Apply manual overrides to _info (single source of truth)
         if self._manual_unit is not None:
             self._info.unit = self._manual_unit
@@ -493,18 +480,19 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return self._info
 
     @property
+    def spec(self) -> CharacteristicSpec | None:
+        """Get the full GSS specification with description and detailed metadata."""
+        return self._spec
+
+    @property
     def name(self) -> str:
         """Get the characteristic name from _info."""
         return self._info.name
 
     @property
-    def summary(self) -> str:
-        """Get the characteristic summary."""
-        # NOTE: For single source of truth, we should use _info but CharacteristicInfo
-        # doesn't currently include summary field. This is a temporary compromise
-        # until CharacteristicInfo is enhanced with summary field
-        info = uuid_registry.get_characteristic_info(self._info.uuid)
-        return info.summary if info else ""
+    def description(self) -> str:
+        """Get the characteristic description from GSS specification."""
+        return self._spec.description if self._spec and self._spec.description else ""
 
     @property
     def display_name(self) -> str:
@@ -618,7 +606,15 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     @classmethod
     def _resolve_class_uuid(cls) -> BluetoothUUID | None:
         """Resolve the characteristic UUID for this class without creating an instance."""
-        # Try cross-file resolution first
+        # Check for _info attribute first (custom characteristics)
+        if hasattr(cls, "_info"):
+            info: CharacteristicInfo = cls._info  # Custom characteristics may have _info
+            try:
+                return info.uuid
+            except AttributeError:
+                pass
+
+        # Try cross-file resolution for SIG characteristics
         yaml_spec = cls._resolve_yaml_spec_class()
         if yaml_spec:
             return yaml_spec.uuid
@@ -831,6 +827,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         enable_trace = self._is_parse_trace_enabled()
         parse_trace: list[str] = []
         if enable_trace:
+            # TODO Make traces unique and more useful
             parse_trace = ["Starting parse"]
         field_errors: list[FieldError] = []
 
@@ -888,8 +885,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def encode_value(self, data: Any) -> bytearray:  # noqa: ANN401
         """Encode the characteristic's value to raw bytes.
 
-        If _template is set , uses the template's encode_value method.
+        If _template is set, uses the template's encode_value method.
         Otherwise, subclasses must override this method.
+
+        This is a low-level method that performs no validation. For encoding
+        with validation, use encode() instead.
 
         Args:
             data: Dataclass instance or value to encode
@@ -906,10 +906,67 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             return self._template.encode_value(data)
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override encode_value()")
 
+    def build_value(self, data: Any) -> bytearray:  # noqa: ANN401
+        """Build characteristic bytes from value with validation.
+
+        High-level encoding method that validates before encoding, mirroring
+        how parse_value() validates after decode_value().
+
+        Args:
+            data: Value to encode (type depends on characteristic)
+
+        Returns:
+            Validated and encoded bytes for characteristic write
+
+        Raises:
+            ValueError: If data fails validation
+            TypeError: If data type is incorrect
+            NotImplementedError: If characteristic doesn't support encoding
+
+        """
+        enable_trace = self._is_parse_trace_enabled()
+        build_trace: list[str] = []
+        if enable_trace:
+            # TODO Make traces unique and more useful
+            build_trace.append("Starting build")
+
+        try:
+            if enable_trace:
+                build_trace.append("Validating type")
+            self._validate_type(data)
+
+            if enable_trace:
+                build_trace.append("Validating range")
+            # Validate range for numeric types
+            if isinstance(data, (int, float)):
+                self._validate_range(data)
+
+            if enable_trace:
+                build_trace.append("Encoding value")
+            # Encode the validated value
+            encoded = self.encode_value(data)
+
+            if enable_trace:
+                build_trace.append(f"Validating encoded length (got {len(encoded)} bytes)")
+            # Validate encoded length
+            self._validate_length(encoded)
+
+            if enable_trace:
+                build_trace.append("Build completed successfully")
+
+            return encoded
+        except Exception as e:
+            if enable_trace:
+                build_trace.append(f"Build failed: {str(e)}")
+            raise
+
     @property
     def unit(self) -> str:
-        """Get the unit of measurement from _info."""
-        return self._info.unit
+        """Get the unit of measurement from _info.
+
+        Returns empty string for characteristics without units (e.g., bitfields).
+        """
+        return self._info.unit or ""
 
     @property
     def size(self) -> int | None:

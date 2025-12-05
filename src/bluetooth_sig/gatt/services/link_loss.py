@@ -11,7 +11,7 @@ from .base import BaseGattService
 class LinkLossService(BaseGattService):
     """Link Loss Service implementation.
 
-    Defines behavior when a link is lost between two devices.
+    Defines behaviour when a link is lost between two devices.
 
     Contains characteristics related to link loss alerts:
     - Alert Level - Required

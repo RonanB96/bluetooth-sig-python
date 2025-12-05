@@ -7,11 +7,18 @@ from typing import Any, cast
 
 import msgspec
 
-from bluetooth_sig.registry.base import BaseRegistry
+from bluetooth_sig.registry.base import BaseGenericRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 
 
-class CompanyIdentifiersRegistry(BaseRegistry[str]):
+class CompanyIdentifierInfo(msgspec.Struct, frozen=True, kw_only=True):
+    """Information about a Bluetooth SIG company identifier."""
+
+    id: int
+    name: str
+
+
+class CompanyIdentifiersRegistry(BaseGenericRegistry[CompanyIdentifierInfo]):
     """Registry for Bluetooth SIG company identifiers with lazy loading.
 
     This registry resolves manufacturer company IDs to company names from
@@ -24,7 +31,7 @@ class CompanyIdentifiersRegistry(BaseRegistry[str]):
     def __init__(self) -> None:
         """Initialize the company identifiers registry."""
         super().__init__()
-        self._companies: dict[int, str] = {}
+        self._companies: dict[int, CompanyIdentifierInfo] = {}
 
     def _load_company_identifiers(self, yaml_path: Path) -> None:
         """Load company identifiers from YAML file.
@@ -52,7 +59,7 @@ class CompanyIdentifiersRegistry(BaseRegistry[str]):
                 company_id = entry.get("value")
                 company_name = entry.get("name")
                 if company_id is not None and company_name:
-                    self._companies[company_id] = company_name
+                    self._companies[company_id] = CompanyIdentifierInfo(id=company_id, name=company_name)
 
     def _load(self) -> None:
         """Perform the actual loading of company identifiers data."""
@@ -99,7 +106,8 @@ class CompanyIdentifiersRegistry(BaseRegistry[str]):
         """
         self._ensure_loaded()
         with self._lock:
-            return self._companies.get(company_id)
+            info = self._companies.get(company_id)
+            return info.name if info else None
 
 
 # Singleton instance for global use

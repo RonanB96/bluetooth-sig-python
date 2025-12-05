@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests for connection manager implementations.
 
-These tests verify actual behavior of connection managers.
+These tests verify actual behaviour of connection managers.
 No skips allowed - if imports fail, the test fails.
 """
 
@@ -15,10 +15,7 @@ import pytest
 from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
 from examples.connection_managers.bleak_utils import bleak_services_to_batch
 from examples.connection_managers.bluepy import BluePyConnectionManager
-from examples.connection_managers.simpleble import (
-    SimplePyBLEConnectionManager,
-    simpleble_services_to_batch,
-)
+from examples.connection_managers.simpleble import SimplePyBLEConnectionManager, simpleble_services_to_batch
 
 
 class TestBleakRetryConnectionManager:

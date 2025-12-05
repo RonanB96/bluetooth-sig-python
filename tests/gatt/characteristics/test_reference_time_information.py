@@ -15,7 +15,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestReferenceTimeInformationCharacteristic(CommonCharacteristicTests):
     """Test suite for Reference Time Information characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Adds reference time information-specific validation and edge cases.
     """
 

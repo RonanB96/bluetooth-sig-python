@@ -11,7 +11,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestBatteryLevelCharacteristic(CommonCharacteristicTests):
     """Test suite for Battery Level characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Only adds battery-specific edge cases and domain validation.
     """
 

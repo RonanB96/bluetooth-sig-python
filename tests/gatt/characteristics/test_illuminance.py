@@ -33,8 +33,8 @@ class TestIlluminanceCharacteristic(CommonCharacteristicTests):
                 description="100 lux",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0xFF, 0xFF, 0xFF]),  # 16777215 * 0.01 = 167772.15 lux (max)
-                expected_value=167772.15,
+                input_data=bytearray([0xFE, 0xFF, 0xFF]),  # 16777214 * 0.01 = 167772.14 lux (max)
+                expected_value=167772.14,
                 description="Maximum illuminance",
             ),
         ]

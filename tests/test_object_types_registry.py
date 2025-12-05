@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.uuids.object_types import ObjectTypeInfo, ObjectTypesRegistry
+from bluetooth_sig.registry.uuids.object_types import ObjectTypesRegistry
+from bluetooth_sig.types.registry.object_types import ObjectTypeInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -123,7 +124,7 @@ class TestObjectTypesRegistry:
 
     def test_uuid_formats(self, object_types_registry: ObjectTypesRegistry) -> None:
         """Test various UUID input formats."""
-        formats: list[str | int] = ["2ACA", "0x2ACA", "0X2ACA", 0x2ACA]
+        formats: list[str | BluetoothUUID] = ["2ACA", "0x2ACA", "0X2ACA", BluetoothUUID("2ACA")]
         for fmt in formats:
             info = object_types_registry.get_object_type_info(fmt)
             if object_types_registry.is_object_type_uuid("2ACA"):

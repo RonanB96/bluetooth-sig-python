@@ -1,5 +1,7 @@
 """Tests for Bond Management Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.bond_management import BondManagementService

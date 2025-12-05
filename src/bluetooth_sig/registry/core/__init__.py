@@ -7,6 +7,8 @@ This module contains registries for:
 - And other core specification registries (planned)
 """
 
+from __future__ import annotations
+
 from bluetooth_sig.registry.core.ad_types import ad_types_registry
 
 __all__ = [

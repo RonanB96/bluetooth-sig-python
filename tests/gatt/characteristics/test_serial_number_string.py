@@ -39,3 +39,18 @@ class TestSerialNumberStringCharacteristic(CommonCharacteristicTests):
             ),
             CharacteristicTestData(input_data=bytearray(b""), expected_value="", description="Empty serial number"),
         ]
+
+    @pytest.fixture
+    def invalid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+        return [
+            CharacteristicTestData(
+                input_data=bytearray(b"\xff\xfe\xfd"),  # Invalid UTF-8 sequence
+                expected_value=None,
+                description="Invalid UTF-8 bytes",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\xc0\x80"),  # Overlong encoding
+                expected_value=None,
+                description="Overlong UTF-8 encoding",
+            ),
+        ]

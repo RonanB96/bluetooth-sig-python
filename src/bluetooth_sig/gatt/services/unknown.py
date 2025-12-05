@@ -29,6 +29,5 @@ class UnknownService(BaseGattService):
         info = ServiceInfo(
             uuid=uuid,
             name=name or f"Unknown Service ({uuid})",
-            description="",
         )
         super().__init__(info=info)

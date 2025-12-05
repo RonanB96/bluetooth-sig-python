@@ -309,7 +309,7 @@ class TestRegistryConsistency:
 
 
 class TestNameResolutionFallback:
-    """Test name resolution fallback behavior when explicit names are not
+    """Test name resolution fallback behaviour when explicit names are not
     set.
     """
 
@@ -461,7 +461,7 @@ class TestNameResolutionFallback:
         assert name == "Model Number String", f"Expected 'Model Number String', got '{name}'"
 
     def test_fallback_failure_handling(self) -> None:
-        """Test behavior when neither explicit name nor class name resolution
+        """Test behaviour when neither explicit name nor class name resolution
         works.
         """
         from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
@@ -496,12 +496,8 @@ class TestNameResolutionFallback:
         strategy.
         """
         from bluetooth_sig.gatt.services.battery_service import BatteryService
-        from bluetooth_sig.gatt.services.device_information import (
-            DeviceInformationService,
-        )
-        from bluetooth_sig.gatt.services.environmental_sensing import (
-            EnvironmentalSensingService,
-        )
+        from bluetooth_sig.gatt.services.device_information import DeviceInformationService
+        from bluetooth_sig.gatt.services.environmental_sensing import EnvironmentalSensingService
         from bluetooth_sig.gatt.services.generic_access import GenericAccessService
 
         # Services without explicit names (should use class name resolution)
@@ -545,9 +541,7 @@ class TestNameResolutionFallback:
         """Test that current characteristics use the expected name resolution
         strategy.
         """
-        from bluetooth_sig.gatt.characteristics.battery_level import (
-            BatteryLevelCharacteristic,
-        )
+        from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
         from bluetooth_sig.gatt.characteristics.uv_index import UVIndexCharacteristic
 
         # Characteristics with explicit names (should use explicit name resolution)

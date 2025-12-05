@@ -2,105 +2,30 @@
 
 from __future__ import annotations
 
+from bluetooth_sig.types.base_types import SIGInfo
+
+__all__ = [
+    "UuidRegistry",
+    "uuid_registry",
+    "CharacteristicSpec",
+    "FieldInfo",
+    "UnitMetadata",
+]
+
 import logging
 import threading
-from enum import Enum
 from pathlib import Path
 from typing import Any, cast
 
 import msgspec
 
-from bluetooth_sig.types.gatt_enums import DataType
+from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
+from bluetooth_sig.types.gatt_enums import DataType, ValueType
+from bluetooth_sig.types.registry.descriptor_types import DescriptorInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 from ..registry.utils import find_bluetooth_sig_path, load_yaml_uuids, normalize_uuid_string
-
-
-class FieldInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Field-related metadata from YAML."""
-
-    data_type: str | None = None
-    field_size: str | None = None
-
-
-class UnitInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Unit-related metadata from YAML."""
-
-    unit_id: str | None = None
-    unit_symbol: str | None = None
-    base_unit: str | None = None
-    resolution_text: str | None = None
-
-
-class CharacteristicSpec(msgspec.Struct, kw_only=True):
-    """Characteristic specification from cross-file YAML references."""
-
-    uuid: BluetoothUUID
-    name: str
-    field_info: FieldInfo = msgspec.field(default_factory=FieldInfo)
-    unit_info: UnitInfo = msgspec.field(default_factory=UnitInfo)
-    description: str | None = None
-
-    # Convenience properties for backward compatibility
-    @property
-    def data_type(self) -> str | None:
-        """Get data type from field info."""
-        return self.field_info.data_type if self.field_info else None
-
-    @property
-    def field_size(self) -> str | None:
-        """Get field size from field info."""
-        return self.field_info.field_size if self.field_info else None
-
-    @property
-    def unit_id(self) -> str | None:
-        """Get unit ID from unit info."""
-        return self.unit_info.unit_id if self.unit_info else None
-
-    @property
-    def unit_symbol(self) -> str | None:
-        """Get unit symbol from unit info."""
-        return self.unit_info.unit_symbol if self.unit_info else None
-
-    @property
-    def base_unit(self) -> str | None:
-        """Get base unit from unit info."""
-        return self.unit_info.base_unit if self.unit_info else None
-
-    @property
-    def resolution_text(self) -> str | None:
-        """Get resolution text from unit info."""
-        return self.unit_info.resolution_text if self.unit_info else None
-
-
-class UuidOrigin(Enum):
-    """Origin of UUID information."""
-
-    BLUETOOTH_SIG = "bluetooth_sig"
-    RUNTIME = "runtime"
-
-
-class UuidInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Information about a UUID."""
-
-    uuid: BluetoothUUID
-    name: str
-    id: str
-    summary: str = ""
-    unit: str | None = None
-    value_type: str | None = None
-    origin: UuidOrigin = UuidOrigin.BLUETOOTH_SIG
-
-
-class CustomUuidEntry(msgspec.Struct, frozen=True, kw_only=True):
-    """Entry for custom UUID registration."""
-
-    uuid: BluetoothUUID
-    name: str
-    id: str | None = None
-    summary: str | None = None
-    unit: str | None = None
-    value_type: str | None = None
+from ..types.registry import CharacteristicSpec, FieldInfo, UnitMetadata
 
 
 class UuidRegistry:  # pylint: disable=too-many-instance-attributes
@@ -116,10 +41,10 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         """Initialize the UUID registry."""
         self._lock = threading.RLock()
 
-        # Canonical storage: normalized_uuid -> UuidInfo (single source of truth)
-        self._services: dict[str, UuidInfo] = {}
-        self._characteristics: dict[str, UuidInfo] = {}
-        self._descriptors: dict[str, UuidInfo] = {}
+        # Canonical storage: normalized_uuid -> domain types (single source of truth)
+        self._services: dict[str, ServiceInfo] = {}
+        self._characteristics: dict[str, CharacteristicInfo] = {}
+        self._descriptors: dict[str, DescriptorInfo] = {}
 
         # Lightweight alias indices: alias -> normalized_uuid
         self._service_aliases: dict[str, str] = {}
@@ -127,9 +52,12 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         self._descriptor_aliases: dict[str, str] = {}
 
         # Preserve SIG entries overridden at runtime so we can restore them
-        self._service_overrides: dict[str, UuidInfo] = {}
-        self._characteristic_overrides: dict[str, UuidInfo] = {}
-        self._descriptor_overrides: dict[str, UuidInfo] = {}
+        self._service_overrides: dict[str, ServiceInfo] = {}
+        self._characteristic_overrides: dict[str, CharacteristicInfo] = {}
+        self._descriptor_overrides: dict[str, DescriptorInfo] = {}
+
+        # Track runtime-registered UUIDs (replaces origin field checks)
+        self._runtime_uuids: set[str] = set()
 
         # Unit mappings
         self._unit_mappings: dict[str, str] = {}
@@ -143,7 +71,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             # If YAML loading fails, continue with empty registry
             pass
 
-    def _store_service(self, info: UuidInfo) -> None:
+    def _store_service(self, info: ServiceInfo) -> None:
         """Store service info with canonical storage + aliases."""
         canonical_key = info.uuid.normalized
 
@@ -155,7 +83,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         for alias in aliases:
             self._service_aliases[alias.lower()] = canonical_key
 
-    def _store_characteristic(self, info: UuidInfo) -> None:
+    def _store_characteristic(self, info: CharacteristicInfo) -> None:
         """Store characteristic info with canonical storage + aliases."""
         canonical_key = info.uuid.normalized
 
@@ -167,7 +95,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         for alias in aliases:
             self._characteristic_aliases[alias.lower()] = canonical_key
 
-    def _store_descriptor(self, info: UuidInfo) -> None:
+    def _store_descriptor(self, info: DescriptorInfo) -> None:
         """Store descriptor info with canonical storage + aliases."""
         canonical_key = info.uuid.normalized
 
@@ -179,16 +107,16 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         for alias in aliases:
             self._descriptor_aliases[alias.lower()] = canonical_key
 
-    def _generate_aliases(self, info: UuidInfo) -> set[str]:
-        """Generate name/ID-based alias keys for a UuidInfo (UUID variations handled by BluetoothUUID)."""
+    def _generate_aliases(self, info: SIGInfo) -> set[str]:
+        """Generate name/ID-based alias keys for domain info types (UUID variations handled by BluetoothUUID)."""
         aliases: set[str] = {
-            # Name variations
-            info.name.lower(),  # Lowercase name
-            info.id,  # Full ID
+            info.name.lower(),
         }
 
-        # Add service/characteristic-specific name variations
-        if "service" in info.id:
+        if info.id:
+            aliases.add(info.id)
+
+        if info.id and "service" in info.id:
             service_name = info.id.replace("org.bluetooth.service.", "")
             if service_name.endswith("_service"):
                 service_name = service_name[:-8]  # Remove _service
@@ -197,7 +125,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             # Also add "Service" suffix if not present
             if not service_name.endswith(" Service"):
                 aliases.add(service_name + " Service")
-        elif "characteristic" in info.id:
+        elif info.id and "characteristic" in info.id:
             char_name = info.id.replace("org.bluetooth.characteristic.", "")
             char_name = char_name.replace("_", " ").title()
             aliases.add(char_name)
@@ -225,8 +153,10 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 uuid = normalize_uuid_string(uuid_info["uuid"])
 
                 bt_uuid = BluetoothUUID(uuid)
-                info = UuidInfo(
-                    uuid=bt_uuid, name=uuid_info["name"], id=uuid_info["id"], origin=UuidOrigin.BLUETOOTH_SIG
+                info = ServiceInfo(
+                    uuid=bt_uuid,
+                    name=uuid_info["name"],
+                    id=uuid_info.get("id", ""),
                 )
                 self._store_service(info)
 
@@ -237,10 +167,14 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 uuid = normalize_uuid_string(uuid_info["uuid"])
 
                 bt_uuid = BluetoothUUID(uuid)
-                info = UuidInfo(
-                    uuid=bt_uuid, name=uuid_info["name"], id=uuid_info["id"], origin=UuidOrigin.BLUETOOTH_SIG
+                char_info = CharacteristicInfo(
+                    uuid=bt_uuid,
+                    name=uuid_info["name"],
+                    id=uuid_info.get("id", ""),
+                    unit="",  # Will be set from unit mappings if available
+                    value_type=ValueType.UNKNOWN,
                 )
-                self._store_characteristic(info)
+                self._store_characteristic(char_info)
 
         # Load descriptor UUIDs
         descriptor_yaml = base_path / "descriptors.yaml"
@@ -249,10 +183,12 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 uuid = normalize_uuid_string(uuid_info["uuid"])
 
                 bt_uuid = BluetoothUUID(uuid)
-                info = UuidInfo(
-                    uuid=bt_uuid, name=uuid_info["name"], id=uuid_info["id"], origin=UuidOrigin.BLUETOOTH_SIG
+                desc_info = DescriptorInfo(
+                    uuid=bt_uuid,
+                    name=uuid_info["name"],
+                    id=uuid_info.get("id", ""),
                 )
-                self._store_descriptor(info)
+                self._store_descriptor(desc_info)
 
         # Load unit mappings and GSS specifications
         self._load_unit_mappings(base_path)
@@ -444,14 +380,22 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
             # Get existing info and create updated version
             existing_info = self._characteristics[canonical_uuid]
-            updated_info = UuidInfo(
+
+            # Convert value_type string to ValueType enum if provided
+            new_value_type = existing_info.value_type
+            if value_type:
+                try:
+                    new_value_type = ValueType(value_type)
+                except (ValueError, KeyError):
+                    new_value_type = existing_info.value_type
+
+            # Create updated CharacteristicInfo (immutable, so create new instance)
+            updated_info = CharacteristicInfo(
                 uuid=existing_info.uuid,
                 name=existing_info.name,
                 id=existing_info.id,
-                summary=existing_info.summary,
                 unit=unit or existing_info.unit,
-                value_type=value_type or existing_info.value_type,
-                origin=existing_info.origin,
+                value_type=new_value_type,
             )
 
             # Update canonical store (aliases remain the same since UUID/name/id unchanged)
@@ -485,18 +429,61 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             if not isinstance(description_value, str):
                 continue
 
-            if "Base Unit:" in description_value and not unit:
-                unit_line = None
-                for line in description_value.split("\n"):
-                    if "Base Unit:" in line:
-                        unit_line = line.strip()
-                        break
-
-                if unit_line and "org.bluetooth.unit." in unit_line:
-                    unit_spec = unit_line.split("org.bluetooth.unit.")[1].strip()
-                    unit = self._convert_bluetooth_unit_to_readable(unit_spec)
+            # Extract unit from either "Base Unit:" or "Unit:" format
+            if not unit and ("Base Unit:" in description_value or "Unit:" in description_value):
+                unit = self._extract_unit_from_description(description_value)
 
         return unit, value_type
+
+    def _extract_unit_from_description(self, description: str) -> str | None:
+        """Extract unit symbol from GSS field description.
+
+        Handles both "Base Unit:" (unit on next line) and "Unit:" (inline) formats.
+        Strips all spaces from unit IDs to handle YAML formatting issues.
+
+        Args:
+            description: Field description text from GSS YAML
+
+        Returns:
+            Human-readable unit symbol, or None if no unit found
+        """
+        unit_id, _ = self._extract_unit_id_and_line(description)
+        if unit_id:
+            return self._convert_bluetooth_unit_to_readable(unit_id)
+        return None
+
+    def _extract_unit_id_and_line(self, description: str) -> tuple[str | None, str | None]:
+        """Extract raw unit ID and line from GSS field description.
+
+        Handles both "Base Unit:" (unit on next line) and "Unit:" (inline) formats.
+        Strips all spaces from unit IDs to handle YAML formatting issues.
+
+        Args:
+            description: Field description text from GSS YAML
+
+        Returns:
+            Tuple of (unit_id without org.bluetooth.unit prefix, full unit line with spaces removed)
+            Returns (None, None) if no unit found
+        """
+        unit_line = None
+
+        if "Base Unit:" in description:
+            # Format: "Base Unit:\norg.bluetooth.unit.xxx" or "Base Unit: org.bluetooth.unit.xxx"
+            parts = description.split("Base Unit:")[1].split("\n")
+            unit_line = parts[0].strip()
+            if not unit_line and len(parts) > 1:  # Unit is on next line
+                unit_line = parts[1].strip()
+        elif "Unit:" in description:
+            # Format: "Unit: org.bluetooth.unit.xxx" (inline)
+            unit_line = description.split("Unit:")[1].split("\n")[0].strip()
+
+        if unit_line and "org.bluetooth.unit." in unit_line:
+            # Remove all spaces (handles YAML formatting issues like "org.bluetooth.unit. electrical_...")
+            cleaned_line = unit_line.replace(" ", "")
+            unit_spec = cleaned_line.split("org.bluetooth.unit.")[1].strip()
+            return unit_spec, cleaned_line
+
+        return None, None
 
     def _convert_yaml_type_to_python_type(self, yaml_type: str) -> str:
         """Convert YAML type to Python type string."""
@@ -507,75 +494,104 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         unit_spec = unit_spec.rstrip(".").lower()
         return self._unit_mappings.get(unit_spec, unit_spec)
 
-    def register_characteristic(
+    def register_characteristic(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
-        entry: CustomUuidEntry,
+        uuid: BluetoothUUID,
+        name: str,
+        identifier: str | None = None,
+        unit: str | None = None,
+        value_type: ValueType | None = None,
         override: bool = False,
     ) -> None:
-        """Register a custom characteristic at runtime."""
+        """Register a custom characteristic at runtime.
+
+        Args:
+            uuid: The Bluetooth UUID for the characteristic
+            name: Human-readable name
+            identifier: Optional identifier (auto-generated if not provided)
+            unit: Optional unit of measurement
+            value_type: Optional value type
+            override: If True, allow overriding existing entries
+        """
         with self._lock:
-            canonical_key = entry.uuid.normalized
+            canonical_key = uuid.normalized
 
             # Check for conflicts with existing entries
             if canonical_key in self._characteristics:
-                existing = self._characteristics[canonical_key]
-                if existing.origin == UuidOrigin.BLUETOOTH_SIG:
+                # Check if it's a SIG characteristic (not in runtime set)
+                if canonical_key not in self._runtime_uuids:
                     if not override:
                         raise ValueError(
-                            f"UUID {entry.uuid} conflicts with existing SIG "
+                            f"UUID {uuid} conflicts with existing SIG "
                             "characteristic entry. Use override=True to replace."
                         )
                     # Preserve original SIG entry for restoration
-                    self._characteristic_overrides.setdefault(canonical_key, existing)
-                elif existing.origin == UuidOrigin.RUNTIME and not override:
+                    self._characteristic_overrides.setdefault(canonical_key, self._characteristics[canonical_key])
+                elif not override:
+                    # Runtime entry already exists
                     raise ValueError(
-                        f"UUID {entry.uuid} already registered as runtime characteristic. Use override=True to replace."
+                        f"UUID {uuid} already registered as runtime characteristic. Use override=True to replace."
                     )
 
-            info = UuidInfo(
-                uuid=entry.uuid,
-                name=entry.name,
-                id=entry.id or f"runtime.characteristic.{entry.name.lower().replace(' ', '_')}",
-                summary=entry.summary or "",
-                unit=entry.unit,
-                value_type=entry.value_type,
-                origin=UuidOrigin.RUNTIME,
+            info = CharacteristicInfo(
+                uuid=uuid,
+                name=name,
+                id=identifier or f"runtime.characteristic.{name.lower().replace(' ', '_')}",
+                unit=unit or "",
+                value_type=value_type or ValueType.UNKNOWN,
             )
+
+            # Track as runtime-registered UUID
+            self._runtime_uuids.add(canonical_key)
 
             self._store_characteristic(info)
 
-    def register_service(self, entry: CustomUuidEntry, override: bool = False) -> None:
-        """Register a custom service at runtime."""
+    def register_service(
+        self,
+        uuid: BluetoothUUID,
+        name: str,
+        identifier: str | None = None,
+        override: bool = False,
+    ) -> None:
+        """Register a custom service at runtime.
+
+        Args:
+            uuid: The Bluetooth UUID for the service
+            name: Human-readable name
+            identifier: Optional identifier (auto-generated if not provided)
+            override: If True, allow overriding existing entries
+        """
         with self._lock:
-            canonical_key = entry.uuid.normalized
+            canonical_key = uuid.normalized
 
             # Check for conflicts with existing entries
             if canonical_key in self._services:
-                existing = self._services[canonical_key]
-                if existing.origin == UuidOrigin.BLUETOOTH_SIG:
+                # Check if it's a SIG service (not in runtime set)
+                if canonical_key not in self._runtime_uuids:
                     if not override:
                         raise ValueError(
-                            f"UUID {entry.uuid} conflicts with existing SIG service entry. "
-                            "Use override=True to replace."
+                            f"UUID {uuid} conflicts with existing SIG service entry. Use override=True to replace."
                         )
                     # Preserve original SIG entry for restoration
-                    self._service_overrides.setdefault(canonical_key, existing)
-                elif existing.origin == UuidOrigin.RUNTIME and not override:
+                    self._service_overrides.setdefault(canonical_key, self._services[canonical_key])
+                elif not override:
+                    # Runtime entry already exists
                     raise ValueError(
-                        f"UUID {entry.uuid} already registered as runtime service. Use override=True to replace."
+                        f"UUID {uuid} already registered as runtime service. Use override=True to replace."
                     )
 
-            info = UuidInfo(
-                uuid=entry.uuid,
-                name=entry.name,
-                id=entry.id or f"runtime.service.{entry.name.lower().replace(' ', '_')}",
-                summary=entry.summary or "",
-                origin=UuidOrigin.RUNTIME,
+            info = ServiceInfo(
+                uuid=uuid,
+                name=name,
+                id=identifier or f"runtime.service.{name.lower().replace(' ', '_')}",
             )
+
+            # Track as runtime-registered UUID
+            self._runtime_uuids.add(canonical_key)
 
             self._store_service(info)
 
-    def get_service_info(self, key: str | BluetoothUUID) -> UuidInfo | None:
+    def get_service_info(self, key: str | BluetoothUUID) -> ServiceInfo | None:
         """Get information about a service by UUID, name, or ID."""
         with self._lock:
             # Convert BluetoothUUID to canonical key
@@ -603,7 +619,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
             return None
 
-    def get_characteristic_info(self, identifier: str | BluetoothUUID) -> UuidInfo | None:
+    def get_characteristic_info(self, identifier: str | BluetoothUUID) -> CharacteristicInfo | None:
         """Get information about a characteristic by UUID, name, or ID."""
         with self._lock:
             # Convert BluetoothUUID to canonical key
@@ -631,7 +647,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
             return None
 
-    def get_descriptor_info(self, identifier: str | BluetoothUUID) -> UuidInfo | None:
+    def get_descriptor_info(self, identifier: str | BluetoothUUID) -> DescriptorInfo | None:
         """Get information about a descriptor by UUID, name, or ID."""
         with self._lock:
             # Convert BluetoothUUID to canonical key
@@ -711,21 +727,18 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                     field_size = first_field.get("size")
                     field_description = first_field.get("description", "")
 
-                    # Extract base unit from description
-                    if "Base Unit:" in field_description:
-                        base_unit_line = field_description.split("Base Unit:")[1].split("\n")[0].strip()
-                        base_unit = base_unit_line
-                        unit_id = base_unit_line
-
-                        # Cross-reference unit_id with units.yaml to get symbol
-                        if hasattr(self, "_unit_mappings"):
-                            unit_symbol = getattr(self, "_unit_mappings", {}).get(unit_id, "")
+                    # Extract unit from description using helper method
+                    if "Base Unit:" in field_description or "Unit:" in field_description:
+                        unit_spec, base_unit = self._extract_unit_id_and_line(field_description)
+                        if unit_spec:
+                            unit_symbol = self._convert_bluetooth_unit_to_readable(unit_spec)
+                            unit_id = base_unit
 
                     # Extract resolution information
                     if "resolution of" in field_description.lower():
                         resolution_text = field_description
 
-            # 4. Use existing unit/value_type from UuidInfo if GSS didn't provide them
+            # 4. Use existing unit/value_type from CharacteristicInfo if GSS didn't provide them
             if not unit_symbol and char_info.unit:
                 unit_symbol = char_info.unit
 
@@ -733,7 +746,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 uuid=char_info.uuid,
                 name=char_info.name,
                 field_info=FieldInfo(data_type=data_type, field_size=field_size),
-                unit_info=UnitInfo(
+                unit_info=UnitMetadata(
                     unit_id=unit_id,
                     unit_symbol=unit_symbol,
                     base_unit=base_unit,
@@ -771,27 +784,24 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
     def clear_custom_registrations(self) -> None:
         """Clear all custom registrations (for testing)."""
         with self._lock:
-            # Remove runtime entries from canonical stores
-            runtime_service_keys = [k for k, v in self._services.items() if v.origin == UuidOrigin.RUNTIME]
-            runtime_char_keys = [k for k, v in self._characteristics.items() if v.origin == UuidOrigin.RUNTIME]
-            runtime_desc_keys = [k for k, v in self._descriptors.items() if v.origin == UuidOrigin.RUNTIME]
+            # Use runtime_uuids set to identify what to remove
+            runtime_keys = list(self._runtime_uuids)
 
-            for key in runtime_service_keys:
-                del self._services[key]
-            for key in runtime_char_keys:
-                del self._characteristics[key]
-            for key in runtime_desc_keys:
-                del self._descriptors[key]
+            # Remove runtime entries from canonical stores
+            for key in runtime_keys:
+                self._services.pop(key, None)
+                self._characteristics.pop(key, None)
+                self._descriptors.pop(key, None)
 
             # Remove corresponding aliases (alias -> canonical_key where canonical_key is runtime)
             runtime_service_aliases = [
-                alias for alias, canonical in self._service_aliases.items() if canonical in runtime_service_keys
+                alias for alias, canonical in self._service_aliases.items() if canonical in runtime_keys
             ]
             runtime_char_aliases = [
-                alias for alias, canonical in self._characteristic_aliases.items() if canonical in runtime_char_keys
+                alias for alias, canonical in self._characteristic_aliases.items() if canonical in runtime_keys
             ]
             runtime_desc_aliases = [
-                alias for alias, canonical in self._descriptor_aliases.items() if canonical in runtime_desc_keys
+                alias for alias, canonical in self._descriptor_aliases.items() if canonical in runtime_keys
             ]
 
             for alias in runtime_service_aliases:
@@ -802,18 +812,19 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 del self._descriptor_aliases[alias]
 
             # Restore any preserved SIG entries that were overridden
-            for key in runtime_service_keys:
+            for key in runtime_keys:
                 original = self._service_overrides.pop(key, None)
                 if original is not None:
                     self._store_service(original)
-            for key in runtime_char_keys:
                 original = self._characteristic_overrides.pop(key, None)
                 if original is not None:
                     self._store_characteristic(original)
-            for key in runtime_desc_keys:
                 original = self._descriptor_overrides.pop(key, None)
                 if original is not None:
                     self._store_descriptor(original)
+
+            # Clear the runtime tracking set
+            self._runtime_uuids.clear()
 
 
 # Global instance

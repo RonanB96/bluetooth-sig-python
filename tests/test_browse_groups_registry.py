@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.uuids.browse_groups import BrowseGroupInfo, BrowseGroupsRegistry
+from bluetooth_sig.registry.uuids.browse_groups import BrowseGroupsRegistry
+from bluetooth_sig.types.registry.browse_group_identifiers import BrowseGroupInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -124,7 +125,7 @@ class TestBrowseGroupsRegistry:
 
     def test_uuid_formats(self, browse_groups_registry: BrowseGroupsRegistry) -> None:
         """Test various UUID input formats."""
-        formats: list[str | int] = ["1002", "0x1002", "0X1002", 0x1002]
+        formats: list[str | BluetoothUUID] = ["1002", "0x1002", "0X1002", BluetoothUUID("1002")]
         for fmt in formats:
             info = browse_groups_registry.get_browse_group_info(fmt)
             if browse_groups_registry.is_browse_group_uuid("1002"):

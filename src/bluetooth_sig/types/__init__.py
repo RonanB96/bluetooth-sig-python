@@ -36,22 +36,15 @@ from .alert import (
     validate_category_id,
 )
 from .appearance import AppearanceData
-from .appearance_info import AppearanceInfo
 from .base_types import SIGInfo
 from .battery import BatteryChargeLevel, BatteryChargeState, BatteryChargingType, BatteryFaultReason
-from .class_of_device import ClassOfDeviceInfo
 from .context import CharacteristicContext, DeviceInfo
-from .data_types import (
-    CharacteristicInfo,
-    CharacteristicRegistration,
-    ParseFieldError,
-    ServiceInfo,
-    ServiceRegistration,
-    ValidationResult,
-)
-from .descriptor_types import DescriptorData, DescriptorInfo
+from .data_types import CharacteristicInfo, DateData, ParseFieldError, ServiceInfo, ValidationResult
 from .location import PositionStatus
 from .protocols import CharacteristicDataProtocol
+from .registry.appearance_info import AppearanceInfo
+from .registry.class_of_device import ClassOfDeviceInfo
+from .registry.descriptor_types import DescriptorData, DescriptorInfo
 from .units import (
     AngleUnit,
     ConcentrationUnit,
@@ -102,13 +95,13 @@ __all__ = [
     "CharacteristicContext",
     "CharacteristicDataProtocol",
     "CharacteristicInfo",
-    "CharacteristicRegistration",
     "ClassOfDeviceInfo",
     "ConcentrationUnit",
     "ConnectionData",
     "CoreAdvertisingData",
     "DescriptorData",
     "DescriptorInfo",
+    "DateData",
     "DeviceInfo",
     "DeviceProperties",
     "ElectricalUnit",
@@ -130,7 +123,6 @@ __all__ = [
     "PressureUnit",
     "SecurityData",
     "ServiceInfo",
-    "ServiceRegistration",
     "SIGInfo",
     "SoundUnit",
     "TemperatureUnit",

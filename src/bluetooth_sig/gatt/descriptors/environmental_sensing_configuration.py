@@ -36,7 +36,7 @@ class EnvironmentalSensingConfigurationDescriptor(BaseDescriptor):
     """Environmental Sensing Configuration Descriptor (0x290B).
 
     Configures environmental sensing measurement parameters.
-    Contains various configuration flags for sensor behavior.
+    Contains various configuration flags for sensor behaviour.
     """
 
     def _has_structured_data(self) -> bool:

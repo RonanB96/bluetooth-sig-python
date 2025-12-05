@@ -6,8 +6,8 @@ from collections.abc import Mapping
 
 import msgspec
 
-from .descriptor_types import DescriptorData
 from .protocols import CharacteristicDataProtocol
+from .registry.descriptor_types import DescriptorData
 
 
 class DeviceInfo(msgspec.Struct, kw_only=True):

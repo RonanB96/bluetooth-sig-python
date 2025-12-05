@@ -8,15 +8,16 @@ characteristics.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 
 import msgspec
 
-from bluetooth_sig.registry.base import BaseRegistry
+from bluetooth_sig.registry.base import BaseGenericRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
-from bluetooth_sig.types.appearance_info import AppearanceInfo
+from bluetooth_sig.types.registry.appearance_info import AppearanceInfo, AppearanceSubcategoryInfo
 
 
-class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
+class AppearanceValuesRegistry(BaseGenericRegistry[AppearanceInfo]):
     """Registry for Bluetooth appearance values with lazy loading.
 
     This registry loads appearance values from the Bluetooth SIG assigned_numbers
@@ -84,8 +85,8 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
             if not isinstance(item, dict):
                 continue
 
-            category_val = item.get("category")
-            category_name = item.get("name")
+            category_val: int | None = item.get("category")
+            category_name: str | None = item.get("name")
 
             if category_val is None or not category_name:
                 continue
@@ -96,9 +97,8 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
             appearance_code = category_val << 6
             self._appearances[appearance_code] = AppearanceInfo(
                 category=category_name,
-                subcategory=None,
                 category_value=category_val,
-                subcategory_value=None,
+                subcategory=None,
             )
 
             # Store subcategories if present
@@ -120,9 +120,8 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
                 full_code = (category_val << 6) | subcat_val
                 self._appearances[full_code] = AppearanceInfo(
                     category=category_name,
-                    subcategory=subcat_name,
                     category_value=category_val,
-                    subcategory_value=subcat_val,
+                    subcategory=AppearanceSubcategoryInfo(name=subcat_name, value=subcat_val),
                 )
 
     def get_appearance_info(self, appearance_code: int) -> AppearanceInfo | None:
@@ -175,11 +174,17 @@ class AppearanceValuesRegistry(BaseRegistry[AppearanceInfo]):
 
         # Search for matching appearance
         for info in self._appearances.values():
-            if info.category == category and info.subcategory == subcategory:
+            # Check category match
+            if info.category != category:
+                continue
+            # Check subcategory match
+            if subcategory is None and info.subcategory is None:
+                return info
+            if info.subcategory and info.subcategory.name == subcategory:
                 return info
 
         return None
 
 
 # Singleton instance for global use
-appearance_values_registry = AppearanceValuesRegistry()
+appearance_values_registry = cast(AppearanceValuesRegistry, AppearanceValuesRegistry.get_instance())

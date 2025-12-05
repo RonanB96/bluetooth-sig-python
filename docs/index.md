@@ -2,7 +2,7 @@
 
 A pure Python library for Bluetooth SIG standards interpretation
 
-[![Coverage Status](https://img.shields.io/endpoint?url=https://ronanb96.github.io/bluetooth-sig-python/coverage/coverage-badge.json)](coverage/index.html)
+![Coverage Status](https://img.shields.io/endpoint?url=https://ronanb96.github.io/bluetooth-sig-python/coverage/coverage-badge.json)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://img.shields.io/pypi/v/bluetooth-sig.svg)](https://pypi.org/project/bluetooth-sig/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -27,7 +27,7 @@ from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
 service_info = translator.get_sig_info_by_uuid("180F")  # Battery
-char_info = translator.get_sig_info_by_uuid("2A19")    # Battery Level
+char_info = translator.get_sig_info_by_uuid("2A19")  # Battery Level
 ```
 
 ## Getting Started
@@ -40,7 +40,7 @@ char_info = translator.get_sig_info_by_uuid("2A19")    # Battery Level
 
     Get up and running in minutes
 
-    [:octicons-arrow-right-24: Quick Start](quickstart.md)
+    [:octicons-arrow-right-24: Quick Start](tutorials/quickstart.md)
 
 - :material-book-open-variant:{ .lg .middle } __Installation__
 
@@ -48,7 +48,7 @@ char_info = translator.get_sig_info_by_uuid("2A19")    # Battery Level
 
     Install via pip or from source
 
-    [:octicons-arrow-right-24: Installation](installation.md)
+    [:octicons-arrow-right-24: Installation](tutorials/installation.md)
 
 - :material-code-braces:{ .lg .middle } __Usage Guide__
 
@@ -56,7 +56,7 @@ char_info = translator.get_sig_info_by_uuid("2A19")    # Battery Level
 
     Learn how to use the library
 
-    [:octicons-arrow-right-24: Usage Guide](usage.md)
+    [:octicons-arrow-right-24: Usage Guide](how-to/usage.md)
 
 - :material-api:{ .lg .middle } __API Reference__
 
@@ -64,7 +64,7 @@ char_info = translator.get_sig_info_by_uuid("2A19")    # Battery Level
 
     Detailed API documentation
 
-    [:octicons-arrow-right-24: API Reference](api/core.md)
+    [:octicons-arrow-right-24: API Reference](reference/index.md)
 
 </div>
 
@@ -72,14 +72,14 @@ char_info = translator.get_sig_info_by_uuid("2A19")    # Battery Level
 
 Unlike other Bluetooth libraries that focus on device connectivity, this library specializes in **standards interpretation**. It bridges the gap between raw BLE data and meaningful application-level information.
 
-[Learn more about what this library solves →](why-use.md)
+[Learn more about what this library solves →](explanation/why-use.md)
 
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/ronanb96/bluetooth-sig-python/issues)
 - **Source Code**: [GitHub Repository](https://github.com/ronanb96/bluetooth-sig-python)
 - **Documentation**: You're here! 🎉
-- **Coverage Report**: [Test Coverage](coverage/index.html) (Generated from CI)
+- **Test Coverage**: Available in CI artifacts
 
 ## License
 

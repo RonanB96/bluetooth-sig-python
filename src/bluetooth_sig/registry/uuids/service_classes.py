@@ -1,61 +1,46 @@
-"""Service classes registry for Bluetooth SIG service class definitions."""
+"""Service classes registry for Bluetooth SIG service class UUIDs."""
 
 from __future__ import annotations
 
-import msgspec
-
-from bluetooth_sig.registry.base import BaseRegistry
-from bluetooth_sig.registry.utils import find_bluetooth_sig_path, load_yaml_uuids, parse_bluetooth_uuid
+from bluetooth_sig.registry.base import BaseUUIDRegistry
+from bluetooth_sig.registry.utils import find_bluetooth_sig_path
+from bluetooth_sig.types.registry.service_class import ServiceClassInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-class ServiceClassInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Information about a Bluetooth SIG service class."""
-
-    uuid: BluetoothUUID
-    name: str
-    id: str
-
-
-class ServiceClassesRegistry(BaseRegistry[ServiceClassInfo]):
+class ServiceClassesRegistry(BaseUUIDRegistry[ServiceClassInfo]):
     """Registry for Bluetooth SIG service class definitions."""
 
-    def __init__(self) -> None:
-        """Initialize the service classes registry."""
-        super().__init__()
-        self._service_classes: dict[str, ServiceClassInfo] = {}
-        self._name_to_info: dict[str, ServiceClassInfo] = {}
-        self._id_to_info: dict[str, ServiceClassInfo] = {}
+    def _load_yaml_path(self) -> str:
+        """Return the YAML file path relative to bluetooth_sig/ root."""
+        return "assigned_numbers/uuids/service_classes.yaml"
+
+    def _create_info_from_yaml(self, uuid_data: dict[str, str], uuid: BluetoothUUID) -> ServiceClassInfo:
+        """Create ServiceClassInfo from YAML data."""
+        return ServiceClassInfo(
+            uuid=uuid,
+            name=uuid_data["name"],
+            id=uuid_data["id"],
+        )
+
+    def _create_runtime_info(self, entry: object, uuid: BluetoothUUID) -> ServiceClassInfo:
+        """Create runtime ServiceClassInfo from entry."""
+        return ServiceClassInfo(
+            uuid=uuid,
+            name=getattr(entry, "name", ""),
+            id=getattr(entry, "id", ""),
+        )
 
     def _load(self) -> None:
         """Perform the actual loading of service classes data."""
         base_path = find_bluetooth_sig_path()
-        if not base_path:
-            self._loaded = True
-            return
-
-        # Load service class UUIDs
-        service_classes_yaml = base_path / "service_classes.yaml"
-        if service_classes_yaml.exists():
-            for item in load_yaml_uuids(service_classes_yaml):
-                try:
-                    uuid = parse_bluetooth_uuid(item["uuid"])
-                    name = item["name"]
-                    service_class_id = item["id"]
-
-                    info = ServiceClassInfo(uuid=uuid, name=name, id=service_class_id)
-
-                    # Store by UUID string for fast lookup
-                    self._service_classes[uuid.short_form.upper()] = info
-                    self._name_to_info[name.lower()] = info
-                    self._id_to_info[service_class_id] = info
-
-                except (KeyError, ValueError):
-                    # Skip malformed entries
-                    continue
+        if base_path:
+            yaml_path = base_path / self._load_yaml_path()
+            if yaml_path.exists():
+                self._load_from_yaml(yaml_path)
         self._loaded = True
 
-    def get_service_class_info(self, uuid: str | int | BluetoothUUID) -> ServiceClassInfo | None:
+    def get_service_class_info(self, uuid: str | BluetoothUUID) -> ServiceClassInfo | None:
         """Get service class information by UUID.
 
         Args:
@@ -64,12 +49,7 @@ class ServiceClassesRegistry(BaseRegistry[ServiceClassInfo]):
         Returns:
             ServiceClassInfo if found, None otherwise
         """
-        self._ensure_loaded()
-        try:
-            bt_uuid = parse_bluetooth_uuid(uuid)
-            return self._service_classes.get(bt_uuid.short_form.upper())
-        except ValueError:
-            return None
+        return self.get_info(uuid)
 
     def get_service_class_info_by_name(self, name: str) -> ServiceClassInfo | None:
         """Get service class information by name (case insensitive).
@@ -80,8 +60,7 @@ class ServiceClassesRegistry(BaseRegistry[ServiceClassInfo]):
         Returns:
             ServiceClassInfo if found, None otherwise
         """
-        self._ensure_loaded()
-        return self._name_to_info.get(name.lower())
+        return self.get_info(name)
 
     def get_service_class_info_by_id(self, service_class_id: str) -> ServiceClassInfo | None:
         """Get service class information by service class ID.
@@ -92,10 +71,9 @@ class ServiceClassesRegistry(BaseRegistry[ServiceClassInfo]):
         Returns:
             ServiceClassInfo if found, None otherwise
         """
-        self._ensure_loaded()
-        return self._id_to_info.get(service_class_id)
+        return self.get_info(service_class_id)
 
-    def is_service_class_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
+    def is_service_class_uuid(self, uuid: str | BluetoothUUID) -> bool:
         """Check if a UUID corresponds to a known service class.
 
         Args:
@@ -104,7 +82,6 @@ class ServiceClassesRegistry(BaseRegistry[ServiceClassInfo]):
         Returns:
             True if the UUID is a known service class, False otherwise
         """
-        self._ensure_loaded()
         return self.get_service_class_info(uuid) is not None
 
     def get_all_service_classes(self) -> list[ServiceClassInfo]:
@@ -114,7 +91,8 @@ class ServiceClassesRegistry(BaseRegistry[ServiceClassInfo]):
             List of all ServiceClassInfo objects
         """
         self._ensure_loaded()
-        return list(self._service_classes.values())
+        with self._lock:
+            return list(self._canonical_store.values())
 
 
 # Global instance for convenience

@@ -71,9 +71,9 @@ def _try_pyreverse(src_path: Path, package: str) -> dict[str, str] | None:
 
         result: dict[str, str] = {}
         if classes_file.exists():
-            result['classes'] = classes_file.read_text(encoding="utf8")
+            result["classes"] = classes_file.read_text(encoding="utf8")
         if packages_file.exists():
-            result['packages'] = packages_file.read_text(encoding="utf8")
+            result["packages"] = packages_file.read_text(encoding="utf8")
 
         return result if result else None
     finally:
@@ -155,11 +155,11 @@ def generate_class_puml(src_path: Path, package: str, out_puml_dir: Path) -> boo
     if puml_contents is not None:
         out_puml_dir.mkdir(parents=True, exist_ok=True)
         success = False
-        if 'classes' in puml_contents:
-            write_puml(puml_contents['classes'], out_puml_dir / f"classes_{package}.puml")
+        if "classes" in puml_contents:
+            write_puml(puml_contents["classes"], out_puml_dir / f"classes_{package}.puml")
             success = True
-        if 'packages' in puml_contents:
-            write_puml(puml_contents['packages'], out_puml_dir / f"packages_{package}.puml")
+        if "packages" in puml_contents:
+            write_puml(puml_contents["packages"], out_puml_dir / f"packages_{package}.puml")
             success = True
         return success
 
@@ -352,9 +352,9 @@ def generate_all_diagrams(
                 # No newly generated puml; render only if some puml exists and
                 # is newer than SVGs or missing SVGs
                 if existing_puml:
-                        puml_mtime = max(p.stat().st_mtime_ns for p in existing_puml)
-                        svg_mtime = min((s.stat().st_mtime_ns for s in existing_svg), default=0)
-                        render_needed = force or (not existing_svg) or (puml_mtime > svg_mtime)
+                    puml_mtime = max(p.stat().st_mtime_ns for p in existing_puml)
+                    svg_mtime = min((s.stat().st_mtime_ns for s in existing_svg), default=0)
+                    render_needed = force or (not existing_svg) or (puml_mtime > svg_mtime)
                 else:
                     render_needed = False
 
@@ -367,11 +367,11 @@ def generate_all_diagrams(
         # Decide whether to run pydeps (dependency graph)
         should_generate_pydeps = force or (cache_entry.get("fingerprint") != fingerprint) or not existing_pydeps
         if should_generate_pydeps:
-                print(f"Generating pydeps SVG for {package}")
-                # Pass the pydeps 'max_bacon' argument positionally to stay
-                # compatible with test doubles that accept a third positional
-                # parameter rather than a keyword argument.
-                made_pydeps = generate_pydeps_svg(package, out_pydeps_svg, pydeps_max_bacon)
+            print(f"Generating pydeps SVG for {package}")
+            # Pass the pydeps 'max_bacon' argument positionally to stay
+            # compatible with test doubles that accept a third positional
+            # parameter rather than a keyword argument.
+            made_pydeps = generate_pydeps_svg(package, out_pydeps_svg, pydeps_max_bacon)
         else:
             made_pydeps = existing_pydeps
 

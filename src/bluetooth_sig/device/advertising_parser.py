@@ -10,12 +10,10 @@ from __future__ import annotations
 import logging
 
 from ..gatt.characteristics.utils import DataParser
-from ..registry import (
-    ad_types_registry,
-    appearance_values_registry,
-    class_of_device_registry,
-    company_identifiers_registry,
-)
+from ..registry.company_identifiers import company_identifiers_registry
+from ..registry.core.ad_types import ad_types_registry
+from ..registry.core.appearance_values import appearance_values_registry
+from ..registry.core.class_of_device import class_of_device_registry
 from ..types import (
     AdvertisingData,
     AdvertisingDataStructures,

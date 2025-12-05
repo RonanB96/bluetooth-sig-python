@@ -18,7 +18,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestLNControlPointCharacteristic(CommonCharacteristicTests):
     """Test suite for LN Control Point characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Only adds LN control point-specific edge cases and domain validation.
     """
 

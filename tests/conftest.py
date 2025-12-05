@@ -4,6 +4,8 @@ Ensure repository root and `src/` are on `sys.path` so tests can import
 local packages without per-test sys.path hacks.
 """
 
+from __future__ import annotations
+
 import sys
 from collections.abc import Generator
 from pathlib import Path

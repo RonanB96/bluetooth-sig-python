@@ -7,9 +7,7 @@ from datetime import datetime
 import pytest
 
 from bluetooth_sig.gatt.characteristics.templates import TimeData
-from bluetooth_sig.gatt.characteristics.time_with_dst import (
-    TimeWithDstCharacteristic,
-)
+from bluetooth_sig.gatt.characteristics.time_with_dst import TimeWithDstCharacteristic
 from bluetooth_sig.types.gatt_enums import AdjustReason, DayOfWeek
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -17,7 +15,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
     """Test suite for Time with DST characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Adds time with DST-specific validation and edge cases.
     """
 

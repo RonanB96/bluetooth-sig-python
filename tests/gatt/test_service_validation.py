@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from bluetooth_sig.gatt.characteristics import (
-    BatteryLevelCharacteristic,
-    ModelNumberStringCharacteristic,
-)
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic, ModelNumberStringCharacteristic
 from bluetooth_sig.gatt.services import (
     BatteryService,
     CharacteristicStatus,

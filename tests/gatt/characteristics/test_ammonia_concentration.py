@@ -1,5 +1,7 @@
 """Test ammonia concentration characteristic parsing."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import AmmoniaConcentrationCharacteristic

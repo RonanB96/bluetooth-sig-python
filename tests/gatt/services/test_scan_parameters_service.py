@@ -1,5 +1,7 @@
 """Tests for Scan Parameters Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.scan_parameters import ScanParametersService

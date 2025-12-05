@@ -21,7 +21,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
     """Test suite for Location and Speed characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Only adds location and speed-specific edge cases and domain validation.
     """
 

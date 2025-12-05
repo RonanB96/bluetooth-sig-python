@@ -46,15 +46,20 @@ SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
 # Use UUID from your BLE library
 battery_data = translator.parse_characteristic(
     "2A19",  # UUID from your BLE library
-    SIMULATED_BATTERY_DATA
+    SIMULATED_BATTERY_DATA,
 )
 print(f"Battery: {battery_data.value}%")  # "Battery: 85%"
 
 # Alternative: Use CharacteristicName enum - convert to UUID first
 from bluetooth_sig.types.gatt_enums import CharacteristicName
-battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+
+battery_uuid = translator.get_characteristic_uuid_by_name(
+    CharacteristicName.BATTERY_LEVEL
+)
 if battery_uuid:
-    result2 = translator.parse_characteristic(str(battery_uuid), SIMULATED_BATTERY_DATA)
+    result2 = translator.parse_characteristic(
+        str(battery_uuid), SIMULATED_BATTERY_DATA
+    )
 ```
 
 ## What This Library Does
@@ -79,6 +84,7 @@ Works seamlessly with any BLE connection library:
 ```python
 # SKIP: Requires BLE hardware and connection setup
 from bleak import BleakClient
+
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()

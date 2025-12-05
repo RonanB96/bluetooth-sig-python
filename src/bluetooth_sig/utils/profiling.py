@@ -60,7 +60,7 @@ def timer(_operation: str = "operation") -> Generator[dict[str, float], None, No
     """Context manager for timing a single operation.
 
     Args:
-        operation: Name of the operation being timed (currently unused, reserved for future use)
+        _operation: Name of the operation being timed (currently unused, reserved for future use)
 
     Yields:
         Dictionary that will contain 'elapsed' key with timing result

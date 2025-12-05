@@ -2,81 +2,54 @@
 
 from __future__ import annotations
 
-import msgspec
-
-from bluetooth_sig.registry.base import BaseRegistry
-from bluetooth_sig.registry.utils import (
-    find_bluetooth_sig_path,
-    load_yaml_uuids,
-    normalize_uuid_string,
-    parse_bluetooth_uuid,
-)
+from bluetooth_sig.registry.base import BaseUUIDRegistry
+from bluetooth_sig.registry.utils import find_bluetooth_sig_path
+from bluetooth_sig.types.registry.units import UnitInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-class UnitInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """Information about a Bluetooth SIG unit."""
-
-    uuid: BluetoothUUID
-    name: str
-    id: str
-
-
-class UnitsRegistry(BaseRegistry[UnitInfo]):
+class UnitsRegistry(BaseUUIDRegistry[UnitInfo]):
     """Registry for Bluetooth SIG unit UUIDs."""
 
-    def __init__(self) -> None:
-        """Initialize the units registry."""
-        super().__init__()
-        self._units: dict[str, UnitInfo] = {}  # normalized_uuid -> UnitInfo
-        self._units_by_name: dict[str, UnitInfo] = {}  # lower_name -> UnitInfo
-        self._units_by_id: dict[str, UnitInfo] = {}  # id -> UnitInfo
+    def _load_yaml_path(self) -> str:
+        """Return the YAML file path relative to bluetooth_sig/ root."""
+        return "units.yaml"
+
+    def _create_info_from_yaml(self, uuid_data: dict[str, str], uuid: BluetoothUUID) -> UnitInfo:
+        """Create UnitInfo from YAML data."""
+        return UnitInfo(
+            uuid=uuid,
+            name=uuid_data["name"],
+            id=uuid_data["id"],
+        )
+
+    def _create_runtime_info(self, entry: object, uuid: BluetoothUUID) -> UnitInfo:
+        """Create runtime UnitInfo from entry."""
+        return UnitInfo(
+            uuid=uuid,
+            name=getattr(entry, "name", ""),
+            id=getattr(entry, "id", ""),
+        )
 
     def _load(self) -> None:
         """Perform the actual loading of units data."""
         base_path = find_bluetooth_sig_path()
-        if not base_path:
-            self._loaded = True
-            return
-
-        # Load unit UUIDs
-        units_yaml = base_path / "units.yaml"
-        if units_yaml.exists():
-            for unit_info in load_yaml_uuids(units_yaml):
-                try:
-                    uuid = normalize_uuid_string(unit_info["uuid"])
-
-                    bt_uuid = BluetoothUUID(uuid)
-                    info = UnitInfo(uuid=bt_uuid, name=unit_info["name"], id=unit_info["id"])
-                    # Store using short form as key for easy lookup
-                    self._units[bt_uuid.short_form.upper()] = info
-                    # Also store by name and id for reverse lookup
-                    self._units_by_name[unit_info["name"].lower()] = info
-                    self._units_by_id[unit_info["id"]] = info
-                except (KeyError, ValueError):
-                    # Skip malformed entries
-                    continue
+        if base_path:
+            yaml_path = base_path / self._load_yaml_path()
+            if yaml_path.exists():
+                self._load_from_yaml(yaml_path)
         self._loaded = True
 
-    def get_unit_info(self, uuid: str | int | BluetoothUUID) -> UnitInfo | None:
+    def get_unit_info(self, uuid: str | BluetoothUUID) -> UnitInfo | None:
         """Get unit information by UUID.
 
         Args:
-            uuid: 16-bit UUID as string (with or without 0x), int, or BluetoothUUID
+            uuid: 16-bit UUID as string (with or without 0x) or BluetoothUUID
 
         Returns:
             UnitInfo object, or None if not found
         """
-        self._ensure_loaded()
-        with self._lock:
-            try:
-                bt_uuid = parse_bluetooth_uuid(uuid)
-
-                # Get the short form (16-bit) for lookup
-                short_key = bt_uuid.short_form.upper()
-                return self._units.get(short_key)
-            except ValueError:
-                return None
+        return self.get_info(uuid)
 
     def get_unit_info_by_name(self, name: str) -> UnitInfo | None:
         """Get unit information by name.
@@ -87,9 +60,7 @@ class UnitsRegistry(BaseRegistry[UnitInfo]):
         Returns:
             UnitInfo object, or None if not found
         """
-        self._ensure_loaded()
-        with self._lock:
-            return self._units_by_name.get(name.lower())
+        return self.get_info(name)
 
     def get_unit_info_by_id(self, unit_id: str) -> UnitInfo | None:
         """Get unit information by ID.
@@ -100,11 +71,9 @@ class UnitsRegistry(BaseRegistry[UnitInfo]):
         Returns:
             UnitInfo object, or None if not found
         """
-        self._ensure_loaded()
-        with self._lock:
-            return self._units_by_id.get(unit_id)
+        return self.get_info(unit_id)
 
-    def is_unit_uuid(self, uuid: str | int | BluetoothUUID) -> bool:
+    def is_unit_uuid(self, uuid: str | BluetoothUUID) -> bool:
         """Check if a UUID is a registered unit UUID.
 
         Args:
@@ -113,7 +82,6 @@ class UnitsRegistry(BaseRegistry[UnitInfo]):
         Returns:
             True if the UUID is a unit UUID, False otherwise
         """
-        self._ensure_loaded()
         return self.get_unit_info(uuid) is not None
 
     def get_all_units(self) -> list[UnitInfo]:
@@ -124,7 +92,7 @@ class UnitsRegistry(BaseRegistry[UnitInfo]):
         """
         self._ensure_loaded()
         with self._lock:
-            return list(self._units.values())
+            return list(self._canonical_store.values())
 
 
 # Global instance

@@ -24,19 +24,36 @@ class DescriptorRegistry:
             pass
 
     @classmethod
-    def get_descriptor_class(cls, uuid: str) -> type[BaseDescriptor] | None:
-        """Get descriptor class for UUID."""
-        # Convert to BluetoothUUID and use full form for lookup
-        try:
-            uuid_obj = BluetoothUUID(uuid)
-            full_uuid_str = uuid_obj.dashed_form
-            return cls._registry.get(full_uuid_str)
-        except ValueError:
-            return None
+    def get_descriptor_class(cls, uuid: str | BluetoothUUID | int) -> type[BaseDescriptor] | None:
+        """Get descriptor class for UUID.
+
+        Args:
+            uuid: The descriptor UUID
+
+        Returns:
+            Descriptor class if found, None otherwise
+
+        Raises:
+            ValueError: If uuid format is invalid
+        """
+        # Convert to BluetoothUUID and use full form for lookup (let ValueError propagate)
+        uuid_obj = BluetoothUUID(uuid)
+        full_uuid_str = uuid_obj.dashed_form
+        return cls._registry.get(full_uuid_str)
 
     @classmethod
-    def create_descriptor(cls, uuid: str) -> BaseDescriptor | None:
-        """Create descriptor instance for UUID."""
+    def create_descriptor(cls, uuid: str | BluetoothUUID | int) -> BaseDescriptor | None:
+        """Create descriptor instance for UUID.
+
+        Args:
+            uuid: The descriptor UUID
+
+        Returns:
+            Descriptor instance if found, None otherwise
+
+        Raises:
+            ValueError: If uuid format is invalid
+        """
         descriptor_class = cls.get_descriptor_class(uuid)
         if descriptor_class:
             try:

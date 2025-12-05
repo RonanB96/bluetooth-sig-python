@@ -7,10 +7,7 @@ from typing import Any
 import pytest
 
 from bluetooth_sig.gatt.characteristics import PositionQualityCharacteristic
-from bluetooth_sig.gatt.characteristics.position_quality import (
-    PositionQualityData,
-    PositionQualityFlags,
-)
+from bluetooth_sig.gatt.characteristics.position_quality import PositionQualityData, PositionQualityFlags
 from bluetooth_sig.types import PositionStatus
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -18,7 +15,7 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 class TestPositionQualityCharacteristic(CommonCharacteristicTests):
     """Test suite for Position Quality characteristic.
 
-    Inherits behavioral tests from CommonCharacteristicTests.
+    Inherits behavioural tests from CommonCharacteristicTests.
     Only adds position quality-specific edge cases and domain validation.
     """
 
