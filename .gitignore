@@ -234,3 +234,7 @@ AGENTS.md
 # Benchmark results
 benchmark.json
 docs/benchmarks/*.json.cache/gen_ref/
+
+# Sphinx build output
+docs_sphinx/build/
+

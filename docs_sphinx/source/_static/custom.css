@@ -1,0 +1,28 @@
+/* Custom styles for Bluetooth SIG Standards Library documentation */
+
+/* Improve code block appearance */
+.highlight {
+    border-radius: 4px;
+}
+
+/* Style admonitions to be more prominent */
+.admonition {
+    border-radius: 4px;
+}
+
+/* Improve table styling */
+table {
+    width: 100%;
+}
+
+/* Style grid cards from sphinx-design */
+.sd-card {
+    border-radius: 8px;
+}
+
+/* Style API documentation */
+.py-class, .py-function, .py-method {
+    border-left: 3px solid var(--color-brand-primary);
+    padding-left: 1rem;
+    margin-left: 0;
+}
