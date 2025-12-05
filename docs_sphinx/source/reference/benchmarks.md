@@ -14,17 +14,36 @@ This page displays performance benchmark results for the bluetooth-sig-python li
 <p>Loading benchmark results...</p>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-vSZnPYTMx+F2N7XjnYVPpDXu0yfEQXlr8BFIN21GVR9f3xYwB4C6wN5v7Rqa2Pxp" crossorigin="anonymous"></script>
 
 <script>
+// Maximum response size for JSON fetches (1MB)
+const MAX_RESPONSE_SIZE = 1024 * 1024;
+
+// Safe JSON fetch with validation
+async function safeFetchJson(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  
+  // Check content-type
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    throw new Error('Invalid content type');
+  }
+  
+  // Check content-length if available
+  const contentLength = response.headers.get('content-length');
+  if (contentLength && parseInt(contentLength) > MAX_RESPONSE_SIZE) {
+    throw new Error('Response too large');
+  }
+  
+  return response.json();
+}
+
 // Load historical trends
-fetch('./history.json')
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Historical data not available yet');
-    }
-    return response.json();
-  })
+safeFetchJson('./history.json')
   .then(history => {
     const container = document.getElementById('benchmark-trends');
 
@@ -118,13 +137,7 @@ fetch('./history.json')
     `;
   });
 // Load and display benchmark results from JSON
-fetch('./benchmark.json')
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Benchmark data not available');
-    }
-    return response.json();
-  })
+safeFetchJson('./benchmark.json')
   .then(data => {
     const container = document.getElementById('benchmark-results');
 
