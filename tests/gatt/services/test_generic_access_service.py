@@ -1,5 +1,7 @@
 """Tests for Generic Access Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.generic_access import GenericAccessService

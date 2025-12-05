@@ -1,5 +1,7 @@
 """Tests for Cycling Power Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.cycling_power import CyclingPowerService

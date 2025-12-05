@@ -1,5 +1,7 @@
 """Device Wearing Position characteristic (0x2B4B)."""
 
+from __future__ import annotations
+
 from .base import BaseCharacteristic
 from .templates import Uint8Template
 

@@ -1,5 +1,7 @@
 """Tests for Next DST Change Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.next_dst_change import NextDstChangeService

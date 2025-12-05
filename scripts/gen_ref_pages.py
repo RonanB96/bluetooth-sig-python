@@ -13,6 +13,8 @@ files when the source .py file is newer than the cached .md file in .cache/gen_r
 This significantly speeds up dirty builds (mkdocs build --dirty) by skipping unchanged files.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import mkdocs_gen_files

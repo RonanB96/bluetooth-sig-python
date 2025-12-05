@@ -1,5 +1,7 @@
 """Tests for Heart Rate Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.heart_rate import HeartRateService

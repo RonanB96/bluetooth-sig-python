@@ -1,5 +1,7 @@
 """Tests for Body Composition Service and related characteristics."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics.body_composition_feature import (

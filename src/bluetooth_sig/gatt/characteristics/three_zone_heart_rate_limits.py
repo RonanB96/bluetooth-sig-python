@@ -1,5 +1,7 @@
 """Three Zone Heart Rate Limits characteristic (0x2A94)."""
 
+from __future__ import annotations
+
 import msgspec
 
 from ..context import CharacteristicContext

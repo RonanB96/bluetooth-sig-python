@@ -1,5 +1,7 @@
 """Two Zone Heart Rate Limits characteristic (0x2A95)."""
 
+from __future__ import annotations
+
 from .base import BaseCharacteristic
 from .templates import Uint8Template
 

@@ -1,5 +1,7 @@
 """High Resolution Height characteristic (0x2B47)."""
 
+from __future__ import annotations
+
 from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 

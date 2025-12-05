@@ -1,5 +1,7 @@
 """Battery Critical Status characteristic implementation."""
 
+from __future__ import annotations
+
 from enum import IntFlag
 
 import msgspec

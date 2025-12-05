@@ -1,5 +1,7 @@
 """Preferred Units characteristic (0x2B46)."""
 
+from __future__ import annotations
+
 import msgspec
 
 from ...registry.uuids.units import units_registry

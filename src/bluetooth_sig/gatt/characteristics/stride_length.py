@@ -1,5 +1,7 @@
 """Stride Length characteristic (0x2B49)."""
 
+from __future__ import annotations
+
 from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 

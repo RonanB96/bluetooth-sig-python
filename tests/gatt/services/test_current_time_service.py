@@ -1,5 +1,7 @@
 """Tests for Current Time Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.current_time_service import CurrentTimeService

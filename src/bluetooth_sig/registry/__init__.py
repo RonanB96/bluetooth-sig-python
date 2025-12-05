@@ -8,6 +8,8 @@ Structure mirrors bluetooth_sig/assigned_numbers/:
 - profiles/ - Profile-specific registries
 """
 
+from __future__ import annotations
+
 from bluetooth_sig.registry.base import BaseUUIDRegistry
 
 __all__ = [

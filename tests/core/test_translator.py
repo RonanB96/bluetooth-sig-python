@@ -1,5 +1,7 @@
 """Test Bluetooth SIG Translator functionality."""
 
+from __future__ import annotations
+
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from bluetooth_sig.types import ValidationResult

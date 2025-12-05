@@ -1,5 +1,7 @@
 """Caloric Intake characteristic (0x2B45)."""
 
+from __future__ import annotations
+
 from .base import BaseCharacteristic
 from .templates import Uint16Template
 

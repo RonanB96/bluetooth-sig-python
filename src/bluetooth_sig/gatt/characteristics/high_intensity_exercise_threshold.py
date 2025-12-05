@@ -1,5 +1,7 @@
 """High Intensity Exercise Threshold characteristic (0x2B4D)."""
 
+from __future__ import annotations
+
 from .base import BaseCharacteristic
 from .templates import Uint8Template
 

@@ -1,5 +1,7 @@
 """Tests for Health Thermometer Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.health_thermometer import HealthThermometerService

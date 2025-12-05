@@ -1,5 +1,7 @@
 """Aerobic Heart Rate Upper Limit characteristic (0x2A84)."""
 
+from __future__ import annotations
+
 from .base import BaseCharacteristic
 from .templates import Uint8Template
 

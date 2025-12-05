@@ -1,5 +1,7 @@
 """Tests for Running Speed and Cadence Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.running_speed_and_cadence import RunningSpeedAndCadenceService

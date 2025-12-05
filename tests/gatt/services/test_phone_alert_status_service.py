@@ -1,5 +1,7 @@
 """Tests for Phone Alert Status Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.phone_alert_status import PhoneAlertStatusService

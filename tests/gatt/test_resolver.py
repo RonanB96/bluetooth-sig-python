@@ -4,6 +4,8 @@ This module tests the name normalization, variant generation, and registry searc
 strategies that are shared between characteristic and service resolution.
 """
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.resolver import (

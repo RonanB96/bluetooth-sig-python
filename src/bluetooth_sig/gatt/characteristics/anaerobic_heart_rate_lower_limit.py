@@ -1,5 +1,7 @@
 """Anaerobic Heart Rate Lower Limit characteristic (0x2A81)."""
 
+from __future__ import annotations
+
 from .base import BaseCharacteristic
 from .templates import Uint8Template
 

@@ -1,5 +1,7 @@
 """Tests for Tx Power Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.tx_power import TxPowerService

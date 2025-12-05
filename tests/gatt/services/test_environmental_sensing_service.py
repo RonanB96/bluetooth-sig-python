@@ -1,5 +1,7 @@
 """Tests for Environmental Sensing Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.environmental_sensing import EnvironmentalSensingService

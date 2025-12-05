@@ -1,5 +1,7 @@
 """Tests for Link Loss Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.link_loss import LinkLossService

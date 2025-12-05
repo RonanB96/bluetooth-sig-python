@@ -54,7 +54,8 @@ def clean_description(description: str) -> str:
     # Get first sentence only (up to first period followed by space or end)
     # But avoid matching decimals like "PM2.5" or "0.1"
     import re
-    match = re.search(r'^(.*?)\.\s', cleaned)  # Period followed by space
+
+    match = re.search(r"^(.*?)\.\s", cleaned)  # Period followed by space
     if match:
         cleaned = match.group(1).strip() + "."
     elif cleaned and not cleaned.endswith("."):

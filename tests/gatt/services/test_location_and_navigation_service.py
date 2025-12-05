@@ -1,5 +1,7 @@
 """Tests for Location and Navigation Service."""
 
+from __future__ import annotations
+
 import pytest
 
 from bluetooth_sig.gatt.services.location_and_navigation import LocationAndNavigationService

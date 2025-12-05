@@ -1,5 +1,7 @@
 """Power Specification characteristic implementation."""
 
+from __future__ import annotations
+
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils.data_parser import DataParser

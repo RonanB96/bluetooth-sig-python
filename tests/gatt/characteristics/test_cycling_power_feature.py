@@ -1,5 +1,7 @@
 """Test cycling power feature characteristic parsing."""
 
+from __future__ import annotations
+
 import struct
 
 import pytest
