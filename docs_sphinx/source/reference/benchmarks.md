@@ -14,10 +14,11 @@ This page displays performance benchmark results for the bluetooth-sig-python li
 <p>Loading benchmark results...</p>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-vSZnPYTMx+F2N7XjnYVPpDXu0yfEQXlr8BFIN21GVR9f3xYwB4C6wN5v7Rqa2Pxp" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb" crossorigin="anonymous"></script>
 
 <script>
 // Maximum response size for JSON fetches (1MB)
+// This limit is appropriate for benchmark data which typically ranges from 10KB-100KB
 const MAX_RESPONSE_SIZE = 1024 * 1024;
 
 // Safe JSON fetch with validation
