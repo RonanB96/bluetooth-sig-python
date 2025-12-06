@@ -1,0 +1,278 @@
+"""Sphinx configuration for Bluetooth SIG Standards Library.
+
+This configuration optimizes for parallel builds to achieve <60 second build times
+for 332 Python modules. Uses sphinx-autoapi for automatic API documentation generation
+and MyST Parser for Markdown compatibility with existing documentation.
+"""
+
+import sys
+from pathlib import Path
+import re
+
+# Add source directory to path for imports (not for AutoAPI scanning)
+# AutoAPI scans from autoapi_dirs, this is just for import resolution
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+
+# -- Project information -----------------------------------------------------
+project = "Bluetooth SIG Standards Library"
+copyright = "2025, RonanB96"
+author = "RonanB96"
+release = "0.3.0"
+
+# -- General configuration ---------------------------------------------------
+extensions = [
+    # Core documentation generation
+    "sphinx.ext.autodoc",  # Required by autoapi
+    # "sphinx.ext.viewcode",  # DISABLED: Generates _modules/ source pages (slow)
+    "sphinx.ext.intersphinx",  # Cross-reference external docs
+    "sphinx.ext.napoleon",  # Support Google-style docstrings
+    # API documentation (replaces mkdocstrings)
+    "autoapi.extension",
+    # Markdown support (replaces mkdocs native markdown)
+    "myst_parser",
+    # Design elements (replaces Material theme features)
+    "sphinx_design",
+    # Diagrams
+    "sphinxcontrib.mermaid",
+    # Copy button for code blocks
+    "sphinx_copybutton",
+]
+
+# MyST Parser configuration for Markdown support
+# Only enable extensions that are actually used in documentation
+myst_enable_extensions = [
+    "colon_fence",  # ::: fenced directives (CRITICAL: used extensively)
+    "html_admonition",  # HTML admonitions (tip/note blocks)
+    "linkify",  # Auto-link URLs (useful for maintenance)
+]
+
+# Allow .md extension for source files
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
+
+# Main document
+master_doc = "index"
+
+# Exclude patterns
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+# Templates
+templates_path = ["_templates"]
+
+# -- AutoAPI configuration ---------------------------------------------------
+# Automatic API documentation generation (replaces mkdocstrings + gen_ref_pages.py)
+autoapi_type = "python"
+autoapi_dirs = ["../../src"]  # Scans from src to get correct module names
+autoapi_root = "api"  # Puts generated docs in docs/source/api/
+autoapi_template_dir = "_templates/autoapi"
+
+# Remove 'src' from module paths in generated docs
+# Without this, paths become 'src.bluetooth_sig' instead of 'bluetooth_sig'
+autoapi_ignore = [
+    "**/test_*",
+    "**/tests/*",
+    "**/__pycache__/*",
+    "**/conftest.py",
+]
+
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+]
+
+# Keep generated files for incremental builds (critical for performance)
+autoapi_keep_files = True
+autoapi_generate_api_docs = True
+autoapi_add_toctree_entry = False  # We don't want AutoAPI to add to main toctree
+
+# Python path configuration to ensure imports work correctly
+autoapi_python_class_content = "both"  # Include both class and __init__ docstrings
+autoapi_member_order = "groupwise"  # Group by type (classes, functions, etc.)
+
+
+# Override AutoAPI's module name extraction to remove 'src' prefix
+def autoapi_skip_member(app, what, name, obj, skip, options):
+    """Skip certain members during API documentation generation."""
+    # Skip test files and private members
+    if "test_" in name or name.startswith("_"):
+        return True
+    return skip
+
+
+# Napoleon settings for Google-style docstrings
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+napoleon_include_init_with_doc = True
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = True
+napoleon_use_admonition_for_notes = True
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = True
+napoleon_use_rtype = True
+napoleon_preprocess_types = True
+napoleon_type_aliases = None
+napoleon_attr_annotations = True
+
+# -- Intersphinx configuration -----------------------------------------------
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+}
+
+# -- HTML output configuration -----------------------------------------------
+html_theme = "furo"
+
+# Enable breadcrumbs (Furo will display them if enabled)
+html_context = {
+    "display_github": True,
+    "github_user": "RonanB96",
+    "github_repo": "bluetooth-sig-python",
+    "github_version": "main",
+    "conf_py_path": "/docs/source/",
+}
+
+# Furo theme options for Material-like experience
+html_theme_options = {
+    "light_css_variables": {
+        "color-brand-primary": "#2196F3",  # Bluetooth blue
+        "color-brand-content": "#2196F3",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#64B5F6",  # Lighter blue for dark mode
+        "color-brand-content": "#64B5F6",
+    },
+    "sidebar_hide_name": False,
+    "navigation_with_keys": True,
+    "top_of_page_button": "edit",
+    "source_repository": "https://github.com/RonanB96/bluetooth-sig-python",
+    "source_branch": "main",
+    "source_directory": "docs/source/",
+}
+
+# Static files
+html_static_path = ["_static"]
+
+# Custom CSS
+html_css_files = [
+    "custom.css",
+]
+
+# -- Mermaid configuration ---------------------------------------------------
+mermaid_version = "10.9.0"
+mermaid_init_js = "mermaid.initialize({startOnLoad:true, theme: 'neutral'});"
+
+# -- Build performance optimization ------------------------------------------
+# Parallel build configuration (use with sphinx-build -j auto)
+parallel_read_safe = True
+parallel_write_safe = True
+
+# Nitpicky mode disabled for faster builds (can enable for release checks)
+nitpicky = False
+
+
+def fix_table_headers(app, exception):
+    """Post-process HTML files to add proper table headers for accessibility.
+
+    This fixes AutoAPI-generated tables that lack <thead> elements.
+    """
+    if exception is not None or app.builder.format != "html":
+        return
+
+    build_dir = Path(app.outdir)
+
+    # Pattern 1: autosummary tables without thead (API docs)
+    autosummary_pattern = re.compile(
+        r'(<table[^>]*class="[^"]*autosummary[^"]*"[^>]*>)\s*(<tbody>)', re.IGNORECASE | re.DOTALL
+    )
+
+    # Pattern 2: domainindex-table without proper headers (py-modindex.html)
+    domainindex_pattern = re.compile(r'(<table[^>]*class="domainindex-table"[^>]*>)\s*(<tr)', re.IGNORECASE | re.DOTALL)
+
+    # Pattern 3: genindextable without proper headers (genindex.html)
+    genindex_pattern = re.compile(
+        r'(<table[^>]*class="[^"]*genindextable[^"]*"[^>]*>)\s*(<tr)', re.IGNORECASE | re.DOTALL
+    )
+
+    def add_autosummary_thead(match):
+        """Add thead for autosummary tables."""
+        table_tag = match.group(1)
+        tbody_tag = match.group(2)
+        thead = (
+            '\n<thead>\n<tr><th class="head"><p>Name</p></th><th class="head"><p>Description</p></th></tr>\n</thead>\n'
+        )
+        return f"{table_tag}{thead}{tbody_tag}"
+
+    def add_domainindex_thead(match):
+        """Add thead for domainindex tables."""
+        table_tag = match.group(1)
+        tr_tag = match.group(2)
+        thead = '\n<thead>\n<tr><th class="head"><p>Navigation</p></th><th class="head"><p>Module</p></th><th class="head"><p>Description</p></th></tr>\n</thead>\n<tbody>\n'
+        return f"{table_tag}{thead}{tr_tag}"
+
+    def add_genindex_thead(match):
+        """Add thead for genindex tables."""
+        table_tag = match.group(1)
+        tr_tag = match.group(2)
+        # These are multi-column index tables, use a simple generic header
+        thead = '\n<thead>\n<tr><th class="head"><p>Index Entries</p></th></tr>\n</thead>\n<tbody>\n'
+        return f"{table_tag}{thead}{tr_tag}"
+
+    # Process all HTML files
+    html_files = list(build_dir.rglob("*.html"))
+    fixed_counts = {"autosummary": 0, "domainindex": 0, "genindex": 0}
+
+    for html_file in html_files:
+        try:
+            content = html_file.read_text(encoding="utf-8")
+            modified = False
+
+            # Fix autosummary tables
+            new_content, count = autosummary_pattern.subn(add_autosummary_thead, content)
+            if count > 0:
+                content = new_content
+                fixed_counts["autosummary"] += count
+                modified = True
+
+            # Fix domainindex tables (py-modindex.html)
+            if "py-modindex" in html_file.name or "domainindex" in html_file.name:
+                new_content, count = domainindex_pattern.subn(add_domainindex_thead, content)
+                if count > 0:
+                    content = new_content
+                    fixed_counts["domainindex"] += count
+                    modified = True
+                    # Add closing tbody tag before </table>
+                    content = content.replace("</table>", "</tbody>\n</table>")
+
+            # Fix genindex tables (genindex.html)
+            if "genindex" in html_file.name:
+                new_content, count = genindex_pattern.subn(add_genindex_thead, content)
+                if count > 0:
+                    content = new_content
+                    fixed_counts["genindex"] += count
+                    modified = True
+                    # Add closing tbody tag before </table>
+                    content = content.replace("</table>", "</tbody>\n</table>")
+
+            if modified:
+                html_file.write_text(content, encoding="utf-8")
+
+        except Exception as e:
+            print(f"Warning: Could not process {html_file}: {e}")
+
+    total = sum(fixed_counts.values())
+    if total > 0:
+        print(f"✓ Fixed {total} tables with proper headers:")
+        for table_type, count in fixed_counts.items():
+            if count > 0:
+                print(f"  - {table_type}: {count}")
+
+
+def setup(app):
+    """Sphinx setup hook."""
+    app.connect("autoapi-skip-member", autoapi_skip_member)
+    app.connect("build-finished", fix_table_headers)

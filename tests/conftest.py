@@ -24,12 +24,25 @@ if SRC.exists() and str(SRC) not in sys.path:
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Modify test items to skip benchmark and built_docs tests by default.
+
+    Args:
+        config: Pytest configuration object
+        items: List of test items collected
+    """
     # Skip all tests marked 'benchmark' unless -m benchmark is passed
+    # Skip all tests marked 'built_docs' unless -m built_docs is passed
     if not config.getoption("-m"):
         skip_benchmark = pytest.mark.skip(reason="Skipped by default. Use -m benchmark to run benchmarks.")
+        skip_built_docs = pytest.mark.skip(
+            reason="Skipped by default. Use -m built_docs to run documentation verification tests. "
+            "Requires built documentation: sphinx-build."
+        )
         for item in items:
             if "benchmark" in item.keywords:
                 item.add_marker(skip_benchmark)
+            if "built_docs" in item.keywords:
+                item.add_marker(skip_built_docs)
 
 
 @pytest.fixture(scope="session", autouse=True)
