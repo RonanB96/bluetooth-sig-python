@@ -224,7 +224,9 @@ docs/diagrams/
 docs/diagrams/svg/
 docs/diagrams/deps/
 docs/diagrams/.cache/
-docs/source/api
+
+# Ignore auto-generated API docs but keep top-level index
+docs/source/api/src/
 
 # AI Agent operational policies and internal tool state
 AGENTS.md
@@ -235,6 +237,3 @@ AGENTS.md
 # Benchmark results
 benchmark.json
 docs/benchmarks/*.json.cache/gen_ref/
-
-
-

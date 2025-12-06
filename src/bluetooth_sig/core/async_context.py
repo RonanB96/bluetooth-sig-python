@@ -18,13 +18,12 @@ class AsyncParsingSession:
 
     Maintains parsing context across multiple async operations.
 
-    Example:
-        ```python
+    Example::
+
         async with AsyncParsingSession() as session:
             result1 = await session.parse("2A19", data1)
             result2 = await session.parse("2A6E", data2)
             # Context automatically shared between parses
-        ```
     """
 
     def __init__(

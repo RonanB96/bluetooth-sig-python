@@ -72,13 +72,12 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             The singleton BluetoothSIGTranslator instance
 
-        Example:
-            ```python
+        Example::
+
             from bluetooth_sig import BluetoothSIGTranslator
 
             # Get the singleton instance
             translator = BluetoothSIGTranslator.get_instance()
-            ```
         """
         if cls._instance is None:
             cls._instance = cls()
@@ -114,15 +113,13 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             CharacteristicData with parsed value and metadata
 
         Example:
-            Parse battery level data:
+            Parse battery level data::
 
-            ```python
-            from bluetooth_sig import BluetoothSIGTranslator
+                from bluetooth_sig import BluetoothSIGTranslator
 
-            translator = BluetoothSIGTranslator()
-            result = translator.parse_characteristic("2A19", b"\x64")
-            print(f"Battery: {result.value}%")  # Battery: 100%
-            ```
+                translator = BluetoothSIGTranslator()
+                result = translator.parse_characteristic("2A19", b"\x64")
+                print(f"Battery: {result.value}%")  # Battery: 100%
 
         """
         logger.debug("Parsing characteristic UUID=%s, data_len=%d", uuid, len(raw_data))
@@ -176,16 +173,14 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             [CharacteristicInfo][bluetooth_sig.CharacteristicInfo] with metadata or None if not found
 
         Example:
-            Get battery level characteristic info:
+            Get battery level characteristic info::
 
-            ```python
-            from bluetooth_sig import BluetoothSIGTranslator
+                from bluetooth_sig import BluetoothSIGTranslator
 
-            translator = BluetoothSIGTranslator()
-            info = translator.get_characteristic_info_by_uuid("2A19")
-            if info:
-                print(f"Name: {info.name}")  # Name: Battery Level
-            ```
+                translator = BluetoothSIGTranslator()
+                info = translator.get_characteristic_info_by_uuid("2A19")
+                if info:
+                    print(f"Name: {info.name}")  # Name: Battery Level
 
         """
         try:
@@ -483,20 +478,18 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             ValueError: If circular dependencies are detected
 
         Example:
-            Parse multiple environmental characteristics:
+            Parse multiple environmental characteristics::
 
-            ```python
-            from bluetooth_sig import BluetoothSIGTranslator
+                from bluetooth_sig import BluetoothSIGTranslator
 
-            translator = BluetoothSIGTranslator()
-            data = {
-                "2A6E": b"\\x0A\\x00",  # Temperature
-                "2A6F": b"\\x32\\x00",  # Humidity
-            }
-            results = translator.parse_characteristics(data)
-            for uuid, result in results.items():
-                print(f"{uuid}: {result.value}")
-            ```
+                translator = BluetoothSIGTranslator()
+                data = {
+                    "2A6E": b"\\x0A\\x00",  # Temperature
+                    "2A6F": b"\\x32\\x00",  # Humidity
+                }
+                results = translator.parse_characteristics(data)
+                for uuid, result in results.items():
+                    print(f"{uuid}: {result.value}")
 
         """
         return self._parse_characteristics_batch(char_data, ctx)
@@ -808,8 +801,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             TypeError: If cls does not inherit from BaseCharacteristic
             ValueError: If UUID conflicts with existing registration and override=False
 
-        Example:
-            ```python
+        Example::
+
             from bluetooth_sig import BluetoothSIGTranslator, CharacteristicInfo, ValueType
             from bluetooth_sig.types import BluetoothUUID
 
@@ -821,7 +814,6 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 value_type=ValueType.FLOAT,
             )
             translator.register_custom_characteristic_class(str(info.uuid), MyCustomCharacteristic, info=info)
-            ```
 
         """
         # Register the class
@@ -857,15 +849,14 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             TypeError: If cls does not inherit from BaseGattService
             ValueError: If UUID conflicts with existing registration and override=False
 
-        Example:
-            ```python
+        Example::
+
             from bluetooth_sig import BluetoothSIGTranslator, ServiceInfo
             from bluetooth_sig.types import BluetoothUUID
 
             translator = BluetoothSIGTranslator()
             info = ServiceInfo(uuid=BluetoothUUID("12345678-1234-1234-1234-123456789abc"), name="Custom Service")
             translator.register_custom_service_class(str(info.uuid), MyCustomService, info=info)
-            ```
 
         """
         # Register the class
@@ -902,13 +893,12 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             CharacteristicData with parsed value and metadata
 
-        Example:
-            ```python
+        Example::
+
             async with BleakClient(address) as client:
                 data = await client.read_gatt_char("2A19")
                 result = await translator.parse_characteristic_async("2A19", data)
                 print(f"Battery: {result.value}%")
-            ```
         """
         # Convert to string for consistency with sync API
         uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
@@ -934,8 +924,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             Dictionary mapping UUIDs to CharacteristicData results
 
-        Example:
-            ```python
+        Example::
+
             async with BleakClient(address) as client:
                 # Read multiple characteristics
                 char_data = {}
@@ -946,7 +936,6 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 results = await translator.parse_characteristics_async(char_data)
                 for uuid, result in results.items():
                     print(f"{uuid}: {result.value}")
-            ```
         """
         # Delegate directly to sync implementation
         # The sync implementation already handles dependency ordering

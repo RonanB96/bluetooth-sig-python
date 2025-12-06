@@ -1,25 +1,38 @@
 """Sphinx configuration for Bluetooth SIG Standards Library.
 
-This configuration optimizes for parallel builds to achieve <60 second build times
-for 332 Python modules. Uses sphinx-autoapi for automatic API documentation generation
-and MyST Parser for Markdown compatibility with existing documentation.
+Optimised for fast parallel builds using sphinx-autoapi
+for automatic API generation and MyST Parser for Markdown support.
+
+Based on:
+- https://www.sphinx-doc.org/en/master/usage/configuration.html
+- https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html
+- https://myst-parser.readthedocs.io/en/latest/configuration.html
 """
 
+from __future__ import annotations
+
+import re
 import sys
 from pathlib import Path
-import re
+
+from sphinx.application import Sphinx
 
 # Add source directory to path for imports (not for AutoAPI scanning)
 # AutoAPI scans from autoapi_dirs, this is just for import resolution
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 # -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+
 project = "Bluetooth SIG Standards Library"
 copyright = "2025, RonanB96"
 author = "RonanB96"
 release = "0.3.0"
+version = release  # Short X.Y version (matches release for this project)
 
 # -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+
 extensions = [
     # Core documentation generation
     "sphinx.ext.autodoc",  # Required by autoapi
@@ -39,6 +52,7 @@ extensions = [
 ]
 
 # MyST Parser configuration for Markdown support
+# https://myst-parser.readthedocs.io/en/latest/configuration.html
 # Only enable extensions that are actually used in documentation
 myst_enable_extensions = [
     "colon_fence",  # ::: fenced directives (CRITICAL: used extensively)
@@ -62,14 +76,14 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 templates_path = ["_templates"]
 
 # -- AutoAPI configuration ---------------------------------------------------
+# https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html
 # Automatic API documentation generation (replaces mkdocstrings + gen_ref_pages.py)
+
 autoapi_type = "python"
 autoapi_dirs = ["../../src"]  # Scans from src to get correct module names
 autoapi_root = "api"  # Puts generated docs in docs/source/api/
-autoapi_template_dir = "_templates/autoapi"
 
-# Remove 'src' from module paths in generated docs
-# Without this, paths become 'src.bluetooth_sig' instead of 'bluetooth_sig'
+# Ignore patterns for AutoAPI scanning
 autoapi_ignore = [
     "**/test_*",
     "**/tests/*",
@@ -77,6 +91,7 @@ autoapi_ignore = [
     "**/conftest.py",
 ]
 
+# AutoAPI rendering options
 autoapi_options = [
     "members",
     "undoc-members",
@@ -87,16 +102,35 @@ autoapi_options = [
 # Keep generated files for incremental builds (critical for performance)
 autoapi_keep_files = True
 autoapi_generate_api_docs = True
-autoapi_add_toctree_entry = False  # We don't want AutoAPI to add to main toctree
+autoapi_add_toctree_entry = False  # Manual toctree control
 
-# Python path configuration to ensure imports work correctly
+# Python-specific AutoAPI settings
 autoapi_python_class_content = "both"  # Include both class and __init__ docstrings
 autoapi_member_order = "groupwise"  # Group by type (classes, functions, etc.)
 
 
 # Override AutoAPI's module name extraction to remove 'src' prefix
-def autoapi_skip_member(app, what, name, obj, skip, options):
-    """Skip certain members during API documentation generation."""
+def autoapi_skip_member(
+    app: Sphinx,
+    what: str,
+    name: str,
+    obj: object,
+    skip: bool,
+    options: dict[str, object],
+) -> bool:
+    """Skip certain members during API documentation generation.
+
+    Args:
+        app: Sphinx application object
+        what: Type of the object (e.g., 'function', 'class')
+        name: Fully qualified name of the object
+        obj: The object itself
+        skip: Whether AutoAPI will skip this member
+        options: Options given to the directive
+
+    Returns:
+        True to skip the member, False to include it
+    """
     # Skip test files and private members
     if "test_" in name or name.startswith("_"):
         return True
@@ -120,14 +154,18 @@ napoleon_type_aliases = None
 napoleon_attr_annotations = True
 
 # -- Intersphinx configuration -----------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html
+
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
 }
 
 # -- HTML output configuration -----------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+
 html_theme = "furo"
 
-# Enable breadcrumbs (Furo will display them if enabled)
+# GitHub integration context
 html_context = {
     "display_github": True,
     "github_user": "RonanB96",
@@ -136,7 +174,8 @@ html_context = {
     "conf_py_path": "/docs/source/",
 }
 
-# Furo theme options for Material-like experience
+# Furo theme options for branding and navigation
+# https://pradyunsg.me/furo/customisation/
 html_theme_options = {
     "light_css_variables": {
         "color-brand-primary": "#2196F3",  # Bluetooth blue
@@ -153,32 +192,61 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/source/",
 }
-
-# Static files
+# Configure sidebars for consistent navigation
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_sidebars
+html_sidebars = {
+    "**": [
+        "sidebar/brand.html",
+        "sidebar/search.html",
+        "sidebar/scroll-start.html",
+        "sidebar/navigation.html",
+        "sidebar/ethical-ads.html",
+        "sidebar/scroll-end.html",
+    ],
+    # Minimal sidebars for special pages
+    "genindex": ["sidebar/brand.html", "sidebar/search.html", "sidebar/navigation.html"],
+    "py-modindex": ["sidebar/brand.html", "sidebar/search.html", "sidebar/navigation.html"],
+    "search": ["sidebar/brand.html", "sidebar/navigation.html"],
+}
+# Static files directory
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_static_path
 html_static_path = ["_static"]
 
-# Custom CSS
+# Custom CSS files to include
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_css_files
 html_css_files = [
     "custom.css",
 ]
 
 # -- Mermaid configuration ---------------------------------------------------
+# https://sphinxcontrib-mermaid-demo.readthedocs.io/en/latest/
+
 mermaid_version = "10.9.0"
 mermaid_init_js = "mermaid.initialize({startOnLoad:true, theme: 'neutral'});"
 
-# -- Build performance optimization ------------------------------------------
+# -- Build performance optimisation ------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-parallel_read_safe
+
 # Parallel build configuration (use with sphinx-build -j auto)
 parallel_read_safe = True
 parallel_write_safe = True
 
-# Nitpicky mode disabled for faster builds (can enable for release checks)
+# Nitpicky mode disabled for faster builds (enable for release checks)
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpicky
 nitpicky = False
 
 
-def fix_table_headers(app, exception):
+def fix_table_headers(
+    app: Sphinx,
+    exception: Exception | None,
+) -> None:
     """Post-process HTML files to add proper table headers for accessibility.
 
-    This fixes AutoAPI-generated tables that lack <thead> elements.
+    Fixes AutoAPI-generated tables that lack <thead> elements.
+
+    Args:
+        app: Sphinx application object
+        exception: Build exception if any occurred
     """
     if exception is not None or app.builder.format != "html":
         return
@@ -198,8 +266,15 @@ def fix_table_headers(app, exception):
         r'(<table[^>]*class="[^"]*genindextable[^"]*"[^>]*>)\s*(<tr)', re.IGNORECASE | re.DOTALL
     )
 
-    def add_autosummary_thead(match):
-        """Add thead for autosummary tables."""
+    def add_autosummary_thead(match: re.Match[str]) -> str:
+        """Add thead for autosummary tables.
+
+        Args:
+            match: Regular expression match object
+
+        Returns:
+            Replacement string with thead element
+        """
         table_tag = match.group(1)
         tbody_tag = match.group(2)
         thead = (
@@ -207,15 +282,35 @@ def fix_table_headers(app, exception):
         )
         return f"{table_tag}{thead}{tbody_tag}"
 
-    def add_domainindex_thead(match):
-        """Add thead for domainindex tables."""
+    def add_domainindex_thead(match: re.Match[str]) -> str:
+        """Add thead for domainindex tables.
+
+        Args:
+            match: Regular expression match object
+
+        Returns:
+            Replacement string with thead element
+        """
         table_tag = match.group(1)
         tr_tag = match.group(2)
-        thead = '\n<thead>\n<tr><th class="head"><p>Navigation</p></th><th class="head"><p>Module</p></th><th class="head"><p>Description</p></th></tr>\n</thead>\n<tbody>\n'
+        thead = (
+            "\n<thead>\n"
+            '<tr><th class="head"><p>Navigation</p></th>'
+            '<th class="head"><p>Module</p></th>'
+            '<th class="head"><p>Description</p></th></tr>\n'
+            "</thead>\n<tbody>\n"
+        )
         return f"{table_tag}{thead}{tr_tag}"
 
-    def add_genindex_thead(match):
-        """Add thead for genindex tables."""
+    def add_genindex_thead(match: re.Match[str]) -> str:
+        """Add thead for genindex tables.
+
+        Args:
+            match: Regular expression match object
+
+        Returns:
+            Replacement string with thead element
+        """
         table_tag = match.group(1)
         tr_tag = match.group(2)
         # These are multi-column index tables, use a simple generic header
@@ -272,7 +367,71 @@ def fix_table_headers(app, exception):
                 print(f"  - {table_type}: {count}")
 
 
-def setup(app):
-    """Sphinx setup hook."""
+def fix_autoapi_anchors(
+    app: Sphinx,
+    exception: Exception | None,
+) -> None:
+    """Fix anchor links after build to remove 'src.' prefix.
+
+    Post-build hook that fixes AutoAPI-generated anchor IDs that incorrectly
+    include the 'src.' prefix from the source directory structure.
+
+    Changes:
+    - #module-src.bluetooth_sig.X -> #module-bluetooth_sig.X
+    - #src.bluetooth_sig.X.Y -> #bluetooth_sig.X.Y
+    - href="...src.bluetooth_sig..." -> href="...bluetooth_sig..."
+
+    Args:
+        app: Sphinx application object
+        exception: Build exception if any occurred
+    """
+    if exception is not None or app.builder.format != "html":
+        return
+
+    build_dir = Path(app.outdir)
+    if not build_dir.exists():
+        return
+
+    # Patterns to fix
+    patterns = [
+        # Fix module anchor IDs
+        (r'id="module-src\.bluetooth_sig\.', 'id="module-bluetooth_sig.'),
+        (r"#module-src\.bluetooth_sig\.", "#module-bluetooth_sig."),
+        # Fix class/function anchor IDs
+        (r'id="src\.bluetooth_sig\.', 'id="bluetooth_sig.'),
+        (r"#src\.bluetooth_sig\.", "#bluetooth_sig."),
+        # Fix href links
+        (r'href="([^"]*)/src\.bluetooth_sig\.', r'href="\1/bluetooth_sig.'),
+        # Fix py:module directives in source
+        (r"py:module:: src\.bluetooth_sig\.", "py:module:: bluetooth_sig."),
+    ]
+
+    # Process all HTML files
+    html_files = list(build_dir.rglob("*.html"))
+    for html_file in html_files:
+        try:
+            content = html_file.read_text(encoding="utf-8")
+            modified = content
+
+            # Apply all patterns
+            for pattern, replacement in patterns:
+                modified = re.sub(pattern, replacement, modified)
+
+            # Only write if changes were made
+            if modified != content:
+                html_file.write_text(modified, encoding="utf-8")
+        except Exception as e:
+            print(f"Warning: Failed to fix anchors in {html_file}: {e}")
+
+
+def setup(app: Sphinx) -> None:
+    """Sphinx setup hook.
+
+    Connects custom event handlers to Sphinx events.
+
+    Args:
+        app: Sphinx application object
+    """
     app.connect("autoapi-skip-member", autoapi_skip_member)
     app.connect("build-finished", fix_table_headers)
+    app.connect("build-finished", fix_autoapi_anchors)

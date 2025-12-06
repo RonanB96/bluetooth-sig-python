@@ -18,10 +18,59 @@ from typing import Any
 import pytest
 from playwright.sync_api import Page
 
-# Configure Playwright to use system Chromium on Alpine Linux before import
+# ============================================================================
+# Shared Test Constants
+# ============================================================================
+
+# CSS class names used in Furo theme
+CSS_CLASS_SIDEBAR_TREE = "sidebar-tree"
+CSS_CLASS_TOCTREE_L1 = "toctree-l1"
+CSS_CLASS_SIDEBAR_BRAND = "sidebar-brand"
+CSS_CLASS_SIDEBAR_SEARCH = "sidebar-search"
+CSS_CLASS_SIDEBAR_DRAWER = "sidebar-drawer"
+CSS_CLASS_TOCTREE_CHECKBOX = "toctree-checkbox"
+
+# CSS selectors for Furo theme (for Playwright tests)
+SELECTOR_SIDEBAR_TREE = ".sidebar-tree"
+SELECTOR_SIDEBAR_DRAWER = ".sidebar-drawer"
+SELECTOR_SIDEBAR_BRAND = ".sidebar-brand"
+SELECTOR_SIDEBAR_SEARCH = ".sidebar-search"
+SELECTOR_TOCTREE_L1 = ".toctree-l1"
+SELECTOR_TOCTREE_CHECKBOX = "input.toctree-checkbox"
+SELECTOR_SIDEBAR_TREE_LINK = f"{SELECTOR_SIDEBAR_TREE} a.reference"
+SELECTOR_TOP_LEVEL_ITEMS = f"{SELECTOR_SIDEBAR_TREE} > ul > li{SELECTOR_TOCTREE_L1}"
+
+# Required sections following Diátaxis framework
+REQUIRED_SECTIONS = {
+    "Tutorials": "tutorials/index.html",
+    "How-to Guides": "how-to/index.html",
+    "API Reference": "api/index.html",
+    "Understanding the Library": "explanation/index.html",
+    "Community": "community/index.html",
+    "Performance & Benchmarks": "performance/index.html",
+}
+
+# Expected section order
+EXPECTED_SECTION_ORDER = [
+    "Tutorials",
+    "How-to Guides",
+    "API Reference",
+    "Understanding the Library",
+    "Community",
+    "Performance & Benchmarks",
+]
+
+# ============================================================================
+# Playwright Configuration
+# ============================================================================
+
+# Configure Playwright to use browsers from default cache location
 # This must be set before pytest-playwright plugin loads
-os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "0")
-os.environ.setdefault("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
+# Remove any overrides that might cause issues
+if "PLAYWRIGHT_BROWSERS_PATH" in os.environ:
+    del os.environ["PLAYWRIGHT_BROWSERS_PATH"]
+if "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD" in os.environ:
+    del os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"]
 
 # Get repository root and docs build directory
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -39,17 +88,18 @@ def pytest_configure(config: pytest.Config) -> None:
 
 @pytest.fixture(scope="session")
 def browser_type_launch_args(browser_type_launch_args: dict[str, Any]) -> dict[str, Any]:
-    """Override Playwright browser launch arguments to use system chromium.
+    """Override Playwright browser launch arguments.
 
     Args:
         browser_type_launch_args: Default launch arguments from pytest-playwright
 
     Returns:
-        Modified launch arguments with system chromium executable path
+        Modified launch arguments with additional browser options
     """
+    # Use Playwright's bundled chromium (no executable_path needed)
+    # It will use the browser from ~/.cache/ms-playwright/
     return {
         **browser_type_launch_args,
-        "executable_path": "/usr/bin/chromium-browser",
         "args": [
             "--no-sandbox",
             "--disable-dev-shm-usage",
@@ -97,13 +147,18 @@ def find_available_port(start_port: int = 8000, max_attempts: int = 10) -> int:
 
 
 @pytest.fixture(scope="session")
-def docs_server_port() -> int:
+def docs_server_port() -> Generator[int, None, None]:
     """Fixture providing an available port for the docs server.
 
-    Returns:
+    Finds an available port and yields it for the session. The port is
+    automatically released when the session ends.
+
+    Yields:
         Available port number
     """
-    return find_available_port()
+    port = find_available_port()
+    yield port
+    # Port is automatically released when fixture scope ends
 
 
 @pytest.fixture(scope="session")
@@ -111,7 +166,7 @@ def docs_server(docs_server_port: int) -> Generator[str, None, None]:
     """Start a simple HTTP server serving built Sphinx documentation.
 
     This fixture starts a server at session scope, serves the built HTML docs,
-    and automatically shuts down after all tests complete.
+    and automatically shuts down after all tests complete or on interruption (Ctrl+C).
 
     Args:
         docs_server_port: Port to use for the server
@@ -159,10 +214,12 @@ def docs_server(docs_server_port: int) -> Generator[str, None, None]:
         server.shutdown()
         raise RuntimeError(f"Documentation server failed to start within {max_wait} seconds")
 
-    yield base_url
-
-    # Shutdown server
-    server.shutdown()
+    try:
+        yield base_url
+    finally:
+        # Ensure server shuts down even on KeyboardInterrupt (Ctrl+C)
+        server.shutdown()
+        server.server_close()
 
 
 @pytest.fixture(scope="session")
@@ -273,18 +330,6 @@ def html_file(request: pytest.FixtureRequest, docs_server: str) -> str:
     file_path: Path = request.param
     relative_path = file_path.relative_to(DOCS_BUILD_DIR)
     return f"{docs_server}/{relative_path}"
-
-
-@pytest.fixture(scope="session")
-def all_html_files() -> list[Path]:
-    """Fixture providing all HTML files in the built documentation.
-
-    Returns:
-        List of paths to all HTML files in docs/build/html
-    """
-    if not DOCS_BUILD_DIR.exists():
-        return []
-    return sorted(DOCS_BUILD_DIR.rglob("*.html"))
 
 
 @pytest.fixture(scope="session")

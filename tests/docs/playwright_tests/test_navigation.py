@@ -44,23 +44,34 @@ def test_internal_anchor_links_valid(page: Page, html_file: str) -> None:
     """Test that anchor links point to existing elements."""
     page.goto(html_file)
 
+    # Wait for page to be fully loaded
+    page.wait_for_load_state("load")
+
     anchor_links = page.locator("a[href^='#']").all()
 
     if not anchor_links:
         pytest.skip("No anchor links on page")
 
-    broken_anchors = []
+    broken_anchors: list[str] = []
 
-    for link in anchor_links[:10]:
+    for link in anchor_links:
         href = link.get_attribute("href")
 
         if not href or href == "#":
             continue
 
         anchor_id = href[1:]
-        target = page.locator(f"#{anchor_id}, [name='{anchor_id}']")
 
-        if target.count() == 0:
+        # Check if target exists - use getElementById which handles special characters correctly
+        target_exists = page.evaluate(
+            """(anchorId) => {
+                const byId = document.getElementById(anchorId);
+                return byId !== null;
+            }""",
+            anchor_id,
+        )
+
+        if not target_exists:
             broken_anchors.append(href)
 
     if broken_anchors:
