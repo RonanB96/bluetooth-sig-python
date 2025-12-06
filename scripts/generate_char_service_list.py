@@ -325,7 +325,10 @@ registry. The UUID registry is loaded from YAML files in the `bluetooth_sig` sub
 
 def main() -> None:
     """Main entry point."""
-    output_file = repo_root / "docs" / "reference" / "characteristics.md"
+    output_file = repo_root / "docs" / "source" / "reference" / "characteristics.md"
+
+    # Create directory if it doesn't exist
+    output_file.parent.mkdir(parents=True, exist_ok=True)
 
     print("Generating characteristics and services list...")
     markdown = generate_markdown()

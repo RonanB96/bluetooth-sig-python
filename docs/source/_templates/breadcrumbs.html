@@ -1,0 +1,12 @@
+{# Custom breadcrumbs template for Furo theme #}
+{%- if parents %}
+<nav class="breadcrumbs" aria-label="Breadcrumb navigation">
+  <ul>
+    <li><a href="{{ pathto(master_doc) }}">Home</a></li>
+    {%- for parent in parents %}
+    <li><a href="{{ parent.link|e }}">{{ parent.title }}</a></li>
+    {%- endfor %}
+    <li class="current">{{ title }}</li>
+  </ul>
+</nav>
+{%- endif %}
