@@ -264,6 +264,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0 # Full history needed for git describe versioning
           submodules: recursive
           token: ${{ secrets.GITHUB_TOKEN }}
 
