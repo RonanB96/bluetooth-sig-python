@@ -434,6 +434,8 @@ jobs:
             exit 0
           fi
 
+          # Dynamic worker calculation via pytest hook (pytest_xdist_auto_num_workers)
+          # Workers scale based on file count: few files = 1-2 workers, many files = 4-8 workers
           pytest tests/docs/playwright_tests/ \
             -m "built_docs and playwright" \
             -n auto \

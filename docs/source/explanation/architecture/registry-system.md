@@ -362,7 +362,7 @@ All specialized registries inherit from {py:class}`~bluetooth_sig.registry.base.
 - `_lazy_load`: Helper for double-checked locking pattern
 - `_ensure_loaded`: Guarantees data is loaded before access
 
-This base class ensures consistent behavior across all registry types. See {py:class}`~bluetooth_sig.registry.base.BaseUUIDRegistry` source code for complete details.
+This base class ensures consistent behaviour across all registry types. See {py:class}`~bluetooth_sig.registry.base.BaseUUIDRegistry` source code for complete details.
 
 ### Singleton Guarantees
 

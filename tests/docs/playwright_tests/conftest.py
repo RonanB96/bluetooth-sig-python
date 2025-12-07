@@ -36,11 +36,10 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture(scope="session")
-def browser_type_launch_args(browser_type_launch_args: dict[str, Any]) -> dict[str, Any]:
+def browser_type_launch_args(
+    pytestconfig: pytest.Config,
+) -> dict[str, Any]:
     """Override Playwright browser launch arguments.
-
-    Args:
-        browser_type_launch_args: Default launch arguments from pytest-playwright
 
     Returns:
         Modified launch arguments with additional browser options
@@ -48,13 +47,26 @@ def browser_type_launch_args(browser_type_launch_args: dict[str, Any]) -> dict[s
     # Use Playwright's bundled chromium (no executable_path needed)
     # It will use the browser from ~/.cache/ms-playwright/
     return {
-        **browser_type_launch_args,
         "args": [
             "--no-sandbox",
             "--disable-dev-shm-usage",
             "--disable-gpu",
         ],
     }
+
+
+@pytest.fixture
+def page(page: Page) -> Page:
+    """Override page fixture to set increased timeouts for CI.
+
+    Args:
+        page: Playwright page from pytest-playwright
+
+    Returns:
+        Page with increased navigation timeout
+    """
+    page.set_default_navigation_timeout(60000)  # 60 seconds for CI
+    return page
 
 
 @pytest.fixture(autouse=True)
