@@ -354,4 +354,4 @@ ______________________________________________________________________
 - [What It Does NOT Solve](limitations.md) - Understand the boundaries
 - [Quick Start](../tutorials/quickstart.md) - Start using the library
 - [Usage Guide](../how-to/usage.md) - Detailed usage examples
-- [API Reference](../api/index.rst) - Complete API documentation
+- [API Reference](../api/index.md) - Complete API documentation

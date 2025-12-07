@@ -1,13 +1,14 @@
 """Pytest configuration for documentation verification tests.
 
-These tests require built documentation (Sphinx HTML output) and use Playwright
-to verify navigation, structure, accessibility, and Diátaxis compliance.
+These tests require built documentation (Sphinx HTML output) to verify
+navigation, structure, accessibility, and Diátaxis compliance.
+
+Shared fixtures for both regular and Playwright-based documentation tests.
 """
 
 from __future__ import annotations
 
 import http.server
-import os
 import socketserver
 import threading
 import time
@@ -16,7 +17,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from playwright.sync_api import Page
 
 # ============================================================================
 # Shared Test Constants
@@ -60,52 +60,9 @@ EXPECTED_SECTION_ORDER = [
     "Performance & Benchmarks",
 ]
 
-# ============================================================================
-# Playwright Configuration
-# ============================================================================
-
-# Configure Playwright to use browsers from default cache location
-# This must be set before pytest-playwright plugin loads
-# Remove any overrides that might cause issues
-if "PLAYWRIGHT_BROWSERS_PATH" in os.environ:
-    del os.environ["PLAYWRIGHT_BROWSERS_PATH"]
-if "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD" in os.environ:
-    del os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"]
-
 # Get repository root and docs build directory
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 DOCS_BUILD_DIR = ROOT_DIR / "docs" / "build" / "html"
-
-
-def pytest_configure(config: pytest.Config) -> None:
-    """Configure pytest for documentation tests.
-
-    Override Playwright's browser launch to use system chromium.
-    """
-    # Set launch options for system chromium
-    config.option.browser_channel = None
-
-
-@pytest.fixture(scope="session")
-def browser_type_launch_args(browser_type_launch_args: dict[str, Any]) -> dict[str, Any]:
-    """Override Playwright browser launch arguments.
-
-    Args:
-        browser_type_launch_args: Default launch arguments from pytest-playwright
-
-    Returns:
-        Modified launch arguments with additional browser options
-    """
-    # Use Playwright's bundled chromium (no executable_path needed)
-    # It will use the browser from ~/.cache/ms-playwright/
-    return {
-        **browser_type_launch_args,
-        "args": [
-            "--no-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",
-        ],
-    }
 
 
 def is_port_available(port: int) -> bool:
@@ -188,94 +145,38 @@ def docs_server(docs_server_port: int) -> Generator[str, None, None]:
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(*args, directory=str(DOCS_BUILD_DIR), **kwargs)
 
-        def log_message(self, format: str, *args: Any) -> None:
+        def log_message(self, fmt: str, *args: Any) -> None:
             """Suppress server log messages."""
-            pass
+            pass  # pylint: disable=unnecessary-pass
 
     # Start server in a thread
-    server = socketserver.TCPServer(("127.0.0.1", docs_server_port), Handler)
-    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
-    server_thread.start()
+    with socketserver.TCPServer(("127.0.0.1", docs_server_port), Handler) as server:
+        server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+        server_thread.start()
 
-    # Wait for server to be ready
-    base_url = f"http://localhost:{docs_server_port}"
-    max_wait = 5
-    start_time = time.time()
+        # Wait for server to be ready
+        base_url = f"http://localhost:{docs_server_port}"
+        max_wait = 5
+        start_time = time.time()
 
-    while time.time() - start_time < max_wait:
+        while time.time() - start_time < max_wait:
+            try:
+                import urllib.request
+
+                with urllib.request.urlopen(f"{base_url}/index.html", timeout=1):
+                    break
+            except Exception:
+                time.sleep(0.1)
+        else:
+            server.shutdown()
+            raise RuntimeError(f"Documentation server failed to start within {max_wait} seconds")
+
         try:
-            import urllib.request
-
-            urllib.request.urlopen(f"{base_url}/index.html", timeout=1)
-            break
-        except Exception:
-            time.sleep(0.1)
-    else:
-        server.shutdown()
-        raise RuntimeError(f"Documentation server failed to start within {max_wait} seconds")
-
-    try:
-        yield base_url
-    finally:
-        # Ensure server shuts down even on KeyboardInterrupt (Ctrl+C)
-        server.shutdown()
-        server.server_close()
-
-
-@pytest.fixture(scope="session")
-def browser_context_args(browser_context_args: dict[str, Any]) -> dict[str, Any]:
-    """Configure browser context for consistent testing.
-
-    Args:
-        browser_context_args: Default context arguments from pytest-playwright
-
-    Returns:
-        Modified context arguments with consistent viewport and locale
-    """
-    return {
-        **browser_context_args,
-        "viewport": {"width": 1280, "height": 720},
-        "locale": "en-US",
-        "timezone_id": "UTC",
-    }
-
-
-@pytest.fixture(autouse=True)
-def monitor_console_errors(page: Page) -> Generator[None, None, None]:
-    """Monitor and collect JavaScript console errors during tests.
-
-    This fixture automatically monitors all console messages and fails tests
-    if JavaScript errors are detected. It's applied to all tests automatically.
-
-    Args:
-        page: Playwright page fixture
-
-    Yields:
-        None - fixture runs before and after test execution
-
-    Raises:
-        AssertionError: If console errors are detected during test
-    """
-    errors: list[str] = []
-
-    def handle_console(msg: Any) -> None:
-        """Collect console error messages."""
-        if msg.type == "error":
-            error_text = msg.text
-            # Ignore common non-critical errors
-            if "404" in error_text or "Failed to load resource" in error_text:
-                return  # Skip 404s for missing favicons, etc.
-            errors.append(error_text)
-
-    page.on("console", handle_console)
-    yield
-
-    # Check for errors after test completes
-    if errors:
-        error_summary = "\n".join(f"  - {err}" for err in errors[:5])
-        if len(errors) > 5:
-            error_summary += f"\n  ... and {len(errors) - 5} more errors"
-        pytest.fail(f"JavaScript console errors detected:\n{error_summary}")
+            yield base_url
+        finally:
+            # Ensure server shuts down even on KeyboardInterrupt (Ctrl+C)
+            server.shutdown()
+            server.server_close()
 
 
 @pytest.fixture(scope="session")
@@ -342,7 +243,7 @@ def html_file_url(docs_server: str) -> dict[Path, str]:
     if not DOCS_BUILD_DIR.exists():
         return {}
 
-    url_map = {}
+    url_map: dict[Path, str] = {}
     for html_file in DOCS_BUILD_DIR.rglob("*.html"):
         relative_path = html_file.relative_to(DOCS_BUILD_DIR)
         url = f"{docs_server}/{relative_path}"

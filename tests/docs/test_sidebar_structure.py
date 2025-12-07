@@ -16,7 +16,8 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
-from conftest import (
+
+from tests.docs.conftest import (
     CSS_CLASS_SIDEBAR_BRAND,
     CSS_CLASS_SIDEBAR_DRAWER,
     CSS_CLASS_SIDEBAR_SEARCH,
@@ -28,7 +29,7 @@ from conftest import (
 )
 
 
-class SidebarParser(HTMLParser):
+class SidebarParser(HTMLParser):  # pylint: disable=too-many-instance-attributes
     """HTML parser to extract sidebar navigation structure."""
 
     def __init__(self) -> None:
@@ -120,7 +121,7 @@ def test_sidebar_html_has_required_sections() -> None:
         parser.feed(f.read())
 
     # Check each required section
-    found_sections = {text: href for text, href in parser.sidebar_sections}
+    found_sections = dict(parser.sidebar_sections)
     missing_sections: list[str] = []
     incorrect_hrefs: list[str] = []
 

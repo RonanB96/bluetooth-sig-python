@@ -12,6 +12,19 @@ from pathlib import Path
 
 import pytest
 
+# Apply nest_asyncio only when needed (Python < 3.11)
+# Python 3.11+ has native support for nested asyncio.run() calls
+# pytest-asyncio 0.23+ handles event loops better, but nest_asyncio may still
+# be needed for test_docs_code_blocks.py which executes code blocks with asyncio.run()
+try:
+    import nest_asyncio  # type: ignore[import-untyped]
+
+    if sys.version_info < (3, 11):
+        nest_asyncio.apply()
+except ImportError:
+    # nest_asyncio not available - tests requiring it will fail explicitly
+    pass
+
 ROOT = Path(__file__).resolve().parent.parent
 # Export ROOT_DIR for tests that need to construct paths relative to project root
 ROOT_DIR = ROOT

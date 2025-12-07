@@ -240,4 +240,4 @@ See [Contributing Guide](contributing.md) for details.
 
 - [Architecture](../explanation/architecture/overview.md) - Understand the design
 - [Testing Guide](testing.md) - Testing best practices
-- [API Reference](../api/src/bluetooth_sig/gatt/index.rst) - GATT layer details
+- [API Reference](../api/index.md) - GATT layer details

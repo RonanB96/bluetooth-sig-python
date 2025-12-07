@@ -554,5 +554,5 @@ All data structures follow the Bluetooth SIG specifications and provide type-saf
 - [Quick Start Guide](../tutorials/quickstart.md) - Basic getting started
 - [BLE Integration Guide](ble-integration.md) - Connect with bleak, simplepyble, etc.
 - [Supported Characteristics](../reference/characteristics.md) - Complete list of supported GATT characteristics
-- [API Reference](../api/index.rst) - Detailed API documentation
+- [API Reference](../api/index.md) - Detailed API documentation
 - [Testing Guide](testing.md) - How to test your BLE integration

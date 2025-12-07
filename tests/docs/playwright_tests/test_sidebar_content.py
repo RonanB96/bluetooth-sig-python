@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import Page
 
-from ..conftest import (
+from tests.docs.conftest import (
     EXPECTED_SECTION_ORDER,
     REQUIRED_SECTIONS,
     SELECTOR_SIDEBAR_BRAND,

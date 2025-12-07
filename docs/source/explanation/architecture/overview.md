@@ -49,10 +49,10 @@ graph TB
 
 | Pattern | Purpose | Location |
 |---------|---------|----------|
-| **Registry Pattern** | Dynamic discovery of characteristics | [internals.md](internals.md) |
-| **Singleton Pattern** | Single translator/registry instances | [internals.md](internals.md) |
-| **Template Method** | Abstract parsing contracts | [internals.md](internals.md) |
-| **Lazy Initialization** | On-demand data loading | [registry-system.md](registry-system.md) |
+| **Registry Pattern** | Dynamic discovery of characteristics | [Internal Architecture](internals.md) |
+| **Singleton Pattern** | Single translator/registry instances | [Internal Architecture](internals.md) |
+| **Template Method** | Abstract parsing contracts | [Internal Architecture](internals.md) |
+| **Lazy Initialization** | On-demand data loading | [Registry System](registry-system.md) |
 
 ## System Layers
 
@@ -117,12 +117,12 @@ graph TB
 
 ### Package Dependencies
 
-[![Package Dependencies](../../diagrams/deps/bluetooth_sig.svg)](../../diagrams/deps/bluetooth_sig.svg)
+![Package Dependencies](../../diagrams/deps/bluetooth_sig.svg)
 
 ### Package Hierarchy
 
-[![Package Hierarchy](../../diagrams/svg/packages_bluetooth_sig.svg)](../../diagrams/svg/packages_bluetooth_sig.svg)
+![Package Hierarchy](../../diagrams/svg/packages_bluetooth_sig.svg)
 
 ### Class Hierarchy
 
-[![Class Diagram](../../diagrams/svg/classes_bluetooth_sig.svg)](../../diagrams/svg/classes_bluetooth_sig.svg)
+![Class Diagram](../../diagrams/svg/classes_bluetooth_sig.svg)

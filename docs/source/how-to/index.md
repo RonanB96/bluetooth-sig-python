@@ -25,7 +25,7 @@ Practical guides to solve specific problems and accomplish goals with the Blueto
 ## Related Sections
 
 - **[Tutorials](../tutorials/index.md)** - Step-by-step learning for beginners
-- **[API Reference](../api/index.rst)** - Detailed API documentation
+- **[API Reference](../api/index.md)** - Detailed API documentation
 - **[Explanation](../explanation/index.md)** - Understand concepts and architecture
 
 ```{toctree}

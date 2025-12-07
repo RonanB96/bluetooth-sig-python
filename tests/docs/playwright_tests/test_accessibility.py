@@ -36,6 +36,7 @@ def test_page_has_proper_title(page: Page, html_file: str) -> None:
 def test_heading_hierarchy(page: Page, html_file: str) -> None:
     """Test proper heading hierarchy."""
     page.goto(html_file)
+    page.wait_for_load_state("networkidle")
     h1_count = page.locator("h1").count()
     assert 1 <= h1_count <= 2, f"Wrong h1 count on {html_file}: {h1_count}"
 
@@ -327,8 +328,9 @@ def test_form_inputs_have_labels(page: Page, html_file: str) -> None:
             parent_tag = input_elem.evaluate("el => el.parentElement?.tagName")
             grandparent_tag = input_elem.evaluate("el => el.parentElement?.parentElement?.tagName")
             has_wrapping_label = parent_tag == "LABEL" or grandparent_tag == "LABEL"
-        except Exception:
-            pass
+        except Exception as e:
+            # Log evaluation errors but continue - DOM structure may vary
+            print(f"Warning: Failed to evaluate label wrapping for input {input_id}: {e}")
 
         has_aria_label = (
             input_elem.get_attribute("aria-label") is not None

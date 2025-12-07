@@ -218,7 +218,7 @@ See the [Usage Guide](../how-to/usage.md) for a complete list.
 
 - [Usage Guide](../how-to/usage.md) - Comprehensive usage examples
 - [BLE Integration Guide](../how-to/ble-integration.md) - Integrate with your BLE library
-- [API Reference](../api/index.rst) - Complete API documentation
+- [API Reference](../api/index.md) - Complete API documentation
 - [What Problems It Solves](../explanation/what-it-solves.md) - Understand the benefits
 
 ## Getting Help

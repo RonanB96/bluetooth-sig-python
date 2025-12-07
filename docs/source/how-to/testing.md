@@ -530,5 +530,5 @@ def test_temperature_parsing():
 ## Next Steps
 
 - [Contributing Guide](contributing.md) - Contribute to the project
-- [API Reference](../api/index.rst) - API documentation
+- [API Reference](../api/index.md) - API documentation
 - [Examples](https://github.com/RonanB96/bluetooth-sig-python/tree/main/examples) - More examples

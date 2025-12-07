@@ -196,5 +196,5 @@ For detailed performance data and benchmarks:
 
 ## See Also
 
-- [API Reference](../api/index.rst) - Complete API documentation
+- [API Reference](../api/index.md) - Complete API documentation
 - [Testing Guide](testing.md) - How to test performance in your application

@@ -21,7 +21,7 @@ Please read our **[Code of Conduct](code-of-conduct.md)** before participating i
 
 - **[GitHub Issues](https://github.com/RonanB96/bluetooth-sig-python/issues)** - Report bugs or request features
 - **[Discussions](https://github.com/RonanB96/bluetooth-sig-python/discussions)** - Ask questions or share ideas
-- **Documentation** - Check [Tutorials](../tutorials/index.md), [How-to Guides](../how-to/index.md), and [API Reference](../api/index.rst)
+- **Documentation** - Check [Tutorials](../tutorials/index.md), [How-to Guides](../how-to/index.md), and [API Reference](../api/index.md)
 
 ## Project Links
 

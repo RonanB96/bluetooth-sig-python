@@ -11,7 +11,9 @@ Based on:
 
 from __future__ import annotations
 
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -59,6 +61,9 @@ myst_enable_extensions = [
     "html_admonition",  # HTML admonitions (tip/note blocks)
     "linkify",  # Auto-link URLs (useful for maintenance)
 ]
+
+# Enable mermaid code blocks to be rendered as mermaid directives
+myst_fence_as_directive = ["mermaid"]
 
 # Allow .md extension for source files
 source_suffix = {
@@ -424,6 +429,79 @@ def fix_autoapi_anchors(
             print(f"Warning: Failed to fix anchors in {html_file}: {e}")
 
 
+def run_pre_build_scripts(app: Sphinx, config: object) -> None:
+    """Run generation scripts before building documentation.
+
+    This replicates the behaviour from docs_hooks.py (which was MkDocs-specific)
+    for Sphinx builds. Executes two pre-build steps:
+    1. Generates comprehensive list of supported characteristics and services
+       from the registry system → docs/source/reference/characteristics.md
+    2. Generates class diagrams and dependency graphs using pyreverse and pydeps
+       → docs/diagrams/*.svg (C4 model, package structure, etc.)
+
+    Args:
+        app: Sphinx application object
+        config: Sphinx config object (unused but required by event signature)
+
+    Raises:
+        subprocess.CalledProcessError: If any generation script fails.
+    """
+    repo_root = Path(__file__).parent.parent.parent
+
+    # =========================================================================
+    # Step 1: Generate characteristics and services documentation
+    # =========================================================================
+    script_path = repo_root / "scripts" / "generate_char_service_list.py"
+
+    if not script_path.exists():
+        print(f"Warning: Generate script not found at {script_path}")
+    else:
+        try:
+            print("Running characteristics generation script...")
+            print("  → Outputs to: docs/source/reference/characteristics.md")
+            subprocess.run(
+                [sys.executable, str(script_path)],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            print("✓ Characteristics documentation generated successfully")
+        except subprocess.CalledProcessError as e:
+            print(f"Error: Failed to generate characteristics: {e}")
+            print(f"stdout: {e.stdout}")
+            print(f"stderr: {e.stderr}")
+            raise
+
+    # =========================================================================
+    # Step 2: Generate architecture diagrams
+    # =========================================================================
+    diag_script = repo_root / "scripts" / "generate_diagrams.py"
+    if not diag_script.exists():
+        print(f"Warning: Diagrams generation script not found at {diag_script}")
+    else:
+        try:
+            print("Running diagrams generation script...")
+            print("  → Outputs to: docs/source/diagrams/*.svg")
+            # Force strict behaviour for published docs
+            env = dict(os.environ)
+            env["STRICT_DIAGRAMS"] = "1"
+            subprocess.run(
+                [sys.executable, str(diag_script)],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                check=True,
+                env=env,
+            )
+            print("✓ Diagrams generated successfully")
+        except subprocess.CalledProcessError as e:
+            print(f"Error: Failed to generate diagrams: {e}")
+            print(f"stdout: {e.stdout}")
+            print(f"stderr: {e.stderr}")
+            raise
+
+
 def setup(app: Sphinx) -> None:
     """Sphinx setup hook.
 
@@ -432,6 +510,12 @@ def setup(app: Sphinx) -> None:
     Args:
         app: Sphinx application object
     """
+    # Run generation scripts before build starts
+    app.connect("config-inited", run_pre_build_scripts)
+
+    # Skip members during API generation
     app.connect("autoapi-skip-member", autoapi_skip_member)
+
+    # Post-build fixes
     app.connect("build-finished", fix_table_headers)
     app.connect("build-finished", fix_autoapi_anchors)

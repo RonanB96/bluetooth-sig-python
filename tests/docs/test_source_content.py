@@ -105,14 +105,37 @@ def test_markdown_images_have_alt_text(all_markdown_files: list[Path]) -> None:
 def test_code_blocks_have_language(all_markdown_files: list[Path]) -> None:
     """Test that code blocks specify a language."""
     issues = []
-    # Match ```\n or ``` \n (no language specified)
-    bad_fence = re.compile(r"^```\s*$", re.MULTILINE)
 
     for file in all_markdown_files:
         content = file.read_text(encoding="utf-8")
-        matches = bad_fence.findall(content)
-        if matches:
-            issues.append(f"{file.relative_to(DOCS_SOURCE_DIR)}: {len(matches)} code block(s) without language")
+
+        # Remove MyST directive blocks (these use ``` without language, which is valid)
+        # Pattern 1: ```{directive}...```
+        content = re.sub(r"```\{[^}]+\}.*?```", "", content, flags=re.DOTALL)
+
+        # Pattern 2: ``` followed by :option: lines (MyST directive options)
+        # Use possessive quantifier (via atomic group) to prevent backtracking
+        content = re.sub(r"```\n(?::[\w-]+:[^\n]*\n)*?```", "", content, flags=re.DOTALL)
+
+        # Pattern 3: Closing ``` for MyST containers (::::{directive}...```)
+        content = re.sub(r"::::\{[^}]+\}.*?```", "", content, flags=re.DOTALL)
+
+        # Now find code blocks: ```[optional-language]\n...content...\n```
+        # We want to find blocks where opening ``` is NOT followed by a language identifier
+        # Pattern: ``` at line start, optional whitespace, newline (= no language)
+        # But we need to match the FULL block to avoid double-counting closing fences
+        code_block_pattern = re.compile(r"^```(\w*)\s*\n.*?^```\s*$", re.MULTILINE | re.DOTALL)
+
+        blocks_without_language = 0
+        for match in code_block_pattern.finditer(content):
+            language = match.group(1)
+            if not language:  # Empty language = no language specified
+                blocks_without_language += 1
+
+        if blocks_without_language > 0:
+            issues.append(
+                f"{file.relative_to(DOCS_SOURCE_DIR)}: {blocks_without_language} code block(s) without language"
+            )
 
     if issues:
         pytest.fail("Code blocks without language:\n" + "\n".join(f"  - {issue}" for issue in issues[:10]))
@@ -131,7 +154,7 @@ def test_tutorials_use_appropriate_language(docs_source_dir: Path) -> None:
         pytest.skip("No tutorial markdown files found")
 
     issues = []
-    rules = DIATAXIS_RULES["tutorials"]
+    rules: dict[str, list[str] | str] = DIATAXIS_RULES["tutorials"]  # type: ignore[assignment]
 
     for tutorial_file in tutorial_files:
         content = tutorial_file.read_text(encoding="utf-8").lower()
@@ -158,7 +181,7 @@ def test_reference_docs_maintain_neutral_tone(docs_source_dir: Path) -> None:
         pytest.skip("No reference markdown files found")
 
     issues = []
-    rules = DIATAXIS_RULES["reference"]
+    rules: dict[str, list[str] | str] = DIATAXIS_RULES["reference"]  # type: ignore[assignment]
 
     for ref_file in reference_files:
         content = ref_file.read_text(encoding="utf-8").lower()
@@ -239,6 +262,11 @@ def test_heading_hierarchy_no_skips(all_markdown_files: list[Path]) -> None:
 
     for file in all_markdown_files:
         content = file.read_text(encoding="utf-8")
+
+        # Remove code blocks first - they may contain # comments that aren't headings
+        # Pattern: ```language\n...content...\n```
+        content = re.sub(r"^```\w*\s*\n.*?^```\s*$", "", content, flags=re.MULTILINE | re.DOTALL)
+
         headings = re.findall(r"^(#{1,6})\s+", content, re.MULTILINE)
 
         for i in range(len(headings) - 1):

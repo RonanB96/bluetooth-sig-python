@@ -40,7 +40,7 @@ Through these tutorials, you will:
 After completing the tutorials, explore:
 
 - **[How-to Guides](../how-to/index.md)** - Solve specific problems and integrate with BLE libraries
-- **[API Reference](../api/index.rst)** - Detailed API documentation
+- **[API Reference](../api/index.md)** - Detailed API documentation
 - **[Architecture](../explanation/architecture/overview.md)** - Understand how the library works
 
 ## Philosophy

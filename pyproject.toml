@@ -40,8 +40,9 @@ homepage = "https://github.com/RonanB96/bluetooth-sig-python"
 [project.optional-dependencies]
 dev = [
     "pytest~=8.4",
-    "pytest-asyncio~=1.1",
+    "pytest-asyncio>=0.23.0,<0.24",
     "pytest-cov>=6.2,<8",
+    "nest-asyncio>=1.5.0",
     "pytest-benchmark~=5.1",
     "pylint~=3.3",
     "ruff~=0.13",
@@ -53,8 +54,9 @@ dev = [
 ]
 test = [
     "pytest~=8.4",
-    "pytest-asyncio~=1.2",
+    "pytest-asyncio>=0.23.0,<0.24",
     "pytest-cov>=6.2,<8",
+    "nest-asyncio>=1.5.0",
     "pytest-benchmark~=5.1",
     "pytest-xdist~=3.0",
     "pytest-markdown-docs~=0.9",
@@ -76,6 +78,7 @@ examples = [
 docs = [
     "sphinx>=7.2.0",
     "sphinx-autoapi>=3.0.0",
+    "sphinx-autobuild>=2024.2.4",
     "myst-parser>=2.0.0",
     "sphinx-design>=0.5.0",
     "furo>=2024.1.29",
@@ -92,7 +95,7 @@ docs = [
 # bluetooth_sig_python = "bluetooth_sig_python.cli:app"
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
+asyncio_mode = "strict"
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-m 'not benchmark and not built_docs and not playwright'"
@@ -186,7 +189,6 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"] # Ignore unused imports in __init__.py files
-"docs_hooks.py" = ["ANN001", "ANN002", "ANN003", "ANN201"] # MkDocs hooks must match their interface exactly
 # Tests and examples intentionally omit exhaustive Google-style docstrings in
 # many places (fixtures, local test helpers, and example scripts). Ignore
 # docstring-related (D...) codes in those paths so we can focus fixes on

@@ -57,7 +57,7 @@ Zooms into the registry system to show internal components.
 For code-level details, see:
 
 - [Internals](internals.md) - Implementation patterns and key classes
-- [API Reference](../../api/index.rst) - Complete class documentation
+- [API Reference](../../api/index.md) - Complete class documentation
 
 ## Navigation Path
 

@@ -28,6 +28,7 @@ def test_navigation_structure_exists(page: Page, html_file: str) -> None:
     nav_selectors = [
         "nav",
         ".sidebar",
+        ".sidebar-drawer",  # Furo theme sidebar
         ".toctree-wrapper",
         ".sphinxsidebar",
         '[role="navigation"]',

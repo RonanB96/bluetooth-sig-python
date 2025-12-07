@@ -4,13 +4,13 @@ This page displays performance benchmark results for the bluetooth-sig-python li
 
 ## Historical Trends
 
-<div id="benchmark-trends">
+<div id="benchmark-trends-content">
 <p>Historical trends will be available once benchmarks are published.</p>
 </div>
 
 ## Latest Results
 
-<div id="benchmark-results">
+<div id="benchmark-results-content">
 <p>Loading benchmark results...</p>
 </div>
 
@@ -46,7 +46,7 @@ async function safeFetchJson(url) {
 // Load historical trends
 safeFetchJson('./history.json')
   .then(history => {
-    const container = document.getElementById('benchmark-trends');
+    const container = document.getElementById('benchmark-trends-content');
 
     if (!history || history.length === 0) {
       container.innerHTML = '<p><em>Historical trends will appear after multiple benchmark runs.</em></p>';
@@ -129,7 +129,7 @@ safeFetchJson('./history.json')
     });
   })
   .catch(error => {
-    const container = document.getElementById('benchmark-trends');
+    const container = document.getElementById('benchmark-trends-content');
     container.innerHTML = `
       <div class="admonition note">
         <p class="admonition-title">Note</p>
@@ -140,7 +140,7 @@ safeFetchJson('./history.json')
 // Load and display benchmark results from JSON
 safeFetchJson('./benchmark.json')
   .then(data => {
-    const container = document.getElementById('benchmark-results');
+    const container = document.getElementById('benchmark-results-content');
 
     if (!data.benchmarks || data.benchmarks.length === 0) {
       container.innerHTML = '<p>No benchmark data available yet.</p>';
@@ -181,7 +181,7 @@ safeFetchJson('./benchmark.json')
     container.innerHTML = html;
   })
   .catch(error => {
-    const container = document.getElementById('benchmark-results');
+    const container = document.getElementById('benchmark-results-content');
     container.innerHTML = `
       <div class="admonition note">
         <p class="admonition-title">Note</p>

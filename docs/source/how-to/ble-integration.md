@@ -407,7 +407,7 @@ if __name__ == "__main__":
 ## See Also
 
 - [Quick Start](../tutorials/quickstart.md) - Basic usage
-- [API Reference](../api/index.rst) - Full API documentation
+- [API Reference](../api/index.md) - Full API documentation
 - [Examples](https://github.com/ronanb96/bluetooth-sig-python/tree/main/examples)
   - More examples
   - Additional resources
