@@ -335,5 +335,5 @@ When modifying test suite:
 1. Follow existing test patterns
 2. Use parametrized `html_file` fixture for per-page tests
 3. Add appropriate markers (`@pytest.mark.built_docs`, etc.)
-4. Document expected behavior in test docstrings
+4. Document expected behaviour in test docstrings
 5. Test with both selective and comprehensive modes

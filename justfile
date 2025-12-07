@@ -93,8 +93,6 @@ clean:
     find . -type f -name '*~' -delete
     find . -type d -name '__pycache__' -exec rm -fr {} +
 
-VERSION := `grep -m1 '^version' pyproject.toml | sed -E 's/version = "(.*)"/\1/'`
-
-# Print the current version of the project
+# Print the current version of the project (from git describe)
 version:
-    @echo "Current version is {{VERSION}}"
+    @git describe --tags

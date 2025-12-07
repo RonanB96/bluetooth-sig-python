@@ -11,18 +11,20 @@ Selective Testing:
         export DOCS_TEST_FILES='["ALL"]'                                      # Test all pages
         export DOCS_TEST_FILES='[]'                                             # Skip all tests (no docs changed)
 
-    If DOCS_TEST_FILES is not set, all HTML files are tested (default behavior).
+    If DOCS_TEST_FILES is not set, all HTML files are tested (default behaviour).
 """
 
 from __future__ import annotations
 
 import http.server
 import json
+import multiprocessing
 import os
-import socketserver
+import socket
 import threading
 import time
 from collections.abc import Generator
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
@@ -74,6 +76,86 @@ EXPECTED_SECTION_ORDER = [
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 DOCS_BUILD_DIR = ROOT_DIR / "docs" / "build" / "html"
 
+# Worker calculation thresholds
+WORKER_THRESHOLD_FEW_FILES = 10  # Below this: minimal workers
+WORKER_THRESHOLD_MEDIUM_FILES = 50  # Below this: medium workers
+WORKER_FILES_PER_WORKER = 20  # Files per worker for large workloads
+MAX_WORKERS = 8  # Maximum workers regardless of CPU count
+MIN_WORKERS = 2  # Minimum workers for parallel testing
+
+# Server configuration
+DEFAULT_SERVER_PORT = 8000  # Base port for HTTP servers
+SERVER_STARTUP_TIMEOUT_SECONDS = 3  # Time to wait for server startup
+SERVER_HEALTH_CHECK_INTERVAL_SECONDS = 0.1  # Interval between health checks
+
+# File count estimation
+ESTIMATED_HTML_FILE_COUNT = 150  # Default estimate when docs not built
+
+
+def pytest_xdist_auto_num_workers(config: pytest.Config) -> int:
+    """Dynamically calculate optimal number of pytest-xdist workers.
+
+    Scales workers based on the number of documentation files being tested:
+    - Few files (< 10): 1-2 workers (avoid overhead)
+    - Medium (10-50): 2-4 workers
+    - Many (50+): 4-8 workers (up to CPU count)
+
+    Each worker gets its own HTTP server on a unique port.
+
+    Args:
+        config: Pytest configuration object
+
+    Returns:
+        Optimal number of workers for current test scope
+    """
+    # Get test file count from environment variable (set by detect_changed_docs.py)
+    test_files_env = os.environ.get("DOCS_TEST_FILES", "")
+
+    if test_files_env:
+        try:
+            test_files_config = json.loads(test_files_env)
+            if not test_files_config or test_files_config == []:
+                # No files to test
+                return 1
+            if test_files_config == ["ALL"]:
+                # Test all files - use all available cores
+                if DOCS_BUILD_DIR.exists():
+                    file_count = len(list(DOCS_BUILD_DIR.rglob("*.html")))
+                else:
+                    file_count = ESTIMATED_HTML_FILE_COUNT
+            else:
+                # Specific files
+                file_count = len(test_files_config)
+        except (json.JSONDecodeError, ValueError):
+            file_count = ESTIMATED_HTML_FILE_COUNT
+    else:
+        # Default: test all files
+        if DOCS_BUILD_DIR.exists():
+            file_count = len(list(DOCS_BUILD_DIR.rglob("*.html")))
+        else:
+            file_count = ESTIMATED_HTML_FILE_COUNT
+
+    # Calculate optimal workers based on file count and available CPUs
+    cpu_count = multiprocessing.cpu_count()
+
+    if file_count < WORKER_THRESHOLD_FEW_FILES:
+        # Few files - avoid xdist overhead
+        workers = min(MIN_WORKERS, cpu_count)
+    elif file_count < WORKER_THRESHOLD_MEDIUM_FILES:
+        # Medium workload
+        workers = min(4, cpu_count)
+    else:
+        # Large workload - scale up to CPU count
+        workers = min(MAX_WORKERS, cpu_count, max(MIN_WORKERS, file_count // WORKER_FILES_PER_WORKER))
+
+    # Log worker calculation for debugging
+    print(
+        f"\n🔧 Dynamic worker calculation: {file_count} files, {cpu_count} CPUs → {workers} workers\n",
+        flush=True,
+    )
+
+    return workers
+
 
 def is_port_available(port: int) -> bool:
     """Check if a port is available for binding.
@@ -84,8 +166,6 @@ def is_port_available(port: int) -> bool:
     Returns:
         True if port is available, False otherwise
     """
-    import socket
-
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         try:
             sock.bind(("127.0.0.1", port))
@@ -115,43 +195,53 @@ def find_available_port(start_port: int = 8000, max_attempts: int = 10) -> int:
 
 @pytest.fixture(scope="session")
 def docs_server_port(worker_id: str) -> Generator[int, None, None]:
-    """Fixture providing an available port for the docs server.
+    """Fixture providing a unique port for each worker's docs server.
 
-    When running with pytest-xdist, ensures all workers use the same port
-    by having only the master/gw0 worker find and reserve the port.
+    Each pytest-xdist worker gets its own HTTP server on a unique port:
+    - master or gw0: 8000
+    - gw1: 8001
+    - gw2: 8002
+    - etc.
+
+    This enables true parallel testing with multiple server instances.
 
     Args:
         worker_id: pytest-xdist worker identifier ('master' or 'gw0', 'gw1', etc.)
 
     Yields:
-        Available port number
+        Unique port number for this worker
     """
     if worker_id == "master":
-        # Not using xdist, find an available port
-        port = find_available_port()
-        yield port
+        # Not using xdist
+        port = DEFAULT_SERVER_PORT
+    elif worker_id.startswith("gw"):
+        # Extract worker number (gw0 -> 0, gw1 -> 1, etc.)
+        worker_num = int(worker_id[2:])
+        port = DEFAULT_SERVER_PORT + worker_num
     else:
-        # xdist worker - use fixed port that master/gw0 will bind
-        # All workers will attempt to connect to the same server
-        yield 8000
+        # Fallback for unexpected worker_id format
+        port = find_available_port()
+
+    print(f"🔌 Worker {worker_id} assigned port {port}", flush=True)
+    yield port
 
 
 @pytest.fixture(scope="session")
 def docs_server(docs_server_port: int, worker_id: str) -> Generator[str, None, None]:
-    """Start a simple HTTP server serving built Sphinx documentation.
+    """Start a threaded HTTP server serving built Sphinx documentation.
 
-    This fixture starts a server at session scope, serves the built HTML docs,
-    and automatically shuts down after all tests complete or on interruption (Ctrl+C).
+    Each pytest-xdist worker gets its own ThreadingHTTPServer instance
+    on a unique port, enabling true parallel testing without blocking.
 
-    When using pytest-xdist, only the master/gw0 worker starts the server,
-    and all other workers connect to it.
+    ThreadingHTTPServer handles concurrent requests efficiently, preventing
+    "Connection reset" errors when multiple tests access the server simultaneously.
 
     Args:
-        docs_server_port: Port to use for the server
+        docs_server_port: Unique port for this worker's server
         worker_id: pytest-xdist worker identifier
 
     Yields:
-        Base URL of the documentation server (e.g., "http://localhost:8000")
+        Base URL of the documentation server (e.g., "http://localhost:8001")
 
     Raises:
         RuntimeError: If documentation is not built or server fails to start
@@ -164,49 +254,29 @@ def docs_server(docs_server_port: int, worker_id: str) -> Generator[str, None, N
 
     base_url = f"http://localhost:{docs_server_port}"
 
-    # Only gw0 (first worker) or master (non-xdist) should start the server
-    # All other workers (gw1, gw2, etc.) should wait for it
-    is_server_worker = worker_id in ("master", "gw0")
-
-    if not is_server_worker:
-        # xdist worker (gw1, gw2, etc.) - wait for server to be ready (started by gw0)
-        max_wait = 30
-        start_time = time.time()
-        while time.time() - start_time < max_wait:
-            try:
-                import urllib.request
-
-                with urllib.request.urlopen(f"{base_url}/index.html", timeout=1):
-                    break
-            except Exception:
-                time.sleep(0.2)
-        else:
-            raise RuntimeError(f"Documentation server not ready within {max_wait} seconds")
-
-        yield base_url
-        return
-
-    # gw0 or master: start the server
+    # Each worker starts its own server (no coordination needed)
     class Handler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
             super().__init__(*args, directory=str(DOCS_BUILD_DIR), **kwargs)
 
-        def log_message(self, fmt: str, *args: Any) -> None:
+        def log_message(self, format: str, *args: Any) -> None:  # noqa: ANN401, ARG002 # pylint: disable=redefined-builtin
             """Suppress server log messages."""
-            pass  # pylint: disable=unnecessary-pass
 
-    # Enable address reuse to prevent "Address already in use" errors
-    class ReuseAddrTCPServer(socketserver.TCPServer):
+    # Use ThreadingHTTPServer for concurrent request handling
+    # This prevents "Connection reset" errors during parallel testing
+    class ThreadedDocsServer(ThreadingHTTPServer):
         allow_reuse_address = True
+        daemon_threads = True  # Allow clean shutdown
+
+    print(f"🚀 Worker {worker_id} starting server on port {docs_server_port}", flush=True)
 
     # Start server in a thread
-    with ReuseAddrTCPServer(("127.0.0.1", docs_server_port), Handler) as server:
+    with ThreadedDocsServer(("127.0.0.1", docs_server_port), Handler) as server:
         server_thread = threading.Thread(target=server.serve_forever, daemon=True)
         server_thread.start()
 
-        # Wait for server to be ready
-        base_url = f"http://localhost:{docs_server_port}"
-        max_wait = 5
+        # Wait for server to be ready (shorter timeout since no coordination needed)
+        max_wait = SERVER_STARTUP_TIMEOUT_SECONDS
         start_time = time.time()
 
         while time.time() - start_time < max_wait:
@@ -214,17 +284,19 @@ def docs_server(docs_server_port: int, worker_id: str) -> Generator[str, None, N
                 import urllib.request
 
                 with urllib.request.urlopen(f"{base_url}/index.html", timeout=1):
+                    print(f"✅ Worker {worker_id} server ready on port {docs_server_port}", flush=True)
                     break
-            except Exception:
-                time.sleep(0.1)
+            except Exception:  # noqa: S110 - broad catch needed for server health check
+                time.sleep(SERVER_HEALTH_CHECK_INTERVAL_SECONDS)
         else:
             server.shutdown()
-            raise RuntimeError(f"Documentation server failed to start within {max_wait} seconds")
+            raise RuntimeError(f"Documentation server for worker {worker_id} failed to start within {max_wait} seconds")
 
         try:
             yield base_url
         finally:
             # Ensure server shuts down even on KeyboardInterrupt (Ctrl+C)
+            print(f"🛑 Worker {worker_id} shutting down server on port {docs_server_port}", flush=True)
             server.shutdown()
             server.server_close()
 
