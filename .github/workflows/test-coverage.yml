@@ -351,8 +351,8 @@ jobs:
   test-documentation:
     name: Test Documentation with Playwright
     needs: build-docs
-    # Allow running independently via workflow_dispatch for local act testing
-    if: ${{ !cancelled() && (success() || github.event.inputs.skip_dependencies == 'true') }}
+    # Only run on PRs - documentation tests don't contribute to coverage
+    if: ${{ github.event_name == 'pull_request' && !cancelled() && (success() || github.event.inputs.skip_dependencies == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
