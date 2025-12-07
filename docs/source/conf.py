@@ -30,9 +30,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 project = "Bluetooth SIG Standards Library"
 copyright = "2025, RonanB96"
 author = "RonanB96"
-release = "0.3.0"
-version = release  # Short X.Y version (matches release for this project)
-# Build timestamp for cache busting
+
+# Get version from git describe (single source of truth)
+_version_result = subprocess.run(
+    ["git", "describe", "--tags"],
+    capture_output=True,
+    text=True,
+    check=True,
+    cwd=Path(__file__).parent.parent.parent,
+)
+release = _version_result.stdout.strip().lstrip("v")
+version = release
 build_date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
 # -- General configuration ---------------------------------------------------
