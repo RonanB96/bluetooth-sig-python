@@ -323,10 +323,16 @@ jobs:
       - name: Link benchmarks into docs directory
         run: |
           if [ -f "benchmarks/benchmark.json" ]; then
-            echo "✅ Benchmark results found, linking to docs/source/"
-            mkdir -p docs/source/benchmarks
-            cp benchmarks/benchmark.json docs/source/benchmarks/
-            ls -la docs/source/benchmarks/
+            echo "✅ Benchmark results found, copying to docs/source/_static/performance/"
+            mkdir -p docs/source/_static/performance
+            cp benchmarks/benchmark.json docs/source/_static/performance/
+            if [ -f "benchmarks/history.json" ]; then
+              echo "✅ Benchmark history found, copying to docs/source/_static/performance/"
+              cp benchmarks/history.json docs/source/_static/performance/
+            else
+              echo "⚠️ No benchmark history found yet (first run creates it)"
+            fi
+            ls -la docs/source/_static/performance/
           else
             echo "⚠️ No benchmark results found, docs will build without benchmarks"
           fi

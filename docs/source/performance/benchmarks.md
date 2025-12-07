@@ -44,7 +44,7 @@ async function safeFetchJson(url) {
 }
 
 // Load historical trends
-safeFetchJson('./history.json')
+safeFetchJson('../_static/performance/history.json')
   .then(history => {
     const container = document.getElementById('benchmark-trends-content');
 
@@ -138,7 +138,7 @@ safeFetchJson('./history.json')
     `;
   });
 // Load and display benchmark results from JSON
-safeFetchJson('./benchmark.json')
+safeFetchJson('../_static/performance/benchmark.json')
   .then(data => {
     const container = document.getElementById('benchmark-results-content');
 
