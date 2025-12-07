@@ -164,9 +164,13 @@ def docs_server(docs_server_port: int, worker_id: str) -> Generator[str, None, N
 
     base_url = f"http://localhost:{docs_server_port}"
 
-    if worker_id != "master":
-        # xdist worker - wait for server to be ready (started by gw0)
-        max_wait = 10
+    # Only gw0 (first worker) or master (non-xdist) should start the server
+    # All other workers (gw1, gw2, etc.) should wait for it
+    is_server_worker = worker_id in ("master", "gw0")
+
+    if not is_server_worker:
+        # xdist worker (gw1, gw2, etc.) - wait for server to be ready (started by gw0)
+        max_wait = 30
         start_time = time.time()
         while time.time() - start_time < max_wait:
             try:
@@ -175,14 +179,14 @@ def docs_server(docs_server_port: int, worker_id: str) -> Generator[str, None, N
                 with urllib.request.urlopen(f"{base_url}/index.html", timeout=1):
                     break
             except Exception:
-                time.sleep(0.1)
+                time.sleep(0.2)
         else:
             raise RuntimeError(f"Documentation server not ready within {max_wait} seconds")
 
         yield base_url
         return
 
-    # Master worker or non-xdist: start the server
+    # gw0 or master: start the server
     class Handler(http.server.SimpleHTTPRequestHandler):
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(*args, directory=str(DOCS_BUILD_DIR), **kwargs)
