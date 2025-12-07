@@ -1,0 +1,71 @@
+/* Custom styles for Bluetooth SIG Standards Library documentation */
+
+/* Breadcrumbs navigation styling */
+.breadcrumbs {
+    padding: 1rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--color-background-border);
+}
+
+.breadcrumbs ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
+.breadcrumbs li {
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumbs li:not(:last-child)::after {
+    content: "›";
+    margin-left: 0.5rem;
+    color: var(--color-foreground-muted);
+    font-weight: bold;
+}
+
+.breadcrumbs a {
+    color: var(--color-link);
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumbs .current {
+    color: var(--color-foreground-primary);
+    font-weight: 500;
+}
+
+/* Improve code block appearance */
+.highlight {
+    border-radius: 4px;
+}
+
+/* Style admonitions to be more prominent */
+.admonition {
+    border-radius: 4px;
+}
+
+/* Improve table styling */
+table {
+    width: 100%;
+}
+
+/* Style grid cards from sphinx-design */
+.sd-card {
+    border-radius: 8px;
+}
+
+/* Style API documentation */
+.py-class, .py-function, .py-method {
+    border-left: 3px solid var(--color-brand-primary);
+    padding-left: 1rem;
+    margin-left: 0;
+}

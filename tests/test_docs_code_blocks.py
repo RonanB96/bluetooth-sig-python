@@ -79,7 +79,7 @@ def extract_python_code_blocks(markdown_content: str) -> list[str]:
     return matches
 
 
-def should_skip_code_block(code: str) -> tuple[bool, str]:
+def should_skip_code_block(code: str) -> tuple[bool, str]:  # pylint: disable=too-many-return-statements
     """Determine if a code block should be skipped.
 
     Args:
@@ -87,6 +87,9 @@ def should_skip_code_block(code: str) -> tuple[bool, str]:
 
     Returns:
         Tuple of (should_skip, reason)
+
+    Note:
+        Multiple return statements are intentional for clear skip condition logic.
     """
     # Check for explicit SKIP marker with optional reason
     skip_match = re.search(r"#\s*SKIP:?\s*(.*)", code, re.IGNORECASE)
@@ -105,6 +108,16 @@ def should_skip_code_block(code: str) -> tuple[bool, str]:
     # Skip bash commands
     if code.strip().startswith("bash"):
         return True, "Bash command, not Python code"
+
+    # Skip async functions with parameters - they can't be auto-executed
+    # Match: async def function_name(param1, param2): but not async def function_name():
+    async_func_match = re.search(r"async def (\w+)\(([^)]+)\)", code)
+    if async_func_match:
+        func_name = async_func_match.group(1)
+        params = async_func_match.group(2).strip()
+        # Skip if it has parameters (not empty, not just ")")
+        if params and params != "":
+            return True, f"Async function '{func_name}' has parameters - cannot auto-execute"
 
     # Only skip if it's PURELY comments with no actual code
     lines = code.strip().split("\n")
@@ -142,9 +155,16 @@ def wrap_async_code(code: str) -> str:
     if re.search(r"#\s*SKIP:", code, re.IGNORECASE):
         return code
 
+    # Prefix to handle nested event loops
+    nested_prefix = """import asyncio
+import nest_asyncio
+nest_asyncio.apply()
+
+"""
+
     # If there's an async main() function, wrap it
     if "async def main(" in code:
-        return f"{code}\n\nasyncio.run(main())"
+        return f"{nested_prefix}{code}\n\nasyncio.run(main())"
 
     # If there's another async function defined, find and wrap it
     async_func_match = re.search(r"async def (\w+)\(", code)
@@ -152,13 +172,13 @@ def wrap_async_code(code: str) -> str:
         func_name = async_func_match.group(1)
         # Check if function takes parameters - skip if it does
         if f"async def {func_name}()" in code:
-            return f"{code}\n\nasyncio.run({func_name}())"
+            return f"{nested_prefix}{code}\n\nasyncio.run({func_name}())"
         # Has parameters - can't auto-execute, skip wrapping
         return code
 
     # For inline await expressions, wrap everything
     if "await " in code and "async def" not in code:
-        wrapper_lines = ["async def _test_wrapper():"]
+        wrapper_lines = [nested_prefix + "async def _test_wrapper():"]
         wrapper_lines.extend(f"    {line}" for line in code.split("\n"))
         wrapper_lines.append("")
         wrapper_lines.append("asyncio.run(_test_wrapper())")
@@ -353,6 +373,7 @@ ALL_CODE_BLOCKS = collect_code_blocks()
 
 @pytest.mark.docs
 @pytest.mark.code_blocks
+@pytest.mark.built_docs
 @pytest.mark.parametrize(
     "doc_file,block_num,code",
     [

@@ -4,78 +4,73 @@
 list:
     @just --list
 
+# Initialize the bluetooth_sig submodule (REQUIRED before first use)
+init:
+    git submodule init
+    git submodule update
+    @echo "✅ Submodule initialized. Run 'just install' to set up Python environment."
+
+# Install dependencies for development
+install:
+    pip install -e .[dev,test,examples]
+
 # Run all the formatting, linting, and testing commands
 qa:
-    uv run --python=3.13 --extra test ruff format .
-    uv run --python=3.13 --extra test ruff check . --fix
-    uv run --python=3.13 --extra test ruff check --select I --fix .
-    uv run --python=3.13 --extra test pytest .
-
-# Run all the tests for all the supported Python versions
-testall:
-    uv run --python=3.9 --extra test pytest
-    uv run --python=3.10 --extra test pytest
-    uv run --python=3.11 --extra test pytest
-    uv run --python=3.12 --extra test pytest
-    uv run --python=3.13 --extra test pytest
+    ./scripts/format.sh --fix
+    ./scripts/lint.sh --all
+    python -m pytest tests/ -n auto --ignore=tests/benchmarks/ -v
 
 # Run all the tests, but allow for arguments to be passed
 test *ARGS:
-    @echo "Running with arg: {{ARGS}}"
-    uv run --python=3.13 --extra test pytest {{ARGS}}
+    python -m pytest tests/ -n auto --ignore=tests/benchmarks/ {{ARGS}}
 
-# Run all the tests, but on failure, drop into the debugger
+# Run all the tests, but on failure, drop into the debugger (serial execution required)
 pdb *ARGS:
-    @echo "Running with arg: {{ARGS}}"
-    uv run --python=3.13  --extra test pytest --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb {{ARGS}}
+    python -m pytest tests/ --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb {{ARGS}}
 
-# Run coverage, and build to HTML
+# Run performance benchmarks
+benchmark:
+    python -m pytest tests/benchmarks/ --benchmark-only --benchmark-columns=min,max,mean,stddev --benchmark-sort=name
+
+# Run coverage and build HTML report (matches CI requirements)
 coverage:
-    uv run --python=3.13 --extra test coverage run -m pytest .
-    uv run --python=3.13 --extra test coverage report -m
-    uv run --python=3.13 --extra test coverage html
+    python -m pytest tests/ -n auto --ignore=tests/benchmarks/ --cov=src/bluetooth_sig --cov-report=html --cov-report=xml --cov-report=term-missing --cov-fail-under=70
 
-# Build the project, useful for checking that packaging is correct
+# Build documentation site with Sphinx (parallel build)
+docs:
+    sphinx-build -j auto -b html docs/source docs/build/html
+
+# Serve documentation locally (opens built docs in browser)
+docs-serve:
+    @echo "Opening documentation in browser..."
+    python -m http.server --directory docs/build/html 8000
+
+# Build the project distribution
 build:
-    rm -rf build
-    rm -rf dist
-    uv build
+    rm -rf build dist
+    python -m build
+
+# Remove all build, test, coverage and Python artifacts
+clean:
+    rm -fr build/
+    rm -fr dist/
+    rm -fr site/
+    rm -fr .eggs/
+    rm -fr .pytest_cache/
+    rm -fr .mypy_cache/
+    rm -fr .ruff_cache/
+    rm -fr htmlcov/
+    rm -f .coverage
+    rm -f benchmark.json
+    find . -type d -name '*.egg-info' -exec rm -fr {} +
+    find . -type f -name '*.egg' -delete
+    find . -type f -name '*.pyc' -delete
+    find . -type f -name '*.pyo' -delete
+    find . -type f -name '*~' -delete
+    find . -type d -name '__pycache__' -exec rm -fr {} +
 
 VERSION := `grep -m1 '^version' pyproject.toml | sed -E 's/version = "(.*)"/\1/'`
 
 # Print the current version of the project
 version:
     @echo "Current version is {{VERSION}}"
-
-# Tag the current version in git and put to github
-tag:
-    echo "Tagging version v{{VERSION}}"
-    git tag -a v{{VERSION}} -m "Creating version v{{VERSION}}"
-    git push origin v{{VERSION}}
-
-# remove all build, test, coverage and Python artifacts
-clean:
-	clean-build
-	clean-pyc
-	clean-test
-
-# remove build artifacts
-clean-build:
-	rm -fr build/
-	rm -fr dist/
-	rm -fr .eggs/
-	find . -name '*.egg-info' -exec rm -fr {} +
-	find . -name '*.egg' -exec rm -f {} +
-
-# remove Python file artifacts
-clean-pyc:
-	find . -name '*.pyc' -exec rm -f {} +
-	find . -name '*.pyo' -exec rm -f {} +
-	find . -name '*~' -exec rm -f {} +
-	find . -name '__pycache__' -exec rm -fr {} +
-
-# remove test and coverage artifacts
-clean-test:
-	rm -f .coverage
-	rm -fr htmlcov/
-	rm -fr .pytest_cache

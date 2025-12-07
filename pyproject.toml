@@ -40,8 +40,9 @@ homepage = "https://github.com/RonanB96/bluetooth-sig-python"
 [project.optional-dependencies]
 dev = [
     "pytest~=8.4",
-    "pytest-asyncio~=1.1",
+    "pytest-asyncio>=0.23.0,<0.24",
     "pytest-cov>=6.2,<8",
+    "nest-asyncio>=1.5.0",
     "pytest-benchmark~=5.1",
     "pylint~=3.3",
     "ruff~=0.13",
@@ -53,11 +54,14 @@ dev = [
 ]
 test = [
     "pytest~=8.4",
-    "pytest-asyncio~=1.2",
+    "pytest-asyncio>=0.23.0,<0.24",
     "pytest-cov>=6.2,<8",
+    "nest-asyncio>=1.5.0",
     "pytest-benchmark~=5.1",
     "pytest-xdist~=3.0",
     "pytest-markdown-docs~=0.9",
+    "playwright~=1.56",
+    "pytest-playwright~=0.7",
     "bleak>=0.21.0",
     "bleak-retry-connector>=2.13.1,<3",
     "simplepyble>=0.10.3",
@@ -72,12 +76,15 @@ examples = [
     "bluepy>=1.3.0",
 ]
 docs = [
-    "mkdocs>=1.6.0",
-    "mkdocs-material>=9.6.0",
-    "mkdocstrings[python]>=0.30.0",
-    "mkdocs-gen-files~=0.5",
-    "mkdocs-literate-nav~=0.6",
-    "mkdocs-section-index~=0.3",
+    "sphinx>=7.2.0",
+    "sphinx-autoapi>=3.0.0",
+    "sphinx-autobuild>=2024.2.4",
+    "myst-parser>=2.0.0",
+    "sphinx-design>=0.5.0",
+    "furo>=2024.1.29",
+    "sphinxcontrib-mermaid>=0.9.0",
+    "sphinx-copybutton>=0.5.0",
+    "linkify-it-py>=2.0.0",
     "pymdown-extensions>=10.0.0",
     "pydeps>=1.12.0",
     "pylint~=3.3",
@@ -88,15 +95,18 @@ docs = [
 # bluetooth_sig_python = "bluetooth_sig_python.cli:app"
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
+asyncio_mode = "strict"
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-m 'not benchmark'"
+addopts = "-m 'not benchmark and not built_docs and not playwright'"
 norecursedirs = ["tests/benchmarks"]
 markers = [
     "benchmark: marks benchmark tests (deselected by default)",
+    "built_docs: marks tests that require built documentation (deselected by default)",
     "docs: Tests for documentation examples and code blocks",
     "code_blocks: Tests that execute code blocks extracted from markdown documentation",
+    "playwright: Tests using Playwright for browser automation",
+    "accessibility: Tests for documentation accessibility compliance",
 ]
 
 [tool.hatch.build]
@@ -119,6 +129,8 @@ persistent = true
 jobs = 0
 output-format = "colorized"
 msg-template = "{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
+extension-pkg-allow-list = ["playwright"]
+ignored-modules = ["playwright", "playwright.sync_api"]
 
 [tool.pylint.DESIGN]
 # Allow registries to have similar patterns - they inherit from base class
@@ -177,7 +189,6 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"] # Ignore unused imports in __init__.py files
-"docs_hooks.py" = ["ANN001", "ANN002", "ANN003", "ANN201"] # MkDocs hooks must match their interface exactly
 # Tests and examples intentionally omit exhaustive Google-style docstrings in
 # many places (fixtures, local test helpers, and example scripts). Ignore
 # docstring-related (D...) codes in those paths so we can focus fixes on
@@ -266,6 +277,7 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 warn_unused_ignores = false  # Allow extra type: ignore comments for test flexibility
 ignore_missing_imports = true  # Allow missing imports for test utilities
+disallow_any_unimported = false  # Allow untyped imports in tests (e.g., playwright)
 
 [[tool.mypy.overrides]]
 module = "examples.*"
@@ -290,6 +302,13 @@ module = "bluepy.*"
 # BluePy is an optional external dependency used in examples; it does not ship
 # type stubs or py.typed marker. Allow mypy to treat it as untyped and disable
 # strict checks that would fail due to untyped imports.
+ignore_missing_imports = true
+disallow_any_unimported = false
+
+[[tool.mypy.overrides]]
+module = "playwright.*"
+# Playwright is an optional dependency for documentation tests.
+# It has inline types but mypy has issues finding them in editable installs.
 ignore_missing_imports = true
 disallow_any_unimported = false
 

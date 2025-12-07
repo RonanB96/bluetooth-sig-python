@@ -5,6 +5,16 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_dependencies:
+        description: 'Skip job dependencies (for local act testing)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -245,6 +255,8 @@ jobs:
   build-docs:
     name: Build Documentation
     needs: [test, benchmark]
+    # Allow running independently via workflow_dispatch for local act testing
+    if: ${{ !cancelled() && (success() || github.event.inputs.skip_dependencies == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -300,10 +312,10 @@ jobs:
       - name: Link coverage into docs directory
         run: |
           if [ -d "htmlcov" ]; then
-            echo "✅ Coverage reports found, linking to docs/"
-            rm -f docs/coverage
-            ln -sf ../htmlcov docs/coverage
-            ls -la docs/coverage | head -3
+            echo "✅ Coverage reports found, linking to docs/source/"
+            rm -f docs/source/coverage
+            ln -sf ../../htmlcov docs/source/coverage
+            ls -la docs/source/coverage | head -3
           else
             echo "⚠️ No coverage reports found, docs will build without coverage"
           fi
@@ -311,24 +323,23 @@ jobs:
       - name: Link benchmarks into docs directory
         run: |
           if [ -f "benchmarks/benchmark.json" ]; then
-            echo "✅ Benchmark results found, linking to docs/"
-            mkdir -p docs/benchmarks
-            cp benchmarks/benchmark.json docs/benchmarks/
-            ls -la docs/benchmarks/
+            echo "✅ Benchmark results found, linking to docs/source/"
+            mkdir -p docs/source/benchmarks
+            cp benchmarks/benchmark.json docs/source/benchmarks/
+            ls -la docs/source/benchmarks/
           else
             echo "⚠️ No benchmark results found, docs will build without benchmarks"
           fi
 
       - name: Build documentation
         run: |
-          mkdocs build
+          sphinx-build -b html -j auto docs/source docs/build/html
 
-      - name: Upload combined site artifact (main branch only)
-        if: github.ref == 'refs/heads/main'
+      - name: Upload built documentation artifact
         uses: actions/upload-artifact@v5
         with:
-          name: site
-          path: site/
+          name: ${{ github.ref == 'refs/heads/main' && 'site' || 'built-docs' }}
+          path: docs/build/html/
           retention-days: 30
 
   deploy:

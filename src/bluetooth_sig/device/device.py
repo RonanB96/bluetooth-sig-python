@@ -96,24 +96,22 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     - Cache device information for performance
 
     Example:
-        Create and configure a device:
+        Create and configure a device::
 
-        ```python
-        from bluetooth_sig import BluetoothSIGTranslator
-        from bluetooth_sig.device import Device
+            from bluetooth_sig import BluetoothSIGTranslator
+            from bluetooth_sig.device import Device
 
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
+            translator = BluetoothSIGTranslator()
+            device = Device("AA:BB:CC:DD:EE:FF", translator)
 
-        # Attach connection manager and discover services
-        device.attach_connection_manager(manager)
-        await device.connect()
-        await device.discover_services()
+            # Attach connection manager and discover services
+            device.attach_connection_manager(manager)
+            await device.connect()
+            await device.discover_services()
 
-        # Read characteristic
-        battery = await device.read("battery_level")
-        print(f"Battery: {battery.value}%")
-        ```
+            # Read characteristic
+            battery = await device.read("battery_level")
+            print(f"Battery: {battery.value}%")
 
     """
 
@@ -187,8 +185,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Raises:
             NotImplementedError: If the connection manager doesn't support scanning
 
-        Example:
-            ```python
+        Example::
+
             from bluetooth_sig.device import Device
             from connection_managers.bleak_retry import BleakRetryConnectionManager
 
@@ -199,7 +197,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             if devices:
                 translator = BluetoothSIGTranslator()
                 device = Device(devices[0].address, translator)
-            ```
 
         """
         return await manager_class.scan(timeout)
@@ -429,8 +426,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             RuntimeError: If no connection manager is attached
             ValueError: If required dependencies cannot be resolved
 
-        Example:
-            ```python
+        Example::
+
             # Read RSC Measurement - automatically reads/caches RSC Feature first
             measurement = await device.read(CharacteristicName.RSC_MEASUREMENT)
 
@@ -441,7 +438,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             measurement3 = await device.read(
                 CharacteristicName.RSC_MEASUREMENT, resolution_mode=DependencyResolutionMode.FORCE_REFRESH
             )
-            ```
 
         """
         if not self.connection_manager:
@@ -714,13 +710,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns:
             CharacteristicData (last parsed result) if found, None otherwise.
 
-        Example:
-            ```python
+        Example::
+
             # Search for characteristic across all services
             battery_data = device.get_characteristic_data(BluetoothUUID("2A19"))
             if battery_data:
                 print(f"Battery: {battery_data.value}%")
-            ```
 
         """
         char_instance = self._get_cached_characteristic(char_uuid)
@@ -755,8 +750,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Raises:
             RuntimeError: If no connection manager is attached
 
-        Example:
-            ```python
+        Example::
+
             device = Device(address, translator)
             device.attach_connection_manager(manager)
 
@@ -771,7 +766,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             # Read characteristic values
             battery = await device.read("battery_level")
-            ```
 
         """
         if not self.connection_manager:

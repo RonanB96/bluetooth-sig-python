@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any, cast
 
 DEFAULT_SRC = Path(__file__).parent.parent / "src"
-DEFAULT_DOCS_DIAGRAMS = Path(__file__).parent.parent / "docs" / "diagrams"
+DEFAULT_DOCS_DIAGRAMS = Path(__file__).parent.parent / "docs" / "source" / "diagrams"
 DEFAULT_CACHE_DIR = DEFAULT_DOCS_DIAGRAMS / ".cache"
 DEFAULT_CACHE_FILE = DEFAULT_CACHE_DIR / "diagrams_cache.json"
 

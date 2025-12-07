@@ -1,0 +1,8 @@
+{# Extend Furo's page template to add breadcrumbs #}
+{% extends "!page.html" %}
+
+{# Add breadcrumbs before the main content #}
+{% block content %}
+  {% include "breadcrumbs.html" %}
+  {{ super() }}
+{% endblock %}

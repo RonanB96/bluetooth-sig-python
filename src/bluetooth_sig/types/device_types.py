@@ -37,8 +37,8 @@ class DeviceService(msgspec.Struct, kw_only=True):
     This provides a single source of truth: BaseCharacteristic instances
     maintain their own last_parsed CharacteristicData.
 
-    Example:
-        ```python
+    Example::
+
         # After discover_services() and read()
         service = device.services["0000180f..."]  # Battery Service
         battery_char = service.characteristics["00002a19..."]  # BatteryLevelCharacteristic instance
@@ -49,7 +49,6 @@ class DeviceService(msgspec.Struct, kw_only=True):
 
         # Or decode new data
         parsed_value = battery_char.decode_value(raw_data)
-        ```
     """
 
     service: BaseGattService
