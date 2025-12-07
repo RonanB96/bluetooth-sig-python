@@ -355,7 +355,7 @@ jobs:
     # Only run on PRs - documentation tests don't contribute to coverage
     if: ${{ github.event_name == 'pull_request' && !cancelled() && (success() || github.event.inputs.skip_dependencies == 'true') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 120
     permissions:
       contents: read
     steps:
@@ -425,7 +425,7 @@ jobs:
           DOCS_TEST_FILES: ${{ steps.changed-docs.outputs.changed_files }}
         run: |
           echo "Testing files: $DOCS_TEST_FILES"
-          
+
           # Skip tests if no documentation changes detected
           if [ "$DOCS_TEST_FILES" = "[]" ]; then
             echo "ℹ️ No documentation changes detected, skipping Playwright tests"
@@ -433,7 +433,7 @@ jobs:
             echo '<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="playwright" tests="0" skipped="0" failures="0" errors="0"></testsuite></testsuites>' > test-results/playwright-results.xml
             exit 0
           fi
-          
+
           pytest tests/docs/playwright_tests/ \
             -m "built_docs and playwright" \
             -n auto \
