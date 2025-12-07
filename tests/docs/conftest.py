@@ -1,14 +1,24 @@
 """Pytest configuration for documentation verification tests.
 
 These tests require built documentation (Sphinx HTML output) to verify
-navigation, structure, accessibility, and Diátaxis compliance.
+navigation, structure, accessibility, and Diataxis compliance.
 
 Shared fixtures for both regular and Playwright-based documentation tests.
+
+Selective Testing:
+    Set DOCS_TEST_FILES environment variable to control which pages to test:
+        export DOCS_TEST_FILES='["tutorials/index.html", "api/index.html"]'  # Test specific pages
+        export DOCS_TEST_FILES='["ALL"]'                                      # Test all pages
+        export DOCS_TEST_FILES='[]'                                             # Skip all tests (no docs changed)
+
+    If DOCS_TEST_FILES is not set, all HTML files are tested (default behavior).
 """
 
 from __future__ import annotations
 
 import http.server
+import json
+import os
 import socketserver
 import threading
 import time
@@ -104,29 +114,41 @@ def find_available_port(start_port: int = 8000, max_attempts: int = 10) -> int:
 
 
 @pytest.fixture(scope="session")
-def docs_server_port() -> Generator[int, None, None]:
+def docs_server_port(worker_id: str) -> Generator[int, None, None]:
     """Fixture providing an available port for the docs server.
 
-    Finds an available port and yields it for the session. The port is
-    automatically released when the session ends.
+    When running with pytest-xdist, ensures all workers use the same port
+    by having only the master/gw0 worker find and reserve the port.
+
+    Args:
+        worker_id: pytest-xdist worker identifier ('master' or 'gw0', 'gw1', etc.)
 
     Yields:
         Available port number
     """
-    port = find_available_port()
-    yield port
-    # Port is automatically released when fixture scope ends
+    if worker_id == "master":
+        # Not using xdist, find an available port
+        port = find_available_port()
+        yield port
+    else:
+        # xdist worker - use fixed port that master/gw0 will bind
+        # All workers will attempt to connect to the same server
+        yield 8000
 
 
 @pytest.fixture(scope="session")
-def docs_server(docs_server_port: int) -> Generator[str, None, None]:
+def docs_server(docs_server_port: int, worker_id: str) -> Generator[str, None, None]:
     """Start a simple HTTP server serving built Sphinx documentation.
 
     This fixture starts a server at session scope, serves the built HTML docs,
     and automatically shuts down after all tests complete or on interruption (Ctrl+C).
 
+    When using pytest-xdist, only the master/gw0 worker starts the server,
+    and all other workers connect to it.
+
     Args:
         docs_server_port: Port to use for the server
+        worker_id: pytest-xdist worker identifier
 
     Yields:
         Base URL of the documentation server (e.g., "http://localhost:8000")
@@ -140,7 +162,27 @@ def docs_server(docs_server_port: int) -> Generator[str, None, None]:
             "Run 'sphinx-build -b html docs/source docs/build/html' to build documentation."
         )
 
-    # Change to docs build directory
+    base_url = f"http://localhost:{docs_server_port}"
+
+    if worker_id != "master":
+        # xdist worker - wait for server to be ready (started by gw0)
+        max_wait = 10
+        start_time = time.time()
+        while time.time() - start_time < max_wait:
+            try:
+                import urllib.request
+
+                with urllib.request.urlopen(f"{base_url}/index.html", timeout=1):
+                    break
+            except Exception:
+                time.sleep(0.1)
+        else:
+            raise RuntimeError(f"Documentation server not ready within {max_wait} seconds")
+
+        yield base_url
+        return
+
+    # Master worker or non-xdist: start the server
     class Handler(http.server.SimpleHTTPRequestHandler):
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(*args, directory=str(DOCS_BUILD_DIR), **kwargs)
@@ -149,8 +191,12 @@ def docs_server(docs_server_port: int) -> Generator[str, None, None]:
             """Suppress server log messages."""
             pass  # pylint: disable=unnecessary-pass
 
+    # Enable address reuse to prevent "Address already in use" errors
+    class ReuseAddrTCPServer(socketserver.TCPServer):
+        allow_reuse_address = True
+
     # Start server in a thread
-    with socketserver.TCPServer(("127.0.0.1", docs_server_port), Handler) as server:
+    with ReuseAddrTCPServer(("127.0.0.1", docs_server_port), Handler) as server:
         server_thread = threading.Thread(target=server.serve_forever, daemon=True)
         server_thread.start()
 
@@ -202,17 +248,74 @@ def all_html_files(docs_build_dir: Path) -> list[Path]:
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
-    """Generate parametrized tests for all HTML files.
+    """Generate parametrized tests for HTML files (all or selective).
 
     This hook dynamically parametrizes tests that use the 'html_file' fixture
-    with all HTML files found in the built documentation.
+    with HTML files based on the DOCS_TEST_FILES environment variable.
+
+    Environment Variables:
+        DOCS_TEST_FILES: JSON array of HTML file paths to test
+            - ["ALL"]: Test all HTML files (default if not set)
+            - ["tutorials/index.html", "api/index.html"]: Test specific files
+            - []: Skip all tests (no documentation changes detected)
+
+    The paths in DOCS_TEST_FILES should be relative to docs/build/html/.
     """
     if "html_file" in metafunc.fixturenames:
-        html_files = []
-        if DOCS_BUILD_DIR.exists():
-            html_files = list(DOCS_BUILD_DIR.rglob("*.html"))
+        # Check for selective testing via environment variable
+        test_files_env = os.environ.get("DOCS_TEST_FILES", "")
 
-        # Create (file_path, url) tuples for parametrization
+        if test_files_env:
+            try:
+                test_files_config = json.loads(test_files_env)
+            except json.JSONDecodeError as e:
+                raise ValueError(
+                    f"Invalid DOCS_TEST_FILES JSON: {test_files_env}\n"
+                    f'Expected format: ["file1.html", "file2.html"], ["ALL"], or []\n'
+                    f"Error: {e}"
+                ) from e
+
+            # Handle empty list - skip all tests (no docs changes)
+            if test_files_config == []:
+                print("ℹ️  No documentation changes detected, skipping all tests")
+                metafunc.parametrize("html_file", [], ids=[])
+                return
+
+            # Check if comprehensive testing requested
+            if test_files_config == ["ALL"]:
+                # Test all files
+                html_files = []
+                if DOCS_BUILD_DIR.exists():
+                    html_files = sorted(DOCS_BUILD_DIR.rglob("*.html"))
+            else:
+                # Test specific files
+                html_files = []
+                missing_files = []
+                if DOCS_BUILD_DIR.exists():
+                    for relative_path in test_files_config:
+                        file_path = DOCS_BUILD_DIR / relative_path
+                        if file_path.exists():
+                            html_files.append(file_path)
+                        else:
+                            missing_files.append(relative_path)
+
+                # Report missing files but continue with found files
+                if missing_files:
+                    print(f"⚠️  Skipping {len(missing_files)} non-existent files:")
+                    for missing in missing_files[:5]:
+                        print(f"     - {missing}")
+                    if len(missing_files) > 5:
+                        print(f"     ... and {len(missing_files) - 5} more")
+
+                # Sort for consistent test ordering
+                html_files = sorted(html_files)
+        else:
+            # Default: test all files
+            html_files = []
+            if DOCS_BUILD_DIR.exists():
+                html_files = sorted(DOCS_BUILD_DIR.rglob("*.html"))
+
+        # Create parametrization
         ids = [str(f.relative_to(DOCS_BUILD_DIR)) for f in html_files]
         metafunc.parametrize("html_file", html_files, ids=ids, indirect=True)
 
