@@ -15,6 +15,7 @@ import os
 import re
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sphinx.application import Sphinx
@@ -31,6 +32,8 @@ copyright = "2025, RonanB96"
 author = "RonanB96"
 release = "0.3.0"
 version = release  # Short X.Y version (matches release for this project)
+# Build timestamp for cache busting
+build_date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
