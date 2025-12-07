@@ -233,4 +233,6 @@ AGENTS.md
 
 # Benchmark results
 benchmark.json
+benchmark-history/
+docs/source/_static/performance/*.json
 docs/benchmarks/*.json.cache/gen_ref/

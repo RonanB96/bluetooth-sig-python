@@ -1,0 +1,2 @@
+# This directory contains generated benchmark JSON files
+# The files are generated during CI/CD and are not committed to git
