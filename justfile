@@ -45,6 +45,30 @@ docs-serve:
     @echo "Opening documentation in browser..."
     python -m http.server --directory docs/build/html 8000
 
+# Test all documentation pages with Playwright
+docs-test-all:
+    @echo "🧪 Testing all documentation pages..."
+    DOCS_TEST_FILES='["ALL"]' pytest tests/docs/playwright_tests/ -m "built_docs and playwright" -n auto -v
+
+# Test only changed documentation pages (compares with main branch)
+docs-test-changed:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔍 Detecting changed documentation files..."
+    CHANGED=$$(python scripts/detect_changed_docs.py --base origin/main --head HEAD --verbose)
+    echo "📋 Files to test: $$CHANGED"
+    export DOCS_TEST_FILES="$$CHANGED"
+    pytest tests/docs/playwright_tests/ -m "built_docs and playwright" -n auto -v
+
+# Test specific documentation pages (provide space-separated paths)
+docs-test-files FILES:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    FILES_JSON=$$(python -c "import sys, json; print(json.dumps(sys.argv[1:]))" {{FILES}})
+    echo "📋 Testing files: $$FILES_JSON"
+    export DOCS_TEST_FILES="$$FILES_JSON"
+    pytest tests/docs/playwright_tests/ -m "built_docs and playwright" -n auto -v
+
 # Build the project distribution
 build:
     rm -rf build dist
