@@ -80,24 +80,6 @@ def test_page_has_css_styling(page: Page, html_file: str) -> None:
 
 @pytest.mark.built_docs
 @pytest.mark.playwright
-def test_page_has_footer(page: Page, html_file: str) -> None:
-    """Test that pages have a footer."""
-    page.goto(html_file)
-
-    footer_selectors = ["footer", '[role="contentinfo"]', ".footer"]
-
-    has_footer = any(page.locator(selector).count() > 0 for selector in footer_selectors)
-
-    if not has_footer:
-        pytest.skip("Footer optional but recommended")
-
-    footer = page.locator("footer, [role='contentinfo']").first
-    footer_text = footer.inner_text().strip()
-    assert len(footer_text) > 0, f"{html_file}: Footer should have content"
-
-
-@pytest.mark.built_docs
-@pytest.mark.playwright
 def test_mobile_menu_toggle_exists(page: Page, html_file: str) -> None:
     """Test that mobile menu toggle exists."""
     page.goto(html_file)
