@@ -416,6 +416,46 @@ class ScaledSint8Template(ScaledTemplate):
             raise ValueError(f"Scaled value {raw} out of range for sint8")
 
 
+class ScaledUint8Template(ScaledTemplate):
+    """Template for scaled 8-bit unsigned integer.
+
+    Used for unsigned values that need decimal precision encoded as integers.
+    Can be initialized with scale_factor/offset or Bluetooth SIG M, d, b parameters.
+    Formula: value = scale_factor * (raw + offset) or value = M * 10^d * (raw + b)
+    Example: Uncertainty with scale_factor=0.1, offset=0 or M=1, d=-1, b=0
+    """
+
+    def __init__(self, scale_factor: float = 1.0, offset: int = 0) -> None:
+        """Initialize with scale factor and offset.
+
+        Args:
+            scale_factor: Factor to multiply raw value by
+            offset: Offset to add to raw value before scaling
+
+        """
+        super().__init__(scale_factor, offset)
+
+    @property
+    def data_size(self) -> int:
+        """Size: 1 byte."""
+        return 1
+
+    def _parse_raw(self, data: bytearray, offset: int) -> int:
+        """Parse raw 8-bit unsigned integer."""
+        if len(data) < offset + 1:
+            raise ValueError("Insufficient data for scaled uint8 parsing")
+        return DataParser.parse_int8(data, offset, signed=False)
+
+    def _encode_raw(self, raw: int) -> bytearray:
+        """Encode raw 8-bit unsigned integer."""
+        return DataParser.encode_int8(raw, signed=False)
+
+    def _check_range(self, raw: int) -> None:
+        """Check range for uint8."""
+        if not 0 <= raw <= UINT8_MAX:
+            raise ValueError(f"Scaled value {raw} out of range for uint8")
+
+
 class ScaledUint32Template(ScaledTemplate):
     """Template for scaled 32-bit unsigned integer with configurable resolution and offset."""
 
@@ -975,6 +1015,7 @@ __all__ = [
     "ScaledUint16Template",
     "ScaledSint16Template",
     "ScaledSint8Template",
+    "ScaledUint8Template",
     "ScaledUint32Template",
     "ScaledUint24Template",
     "ScaledSint24Template",

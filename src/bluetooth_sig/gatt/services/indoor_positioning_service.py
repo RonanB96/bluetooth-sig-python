@@ -29,8 +29,8 @@ class IndoorPositioningService(BaseGattService):
         CharacteristicName.FLOOR_NUMBER: False,  # optional
         CharacteristicName.LOCATION_NAME: False,  # optional
         CharacteristicName.INDOOR_POSITIONING_CONFIGURATION: False,  # optional
-        # CharacteristicName.LOCAL_NORTH_COORDINATE: False,  # optional - not implemented yet
-        # CharacteristicName.LOCAL_EAST_COORDINATE: False,  # optional - not implemented yet
-        # CharacteristicName.ALTITUDE: False,  # optional - not implemented yet
-        # CharacteristicName.UNCERTAINTY: False,  # optional - not implemented yet
+        CharacteristicName.LOCAL_NORTH_COORDINATE: False,  # optional
+        CharacteristicName.LOCAL_EAST_COORDINATE: False,  # optional
+        CharacteristicName.ALTITUDE: False,  # optional
+        CharacteristicName.UNCERTAINTY: False,  # optional
     }
