@@ -7,6 +7,7 @@ from enum import IntFlag
 import msgspec
 
 from ...types.gatt_enums import ValueType
+from ..constants import UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -42,6 +43,11 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
     device. Indicates which optional measurements and capabilities are
     available.
     """
+
+    # Validation attributes
+    expected_length: int = 2  # uint16 bitmap
+    min_value: int = 0
+    max_value: int = UINT16_MAX
 
     _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
 

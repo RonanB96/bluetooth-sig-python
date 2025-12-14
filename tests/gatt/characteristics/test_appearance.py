@@ -65,62 +65,73 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
     def test_decode_value_returns_appearance_data(self, characteristic: AppearanceCharacteristic) -> None:
         """Test that decode_value returns AppearanceData."""
         data = bytearray([0x40, 0x00])  # Phone (64)
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
 
-        assert isinstance(result, AppearanceData)
-        assert result.raw_value == 64
+        assert result.parse_success
+        assert isinstance(result.value, AppearanceData)
+        assert result.value.raw_value == 64
 
     def test_decode_with_known_appearance(self, characteristic: AppearanceCharacteristic) -> None:
         """Test decoding appearance with registry lookup."""
         # Heart Rate Sensor: Heart Rate Belt (833 = 0x0341)
         data = bytearray([0x41, 0x03])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
 
-        assert result.raw_value == 833
+        assert result.parse_success
+        assert result.value is not None
+        assert result.value.raw_value == 833
         # If registry is loaded, should have info
-        if result.info:
-            assert result.category == "Heart Rate Sensor"
-            assert result.subcategory == "Heart Rate Belt"
-            assert result.full_name == "Heart Rate Sensor: Heart Rate Belt"
+        if result.value.info:
+            assert result.value.category == "Heart Rate Sensor"
+            assert result.value.subcategory == "Heart Rate Belt"
+            assert result.value.full_name == "Heart Rate Sensor: Heart Rate Belt"
 
     def test_decode_category_only_appearance(self, characteristic: AppearanceCharacteristic) -> None:
         """Test decoding appearance with category only (no subcategory)."""
         # Phone (64 = 0x0040)
         data = bytearray([0x40, 0x00])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
 
-        assert result.raw_value == 64
-        if result.info:
-            assert result.category == "Phone"
-            assert result.subcategory is None
-            assert result.full_name == "Phone"
+        assert result.parse_success
+        assert result.value is not None
+        assert result.value.raw_value == 64
+        if result.value.info:
+            assert result.value.category == "Phone"
+            assert result.value.subcategory is None
+            assert result.value.full_name == "Phone"
 
     def test_decode_unknown_appearance(self, characteristic: AppearanceCharacteristic) -> None:
         """Test decoding unknown appearance code."""
         # Unknown (0 = 0x0000)
         data = bytearray([0x00, 0x00])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
 
-        assert result.raw_value == 0
+        assert result.parse_success
+        assert result.value is not None
+        assert result.value.raw_value == 0
         # Should still return AppearanceData even if unknown
-        if result.info:
-            assert result.category == "Unknown"
+        if result.value.info:
+            assert result.value.category == "Unknown"
 
     def test_int_conversion(self, characteristic: AppearanceCharacteristic) -> None:
         """Test that AppearanceData can be converted to int."""
         data = bytearray([0x41, 0x03])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
 
-        assert int(result) == 833
-        assert result.raw_value == 833
+        assert result.parse_success
+        assert result.value is not None
+        assert int(result.value) == 833
+        assert result.value.raw_value == 833
 
     def test_encode_value_with_appearance_data(self, characteristic: AppearanceCharacteristic) -> None:
         """Test encoding AppearanceData back to bytes."""
         data = bytearray([0x41, 0x03])
-        appearance_data = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
+        assert result.value is not None
+        appearance_data = result.value
 
         # Encode it back
-        encoded = characteristic.encode_value(appearance_data)
+        encoded = characteristic.build_value(appearance_data)
         assert encoded == data
 
     def test_from_category_helper(self, characteristic: AppearanceCharacteristic) -> None:
@@ -138,10 +149,12 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
         assert hr_belt_data.subcategory == "Heart Rate Belt"
 
         # Encode and decode round-trip with human-readable data
-        encoded = characteristic.encode_value(hr_belt_data)
-        decoded = characteristic.decode_value(encoded)
-        assert decoded.full_name == hr_belt_data.full_name
-        assert decoded.raw_value == hr_belt_data.raw_value
+        encoded = characteristic.build_value(hr_belt_data)
+        result = characteristic.parse_value(encoded)
+        assert result.parse_success
+        assert result.value is not None
+        assert result.value.full_name == hr_belt_data.full_name
+        assert result.value.raw_value == hr_belt_data.raw_value
 
     def test_from_category_invalid(self) -> None:
         """Test that from_category raises ValueError for invalid categories."""
@@ -155,11 +168,13 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
         """Test that properties return None when no registry info available."""
         # Use a code unlikely to be in registry
         data = bytearray([0xFF, 0xFF])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
 
-        assert result.raw_value == 65535
+        assert result.parse_success
+        assert result.value is not None
+        assert result.value.raw_value == 65535
         # Properties should handle None gracefully
-        if result.info is None:
-            assert result.category is None
-            assert result.subcategory is None
-            assert result.full_name is None
+        if result.value.info is None:
+            assert result.value.category is None
+            assert result.value.subcategory is None
+            assert result.value.full_name is None

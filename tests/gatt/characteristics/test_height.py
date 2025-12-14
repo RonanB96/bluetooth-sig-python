@@ -50,15 +50,21 @@ class TestHeightCharacteristic(CommonCharacteristicTests):
         # Convert cm to scaled uint16 (height / 0.01)
         scaled_value = int(height_cm / 0.01)
         data = bytearray([scaled_value & 0xFF, (scaled_value >> 8) & 0xFF])
-        result = characteristic.decode_value(data)
-        assert abs(result - height_cm) < 0.01  # Allow small floating point error
+        result = characteristic.parse_value(data)
+        assert result.parse_success
+        assert result.value is not None
+        assert abs(result.value - height_cm) < 0.01  # Allow small floating point error
 
     def test_height_boundary_values(self, characteristic: HeightCharacteristic) -> None:
         """Test height boundary values."""
         # Test minimum height (0 cm)
-        result = characteristic.decode_value(bytearray([0, 0]))
-        assert result == 0.0
+        result = characteristic.parse_value(bytearray([0, 0]))
+        assert result.parse_success
+        assert result.value is not None
+        assert result.value == 0.0
 
         # Test maximum height (655.35 cm)
-        result = characteristic.decode_value(bytearray([0xFF, 0xFF]))
-        assert abs(result - 655.35) < 0.01
+        result = characteristic.parse_value(bytearray([0xFF, 0xFF]))
+        assert result.parse_success
+        assert result.value is not None
+        assert abs(result.value - 655.35) < 0.01

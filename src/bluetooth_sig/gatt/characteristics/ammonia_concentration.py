@@ -15,3 +15,6 @@ class AmmoniaConcentrationCharacteristic(BaseCharacteristic):
 
     _manual_unit: str | None = "kg/m³"  # Unit as per SIG specification
     _template = IEEE11073FloatTemplate()
+
+    expected_length: int = 2
+    expected_type: type = float

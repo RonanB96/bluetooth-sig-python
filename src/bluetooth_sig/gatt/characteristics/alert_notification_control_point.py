@@ -44,6 +44,9 @@ class AlertNotificationControlPointCharacteristic(BaseCharacteristic):
     Used by Alert Notification Service (0x1811).
     """
 
+    min_length: int = 2  # Command ID + Category ID
+    allow_variable_length: bool = True  # Some commands may have additional data
+
     def decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None
     ) -> AlertNotificationControlPointData:

@@ -15,3 +15,6 @@ class DewPointCharacteristic(BaseCharacteristic):
     """
 
     _template = ScaledSint8Template.from_letter_method(M=1, d=0, b=0)
+
+    expected_length: int = 1
+    expected_type: type = int

@@ -53,6 +53,10 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
     and torque measurements at different crank angles.
     """
 
+    # Variable length: min 7 bytes (flags:1 + crank_revs:2 + crank_time:2 + angle:2), plus optional arrays
+    min_length = 7
+    allow_variable_length = True
+
     _manual_unit: str = "various"  # Multiple units in vector data
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerVectorData:

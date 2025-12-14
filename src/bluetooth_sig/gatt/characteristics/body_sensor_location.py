@@ -30,6 +30,12 @@ class BodySensorLocationCharacteristic(BaseCharacteristic):
     Spec: Bluetooth SIG Assigned Numbers, Body Sensor Location characteristic
     """
 
+    # Validation attributes
+    expected_length: int = 1  # uint8
+    min_value: int = BodySensorLocation.OTHER  # 0
+    max_value: int = BodySensorLocation.FOOT  # 6
+    expected_type: type = int
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BodySensorLocation:
         """Decode body sensor location from raw bytes.
 
@@ -45,8 +51,6 @@ class BodySensorLocationCharacteristic(BaseCharacteristic):
 
         """
         del ctx  # Unused parameter
-        if len(data) != 1:
-            raise ValueError(f"Body Sensor Location requires exactly 1 byte, got {len(data)}")
 
         location_value = int(data[0])
         try:

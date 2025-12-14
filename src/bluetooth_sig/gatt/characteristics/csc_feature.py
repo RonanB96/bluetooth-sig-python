@@ -36,6 +36,8 @@ class CSCFeatureCharacteristic(BaseCharacteristic):
     capabilities.
     """
 
+    expected_length: int = 2
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CSCFeatureData:
         """Parse CSC feature data.
 

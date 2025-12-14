@@ -36,6 +36,9 @@ class PLXFeaturesCharacteristic(BaseCharacteristic):
     Spec: Bluetooth SIG Assigned Numbers, PLX Features characteristic
     """
 
+    expected_length: int = 2
+    expected_type: type = int
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PLXFeatureFlags:
         """Decode PLX features from raw bytes.
 

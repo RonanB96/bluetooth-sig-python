@@ -29,6 +29,8 @@ class AlertStatusCharacteristic(BaseCharacteristic):
     Bits 3-7: Reserved for future use
     """
 
+    expected_length: int = 1
+
     # Bit masks for alert status flags
     RINGER_STATE_MASK = 0x01  # Bit 0
     VIBRATE_STATE_MASK = 0x02  # Bit 1

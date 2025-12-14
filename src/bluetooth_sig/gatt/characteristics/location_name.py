@@ -15,3 +15,5 @@ class LocationNameCharacteristic(BaseCharacteristic):
     """
 
     _template = Utf8StringTemplate()
+    min_length = 0
+    expected_type = str

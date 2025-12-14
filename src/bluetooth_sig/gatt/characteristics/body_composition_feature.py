@@ -111,6 +111,7 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
     characteristic that describes device capabilities.
     """
 
+    expected_length: int = 4
     min_length: int = 4  # Features(4) fixed length
     max_length: int = 4  # Features(4) fixed length
     allow_variable_length: bool = False  # Fixed length

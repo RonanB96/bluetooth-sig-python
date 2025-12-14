@@ -38,6 +38,9 @@ class RingerControlPointCharacteristic(BaseCharacteristic):
     - 0, 4-255: Reserved for future use
     """
 
+    min_length = 1
+    expected_type = bytes
+
     def encode_value(self, data: RingerControlPointData) -> bytearray:
         """Encode RingerControlPointData command to bytes.
 

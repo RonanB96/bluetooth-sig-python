@@ -19,3 +19,6 @@ class PM25ConcentrationCharacteristic(BaseCharacteristic):
     resolution: float = 1.0
     _manual_unit: str = "µg/m³"  # Override template's "ppm" default
     max_value: float = 65533.0  # Exclude special values 0xFFFE and 0xFFFF
+
+    expected_length: int = 2
+    expected_type: type = int

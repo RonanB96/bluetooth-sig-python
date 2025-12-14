@@ -18,3 +18,6 @@ class LocalNorthCoordinateCharacteristic(BaseCharacteristic):
     _manual_unit = "m"
     _manual_value_type = "float"
     _template = ScaledSint24Template(scale_factor=0.1)
+
+    expected_length: int = 3
+    expected_type: type = float

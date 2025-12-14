@@ -47,6 +47,9 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
     # This ensures RSC Feature is parsed first when both are present
     _optional_dependencies = [RSCFeatureCharacteristic]
 
+    min_length: int = 4  # Flags(1) + Speed(2) + Cadence(1)
+    allow_variable_length: bool = True  # Optional stride length and total distance
+
     def _validate_against_feature(self, data: RSCMeasurementData, ctx: CharacteristicContext) -> None:
         """Validate RSC measurement data against supported features.
 

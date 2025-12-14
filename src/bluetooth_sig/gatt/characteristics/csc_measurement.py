@@ -48,6 +48,11 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
     # This ensures CSC Feature is parsed first when both are present
     _optional_dependencies = [CSCFeatureCharacteristic]
 
+    # Validation: min 1 byte (flags), max 11 bytes (flags + wheel + crank data)
+    min_length = 1
+    allow_variable_length = True
+    max_length = 11  # flags:1 + wheel:6 + crank:4
+
     # Time resolution constants
     CSC_TIME_RESOLUTION = 1024.0  # 1/1024 second resolution for both wheel and crank event times
 

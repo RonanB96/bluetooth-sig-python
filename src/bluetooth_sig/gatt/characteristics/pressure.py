@@ -18,3 +18,4 @@ class PressureCharacteristic(BaseCharacteristic):
 
     # Override template validation for realistic atmospheric pressure range
     max_value: float = 200000.0  # 0 to 2000 hPa (200000 Pa)
+    expected_length: int = 4  # uint32

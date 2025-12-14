@@ -28,6 +28,10 @@ class PreferredUnitsCharacteristic(BaseCharacteristic):
     Each unit is represented by a 16-bit Bluetooth UUID from the Bluetooth SIG units registry.
     """
 
+    # Variable length: minimum 0 bytes (empty list), multiples of 2 bytes (16-bit UUIDs)
+    min_length = 0
+    allow_variable_length = True
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PreferredUnitsData:
         """Decode Preferred Units from raw bytes.
 

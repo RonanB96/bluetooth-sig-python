@@ -53,6 +53,8 @@ class HidInformationCharacteristic(BaseCharacteristic):
     HID Information characteristic.
     """
 
+    expected_length: int = 4  # bcdHID(2) + bCountryCode(1) + Flags(1)
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> HidInformationData:
         """Parse HID information data.
 

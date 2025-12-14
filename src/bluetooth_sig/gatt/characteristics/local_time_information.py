@@ -82,6 +82,8 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
     information.
     """
 
+    expected_length: int = 2  # Timezone(1) + DST Offset(1)
+
     def decode_value(  # pylint: disable=too-many-locals
         self,
         data: bytearray,

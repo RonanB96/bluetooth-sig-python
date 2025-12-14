@@ -26,3 +26,6 @@ class ElevationCharacteristic(BaseCharacteristic):
     _manual_value_type: ValueType | str | None = "float"  # Override YAML int type since decode_value returns float
     _manual_unit: str | None = LengthUnit.METERS.value  # Override template's "units" default
     resolution: float = 0.01
+
+    expected_length: int = 3
+    expected_type: type = float

@@ -21,3 +21,6 @@ class AverageCurrentCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = ElectricalUnit.AMPS.value  # Override template's "units" default
     resolution: float = 0.01
+
+    expected_length: int = 2
+    expected_type: type = float

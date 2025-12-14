@@ -71,6 +71,9 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
     _optional_dependencies = [CyclingPowerFeatureCharacteristic]
 
+    min_length: int = 4  # Flags(2) + Instantaneous Power(2)
+    allow_variable_length: bool = True  # Many optional fields based on flags
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerMeasurementData:  # pylint: disable=too-many-locals # Complex parsing with many optional fields
         """Parse cycling power measurement data according to Bluetooth specification.
 

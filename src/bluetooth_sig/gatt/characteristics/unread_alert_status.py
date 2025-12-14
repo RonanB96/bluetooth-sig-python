@@ -36,6 +36,8 @@ class UnreadAlertStatusCharacteristic(BaseCharacteristic):
     Used by Alert Notification Service (0x1811).
     """
 
+    expected_length: int = 2
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> UnreadAlertStatusData:
         """Decode Unread Alert Status data from bytes.
 

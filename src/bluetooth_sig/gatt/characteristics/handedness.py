@@ -26,6 +26,9 @@ class HandednessCharacteristic(BaseCharacteristic):
     The Handedness characteristic is used to represent the handedness of a user.
     """
 
+    expected_length: int = 1
+    expected_type: type = int
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> Handedness:
         """Decode handedness from raw bytes.
 

@@ -82,6 +82,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Glucose Feature"
     _manual_unit: str = "bitmap"  # Feature bitmap
 
+    expected_length: int = 2
     min_length: int = 2  # Features(2) fixed length
     max_length: int = 2  # Features(2) fixed length
     allow_variable_length: bool = False  # Fixed length

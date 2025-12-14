@@ -39,6 +39,7 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
     specification.
     """
 
+    min_length = 4
     _characteristic_name: str = "Supported Power Range"
     # Override since decode_value returns structured SupportedPowerRangeData
     _manual_value_type: ValueType | str | None = ValueType.DICT
