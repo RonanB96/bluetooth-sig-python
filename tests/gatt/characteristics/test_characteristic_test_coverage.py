@@ -34,6 +34,7 @@ class TestCharacteristicTestFileCoverage:
             "test_characteristic_common.py",  # Common test utilities
             "test_characteristic_test_coverage.py",  # This coverage test
             "test_custom_characteristics.py",  # Tests custom characteristic functionality
+            "test_templates.py",  # Tests template classes, not characteristics
         }
         for test_file in test_dir.glob("test_*.py"):
             if test_file.name not in excluded_test_files:

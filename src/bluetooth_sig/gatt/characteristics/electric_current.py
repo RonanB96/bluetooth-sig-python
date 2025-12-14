@@ -24,3 +24,6 @@ class ElectricCurrentCharacteristic(BaseCharacteristic):
     # Template configuration
     resolution: float = 0.01  # 0.01 A resolution
     max_value: float = 655.35  # 65535 * 0.01 A max
+
+    expected_length: int = 2
+    expected_type: type = float

@@ -133,6 +133,9 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
     # RR-Interval resolution: 1/1024 seconds per unit
     RR_INTERVAL_RESOLUTION = RR_INTERVAL_RESOLUTION
 
+    min_length: int = 2  # Flags(1) + HR(1/2)
+    allow_variable_length: bool = True  # Optional energy expended and RR intervals
+
     def decode_value(  # pylint: disable=too-many-branches  # Branches needed for spec-compliant parsing
         self, data: bytearray, ctx: CharacteristicContext | None = None
     ) -> HeartRateData:

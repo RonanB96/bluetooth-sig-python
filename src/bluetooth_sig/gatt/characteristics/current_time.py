@@ -13,6 +13,7 @@ Based on Bluetooth SIG GATT Specification:
 
 from __future__ import annotations
 
+from ...types.gatt_enums import ValueType
 from .base import BaseCharacteristic
 from .templates import TimeDataTemplate
 
@@ -34,6 +35,11 @@ class CurrentTimeCharacteristic(BaseCharacteristic):
     - Fractions256: uint8 (0-255, representing 1/256 fractions of a second)
     - Adjust Reason: uint8 bitfield
     """
+
+    # Validation attributes
+    expected_length: int = 10  # Fixed 10-byte structure
+
+    _manual_value_type: ValueType | str | None = ValueType.DICT
 
     def __init__(self) -> None:
         """Initialize the Current Time characteristic."""

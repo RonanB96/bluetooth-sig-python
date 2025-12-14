@@ -47,6 +47,8 @@ class TimeUpdateStateCharacteristic(BaseCharacteristic):
     - Result: uint8 (0=Successful, 1=Canceled, etc.)
     """
 
+    expected_length = 2
+
     def __init__(self) -> None:
         """Initialize the Time Update State characteristic."""
         super().__init__()

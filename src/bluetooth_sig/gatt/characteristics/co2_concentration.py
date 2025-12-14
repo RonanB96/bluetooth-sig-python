@@ -29,3 +29,6 @@ class CO2ConcentrationCharacteristic(BaseCharacteristic):
     # Template configuration
     resolution: float = 1.0
     max_value: int | float | None = 65533.0  # Exclude special values 0xFFFE and 0xFFFF
+
+    expected_length: int = 2
+    expected_type: type = int

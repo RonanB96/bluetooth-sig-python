@@ -71,6 +71,7 @@ class LNFeatureCharacteristic(BaseCharacteristic):
     Used to represent the supported features of a location and navigation sensor.
     """
 
+    min_length = 4
     _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> LNFeatureData:

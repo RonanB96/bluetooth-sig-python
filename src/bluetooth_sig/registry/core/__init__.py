@@ -10,7 +10,9 @@ This module contains registries for:
 from __future__ import annotations
 
 from bluetooth_sig.registry.core.ad_types import ad_types_registry
+from bluetooth_sig.registry.core.formattypes import format_types_registry
 
 __all__ = [
     "ad_types_registry",
+    "format_types_registry",
 ]

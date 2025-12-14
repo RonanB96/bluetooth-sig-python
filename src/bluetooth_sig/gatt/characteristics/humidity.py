@@ -32,7 +32,12 @@ class HumidityCharacteristic(BaseCharacteristic):
 
     # Template configuration
     resolution: float = 0.01  # 0.01% resolution
-    max_value: int | float | None = PERCENTAGE_MAX  # Humidity max 100%
+
+    # Validation attributes
+    expected_length: int = 2  # uint16
+    min_value: float = 0.0
+    max_value: float = PERCENTAGE_MAX  # 100% humidity
+    expected_type: type = float
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode humidity characteristic.

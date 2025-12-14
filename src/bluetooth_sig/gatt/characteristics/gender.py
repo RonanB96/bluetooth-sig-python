@@ -25,6 +25,9 @@ class GenderCharacteristic(BaseCharacteristic):
     The Gender characteristic is used to represent the gender of a user.
     """
 
+    expected_length: int = 1
+    expected_type: type = int
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> Gender:
         """Decode gender from raw bytes.
 

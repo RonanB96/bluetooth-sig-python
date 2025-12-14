@@ -40,6 +40,9 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic):
     specifications.
     """
 
+    # Validation attributes
+    expected_length: int = 4  # 2x uint16
+
     # Override since decode_value returns structured ElectricCurrentSpecificationData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 

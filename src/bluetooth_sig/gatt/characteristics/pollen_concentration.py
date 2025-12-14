@@ -21,3 +21,6 @@ class PollenConcentrationCharacteristic(BaseCharacteristic):
 
     # SIG specification configuration
     resolution: float = 1.0
+
+    expected_length: int = 3
+    expected_type: type = float

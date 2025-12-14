@@ -26,6 +26,9 @@ class ReportCharacteristic(BaseCharacteristic):
     Report characteristic.
     """
 
+    min_length = 1
+    expected_type = bytes
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ReportData:
         """Parse report data.
 

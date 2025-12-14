@@ -30,6 +30,7 @@ class MagneticFluxDensity3DCharacteristic(BaseCharacteristic):
 
     _vector_components: list[str] = ["x_axis", "y_axis", "z_axis"]
     resolution: float = 1e-7
+    expected_length: int = 6  # 3 x sint16
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VectorData:
         """Parse 3D magnetic flux density (3 x sint16 with resolution).

@@ -27,6 +27,7 @@ from .glucose import GlucoseService
 from .health_thermometer import HealthThermometerService
 from .heart_rate import HeartRateService
 from .immediate_alert import ImmediateAlertService
+from .indoor_positioning_service import IndoorPositioningService
 from .link_loss import LinkLossService
 from .location_and_navigation import LocationAndNavigationService
 from .next_dst_change import NextDstChangeService
@@ -67,6 +68,7 @@ __all__ = [
     "HealthThermometerService",
     "HeartRateService",
     "ImmediateAlertService",
+    "IndoorPositioningService",
     "LinkLossService",
     "LocationAndNavigationService",
     "NextDstChangeService",

@@ -15,3 +15,6 @@ class ApparentWindSpeedCharacteristic(BaseCharacteristic):
     """
 
     _template = ScaledUint16Template.from_letter_method(M=1, d=-2, b=0)
+
+    expected_length: int = 2
+    expected_type: type = float

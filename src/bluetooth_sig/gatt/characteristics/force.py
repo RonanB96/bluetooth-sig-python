@@ -22,6 +22,8 @@ class ForceCharacteristic(BaseCharacteristic):
     The Force characteristic is used to represent the force being applied to an object along a given axis.
     """
 
+    expected_length: int = 4  # sint32
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode force characteristic.
 

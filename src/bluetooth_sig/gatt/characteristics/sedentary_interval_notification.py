@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 from .templates import Uint16Template
 
@@ -15,3 +16,9 @@ class SedentaryIntervalNotificationCharacteristic(BaseCharacteristic):
     """
 
     _template = Uint16Template()
+
+    # Validation attributes
+    expected_length: int = 2
+    min_value: int = 0
+    max_value: int = UINT16_MAX
+    expected_type: type = int

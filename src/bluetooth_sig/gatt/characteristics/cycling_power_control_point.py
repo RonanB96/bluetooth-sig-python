@@ -126,6 +126,10 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
     control.
     """
 
+    # Variable length: min 1 byte (op_code), variable parameters per op_code
+    min_length = 1
+    allow_variable_length = True
+
     # Resolution constants for parameter calculations
     CRANK_LENGTH_RESOLUTION = 2.0  # 0.5mm resolution (value / 2)
     CHAIN_LENGTH_RESOLUTION = 10.0  # 0.1mm resolution (value / 10)

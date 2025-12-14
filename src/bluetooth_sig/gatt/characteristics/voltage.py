@@ -24,4 +24,8 @@ class VoltageCharacteristic(BaseCharacteristic):
 
     # Template configuration
     resolution: float = 1 / 64  # 1/64 V resolution
-    max_value: float = UINT16_MAX / 64  # ~1024 V max
+
+    expected_length: int = 2
+    min_value: float = 0.0
+    max_value: float = UINT16_MAX * (1.0 / 64.0)  # Max scaled value
+    expected_type: type = float

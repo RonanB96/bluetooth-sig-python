@@ -38,6 +38,9 @@ class NewAlertCharacteristic(BaseCharacteristic):
     Used by Alert Notification Service (0x1811).
     """
 
+    min_length: int = 2  # Category ID(1) + Number of New Alert(1)
+    allow_variable_length: bool = True  # Optional text string
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> NewAlertData:
         """Decode New Alert data from bytes.
 

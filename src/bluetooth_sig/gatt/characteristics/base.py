@@ -677,15 +677,34 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             return self._template.decode_value(data, offset=0, ctx=ctx)
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
-    def _validate_range(self, value: Any, ctx: CharacteristicContext | None = None) -> None:  # noqa: ANN401  # Validates values of various numeric types  # pylint: disable=unused-argument
+    def _validate_range(self, value: Any, ctx: CharacteristicContext | None = None) -> None:  # noqa: ANN401  # Validates values of various numeric types
         """Validate value is within min/max range from both class attributes and descriptors.
+
+        Validation precedence:
+        1. Descriptor Valid Range (if present in context) - most specific, device-reported
+        2. Class-level validation attributes (min_value, max_value) - characteristic spec defaults
 
         Args:
             value: The value to validate
-            TODO descriptors for ranges
-            ctx: Optional characteristic context (reserved for future descriptor validation)
+            ctx: Optional characteristic context containing descriptors
+
+        Raises:
+            ValueRangeError: If value is outside the valid range
         """
-        # Check class-level validation attributes first
+        # Skip validation for non-numeric types
+        if not isinstance(value, (int, float)):
+            return
+
+        # Check descriptor Valid Range first (takes precedence over class attributes)
+        descriptor_range = self.get_valid_range_from_context(ctx) if ctx else None
+        if descriptor_range is not None:
+            min_val, max_val = descriptor_range
+            if value < min_val or value > max_val:
+                raise ValueRangeError("value", value, min_val, max_val)
+            # Descriptor validation passed - skip class-level checks
+            return
+
+        # Fall back to class-level validation attributes
         if self.min_value is not None and value < self.min_value:
             raise ValueRangeError("value", value, self.min_value, self.max_value)
         if self.max_value is not None and value > self.max_value:

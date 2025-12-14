@@ -35,6 +35,9 @@ class AlertCategoryIdBitMaskCharacteristic(BaseCharacteristic):
     Spec: Bluetooth SIG GATT Specification Supplement, Alert Category ID Bit Mask
     """
 
+    expected_length: int = 2
+    expected_type: type = int
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertCategoryBitMask:
         """Decode Alert Category ID Bit Mask data from bytes.
 

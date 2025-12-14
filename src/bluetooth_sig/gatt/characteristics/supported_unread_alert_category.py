@@ -28,6 +28,9 @@ class SupportedUnreadAlertCategoryCharacteristic(BaseCharacteristic):
     Used by Alert Notification Service (0x1811).
     """
 
+    expected_length: int = 2
+    expected_type: type = int
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertCategoryBitMask:
         """Decode Supported Unread Alert Category data from bytes.
 

@@ -23,6 +23,8 @@ class LinearPositionCharacteristic(BaseCharacteristic):
     along a given axis and referencing to the device-specific zero point.
     """
 
+    expected_length: int = 4  # sint32
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode linear position characteristic.
 

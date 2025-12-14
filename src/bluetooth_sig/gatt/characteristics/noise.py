@@ -37,6 +37,8 @@ class NoiseCharacteristic(BaseCharacteristic):
     _template = Uint8Template()
     _manual_unit: str | None = "dB SPL"
 
+    expected_length = 1
+    expected_type = int
     # Range constraints per SIG spec
     min_value: int | float | None = 0
     max_value: int | float | None = MAX_MEASURABLE_VALUE

@@ -30,6 +30,7 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
 
     _vector_components: list[str] = ["x_axis", "y_axis"]
     resolution: float = 1e-7
+    expected_length: int = 4  # 2 x sint16
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> Vector2DData:
         """Parse 2D magnetic flux density (2 x sint16 with resolution).

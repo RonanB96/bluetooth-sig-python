@@ -20,3 +20,6 @@ class NitrogenDioxideConcentrationCharacteristic(BaseCharacteristic):
     # Template configuration
     resolution: float = 1.0
     max_value: float = 65533.0  # Exclude special values 0xFFFE and 0xFFFF
+
+    expected_length: int = 2
+    expected_type: type = int

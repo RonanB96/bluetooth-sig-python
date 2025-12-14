@@ -53,6 +53,7 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
 
     # Override since decode_value returns structured VoltageStatisticsData
     _manual_value_type: ValueType | str | None = ValueType.DICT
+    expected_length: int = 6  # Minimum(2) + Maximum(2) + Average(2)
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VoltageStatisticsData:
         """Parse voltage statistics data (3x uint16 in units of 1/64 V).

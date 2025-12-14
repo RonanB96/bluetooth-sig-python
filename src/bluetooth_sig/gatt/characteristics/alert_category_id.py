@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ...types import AlertCategoryID, validate_category_id
+from ..constants import UINT8_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .templates import Uint8Template
@@ -32,6 +33,12 @@ class AlertCategoryIdCharacteristic(BaseCharacteristic):
 
     Spec: Bluetooth SIG GATT Specification Supplement, Alert Category ID
     """
+
+    # Validation attributes
+    expected_length: int = 1  # uint8
+    min_value: int = 0
+    max_value: int = UINT8_MAX
+    expected_type: type = int
 
     _template = Uint8Template()
 
