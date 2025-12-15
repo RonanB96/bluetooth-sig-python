@@ -11,13 +11,12 @@ Organization:
 from __future__ import annotations
 
 from enum import IntEnum, IntFlag
-from typing import TYPE_CHECKING
 
 import msgspec
 
-if TYPE_CHECKING:
-    from bluetooth_sig.types.appearance import AppearanceData
-    from bluetooth_sig.types.registry.class_of_device import ClassOfDeviceInfo
+from bluetooth_sig.types.appearance import AppearanceData
+from bluetooth_sig.types.registry.class_of_device import ClassOfDeviceInfo
+from bluetooth_sig.types.uri import URIData
 
 
 class PDUType(IntEnum):
@@ -147,20 +146,6 @@ class ExtendedHeaderFlags(IntEnum):
     ACAD = 0x80
 
 
-class ADTypeInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """AD Type information from Bluetooth SIG assigned numbers.
-
-    Attributes:
-        value: The AD type value (e.g., 0x01 for Flags)
-        name: Human-readable name from the specification
-        reference: Optional specification reference
-    """
-
-    value: int
-    name: str
-    reference: str
-
-
 class BLEAdvertisingFlags(IntFlag):
     """BLE Advertising Flags (Core Spec Supplement, Part A, Section 1.3).
 
@@ -271,7 +256,7 @@ class CoreAdvertisingData(msgspec.Struct, kw_only=True):
         service_data: Service-specific data keyed by service UUID
         solicited_service_uuids: List of service UUIDs the device is seeking
         local_name: Device's local name (complete or shortened)
-        uri: Uniform Resource Identifier
+        uri_data: Parsed URI with scheme info from UriSchemesRegistry
     """
 
     manufacturer_data: dict[int, bytes] = msgspec.field(default_factory=dict)
@@ -280,7 +265,7 @@ class CoreAdvertisingData(msgspec.Struct, kw_only=True):
     service_data: dict[str, bytes] = msgspec.field(default_factory=dict)
     solicited_service_uuids: list[str] = msgspec.field(default_factory=list)
     local_name: str = ""
-    uri: str = ""
+    uri_data: URIData | None = None
 
 
 class DeviceProperties(msgspec.Struct, kw_only=True):

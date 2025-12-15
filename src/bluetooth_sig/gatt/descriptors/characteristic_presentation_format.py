@@ -7,6 +7,7 @@ from enum import IntEnum
 import msgspec
 
 from ...registry.core.formattypes import format_types_registry
+from ...registry.core.namespace_description import namespace_description_registry
 from ...registry.uuids.units import units_registry
 from ...types.uuid import BluetoothUUID
 from ..characteristics.utils import DataParser
@@ -98,6 +99,11 @@ class CharacteristicPresentationFormatData(msgspec.Struct, frozen=True, kw_only=
     """Namespace for description field (e.g., FormatNamespace.BLUETOOTH_SIG_ASSIGNED_NUMBERS)."""
     description: int
     """Description identifier within the namespace."""
+    description_name: str | None = None
+    """Resolved description name (e.g., 'left', 'first') from NamespaceDescriptionRegistry.
+
+    Only resolved when namespace=0x01 (Bluetooth SIG Assigned Numbers).
+    """
 
 
 class CharacteristicPresentationFormatDescriptor(BaseDescriptor):
@@ -138,6 +144,7 @@ class CharacteristicPresentationFormatDescriptor(BaseDescriptor):
         format_val = DataParser.parse_int8(data, offset=0)
         namespace_val = DataParser.parse_int8(data, offset=4)
         unit_val = DataParser.parse_int16(data, offset=2, endian="little")
+        description_val = DataParser.parse_int16(data, offset=5, endian="little")
 
         # Resolve format type name from registry
         format_info = format_types_registry.get_format_type_info(format_val)
@@ -148,6 +155,11 @@ class CharacteristicPresentationFormatDescriptor(BaseDescriptor):
         unit_info = units_registry.get_unit_info(unit_uuid)
         unit_name = unit_info.name if unit_info else None
 
+        # Resolve description name from registry (only for Bluetooth SIG namespace)
+        description_name: str | None = None
+        if namespace_val == FormatNamespace.BLUETOOTH_SIG_ASSIGNED_NUMBERS:
+            description_name = namespace_description_registry.resolve_description_name(description_val)
+
         return CharacteristicPresentationFormatData(
             format=FormatType(format_val),
             format_name=format_name,
@@ -155,7 +167,8 @@ class CharacteristicPresentationFormatDescriptor(BaseDescriptor):
             unit=unit_val,
             unit_name=unit_name,
             namespace=FormatNamespace(namespace_val),
-            description=DataParser.parse_int16(data, offset=5, endian="little"),
+            description=description_val,
+            description_name=description_name,
         )
 
     def get_format_type(self, data: bytes) -> FormatType:

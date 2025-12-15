@@ -8,12 +8,12 @@ import msgspec
 
 from bluetooth_sig.registry.base import BaseGenericRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
-from bluetooth_sig.types.advertising import ADTypeInfo
+from bluetooth_sig.types.registry.ad_types import AdTypeInfo
 
 logger = logging.getLogger(__name__)
 
 
-class ADTypesRegistry(BaseGenericRegistry[ADTypeInfo]):
+class ADTypesRegistry(BaseGenericRegistry[AdTypeInfo]):
     """Registry for Bluetooth advertising data types with lazy loading.
 
     This registry loads AD type definitions from the official Bluetooth SIG
@@ -24,8 +24,8 @@ class ADTypesRegistry(BaseGenericRegistry[ADTypeInfo]):
     def __init__(self) -> None:
         """Initialize the AD types registry."""
         super().__init__()
-        self._ad_types: dict[int, ADTypeInfo] = {}
-        self._ad_types_by_name: dict[str, ADTypeInfo] = {}
+        self._ad_types: dict[int, AdTypeInfo] = {}
+        self._ad_types_by_name: dict[str, AdTypeInfo] = {}
 
     def _load(self) -> None:
         """Perform the actual loading of AD types data."""
@@ -65,7 +65,7 @@ class ADTypesRegistry(BaseGenericRegistry[ADTypeInfo]):
                 if isinstance(value, str):
                     value = int(value, 16)
 
-                ad_type_info = ADTypeInfo(
+                ad_type_info = AdTypeInfo(
                     value=value,
                     name=name,
                     reference=reference,
@@ -83,27 +83,27 @@ class ADTypesRegistry(BaseGenericRegistry[ADTypeInfo]):
 
         self._loaded = True
 
-    def get_ad_type_info(self, ad_type: int) -> ADTypeInfo | None:
+    def get_ad_type_info(self, ad_type: int) -> AdTypeInfo | None:
         """Get AD type info by value (lazy loads on first call).
 
         Args:
             ad_type: The AD type value (e.g., 0x01 for Flags)
 
         Returns:
-            ADTypeInfo object, or None if not found
+            AdTypeInfo object, or None if not found
         """
         self._ensure_loaded()
         with self._lock:
             return self._ad_types.get(ad_type)
 
-    def get_ad_type_by_name(self, name: str) -> ADTypeInfo | None:
+    def get_ad_type_by_name(self, name: str) -> AdTypeInfo | None:
         """Get AD type info by name (lazy loads on first call).
 
         Args:
             name: AD type name (case-insensitive)
 
         Returns:
-            ADTypeInfo object, or None if not found
+            AdTypeInfo object, or None if not found
         """
         self._ensure_loaded()
         with self._lock:
@@ -122,11 +122,11 @@ class ADTypesRegistry(BaseGenericRegistry[ADTypeInfo]):
         with self._lock:
             return ad_type in self._ad_types
 
-    def get_all_ad_types(self) -> dict[int, ADTypeInfo]:
+    def get_all_ad_types(self) -> dict[int, AdTypeInfo]:
         """Get all registered AD types (lazy loads on first call).
 
         Returns:
-            Dictionary mapping AD type values to ADTypeInfo objects
+            Dictionary mapping AD type values to AdTypeInfo objects
         """
         self._ensure_loaded()
         with self._lock:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from .advertising import (
-    ADTypeInfo,
     AdvertisingData,
     AdvertisingDataStructures,
     BLEAdvertisingFlags,
@@ -42,9 +41,11 @@ from .context import CharacteristicContext, DeviceInfo
 from .data_types import CharacteristicInfo, DateData, ParseFieldError, ServiceInfo, ValidationResult
 from .location import PositionStatus
 from .protocols import CharacteristicDataProtocol
+from .registry.ad_types import AdTypeInfo
 from .registry.appearance_info import AppearanceInfo
 from .registry.class_of_device import ClassOfDeviceInfo
 from .registry.descriptor_types import DescriptorData, DescriptorInfo
+from .registry.uri_schemes import UriSchemeInfo
 from .units import (
     AngleUnit,
     ConcentrationUnit,
@@ -60,6 +61,7 @@ from .units import (
     TemperatureUnit,
     WeightUnit,
 )
+from .uri import URIData
 
 # Device-related types are imported from device_types module to avoid cyclic imports
 # Import them directly: from bluetooth_sig.types.device_types import DeviceService, DeviceEncryption
@@ -76,7 +78,7 @@ __all__ = [
     "ALERT_TEXT_MAX_LENGTH",
     "UNREAD_COUNT_MAX",
     "UNREAD_COUNT_MORE_THAN_MAX",
-    "ADTypeInfo",
+    "AdTypeInfo",
     "AdvertisingData",
     "AdvertisingDataStructures",
     "AlertCategoryBitMask",
@@ -126,6 +128,8 @@ __all__ = [
     "SIGInfo",
     "SoundUnit",
     "TemperatureUnit",
+    "URIData",
+    "UriSchemeInfo",
     "ValidationResult",
     "WeightUnit",
     "validate_category_id",

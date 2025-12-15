@@ -27,6 +27,7 @@ from ..types import (
 )
 from ..types.ad_types_constants import ADType
 from ..types.appearance import AppearanceData
+from ..types.uri import URIData
 
 logger = logging.getLogger(__name__)
 
@@ -348,10 +349,7 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 service_uuid = ad_data[:16].hex().upper()
                 parsed.core.service_data[service_uuid] = ad_data[16:]
             elif ad_type == ADType.URI:
-                try:
-                    parsed.core.uri = ad_data.decode("utf-8")
-                except UnicodeDecodeError:
-                    parsed.core.uri = ad_data.hex()
+                parsed.core.uri_data = URIData.from_raw_data(ad_data)
             elif ad_type == ADType.INDOOR_POSITIONING:
                 parsed.location.indoor_positioning = ad_data
             elif ad_type == ADType.TRANSPORT_DISCOVERY_DATA:

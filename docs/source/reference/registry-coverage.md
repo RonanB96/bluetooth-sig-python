@@ -7,7 +7,7 @@ Quick reference for Bluetooth SIG registry implementation status. Registry sourc
 | Folder                   | Source Files | Implemented | Status         |
 | ------------------------ | ------------ | ----------- | -------------- |
 | `uuids/`                 | 12           | 12          | ✅ Complete     |
-| `core/`                  | 16           | 4           | 🔄 Partial      |
+| `core/`                  | 16           | 5           | 🔄 Partial      |
 | `company_identifiers/`   | 1            | 1           | ✅ Complete     |
 | `mesh/`                  | 15           | 0           | ❌ Out of scope |
 | `profiles_and_services/` | 49           | 0           | 🔄 As needed    |
@@ -50,13 +50,31 @@ Essential for passive scanning and beacon-based sensors (temperature, proximity,
 Many low-power sensors broadcast data via manufacturer-specific advertising packets. The `CompanyIdentifiersRegistry` resolves the 16-bit manufacturer ID, enabling proper routing to vendor-specific decoders.
 :::
 
+### CPF Descriptor Resolution
+
+| Registry Class               | Source File                  | Runtime Usage                                       |
+| ---------------------------- | ---------------------------- | --------------------------------------------------- |
+| `NamespaceDescriptionRegistry` | `core/namespace.yaml`       | CPF description field → name (e.g., "left", "first") |
+
+:::{tip}
+The CPF (Characteristic Presentation Format) descriptor has a description field that, when namespace=0x01 (Bluetooth SIG), resolves to human-readable names. This enables automatic resolution of position indicators like "left", "right", "front" or ordinals like "first", "second" in multi-sensor devices.
+:::
+
+### URI Beacon Parsing
+
+| Registry Class       | Source File              | Runtime Usage                                         |
+| -------------------- | ------------------------ | ----------------------------------------------------- |
+| `UriSchemesRegistry` | `core/uri_schemes.yaml`  | Decodes compressed URI scheme codes in advertising data |
+
+:::{tip}
+The Bluetooth SIG URI AD type (0x24) uses a compressed format where the first byte is a scheme code. For example, `0x16` = "http:" and `0x17` = "https:". The `UriSchemesRegistry` decodes these codes, enabling Eddystone URL beacon parsing and other URI-based beacon formats.
+:::
+
 ### Planned Communication Registries
 
 | Registry                       | Source File                                   | Use Case                               | Priority |
 | ------------------------------ | --------------------------------------------- | -------------------------------------- | -------- |
 | `CodingFormatRegistry`         | `core/coding_format.yaml`                     | LE Audio codec negotiation (LC3, etc.) | Medium   |
-| `UriSchemesRegistry`           | `core/uri_schemes.yaml`                       | Eddystone URI beacon decoding          | Low      |
-| `NamespaceDescriptionRegistry` | `core/cgss_namespace_description_values.yaml` | CPF namespace field resolution         | Low      |
 
 ---
 
