@@ -86,9 +86,7 @@ def test_coverage_badge_endpoint_exists() -> None:
             )
 
         # If 200, validate the JSON structure
-        assert (
-            response.status_code == 200
-        ), f"Coverage endpoint returned {response.status_code}: {endpoint_url}"
+        assert response.status_code == 200, f"Coverage endpoint returned {response.status_code}: {endpoint_url}"
 
         data = response.json()
         assert "schemaVersion" in data, "Coverage badge JSON missing 'schemaVersion'"
@@ -115,9 +113,7 @@ def test_pypi_badge_matches_package() -> None:
     assert match, "PyPI version badge not found in README.md"
 
     package_name = match.group(1)
-    assert (
-        package_name == "bluetooth-sig"
-    ), f"PyPI badge uses package '{package_name}' but should use 'bluetooth-sig'"
+    assert package_name == "bluetooth-sig", f"PyPI badge uses package '{package_name}' but should use 'bluetooth-sig'"
 
 
 def test_badge_links_match_urls() -> None:
@@ -137,20 +133,18 @@ def test_badge_links_match_urls() -> None:
     # Coverage badge should link to coverage report
     coverage_links = [link for link in badge_links if "coverage" in link.lower()]
     if coverage_links:
-        assert any(
-            "coverage" in link.lower() for link in coverage_links
-        ), "Coverage badge should link to coverage report"
+        assert any("coverage" in link.lower() for link in coverage_links), (
+            "Coverage badge should link to coverage report"
+        )
 
     # PyPI badge should link to PyPI page
     pypi_links = [link for link in badge_links if "pypi.org" in link]
     if pypi_links:
-        assert any(
-            "bluetooth-sig" in link for link in pypi_links
-        ), "PyPI badge should link to package page"
+        assert any("bluetooth-sig" in link for link in pypi_links), "PyPI badge should link to package page"
 
     # Documentation badge should link to docs
     doc_links = [link for link in badge_links if "docs" in link.lower()]
     if doc_links:
-        assert any(
-            "github.io" in link or "readthedocs" in link for link in doc_links
-        ), "Documentation badge should link to hosted docs"
+        assert any("github.io" in link or "readthedocs" in link for link in doc_links), (
+            "Documentation badge should link to hosted docs"
+        )

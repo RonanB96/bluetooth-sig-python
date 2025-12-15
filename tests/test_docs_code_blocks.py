@@ -20,8 +20,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-# Get repository root
-ROOT_DIR = Path(__file__).resolve().parent.parent
+from tests.conftest import ROOT_DIR
+
 DOCS_DIR = ROOT_DIR / "docs"
 
 

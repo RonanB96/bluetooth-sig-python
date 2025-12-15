@@ -58,7 +58,7 @@ def test_documentation_has_diataxis_structure(index_html_path: Path) -> None:
 
     # Diataxis requires all four quadrants
     missing_sections: list[str] = []
-    for section in diataxis_sections.keys():
+    for section in diataxis_sections:
         if section not in found_sections:
             missing_sections.append(section)
 
