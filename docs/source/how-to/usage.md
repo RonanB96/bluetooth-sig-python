@@ -233,9 +233,8 @@ async def read_environmental_sensors(devices: list[str]):
 Common in: Omron blood pressure monitors, A&D medical devices, iHealth monitors
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator, CharacteristicData
 from bluetooth_sig.stream.pairing import DependencyPairingBuffer
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
 

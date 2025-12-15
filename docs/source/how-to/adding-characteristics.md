@@ -12,20 +12,20 @@ You might need to add a characteristic when:
 
 ## Basic Structure
 
-Every characteristic follows this pattern:
+Every custom characteristic follows this pattern:
 
 ```python
-from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.exceptions import (
     InsufficientDataError,
     ValueRangeError,
 )
 
 
-class MyCharacteristic(BaseCharacteristic):
+class MyCharacteristic(CustomBaseCharacteristic):
     """My Custom Characteristic (UUID: XXXX).
 
-    Specification: [Link to specification if available]
+    Custom characteristics auto-register with the global translator on first use.
     """
 
     def decode_value(self, data: bytearray) -> YourReturnType:
@@ -63,16 +63,17 @@ class MyCharacteristic(BaseCharacteristic):
 Let's add a custom "Light Level" characteristic that reports brightness as a percentage:
 
 ```python
-from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.exceptions import (
     InsufficientDataError,
     ValueRangeError,
 )
 from bluetooth_sig.types import CharacteristicInfo
+from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-class LightLevelCharacteristic(BaseCharacteristic):
+class LightLevelCharacteristic(CustomBaseCharacteristic):
     """Light Level characteristic.
 
     Reports ambient light level as a percentage (0-100%).
@@ -86,6 +87,8 @@ class LightLevelCharacteristic(BaseCharacteristic):
     _info = CharacteristicInfo(
         uuid=BluetoothUUID("ABCD"),  # Your custom UUID
         name="Light Level",
+        value_type=ValueType.UINT8,
+        unit="%",
     )
 
     def decode_value(self, data: bytearray) -> int:
@@ -111,11 +114,6 @@ class LightLevelCharacteristic(BaseCharacteristic):
             raise ValueRangeError(f"Light level must be 0-100%, got {value}%")
 
         return value
-
-    @property
-    def unit(self) -> str:
-        """Return the unit for this characteristic."""
-        return "%"
 ```
 
 ## Example: Complex Multi-Field Characteristic
@@ -138,7 +136,7 @@ class SensorReading(msgspec.Struct, frozen=True, kw_only=True):
 ```
 
 ```python
-class MultiSensorCharacteristic(BaseCharacteristic):
+class MultiSensorCharacteristic(CustomBaseCharacteristic):
     """Multi-sensor characteristic with multiple fields."""
 
     _info = CharacteristicInfo(uuid=BluetoothUUID("WXYZ"), name="Multi Sensor")
