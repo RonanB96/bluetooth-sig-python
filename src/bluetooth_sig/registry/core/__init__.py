@@ -10,11 +10,11 @@ This module contains registries for:
 
 from __future__ import annotations
 
-from bluetooth_sig.registry.core.ad_types import ad_types_registry
-from bluetooth_sig.registry.core.coding_format import coding_format_registry
-from bluetooth_sig.registry.core.formattypes import format_types_registry
-from bluetooth_sig.registry.core.namespace_description import namespace_description_registry
-from bluetooth_sig.registry.core.uri_schemes import uri_schemes_registry
+from .ad_types import ad_types_registry
+from .coding_format import coding_format_registry
+from .formattypes import format_types_registry
+from .namespace_description import namespace_description_registry
+from .uri_schemes import uri_schemes_registry
 
 __all__ = [
     "ad_types_registry",

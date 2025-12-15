@@ -8,6 +8,8 @@ import msgspec
 
 from .advertising import AdvertisingData
 
+# Circular dependency: gatt.characteristics.base imports from types,
+# and this module needs to reference those classes for type hints.
 if TYPE_CHECKING:
     from ..gatt.characteristics.base import BaseCharacteristic
     from ..gatt.services.base import BaseGattService
