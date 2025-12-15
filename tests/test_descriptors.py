@@ -452,6 +452,21 @@ class TestCharacteristicPresentationFormatDescriptor:
         assert result.value.namespace == 0x01  # Bluetooth SIG
         assert result.value.description == 0x0000
 
+    def test_parse_presentation_format_registry_resolution(self) -> None:
+        """Test CPF auto-resolves format/unit names from registries."""
+        cpf = CharacteristicPresentationFormatDescriptor()
+        # Known values: UINT16 (0x06), Celsius (0x272F)
+        known = cpf.parse_value(b"\x06\x00\x2f\x27\x01\x00\x00")
+        assert known.parse_success and known.value is not None
+        assert known.value.format_name == "uint16"
+        assert known.value.unit_name is not None and "Celsius" in known.value.unit_name
+
+        # Unknown values: 0xFF format, 0xFFFF unit
+        unknown = cpf.parse_value(b"\xff\x00\xff\xff\x01\x00\x00")
+        assert unknown.parse_success and unknown.value is not None
+        assert unknown.value.format_name is None
+        assert unknown.value.unit_name is None
+
     def test_parse_invalid_length(self) -> None:
         """Test parsing presentation format with invalid length."""
         cpf = CharacteristicPresentationFormatDescriptor()

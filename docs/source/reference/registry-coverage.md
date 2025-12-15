@@ -101,10 +101,6 @@ Registries in `profiles_and_services/` are loaded on-demand when corresponding G
 
 ## Priority Roadmap
 
-### Immediate
-
-**Format Types Integration** — `FormatTypesRegistry` exists but CPF descriptor returns raw integers. Planned enhancement: resolve format codes to names (`0x06` → `uint16`) during descriptor parsing.
-
 ### LE Audio Foundation
 
 **Coding Format Registry** — 9-entry registry for codec identification. Required foundation before implementing LE Audio characteristics (LC3, vendor codecs).
