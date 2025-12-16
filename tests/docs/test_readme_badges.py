@@ -4,9 +4,40 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 import requests
+
+
+def _is_trusted_domain(url: str, trusted_domains: list[str]) -> bool:
+    """Check if a URL's host matches one of the trusted domains.
+
+    Uses proper URL parsing to prevent URL substring attacks.
+    The host must exactly match or be a subdomain of a trusted domain.
+
+    Args:
+        url: The URL to check.
+        trusted_domains: List of trusted domain names (e.g., ["pypi.org", "github.io"]).
+
+    Returns:
+        True if the URL's host is a trusted domain, False otherwise.
+    """
+    try:
+        parsed = urlparse(url)
+        host = parsed.netloc.lower()
+        # Remove port if present
+        if ":" in host:
+            host = host.split(":")[0]
+
+        for domain in trusted_domains:
+            domain = domain.lower()
+            # Exact match or subdomain match (e.g., "files.pypi.org" matches "pypi.org")
+            if host == domain or host.endswith("." + domain):
+                return True
+        return False
+    except Exception:
+        return False
 
 
 def test_readme_badges_are_valid() -> None:
@@ -35,7 +66,7 @@ def test_readme_badges_are_valid() -> None:
 
     for url in badge_urls:
         # TODO Skip PyPI badge as package is not yet published
-        if "pypi.org" in url or "pypi/v/bluetooth-sig" in url:
+        if _is_trusted_domain(url, ["pypi.org"]) or "/pypi/v/bluetooth-sig" in url:
             skipped_badges.append((url, "Package not yet published"))
             continue
 
@@ -138,13 +169,13 @@ def test_badge_links_match_urls() -> None:
         )
 
     # PyPI badge should link to PyPI page
-    pypi_links = [link for link in badge_links if "pypi.org" in link]
+    pypi_links = [link for link in badge_links if _is_trusted_domain(link, ["pypi.org"])]
     if pypi_links:
         assert any("bluetooth-sig" in link for link in pypi_links), "PyPI badge should link to package page"
 
     # Documentation badge should link to docs
     doc_links = [link for link in badge_links if "docs" in link.lower()]
     if doc_links:
-        assert any("github.io" in link or "readthedocs" in link for link in doc_links), (
-            "Documentation badge should link to hosted docs"
-        )
+        assert any(
+            _is_trusted_domain(link, ["github.io", "readthedocs.io", "readthedocs.org"]) for link in doc_links
+        ), "Documentation badge should link to hosted docs"

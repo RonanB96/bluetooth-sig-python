@@ -95,8 +95,12 @@ def display_advertising_data(
     else:
         not_found_fields.append("Solicited Service UUIDs")
 
-    if parsed_data.ad_structures.core.uri:
-        found_fields.append(f"URI: {parsed_data.ad_structures.core.uri}")
+    if parsed_data.ad_structures.core.uri_data:
+        uri_data = parsed_data.ad_structures.core.uri_data
+        uri_info = f"URI: {uri_data.full_uri}"
+        if uri_data.is_known_scheme:
+            uri_info += f" (scheme: {uri_data.scheme_name})"
+        found_fields.append(uri_info)
     else:
         not_found_fields.append("URI")
 
