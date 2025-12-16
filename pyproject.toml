@@ -48,6 +48,7 @@ dev = [
     "ruff~=0.13",
     "pydocstyle~=6.3",
     "types-PyYAML~=6.0",
+    "types-requests~=2.32",
     "mypy~=1.0",
     "ipdb~=0.13",
     "coverage~=7.0",
