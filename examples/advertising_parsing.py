@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Advertising data parsing example using the AdvertisingParser.
+"""Advertising data parsing example using the AdvertisingPDUParser.
 
-Demonstrates how to use the AdvertisingParser and Bluetooth SIG translator to
+Demonstrates how to use the AdvertisingPDUParser and Bluetooth SIG translator to
 interpret advertising PDUs and service data for examples and tests.
 """
 
@@ -11,13 +11,15 @@ import asyncio
 from typing import cast
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.device.advertising_parser import AdvertisingParser
+from bluetooth_sig.advertising import AdvertisingPDUParser
 from bluetooth_sig.types.advertising import (
     AdvertisingData,
     AdvertisingDataStructures,
     BLEAdvertisingFlags,
+    MeshAndBroadcastData,
 )
 from bluetooth_sig.types.appearance import AppearanceData
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 def display_advertising_data(
@@ -40,11 +42,12 @@ def display_advertising_data(
     if parsed_data.ad_structures.core.service_uuids:
         service_lines = ["Service UUIDs:"]
         for uuid in parsed_data.ad_structures.core.service_uuids:
-            service_info = translator.get_service_info_by_uuid(uuid)
+            service_info = translator.get_service_info_by_uuid(str(uuid))
+            display_uuid = uuid.short_form  # Use short form for display
             if service_info:
-                service_lines.append(f"  {uuid}: {service_info.name}")
+                service_lines.append(f"  {display_uuid}: {service_info.name}")
             else:
-                service_lines.append(f"  {uuid}: Unknown service")
+                service_lines.append(f"  {display_uuid}: Unknown service")
         found_fields.extend(service_lines)
     else:
         not_found_fields.append("Service UUIDs")
@@ -171,39 +174,39 @@ def display_advertising_data(
         not_found_fields.append("Mesh Beacon")
 
     # Target addresses
-    if parsed_data.ad_structures.connection.public_target_address:
+    if parsed_data.ad_structures.directed.public_target_address:
         target_lines = ["Public Target Address:"]
-        for addr in parsed_data.ad_structures.connection.public_target_address:
+        for addr in parsed_data.ad_structures.directed.public_target_address:
             target_lines.append(f"  {addr}")
         found_fields.extend(target_lines)
     else:
         not_found_fields.append("Public Target Address")
 
-    if parsed_data.ad_structures.connection.random_target_address:
+    if parsed_data.ad_structures.directed.random_target_address:
         random_lines = ["Random Target Address:"]
-        for addr in parsed_data.ad_structures.connection.random_target_address:
+        for addr in parsed_data.ad_structures.directed.random_target_address:
             random_lines.append(f"  {addr}")
         found_fields.extend(random_lines)
     else:
         not_found_fields.append("Random Target Address")
 
     # Advertising intervals
-    if parsed_data.ad_structures.connection.advertising_interval is not None:
-        found_fields.append(f"Advertising Interval: {parsed_data.ad_structures.connection.advertising_interval} ms")
+    if parsed_data.ad_structures.directed.advertising_interval is not None:
+        found_fields.append(f"Advertising Interval: {parsed_data.ad_structures.directed.advertising_interval} ms")
     else:
         not_found_fields.append("Advertising Interval")
 
-    if parsed_data.ad_structures.connection.advertising_interval_long is not None:
+    if parsed_data.ad_structures.directed.advertising_interval_long is not None:
         found_fields.append(
-            f"Advertising Interval Long: {parsed_data.ad_structures.connection.advertising_interval_long} ms"
+            f"Advertising Interval Long: {parsed_data.ad_structures.directed.advertising_interval_long} ms"
         )
     else:
         not_found_fields.append("Advertising Interval Long")
 
     # Device addresses and roles
-    if parsed_data.ad_structures.connection.le_bluetooth_device_address:
+    if parsed_data.ad_structures.directed.le_bluetooth_device_address:
         found_fields.append(
-            f"LE Bluetooth Device Address: {parsed_data.ad_structures.connection.le_bluetooth_device_address}"
+            f"LE Bluetooth Device Address: {parsed_data.ad_structures.directed.le_bluetooth_device_address}"
         )
     else:
         not_found_fields.append("LE Bluetooth Device Address")
@@ -214,53 +217,53 @@ def display_advertising_data(
         not_found_fields.append("LE Role")
 
     if parsed_data.ad_structures.properties.class_of_device is not None:
-        found_fields.append(f"Class of Device: 0x{parsed_data.ad_structures.properties.class_of_device:06X}")
+        found_fields.append(f"Class of Device: 0x{parsed_data.ad_structures.properties.class_of_device.raw_value:06X}")
     else:
         not_found_fields.append("Class of Device")
 
-    # Pairing and security
-    if parsed_data.ad_structures.connection.simple_pairing_hash_c:
+    # OOB Pairing and security
+    if parsed_data.ad_structures.oob_security.simple_pairing_hash_c:
         found_fields.append(
-            f"Simple Pairing Hash C: {parsed_data.ad_structures.connection.simple_pairing_hash_c.hex()}"
+            f"Simple Pairing Hash C: {parsed_data.ad_structures.oob_security.simple_pairing_hash_c.hex()}"
         )
     else:
         not_found_fields.append("Simple Pairing Hash C")
 
-    if parsed_data.ad_structures.connection.simple_pairing_randomizer_r:
+    if parsed_data.ad_structures.oob_security.simple_pairing_randomizer_r:
         found_fields.append(
-            f"Simple Pairing Randomizer R: {parsed_data.ad_structures.connection.simple_pairing_randomizer_r.hex()}"
+            f"Simple Pairing Randomizer R: {parsed_data.ad_structures.oob_security.simple_pairing_randomizer_r.hex()}"
         )
     else:
         not_found_fields.append("Simple Pairing Randomizer R")
 
-    if parsed_data.ad_structures.connection.security_manager_tk_value:
+    if parsed_data.ad_structures.oob_security.security_manager_tk_value:
         found_fields.append(
-            f"Security Manager TK Value: {parsed_data.ad_structures.connection.security_manager_tk_value.hex()}"
+            f"Security Manager TK Value: {parsed_data.ad_structures.oob_security.security_manager_tk_value.hex()}"
         )
     else:
         not_found_fields.append("Security Manager TK Value")
 
-    if parsed_data.ad_structures.connection.security_manager_out_of_band_flags:
-        oob_hex = parsed_data.ad_structures.connection.security_manager_out_of_band_flags.hex()
-        found_fields.append(f"Security Manager Out of Band Flags: {oob_hex}")
+    if parsed_data.ad_structures.oob_security.security_manager_oob_flags:
+        oob_hex = parsed_data.ad_structures.oob_security.security_manager_oob_flags.hex()
+        found_fields.append(f"Security Manager OOB Flags: {oob_hex}")
     else:
-        not_found_fields.append("Security Manager Out of Band Flags")
+        not_found_fields.append("Security Manager OOB Flags")
 
-    if parsed_data.ad_structures.connection.slave_connection_interval_range:
-        range_data = parsed_data.ad_structures.connection.slave_connection_interval_range
-        found_fields.append(f"Slave Connection Interval Range: {range_data.hex()}")
+    if parsed_data.ad_structures.directed.peripheral_connection_interval_range:
+        range_data = parsed_data.ad_structures.directed.peripheral_connection_interval_range
+        found_fields.append(f"Peripheral Connection Interval Range: {range_data.hex()}")
     else:
-        not_found_fields.append("Slave Connection Interval Range")
+        not_found_fields.append("Peripheral Connection Interval Range")
 
-    if parsed_data.ad_structures.connection.secure_connections_confirmation:
-        confirmation = parsed_data.ad_structures.connection.secure_connections_confirmation
+    if parsed_data.ad_structures.oob_security.secure_connections_confirmation:
+        confirmation = parsed_data.ad_structures.oob_security.secure_connections_confirmation
         found_fields.append(f"Secure Connections Confirmation: {confirmation.hex()}")
     else:
         not_found_fields.append("Secure Connections Confirmation")
 
-    if parsed_data.ad_structures.connection.secure_connections_random:
+    if parsed_data.ad_structures.oob_security.secure_connections_random:
         found_fields.append(
-            f"Secure Connections Random: {parsed_data.ad_structures.connection.secure_connections_random.hex()}"
+            f"Secure Connections Random: {parsed_data.ad_structures.oob_security.secure_connections_random.hex()}"
         )
     else:
         not_found_fields.append("Secure Connections Random")
@@ -317,8 +320,9 @@ def display_advertising_data(
         if parsed_data.extended.periodic_advertising_data:
             extended_found.append(f"Periodic Advertising Data: {parsed_data.extended.periodic_advertising_data.hex()}")
 
-        if parsed_data.extended.broadcast_code:
-            extended_found.append(f"Broadcast Code: {parsed_data.extended.broadcast_code.hex()}")
+        # Broadcast code is now in mesh struct (it's an AD type, not PDU metadata)
+        if parsed_data.ad_structures.mesh.broadcast_code:
+            extended_found.append(f"Broadcast Code: {parsed_data.ad_structures.mesh.broadcast_code.hex()}")
 
         if not parsed_data.extended.extended_payload:
             extended_not_found.append("Extended Payload")
@@ -326,7 +330,7 @@ def display_advertising_data(
         if not parsed_data.extended.periodic_advertising_data:
             extended_not_found.append("Periodic Advertising Data")
 
-        if not parsed_data.extended.broadcast_code:
+        if not parsed_data.ad_structures.mesh.broadcast_code:
             extended_not_found.append("Broadcast Code")
 
         if extended_found:
@@ -353,7 +357,7 @@ def demo_advertising_parsing() -> None:
     print("=" * 40)
 
     # Create parser and translator
-    # parser = AdvertisingParser()  # Would be used for actual parsing
+    # parser = AdvertisingPDUParser()  # Would be used for actual parsing
     translator = BluetoothSIGTranslator()
 
     # Example advertising data (this would come from BLE scanning)
@@ -384,9 +388,9 @@ def demo_advertising_parsing() -> None:
     print("\nParsing advertising data...")
 
     try:
-        # The AdvertisingParser would parse raw PDU data in a real scenario
+        # The AdvertisingPDUParser would parse raw PDU data in a real scenario
         # For this demo, we'll show the API
-        print("AdvertisingParser methods available:")
+        print("AdvertisingPDUParser methods available:")
         print("- parse_advertising_data(raw_pdu)")
         print("- parse_legacy_advertising(data)")
         print("- parse_extended_advertising(data)")
@@ -424,7 +428,7 @@ async def main(
         try:
             clean_hex = data.replace(" ", "").replace(":", "")
             raw_bytes = bytes.fromhex(clean_hex)
-            advertising_parser = AdvertisingParser()
+            advertising_parser = AdvertisingPDUParser()
             parsed_data = advertising_parser.parse_advertising_data(raw_bytes)
             print("Parsing provided advertising data:")
             print(f"Raw data: {data}")
@@ -454,8 +458,8 @@ async def main(
                             b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
                         )
                     },
-                    service_uuids=["180F", "180A"],  # Battery and Device Info services
-                    service_data={"180F": b"\x64"},  # Battery level 100%
+                    service_uuids=[BluetoothUUID("180F"), BluetoothUUID("180A")],  # Battery and Device Info services
+                    service_data={BluetoothUUID("180F"): b"\x64"},  # Battery level 100%
                 ),
                 properties=DeviceProperties(
                     appearance=AppearanceData(raw_value=0x03C0, info=None),  # Generic Computer
@@ -489,19 +493,21 @@ async def main(
                             b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
                         )
                     },
-                    service_uuids=["180F", "180A"],  # Battery and Device Info services
-                    service_data={"180F": b"\x64"},  # Battery level 100%
+                    service_uuids=[BluetoothUUID("180F"), BluetoothUUID("180A")],  # Battery and Device Info services
+                    service_data={BluetoothUUID("180F"): b"\x64"},  # Battery level 100%
                 ),
                 properties=DeviceProperties(
                     appearance=AppearanceData(raw_value=0x03C1, info=None),  # Generic Computer with extended features
                     tx_power=-40,
                     flags=BLEAdvertisingFlags(0x06),
                 ),
+                mesh=MeshAndBroadcastData(
+                    broadcast_code=b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff\x00",
+                ),
             ),
             extended=ExtendedAdvertisingData(
                 extended_payload=b"\x01\x02\x03\x04\x05",
                 periodic_advertising_data=b"\xaa\xbb\xcc\xdd",
-                broadcast_code=b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff\x00",
             ),
             rssi=-35,
         )
@@ -526,7 +532,9 @@ async def main(
                 else ""
             ),
             "broadcast_code": (
-                parsed_data.extended.broadcast_code.hex() if parsed_data.extended.broadcast_code else ""
+                parsed_data.ad_structures.mesh.broadcast_code.hex()
+                if parsed_data.ad_structures.mesh.broadcast_code
+                else ""
             ),
             "is_extended_advertising": parsed_data.is_extended_advertising,
             "total_payload_size": parsed_data.total_payload_size,
@@ -540,7 +548,7 @@ async def main(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Advertising data parsing example using the AdvertisingParser.")
+    parser = argparse.ArgumentParser(description="Advertising data parsing example using the AdvertisingPDUParser.")
     parser.add_argument("--show-not-found", action="store_true", help="Show fields not found in the advertising data")
     parser.add_argument("--show-debug", action="store_true", help="Show debug information")
     parser.add_argument("--mock", action="store_true", help="Use mock legacy advertising data")

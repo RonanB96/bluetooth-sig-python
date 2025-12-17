@@ -1,5 +1,9 @@
 """Object types registry for Bluetooth SIG object type definitions."""
 
+# pylint: disable=duplicate-code
+# NOTE: Registry classes intentionally follow the same pattern.
+# This is by design for consistency across all UUID registries.
+
 from __future__ import annotations
 
 from bluetooth_sig.registry.base import BaseUUIDRegistry

@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 from .advertising import (
+    AdvertisementData,
     AdvertisingData,
     AdvertisingDataStructures,
     BLEAdvertisingFlags,
     BLEAdvertisingPDU,
     BLEExtendedHeader,
-    ConnectionData,
     CoreAdvertisingData,
     DeviceProperties,
+    DirectedAdvertisingData,
     ExtendedAdvertisingData,
     ExtendedHeaderFlags,
     LocationAndSensingData,
     MeshAndBroadcastData,
+    OOBSecurityData,
     PDUHeaderFlags,
     PDULayout,
     PDUType,
@@ -39,6 +41,19 @@ from .base_types import SIGInfo
 from .battery import BatteryChargeLevel, BatteryChargeState, BatteryChargingType, BatteryFaultReason
 from .context import CharacteristicContext, DeviceInfo
 from .data_types import CharacteristicInfo, DateData, ParseFieldError, ServiceInfo, ValidationResult
+from .ead import (
+    EAD_ADDRESS_SIZE,
+    EAD_IV_SIZE,
+    EAD_MIC_SIZE,
+    EAD_MIN_SIZE,
+    EAD_NONCE_SIZE,
+    EAD_RANDOMIZER_SIZE,
+    EAD_SESSION_KEY_SIZE,
+    EADDecryptResult,
+    EADError,
+    EADKeyMaterial,
+    EncryptedAdvertisingData,
+)
 from .location import PositionStatus
 from .protocols import CharacteristicDataProtocol
 from .registry.ad_types import AdTypeInfo
@@ -99,14 +114,25 @@ __all__ = [
     "CharacteristicInfo",
     "ClassOfDeviceInfo",
     "ConcentrationUnit",
-    "ConnectionData",
     "CoreAdvertisingData",
+    "DirectedAdvertisingData",
     "DescriptorData",
     "DescriptorInfo",
     "DateData",
     "DeviceInfo",
     "DeviceProperties",
+    "EAD_ADDRESS_SIZE",
+    "EAD_IV_SIZE",
+    "EAD_MIC_SIZE",
+    "EAD_MIN_SIZE",
+    "EAD_NONCE_SIZE",
+    "EAD_RANDOMIZER_SIZE",
+    "EAD_SESSION_KEY_SIZE",
+    "EADDecryptResult",
+    "EADError",
+    "EADKeyMaterial",
     "ElectricalUnit",
+    "EncryptedAdvertisingData",
     "ExtendedAdvertisingData",
     "ExtendedHeaderFlags",
     "GlucoseConcentrationUnit",
@@ -115,7 +141,9 @@ __all__ = [
     "LocationAndSensingData",
     "MeasurementSystem",
     "MeshAndBroadcastData",
+    "OOBSecurityData",
     "ParseFieldError",
+    "AdvertisementData",
     "PDUHeaderFlags",
     "PDULayout",
     "PDUType",

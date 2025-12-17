@@ -9,13 +9,22 @@ For sync-only libraries an adapter can run sync calls in a thread and
 expose an async interface.
 """
 # pylint: disable=duplicate-code  # Pattern repetition is expected for protocol definitions
+# pylint: disable=too-many-public-methods  # BLE connection protocol requires complete interface
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from typing import Callable, ClassVar
 
-from bluetooth_sig.types.device_types import DeviceService, ScannedDevice
+from bluetooth_sig.types.advertising import AdvertisementData
+from bluetooth_sig.types.device_types import (
+    DeviceService,
+    ScanDetectionCallback,
+    ScanFilter,
+    ScannedDevice,
+    ScanningMode,
+)
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -142,10 +151,33 @@ class ConnectionManagerProtocol(ABC):
 
     @abstractmethod
     async def read_rssi(self) -> int:
-        """Read the RSSI (signal strength) of the connection.
+        """Read the RSSI (signal strength) during an active connection.
+
+        This reads RSSI from the active BLE connection. Not all backends
+        support this - some only provide RSSI from advertisement data.
 
         Returns:
             RSSI value in dBm (typically negative, e.g., -60)
+
+        Raises:
+            NotImplementedError: If this backend doesn't support connection RSSI
+            RuntimeError: If not connected
+
+        """
+
+    @abstractmethod
+    async def get_advertisement_rssi(self, refresh: bool = False) -> int | None:
+        """Get the RSSI from advertisement data.
+
+        This returns the RSSI from advertisement data. Does not require
+        an active connection.
+
+        Args:
+            refresh: If True, perform an active scan to get fresh RSSI.
+                    If False, return the cached RSSI from last advertisement.
+
+        Returns:
+            RSSI value in dBm, or None if no advertisement has been received
 
         """
 
@@ -189,7 +221,15 @@ class ConnectionManagerProtocol(ABC):
         """
 
     @classmethod
-    async def scan(cls, timeout: float = 5.0) -> list[ScannedDevice]:
+    async def scan(  # pylint: disable=too-many-arguments
+        cls,
+        timeout: float = 5.0,
+        *,
+        filters: ScanFilter | None = None,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+        callback: ScanDetectionCallback | None = None,
+    ) -> list[ScannedDevice]:
         """Scan for nearby BLE devices.
 
         This is a class method that doesn't require an instance. Not all backends
@@ -197,15 +237,174 @@ class ConnectionManagerProtocol(ABC):
 
         Args:
             timeout: Scan duration in seconds (default: 5.0)
+            filters: Optional filter criteria. Devices not matching filters are excluded.
+                Filtering may happen at OS level (more efficient) or post-scan depending
+                on backend capabilities.
+            scanning_mode: 'active' (default) sends scan requests for scan response data,
+                'passive' only listens to advertisements (saves power, faster).
+                Note: Passive scanning is NOT supported on macOS.
+            adapter: Backend-specific adapter identifier (e.g., "hci0" for BlueZ).
+                None uses the default adapter.
+            callback: Optional async or sync function called with each ScannedDevice
+                as it's discovered. Enables real-time UI updates and early processing.
+                If async, it's awaited before continuing.
 
         Returns:
-            List of discovered devices
+            List of discovered devices matching the filters
 
         Raises:
             NotImplementedError: If this backend doesn't support scanning
 
+        Example::
+
+            # Basic scan
+            devices = await MyConnectionManager.scan(timeout=5.0)
+
+            # Filtered scan for Heart Rate monitors
+            from bluetooth_sig.types.device_types import ScanFilter
+
+            filters = ScanFilter(service_uuids=["180d"], rssi_threshold=-70)
+            devices = await MyConnectionManager.scan(timeout=10.0, filters=filters)
+
+
+            # Scan with real-time callback
+            async def on_device(device: ScannedDevice) -> None:
+                print(f"Found: {device.name or device.address}")
+
+
+            devices = await MyConnectionManager.scan(timeout=10.0, callback=on_device)
+
         """
         raise NotImplementedError(f"{cls.__name__} does not support scanning")
+
+    @classmethod
+    async def find_device(
+        cls,
+        filters: ScanFilter,
+        timeout: float = 10.0,
+        *,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+    ) -> ScannedDevice | None:
+        """Find the first device matching the filter criteria.
+
+        This is more efficient than a full scan when looking for a specific device.
+        Use ScanFilter to match by address, name, service UUIDs, or custom function.
+
+        Args:
+            filters: Filter criteria. Use ScanFilter(addresses=[...]) for address,
+                ScanFilter(names=[...]) for name, or ScanFilter(filter_func=...) for
+                custom matching logic.
+            timeout: Maximum time to scan in seconds (default: 10.0)
+            scanning_mode: 'active' or 'passive' scanning mode.
+            adapter: Backend-specific adapter identifier. None uses default.
+
+        Returns:
+            The first matching device, or None if not found within timeout
+
+        Raises:
+            NotImplementedError: If this backend doesn't support scanning
+
+        Example::
+
+            # Find by address
+            device = await MyConnectionManager.find_device(
+                ScanFilter(addresses=["AA:BB:CC:DD:EE:FF"]),
+                timeout=15.0,
+            )
+
+            # Find by name
+            device = await MyConnectionManager.find_device(
+                ScanFilter(names=["Polar H10"]),
+                timeout=15.0,
+            )
+
+
+            # Find with custom filter
+            def has_apple_data(device: ScannedDevice) -> bool:
+                if device.advertisement_data is None:
+                    return False
+                mfr = device.advertisement_data.ad_structures.core.manufacturer_data
+                return 0x004C in mfr
+
+
+            device = await MyConnectionManager.find_device(
+                ScanFilter(filter_func=has_apple_data),
+                timeout=10.0,
+            )
+
+        """
+        raise NotImplementedError(f"{cls.__name__} does not support find_device")
+
+    @classmethod
+    def scan_stream(
+        cls,
+        timeout: float | None = 5.0,
+        *,
+        filters: ScanFilter | None = None,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+    ) -> AsyncIterator[ScannedDevice]:
+        """Stream discovered devices as an async iterator.
+
+        This provides the most Pythonic way to process devices as they're
+        discovered, with full async/await support and easy early termination.
+
+        Args:
+            timeout: Scan duration in seconds. None for indefinite.
+            filters: Optional filter criteria.
+            scanning_mode: 'active' or 'passive'.
+            adapter: Backend-specific adapter identifier.
+
+        Yields:
+            ScannedDevice objects as they are discovered
+
+        Raises:
+            NotImplementedError: If this backend doesn't support streaming
+
+        Example::
+
+            async for device in MyConnectionManager.scan_stream(timeout=10.0):
+                print(f"Found: {device.name}")
+                if device.name == "My Target Device":
+                    break  # Stop scanning early
+
+        """
+        raise NotImplementedError(f"{cls.__name__} does not support scan_stream")
+
+    @abstractmethod
+    async def get_latest_advertisement(self, refresh: bool = False) -> AdvertisementData | None:
+        """Return the most recently received advertisement data.
+
+        Args:
+            refresh: If True, perform an active scan to get fresh data.
+                    If False, return the last cached advertisement.
+
+        Returns:
+            Latest AdvertisementData, or None if none received yet
+
+        """
+
+    @classmethod
+    @abstractmethod
+    def convert_advertisement(cls, advertisement: object) -> AdvertisementData:
+        """Convert framework-specific advertisement data to AdvertisementData.
+
+        This method bridges the gap between BLE framework-specific advertisement
+        representations (Bleak's AdvertisementData, SimpleBLE's Peripheral, etc.)
+        and our unified AdvertisementData type.
+
+        Each connection manager implementation knows how to extract manufacturer_data,
+        service_data, local_name, RSSI, etc. from its framework's format.
+
+        Args:
+            advertisement: Framework-specific advertisement object
+                          (e.g., bleak.backends.scanner.AdvertisementData)
+
+        Returns:
+            Unified AdvertisementData with ad_structures populated
+
+        """
 
 
 __all__ = ["ConnectionManagerProtocol"]

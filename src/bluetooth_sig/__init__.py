@@ -9,6 +9,16 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from .advertising import (
+    AdvertisingDataInterpreter,
+    AdvertisingInterpreterInfo,
+    AdvertisingInterpreterRegistry,
+    AdvertisingPDUParser,
+    DataSource,
+    DictKeyProvider,
+    EncryptionKeyProvider,
+    advertising_interpreter_registry,
+)
 from .core.async_context import AsyncParsingSession
 from .core.translator import BluetoothSIGTranslator
 from .gatt.characteristics.base import BaseCharacteristic, CharacteristicData
@@ -31,6 +41,17 @@ except ImportError:
     __version__ = _version_result.stdout.strip().lstrip("v")
 
 __all__ = [
+    # Advertising PDU parsing
+    "AdvertisingPDUParser",
+    # Advertising data interpretation (vendor-specific)
+    "AdvertisingDataInterpreter",
+    "AdvertisingInterpreterInfo",
+    "AdvertisingInterpreterRegistry",
+    "advertising_interpreter_registry",
+    "DataSource",
+    "DictKeyProvider",
+    "EncryptionKeyProvider",
+    # Core
     "AsyncParsingSession",
     "BaseCharacteristic",
     "BaseGattService",

@@ -7,18 +7,42 @@ following the same pattern as Bleak and SimplePyBLE managers.
 from __future__ import annotations
 
 import asyncio
+import inspect
+from collections.abc import AsyncIterator
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable
+from typing import Callable, ClassVar
 
-from bluepy.btle import ADDR_TYPE_RANDOM, UUID, BTLEException, Characteristic, Peripheral, Service
+from bluepy.btle import (
+    ADDR_TYPE_RANDOM,
+    UUID,
+    BTLEException,
+    Characteristic,
+    Peripheral,
+    ScanEntry,
+    Scanner,
+    Service,
+)
 
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
+from bluetooth_sig.types.ad_types_constants import ADType
+from bluetooth_sig.types.advertising import (
+    AdvertisementData,
+    AdvertisingDataStructures,
+    CoreAdvertisingData,
+    DeviceProperties,
+)
 from bluetooth_sig.types.data_types import CharacteristicInfo
-from bluetooth_sig.types.device_types import DeviceService
+from bluetooth_sig.types.device_types import (
+    DeviceService,
+    ScanDetectionCallback,
+    ScanFilter,
+    ScannedDevice,
+    ScanningMode,
+)
 from bluetooth_sig.types.gatt_enums import GattProperty
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -30,6 +54,8 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
     Implements ConnectionManagerProtocol to integrate BluePy with
     the bluetooth-sig-python Device class.
     """
+
+    supports_scanning: ClassVar[bool] = True
 
     def __init__(self, address: str, addr_type: str = ADDR_TYPE_RANDOM, timeout: float = 20.0) -> None:
         """Initialize the connection manager.
@@ -46,6 +72,7 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
         self.periph: Peripheral | None = None
         self.executor = ThreadPoolExecutor(max_workers=1)
         self._cached_services: list[DeviceService] | None = None
+        self._latest_advertisement: AdvertisementData | None = None
 
     @staticmethod
     def to_bluepy_uuid(uuid: BluetoothUUID) -> UUID:
@@ -354,10 +381,7 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
         raise NotImplementedError("Unpairing not supported in BluePy connection manager")
 
     async def read_rssi(self) -> int:
-        """Read the RSSI (signal strength) of the connection.
-
-        Returns:
-            RSSI value in dBm (typically negative, e.g., -50)
+        """Read the RSSI (signal strength) during an active connection.
 
         Raises:
             NotImplementedError: BluePy doesn't support reading RSSI from connected devices
@@ -365,10 +389,32 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
         Note:
             BluePy only provides RSSI values during scanning (from advertising packets).
             Once connected, there's no API to read RSSI from an active connection.
+            Use get_advertisement_rssi() to get the last advertised RSSI.
             See: https://github.com/IanHarvey/bluepy/issues/394
 
         """
-        raise NotImplementedError("RSSI reading from connected devices not supported in BluePy")
+        raise NotImplementedError(
+            "BluePy does not support connection RSSI. Use get_advertisement_rssi() "
+            "to get RSSI from the last advertisement."
+        )
+
+    async def get_advertisement_rssi(self, refresh: bool = False) -> int | None:
+        """Get the RSSI from advertisement data.
+
+        Args:
+            refresh: If True, perform an active scan to get fresh RSSI.
+                    If False, return the cached RSSI from last advertisement.
+
+        Returns:
+            RSSI value in dBm, or None if no advertisement has been received
+
+        """
+        if refresh:
+            await self.get_latest_advertisement(refresh=True)
+
+        if self._latest_advertisement is not None:
+            return self._latest_advertisement.rssi
+        return None
 
     def set_disconnected_callback(self, callback: Callable[[], None]) -> None:
         """Set a callback to be called when the device disconnects.
@@ -419,3 +465,257 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
 
         """
         return "Unknown"
+
+    async def get_latest_advertisement(self, refresh: bool = False) -> AdvertisementData | None:
+        """Return the most recently received advertisement data.
+
+        Args:
+            refresh: If True, perform a short active scan to get fresh data.
+                    If False, return the last cached advertisement.
+
+        Returns:
+            Latest AdvertisementData, or None if none received yet
+
+        """
+        if refresh:
+
+            def _do_scan() -> AdvertisementData | None:
+                scanner = Scanner()
+                entries = scanner.scan(1.0)  # 1 second scan
+                for entry in entries:
+                    if entry.addr.upper() == self._address.upper():
+                        return self.convert_advertisement(entry)
+                return None
+
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(self.executor, _do_scan)
+            if result is not None:
+                self._latest_advertisement = result
+
+        return self._latest_advertisement
+
+    @classmethod
+    def convert_advertisement(cls, advertisement: object) -> AdvertisementData:
+        """Convert BluePy scan entry to our AdvertisementData type.
+
+        BluePy provides advertisement data through ScanEntry objects during scanning.
+        This method extracts the relevant fields using ADType constants.
+
+        Args:
+            advertisement: BluePy ScanEntry object from scan results
+
+        Returns:
+            Unified AdvertisementData with ad_structures populated
+
+        Note:
+            BluePy's getScanData() returns (ad_type, desc, hex_value) tuples.
+            Values are hex strings that need conversion to bytes.
+
+        """
+        manufacturer_data: dict[int, bytes] = {}
+        service_uuids: list[str] = []
+        service_data: dict[BluetoothUUID, bytes] = {}
+        local_name: str = ""
+        tx_power: int = 0
+
+        scan_data = advertisement.getScanData()  # type: ignore[attr-defined]
+        for ad_type, _desc, value in scan_data:
+            # Convert hex string to bytes - some values may not be hex encoded
+            try:
+                ad_bytes = bytes.fromhex(value) if value else b""
+            except ValueError:
+                # Value is not a hex string (e.g., device name as plain text)
+                ad_bytes = value.encode("utf-8") if isinstance(value, str) else b""
+
+            # Device names
+            if ad_type == ADType.COMPLETE_LOCAL_NAME:
+                local_name = ad_bytes.decode("utf-8", errors="replace")
+            elif ad_type == ADType.SHORTENED_LOCAL_NAME and not local_name:
+                local_name = ad_bytes.decode("utf-8", errors="replace")
+
+            # Manufacturer data (first 2 bytes are company ID, little-endian)
+            elif ad_type == ADType.MANUFACTURER_SPECIFIC_DATA and len(ad_bytes) >= 2:
+                company_id = int.from_bytes(ad_bytes[:2], byteorder="little")
+                manufacturer_data[company_id] = ad_bytes[2:]
+
+            # 16-bit Service UUIDs
+            elif ad_type in (ADType.INCOMPLETE_16BIT_SERVICE_UUIDS, ADType.COMPLETE_16BIT_SERVICE_UUIDS):
+                for i in range(0, len(ad_bytes), 2):
+                    if i + 1 < len(ad_bytes):
+                        uuid16 = int.from_bytes(ad_bytes[i : i + 2], byteorder="little")
+                        service_uuids.append(f"{uuid16:04X}")
+
+            # 32-bit Service UUIDs
+            elif ad_type in (ADType.INCOMPLETE_32BIT_SERVICE_UUIDS, ADType.COMPLETE_32BIT_SERVICE_UUIDS):
+                for i in range(0, len(ad_bytes), 4):
+                    if i + 3 < len(ad_bytes):
+                        uuid32 = int.from_bytes(ad_bytes[i : i + 4], byteorder="little")
+                        service_uuids.append(f"{uuid32:08X}")
+
+            # 128-bit Service UUIDs
+            elif ad_type in (ADType.INCOMPLETE_128BIT_SERVICE_UUIDS, ADType.COMPLETE_128BIT_SERVICE_UUIDS):
+                for i in range(0, len(ad_bytes), 16):
+                    if i + 15 < len(ad_bytes):
+                        uuid_bytes = ad_bytes[i : i + 16][::-1]  # Reverse for standard format
+                        uuid_hex = uuid_bytes.hex().upper()
+                        # Format as standard UUID: 8-4-4-4-12
+                        formatted = (
+                            f"{uuid_hex[:8]}-{uuid_hex[8:12]}-{uuid_hex[12:16]}-{uuid_hex[16:20]}-{uuid_hex[20:]}"
+                        )
+                        service_uuids.append(formatted)
+
+            # 16-bit Service Data
+            elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_bytes) >= 2:
+                uuid16 = int.from_bytes(ad_bytes[:2], byteorder="little")
+                service_data[BluetoothUUID(f"{uuid16:04X}")] = ad_bytes[2:]
+
+            # TX Power Level
+            elif ad_type == ADType.TX_POWER_LEVEL and len(ad_bytes) >= 1:
+                tx_power = int.from_bytes(ad_bytes[:1], byteorder="little", signed=True)
+
+        core_data = CoreAdvertisingData(
+            manufacturer_data=manufacturer_data,
+            service_uuids=[BluetoothUUID(uuid) for uuid in service_uuids],
+            service_data=service_data,
+            local_name=local_name,
+        )
+
+        properties = DeviceProperties(
+            tx_power=tx_power,
+        )
+
+        return AdvertisementData(
+            ad_structures=AdvertisingDataStructures(
+                core=core_data,
+                properties=properties,
+            ),
+            rssi=advertisement.rssi,  # type: ignore[attr-defined]
+        )
+
+    # =========================================================================
+    # SCANNING METHODS
+    # =========================================================================
+
+    @classmethod
+    def _scan_entry_to_scanned_device(cls, entry: ScanEntry) -> ScannedDevice:
+        """Convert a BluePy ScanEntry to a ScannedDevice."""
+        return ScannedDevice(
+            address=entry.addr,
+            name=entry.getValueText(9) or None,  # 9 = Complete Local Name
+            advertisement_data=cls.convert_advertisement(entry),
+        )
+
+    @classmethod
+    async def scan(  # pylint: disable=too-many-arguments
+        cls,
+        timeout: float = 5.0,
+        *,
+        filters: ScanFilter | None = None,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+        callback: ScanDetectionCallback | None = None,
+    ) -> list[ScannedDevice]:
+        """Scan for nearby BLE devices.
+
+        Args:
+            timeout: Scan duration in seconds
+            filters: Optional filter criteria
+            scanning_mode: 'active' or 'passive'
+            adapter: Ignored (BluePy uses default adapter)
+            callback: Optional async/sync function called for each discovered device
+
+        Returns:
+            List of discovered devices matching filters
+
+        Raises:
+            PermissionError: If not running with root/sudo privileges
+
+        """
+        del adapter  # Unused - BluePy uses default adapter
+        loop = asyncio.get_event_loop()
+        passive = scanning_mode == "passive"
+
+        def _scan() -> list[ScanEntry]:
+            scanner = Scanner()
+            try:
+                return list(scanner.scan(timeout, passive=passive))
+            except BTLEException as e:
+                if "Failed to execute management command" in str(e):
+                    raise PermissionError(
+                        "BluePy scanning requires root privileges. Run with: sudo python <script>"
+                    ) from e
+                raise
+
+        entries = await loop.run_in_executor(None, _scan)
+
+        devices: list[ScannedDevice] = []
+        for entry in entries:
+            scanned = cls._scan_entry_to_scanned_device(entry)
+            if filters and not filters.matches(scanned):
+                continue
+            devices.append(scanned)
+            if callback:
+                result = callback(scanned)
+                if inspect.isawaitable(result):
+                    await result
+
+        return devices
+
+    @classmethod
+    async def find_device(
+        cls,
+        filters: ScanFilter,
+        timeout: float = 10.0,
+        *,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+    ) -> ScannedDevice | None:
+        """Find the first device matching filter criteria.
+
+        Args:
+            filters: Filter criteria (address, name, service_uuids, or filter_func)
+            timeout: Maximum scan time in seconds
+            scanning_mode: 'active' or 'passive'
+            adapter: Ignored
+
+        Returns:
+            First matching device or None
+
+        """
+        del adapter  # Unused
+        devices = await cls.scan(timeout=timeout, filters=filters, scanning_mode=scanning_mode)
+        return devices[0] if devices else None
+
+    @classmethod
+    def scan_stream(
+        cls,
+        timeout: float | None = 10.0,
+        *,
+        filters: ScanFilter | None = None,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+    ) -> AsyncIterator[ScannedDevice]:
+        """Stream discovered devices as an async iterator.
+
+        Note: BluePy doesn't support true streaming, so this
+        scans first then yields devices.
+
+        Args:
+            timeout: Scan duration in seconds
+            filters: Optional filter criteria
+            scanning_mode: 'active' or 'passive'
+            adapter: Ignored
+
+        Yields:
+            ScannedDevice for each discovered device
+
+        """
+        del adapter  # Unused
+
+        async def _stream() -> AsyncIterator[ScannedDevice]:
+            scan_timeout = timeout if timeout is not None else 10.0
+            devices = await cls.scan(timeout=scan_timeout, filters=filters, scanning_mode=scanning_mode)
+            for device in devices:
+                yield device
+
+        return _stream()

@@ -1,20 +1,24 @@
-"""Advertising data parser for BLE devices.
+"""BLE Advertising PDU parser.
 
-This module provides a dedicated parser for BLE advertising data
-packets, extracting device information, manufacturer data, and service
-UUIDs from both legacy and extended advertising formats.
+This module provides a parser for BLE advertising PDU data packets,
+extracting device information, manufacturer data, and service UUIDs
+from both legacy and extended advertising formats.
+
+This is the low-level BLE spec parser. For interpreting vendor-specific
+sensor data (e.g., Xiaomi, RuuviTag, BTHome), see the AdvertisingDataInterpreter
+base class.
 """
 
 from __future__ import annotations
 
 import logging
 
-from ..gatt.characteristics.utils import DataParser
-from ..registry.company_identifiers import company_identifiers_registry
-from ..registry.core.ad_types import ad_types_registry
-from ..registry.core.appearance_values import appearance_values_registry
-from ..registry.core.class_of_device import class_of_device_registry
-from ..types import (
+from bluetooth_sig.gatt.characteristics.utils import DataParser
+from bluetooth_sig.registry.company_identifiers import company_identifiers_registry
+from bluetooth_sig.registry.core.ad_types import ad_types_registry
+from bluetooth_sig.registry.core.appearance_values import appearance_values_registry
+from bluetooth_sig.registry.core.class_of_device import class_of_device_registry
+from bluetooth_sig.types import (
     AdvertisingData,
     AdvertisingDataStructures,
     BLEAdvertisingFlags,
@@ -25,18 +29,28 @@ from ..types import (
     PDULayout,
     PDUType,
 )
-from ..types.ad_types_constants import ADType
-from ..types.appearance import AppearanceData
-from ..types.uri import URIData
+from bluetooth_sig.types.ad_types_constants import ADType
+from bluetooth_sig.types.appearance import AppearanceData
+from bluetooth_sig.types.uri import URIData
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 logger = logging.getLogger(__name__)
 
 
-class AdvertisingParser:  # pylint: disable=too-few-public-methods
-    """Parser for BLE advertising data packets.
+class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
+    """Parser for BLE advertising PDU data packets.
 
-    Handles both legacy and extended advertising PDU formats, extracting
-    device information, manufacturer data, and service UUIDs.
+    Parses raw BLE advertising PDU bytes into structured AdvertisingData,
+    handling both legacy and extended advertising formats.
+
+    This is the low-level parsing layer that extracts:
+    - Manufacturer data (company_id → payload)
+    - Service data (UUID → payload)
+    - Flags, local name, appearance, TX power
+    - Extended advertising fields (BLE 5.0+)
+
+    For vendor-specific interpretation (e.g., BTHome sensor values),
+    use AdvertisingDataInterpreter subclasses.
     """
 
     def parse_advertising_data(self, raw_data: bytes) -> AdvertisingData:
@@ -267,6 +281,56 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             ad_structures=parsed_data,
         )
 
+    @staticmethod
+    def _parse_address_list(ad_data: bytes) -> list[str]:
+        """Parse list of 6-byte Bluetooth addresses from raw data.
+
+        Args:
+            ad_data: Raw address data (multiple 6-byte addresses)
+
+        Returns:
+            List of formatted address strings (XX:XX:XX:XX:XX:XX)
+        """
+        addresses: list[str] = []
+        for j in range(0, len(ad_data), 6):
+            if j + 5 < len(ad_data):
+                addr_bytes = ad_data[j : j + 6]
+                addresses.append(":".join(f"{b:02X}" for b in addr_bytes[::-1]))
+        return addresses
+
+    @staticmethod
+    def _parse_16bit_uuids(ad_data: bytes) -> list[BluetoothUUID]:
+        """Parse list of 16-bit service UUIDs from raw data.
+
+        Args:
+            ad_data: Raw UUID data
+
+        Returns:
+            List of BluetoothUUID objects
+        """
+        uuids: list[BluetoothUUID] = []
+        for j in range(0, len(ad_data), 2):
+            if j + 1 < len(ad_data):
+                uuid_short = DataParser.parse_int16(ad_data, j, signed=False)
+                uuids.append(BluetoothUUID(uuid_short))
+        return uuids
+
+    @staticmethod
+    def _parse_128bit_uuids(ad_data: bytes) -> list[BluetoothUUID]:
+        """Parse list of 128-bit service UUIDs from raw data.
+
+        Args:
+            ad_data: Raw UUID data
+
+        Returns:
+            List of BluetoothUUID objects
+        """
+        uuids: list[BluetoothUUID] = []
+        for j in range(0, len(ad_data), 16):
+            if j + 15 < len(ad_data):
+                uuids.append(BluetoothUUID(ad_data[j : j + 16].hex().upper()))
+        return uuids
+
     def _parse_manufacturer_data(self, ad_data: bytes, parsed: AdvertisingDataStructures) -> None:
         """Parse manufacturer-specific data and resolve company name.
 
@@ -317,18 +381,12 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 ADType.INCOMPLETE_16BIT_SERVICE_UUIDS,
                 ADType.COMPLETE_16BIT_SERVICE_UUIDS,
             ):
-                for j in range(0, len(ad_data), 2):
-                    if j + 1 < len(ad_data):
-                        uuid_short = DataParser.parse_int16(ad_data, j, signed=False)
-                        parsed.core.service_uuids.append(f"{uuid_short:04X}")
+                parsed.core.service_uuids.extend(self._parse_16bit_uuids(ad_data))
             elif ad_type in (
                 ADType.INCOMPLETE_128BIT_SERVICE_UUIDS,
                 ADType.COMPLETE_128BIT_SERVICE_UUIDS,
             ):
-                for j in range(0, len(ad_data), 16):
-                    if j + 15 < len(ad_data):
-                        uuid_128 = ad_data[j : j + 16].hex().upper()
-                        parsed.core.service_uuids.append(uuid_128)
+                parsed.core.service_uuids.extend(self._parse_128bit_uuids(ad_data))
             elif ad_type in (ADType.SHORTENED_LOCAL_NAME, ADType.COMPLETE_LOCAL_NAME):
                 try:
                     parsed.core.local_name = ad_data.decode("utf-8")
@@ -343,11 +401,15 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 appearance_info = appearance_values_registry.get_appearance_info(raw_value)
                 parsed.properties.appearance = AppearanceData(raw_value=raw_value, info=appearance_info)
             elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_data) >= 2:
-                service_uuid = f"{DataParser.parse_int16(ad_data, 0, signed=False):04X}"
+                service_uuid = BluetoothUUID(DataParser.parse_int16(ad_data, 0, signed=False))
                 parsed.core.service_data[service_uuid] = ad_data[2:]
+                if service_uuid not in parsed.core.service_uuids:
+                    parsed.core.service_uuids.append(service_uuid)
             elif ad_type == ADType.SERVICE_DATA_128BIT and len(ad_data) >= 16:
-                service_uuid = ad_data[:16].hex().upper()
+                service_uuid = BluetoothUUID(ad_data[:16].hex().upper())
                 parsed.core.service_data[service_uuid] = ad_data[16:]
+                if service_uuid not in parsed.core.service_uuids:
+                    parsed.core.service_uuids.append(service_uuid)
             elif ad_type == ADType.URI:
                 parsed.core.uri_data = URIData.from_raw_data(ad_data)
             elif ad_type == ADType.INDOOR_POSITIONING:
@@ -378,44 +440,37 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
             elif ad_type == ADType.MESH_BEACON:
                 parsed.mesh.mesh_beacon = ad_data
             elif ad_type == ADType.PUBLIC_TARGET_ADDRESS:
-                for j in range(0, len(ad_data), 6):
-                    if j + 5 < len(ad_data):
-                        addr_bytes = ad_data[j : j + 6]
-                        addr_str = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
-                        parsed.connection.public_target_address.append(addr_str)
+                parsed.directed.public_target_address.extend(self._parse_address_list(ad_data))
             elif ad_type == ADType.RANDOM_TARGET_ADDRESS:
-                for j in range(0, len(ad_data), 6):
-                    if j + 5 < len(ad_data):
-                        addr_bytes = ad_data[j : j + 6]
-                        addr_str = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
-                        parsed.connection.random_target_address.append(addr_str)
+                parsed.directed.random_target_address.extend(self._parse_address_list(ad_data))
             elif ad_type == ADType.ADVERTISING_INTERVAL and len(ad_data) >= 2:
-                parsed.connection.advertising_interval = DataParser.parse_int16(ad_data, 0, signed=False)
+                parsed.directed.advertising_interval = DataParser.parse_int16(ad_data, 0, signed=False)
             elif ad_type == ADType.ADVERTISING_INTERVAL_LONG and len(ad_data) >= 3:
-                parsed.connection.advertising_interval_long = int.from_bytes(
+                parsed.directed.advertising_interval_long = int.from_bytes(
                     ad_data[:3], byteorder="little", signed=False
                 )
             elif ad_type == ADType.LE_BLUETOOTH_DEVICE_ADDRESS and len(ad_data) >= 6:
                 addr_bytes = ad_data[:6]
-                parsed.connection.le_bluetooth_device_address = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
+                parsed.directed.le_bluetooth_device_address = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
             elif ad_type == ADType.LE_ROLE and len(ad_data) >= 1:
                 parsed.properties.le_role = ad_data[0]
             elif ad_type == ADType.CLASS_OF_DEVICE and len(ad_data) >= 3:
-                parsed.properties.class_of_device = int.from_bytes(ad_data[:3], byteorder="little", signed=False)
+                raw_cod = int.from_bytes(ad_data[:3], byteorder="little", signed=False)
+                parsed.properties.class_of_device = class_of_device_registry.decode_class_of_device(raw_cod)
             elif ad_type == ADType.SIMPLE_PAIRING_HASH_C:
-                parsed.connection.simple_pairing_hash_c = ad_data
+                parsed.oob_security.simple_pairing_hash_c = ad_data
             elif ad_type == ADType.SIMPLE_PAIRING_RANDOMIZER_R:
-                parsed.connection.simple_pairing_randomizer_r = ad_data
+                parsed.oob_security.simple_pairing_randomizer_r = ad_data
             elif ad_type == ADType.SECURITY_MANAGER_TK_VALUE:
-                parsed.connection.security_manager_tk_value = ad_data
+                parsed.oob_security.security_manager_tk_value = ad_data
             elif ad_type == ADType.SECURITY_MANAGER_OUT_OF_BAND_FLAGS:
-                parsed.connection.security_manager_out_of_band_flags = ad_data
+                parsed.oob_security.security_manager_oob_flags = ad_data
             elif ad_type == ADType.SLAVE_CONNECTION_INTERVAL_RANGE:
-                parsed.connection.slave_connection_interval_range = ad_data
+                parsed.directed.peripheral_connection_interval_range = ad_data
             elif ad_type == ADType.SECURE_CONNECTIONS_CONFIRMATION_VALUE:
-                parsed.connection.secure_connections_confirmation = ad_data
+                parsed.oob_security.secure_connections_confirmation = ad_data
             elif ad_type == ADType.SECURE_CONNECTIONS_RANDOM_VALUE:
-                parsed.connection.secure_connections_random = ad_data
+                parsed.oob_security.secure_connections_random = ad_data
             elif ad_type == ADType.CHANNEL_MAP_UPDATE_INDICATION:
                 parsed.location.channel_map_update_indication = ad_data
             elif ad_type == ADType.PB_ADV:
@@ -424,11 +479,5 @@ class AdvertisingParser:  # pylint: disable=too-few-public-methods
                 parsed.security.resolvable_set_identifier = ad_data
 
             i += length + 1
-
-        # Decode class_of_device if present
-        if parsed.properties.class_of_device is not None:
-            parsed.properties.class_of_device_info = class_of_device_registry.decode_class_of_device(
-                parsed.properties.class_of_device
-            )
 
         return parsed

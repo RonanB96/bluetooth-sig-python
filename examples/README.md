@@ -50,7 +50,7 @@ python -m examples.notifications--address 12:34:56:78:9A:BC --characteristic 2A1
 
 ### advertising_parsing.py
 
-Parses BLE advertising data packets using the AdvertisingParser.
+Parses BLE advertising data packets using the AdvertisingPDUParser.
 
 ```bash
 # Parse real advertising data

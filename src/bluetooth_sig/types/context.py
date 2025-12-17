@@ -8,6 +8,7 @@ import msgspec
 
 from .protocols import CharacteristicDataProtocol
 from .registry.descriptor_types import DescriptorData
+from .uuid import BluetoothUUID
 
 
 class DeviceInfo(msgspec.Struct, kw_only=True):
@@ -16,7 +17,7 @@ class DeviceInfo(msgspec.Struct, kw_only=True):
     address: str = ""
     name: str = ""
     manufacturer_data: dict[int, bytes] = msgspec.field(default_factory=dict)
-    service_uuids: list[str] = msgspec.field(default_factory=list)
+    service_uuids: list[BluetoothUUID] = msgspec.field(default_factory=list)
 
 
 class CharacteristicContext(msgspec.Struct, kw_only=True):

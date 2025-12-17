@@ -8,6 +8,8 @@ that do NOT inherit from BaseCharacteristic.
 All templates follow the CodingTemplate protocol and can be used by both SIG
 and custom characteristics through composition.
 """
+# pylint: disable=too-many-lines  # Template classes are cohesive - splitting would break composition pattern
+# TODO review splitting into multiple files
 
 from __future__ import annotations
 

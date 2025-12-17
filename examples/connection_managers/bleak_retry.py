@@ -1,18 +1,24 @@
-"""Bleak-based connection manager moved to examples connection_managers.
+"""Bleak-based connection manager for bluetooth-sig-python.
 
-This module imports Bleak at module import time so that attempting to
-import it when Bleak is not available will fail fast (tests rely on
-that behaviour).
+This module provides a Bleak backend implementation with retry support,
+comprehensive scanning capabilities, and proper async patterns.
 """
 
 from __future__ import annotations
 
 import asyncio
-from typing import Callable
-from venv import logger
+import contextlib
+import inspect
+import logging
+import sys
+from collections.abc import AsyncIterator
+from typing import Any, Callable
 
 from bleak import BleakClient, BleakScanner
+from bleak.args.bluez import AdvertisementDataType, OrPattern  # type: ignore[attr-defined]
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.device import BLEDevice
+from bleak.backends.scanner import AdvertisementData as BleakAdvertisementData
 
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
@@ -20,17 +26,26 @@ from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 from bluetooth_sig.types.advertising import (
-    AdvertisingData,
+    AdvertisementData,
     AdvertisingDataStructures,
     CoreAdvertisingData,
     DeviceProperties,
 )
 from bluetooth_sig.types.data_types import CharacteristicInfo
-from bluetooth_sig.types.device_types import DeviceService, ScannedDevice
+from bluetooth_sig.types.device_types import (
+    DeviceService,
+    ScanDetectionCallback,
+    ScanFilter,
+    ScannedDevice,
+    ScanningMode,
+)
 from bluetooth_sig.types.gatt_enums import GattProperty
 from bluetooth_sig.types.uuid import BluetoothUUID
 
+logger = logging.getLogger(__name__)
 
+
+# pylint: disable=too-many-public-methods  # Implements full ConnectionManagerProtocol interface
 class BleakRetryConnectionManager(ConnectionManagerProtocol):
     """Connection manager using Bleak with retry support for robust connections."""
 
@@ -58,6 +73,7 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
         self.max_attempts = max_attempts
         self._bleak_callback = disconnected_callback
         self._cached_services: list[DeviceService] | None = None
+        self._latest_advertisement: AdvertisementData | None = None
         self.client = self._create_client()
 
     def _create_client(self) -> BleakClient:
@@ -265,18 +281,38 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
         await self.client.unpair()
 
     async def read_rssi(self) -> int:
-        """Read the RSSI (signal strength) of the connection.
+        """Read the RSSI (signal strength) during an active connection.
 
-        Returns:
-            RSSI value in dBm (typically negative, e.g., -50)
+        Bleak does not provide a cross-platform API for reading RSSI during
+        an active connection. Use get_advertisement_rssi() to get the RSSI
+        from the last advertisement instead.
 
         Raises:
-            NotImplementedError: If the backend doesn't support RSSI reading
+            NotImplementedError: Bleak doesn't support connection RSSI
 
         """
-        # Bleak doesn't have a standard cross-platform RSSI method
-        # This would need to be implemented per-backend
-        raise NotImplementedError("RSSI reading not yet supported in Bleak connection manager")
+        raise NotImplementedError(
+            "Bleak does not provide connection RSSI. Use get_advertisement_rssi() "
+            "or get_latest_advertisement(refresh=True) to get RSSI from advertisements."
+        )
+
+    async def get_advertisement_rssi(self, refresh: bool = False) -> int | None:
+        """Get the RSSI from advertisement data.
+
+        Args:
+            refresh: If True, perform an active scan to get fresh RSSI.
+                    If False, return the cached RSSI from last advertisement.
+
+        Returns:
+            RSSI value in dBm, or None if no advertisement has been received
+
+        """
+        if refresh:
+            await self.get_latest_advertisement(refresh=True)
+
+        if self._latest_advertisement is not None:
+            return self._latest_advertisement.rssi
+        return None
 
     def set_disconnected_callback(self, callback: Callable[[], None]) -> None:
         """Set a callback to be called when the device disconnects.
@@ -295,59 +331,422 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
             "Pass it to the BleakRetryConnectionManager constructor instead."
         )
 
-    @classmethod
-    async def scan(cls, timeout: float = 5.0) -> list[ScannedDevice]:
-        """Scan for nearby BLE devices using Bleak.
+    async def get_latest_advertisement(self, refresh: bool = False) -> AdvertisementData | None:
+        """Return the most recently received advertisement data.
 
         Args:
-            timeout: Scan duration in seconds (default: 5.0)
+            refresh: If True, perform a short active scan to get fresh data.
+                    If False, return the last cached advertisement.
 
         Returns:
-            List of discovered devices with their information
+            Latest AdvertisementData, or None if none received yet
 
         """
-        # Scan and get devices with advertisement data
-        devices_and_adv_data = await BleakScanner.discover(timeout=timeout, return_adv=True)
+        if refresh:
+            scanner = BleakScanner()
+            await scanner.start()
+            await asyncio.sleep(1.0)  # Short scan
+            await scanner.stop()
 
-        scanned_devices: list[ScannedDevice] = []
+            # Find our device in results
+            for ble_device, adv in scanner.discovered_devices_and_advertisement_data.values():
+                if ble_device.address.upper() == self._address.upper():
+                    self._latest_advertisement = self.convert_advertisement(adv)
+                    break
 
-        for device, adv_data in devices_and_adv_data.values():
-            # Parse the raw advertisement data if available
-            advertisement_data = None
-            if adv_data:
-                # Create AdvertisingData from Bleak's AdvertisementData
+        return self._latest_advertisement
 
-                # Build CoreAdvertisingData from Bleak's data
-                core_data = CoreAdvertisingData(
-                    manufacturer_data=adv_data.manufacturer_data,
-                    service_uuids=adv_data.service_uuids,
-                    service_data=adv_data.service_data,
-                    local_name=adv_data.local_name or "",
-                )
+    @classmethod
+    def convert_advertisement(cls, advertisement: object) -> AdvertisementData:
+        """Convert Bleak's AdvertisementData to our AdvertisementData type.
 
-                # Build DeviceProperties
-                properties = DeviceProperties(
-                    tx_power=adv_data.tx_power if adv_data.tx_power is not None else 0,
-                )
+        This method bridges Bleak's framework-specific advertisement data to our
+        unified AdvertisementData type.
 
-                # Create the complete AdvertisingData structure
-                advertisement_data = AdvertisingData(
-                    raw_data=b"",  # Bleak doesn't expose raw PDU
-                    ad_structures=AdvertisingDataStructures(
-                        core=core_data,
-                        properties=properties,
-                    ),
-                    rssi=adv_data.rssi,
-                )
+        Args:
+            advertisement: Bleak's AdvertisementData from scan callback
 
-            scanned_device = ScannedDevice(
-                address=device.address,
-                name=device.name,
-                advertisement_data=advertisement_data,
+        Returns:
+            Unified AdvertisementData with ad_structures populated
+
+        """
+        bleak_adv: BleakAdvertisementData = advertisement  # type: ignore[assignment]
+
+        # Build CoreAdvertisingData from Bleak's data
+        # Convert string UUIDs to BluetoothUUID objects
+        service_uuids = [BluetoothUUID(uuid) for uuid in (bleak_adv.service_uuids or [])]
+        service_data = {BluetoothUUID(uuid): data for uuid, data in (bleak_adv.service_data or {}).items()}
+
+        core_data = CoreAdvertisingData(
+            manufacturer_data=bleak_adv.manufacturer_data or {},
+            service_uuids=service_uuids,
+            service_data=service_data,
+            local_name=bleak_adv.local_name or "",
+        )
+
+        # Build DeviceProperties
+        properties = DeviceProperties(
+            tx_power=bleak_adv.tx_power if bleak_adv.tx_power is not None else 0,
+        )
+
+        # Create the complete AdvertisementData structure
+        return AdvertisementData(
+            ad_structures=AdvertisingDataStructures(
+                core=core_data,
+                properties=properties,
+            ),
+            rssi=bleak_adv.rssi,
+        )
+
+    @classmethod
+    def _effective_scanning_mode(cls, mode: ScanningMode) -> ScanningMode:
+        """Get effective scanning mode, handling platform limitations."""
+        if mode == "passive" and sys.platform == "darwin":
+            logger.warning("Passive scanning not supported on macOS, using active")
+            return "active"
+        return mode
+
+    @classmethod
+    def _bluez_args(cls, adapter: str | None, scanning_mode: ScanningMode = "active") -> dict[str, Any]:
+        """Build BlueZ-specific scanner arguments.
+
+        For passive scanning on BlueZ, or_patterns are required. We provide a
+        catch-all pattern that matches any advertisement with Flags AD type.
+        """
+        args: dict[str, Any] = {}
+        if adapter:
+            args["adapter"] = adapter
+
+        # BlueZ requires or_patterns for passive scanning
+        # Use a catch-all pattern matching Flags (0x01) which is in most advertisements
+        if scanning_mode == "passive":
+            # Match any advertisement with a Flags byte (position 0, any value)
+            # Using empty bytes matches any content at that position
+            catch_all_pattern = OrPattern(
+                start_position=0,
+                ad_data_type=AdvertisementDataType.FLAGS,
+                content_of_pattern=b"",  # Empty matches any flags value
             )
-            scanned_devices.append(scanned_device)
+            args["or_patterns"] = [catch_all_pattern]
 
-        return scanned_devices
+        return args
+
+    @classmethod
+    def _to_scanned_device(cls, device: BLEDevice, adv: BleakAdvertisementData | None) -> ScannedDevice:
+        """Convert Bleak device and advertisement to ScannedDevice."""
+        return ScannedDevice(
+            address=device.address,
+            name=device.name,
+            advertisement_data=cls.convert_advertisement(adv) if adv else None,
+        )
+
+    @classmethod
+    async def scan(  # pylint: disable=too-many-arguments
+        cls,
+        timeout: float = 5.0,
+        *,
+        filters: ScanFilter | None = None,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+        callback: ScanDetectionCallback | None = None,
+    ) -> list[ScannedDevice]:
+        """Scan for nearby BLE devices.
+
+        Args:
+            timeout: Scan duration in seconds
+            filters: Optional filter criteria
+            scanning_mode: 'active' or 'passive' (passive unsupported on macOS)
+            adapter: Bluetooth adapter (e.g., "hci0" on Linux)
+            callback: Optional async/sync function called for each discovered device
+
+        Returns:
+            List of discovered devices matching filters
+
+        """
+        if callback:
+            # Use callback-based scanning for real-time notifications
+            return await cls._scan_with_callback(
+                callback=callback,
+                timeout=timeout,
+                filters=filters,
+                scanning_mode=scanning_mode,
+                adapter=adapter,
+            )
+
+        # Standard batch scanning
+        effective_mode = cls._effective_scanning_mode(scanning_mode)
+        service_uuids = filters.service_uuids if filters else None
+        bluez = cls._bluez_args(adapter, effective_mode)
+
+        # Bleak's discover returns dict when return_adv=True
+        if service_uuids:
+            results = await BleakScanner.discover(  # type: ignore[call-overload]
+                timeout=timeout,
+                return_adv=True,
+                service_uuids=service_uuids,
+                scanning_mode=effective_mode,
+                bluez=bluez,
+            )
+        else:
+            results = await BleakScanner.discover(  # type: ignore[call-overload]
+                timeout=timeout,
+                return_adv=True,
+                scanning_mode=effective_mode,
+                bluez=bluez,
+            )
+
+        devices: list[ScannedDevice] = []
+        for device, adv in results.values():
+            scanned = cls._to_scanned_device(device, adv)
+
+            # Apply remaining filters (service_uuids already applied at OS level)
+            if filters:
+                post_filter = ScanFilter(
+                    addresses=filters.addresses,
+                    names=filters.names,
+                    rssi_threshold=filters.rssi_threshold,
+                    filter_func=filters.filter_func,
+                )
+                if not post_filter.matches(scanned):
+                    continue
+
+            devices.append(scanned)
+
+        return devices
+
+    @classmethod
+    async def _scan_with_callback(  # pylint: disable=too-many-arguments
+        cls,
+        callback: ScanDetectionCallback,
+        timeout: float | None = 5.0,
+        *,
+        filters: ScanFilter | None = None,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+    ) -> list[ScannedDevice]:
+        """Internal: Scan with real-time callbacks as devices are discovered."""
+        discovered: dict[str, ScannedDevice] = {}
+        effective_mode = cls._effective_scanning_mode(scanning_mode)
+        bluez = cls._bluez_args(adapter, effective_mode)
+        service_uuids = filters.service_uuids if filters else None
+
+        def on_detection(device: BLEDevice, adv: BleakAdvertisementData) -> None:
+            scanned = cls._to_scanned_device(device, adv)
+
+            if filters and not filters.matches(scanned):
+                return
+
+            discovered[device.address] = scanned
+
+            result = callback(scanned)
+            if inspect.isawaitable(result):
+                asyncio.create_task(result)  # type: ignore[arg-type]
+
+        scanner = BleakScanner(
+            detection_callback=on_detection,
+            service_uuids=service_uuids,
+            scanning_mode=effective_mode,
+            bluez=bluez,  # type: ignore[arg-type]
+        )
+
+        await scanner.start()
+        if timeout is not None:
+            await asyncio.sleep(timeout)
+        else:
+            try:
+                await asyncio.Future()  # type: ignore[arg-type]
+            except asyncio.CancelledError:
+                pass
+        await scanner.stop()
+
+        return list(discovered.values())
+
+    @classmethod
+    async def find_device(  # pylint: disable=too-many-return-statements
+        cls,
+        filters: ScanFilter,
+        timeout: float = 10.0,
+        *,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+    ) -> ScannedDevice | None:
+        """Find the first device matching filter criteria.
+
+        Uses Bleak's native early-termination for efficiency when possible.
+
+        Args:
+            filters: Filter criteria (address, name, service_uuids, or filter_func)
+            timeout: Maximum scan time in seconds
+            scanning_mode: 'active' or 'passive'
+            adapter: Bluetooth adapter to use
+
+        Returns:
+            First matching device or None
+
+        """
+        effective_mode = cls._effective_scanning_mode(scanning_mode)
+        bluez = cls._bluez_args(adapter, effective_mode)
+
+        # Use Bleak's native find methods when applicable for early termination
+        if filters.addresses and len(filters.addresses) == 1 and not filters.names and not filters.filter_func:
+            # Single address lookup - use Bleak's native method
+            ble_device = await BleakScanner.find_device_by_address(
+                filters.addresses[0],
+                timeout=timeout,
+                bluez=bluez,  # type: ignore[arg-type]
+            )
+            if not ble_device:
+                return None
+            adv = await cls._get_advertisement_for_device(ble_device.address, bluez, timeout)
+            return cls._to_scanned_device(ble_device, adv)
+
+        if filters.names and len(filters.names) == 1 and not filters.addresses and not filters.filter_func:
+            # Single name lookup - use Bleak's native method
+            ble_device = await BleakScanner.find_device_by_name(
+                filters.names[0],
+                timeout=timeout,
+                bluez=bluez,  # type: ignore[arg-type]
+            )
+            if not ble_device:
+                return None
+            adv = await cls._get_advertisement_for_device(ble_device.address, bluez, timeout)
+            return cls._to_scanned_device(ble_device, adv)
+
+        if filters.filter_func and not filters.addresses and not filters.names:
+            # Custom filter - use Bleak's native filter method
+            def bleak_filter(device: BLEDevice, adv: BleakAdvertisementData) -> bool:
+                scanned = cls._to_scanned_device(device, adv)
+                return filters.matches(scanned)
+
+            ble_device = await BleakScanner.find_device_by_filter(
+                bleak_filter,
+                timeout=timeout,
+                bluez=bluez,  # type: ignore[arg-type]
+            )
+            if not ble_device:
+                return None
+            adv = await cls._get_advertisement_for_device(ble_device.address, bluez, timeout)
+            return cls._to_scanned_device(ble_device, adv)
+
+        # Fallback: full scan and return first match
+        devices = await cls.scan(
+            timeout=timeout,
+            filters=filters,
+            scanning_mode=scanning_mode,
+            adapter=adapter,
+        )
+        return devices[0] if devices else None
+
+    @classmethod
+    async def _get_advertisement_for_device(
+        cls,
+        address: str,
+        bluez: dict[str, Any],
+        timeout: float,
+    ) -> BleakAdvertisementData | None:
+        """Helper to get advertisement data for a known device."""
+        scanner = BleakScanner(bluez=bluez)  # type: ignore[arg-type]
+        await scanner.start()
+        await asyncio.sleep(min(1.0, timeout / 4))
+        await scanner.stop()
+
+        for dev, adv in scanner.discovered_devices_and_advertisement_data.values():
+            if dev.address.upper() == address.upper():
+                return adv
+        return None
+
+    @classmethod
+    async def _scan_stream_impl(
+        cls,
+        timeout: float | None,
+        filters: ScanFilter | None,
+        scanning_mode: ScanningMode,
+        adapter: str | None,
+    ) -> AsyncIterator[ScannedDevice]:
+        """Async generator yielding devices as discovered."""
+        queue: asyncio.Queue[ScannedDevice | None] = asyncio.Queue()
+        seen: set[str] = set()
+        effective_mode = cls._effective_scanning_mode(scanning_mode)
+        bluez = cls._bluez_args(adapter, effective_mode)
+        service_uuids = filters.service_uuids if filters else None
+
+        def on_detection(device: BLEDevice, adv: BleakAdvertisementData) -> None:
+            if device.address in seen:
+                return
+
+            scanned = cls._to_scanned_device(device, adv)
+            if filters and not filters.matches(scanned):
+                return
+
+            seen.add(device.address)
+            queue.put_nowait(scanned)
+
+        scanner = BleakScanner(
+            detection_callback=on_detection,
+            service_uuids=service_uuids,
+            scanning_mode=effective_mode,
+            bluez=bluez,  # type: ignore[arg-type]
+        )
+
+        async def scan_task() -> None:
+            await scanner.start()
+            if timeout is not None:
+                await asyncio.sleep(timeout)
+            else:
+                await asyncio.Future()  # type: ignore[arg-type]
+            await scanner.stop()
+            queue.put_nowait(None)
+
+        task = asyncio.create_task(scan_task())
+
+        try:
+            while True:
+                item = await queue.get()
+                if item is None:
+                    break
+                yield item
+        finally:
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+            await scanner.stop()
+
+    @classmethod
+    def scan_stream(
+        cls,
+        timeout: float | None = 5.0,
+        *,
+        filters: ScanFilter | None = None,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+    ) -> AsyncIterator[ScannedDevice]:
+        """Stream discovered devices as an async iterator.
+
+        Enables early termination by breaking from the loop.
+
+        Args:
+            timeout: Scan duration (None for indefinite)
+            filters: Optional filter criteria
+            scanning_mode: 'active' or 'passive'
+            adapter: Bluetooth adapter to use.
+
+        Yields:
+            ScannedDevice objects as they are discovered
+
+        Example::
+
+            async for device in BleakRetryConnectionManager.scan_stream(timeout=10.0):
+                print(f"Found: {device.name}")
+                if device.name == "My Target Device":
+                    break  # Stop scanning early
+
+        """
+        return cls._scan_stream_impl(
+            timeout=timeout,
+            filters=filters,
+            scanning_mode=scanning_mode,
+            adapter=adapter,
+        )
 
     @property
     def mtu_size(self) -> int:
