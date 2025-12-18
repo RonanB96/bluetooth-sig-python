@@ -10,7 +10,7 @@ import asyncio
 import inspect
 from collections.abc import AsyncIterator
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, ClassVar
+from typing import TYPE_CHECKING, Callable, ClassVar
 
 from bluepy.btle import (
     ADDR_TYPE_RANDOM,
@@ -38,11 +38,13 @@ from bluetooth_sig.types.advertising import (
 from bluetooth_sig.types.data_types import CharacteristicInfo
 from bluetooth_sig.types.device_types import (
     DeviceService,
-    ScanDetectionCallback,
     ScanFilter,
     ScannedDevice,
     ScanningMode,
 )
+
+if TYPE_CHECKING:
+    from bluetooth_sig.types.device_types import ScanDetectionCallback
 from bluetooth_sig.types.gatt_enums import GattProperty
 from bluetooth_sig.types.uuid import BluetoothUUID
 

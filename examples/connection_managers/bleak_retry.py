@@ -12,7 +12,7 @@ import inspect
 import logging
 import sys
 from collections.abc import AsyncIterator
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from bleak import BleakClient, BleakScanner
 from bleak.args.bluez import AdvertisementDataType, OrPattern  # type: ignore[attr-defined]
@@ -34,11 +34,13 @@ from bluetooth_sig.types.advertising import (
 from bluetooth_sig.types.data_types import CharacteristicInfo
 from bluetooth_sig.types.device_types import (
     DeviceService,
-    ScanDetectionCallback,
     ScanFilter,
     ScannedDevice,
     ScanningMode,
 )
+
+if TYPE_CHECKING:
+    from bluetooth_sig.types.device_types import ScanDetectionCallback
 from bluetooth_sig.types.gatt_enums import GattProperty
 from bluetooth_sig.types.uuid import BluetoothUUID
 

@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Literal, Union
+from typing import TYPE_CHECKING, Literal
 
 import msgspec
 
@@ -13,18 +12,24 @@ from .uuid import BluetoothUUID
 # Type alias for scanning mode
 ScanningMode = Literal["active", "passive"]
 
-# Type alias for scan detection callback: receives ScannedDevice as it's discovered
-# Uses Union[] instead of | for Python 3.9 compatibility with GenericAlias
-ScanDetectionCallback = Callable[["ScannedDevice"], Union[Awaitable[None], None]]
-
-# Type alias for scan filter function: returns True if device matches
-ScanFilterFunc = Callable[["ScannedDevice"], bool]
-
 # Circular dependency: gatt.characteristics.base imports from types,
 # and this module needs to reference those classes for type hints.
+# Type aliases using Callable with union syntax (|) must be in TYPE_CHECKING
+# because GenericAlias doesn't support | operator at runtime in Python 3.9.
+# PEP 604 (X | Y syntax) is Python 3.10+ only.
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from typing_extensions import TypeAlias
+
     from ..gatt.characteristics.base import BaseCharacteristic
     from ..gatt.services.base import BaseGattService
+
+    # Type alias for scan detection callback: receives ScannedDevice as it's discovered
+    ScanDetectionCallback: TypeAlias = Callable[["ScannedDevice"], Awaitable[None] | None]
+
+    # Type alias for scan filter function: returns True if device matches
+    ScanFilterFunc: TypeAlias = Callable[["ScannedDevice"], bool]
 
 
 class ScannedDevice(msgspec.Struct, kw_only=True):

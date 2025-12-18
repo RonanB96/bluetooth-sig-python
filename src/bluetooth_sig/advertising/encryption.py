@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 from bluetooth_sig.types.ead import EADKeyMaterial
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
+    from typing_extensions import TypeAlias
 
     AsyncKeyLookup: TypeAlias = Callable[[str], Awaitable[bytes | None]]
 
@@ -223,4 +223,3 @@ class DictKeyProvider:
         """
         normalized_mac = mac_address.upper()
         self.ead_keys.pop(normalized_mac, None)
-

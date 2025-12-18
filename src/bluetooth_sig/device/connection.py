@@ -15,17 +15,19 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
-from typing import Callable, ClassVar
+from typing import TYPE_CHECKING, Callable, ClassVar
 
 from bluetooth_sig.types.advertising import AdvertisementData
 from bluetooth_sig.types.device_types import (
     DeviceService,
-    ScanDetectionCallback,
     ScanFilter,
     ScannedDevice,
     ScanningMode,
 )
 from bluetooth_sig.types.uuid import BluetoothUUID
+
+if TYPE_CHECKING:
+    from bluetooth_sig.types.device_types import ScanDetectionCallback
 
 
 class ConnectionManagerProtocol(ABC):

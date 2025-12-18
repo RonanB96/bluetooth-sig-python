@@ -13,7 +13,7 @@ import inspect
 import logging
 from collections.abc import AsyncIterator, Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import ClassVar, Protocol
+from typing import TYPE_CHECKING, ClassVar, Protocol
 
 import simplepyble
 
@@ -32,11 +32,13 @@ from bluetooth_sig.types.advertising import (
 from bluetooth_sig.types.data_types import CharacteristicInfo
 from bluetooth_sig.types.device_types import (
     DeviceService,
-    ScanDetectionCallback,
     ScanFilter,
     ScannedDevice,
     ScanningMode,
 )
+
+if TYPE_CHECKING:
+    from bluetooth_sig.types.device_types import ScanDetectionCallback
 from bluetooth_sig.types.gatt_enums import GattProperty
 from bluetooth_sig.types.io import RawCharacteristicBatch, RawCharacteristicRead
 from bluetooth_sig.types.uuid import BluetoothUUID
