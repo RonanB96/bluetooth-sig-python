@@ -3,11 +3,9 @@
 This module defines data structures for Encrypted Advertising Data
 per Bluetooth Core Spec Supplement Section 1.23.
 
-EAD Format:
-    +------------+-------------------+----------+
-    | Randomizer | Encrypted Payload | MIC      |
-    | 5 bytes    | Variable length   | 4 bytes  |
-    +------------+-------------------+----------+
+EAD Format::
+
+    [Randomizer (5 bytes)][Encrypted Payload (variable)][MIC (4 bytes)]
 
 The Randomizer provides uniqueness for each advertisement. The MIC
 (Message Integrity Check) is a 4-byte authentication tag produced by
