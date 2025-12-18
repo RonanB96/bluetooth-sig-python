@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from bluetooth_sig.registry.base import BaseUUIDRegistry
-from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.registry.protocol_identifiers import ProtocolInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -35,15 +34,6 @@ class ProtocolIdentifiersRegistry(BaseUUIDRegistry[ProtocolInfo]):
             uuid=uuid,
             name=getattr(entry, "name", ""),
         )
-
-    def _load(self) -> None:
-        """Perform the actual loading of protocol identifiers data."""
-        base_path = find_bluetooth_sig_path()
-        if base_path:
-            yaml_path = base_path / self._load_yaml_path()
-            if yaml_path.exists():
-                self._load_from_yaml(yaml_path)
-        self._loaded = True
 
     def get_protocol_info(self, uuid: str | BluetoothUUID) -> ProtocolInfo | None:
         """Get protocol information by UUID or name.

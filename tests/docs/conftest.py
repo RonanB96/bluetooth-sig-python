@@ -28,6 +28,20 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from tests.conftest import ROOT_DIR
+
+# Skip playwright_tests folder during collection if playwright is not installed
+# This prevents collection errors from breaking non-playwright tests
+# Must use collect_ignore (not collect_ignore_glob) to ignore directories entirely
+try:
+    import playwright as _playwright  # pylint: disable=unused-import
+
+    del _playwright  # Silence unused import - we only check importability
+    collect_ignore: list[str] = []
+except ImportError:
+    # Use absolute path to the playwright_tests directory
+    collect_ignore = [str(Path(__file__).parent / "playwright_tests")]
+
 import pytest
 
 # ============================================================================
@@ -72,8 +86,6 @@ EXPECTED_SECTION_ORDER = [
     "Performance & Benchmarks",
 ]
 
-# Get repository root and docs build directory
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 DOCS_BUILD_DIR = ROOT_DIR / "docs" / "build" / "html"
 
 # Worker calculation thresholds

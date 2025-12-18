@@ -1,4 +1,4 @@
-"""GATT package initialization."""
+"""GATT package - characteristics, services, and UUID resolution."""
 
 from __future__ import annotations
 

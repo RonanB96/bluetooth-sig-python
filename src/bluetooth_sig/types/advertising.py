@@ -11,13 +11,14 @@ Organization:
 from __future__ import annotations
 
 from enum import IntEnum, IntFlag
-from typing import TYPE_CHECKING
+from typing import Any
 
 import msgspec
 
-if TYPE_CHECKING:
-    from bluetooth_sig.types.appearance import AppearanceData
-    from bluetooth_sig.types.registry.class_of_device import ClassOfDeviceInfo
+from bluetooth_sig.types.appearance import AppearanceData
+from bluetooth_sig.types.registry.class_of_device import ClassOfDeviceInfo
+from bluetooth_sig.types.uri import URIData
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 class PDUType(IntEnum):
@@ -147,20 +148,6 @@ class ExtendedHeaderFlags(IntEnum):
     ACAD = 0x80
 
 
-class ADTypeInfo(msgspec.Struct, frozen=True, kw_only=True):
-    """AD Type information from Bluetooth SIG assigned numbers.
-
-    Attributes:
-        value: The AD type value (e.g., 0x01 for Flags)
-        name: Human-readable name from the specification
-        reference: Optional specification reference
-    """
-
-    value: int
-    name: str
-    reference: str
-
-
 class BLEAdvertisingFlags(IntFlag):
     """BLE Advertising Flags (Core Spec Supplement, Part A, Section 1.3).
 
@@ -271,16 +258,16 @@ class CoreAdvertisingData(msgspec.Struct, kw_only=True):
         service_data: Service-specific data keyed by service UUID
         solicited_service_uuids: List of service UUIDs the device is seeking
         local_name: Device's local name (complete or shortened)
-        uri: Uniform Resource Identifier
+        uri_data: Parsed URI with scheme info from UriSchemesRegistry
     """
 
     manufacturer_data: dict[int, bytes] = msgspec.field(default_factory=dict)
     manufacturer_names: dict[int, str] = msgspec.field(default_factory=dict)
-    service_uuids: list[str] = msgspec.field(default_factory=list)
-    service_data: dict[str, bytes] = msgspec.field(default_factory=dict)
-    solicited_service_uuids: list[str] = msgspec.field(default_factory=list)
+    service_uuids: list[BluetoothUUID] = msgspec.field(default_factory=list)
+    service_data: dict[BluetoothUUID, bytes] = msgspec.field(default_factory=dict)
+    solicited_service_uuids: list[BluetoothUUID] = msgspec.field(default_factory=list)
     local_name: str = ""
-    uri: str = ""
+    uri_data: URIData | None = None
 
 
 class DeviceProperties(msgspec.Struct, kw_only=True):
@@ -301,26 +288,21 @@ class DeviceProperties(msgspec.Struct, kw_only=True):
     tx_power: int = 0
     le_role: int | None = None
     le_supported_features: bytes = b""
-    class_of_device: int | None = None
-    class_of_device_info: ClassOfDeviceInfo | None = None
+    class_of_device: ClassOfDeviceInfo | None = None
 
 
-class ConnectionData(msgspec.Struct, kw_only=True):
-    """Connection and pairing related advertising data.
+class DirectedAdvertisingData(msgspec.Struct, kw_only=True):
+    """Directed advertising and timing parameters.
+
+    These AD types specify target devices and advertising timing.
 
     Attributes:
-        public_target_address: List of public device addresses
-        random_target_address: List of random device addresses
-        le_bluetooth_device_address: LE Bluetooth device address
-        advertising_interval: Advertising interval (0.625ms units)
-        advertising_interval_long: Long advertising interval
-        slave_connection_interval_range: Preferred connection interval range
-        simple_pairing_hash_c: Simple Pairing Hash C (P-192)
-        simple_pairing_randomizer_r: Simple Pairing Randomizer R (P-192)
-        secure_connections_confirmation: Secure Connections Confirmation Value
-        secure_connections_random: Secure Connections Random Value
-        security_manager_tk_value: Security Manager TK Value
-        security_manager_out_of_band_flags: SM Out of Band Flags
+        public_target_address: List of public target addresses (AD 0x17)
+        random_target_address: List of random target addresses (AD 0x18)
+        le_bluetooth_device_address: LE Bluetooth device address (AD 0x1B)
+        advertising_interval: Advertising interval in 0.625ms units (AD 0x1A)
+        advertising_interval_long: Long advertising interval (AD 0x2F)
+        peripheral_connection_interval_range: Preferred connection interval (AD 0x12)
     """
 
     public_target_address: list[str] = msgspec.field(default_factory=list)
@@ -328,13 +310,29 @@ class ConnectionData(msgspec.Struct, kw_only=True):
     le_bluetooth_device_address: str = ""
     advertising_interval: int | None = None
     advertising_interval_long: int | None = None
-    slave_connection_interval_range: bytes = b""
+    peripheral_connection_interval_range: bytes = b""
+
+
+class OOBSecurityData(msgspec.Struct, kw_only=True):
+    """Out-of-Band (OOB) security data advertised for pairing.
+
+    These AD types provide security material for OOB pairing mechanisms.
+
+    Attributes:
+        simple_pairing_hash_c: Simple Pairing Hash C-192/C-256 (AD 0x0E, 0x1D)
+        simple_pairing_randomizer_r: Simple Pairing Randomizer R-192/R-256 (AD 0x0F, 0x1E)
+        secure_connections_confirmation: LE SC Confirmation Value (AD 0x22)
+        secure_connections_random: LE SC Random Value (AD 0x23)
+        security_manager_tk_value: Security Manager TK Value (AD 0x10)
+        security_manager_oob_flags: SM Out of Band Flags (AD 0x11)
+    """
+
     simple_pairing_hash_c: bytes = b""
     simple_pairing_randomizer_r: bytes = b""
     secure_connections_confirmation: bytes = b""
     secure_connections_random: bytes = b""
     security_manager_tk_value: bytes = b""
-    security_manager_out_of_band_flags: bytes = b""
+    security_manager_oob_flags: bytes = b""
 
 
 class LocationAndSensingData(msgspec.Struct, kw_only=True):
@@ -390,36 +388,42 @@ class SecurityData(msgspec.Struct, kw_only=True):
 
 
 class ExtendedAdvertisingData(msgspec.Struct, kw_only=True):
-    """Extended advertising data (BLE 5.0+).
+    """Extended advertising PDU-level metadata (BLE 5.0+).
+
+    This contains PDU-level information specific to extended advertising,
+    NOT AD types (which go in AdvertisingDataStructures).
 
     Attributes:
-        extended_payload: Extended advertising payload bytes
-        auxiliary_packets: List of auxiliary advertising packets
-        periodic_advertising_data: Periodic advertising data bytes
-        broadcast_code: Broadcast audio code
+        extended_payload: Raw extended advertising payload bytes
+        auxiliary_packets: Chained AUX_ADV_IND packets via AuxPtr
+        periodic_advertising_data: Data from periodic advertising train
     """
 
     extended_payload: bytes = b""
     auxiliary_packets: list[BLEAdvertisingPDU] = msgspec.field(default_factory=list)
     periodic_advertising_data: bytes = b""
-    broadcast_code: bytes = b""
 
 
 class AdvertisingDataStructures(msgspec.Struct, kw_only=True):
     """Complete parsed advertising data structures organized by category.
 
+    Contains all AD Types parsed from advertising PDUs (both legacy and extended).
+    These are payload content, not PDU-level metadata.
+
     Attributes:
-        core: Core device identification and service information
-        properties: Device capabilities and appearance
-        connection: Connection and pairing related data
+        core: Device identification and services (manufacturer data, UUIDs, name)
+        properties: Device capabilities (flags, appearance, tx_power, features)
+        directed: Directed advertising parameters (target addresses, intervals)
+        oob_security: Out-of-Band security data for pairing
         location: Location and sensing data
-        mesh: Mesh and broadcast audio data
-        security: Security and encryption data
+        mesh: Mesh network and broadcast audio data
+        security: Encrypted advertising and privacy data
     """
 
     core: CoreAdvertisingData = msgspec.field(default_factory=CoreAdvertisingData)
     properties: DeviceProperties = msgspec.field(default_factory=DeviceProperties)
-    connection: ConnectionData = msgspec.field(default_factory=ConnectionData)
+    directed: DirectedAdvertisingData = msgspec.field(default_factory=DirectedAdvertisingData)
+    oob_security: OOBSecurityData = msgspec.field(default_factory=OOBSecurityData)
     location: LocationAndSensingData = msgspec.field(default_factory=LocationAndSensingData)
     mesh: MeshAndBroadcastData = msgspec.field(default_factory=MeshAndBroadcastData)
     security: SecurityData = msgspec.field(default_factory=SecurityData)
@@ -454,3 +458,60 @@ class AdvertisingData(msgspec.Struct, kw_only=True):
         for aux_packet in self.extended.auxiliary_packets:
             base_size += len(aux_packet.payload)
         return base_size
+
+
+class AdvertisementData(msgspec.Struct, kw_only=True):
+    """Complete parsed advertisement with PDU structures and interpreted data.
+
+    This is the unified result from Device.update_advertisement(), containing
+    both low-level AD structures and high-level vendor-specific interpretation.
+
+    The interpreted_data field is typed as Any to maintain msgspec.Struct compatibility
+    while supporting generic vendor-specific result types at runtime.
+
+    Attributes:
+        ad_structures: Parsed AD structures (manufacturer_data, service_data, etc.)
+        interpreted_data: Vendor-specific typed result (e.g., sensor readings), or None
+        interpreter_name: Name of the interpreter used (e.g., "BTHome", "Xiaomi"), or None
+        rssi: Received signal strength indicator in dBm
+
+    Example:
+        # Using connection manager (recommended)
+        ad_data = BleakConnectionManager.convert_advertisement(bleak_advertisement)
+        result = device.update_advertisement(ad_data)
+
+        # Access low-level AD structures
+        print(result.ad_structures.core.manufacturer_data)  # {0x0499: b'...'}
+        print(result.ad_structures.properties.flags)
+
+        # Access vendor-specific interpreted data
+        if result.interpreted_data:
+            print(f"Interpreter: {result.interpreter_name}")
+            print(f"Temperature: {result.interpreted_data.temperature}")
+
+    """
+
+    ad_structures: AdvertisingDataStructures = msgspec.field(default_factory=AdvertisingDataStructures)
+    interpreted_data: Any = None
+    interpreter_name: str | None = None
+    rssi: int | None = None
+
+    @property
+    def manufacturer_data(self) -> dict[int, bytes]:
+        """Convenience accessor for manufacturer data (company_id → payload)."""
+        return self.ad_structures.core.manufacturer_data
+
+    @property
+    def service_data(self) -> dict[BluetoothUUID, bytes]:
+        """Convenience accessor for service data (UUID → payload)."""
+        return self.ad_structures.core.service_data
+
+    @property
+    def local_name(self) -> str:
+        """Convenience accessor for device local name."""
+        return self.ad_structures.core.local_name
+
+    @property
+    def has_interpretation(self) -> bool:
+        """Check if vendor-specific interpretation was applied."""
+        return self.interpreted_data is not None

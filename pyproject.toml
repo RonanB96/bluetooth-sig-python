@@ -30,6 +30,7 @@ dependencies = [
     "pyyaml~=6.0.0",
     "msgspec>=0.18.0",
     "typing_extensions>=4.0.0",
+    "cryptography>=41.0.0",
 ]
 
 [project.urls]
@@ -48,10 +49,10 @@ dev = [
     "ruff~=0.13",
     "pydocstyle~=6.3",
     "types-PyYAML~=6.0",
+    "types-requests~=2.32",
     "mypy~=1.0",
     "ipdb~=0.13",
-    "coverage~=7.0",
-]
+    "coverage~=7.0"]
 test = [
     "pytest~=8.4",
     "pytest-asyncio>=0.23.0,<0.24",
@@ -62,6 +63,8 @@ test = [
     "pytest-markdown-docs~=0.9",
     "playwright~=1.56",
     "pytest-playwright~=0.7",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0",
     "bleak>=0.21.0",
     "bleak-retry-connector>=2.13.1,<3",
     "simplepyble>=0.10.3",
@@ -133,7 +136,7 @@ allow-direct-references = true
 
 [tool.pylint.MAIN]
 source-roots = ["src"]
-ignore = ["CVS", ".git", "__pycache__", ".venv"]
+ignore = ["CVS", ".git", "__pycache__", ".venv", "_version.py"]
 ignore-paths = ["^.git/.*$", "^.venv/.*$"]
 persistent = true
 jobs = 0
@@ -144,7 +147,8 @@ ignored-modules = ["playwright", "playwright.sync_api"]
 
 [tool.pylint.DESIGN]
 # Allow registries to have similar patterns - they inherit from base class
-min-similarity-lines = 10
+# Browse groups and declarations share common lookup patterns by design
+min-similarity-lines = 15
 
 [tool.pylint.FORMAT]
 # Line length is handled by ruff - DO NOT SET max-line-length

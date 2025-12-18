@@ -212,8 +212,8 @@ class BluetoothUUID:
         return self.matches(other)
 
     def __hash__(self) -> int:
-        """Hash based on normalized form."""
-        return hash(self._normalized)
+        """Hash based on full form for consistency with __eq__."""
+        return hash(self.full_form)
 
     def __lt__(self, other: str | BluetoothUUID) -> bool:
         """Less than comparison."""

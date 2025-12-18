@@ -3,19 +3,20 @@
 from __future__ import annotations
 
 from .advertising import (
-    ADTypeInfo,
+    AdvertisementData,
     AdvertisingData,
     AdvertisingDataStructures,
     BLEAdvertisingFlags,
     BLEAdvertisingPDU,
     BLEExtendedHeader,
-    ConnectionData,
     CoreAdvertisingData,
     DeviceProperties,
+    DirectedAdvertisingData,
     ExtendedAdvertisingData,
     ExtendedHeaderFlags,
     LocationAndSensingData,
     MeshAndBroadcastData,
+    OOBSecurityData,
     PDUHeaderFlags,
     PDULayout,
     PDUType,
@@ -40,11 +41,26 @@ from .base_types import SIGInfo
 from .battery import BatteryChargeLevel, BatteryChargeState, BatteryChargingType, BatteryFaultReason
 from .context import CharacteristicContext, DeviceInfo
 from .data_types import CharacteristicInfo, DateData, ParseFieldError, ServiceInfo, ValidationResult
+from .ead import (
+    EAD_ADDRESS_SIZE,
+    EAD_IV_SIZE,
+    EAD_MIC_SIZE,
+    EAD_MIN_SIZE,
+    EAD_NONCE_SIZE,
+    EAD_RANDOMIZER_SIZE,
+    EAD_SESSION_KEY_SIZE,
+    EADDecryptResult,
+    EADError,
+    EADKeyMaterial,
+    EncryptedAdvertisingData,
+)
 from .location import PositionStatus
 from .protocols import CharacteristicDataProtocol
+from .registry.ad_types import AdTypeInfo
 from .registry.appearance_info import AppearanceInfo
 from .registry.class_of_device import ClassOfDeviceInfo
 from .registry.descriptor_types import DescriptorData, DescriptorInfo
+from .registry.uri_schemes import UriSchemeInfo
 from .units import (
     AngleUnit,
     ConcentrationUnit,
@@ -60,6 +76,7 @@ from .units import (
     TemperatureUnit,
     WeightUnit,
 )
+from .uri import URIData
 
 # Device-related types are imported from device_types module to avoid cyclic imports
 # Import them directly: from bluetooth_sig.types.device_types import DeviceService, DeviceEncryption
@@ -76,7 +93,7 @@ __all__ = [
     "ALERT_TEXT_MAX_LENGTH",
     "UNREAD_COUNT_MAX",
     "UNREAD_COUNT_MORE_THAN_MAX",
-    "ADTypeInfo",
+    "AdTypeInfo",
     "AdvertisingData",
     "AdvertisingDataStructures",
     "AlertCategoryBitMask",
@@ -97,14 +114,25 @@ __all__ = [
     "CharacteristicInfo",
     "ClassOfDeviceInfo",
     "ConcentrationUnit",
-    "ConnectionData",
     "CoreAdvertisingData",
+    "DirectedAdvertisingData",
     "DescriptorData",
     "DescriptorInfo",
     "DateData",
     "DeviceInfo",
     "DeviceProperties",
+    "EAD_ADDRESS_SIZE",
+    "EAD_IV_SIZE",
+    "EAD_MIC_SIZE",
+    "EAD_MIN_SIZE",
+    "EAD_NONCE_SIZE",
+    "EAD_RANDOMIZER_SIZE",
+    "EAD_SESSION_KEY_SIZE",
+    "EADDecryptResult",
+    "EADError",
+    "EADKeyMaterial",
     "ElectricalUnit",
+    "EncryptedAdvertisingData",
     "ExtendedAdvertisingData",
     "ExtendedHeaderFlags",
     "GlucoseConcentrationUnit",
@@ -113,7 +141,9 @@ __all__ = [
     "LocationAndSensingData",
     "MeasurementSystem",
     "MeshAndBroadcastData",
+    "OOBSecurityData",
     "ParseFieldError",
+    "AdvertisementData",
     "PDUHeaderFlags",
     "PDULayout",
     "PDUType",
@@ -126,6 +156,8 @@ __all__ = [
     "SIGInfo",
     "SoundUnit",
     "TemperatureUnit",
+    "URIData",
+    "UriSchemeInfo",
     "ValidationResult",
     "WeightUnit",
     "validate_category_id",

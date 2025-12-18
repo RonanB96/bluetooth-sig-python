@@ -145,7 +145,9 @@ def enhance_error_message_with_descriptors(base_message: str, ctx: Characteristi
 
     pres_format = get_presentation_format_from_context(ctx)
     if pres_format:
-        enhancements.append(f"Format: {pres_format.format} ({pres_format.unit})")
+        format_str = pres_format.format_name or f"0x{pres_format.format:02X}"
+        unit_str = pres_format.unit_name or f"0x{pres_format.unit:04X}"
+        enhancements.append(f"Format: {format_str} (Unit: {unit_str})")
 
     if enhancements:
         return f"{base_message} ({'; '.join(enhancements)})"

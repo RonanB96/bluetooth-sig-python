@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from bluetooth_sig.types import DescriptorInfo
-
 from .base import BaseDescriptor
 from .cccd import CCCDData, CCCDDescriptor
 from .characteristic_aggregate_format import CharacteristicAggregateFormatData, CharacteristicAggregateFormatDescriptor
@@ -74,7 +72,6 @@ DescriptorRegistry.register(IMDTriggerSettingDescriptor)
 
 __all__ = [
     "BaseDescriptor",
-    "DescriptorInfo",
     "CCCDData",
     "CCCDDescriptor",
     "CharacteristicAggregateFormatData",

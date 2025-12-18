@@ -4,19 +4,19 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.device.advertising_parser import AdvertisingParser
+from bluetooth_sig.advertising import AdvertisingPDUParser
 from bluetooth_sig.types import AdvertisingData
 
 
-class TestAdvertisingParserClassOfDevice:
+class TestAdvertisingPDUParserClassOfDevice:
     """Test Class of Device parsing in advertising data."""
 
     @pytest.fixture
-    def parser(self) -> AdvertisingParser:
-        """Create an advertising parser instance."""
-        return AdvertisingParser()
+    def parser(self) -> AdvertisingPDUParser:
+        """Create an advertising PDU parser instance."""
+        return AdvertisingPDUParser()
 
-    def test_parse_class_of_device_computer_laptop_networking(self, parser: AdvertisingParser) -> None:
+    def test_parse_class_of_device_computer_laptop_networking(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing CoD for Computer: Laptop with Networking service.
 
         CoD 0x02010C breakdown:
@@ -35,10 +35,10 @@ class TestAdvertisingParserClassOfDevice:
         result = parser.parse_advertising_data(ad_data)
 
         assert isinstance(result, AdvertisingData)
-        assert result.ad_structures.properties.class_of_device == 0x02010C
-        assert result.ad_structures.properties.class_of_device_info is not None
+        assert result.ad_structures.properties.class_of_device is not None
+        assert result.ad_structures.properties.class_of_device.raw_value == 0x02010C
 
-        cod_info = result.ad_structures.properties.class_of_device_info
+        cod_info = result.ad_structures.properties.class_of_device
         assert cod_info.major_class and "Computer" in cod_info.major_class[0].name
         assert cod_info.minor_class and cod_info.minor_class[0].name == "Laptop"
         assert len(cod_info.service_classes) == 1
@@ -50,7 +50,7 @@ class TestAdvertisingParserClassOfDevice:
         assert "Laptop" in cod_info.full_description
         assert "Networking" in cod_info.full_description
 
-    def test_parse_class_of_device_phone_smartphone(self, parser: AdvertisingParser) -> None:
+    def test_parse_class_of_device_phone_smartphone(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing CoD for Phone: Smartphone.
 
         CoD 0x00020C breakdown:
@@ -64,15 +64,15 @@ class TestAdvertisingParserClassOfDevice:
 
         result = parser.parse_advertising_data(ad_data)
 
-        assert result.ad_structures.properties.class_of_device == 0x00020C
-        assert result.ad_structures.properties.class_of_device_info is not None
+        assert result.ad_structures.properties.class_of_device is not None
+        assert result.ad_structures.properties.class_of_device.raw_value == 0x00020C
 
-        cod_info = result.ad_structures.properties.class_of_device_info
+        cod_info = result.ad_structures.properties.class_of_device
         assert cod_info.major_class and "Phone" in cod_info.major_class[0].name
         assert cod_info.minor_class and cod_info.minor_class[0].name == "Smartphone"
         assert cod_info.service_classes == []
 
-    def test_parse_class_of_device_with_multiple_services(self, parser: AdvertisingParser) -> None:
+    def test_parse_class_of_device_with_multiple_services(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing CoD with multiple service classes.
 
         CoD 0x22010C - Computer: Laptop with Networking + Audio services
@@ -83,17 +83,17 @@ class TestAdvertisingParserClassOfDevice:
 
         result = parser.parse_advertising_data(ad_data)
 
-        assert result.ad_structures.properties.class_of_device == 0x22010C
-        assert result.ad_structures.properties.class_of_device_info is not None
+        assert result.ad_structures.properties.class_of_device is not None
+        assert result.ad_structures.properties.class_of_device.raw_value == 0x22010C
 
-        cod_info = result.ad_structures.properties.class_of_device_info
+        cod_info = result.ad_structures.properties.class_of_device
         assert cod_info.major_class and "Computer" in cod_info.major_class[0].name
         assert cod_info.minor_class and cod_info.minor_class[0].name == "Laptop"
         assert len(cod_info.service_classes) == 2
         assert any("Networking" in s for s in cod_info.service_classes)
         assert any("Audio" in s for s in cod_info.service_classes)
 
-    def test_parse_no_class_of_device(self, parser: AdvertisingParser) -> None:
+    def test_parse_no_class_of_device(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing advertising data without CoD field."""
         # Just a flags field
         ad_data = bytes([2, 0x01, 0x06])
@@ -101,9 +101,8 @@ class TestAdvertisingParserClassOfDevice:
         result = parser.parse_advertising_data(ad_data)
 
         assert result.ad_structures.properties.class_of_device is None
-        assert result.ad_structures.properties.class_of_device_info is None
 
-    def test_parse_class_of_device_with_other_fields(self, parser: AdvertisingParser) -> None:
+    def test_parse_class_of_device_with_other_fields(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing CoD alongside other advertising data fields."""
         # Multiple AD structures
         cod_value = 0x02010C
@@ -122,12 +121,12 @@ class TestAdvertisingParserClassOfDevice:
         # All fields should be parsed
         assert result.ad_structures.properties.flags is not None
         assert result.ad_structures.core.local_name == "TestDev"
-        assert result.ad_structures.properties.class_of_device == 0x02010C
-        assert result.ad_structures.properties.class_of_device_info is not None
-        cod_info = result.ad_structures.properties.class_of_device_info
+        assert result.ad_structures.properties.class_of_device is not None
+        assert result.ad_structures.properties.class_of_device.raw_value == 0x02010C
+        cod_info = result.ad_structures.properties.class_of_device
         assert cod_info.major_class and "Computer" in cod_info.major_class[0].name
 
-    def test_parse_class_of_device_invalid_length(self, parser: AdvertisingParser) -> None:
+    def test_parse_class_of_device_invalid_length(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing CoD with invalid length (should be ignored)."""
         # CoD should be 3 bytes, provide only 2
         ad_data = bytes([3, 0x0D, 0x0C, 0x01])
@@ -136,9 +135,8 @@ class TestAdvertisingParserClassOfDevice:
 
         # Should not parse CoD if length is wrong
         assert result.ad_structures.properties.class_of_device is None
-        assert result.ad_structures.properties.class_of_device_info is None
 
-    def test_parse_class_of_device_health_device(self, parser: AdvertisingParser) -> None:
+    def test_parse_class_of_device_health_device(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing CoD for Health: Blood Pressure Monitor.
 
         CoD for Health: Blood Pressure Monitor:
@@ -151,13 +149,13 @@ class TestAdvertisingParserClassOfDevice:
 
         result = parser.parse_advertising_data(ad_data)
 
-        assert result.ad_structures.properties.class_of_device_info is not None
-        cod_info = result.ad_structures.properties.class_of_device_info
+        assert result.ad_structures.properties.class_of_device is not None
+        cod_info = result.ad_structures.properties.class_of_device
         assert cod_info.major_class and "Health" in cod_info.major_class[0].name
         assert cod_info.minor_class is not None
         assert cod_info.minor_class and "Pressure" in cod_info.minor_class[0].name
 
-    def test_parse_class_of_device_audio_headset(self, parser: AdvertisingParser) -> None:
+    def test_parse_class_of_device_audio_headset(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing CoD for Audio/Video: Wearable Headset with Audio service.
 
         CoD with Audio service (bit 21), Audio/Video major (0x04), Headset (0x01)
@@ -171,8 +169,8 @@ class TestAdvertisingParserClassOfDevice:
 
         result = parser.parse_advertising_data(ad_data)
 
-        assert result.ad_structures.properties.class_of_device_info is not None
-        cod_info = result.ad_structures.properties.class_of_device_info
+        assert result.ad_structures.properties.class_of_device is not None
+        cod_info = result.ad_structures.properties.class_of_device
         assert (
             cod_info.major_class
             and "Audio" in cod_info.major_class[0].name

@@ -106,13 +106,13 @@ if battery_uuid:
 
 **Key point**: You get UUIDs from your BLE connection library, then this library automatically identifies what they are and parses the data correctly.
 
-The {py:class}`~bluetooth_sig.BluetoothSIGTranslator.parse_characteristic` method returns a {py:class}`~bluetooth_sig.gatt.characteristics.base.CharacteristicData` object containing:
+The {py:meth}`~bluetooth_sig.BluetoothSIGTranslator.parse_characteristic` method returns a {py:class}`~bluetooth_sig.gatt.characteristics.base.CharacteristicData` object containing:
 
 - `value` - The parsed, human-readable value
 - `info` - {py:class}`~bluetooth_sig.types.CharacteristicInfo` with UUID, name, unit, and properties
 - `raw_data` - Original bytearray
 - `parse_success` - Boolean indicating successful parsing
-- `error_message` - Error details if parsing failed
+- `error_message` - Error details if parsing failed (empty string if successful)
 
 ## Working with Types
 
@@ -143,7 +143,7 @@ print(result.info.uuid)  # "00002a19-0000-1000-8000-00805f9b34fb"
 # Access raw data and status
 print(result.raw_data)  # bytearray([85])
 print(result.parse_success)  # True
-print(result.error_message)  # None
+print(result.error_message)  # "" (empty string when successful)
 ```
 
 See the {py:class}`~bluetooth_sig.gatt.characteristics.base.CharacteristicData` API reference for complete details.

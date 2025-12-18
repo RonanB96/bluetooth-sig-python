@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from bluetooth_sig.device.advertising_parser import AdvertisingParser
+from bluetooth_sig.advertising import AdvertisingPDUParser
 from bluetooth_sig.types.advertising import (
     AdvertisingDataStructures,
     BLEAdvertisingFlags,
@@ -11,6 +11,7 @@ from bluetooth_sig.types.advertising import (
     ExtendedHeaderFlags,
     PDUType,
 )
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 class TestPDUType:
@@ -132,7 +133,7 @@ class TestAdvertisingDataStructures:
             core=CoreAdvertisingData(
                 manufacturer_data={0x1234: b"test_data"},
                 manufacturer_names={0x1234: "Test Company"},
-                service_uuids=["180F", "180A"],
+                service_uuids=[BluetoothUUID("180F"), BluetoothUUID("180A")],
                 local_name="Test Device",
             ),
             properties=DeviceProperties(
@@ -149,12 +150,12 @@ class TestAdvertisingDataStructures:
         assert parsed.properties.flags == BLEAdvertisingFlags(0x06)
 
 
-class TestAdvertisingParserWithManufacturerData:
+class TestAdvertisingPDUParserWithManufacturerData:
     """Test advertising parser with manufacturer data and company name resolution."""
 
     def test_parse_apple_manufacturer_data(self) -> None:
         """Test parsing advertising data with Apple manufacturer data."""
-        parser = AdvertisingParser()
+        parser = AdvertisingPDUParser()
 
         # Construct advertising data with Apple manufacturer data (0x004C)
         # AD Structure: Length (1) + Type (1) + Company ID (2 little-endian) + Data
@@ -186,7 +187,7 @@ class TestAdvertisingParserWithManufacturerData:
 
     def test_parse_microsoft_manufacturer_data(self) -> None:
         """Test parsing advertising data with Microsoft manufacturer data."""
-        parser = AdvertisingParser()
+        parser = AdvertisingPDUParser()
 
         # Construct advertising data with Microsoft manufacturer data (0x0006)
         ad_data = bytearray(
@@ -213,7 +214,7 @@ class TestAdvertisingParserWithManufacturerData:
 
     def test_parse_google_manufacturer_data(self) -> None:
         """Test parsing advertising data with Google manufacturer data."""
-        parser = AdvertisingParser()
+        parser = AdvertisingPDUParser()
 
         # Construct advertising data with Google manufacturer data (0x00E0)
         ad_data = bytearray(
@@ -239,7 +240,7 @@ class TestAdvertisingParserWithManufacturerData:
 
     def test_parse_unknown_manufacturer_data(self) -> None:
         """Test parsing advertising data with unknown manufacturer ID."""
-        parser = AdvertisingParser()
+        parser = AdvertisingPDUParser()
 
         # Construct advertising data with unknown manufacturer data (0xFFFF)
         ad_data = bytearray(
@@ -263,7 +264,7 @@ class TestAdvertisingParserWithManufacturerData:
 
     def test_parse_multiple_manufacturer_data(self) -> None:
         """Test parsing advertising data with multiple manufacturer data entries."""
-        parser = AdvertisingParser()
+        parser = AdvertisingPDUParser()
 
         # Construct advertising data with multiple manufacturer data entries
         # Apple (0x004C) and Microsoft (0x0006)
@@ -305,7 +306,7 @@ class TestAdvertisingParserWithManufacturerData:
 
     def test_parse_advertising_without_manufacturer_data(self) -> None:
         """Test parsing advertising data without manufacturer data."""
-        parser = AdvertisingParser()
+        parser = AdvertisingPDUParser()
 
         # Construct advertising data with only local name (no manufacturer data)
         # Note: Length includes the type byte but not the length byte itself
