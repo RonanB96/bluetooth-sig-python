@@ -1,0 +1,120 @@
+# Nordic Thingy:52 Example
+
+This example demonstrates how to extend the bluetooth-sig-python library for vendor-specific characteristics using the Nordic Thingy:52 environmental sensor kit.
+
+## Overview
+
+The Nordic Thingy:52 is a multi-sensor development kit with custom GATT characteristics. This example shows how to:
+
+1. **Define custom characteristics** - Extend `CustomBaseCharacteristic` for vendor-specific UUIDs
+2. **Register characteristics** - Make them available through the unified API
+3. **Read sensors** - Use the same `Device` interface for both SIG and vendor characteristics
+
+## Files
+
+- `thingy52_characteristics.py` - Custom characteristic definitions for all Thingy:52 sensors
+- `thingy52_example.py` - Example script demonstrating usage
+- `__init__.py` - Package initialization
+
+## Requirements
+
+```bash
+pip install bluetooth-sig bluepy
+```
+
+## Usage
+
+### Read All Sensors
+
+```bash
+python -m examples.thingy52.thingy52_example AA:BB:CC:DD:EE:FF
+```
+
+### Read Specific Sensors
+
+```bash
+# Temperature only
+python -m examples.thingy52.thingy52_example AA:BB:CC:DD:EE:FF --temperature
+
+# Multiple sensors
+python -m examples.thingy52.thingy52_example AA:BB:CC:DD:EE:FF --temperature --humidity --pressure
+
+# Battery level (SIG standard characteristic)
+python -m examples.thingy52.thingy52_example AA:BB:CC:DD:EE:FF --battery
+```
+
+## Available Sensors
+
+### Environment Service (0xEF68xxxx-9B35-4933-9B10-52FFA9740042)
+- **Temperature** (0x0201) - Temperature in °C
+- **Pressure** (0x0202) - Atmospheric pressure in hPa
+- **Humidity** (0x0203) - Relative humidity in %
+- **Gas** (0x0204) - Air quality (eCO2 and TVOC)
+- **Color** (0x0205) - RGBC color sensor
+
+### User Interface Service (0xEF68xxxx-9B35-4933-9B10-52FFA9740042)
+- **Button** (0x0302) - Button state (pressed/released)
+
+### Motion Service (0xEF68xxxx-9B35-4933-9B10-52FFA9740042)
+- **Orientation** (0x0403) - Device orientation
+- **Heading** (0x0409) - Compass heading in degrees
+
+### Battery Service (Standard SIG)
+- **Battery Level** (0x2A19) - Battery percentage (0-100%)
+
+## Key Concepts
+
+### 1. Custom Characteristic Definition
+
+```python
+from bluetooth_sig.gatt.characteristics.base import CustomBaseCharacteristic
+
+class ThingyTemperatureCharacteristic(CustomBaseCharacteristic):
+    """Nordic Thingy:52 Temperature characteristic."""
+
+    def decode_value(self, data: bytearray) -> float:
+        """Decode temperature from raw bytes."""
+        if len(data) < 5:
+            raise InsufficientDataError("Temperature requires 5 bytes")
+
+        # Parse integer and fractional parts
+        integer = int.from_bytes(data[0:1], byteorder="little", signed=True)
+        decimal = int.from_bytes(data[1:2], byteorder="little", signed=False)
+
+        return float(integer) + (float(decimal) / 100.0)
+```
+
+### 2. Registration
+
+```python
+translator = BluetoothSIGTranslator()
+
+translator.register_custom_characteristic_class(
+    "EF680201-9B35-4933-9B10-52FFA9740042",
+    ThingyTemperatureCharacteristic,
+    metadata=CharacteristicRegistration(
+        uuid=BluetoothUUID("EF680201-9B35-4933-9B10-52FFA9740042"),
+        name="Thingy Temperature",
+        unit="°C",
+        value_type=ValueType.FLOAT,
+    ),
+)
+```
+
+### 3. Unified Reading
+
+```python
+# Both SIG and vendor characteristics use the same interface
+battery = device.translator.parse_characteristic("2A19", raw_battery_data)
+temperature = device.translator.parse_characteristic(
+    "EF680201-9B35-4933-9B10-52FFA9740042",
+    raw_temp_data
+)
+```
+
+## References
+
+- [Nordic Thingy:52 Documentation](https://nordicsemiconductor.github.io/Nordic-Thingy52-FW/documentation)
+- [Nordic Thingy:52 GitHub](https://github.com/NordicSemiconductor/Nordic-Thingy52-FW)
+- [BluePy Library](https://github.com/IanHarvey/bluepy)
+- [Bluetooth SIG Assigned Numbers](https://www.bluetooth.com/specifications/assigned-numbers/)

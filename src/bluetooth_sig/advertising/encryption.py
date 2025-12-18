@@ -12,9 +12,14 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from bluetooth_sig.types.ead import EADKeyMaterial
+
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
+    AsyncKeyLookup: TypeAlias = Callable[[str], Awaitable[bytes | None]]
 
 logger = logging.getLogger(__name__)
 
@@ -220,8 +225,4 @@ class DictKeyProvider:
         self.ead_keys.pop(normalized_mac, None)
 
 
-AsyncKeyLookup = Callable[[str], Awaitable[bytes | None]]
-"""Type alias for async key lookup functions.
-
-Used with parse_with_key_lookup() for async key providers.
-"""
+# AsyncKeyLookup type alias is defined in TYPE_CHECKING block at top of module
