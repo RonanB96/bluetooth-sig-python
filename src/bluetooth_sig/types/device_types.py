@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Union
 
 import msgspec
 
@@ -12,6 +12,13 @@ from .uuid import BluetoothUUID
 
 # Type alias for scanning mode
 ScanningMode = Literal["active", "passive"]
+
+# Type alias for scan detection callback: receives ScannedDevice as it's discovered
+# Uses Union[] instead of | for Python 3.9 compatibility with GenericAlias
+ScanDetectionCallback = Callable[["ScannedDevice"], Union[Awaitable[None], None]]
+
+# Type alias for scan filter function: returns True if device matches
+ScanFilterFunc = Callable[["ScannedDevice"], bool]
 
 # Circular dependency: gatt.characteristics.base imports from types,
 # and this module needs to reference those classes for type hints.
@@ -70,13 +77,6 @@ class DeviceEncryption(msgspec.Struct, kw_only=True):
     encryption_level: str = ""
     security_mode: int = 0
     key_size: int = 0
-
-
-# Type alias for scan detection callback: receives ScannedDevice as it's discovered
-ScanDetectionCallback = Callable[["ScannedDevice"], Awaitable[None] | None]
-
-# Type alias for scan filter function: returns True if device matches
-ScanFilterFunc = Callable[["ScannedDevice"], bool]
 
 
 class ScanFilter(msgspec.Struct, kw_only=True):

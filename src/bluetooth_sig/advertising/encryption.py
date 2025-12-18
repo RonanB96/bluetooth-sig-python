@@ -224,5 +224,3 @@ class DictKeyProvider:
         normalized_mac = mac_address.upper()
         self.ead_keys.pop(normalized_mac, None)
 
-
-# AsyncKeyLookup type alias is defined in TYPE_CHECKING block at top of module
