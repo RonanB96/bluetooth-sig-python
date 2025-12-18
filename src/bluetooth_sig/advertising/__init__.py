@@ -6,6 +6,8 @@ Two-layer architecture:
 - EAD: Encrypted advertising data support (Core Spec 1.23)
 """
 
+from __future__ import annotations
+
 from bluetooth_sig.advertising.base import (
     AdvertisingDataInterpreter,
     AdvertisingInterpreterInfo,

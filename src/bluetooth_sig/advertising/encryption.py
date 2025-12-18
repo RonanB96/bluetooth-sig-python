@@ -144,7 +144,9 @@ class DictKeyProvider:
         key = self.keys.get(normalized_mac)
 
         if key is None and normalized_mac not in self.warned_macs:
-            logger.debug("No encryption key for MAC %s", normalized_mac)
+            # Mask MAC address in logs (show only last 4 chars) for privacy
+            masked_mac = f"**:**:**:**:{normalized_mac[-5:]}"
+            logger.debug("No encryption key for MAC %s", masked_mac)
             self.warned_macs.add(normalized_mac)
 
         return key
@@ -164,7 +166,9 @@ class DictKeyProvider:
         key_material = self.ead_keys.get(normalized_mac)
 
         if key_material is None and normalized_mac not in self.warned_macs:
-            logger.debug("No EAD key material for MAC %s", normalized_mac)
+            # Mask MAC address in logs (show only last 4 chars) for privacy
+            masked_mac = f"**:**:**:**:{normalized_mac[-5:]}"
+            logger.debug("No EAD key material for MAC %s", masked_mac)
             self.warned_macs.add(normalized_mac)
 
         return key_material

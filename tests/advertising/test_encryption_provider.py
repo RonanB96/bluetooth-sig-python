@@ -31,8 +31,8 @@ class TestDictKeyProviderGetKeyLogging:
 
         assert result1 is None
         assert result2 is None
-        # Should only have one debug message for this MAC
-        debug_messages = [r.message for r in caplog.records if "AA:BB:CC:DD:EE:FF" in r.message]
+        # Should only have one debug message for this MAC (masked: **:**:**:**:EE:FF)
+        debug_messages = [r.message for r in caplog.records if "EE:FF" in r.message]
         assert len(debug_messages) == 1
 
     def test_get_key_logs_for_each_different_mac(self, caplog: pytest.LogCaptureFixture) -> None:
@@ -43,10 +43,10 @@ class TestDictKeyProviderGetKeyLogging:
             provider.get_key("AA:BB:CC:DD:EE:FF")
             provider.get_key("11:22:33:44:55:66")
 
-        # Should have warnings for both MACs
+        # Should have warnings for both MACs (masked: last 5 chars visible)
         messages = [r.message for r in caplog.records]
-        assert any("AA:BB:CC:DD:EE:FF" in m for m in messages)
-        assert any("11:22:33:44:55:66" in m for m in messages)
+        assert any("EE:FF" in m for m in messages)
+        assert any("55:66" in m for m in messages)
 
 
 class TestDictKeyProviderSetKey:
@@ -91,9 +91,9 @@ class TestDictKeyProviderSetKey:
             # Get again should trigger warning again (status was cleared by set)
             provider.get_key("AA:BB:CC:DD:EE:FF")
 
-        # Should have a new warning
+        # Should have a new warning (masked: **:**:**:**:EE:FF)
         messages = [r.message for r in caplog.records]
-        assert any("AA:BB:CC:DD:EE:FF" in m for m in messages)
+        assert any("EE:FF" in m for m in messages)
 
     def test_set_key_overwrites_existing(self) -> None:
         """Test that set_key overwrites existing key."""
@@ -149,8 +149,8 @@ class TestDictKeyProviderGetEadKeyLogging:
 
         assert result1 is None
         assert result2 is None
-        # Should only have one debug message for this MAC
-        debug_messages = [r.message for r in caplog.records if "AA:BB:CC:DD:EE:FF" in r.message]
+        # Should only have one debug message for this MAC (masked: **:**:**:**:EE:FF)
+        debug_messages = [r.message for r in caplog.records if "EE:FF" in r.message]
         assert len(debug_messages) == 1
 
 
@@ -188,8 +188,9 @@ class TestDictKeyProviderSetEadKey:
         with caplog.at_level(logging.DEBUG):
             provider.get_ead_key("AA:BB:CC:DD:EE:FF")  # Should trigger warning again
 
+        # Should have a new warning (masked: **:**:**:**:EE:FF)
         messages = [r.message for r in caplog.records]
-        assert any("AA:BB:CC:DD:EE:FF" in m for m in messages)
+        assert any("EE:FF" in m for m in messages)
 
 
 class TestDictKeyProviderRemoveEadKey:
