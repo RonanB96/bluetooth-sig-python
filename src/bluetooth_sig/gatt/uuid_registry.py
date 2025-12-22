@@ -7,21 +7,16 @@ from bluetooth_sig.types.base_types import SIGInfo
 __all__ = [
     "UuidRegistry",
     "uuid_registry",
-    "CharacteristicSpec",
-    "FieldInfo",
-    "UnitMetadata",
 ]
 
-import logging
 import threading
-from pathlib import Path
-from typing import Any, cast
 
-import msgspec
-
+from bluetooth_sig.registry.gss import GssRegistry
+from bluetooth_sig.registry.uuids.units import UnitsRegistry
 from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
-from bluetooth_sig.types.gatt_enums import DataType, ValueType
+from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.registry.descriptor_types import DescriptorInfo
+from bluetooth_sig.types.registry.gss_characteristic import GssCharacteristicSpec
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 from ..registry.utils import find_bluetooth_sig_path, load_yaml_uuids, normalize_uuid_string
@@ -59,11 +54,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         # Track runtime-registered UUIDs (replaces origin field checks)
         self._runtime_uuids: set[str] = set()
 
-        # Unit mappings
-        self._unit_mappings: dict[str, str] = {}
-
-        # GSS specifications storage (for resolve_characteristic_spec)
-        self._gss_specs: dict[str, dict[str, Any]] = {}
+        self._gss_registry: GssRegistry | None = None
 
         try:
             self._load_uuids()
@@ -190,178 +181,40 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 )
                 self._store_descriptor(desc_info)
 
-        # Load unit mappings and GSS specifications
-        self._load_unit_mappings(base_path)
-        self._load_gss_specifications()
+        # Load GSS specifications
+        self._gss_registry = GssRegistry.get_instance()
+        self._load_gss_characteristic_info()
 
-    def _load_unit_mappings(self, base_path: Path) -> None:
-        """Load unit symbol mappings from units.yaml file."""
-        units_yaml = base_path / "units.yaml"
-        if not units_yaml.exists():
+    def _load_gss_characteristic_info(self) -> None:
+        """Load GSS specs and update characteristics with extracted info."""
+        if self._gss_registry is None:
             return
 
-        try:
-            units_data = load_yaml_uuids(units_yaml)
-            for unit_info in units_data:
-                unit_id = unit_info.get("id", "")
-                unit_name = unit_info.get("name", "")
+        all_specs = self._gss_registry.get_all_specs()
 
-                if not unit_id or not unit_name:
-                    continue
+        # Group by identifier to avoid duplicate processing
+        processed_ids: set[str] = set()
+        for spec in all_specs.values():
+            if spec.identifier in processed_ids:
+                continue
+            processed_ids.add(spec.identifier)
 
-                unit_symbol = self._extract_unit_symbol_from_name(unit_name)
-                if unit_symbol:
-                    unit_key = unit_id.replace("org.bluetooth.unit.", "").lower()
-                    self._unit_mappings[unit_key] = unit_symbol
-
-        except (msgspec.DecodeError, OSError, KeyError):
-            pass
-
-    def _extract_unit_symbol_from_name(self, unit_name: str) -> str:
-        """Extract unit symbol from unit name.
-
-        Args:
-            unit_name: The unit name from units.yaml (e.g., "pressure (pascal)")
-
-        Returns:
-            Unit symbol string (e.g., "Pa"), or empty string if no symbol can be extracted
-
-        """
-        # Handle common unit names that map to symbols
-        unit_symbol_map = {
-            "percentage": "%",
-            "per mille": "‰",
-            "unitless": "",
-        }
-
-        if unit_name.lower() in unit_symbol_map:
-            return unit_symbol_map[unit_name.lower()]
-
-        # Extract symbol from parentheses if present
-        if "(" in unit_name and ")" in unit_name:
-            start = unit_name.find("(") + 1
-            end = unit_name.find(")", start)
-            if 0 < start < end:
-                symbol_candidate = unit_name[start:end].strip()
-
-                # Map common symbols
-                symbol_mapping = {
-                    "degree celsius": "°C",
-                    "degree fahrenheit": "°F",
-                    "kelvin": "K",
-                    "pascal": "Pa",
-                    "bar": "bar",
-                    "millimetre of mercury": "mmHg",
-                    "ampere": "A",
-                    "volt": "V",
-                    "joule": "J",
-                    "watt": "W",
-                    "hertz": "Hz",
-                    "metre": "m",
-                    "kilogram": "kg",
-                    "second": "s",
-                    "metre per second": "m/s",
-                    "metre per second squared": "m/s²",
-                    "radian per second": "rad/s",
-                    "candela": "cd",
-                    "lux": "lux",
-                    "newton": "N",
-                    "coulomb": "C",
-                    "farad": "F",
-                    "ohm": "Ω",
-                    "siemens": "S",
-                    "weber": "Wb",
-                    "tesla": "T",
-                    "henry": "H",
-                    "lumen": "lm",
-                    "becquerel": "Bq",
-                    "gray": "Gy",
-                    "sievert": "Sv",
-                    "katal": "kat",
-                    "degree": "°",
-                    "radian": "rad",
-                    "steradian": "sr",
-                }
-
-                return symbol_mapping.get(symbol_candidate.lower(), symbol_candidate)
-
-        # For units without parentheses, try to map common ones
-        common_units = {
-            "frequency": "Hz",
-            "force": "N",
-            "pressure": "Pa",
-            "energy": "J",
-            "power": "W",
-            "mass": "kg",
-            "length": "m",
-            "time": "s",
-        }
-
-        for unit_type, symbol in common_units.items():
-            if unit_name.lower().startswith(unit_type):
-                return symbol
-
-        # Handle thermodynamic temperature specially (from yaml_cross_reference)
-        if "celsius temperature" in unit_name.lower():
-            return "°C"
-        if "fahrenheit temperature" in unit_name.lower():
-            return "°F"
-
-        # Return empty string if no symbol can be extracted (API compatibility)
-        return ""
-
-    def _load_gss_specifications(self) -> None:
-        """Load detailed specifications from GSS YAML files."""
-        gss_path = self._find_gss_path()
-        if not gss_path:
-            return
-
-        for yaml_file in gss_path.glob("org.bluetooth.characteristic.*.yaml"):
-            self._process_gss_file(yaml_file)
-
-    def _find_gss_path(self) -> Path | None:
-        """Find the GSS specifications directory."""
-        project_root = Path(__file__).parent.parent.parent.parent
-        gss_path = project_root / "bluetooth_sig" / "gss"
-
-        if gss_path.exists():
-            return gss_path
-
-        pkg_root = Path(__file__).parent.parent
-        gss_path = pkg_root / "bluetooth_sig" / "gss"
-
-        return gss_path if gss_path.exists() else None
-
-    def _process_gss_file(self, yaml_file: Path) -> None:
-        """Process a single GSS YAML file."""
-        try:
-            with yaml_file.open("r", encoding="utf-8") as f:
-                data = msgspec.yaml.decode(f.read())
-
-            if not data or "characteristic" not in data:
-                return
-
-            char_data = data["characteristic"]
-            char_name = char_data.get("name")
-            char_id = char_data.get("identifier")
-
-            if not char_name or not char_id:
-                return
-
-            # Store full GSS spec for resolve_characteristic_spec method
-            # Store by both ID and name for lookup flexibility
-            if char_id:
-                self._gss_specs[char_id] = char_data
-            if char_name:
-                self._gss_specs[char_name] = char_data
-
-            unit, value_type = self._extract_info_from_gss(char_data)
+            # Extract unit and value_type from structure
+            char_data = {
+                "structure": [
+                    {
+                        "field": f.field,
+                        "type": f.type,
+                        "size": f.size,
+                        "description": f.description,
+                    }
+                    for f in spec.structure
+                ]
+            }
+            unit, value_type = self._gss_registry.extract_info_from_gss(char_data)
 
             if unit or value_type:
-                self._update_characteristic_with_gss_info(char_name, char_id, unit, value_type)
-
-        except (msgspec.DecodeError, OSError, KeyError) as e:
-            logging.warning("Failed to parse GSS YAML file %s: %s", yaml_file, e)
+                self._update_characteristic_with_gss_info(spec.name, spec.identifier, unit, value_type)
 
     def _update_characteristic_with_gss_info(
         self, char_name: str, char_id: str, unit: str | None, value_type: str | None
@@ -401,98 +254,24 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             # Update canonical store (aliases remain the same since UUID/name/id unchanged)
             self._characteristics[canonical_uuid] = updated_info
 
-    def _extract_info_from_gss(self, char_data: dict[str, Any]) -> tuple[str | None, str | None]:
-        """Extract unit and value_type from GSS characteristic structure."""
-        structure = char_data.get("structure", [])
-        if not isinstance(structure, list) or not structure:
-            return None, None
-
-        typed_structure: list[dict[str, Any]] = []
-        for raw_field in structure:
-            if isinstance(raw_field, dict):
-                typed_structure.append(cast(dict[str, Any], raw_field))
-
-        if not typed_structure:
-            return None, None
-
-        unit = None
-        value_type = None
-
-        for field in typed_structure:
-            field_dict: dict[str, Any] = field
-
-            if not value_type and isinstance(field_dict.get("type"), str):
-                yaml_type_value = cast(str, field_dict["type"])
-                value_type = self._convert_yaml_type_to_python_type(yaml_type_value)
-
-            description_value = field_dict.get("description", "")
-            if not isinstance(description_value, str):
-                continue
-
-            # Extract unit from either "Base Unit:" or "Unit:" format
-            if not unit and ("Base Unit:" in description_value or "Unit:" in description_value):
-                unit = self._extract_unit_from_description(description_value)
-
-        return unit, value_type
-
-    def _extract_unit_from_description(self, description: str) -> str | None:
-        """Extract unit symbol from GSS field description.
-
-        Handles both "Base Unit:" (unit on next line) and "Unit:" (inline) formats.
-        Strips all spaces from unit IDs to handle YAML formatting issues.
-
-        Args:
-            description: Field description text from GSS YAML
-
-        Returns:
-            Human-readable unit symbol, or None if no unit found
-        """
-        unit_id, _ = self._extract_unit_id_and_line(description)
-        if unit_id:
-            return self._convert_bluetooth_unit_to_readable(unit_id)
-        return None
-
-    def _extract_unit_id_and_line(self, description: str) -> tuple[str | None, str | None]:
-        """Extract raw unit ID and line from GSS field description.
-
-        Handles both "Base Unit:" (unit on next line) and "Unit:" (inline) formats.
-        Strips all spaces from unit IDs to handle YAML formatting issues.
-
-        Args:
-            description: Field description text from GSS YAML
-
-        Returns:
-            Tuple of (unit_id without org.bluetooth.unit prefix, full unit line with spaces removed)
-            Returns (None, None) if no unit found
-        """
-        unit_line = None
-
-        if "Base Unit:" in description:
-            # Format: "Base Unit:\norg.bluetooth.unit.xxx" or "Base Unit: org.bluetooth.unit.xxx"
-            parts = description.split("Base Unit:")[1].split("\n")
-            unit_line = parts[0].strip()
-            if not unit_line and len(parts) > 1:  # Unit is on next line
-                unit_line = parts[1].strip()
-        elif "Unit:" in description:
-            # Format: "Unit: org.bluetooth.unit.xxx" (inline)
-            unit_line = description.split("Unit:")[1].split("\n")[0].strip()
-
-        if unit_line and "org.bluetooth.unit." in unit_line:
-            # Remove all spaces (handles YAML formatting issues like "org.bluetooth.unit. electrical_...")
-            cleaned_line = unit_line.replace(" ", "")
-            unit_spec = cleaned_line.split("org.bluetooth.unit.")[1].strip()
-            return unit_spec, cleaned_line
-
-        return None, None
-
-    def _convert_yaml_type_to_python_type(self, yaml_type: str) -> str:
-        """Convert YAML type to Python type string."""
-        return DataType.from_string(yaml_type).to_python_type()
-
     def _convert_bluetooth_unit_to_readable(self, unit_spec: str) -> str:
-        """Convert Bluetooth SIG unit specification to human-readable format."""
+        """Convert Bluetooth SIG unit specification to human-readable symbol.
+
+        Args:
+            unit_spec: Unit specification (e.g., "thermodynamic_temperature.degree_celsius")
+
+        Returns:
+            Human-readable symbol (e.g., "°C"), or unit_spec if no mapping found
+        """
         unit_spec = unit_spec.rstrip(".").lower()
-        return self._unit_mappings.get(unit_spec, unit_spec)
+        unit_id = f"org.bluetooth.unit.{unit_spec}"
+
+        units_registry = UnitsRegistry.get_instance()
+        unit_info = units_registry.get_info(unit_id)
+        if unit_info and unit_info.symbol:
+            return unit_info.symbol
+
+        return unit_spec
 
     def register_characteristic(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
@@ -675,6 +454,54 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
             return None
 
+    def get_gss_spec(self, identifier: str | BluetoothUUID) -> GssCharacteristicSpec | None:
+        """Get the full GSS characteristic specification with all field metadata.
+
+        This provides access to the complete YAML structure including all fields,
+        their units, resolutions, ranges, and presence conditions.
+
+        Args:
+            identifier: Characteristic name, ID, or UUID
+
+        Returns:
+            GssCharacteristicSpec with full field structure, or None if not found
+
+        Example:
+            gss = uuid_registry.get_gss_spec("Location and Speed")
+            if gss:
+                for field in gss.structure:
+                    print(f"{field.python_name}: unit={field.unit_id}, resolution={field.resolution}")
+
+        """
+        if self._gss_registry is None:
+            return None
+
+        with self._lock:
+            # Try direct lookup by name or ID
+            if isinstance(identifier, str):
+                spec = self._gss_registry.get_spec(identifier)
+                if spec:
+                    return spec
+
+                # Try to get CharacteristicInfo to find the ID
+                char_info = self.get_characteristic_info(identifier)
+                if char_info:
+                    spec = self._gss_registry.get_spec(char_info.id)
+                    if spec:
+                        return spec
+            elif isinstance(identifier, BluetoothUUID):
+                # Look up by UUID
+                char_info = self.get_characteristic_info(identifier)
+                if char_info:
+                    spec = self._gss_registry.get_spec(char_info.name)
+                    if spec:
+                        return spec
+                    spec = self._gss_registry.get_spec(char_info.id)
+                    if spec:
+                        return spec
+
+            return None
+
     def resolve_characteristic_spec(self, characteristic_name: str) -> CharacteristicSpec | None:  # pylint: disable=too-many-locals
         """Resolve characteristic specification with rich YAML metadata.
 
@@ -699,14 +526,8 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             if not char_info:
                 return None
 
-            # 2. Get GSS specification if available
-            gss_spec = None
-            for search_key in [characteristic_name, char_info.id]:
-                # Load GSS specs on-demand (already loaded in __init__)
-                if hasattr(self, "_gss_specs"):
-                    gss_spec = getattr(self, "_gss_specs", {}).get(search_key)
-                    if gss_spec:
-                        break
+            # 2. Get typed GSS specification if available
+            gss_spec = self.get_gss_spec(characteristic_name)
 
             # 3. Extract metadata from GSS specification
             data_type = None
@@ -718,25 +539,23 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             description = None
 
             if gss_spec:
-                description = gss_spec.get("description", "")
-                structure = gss_spec.get("structure", [])
+                description = gss_spec.description
 
-                if structure and len(structure) > 0:
-                    first_field = structure[0]
-                    data_type = first_field.get("type")
-                    field_size = first_field.get("size")
-                    field_description = first_field.get("description", "")
+                # Use primary field for metadata extraction
+                primary = gss_spec.primary_field
+                if primary:
+                    data_type = primary.type
+                    field_size = str(primary.fixed_size) if primary.fixed_size else primary.size
 
-                    # Extract unit from description using helper method
-                    if "Base Unit:" in field_description or "Unit:" in field_description:
-                        unit_spec, base_unit = self._extract_unit_id_and_line(field_description)
-                        if unit_spec:
-                            unit_symbol = self._convert_bluetooth_unit_to_readable(unit_spec)
-                            unit_id = base_unit
+                    # Use FieldSpec's unit_id property (auto-parsed from description)
+                    if primary.unit_id:
+                        unit_id = f"org.bluetooth.unit.{primary.unit_id}"
+                        unit_symbol = self._convert_bluetooth_unit_to_readable(primary.unit_id)
+                        base_unit = unit_id
 
-                    # Extract resolution information
-                    if "resolution of" in field_description.lower():
-                        resolution_text = field_description
+                    # Get resolution from FieldSpec
+                    if primary.resolution is not None:
+                        resolution_text = f"Resolution: {primary.resolution}"
 
             # 4. Use existing unit/value_type from CharacteristicInfo if GSS didn't provide them
             if not unit_symbol and char_info.unit:

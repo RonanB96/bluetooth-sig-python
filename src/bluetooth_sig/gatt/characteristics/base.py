@@ -15,6 +15,7 @@ from ...registry.uuids.units import units_registry
 from ...types import CharacteristicDataProtocol, CharacteristicInfo
 from ...types import ParseFieldError as FieldError
 from ...types.gatt_enums import CharacteristicName, DataType, GattProperty, ValueType
+from ...types.registry import CharacteristicSpec
 from ...types.registry.descriptor_types import DescriptorData
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
@@ -29,7 +30,7 @@ from ..descriptors.cccd import CCCDDescriptor
 from ..descriptors.characteristic_presentation_format import CharacteristicPresentationFormatData
 from ..exceptions import InsufficientDataError, ParseFieldError, UUIDResolutionError, ValueRangeError
 from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
-from ..uuid_registry import CharacteristicSpec, uuid_registry
+from ..uuid_registry import uuid_registry
 from .templates import CodingTemplate
 
 

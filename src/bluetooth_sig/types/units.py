@@ -1,7 +1,18 @@
-"""Unit enumerations for measurements and data types.
+"""Domain enums for measurement units in decoded characteristic data.
 
-Defines enums for measurement systems, weight units, height units,
-temperature units, and other unit types to replace string usage with type-safe alternatives.
+These enums provide type-safe representations of measurement choices
+(e.g., Celsius vs Fahrenheit, metric vs imperial) used in decoded
+characteristic return values. They enable static type checking and
+IDE autocompletion for unit-aware data.
+
+Note: These are distinct from UnitInfo in registry/uuids/units.py which
+provides Bluetooth SIG metadata (UUID, name, symbol) loaded from YAML.
+The symbol values here intentionally match the registry symbols for
+consistency, but serve different purposes:
+- Domain enums: Type hints for decoded data (e.g., `unit: PressureUnit`)
+- Registry UnitInfo: UUID resolution and metadata lookup
+
+Reference: https://www.bipm.org/en/measurement-units
 """
 
 from __future__ import annotations
