@@ -6,13 +6,13 @@ from __future__ import annotations
 import os
 import re
 from abc import ABC, ABCMeta
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from typing import Any
 
 import msgspec
 
 from ...registry.uuids.units import units_registry
-from ...types import CharacteristicDataProtocol, CharacteristicInfo
+from ...types import CharacteristicDataProtocol, CharacteristicInfo, SpecialValueType, classify_special_value
 from ...types import ParseFieldError as FieldError
 from ...types.gatt_enums import CharacteristicName, DataType, GattProperty, ValueType
 from ...types.registry import CharacteristicSpec
@@ -41,6 +41,7 @@ class CharacteristicData(msgspec.Struct, kw_only=True):
         characteristic: The BaseCharacteristic instance that parsed this data
         value: Parsed and validated value
         raw_data: Original raw bytes
+        raw_int: Raw integer value extracted from bytes before translation
         parse_success: Whether parsing succeeded
         error_message: Error description if parse failed
         field_errors: Field-level parsing errors
@@ -50,6 +51,7 @@ class CharacteristicData(msgspec.Struct, kw_only=True):
     characteristic: BaseCharacteristic
     value: Any | None = None
     raw_data: bytes = b""
+    raw_int: int | None = None
     parse_success: bool = False
     error_message: str = ""
     field_errors: list[FieldError] = msgspec.field(default_factory=list)
@@ -312,6 +314,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     # Set to "0", "false", or "no" to disable trace collection
     _enable_parse_trace: bool = True  # Default: enabled
 
+    # Special value handling (GSS-derived)
+    # Manual override for special values when GSS spec is incomplete/wrong.
+    # Format: {raw_value: meaning_string}. GSS values are used by default.
+    _special_values: dict[int, str] | None = None
+
     def __init__(
         self,
         info: CharacteristicInfo | None = None,
@@ -503,6 +510,92 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         to class name.
         """
         return self._characteristic_name or self.__class__.__name__
+
+    @cached_property
+    def gss_special_values(self) -> dict[int, str]:
+        """Get special values from GSS specification.
+
+        Extracts all special value definitions (e.g., 0x8000="value is not known")
+        from the GSS YAML specification for this characteristic.
+
+        GSS stores values as unsigned hex (e.g., 0x8000). For signed types,
+        this method also includes the signed interpretation so lookups work
+        with both parsed signed values and raw unsigned values.
+
+        Returns:
+            Dictionary mapping raw integer values to their human-readable meanings.
+            Includes both unsigned and signed interpretations for applicable values.
+        """
+        # CharacteristicSpec.structure is not yet implemented - return empty dict
+        # TODO: Implement when GSS structure parsing is added to CharacteristicSpec
+        if not self._spec or not hasattr(self._spec, "structure") or not self._spec.structure:
+            return {}
+
+        result: dict[int, str] = {}
+        for field in self._spec.structure:
+            for sv in field.special_values:
+                unsigned_val = sv.raw_value
+                result[unsigned_val] = sv.meaning
+
+                # For values that could represent signed interpretations,
+                # add the signed equivalent based on common bit widths.
+                # This handles cases like 0x8000 (32768) -> -32768 for sint16.
+                for bits in (8, 16, 24, 32):
+                    max_unsigned = (1 << bits) - 1
+                    sign_bit = 1 << (bits - 1)
+                    if unsigned_val <= max_unsigned and unsigned_val >= sign_bit:
+                        # This value would be negative when interpreted as signed
+                        signed_val = unsigned_val - (1 << bits)
+                        if signed_val not in result:
+                            result[signed_val] = sv.meaning
+        return result
+
+    def is_special_value(self, raw_value: int) -> bool:
+        """Check if a raw value is a special sentinel value.
+
+        Checks both manual overrides (_special_values class variable) and
+        GSS-derived special values, with manual taking precedence.
+
+        Args:
+            raw_value: The raw integer value to check.
+
+        Returns:
+            True if this is a special sentinel value, False otherwise.
+        """
+        # Check manual overrides first
+        if self._special_values is not None and raw_value in self._special_values:
+            return True
+        # Fall back to GSS-derived values
+        return raw_value in self.gss_special_values
+
+    def get_special_value_meaning(self, raw_value: int) -> str | None:
+        """Get the human-readable meaning of a special value.
+
+        Args:
+            raw_value: The raw integer value to look up.
+
+        Returns:
+            The meaning string (e.g., "value is not known"), or None if not special.
+        """
+        # Check manual overrides first
+        if self._special_values is not None and raw_value in self._special_values:
+            return self._special_values[raw_value]
+        # Fall back to GSS-derived values
+        return self.gss_special_values.get(raw_value)
+
+    def get_special_value_type(self, raw_value: int) -> SpecialValueType | None:
+        """Get the category of a special value.
+
+        Args:
+            raw_value: The raw integer value to classify.
+
+        Returns:
+            The SpecialValueType category, or None if not a special value.
+        """
+        meaning = self.get_special_value_meaning(raw_value)
+        if meaning is None:
+            return None
+        return classify_special_value(meaning)
 
     @classmethod
     def _normalize_dependency_class(cls, dep_class: type[BaseCharacteristic]) -> str | None:
@@ -726,6 +819,55 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         if self.max_length is not None and length > self.max_length:
             raise ValueError(f"Maximum {self.max_length} bytes allowed, got {length}")
 
+    def _extract_raw_int(
+        self,
+        data: bytearray,
+        enable_trace: bool,
+        parse_trace: list[str],
+    ) -> int | None:
+        """Extract raw integer from bytes using the extraction pipeline.
+
+        Tries extraction in order of precedence:
+        1. Template extractor (if _template with extractor is set)
+        2. YAML-derived extractor (based on get_yaml_data_type())
+
+        Args:
+            data: Raw bytes to extract from.
+            enable_trace: Whether to log trace messages.
+            parse_trace: List to append trace messages to.
+
+        Returns:
+            Raw integer value, or None if no extractor is available.
+        """
+        # Import here to avoid circular imports
+        from .utils.extractors import get_extractor
+
+        # Priority 1: Template extractor
+        if self._template is not None and self._template.extractor is not None:
+            if enable_trace:
+                parse_trace.append("Extracting raw integer via template extractor")
+            raw_int = self._template.extractor.extract(data, offset=0)
+            if enable_trace:
+                parse_trace.append(f"Extracted raw_int: {raw_int}")
+            return raw_int
+
+        # Priority 2: YAML data type extractor
+        yaml_type = self.get_yaml_data_type()
+        if yaml_type is not None:
+            extractor = get_extractor(yaml_type)
+            if extractor is not None:
+                if enable_trace:
+                    parse_trace.append(f"Extracting raw integer via YAML type '{yaml_type}'")
+                raw_int = extractor.extract(data, offset=0)
+                if enable_trace:
+                    parse_trace.append(f"Extracted raw_int: {raw_int}")
+                return raw_int
+
+        # No extractor available
+        if enable_trace:
+            parse_trace.append("No extractor available for raw_int extraction")
+        return None
+
     def _get_dependency_from_context(
         self,
         ctx: CharacteristicContext,
@@ -836,6 +978,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def parse_value(self, data: bytes | bytearray, ctx: CharacteristicContext | None = None) -> CharacteristicData:
         """Parse raw characteristic data into structured value with validation.
 
+        Uses the pipeline: bytes → [Extractor] → raw_int → [Translator] → typed_value
+
         Args:
             data: Raw bytes from the characteristic read
             ctx: Optional context with device info and other characteristics
@@ -847,14 +991,18 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         enable_trace = self._is_parse_trace_enabled()
         parse_trace: list[str] = []
         if enable_trace:
-            # TODO Make traces unique and more useful
             parse_trace = ["Starting parse"]
         field_errors: list[FieldError] = []
+        raw_int: int | None = None
 
         try:
             if enable_trace:
                 parse_trace.append(f"Validating data length (got {len(data_bytes)} bytes)")
             self._validate_length(data_bytes)
+
+            # Extract raw integer using the pipeline
+            raw_int = self._extract_raw_int(data_bytes, enable_trace, parse_trace)
+
             if enable_trace:
                 parse_trace.append("Decoding value")
             parsed_value = self.decode_value(data_bytes, ctx)
@@ -870,6 +1018,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 characteristic=self,
                 value=parsed_value,
                 raw_data=bytes(data),
+                raw_int=raw_int,
                 parse_success=True,
                 error_message="",
                 field_errors=field_errors,

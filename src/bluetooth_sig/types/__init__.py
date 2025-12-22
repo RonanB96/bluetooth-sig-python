@@ -61,6 +61,7 @@ from .registry.appearance_info import AppearanceInfo
 from .registry.class_of_device import ClassOfDeviceInfo
 from .registry.descriptor_types import DescriptorData, DescriptorInfo
 from .registry.uri_schemes import UriSchemeInfo
+from .special_values import SpecialValueResult, SpecialValueRule
 from .units import (
     AngleUnit,
     ConcentrationUnit,
@@ -73,8 +74,10 @@ from .units import (
     PhysicalUnit,
     PressureUnit,
     SoundUnit,
+    SpecialValueType,
     TemperatureUnit,
     WeightUnit,
+    classify_special_value,
 )
 from .uri import URIData
 
@@ -155,10 +158,14 @@ __all__ = [
     "ServiceInfo",
     "SIGInfo",
     "SoundUnit",
+    "SpecialValueResult",
+    "SpecialValueRule",
+    "SpecialValueType",
     "TemperatureUnit",
     "URIData",
     "UriSchemeInfo",
     "ValidationResult",
     "WeightUnit",
+    "classify_special_value",
     "validate_category_id",
 ]

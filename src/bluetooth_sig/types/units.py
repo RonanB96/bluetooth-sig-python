@@ -111,3 +111,47 @@ class PhysicalUnit(Enum):
     """Units for physical measurements."""
 
     TESLA = "T"
+
+
+class SpecialValueType(Enum):
+    """Standard Bluetooth SIG special value categories.
+
+    These represent sentinel values in characteristic data that indicate
+    the measurement is not a normal reading. GSS YAML files define these
+    using patterns like "value is not known" or "value is not valid".
+    """
+
+    UNKNOWN = "unknown"  # Value not known/not available (most common)
+    INVALID = "invalid"  # Value not valid for current state
+    OVERFLOW = "overflow"  # Value exceeds maximum representable
+    UNDERFLOW = "underflow"  # Value below minimum representable
+    OUT_OF_RANGE = "out_of_range"  # Sensor out of measurement range
+
+
+def classify_special_value(meaning: str) -> SpecialValueType:
+    """Classify a GSS meaning string into a standard category.
+
+    Parses the human-readable meaning from GSS YAML special value definitions
+    and maps it to a SpecialValueType enum.
+
+    Args:
+        meaning: Human-readable meaning from GSS (e.g., "value is not known")
+
+    Returns:
+        The appropriate SpecialValueType category.
+    """
+    meaning_lower = meaning.lower()
+
+    if "not known" in meaning_lower or "unknown" in meaning_lower:
+        return SpecialValueType.UNKNOWN
+    if "not valid" in meaning_lower or "invalid" in meaning_lower:
+        return SpecialValueType.INVALID
+    if "or greater" in meaning_lower or "overflow" in meaning_lower:
+        return SpecialValueType.OVERFLOW
+    if "less than" in meaning_lower or "underflow" in meaning_lower:
+        return SpecialValueType.UNDERFLOW
+    if "out of range" in meaning_lower:
+        return SpecialValueType.OUT_OF_RANGE
+
+    # Default fallback - most special values indicate unknown
+    return SpecialValueType.UNKNOWN
