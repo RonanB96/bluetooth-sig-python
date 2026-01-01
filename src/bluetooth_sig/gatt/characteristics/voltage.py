@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from ...types.units import ElectricalUnit
-from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
@@ -24,8 +23,3 @@ class VoltageCharacteristic(BaseCharacteristic):
 
     # Template configuration
     resolution: float = 1 / 64  # 1/64 V resolution
-
-    expected_length: int = 2
-    min_value: float = 0.0
-    max_value: float = UINT16_MAX * (1.0 / 64.0)  # Max scaled value
-    expected_type: type = float

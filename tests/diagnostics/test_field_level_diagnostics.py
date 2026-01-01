@@ -302,7 +302,7 @@ class TestGenericErrorExtraction:
         # Generic errors do not produce field_errors (no brittle string parsing)
         assert len(result.field_errors) == 0
         # But the error message is still captured
-        assert "Invalid value: 200" in result.error_message
+        assert "Value 200 is above maximum 100" in result.error_message
         assert "Parse failed:" in result.parse_trace[-1]
 
 

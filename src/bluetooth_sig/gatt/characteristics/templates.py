@@ -47,6 +47,7 @@ from .utils.extractors import (
     SINT8,
     SINT16,
     SINT24,
+    SINT32,
     UINT8,
     UINT16,
     UINT24,
@@ -182,7 +183,7 @@ class Uint8Template(CodingTemplate):
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse 8-bit unsigned integer."""
         if len(data) < offset + 1:
-            raise ValueError("Insufficient data for uint8 parsing")
+            raise InsufficientDataError("uint8", data[offset:], 1)
         return self.extractor.extract(data, offset)
 
     def encode_value(self, value: int) -> bytearray:
@@ -213,7 +214,7 @@ class Sint8Template(CodingTemplate):
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse 8-bit signed integer."""
         if len(data) < offset + 1:
-            raise ValueError("Insufficient data for sint8 parsing")
+            raise InsufficientDataError("sint8", data[offset:], 1)
         return self.extractor.extract(data, offset)
 
     def encode_value(self, value: int) -> bytearray:
@@ -244,7 +245,7 @@ class Uint16Template(CodingTemplate):
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse 16-bit unsigned integer."""
         if len(data) < offset + 2:
-            raise ValueError("Insufficient data for uint16 parsing")
+            raise InsufficientDataError("uint16", data[offset:], 2)
         return self.extractor.extract(data, offset)
 
     def encode_value(self, value: int) -> bytearray:
@@ -275,7 +276,7 @@ class Sint16Template(CodingTemplate):
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse 16-bit signed integer."""
         if len(data) < offset + 2:
-            raise ValueError("Insufficient data for sint16 parsing")
+            raise InsufficientDataError("sint16", data[offset:], 2)
         return self.extractor.extract(data, offset)
 
     def encode_value(self, value: int) -> bytearray:
@@ -306,7 +307,7 @@ class Uint32Template(CodingTemplate):
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse 32-bit unsigned integer."""
         if len(data) < offset + 4:
-            raise ValueError("Insufficient data for uint32 parsing")
+            raise InsufficientDataError("uint32", data[offset:], 4)
         return self.extractor.extract(data, offset)
 
     def encode_value(self, value: int) -> bytearray:
@@ -623,6 +624,38 @@ class ScaledSint24Template(ScaledTemplate):
             raise ValueError(f"Scaled value {raw} out of range for sint24")
 
 
+class ScaledSint32Template(ScaledTemplate):
+    """Template for scaled 32-bit signed integer with configurable resolution and offset.
+
+    Used for signed values encoded in 4 bytes.
+    Example: Longitude -180.0 to 180.0 degrees stored with scale_factor=1e-7
+    """
+
+    _extractor = SINT32
+
+    def __init__(self, scale_factor: float = 0.01, offset: int = 0) -> None:
+        """Initialize with scale factor and offset.
+
+        Args:
+            scale_factor: Factor to multiply raw value by
+            offset: Offset to add to raw value before scaling
+
+        """
+        super().__init__(scale_factor, offset)
+
+    @property
+    def data_size(self) -> int:
+        """Size: 4 bytes."""
+        return 4
+
+    def _check_range(self, raw: int) -> None:
+        """Check range for sint32."""
+        sint32_min = -(2**31)
+        sint32_max = (2**31) - 1
+        if not sint32_min <= raw <= sint32_max:
+            raise ValueError(f"Scaled value {raw} out of range for sint32")
+
+
 # =============================================================================
 # DOMAIN-SPECIFIC TEMPLATES
 # =============================================================================
@@ -649,10 +682,10 @@ class PercentageTemplate(CodingTemplate):
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse percentage value."""
         if len(data) < offset + 1:
-            raise ValueError("Insufficient data for percentage parsing")
+            raise InsufficientDataError("percentage", data[offset:], 1)
         value = self.extractor.extract(data, offset)
         if not 0 <= value <= PERCENTAGE_MAX:
-            raise ValueError(f"Percentage value {value} out of range (0-{PERCENTAGE_MAX})")
+            raise ValueRangeError("percentage", value, 0, PERCENTAGE_MAX)
         return self.translator.translate(value)
 
     def encode_value(self, value: int) -> bytearray:
@@ -892,7 +925,7 @@ class IEEE11073FloatTemplate(CodingTemplate):
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
         """Parse IEEE 11073 SFLOAT format."""
         if len(data) < offset + 2:
-            raise ValueError("Insufficient data for IEEE11073 SFLOAT parsing")
+            raise InsufficientDataError("IEEE11073 SFLOAT", data[offset:], 2)
         raw = self.extractor.extract(data, offset)
         return self.translator.translate(raw)
 
@@ -918,7 +951,7 @@ class Float32Template(CodingTemplate):
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
         """Parse IEEE-754 32-bit float."""
         if len(data) < offset + 4:
-            raise ValueError("Insufficient data for float32 parsing")
+            raise InsufficientDataError("float32", data[offset:], 4)
         return DataParser.parse_float32(data, offset)
 
     def encode_value(self, value: float) -> bytearray:
@@ -1054,7 +1087,7 @@ class VectorTemplate(CodingTemplate):
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> VectorData:
         """Parse 3D vector data."""
         if len(data) < offset + 12:
-            raise ValueError("Insufficient data for 3D vector parsing (need 12 bytes)")
+            raise InsufficientDataError("3D vector", data[offset:], 12)
 
         x_axis = DataParser.parse_float32(data, offset)
         y_axis = DataParser.parse_float32(data, offset + 4)
@@ -1082,7 +1115,7 @@ class Vector2DTemplate(CodingTemplate):
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> Vector2DData:
         """Parse 2D vector data."""
         if len(data) < offset + 8:
-            raise ValueError("Insufficient data for 2D vector parsing (need 8 bytes)")
+            raise InsufficientDataError("2D vector", data[offset:], 8)
 
         x_axis = DataParser.parse_float32(data, offset)
         y_axis = DataParser.parse_float32(data, offset + 4)

@@ -27,8 +27,6 @@ class ApparentEnergy32Characteristic(BaseCharacteristic):
         "kVAh"  # YAML: electrical_apparent_energy.kilovolt_ampere_hour, units.yaml: energy.kilovolt_ampere_hour
     )
 
-    expected_length = 4
-
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode apparent energy 32 characteristic.
 

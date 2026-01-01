@@ -572,6 +572,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                     resolution_text=resolution_text,
                 ),
                 description=description,
+                structure=gss_spec.structure if gss_spec else [],
             )
 
     def get_signed_from_data_type(self, data_type: str | None) -> bool:

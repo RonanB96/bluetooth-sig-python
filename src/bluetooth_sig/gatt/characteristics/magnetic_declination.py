@@ -29,9 +29,7 @@ class MagneticDeclinationCharacteristic(BaseCharacteristic):
 
     # Template configuration
     resolution: float = 0.01  # 0.01 degree resolution
-    max_value: float = 655.35  # 65535 * 0.01 degrees max
 
-    expected_length: int = 2
     expected_type: type = float
 
     def encode_value(self, data: float) -> bytearray:

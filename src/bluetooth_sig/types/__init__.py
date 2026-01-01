@@ -40,7 +40,14 @@ from .appearance import AppearanceData
 from .base_types import SIGInfo
 from .battery import BatteryChargeLevel, BatteryChargeState, BatteryChargingType, BatteryFaultReason
 from .context import CharacteristicContext, DeviceInfo
-from .data_types import CharacteristicInfo, DateData, ParseFieldError, ServiceInfo, ValidationResult
+from .data_types import (
+    CharacteristicInfo,
+    DateData,
+    ParseFieldError,
+    ServiceInfo,
+    ValidationAccumulator,
+    ValidationResult,
+)
 from .ead import (
     EAD_ADDRESS_SIZE,
     EAD_IV_SIZE,
@@ -164,6 +171,7 @@ __all__ = [
     "TemperatureUnit",
     "URIData",
     "UriSchemeInfo",
+    "ValidationAccumulator",
     "ValidationResult",
     "WeightUnit",
     "classify_special_value",

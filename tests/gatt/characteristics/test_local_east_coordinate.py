@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import LocalEastCoordinateCharacteristic
+from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -51,7 +52,7 @@ class TestLocalEastCoordinateCharacteristic(CommonCharacteristicTests):
     def test_local_east_coordinate_error_handling(self, characteristic: LocalEastCoordinateCharacteristic) -> None:
         """Test Local East Coordinate error handling."""
         # Test insufficient data
-        with pytest.raises(ValueError, match="Insufficient data"):
+        with pytest.raises(InsufficientDataError, match="need 3 bytes, got 2"):
             characteristic.decode_value(bytearray([0x12, 0x34]))
 
     def test_local_east_coordinate_boundary_values(self, characteristic: LocalEastCoordinateCharacteristic) -> None:

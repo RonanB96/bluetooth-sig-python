@@ -50,8 +50,6 @@ class PowerSpecificationCharacteristic(BaseCharacteristic):
     The Power Specification characteristic is used to represent a specification of power values.
     """
 
-    expected_length = 9
-
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PowerSpecificationData:
         """Decode the power specification values."""
         # Parse three uint24 values (little-endian)

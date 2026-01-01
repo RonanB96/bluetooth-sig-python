@@ -51,7 +51,9 @@ class TestAltitudeCharacteristic(CommonCharacteristicTests):
     def test_altitude_error_handling(self, characteristic: AltitudeCharacteristic) -> None:
         """Test Altitude error handling."""
         # Test insufficient data
-        with pytest.raises(ValueError, match="Insufficient data"):
+        from bluetooth_sig.gatt.exceptions import InsufficientDataError
+
+        with pytest.raises(InsufficientDataError, match="need 2 bytes, got 1"):
             characteristic.decode_value(bytearray([0x12]))
 
     def test_altitude_boundary_values(self, characteristic: AltitudeCharacteristic) -> None:

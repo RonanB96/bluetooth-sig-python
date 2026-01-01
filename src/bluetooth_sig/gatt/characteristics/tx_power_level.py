@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from ...types.units import ElectricalUnit
-from ..constants import SINT8_MAX, SINT8_MIN
 from .base import BaseCharacteristic
 from .templates import Sint8Template
 
@@ -24,7 +23,3 @@ class TxPowerLevelCharacteristic(BaseCharacteristic):
     _manual_unit: str = ElectricalUnit.DBM.value  # Override template's "units" default
 
     # Validation attributes
-    expected_length: int = 1  # sint8
-    min_value: int = SINT8_MIN  # -128 dBm
-    max_value: int = SINT8_MAX  # 127 dBm
-    expected_type: type = int

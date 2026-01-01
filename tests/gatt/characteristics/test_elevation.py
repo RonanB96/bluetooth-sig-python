@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import ElevationCharacteristic
+from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -53,7 +54,7 @@ class TestElevationCharacteristic(CommonCharacteristicTests):
     def test_elevation_error_handling(self, characteristic: ElevationCharacteristic) -> None:
         """Test Elevation error handling."""
         # Test insufficient data
-        with pytest.raises(ValueError, match="Insufficient data"):
+        with pytest.raises(InsufficientDataError, match="need 3 bytes"):
             characteristic.decode_value(bytearray([0x12, 0x34]))
 
     def test_elevation_boundary_values(self, characteristic: ElevationCharacteristic) -> None:

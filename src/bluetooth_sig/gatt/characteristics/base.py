@@ -1,4 +1,74 @@
-"""Base class for GATT characteristics."""
+"""Base class for GATT characteristics.
+
+This module implements the core characteristic parsing and encoding system for
+Bluetooth GATT characteristics, following official Bluetooth SIG specifications.
+
+Architecture
+============
+
+The implementation uses a multi-stage pipeline for parsing and encoding:
+
+**Parsing Pipeline (parse_value):**
+  1. Length validation (pre-decode)
+  2. Raw integer extraction (little-endian per Bluetooth spec)
+  3. Special value detection (sentinel values like 0x8000)
+  4. Value decoding (via template or subclass override)
+  5. Range validation (post-decode)
+  6. Type validation
+
+**Encoding Pipeline (build_value):**
+  1. Type validation
+  2. Range validation
+  3. Value encoding (via template or subclass override)
+  4. Length validation (post-encode)
+
+YAML Metadata Resolution
+=========================
+
+Characteristic metadata is automatically resolved from Bluetooth SIG YAML specifications:
+
+- UUID, name, value type from assigned numbers registry
+- Units, resolution, and scaling factors (M × 10^d + b formula)
+- Special sentinel values (e.g., 0x8000 = "value is not known")
+- Validation ranges and length constraints
+
+Manual overrides (_manual_unit, _special_values, etc.) should only be used for:
+- Fixing incomplete or incorrect SIG specifications
+- Custom characteristics not in official registry
+- Performance optimizations
+
+Template Composition
+====================
+
+Characteristics use templates for reusable parsing logic via composition:
+
+    class TemperatureCharacteristic(BaseCharacteristic):
+        _template = Sint16Template(resolution=0.01, unit="°C")
+        # No need to override decode_value() - template handles it
+
+Subclasses only override decode_value() for custom logic that templates
+cannot handle. Templates take priority over YAML-derived extractors.
+
+Validation Sources (Priority Order)
+===================================
+
+1. **Descriptor Valid Range** - Device-reported constraints (highest priority)
+2. **Class-level Attributes** - Characteristic spec defaults (min_value, max_value)
+3. **YAML-derived Ranges** - Bluetooth SIG specification ranges (fallback)
+
+Special Values
+==============
+
+Sentinel values (like 0x8000 for "unknown") bypass range and type validation
+since they represent non-numeric states. The gss_special_values property
+handles both unsigned (0x8000) and signed (-32768) interpretations for
+compatibility with different parsing contexts.
+
+Byte Order
+==========
+
+All multi-byte values use little-endian encoding per Bluetooth Core Specification.
+"""
 # pylint: disable=too-many-lines
 
 from __future__ import annotations
@@ -12,8 +82,16 @@ from typing import Any
 import msgspec
 
 from ...registry.uuids.units import units_registry
-from ...types import CharacteristicDataProtocol, CharacteristicInfo, SpecialValueType, classify_special_value
+from ...types import (
+    CharacteristicDataProtocol,
+    CharacteristicInfo,
+    SpecialValueResult,
+    SpecialValueRule,
+    SpecialValueType,
+    classify_special_value,
+)
 from ...types import ParseFieldError as FieldError
+from ...types.data_types import ValidationAccumulator
 from ...types.gatt_enums import CharacteristicName, DataType, GattProperty, ValueType
 from ...types.registry import CharacteristicSpec
 from ...types.registry.descriptor_types import DescriptorData
@@ -28,10 +106,12 @@ from ..descriptor_utils import validate_value_against_descriptor_range as _valid
 from ..descriptors import BaseDescriptor
 from ..descriptors.cccd import CCCDDescriptor
 from ..descriptors.characteristic_presentation_format import CharacteristicPresentationFormatData
-from ..exceptions import InsufficientDataError, ParseFieldError, UUIDResolutionError, ValueRangeError
+from ..exceptions import ParseFieldError, UUIDResolutionError, ValueRangeError
 from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
+from ..special_values_resolver import SpecialValueResolver
 from ..uuid_registry import uuid_registry
 from .templates import CodingTemplate
+from .utils.extractors import get_extractor
 
 
 class CharacteristicData(msgspec.Struct, kw_only=True):
@@ -46,16 +126,19 @@ class CharacteristicData(msgspec.Struct, kw_only=True):
         error_message: Error description if parse failed
         field_errors: Field-level parsing errors
         parse_trace: Detailed parsing steps for debugging
+        validation: Structured validation results with errors and warnings
     """
 
     characteristic: BaseCharacteristic
     value: Any | None = None
     raw_data: bytes = b""
     raw_int: int | None = None
+    special_value: SpecialValueResult | None = None
     parse_success: bool = False
     error_message: str = ""
     field_errors: list[FieldError] = msgspec.field(default_factory=list)
     parse_trace: list[str] = msgspec.field(default_factory=list)
+    validation: ValidationAccumulator | None = None
 
     @property
     def info(self) -> CharacteristicInfo:
@@ -393,6 +476,23 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # NOTE: Custom characteristics will have _spec=None since they're not in GSS files.
         # The spec and description properties gracefully handle None/empty values.
         self._spec = self._resolve_yaml_spec()
+
+        # Initialize SpecialValueResolver with spec-derived and class-level rules
+        spec_rules: dict[int, SpecialValueRule] = {}
+        for raw, meaning in self.gss_special_values.items():
+            spec_rules[raw] = SpecialValueRule(
+                raw_value=raw, meaning=meaning, value_type=classify_special_value(meaning)
+            )
+
+        class_rules: dict[int, SpecialValueRule] = {}
+        if self._special_values is not None:
+            for raw, meaning in self._special_values.items():
+                class_rules[raw] = SpecialValueRule(
+                    raw_value=raw, meaning=meaning, value_type=classify_special_value(meaning)
+                )
+
+        self._special_resolver = SpecialValueResolver(spec_rules=spec_rules, class_rules=class_rules)
+
         # Apply manual overrides to _info (single source of truth)
         if self._manual_unit is not None:
             self._info.unit = self._manual_unit
@@ -526,8 +626,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             Dictionary mapping raw integer values to their human-readable meanings.
             Includes both unsigned and signed interpretations for applicable values.
         """
-        # CharacteristicSpec.structure is not yet implemented - return empty dict
-        # TODO: Implement when GSS structure parsing is added to CharacteristicSpec
+        # extract special values from YAML
         if not self._spec or not hasattr(self._spec, "structure") or not self._spec.structure:
             return {}
 
@@ -543,7 +642,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 for bits in (8, 16, 24, 32):
                     max_unsigned = (1 << bits) - 1
                     sign_bit = 1 << (bits - 1)
-                    if unsigned_val <= max_unsigned and unsigned_val >= sign_bit:
+                    if sign_bit <= unsigned_val <= max_unsigned:
                         # This value would be negative when interpreted as signed
                         signed_val = unsigned_val - (1 << bits)
                         if signed_val not in result:
@@ -562,11 +661,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Returns:
             True if this is a special sentinel value, False otherwise.
         """
-        # Check manual overrides first
-        if self._special_values is not None and raw_value in self._special_values:
-            return True
-        # Fall back to GSS-derived values
-        return raw_value in self.gss_special_values
+        return self._special_resolver.is_special(raw_value)
 
     def get_special_value_meaning(self, raw_value: int) -> str | None:
         """Get the human-readable meaning of a special value.
@@ -577,11 +672,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Returns:
             The meaning string (e.g., "value is not known"), or None if not special.
         """
-        # Check manual overrides first
-        if self._special_values is not None and raw_value in self._special_values:
-            return self._special_values[raw_value]
-        # Fall back to GSS-derived values
-        return self.gss_special_values.get(raw_value)
+        res = self._special_resolver.resolve(raw_value)
+        return res.meaning if res is not None else None
 
     def get_special_value_type(self, raw_value: int) -> SpecialValueType | None:
         """Get the category of a special value.
@@ -592,10 +684,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Returns:
             The SpecialValueType category, or None if not a special value.
         """
-        meaning = self.get_special_value_meaning(raw_value)
-        if meaning is None:
-            return None
-        return classify_special_value(meaning)
+        res = self._special_resolver.resolve(raw_value)
+        return res.value_type if res is not None else None
 
     @classmethod
     def _normalize_dependency_class(cls, dep_class: type[BaseCharacteristic]) -> str | None:
@@ -771,53 +861,130 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             return self._template.decode_value(data, offset=0, ctx=ctx)
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
-    def _validate_range(self, value: Any, ctx: CharacteristicContext | None = None) -> None:  # noqa: ANN401  # Validates values of various numeric types
+    def _validate_range(self, value: Any, ctx: CharacteristicContext | None = None) -> ValidationAccumulator:  # noqa: ANN401  # Validates values of various numeric types
         """Validate value is within min/max range from both class attributes and descriptors.
 
         Validation precedence:
         1. Descriptor Valid Range (if present in context) - most specific, device-reported
         2. Class-level validation attributes (min_value, max_value) - characteristic spec defaults
+        3. YAML-derived value range from structure - Bluetooth SIG specification
 
         Args:
             value: The value to validate
             ctx: Optional characteristic context containing descriptors
 
-        Raises:
-            ValueRangeError: If value is outside the valid range
+        Returns:
+            ValidationReport with errors if validation fails
         """
+        result = ValidationAccumulator()
+
+        # Skip validation for SpecialValueResult
+        if isinstance(value, SpecialValueResult):
+            return result
+
         # Skip validation for non-numeric types
         if not isinstance(value, (int, float)):
-            return
+            return result
 
         # Check descriptor Valid Range first (takes precedence over class attributes)
         descriptor_range = self.get_valid_range_from_context(ctx) if ctx else None
         if descriptor_range is not None:
             min_val, max_val = descriptor_range
             if value < min_val or value > max_val:
-                raise ValueRangeError("value", value, min_val, max_val)
-            # Descriptor validation passed - skip class-level checks
-            return
+                error_msg = (
+                    f"Value {value} is outside valid range [{min_val}, {max_val}] "
+                    f"(source: Valid Range descriptor for {self.name})"
+                )
+                if self.unit:
+                    error_msg += f" [unit: {self.unit}]"
+                result.add_error(error_msg)
+            # Descriptor validation checked - skip class-level checks
+            return result
 
         # Fall back to class-level validation attributes
         if self.min_value is not None and value < self.min_value:
-            raise ValueRangeError("value", value, self.min_value, self.max_value)
+            error_msg = (
+                f"Value {value} is below minimum {self.min_value} "
+                f"(source: class-level constraint for {self.__class__.__name__})"
+            )
+            if self.unit:
+                error_msg += f" [unit: {self.unit}]"
+            result.add_error(error_msg)
         if self.max_value is not None and value > self.max_value:
-            raise ValueRangeError("value", value, self.min_value, self.max_value)
+            error_msg = (
+                f"Value {value} is above maximum {self.max_value} "
+                f"(source: class-level constraint for {self.__class__.__name__})"
+            )
+            if self.unit:
+                error_msg += f" [unit: {self.unit}]"
+            result.add_error(error_msg)
 
-    def _validate_type(self, value: Any) -> None:  # noqa: ANN401
+        # Fall back to YAML-derived value range from structure
+        # Use tolerance-based comparison for floating-point values due to precision loss in scaled types
+        if self.min_value is None and self.max_value is None and self._spec and self._spec.structure:
+            for field in self._spec.structure:
+                yaml_range = field.value_range
+                if yaml_range is not None:
+                    min_val, max_val = yaml_range
+                    # Use tolerance for floating-point comparison (common in scaled characteristics)
+                    tolerance = max(abs(max_val - min_val) * 1e-9, 1e-9) if isinstance(value, float) else 0
+                    if value < min_val - tolerance or value > max_val + tolerance:
+                        yaml_source = f"{self._spec.name}" if self._spec.name else "YAML specification"
+                        error_msg = (
+                            f"Value {value} is outside allowed range [{min_val}, {max_val}] "
+                            f"(source: Bluetooth SIG {yaml_source})"
+                        )
+                        if self.unit:
+                            error_msg += f" [unit: {self.unit}]"
+                        result.add_error(error_msg)
+                    break  # Use first field with range found
+
+        return result
+
+    def _validate_type(self, value: Any) -> ValidationAccumulator:  # noqa: ANN401
         """Validate value type matches expected_type if specified."""
-        if self.expected_type is not None and not isinstance(value, self.expected_type):
-            raise TypeError(f"expected type {self.expected_type.__name__}, got {type(value).__name__}")
+        result = ValidationAccumulator()
+        if self.expected_type is not None and not isinstance(value, (self.expected_type, SpecialValueResult)):
+            error_msg = (
+                f"Type validation failed for {self.name}: "
+                f"expected {self.expected_type.__name__}, got {type(value).__name__} "
+                f"(value: {value})"
+            )
+            result.add_error(error_msg)
+        return result
 
-    def _validate_length(self, data: bytes | bytearray) -> None:
+    def _validate_length(self, data: bytes | bytearray) -> ValidationAccumulator:
         """Validate data length meets requirements."""
+        result = ValidationAccumulator()
         length = len(data)
+
+        # Determine validation source for error context
+        yaml_size = self.get_yaml_field_size()
+        source_context = ""
+        if yaml_size is not None:
+            source_context = f" (YAML specification: {yaml_size} bytes)"
+        elif self.expected_length is not None or self.min_length is not None or self.max_length is not None:
+            source_context = f" (class-level constraint for {self.__class__.__name__})"
+
         if self.expected_length is not None and length != self.expected_length:
-            raise InsufficientDataError("characteristic_data", data, self.expected_length)
+            error_msg = (
+                f"Length validation failed for {self.name}: "
+                f"expected exactly {self.expected_length} bytes, got {length}{source_context}"
+            )
+            result.add_error(error_msg)
         if self.min_length is not None and length < self.min_length:
-            raise InsufficientDataError("characteristic_data", data, self.min_length)
+            error_msg = (
+                f"Length validation failed for {self.name}: "
+                f"expected at least {self.min_length} bytes, got {length}{source_context}"
+            )
+            result.add_error(error_msg)
         if self.max_length is not None and length > self.max_length:
-            raise ValueError(f"Maximum {self.max_length} bytes allowed, got {length}")
+            error_msg = (
+                f"Length validation failed for {self.name}: "
+                f"expected at most {self.max_length} bytes, got {length}{source_context}"
+            )
+            result.add_error(error_msg)
+        return result
 
     def _extract_raw_int(
         self,
@@ -839,9 +1006,6 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         Returns:
             Raw integer value, or None if no extractor is available.
         """
-        # Import here to avoid circular imports
-        from .utils.extractors import get_extractor
-
         # Priority 1: Template extractor
         if self._template is not None and self._template.extractor is not None:
             if enable_trace:
@@ -867,6 +1031,23 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         if enable_trace:
             parse_trace.append("No extractor available for raw_int extraction")
         return None
+
+    def _pack_raw_int(self, raw: int) -> bytearray:
+        """Pack a raw integer to bytes using template extractor or YAML extractor."""
+        # Priority 1: template extractor
+        if self._template is not None:
+            extractor = getattr(self._template, "extractor", None)
+            if extractor is not None:
+                return bytearray(extractor.pack(raw))
+
+        # Priority 2: YAML-derived extractor
+        yaml_type = self.get_yaml_data_type()
+        if yaml_type is not None:
+            extractor = get_extractor(yaml_type)
+            if extractor is not None:
+                return bytearray(extractor.pack(raw))
+
+        raise ValueError("No extractor available to pack raw integer for this characteristic")
 
     def _get_dependency_from_context(
         self,
@@ -952,6 +1133,20 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         return ctx.other_characteristics.get(char_uuid)
 
+    def _check_special_value(self, raw_value: int) -> int | SpecialValueResult:
+        """Check if raw value is a special sentinel value and return appropriate result.
+
+        Args:
+            raw_value: The raw integer value to check
+
+        Returns:
+            SpecialValueResult if raw_value is special, otherwise raw_value unchanged
+        """
+        res = self._special_resolver.resolve(raw_value)
+        if res is not None:
+            return res
+        return raw_value
+
     def _is_parse_trace_enabled(self) -> bool:
         """Check if parse trace is enabled via environment variable or instance attribute.
 
@@ -975,10 +1170,76 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         # Default to enabled
         return True
 
+    def _perform_parse_validation(
+        self, data_bytes: bytearray, enable_trace: bool, parse_trace: list[str], validation: ValidationAccumulator
+    ) -> None:
+        """Perform initial validation on parse data."""
+        if enable_trace:
+            parse_trace.append(f"Validating data length (got {len(data_bytes)} bytes)")
+        length_validation = self._validate_length(data_bytes)
+        validation.errors.extend(length_validation.errors)
+        validation.warnings.extend(length_validation.warnings)
+        if not length_validation.valid:
+            raise ValueError("; ".join(length_validation.errors))
+
+    def _extract_and_check_special_value(
+        self, data_bytes: bytearray, enable_trace: bool, parse_trace: list[str], ctx: CharacteristicContext | None
+    ) -> tuple[int | None, Any]:
+        """Extract raw int and check for special values."""
+        # Extract raw integer using the pipeline
+        raw_int = self._extract_raw_int(data_bytes, enable_trace, parse_trace)
+
+        # Check for special values if raw_int was extracted
+        parsed_value = None
+        if raw_int is not None:
+            if enable_trace:
+                parse_trace.append("Checking for special values")
+            parsed_value = self._check_special_value(raw_int)
+            if enable_trace:
+                if isinstance(parsed_value, SpecialValueResult):
+                    parse_trace.append(f"Found special value: {parsed_value}")
+                else:
+                    parse_trace.append("Not a special value, proceeding with decode")
+
+        return raw_int, parsed_value
+
+    def _decode_and_validate_value(
+        self,  # pylint: disable=too-many-arguments
+        parsed_value: Any,  # noqa: ANN401
+        data_bytes: bytearray,
+        enable_trace: bool,
+        parse_trace: list[str],
+        ctx: CharacteristicContext | None,
+        validation: ValidationAccumulator,
+    ) -> Any:  # noqa: ANN401
+        """Decode value if not special and perform validation."""
+        # If not a special value, decode using the characteristic's decode_value method
+        if not isinstance(parsed_value, SpecialValueResult):
+            if enable_trace:
+                parse_trace.append("Decoding value")
+            parsed_value = self.decode_value(data_bytes, ctx)
+
+        if enable_trace:
+            parse_trace.append("Validating range")
+        range_validation = self._validate_range(parsed_value, ctx)
+        validation.errors.extend(range_validation.errors)
+        validation.warnings.extend(range_validation.warnings)
+        if not range_validation.valid:
+            raise ValueError("; ".join(range_validation.errors))
+        if enable_trace:
+            parse_trace.append("Validating type")
+        type_validation = self._validate_type(parsed_value)
+        validation.errors.extend(type_validation.errors)
+        validation.warnings.extend(type_validation.warnings)
+        if not type_validation.valid:
+            raise ValueError("; ".join(type_validation.errors))
+
+        return parsed_value
+
     def parse_value(self, data: bytes | bytearray, ctx: CharacteristicContext | None = None) -> CharacteristicData:
         """Parse raw characteristic data into structured value with validation.
 
-        Uses the pipeline: bytes → [Extractor] → raw_int → [Translator] → typed_value
+        Uses the pipeline: bytes → [Extractor] → raw_int → [Special Check] → [Translator] → typed_value
 
         Args:
             data: Raw bytes from the characteristic read
@@ -993,25 +1254,20 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         if enable_trace:
             parse_trace = ["Starting parse"]
         field_errors: list[FieldError] = []
-        raw_int: int | None = None
+        validation = ValidationAccumulator()
 
         try:
-            if enable_trace:
-                parse_trace.append(f"Validating data length (got {len(data_bytes)} bytes)")
-            self._validate_length(data_bytes)
+            # Perform initial validation
+            self._perform_parse_validation(data_bytes, enable_trace, parse_trace, validation)
 
-            # Extract raw integer using the pipeline
-            raw_int = self._extract_raw_int(data_bytes, enable_trace, parse_trace)
+            # Extract raw int and check for special values
+            raw_int, parsed_value = self._extract_and_check_special_value(data_bytes, enable_trace, parse_trace, ctx)
 
-            if enable_trace:
-                parse_trace.append("Decoding value")
-            parsed_value = self.decode_value(data_bytes, ctx)
-            if enable_trace:
-                parse_trace.append("Validating range")
-            self._validate_range(parsed_value, ctx)
-            if enable_trace:
-                parse_trace.append("Validating type")
-            self._validate_type(parsed_value)
+            # Decode and validate value
+            parsed_value = self._decode_and_validate_value(
+                parsed_value, data_bytes, enable_trace, parse_trace, ctx, validation
+            )
+
             if enable_trace:
                 parse_trace.append("completed successfully")
             result = CharacteristicData(
@@ -1019,10 +1275,12 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 value=parsed_value,
                 raw_data=bytes(data),
                 raw_int=raw_int,
+                special_value=parsed_value if isinstance(parsed_value, SpecialValueResult) else None,
                 parse_success=True,
                 error_message="",
                 field_errors=field_errors,
                 parse_trace=parse_trace,
+                validation=validation,
             )
             self.last_parsed = result
             return result
@@ -1047,6 +1305,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
                 error_message=str(e),
                 field_errors=field_errors,
                 parse_trace=parse_trace,
+                validation=validation,
             )
             self.last_parsed = result
             return result
@@ -1102,13 +1361,21 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         try:
             if enable_trace:
                 build_trace.append("Validating type")
-            self._validate_type(data)
+            type_validation = self._validate_type(data)
+            if not type_validation.valid:
+                raise ValueError("; ".join(type_validation.errors))
 
             if enable_trace:
                 build_trace.append("Validating range")
             # Validate range for numeric types
             if isinstance(data, (int, float)):
-                self._validate_range(data)
+                range_validation = self._validate_range(data)
+                if not range_validation.valid:
+                    # Construct ValueRangeError with proper arguments
+                    # Extract min/max from validation errors or use class attributes
+                    min_val = self.min_value
+                    max_val = self.max_value
+                    raise ValueRangeError(self.name, data, min_val, max_val)
 
             if enable_trace:
                 build_trace.append("Encoding value")
@@ -1118,7 +1385,9 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             if enable_trace:
                 build_trace.append(f"Validating encoded length (got {len(encoded)} bytes)")
             # Validate encoded length
-            self._validate_length(encoded)
+            length_validation = self._validate_length(encoded)
+            if not length_validation.valid:
+                raise ValueError("; ".join(length_validation.errors))
 
             if enable_trace:
                 build_trace.append("Build completed successfully")
@@ -1128,6 +1397,27 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             if enable_trace:
                 build_trace.append(f"Build failed: {str(e)}")
             raise
+
+    # -------------------- Encoding helpers for special values --------------------
+    def encode_special(self, value_type: SpecialValueType) -> bytearray:
+        """Encode a special value type to bytes (reverse lookup).
+
+        Raises ValueError if no raw value of that type is defined for this characteristic.
+        """
+        raw = self._special_resolver.get_raw_for_type(value_type)
+        if raw is None:
+            raise ValueError(f"No special value of type {value_type.name} defined for this characteristic")
+        return self._pack_raw_int(raw)
+
+    def encode_special_by_meaning(self, meaning: str) -> bytearray:
+        """Encode a special value by a partial meaning string match.
+
+        Raises ValueError if no matching special value is found.
+        """
+        raw = self._special_resolver.get_raw_for_meaning(meaning)
+        if raw is None:
+            raise ValueError(f"No special value matching '{meaning}' defined for this characteristic")
+        return self._pack_raw_int(raw)
 
     @property
     def unit(self) -> str:

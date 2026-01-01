@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import msgspec
 
+from bluetooth_sig.types.registry.gss_characteristic import FieldSpec
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -37,6 +38,7 @@ class CharacteristicSpec(msgspec.Struct, kw_only=True):
     field_info: FieldInfo = msgspec.field(default_factory=FieldInfo)
     unit_info: UnitMetadata = msgspec.field(default_factory=UnitMetadata)
     description: str | None = None
+    structure: list[FieldSpec] = msgspec.field(default_factory=list)
 
     @property
     def data_type(self) -> str | None:

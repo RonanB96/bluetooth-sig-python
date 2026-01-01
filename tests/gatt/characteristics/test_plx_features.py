@@ -96,11 +96,13 @@ class TestPLXFeaturesCharacteristic(CommonCharacteristicTests):
         ]
 
     def test_invalid_length(self, characteristic: BaseCharacteristic) -> None:
-        """Test that invalid data length raises ValueError."""
-        with pytest.raises(ValueError, match="requires at least 2 bytes"):
+        """Test that invalid data length raises InsufficientDataError."""
+        from bluetooth_sig.gatt.exceptions import InsufficientDataError
+
+        with pytest.raises(InsufficientDataError):
             characteristic.decode_value(bytearray([]))
 
-        with pytest.raises(ValueError, match="requires at least 2 bytes"):
+        with pytest.raises(InsufficientDataError):
             characteristic.decode_value(bytearray([0x00]))
 
     def test_encode_value(self, characteristic: BaseCharacteristic) -> None:

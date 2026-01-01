@@ -27,8 +27,6 @@ class FourZoneHeartRateLimitsCharacteristic(BaseCharacteristic):
     (Maximum, Hard, Moderate, and Light) of a user.
     """
 
-    expected_length = 3
-
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> FourZoneHeartRateLimitsData:
         """Decode Four Zone Heart Rate Limits from raw bytes.
 

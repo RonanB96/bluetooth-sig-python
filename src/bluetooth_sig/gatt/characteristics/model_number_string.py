@@ -14,5 +14,4 @@ class ModelNumberStringCharacteristic(BaseCharacteristic):
     Model Number String characteristic.
     """
 
-    expected_length = None
     _template = Utf8StringTemplate()
