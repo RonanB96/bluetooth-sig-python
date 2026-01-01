@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 from bluetooth_sig.registry.core.ad_types import ADTypesRegistry, ad_types_registry
-from bluetooth_sig.types.advertising import ADTypeInfo
+from bluetooth_sig.types.registry.ad_types import AdTypeInfo
 
 
 @pytest.fixture(scope="session")
@@ -27,7 +27,7 @@ class TestADTypesRegistry:
         assert isinstance(ad_types, dict)
         # If submodule is initialized, should have AD types after first access
         if ad_types:
-            assert all(isinstance(info, ADTypeInfo) for info in ad_types.values())
+            assert all(isinstance(info, AdTypeInfo) for info in ad_types.values())
 
     def test_lazy_loading(self) -> None:
         """Test that YAML is not loaded until first access."""
@@ -45,19 +45,19 @@ class TestADTypesRegistry:
         # Test with known AD types
         flags_info = registry.get_ad_type_info(0x01)
         if flags_info:  # Only if YAML loaded
-            assert isinstance(flags_info, ADTypeInfo)
+            assert isinstance(flags_info, AdTypeInfo)
             assert flags_info.value == 0x01
             assert "flags" in flags_info.name.lower()
 
         complete_name_info = registry.get_ad_type_info(0x09)
         if complete_name_info:
-            assert isinstance(complete_name_info, ADTypeInfo)
+            assert isinstance(complete_name_info, AdTypeInfo)
             assert complete_name_info.value == 0x09
             assert "complete local name" in complete_name_info.name.lower()
 
         manufacturer_info = registry.get_ad_type_info(0xFF)
         if manufacturer_info:
-            assert isinstance(manufacturer_info, ADTypeInfo)
+            assert isinstance(manufacturer_info, AdTypeInfo)
             assert manufacturer_info.value == 0xFF
             assert "manufacturer" in manufacturer_info.name.lower()
 
@@ -66,7 +66,7 @@ class TestADTypesRegistry:
         # Test with known AD type name
         flags_info = registry.get_ad_type_by_name("Flags")
         if flags_info:  # Only if YAML loaded
-            assert isinstance(flags_info, ADTypeInfo)
+            assert isinstance(flags_info, AdTypeInfo)
             assert flags_info.value == 0x01
 
         # Test case insensitive
@@ -110,13 +110,13 @@ class TestADTypesRegistry:
             assert 0x09 in ad_types  # Complete Local Name
             assert 0xFF in ad_types  # Manufacturer Specific Data
 
-            # Verify all values are ADTypeInfo
+            # Verify all values are AdTypeInfo
             for value, info in ad_types.items():
-                assert isinstance(info, ADTypeInfo)
+                assert isinstance(info, AdTypeInfo)
                 assert info.value == value
 
     def test_ad_type_info_structure(self, registry: ADTypesRegistry) -> None:
-        """Test that ADTypeInfo has expected structure."""
+        """Test that AdTypeInfo has expected structure."""
         info = registry.get_ad_type_info(0x01)
         if info:
             assert hasattr(info, "value")
@@ -128,7 +128,7 @@ class TestADTypesRegistry:
 
     def test_thread_safety(self, registry: ADTypesRegistry) -> None:
         """Test that concurrent lookups work correctly."""
-        results: list[ADTypeInfo | None] = []
+        results: list[AdTypeInfo | None] = []
 
         def lookup_ad_type(ad_type: int) -> None:
             info = registry.get_ad_type_info(ad_type)
@@ -192,4 +192,4 @@ class TestADTypesRegistry:
         # Should not raise even if YAML is missing
         info = fresh_registry.get_ad_type_info(0x01)
         # Should return None if YAML not found, or valid info if found
-        assert info is None or isinstance(info, ADTypeInfo)
+        assert info is None or isinstance(info, AdTypeInfo)

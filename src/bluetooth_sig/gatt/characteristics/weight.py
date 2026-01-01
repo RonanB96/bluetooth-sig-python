@@ -15,3 +15,5 @@ class WeightCharacteristic(BaseCharacteristic):
     """
 
     _template = ScaledUint16Template(scale_factor=0.005)  # 5g resolution
+
+    # Validation attributes

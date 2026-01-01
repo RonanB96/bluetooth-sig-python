@@ -22,7 +22,8 @@ class TestWeightMeasurementCharacteristic:
         """Test characteristic name resolution."""
         char = WeightMeasurementCharacteristic()
         assert char._characteristic_name == "Weight Measurement"
-        assert char.value_type == ValueType.BYTES
+        # Value type resolved from GSS YAML (uint16 Weight field -> INT)
+        assert char.value_type == ValueType.INT
 
     def test_parse_basic_weight_metric(self) -> None:
         """Test parsing basic weight in metric units."""

@@ -95,12 +95,11 @@ class TestYAMLUnitParsing:
 
     def test_gss_yaml_file_parsing(self) -> None:
         """Test that GSS YAML files can be parsed without errors."""
-        # This test ensures the GSS parsing doesn't crash
-        # Even if no GSS files are available, it should handle gracefully
+        from bluetooth_sig.registry.gss import GssRegistry
 
-        # Try to reload GSS specifications (should not crash)
         try:
-            uuid_registry._load_gss_specifications()
+            registry = GssRegistry.get_instance()
+            _ = registry.get_all_specs()
         except (ValueError, TypeError, OSError) as e:
             pytest.fail(f"GSS specification loading should not raise exceptions: {e}")
 

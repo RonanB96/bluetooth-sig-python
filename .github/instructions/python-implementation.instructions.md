@@ -10,6 +10,7 @@ applyTo: "**/*.py,**/pyproject.toml,**/requirements*.txt,**/setup.py"
 - Conditional imports for core logic
 - Use of TYPE_CHECKING
 - Non top-level or lazy imports
+- rexporting outside of the module where defined
 - Untyped public function signatures
 - Using hasattr or getattr when direct attribute access is possible
 - Silent exception pass / bare `except:`
@@ -19,7 +20,7 @@ applyTo: "**/*.py,**/pyproject.toml,**/requirements*.txt,**/setup.py"
 
 ## Type Safety (ABSOLUTE REQUIREMENT)
 
-**Every public function MUST have complete, explicit type hints.**
+**Every function MUST have complete, explicit type hints.**
 
 - ❌ **FORBIDDEN**: `def parse(data)` or `def get_value(self)`
 - ✅ **REQUIRED**: `def parse(data: bytes) -> BatteryLevelData` and `def get_value(self) -> int | None`
@@ -153,8 +154,8 @@ def decode_battery_level(data: bytearray) -> int:
 ```python
 def _parse_legacy_advertising(self, raw_data: bytes) -> None:
     # pylint: disable=duplicate-code
-    # NOTE: Duplicates AdvertisingParser for backwards compatibility.
-    # TODO: Refactor to delegate to AdvertisingParser instead.
+    # NOTE: Duplicates AdvertisingPDUParser for backwards compatibility.
+    # TODO: Refactor to delegate to AdvertisingPDUParser instead.
     # Duplication exists because Device has legacy inline parsing.
     ...actual duplicated code...
 ```

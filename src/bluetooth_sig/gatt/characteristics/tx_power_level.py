@@ -21,3 +21,5 @@ class TxPowerLevelCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Tx Power Level"
     _manual_unit: str = ElectricalUnit.DBM.value  # Override template's "units" default
+
+    # Validation attributes

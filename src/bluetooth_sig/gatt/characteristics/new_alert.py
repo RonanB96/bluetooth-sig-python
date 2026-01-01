@@ -38,6 +38,9 @@ class NewAlertCharacteristic(BaseCharacteristic):
     Used by Alert Notification Service (0x1811).
     """
 
+    min_length: int = 2  # Category ID(1) + Number of New Alert(1)
+    allow_variable_length: bool = True  # Optional text string
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> NewAlertData:
         """Decode New Alert data from bytes.
 
@@ -49,12 +52,9 @@ class NewAlertCharacteristic(BaseCharacteristic):
             NewAlertData with all fields
 
         Raises:
-            ValueError: If data is insufficient or contains invalid values
+            ValueError: If data contains invalid values
 
         """
-        if len(data) < 2:
-            raise ValueError(f"Insufficient data for New Alert: expected minimum 2 bytes, got {len(data)}")
-
         # Parse Category ID (1 byte)
         category_id_raw = DataParser.parse_int8(data, 0, signed=False)
         category_id = validate_category_id(category_id_raw)

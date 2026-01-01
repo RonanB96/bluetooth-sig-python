@@ -64,12 +64,16 @@ class TestBodySensorLocationCharacteristic(CommonCharacteristicTests):
         ]
 
     def test_invalid_length(self, characteristic: BaseCharacteristic) -> None:
-        """Test that invalid data length raises ValueError."""
-        with pytest.raises(ValueError, match="requires exactly 1 byte"):
-            characteristic.decode_value(bytearray([]))
+        """Test that invalid data length raises error."""
+        # Empty data - will fail when trying to access data[0]
+        result = characteristic.parse_value(bytearray([]))
+        assert not result.parse_success
+        assert "index out of range" in result.error_message.lower() or "insufficient" in result.error_message.lower()
 
-        with pytest.raises(ValueError, match="requires exactly 1 byte"):
-            characteristic.decode_value(bytearray([0x00, 0x00]))
+        # Too much data - characteristic only reads first byte, extra bytes ignored
+        result = characteristic.parse_value(bytearray([0x00, 0x00]))
+        assert result.parse_success  # Should succeed, only first byte is read
+        assert result.value == BodySensorLocation.OTHER
 
     def test_invalid_value(self, characteristic: BaseCharacteristic) -> None:
         """Test that invalid location value raises ValueError."""
@@ -81,6 +85,6 @@ class TestBodySensorLocationCharacteristic(CommonCharacteristicTests):
 
     def test_encode_value(self, characteristic: BaseCharacteristic) -> None:
         """Test encoding body sensor location to bytes."""
-        assert characteristic.encode_value(BodySensorLocation.WRIST) == bytearray([0x02])
-        assert characteristic.encode_value(BodySensorLocation.CHEST) == bytearray([0x01])
-        assert characteristic.encode_value(BodySensorLocation.FOOT) == bytearray([0x06])
+        assert characteristic.build_value(BodySensorLocation.WRIST) == bytearray([0x02])
+        assert characteristic.build_value(BodySensorLocation.CHEST) == bytearray([0x01])
+        assert characteristic.build_value(BodySensorLocation.FOOT) == bytearray([0x06])

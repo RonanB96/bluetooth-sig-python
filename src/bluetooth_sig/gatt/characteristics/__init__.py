@@ -20,6 +20,7 @@ from .alert_category_id import AlertCategoryIdCharacteristic
 from .alert_category_id_bit_mask import AlertCategoryIdBitMaskCharacteristic
 from .alert_level import AlertLevelCharacteristic
 from .alert_notification_control_point import AlertNotificationControlPointCharacteristic
+from .altitude import AltitudeCharacteristic
 from .ammonia_concentration import AmmoniaConcentrationCharacteristic
 from .anaerobic_heart_rate_lower_limit import AnaerobicHeartRateLowerLimitCharacteristic
 from .anaerobic_heart_rate_upper_limit import AnaerobicHeartRateUpperLimitCharacteristic
@@ -95,6 +96,8 @@ from .latitude import LatitudeCharacteristic
 from .linear_position import LinearPositionCharacteristic
 from .ln_control_point import LNControlPointCharacteristic
 from .ln_feature import LNFeatureCharacteristic
+from .local_east_coordinate import LocalEastCoordinateCharacteristic
+from .local_north_coordinate import LocalNorthCoordinateCharacteristic
 from .local_time_information import LocalTimeInformationCharacteristic
 from .location_and_speed import LocationAndSpeedCharacteristic
 from .location_name import LocationNameCharacteristic
@@ -153,6 +156,7 @@ from .true_wind_direction import TrueWindDirectionCharacteristic
 from .true_wind_speed import TrueWindSpeedCharacteristic
 from .two_zone_heart_rate_limits import TwoZoneHeartRateLimitsCharacteristic
 from .tx_power_level import TxPowerLevelCharacteristic
+from .uncertainty import UncertaintyCharacteristic
 from .unread_alert_status import UnreadAlertStatusCharacteristic
 from .uv_index import UVIndexCharacteristic
 from .vo2_max import VO2MaxCharacteristic
@@ -185,6 +189,7 @@ __all__ = [
     "AlertCategoryIdCharacteristic",
     "AlertLevelCharacteristic",
     "AlertNotificationControlPointCharacteristic",
+    "AltitudeCharacteristic",
     "AmmoniaConcentrationCharacteristic",
     "AnaerobicHeartRateLowerLimitCharacteristic",
     "AnaerobicHeartRateUpperLimitCharacteristic",
@@ -263,6 +268,8 @@ __all__ = [
     "LNControlPointCharacteristic",
     "LNFeatureCharacteristic",
     "LocalTimeInformationCharacteristic",
+    "LocalNorthCoordinateCharacteristic",
+    "LocalEastCoordinateCharacteristic",
     "LocationAndSpeedCharacteristic",
     "LocationNameCharacteristic",
     "LongitudeCharacteristic",
@@ -326,6 +333,7 @@ __all__ = [
     "TrueWindSpeedCharacteristic",
     "TxPowerLevelCharacteristic",
     "UnreadAlertStatusCharacteristic",
+    "UncertaintyCharacteristic",
     "UVIndexCharacteristic",
     "VO2MaxCharacteristic",
     "VOCConcentrationCharacteristic",

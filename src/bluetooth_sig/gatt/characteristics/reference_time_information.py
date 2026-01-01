@@ -65,6 +65,8 @@ class ReferenceTimeInformationCharacteristic(BaseCharacteristic):
     Used by Current Time Service (0x1805).
     """
 
+    expected_length: int = 4  # Time Source(1) + Time Accuracy(1) + Days(1) + Hours(1)
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ReferenceTimeInformationData:
         """Decode Reference Time Information data from bytes.
 

@@ -70,11 +70,7 @@ class DataParser:
         """Parse 24-bit integer with configurable endianness and signed interpretation."""
         if len(data) < offset + 3:
             raise InsufficientDataError("int24", data[offset:], 3)
-        value = int.from_bytes(data[offset : offset + 3], byteorder=endian, signed=signed)
-        # For signed 24-bit, extend sign bit if needed
-        if signed and (value & 0x800000):
-            value -= 0x1000000
-        return value
+        return int.from_bytes(data[offset : offset + 3], byteorder=endian, signed=signed)
 
     @staticmethod
     def parse_float32(data: bytearray, offset: int = 0) -> float:

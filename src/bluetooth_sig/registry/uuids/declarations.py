@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from bluetooth_sig.registry.base import BaseUUIDRegistry
-from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.registry.declarations import DeclarationInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -30,15 +29,6 @@ class DeclarationsRegistry(BaseUUIDRegistry[DeclarationInfo]):
             name=getattr(entry, "name", ""),
             id=getattr(entry, "id", ""),
         )
-
-    def _load(self) -> None:
-        """Perform the actual loading of declarations data."""
-        base_path = find_bluetooth_sig_path()
-        if base_path:
-            yaml_path = base_path / self._load_yaml_path()
-            if yaml_path.exists():
-                self._load_from_yaml(yaml_path)
-        self._loaded = True
 
     def get_declaration_info(self, uuid: str | BluetoothUUID) -> DeclarationInfo | None:
         """Get declaration information by UUID.

@@ -47,9 +47,19 @@ class TestCO2ConcentrationCharacteristic(CommonCharacteristicTests):
         assert result.value == 65533
 
     def test_co2_concentration_validation_limits(self, characteristic: CO2ConcentrationCharacteristic) -> None:
-        """Test CO2 concentration validation rejects values above max."""
-        # Test value above max_value (65534) - should fail validation
-        invalid_data = bytearray([0xFE, 0xFF])  # 65534 ppm
-        result = characteristic.parse_value(invalid_data)
-        assert not result.parse_success
-        assert "invalid value" in result.error_message.lower()
+        """Test CO2 concentration special value handling at overflow boundary."""
+        # Test 0xFFFE (65534) - special value meaning "65534 or greater" per SIG spec
+        overflow_data = bytearray([0xFE, 0xFF])  # 65534 / 0xFFFE
+        result = characteristic.parse_value(overflow_data)
+        assert result.parse_success
+        assert result.special_value is not None
+        assert result.special_value.raw_value == 65534
+        assert "65534 or greater" in result.special_value.meaning.lower()
+
+        # Test 0xFFFF (65535) - special value meaning "not known"
+        unknown_data = bytearray([0xFF, 0xFF])  # 65535 / 0xFFFF
+        result = characteristic.parse_value(unknown_data)
+        assert result.parse_success
+        assert result.special_value is not None
+        assert result.special_value.raw_value == 65535
+        assert "not known" in result.special_value.meaning.lower()

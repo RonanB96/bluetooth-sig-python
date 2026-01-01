@@ -21,30 +21,18 @@ from importlib import util as importlib_util
 # Public state describing available example back-ends
 AVAILABLE_LIBRARIES: dict[str, dict[str, str | bool]] = {}
 
-# Detect bleak / bleak-retry connector
-_bleak_spec = importlib_util.find_spec("bleak")
+# Detect bleak-retry connector
 _bleak_retry_spec = importlib_util.find_spec("bleak_retry_connector")
 
-bleak_available: bool = bool(_bleak_spec)
 bleak_retry_available: bool = bool(_bleak_retry_spec)
 
-# Import module objects only when the spec indicated availability.
-# If the import fails unexpectedly, treat the back-end as unavailable.
-_bleak_module: object | None = None
-if bleak_available:
-    try:
-        _bleak_module = importlib.import_module("bleak")
-    except ImportError:
-        bleak_available = False
-        _bleak_module = None
-
-_bleak_retry_module: object | None = None
+bleak_retry_module: object | None = None
 if bleak_retry_available:
     try:
-        _bleak_retry_module = importlib.import_module("bleak_retry_connector")
+        bleak_retry_module = importlib.import_module("bleak_retry_connector")
     except ImportError:
         bleak_retry_available = False
-        _bleak_retry_module = None
+        bleak_retry_module = None
 
 # Detect SimplePyBLE
 simplepyble_available: bool = bool(importlib_util.find_spec("simplepyble"))
@@ -75,12 +63,6 @@ if bleak_retry_available:
         "async": True,
         "description": "Robust BLE connections with retry logic",
     }
-elif bleak_available:
-    AVAILABLE_LIBRARIES["bleak"] = {
-        "module": "bleak",
-        "async": True,
-        "description": "Bleak (async) - cross-platform BLE library",
-    }
 
 if simplepyble_available:
     AVAILABLE_LIBRARIES["simplepyble"] = {
@@ -95,6 +77,45 @@ if bluepy_available:
         "async": False,
         "description": "BluePy - Python Bluetooth LE interface (Linux only)",
     }
+
+
+def get_connection_manager_class(manager_name: str) -> type:
+    """Get a connection manager class by name.
+
+    Args:
+        manager_name: Name of the connection manager ('bleak-retry', 'simplepyble', etc.)
+
+    Returns:
+        Connection manager class (not instance) implementing ConnectionManagerProtocol
+
+    Raises:
+        ValueError: If manager is not available or not supported
+        ImportError: If required dependencies are not installed
+    """
+    if manager_name not in AVAILABLE_LIBRARIES:
+        available = list(AVAILABLE_LIBRARIES.keys())
+        raise ValueError(
+            f"Connection manager '{manager_name}' not available. "
+            f"Available: {available}. "
+            f"Install with: pip install .[examples]"
+        )
+
+    if manager_name == "bleak-retry":
+        from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+
+        return BleakRetryConnectionManager
+
+    if manager_name == "simplepyble":
+        from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
+
+        return SimplePyBLEConnectionManager
+
+    if manager_name == "bluepy":
+        from examples.connection_managers.bluepy import BluePyConnectionManager
+
+        return BluePyConnectionManager
+
+    raise ValueError(f"Unsupported connection manager: {manager_name}")
 
 
 def show_library_availability() -> bool:
@@ -121,10 +142,11 @@ def show_library_availability() -> bool:
 
 __all__ = [
     "AVAILABLE_LIBRARIES",
-    "bleak_available",
     "bleak_retry_available",
+    "bleak_retry_module",
     "bluepy_available",
     "bluepy_module",
+    "get_connection_manager_class",
     "show_library_availability",
     "simplepyble_available",
     "simplepyble_module",

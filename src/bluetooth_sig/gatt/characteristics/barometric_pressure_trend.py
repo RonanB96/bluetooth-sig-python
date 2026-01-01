@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from enum import IntEnum
 
+from ..constants import UINT8_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .templates import Uint8Template
@@ -58,6 +59,10 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
     Represents the trend observed for barometric pressure using
     enumerated values.
     """
+
+    # YAML has no range constraint; enforce uint8 domain for enum conversion.
+    min_value: int | float | None = 0
+    max_value: int | float | None = UINT8_MAX
 
     _template = Uint8Template()  # Used for base uint8 parsing, then converted to enum
 

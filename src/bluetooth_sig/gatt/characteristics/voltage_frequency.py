@@ -21,3 +21,5 @@ class VoltageFrequencyCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = ElectricalUnit.HERTZ.value  # Override template's "units" default
     resolution: float = 1 / 256
+    # YAML encodes min/max as "Minimum: 1" "Maximum: 65533" (not "Allowed range").
+    max_value: float = 65533.0 * (1.0 / 256.0)  # Exclude special values 0xFFFE and 0xFFFF

@@ -79,8 +79,8 @@ class Temperature(BaseCharacteristic):
     expected_length = 2
 
 
-# Actually: raw value 256, (256 + 0) * 0.01 = 2.56°C
-# For 25.6°C: 2560 * 0.01 = 25.6, so 0x00, 0x0A (2560)
+# Little-endian: [low_byte, high_byte] = [0x00, 0x0A] = 0x0A00 = 2560
+# 2560 * 0.01 = 25.6°C
 temperature_data = bytearray([0x00, 0x0A])  # 2560 in little-endian
 temp_char = Temperature()
 result = temp_char.decode_value(temperature_data)

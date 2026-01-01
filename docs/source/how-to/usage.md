@@ -233,9 +233,8 @@ async def read_environmental_sensors(devices: list[str]):
 Common in: Omron blood pressure monitors, A&D medical devices, iHealth monitors
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig import BluetoothSIGTranslator, CharacteristicData
 from bluetooth_sig.stream.pairing import DependencyPairingBuffer
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
 
@@ -469,8 +468,8 @@ async def main():
     translator = BluetoothSIGTranslator()
     device = Device(SIMULATED_DEVICE_ADDRESS, translator)
 
-    # Parse advertisement data
-    device.parse_advertiser_data(SIMULATED_ADV_DATA)
+    # Parse raw advertisement PDU bytes
+    device.parse_raw_advertisement(SIMULATED_ADV_DATA)
     print(f"Device name: {device.name}")
 
     # Discover services (real workflow with connection manager)
@@ -514,8 +513,9 @@ async def discover_device(device_address):
     device = Device(device_address, translator)
 
     async with BleakClient(device_address) as client:
-        # Get advertisement data (if available from your BLE library)
-        # device.parse_advertiser_data(advertisement_bytes)
+        # For integrated scanning, use connection manager's convert_advertisement()
+        # followed by device.update_advertisement()
+        # For raw PDU bytes: device.parse_raw_advertisement(raw_bytes)
 
         # Discover services
         services = await client.get_services()

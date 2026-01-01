@@ -5,6 +5,8 @@ services, characteristics, encryption requirements, and advertiser data
 for a BLE device. It integrates with the BluetoothSIGTranslator for
 parsing while providing a unified view of device state.
 """
+# pylint: disable=too-many-lines  # Device abstraction is a cohesive module with related classes
+# TODO split into multiple files
 
 from __future__ import annotations
 
@@ -13,6 +15,11 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, Callable, Protocol
 
+from ..advertising import (
+    AdvertisingDataInterpreter,
+    AdvertisingPDUParser,
+    advertising_interpreter_registry,
+)
 from ..gatt.characteristics import CharacteristicName
 from ..gatt.characteristics.base import BaseCharacteristic, CharacteristicData
 from ..gatt.characteristics.registry import CharacteristicRegistry
@@ -21,10 +28,16 @@ from ..gatt.context import CharacteristicContext, DeviceInfo
 from ..gatt.descriptors.base import BaseDescriptor
 from ..gatt.descriptors.registry import DescriptorRegistry
 from ..gatt.services import ServiceName
-from ..types import AdvertisingData, CharacteristicDataProtocol, CharacteristicInfo, DescriptorData, DescriptorInfo
+from ..types import (
+    AdvertisementData,
+    AdvertisingData,
+    CharacteristicDataProtocol,
+    CharacteristicInfo,
+    DescriptorData,
+    DescriptorInfo,
+)
 from ..types.device_types import DeviceEncryption, DeviceService, ScannedDevice
 from ..types.uuid import BluetoothUUID
-from .advertising_parser import AdvertisingParser
 from .connection import ConnectionManagerProtocol
 
 __all__ = [
@@ -132,11 +145,20 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.encryption = DeviceEncryption()
         self.advertiser_data = AdvertisingData(raw_data=b"")
 
-        # Advertising parser for handling advertising data
-        self.advertising_parser = AdvertisingParser()
+        # Advertising PDU parser for handling raw advertising data
+        self._pdu_parser = AdvertisingPDUParser()
+
+        # Cache of vendor-specific advertising interpreters (keyed by class name)
+        self._advertising_interpreters: dict[str, AdvertisingDataInterpreter[Any]] = {}
+
+        # Optional bindkey for encrypted advertisements
+        self._advertising_bindkey: bytes | None = None
 
         # Cache for device_info property
         self._device_info_cache: DeviceInfo | None = None
+
+        # Last interpreted advertisement (with vendor-specific data)
+        self._last_interpreted_advertisement: AdvertisementData | None = None
 
     def __str__(self) -> str:
         """Return string representation of Device.
@@ -685,19 +707,175 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return self.connection_manager.mtu_size
 
-    def parse_advertiser_data(self, raw_data: bytes) -> None:
-        """Parse raw advertising data and update device information.
+    def set_advertising_bindkey(self, bindkey: bytes | None) -> None:
+        """Set encryption key for encrypted advertising data.
 
         Args:
-            raw_data: Raw bytes from BLE advertising packet
+            bindkey: Encryption key bytes, or None to clear
 
         """
-        parsed_data = self.advertising_parser.parse_advertising_data(raw_data)
-        self.advertiser_data = parsed_data
+        self._advertising_bindkey = bindkey
+        # Update any existing interpreters
+        for interpreter in self._advertising_interpreters.values():
+            interpreter.bindkey = bindkey
+
+    async def refresh_advertisement(self, refresh: bool = False) -> AdvertisementData | None:
+        """Get advertisement data from the connection manager.
+
+        Args:
+            refresh: If True, perform an active scan to get fresh advertisement
+                    data from the device. If False, return the last cached value.
+
+        Returns:
+            Interpreted AdvertisementData if available, None if no advertisement
+            has been received by the connection manager yet.
+
+        Raises:
+            RuntimeError: If no connection manager is attached
+
+        Example::
+
+            device.attach_connection_manager(manager)
+
+            # Get cached advertisement (fast, no BLE activity)
+            ad = await device.refresh_advertisement()
+
+            # Force fresh scan (slower, active BLE scan)
+            ad = await device.refresh_advertisement(refresh=True)
+
+            if ad and ad.interpreted_data:
+                print(f"Sensor: {ad.interpreted_data}")
+
+        """
+        if not self.connection_manager:
+            raise RuntimeError("No connection manager attached to Device")
+
+        advertisement = await self.connection_manager.get_latest_advertisement(refresh=refresh)
+        if advertisement is None:
+            return None
+
+        # Process through the interpretation pipeline
+        self._process_advertisement(advertisement)
+        return self._last_interpreted_advertisement
+
+    def _process_advertisement(self, advertisement: AdvertisementData) -> None:
+        """Process advertisement data and store results.
+
+        Internal method that stores advertisement data and routes to
+        vendor interpreters for typed sensor data extraction.
+
+        Args:
+            advertisement: AdvertisementData from connection manager
+
+        """
+        # Store the advertisement data
+        self.advertiser_data = AdvertisingData(
+            raw_data=b"",  # Raw data not available from converted advertisements
+            ad_structures=advertisement.ad_structures,
+            rssi=advertisement.rssi,
+        )
 
         # Update device name if not set
-        if parsed_data.ad_structures.core.local_name and not self.name:
-            self.name = parsed_data.ad_structures.core.local_name
+        if advertisement.ad_structures.core.local_name and not self.name:
+            self.name = advertisement.ad_structures.core.local_name
+
+        # Apply vendor interpretation and store result
+        interpreted = self._interpret_advertisement(advertisement)
+        # Store the interpreted result for later access
+        self._last_interpreted_advertisement = interpreted
+
+    def _interpret_advertisement(self, advertisement: AdvertisementData) -> AdvertisementData:
+        """Apply vendor interpretation to advertisement data.
+
+        Internal method that routes advertisement data to registered vendor
+        interpreters for typed sensor data extraction.
+
+        Args:
+            advertisement: AdvertisementData with ad_structures populated
+
+        Returns:
+            AdvertisementData with interpreted_data populated if a matching
+            vendor interpreter was found
+
+        """
+        # Route to vendor interpreter
+        interpreted_data: Any = None
+        interpreter_name: str | None = None
+
+        interpreter_class = advertising_interpreter_registry.find_interpreter_class(
+            advertisement.ad_structures.core.manufacturer_data,
+            advertisement.ad_structures.core.service_data,
+            advertisement.ad_structures.core.local_name or None,
+        )
+
+        if interpreter_class is not None:
+            # Get or create stateful interpreter for this device + interpreter type
+            class_name = interpreter_class.__name__
+            if class_name not in self._advertising_interpreters:
+                self._advertising_interpreters[class_name] = interpreter_class(
+                    self.address,
+                    bindkey=self._advertising_bindkey,
+                )
+
+            interpreter = self._advertising_interpreters[class_name]
+            interpreted_data = interpreter.interpret(
+                advertisement.ad_structures.core.manufacturer_data,
+                advertisement.ad_structures.core.service_data,
+                advertisement.ad_structures.core.local_name or None,
+                advertisement.rssi or 0,
+            )
+            interpreter_name = interpreter_class._info.name  # pylint: disable=protected-access
+
+        return AdvertisementData(
+            ad_structures=advertisement.ad_structures,
+            interpreted_data=interpreted_data,
+            interpreter_name=interpreter_name,
+            rssi=advertisement.rssi,
+        )
+
+    def parse_raw_advertisement(self, raw_data: bytes, rssi: int = 0) -> AdvertisementData:
+        """Parse raw advertising PDU bytes directly.
+
+        Use this method when you have raw BLE advertising PDU bytes (e.g., from
+        a custom BLE stack or packet capture). For framework-integrated scanning,
+        use the connection manager's convert_advertisement() followed by
+        update_advertisement() instead.
+
+        Args:
+            raw_data: Raw BLE advertising PDU bytes
+            rssi: Received signal strength in dBm
+
+        Returns:
+            AdvertisementData with parsed AD structures and vendor interpretation
+
+        Example:
+            # Parse raw PDU bytes directly
+            result = device.parse_raw_advertisement(pdu_bytes, rssi=-65)
+            print(result.manufacturer_data)
+
+        """
+        # Parse raw PDU bytes
+        pdu_result = self._pdu_parser.parse_advertising_data(raw_data)
+
+        # Store the parsed AdvertisingData (with raw_data) directly
+        self.advertiser_data = AdvertisingData(
+            raw_data=raw_data,
+            ad_structures=pdu_result.ad_structures,
+            rssi=rssi,
+        )
+
+        # Update device name if present and not already set
+        if pdu_result.ad_structures.core.local_name and not self.name:
+            self.name = pdu_result.ad_structures.core.local_name
+
+        # Create AdvertisementData for interpretation
+        advertisement = AdvertisementData(
+            ad_structures=pdu_result.ad_structures,
+            rssi=rssi,
+        )
+
+        # Route to vendor interpreter and return result
+        return self._interpret_advertisement(advertisement)
 
     def get_characteristic_data(self, char_uuid: BluetoothUUID) -> CharacteristicData | None:
         """Get parsed characteristic data - single source of truth via characteristic.last_parsed.
@@ -914,6 +1092,21 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return False
         # Check if the connection manager has an is_connected property
         return getattr(self.connection_manager, "is_connected", False)
+
+    @property
+    def interpreted_advertisement(self) -> AdvertisementData | None:
+        """Get the last interpreted advertisement data.
+
+        This is automatically populated when a connection manager pushes
+        advertisement data to the device. The data includes vendor-specific
+        interpretations if registered interpreters match.
+
+        Returns:
+            AdvertisementData with interpreted fields, or None if no
+            advertisement has been received yet.
+
+        """
+        return self._last_interpreted_advertisement
 
     def get_service_by_uuid(self, service_uuid: str) -> DeviceService | None:
         """Get a service by its UUID.

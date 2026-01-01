@@ -38,6 +38,8 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
     capabilities.
     """
 
+    expected_length: int = 4
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerFeatureData:
         """Parse cycling power feature data.
 

@@ -28,6 +28,10 @@ class SupportedNewAlertCategoryCharacteristic(BaseCharacteristic):
     Used by Alert Notification Service (0x1811).
     """
 
+    # YAML specifies size: 1 or 2 (variable length struct)
+    min_length: int | None = 1
+    max_length: int | None = 2
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertCategoryBitMask:
         """Decode Supported New Alert Category data from bytes.
 

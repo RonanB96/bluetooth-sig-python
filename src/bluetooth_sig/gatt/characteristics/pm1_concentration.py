@@ -26,4 +26,3 @@ class PM1ConcentrationCharacteristic(BaseCharacteristic):
 
     # Template configuration
     resolution: float = 1.0
-    max_value: float = 65533.0  # Exclude special values 0xFFFE and 0xFFFF

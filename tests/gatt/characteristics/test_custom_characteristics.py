@@ -242,7 +242,7 @@ class TestCustomCharacteristicVariants:
         short_data = bytearray([0x14])
         result = sensor.parse_value(short_data)
         assert result.parse_success is False
-        assert "need 2 bytes" in result.error_message.lower()
+        assert "expected exactly 2 bytes, got 1" in result.error_message.lower()
 
         # Test validation: range check (simulate out of range)
         # The sensor will decode the value, but validation will fail if out of range

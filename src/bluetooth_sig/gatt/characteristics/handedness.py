@@ -5,6 +5,7 @@ from __future__ import annotations
 from enum import IntEnum
 
 from bluetooth_sig.gatt.context import CharacteristicContext
+from bluetooth_sig.gatt.exceptions import ValueRangeError
 
 from .base import BaseCharacteristic
 
@@ -26,6 +27,8 @@ class HandednessCharacteristic(BaseCharacteristic):
     The Handedness characteristic is used to represent the handedness of a user.
     """
 
+    expected_length: int | None = 1
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> Handedness:
         """Decode handedness from raw bytes.
 
@@ -37,16 +40,12 @@ class HandednessCharacteristic(BaseCharacteristic):
             Handedness enum value
 
         Raises:
-            ValueError: If data length is not exactly 1 byte or value is invalid
+            ValueRangeError: If value is invalid (not 0x00-0x03)
         """
-        if len(data) != 1:
-            raise ValueError(f"Handedness requires exactly 1 byte, got {len(data)}")
-
         handedness_value = int(data[0])
-        try:
-            return Handedness(handedness_value)
-        except ValueError as e:
-            raise ValueError(f"Invalid Handedness value: {handedness_value} (valid range: 0x00-0x03)") from e
+        if handedness_value > Handedness.UNSPECIFIED:
+            raise ValueRangeError("Handedness", handedness_value, Handedness.LEFT_HANDED, Handedness.UNSPECIFIED)
+        return Handedness(handedness_value)
 
     def encode_value(self, data: Handedness) -> bytearray:
         """Encode handedness to raw bytes.

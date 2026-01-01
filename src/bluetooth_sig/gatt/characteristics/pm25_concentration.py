@@ -18,4 +18,3 @@ class PM25ConcentrationCharacteristic(BaseCharacteristic):
     _characteristic_name: str = "Particulate Matter - PM2.5 Concentration"
     resolution: float = 1.0
     _manual_unit: str = "µg/m³"  # Override template's "ppm" default
-    max_value: float = 65533.0  # Exclude special values 0xFFFE and 0xFFFF

@@ -40,6 +40,8 @@ class RSCFeatureCharacteristic(BaseCharacteristic):
     capabilities.
     """
 
+    expected_length: int = 2
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RSCFeatureData:
         """Parse RSC feature data.
 

@@ -13,7 +13,7 @@ When working with Bluetooth Low Energy (BLE) devices, you typically encounter ra
 raw_data = bytearray([0x64, 0x09])  # What does this mean? 🤔
 ```
 
-Without proper interpretation, this is just bytes. According to Bluetooth SIG specifications for the Temperature characteristic (0x2A6E), this represents **24.36°C** (2404 * 0.01).
+Without proper interpretation, this is just bytes. According to Bluetooth SIG specifications for the Temperature characteristic (0x2A6E), this represents **24.04°C** (2404 * 0.01).
 
 ### Challenge 2: UUID Management
 

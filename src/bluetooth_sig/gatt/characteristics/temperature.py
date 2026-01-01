@@ -22,6 +22,8 @@ class TemperatureCharacteristic(BaseCharacteristic):
     Temperature measurement characteristic.
     """
 
+    expected_type: type | None = float  # Allows both float and None (for unknown value)
+
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode temperature characteristic.
 

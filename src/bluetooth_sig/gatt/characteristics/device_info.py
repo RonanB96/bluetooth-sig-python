@@ -15,6 +15,7 @@ class FirmwareRevisionStringCharacteristic(BaseCharacteristic):
     """
 
     _template = Utf8StringTemplate()
+    min_length = 0
 
 
 class HardwareRevisionStringCharacteristic(BaseCharacteristic):
@@ -26,6 +27,7 @@ class HardwareRevisionStringCharacteristic(BaseCharacteristic):
     """
 
     _template = Utf8StringTemplate()
+    min_length = 0
 
 
 class SoftwareRevisionStringCharacteristic(BaseCharacteristic):
@@ -37,3 +39,4 @@ class SoftwareRevisionStringCharacteristic(BaseCharacteristic):
     """
 
     _template = Utf8StringTemplate()
+    min_length = 0

@@ -45,9 +45,12 @@ class AppearanceCharacteristic(BaseCharacteristic):
 
     _manual_value_type = "AppearanceData"  # Override since decode_value returns structured data
 
-    min_length = 2  # Appearance(2) fixed length
-    max_length = 2  # Appearance(2) fixed length
+    # Validation attributes
+    expected_length: int = 2  # uint16 fixed length
+    min_length: int = 2  # Appearance(2) fixed length
+    max_length: int = 2  # Appearance(2) fixed length
     allow_variable_length: bool = False  # Fixed length
+    expected_type: type = AppearanceData
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AppearanceData:
         """Parse appearance value with human-readable info.

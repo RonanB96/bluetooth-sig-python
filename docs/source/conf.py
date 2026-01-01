@@ -473,8 +473,6 @@ def run_pre_build_scripts(app: Sphinx, config: object) -> None:
             subprocess.run(
                 [sys.executable, str(script_path)],
                 cwd=repo_root,
-                capture_output=True,
-                text=True,
                 check=True,
             )
             print("✓ Characteristics documentation generated successfully")
@@ -487,30 +485,33 @@ def run_pre_build_scripts(app: Sphinx, config: object) -> None:
     # =========================================================================
     # Step 2: Generate architecture diagrams
     # =========================================================================
-    diag_script = repo_root / "scripts" / "generate_diagrams.py"
-    if not diag_script.exists():
-        print(f"Warning: Diagrams generation script not found at {diag_script}")
+    # Skip if SKIP_DIAGRAMS environment variable is set or diagrams deps missing
+    if os.getenv("SKIP_DIAGRAMS"):
+        print("ℹ Skipping diagram generation (SKIP_DIAGRAMS=1)")
     else:
-        try:
-            print("Running diagrams generation script...")
-            print("  → Outputs to: docs/source/diagrams/*.svg")
-            # Force strict behaviour for published docs
-            env = dict(os.environ)
-            env["STRICT_DIAGRAMS"] = "1"
-            subprocess.run(
-                [sys.executable, str(diag_script)],
-                cwd=repo_root,
-                capture_output=True,
-                text=True,
-                check=True,
-                env=env,
-            )
-            print("✓ Diagrams generated successfully")
-        except subprocess.CalledProcessError as e:
-            print(f"Error: Failed to generate diagrams: {e}")
-            print(f"stdout: {e.stdout}")
-            print(f"stderr: {e.stderr}")
-            raise
+        diag_script = repo_root / "scripts" / "generate_diagrams.py"
+        if not diag_script.exists():
+            print(f"Warning: Diagrams generation script not found at {diag_script}")
+        else:
+            try:
+                print("Running diagrams generation script...")
+                print("  → Outputs to: docs/source/diagrams/*.svg")
+                # Pass through STRICT_DIAGRAMS if set, otherwise enable for Sphinx builds
+                env = dict(os.environ)
+                if not os.getenv("STRICT_DIAGRAMS"):
+                    env["STRICT_DIAGRAMS"] = "1"
+                subprocess.run(
+                    [sys.executable, str(diag_script)],
+                    cwd=repo_root,
+                    check=True,
+                    env=env,
+                )
+                print("✓ Diagrams generated successfully")
+            except subprocess.CalledProcessError as e:
+                print(f"Error: Failed to generate diagrams: {e}")
+                print(f"stdout: {e.stdout}")
+                print(f"stderr: {e.stderr}")
+                raise
 
 
 def setup(app: Sphinx) -> None:
@@ -530,3 +531,81 @@ def setup(app: Sphinx) -> None:
     # Post-build fixes
     app.connect("build-finished", fix_table_headers)
     app.connect("build-finished", fix_autoapi_anchors)
+    app.connect("build-finished", add_external_link_security)
+
+
+def add_external_link_security(app: Sphinx, exception: Exception | None) -> None:
+    """Add rel='noopener noreferrer' to external links for security.
+
+    Prevents tabnabbing attacks by ensuring external links cannot access
+    window.opener. This is a defense-in-depth measure even though modern
+    browsers automatically apply noopener to target='_blank' links.
+
+    See: https://owasp.org/www-community/attacks/Reverse_Tabnabbing
+
+    Args:
+        app: Sphinx application object
+        exception: Exception raised during build, if any
+    """
+    if exception:
+        return
+
+    build_dir = Path(app.outdir)
+    html_files = list(build_dir.rglob("*.html"))
+
+    fixed_count = 0
+    total_links = 0
+
+    for html_file in html_files:
+        try:
+            content = html_file.read_text(encoding="utf-8")
+            original_content = content
+
+            # Find all external links (http/https) that don't already have security attributes
+            def add_security_attrs(match: re.Match[str]) -> str:
+                nonlocal total_links
+                total_links += 1
+
+                full_tag = match.group(0)
+                href = match.group(1)
+
+                # Skip localhost links
+                if "localhost" in href or "127.0.0.1" in href:
+                    return full_tag
+
+                # Check if rel attribute already exists with security values
+                if re.search(r'\brel=["\'][^"\']*\b(noopener|noreferrer)\b', full_tag):
+                    return full_tag
+
+                # Find where to insert rel attribute (right after href)
+                # Match the full opening tag structure
+                href_pattern = r'href=["\']' + re.escape(href) + r'["\']'
+
+                # Check if rel already exists
+                rel_match = re.search(r'\brel=["\']([^"\']*)["\']', full_tag)
+
+                if rel_match:
+                    # Update existing rel
+                    old_rel = rel_match.group(0)
+                    rel_value = rel_match.group(1)
+                    new_rel_value = f"{rel_value} noopener noreferrer" if rel_value else "noopener noreferrer"
+                    new_rel = f'rel="{new_rel_value}"'
+                    return full_tag.replace(old_rel, new_rel, 1)
+                else:
+                    # Insert rel after href
+                    return re.sub(href_pattern, f'{href_pattern} rel="noopener noreferrer"', full_tag, count=1)
+
+            # Match opening anchor tags with external links
+            # Captures the full opening tag and the href value
+            pattern = r'<a\s+[^>]*href=["\'](https?://[^"\']*)["\'][^>]*>'
+            content = re.sub(pattern, add_security_attrs, content)
+
+            if content != original_content:
+                html_file.write_text(content, encoding="utf-8")
+                fixed_count += 1
+
+        except Exception as e:
+            print(f"Warning: Failed to add security attributes to {html_file}: {e}")
+
+    if fixed_count > 0:
+        print(f"✓ Added security attributes to {total_links} external links in {fixed_count} HTML files")

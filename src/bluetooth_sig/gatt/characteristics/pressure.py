@@ -15,6 +15,3 @@ class PressureCharacteristic(BaseCharacteristic):
     """
 
     _template = PressureTemplate()
-
-    # Override template validation for realistic atmospheric pressure range
-    max_value: float = 200000.0  # 0 to 2000 hPa (200000 Pa)

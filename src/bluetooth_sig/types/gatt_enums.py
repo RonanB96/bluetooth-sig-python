@@ -107,6 +107,7 @@ class DataType(Enum):
     FLOAT32 = "float32"
     FLOAT64 = "float64"
     UTF8S = "utf8s"
+    UTF16S = "utf16s"
     STRUCT = "struct"
     MEDFLOAT16 = "medfloat16"
     MEDFLOAT32 = "medfloat32"
@@ -129,7 +130,7 @@ class DataType(Enum):
         # Handle common aliases
         type_str = type_str.lower()
         aliases = {
-            "utf16s": cls.UTF8S,  # TODO utf16s maps to UTF8S for now
+            "utf16s": cls.UTF16S,  # UTF-16 string support
             "sfloat": cls.MEDFLOAT16,  # IEEE-11073 16-bit SFLOAT
             "float": cls.FLOAT32,  # IEEE-11073 32-bit FLOAT
             "variable": cls.STRUCT,  # variable maps to STRUCT
@@ -157,6 +158,7 @@ class DataType(Enum):
             self.UINT8: ValueType.INT,
             self.SINT16: ValueType.INT,
             self.UINT16: ValueType.INT,
+            self.SINT24: ValueType.INT,
             self.UINT24: ValueType.INT,
             self.SINT32: ValueType.INT,
             self.UINT32: ValueType.INT,
@@ -169,6 +171,7 @@ class DataType(Enum):
             self.MEDFLOAT32: ValueType.FLOAT,
             # String types
             self.UTF8S: ValueType.STRING,
+            self.UTF16S: ValueType.STRING,
             # Boolean type
             self.BOOLEAN: ValueType.BOOL,
             # Struct/opaque data
@@ -204,6 +207,7 @@ class DataType(Enum):
             self.MEDFLOAT32: "float",
             # String types
             self.UTF8S: "string",
+            self.UTF16S: "string",
             # Boolean type
             self.BOOLEAN: "boolean",
             # Struct/opaque data

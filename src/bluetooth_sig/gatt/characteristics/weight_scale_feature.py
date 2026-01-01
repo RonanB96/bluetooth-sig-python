@@ -103,6 +103,7 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Weight Scale Feature"
 
+    expected_length: int = 4
     min_length: int = 4  # Features(4) fixed length
     max_length: int = 4  # Features(4) fixed length
     allow_variable_length: bool = False  # Fixed length

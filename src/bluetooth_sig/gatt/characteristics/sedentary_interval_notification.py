@@ -15,3 +15,5 @@ class SedentaryIntervalNotificationCharacteristic(BaseCharacteristic):
     """
 
     _template = Uint16Template()
+
+    # Validation attributes

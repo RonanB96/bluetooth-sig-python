@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ...types import AlertCategoryID, validate_category_id
+from ..constants import UINT8_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .templates import Uint8Template
@@ -32,6 +33,10 @@ class AlertCategoryIdCharacteristic(BaseCharacteristic):
 
     Spec: Bluetooth SIG GATT Specification Supplement, Alert Category ID
     """
+
+    # YAML has no range constraint; enforce uint8 domain for category enum.
+    min_value: int | float | None = 0
+    max_value: int | float | None = UINT8_MAX
 
     _template = Uint8Template()
 

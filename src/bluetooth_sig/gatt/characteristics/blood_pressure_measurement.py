@@ -73,6 +73,8 @@ class BloodPressureMeasurementCharacteristic(BaseBloodPressureCharacteristic):
     """
 
     _is_base_class = False  # This is a concrete characteristic class
+    min_length: int = 7  # Flags(1) + Systolic(2) + Diastolic(2) + MAP(2)
+    allow_variable_length: bool = True  # Optional timestamp, pulse rate, user ID, status
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureData:  # pylint: disable=too-many-locals
         """Parse blood pressure measurement data according to Bluetooth specification.

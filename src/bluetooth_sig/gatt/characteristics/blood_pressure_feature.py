@@ -7,6 +7,7 @@ from enum import IntFlag
 import msgspec
 
 from ...types.gatt_enums import ValueType
+from ..constants import UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -44,6 +45,10 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
     """
 
     _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
+
+    # YAML has no range constraint; enforce full uint16 bitmap range.
+    min_value: int = 0
+    max_value: int = UINT16_MAX
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureFeatureData:
         """Parse blood pressure feature data according to Bluetooth specification.

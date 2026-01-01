@@ -44,6 +44,7 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
     specifications.
     """
 
+    min_length = 4
     # Override since decode_value returns structured VoltageSpecificationData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 

@@ -49,9 +49,6 @@ class RingerSettingCharacteristic(BaseCharacteristic):
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 1:
-            raise ValueError("Ringer Setting data must be at least 1 byte")
-
         setting_byte = DataParser.parse_int8(data, 0, signed=False)
 
         try:
