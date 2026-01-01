@@ -44,12 +44,11 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
     available.
     """
 
-    # Validation attributes
-    expected_length: int = 2  # uint16 bitmap
+    _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
+
+    # YAML has no range constraint; enforce full uint16 bitmap range.
     min_value: int = 0
     max_value: int = UINT16_MAX
-
-    _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureFeatureData:
         """Parse blood pressure feature data according to Bluetooth specification.

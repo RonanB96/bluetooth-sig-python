@@ -14,6 +14,4 @@ class SerialNumberStringCharacteristic(BaseCharacteristic):
     Serial Number String characteristic.
     """
 
-    expected_length = None
-    _template = Utf8StringTemplate()
     _template = Utf8StringTemplate()

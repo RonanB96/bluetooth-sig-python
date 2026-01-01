@@ -54,12 +54,13 @@ class TestHumidityCharacteristic(CommonCharacteristicTests):
         assert abs(result.value - 50.0) < 0.01
 
     def test_humidity_out_of_range_validation(self, characteristic: HumidityCharacteristic) -> None:
-        """Test that special value 0xFFFF returns None."""
-        # Test special value 0xFFFF should return None (value is not known)
-        # This fails type validation since None is not a float
+        """Test that special value 0xFFFF returns SpecialValueResult."""
+        # Test special value 0xFFFF should return SpecialValueResult (value is not known)
         result = characteristic.parse_value(bytearray([0xFF, 0xFF]))
-        assert not result.parse_success
-        assert "type" in result.error_message.lower()
+        assert result.parse_success
+        assert result.special_value is not None
+        assert result.special_value.meaning == "value is not known"
+        assert result.value == result.special_value
 
     def test_humidity_encoding_accuracy(self, characteristic: HumidityCharacteristic) -> None:
         """Test encoding produces correct byte sequences."""

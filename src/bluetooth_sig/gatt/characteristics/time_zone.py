@@ -19,7 +19,6 @@ class TimeZoneCharacteristic(BaseCharacteristic):
     standard time and UTC.
     """
 
-    expected_length = 1
     # Manual override: YAML indicates sint8->int but we return descriptive strings
     _manual_value_type: ValueType | str | None = ValueType.STRING
 

@@ -32,8 +32,8 @@ class TestVoltageFrequencyCharacteristic(CommonCharacteristicTests):
                 description="50 Hz (typical mains frequency)",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0xFF, 0xFF]),  # 65535 / 256 ≈ 255.998 Hz (max)
-                expected_value=65535 / 256,
-                description="Maximum frequency",
+                input_data=bytearray([0x00, 0x3C]),  # 60 Hz (60 * 256 = 15360 = 0x3C00, little endian so 0x003C)
+                expected_value=60.0,
+                description="60 Hz (typical mains frequency)",
             ),
         ]

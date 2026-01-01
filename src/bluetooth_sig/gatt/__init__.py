@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ..types.registry import CharacteristicSpec, FieldInfo, UnitMetadata
 from .characteristics.base import BaseCharacteristic
 from .constants import (
     ABSOLUTE_ZERO_CELSIUS,
@@ -22,7 +23,7 @@ from .exceptions import (
     ValueRangeError,
 )
 from .services.base import BaseGattService
-from .uuid_registry import CharacteristicSpec, FieldInfo, UnitMetadata, UuidRegistry, uuid_registry
+from .uuid_registry import UuidRegistry, uuid_registry
 
 __all__ = [
     "BaseGattService",

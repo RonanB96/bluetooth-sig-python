@@ -142,10 +142,11 @@ def test_sidebar_exists(html_files: list[Path]) -> None:
 
             if element:
                 # Verify sidebar has links
-                links = element.find_all("a")
-                if links:
-                    found_sidebar = True
-                    break
+                if hasattr(element, "find_all"):
+                    links = element.find_all("a")
+                    if links:
+                        found_sidebar = True
+                        break
 
         if not found_sidebar:
             issues.append(f"{html_file.name}: No sidebar with navigation links found")

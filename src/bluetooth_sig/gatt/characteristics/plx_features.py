@@ -36,26 +36,20 @@ class PLXFeaturesCharacteristic(BaseCharacteristic):
     Spec: Bluetooth SIG Assigned Numbers, PLX Features characteristic
     """
 
-    expected_length: int = 2
-    expected_type: type = int
+    expected_length: int | None = 2
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PLXFeatureFlags:
         """Decode PLX features from raw bytes.
 
         Args:
-            data: Raw bytes from BLE characteristic (2 bytes minimum)
+            data: Raw bytes from BLE characteristic (2 bytes)
             ctx: Unused, for signature compatibility
 
         Returns:
             PLXFeatureFlags enum with supported features
 
-        Raises:
-            ValueError: If data length is less than 2 bytes
-
         """
         del ctx  # Unused parameter
-        if len(data) < 2:
-            raise ValueError(f"PLX Features requires at least 2 bytes, got {len(data)}")
 
         raw_value = DataParser.parse_int16(data, 0, signed=False)
         return PLXFeatureFlags(raw_value)

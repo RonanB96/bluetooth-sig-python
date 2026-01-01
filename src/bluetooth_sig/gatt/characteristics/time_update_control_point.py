@@ -27,8 +27,6 @@ class TimeUpdateControlPointCharacteristic(BaseCharacteristic):
     - 0x02: Cancel Reference Time Update
     """
 
-    expected_length = 1
-
     def __init__(self) -> None:
         """Initialize the Time Update Control Point characteristic."""
         super().__init__()

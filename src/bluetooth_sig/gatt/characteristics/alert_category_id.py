@@ -34,11 +34,9 @@ class AlertCategoryIdCharacteristic(BaseCharacteristic):
     Spec: Bluetooth SIG GATT Specification Supplement, Alert Category ID
     """
 
-    # Validation attributes
-    expected_length: int = 1  # uint8
-    min_value: int = 0
-    max_value: int = UINT8_MAX
-    expected_type: type = int
+    # YAML has no range constraint; enforce uint8 domain for category enum.
+    min_value: int | float | None = 0
+    max_value: int | float | None = UINT8_MAX
 
     _template = Uint8Template()
 

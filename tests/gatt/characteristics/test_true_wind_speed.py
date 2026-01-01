@@ -46,7 +46,7 @@ class TestTrueWindSpeedCharacteristic(CommonCharacteristicTests):
     def test_true_wind_speed_parsing(self, characteristic: TrueWindSpeedCharacteristic) -> None:
         """Test true wind speed characteristic parsing."""
         # Test metadata
-        assert characteristic.unit == "metres per second"
+        assert characteristic.unit == "m/s"
 
         # Test 10.50 m/s (1050 * 0.01)
         data = bytearray([0x1A, 0x04])  # 1050 in little endian

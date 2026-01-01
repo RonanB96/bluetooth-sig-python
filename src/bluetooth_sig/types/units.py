@@ -1,7 +1,18 @@
-"""Unit enumerations for measurements and data types.
+"""Domain enums for measurement units in decoded characteristic data.
 
-Defines enums for measurement systems, weight units, height units,
-temperature units, and other unit types to replace string usage with type-safe alternatives.
+These enums provide type-safe representations of measurement choices
+(e.g., Celsius vs Fahrenheit, metric vs imperial) used in decoded
+characteristic return values. They enable static type checking and
+IDE autocompletion for unit-aware data.
+
+Note: These are distinct from UnitInfo in registry/uuids/units.py which
+provides Bluetooth SIG metadata (UUID, name, symbol) loaded from YAML.
+The symbol values here intentionally match the registry symbols for
+consistency, but serve different purposes:
+- Domain enums: Type hints for decoded data (e.g., `unit: PressureUnit`)
+- Registry UnitInfo: UUID resolution and metadata lookup
+
+Reference: https://www.bipm.org/en/measurement-units
 """
 
 from __future__ import annotations
@@ -100,3 +111,47 @@ class PhysicalUnit(Enum):
     """Units for physical measurements."""
 
     TESLA = "T"
+
+
+class SpecialValueType(Enum):
+    """Standard Bluetooth SIG special value categories.
+
+    These represent sentinel values in characteristic data that indicate
+    the measurement is not a normal reading. GSS YAML files define these
+    using patterns like "value is not known" or "value is not valid".
+    """
+
+    UNKNOWN = "unknown"  # Value not known/not available (most common)
+    INVALID = "invalid"  # Value not valid for current state
+    OVERFLOW = "overflow"  # Value exceeds maximum representable
+    UNDERFLOW = "underflow"  # Value below minimum representable
+    OUT_OF_RANGE = "out_of_range"  # Sensor out of measurement range
+
+
+def classify_special_value(meaning: str) -> SpecialValueType:
+    """Classify a GSS meaning string into a standard category.
+
+    Parses the human-readable meaning from GSS YAML special value definitions
+    and maps it to a SpecialValueType enum.
+
+    Args:
+        meaning: Human-readable meaning from GSS (e.g., "value is not known")
+
+    Returns:
+        The appropriate SpecialValueType category.
+    """
+    meaning_lower = meaning.lower()
+
+    if "not known" in meaning_lower or "unknown" in meaning_lower:
+        return SpecialValueType.UNKNOWN
+    if "not valid" in meaning_lower or "invalid" in meaning_lower:
+        return SpecialValueType.INVALID
+    if "or greater" in meaning_lower or "overflow" in meaning_lower:
+        return SpecialValueType.OVERFLOW
+    if "less than" in meaning_lower or "underflow" in meaning_lower:
+        return SpecialValueType.UNDERFLOW
+    if "out of range" in meaning_lower:
+        return SpecialValueType.OUT_OF_RANGE
+
+    # Default fallback - most special values indicate unknown
+    return SpecialValueType.UNKNOWN

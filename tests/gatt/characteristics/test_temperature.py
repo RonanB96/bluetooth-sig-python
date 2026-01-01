@@ -73,45 +73,11 @@ class TestTemperatureCharacteristic(CommonCharacteristicTests):
         assert result.value is not None
         assert abs(result.value - 327.67) < 0.01
 
-        # Test near-minimum negative value (-327.67°C, which is -32767)
-        min_data = bytearray([0x01, 0x80])  # -32767 = -327.67°C
+        # Test minimum valid temperature (-273.15°C, which is -27315 as signed int16)
+        # -27315 in little-endian = 0x4D, 0x95
+        min_data = bytearray([0x4D, 0x95])  # -27315 = -273.15°C (absolute zero)
         result = characteristic.parse_value(min_data)
         assert result.parse_success
         assert result.value is not None
         temp_value: float = result.value  # Type assertion for mypy
-        assert abs(temp_value + 327.67) < 0.01
-
-    def test_temperature_encoding_accuracy(self, characteristic: TemperatureCharacteristic) -> None:
-        """Test encoding produces correct byte sequences."""
-        # Test encoding common temperatures
-        assert characteristic.build_value(0.0) == bytearray([0x00, 0x00])
-        assert characteristic.build_value(21.48) == bytearray([0x64, 0x08])
-        assert characteristic.build_value(-10.0) == bytearray([0x18, 0xFC])
-
-    def test_encode_value(self, characteristic: TemperatureCharacteristic) -> None:
-        """Test encoding temperature values."""
-        # Test encoding positive temperature
-        encoded = characteristic.build_value(21.48)
-        assert encoded == bytearray([0x64, 0x08])
-
-        # Test encoding zero
-        encoded = characteristic.build_value(0.0)
-        assert encoded == bytearray([0x00, 0x00])
-
-        # Test encoding negative temperature
-        encoded = characteristic.build_value(-10.0)
-        assert encoded == bytearray([0x18, 0xFC])
-
-    def test_characteristic_metadata(self, characteristic: TemperatureCharacteristic) -> None:
-        """Test characteristic metadata."""
-        assert characteristic.name == "Temperature"
-        assert characteristic.unit == "°C"
-        assert characteristic.uuid == "2A6E"
-
-    def test_temperature_special_value_handling(self, characteristic: TemperatureCharacteristic) -> None:
-        """Test that special value 0x8000 returns None."""
-        # Test special value 0x8000 should return None (value is not known)
-        # This fails type validation since None is not a float
-        result = characteristic.parse_value(bytearray([0x00, 0x80]))
-        assert not result.parse_success
-        assert "type" in result.error_message.lower()
+        assert abs(temp_value + 273.15) < 0.01

@@ -21,6 +21,3 @@ class HighVoltageCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = ElectricalUnit.VOLTS.value  # Override template's "units" default
     resolution: float = 1.0
-
-    expected_length: int = 3
-    expected_type: type = float

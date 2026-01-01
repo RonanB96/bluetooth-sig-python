@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 import pytest
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 
 @pytest.mark.built_docs
@@ -53,8 +53,8 @@ def test_pages_have_language_attribute(html_files: list[Path]) -> None:
 
         html_tag = soup.find("html")
 
-        if html_tag is None:
-            issues.append(f"{html_file.name}: No <html> tag found")
+        if not isinstance(html_tag, Tag):
+            issues.append(f"{html_file.name}: <html> tag is not a valid element")
             continue
 
         lang = html_tag.get("lang")

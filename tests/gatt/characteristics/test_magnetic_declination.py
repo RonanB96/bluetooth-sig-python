@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import MagneticDeclinationCharacteristic
+from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -74,7 +75,7 @@ class TestMagneticDeclinationCharacteristic(CommonCharacteristicTests):
     def test_magnetic_declination_error_handling(self, characteristic: MagneticDeclinationCharacteristic) -> None:
         """Test Magnetic Declination error handling."""
         # Test insufficient data
-        with pytest.raises(ValueError, match="Insufficient data"):
+        with pytest.raises(InsufficientDataError, match="need 2 bytes, got 1"):
             characteristic.decode_value(bytearray([0x12]))
 
     def test_magnetic_declination_cardinal_directions(self, characteristic: MagneticDeclinationCharacteristic) -> None:

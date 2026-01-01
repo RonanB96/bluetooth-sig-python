@@ -28,8 +28,6 @@ class FiveZoneHeartRateLimitsCharacteristic(BaseCharacteristic):
     (Maximum, Hard, Moderate, Light, and Very Light) of a user.
     """
 
-    expected_length = 4
-
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> FiveZoneHeartRateLimitsData:
         """Decode Five Zone Heart Rate Limits from raw bytes.
 

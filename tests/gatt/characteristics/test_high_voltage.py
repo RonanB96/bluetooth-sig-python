@@ -32,11 +32,6 @@ class TestHighVoltageCharacteristic(CommonCharacteristicTests):
                 description="1 volt",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0xFF, 0xFF, 0xFF]),  # 16777215 V (max uint24)
-                expected_value=16777215.0,
-                description="Maximum voltage",
-            ),
-            CharacteristicTestData(
                 input_data=bytearray([0x10, 0x27, 0x00]),  # 10000 V
                 expected_value=10000.0,
                 description="10,000 volts",

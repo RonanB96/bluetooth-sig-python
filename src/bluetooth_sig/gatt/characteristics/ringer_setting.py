@@ -35,8 +35,6 @@ class RingerSettingCharacteristic(BaseCharacteristic):
     Values 2-255: Reserved for future use
     """
 
-    expected_length: int = 1
-
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RingerSettingData:
         """Parse ringer setting data according to Bluetooth specification.
 
@@ -51,9 +49,6 @@ class RingerSettingCharacteristic(BaseCharacteristic):
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 1:
-            raise ValueError("Ringer Setting data must be at least 1 byte")
-
         setting_byte = DataParser.parse_int8(data, 0, signed=False)
 
         try:

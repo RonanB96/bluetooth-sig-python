@@ -34,8 +34,6 @@ class TimeWithDstCharacteristic(BaseCharacteristic):
     - Adjust Reason: uint8 bitfield
     """
 
-    expected_length = 10
-
     def __init__(self) -> None:
         """Initialize the Time with DST characteristic."""
         super().__init__()
