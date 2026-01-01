@@ -17,7 +17,8 @@ class LocalNorthCoordinateCharacteristic(BaseCharacteristic):
     # Manual overrides required as Bluetooth SIG registry doesn't provide unit/value type
     _manual_unit = "m"
     _manual_value_type = "float"
+    # SIG spec: sint24 with 0.1 m resolution → fixed 3-byte payload; no GSS YAML
+    expected_length = 3
+    min_length = 3
+    max_length = 3
     _template = ScaledSint24Template(scale_factor=0.1)
-
-    expected_length: int = 3
-    expected_type: type = float

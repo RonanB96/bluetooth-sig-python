@@ -28,6 +28,11 @@ Practical guides to solve specific problems and accomplish goals with the Blueto
 - **[API Reference](../api/index.md)** - Detailed API documentation
 - **[Explanation](../explanation/index.md)** - Understand concepts and architecture
 
+## Reference
+
+- **[Supported Characteristics](../reference/characteristics.md)** - Complete list of implemented GATT characteristics
+- **[Registry Coverage](../reference/registry-coverage.md)** - Bluetooth SIG registry implementation status
+
 ```{toctree}
 :maxdepth: 1
 :hidden:
@@ -41,4 +46,5 @@ testing
 migration
 contributing
 ../reference/characteristics
+../reference/registry-coverage
 ```

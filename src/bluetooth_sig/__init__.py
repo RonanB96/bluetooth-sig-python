@@ -1,8 +1,7 @@
 """Bluetooth SIG Standards Library for pure SIG standard interpretation.
 
 A framework-agnostic library for parsing and interpreting Bluetooth SIG
-standards, including GATT characteristics, services, and UUID
-resolution.
+standards, including GATT characteristics, services, and UUID resolution.
 """
 
 from __future__ import annotations
@@ -10,15 +9,25 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from .core import AsyncParsingSession, BluetoothSIGTranslator
-from .gatt import BaseCharacteristic, BaseGattService
-from .gatt.characteristics import CharacteristicRegistry
-from .gatt.characteristics.base import CharacteristicData
-from .gatt.services import GattServiceRegistry
-from .registry.uuids.members import members_registry
-from .types import CharacteristicInfo, ServiceInfo, SIGInfo, ValidationResult
+from .advertising import (
+    AdvertisingDataInterpreter,
+    AdvertisingInterpreterInfo,
+    AdvertisingInterpreterRegistry,
+    AdvertisingPDUParser,
+    DataSource,
+    DictKeyProvider,
+    EncryptionKeyProvider,
+    advertising_interpreter_registry,
+)
+from .core.async_context import AsyncParsingSession
+from .core.translator import BluetoothSIGTranslator
+from .gatt.characteristics.base import BaseCharacteristic, CharacteristicData
+from .gatt.characteristics.registry import CharacteristicRegistry
+from .gatt.services.base import BaseGattService
+from .gatt.services.registry import GattServiceRegistry
+from .types.base_types import SIGInfo
+from .types.data_types import CharacteristicInfo, ServiceInfo, ValidationResult
 
-# Get version from hatchling-generated file, fallback to git describe
 try:
     from ._version import __version__
 except ImportError:
@@ -32,10 +41,21 @@ except ImportError:
     __version__ = _version_result.stdout.strip().lstrip("v")
 
 __all__ = [
+    # Advertising PDU parsing
+    "AdvertisingPDUParser",
+    # Advertising data interpretation (vendor-specific)
+    "AdvertisingDataInterpreter",
+    "AdvertisingInterpreterInfo",
+    "AdvertisingInterpreterRegistry",
+    "advertising_interpreter_registry",
+    "DataSource",
+    "DictKeyProvider",
+    "EncryptionKeyProvider",
+    # Core
     "AsyncParsingSession",
-    "BluetoothSIGTranslator",
     "BaseCharacteristic",
     "BaseGattService",
+    "BluetoothSIGTranslator",
     "CharacteristicData",
     "CharacteristicInfo",
     "CharacteristicRegistry",
@@ -43,5 +63,5 @@ __all__ = [
     "ServiceInfo",
     "SIGInfo",
     "ValidationResult",
-    "members_registry",
+    "__version__",
 ]

@@ -11,15 +11,14 @@ applyTo: "docs/**/*.md, docs/*.md, mkdocs.yml"
 
 ## Code Sample Requirements
 - Every code block must be copy-paste runnable and import from `bluetooth_sig` using the public re-exports unless there is a documented reason otherwise.
- - Validate snippets before publishing; examples that fail at runtime (missing methods, stale names) are unacceptable and must be executed/verified before inclusion.
+- Validate snippets before publishing; examples that fail at runtime (missing methods, stale names) are unacceptable and must be executed/verified before inclusion.
 - Pair code with its expected output or a short assertion so readers can self-verify results.
 - Highlight context-dependent snippets with prerequisites (environment variables, BLE connection managers, etc.) directly above the block.
-- **Use mkdocstrings automatic cross-references** for all Python objects: `[text][full.path.to.object]` or `[full.path.to.object][]`
-- For objects in the public API, use: `[CharacteristicData][]`, `[BaseCharacteristic][]`, etc.
-- Method references: `[parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic]`
-- **Link context near code blocks**: Since mkdocstrings doesn't auto-link inside regular code examples, add prose with links before/after code blocks to provide context
-- Example pattern: "The [parse_characteristic][] method returns a [CharacteristicData][] object:" followed by the code block
-- Enable `signature_crossrefs` in mkdocs.yml for automatic linking in API method signatures
+- **Use Sphinx cross-references** for all Python objects: `:class:`bluetooth_sig.SomeClass``, `:meth:`bluetooth_sig.SomeClass.method``, `:func:`bluetooth_sig.some_function``
+- For objects in the public API, use: `:class:`CharacteristicData``, `:class:`BaseCharacteristic``, etc.
+- Method references: `:meth:`BluetoothSIGTranslator.parse_characteristic``
+- **Link context near code blocks**: Add prose with cross-references before/after code blocks to provide context
+- Example pattern: "The :meth:`parse_characteristic` method returns a :class:`CharacteristicData` object:" followed by the code block
 
 ## Python-specific API & Documentation References
 
@@ -33,9 +32,8 @@ applyTo: "docs/**/*.md, docs/*.md, mkdocs.yml"
    - Detailed, code-level docstring guidance (PEP 257 conventions, preferred docstring style, enforcement and doctest examples) has been moved to `.github/instructions/python-implementation.instructions.md` — that file is the authoritative source for in-code documentation rules for Python files.
 
 - Doc generation toolchain:
-  - MkDocs (used by this project): https://www.mkdocs.org/
-  - mkdocstrings (Python handler): https://mkdocstrings.github.io/handlers/python/
-  - Sphinx (autodoc + napoleon for Google-style docstrings): https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html and https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
+  - Sphinx (used by this project): https://www.sphinx-doc.org/
+  - Sphinx autodoc + napoleon for Google-style docstrings: https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html and https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
   - Read the Docs (hosting): https://docs.readthedocs.io/
 
 - Packaging & distribution:
@@ -50,13 +48,13 @@ These Python-focused references inform the following recommendations for documen
 ## Structural Expectations
 - Start each page with a one-sentence summary followed by bullets that outline what the reader will gain; keep paragraphs under three sentences for scannability.
 - Use ordered lists for procedural steps and unordered lists for options or feature highlights.
-- **Use mkdocstrings automatic cross-references** throughout all documentation for Python objects
-  - Syntax: `[text][full.path.to.object]` or `[full.path.to.object][]` for automatic title
-  - Public API objects: `[BluetoothSIGTranslator][]` automatically links to the generated API docs
-  - Methods: `[parse_characteristic][bluetooth_sig.BluetoothSIGTranslator.parse_characteristic]`
-  - Types: `[CharacteristicData][]` links to the dataclass documentation
-- Cross-reference related content using these auto-links so mkdocstrings generates proper hyperlinks automatically
- - MkDocs anchor links should only be used for section headings, not for API objects; prefer cross-references instead of direct anchors (for example, the "characteristicdata" section in `api/types.md`).
+- **Use Sphinx cross-references** throughout all documentation for Python objects
+  - Classes: `:class:`bluetooth_sig.BluetoothSIGTranslator``
+  - Methods: `:meth:`BluetoothSIGTranslator.parse_characteristic``
+  - Functions: `:func:`bluetooth_sig.some_function``
+  - Modules: `:mod:`bluetooth_sig.gatt``
+- Cross-reference related content using Sphinx roles so autodoc generates proper hyperlinks automatically
+- Use `:ref:` for internal section links and `:doc:` for linking to other documentation pages.
 
 ## Style and Voice
 - Write in active voice with second-person guidance ("You can", "Configure", "Call") to match the conversational tone in the Quick Start.

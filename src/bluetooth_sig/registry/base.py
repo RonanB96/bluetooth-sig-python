@@ -8,7 +8,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Generic, TypeVar
 
-from bluetooth_sig.registry.utils import load_yaml_uuids, normalize_uuid_string
+from bluetooth_sig.registry.utils import (
+    find_bluetooth_sig_path,
+    load_yaml_uuids,
+    normalize_uuid_string,
+)
 from bluetooth_sig.types.registry import BaseUuidInfo, generate_basic_aliases
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -157,11 +161,24 @@ class BaseUUIDRegistry(RegistryMixin, ABC, Generic[U]):
             info = self._create_info_from_yaml(uuid_data, bt_uuid)
             self._store_info(info)
 
+    def _load(self) -> None:
+        """Perform the actual loading of registry data from YAML.
+
+        Default implementation loads from the path returned by _load_yaml_path().
+        Subclasses can override for custom loading behaviour.
+        """
+        base_path = find_bluetooth_sig_path()
+        if base_path:
+            yaml_path = base_path / self._load_yaml_path()
+            if yaml_path.exists():
+                self._load_from_yaml(yaml_path)
+        self._loaded = True
+
     @abstractmethod
     def _create_info_from_yaml(self, uuid_data: dict[str, Any], uuid: BluetoothUUID) -> U:
         """Create info instance from YAML data.
 
-        Subclasses can override to customize info creation.
+        Subclasses must implement to create the appropriate info type.
         """
 
     def get_info(self, identifier: str | BluetoothUUID) -> U | None:

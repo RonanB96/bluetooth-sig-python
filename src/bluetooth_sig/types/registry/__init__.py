@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 __all__ = [
+    "AdTypeInfo",
     "BaseUuidInfo",
     "FieldInfo",
     "UnitMetadata",
@@ -17,6 +18,7 @@ __all__ = [
     "NameOpcodeTypeInfo",
 ]
 
+from .ad_types import AdTypeInfo
 from .common import (
     BaseUuidInfo,
     CharacteristicSpec,

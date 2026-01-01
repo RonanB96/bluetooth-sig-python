@@ -6,7 +6,7 @@ resolution of Bluetooth SIG company identifiers to company names.
 
 from __future__ import annotations
 
-from bluetooth_sig.registry.company_identifiers.company_identifiers_registry import (
+from .company_identifiers_registry import (
     CompanyIdentifiersRegistry,
     company_identifiers_registry,
 )

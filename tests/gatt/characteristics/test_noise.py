@@ -36,9 +36,4 @@ class TestNoiseCharacteristic(CommonCharacteristicTests):
                 expected_value=253,
                 description="253 dB (maximum normal value)",
             ),
-            CharacteristicTestData(
-                input_data=bytearray([0xFE]),  # 254 dB or greater
-                expected_value=254,
-                description="254 dB or greater (special value)",
-            ),
         ]

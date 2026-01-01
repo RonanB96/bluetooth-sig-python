@@ -60,11 +60,9 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
     enumerated values.
     """
 
-    # Validation attributes
-    expected_length: int = 1  # uint8
-    min_value: int = 0
-    max_value: int = UINT8_MAX
-    expected_type: type = int
+    # YAML has no range constraint; enforce uint8 domain for enum conversion.
+    min_value: int | float | None = 0
+    max_value: int | float | None = UINT8_MAX
 
     _template = Uint8Template()  # Used for base uint8 parsing, then converted to enum
 

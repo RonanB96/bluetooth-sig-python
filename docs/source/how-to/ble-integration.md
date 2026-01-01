@@ -133,6 +133,8 @@ asyncio.run(example())
 
 
 
+
+
 ```
 
 ## Integration with bleak-retry-connector
@@ -408,8 +410,4 @@ if __name__ == "__main__":
 
 - [Quick Start](../tutorials/quickstart.md) - Basic usage
 - [API Reference](../api/index.md) - Full API documentation
-- [Examples](https://github.com/ronanb96/bluetooth-sig-python/tree/main/examples)
-  - More examples
-  - Additional resources
-  - Community support
-  - More examples
+- [Examples](https://github.com/ronanb96/bluetooth-sig-python/tree/main/examples) - More examples and patterns

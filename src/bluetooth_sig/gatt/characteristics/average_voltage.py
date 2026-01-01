@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from ...types.units import ElectricalUnit
-from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
@@ -17,12 +16,6 @@ class AverageVoltageCharacteristic(BaseCharacteristic):
 
     Measures average voltage with 1/64 V resolution.
     """
-
-    # Validation attributes
-    expected_length: int = 2  # uint16
-    min_value: float = 0.0
-    max_value: float = UINT16_MAX * (1.0 / 64.0)  # Max scaled value
-    expected_type: type = float
 
     _template = ScaledUint16Template(scale_factor=1 / 64)
 

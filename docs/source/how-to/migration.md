@@ -264,9 +264,7 @@ async def main():
 
             gm = results[gm_uuid].value  # GlucoseMeasurementData
             gmc = results[gmc_uuid].value  # GlucoseMeasurementContextData
-            print(
-                f"Seq {seq}: Glucose {gm.concentration} {results[gm_uuid].unit}"
-            )
+            print(f"Seq {seq}: Glucose {gm.glucose_concentration} {gm.unit}")
             print(f"Seq {seq}: Carbs {gmc.carbohydrate} g")
 
             # Remove processed entries

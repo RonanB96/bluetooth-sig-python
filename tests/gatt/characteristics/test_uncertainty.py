@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import UncertaintyCharacteristic
+from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -49,7 +50,7 @@ class TestUncertaintyCharacteristic(CommonCharacteristicTests):
     def test_uncertainty_error_handling(self, characteristic: UncertaintyCharacteristic) -> None:
         """Test Uncertainty error handling."""
         # Test insufficient data
-        with pytest.raises(ValueError, match="Insufficient data"):
+        with pytest.raises(InsufficientDataError, match="need 1 bytes, got 0"):
             characteristic.decode_value(bytearray())
 
     def test_uncertainty_boundary_values(self, characteristic: UncertaintyCharacteristic) -> None:

@@ -30,8 +30,6 @@ class BatteryCriticalStatusCharacteristic(BaseCharacteristic):
 
     _manual_unit: str | None = None  # Bitfield, no units
 
-    expected_length = 1
-
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BatteryCriticalStatus:
         """Decode the battery critical status value."""
         value = DataParser.parse_int8(data, 0, signed=False)

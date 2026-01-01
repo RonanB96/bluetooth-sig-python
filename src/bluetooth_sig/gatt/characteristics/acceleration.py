@@ -24,8 +24,6 @@ class AccelerationCharacteristic(BaseCharacteristic):
 
     _manual_unit: str | None = "m/s²"  # Manual override due to YAML typo (metres_per_seconds_squared)
 
-    expected_length = 4
-
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode acceleration characteristic.
 

@@ -12,67 +12,51 @@ You might need to add a characteristic when:
 
 ## Basic Structure
 
-Every characteristic follows this pattern:
+SIG characteristics extend :class:`~bluetooth_sig.gatt.characteristics.base.BaseCharacteristic` and are auto-discovered by UUID in the docstring:
 
 ```python
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-from bluetooth_sig.gatt.exceptions import (
-    InsufficientDataError,
-    ValueRangeError,
-)
+from bluetooth_sig.gatt.characteristics.utils.data_parser import DataParser
+from bluetooth_sig.gatt.context import CharacteristicContext
 
 
 class MyCharacteristic(BaseCharacteristic):
-    """My Custom Characteristic (UUID: XXXX).
+    """My Characteristic (0x2AXX).
 
-    Specification: [Link to specification if available]
+    org.bluetooth.characteristic.my_characteristic
     """
 
-    def decode_value(self, data: bytearray) -> YourReturnType:
-        """Decode characteristic data.
+    expected_length: int = 2
+    min_value: float = 0.0
+    max_value: float = 100.0
+    expected_type: type = float
 
-        Args:
-            data: Raw bytes from BLE characteristic
+    def decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None
+    ) -> float:
+        raw = DataParser.parse_int16(data, 0, signed=False)
+        return raw * 0.01
 
-        Returns:
-            Parsed value in appropriate type
-
-        Raises:
-            InsufficientDataError: If data is too short
-            ValueRangeError: If value is out of range
-        """
-        # 1. Validate length
-        if len(data) < expected_length:
-            raise InsufficientDataError(
-                f"My Characteristic requires at least {expected_length} bytes"
-            )
-
-        # 2. Parse data
-        value = parse_logic_here(data)
-
-        # 3. Validate range
-        if not is_valid(value):
-            raise ValueRangeError(f"Value {value} is out of range")
-
-        # 4. Return typed result
-        return value
+    def encode_value(self, data: float) -> bytearray:
+        return DataParser.encode_int16(int(data / 0.01), signed=False)
 ```
 
-## Example: Simple Characteristic
+## Custom Characteristics
 
-Let's add a custom "Light Level" characteristic that reports brightness as a percentage:
+For vendor-specific characteristics, extend :class:`~bluetooth_sig.gatt.characteristics.custom.CustomBaseCharacteristic`:
 
 ```python
-from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.exceptions import (
     InsufficientDataError,
     ValueRangeError,
 )
 from bluetooth_sig.types import CharacteristicInfo
+from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-class LightLevelCharacteristic(BaseCharacteristic):
+class LightLevelCharacteristic(CustomBaseCharacteristic):
     """Light Level characteristic.
 
     Reports ambient light level as a percentage (0-100%).
@@ -86,6 +70,8 @@ class LightLevelCharacteristic(BaseCharacteristic):
     _info = CharacteristicInfo(
         uuid=BluetoothUUID("ABCD"),  # Your custom UUID
         name="Light Level",
+        value_type=ValueType.UINT8,
+        unit="%",
     )
 
     def decode_value(self, data: bytearray) -> int:
@@ -111,11 +97,6 @@ class LightLevelCharacteristic(BaseCharacteristic):
             raise ValueRangeError(f"Light level must be 0-100%, got {value}%")
 
         return value
-
-    @property
-    def unit(self) -> str:
-        """Return the unit for this characteristic."""
-        return "%"
 ```
 
 ## Example: Complex Multi-Field Characteristic
@@ -138,7 +119,7 @@ class SensorReading(msgspec.Struct, frozen=True, kw_only=True):
 ```
 
 ```python
-class MultiSensorCharacteristic(BaseCharacteristic):
+class MultiSensorCharacteristic(CustomBaseCharacteristic):
     """Multi-sensor characteristic with multiple fields."""
 
     _info = CharacteristicInfo(uuid=BluetoothUUID("WXYZ"), name="Multi Sensor")

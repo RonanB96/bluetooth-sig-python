@@ -26,7 +26,10 @@ class BondManagementFeatureCharacteristic(BaseCharacteristic):
     3 bytes containing boolean flags for supported operations.
     """
 
+    # SIG spec: three uint8 feature flags → fixed 3-byte payload; no GSS YAML
     expected_length = 3
+    min_length = 3
+    max_length = 3
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BondManagementFeatureData:
         """Decode Bond Management Feature data from bytes.

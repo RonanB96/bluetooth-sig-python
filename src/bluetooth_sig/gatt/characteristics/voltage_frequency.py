@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from ...types.units import ElectricalUnit
-from ..constants import UINT16_MAX
 from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
@@ -22,8 +21,5 @@ class VoltageFrequencyCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = ElectricalUnit.HERTZ.value  # Override template's "units" default
     resolution: float = 1 / 256
-
-    expected_length: int = 2
-    min_value: float = 0.0
-    max_value: float = UINT16_MAX * (1.0 / 256.0)  # Max scaled value
-    expected_type: type = float
+    # YAML encodes min/max as "Minimum: 1" "Maximum: 65533" (not "Allowed range").
+    max_value: float = 65533.0 * (1.0 / 256.0)  # Exclude special values 0xFFFE and 0xFFFF

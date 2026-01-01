@@ -28,7 +28,6 @@ class IlluminanceCharacteristic(BaseCharacteristic):
     """
 
     resolution: float = 0.01
-    expected_length: int = 3  # uint24
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode illuminance characteristic.

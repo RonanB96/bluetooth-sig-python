@@ -9,10 +9,12 @@ import pytest
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.types.advertising import AdvertisementData, AdvertisingDataStructures, CoreAdvertisingData
 from bluetooth_sig.types.device_types import DeviceEncryption, DeviceService
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
+# pylint: disable=too-many-public-methods  # Mock must implement full protocol interface
 class MockConnectionManager(ConnectionManagerProtocol):
     """Mock connection manager for testing."""
 
@@ -86,8 +88,23 @@ class MockConnectionManager(ConnectionManagerProtocol):
     async def read_rssi(self) -> int:
         return -60
 
+    async def get_advertisement_rssi(self, refresh: bool = False) -> int | None:
+        """Mock get_advertisement_rssi - returns fixed value."""
+        return -65
+
     def set_disconnected_callback(self, callback: Callable[[], None]) -> None:
         pass
+
+    @classmethod
+    def convert_advertisement(cls, advertisement: object) -> AdvertisementData:
+        """Mock convert_advertisement - returns empty AdvertisementData."""
+        return AdvertisementData(
+            ad_structures=AdvertisingDataStructures(core=CoreAdvertisingData()),
+        )
+
+    async def get_latest_advertisement(self, refresh: bool = False) -> AdvertisementData | None:
+        """Mock get_latest_advertisement - returns None."""
+        return None
 
 
 class FaultyManager:
@@ -147,7 +164,7 @@ class TestDevice:
         expected = f"Device({self.device_address}, name=Test Device, 0 services, 0 characteristics)"
         assert str(self.device) == expected
 
-    def test_parse_advertiser_data_basic(self) -> None:
+    def test_parse_raw_advertisement_basic(self) -> None:
         """Test basic advertiser data parsing."""
         # Sample advertisement data with local name
         adv_data = bytes(
@@ -171,7 +188,7 @@ class TestDevice:
             ]
         )
 
-        self.device.parse_advertiser_data(adv_data)
+        self.device.parse_raw_advertisement(adv_data)
 
         assert self.device.advertiser_data is not None
         assert self.device.advertiser_data.raw_data == adv_data
@@ -179,7 +196,7 @@ class TestDevice:
         assert self.device.advertiser_data.ad_structures.properties.flags == 0x06
         assert self.device.name == "Test Device"  # Should update device name
 
-    def test_parse_advertiser_data_manufacturer(self) -> None:
+    def test_parse_raw_advertisement_manufacturer(self) -> None:
         """Test advertiser data parsing with manufacturer data."""
         # Sample advertisement data with manufacturer data
         adv_data = bytes(
@@ -194,12 +211,12 @@ class TestDevice:
             ]
         )
 
-        self.device.parse_advertiser_data(adv_data)
+        self.device.parse_raw_advertisement(adv_data)
 
         assert self.device.advertiser_data is not None
         assert self.device.advertiser_data.ad_structures.core.manufacturer_data[0x004C] == b"\x01\x02\x03"
 
-    def test_parse_advertiser_data_service_uuids(self) -> None:
+    def test_parse_raw_advertisement_service_uuids(self) -> None:
         """Test advertiser data parsing with service UUIDs."""
         # Sample advertisement data with 16-bit service UUIDs
         adv_data = bytes(
@@ -211,12 +228,12 @@ class TestDevice:
             ]
         )
 
-        self.device.parse_advertiser_data(adv_data)
+        self.device.parse_raw_advertisement(adv_data)
 
         assert self.device.advertiser_data is not None
         assert "180F" in self.device.advertiser_data.ad_structures.core.service_uuids
 
-    def test_parse_advertiser_data_tx_power(self) -> None:
+    def test_parse_raw_advertisement_tx_power(self) -> None:
         """Test advertiser data parsing with TX power."""
         # Sample advertisement data with TX power
         adv_data = bytes(
@@ -227,7 +244,7 @@ class TestDevice:
             ]
         )
 
-        self.device.parse_advertiser_data(adv_data)
+        self.device.parse_raw_advertisement(adv_data)
 
         assert self.device.advertiser_data is not None
         assert self.device.advertiser_data.ad_structures.properties.tx_power == -4
@@ -262,7 +279,7 @@ class TestDevice:
                 0x03,  # Manufacturer data
             ]
         )
-        self.device.parse_advertiser_data(adv_data)
+        self.device.parse_raw_advertisement(adv_data)
 
         # Verify advertiser data was parsed
         assert self.device.advertiser_data is not None
@@ -385,7 +402,7 @@ class TestDevice:
             ]
         )
 
-        self.device.parse_advertiser_data(raw_advertising_data)
+        self.device.parse_raw_advertisement(raw_advertising_data)
         device_info4 = self.device.device_info
         assert device_info4 is device_info1  # Still same object (efficient)
         assert device_info4.name == "Test Device"  # Name remains (not overwritten by advertiser)

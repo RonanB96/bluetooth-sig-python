@@ -10,7 +10,7 @@ Structure mirrors bluetooth_sig/assigned_numbers/:
 
 from __future__ import annotations
 
-from bluetooth_sig.registry.base import BaseUUIDRegistry
+from .base import BaseUUIDRegistry
 
 __all__ = [
     "BaseUUIDRegistry",

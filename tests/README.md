@@ -57,10 +57,26 @@ tests/
 │   ├── test_examples.py              # Example usage scenarios
 │   └── test_round_trip.py            # Round-trip encoding/decoding
 │
-└── diagnostics/                       # Logging and diagnostics
-    ├── test_field_errors.py          # Field-level error handling
-    ├── test_field_level_diagnostics.py
-    └── test_logging.py               # General logging functionality
+├── diagnostics/                       # Logging and diagnostics
+│   ├── test_field_errors.py          # Field-level error handling
+│   ├── test_field_level_diagnostics.py
+│   └── test_logging.py               # General logging functionality
+│
+└── docs/                              # Documentation tests
+    ├── conftest.py                   # Shared fixtures for docs tests
+    ├── test_source_content.py        # Markdown source validation
+    ├── test_generate_diagrams.py     # Diagram generation tests
+    ├── test_sidebar_structure.py     # Sidebar structure validation
+    ├── html/                         # Static HTML validation (BeautifulSoup)
+    │   ├── test_accessibility_static.py
+    │   ├── test_structure_static.py
+    │   └── test_content_quality_static.py
+    └── playwright_tests/             # Interactive browser tests
+        ├── test_accessibility.py
+        ├── test_navigation.py
+        ├── test_diataxis_structure.py
+        ├── test_sidebar_content.py
+        └── test_documentation_quality.py
 ```
 
 ## Getting Started
@@ -89,6 +105,11 @@ python -m pytest tests/gatt/characteristics/test_battery_power_state.py
 
 # Run with coverage
 python -m pytest tests/ --cov=src/bluetooth_sig
+
+# Run documentation tests
+python -m pytest tests/docs/test_source_content.py -v  # Markdown source
+python -m pytest tests/docs/html/ -v -n auto -m built_docs -p no:playwright  # Static HTML
+python -m pytest tests/docs/playwright_tests/ -v -n auto -m "built_docs and playwright"  # Browser
 ```
 
 ## Test Categories
@@ -102,6 +123,7 @@ python -m pytest tests/ --cov=src/bluetooth_sig
 - **Utils**: Utility functions that don't fit elsewhere
 - **Integration**: End-to-end scenarios and comprehensive tests
 - **Diagnostics**: Logging and error handling tests
+- **Docs**: Documentation validation (Markdown source, HTML parsing, and Playwright browser tests)
 
 ### 2. Hierarchical Organization
 
@@ -129,6 +151,30 @@ When adding new tests:
 2. **Follow naming conventions**: Use `test_` prefix for test files and functions
 3. **Maintain separation**: Don't mix different types of functionality in the same test file
 4. **Use fixtures**: Leverage the shared fixtures in `conftest.py` for common setup
+
+## Documentation Tests
+
+The `tests/docs/` directory contains three test suites with increasing complexity:
+
+- **Markdown Source** (`test_source_content.py`): Fastest validation on raw markdown
+  - Content quality (alt text, link text, code block languages)
+  - Heading hierarchy and document structure
+  - Writing style and Diataxis compliance
+  - No build required, tests source files directly
+
+- **HTML Parsing** (`tests/docs/html/`): Fast static validation using BeautifulSoup
+  - Theme-generated elements (navigation, footer, breadcrumbs)
+  - Sphinx-added accessibility attributes
+  - Generated anchor IDs and internal links
+  - 10-50× faster than browser tests, no Chromium required
+
+- **Playwright** (`tests/docs/playwright_tests/`): Interactive browser testing
+  - JavaScript functionality and keyboard navigation
+  - CSS rendering and computed styles
+  - Performance metrics and page load timing
+  - Requires Chromium installation
+
+See individual READMEs for detailed usage: [`tests/docs/html/README.md`](docs/html/README.md) and [`tests/docs/playwright_tests/README.md`](docs/playwright_tests/README.md)
 
 ## Test Configuration
 

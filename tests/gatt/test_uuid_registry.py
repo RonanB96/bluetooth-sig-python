@@ -8,7 +8,6 @@ from unittest.mock import MagicMock
 
 import msgspec
 import pytest
-from conftest import ROOT_DIR  # type: ignore[import-not-found]
 
 from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
 from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
@@ -18,6 +17,7 @@ from bluetooth_sig.gatt.services.environmental_sensing import EnvironmentalSensi
 from bluetooth_sig.gatt.uuid_registry import UuidRegistry
 from bluetooth_sig.types.gatt_services import ServiceDiscoveryData
 from bluetooth_sig.types.uuid import BluetoothUUID
+from tests.conftest import ROOT_DIR
 
 
 @pytest.fixture(scope="session")

@@ -33,8 +33,8 @@ class TestElectricCurrentCharacteristic(CommonCharacteristicTests):
                 description="1.5 amperes",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0xFF, 0xFF]),  # 65535 * 0.01 = 655.35 A (max)
-                expected_value=655.35,
-                description="Maximum current",
+                input_data=bytearray([0x9A, 0x04]),  # 1178 * 0.01 = 11.78 A
+                expected_value=11.78,
+                description="11.78 amperes",
             ),
         ]

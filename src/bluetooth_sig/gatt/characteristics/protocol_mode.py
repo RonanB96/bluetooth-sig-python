@@ -8,9 +8,6 @@ from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
-# Constants per Bluetooth HID specification
-PROTOCOL_MODE_DATA_LENGTH = 1  # Fixed data length: 1 byte
-
 
 class ProtocolMode(IntEnum):
     """Protocol Mode values."""
@@ -27,7 +24,10 @@ class ProtocolModeCharacteristic(BaseCharacteristic):
     Protocol Mode characteristic.
     """
 
-    expected_length = PROTOCOL_MODE_DATA_LENGTH
+    # SIG spec: uint8 enumerated mode value → fixed 1-byte payload; no GSS YAML
+    expected_length = 1
+    min_length = 1
+    max_length = 1
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ProtocolMode:
         """Parse protocol mode data.

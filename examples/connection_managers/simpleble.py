@@ -9,9 +9,11 @@ installed fails fast and provides a clear diagnostic.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Iterable, Mapping, Sequence
+import inspect
+import logging
+from collections.abc import AsyncIterator, Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import Protocol
+from typing import TYPE_CHECKING, ClassVar, Protocol
 
 import simplepyble
 
@@ -21,11 +23,27 @@ from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 from bluetooth_sig.gatt.services.unknown import UnknownService
+from bluetooth_sig.types.advertising import (
+    AdvertisementData,
+    AdvertisingDataStructures,
+    CoreAdvertisingData,
+    DeviceProperties,
+)
 from bluetooth_sig.types.data_types import CharacteristicInfo
-from bluetooth_sig.types.device_types import DeviceService
+from bluetooth_sig.types.device_types import (
+    DeviceService,
+    ScanFilter,
+    ScannedDevice,
+    ScanningMode,
+)
+
+if TYPE_CHECKING:
+    from bluetooth_sig.types.device_types import ScanDetectionCallback
 from bluetooth_sig.types.gatt_enums import GattProperty
 from bluetooth_sig.types.io import RawCharacteristicBatch, RawCharacteristicRead
 from bluetooth_sig.types.uuid import BluetoothUUID
+
+logger = logging.getLogger(__name__)
 
 
 class _DescriptorLike(Protocol):
@@ -91,8 +109,11 @@ def simpleble_services_to_batch(
     return RawCharacteristicBatch(items=items)
 
 
+# pylint: disable=too-many-public-methods  # Implements full ConnectionManagerProtocol interface
 class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
     """Connection manager using SimplePyBLE for BLE communication."""
+
+    supports_scanning: ClassVar[bool] = True
 
     def __init__(
         self,
@@ -115,6 +136,7 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         self.peripheral: simplepyble.Peripheral | None = None
         self.executor = ThreadPoolExecutor(max_workers=1)
         self._cached_services: list[DeviceService] | None = None
+        self._latest_advertisement: AdvertisementData | None = None
 
     async def connect(self) -> None:
         """Connect to the device."""
@@ -439,7 +461,9 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         await asyncio.get_event_loop().run_in_executor(self.executor, _unpair)
 
     async def read_rssi(self) -> int:
-        """Read the RSSI (signal strength) of the connection.
+        """Read the RSSI (signal strength) during an active connection.
+
+        SimpleBLE supports reading RSSI from connected peripherals.
 
         Returns:
             RSSI value in dBm (typically negative, e.g., -50)
@@ -455,6 +479,24 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
             return p.rssi()  # type: ignore[no-any-return]
 
         return await asyncio.get_event_loop().run_in_executor(self.executor, _read_rssi)
+
+    async def get_advertisement_rssi(self, refresh: bool = False) -> int | None:
+        """Get the RSSI from advertisement data.
+
+        Args:
+            refresh: If True, perform an active scan to get fresh RSSI.
+                    If False, return the cached RSSI from last advertisement.
+
+        Returns:
+            RSSI value in dBm, or None if no advertisement has been received
+
+        """
+        if refresh:
+            await self.get_latest_advertisement(refresh=True)
+
+        if self._latest_advertisement is not None:
+            return self._latest_advertisement.rssi
+        return None
 
     def set_disconnected_callback(self, callback: Callable[[], None]) -> None:
         """Set a callback to be called when the device disconnects.
@@ -482,3 +524,218 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         p = self.peripheral
         assert p is not None
         return p.mtu()  # type: ignore[no-any-return]
+
+    async def get_latest_advertisement(self, refresh: bool = False) -> AdvertisementData | None:
+        """Return the most recently received advertisement data.
+
+        Args:
+            refresh: If True, perform a short active scan to get fresh data.
+                    If False, return the last cached advertisement.
+
+        Returns:
+            Latest AdvertisementData, or None if none received yet
+
+        """
+        if refresh:
+
+            def _do_scan() -> AdvertisementData | None:
+                # pylint: disable=no-member
+                adapters = simplepyble.Adapter.get_adapters()
+                if not adapters:
+                    return None
+                adapter = adapters[0]
+                adapter.scan_for(1000)  # 1 second scan
+                for peripheral in adapter.scan_get_results():
+                    if peripheral.address().upper() == self._address.upper():
+                        return self.convert_advertisement(peripheral)
+                return None
+
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(self.executor, _do_scan)
+            if result is not None:
+                self._latest_advertisement = result
+
+        return self._latest_advertisement
+
+    @classmethod
+    def convert_advertisement(cls, advertisement: object) -> AdvertisementData:
+        """Convert SimplePyBLE peripheral data to our AdvertisementData type.
+
+        SimplePyBLE provides advertisement data through the Peripheral object
+        after scanning. This method extracts the relevant fields.
+
+        Args:
+            advertisement: SimplePyBLE Peripheral object from scan results
+
+        Returns:
+            Unified AdvertisementData with ad_structures populated
+
+        """
+        peripheral: simplepyble.Peripheral = advertisement  # type: ignore[assignment]
+
+        # Extract manufacturer data from peripheral
+        manufacturer_data: dict[int, bytes] = {}
+        for company_id, data in peripheral.manufacturer_data().items():
+            manufacturer_data[company_id] = bytes(data)
+
+        # Extract service UUIDs - services() returns service objects with uuid() method
+        # Note: services() may be empty before connection; use it if available
+        service_uuids: list[BluetoothUUID] = []
+        try:
+            for svc in peripheral.services():
+                service_uuids.append(BluetoothUUID(str(svc.uuid())))
+        except Exception:  # noqa: BLE001 - SimplePyBLE may raise various exceptions
+            logger.debug("Failed to get service UUIDs from peripheral %s", peripheral.address(), exc_info=True)
+
+        # Build CoreAdvertisingData
+        core_data = CoreAdvertisingData(
+            manufacturer_data=manufacturer_data,
+            service_uuids=service_uuids,
+            service_data={},  # SimplePyBLE doesn't expose service data separately
+            local_name=peripheral.identifier() or "",
+        )
+
+        # Build DeviceProperties
+        tx_power = 0
+        try:
+            tx_power = peripheral.tx_power()
+        except Exception:  # noqa: BLE001
+            logger.debug("Failed to get tx_power from peripheral %s", peripheral.address(), exc_info=True)
+
+        properties = DeviceProperties(
+            tx_power=tx_power,
+        )
+
+        return AdvertisementData(
+            ad_structures=AdvertisingDataStructures(
+                core=core_data,
+                properties=properties,
+            ),
+            rssi=peripheral.rssi(),
+        )
+
+    # =========================================================================
+    # SCANNING METHODS
+    # =========================================================================
+
+    @classmethod
+    def _get_adapter(cls) -> simplepyble.Adapter:
+        """Get the first available Bluetooth adapter."""
+        adapters = simplepyble.Adapter.get_adapters()  # pylint: disable=no-member
+        if not adapters:
+            raise RuntimeError("No BLE adapters found")
+        return adapters[0]
+
+    @classmethod
+    def _peripheral_to_scanned_device(cls, peripheral: simplepyble.Peripheral) -> ScannedDevice:
+        """Convert a SimplePyBLE Peripheral to a ScannedDevice."""
+        return ScannedDevice(
+            address=peripheral.address(),
+            name=peripheral.identifier() or None,
+            advertisement_data=cls.convert_advertisement(peripheral),
+        )
+
+    @classmethod
+    async def scan(  # pylint: disable=too-many-arguments
+        cls,
+        timeout: float = 5.0,
+        *,
+        filters: ScanFilter | None = None,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+        callback: ScanDetectionCallback | None = None,
+    ) -> list[ScannedDevice]:
+        """Scan for nearby BLE devices.
+
+        Args:
+            timeout: Scan duration in seconds
+            filters: Optional filter criteria
+            scanning_mode: Ignored (SimplePyBLE only supports active scanning)
+            adapter: Ignored (SimplePyBLE uses first available adapter)
+            callback: Optional async/sync function called for each discovered device
+
+        Returns:
+            List of discovered devices matching filters
+
+        """
+        del scanning_mode, adapter  # Unused - SimplePyBLE only supports active scanning on first adapter
+        loop = asyncio.get_event_loop()
+
+        def _scan() -> list[simplepyble.Peripheral]:
+            adapter_obj = cls._get_adapter()
+            adapter_obj.scan_for(int(timeout * 1000))  # milliseconds
+            return list(adapter_obj.scan_get_results())
+
+        peripherals = await loop.run_in_executor(None, _scan)
+
+        devices: list[ScannedDevice] = []
+        for peripheral in peripherals:
+            scanned = cls._peripheral_to_scanned_device(peripheral)
+            if filters and not filters.matches(scanned):
+                continue
+            devices.append(scanned)
+            if callback:
+                result = callback(scanned)
+                if inspect.isawaitable(result):
+                    await result
+
+        return devices
+
+    @classmethod
+    async def find_device(
+        cls,
+        filters: ScanFilter,
+        timeout: float = 10.0,
+        *,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+    ) -> ScannedDevice | None:
+        """Find the first device matching filter criteria.
+
+        Args:
+            filters: Filter criteria (address, name, service_uuids, or filter_func)
+            timeout: Maximum scan time in seconds
+            scanning_mode: Ignored
+            adapter: Ignored
+
+        Returns:
+            First matching device or None
+
+        """
+        del scanning_mode, adapter  # Unused
+        devices = await cls.scan(timeout=timeout, filters=filters)
+        return devices[0] if devices else None
+
+    @classmethod
+    def scan_stream(
+        cls,
+        timeout: float | None = 10.0,
+        *,
+        filters: ScanFilter | None = None,
+        scanning_mode: ScanningMode = "active",
+        adapter: str | None = None,
+    ) -> AsyncIterator[ScannedDevice]:
+        """Stream discovered devices as an async iterator.
+
+        Note: SimplePyBLE doesn't support true streaming, so this
+        scans first then yields devices.
+
+        Args:
+            timeout: Scan duration in seconds
+            filters: Optional filter criteria
+            scanning_mode: Ignored
+            adapter: Ignored
+
+        Yields:
+            ScannedDevice for each discovered device
+
+        """
+        del scanning_mode, adapter  # Unused
+
+        async def _stream() -> AsyncIterator[ScannedDevice]:
+            scan_timeout = timeout if timeout is not None else 10.0
+            devices = await cls.scan(timeout=scan_timeout, filters=filters)
+            for device in devices:
+                yield device
+
+        return _stream()

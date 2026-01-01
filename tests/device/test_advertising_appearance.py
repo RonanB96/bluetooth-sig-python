@@ -1,23 +1,23 @@
-"""Tests for advertising parser appearance info functionality."""
+"""Tests for advertising PDU parser appearance info functionality."""
 
 from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.device.advertising_parser import AdvertisingParser
+from bluetooth_sig.advertising import AdvertisingPDUParser
 from bluetooth_sig.types import AppearanceData
 from bluetooth_sig.types.ad_types_constants import ADType
 
 
-class TestAdvertisingParserAppearance:
+class TestAdvertisingPDUParserAppearance:
     """Test appearance info parsing in advertising data."""
 
     @pytest.fixture
-    def parser(self) -> AdvertisingParser:
-        """Create advertising parser instance."""
-        return AdvertisingParser()
+    def parser(self) -> AdvertisingPDUParser:
+        """Create advertising PDU parser instance."""
+        return AdvertisingPDUParser()
 
-    def test_parse_appearance_with_info(self, parser: AdvertisingParser) -> None:
+    def test_parse_appearance_with_info(self, parser: AdvertisingPDUParser) -> None:
         """Test that appearance value is parsed with registry lookup."""
         # Create advertising data with appearance
         # AD Structure: [length, type, data...]
@@ -45,7 +45,7 @@ class TestAdvertisingParserAppearance:
             assert result.ad_structures.properties.appearance.info.subcategory.name == "Heart Rate Belt"
             assert result.ad_structures.properties.appearance.info.full_name == "Heart Rate Sensor: Heart Rate Belt"
 
-    def test_parse_appearance_category_only(self, parser: AdvertisingParser) -> None:
+    def test_parse_appearance_category_only(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing appearance with category only (no subcategory)."""
         # Phone: 64 (0x0040) = [0x40, 0x00] in little endian
         ad_data = bytearray(
@@ -67,7 +67,7 @@ class TestAdvertisingParserAppearance:
             assert result.ad_structures.properties.appearance.info.subcategory is None
             assert result.ad_structures.properties.appearance.info.full_name == "Phone"
 
-    def test_parse_appearance_unknown(self, parser: AdvertisingParser) -> None:
+    def test_parse_appearance_unknown(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing unknown appearance value."""
         # Unknown: 0 (0x0000)
         ad_data = bytearray(
@@ -86,7 +86,7 @@ class TestAdvertisingParserAppearance:
         if result.ad_structures.properties.appearance.info:
             assert result.ad_structures.properties.appearance.info.category == "Unknown"
 
-    def test_parse_appearance_not_in_registry(self, parser: AdvertisingParser) -> None:
+    def test_parse_appearance_not_in_registry(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing appearance value not in registry."""
         # Use unlikely value
         ad_data = bytearray(
@@ -104,7 +104,7 @@ class TestAdvertisingParserAppearance:
         assert result.ad_structures.properties.appearance.raw_value == 65535
         # appearance.info should be None for unknown codes
 
-    def test_parse_no_appearance_field(self, parser: AdvertisingParser) -> None:
+    def test_parse_no_appearance_field(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing advertising data without appearance field."""
         # Just a complete local name
         ad_data = bytearray(
@@ -123,7 +123,7 @@ class TestAdvertisingParserAppearance:
 
         assert result.ad_structures.properties.appearance is None
 
-    def test_parse_multiple_fields_with_appearance(self, parser: AdvertisingParser) -> None:
+    def test_parse_multiple_fields_with_appearance(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing advertising data with multiple fields including appearance."""
         # Multiple AD structures: flags, name, appearance
         ad_data = bytearray(
@@ -153,7 +153,7 @@ class TestAdvertisingParserAppearance:
         if result.ad_structures.properties.appearance.info:
             assert result.ad_structures.properties.appearance.info.full_name == "Heart Rate Sensor: Heart Rate Belt"
 
-    def test_parse_computer_subcategories(self, parser: AdvertisingParser) -> None:
+    def test_parse_computer_subcategories(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing various computer subcategories."""
         # Desktop: (2 << 6) | 1 = 129 (0x0081)
         ad_data_desktop = bytearray([3, ADType.APPEARANCE, 0x81, 0x00])

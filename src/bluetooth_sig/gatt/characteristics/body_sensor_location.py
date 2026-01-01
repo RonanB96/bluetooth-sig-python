@@ -30,11 +30,9 @@ class BodySensorLocationCharacteristic(BaseCharacteristic):
     Spec: Bluetooth SIG Assigned Numbers, Body Sensor Location characteristic
     """
 
-    # Validation attributes
-    expected_length: int = 1  # uint8
+    # YAML has no range constraint; enforce valid enum bounds.
     min_value: int = BodySensorLocation.OTHER  # 0
     max_value: int = BodySensorLocation.FOOT  # 6
-    expected_type: type = int
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BodySensorLocation:
         """Decode body sensor location from raw bytes.

@@ -25,7 +25,8 @@ class TestBodyCompositionMeasurementCharacteristic:
         """Test characteristic name resolution."""
         char = BodyCompositionMeasurementCharacteristic()
         assert char.name == "Body Composition Measurement"
-        assert char.value_type == ValueType.BYTES
+        # Value type resolved from GSS YAML (uint16 primary field -> INT)
+        assert char.value_type == ValueType.INT
 
     def test_parse_basic_body_fat_metric(self) -> None:
         """Test parsing basic body fat percentage in metric units."""

@@ -67,12 +67,12 @@ class TestBLEParsing:
         # SIMULATED DATA - For testing without hardware
         # ============================================
         TEMP_UUID = "2A6E"  # Temperature characteristic UUID
-        mock_data = bytearray([0x64, 0x09])  # 24.36°C
+        mock_data = bytearray([0x64, 0x09])  # 24.04°C
 
         translator = BluetoothSIGTranslator()
         result = translator.parse_characteristic(TEMP_UUID, mock_data)
 
-        assert result.value == 24.36
+        assert result.value == 24.04
         assert isinstance(result.value, float)
 ```
 
@@ -231,17 +231,17 @@ def test_with_factory():
 
     # Generate test data
     battery_data = TestDataFactory.battery_level(85)
-    temp_data = TestDataFactory.temperature(24.36)
-    humidity_data = TestDataFactory.humidity(49.42)
+    temp_data = TestDataFactory.temperature(24.04)
+    humidity_data = TestDataFactory.humidity(49.22)
 
     # Test parsing
     assert (
         translator.parse_characteristic(BATTERY_UUID, battery_data).value == 85
     )
-    assert translator.parse_characteristic(TEMP_UUID, temp_data).value == 24.36
+    assert translator.parse_characteristic(TEMP_UUID, temp_data).value == 24.04
     assert (
         translator.parse_characteristic(HUMIDITY_UUID, humidity_data).value
-        == 49.42
+        == 49.22
     )
 ```
 
@@ -313,7 +313,7 @@ def valid_battery_data():
 @pytest.fixture
 def valid_temp_data():
     """Provide valid temperature data."""
-    return bytearray([0x64, 0x09])  # 24.36°C
+    return bytearray([0x64, 0x09])  # 24.04°C
 
 
 def test_with_fixtures(translator, valid_battery_data):
@@ -347,8 +347,8 @@ class TestIntegration:
         # Simulate reading multiple characteristics
         sensor_data = {
             BATTERY_UUID: bytearray([85]),  # Battery: 85%
-            TEMP_UUID: bytearray([0x64, 0x09]),  # Temp: 24.36°C
-            HUMIDITY_UUID: bytearray([0x3A, 0x13]),  # Humidity: 49.42%
+            TEMP_UUID: bytearray([0x64, 0x09]),  # Temp: 24.04°C
+            HUMIDITY_UUID: bytearray([0x3A, 0x13]),  # Humidity: 49.22%
         }
 
         results = {}
@@ -357,8 +357,8 @@ class TestIntegration:
 
         # Verify all parsed correctly
         assert results[BATTERY_UUID].value == 85
-        assert results[TEMP_UUID].value == 24.36
-        assert results[HUMIDITY_UUID].value == 49.42
+        assert results[TEMP_UUID].value == 24.04
+        assert results[HUMIDITY_UUID].value == 49.22
 
     def test_uuid_resolution_workflow(self):
         """Test UUID resolution workflow."""
@@ -517,14 +517,14 @@ def test_battery_1(): ...
 def test_temperature_parsing():
     # Arrange
     TEMP_UUID = "2A6E"  # Temperature characteristic UUID
-    data = bytearray([0x64, 0x09])  # 24.36°C
+    data = bytearray([0x64, 0x09])  # 24.04°C
     translator = BluetoothSIGTranslator()
 
     # Act
     result = translator.parse_characteristic(TEMP_UUID, data)
 
     # Assert
-    assert result.value == 24.36
+    assert result.value == 24.04
 ```
 
 ## Next Steps

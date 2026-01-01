@@ -116,23 +116,31 @@ class TestIEEE11073FLOAT32Parser:
         assert abs(result - (-37.0)) < 1e-6
 
     def test_parse_special_values(self) -> None:
-        """Test parsing FLOAT32 special values."""
+        """Test parsing FLOAT32 special values.
+
+        Per IEEE 11073-20601 and Bluetooth GSS:
+        - NaN: 0x007FFFFF (exponent=0, mantissa=0x7FFFFF)
+        - +Infinity: 0x007FFFFE (exponent=0, mantissa=0x7FFFFE)
+        - -Infinity: 0x00800002 (exponent=0, mantissa=0x800002)
+        - NRes: 0x00800000 (exponent=0, mantissa=0x800000)
+        - RFU: 0x00800001 (exponent=0, mantissa=0x800001)
+        """
         # NaN
         data = bytearray([0xFF, 0xFF, 0x7F, 0x00])  # 0x007FFFFF
         assert math.isnan(IEEE11073Parser.parse_float32(data))
 
-        # +Infinity
-        data = bytearray([0x00, 0x00, 0x80, 0x00])  # 0x00800000
+        # +Infinity (0x007FFFFE)
+        data = bytearray([0xFE, 0xFF, 0x7F, 0x00])  # 0x007FFFFE
         assert math.isinf(IEEE11073Parser.parse_float32(data))
         assert IEEE11073Parser.parse_float32(data) > 0
 
-        # -Infinity
-        data = bytearray([0x01, 0x00, 0x80, 0x00])  # 0x00800001
+        # -Infinity (0x00800002)
+        data = bytearray([0x02, 0x00, 0x80, 0x00])  # 0x00800002
         assert math.isinf(IEEE11073Parser.parse_float32(data))
         assert IEEE11073Parser.parse_float32(data) < 0
 
-        # NRes (Not a valid result)
-        data = bytearray([0x02, 0x00, 0x80, 0x00])  # 0x00800002
+        # NRes (Not a valid result) - 0x00800000
+        data = bytearray([0x00, 0x00, 0x80, 0x00])  # 0x00800000
         assert math.isnan(IEEE11073Parser.parse_float32(data))
 
     def test_parse_with_offset(self) -> None:
@@ -165,18 +173,24 @@ class TestIEEE11073FLOAT32Parser:
         assert result == bytearray([0x00, 0x00, 0x00, 0x00])
 
     def test_encode_special_values(self) -> None:
-        """Test encoding FLOAT32 special values."""
+        """Test encoding FLOAT32 special values.
+
+        Per IEEE 11073-20601 and Bluetooth GSS:
+        - NaN: 0x007FFFFF
+        - +Infinity: 0x007FFFFE
+        - -Infinity: 0x00800002
+        """
         # NaN
         result = IEEE11073Parser.encode_float32(float("nan"))
         assert result == bytearray([0xFF, 0xFF, 0x7F, 0x00])
 
-        # +Infinity
+        # +Infinity (0x007FFFFE in little-endian)
         result = IEEE11073Parser.encode_float32(float("inf"))
-        assert result == bytearray([0x00, 0x00, 0x80, 0x00])
+        assert result == bytearray([0xFE, 0xFF, 0x7F, 0x00])
 
-        # -Infinity
+        # -Infinity (0x00800002 in little-endian)
         result = IEEE11073Parser.encode_float32(float("-inf"))
-        assert result == bytearray([0x01, 0x00, 0x80, 0x00])
+        assert result == bytearray([0x02, 0x00, 0x80, 0x00])
 
     def test_encode_decode_roundtrip(self) -> None:
         """Test FLOAT32 encode/decode roundtrip for various values."""

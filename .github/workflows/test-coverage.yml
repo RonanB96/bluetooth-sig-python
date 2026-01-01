@@ -310,17 +310,6 @@ jobs:
           branch: main
           path: benchmarks
 
-      - name: Link coverage into docs directory
-        run: |
-          if [ -d "htmlcov" ]; then
-            echo "✅ Coverage reports found, linking to docs/source/"
-            rm -f docs/source/coverage
-            ln -sf ../../htmlcov docs/source/coverage
-            ls -la docs/source/coverage | head -3
-          else
-            echo "⚠️ No coverage reports found, docs will build without coverage"
-          fi
-
       - name: Link benchmarks into docs directory
         run: |
           if [ -f "benchmarks/benchmark.json" ]; then
@@ -341,6 +330,16 @@ jobs:
       - name: Build documentation
         run: |
           sphinx-build -b html -j auto docs/source docs/build/html
+
+      - name: Copy coverage into built docs
+        run: |
+          if [ -d "htmlcov" ]; then
+            echo "✅ Copying coverage reports into docs/build/html/"
+            cp -r htmlcov docs/build/html/coverage
+            ls -la docs/build/html/coverage/coverage-badge.json
+          else
+            echo "⚠️ No coverage reports to copy"
+          fi
 
       - name: Upload built documentation artifact
         uses: actions/upload-artifact@v5
