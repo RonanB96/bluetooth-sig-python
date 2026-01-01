@@ -35,8 +35,6 @@ class SportTypeForAerobicAndAnaerobicThresholdsCharacteristic(BaseCharacteristic
     the sport type applicable to aerobic and anaerobic thresholds for a user.
     """
 
-    expected_length = 1
-
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> SportType:
         """Decode sport type from raw bytes.
 

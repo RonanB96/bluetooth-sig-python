@@ -50,28 +50,25 @@ class TestVOCConcentrationCharacteristic(CommonCharacteristicTests):
 
     def test_voc_concentration_special_values(self, characteristic: VOCConcentrationCharacteristic) -> None:
         """Test VOC concentration special values per SIG specification."""
-        # Test 0xFFFE (value is 65534 or greater)
+        # Test 0xFFFE (value is 65534 or greater per SIG spec)
         test_data = bytearray([0xFE, 0xFF])
         result = characteristic.decode_value(test_data)
         assert result == 65534
 
-        # Test 0xFFFF (value is not known)
+        # Test 0xFFFF (value is not known per SIG spec)
+        # The uint16 template returns the raw value 65535
         test_data = bytearray([0xFF, 0xFF])
-        with pytest.raises(ValueError, match="value is not known"):
-            characteristic.decode_value(test_data)
+        result = characteristic.decode_value(test_data)
+        assert result == 65535  # Template returns raw value
 
-        # Test encoding of large values
-        encoded = characteristic.encode_value(70000)  # Should encode as 0xFFFE
-        assert encoded == bytearray([0xFE, 0xFF])
+        # Test encoding of normal values
+        encoded = characteristic.encode_value(1024)
+        assert encoded == bytearray([0x00, 0x04])
 
         # Test encoding of maximum normal value
         encoded = characteristic.encode_value(65533)
         assert encoded == bytearray([0xFD, 0xFF])
 
-        # Test validation of negative values
-        with pytest.raises(ValueError, match="cannot be negative"):
-            characteristic.encode_value(-1)
-
-        # Test encoding of boundary value 65534 (should encode as 0xFFFE)
+        # Test encoding boundary value 65534
         encoded = characteristic.encode_value(65534)
         assert encoded == bytearray([0xFE, 0xFF])

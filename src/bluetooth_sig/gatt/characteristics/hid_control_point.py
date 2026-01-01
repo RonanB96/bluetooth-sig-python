@@ -27,8 +27,6 @@ class HidControlPointCharacteristic(BaseCharacteristic):
     HID Control Point characteristic.
     """
 
-    expected_length = 1
-
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> HidControlPointCommand:
         """Parse HID control point data.
 

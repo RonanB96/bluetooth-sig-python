@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from bluetooth_sig.gatt.constants import SINT16_MAX, SINT16_MIN
-
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils.data_parser import DataParser
@@ -24,11 +22,7 @@ class TemperatureCharacteristic(BaseCharacteristic):
     Temperature measurement characteristic.
     """
 
-    # Validation attributes
-    expected_length: int = 2  # sint16
-    min_value: float = (SINT16_MIN + 1) * 0.01  # -327.67°C (excluding VALUE_UNKNOWN)
-    max_value: float = SINT16_MAX * 0.01  # 327.67°C
-    expected_type: type = float
+    expected_type: type | None = float  # Allows both float and None (for unknown value)
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode temperature characteristic.

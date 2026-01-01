@@ -17,6 +17,3 @@ class NonMethaneVOCConcentrationCharacteristic(BaseCharacteristic):
 
     _characteristic_name: str = "Non-Methane Volatile Organic Compounds Concentration"
     _manual_unit: str = "kg/m³"  # Unit as per SIG specification
-
-    expected_length: int = 2
-    expected_type: type = float

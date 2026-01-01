@@ -35,8 +35,7 @@ class AlertCategoryIdBitMaskCharacteristic(BaseCharacteristic):
     Spec: Bluetooth SIG GATT Specification Supplement, Alert Category ID Bit Mask
     """
 
-    expected_length: int = 2
-    expected_type: type = int
+    expected_length: int | None = 2
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertCategoryBitMask:
         """Decode Alert Category ID Bit Mask data from bytes.
@@ -52,9 +51,6 @@ class AlertCategoryIdBitMaskCharacteristic(BaseCharacteristic):
             ValueError: If data is insufficient
 
         """
-        if len(data) < 2:
-            raise ValueError(f"Insufficient data for Alert Category ID Bit Mask: expected 2 bytes, got {len(data)}")
-
         mask_value = DataParser.parse_int16(data, 0, signed=False)
         return AlertCategoryBitMask(mask_value)
 

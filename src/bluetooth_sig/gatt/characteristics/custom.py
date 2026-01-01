@@ -145,14 +145,23 @@ class CustomBaseCharacteristic(BaseCharacteristic):
 
         CustomBaseCharacteristic manages _info manually from provided or configured info,
         bypassing SIG resolution that would fail for custom characteristics.
+        Then delegates to parent for remaining initialization.
         """
         # Use provided info if available (from manual override), otherwise use configured info
+        final_info = None
         if hasattr(self, "_provided_info") and self._provided_info:
-            self._info = self._provided_info
+            final_info = self._provided_info
         else:
             configured_info = self.__class__.get_configured_info()
             if configured_info:
-                self._info = configured_info
+                final_info = configured_info
             else:
                 # This shouldn't happen if class setup is correct
                 raise ValueError(f"CustomBaseCharacteristic {self.__class__.__name__} has no valid info source")
+
+        # Set _provided_info so parent __post_init__ will use it instead of trying SIG resolution
+        self._provided_info = final_info
+
+        # Call parent to complete initialization (sets up _special_resolver, applies overrides, etc.)
+        # This is critical - without it, _special_resolver won't exist
+        super().__post_init__()

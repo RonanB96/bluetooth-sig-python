@@ -44,11 +44,9 @@ class AlertLevelCharacteristic(BaseCharacteristic):
 
     _template = Uint8Template()
 
-    # Validation attributes
-    expected_length: int = 1  # uint8
+    # YAML has no range constraint; enforce valid enum bounds.
     min_value: int = AlertLevel.NO_ALERT  # 0
     max_value: int = AlertLevel.HIGH_ALERT  # 2
-    expected_type: type = int
 
     def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertLevel:
         """Decode alert level from raw bytes.

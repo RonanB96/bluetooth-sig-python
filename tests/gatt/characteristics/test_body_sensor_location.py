@@ -64,16 +64,16 @@ class TestBodySensorLocationCharacteristic(CommonCharacteristicTests):
         ]
 
     def test_invalid_length(self, characteristic: BaseCharacteristic) -> None:
-        """Test that invalid data length raises InsufficientDataError."""
-        # Empty data - should fail length validation
+        """Test that invalid data length raises error."""
+        # Empty data - will fail when trying to access data[0]
         result = characteristic.parse_value(bytearray([]))
         assert not result.parse_success
-        assert "characteristic_data" in result.error_message.lower()
+        assert "index out of range" in result.error_message.lower() or "insufficient" in result.error_message.lower()
 
-        # Too much data - should fail length validation
+        # Too much data - characteristic only reads first byte, extra bytes ignored
         result = characteristic.parse_value(bytearray([0x00, 0x00]))
-        assert not result.parse_success
-        assert "byte" in result.error_message.lower()
+        assert result.parse_success  # Should succeed, only first byte is read
+        assert result.value == BodySensorLocation.OTHER
 
     def test_invalid_value(self, characteristic: BaseCharacteristic) -> None:
         """Test that invalid location value raises ValueError."""

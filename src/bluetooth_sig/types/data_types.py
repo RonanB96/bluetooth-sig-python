@@ -54,21 +54,48 @@ class ServiceInfo(SIGInfo):
     characteristics: list[CharacteristicInfo] = msgspec.field(default_factory=list[CharacteristicInfo])
 
 
+class ValidationAccumulator:
+    """Result of characteristic data validation with error/warning accumulation.
+
+    Used during parsing to accumulate validation issues from multiple validation steps.
+    Provides methods to add errors/warnings and check overall validity.
+    """
+
+    def __init__(self) -> None:
+        """Initialize empty validation result."""
+        self.errors: list[str] = []
+        self.warnings: list[str] = []
+
+    def add_error(self, message: str) -> None:
+        """Add a validation error message.
+
+        Args:
+            message: Error message to add
+        """
+        self.errors.append(message)
+
+    def add_warning(self, message: str) -> None:
+        """Add a validation warning message.
+
+        Args:
+            message: Warning message to add
+        """
+        self.warnings.append(message)
+
+    @property
+    def valid(self) -> bool:
+        """Check if validation passed (no errors).
+
+        Returns:
+            True if no errors, False otherwise
+        """
+        return len(self.errors) == 0
+
+
 class ValidationResult(msgspec.Struct, frozen=True, kw_only=True):
-    """Result of characteristic data validation.
+    """Summary of validation results for external API consumption.
 
-    Provides diagnostic information about whether characteristic data
-    matches the expected format per Bluetooth SIG specifications.
-
-    This is a lightweight validation result, NOT SIG registry metadata.
-    For characteristic metadata (uuid, name, description), query the
-    characteristic's info directly.
-
-    Attributes:
-        is_valid: Whether the data format is valid per SIG specs
-        actual_length: Number of bytes in the data
-        expected_length: Expected bytes for fixed-length characteristics, None for variable
-        error_message: Description of validation failure, empty string if valid
+    Lightweight validation result for API responses, not for accumulation.
     """
 
     is_valid: bool

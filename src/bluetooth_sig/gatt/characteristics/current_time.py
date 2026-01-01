@@ -37,8 +37,6 @@ class CurrentTimeCharacteristic(BaseCharacteristic):
     """
 
     # Validation attributes
-    expected_length: int = 10  # Fixed 10-byte structure
-
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
     def __init__(self) -> None:
