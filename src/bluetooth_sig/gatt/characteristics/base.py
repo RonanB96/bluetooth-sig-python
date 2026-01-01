@@ -407,6 +407,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         info: CharacteristicInfo | None = None,
         validation: ValidationConfig | None = None,
         properties: list[GattProperty] | None = None,
+        validate: bool = True,
     ) -> None:
         """Initialize characteristic with structured configuration.
 
@@ -414,6 +415,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             info: Complete characteristic information (optional for SIG characteristics)
             validation: Validation constraints configuration (optional)
             properties: Runtime BLE properties discovered from device (optional)
+            validate: Enable validation during parse/encode (default: True)
 
         """
         # Store provided info or None (will be resolved in __post_init__)
@@ -430,6 +432,9 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         self._manual_unit: str | None = self.__class__._manual_unit
         self._manual_value_type: ValueType | str | None = self.__class__._manual_value_type
         self.value_type: ValueType = ValueType.UNKNOWN
+
+        # Validation control
+        self._validate_enabled = validate
 
         # Set validation attributes from ValidationConfig or class defaults
         if validation:
@@ -861,6 +866,14 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             return self._template.decode_value(data, offset=0, ctx=ctx)
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
+    def _is_validation_enabled(self) -> bool:
+        """Check if validation is enabled for this characteristic instance.
+
+        Returns:
+            True if validation should be performed, False to skip all validation
+        """
+        return self._validate_enabled
+
     def _validate_range(self, value: Any, ctx: CharacteristicContext | None = None) -> ValidationAccumulator:  # noqa: ANN401  # Validates values of various numeric types
         """Validate value is within min/max range from both class attributes and descriptors.
 
@@ -877,6 +890,10 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             ValidationReport with errors if validation fails
         """
         result = ValidationAccumulator()
+
+        # Skip validation if disabled
+        if not self._is_validation_enabled():
+            return result
 
         # Skip validation for SpecialValueResult
         if isinstance(value, SpecialValueResult):
@@ -944,6 +961,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def _validate_type(self, value: Any) -> ValidationAccumulator:  # noqa: ANN401
         """Validate value type matches expected_type if specified."""
         result = ValidationAccumulator()
+
+        # Skip validation if disabled
+        if not self._is_validation_enabled():
+            return result
+
         if self.expected_type is not None and not isinstance(value, (self.expected_type, SpecialValueResult)):
             error_msg = (
                 f"Type validation failed for {self.name}: "
@@ -956,6 +978,11 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def _validate_length(self, data: bytes | bytearray) -> ValidationAccumulator:
         """Validate data length meets requirements."""
         result = ValidationAccumulator()
+
+        # Skip validation if disabled
+        if not self._is_validation_enabled():
+            return result
+
         length = len(data)
 
         # Determine validation source for error context

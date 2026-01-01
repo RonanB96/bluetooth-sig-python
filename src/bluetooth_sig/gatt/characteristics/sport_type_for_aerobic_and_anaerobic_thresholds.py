@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from enum import IntEnum
 
-from bluetooth_sig.gatt.context import CharacteristicContext
-
 from .base import BaseCharacteristic
+from .templates import EnumTemplate
 
 
 class SportType(IntEnum):
@@ -35,32 +34,4 @@ class SportTypeForAerobicAndAnaerobicThresholdsCharacteristic(BaseCharacteristic
     the sport type applicable to aerobic and anaerobic thresholds for a user.
     """
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> SportType:
-        """Decode sport type from raw bytes.
-
-        Args:
-            data: Raw bytes from BLE characteristic (1 byte)
-            ctx: Optional context for parsing
-
-        Returns:
-            SportType enum value
-
-        Raises:
-            ValueError: If data length is not exactly 1 byte or value is invalid
-        """
-        sport_type_value = int(data[0])
-        try:
-            return SportType(sport_type_value)
-        except ValueError as e:
-            raise ValueError(f"Invalid Sport Type value: {sport_type_value} (valid range: 0-11)") from e
-
-    def encode_value(self, data: SportType) -> bytearray:
-        """Encode sport type to raw bytes.
-
-        Args:
-            data: SportType enum value
-
-        Returns:
-            bytearray: Encoded bytes
-        """
-        return bytearray([data.value])
+    _template = EnumTemplate.uint8(SportType)

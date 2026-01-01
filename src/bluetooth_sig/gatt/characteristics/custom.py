@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ...types import CharacteristicInfo
-from .base import BaseCharacteristic
+from .base import BaseCharacteristic, ValidationConfig
 
 
 class CustomBaseCharacteristic(BaseCharacteristic):
@@ -88,12 +88,16 @@ class CustomBaseCharacteristic(BaseCharacteristic):
         self,
         info: CharacteristicInfo | None = None,
         auto_register: bool = True,
+        validate: bool = True,
+        validation: ValidationConfig | None = None,
     ) -> None:
         """Initialize a custom characteristic with automatic _info resolution and registration.
 
         Args:
             info: Optional override for class-configured _info
             auto_register: If True (default), automatically register with global translator singleton
+            validate: Enable validation during parse/encode (default: True)
+            validation: Validation constraints configuration (optional)
 
         Raises:
             ValueError: If no valid info available from class or parameter
@@ -138,7 +142,7 @@ class CustomBaseCharacteristic(BaseCharacteristic):
                 CustomBaseCharacteristic._registry_tracker.add(registry_key)
 
         # Call parent constructor with our info to maintain consistency
-        super().__init__(info=final_info)
+        super().__init__(info=final_info, validate=validate, validation=validation)
 
     def __post_init__(self) -> None:
         """Override BaseCharacteristic.__post_init__ to use custom info management.

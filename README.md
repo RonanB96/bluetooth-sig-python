@@ -17,6 +17,7 @@ A pure Python library for Bluetooth SIG standards interpretation, providing comp
 - ✅ **Modern Python**: msgspec-based design with Python 3.9+ compatibility
 - ✅ **Comprehensive**: Support for 70+ GATT characteristics across multiple service categories
 - ✅ **Production Ready**: Extensive validation and comprehensive testing
+- ✅ **Flexible Validation**: Enable/disable validation per-characteristic for testing or debugging
 - ✅ **Framework Agnostic**: Works with any BLE library (bleak, simplepyble, etc.)
 
 ## Installation

@@ -299,3 +299,112 @@ class TestBaseCharacteristicValidation:
         # Test type validation failure
         with pytest.raises(ValueError, match="expected int"):
             char.build_value("not an int")  # Wrong type
+
+
+class TestValidationControl:
+    """Test the validate parameter for enabling/disabling validation."""
+
+    def test_validation_enabled_by_default(self) -> None:
+        """Test that validation is enabled by default."""
+        char = ValidationHelperCharacteristic()
+
+        # Out-of-range value should fail with default validation
+        data = bytearray([200, 0])  # 200 is out of range 0-100
+        result = char.parse_value(data)
+
+        assert result.parse_success is False
+        assert "Value 200 is above maximum 100" in result.error_message
+
+    def test_validation_can_be_disabled(self) -> None:
+        """Test that validation can be explicitly disabled."""
+        char = ValidationHelperCharacteristic(validate=False)
+
+        # Out-of-range value should succeed when validation disabled
+        data = bytearray([200, 0])  # 200 is out of range 0-100
+        result = char.parse_value(data)
+
+        assert result.parse_success is True
+        assert result.value == 200
+        assert result.error_message == ""
+
+    def test_disabled_validation_skips_length_check(self) -> None:
+        """Test that disabled validation skips length validation."""
+        char = ValidationHelperCharacteristic(validate=False)
+
+        # Wrong length should succeed when validation disabled
+        # Note: decode_value will still raise if it needs more bytes
+        data = bytearray([50, 0, 99])  # 3 bytes instead of expected 2
+        result = char.parse_value(data)
+
+        assert result.parse_success is True
+        assert result.value == 50  # Should still decode the first 2 bytes
+
+    def test_disabled_validation_skips_type_check(self) -> None:
+        """Test that disabled validation skips type validation."""
+
+        class TypeMismatchCharacteristic(CustomBaseCharacteristic):
+            expected_type: type | None = int
+
+            _info = CharacteristicInfo(
+                uuid=BluetoothUUID("12345678-1234-1234-1234-123456789020"),
+                name="Type Mismatch",
+                unit="",
+                value_type=ValueType.INT,
+            )
+
+            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+                # Returns string but expected_type is int
+                return "not an int"
+
+            def encode_value(self, data: str) -> bytearray:
+                return bytearray([42])
+
+        # With validation enabled (default) - should fail
+        char_validated = TypeMismatchCharacteristic()
+        result = char_validated.parse_value(bytearray([1, 2]))
+        assert result.parse_success is False
+        assert "expected int, got str" in result.error_message
+
+        # With validation disabled - should succeed
+        char_no_validation = TypeMismatchCharacteristic(validate=False)
+        result = char_no_validation.parse_value(bytearray([1, 2]))
+        assert result.parse_success is True
+        assert result.value == "not an int"
+
+    def test_disabled_validation_in_build_value(self) -> None:
+        """Test that disabled validation affects build_value as well."""
+        char = ValidationHelperCharacteristic(validate=False)
+
+        # Out-of-range value should succeed in build when validation disabled
+        result = char.build_value(200)  # Above max_value of 100
+        assert result == bytearray([200, 0])
+
+    def test_validation_control_with_validation_config(self) -> None:
+        """Test that validate parameter works alongside ValidationConfig."""
+        from bluetooth_sig.gatt.characteristics.base import ValidationConfig
+
+        # Both validation control and constraints can be specified
+        char = ValidationHelperCharacteristic(validate=False, validation=ValidationConfig(min_value=10, max_value=50))
+
+        # Even with tighter constraints in ValidationConfig, validation is disabled
+        data = bytearray([200, 0])  # Out of range
+        result = char.parse_value(data)
+
+        assert result.parse_success is True
+        assert result.value == 200
+
+    def test_validation_separate_instances(self) -> None:
+        """Test that validation control is per-instance, not global."""
+        char_validated = ValidationHelperCharacteristic(validate=True)
+        char_no_validation = ValidationHelperCharacteristic(validate=False)
+
+        data = bytearray([200, 0])  # Out of range
+
+        # First instance should fail
+        result1 = char_validated.parse_value(data)
+        assert result1.parse_success is False
+
+        # Second instance should succeed
+        result2 = char_no_validation.parse_value(data)
+        assert result2.parse_success is True
+        assert result2.value == 200

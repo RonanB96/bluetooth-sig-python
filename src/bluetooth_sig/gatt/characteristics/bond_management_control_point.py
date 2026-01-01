@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from enum import IntEnum
 
-from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .templates import EnumTemplate
 
 
 class BondManagementCommand(IntEnum):
@@ -27,42 +27,4 @@ class BondManagementControlPointCharacteristic(BaseCharacteristic):
 
     min_length = 1
     allow_variable_length = True
-
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BondManagementCommand:
-        """Decode Bond Management Control Point data from bytes.
-
-        Args:
-            data: Raw characteristic data (at least 1 byte)
-            ctx: Optional characteristic context
-
-        Returns:
-            BondManagementCommand
-
-        Raises:
-            ValueError: If data is insufficient or command invalid
-
-        """
-        if len(data) < 1:
-            raise ValueError("Insufficient data for Bond Management Control Point: expected at least 1 byte")
-
-        # Parse command (1 byte)
-        command_value = data[0]
-        try:
-            command = BondManagementCommand(command_value)
-        except ValueError as exc:
-            raise ValueError(f"Invalid command: {command_value}") from exc
-
-        return command
-
-    def encode_value(self, data: BondManagementCommand) -> bytearray:
-        """Encode Bond Management Control Point data to bytes.
-
-        Args:
-            data: BondManagementCommand to encode
-        Returns:
-            Encoded command (1 byte)
-
-        """
-        result = bytearray()
-        result.append(data.value)
-        return result
+    _template = EnumTemplate.uint8(BondManagementCommand)

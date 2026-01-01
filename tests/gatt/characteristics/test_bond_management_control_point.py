@@ -58,13 +58,17 @@ class TestBondManagementControlPointCharacteristic(CommonCharacteristicTests):
         assert result == BondManagementCommand.DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER
 
     def test_invalid_command(self, characteristic: BondManagementControlPointCharacteristic) -> None:
-        """Test that invalid commands raise ValueError."""
-        with pytest.raises(ValueError, match="Invalid command"):
+        """Test that invalid commands raise ValueRangeError."""
+        from bluetooth_sig.gatt.exceptions import ValueRangeError
+
+        with pytest.raises(ValueRangeError, match="Invalid BondManagementCommand"):
             characteristic.decode_value(bytearray([0x04]))  # Invalid command
 
     def test_insufficient_data(self, characteristic: BondManagementControlPointCharacteristic) -> None:
-        """Test that insufficient data raises ValueError."""
-        with pytest.raises(ValueError, match="expected at least 1 byte"):
+        """Test that insufficient data raises InsufficientDataError."""
+        from bluetooth_sig.gatt.exceptions import InsufficientDataError
+
+        with pytest.raises(InsufficientDataError, match="need 1 bytes"):
             characteristic.decode_value(bytearray())  # Empty data
 
     def test_encode_commands(self, characteristic: BondManagementControlPointCharacteristic) -> None:

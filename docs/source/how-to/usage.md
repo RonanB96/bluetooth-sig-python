@@ -549,6 +549,23 @@ The Device class uses several data structures:
 
 All data structures follow the Bluetooth SIG specifications and provide type-safe access to device information.
 
+## Controlling Validation
+
+By default, characteristics validate all data against Bluetooth SIG specifications. Disable validation for testing or debugging non-compliant devices:
+
+```python
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+
+# Default: validation enabled
+char = BatteryLevelCharacteristic()
+
+# Disable for permissive parsing
+char_permissive = BatteryLevelCharacteristic(validate=False)
+result = char_permissive.parse_value(bytearray([200]))  # Succeeds despite out-of-range
+```
+
+Use `validate=False` for testing with synthetic data or debugging firmware. Keep validation enabled (default) for production code.
+
 ## Next Steps
 
 - [Quick Start Guide](../tutorials/quickstart.md) - Basic getting started

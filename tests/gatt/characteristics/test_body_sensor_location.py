@@ -68,7 +68,7 @@ class TestBodySensorLocationCharacteristic(CommonCharacteristicTests):
         # Empty data - will fail when trying to access data[0]
         result = characteristic.parse_value(bytearray([]))
         assert not result.parse_success
-        assert "index out of range" in result.error_message.lower() or "insufficient" in result.error_message.lower()
+        assert "need 1 bytes" in result.error_message or "insufficient" in result.error_message.lower()
 
         # Too much data - characteristic only reads first byte, extra bytes ignored
         result = characteristic.parse_value(bytearray([0x00, 0x00]))
@@ -76,11 +76,13 @@ class TestBodySensorLocationCharacteristic(CommonCharacteristicTests):
         assert result.value == BodySensorLocation.OTHER
 
     def test_invalid_value(self, characteristic: BaseCharacteristic) -> None:
-        """Test that invalid location value raises ValueError."""
-        with pytest.raises(ValueError, match="Invalid Body Sensor Location value"):
+        """Test that invalid location value raises ValueRangeError."""
+        from bluetooth_sig.gatt.exceptions import ValueRangeError
+
+        with pytest.raises(ValueRangeError, match="Invalid BodySensorLocation"):
             characteristic.decode_value(bytearray([0x07]))  # Out of range
 
-        with pytest.raises(ValueError, match="Invalid Body Sensor Location value"):
+        with pytest.raises(ValueRangeError, match="Invalid BodySensorLocation"):
             characteristic.decode_value(bytearray([0xFF]))
 
     def test_encode_value(self, characteristic: BaseCharacteristic) -> None:

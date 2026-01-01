@@ -80,8 +80,10 @@ class TestSportTypeForAerobicAndAnaerobicThresholdsCharacteristic(CommonCharacte
         self, characteristic: SportTypeForAerobicAndAnaerobicThresholdsCharacteristic
     ) -> None:
         """Test sport type with invalid values."""
+        from bluetooth_sig.gatt.exceptions import ValueRangeError
+
         # Test invalid value (12 is reserved)
-        with pytest.raises(ValueError, match="Invalid Sport Type value: 12"):
+        with pytest.raises(ValueRangeError, match="Invalid SportType"):
             characteristic.decode_value(bytearray([12]))
 
     def test_sport_type_encoding(self, characteristic: SportTypeForAerobicAndAnaerobicThresholdsCharacteristic) -> None:
