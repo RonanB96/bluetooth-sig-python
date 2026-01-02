@@ -9,6 +9,7 @@ import msgspec
 from ..constants import SINT8_MIN
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 class DSTOffset(IntEnum):
@@ -100,7 +101,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
             raise ValueError("Local time information data must be at least 2 bytes")
 
         # Parse time zone (sint8)
-        timezone_raw = int.from_bytes(data[:1], byteorder="little", signed=True)
+        timezone_raw = DataParser.parse_int8(data, 0, signed=True)
 
         # Parse DST offset (uint8)
         dst_offset_raw = data[1]
@@ -174,9 +175,9 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
 
         """
         # Encode timezone (use raw value directly)
-        timezone_byte = data.timezone.raw_value.to_bytes(1, byteorder="little", signed=True)
+        timezone_byte = DataParser.encode_int8(data.timezone.raw_value, signed=True)
 
         # Encode DST offset (use raw value directly)
-        dst_offset_byte = data.dst_offset.raw_value.to_bytes(1, byteorder="little", signed=False)
+        dst_offset_byte = DataParser.encode_int8(data.dst_offset.raw_value, signed=False)
 
         return bytearray(timezone_byte + dst_offset_byte)

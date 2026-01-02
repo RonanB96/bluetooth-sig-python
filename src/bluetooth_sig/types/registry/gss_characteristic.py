@@ -134,20 +134,23 @@ class FieldSpec(msgspec.Struct, frozen=True, kw_only=True):
 
         Looks for patterns like:
         - "Allowed range is: -273.15 to 327.67"
+        - "Allowed range is 0 to 100"
+        - "Range: X to Y"
         - "Minimum: X" and "Maximum: Y"
+        - "Minimum value: X" and "Maximum value: Y"
         """
-        # Pattern: "Allowed range is: X to Y"
+        # Pattern: "Allowed range is/: X to Y" or "Range: X to Y"
         match = re.search(
-            r"Allowed range[^:]*:\s*([+-]?\d+\.?\d*)\s*to\s*([+-]?\d+\.?\d*)",
+            r"(?:Allowed\s+)?range(?:\s+is)?[:\s]+([+-]?\d+\.?\d*)\s*to\s*([+-]?\d+\.?\d*)",
             self.description,
             re.IGNORECASE,
         )
         if match:
             return float(match.group(1)), float(match.group(2))
 
-        # Pattern: Minimum/Maximum on separate lines
-        min_match = re.search(r"Minimum:\s*([+-]?\d+\.?\d*)", self.description)
-        max_match = re.search(r"Maximum:\s*([+-]?\d+\.?\d*)", self.description)
+        # Pattern: Minimum/Maximum on separate lines (allow optional "value" wording)
+        min_match = re.search(r"Minimum(?:\s+value)?[:\s]+([+-]?\d+\.?\d*)", self.description)
+        max_match = re.search(r"Maximum(?:\s+value)?[:\s]+([+-]?\d+\.?\d*)", self.description)
         if min_match and max_match:
             min_val = min_match.group(1)
             max_val = max_match.group(1)

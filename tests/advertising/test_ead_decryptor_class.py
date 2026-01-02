@@ -219,7 +219,8 @@ class TestEADDecryptorIntegration:
         """Test encrypting data and then decrypting it."""
         from cryptography.hazmat.primitives.ciphers.aead import AESCCM
 
-        from bluetooth_sig.advertising.ead_decryptor import build_ead_nonce, mac_address_to_bytes
+        from bluetooth_sig.advertising.ead_decryptor import build_ead_nonce
+        from bluetooth_sig.types.address import mac_address_to_bytes
         from bluetooth_sig.types.ead import EAD_MIC_SIZE
 
         # Setup
@@ -252,7 +253,8 @@ class TestEADDecryptorIntegration:
         """Test encryption/decryption with associated authenticated data."""
         from cryptography.hazmat.primitives.ciphers.aead import AESCCM
 
-        from bluetooth_sig.advertising.ead_decryptor import build_ead_nonce, mac_address_to_bytes
+        from bluetooth_sig.advertising.ead_decryptor import build_ead_nonce
+        from bluetooth_sig.types.address import mac_address_to_bytes
         from bluetooth_sig.types.ead import EAD_MIC_SIZE
 
         session_key = VALID_KEY
@@ -281,7 +283,8 @@ class TestEADDecryptorIntegration:
         """Test decrypting EAD with empty payload (just randomizer + MIC)."""
         from cryptography.hazmat.primitives.ciphers.aead import AESCCM
 
-        from bluetooth_sig.advertising.ead_decryptor import build_ead_nonce, mac_address_to_bytes
+        from bluetooth_sig.advertising.ead_decryptor import build_ead_nonce
+        from bluetooth_sig.types.address import mac_address_to_bytes
         from bluetooth_sig.types.ead import EAD_MIC_SIZE
 
         session_key = VALID_KEY
@@ -312,7 +315,8 @@ class TestEADDecryptorProviderIntegration:
         """Test successful key lookup from provider."""
         from cryptography.hazmat.primitives.ciphers.aead import AESCCM
 
-        from bluetooth_sig.advertising.ead_decryptor import build_ead_nonce, mac_address_to_bytes
+        from bluetooth_sig.advertising.ead_decryptor import build_ead_nonce
+        from bluetooth_sig.types.address import mac_address_to_bytes
         from bluetooth_sig.types.ead import EAD_MIC_SIZE
 
         session_key = VALID_KEY

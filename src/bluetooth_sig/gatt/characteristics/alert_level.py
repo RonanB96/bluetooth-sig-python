@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from enum import IntEnum
 
-from bluetooth_sig.types.context import CharacteristicContext
-
 from .base import BaseCharacteristic
-from .templates import Uint8Template
+from .templates import EnumTemplate
 
 
 class AlertLevel(IntEnum):
@@ -42,57 +40,8 @@ class AlertLevelCharacteristic(BaseCharacteristic):
     Spec: Bluetooth SIG GATT Specification Supplement, Alert Level
     """
 
-    _template = Uint8Template()
+    _template = EnumTemplate.uint8(AlertLevel)
 
     # YAML has no range constraint; enforce valid enum bounds.
     min_value: int = AlertLevel.NO_ALERT  # 0
     max_value: int = AlertLevel.HIGH_ALERT  # 2
-
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertLevel:
-        """Decode alert level from raw bytes.
-
-        Args:
-            data: Raw bytes from BLE characteristic (1 byte)
-            ctx: Optional context for parsing
-
-        Returns:
-            AlertLevel enum value
-
-        Raises:
-            ValueError: If data is less than 1 byte or value is invalid
-
-        """
-        raw_value = self._template.decode_value(data, offset=0, ctx=ctx)
-
-        # Validate against known values
-        if raw_value not in (AlertLevel.NO_ALERT, AlertLevel.MILD_ALERT, AlertLevel.HIGH_ALERT):
-            raise ValueError(
-                f"Alert Level value {raw_value} is reserved or invalid. "
-                f"Valid values: 0 (No Alert), 1 (Mild Alert), 2 (High Alert)"
-            )
-
-        return AlertLevel(raw_value)
-
-    def encode_value(self, data: AlertLevel | int) -> bytearray:
-        r"""Encode alert level to raw bytes.
-
-        Args:
-            data: AlertLevel enum value or integer (0-2)
-
-        Returns:
-            Encoded characteristic data (1 byte)
-
-        Raises:
-            ValueError: If data is not 0, 1, or 2
-
-        """
-        # Convert AlertLevel to int if needed
-        int_value = int(data) if isinstance(data, AlertLevel) else data
-
-        # Validate range
-        if int_value not in (AlertLevel.NO_ALERT, AlertLevel.MILD_ALERT, AlertLevel.HIGH_ALERT):
-            raise ValueError(
-                f"Alert Level value {int_value} is invalid. Valid values: 0 (No Alert), 1 (Mild Alert), 2 (High Alert)"
-            )
-
-        return self._template.encode_value(int_value)

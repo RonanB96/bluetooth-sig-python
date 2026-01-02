@@ -1,42 +1,13 @@
-"""Device Information Service characteristics."""
+"""Device Information Service characteristics - re-exports for backward compatibility."""
 
 from __future__ import annotations
 
-from .base import BaseCharacteristic
-from .templates import Utf8StringTemplate
+from .firmware_revision_string import FirmwareRevisionStringCharacteristic
+from .hardware_revision_string import HardwareRevisionStringCharacteristic
+from .software_revision_string import SoftwareRevisionStringCharacteristic
 
-
-class FirmwareRevisionStringCharacteristic(BaseCharacteristic):
-    """Firmware Revision String characteristic (0x2A26).
-
-    org.bluetooth.characteristic.firmware_revision_string
-
-    Firmware Revision String characteristic.
-    """
-
-    _template = Utf8StringTemplate()
-    min_length = 0
-
-
-class HardwareRevisionStringCharacteristic(BaseCharacteristic):
-    """Hardware Revision String characteristic (0x2A27).
-
-    org.bluetooth.characteristic.hardware_revision_string
-
-    Hardware Revision String characteristic.
-    """
-
-    _template = Utf8StringTemplate()
-    min_length = 0
-
-
-class SoftwareRevisionStringCharacteristic(BaseCharacteristic):
-    """Software Revision String characteristic (0x2A28).
-
-    org.bluetooth.characteristic.software_revision_string
-
-    Software Revision String characteristic.
-    """
-
-    _template = Utf8StringTemplate()
-    min_length = 0
+__all__ = [
+    "FirmwareRevisionStringCharacteristic",
+    "HardwareRevisionStringCharacteristic",
+    "SoftwareRevisionStringCharacteristic",
+]

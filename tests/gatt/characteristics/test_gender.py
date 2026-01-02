@@ -71,7 +71,9 @@ class TestGenderCharacteristic(CommonCharacteristicTests):
     def test_gender_invalid_values(self, characteristic: GenderCharacteristic) -> None:
         """Test gender with invalid values."""
         # Test invalid value (3 is reserved)
-        with pytest.raises(ValueError, match="Invalid Gender value: 3"):
+        from bluetooth_sig.gatt.exceptions import ValueRangeError
+
+        with pytest.raises(ValueRangeError, match="Invalid Gender"):
             characteristic.decode_value(bytearray([3]))
 
     def test_gender_encoding(self, characteristic: GenderCharacteristic) -> None:

@@ -8,6 +8,7 @@ from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 class ElectricCurrentRangeData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
@@ -63,8 +64,8 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
             raise ValueError("Electric current range data must be at least 4 bytes")
 
         # Convert 2x uint16 (little endian) to current range in Amperes
-        min_current_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
-        max_current_raw = int.from_bytes(data[2:4], byteorder="little", signed=False)
+        min_current_raw = DataParser.parse_int16(data, 0, signed=False)
+        max_current_raw = DataParser.parse_int16(data, 2, signed=False)
 
         return ElectricCurrentRangeData(min=min_current_raw * 0.01, max=max_current_raw * 0.01)
 
@@ -93,7 +94,7 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
 
         # Encode as 2 uint16 values (little endian)
         result = bytearray()
-        result.extend(min_current_raw.to_bytes(2, byteorder="little", signed=False))
-        result.extend(max_current_raw.to_bytes(2, byteorder="little", signed=False))
+        result.extend(DataParser.encode_int16(min_current_raw, signed=False))
+        result.extend(DataParser.encode_int16(max_current_raw, signed=False))
 
         return result

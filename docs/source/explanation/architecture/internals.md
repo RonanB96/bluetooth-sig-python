@@ -244,18 +244,54 @@ sequenceDiagram
 
 ### Declarative Validation Pattern
 
-Instead of manual validation in `decode_value`, characteristics declare constraints as class attributes:
+Characteristics declare constraints as class attributes instead of implementing manual validation in `decode_value()`:
 
-**Example**: The `BatteryLevelCharacteristic` demonstrates this pattern. Rather than implementing manual length checks and range validation in the decode method, it declares `expected_length = 1`, `min_value = 0`, and `max_value = 100` as class attributes. The base class automatically enforces these constraints before calling the decode method.
+:::::{grid} 2
+:gutter: 3
 
-This approach:
+::::{grid-item}
+**Before** (Manual Validation):
+
+```python
+def decode_value(self, data: bytearray) -> int:
+    if len(data) != 1:
+        raise ValueError("Need 1 byte")
+    level = data[0]
+    if not 0 <= level <= 100:
+        raise ValueError("Must be 0-100")
+    return level
+```
+
+::::
+
+::::{grid-item}
+**After** (Declarative):
+
+```python
+expected_length = 1
+min_value = 0
+max_value = 100
+
+def decode_value(self, data: bytearray) -> int:
+    return data[0]  # Validation automatic
+```
+
+::::
+
+:::::
+
+**Example**: :class:`~bluetooth_sig.gatt.characteristics.battery.BatteryLevelCharacteristic` declares `expected_length = 1`, `min_value = 0`, and `max_value = 100` as class attributes. The base class enforces these constraints before calling `decode_value()`.
+
+**Benefits**:
 
 - **Reduces boilerplate**: No repetitive validation code
-- **Prevents errors**: Can't forget validation steps
-- **Improves consistency**: All characteristics validated the same way
+- **Prevents errors**: Cannot forget validation steps
+- **Improves consistency**: All characteristics validated uniformly
 - **Enhances readability**: Constraints visible at class level
 
-See {py:class}`~bluetooth_sig.gatt.characteristics.base.BaseCharacteristic` API reference for all available validation attributes.
+Validation can be disabled per-instance via `validate=False` parameter for testing or debugging non-compliant devices.
+
+See {py:class}`~bluetooth_sig.gatt.characteristics.base.BaseCharacteristic` for available validation attributes.
 
 ### Template Composition System
 
@@ -571,6 +607,8 @@ See [Adding Characteristics Guide](../../how-to/adding-characteristics.md) for s
 ### Level 2: Declarative Validation (Optional)
 
 **Add validation attributes**: Declare `expected_length`, `min_value`, `max_value`, and `expected_type` as class attributes. The base class automatically validates these constraints before calling `decode_value()`, eliminating boilerplate validation code.
+
+**Validation control**: Pass `validate=False` to the constructor to disable validation for permissive parsing, testing, or debugging non-compliant devices. Validation is enabled by default.
 
 ### Level 3: Template Composition (Optional)
 

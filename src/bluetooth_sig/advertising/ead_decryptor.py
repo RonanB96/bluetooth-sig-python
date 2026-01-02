@@ -19,6 +19,7 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESCCM
 
 from bluetooth_sig.advertising.encryption import EADKeyProvider
+from bluetooth_sig.types.address import mac_address_to_bytes
 from bluetooth_sig.types.ead import (
     EAD_MIN_SIZE,
     EAD_RANDOMIZER_SIZE,
@@ -92,35 +93,6 @@ def build_ead_nonce(
     # Nonce: Randomizer(5) + Address(6) + Padding(2)
     padding = b"\x00\x00"
     return randomizer + device_address + padding
-
-
-def mac_address_to_bytes(mac_address: str) -> bytes:
-    """Convert a MAC address string to 6 bytes.
-
-    Args:
-        mac_address: MAC address string (e.g., "AA:BB:CC:DD:EE:FF")
-
-    Returns:
-        6-byte representation of the MAC address
-
-    Raises:
-        ValueError: If MAC address format is invalid
-
-    Example:
-        >>> mac_address_to_bytes("AA:BB:CC:DD:EE:FF").hex()
-        'aabbccddeeff'
-    """
-    # Remove colons/dashes and convert to bytes
-    cleaned = mac_address.replace(":", "").replace("-", "")
-    if len(cleaned) != 12:
-        msg = f"Invalid MAC address format: {mac_address}"
-        raise ValueError(msg)
-
-    try:
-        return bytes.fromhex(cleaned)
-    except ValueError as err:
-        msg = f"Invalid MAC address hex characters: {mac_address}"
-        raise ValueError(msg) from err
 
 
 def decrypt_ead(  # pylint: disable=too-many-return-statements

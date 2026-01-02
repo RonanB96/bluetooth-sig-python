@@ -8,6 +8,7 @@ from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 class VoltageStatisticsData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
@@ -75,9 +76,9 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
             raise ValueError("Voltage statistics data must be at least 6 bytes")
 
         # Convert 3x uint16 (little endian) to voltage statistics in Volts
-        min_voltage_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
-        max_voltage_raw = int.from_bytes(data[2:4], byteorder="little", signed=False)
-        avg_voltage_raw = int.from_bytes(data[4:6], byteorder="little", signed=False)
+        min_voltage_raw = DataParser.parse_int16(data, 0, signed=False)
+        max_voltage_raw = DataParser.parse_int16(data, 2, signed=False)
+        avg_voltage_raw = DataParser.parse_int16(data, 4, signed=False)
 
         return VoltageStatisticsData(
             minimum=min_voltage_raw / 64.0,
@@ -118,8 +119,8 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
 
         # Encode as 3 uint16 values (little endian)
         result = bytearray()
-        result.extend(min_voltage_raw.to_bytes(2, byteorder="little", signed=False))
-        result.extend(max_voltage_raw.to_bytes(2, byteorder="little", signed=False))
-        result.extend(avg_voltage_raw.to_bytes(2, byteorder="little", signed=False))
+        result.extend(DataParser.encode_int16(min_voltage_raw, signed=False))
+        result.extend(DataParser.encode_int16(max_voltage_raw, signed=False))
+        result.extend(DataParser.encode_int16(avg_voltage_raw, signed=False))
 
         return result

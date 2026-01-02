@@ -117,8 +117,9 @@ def test_code_blocks_have_language(all_markdown_files: list[Path]) -> None:
         # Use possessive quantifier (via atomic group) to prevent backtracking
         content = re.sub(r"```\n(?::[\w-]+:[^\n]*\n)*?```", "", content, flags=re.DOTALL)
 
-        # Pattern 3: Closing ``` for MyST containers (::::{directive}...```)
-        content = re.sub(r"::::\{[^}]+\}.*?```", "", content, flags=re.DOTALL)
+        # Pattern 3: Remove MyST grid/container blocks (:::::{grid}...::::)
+        # These contain code blocks that shouldn't be checked
+        content = re.sub(r":::+\{[^}]+\}.*?:::+\s*$", "", content, flags=re.MULTILINE | re.DOTALL)
 
         # Now find code blocks: ```[optional-language]\n...content...\n```
         # We want to find blocks where opening ``` is NOT followed by a language identifier
@@ -126,15 +127,21 @@ def test_code_blocks_have_language(all_markdown_files: list[Path]) -> None:
         # But we need to match the FULL block to avoid double-counting closing fences
         code_block_pattern = re.compile(r"^```(\w*)\s*\n.*?^```\s*$", re.MULTILINE | re.DOTALL)
 
-        blocks_without_language = 0
+        blocks_without_language = []
         for match in code_block_pattern.finditer(content):
             language = match.group(1)
             if not language:  # Empty language = no language specified
-                blocks_without_language += 1
+                # Find approximate line number by counting newlines before match
+                line_num = content[: match.start()].count("\n") + 1
+                # Try to find a better line number in original content
+                snippet = match.group(0)[:50].replace("\n", " ")
+                blocks_without_language.append((line_num, snippet))
 
-        if blocks_without_language > 0:
+        if blocks_without_language:
+            line_info = ", ".join(f"L{line}" for line, _ in blocks_without_language[:5])
             issues.append(
-                f"{file.relative_to(DOCS_SOURCE_DIR)}: {blocks_without_language} code block(s) without language"
+                f"{file.relative_to(DOCS_SOURCE_DIR)}: "
+                f"{len(blocks_without_language)} code block(s) without language at lines: {line_info}"
             )
 
     if issues:

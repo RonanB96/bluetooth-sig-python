@@ -18,7 +18,6 @@ from bluetooth_sig.advertising.ead_decryptor import (
     build_ead_nonce,
     decrypt_ead,
     decrypt_ead_from_raw,
-    mac_address_to_bytes,
 )
 from bluetooth_sig.advertising.encryption import (
     DictKeyProvider,
@@ -30,6 +29,7 @@ from bluetooth_sig.advertising.registry import (
     AdvertisingInterpreterRegistry,
     advertising_interpreter_registry,
 )
+from bluetooth_sig.types.address import bytes_to_mac_address, mac_address_to_bytes
 
 __all__ = [
     # PDU parser
@@ -50,5 +50,7 @@ __all__ = [
     "decrypt_ead",
     "decrypt_ead_from_raw",
     "build_ead_nonce",
+    # Address utilities
     "mac_address_to_bytes",
+    "bytes_to_mac_address",
 ]
