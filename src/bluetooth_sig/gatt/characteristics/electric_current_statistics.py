@@ -8,6 +8,7 @@ from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 class ElectricCurrentStatisticsData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
@@ -75,9 +76,9 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
             raise ValueError("Electric current statistics data must be at least 6 bytes")
 
         # Convert 3x uint16 (little endian) to current statistics in Amperes
-        min_current_raw = int.from_bytes(data[:2], byteorder="little", signed=False)
-        max_current_raw = int.from_bytes(data[2:4], byteorder="little", signed=False)
-        avg_current_raw = int.from_bytes(data[4:6], byteorder="little", signed=False)
+        min_current_raw = DataParser.parse_int16(data, 0, signed=False)
+        max_current_raw = DataParser.parse_int16(data, 2, signed=False)
+        avg_current_raw = DataParser.parse_int16(data, 4, signed=False)
 
         return ElectricCurrentStatisticsData(
             minimum=min_current_raw * 0.01,
@@ -102,8 +103,8 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
 
         # Encode as 3 uint16 values (little endian)
         result = bytearray()
-        result.extend(min_current_raw.to_bytes(2, byteorder="little", signed=False))
-        result.extend(max_current_raw.to_bytes(2, byteorder="little", signed=False))
-        result.extend(avg_current_raw.to_bytes(2, byteorder="little", signed=False))
+        result.extend(DataParser.encode_int16(min_current_raw, signed=False))
+        result.extend(DataParser.encode_int16(max_current_raw, signed=False))
+        result.extend(DataParser.encode_int16(avg_current_raw, signed=False))
 
         return result

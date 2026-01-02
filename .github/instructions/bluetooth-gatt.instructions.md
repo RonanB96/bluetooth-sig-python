@@ -48,17 +48,6 @@ class MyCustomChar(BaseCharacteristic):
     )
 ```
 
-**Example - WRONG:**
-```python
-# ❌ Hardcoded UUID string
-if characteristic_uuid == "2A19":
-    return parse_battery_level(data)
-
-# ❌ Hardcoded full UUID
-if str(uuid) == "0000180f-0000-1000-8000-00805f9b34fb":
-    return BatteryService()
-```
-
 ## Registry & UUID Usage
 
 **No hardcoded UUID string literals in logic modules:**
@@ -110,68 +99,114 @@ custom = MyCustomChar()
 value = custom.decode_value(data)  # Same method!
 ```
 
-**Example - WRONG (different APIs):**
-```python
-# ❌ Don't make users use different patterns
-sig_value = sig_char.decode(data)  # Different method name
-custom_value = custom_char.parse_data(data)  # Different method name
-```
-
 ## Characteristic Implementation Pattern
 
-**ALL characteristics MUST follow this pattern:**
+**Choose the appropriate pattern based on complexity:**
+
+### Pattern 1: Simple Single-Value (Use Template)
 ```python
 from __future__ import annotations
-from dataclasses import dataclass
 from .base import BaseCharacteristic
-from bluetooth_sig.gatt.exceptions import InsufficientDataError
-
-@dataclass(frozen=True)
-class BatteryLevelData:
-    """Battery level characteristic data.
-
-    Attributes:
-        level: Battery level percentage (0-100)
-        unit: Always '%'
-    """
-    level: int
-    unit: str = "%"
+from .templates import Uint8Template
 
 class BatteryLevelCharacteristic(BaseCharacteristic):
     """Battery Level characteristic (0x2A19).
 
-    Spec: Bluetooth SIG Assigned Numbers, Battery Level characteristic
+    org.bluetooth.characteristic.battery_level
+
+    Represents battery level as percentage (0-100).
     """
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
-        """Decode battery level from raw bytes.
+    # Template handles everything - no decode_value needed
+    _template = Uint8Template()
+```
+
+### Pattern 2: Structured Multi-Field (Manual Decode)
+```python
+from __future__ import annotations
+from enum import IntFlag
+import msgspec
+from ..context import CharacteristicContext
+from .base import BaseCharacteristic
+from .utils import DataParser
+
+class HeartRateFlags(IntFlag):
+    """Heart rate measurement flags."""
+    HEART_RATE_VALUE_FORMAT_UINT16 = 0x01
+    SENSOR_CONTACT_DETECTED = 0x02
+    SENSOR_CONTACT_SUPPORTED = 0x04
+    ENERGY_EXPENDED_PRESENT = 0x08
+    RR_INTERVAL_PRESENT = 0x10
+
+class HeartRateData(msgspec.Struct, frozen=True, kw_only=True):
+    """Heart rate measurement data.
+
+    Attributes:
+        heart_rate: Heart rate in BPM
+        energy_expended: Optional energy in kJ
+        rr_intervals: RR intervals in seconds
+    """
+    heart_rate: int
+    energy_expended: int | None = None
+    rr_intervals: tuple[float, ...] = ()
+
+class HeartRateMeasurementCharacteristic(BaseCharacteristic):
+    """Heart Rate Measurement characteristic (0x2A37).
+
+    org.bluetooth.characteristic.heart_rate_measurement
+    """
+
+    _manual_value_type = "HeartRateData"  # Override for structured types
+
+    min_length = 2  # BaseCharacteristic validates
+    allow_variable_length = True
+
+    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> HeartRateData:
+        """Parse heart rate measurement.
 
         Args:
-            data: Raw bytes from BLE characteristic (1 byte)
-            ctx: Optional context for parsing
+            data: Raw bytes (length already validated by BaseCharacteristic)
+            ctx: Optional context
 
         Returns:
-            Battery level percentage (0-100)
-
-        Raises:
-            InsufficientDataError: If data length is not exactly 1 byte
-            ValueRangeError: If value is not in range 0-100
+            HeartRateData with parsed fields
         """
-        if len(data) != 1:
-            raise InsufficientDataError(
-                f"Battery Level requires exactly 1 byte, got {len(data)}"
-            )
+        # Parse flags using IntFlag enum
+        flags = HeartRateFlags(data[0])
+        offset = 1
 
-        value = int(data[0])
-        if not 0 <= value <= 100:
-            raise ValueRangeError(f"Battery level must be 0-100%, got {value}%")
+        # Parse based on flags - use named enum members
+        if flags & HeartRateFlags.HEART_RATE_VALUE_FORMAT_UINT16:
+            heart_rate = DataParser.parse_int16(data, offset, signed=False)
+            offset += 2
+        else:
+            heart_rate = DataParser.parse_int8(data, offset, signed=False)
+            offset += 1
 
-        return value
+        # Optional fields based on flags...
+        return HeartRateData(heart_rate=heart_rate)
+```
 
-    @property
-    def unit(self) -> str:
-        """Return the unit for this characteristic."""
-        return "%"
+### Pattern 3: Enum/Bitfield (Use EnumTemplate or IntFlag)
+```python
+from __future__ import annotations
+from enum import IntFlag
+from .base import BaseCharacteristic
+from .templates import EnumTemplate
+
+class AlertLevel(IntFlag):
+    """Alert level enumeration."""
+    NO_ALERT = 0x00
+    MILD_ALERT = 0x01
+    HIGH_ALERT = 0x02
+
+class AlertLevelCharacteristic(BaseCharacteristic):
+    """Alert Level characteristic (0x2A06).
+
+    org.bluetooth.characteristic.alert_level
+    """
+
+    _template = EnumTemplate.uint8(AlertLevel)
 ```
 
 ## Parsing Standards
@@ -182,35 +217,59 @@ class BatteryLevelCharacteristic(BaseCharacteristic):
 - **Pressure**: uint32, 0.1 Pa resolution → convert to hPa
 - **Battery**: uint8, direct percentage value
 
-**Validation sequence:**
-1. Length validation FIRST (before any decoding)
-2. Decode raw value
-3. Check for special sentinels (0xFFFF, etc.)
-4. Range validation
-5. Apply scaling/conversion
-6. Return typed result
+**Framework Responsibilities (BaseCharacteristic handles these - DO NOT duplicate in decode_value):**
+1. **Length validation**: Via `min_length`, `max_length`, `allow_variable_length` attributes
+2. **Special/sentinel values**: Via `special_values` dictionary on BaseCharacteristic
+3. **Range validation**: Via validators in characteristic definition
 
-**Example with sentinel handling:**
+**Characteristic decode_value() should ONLY:**
+1. Parse raw bytes into structured data using templates or DataParser
+2. Apply scaling/conversions per spec
+3. Return typed result
+
+**Example - CORRECT (using template):**
 ```python
-def decode_value(self, data: bytearray) -> float | None:
-    """Decode temperature with sentinel value handling."""
-    # 1. Length validation
-    if len(data) != 2:
-        raise InsufficientDataError(f"Temperature requires 2 bytes, got {len(data)}")
+from .templates import ScaledSint16Template
 
-    # 2. Decode raw value
-    raw_value = int.from_bytes(data, byteorder="little", signed=True)
+class TemperatureCharacteristic(BaseCharacteristic):
+    """Temperature characteristic (0x2A6E).
 
-    # 3. Check sentinel
-    if raw_value == -32768:  # 0x8000 = "Not available"
-        return None
+    org.bluetooth.characteristic.temperature
+    """
 
-    # 4. Range validation
-    if not -27315 <= raw_value <= 32767:  # -273.15°C to 327.67°C
-        raise ValueRangeError(f"Temperature {raw_value * 0.01}°C out of valid range")
+    # Framework handles validation via attributes
+    min_length = 2
+    max_length = 2
+    allow_variable_length = False
 
-    # 5. Apply scaling
-    return raw_value * 0.01  # °C
+    # Use template for parsing - no manual validation needed
+    _template = ScaledSint16Template.from_letter_method(M=1, d=-2, b=0)  # 0.01 scaling
+```
+
+**Example - CORRECT (manual decode with DataParser):**
+```python
+from __future__ import annotations
+import msgspec
+from ..context import CharacteristicContext
+from .utils import DataParser
+
+class MyCharacteristicData(msgspec.Struct, frozen=True, kw_only=True):
+    """Multi-field characteristic data.
+
+    Attributes:
+        field1: First field description
+        field2: Second field description
+    """
+    field1: int
+    field2: int
+
+def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> MyCharacteristicData:
+    """Decode structured multi-field characteristic."""
+    # BaseCharacteristic already validated length - just parse
+    return MyCharacteristicData(
+        field1=DataParser.parse_int16(data, 0, signed=False),
+        field2=DataParser.parse_int8(data, 2, signed=True),
+    )
 ```
 
 ## Service Implementation Pattern
@@ -245,38 +304,47 @@ class BatteryService(BaseService):
 # ✅ CORRECT - explicit timeout
 await client.read_gatt_char(uuid, timeout=10.0)
 
-# ❌ WRONG - no timeout (could hang forever)
-await client.read_gatt_char(uuid)
+**Only raise exceptions for:**
+- Parse errors specific to your characteristic's structure
+- Invalid flag combinations
+- Malformed multi-field data
+
+**Example - CORRECT:**
+```python
+from __future__ import annotations
+from enum import IntFlag
+import msgspec
+
+class MyCharacteristicFlags(IntFlag):
+    """Characteristic flags."""
+    FIELD_PRESENT = 0x01
+    EXTENDED_FORMAT = 0x02
+
+class MyCharacteristicData(msgspec.Struct, frozen=True, kw_only=True):
+    """Characteristic data.
+
+    Attributes:
+        field: Field description
+    """
+    field: int
+
+def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> MyCharacteristicData:
+    """Parse complex characteristic."""
+    # Length already validated by BaseCharacteristic
+
+    flags = MyCharacteristicFlags(data[0])
+    offset = 1
+
+    # Raise only for structural/logical errors
+    if flags & MyCharacteristicFlags.FIELD_PRESENT and len(data) < offset + 2:
+        raise ValueError(f"FIELD_PRESENT flag set but insufficient data")
+
+    # Parse and return - no length checks needed
+    return MyCharacteristicData(field=DataParser.parse_int16(data, offset, signed=False))
 ```
 
-**Performance considerations:**
-- Avoid redundant service discovery
-- Cache structured discovery results where safe
-- Release/close BLE resources deterministically (context managers or explicit close)
-
-## Bit Field Parsing
-
-**Use named bit field abstractions, not magic masks:**
-```python
-from dataclasses import dataclass
-
-@dataclass
-class TemperatureFlags:
-    """Temperature measurement flags byte."""
-    celsius: bool          # Bit 0: 0=Fahrenheit, 1=Celsius
-    timestamp: bool        # Bit 1: Timestamp present
-    temperature_type: bool # Bit 2: Temperature type present
-
-    @classmethod
-    def from_byte(cls, byte: int) -> TemperatureFlags:
-        """Parse flags from byte."""
-        return cls(
-            celsius=bool(byte & 0x01),
-            timestamp=bool(byte & 0x02),
-            temperature_type=bool(byte & 0x04),
-        )
-
 # Usage in characteristic
+```python
 def decode_value(self, data: bytearray) -> TemperatureMeasurement:
     """Decode temperature measurement."""
     flags = TemperatureFlags.from_byte(data[0])
@@ -292,34 +360,6 @@ def decode_value(self, data: bytearray) -> TemperatureMeasurement:
     # etc.
 ```
 
-## Error Handling
-
-**GATT-specific exceptions:**
-```python
-from bluetooth_sig.gatt.exceptions import (
-    BluetoothSIGError,        # Base exception
-    InsufficientDataError,    # Data too short
-    ValueRangeError,          # Value out of spec range
-    UUIDResolutionError,      # UUID not found in registry
-    TypeMismatchError,        # Wrong data type
-)
-
-# Usage
-def decode_value(self, data: bytearray) -> int:
-    """Decode with proper error handling."""
-    if len(data) < 2:
-        raise InsufficientDataError(
-            f"{self._info.name} requires at least 2 bytes, got {len(data)}"
-        )
-
-    value = int.from_bytes(data[:2], "little")
-    if value > 1000:
-        raise ValueRangeError(
-            f"{self._info.name} value {value} exceeds maximum 1000"
-        )
-
-    return value
-```
 
 ## Documentation Requirements
 
@@ -338,11 +378,21 @@ def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None
     Returns:
         Temperature in degrees Celsius
 
-    Raises:
-        InsufficientDataError: If data is not exactly 2 bytes
-        ValueRangeError: If temperature is outside valid range
+   **Is it in Bluetooth SIG assigned numbers?** → Use registry resolution (no `_info` needed)
+2. **Is it vendor-specific?** → Create custom with `_info`
+3. **Can I use a template?** → Check templates.py for Uint8/16/32, Scaled, Enum, Float, String, etc.
+4. **Does similar characteristic exist?** → Inherit and extend
+5. **What validation attributes do I need?** → Set `min_length`, `max_length`, `allow_variable_length`
+6. **Are there special values?** → Use `special_values` attribute, don't check in decode_value
+7. **What's the spec say?** → Check official Bluetooth SIG documentation
 
-    Examples:
+**Implementation Checklist:**
+- [ ] Choose appropriate pattern (template vs manual decode)
+- [ ] Set validation attributes (min_length, max_length, allow_variable_length)
+- [ ] Configure special_values if needed (don't check manually)
+- [ ] Use DataParser or templates for parsing (no manual length checks)
+- [ ] Return typed data (int, float, msgspec.Struct, IntFlag, etc.)
+- [ ] Write tests with valid and invalid data
         >>> char = TemperatureCharacteristic()
         >>> char.decode_value(bytearray([0x00, 0x10]))  # 4096 * 0.01 = 40.96°C
         40.96

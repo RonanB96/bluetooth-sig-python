@@ -295,6 +295,37 @@ class Sint16Template(CodingTemplate):
         return self.extractor.pack(value)
 
 
+class Uint24Template(CodingTemplate):
+    """Template for 24-bit unsigned integer parsing (0-16777215)."""
+
+    @property
+    def data_size(self) -> int:
+        """Size: 3 bytes."""
+        return 3
+
+    @property
+    def extractor(self) -> RawExtractor:
+        """Get uint24 extractor."""
+        return UINT24
+
+    @property
+    def translator(self) -> ValueTranslator[int]:
+        """Return identity translator for no scaling."""
+        return IDENTITY
+
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
+        """Parse 24-bit unsigned integer."""
+        if len(data) < offset + 3:
+            raise InsufficientDataError("uint24", data[offset:], 3)
+        return self.extractor.extract(data, offset)
+
+    def encode_value(self, value: int) -> bytearray:
+        """Encode uint24 value to bytes."""
+        if not 0 <= value <= UINT24_MAX:
+            raise ValueError(f"Value {value} out of range for uint24 (0-{UINT24_MAX})")
+        return self.extractor.pack(value)
+
+
 class Uint32Template(CodingTemplate):
     """Template for 32-bit unsigned integer parsing."""
 
@@ -1367,6 +1398,7 @@ __all__ = [
     "Sint8Template",
     "Uint16Template",
     "Sint16Template",
+    "Uint24Template",
     "Uint32Template",
     # Enum template
     "EnumTemplate",

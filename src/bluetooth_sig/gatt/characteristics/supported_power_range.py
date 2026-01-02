@@ -8,6 +8,7 @@ from ...types.gatt_enums import ValueType
 from ..constants import SINT16_MAX, SINT16_MIN
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 class SupportedPowerRangeData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
@@ -62,8 +63,8 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
             raise ValueError("Supported power range data must be at least 4 bytes")
 
         # Convert 2x sint16 (little endian) to power range in Watts
-        min_power_raw = int.from_bytes(data[:2], byteorder="little", signed=True)
-        max_power_raw = int.from_bytes(data[2:4], byteorder="little", signed=True)
+        min_power_raw = DataParser.parse_int16(data, 0, signed=True)
+        max_power_raw = DataParser.parse_int16(data, 2, signed=True)
 
         return SupportedPowerRangeData(minimum=min_power_raw, maximum=max_power_raw)
 
@@ -87,7 +88,7 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
             raise ValueError(f"Maximum power {data.maximum} exceeds sint16 range")
         # Encode as 2 sint16 values (little endian)
         result = bytearray()
-        result.extend(data.minimum.to_bytes(2, byteorder="little", signed=True))
-        result.extend(data.maximum.to_bytes(2, byteorder="little", signed=True))
+        result.extend(DataParser.encode_int16(data.minimum, signed=True))
+        result.extend(DataParser.encode_int16(data.maximum, signed=True))
 
         return result

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import msgspec
 
 from .base_types import SIGInfo
@@ -34,6 +36,14 @@ class DateData(msgspec.Struct, frozen=True, kw_only=True):
     year: int
     month: int
     day: int
+
+    def to_datetime(self) -> datetime:
+        """Convert to Python datetime (time components set to 00:00:00).
+
+        Returns:
+            datetime object with date components
+        """
+        return datetime(self.year, self.month, self.day)
 
 
 class CharacteristicInfo(SIGInfo):

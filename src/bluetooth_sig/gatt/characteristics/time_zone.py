@@ -6,6 +6,7 @@ from ...types.gatt_enums import ValueType
 from ..constants import SINT8_MIN
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .utils import DataParser
 
 
 class TimeZoneCharacteristic(BaseCharacteristic):
@@ -28,7 +29,7 @@ class TimeZoneCharacteristic(BaseCharacteristic):
             raise ValueError("Time zone data must be at least 1 byte")
 
         # Parse sint8 value
-        offset_raw = int.from_bytes(data[:1], byteorder="little", signed=True)
+        offset_raw = DataParser.parse_int8(data, 0, signed=True)
 
         # Handle special values
         if offset_raw == SINT8_MIN:
@@ -107,4 +108,4 @@ class TimeZoneCharacteristic(BaseCharacteristic):
                 f"Time zone offset {offset_raw} is outside valid range (-48 to +56, or SINT8_MIN for unknown)"
             )
 
-        return bytearray(offset_raw.to_bytes(1, byteorder="little", signed=True))
+        return bytearray(DataParser.encode_int8(offset_raw, signed=True))

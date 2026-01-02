@@ -6,6 +6,7 @@ from ...types import DateData
 from ..context import CharacteristicContext
 from ..exceptions import InsufficientDataError, ValueRangeError
 from .base import BaseCharacteristic
+from .utils import DataParser
 from .utils.ieee11073_parser import IEEE11073Parser
 
 DateOfThresholdAssessmentData = DateData
@@ -38,7 +39,7 @@ class DateOfThresholdAssessmentCharacteristic(BaseCharacteristic):
             raise InsufficientDataError("Date of Threshold Assessment", data, 4)
 
         # Year is uint16 (little-endian)
-        year = int.from_bytes(data[0:2], byteorder="little", signed=False)
+        year = DataParser.parse_int16(data, 0, signed=False)
 
         # Month is uint8
         month = data[2]
@@ -75,7 +76,7 @@ class DateOfThresholdAssessmentCharacteristic(BaseCharacteristic):
         result = bytearray()
 
         # Encode year (uint16, little-endian)
-        result.extend(data.year.to_bytes(2, byteorder="little", signed=False))
+        result.extend(DataParser.encode_int16(data.year, signed=False))
 
         # Encode month (uint8)
         result.append(data.month)

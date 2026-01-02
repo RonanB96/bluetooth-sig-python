@@ -12,9 +12,9 @@ from bluetooth_sig.advertising.ead_decryptor import (
     build_ead_nonce,
     decrypt_ead,
     decrypt_ead_from_raw,
-    mac_address_to_bytes,
 )
 from bluetooth_sig.advertising.encryption import DictKeyProvider
+from bluetooth_sig.types.address import mac_address_to_bytes
 from bluetooth_sig.types.ead import (
     EAD_MIC_SIZE,
     EAD_MIN_SIZE,

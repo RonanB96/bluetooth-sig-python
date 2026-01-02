@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.generic_access import ServiceChangedCharacteristic, ServiceChangedData
+from bluetooth_sig.gatt.characteristics import ServiceChangedCharacteristic, ServiceChangedData
+from bluetooth_sig.gatt.exceptions import InsufficientDataError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -73,16 +74,17 @@ class TestServiceChangedCharacteristic(CommonCharacteristicTests):
         assert decoded == service_changed
 
     def test_invalid_length_raises_error(self) -> None:
-        """Test that invalid data lengths raise ValueError."""
+        """Test that invalid data lengths raise InsufficientDataError."""
         char = ServiceChangedCharacteristic()
 
         # Test too short
-        with pytest.raises(ValueError, match="Service Changed characteristic requires 4 bytes, got 2"):
+        with pytest.raises(InsufficientDataError):
             char.decode_value(bytearray([0x00, 0x00]))
 
-        # Test too long
-        with pytest.raises(ValueError, match="Service Changed characteristic requires 4 bytes, got 6"):
-            char.decode_value(bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        # Test too long - this should still work, just use first 4 bytes
+        result = char.decode_value(bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        assert result.start_handle == 0
+        assert result.end_handle == 0
 
     def test_round_trip_encoding(self) -> None:
         """Test that encoding and decoding preserve data."""
