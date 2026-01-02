@@ -50,6 +50,7 @@ class AdvertisingDataInterpreter(ABC, Generic[T]):
     into strongly-typed domain objects (sensor readings, device state, etc.).
 
     Workflow:
+
         1. Registry routes advertisement to interpreter class via supports()
         2. Device creates/reuses interpreter instance per (mac_address, interpreter_type)
         3. interpreter.interpret() decodes payload, returns typed result

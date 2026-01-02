@@ -1,8 +1,11 @@
+# pylint: disable=too-many-lines # TODO split up Comprehensive translator with many methods
 """Core Bluetooth SIG standards translator functionality."""
 
 from __future__ import annotations
 
+import inspect
 import logging
+import typing
 from collections.abc import Mapping
 from graphlib import TopologicalSorter
 from typing import Any, cast
@@ -159,6 +162,191 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             )
 
         return result
+
+    def encode_characteristic(
+        self,
+        uuid: str,
+        value: Any,  # noqa: ANN401
+        validate: bool = True,
+    ) -> bytes:
+        """Encode a value for writing to a characteristic.
+
+        This method provides the high-level API for encoding characteristic values,
+        mirroring how parse_characteristic() works for reading. It handles both
+        dataclass instances and dictionary inputs, automatically converting dicts
+        to the appropriate type.
+
+        Args:
+            uuid: The characteristic UUID (with or without dashes)
+            value: The value to encode. Can be:
+                - A dataclass instance of the characteristic's expected type
+                - A dictionary with fields matching the characteristic's type
+                - A primitive value (int, float, str, bool) for simple characteristics
+            validate: If True, validates the value before encoding (default: True)
+
+        Returns:
+            Encoded bytes ready to write to the characteristic
+
+        Raises:
+            ValueError: If UUID is invalid, characteristic not found, or value is invalid
+            TypeError: If value type doesn't match characteristic's expected type
+
+        Example:
+            Encode battery level for writing::
+
+                from bluetooth_sig import BluetoothSIGTranslator
+
+                translator = BluetoothSIGTranslator()
+
+                # Simple value
+                data = translator.encode_characteristic("2A19", 85)
+                await client.write_gatt_char("2A19", data)
+
+                # Dict for complex types
+                data = translator.encode_characteristic("2C1D", {"x_axis": 1.5, "y_axis": 0.5, "z_axis": 9.8})
+                await client.write_gatt_char("2C1D", data)
+
+        """
+        logger.debug("Encoding characteristic UUID=%s, value=%s", uuid, value)
+
+        # Create characteristic instance
+        characteristic = CharacteristicRegistry.create_characteristic(uuid)
+        if not characteristic:
+            raise ValueError(f"No encoder available for characteristic UUID: {uuid}")
+
+        logger.debug("Found encoder for UUID=%s: %s", uuid, type(characteristic).__name__)
+
+        # Handle dict input - convert to proper type
+        if isinstance(value, dict):
+            # Get the expected value type for this characteristic
+            value_type = self._get_characteristic_value_type_class(characteristic)
+            if value_type and hasattr(value_type, "__init__") and not isinstance(value_type, str):
+                try:
+                    # Try to construct the dataclass from dict
+                    value = value_type(**value)
+                    logger.debug("Converted dict to %s", value_type.__name__)
+                except (TypeError, ValueError) as e:
+                    type_name = getattr(value_type, "__name__", str(value_type))
+                    raise TypeError(f"Failed to convert dict to {type_name} for characteristic {uuid}: {e}") from e
+
+        # Encode using build_value (with validation) or encode_value (without)
+        try:
+            if validate:
+                encoded = characteristic.build_value(value)
+                logger.debug("Successfully encoded %s with validation", characteristic.name)
+            else:
+                encoded = characteristic.encode_value(value)
+                logger.debug("Successfully encoded %s without validation", characteristic.name)
+            return bytes(encoded)
+        except Exception as e:
+            logger.error("Encoding failed for %s: %s", characteristic.name, e)
+            raise
+
+    def _get_characteristic_value_type_class(  # pylint: disable=too-many-return-statements,too-many-branches
+        self, characteristic: BaseCharacteristic
+    ) -> type[Any] | None:
+        """Get the Python type class that a characteristic expects.
+
+        Args:
+            characteristic: The characteristic instance
+
+        Returns:
+            The type class, or None if it can't be determined
+
+        """
+        # Try to infer from decode_value return type annotation (resolve string annotations)
+        if hasattr(characteristic, "decode_value"):
+            try:
+                # Use get_type_hints to resolve string annotations
+                type_hints = typing.get_type_hints(characteristic.decode_value)
+                return_type = type_hints.get("return")
+                if return_type and return_type is not type(None):
+                    return return_type  # type: ignore[no-any-return]
+            except Exception:  # pylint: disable=broad-exception-caught
+                # Fallback to direct signature inspection
+                sig = inspect.signature(characteristic.decode_value)
+                return_annotation = sig.return_annotation
+                if return_annotation and return_annotation != inspect.Parameter.empty:
+                    # Check if it's not just a string annotation
+                    if not isinstance(return_annotation, str):
+                        return return_annotation  # type: ignore[no-any-return]
+
+        # Try to get from template first
+        # pylint: disable=protected-access  # Need to inspect template for type info
+        if hasattr(characteristic, "_template") and characteristic._template:
+            template = characteristic._template
+            # Check if template has a value_type annotation
+            if hasattr(template, "__orig_class__"):
+                # Extract type from Generic
+                args = typing.get_args(template.__orig_class__)
+                if args:
+                    return args[0]  # type: ignore[no-any-return]
+
+        # For simple types, check info.value_type
+        info = characteristic.info
+        if info.value_type == ValueType.INT:
+            return int
+        if info.value_type == ValueType.FLOAT:
+            return float
+        if info.value_type == ValueType.STRING:
+            return str
+        if info.value_type == ValueType.BOOL:
+            return bool
+        if info.value_type == ValueType.BYTES:
+            return bytes
+
+        return None
+
+    def get_value_type(self, uuid: str) -> ValueType | None:
+        """Get the expected value type for a characteristic.
+
+        Retrieves the ValueType enum indicating what type of data this
+        characteristic produces (int, float, string, bytes, etc.).
+
+        Args:
+            uuid: The characteristic UUID (16-bit short form or full 128-bit)
+
+        Returns:
+            ValueType enum if characteristic is found, None otherwise
+
+        Example:
+            Check what type a characteristic returns::
+
+                from bluetooth_sig import BluetoothSIGTranslator
+
+                translator = BluetoothSIGTranslator()
+                value_type = translator.get_value_type("2A19")
+                print(value_type)  # ValueType.INT
+
+        """
+        info = self.get_characteristic_info_by_uuid(uuid)
+        return info.value_type if info else None
+
+    def supports(self, uuid: str) -> bool:
+        """Check if a characteristic UUID is supported.
+
+        Args:
+            uuid: The characteristic UUID to check
+
+        Returns:
+            True if the characteristic has a parser/encoder, False otherwise
+
+        Example:
+            Check if characteristic is supported::
+
+                from bluetooth_sig import BluetoothSIGTranslator
+
+                translator = BluetoothSIGTranslator()
+                if translator.supports("2A19"):
+                    result = translator.parse_characteristic("2A19", data)
+
+        """
+        try:
+            bt_uuid = BluetoothUUID(uuid)
+            char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(bt_uuid)
+            return char_class is not None
+        except (ValueError, TypeError):
+            return False
 
     def get_characteristic_info_by_uuid(self, uuid: str) -> CharacteristicInfo | None:
         """Get information about a characteristic by UUID.
@@ -940,6 +1128,106 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         # Delegate directly to sync implementation
         # The sync implementation already handles dependency ordering
         return self.parse_characteristics(char_data, ctx)
+
+    async def encode_characteristic_async(
+        self,
+        uuid: str | BluetoothUUID,
+        value: Any,  # noqa: ANN401
+        validate: bool = True,
+    ) -> bytes:
+        """Encode characteristic value in an async-compatible manner.
+
+        This is an async wrapper that allows characteristic encoding to be used
+        in async contexts. The actual encoding is performed synchronously as it's
+        a fast, CPU-bound operation that doesn't benefit from async I/O.
+
+        Args:
+            uuid: The characteristic UUID (string or BluetoothUUID)
+            value: The value to encode (dataclass, dict, or primitive)
+            validate: If True, validates before encoding (default: True)
+
+        Returns:
+            Encoded bytes ready to write
+
+        Example::
+
+            async with BleakClient(address) as client:
+                data = await translator.encode_characteristic_async("2A19", 85)
+                await client.write_gatt_char("2A19", data)
+        """
+        # Convert to string for consistency with sync API
+        uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
+
+        # Delegate to sync implementation
+        return self.encode_characteristic(uuid_str, value, validate)
+
+    def create_value(self, uuid: str, **kwargs: Any) -> Any:  # noqa: ANN401
+        """Create a properly typed value instance for a characteristic.
+
+        This is a convenience method that constructs the appropriate dataclass
+        or value type for a characteristic, which can then be passed to
+        encode_characteristic() or used directly.
+
+        Args:
+            uuid: The characteristic UUID
+            **kwargs: Field values for the characteristic's type
+
+        Returns:
+            Properly typed value instance
+
+        Raises:
+            ValueError: If UUID is invalid or characteristic not found
+            TypeError: If kwargs don't match the characteristic's expected fields
+
+        Example:
+            Create complex characteristic values::
+
+                from bluetooth_sig import BluetoothSIGTranslator
+
+                translator = BluetoothSIGTranslator()
+
+                # Create acceleration data
+                accel = translator.create_value("2C1D", x_axis=1.5, y_axis=0.5, z_axis=9.8)
+
+                # Encode and write
+                data = translator.encode_characteristic("2C1D", accel)
+                await client.write_gatt_char("2C1D", data)
+
+        """
+        # Create characteristic instance
+        characteristic = CharacteristicRegistry.create_characteristic(uuid)
+        if not characteristic:
+            raise ValueError(f"No characteristic found for UUID: {uuid}")
+
+        # Get the value type
+        value_type = self._get_characteristic_value_type_class(characteristic)
+
+        if not value_type:
+            # For simple types, just return the single value if provided
+            if len(kwargs) == 1:
+                return next(iter(kwargs.values()))
+            raise ValueError(
+                f"Cannot determine value type for characteristic {uuid}. "
+                "Try passing a dict to encode_characteristic() instead."
+            )
+
+        # Handle simple primitive types
+        if value_type in (int, float, str, bool, bytes):
+            if len(kwargs) == 1:
+                value = next(iter(kwargs.values()))
+                if not isinstance(value, value_type):
+                    type_name = getattr(value_type, "__name__", str(value_type))
+                    raise TypeError(f"Expected {type_name}, got {type(value).__name__}")
+                return value
+            type_name = getattr(value_type, "__name__", str(value_type))
+            raise TypeError(f"Simple type {type_name} expects a single value")
+
+        # Construct complex type from kwargs
+        try:
+            return value_type(**kwargs)
+        except (TypeError, ValueError) as e:
+            type_name = getattr(value_type, "__name__", str(value_type))
+            raise TypeError(f"Failed to create {type_name} for characteristic {uuid}: {e}") from e
 
 
 # Global instance

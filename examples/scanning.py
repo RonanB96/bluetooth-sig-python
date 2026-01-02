@@ -72,7 +72,7 @@ async def main() -> None:
 
     print("\n💡 You can now create a Device instance:")
     print("   translator = BluetoothSIGTranslator()")
-    print(f"   device = Device('{selected.address}', translator)")
+    print("   device = Device(connection_manager, translator)")
     print(f"   manager = BleakRetryConnectionManager('{selected.address}')")
     print("   device.attach_connection_manager(manager)")
     print("   await device.connect()")

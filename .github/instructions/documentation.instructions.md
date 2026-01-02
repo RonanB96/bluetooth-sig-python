@@ -1,5 +1,5 @@
 ---
-applyTo: "docs/**/*.md, docs/*.md, mkdocs.yml"
+applyTo: "docs/**/*.md, docs/*.md"
 ---
 
 # Documentation Authoring Guidelines

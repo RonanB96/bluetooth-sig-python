@@ -117,7 +117,7 @@ from .utils.extractors import get_extractor
 class CharacteristicData(msgspec.Struct, kw_only=True):
     """Parse result container with back-reference to characteristic.
 
-    Attributes:
+    Field descriptions:
         characteristic: The BaseCharacteristic instance that parsed this data
         value: Parsed and validated value
         raw_data: Original raw bytes
@@ -874,7 +874,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         """
         return self._validate_enabled
 
-    def _validate_range(self, value: Any, ctx: CharacteristicContext | None = None) -> ValidationAccumulator:  # noqa: ANN401  # Validates values of various numeric types
+    def _validate_range(self, value: Any, ctx: CharacteristicContext | None = None) -> ValidationAccumulator:  # noqa: ANN401  # Validates values of various numeric types  # pylint: disable=too-many-branches  # Complex validation with multiple precedence levels
         """Validate value is within min/max range from both class attributes and descriptors.
 
         Validation precedence:
@@ -1209,7 +1209,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         if not length_validation.valid:
             raise ValueError("; ".join(length_validation.errors))
 
-    def _extract_and_check_special_value(
+    def _extract_and_check_special_value(  # pylint: disable=unused-argument  # ctx used in get_valid_range_from_context by callers
         self, data_bytes: bytearray, enable_trace: bool, parse_trace: list[str], ctx: CharacteristicContext | None
     ) -> tuple[int | None, Any]:
         """Extract raw int and check for special values."""
@@ -1230,8 +1230,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         return raw_int, parsed_value
 
-    def _decode_and_validate_value(
-        self,  # pylint: disable=too-many-arguments
+    def _decode_and_validate_value(  # pylint: disable=too-many-arguments,too-many-positional-arguments  # All parameters necessary for decode/validate pipeline
+        self,
         parsed_value: Any,  # noqa: ANN401
         data_bytes: bytearray,
         enable_trace: bool,

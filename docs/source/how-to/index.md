@@ -4,6 +4,7 @@ Practical guides to solve specific problems and accomplish goals with the Blueto
 
 ## Getting Started
 
+- **[Import Patterns](import-patterns.md)** - Understanding the library's import structure and best practices
 - **[Basic Usage](usage.md)** - Core workflows and common patterns
 - **[BLE Integration](ble-integration.md)** - Integrate with bleak, simplepyble, and other BLE libraries
 - **[Async Usage](async-usage.md)** - Use the library in asynchronous applications
@@ -37,6 +38,7 @@ Practical guides to solve specific problems and accomplish goals with the Blueto
 :maxdepth: 1
 :hidden:
 
+import-patterns
 usage
 ble-integration
 async-usage

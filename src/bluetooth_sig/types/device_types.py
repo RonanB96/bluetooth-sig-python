@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 class ScannedDevice(msgspec.Struct, kw_only=True):
     """Minimal wrapper for a device discovered during BLE scanning.
 
-    Attributes:
+    Field descriptions:
         address: Bluetooth MAC address or platform-specific identifier
         name: OS-provided device name (may be None)
         advertisement_data: Complete parsed advertising data (includes rssi, manufacturer_data, etc.)
@@ -93,7 +93,7 @@ class ScanFilter(msgspec.Struct, kw_only=True):
     For OR logic across different filter types, perform multiple scans or use
     a custom `filter_func`.
 
-    Attributes:
+    Field descriptions:
         service_uuids: Only include devices advertising these service UUIDs.
             On some platforms (macOS), this filtering happens at the OS level
             for better efficiency. UUIDs should be in standard string format
@@ -213,7 +213,7 @@ class ScanOptions(msgspec.Struct, kw_only=True):
 
     Combines filter criteria with scan behavior settings.
 
-    Attributes:
+    Field descriptions:
         timeout: Maximum scan duration in seconds. None for indefinite (use with callbacks).
         filters: Filter criteria for discovered devices. None for no filtering.
         scanning_mode: 'active' sends scan requests for additional data (default),

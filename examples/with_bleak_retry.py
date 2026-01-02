@@ -40,10 +40,9 @@ async def robust_device_reading(
 
     target_uuids = get_default_characteristic_uuids()
     translator = BluetoothSIGTranslator()
-    device = Device(address, translator)
 
     manager = BleakRetryConnectionManager(address, max_attempts=retries)
-    device.attach_connection_manager(manager)
+    device = Device(manager, translator)
     await device.connect()
 
     # First discover what characteristics are actually available

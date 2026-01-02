@@ -99,7 +99,7 @@ Docstrings are the authoritative in-code documentation for this project. Because
 
  - Tooling and enforcement:
     - Use `pydocstyle` for enforcing docstring presence and high-level conventions (PEP 257) during CI and local checks. Configure `pydocstyle` rules in `pyproject.toml` or `setup.cfg` as project policy evolves.
-    - Make Google style the canonical style. When rendering documentation with mkdocstrings or Sphinx, configure the handler to parse Google-style docstrings so generated API docs are consistent. If using Sphinx, enable `sphinx.ext.napoleon` and set:
+    - Make Google style the canonical style. When rendering documentation with sphinx, configure the handler to parse Google-style docstrings so generated API docs are consistent. If using Sphinx, enable `sphinx.ext.napoleon` and set:
 
         ```py
         napoleon_google_docstring = True

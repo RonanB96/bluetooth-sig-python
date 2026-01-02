@@ -70,7 +70,6 @@ class LightLevelCharacteristic(CustomBaseCharacteristic):
     _info = CharacteristicInfo(
         uuid=BluetoothUUID("ABCD"),  # Your custom UUID
         name="Light Level",
-        value_type=ValueType.UINT8,
         unit="%",
     )
 

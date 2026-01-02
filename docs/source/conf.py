@@ -52,9 +52,9 @@ extensions = [
     # "sphinx.ext.viewcode",  # DISABLED: Generates _modules/ source pages (slow)
     "sphinx.ext.intersphinx",  # Cross-reference external docs
     "sphinx.ext.napoleon",  # Support Google-style docstrings
-    # API documentation (replaces mkdocstrings)
+    # API documentation
     "autoapi.extension",
-    # Markdown support (replaces mkdocs native markdown)
+    # Markdown support
     "myst_parser",
     # Design elements (replaces Material theme features)
     "sphinx_design",
@@ -93,7 +93,7 @@ templates_path = ["_templates"]
 
 # -- AutoAPI configuration ---------------------------------------------------
 # https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html
-# Automatic API documentation generation (replaces mkdocstrings + gen_ref_pages.py)
+# Automatic API documentation generation
 
 autoapi_type = "python"
 autoapi_dirs = ["../../src"]  # Scans from src to get correct module names
@@ -121,7 +121,7 @@ autoapi_generate_api_docs = True
 autoapi_add_toctree_entry = False  # Manual toctree control
 
 # Python-specific AutoAPI settings
-autoapi_python_class_content = "both"  # Include both class and __init__ docstrings
+autoapi_python_class_content = "class"  # Use class docstring only to avoid attribute duplication
 autoapi_member_order = "groupwise"  # Group by type (classes, functions, etc.)
 
 
@@ -443,7 +443,7 @@ def fix_autoapi_anchors(
 def run_pre_build_scripts(app: Sphinx, config: object) -> None:
     """Run generation scripts before building documentation.
 
-    This replicates the behaviour from docs_hooks.py (which was MkDocs-specific)
+    This replicates the behaviour from docs_hooks.py
     for Sphinx builds. Executes two pre-build steps:
     1. Generates comprehensive list of supported characteristics and services
        from the registry system → docs/source/reference/characteristics.md

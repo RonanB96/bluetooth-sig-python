@@ -10,19 +10,12 @@ from .utils import DataParser
 
 
 class ConnectionParametersData(msgspec.Struct, frozen=True, kw_only=True):
-    """Connection parameters data.
+    """Connection parameters data."""
 
-    Attributes:
-        min_interval: Minimum connection interval in ms
-        max_interval: Maximum connection interval in ms
-        latency: Slave latency (number of events)
-        timeout: Connection supervision timeout in ms
-    """
-
-    min_interval: float
-    max_interval: float
-    latency: int
-    timeout: int
+    min_interval: float  # Minimum connection interval in ms
+    max_interval: float  # Maximum connection interval in ms
+    latency: int  # Slave latency (number of events)
+    timeout: int  # Connection supervision timeout in ms
 
 
 class PeripheralPreferredConnectionParametersCharacteristic(BaseCharacteristic):

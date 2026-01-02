@@ -143,7 +143,8 @@ class TestDevice:
         """Set up test fixtures."""
         self.translator = BluetoothSIGTranslator()
         self.device_address = "AA:BB:CC:DD:EE:FF"
-        self.device = Device(self.device_address, self.translator)
+        self.mock_connection_manager = MockConnectionManager(self.device_address)
+        self.device = Device(self.mock_connection_manager, self.translator)
 
     def test_device_initialization(self) -> None:
         """Test Device initialization."""
@@ -287,29 +288,26 @@ class TestDevice:
 
     def test_is_connected_property(self) -> None:
         """Test is_connected property behaviour."""
-        # Test with no connection manager
-        assert self.device.is_connected is False
-
         # Test with disconnected connection manager
         mock_manager = MockConnectionManager(connected=False)
-        self.device.attach_connection_manager(mock_manager)
-        assert self.device.is_connected is False
+        device = Device(mock_manager, self.translator)
+        assert device.is_connected is False
 
         # Test with connected connection manager
         mock_manager = MockConnectionManager(connected=True)
-        self.device.attach_connection_manager(mock_manager)
-        assert self.device.is_connected is True
+        device = Device(mock_manager, self.translator)
+        assert device.is_connected is True
 
     def test_is_connected_edge_cases(self) -> None:
         """Test is_connected property edge cases."""
         # Test connection manager state change
         mock_manager = MockConnectionManager(connected=True)
-        self.device.attach_connection_manager(mock_manager)
-        assert self.device.is_connected is True
+        device = Device(mock_manager, self.translator)
+        assert device.is_connected is True
 
         # Change state through manager using provided synchronous helper
         mock_manager.disconnect_sync()
-        assert self.device.is_connected is False
+        assert device.is_connected is False
 
     # Test None return value from manager is handled in separate test
 
@@ -318,15 +316,15 @@ class TestDevice:
         # Test manager that raises exception - use module-level FaultyManager
         faulty_manager = FaultyManager()
         # cast to ConnectionManagerProtocol to satisfy static type checking
-        self.device.attach_connection_manager(cast(ConnectionManagerProtocol, faulty_manager))
+        device = Device(cast(ConnectionManagerProtocol, faulty_manager), self.translator)
 
         # Should propagate the exception
         with pytest.raises(RuntimeError, match="Connection check failed"):
-            _ = self.device.is_connected
+            _ = device.is_connected
 
         # Test manager without is_connected property - use module-level IncompleteManager
         incomplete_manager = IncompleteManager()
-        self.device.attach_connection_manager(cast(ConnectionManagerProtocol, incomplete_manager))
+        device = Device(cast(ConnectionManagerProtocol, incomplete_manager), self.translator)
 
         # Should return False for manager without is_connected property
         assert self.device.is_connected is False
@@ -336,8 +334,8 @@ class TestDevice:
         False.
         """
         none_manager = NoneManager()
-        self.device.attach_connection_manager(cast(ConnectionManagerProtocol, none_manager))
-        assert self.device.is_connected is False
+        device = Device(cast(ConnectionManagerProtocol, none_manager), self.translator)
+        assert device.is_connected is False
 
     def test_connection_manager_protocol_interface(self) -> None:
         """Test that ConnectionManagerProtocol has the is_connected

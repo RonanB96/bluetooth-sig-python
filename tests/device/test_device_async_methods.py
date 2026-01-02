@@ -119,17 +119,17 @@ class AsyncMockConnectionManager(ConnectionManagerProtocol):
         return None
 
 
+@pytest.fixture
+def device_with_manager() -> tuple[Device, AsyncMockConnectionManager]:
+    """Create device with attached mock connection manager."""
+    translator = BluetoothSIGTranslator()
+    manager = AsyncMockConnectionManager()
+    device = Device(manager, translator)
+    return device, manager
+
+
 class TestDeviceAsyncRead:
     """Tests for Device.read() async method."""
-
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, AsyncMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = AsyncMockConnectionManager()
-        device.attach_connection_manager(manager)
-        return device, manager
 
     @pytest.mark.asyncio
     async def test_read_by_uuid_string(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
@@ -140,27 +140,6 @@ class TestDeviceAsyncRead:
         _ = await device.read("180F")  # Battery service UUID
 
         assert len(manager.read_char_calls) == 1
-
-    @pytest.mark.asyncio
-    async def test_read_no_connection_manager(self) -> None:
-        """Test read raises RuntimeError without connection manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.read("180F")
-
-
-class TestDeviceAsyncWrite:
-    """Tests for Device.write() async method."""
-
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, AsyncMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = AsyncMockConnectionManager()
-        device.attach_connection_manager(manager)
-        return device, manager
 
     @pytest.mark.asyncio
     async def test_write_with_response(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
@@ -188,27 +167,6 @@ class TestDeviceAsyncWrite:
         assert response is False
 
     @pytest.mark.asyncio
-    async def test_write_no_connection_manager(self) -> None:
-        """Test write raises RuntimeError without connection manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.write("2A19", b"\x00")
-
-
-class TestDeviceAsyncNotifications:
-    """Tests for Device notification methods."""
-
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, AsyncMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = AsyncMockConnectionManager()
-        device.attach_connection_manager(manager)
-        return device, manager
-
-    @pytest.mark.asyncio
     async def test_start_notify(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
         """Test starting notifications for a characteristic."""
         device, manager = device_with_manager
@@ -221,14 +179,6 @@ class TestDeviceAsyncNotifications:
 
         # Verify notification was registered
         assert len(manager.notify_callbacks) == 1
-
-    @pytest.mark.asyncio
-    async def test_start_notify_no_connection_manager(self) -> None:
-        """Test start_notify raises RuntimeError without connection manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.start_notify("2A19", lambda x: None)
 
     @pytest.mark.asyncio
     async def test_notification_callback_receives_parsed_data(
@@ -270,15 +220,6 @@ class TestDeviceAsyncNotifications:
 class TestDeviceAsyncPairing:
     """Tests for Device pairing methods."""
 
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, AsyncMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = AsyncMockConnectionManager()
-        device.attach_connection_manager(manager)
-        return device, manager
-
     @pytest.mark.asyncio
     async def test_pair(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
         """Test pairing with device."""
@@ -299,35 +240,6 @@ class TestDeviceAsyncPairing:
         assert manager.paired is False
 
     @pytest.mark.asyncio
-    async def test_pair_no_connection_manager(self) -> None:
-        """Test pair raises RuntimeError without connection manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.pair()
-
-    @pytest.mark.asyncio
-    async def test_unpair_no_connection_manager(self) -> None:
-        """Test unpair raises RuntimeError without connection manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.unpair()
-
-
-class TestDeviceAsyncRSSI:
-    """Tests for Device RSSI reading."""
-
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, AsyncMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = AsyncMockConnectionManager()
-        device.attach_connection_manager(manager)
-        return device, manager
-
-    @pytest.mark.asyncio
     async def test_read_rssi(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
         """Test reading RSSI value."""
         device, manager = device_with_manager
@@ -336,27 +248,6 @@ class TestDeviceAsyncRSSI:
         rssi = await device.read_rssi()
 
         assert rssi == -72
-
-    @pytest.mark.asyncio
-    async def test_read_rssi_no_connection_manager(self) -> None:
-        """Test read_rssi raises RuntimeError without connection manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.read_rssi()
-
-
-class TestDeviceDisconnectedCallback:
-    """Tests for Device disconnected callback."""
-
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, AsyncMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = AsyncMockConnectionManager()
-        device.attach_connection_manager(manager)
-        return device, manager
 
     def test_set_disconnected_callback(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
         """Test setting disconnected callback."""
@@ -371,47 +262,6 @@ class TestDeviceDisconnectedCallback:
         # Verify callback was passed to manager
         assert manager.disconnected_callback is not None
 
-    def test_set_disconnected_callback_no_manager(self) -> None:
-        """Test set_disconnected_callback raises RuntimeError without manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            device.set_disconnected_callback(lambda: None)
-
-
-class TestDeviceMTU:
-    """Tests for Device MTU property."""
-
-    def test_mtu_size_property(self) -> None:
-        """Test mtu_size property returns manager's MTU."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = AsyncMockConnectionManager()
-        manager._mtu = 512
-        device.attach_connection_manager(manager)
-
-        assert device.mtu_size == 512
-
-    def test_mtu_size_no_manager(self) -> None:
-        """Test mtu_size raises RuntimeError without connection manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            _ = device.mtu_size
-
-
-class TestDeviceDescriptorOperations:
-    """Tests for Device descriptor read/write operations."""
-
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, AsyncMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = AsyncMockConnectionManager()
-        device.attach_connection_manager(manager)
-        return device, manager
-
     @pytest.mark.asyncio
     async def test_read_descriptor_by_uuid(
         self, device_with_manager: tuple[Device, AsyncMockConnectionManager]
@@ -423,14 +273,6 @@ class TestDeviceDescriptorOperations:
         result = await device.read_descriptor(cccd_uuid)
 
         assert result is not None
-
-    @pytest.mark.asyncio
-    async def test_read_descriptor_no_manager(self) -> None:
-        """Test read_descriptor raises RuntimeError without manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.read_descriptor(BluetoothUUID(0x2902))
 
     @pytest.mark.asyncio
     async def test_write_descriptor_by_uuid(
@@ -457,11 +299,3 @@ class TestDeviceDescriptorOperations:
         await device.write_descriptor(cccd, enable_notifications)
 
         # Should extract UUID from descriptor instance
-
-    @pytest.mark.asyncio
-    async def test_write_descriptor_no_manager(self) -> None:
-        """Test write_descriptor raises RuntimeError without manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.write_descriptor(BluetoothUUID(0x2902), b"\x00\x00")

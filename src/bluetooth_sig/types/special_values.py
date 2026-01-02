@@ -23,7 +23,7 @@ from .units import SpecialValueType
 class SpecialValueRule(msgspec.Struct, frozen=True, kw_only=True):
     """A rule matching a raw value to its special meaning.
 
-    Attributes:
+    Field descriptions:
         raw_value: The raw integer that triggers this rule
         meaning: Human-readable description (e.g., "Value is unknown")
         value_type: Category of special value
@@ -57,7 +57,7 @@ class SpecialValueResult(msgspec.Struct, frozen=True, kw_only=True):
     Contains the raw value that was detected, its meaning, type,
     and optionally a threshold value for overflow/underflow cases.
 
-    Attributes:
+    Field descriptions:
         raw_value: The raw integer that triggered the special value
         meaning: Human-readable description
         value_type: Category of special value

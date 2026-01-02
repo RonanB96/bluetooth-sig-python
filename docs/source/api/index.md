@@ -1,20 +1,26 @@
 # API Reference
 
-Complete API documentation for the Bluetooth SIG Standards Library.
+Complete API reference documentation for `bluetooth-sig-python`.
 
-## Main Modules
+## Overview
 
-```{toctree}
-:maxdepth: 2
-
-src/index
-```
+The API documentation is automatically generated from the source code using AutoAPI. Browse the modules below to explore the complete API surface.
 
 ## Quick Links
 
-- **Core API**: {doc}`src/bluetooth_sig/core/index` - Main translator and async context
-- **GATT Layer**: {doc}`src/bluetooth_sig/gatt/index` - Characteristics and services
-- **Registry**: {doc}`src/bluetooth_sig/registry/index` - UUID resolution and lookups
-- **Types**: {doc}`src/bluetooth_sig/types/index` - Data types and protocols
-- **Device Layer**: {doc}`src/bluetooth_sig/device/index` - Device abstractions
-- **Utilities**: {doc}`src/bluetooth_sig/utils/index` - Helper functions
+- [Top-level bluetooth_sig package](src/bluetooth_sig/index)
+- [GATT Characteristics](src/bluetooth_sig/gatt/characteristics/index)
+- [GATT Services](src/bluetooth_sig/gatt/services/index)
+- [Registry Systems](src/bluetooth_sig/registry/index)
+- [Type Definitions](src/bluetooth_sig/types/index)
+
+## Navigation
+
+Use the sidebar or search functionality to find specific APIs, classes, functions, or modules.
+
+```{toctree}
+:maxdepth: 2
+:caption: API Documentation
+
+src/index
+```

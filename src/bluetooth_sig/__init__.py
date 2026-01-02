@@ -9,22 +9,13 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from .advertising import (
-    AdvertisingDataInterpreter,
-    AdvertisingInterpreterInfo,
-    AdvertisingInterpreterRegistry,
-    AdvertisingPDUParser,
-    DataSource,
-    DictKeyProvider,
-    EncryptionKeyProvider,
-    advertising_interpreter_registry,
-)
+# Primary API
 from .core.async_context import AsyncParsingSession
 from .core.translator import BluetoothSIGTranslator
-from .gatt.characteristics.base import BaseCharacteristic, CharacteristicData
-from .gatt.characteristics.registry import CharacteristicRegistry
-from .gatt.services.base import BaseGattService
-from .gatt.services.registry import GattServiceRegistry
+from .device.device import Device
+
+# Essential types for type hints
+from .gatt.characteristics.base import CharacteristicData
 from .types.base_types import SIGInfo
 from .types.data_types import CharacteristicInfo, ServiceInfo, ValidationResult
 
@@ -41,27 +32,16 @@ except ImportError:
     __version__ = _version_result.stdout.strip().lstrip("v")
 
 __all__ = [
-    # Advertising PDU parsing
-    "AdvertisingPDUParser",
-    # Advertising data interpretation (vendor-specific)
-    "AdvertisingDataInterpreter",
-    "AdvertisingInterpreterInfo",
-    "AdvertisingInterpreterRegistry",
-    "advertising_interpreter_registry",
-    "DataSource",
-    "DictKeyProvider",
-    "EncryptionKeyProvider",
-    # Core
-    "AsyncParsingSession",
-    "BaseCharacteristic",
-    "BaseGattService",
+    # Primary API
     "BluetoothSIGTranslator",
+    "AsyncParsingSession",
+    "Device",
+    # Essential types for type hints
     "CharacteristicData",
     "CharacteristicInfo",
-    "CharacteristicRegistry",
-    "GattServiceRegistry",
     "ServiceInfo",
-    "SIGInfo",
     "ValidationResult",
+    "SIGInfo",
+    # Version
     "__version__",
 ]

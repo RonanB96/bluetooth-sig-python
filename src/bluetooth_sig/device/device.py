@@ -128,18 +128,16 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     """
 
-    def __init__(self, address: str, translator: SIGTranslatorProtocol) -> None:
-        """Initialise Device instance with address and translator.
+    def __init__(self, connection_manager: ConnectionManagerProtocol, translator: SIGTranslatorProtocol) -> None:
+        """Initialise Device instance with connection manager and translator.
 
         Args:
-            address: BLE device address
+            connection_manager: Connection manager implementing ConnectionManagerProtocol
             translator: SIGTranslatorProtocol instance
 
         """
-        self.address = address
+        self.connection_manager = connection_manager
         self.translator = translator
-        # Optional connection manager implementing ConnectionManagerProtocol
-        self.connection_manager: ConnectionManagerProtocol | None = None
         self._name: str = ""
         self.services: dict[str, DeviceService] = {}
         self.encryption = DeviceEncryption()
@@ -171,23 +169,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         char_count = sum(len(service.characteristics) for service in self.services.values())
         return f"Device({self.address}, name={self.name}, {service_count} services, {char_count} characteristics)"
 
-    def attach_connection_manager(self, manager: ConnectionManagerProtocol) -> None:
-        """Attach a connection manager to handle BLE connections.
+    @property
+    def address(self) -> str:
+        """Get the device address from the connection manager.
 
-        Args:
-            manager: Connection manager implementing the ConnectionManagerProtocol
+        Returns:
+            BLE device address
 
         """
-        self.connection_manager = manager
-
-    async def detach_connection_manager(self) -> None:
-        """Detach the current connection manager and disconnect if connected.
-
-        Disconnects if a connection manager is present, then removes it.
-        """
-        if self.connection_manager:
-            await self.disconnect()
-        self.connection_manager = None
+        return self.connection_manager.address
 
     @staticmethod
     async def scan(manager_class: type[ConnectionManagerProtocol], timeout: float = 5.0) -> list[ScannedDevice]:
@@ -1088,10 +1078,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             True if connected, False otherwise
 
         """
-        if self.connection_manager is None:
-            return False
-        # Check if the connection manager has an is_connected property
-        return getattr(self.connection_manager, "is_connected", False)
+        return self.connection_manager.is_connected
 
     @property
     def interpreted_advertisement(self) -> AdvertisementData | None:

@@ -36,8 +36,7 @@ async def demo_basic_usage(address: str, connection_manager: ConnectionManagerPr
     print(f"Connecting to device: {address}")
 
     translator = BluetoothSIGTranslator()
-    device = Device(address, translator)
-    device.connection_manager = connection_manager
+    device = Device(connection_manager, translator)
 
     try:
         print("🔗 Connecting to device...")
@@ -91,8 +90,7 @@ async def demo_service_discovery(address: str, connection_manager: ConnectionMan
     from bluetooth_sig.device.device import Device
 
     translator = BluetoothSIGTranslator()
-    device = Device(address, translator)
-    device.connection_manager = connection_manager
+    device = Device(connection_manager, translator)
 
     try:
         print("🔍 Discovering services...")

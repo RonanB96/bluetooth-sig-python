@@ -23,21 +23,25 @@ import pytest
 from tests.conftest import ROOT_DIR
 
 DOCS_DIR = ROOT_DIR / "docs"
+README_PATH = ROOT_DIR / "README.md"
 
 
 def discover_doc_files() -> list[Path]:
-    """Discover all markdown files in the docs directory recursively.
+    """Discover all markdown files in the docs directory recursively plus README.md.
 
     Returns:
-        List of Path objects for all .md files in docs/
+        List of Path objects for all .md files in docs/ and README.md
     """
-    if not DOCS_DIR.exists():
-        return []
-
-    # Find all .md files recursively, excluding generated/cache directories
     md_files: list[Path] = []
-    for pattern in ["**/*.md"]:
-        md_files.extend(DOCS_DIR.glob(pattern))
+
+    # Add README.md from root if it exists
+    if README_PATH.exists():
+        md_files.append(README_PATH)
+
+    # Find all .md files in docs/ recursively
+    if DOCS_DIR.exists():
+        for pattern in ["**/*.md"]:
+            md_files.extend(DOCS_DIR.glob(pattern))
 
     # Exclude generated/cache directories
     excluded_patterns = [
@@ -381,7 +385,7 @@ ALL_CODE_BLOCKS = collect_code_blocks()
             file_path,
             block_num,
             code,
-            id=f"{file_path.relative_to(DOCS_DIR)}-block{block_num}",
+            id=f"{file_path.relative_to(ROOT_DIR)}-block{block_num}",
         )
         for file_path, block_num, code in ALL_CODE_BLOCKS
     ],

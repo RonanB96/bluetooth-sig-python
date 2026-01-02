@@ -113,22 +113,23 @@ class ServiceMockConnectionManager(ConnectionManagerProtocol):
         return None
 
 
+@pytest.fixture
+def device_with_manager() -> tuple[Device, ServiceMockConnectionManager]:
+    """Create device with attached mock connection manager."""
+    translator = BluetoothSIGTranslator()
+    manager = ServiceMockConnectionManager(connected=False)
+    device = Device(manager, translator)
+    return device, manager
+
+
 class TestDeviceConnectDisconnect:
     """Tests for Device connect/disconnect methods."""
-
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, ServiceMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = ServiceMockConnectionManager(connected=False)
-        device.attach_connection_manager(manager)
-        return device, manager
 
     @pytest.mark.asyncio
     async def test_connect(self, device_with_manager: tuple[Device, ServiceMockConnectionManager]) -> None:
         """Test connecting to device."""
         device, manager = device_with_manager
+        await manager.disconnect()
         assert manager.is_connected is False
 
         await device.connect()
@@ -139,41 +140,16 @@ class TestDeviceConnectDisconnect:
     async def test_disconnect(self, device_with_manager: tuple[Device, ServiceMockConnectionManager]) -> None:
         """Test disconnecting from device."""
         device, manager = device_with_manager
-        manager._connected = True
+        await manager.connect()
         assert manager.is_connected is True
 
         await device.disconnect()
 
         assert manager.is_connected is False
 
-    @pytest.mark.asyncio
-    async def test_connect_no_manager(self) -> None:
-        """Test connect raises RuntimeError without connection manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.connect()
-
-    @pytest.mark.asyncio
-    async def test_disconnect_no_manager(self) -> None:
-        """Test disconnect raises RuntimeError without connection manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.disconnect()
-
 
 class TestDeviceServiceDiscovery:
     """Tests for Device service discovery."""
-
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, ServiceMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = ServiceMockConnectionManager()
-        device.attach_connection_manager(manager)
-        return device, manager
 
     @pytest.mark.asyncio
     async def test_discover_services_empty(
@@ -204,26 +180,9 @@ class TestDeviceServiceDiscovery:
 
         assert len(services) == 1
 
-    @pytest.mark.asyncio
-    async def test_discover_services_no_manager(self) -> None:
-        """Test discover_services raises RuntimeError without manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.discover_services()
-
 
 class TestDeviceGetCharacteristicInfo:
     """Tests for Device.get_characteristic_info()."""
-
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, ServiceMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = ServiceMockConnectionManager()
-        device.attach_connection_manager(manager)
-        return device, manager
 
     @pytest.mark.asyncio
     async def test_get_characteristic_info_not_found(
@@ -237,26 +196,9 @@ class TestDeviceGetCharacteristicInfo:
 
         assert result is None
 
-    @pytest.mark.asyncio
-    async def test_get_characteristic_info_no_manager(self) -> None:
-        """Test get_characteristic_info raises RuntimeError without manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.get_characteristic_info("2A19")
-
 
 class TestDeviceReadMultiple:
     """Tests for Device.read_multiple()."""
-
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, ServiceMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = ServiceMockConnectionManager()
-        device.attach_connection_manager(manager)
-        return device, manager
 
     @pytest.mark.asyncio
     async def test_read_multiple_success(
@@ -308,26 +250,9 @@ class TestDeviceReadMultiple:
         assert results == {}
         assert len(manager.read_calls) == 0
 
-    @pytest.mark.asyncio
-    async def test_read_multiple_no_manager(self) -> None:
-        """Test read_multiple raises RuntimeError without manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.read_multiple(["2A19"])
-
 
 class TestDeviceWriteMultiple:
     """Tests for Device.write_multiple()."""
-
-    @pytest.fixture
-    def device_with_manager(self) -> tuple[Device, ServiceMockConnectionManager]:
-        """Create device with attached mock connection manager."""
-        translator = BluetoothSIGTranslator()
-        device = Device("AA:BB:CC:DD:EE:FF", translator)
-        manager = ServiceMockConnectionManager()
-        device.attach_connection_manager(manager)
-        return device, manager
 
     @pytest.mark.asyncio
     async def test_write_multiple_success(
@@ -401,11 +326,3 @@ class TestDeviceWriteMultiple:
 
         assert results == {}
         assert len(manager.write_calls) == 0
-
-    @pytest.mark.asyncio
-    async def test_write_multiple_no_manager(self) -> None:
-        """Test write_multiple raises RuntimeError without manager."""
-        device = Device("AA:BB:CC:DD:EE:FF", BluetoothSIGTranslator())
-
-        with pytest.raises(RuntimeError, match="No connection manager"):
-            await device.write_multiple({"2A19": b"\x50"})

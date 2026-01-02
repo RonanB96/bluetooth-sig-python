@@ -61,25 +61,15 @@ class PLXDeviceAndSensorStatus(IntFlag):
 
 
 class PLXSpotCheckData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
-    """Parsed PLX spot-check measurement data.
+    """Parsed PLX spot-check measurement data."""
 
-    Attributes:
-        spo2: Blood oxygen saturation percentage (SpO2)
-        pulse_rate: Pulse rate in beats per minute
-        spo2pr_fast: Optional flag indicating if SpO2PR is fast (True) or normal (False)
-        measurement_status: Optional measurement status flags
-        device_and_sensor_status: Optional device and sensor status flags
-        pulse_amplitude_index: Optional pulse amplitude index value
-        supported_features: Optional PLX features from context (PLXFeatureFlags enum)
-    """
-
-    spot_check_flags: PLXSpotCheckFlags
-    spo2: float
-    pulse_rate: float
-    measurement_status: PLXMeasurementStatus | None = None
-    device_and_sensor_status: PLXDeviceAndSensorStatus | None = None
-    pulse_amplitude_index: float | None = None
-    supported_features: PLXFeatureFlags | None = None  # PLX Features from context (0x2A60)
+    spot_check_flags: PLXSpotCheckFlags  # PLX spot-check measurement flags
+    spo2: float  # Blood oxygen saturation percentage (SpO2)
+    pulse_rate: float  # Pulse rate in beats per minute
+    measurement_status: PLXMeasurementStatus | None = None  # Optional measurement status flags
+    device_and_sensor_status: PLXDeviceAndSensorStatus | None = None  # Optional device and sensor status flags
+    pulse_amplitude_index: float | None = None  # Optional pulse amplitude index value
+    supported_features: PLXFeatureFlags | None = None  # Optional PLX features from context (PLXFeatureFlags enum)
 
 
 class PLXSpotCheckMeasurementCharacteristic(BaseCharacteristic):

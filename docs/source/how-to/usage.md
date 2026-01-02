@@ -150,7 +150,7 @@ translator = BluetoothSIGTranslator()
 result = await translator.parse_characteristic_async("2A19", bytes([85]))
 ```
 
-Prefer the existing examples for full context: see `examples/async_ble_integration.py`. The async classes are also documented in the Core API via mkdocstrings: `BluetoothSIGTranslator` and `AsyncParsingSession`.
+Prefer the existing examples for full context: see `examples/async_ble_integration.py`.
 
 ## Real-World Usage Patterns
 
@@ -433,8 +433,7 @@ The `Device` class provides a high-level abstraction for grouping BLE device ser
 ### Basic Device Usage
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.device import Device
+from bluetooth_sig import BluetoothSIGTranslator, Device
 from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 # ============================================
@@ -464,9 +463,15 @@ SIMULATED_ADV_DATA = bytes(
 
 
 async def main():
-    # Create translator and device
+    # Create translator and connection manager
     translator = BluetoothSIGTranslator()
-    device = Device(SIMULATED_DEVICE_ADDRESS, translator)
+
+    # Device requires a connection manager - use one from examples/
+    from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+    connection_manager = BleakRetryConnectionManager(SIMULATED_DEVICE_ADDRESS)
+
+    # Create device with connection manager and translator
+    device = Device(connection_manager, translator)
 
     # Parse raw advertisement PDU bytes
     device.parse_raw_advertisement(SIMULATED_ADV_DATA)
@@ -503,14 +508,17 @@ import asyncio
 
 from bleak import BleakClient
 
-from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.device import Device
+from bluetooth_sig import BluetoothSIGTranslator, Device
 from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 
 async def discover_device(device_address):
     translator = BluetoothSIGTranslator()
-    device = Device(device_address, translator)
+
+    # Create connection manager and device
+    from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+    connection_manager = BleakRetryConnectionManager(device_address)
+    device = Device(connection_manager, translator)
 
     async with BleakClient(device_address) as client:
         # For integrated scanning, use connection manager's convert_advertisement()
