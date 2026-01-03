@@ -10,6 +10,7 @@ from collections.abc import Mapping
 from graphlib import TopologicalSorter
 from typing import Any, cast
 
+from ..gatt.characteristics import templates
 from ..gatt.characteristics.base import BaseCharacteristic, CharacteristicData
 from ..gatt.characteristics.registry import CharacteristicRegistry
 from ..gatt.characteristics.unknown import UnknownCharacteristic
@@ -258,7 +259,10 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         if hasattr(characteristic, "decode_value"):
             try:
                 # Use get_type_hints to resolve string annotations
-                type_hints = typing.get_type_hints(characteristic.decode_value)
+                # Need to pass the characteristic's module globals to resolve forward references
+                module = inspect.getmodule(characteristic.__class__)
+                globalns = getattr(module, "__dict__", {}) if module else {}
+                type_hints = typing.get_type_hints(characteristic.decode_value, globalns=globalns)
                 return_type = type_hints.get("return")
                 if return_type and return_type is not type(None):
                     return return_type  # type: ignore[no-any-return]
@@ -270,6 +274,16 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                     # Check if it's not just a string annotation
                     if not isinstance(return_annotation, str):
                         return return_annotation  # type: ignore[no-any-return]
+
+        # Try to get from _manual_value_type attribute
+        # pylint: disable=protected-access  # Need to inspect manual type info
+        if hasattr(characteristic, "_manual_value_type"):
+            manual_type = characteristic._manual_value_type
+            if manual_type:
+                # If it's a string, try to resolve it from templates module
+                if isinstance(manual_type, str):
+                    if hasattr(templates, manual_type):
+                        return getattr(templates, manual_type)  # type: ignore[no-any-return]
 
         # Try to get from template first
         # pylint: disable=protected-access  # Need to inspect template for type info

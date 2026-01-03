@@ -46,6 +46,10 @@ class SidebarParser(HTMLParser):  # pylint: disable=too-many-instance-attributes
         self.sidebar_brand_text = ""
         self.in_brand = False
 
+    def error(self, message: str) -> None:
+        """Handle parsing errors."""
+        # HTMLParser requires this method but we don't need custom error handling
+
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         """Process opening HTML tags."""
         attrs_dict = dict(attrs)
