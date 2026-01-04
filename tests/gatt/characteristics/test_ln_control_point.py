@@ -273,7 +273,7 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
         """Test LN control point with various operations."""
         result = characteristic.parse_value(data)
         for field, expected_value in expected.items():
-            actual_value = getattr(result.value, field)
+            actual_value = getattr(result, field)
             if expected_value is not None and isinstance(expected_value, str):
                 # Convert enum to name for comparison
                 actual_name = actual_value.name if hasattr(actual_value, "name") else str(actual_value)
@@ -292,10 +292,10 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(data)
-        assert result.value.op_code == LNControlPointOpCode.RESPONSE_CODE
-        assert result.value.request_op_code == LNControlPointOpCode.SET_CUMULATIVE_VALUE
-        assert result.value.response_value == LNControlPointResponseValue.SUCCESS
-        assert result.value.response_parameter is None
+        assert result.op_code == LNControlPointOpCode.RESPONSE_CODE
+        assert result.request_op_code == LNControlPointOpCode.SET_CUMULATIVE_VALUE
+        assert result.response_value == LNControlPointResponseValue.SUCCESS
+        assert result.response_parameter is None
 
     def test_ln_control_point_response_with_parameter(self, characteristic: LNControlPointCharacteristic) -> None:
         """Test LN control point response with parameter."""
@@ -312,10 +312,10 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(data)
-        assert result.value.op_code == LNControlPointOpCode.RESPONSE_CODE
-        assert result.value.request_op_code == LNControlPointOpCode.MASK_LOCATION_AND_SPEED_CHARACTERISTIC_CONTENT
-        assert result.value.response_value == LNControlPointResponseValue.OP_CODE_NOT_SUPPORTED
-        assert result.value.response_parameter == 255
+        assert result.op_code == LNControlPointOpCode.RESPONSE_CODE
+        assert result.request_op_code == LNControlPointOpCode.MASK_LOCATION_AND_SPEED_CHARACTERISTIC_CONTENT
+        assert result.response_value == LNControlPointResponseValue.OP_CODE_NOT_SUPPORTED
+        assert result.response_parameter == 255
 
     def test_ln_control_point_start_navigation_request(self, characteristic: LNControlPointCharacteristic) -> None:
         """Test LN control point start navigation request."""
@@ -327,8 +327,8 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(data)
-        assert result.value.op_code == LNControlPointOpCode.NAVIGATION_CONTROL
-        assert result.value.navigation_control_value == 0x01
+        assert result.op_code == LNControlPointOpCode.NAVIGATION_CONTROL
+        assert result.navigation_control_value == 0x01
 
     def test_ln_control_point_stop_navigation_request(self, characteristic: LNControlPointCharacteristic) -> None:
         """Test LN control point stop navigation request."""
@@ -340,5 +340,5 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(data)
-        assert result.value.op_code == LNControlPointOpCode.NAVIGATION_CONTROL
-        assert result.value.navigation_control_value == 0x00
+        assert result.op_code == LNControlPointOpCode.NAVIGATION_CONTROL
+        assert result.navigation_control_value == 0x00

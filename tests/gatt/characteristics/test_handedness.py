@@ -61,25 +61,25 @@ class TestHandednessCharacteristic(CommonCharacteristicTests):
         """Test handedness with various valid values."""
         data = bytearray([handedness_value])
         result = characteristic.parse_value(data)
-        assert result.value == expected_enum
+        assert result == expected_enum
 
     def test_handedness_boundary_values(self, characteristic: HandednessCharacteristic) -> None:
         """Test handedness boundary values."""
         # Test left handed (0x00)
         result = characteristic.parse_value(bytearray([0x00]))
-        assert result.value == Handedness.LEFT_HANDED
+        assert result == Handedness.LEFT_HANDED
 
         # Test right handed (0x01)
         result = characteristic.parse_value(bytearray([0x01]))
-        assert result.value == Handedness.RIGHT_HANDED
+        assert result == Handedness.RIGHT_HANDED
 
         # Test ambidextrous (0x02)
         result = characteristic.parse_value(bytearray([0x02]))
-        assert result.value == Handedness.AMBIDEXTROUS
+        assert result == Handedness.AMBIDEXTROUS
 
         # Test unspecified (0x03)
         result = characteristic.parse_value(bytearray([0x03]))
-        assert result.value == Handedness.UNSPECIFIED
+        assert result == Handedness.UNSPECIFIED
 
     def test_handedness_invalid_values(self, characteristic: HandednessCharacteristic) -> None:
         """Test handedness with invalid values."""

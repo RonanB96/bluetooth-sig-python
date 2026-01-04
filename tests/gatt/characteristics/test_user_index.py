@@ -35,13 +35,13 @@ class TestUserIndexCharacteristic(CommonCharacteristicTests):
         """Test unknown user index."""
         char = UserIndexCharacteristic()
         result = char.parse_value(bytearray([0]))
-        assert result.value == 0
+        assert result == 0
 
     def test_first_user(self) -> None:
         """Test first user index."""
         char = UserIndexCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result.value == 1
+        assert result == 1
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
@@ -49,4 +49,4 @@ class TestUserIndexCharacteristic(CommonCharacteristicTests):
         for user_index in [0, 1, 10, 100, 255]:
             encoded = char.build_value(user_index)
             decoded = char.parse_value(encoded)
-            assert decoded.value == user_index
+            assert decoded == user_index

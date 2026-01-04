@@ -61,20 +61,20 @@ class TestAccelerationCharacteristic(CommonCharacteristicTests):
         """Test acceleration precision and boundary values."""
         # Test zero acceleration
         result = characteristic.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
-        assert result.parse_success
-        assert result.value == 0.0
+
+        assert result == 0.0
 
         # Test positive acceleration (9.81 m/s²)
         result = characteristic.parse_value(bytearray([0x52, 0x26, 0x00, 0x00]))  # 9810 = 9.81 m/s²
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value - 9.81) < 0.001
+
+        assert result is not None
+        assert abs(result - 9.81) < 0.001
 
         # Test negative acceleration (-5.0 m/s²)
         result = characteristic.parse_value(bytearray([0x78, 0xEC, 0xFF, 0xFF]))  # -5000 = -5.0 m/s²
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value + 5.0) < 0.001
+
+        assert result is not None
+        assert abs(result + 5.0) < 0.001
 
     def test_acceleration_extreme_values(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test extreme acceleration values within valid range."""
@@ -84,21 +84,21 @@ class TestAccelerationCharacteristic(CommonCharacteristicTests):
             [max_value & 0xFF, (max_value >> 8) & 0xFF, (max_value >> 16) & 0xFF, (max_value >> 24) & 0xFF]
         )  # 2147483646 = 2147483.646 m/s²
         result = characteristic.parse_value(max_data)
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value - 2147483.646) < 0.001
+
+        assert result is not None
+        assert abs(result - 2147483.646) < 0.001
 
         # Test near-minimum negative value (-2147483.646 m/s², which is -2147483646)
         min_data = bytearray([0x02, 0x00, 0x00, 0x80])  # -2147483646 = -2147483.646 m/s²
         result = characteristic.parse_value(min_data)
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value + 2147483.646) < 0.001
+
+        assert result is not None
+        assert abs(result + 2147483.646) < 0.001
 
         # Test "value is not known" special value
         unknown_data = bytearray([0xFF, 0xFF, 0xFF, 0x7F])  # 0x7FFFFFFF
         result = characteristic.parse_value(unknown_data)
-        assert result.value is None
+        assert result is None
 
     def test_acceleration_encoding_accuracy(self, characteristic: AccelerationCharacteristic) -> None:
         """Test encoding produces correct byte sequences."""

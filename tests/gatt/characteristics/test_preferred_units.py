@@ -62,17 +62,17 @@ class TestPreferredUnitsCharacteristic(CommonCharacteristicTests):
         data = bytearray([units_value & 0xFF, (units_value >> 8) & 0xFF])
         result = characteristic.parse_value(data)
         expected = PreferredUnitsData(units=[BluetoothUUID(units_value)])
-        assert result.value == expected
+        assert result == expected
 
     def test_preferred_units_boundary_values(self, characteristic: PreferredUnitsCharacteristic) -> None:
         """Test preferred units boundary values using actual unit UUIDs."""
         # Test first unit UUID (0x2700 = unitless)
         result = characteristic.parse_value(bytearray([0x00, 0x27]))
-        assert result.value == PreferredUnitsData(units=[BluetoothUUID(0x2700)])
+        assert result == PreferredUnitsData(units=[BluetoothUUID(0x2700)])
 
         # Test last unit UUID (0x27C9 = Gravity)
         result = characteristic.parse_value(bytearray([0xC9, 0x27]))
-        assert result.value == PreferredUnitsData(units=[BluetoothUUID(0x27C9)])
+        assert result == PreferredUnitsData(units=[BluetoothUUID(0x27C9)])
 
     def test_preferred_units_multiple_values(self, characteristic: PreferredUnitsCharacteristic) -> None:
         """Test preferred units with multiple unit values."""
@@ -80,7 +80,7 @@ class TestPreferredUnitsCharacteristic(CommonCharacteristicTests):
         data = bytearray([0x00, 0x27, 0x01, 0x27])
         result = characteristic.parse_value(data)
         expected = PreferredUnitsData(units=[BluetoothUUID(0x2700), BluetoothUUID(0x2701)])
-        assert result.value == expected
+        assert result == expected
 
     def test_preferred_units_encoding(self, characteristic: PreferredUnitsCharacteristic) -> None:
         """Test encoding preferred units back to bytes."""

@@ -8,6 +8,7 @@ from bluetooth_sig.gatt.characteristics.unread_alert_status import (
     UnreadAlertStatusCharacteristic,
     UnreadAlertStatusData,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types import AlertCategoryID
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -45,30 +46,30 @@ class TestUnreadAlertStatusCharacteristic(CommonCharacteristicTests):
         """Test with zero unread alerts."""
         data = bytearray([0x05, 0x00])  # SMS/MMS, 0 unread
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert result.value.category_id == AlertCategoryID.SMS_MMS
-        assert result.value.unread_count == 0
+        assert result is not None
+        assert result.category_id == AlertCategoryID.SMS_MMS
+        assert result.unread_count == 0
 
     def test_max_unread_count(self, characteristic: UnreadAlertStatusCharacteristic) -> None:
         """Test with 255 (more than 254 unread)."""
         data = bytearray([0x04, 0xFF])  # Missed Call, 255 (>254)
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert result.value.category_id == AlertCategoryID.MISSED_CALL
-        assert result.value.unread_count == 255
+        assert result is not None
+        assert result.category_id == AlertCategoryID.MISSED_CALL
+        assert result.unread_count == 255
 
     def test_invalid_category_id(self, characteristic: UnreadAlertStatusCharacteristic) -> None:
         """Test that invalid category IDs are rejected."""
         data = bytearray([0x0A, 0x05])  # 10 is reserved
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
-        assert "category id" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data)
+        assert "category id" in str(exc_info.value).lower()
 
     def test_roundtrip(self, characteristic: UnreadAlertStatusCharacteristic) -> None:
         """Test encode/decode roundtrip."""
         original = UnreadAlertStatusData(category_id=AlertCategoryID.VOICE_MAIL, unread_count=3)
         encoded = characteristic.build_value(original)
         decoded = characteristic.parse_value(encoded)
-        assert decoded.value is not None
-        assert decoded.value.category_id == original.category_id
-        assert decoded.value.unread_count == original.unread_count
+        assert decoded is not None
+        assert decoded.category_id == original.category_id
+        assert decoded.unread_count == original.unread_count

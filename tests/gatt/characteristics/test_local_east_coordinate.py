@@ -46,7 +46,7 @@ class TestLocalEastCoordinateCharacteristic(CommonCharacteristicTests):
         # Test normal parsing
         test_data = bytearray([0xED, 0x03, 0x00])  # 1005 = 100.5m
         parsed = characteristic.parse_value(test_data)
-        assert parsed.value == 100.5
+        assert parsed == 100.5
 
     def test_local_east_coordinate_error_handling(self, characteristic: LocalEastCoordinateCharacteristic) -> None:
         """Test Local East Coordinate error handling."""
@@ -60,16 +60,16 @@ class TestLocalEastCoordinateCharacteristic(CommonCharacteristicTests):
         # Maximum positive (8388607 * 0.1 = 838860.7m)
         data_max = bytearray([0xFF, 0xFF, 0x7F])
         result = characteristic.parse_value(data_max)
-        assert abs(result.value - 838860.7) < 0.1
+        assert abs(result - 838860.7) < 0.1
 
         # Maximum negative (-8388608 * 0.1 = -838860.8m)
         data_min = bytearray([0x00, 0x00, 0x80])
         result = characteristic.parse_value(data_min)
-        assert abs(result.value - (-838860.8)) < 0.1
+        assert abs(result - (-838860.8)) < 0.1
 
     def test_local_east_coordinate_round_trip(self, characteristic: LocalEastCoordinateCharacteristic) -> None:
         """Test encode/decode round trip."""
         test_value = 123.4
         encoded = characteristic.build_value(test_value)
         decoded = characteristic.parse_value(encoded)
-        assert decoded.value == test_value
+        assert decoded == test_value

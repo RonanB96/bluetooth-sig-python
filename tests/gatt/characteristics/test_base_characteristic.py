@@ -6,7 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext
-from bluetooth_sig.gatt.exceptions import ValueRangeError
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -66,36 +66,34 @@ class TestBaseCharacteristicValidation:
         char = ValidationHelperCharacteristic()
         data = bytearray([50, 0])  # 50 in little endian, within range 0-100
 
-        result = char.parse_value(data)
+        value = char.parse_value(data)
 
-        assert result.parse_success is True
-        assert result.value == 50
-        assert result.error_message == ""
-        assert result.raw_data == bytes([50, 0])
-        assert result.characteristic._info.name == "Test Validation"
+        assert value == 50
+        # Check last_parsed for debugging info
+        assert char.last_parsed is not None
+        assert char.last_parsed.raw_data == bytes([50, 0])
+        assert char.last_parsed.characteristic._info.name == "Test Validation"
 
     def test_failed_parse_with_length_validation(self) -> None:
         """Test parsing failure when length validation fails."""
         char = ValidationHelperCharacteristic()
         data = bytearray([50])  # Only 1 byte, but expects 2
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert result.value is None
-        assert "expected exactly 2 bytes, got 1" in result.error_message
-        assert result.raw_data == bytes([50])
+        assert "expected exactly 2 bytes, got 1" in str(exc_info.value)
+        assert exc_info.value.raw_data == bytes([50])
 
     def test_parse_with_decode_error(self) -> None:
         """Test parsing when decode_value raises an exception."""
         char = ValidationHelperCharacteristic()
         data = bytearray([200, 0])  # 200 is out of range 0-100
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert result.value is None
-        assert "Value 200 is above maximum 100" in str(result.error_message)
+        assert "Value 200 is above maximum 100" in str(exc_info.value)
 
     def test_range_validation_failure_min(self) -> None:
         """Test that minimum value validation failures are handled
@@ -122,11 +120,10 @@ class TestBaseCharacteristicValidation:
         char = MinValueCharacteristic()
         data = bytearray([1, 2])
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert result.value is None
-        assert "Value 5 is below minimum 10" in result.error_message
+        assert "Value 5 is below minimum 10" in str(exc_info.value)
 
     def test_type_validation_failure(self) -> None:
         """Test that type validation failures are handled correctly."""
@@ -152,21 +149,19 @@ class TestBaseCharacteristicValidation:
         char = TypeValidationCharacteristic()
         data = bytearray([1, 2])
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert result.value is None
-        assert "expected float, got int" in result.error_message
+        assert "expected float, got int" in str(exc_info.value)
 
     def test_no_validation_never_fails(self) -> None:
         """Test that characteristics without validation attributes never fail."""
         char = NoValidationCharacteristic()
         data = bytearray([1, 2, 3, 4, 5])  # Any data should work
 
-        result = char.parse_value(data)
+        value = char.parse_value(data)
 
-        assert result.parse_success is True
-        assert result.value == 42  # NoValidationCharacteristic always returns 42
+        assert value == 42  # NoValidationCharacteristic always returns 42
 
     def test_min_length_validation(self) -> None:
         """Test minimum length validation."""
@@ -190,14 +185,13 @@ class TestBaseCharacteristicValidation:
         char = MinLengthCharacteristic()
 
         # Test with too short data
-        result = char.parse_value(bytearray([1, 2]))  # 2 bytes < min_length 3
-        assert result.parse_success is False
-        assert "expected at least 3 bytes, got 2" in result.error_message
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([1, 2]))  # 2 bytes < min_length 3
+        assert "expected at least 3 bytes, got 2" in str(exc_info.value)
 
         # Test with sufficient data
-        result = char.parse_value(bytearray([1, 2, 3, 4]))  # 4 bytes >= min_length 3
-        assert result.parse_success is True
-        assert result.value == 4
+        value = char.parse_value(bytearray([1, 2, 3, 4]))  # 4 bytes >= min_length 3
+        assert value == 4
 
     def test_max_length_validation(self) -> None:
         """Test maximum length validation."""
@@ -221,14 +215,13 @@ class TestBaseCharacteristicValidation:
         char = MaxLengthCharacteristic()
 
         # Test with too long data
-        result = char.parse_value(bytearray([1, 2, 3, 4]))  # 4 bytes > max_length 3
-        assert result.parse_success is False
-        assert "expected at most 3 bytes, got 4" in result.error_message
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([1, 2, 3, 4]))  # 4 bytes > max_length 3
+        assert "expected at most 3 bytes, got 4" in str(exc_info.value)
 
         # Test with acceptable data
-        result = char.parse_value(bytearray([1, 2]))  # 2 bytes <= max_length 3
-        assert result.parse_success is True
-        assert result.value == 2
+        value = char.parse_value(bytearray([1, 2]))  # 2 bytes <= max_length 3
+        assert value == 2
 
     def test_decode_value_exception_handling(self) -> None:
         """Test that exceptions from decode_value are properly handled."""
@@ -250,11 +243,10 @@ class TestBaseCharacteristicValidation:
         char = ExceptionCharacteristic()
         data = bytearray([1, 2])
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert result.value is None
-        assert "Custom decode error" in result.error_message
+        assert "Custom decode error" in str(exc_info.value)
 
     def test_struct_error_handling(self) -> None:
         """Test that struct.error exceptions are properly handled."""
@@ -278,14 +270,16 @@ class TestBaseCharacteristicValidation:
         char = StructErrorCharacteristic()
         data = bytearray([1, 2])  # Only 2 bytes, but struct expects 4
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert result.value is None
-        assert result.error_message is not None  # Should contain struct error message
+        # Should contain struct error message
+        assert exc_info.value.raw_data == bytes([1, 2])
 
     def test_build_value_validation(self) -> None:
         """Test that build_value performs validation and raises errors."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError
+
         char = ValidationHelperCharacteristic()
 
         # Test successful build
@@ -293,11 +287,11 @@ class TestBaseCharacteristicValidation:
         assert result == bytearray([50, 0])
 
         # Test range validation failure
-        with pytest.raises(ValueRangeError, match="150.*expected range"):
+        with pytest.raises(CharacteristicEncodeError, match="150.*maximum"):
             char.build_value(150)  # Above max_value
 
         # Test type validation failure
-        with pytest.raises(ValueError, match="expected int"):
+        with pytest.raises(CharacteristicEncodeError, match="expected int"):
             char.build_value("not an int")  # Wrong type
 
 
@@ -310,34 +304,31 @@ class TestValidationControl:
 
         # Out-of-range value should fail with default validation
         data = bytearray([200, 0])  # 200 is out of range 0-100
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert "Value 200 is above maximum 100" in result.error_message
+        assert "Value 200 is above maximum 100" in str(exc_info.value)
 
     def test_validation_can_be_disabled(self) -> None:
-        """Test that validation can be explicitly disabled."""
-        char = ValidationHelperCharacteristic(validate=False)
+        """Test that validation can be explicitly disabled per-call."""
+        char = ValidationHelperCharacteristic()
 
         # Out-of-range value should succeed when validation disabled
         data = bytearray([200, 0])  # 200 is out of range 0-100
-        result = char.parse_value(data)
+        value = char.parse_value(data, validate=False)
 
-        assert result.parse_success is True
-        assert result.value == 200
-        assert result.error_message == ""
+        assert value == 200
 
     def test_disabled_validation_skips_length_check(self) -> None:
         """Test that disabled validation skips length validation."""
-        char = ValidationHelperCharacteristic(validate=False)
+        char = ValidationHelperCharacteristic()
 
         # Wrong length should succeed when validation disabled
         # Note: decode_value will still raise if it needs more bytes
         data = bytearray([50, 0, 99])  # 3 bytes instead of expected 2
-        result = char.parse_value(data)
+        value = char.parse_value(data, validate=False)
 
-        assert result.parse_success is True
-        assert result.value == 50  # Should still decode the first 2 bytes
+        assert value == 50  # Should still decode the first 2 bytes
 
     def test_disabled_validation_skips_type_check(self) -> None:
         """Test that disabled validation skips type validation."""
@@ -360,23 +351,21 @@ class TestValidationControl:
                 return bytearray([42])
 
         # With validation enabled (default) - should fail
-        char_validated = TypeMismatchCharacteristic()
-        result = char_validated.parse_value(bytearray([1, 2]))
-        assert result.parse_success is False
-        assert "expected int, got str" in result.error_message
+        char = TypeMismatchCharacteristic()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([1, 2]))
+        assert "expected int, got str" in str(exc_info.value)
 
         # With validation disabled - should succeed
-        char_no_validation = TypeMismatchCharacteristic(validate=False)
-        result = char_no_validation.parse_value(bytearray([1, 2]))
-        assert result.parse_success is True
-        assert result.value == "not an int"
+        value = char.parse_value(bytearray([1, 2]), validate=False)
+        assert value == "not an int"
 
     def test_disabled_validation_in_build_value(self) -> None:
         """Test that disabled validation affects build_value as well."""
-        char = ValidationHelperCharacteristic(validate=False)
+        char = ValidationHelperCharacteristic()
 
         # Out-of-range value should succeed in build when validation disabled
-        result = char.build_value(200)  # Above max_value of 100
+        result = char.build_value(200, validate=False)  # Above max_value of 100
         assert result == bytearray([200, 0])
 
     def test_validation_control_with_validation_config(self) -> None:
@@ -384,27 +373,24 @@ class TestValidationControl:
         from bluetooth_sig.gatt.characteristics.base import ValidationConfig
 
         # Both validation control and constraints can be specified
-        char = ValidationHelperCharacteristic(validate=False, validation=ValidationConfig(min_value=10, max_value=50))
+        char = ValidationHelperCharacteristic(validation=ValidationConfig(min_value=10, max_value=50))
 
-        # Even with tighter constraints in ValidationConfig, validation is disabled
+        # Even with tighter constraints in ValidationConfig, validation can be disabled per-call
         data = bytearray([200, 0])  # Out of range
-        result = char.parse_value(data)
+        value = char.parse_value(data, validate=False)
 
-        assert result.parse_success is True
-        assert result.value == 200
+        assert value == 200
 
-    def test_validation_separate_instances(self) -> None:
-        """Test that validation control is per-instance, not global."""
-        char_validated = ValidationHelperCharacteristic(validate=True)
-        char_no_validation = ValidationHelperCharacteristic(validate=False)
+    def test_validation_separate_calls(self) -> None:
+        """Test that validation control is per-call, not global."""
+        char = ValidationHelperCharacteristic()
 
         data = bytearray([200, 0])  # Out of range
 
-        # First instance should fail
-        result1 = char_validated.parse_value(data)
-        assert result1.parse_success is False
+        # First call with validation should fail
+        with pytest.raises(CharacteristicParseError):
+            char.parse_value(data, validate=True)
 
-        # Second instance should succeed
-        result2 = char_no_validation.parse_value(data)
-        assert result2.parse_success is True
-        assert result2.value == 200
+        # Second call without validation should succeed
+        value = char.parse_value(data, validate=False)
+        assert value == 200

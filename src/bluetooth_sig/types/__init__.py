@@ -62,7 +62,7 @@ from .ead import (
     EncryptedAdvertisingData,
 )
 from .location import PositionStatus
-from .protocols import CharacteristicDataProtocol
+from .protocols import CharacteristicProtocol
 from .registry.ad_types import AdTypeInfo
 from .registry.appearance_info import AppearanceInfo
 from .registry.class_of_device import ClassOfDeviceInfo
@@ -120,8 +120,8 @@ __all__ = [
     "BLEAdvertisingPDU",
     "BLEExtendedHeader",
     "CharacteristicContext",
-    "CharacteristicDataProtocol",
     "CharacteristicInfo",
+    "CharacteristicProtocol",
     "ClassOfDeviceInfo",
     "ConcentrationUnit",
     "CoreAdvertisingData",

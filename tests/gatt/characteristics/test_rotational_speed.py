@@ -57,17 +57,17 @@ class TestRotationalSpeedCharacteristic(CommonCharacteristicTests):
         """Test rotational speed precision and boundary values."""
         # Test zero speed
         result = characteristic.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
-        assert result.value == 0.0
+        assert result == 0.0
 
         # Test positive speed (1500 RPM)
         result = characteristic.parse_value(bytearray([0xDC, 0x05, 0x00, 0x00]))  # 1500 = 1500 RPM
-        assert result.value is not None
-        assert abs(result.value - 1500.0) < 0.001
+        assert result is not None
+        assert abs(result - 1500.0) < 0.001
 
         # Test negative speed (-500 RPM)
         result = characteristic.parse_value(bytearray([0x0C, 0xFE, 0xFF, 0xFF]))  # -500 = -500 RPM
-        assert result.value is not None
-        assert abs(result.value + 500.0) < 0.001
+        assert result is not None
+        assert abs(result + 500.0) < 0.001
 
     def test_rotational_speed_extreme_values(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test extreme rotational speed values within valid range."""
@@ -77,20 +77,20 @@ class TestRotationalSpeedCharacteristic(CommonCharacteristicTests):
             [max_value & 0xFF, (max_value >> 8) & 0xFF, (max_value >> 16) & 0xFF, (max_value >> 24) & 0xFF]
         )  # 2147483646 = 2147483646 RPM
         result = characteristic.parse_value(max_data)
-        assert result.value is not None
-        assert abs(result.value - 2147483646.0) < 0.001
+        assert result is not None
+        assert abs(result - 2147483646.0) < 0.001
 
         # Test near-minimum negative value (-2147483646 RPM, which is -2147483646)
         min_data = bytearray([0x02, 0x00, 0x00, 0x80])  # -2147483646 = -2147483646 RPM
         result = characteristic.parse_value(min_data)
         assert result is not None
-        assert result.value is not None
-        assert abs(result.value + 2147483646.0) < 0.001
+        assert result is not None
+        assert abs(result + 2147483646.0) < 0.001
 
         # Test "value is not known" special value
         unknown_data = bytearray([0xFF, 0xFF, 0xFF, 0x7F])  # 0x7FFFFFFF
         result = characteristic.parse_value(unknown_data)
-        assert result.value is None
+        assert result is None
 
     def test_rotational_speed_encoding_accuracy(self, characteristic: RotationalSpeedCharacteristic) -> None:
         """Test encoding produces correct byte sequences."""

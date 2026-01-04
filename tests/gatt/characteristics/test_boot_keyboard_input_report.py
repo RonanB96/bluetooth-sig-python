@@ -46,16 +46,16 @@ class TestBootKeyboardInputReportCharacteristic(CommonCharacteristicTests):
         """Test report with no keys pressed."""
         char = BootKeyboardInputReportCharacteristic()
         result = char.parse_value(bytearray([0, 0, 0, 0, 0, 0, 0, 0]))
-        assert result.value.modifiers == KeyboardModifiers(0)
-        assert result.value.reserved == 0
-        assert result.value.keycodes == (0, 0, 0, 0, 0, 0)
+        assert result.modifiers == KeyboardModifiers(0)
+        assert result.reserved == 0
+        assert result.keycodes == (0, 0, 0, 0, 0, 0)
 
     def test_single_key_with_modifier(self) -> None:
         """Test single key with modifier."""
         char = BootKeyboardInputReportCharacteristic()
         result = char.parse_value(bytearray([0x02, 0, 4, 0, 0, 0, 0, 0]))
-        assert result.value.modifiers == KeyboardModifiers.LEFT_SHIFT
-        assert result.value.keycodes[0] == 4  # 'a' key
+        assert result.modifiers == KeyboardModifiers.LEFT_SHIFT
+        assert result.keycodes[0] == 4  # 'a' key
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve data."""
@@ -65,4 +65,4 @@ class TestBootKeyboardInputReportCharacteristic(CommonCharacteristicTests):
         )
         encoded = char.build_value(original)
         decoded = char.parse_value(encoded)
-        assert decoded.value == original
+        assert decoded == original

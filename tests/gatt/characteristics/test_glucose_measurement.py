@@ -225,11 +225,11 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
         test_data = valid_test_data[0].input_data
 
         result = characteristic.parse_value(test_data)
-        assert result.value is not None
-        assert result.value.sequence_number == 42
-        assert result.value.glucose_concentration == 120.0
-        assert result.value.glucose_type is None
-        assert result.value.sample_location is None
+        assert result is not None
+        assert result.sequence_number == 42
+        assert result.glucose_concentration == 120.0
+        assert result.glucose_type is None
+        assert result.sample_location is None
 
     def test_glucose_measurement_with_type_location(self, characteristic: GlucoseMeasurementCharacteristic) -> None:
         """Test glucose measurement with type and location."""
@@ -253,9 +253,9 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(test_data)
-        assert result.value is not None
-        assert result.value.glucose_type == GlucoseType.CAPILLARY_WHOLE_BLOOD
-        assert result.value.sample_location == SampleLocation.FINGER
+        assert result is not None
+        assert result.glucose_type == GlucoseType.CAPILLARY_WHOLE_BLOOD
+        assert result.sample_location == SampleLocation.FINGER
 
     def test_glucose_measurement_with_sensor_status(self, characteristic: GlucoseMeasurementCharacteristic) -> None:
         """Test glucose measurement with sensor status."""
@@ -280,8 +280,8 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(test_data)
-        assert result.value is not None
-        assert result.value.sensor_status == 1
+        assert result is not None
+        assert result.sensor_status == 1
 
     def test_glucose_measurement_invalid_data(self, characteristic: GlucoseMeasurementCharacteristic) -> None:
         """Test glucose measurement with invalid data."""

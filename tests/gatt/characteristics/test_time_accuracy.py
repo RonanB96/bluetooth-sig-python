@@ -35,13 +35,13 @@ class TestTimeAccuracyCharacteristic(CommonCharacteristicTests):
         """Test unknown time accuracy."""
         char = TimeAccuracyCharacteristic()
         result = char.parse_value(bytearray([0]))
-        assert result.value == 0
+        assert result == 0
 
     def test_precise_accuracy(self) -> None:
         """Test precise time accuracy (±1/8 second)."""
         char = TimeAccuracyCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result.value == 1
+        assert result == 1
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
@@ -49,4 +49,4 @@ class TestTimeAccuracyCharacteristic(CommonCharacteristicTests):
         for value in [0, 1, 64, 128, 254]:
             encoded = char.build_value(value)
             decoded = char.parse_value(encoded)
-            assert decoded.value == value
+            assert decoded == value

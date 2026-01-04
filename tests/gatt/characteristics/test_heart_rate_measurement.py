@@ -86,9 +86,9 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
         hr_data = bytearray([0x00, 0x3C])  # 60 BPM
         result = characteristic.parse_value(hr_data, ctx=None)
 
-        assert isinstance(result.value, HeartRateData)
-        assert result.value.heart_rate == 60
-        assert result.value.sensor_location is None  # No context available
+        assert isinstance(result, HeartRateData)
+        assert result.heart_rate == 60
+        assert result.sensor_location is None  # No context available
 
     def test_heart_rate_with_sensor_location_context(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test heart rate parsing with sensor location from context."""
@@ -126,8 +126,8 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
         hr_data = bytearray([0x00, 0x3C])  # 60 BPM
         result = characteristic.parse_value(hr_data, ctx)
 
-        assert result.value.heart_rate == 60
-        assert result.value.sensor_location == BodySensorLocation.WRIST
+        assert result.heart_rate == 60
+        assert result.sensor_location == BodySensorLocation.WRIST
 
     def test_heart_rate_with_different_sensor_locations(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test heart rate with various sensor locations."""
@@ -173,8 +173,8 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
             hr_data = bytearray([0x00, 0x46])  # 70 BPM
             result = characteristic.parse_value(hr_data, ctx)
 
-            assert result.value.heart_rate == 70
-            assert result.value.sensor_location == expected_enum
+            assert result.heart_rate == 70
+            assert result.sensor_location == expected_enum
 
     def test_heart_rate_context_with_missing_sensor_location(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that heart rate works when context exists but sensor location doesn't."""
@@ -186,5 +186,5 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
         hr_data = bytearray([0x00, 0x50])  # 80 BPM
         result = characteristic.parse_value(hr_data, ctx)
 
-        assert result.value.heart_rate == 80
-        assert result.value.sensor_location is None  # Graceful handling of missing context data
+        assert result.heart_rate == 80
+        assert result.sensor_location is None  # Graceful handling of missing context data

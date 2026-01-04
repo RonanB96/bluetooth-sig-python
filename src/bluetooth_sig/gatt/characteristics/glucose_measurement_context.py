@@ -329,17 +329,16 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic[GlucoseMeasurem
         # SIG Specification: "Contains the sequence number of the corresponding Glucose Measurement"
         if ctx is not None and isinstance(ctx, CharacteristicContext):
             glucose_meas = self.get_context_characteristic(ctx, GlucoseMeasurementCharacteristic)
-            if glucose_meas and glucose_meas.parse_success:
+            if glucose_meas and hasattr(glucose_meas, "sequence_number"):
                 # Extract sequence number from GlucoseMeasurementData
-                if hasattr(glucose_meas.value, "sequence_number"):
-                    meas_seq = glucose_meas.value.sequence_number
-                    if meas_seq != sequence_number:
-                        logger.warning(
-                            "Glucose Measurement Context sequence number (%d) does not match "
-                            "Glucose Measurement sequence number (%d)",
-                            sequence_number,
-                            meas_seq,
-                        )
+                meas_seq = glucose_meas.sequence_number
+                if meas_seq != sequence_number:
+                    logger.warning(
+                        "Glucose Measurement Context sequence number (%d) does not match "
+                        "Glucose Measurement sequence number (%d)",
+                        sequence_number,
+                        meas_seq,
+                    )
 
         # Parse all optional fields based on flags
         extended = self._parse_extended_flags(data, flags, offset)

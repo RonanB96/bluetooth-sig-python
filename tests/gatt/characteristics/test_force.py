@@ -53,18 +53,18 @@ class TestForceCharacteristic(CommonCharacteristicTests):
         """Test force precision and boundary values."""
         # Test zero force
         result = characteristic.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
-        assert result.value is not None
-        assert result.value == 0.0
+        assert result is not None
+        assert result == 0.0
 
         # Test negative force (-1 N)
         result = characteristic.parse_value(bytearray([0x18, 0xFC, 0xFF, 0xFF]))  # -1000 = -1.00 N
-        assert result.value is not None
-        assert abs(result.value + 1.0) < 0.001
+        assert result is not None
+        assert abs(result + 1.0) < 0.001
 
         # Test precision (1 N)
         result = characteristic.parse_value(bytearray([0xE8, 0x03, 0x00, 0x00]))  # 1000 = 1.00 N
-        assert result.value is not None
-        assert abs(result.value - 1.0) < 0.001
+        assert result is not None
+        assert abs(result - 1.0) < 0.001
 
     def test_force_extreme_values(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test extreme force values within valid range."""
@@ -74,19 +74,19 @@ class TestForceCharacteristic(CommonCharacteristicTests):
             [max_value & 0xFF, (max_value >> 8) & 0xFF, (max_value >> 16) & 0xFF, (max_value >> 24) & 0xFF]
         )  # 2147483646 = 2147483.646 N
         result = characteristic.parse_value(max_data)
-        assert result.value is not None
-        assert abs(result.value - 2147483.646) < 0.001
+        assert result is not None
+        assert abs(result - 2147483.646) < 0.001
 
         # Test near-minimum negative value (-2147483.646 N, which is -2147483646)
         min_data = bytearray([0x02, 0x00, 0x00, 0x80])  # -2147483646 = -2147483.646 N
         result = characteristic.parse_value(min_data)
-        assert result.value is not None
-        assert abs(result.value + 2147483.646) < 0.001
+        assert result is not None
+        assert abs(result + 2147483.646) < 0.001
 
         # Test "value is not known" special value
         unknown_data = bytearray([0xFF, 0xFF, 0xFF, 0x7F])  # 0x7FFFFFFF
         result = characteristic.parse_value(unknown_data)
-        assert result.value is None
+        assert result is None
 
     def test_force_encoding_accuracy(self, characteristic: ForceCharacteristic) -> None:
         """Test encoding produces correct byte sequences."""
@@ -98,8 +98,8 @@ class TestForceCharacteristic(CommonCharacteristicTests):
         # Test too much data (should work, extra ignored)
         data = bytearray([0xE8, 0x03, 0x00, 0x00, 0xFF, 0xFF])
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert abs(result.value - 1.0) < 0.001
+        assert result is not None
+        assert abs(result - 1.0) < 0.001
 
     def test_encode_value(self, characteristic: ForceCharacteristic) -> None:
         """Test encoding force values."""

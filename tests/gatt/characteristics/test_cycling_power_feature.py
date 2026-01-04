@@ -62,34 +62,34 @@ class TestCyclingPowerFeatureCharacteristic(CommonCharacteristicTests):
         # Test basic feature mask
         feature_data = struct.pack("<I", 0x0000000F)  # Multiple features enabled
         result = characteristic.parse_value(bytearray(feature_data))
-        assert result.value is not None
-        assert result.value.features == (
+        assert result is not None
+        assert result.features == (
             CyclingPowerFeatures.PEDAL_POWER_BALANCE_SUPPORTED
             | CyclingPowerFeatures.ACCUMULATED_ENERGY_SUPPORTED
             | CyclingPowerFeatures.WHEEL_REVOLUTION_DATA_SUPPORTED
             | CyclingPowerFeatures.CRANK_REVOLUTION_DATA_SUPPORTED
         )
-        assert result.value.pedal_power_balance_supported is True
-        assert result.value.accumulated_energy_supported is True
-        assert result.value.wheel_revolution_data_supported is True
-        assert result.value.crank_revolution_data_supported is True
+        assert result.pedal_power_balance_supported is True
+        assert result.accumulated_energy_supported is True
+        assert result.wheel_revolution_data_supported is True
+        assert result.crank_revolution_data_supported is True
 
         # Test single feature
         feature_data = struct.pack("<I", 0x00000001)  # Only pedal power balance
         result = characteristic.parse_value(bytearray(feature_data))
-        assert result.value is not None
-        assert result.value.features == CyclingPowerFeatures.PEDAL_POWER_BALANCE_SUPPORTED
-        assert result.value.pedal_power_balance_supported is True
-        assert result.value.accumulated_energy_supported is False
-        assert result.value.wheel_revolution_data_supported is False
-        assert result.value.crank_revolution_data_supported is False
+        assert result is not None
+        assert result.features == CyclingPowerFeatures.PEDAL_POWER_BALANCE_SUPPORTED
+        assert result.pedal_power_balance_supported is True
+        assert result.accumulated_energy_supported is False
+        assert result.wheel_revolution_data_supported is False
+        assert result.crank_revolution_data_supported is False
 
         # Test no features
         feature_data = struct.pack("<I", 0x00000000)
         result = characteristic.parse_value(bytearray(feature_data))
-        assert result.value is not None
-        assert result.value.features == CyclingPowerFeatures(0)
-        assert result.value.pedal_power_balance_supported is False
-        assert result.value.accumulated_energy_supported is False
-        assert result.value.wheel_revolution_data_supported is False
-        assert result.value.crank_revolution_data_supported is False
+        assert result is not None
+        assert result.features == CyclingPowerFeatures(0)
+        assert result.pedal_power_balance_supported is False
+        assert result.accumulated_energy_supported is False
+        assert result.wheel_revolution_data_supported is False
+        assert result.crank_revolution_data_supported is False

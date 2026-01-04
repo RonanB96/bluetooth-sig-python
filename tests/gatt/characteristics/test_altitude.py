@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import AltitudeCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -46,14 +47,14 @@ class TestAltitudeCharacteristic(CommonCharacteristicTests):
         # Test normal parsing
         test_data = bytearray([0xED, 0x03])  # 1005 = 100.5m
         parsed = characteristic.parse_value(test_data)
-        assert parsed.value == 100.5
+        assert parsed == 100.5
 
     def test_altitude_error_handling(self, characteristic: AltitudeCharacteristic) -> None:
         """Test Altitude error handling."""
-        # Test insufficient data - parse_value returns CharacteristicData with parse_success=False
-        result = characteristic.parse_value(bytearray([0x12]))
-        assert result.parse_success is False
-        assert result.error_message == (
+        # Test insufficient data - parse_value raises CharacteristicParseError
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x12]))
+        assert str(exc_info.value) == (
             "Length validation failed for Altitude: expected exactly 2 bytes, got 1 "
             "(class-level constraint for AltitudeCharacteristic); "
             "Length validation failed for Altitude: expected at least 2 bytes, got 1 "
@@ -65,16 +66,16 @@ class TestAltitudeCharacteristic(CommonCharacteristicTests):
         # Maximum positive (32767 * 0.1 = 3276.7m)
         data_max = bytearray([0xFF, 0x7F])
         result = characteristic.parse_value(data_max)
-        assert abs(result.value - 3276.7) < 0.1
+        assert abs(result - 3276.7) < 0.1
 
         # Maximum negative (-32768 * 0.1 = -3276.8m)
         data_min = bytearray([0x00, 0x80])
         result = characteristic.parse_value(data_min)
-        assert abs(result.value - (-3276.8)) < 0.1
+        assert abs(result - (-3276.8)) < 0.1
 
     def test_altitude_round_trip(self, characteristic: AltitudeCharacteristic) -> None:
         """Test encode/decode round trip."""
         test_value = 123.4
         encoded = characteristic.build_value(test_value)
         decoded = characteristic.parse_value(encoded)
-        assert decoded.value == test_value
+        assert decoded == test_value

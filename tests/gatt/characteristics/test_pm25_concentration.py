@@ -41,4 +41,4 @@ class TestPM25ConcentrationCharacteristic(CommonCharacteristicTests):
         # Test normal parsing
         test_data = bytearray([0x19, 0x00])  # 25 µg/m³ little endian
         parsed = characteristic.parse_value(test_data)
-        assert parsed.value == 25
+        assert parsed == 25

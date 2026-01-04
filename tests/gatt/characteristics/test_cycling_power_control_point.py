@@ -144,12 +144,12 @@ class TestCyclingPowerControlPointCharacteristic(CommonCharacteristicTests):
         op_code = 0x03  # Request Supported Sensor Locations
         test_data = struct.pack("<B", op_code)
         result = char.parse_value(bytearray(test_data))
-        assert result.value is not None
+        assert result is not None
 
-        assert result.value.op_code.value == 3
-        assert str(result.value.op_code) == "Request Supported Sensor Locations"
-        assert result.value.cumulative_value is None
-        assert result.value.sensor_location is None
+        assert result.op_code.value == 3
+        assert str(result.op_code) == "Request Supported Sensor Locations"
+        assert result.cumulative_value is None
+        assert result.sensor_location is None
 
     def test_cycling_power_control_point_with_parameters(self) -> None:
         """Test cycling power control point with parameters."""
@@ -160,22 +160,22 @@ class TestCyclingPowerControlPointCharacteristic(CommonCharacteristicTests):
         cumulative_value = 123456
         test_data = struct.pack("<BI", op_code, cumulative_value)
         result = char.parse_value(bytearray(test_data))
-        assert result.value is not None
+        assert result is not None
 
-        assert result.value.op_code.value == 1
-        assert str(result.value.op_code) == "Set Cumulative Value"
-        assert result.value.cumulative_value == 123456
+        assert result.op_code.value == 1
+        assert str(result.op_code) == "Set Cumulative Value"
+        assert result.cumulative_value == 123456
 
         # Test Set Crank Length
         op_code = 0x04
         crank_length = 350  # 175.0 mm (350 * 0.5)
         test_data = struct.pack("<BH", op_code, crank_length)
         result = char.parse_value(bytearray(test_data))
-        assert result.value is not None
+        assert result is not None
 
-        assert result.value.op_code.value == 4
-        assert str(result.value.op_code) == "Set Crank Length"
-        assert result.value.crank_length == 175.0
+        assert result.op_code.value == 4
+        assert str(result.op_code) == "Set Crank Length"
+        assert result.crank_length == 175.0
 
     def test_cycling_power_control_point_response(self) -> None:
         """Test cycling power control point response parsing."""
@@ -187,13 +187,13 @@ class TestCyclingPowerControlPointCharacteristic(CommonCharacteristicTests):
         response_value = 0x01  # Success
         test_data = struct.pack("<BBB", op_code, request_op_code, response_value)
         result = char.parse_value(bytearray(test_data))
-        assert result.value is not None
+        assert result is not None
 
-        assert result.value.op_code.value == 32
-        assert str(result.value.op_code) == "Response Code"
-        assert result.value.request_op_code and result.value.request_op_code.value == 3
-        assert result.value.response_value and result.value.response_value.value == 1
-        assert str(result.value.response_value) == "Success"
+        assert result.op_code.value == 32
+        assert str(result.op_code) == "Response Code"
+        assert result.request_op_code and result.request_op_code.value == 3
+        assert result.response_value and result.response_value.value == 1
+        assert str(result.response_value) == "Success"
 
     def test_cycling_power_control_point_invalid_data(self) -> None:
         """Test cycling power control point with invalid data."""

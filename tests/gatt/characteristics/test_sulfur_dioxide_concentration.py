@@ -48,7 +48,7 @@ class TestSulfurDioxideConcentrationCharacteristic(CommonCharacteristicTests):
         # Test normal parsing
         test_data = bytearray([0x64, 0x00])  # 100 ppb little endian
         parsed = characteristic.parse_value(test_data)
-        assert parsed.value == 100
+        assert parsed == 100
 
     def test_sulfur_dioxide_concentration_boundary_values(
         self, characteristic: SulfurDioxideConcentrationCharacteristic

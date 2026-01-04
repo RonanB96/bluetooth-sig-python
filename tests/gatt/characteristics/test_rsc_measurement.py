@@ -220,20 +220,20 @@ class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
         # Test speed encoding (1/256 m/s resolution)
         test_data = bytearray([0x00, 0x01, 0x00, 0x00])  # speed = 1/256 m/s (1 * 1/256)
         result = characteristic.parse_value(test_data)
-        assert result.value is not None
-        assert abs(result.value.instantaneous_speed - (1 / 256)) < 1e-10
+        assert result is not None
+        assert abs(result.instantaneous_speed - (1 / 256)) < 1e-10
 
         # Test stride length encoding (0.01 m resolution)
         test_data = bytearray([0x01, 0x00, 0x01, 0x00, 0x01, 0x00])  # stride = 0.01 m
         result = characteristic.parse_value(test_data)
-        assert result.value is not None
-        assert result.value.instantaneous_stride_length == 0.01
+        assert result is not None
+        assert result.instantaneous_stride_length == 0.01
 
         # Test total distance encoding (0.1 m resolution)
         test_data = bytearray([0x02, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00])  # distance = 0.1 m
         result = characteristic.parse_value(test_data)
-        assert result.value is not None
-        assert result.value.total_distance == 0.1
+        assert result is not None
+        assert result.total_distance == 0.1
 
     def test_rsc_measurement_declares_dependencies(self) -> None:
         """Test that RSC Measurement declares RSC Feature as optional dependency.

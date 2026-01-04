@@ -71,7 +71,7 @@ class TestFiveZoneHeartRateLimitsCharacteristic(CommonCharacteristicTests):
             moderate_hard_limit=moderate_limit,
             hard_maximum_limit=hard_limit,
         )
-        assert result.value == expected
+        assert result == expected
 
     def test_five_zone_heart_rate_limits_boundary_values(
         self, characteristic: FiveZoneHeartRateLimitsCharacteristic
@@ -82,11 +82,11 @@ class TestFiveZoneHeartRateLimitsCharacteristic(CommonCharacteristicTests):
         expected = FiveZoneHeartRateLimitsData(
             very_light_light_limit=0, light_moderate_limit=0, moderate_hard_limit=0, hard_maximum_limit=0
         )
-        assert result.value == expected
+        assert result == expected
 
         # Test maximum values (255 BPM)
         result = characteristic.parse_value(bytearray([255, 255, 255, 255]))
         expected = FiveZoneHeartRateLimitsData(
             very_light_light_limit=255, light_moderate_limit=255, moderate_hard_limit=255, hard_maximum_limit=255
         )
-        assert result.value == expected
+        assert result == expected

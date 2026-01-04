@@ -75,7 +75,7 @@ class TestBodySensorLocationCharacteristic(CommonCharacteristicTests):
         # Too much data - characteristic only reads first byte, extra bytes ignored
         result = characteristic.parse_value(bytearray([0x00, 0x00]))
         assert result.parse_success  # Should succeed, only first byte is read
-        assert result.value == BodySensorLocation.OTHER
+        assert result == BodySensorLocation.OTHER
 
     def test_invalid_value(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that invalid location value results in parse failure."""

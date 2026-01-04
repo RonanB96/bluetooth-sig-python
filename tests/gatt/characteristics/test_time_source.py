@@ -38,19 +38,19 @@ class TestTimeSourceCharacteristic(CommonCharacteristicTests):
         """Test unknown time source."""
         char = TimeSourceCharacteristic()
         result = char.parse_value(bytearray([0]))
-        assert result.value == 0
+        assert result == 0
 
     def test_gps_source(self) -> None:
         """Test GPS time source."""
         char = TimeSourceCharacteristic()
         result = char.parse_value(bytearray([2]))
-        assert result.value == 2
+        assert result == 2
 
     def test_atomic_clock_source(self) -> None:
         """Test atomic clock time source."""
         char = TimeSourceCharacteristic()
         result = char.parse_value(bytearray([5]))
-        assert result.value == 5
+        assert result == 5
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
@@ -58,4 +58,4 @@ class TestTimeSourceCharacteristic(CommonCharacteristicTests):
         for source in range(0, 7):
             encoded = char.build_value(source)
             decoded = char.parse_value(encoded)
-            assert decoded.value == source
+            assert decoded == source

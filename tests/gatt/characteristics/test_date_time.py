@@ -43,13 +43,13 @@ class TestDateTimeCharacteristic(CommonCharacteristicTests):
         """Test decoding Christmas 2019 date/time."""
         char = DateTimeCharacteristic()
         result = char.parse_value(bytearray([0xE3, 0x07, 12, 25, 10, 30, 45]))
-        assert result.value == datetime(2019, 12, 25, 10, 30, 45)
+        assert result == datetime(2019, 12, 25, 10, 30, 45)
 
     def test_decode_new_year_2020(self) -> None:
         """Test decoding New Year 2020 date/time."""
         char = DateTimeCharacteristic()
         result = char.parse_value(bytearray([0xE4, 0x07, 1, 1, 0, 0, 0]))
-        assert result.value == datetime(2020, 1, 1, 0, 0, 0)
+        assert result == datetime(2020, 1, 1, 0, 0, 0)
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve datetime."""
@@ -57,4 +57,4 @@ class TestDateTimeCharacteristic(CommonCharacteristicTests):
         original = datetime(2023, 6, 15, 14, 30, 0)
         encoded = char.build_value(original)
         decoded = char.parse_value(encoded)
-        assert decoded.value == original
+        assert decoded == original

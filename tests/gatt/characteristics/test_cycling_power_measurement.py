@@ -161,10 +161,10 @@ class TestCyclingPowerMeasurementCharacteristic(CommonCharacteristicTests):
         power = 250  # 250 watts
         test_data = struct.pack("<Hh", flags, power)
         result = characteristic.parse_value(bytearray(test_data))
-        assert result.value is not None
+        assert result is not None
 
-        assert result.value.flags == 0
-        assert result.value.instantaneous_power == 250
+        assert result.flags == 0
+        assert result.instantaneous_power == 250
 
     def test_cycling_power_measurement_with_pedal_balance(
         self, characteristic: CyclingPowerMeasurementCharacteristic
@@ -176,11 +176,11 @@ class TestCyclingPowerMeasurementCharacteristic(CommonCharacteristicTests):
         balance = 100  # 50% (100 * 0.5%)
         test_data = struct.pack("<HhB", flags, power, balance)
         result = characteristic.parse_value(bytearray(test_data))
-        assert result.value is not None
+        assert result is not None
 
-        assert result.value.flags == 1
-        assert result.value.instantaneous_power == 300
-        assert result.value.pedal_power_balance == 50.0
+        assert result.flags == 1
+        assert result.instantaneous_power == 300
+        assert result.pedal_power_balance == 50.0
 
     def test_cycling_power_measurement_with_wheel_data(
         self, characteristic: CyclingPowerMeasurementCharacteristic
@@ -193,9 +193,9 @@ class TestCyclingPowerMeasurementCharacteristic(CommonCharacteristicTests):
         wheel_time = 2048  # 1 second in 1/2048 units
         test_data = struct.pack("<HhIH", flags, power, wheel_revs, wheel_time)
         result = characteristic.parse_value(bytearray(test_data))
-        assert result.value is not None
+        assert result is not None
 
-        assert result.value.flags == 16
-        assert result.value.instantaneous_power == 320
-        assert result.value.cumulative_wheel_revolutions == 12345
-        assert result.value.last_wheel_event_time == 1.0  # 2048 / 2048 = 1.0 second
+        assert result.flags == 16
+        assert result.instantaneous_power == 320
+        assert result.cumulative_wheel_revolutions == 12345
+        assert result.last_wheel_event_time == 1.0  # 2048 / 2048 = 1.0 second

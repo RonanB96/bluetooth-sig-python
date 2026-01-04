@@ -57,7 +57,7 @@ class TestServiceChangedCharacteristic(CommonCharacteristicTests):
 
         # Test decoding
         decoded = char.parse_value(encoded)
-        assert decoded.value == service_changed
+        assert decoded == service_changed
 
     def test_multiple_services_changed(self) -> None:
         """Test service changed with multiple services in range."""
@@ -70,7 +70,7 @@ class TestServiceChangedCharacteristic(CommonCharacteristicTests):
 
         # Test decoding
         decoded = char.parse_value(encoded)
-        assert decoded.value == service_changed
+        assert decoded == service_changed
 
     def test_invalid_length_raises_error(self) -> None:
         """Test that invalid data lengths result in parse failure."""
@@ -100,5 +100,5 @@ class TestServiceChangedCharacteristic(CommonCharacteristicTests):
         encoded = char.build_value(original)
         decoded = char.parse_value(encoded)
 
-        assert decoded.value == original
+        assert decoded == original
         assert encoded == bytearray([0xCD, 0xAB, 0x01, 0xEF])  # Little endian

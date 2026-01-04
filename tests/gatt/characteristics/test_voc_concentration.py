@@ -42,7 +42,7 @@ class TestVOCConcentrationCharacteristic(CommonCharacteristicTests):
         # Test normal value parsing
         test_data = bytearray([0x00, 0x04])  # 1024 ppb
         result = characteristic.parse_value(test_data)
-        assert result.value == 1024
+        assert result == 1024
 
         # Test encoding
         encoded = characteristic.build_value(1024)
@@ -53,19 +53,19 @@ class TestVOCConcentrationCharacteristic(CommonCharacteristicTests):
         # Test 0xFFFE (value is 65534 or greater per SIG spec)
         test_data = bytearray([0xFE, 0xFF])
         result = characteristic.parse_value(test_data)
-        assert result.parse_success
-        assert result.value is not None
-        assert hasattr(result.value, "raw_value")
-        assert result.value.raw_value == 65534
+
+        assert result is not None
+        assert hasattr(result, "raw_value")
+        assert result.raw_value == 65534
 
         # Test 0xFFFF (value is not known per SIG spec)
         # The uint16 template returns the raw value 65535
         test_data = bytearray([0xFF, 0xFF])
         result = characteristic.parse_value(test_data)
-        assert result.parse_success
-        assert result.value is not None
-        assert hasattr(result.value, "raw_value")
-        assert result.value.raw_value == 65535
+
+        assert result is not None
+        assert hasattr(result, "raw_value")
+        assert result.raw_value == 65535
 
         # Test encoding of normal values
         encoded = characteristic.build_value(1024)

@@ -52,7 +52,7 @@ class TestFatBurnHeartRateUpperLimitCharacteristic(CommonCharacteristicTests):
         """Test fat burn heart rate upper limit with various valid values."""
         data = bytearray([heart_rate])
         result = characteristic.parse_value(data)
-        assert result.value == heart_rate
+        assert result == heart_rate
 
     def test_fat_burn_heart_rate_upper_limit_boundary_values(
         self, characteristic: FatBurnHeartRateUpperLimitCharacteristic
@@ -60,8 +60,8 @@ class TestFatBurnHeartRateUpperLimitCharacteristic(CommonCharacteristicTests):
         """Test fat burn heart rate upper limit boundary values."""
         # Test minimum value (0 BPM)
         result = characteristic.parse_value(bytearray([0]))
-        assert result.value == 0
+        assert result == 0
 
         # Test maximum value (255 BPM)
         result = characteristic.parse_value(bytearray([255]))
-        assert result.value == 255
+        assert result == 255

@@ -220,19 +220,19 @@ class TestCustomCharacteristicVariants:
         data = bytearray([0x14, 0x00])  # 20°C
         result = sensor.parse_value(data)
         assert result.parse_success is True
-        assert result.value == 20
+        assert result == 20
         assert result.characteristic.info.unit == "°C"
 
         # Test parsing negative temperature
         data = bytearray([0xF6, 0xFF])  # -10°C
         result = sensor.parse_value(data)
         assert result.parse_success is True
-        assert result.value == -10
+        assert result == -10
 
         # Test round-trip
         encoded = sensor.build_value(25)
         result = sensor.parse_value(encoded)
-        assert result.value == 25
+        assert result == 25
 
     def test_simple_temperature_validation(self) -> None:
         """Test temperature sensor validation."""
@@ -256,14 +256,14 @@ class TestCustomCharacteristicVariants:
         data = bytearray([0x88, 0x13])
         result = sensor.parse_value(data)
         assert result.parse_success is True
-        assert result.value == 50.0
+        assert result == 50.0
         assert result.characteristic.info.unit == "%"
 
         # Test max humidity
         data = bytearray([0x10, 0x27])  # 10000 * 0.01 = 100.0%
         result = sensor.parse_value(data)
         assert result.parse_success is True
-        assert result.value == 100.0
+        assert result == 100.0
 
     def test_multi_sensor_characteristic(self) -> None:
         """Test multi-field environmental sensor."""
@@ -289,11 +289,11 @@ class TestCustomCharacteristicVariants:
 
         result = sensor.parse_value(data)
         assert result.parse_success is True
-        assert isinstance(result.value, EnvironmentalReading)
-        assert abs(result.value.temperature - 25.5) < 0.1  # Allow floating point tolerance
-        assert result.value.humidity == 60.0
-        assert result.value.pressure == 101325
-        assert result.value.timestamp == 1610612736
+        assert isinstance(result, EnvironmentalReading)
+        assert abs(result.temperature - 25.5) < 0.1  # Allow floating point tolerance
+        assert result.humidity == 60.0
+        assert result.pressure == 101325
+        assert result.timestamp == 1610612736
 
     def test_multi_sensor_length_validation(self) -> None:
         """Test multi-sensor minimum length validation."""
@@ -312,12 +312,12 @@ class TestCustomCharacteristicVariants:
         data = bytearray(b"SN123456789")
         result = char.parse_value(data)
         assert result.parse_success is True
-        assert result.value == "SN123456789"
+        assert result == "SN123456789"
         assert result.characteristic.info.value_type == ValueType.STRING
 
         encoded = char.build_value("TEST12345")
         result = char.parse_value(encoded)
-        assert result.value == "TEST12345"
+        assert result == "TEST12345"
 
     def test_device_status_flags(self) -> None:
         """Test device status flags characteristic."""
@@ -327,20 +327,20 @@ class TestCustomCharacteristicVariants:
         data = bytearray([0x00])
         result = char.parse_value(data)
         assert result.parse_success is True
-        assert isinstance(result.value, dict)
-        # Pylint false positive: result.value is dict, but pylint doesn't recognize msgspec.Struct returns
-        assert result.value["powered_on"] is False  # pylint: disable=unsubscriptable-object
-        assert result.value["charging"] is False  # pylint: disable=unsubscriptable-object
-        assert result.value["error"] is False  # pylint: disable=unsubscriptable-object
+        assert isinstance(result, dict)
+        # Pylint false positive: result is dict, but pylint doesn't recognize msgspec.Struct returns
+        assert result["powered_on"] is False  # pylint: disable=unsubscriptable-object
+        assert result["charging"] is False  # pylint: disable=unsubscriptable-object
+        assert result["error"] is False  # pylint: disable=unsubscriptable-object
 
         # Test multiple flags on: powered_on + bluetooth_connected
         data = bytearray([0x11])  # 0x01 | 0x10
         result = char.parse_value(data)
         assert result.parse_success is True
-        assert result.value is not None
-        assert result.value["powered_on"] is True  # pylint: disable=unsubscriptable-object
-        assert result.value["bluetooth_connected"] is True  # pylint: disable=unsubscriptable-object
-        assert result.value["charging"] is False  # pylint: disable=unsubscriptable-object
+        assert result is not None
+        assert result["powered_on"] is True  # pylint: disable=unsubscriptable-object
+        assert result["bluetooth_connected"] is True  # pylint: disable=unsubscriptable-object
+        assert result["charging"] is False  # pylint: disable=unsubscriptable-object
 
         # Test round-trip
         flags = {
@@ -386,7 +386,7 @@ class TestCustomCharacteristicVariants:
         data = bytearray([85])  # 85%
         result = char.parse_value(data)
         assert result.parse_success is True
-        assert result.value == 85
+        assert result == 85
 
     def test_custom_characteristics_have_is_custom_marker(self) -> None:
         """Verify all custom characteristics have _is_custom marker."""
@@ -443,7 +443,7 @@ class TestCustomCharacteristicRegistration:
         )
 
         assert result.parse_success is True
-        assert result.value == 20
+        assert result == 20
 
     def test_register_multi_field_characteristic(self) -> None:
         """Test registering multi-field characteristic."""
@@ -478,7 +478,7 @@ class TestCustomCharacteristicRegistration:
         )
 
         assert result.parse_success is True
-        assert isinstance(result.value, EnvironmentalReading)
+        assert isinstance(result, EnvironmentalReading)
 
 
 class TestCustomCharacteristicErrorHandling:
@@ -542,7 +542,7 @@ class TestCustomCharacteristicErrorHandling:
         # Empty data should trigger error
         result = sensor.parse_value(bytearray())
         assert result.parse_success is False
-        assert result.value is None
+        assert result is None
 
     def test_validation_error_handling(self) -> None:
         """Test that validation errors are properly handled."""
@@ -577,7 +577,7 @@ class TestCustomCharacteristicEdgeCases:
         data = sensor.build_value(85)
         result = sensor.parse_value(data)
         assert result.parse_success is True
-        assert result.value == 85
+        assert result == 85
 
     def test_minimum_values(self) -> None:
         """Test handling of minimum values."""
@@ -587,7 +587,7 @@ class TestCustomCharacteristicEdgeCases:
         data = sensor.build_value(-40)
         result = sensor.parse_value(data)
         assert result.parse_success is True
-        assert result.value == -40
+        assert result == -40
 
     def test_string_encoding_edge_cases(self) -> None:
         """Test string encoding with special characters."""
@@ -598,7 +598,7 @@ class TestCustomCharacteristicEdgeCases:
         encoded = char.build_value(special_serial)
         result = char.parse_value(encoded)
         assert result.parse_success is True
-        assert result.value == special_serial
+        assert result == special_serial
 
 
 class TestCustomBaseCharacteristicAPI:
@@ -640,8 +640,8 @@ class TestCustomBaseCharacteristicAPI:
         # Should work for parsing
         test_data = bytearray([0x32, 0x00])  # 50 in little-endian
         result = char.parse_value(test_data)
-        assert result.parse_success
-        assert result.value == 50
+
+        assert result == 50
 
     def test_manual_info_override(self) -> None:
         """Test that manual info parameter still works (backwards compatibility)."""

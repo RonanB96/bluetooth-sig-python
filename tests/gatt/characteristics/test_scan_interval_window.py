@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import ScanIntervalWindowCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.scan_interval_window import ScanIntervalWindowData
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -75,7 +76,7 @@ class TestScanIntervalWindowCharacteristic(CommonCharacteristicTests):
 
         result = characteristic.parse_value(data)
         expected = ScanIntervalWindowData(scan_interval=scan_interval, scan_window=scan_window)
-        assert result.value == expected
+        assert result == expected
 
     def test_scan_interval_window_boundary_values(self, characteristic: ScanIntervalWindowCharacteristic) -> None:
         """Test scan interval window boundary values."""
@@ -85,7 +86,7 @@ class TestScanIntervalWindowCharacteristic(CommonCharacteristicTests):
         expected = ScanIntervalWindowData(
             scan_interval=ScanIntervalWindowData.SCAN_INTERVAL_MIN, scan_window=ScanIntervalWindowData.SCAN_WINDOW_MIN
         )
-        assert result.value == expected
+        assert result == expected
 
         # Test maximum values
         data = bytearray([0x00, 0x40, 0x00, 0x20])  # SCAN_INTERVAL_MAX, SCAN_INTERVAL_MAX//2
@@ -94,7 +95,7 @@ class TestScanIntervalWindowCharacteristic(CommonCharacteristicTests):
             scan_interval=ScanIntervalWindowData.SCAN_INTERVAL_MAX,
             scan_window=ScanIntervalWindowData.SCAN_INTERVAL_MAX // 2,
         )
-        assert result.value == expected
+        assert result == expected
 
     def test_scan_interval_window_invalid_length(self, characteristic: ScanIntervalWindowCharacteristic) -> None:
         """Test that invalid data lengths are rejected."""
@@ -111,9 +112,9 @@ class TestScanIntervalWindowCharacteristic(CommonCharacteristicTests):
         """Test that scan window > scan interval is rejected."""
         # scan_window > scan_interval
         data = bytearray([0x04, 0x00, 0x06, 0x00])  # 0x0004, 0x0006
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
-        assert "must be <=" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data)
+        assert "must be <=" in str(exc_info.value).lower()
 
     def test_scan_interval_window_out_of_range_values(self, characteristic: ScanIntervalWindowCharacteristic) -> None:
         """Test that out-of-range values are rejected."""
@@ -150,4 +151,4 @@ class TestScanIntervalWindowCharacteristic(CommonCharacteristicTests):
         encoded = characteristic.build_value(original)
         decoded = characteristic.parse_value(encoded)
 
-        assert decoded.value == original
+        assert decoded == original

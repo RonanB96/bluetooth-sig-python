@@ -59,4 +59,4 @@ class TestPollenConcentrationCharacteristic(CommonCharacteristicTests):
         # Test normal parsing: 123456 count/m³
         test_data = bytearray([0x40, 0xE2, 0x01])  # 123456 in 24-bit little endian
         parsed = characteristic.parse_value(test_data)
-        assert parsed.value == 123456.0  # Returns float now
+        assert parsed == 123456.0  # Returns float now

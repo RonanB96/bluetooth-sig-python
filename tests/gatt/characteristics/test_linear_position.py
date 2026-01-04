@@ -57,17 +57,17 @@ class TestLinearPositionCharacteristic(CommonCharacteristicTests):
         """Test linear position precision and boundary values."""
         # Test zero position
         result = characteristic.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
-        assert result.value == 0.0
+        assert result == 0.0
 
         # Test positive position (0.5 m)
         result = characteristic.parse_value(bytearray([0x40, 0x4B, 0x4C, 0x00]))  # 5000000 = 0.5 m
-        assert result.value is not None
-        assert abs(result.value - 0.5) < 1e-7
+        assert result is not None
+        assert abs(result - 0.5) < 1e-7
 
         # Test negative position (-0.25 m)
         result = characteristic.parse_value(bytearray([0x60, 0xDA, 0xD9, 0xFF]))  # -2500000 = -0.25 m
-        assert result.value is not None
-        assert abs(result.value + 0.25) < 1e-7
+        assert result is not None
+        assert abs(result + 0.25) < 1e-7
 
     def test_linear_position_extreme_values(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test extreme linear position values within valid range."""
@@ -77,20 +77,20 @@ class TestLinearPositionCharacteristic(CommonCharacteristicTests):
             [max_value & 0xFF, (max_value >> 8) & 0xFF, (max_value >> 16) & 0xFF, (max_value >> 24) & 0xFF]
         )  # 2147483646 = 214.7483646 m
         result = characteristic.parse_value(max_data)
-        assert result.value is not None
-        assert abs(result.value - 214.7483646) < 1e-7
+        assert result is not None
+        assert abs(result - 214.7483646) < 1e-7
 
         # Test near-minimum negative value (-214.7483646 m, which is -2147483646)
         min_data = bytearray([0x02, 0x00, 0x00, 0x80])  # -2147483646 = -214.7483646 m
         result = characteristic.parse_value(min_data)
         assert result is not None
-        assert result.value is not None
-        assert abs(result.value + 214.7483646) < 1e-7
+        assert result is not None
+        assert abs(result + 214.7483646) < 1e-7
 
         # Test "value is not known" special value
         unknown_data = bytearray([0xFF, 0xFF, 0xFF, 0x7F])  # 0x7FFFFFFF
         result = characteristic.parse_value(unknown_data)
-        assert result.value is None
+        assert result is None
 
     def test_linear_position_encoding_accuracy(self, characteristic: LinearPositionCharacteristic) -> None:
         """Test encoding produces correct byte sequences."""

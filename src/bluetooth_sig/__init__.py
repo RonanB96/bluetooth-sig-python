@@ -15,7 +15,6 @@ from .core.translator import BluetoothSIGTranslator
 from .device.device import Device
 
 # Essential types for type hints
-from .gatt.characteristics.base import CharacteristicData
 from .types.base_types import SIGInfo
 from .types.data_types import CharacteristicInfo, ServiceInfo, ValidationResult
 
@@ -37,7 +36,6 @@ __all__ = [
     "AsyncParsingSession",
     "Device",
     # Essential types for type hints
-    "CharacteristicData",
     "CharacteristicInfo",
     "ServiceInfo",
     "ValidationResult",

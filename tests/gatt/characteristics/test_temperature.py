@@ -51,35 +51,30 @@ class TestTemperatureCharacteristic(CommonCharacteristicTests):
         """Test temperature precision and boundary values."""
         # Test freezing point (0°C)
         result = characteristic.parse_value(bytearray([0x00, 0x00]))
-        assert result.parse_success
-        assert result.value == 0.0
+        assert result == 0.0
 
         # Test negative temperature (-10°C)
         result = characteristic.parse_value(bytearray([0x18, 0xFC]))  # -1000 = -10.00°C
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value + 10.0) < 0.01
+        assert result is not None
+        assert abs(result + 10.0) < 0.01
 
         # Test precision (21.48°C)
         result = characteristic.parse_value(bytearray([0x64, 0x08]))  # 2148 = 21.48°C
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value - 21.48) < 0.01
+        assert result is not None
+        assert abs(result - 21.48) < 0.01
 
     def test_temperature_extreme_values(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test extreme temperature values within valid range."""
         # Test maximum positive value
         max_data = bytearray([SINT16_MAX & 0xFF, (SINT16_MAX >> 8) & 0xFF])  # 32767 = 327.67°C
         result = characteristic.parse_value(max_data)
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value - 327.67) < 0.01
+        assert result is not None
+        assert abs(result - 327.67) < 0.01
 
         # Test minimum valid temperature (-273.15°C, which is -27315 as signed int16)
         # -27315 in little-endian = 0x4D, 0x95
         min_data = bytearray([0x4D, 0x95])  # -27315 = -273.15°C (absolute zero)
         result = characteristic.parse_value(min_data)
-        assert result.parse_success
-        assert result.value is not None
-        temp_value: float = result.value  # Type assertion for mypy
+        assert result is not None
+        temp_value: float = result  # Type assertion for mypy
         assert abs(temp_value + 273.15) < 0.01

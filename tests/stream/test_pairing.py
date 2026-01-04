@@ -11,7 +11,6 @@ from bluetooth_sig.gatt.characteristics import (
     HumidityCharacteristic,
     TemperatureCharacteristic,
 )
-from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from bluetooth_sig.stream import DependencyPairingBuffer
 
 
@@ -46,13 +45,13 @@ def test_glucose_pairing_out_of_order() -> None:
     gm_uuid = str(GlucoseMeasurementCharacteristic().uuid)
     gmc_uuid = str(GlucoseMeasurementContextCharacteristic().uuid)
 
-    paired: list[dict[str, CharacteristicData[Any]]] = []
+    paired: list[dict[str, Any]] = []
 
-    def group_key(uuid: str, parsed: CharacteristicData) -> int:
-        assert parsed.value is not None
-        return int(parsed.value.sequence_number)
+    def group_key(uuid: str, parsed: Any) -> int:
+        # For glucose measurement, extract sequence number from the parsed value
+        return int(parsed.sequence_number)
 
-    def on_pair(results: dict[str, CharacteristicData[Any]]) -> None:
+    def on_pair(results: dict[str, Any]) -> None:
         paired.append(results)
 
     buf = DependencyPairingBuffer(
@@ -71,10 +70,10 @@ def test_glucose_pairing_out_of_order() -> None:
     assert gm_uuid in results and gmc_uuid in results
     gm = results[gm_uuid]
     gmc = results[gmc_uuid]
-    assert gm.parse_success and gmc.parse_success  # type: ignore[attr-defined]
-    assert gm.value is not None and gmc.value is not None
-    assert gm.value.sequence_number == 42  # type: ignore[attr-defined]
-    assert gmc.value.sequence_number == 42  # type: ignore[attr-defined]
+    # Parsing succeeded (no exceptions raised), values are data objects directly
+    assert gm is not None and gmc is not None
+    assert gm.sequence_number == 42
+    assert gmc.sequence_number == 42
 
 
 def test_glucose_missing_counterpart_no_callback() -> None:
@@ -84,11 +83,11 @@ def test_glucose_missing_counterpart_no_callback() -> None:
 
     called = False
 
-    def group_key(uuid: str, parsed: CharacteristicData) -> int:
-        assert parsed.value is not None
-        return int(parsed.value.sequence_number)
+    def group_key(uuid: str, parsed: Any) -> int:
+        # For glucose measurement, extract sequence number from the parsed value
+        return int(parsed.sequence_number)
 
-    def on_pair(_results: dict[str, CharacteristicData[Any]]) -> None:
+    def on_pair(_results: dict[str, Any]) -> None:
         nonlocal called
         called = True
 
@@ -110,19 +109,19 @@ def test_glucose_mismatched_sequence_numbers_callback_validation() -> None:
     gm_uuid = str(GlucoseMeasurementCharacteristic().uuid)
     gmc_uuid = str(GlucoseMeasurementContextCharacteristic().uuid)
 
-    def group_key(_uuid: str, _parsed: CharacteristicData) -> str:
+    def group_key(_uuid: str, _parsed: Any) -> str:
         # Force same group for both notifications regardless of seq to trigger batch
         return "force-same"
 
-    def on_pair(results: dict[str, CharacteristicData[Any]]) -> None:
+    def on_pair(results: dict[str, Any]) -> None:
         # User implements validation in callback
         gm = results[gm_uuid]
         gmc = results[gmc_uuid]
-        if gm.value.sequence_number != gmc.value.sequence_number:  # type: ignore[attr-defined,union-attr]
+        if gm.sequence_number != gmc.sequence_number:
             raise ValueError(
                 f"Glucose pairing validation failed: "
-                f"measurement seq={gm.value.sequence_number}, "  # type: ignore[attr-defined,union-attr]
-                f"context seq={gmc.value.sequence_number}"  # type: ignore[attr-defined,union-attr]
+                f"measurement seq={gm.sequence_number}, "
+                f"context seq={gmc.sequence_number}"
             )
 
     buf = DependencyPairingBuffer(
@@ -143,12 +142,12 @@ def test_generic_reuse_with_synthetic_key() -> None:
     humid_uuid = str(HumidityCharacteristic().uuid)
 
     # Simple fixed grouping key for a made-up data stream (e.g., one device/topic)
-    def group_key(_uuid: str, _parsed: CharacteristicData) -> str:
+    def group_key(_uuid: str, _parsed: Any) -> str:
         return "room-1"
 
-    captured: list[dict[str, CharacteristicData[Any]]] = []
+    captured: list[dict[str, Any]] = []
 
-    def on_pair(results: dict[str, CharacteristicData[Any]]) -> None:
+    def on_pair(results: dict[str, Any]) -> None:
         captured.append(results)
 
     buf = DependencyPairingBuffer(
@@ -169,8 +168,9 @@ def test_generic_reuse_with_synthetic_key() -> None:
     assert len(captured) == 1
     results = captured[0]
     assert temp_uuid in results and humid_uuid in results
-    assert results[temp_uuid].parse_success  # type: ignore[attr-defined]
-    assert results[humid_uuid].parse_success  # type: ignore[attr-defined]
+    # Values are parsed successfully (no exceptions raised during parsing)
+    assert isinstance(results[temp_uuid], (int, float))
+    assert isinstance(results[humid_uuid], (int, float))
 
 
 def test_blood_pressure_pairing_multiple_sessions() -> None:
@@ -190,15 +190,15 @@ def test_blood_pressure_pairing_multiple_sessions() -> None:
     bpm_uuid = str(BloodPressureMeasurementCharacteristic().uuid)
     icp_uuid = str(IntermediateCuffPressureCharacteristic().uuid)
 
-    sessions: list[dict[str, CharacteristicData[Any]]] = []
+    sessions: list[dict[str, Any]] = []
 
-    def group_key(_uuid: str, parsed: CharacteristicData) -> datetime:
+    def group_key(_uuid: str, parsed: Any) -> datetime:
         # Group by timestamp - notifications with same timestamp are from same session
-        if parsed.value.optional_fields.timestamp:  # type: ignore[attr-defined,union-attr]
-            return parsed.value.optional_fields.timestamp  # type: ignore[attr-defined,union-attr,no-any-return]
+        if parsed.optional_fields.timestamp:
+            return parsed.optional_fields.timestamp
         raise ValueError("Test requires timestamp for grouping")
 
-    def on_pair(results: dict[str, CharacteristicData[Any]]) -> None:
+    def on_pair(results: dict[str, Any]) -> None:
         sessions.append(results)
 
     buf = DependencyPairingBuffer(
@@ -247,18 +247,18 @@ def test_blood_pressure_pairing_multiple_sessions() -> None:
 
     # Session 2 completed first (10:05 timestamp)
     session2 = sessions[0]
-    assert session2[bpm_uuid].value.systolic == 130.0  # type: ignore[attr-defined,union-attr]
-    assert session2[bpm_uuid].value.optional_fields.timestamp.hour == 10  # type: ignore[attr-defined,union-attr]
-    assert session2[bpm_uuid].value.optional_fields.timestamp.minute == 5  # type: ignore[attr-defined,union-attr]
-    assert session2[icp_uuid].value.current_cuff_pressure == 90.0  # type: ignore[attr-defined,union-attr]
-    assert session2[icp_uuid].value.optional_fields.timestamp.hour == 10  # type: ignore[attr-defined,union-attr]
-    assert session2[icp_uuid].value.optional_fields.timestamp.minute == 5  # type: ignore[attr-defined,union-attr]
+    assert session2[bpm_uuid].systolic == 130.0
+    assert session2[bpm_uuid].optional_fields.timestamp.hour == 10
+    assert session2[bpm_uuid].optional_fields.timestamp.minute == 5
+    assert session2[icp_uuid].current_cuff_pressure == 90.0
+    assert session2[icp_uuid].optional_fields.timestamp.hour == 10
+    assert session2[icp_uuid].optional_fields.timestamp.minute == 5
 
     # Session 1 completed second (10:00 timestamp)
     session1 = sessions[1]
-    assert session1[bpm_uuid].value.systolic == 120.0  # type: ignore[attr-defined,union-attr]
-    assert session1[bpm_uuid].value.optional_fields.timestamp.hour == 10  # type: ignore[attr-defined,union-attr]
-    assert session1[bpm_uuid].value.optional_fields.timestamp.minute == 0  # type: ignore[attr-defined,union-attr]
-    assert session1[icp_uuid].value.current_cuff_pressure == 80.0  # type: ignore[attr-defined,union-attr]
-    assert session1[icp_uuid].value.optional_fields.timestamp.hour == 10  # type: ignore[attr-defined,union-attr]
-    assert session1[icp_uuid].value.optional_fields.timestamp.minute == 0  # type: ignore[attr-defined,union-attr]
+    assert session1[bpm_uuid].systolic == 120.0
+    assert session1[bpm_uuid].optional_fields.timestamp.hour == 10
+    assert session1[bpm_uuid].optional_fields.timestamp.minute == 0
+    assert session1[icp_uuid].current_cuff_pressure == 80.0
+    assert session1[icp_uuid].optional_fields.timestamp.hour == 10
+    assert session1[icp_uuid].optional_fields.timestamp.minute == 0

@@ -88,7 +88,6 @@ class CustomBaseCharacteristic(BaseCharacteristic[Any]):
         self,
         info: CharacteristicInfo | None = None,
         auto_register: bool = True,
-        validate: bool = True,
         validation: ValidationConfig | None = None,
     ) -> None:
         """Initialize a custom characteristic with automatic _info resolution and registration.
@@ -96,7 +95,6 @@ class CustomBaseCharacteristic(BaseCharacteristic[Any]):
         Args:
             info: Optional override for class-configured _info
             auto_register: If True (default), automatically register with global translator singleton
-            validate: Enable validation during parse/encode (default: True)
             validation: Validation constraints configuration (optional)
 
         Raises:
@@ -142,7 +140,7 @@ class CustomBaseCharacteristic(BaseCharacteristic[Any]):
                 CustomBaseCharacteristic._registry_tracker.add(registry_key)
 
         # Call parent constructor with our info to maintain consistency
-        super().__init__(info=final_info, validate=validate, validation=validation)
+        super().__init__(info=final_info, validation=validation)
 
     def __post_init__(self) -> None:
         """Override BaseCharacteristic.__post_init__ to use custom info management.

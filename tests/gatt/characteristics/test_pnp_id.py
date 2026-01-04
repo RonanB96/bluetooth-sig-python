@@ -49,10 +49,10 @@ class TestPnpIdCharacteristic(CommonCharacteristicTests):
         """Test PnP ID with Bluetooth SIG vendor."""
         char = PnpIdCharacteristic()
         result = char.parse_value(bytearray([1, 0x0A, 0x00, 0x0B, 0x00, 0x01, 0x00]))
-        assert result.value.vendor_id_source == VendorIdSource.BLUETOOTH_SIG
-        assert result.value.vendor_id == 0x000A
-        assert result.value.product_id == 0x000B
-        assert result.value.product_version == 0x0001
+        assert result.vendor_id_source == VendorIdSource.BLUETOOTH_SIG
+        assert result.vendor_id == 0x000A
+        assert result.product_id == 0x000B
+        assert result.product_version == 0x0001
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve data."""
@@ -62,4 +62,4 @@ class TestPnpIdCharacteristic(CommonCharacteristicTests):
         )
         encoded = char.build_value(original)
         decoded = char.parse_value(encoded)
-        assert decoded.value == original
+        assert decoded == original

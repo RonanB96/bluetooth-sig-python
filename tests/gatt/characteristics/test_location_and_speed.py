@@ -182,7 +182,7 @@ class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
         """Test location and speed with various flag combinations."""
         result = characteristic.parse_value(data)
         for field, expected_value in expected.items():
-            actual_value = getattr(result.value, field)
+            actual_value = getattr(result, field)
             if field == "utc_time" and expected_value is not None:
                 assert actual_value is not None
                 # Could check specific date components if needed
@@ -228,27 +228,27 @@ class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(data)
-        assert result.value.instantaneous_speed == 10.0
-        assert result.value.total_distance == 0.0
-        assert result.value.latitude == 0.0
-        assert result.value.longitude == 0.0
-        assert result.value.elevation == 0.0
-        assert result.value.heading == 0.0
-        assert result.value.rolling_time == 0
-        assert result.value.utc_time is not None
-        assert result.value.position_status == PositionStatus.POSITION_OK
+        assert result.instantaneous_speed == 10.0
+        assert result.total_distance == 0.0
+        assert result.latitude == 0.0
+        assert result.longitude == 0.0
+        assert result.elevation == 0.0
+        assert result.heading == 0.0
+        assert result.rolling_time == 0
+        assert result.utc_time is not None
+        assert result.position_status == PositionStatus.POSITION_OK
 
     def test_location_and_speed_minimal_data(self, characteristic: LocationAndSpeedCharacteristic) -> None:
         """Test location and speed with minimal data (only flags)."""
         data = bytearray([0x00, 0x00])  # No fields present
 
         result = characteristic.parse_value(data)
-        assert result.value.instantaneous_speed is None
-        assert result.value.total_distance is None
-        assert result.value.latitude is None
-        assert result.value.longitude is None
-        assert result.value.elevation is None
-        assert result.value.heading is None
-        assert result.value.rolling_time is None
-        assert result.value.utc_time is None
-        assert result.value.position_status == PositionStatus.NO_POSITION
+        assert result.instantaneous_speed is None
+        assert result.total_distance is None
+        assert result.latitude is None
+        assert result.longitude is None
+        assert result.elevation is None
+        assert result.heading is None
+        assert result.rolling_time is None
+        assert result.utc_time is None
+        assert result.position_status == PositionStatus.NO_POSITION

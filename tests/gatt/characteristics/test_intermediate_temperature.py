@@ -41,13 +41,13 @@ class TestIntermediateTemperatureCharacteristic(CommonCharacteristicTests):
         """Test freezing point temperature."""
         char = IntermediateTemperatureCharacteristic()
         result = char.parse_value(bytearray([0x00, 0x80]))
-        assert result.value == pytest.approx(0.0)
+        assert result == pytest.approx(0.0)
 
     def test_body_temperature(self) -> None:
         """Test typical body temperature."""
         char = IntermediateTemperatureCharacteristic()
         result = char.parse_value(bytearray([0x25, 0x80]))
-        assert result.value == pytest.approx(37.0, abs=0.1)
+        assert result == pytest.approx(37.0, abs=0.1)
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve temperature values."""
@@ -55,4 +55,4 @@ class TestIntermediateTemperatureCharacteristic(CommonCharacteristicTests):
         for temp in [-2.0, 0.0, 20.0, 37.0]:
             encoded = char.build_value(temp)
             decoded = char.parse_value(encoded)
-            assert decoded.value == pytest.approx(temp, abs=0.1)
+            assert decoded == pytest.approx(temp, abs=0.1)

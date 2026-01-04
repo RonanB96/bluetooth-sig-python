@@ -44,17 +44,17 @@ class TestBootMouseInputReportCharacteristic(CommonCharacteristicTests):
         """Test report with no mouse input."""
         char = BootMouseInputReportCharacteristic()
         result = char.parse_value(bytearray([0, 0, 0]))
-        assert result.value.buttons == 0
-        assert result.value.x_displacement == 0
-        assert result.value.y_displacement == 0
+        assert result.buttons == 0
+        assert result.x_displacement == 0
+        assert result.y_displacement == 0
 
     def test_left_button_with_movement(self) -> None:
         """Test left button pressed with mouse movement."""
         char = BootMouseInputReportCharacteristic()
         result = char.parse_value(bytearray([1, 10, 20]))
-        assert result.value.buttons == 1
-        assert result.value.x_displacement == 10
-        assert result.value.y_displacement == 20
+        assert result.buttons == 1
+        assert result.x_displacement == 10
+        assert result.y_displacement == 20
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve data."""
@@ -64,4 +64,4 @@ class TestBootMouseInputReportCharacteristic(CommonCharacteristicTests):
         )
         encoded = char.build_value(original)
         decoded = char.parse_value(encoded)
-        assert decoded.value == original
+        assert decoded == original

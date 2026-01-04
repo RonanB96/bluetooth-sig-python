@@ -8,6 +8,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.current_time import CurrentTimeCharacteristic
 from bluetooth_sig.gatt.characteristics.templates import TimeData
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.gatt_enums import AdjustReason, DayOfWeek
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -105,76 +106,76 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
             ]
         )
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert result.value.date_time is None  # Unknown date
-        assert result.value.day_of_week == DayOfWeek.MONDAY
+        assert result is not None
+        assert result.date_time is None  # Unknown date
+        assert result.day_of_week == DayOfWeek.MONDAY
 
     def test_current_time_boundary_year(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test current time with boundary year values."""
         # Minimum valid year (1582)
         data_min = bytearray([0x2E, 0x06, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00])
         result_min = characteristic.parse_value(data_min)
-        assert result_min.value is not None
-        assert result_min.value.date_time is not None
-        assert result_min.value.date_time.year == 1582
+        assert result_min is not None
+        assert result_min.date_time is not None
+        assert result_min.date_time.year == 1582
 
         # Maximum valid year (9999)
         data_max = bytearray([0x0F, 0x27, 0x0C, 0x1F, 0x17, 0x3B, 0x3B, 0x07, 0xFF, 0x0F])
         result_max = characteristic.parse_value(data_max)
-        assert result_max.value is not None
-        assert result_max.value.date_time is not None
-        assert result_max.value.date_time.year == 9999
+        assert result_max is not None
+        assert result_max.date_time is not None
+        assert result_max.date_time.year == 9999
 
     def test_current_time_invalid_year(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that invalid years are rejected."""
         # Year too low (1) - datetime.MINYEAR is 1, but year 1 is technically valid
         # We test year 10000 which exceeds datetime.MAXYEAR (9999)
         data_high = bytearray([0x10, 0x27, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00])
-        result = characteristic.parse_value(data_high)
-        assert not result.parse_success
-        assert "year" in result.error_message.lower() or "out of range" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data_high)
+        assert "year" in str(exc_info.value).lower() or "out of range" in result.error_message.lower()
 
     def test_current_time_invalid_month(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that invalid months are rejected."""
         data = bytearray([0xE9, 0x07, 0x0D, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00])  # Month: 13
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
-        assert "month" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data)
+        assert "month" in str(exc_info.value).lower()
 
     def test_current_time_invalid_day(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that invalid days are rejected."""
         data = bytearray([0xE9, 0x07, 0x01, 0x20, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00])  # Day: 32
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
-        assert "day" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data)
+        assert "day" in str(exc_info.value).lower()
 
     def test_current_time_invalid_hours(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that invalid hours are rejected."""
         data = bytearray([0xE9, 0x07, 0x01, 0x01, 0x18, 0x00, 0x00, 0x01, 0x00, 0x00])  # Hours: 24
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
-        assert "hour" in result.error_message.lower()  # Python datetime says "hour"
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data)
+        assert "hour" in str(exc_info.value).lower()  # Python datetime says "hour"
 
     def test_current_time_invalid_minutes(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that invalid minutes are rejected."""
         data = bytearray([0xE9, 0x07, 0x01, 0x01, 0x00, 0x3C, 0x00, 0x01, 0x00, 0x00])  # Minutes: 60
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
-        assert "minute" in result.error_message.lower()  # Python datetime says "minute"
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data)
+        assert "minute" in str(exc_info.value).lower()  # Python datetime says "minute"
 
     def test_current_time_invalid_seconds(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that invalid seconds are rejected."""
         data = bytearray([0xE9, 0x07, 0x01, 0x01, 0x00, 0x00, 0x3C, 0x01, 0x00, 0x00])  # Seconds: 60
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
-        assert "second" in result.error_message.lower()  # Python datetime says "second"
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data)
+        assert "second" in str(exc_info.value).lower()  # Python datetime says "second"
 
     def test_current_time_invalid_day_of_week(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that invalid day of week values are rejected."""
         data = bytearray([0xE9, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00])  # Day of Week: 8
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
-        assert "day_of_week" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data)
+        assert "day_of_week" in str(exc_info.value).lower()
 
     @pytest.mark.parametrize(
         "day_of_week,expected_enum",
@@ -195,25 +196,25 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
         """Test all valid day of week values."""
         data = bytearray([0xE9, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00, day_of_week, 0x00, 0x00])
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert result.value.day_of_week == expected_enum
+        assert result is not None
+        assert result.day_of_week == expected_enum
 
     def test_current_time_adjust_reason_flags(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test adjust reason bitfield values."""
         # Manual time update
         data_manual = bytearray([0xE9, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01])
         result = characteristic.parse_value(data_manual)
-        assert result.value is not None
-        assert result.value.adjust_reason & AdjustReason.MANUAL_TIME_UPDATE
+        assert result is not None
+        assert result.adjust_reason & AdjustReason.MANUAL_TIME_UPDATE
 
         # Multiple reasons
         data_multi = bytearray([0xE9, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0F])
         result = characteristic.parse_value(data_multi)
-        assert result.value is not None
-        assert result.value.adjust_reason & AdjustReason.MANUAL_TIME_UPDATE
-        assert result.value.adjust_reason & AdjustReason.EXTERNAL_REFERENCE_TIME_UPDATE
-        assert result.value.adjust_reason & AdjustReason.CHANGE_OF_TIME_ZONE
-        assert result.value.adjust_reason & AdjustReason.CHANGE_OF_DST
+        assert result is not None
+        assert result.adjust_reason & AdjustReason.MANUAL_TIME_UPDATE
+        assert result.adjust_reason & AdjustReason.EXTERNAL_REFERENCE_TIME_UPDATE
+        assert result.adjust_reason & AdjustReason.CHANGE_OF_TIME_ZONE
+        assert result.adjust_reason & AdjustReason.CHANGE_OF_DST
 
     def test_current_time_roundtrip(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that encode/decode are inverse operations."""
@@ -226,9 +227,9 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
 
         encoded = characteristic.build_value(original)
         decoded = characteristic.parse_value(encoded)
-        assert decoded.value is not None
+        assert decoded is not None
 
-        assert decoded.value.date_time == original.date_time
-        assert decoded.value.day_of_week == original.day_of_week
-        assert decoded.value.fractions256 == original.fractions256
-        assert decoded.value.adjust_reason == original.adjust_reason
+        assert decoded.date_time == original.date_time
+        assert decoded.day_of_week == original.day_of_week
+        assert decoded.fractions256 == original.fractions256
+        assert decoded.adjust_reason == original.adjust_reason

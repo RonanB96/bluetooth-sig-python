@@ -43,13 +43,13 @@ class TestCarbonMonoxideConcentrationCharacteristic(CommonCharacteristicTests):
         """Test zero CO concentration."""
         char = CarbonMonoxideConcentrationCharacteristic()
         result = char.parse_value(bytearray([0x00, 0x80]))
-        assert result.value == 0.0
+        assert result == 0.0
 
     def test_typical_concentration(self) -> None:
         """Test typical CO concentration value."""
         char = CarbonMonoxideConcentrationCharacteristic()
         result = char.parse_value(bytearray([0x64, 0x00]))
-        assert result.value == pytest.approx(1.0e-6, abs=1e-9)
+        assert result == pytest.approx(1.0e-6, abs=1e-9)
 
     def test_round_trip(
         self,
@@ -64,10 +64,10 @@ class TestCarbonMonoxideConcentrationCharacteristic(CommonCharacteristicTests):
             # Decode the input
             parsed = characteristic.parse_value(test_case.input_data)
             # Re-encode the parsed value
-            encoded = characteristic.build_value(parsed.value)
+            encoded = characteristic.build_value(parsed)
             # Decode again and check the value matches
             re_decoded = characteristic.parse_value(encoded)
-            assert re_decoded.value == pytest.approx(parsed.value, rel=0.1), (
+            assert re_decoded == pytest.approx(parsed, rel=0.1), (
                 f"{case_desc}: Value changed during round trip"
             )
 
@@ -77,4 +77,4 @@ class TestCarbonMonoxideConcentrationCharacteristic(CommonCharacteristicTests):
         for value in [0.0, 1.0, 10.0, 100.0]:
             encoded = char.build_value(value)
             decoded = char.parse_value(encoded)
-            assert decoded.value == pytest.approx(value, rel=0.01)
+            assert decoded == pytest.approx(value, rel=0.01)

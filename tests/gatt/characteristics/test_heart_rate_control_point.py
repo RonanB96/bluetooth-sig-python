@@ -33,7 +33,7 @@ class TestHeartRateControlPointCharacteristic(CommonCharacteristicTests):
         """Test reset energy expended command."""
         char = HeartRateControlPointCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result.value == 1
+        assert result == 1
 
     def test_encode_reset_command(self) -> None:
         """Test encoding reset command."""
@@ -46,4 +46,4 @@ class TestHeartRateControlPointCharacteristic(CommonCharacteristicTests):
         char = HeartRateControlPointCharacteristic()
         encoded = char.build_value(1)
         decoded = char.parse_value(encoded)
-        assert decoded.value == 1
+        assert decoded == 1

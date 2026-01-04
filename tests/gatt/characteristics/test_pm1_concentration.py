@@ -42,7 +42,7 @@ class TestPM1ConcentrationCharacteristic(CommonCharacteristicTests):
         # Test normal parsing
         test_data = bytearray([0x32, 0x00])  # 50 µg/m³ little endian
         parsed = characteristic.parse_value(test_data)
-        assert parsed.value == 50
+        assert parsed == 50
 
     def test_pm1_concentration_boundary_values(self, characteristic: PM1ConcentrationCharacteristic) -> None:
         """Test PM1 concentration boundary values."""

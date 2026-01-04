@@ -38,14 +38,14 @@ class TestCount24Characteristic(CommonCharacteristicTests):
         """Test zero count."""
         char = Count24Characteristic()
         result = char.parse_value(bytearray([0, 0, 0]))
-        assert result.value == 0
+        assert result == 0
 
     def test_maximum_count(self) -> None:
         """Test maximum count value."""
         char = Count24Characteristic()
         result = char.parse_value(bytearray([255, 255, 255]))
         # 16777215 is a special value meaning "not known"
-        assert result.parse_success
+
         assert result.raw_int == 16777215
 
     def test_custom_round_trip(self) -> None:
@@ -54,4 +54,4 @@ class TestCount24Characteristic(CommonCharacteristicTests):
         for value in [0, 1, 100, 65536, 16777214]:
             encoded = char.build_value(value)
             decoded = char.parse_value(encoded)
-            assert decoded.value == value
+            assert decoded == value

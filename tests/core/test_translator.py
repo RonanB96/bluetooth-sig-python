@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
+
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from bluetooth_sig.types import ValidationResult
 from bluetooth_sig.types.gatt_enums import CharacteristicName, ServiceName
 
@@ -43,21 +44,17 @@ class TestBluetoothSIGTranslator:
         assert callable(translator.list_supported_services), "list_supported_services should be callable"
 
     def test_parse_characteristic_fallback(self) -> None:
-        """Test characteristic parsing returns fallback data."""
+        """Test characteristic parsing raises exception for unknown UUID."""
         translator = BluetoothSIGTranslator()
 
-        # Test with arbitrary UUID and data - should return fallback
+        # Test with arbitrary UUID and data - should raise exception
         # when no parser available
         raw_data = b"\x64"  # 100 in binary
         unknown_uuid = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
-        result = translator.parse_characteristic(unknown_uuid, raw_data)
 
-        # Should return CharacteristicData with fallback info when no parser found
-        assert isinstance(result, CharacteristicData)
-        assert str(result.uuid) == unknown_uuid
-        assert result.name == "Unknown"
-        assert result.value == raw_data
-        assert result.parse_success is False
+        # Should raise CharacteristicParseError for unknown UUID
+        with pytest.raises(Exception):  # Could be CharacteristicParseError or similar
+            translator.parse_characteristic(unknown_uuid, raw_data)
 
     def test_parse_characteristic_with_uuid_formats(self) -> None:
         """Test characteristic parsing with different UUID formats."""
@@ -75,9 +72,7 @@ class TestBluetoothSIGTranslator:
         for uuid in uuids:
             result = translator.parse_characteristic(uuid, raw_data)
             # Should parse known battery level characteristic (0x64 = 100%)
-            assert isinstance(result, CharacteristicData)
-            assert result.value == 100
-            assert result.parse_success is True
+            assert result == 100
 
     def test_get_characteristic_info_fallback(self) -> None:
         """Test get_characteristic_info returns None for unknown characteristics."""
@@ -115,16 +110,14 @@ class TestBluetoothSIGTranslator:
         """Test the pure SIG translation pattern from docs."""
         translator = BluetoothSIGTranslator()
 
-        def parse_sensor_reading(char_uuid: str, raw_data: bytes) -> CharacteristicData:
+        def parse_sensor_reading(char_uuid: str, raw_data: bytes) -> int:
             """Pure SIG standard translation - no connection dependencies."""
             return translator.parse_characteristic(char_uuid, raw_data)
 
         # Test the pattern works
         result = parse_sensor_reading("2A19", b"\x64")
-        assert isinstance(result, CharacteristicData)
         # Should parse battery level characteristic (0x64 = 100%)
-        assert result.value == 100
-        assert result.parse_success is True
+        assert result == 100
 
     def test_no_connection_methods(self) -> None:
         """Test that translator has no connection-related methods."""
@@ -181,12 +174,10 @@ class TestBluetoothSIGTranslator:
         results = translator.parse_characteristics(char_data)
 
         assert len(results) == 2
-        # Results are now CharacteristicData objects
-        assert isinstance(results["2A19"], CharacteristicData)
-        assert results["2A19"].value == 100  # Battery level parsed
-        assert isinstance(results["2A6E"], CharacteristicData)
+        # Results are now parsed values directly
+        assert results["2A19"] == 100  # Battery level parsed
         # Temperature should be parsed (400 * 0.01 = 4.0)
-        assert isinstance(results["2A6E"].value, float)
+        assert isinstance(results["2A6E"], float)
 
     def test_get_characteristics_info_batch(self) -> None:
         """Test getting info for multiple characteristics."""
@@ -302,10 +293,7 @@ class TestBluetoothSIGTranslator:
         result = translator.parse_characteristic(str(found_uuid), simulated_data)
 
         # Step 3: Verify the result
-        assert result.parse_success is True
-        assert result.value == 85
-        assert result.info.name == "Battery Level"
-        assert result.info.unit == "%"
+        assert result == 85
 
         # Test that multiple UUID formats work (as documented)
         formats = [
@@ -317,6 +305,4 @@ class TestBluetoothSIGTranslator:
 
         for uuid_format in formats:
             result = translator.parse_characteristic(uuid_format, simulated_data)
-            assert result.parse_success is True, f"Should parse with format: {uuid_format}"
-            assert result.value == 85
-            assert result.info.name == "Battery Level"
+            assert result == 85, f"Should parse with format: {uuid_format}"

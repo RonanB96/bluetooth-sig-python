@@ -51,7 +51,7 @@ class TestRainfallCharacteristic(CommonCharacteristicTests):
         # Test normal parsing: 1250 mm rainfall
         test_data = bytearray([0xE2, 0x04])  # 1250 in little endian uint16
         parsed = characteristic.parse_value(test_data)
-        assert parsed.value == 1250.0
+        assert parsed == 1250.0
 
     def test_rainfall_boundary_values(self, characteristic: RainfallCharacteristic) -> None:
         """Test rainfall boundary values."""

@@ -282,13 +282,13 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(test_data)
-        assert result.value is not None
-        assert result.value.systolic == 120.0
-        assert result.value.diastolic == 80.0
-        assert result.value.mean_arterial_pressure == 90.0
-        assert result.value.unit == PressureUnit.MMHG
-        assert result.value.optional_fields.timestamp is None
-        assert result.value.optional_fields.pulse_rate is None
+        assert result is not None
+        assert result.systolic == 120.0
+        assert result.diastolic == 80.0
+        assert result.mean_arterial_pressure == 90.0
+        assert result.unit == PressureUnit.MMHG
+        assert result.optional_fields.timestamp is None
+        assert result.optional_fields.pulse_rate is None
 
     def test_blood_pressure_with_all_fields(self, characteristic: BloodPressureMeasurementCharacteristic) -> None:
         """Test blood pressure measurement with all optional fields."""
@@ -318,12 +318,12 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
         )
 
         result: BloodPressureData = characteristic.parse_value(test_data)
-        assert result.value.systolic == 120.0
-        assert result.value.unit == PressureUnit.MMHG
-        assert result.value.optional_fields.timestamp is not None
-        assert result.value.optional_fields.pulse_rate == 72.0
-        assert result.value.optional_fields.user_id == 1
-        assert result.value.optional_fields.measurement_status == 1
+        assert result.systolic == 120.0
+        assert result.unit == PressureUnit.MMHG
+        assert result.optional_fields.timestamp is not None
+        assert result.optional_fields.pulse_rate == 72.0
+        assert result.optional_fields.user_id == 1
+        assert result.optional_fields.measurement_status == 1
 
     def test_blood_pressure_kpa_units(self, characteristic: BloodPressureMeasurementCharacteristic) -> None:
         """Test blood pressure measurement with kPa units."""
@@ -340,11 +340,11 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(test_data)
-        assert result.value is not None
-        assert result.value.systolic == 16.0
-        assert result.value.diastolic == 11.0
-        assert result.value.mean_arterial_pressure == 12.0
-        assert result.value.unit == PressureUnit.KPA
+        assert result is not None
+        assert result.systolic == 16.0
+        assert result.diastolic == 11.0
+        assert result.mean_arterial_pressure == 12.0
+        assert result.unit == PressureUnit.KPA
 
     def test_blood_pressure_invalid_data(self, characteristic: BloodPressureMeasurementCharacteristic) -> None:
         """Test blood pressure measurement with invalid data."""

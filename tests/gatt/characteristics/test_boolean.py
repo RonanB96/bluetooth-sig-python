@@ -37,15 +37,15 @@ class TestBooleanCharacteristic(CommonCharacteristicTests):
         """Test decoding False value."""
         char = BooleanCharacteristic()
         result = char.parse_value(bytearray([0]))
-        assert result.value is False
-        assert isinstance(result.value, bool)
+        assert result is False
+        assert isinstance(result, bool)
 
     def test_true_value(self) -> None:
         """Test decoding True value."""
         char = BooleanCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result.value is True
-        assert isinstance(result.value, bool)
+        assert result is True
+        assert isinstance(result, bool)
 
     def test_encode_false(self) -> None:
         """Test encoding False value."""
@@ -65,4 +65,4 @@ class TestBooleanCharacteristic(CommonCharacteristicTests):
         for value in [False, True]:
             encoded = char.build_value(value)
             decoded = char.parse_value(encoded)
-            assert decoded.value == value
+            assert decoded == value

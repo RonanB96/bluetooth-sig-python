@@ -52,7 +52,7 @@ class TestSedentaryIntervalNotificationCharacteristic(CommonCharacteristicTests)
         """Test sedentary interval notification with various valid values."""
         data = bytearray([interval_minutes & 0xFF, (interval_minutes >> 8) & 0xFF])
         result = characteristic.parse_value(data)
-        assert result.value == interval_minutes
+        assert result == interval_minutes
 
     def test_sedentary_interval_notification_boundary_values(
         self, characteristic: SedentaryIntervalNotificationCharacteristic
@@ -60,8 +60,8 @@ class TestSedentaryIntervalNotificationCharacteristic(CommonCharacteristicTests)
         """Test sedentary interval notification boundary values."""
         # Test minimum value (0 minutes)
         result = characteristic.parse_value(bytearray([0, 0]))
-        assert result.value == 0
+        assert result == 0
 
         # Test maximum value (65535 minutes)
         result = characteristic.parse_value(bytearray([0xFF, 0xFF]))
-        assert result.value == 65535
+        assert result == 65535

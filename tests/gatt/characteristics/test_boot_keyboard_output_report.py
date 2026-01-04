@@ -44,13 +44,13 @@ class TestBootKeyboardOutputReportCharacteristic(CommonCharacteristicTests):
         """Test output report with no LEDs on."""
         char = BootKeyboardOutputReportCharacteristic()
         result = char.parse_value(bytearray([0]))
-        assert result.value == KeyboardLEDs(0)
+        assert result == KeyboardLEDs(0)
 
     def test_num_lock_on(self) -> None:
         """Test Num Lock LED on."""
         char = BootKeyboardOutputReportCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result.value == KeyboardLEDs.NUM_LOCK
+        assert result == KeyboardLEDs.NUM_LOCK
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
@@ -64,4 +64,4 @@ class TestBootKeyboardOutputReportCharacteristic(CommonCharacteristicTests):
         ]:
             encoded = char.build_value(value)
             decoded = char.parse_value(encoded)
-            assert decoded.value == value
+            assert decoded == value
