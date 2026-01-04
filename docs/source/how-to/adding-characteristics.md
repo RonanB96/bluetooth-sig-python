@@ -31,13 +31,13 @@ class MyCharacteristic(BaseCharacteristic):
     max_value: float = 100.0
     expected_type: type = float
 
-    def decode_value(
+    def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None
     ) -> float:
         raw = DataParser.parse_int16(data, 0, signed=False)
         return raw * 0.01
 
-    def encode_value(self, data: float) -> bytearray:
+    def _encode_value(self, data: float) -> bytearray:
         return DataParser.encode_int16(int(data / 0.01), signed=False)
 ```
 
@@ -73,7 +73,7 @@ class LightLevelCharacteristic(CustomBaseCharacteristic):
         unit="%",
     )
 
-    def decode_value(self, data: bytearray) -> int:
+    def _decode_value(self, data: bytearray) -> int:
         """Decode light level.
 
         Args:
@@ -123,7 +123,7 @@ class MultiSensorCharacteristic(CustomBaseCharacteristic):
 
     _info = CharacteristicInfo(uuid=BluetoothUUID("WXYZ"), name="Multi Sensor")
 
-    def decode_value(self, data: bytearray) -> SensorReading:
+    def _decode_value(self, data: bytearray) -> SensorReading:
         """Decode multi-field sensor data.
 
         Format:
@@ -182,26 +182,26 @@ class TestLightLevelCharacteristic:
     def test_valid_value(self):
         """Test valid light level."""
         char = LightLevelCharacteristic()
-        result = char.decode_value(bytearray([50]))
+        result = char.parse_value(bytearray([50]))
         assert result == 50
 
     def test_boundary_values(self):
         """Test boundary values."""
         char = LightLevelCharacteristic()
-        assert char.decode_value(bytearray([0])) == 0
-        assert char.decode_value(bytearray([100])) == 100
+        assert char.parse_value(bytearray([0])) == 0
+        assert char.parse_value(bytearray([100])) == 100
 
     def test_insufficient_data(self):
         """Test error on insufficient data."""
         char = LightLevelCharacteristic()
         with pytest.raises(InsufficientDataError):
-            char.decode_value(bytearray([]))
+            char.parse_value(bytearray([]))
 
     def test_out_of_range(self):
         """Test error on out-of-range value."""
         char = LightLevelCharacteristic()
         with pytest.raises(ValueRangeError):
-            char.decode_value(bytearray([101]))
+            char.parse_value(bytearray([101]))
 ```
 
 ## Contributing Back

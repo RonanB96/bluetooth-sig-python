@@ -18,7 +18,7 @@ class KeyboardLEDs(IntFlag):
     KANA = 0x10
 
 
-class BootKeyboardOutputReportCharacteristic(BaseCharacteristic):
+class BootKeyboardOutputReportCharacteristic(BaseCharacteristic[KeyboardLEDs]):
     """Boot Keyboard Output Report characteristic (0x2A32).
 
     org.bluetooth.characteristic.boot_keyboard_output_report
@@ -36,7 +36,7 @@ class BootKeyboardOutputReportCharacteristic(BaseCharacteristic):
     max_length = 1
     allow_variable_length = False
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> KeyboardLEDs:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> KeyboardLEDs:
         """Parse keyboard LED states.
 
         Args:
@@ -48,7 +48,7 @@ class BootKeyboardOutputReportCharacteristic(BaseCharacteristic):
         """
         return KeyboardLEDs(data[0])
 
-    def encode_value(self, data: KeyboardLEDs) -> bytearray:
+    def _encode_value(self, data: KeyboardLEDs) -> bytearray:
         """Encode LED states to bytes.
 
         Args:

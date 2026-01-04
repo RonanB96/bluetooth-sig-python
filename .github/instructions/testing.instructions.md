@@ -37,7 +37,7 @@ class TestBatteryLevelCharacteristic:
         char = BatteryLevelCharacteristic()
         data = bytearray([75])  # 75%
 
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert result == 75
         assert isinstance(result, int)
@@ -47,17 +47,17 @@ class TestBatteryLevelCharacteristic:
         char = BatteryLevelCharacteristic()
 
         # Minimum
-        assert char.decode_value(bytearray([0])) == 0
+        assert char.parse_value(bytearray([0])) == 0
 
         # Maximum
-        assert char.decode_value(bytearray([100])) == 100
+        assert char.parse_value(bytearray([100])) == 100
 
     def test_decode_insufficient_data(self):
         """Test error on insufficient data."""
         char = BatteryLevelCharacteristic()
 
         with pytest.raises(InsufficientDataError) as exc_info:
-            char.decode_value(bytearray([]))
+            char.parse_value(bytearray([]))
 
         assert "requires exactly 1 byte" in str(exc_info.value).lower()
 
@@ -66,7 +66,7 @@ class TestBatteryLevelCharacteristic:
         char = BatteryLevelCharacteristic()
 
         with pytest.raises(ValueRangeError) as exc_info:
-            char.decode_value(bytearray([101]))
+            char.parse_value(bytearray([101]))
 
         assert "0-100" in str(exc_info.value)
 
@@ -148,7 +148,7 @@ def test_decode_unknown_value(self):
 
     # 0xFFFF = "Unknown" per spec
     data = bytearray([0xFF, 0xFF])
-    result = char.decode_value(data)
+    result = char.parse_value(data)
 
     assert result is None  # Unknown maps to None
 ```
@@ -166,7 +166,7 @@ def test_with_context():
     mock_context.flags = {"celsius": True}
 
     data = bytearray([0x00, 0x10])  # Some temperature value
-    result = char.decode_value(data, ctx=mock_context)
+    result = char.parse_value(data, ctx=mock_context)
 
     assert isinstance(result, float)
 ```
@@ -183,7 +183,7 @@ def test_with_context():
 def test_decode_various_valid_values(data, expected):
     """Test decoding various valid battery levels."""
     char = BatteryLevelCharacteristic()
-    assert char.decode_value(data) == expected
+    assert char.parse_value(data) == expected
 
 @pytest.mark.parametrize("invalid_data", [
     bytearray([]),           # Too short
@@ -195,7 +195,7 @@ def test_decode_invalid_data(invalid_data):
     """Test that invalid data raises appropriate errors."""
     char = BatteryLevelCharacteristic()
     with pytest.raises((InsufficientDataError, ValueRangeError)):
-        char.decode_value(invalid_data)
+        char.parse_value(invalid_data)
 ```
 
 ## Performance Tests
@@ -211,7 +211,7 @@ def test_decode_performance():
 
     start = time.perf_counter()
     for _ in range(1000):
-        char.decode_value(data)
+        char.parse_value(data)
     elapsed = time.perf_counter() - start
 
     # Should decode 1000 times in less than 100ms

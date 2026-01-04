@@ -34,7 +34,7 @@ class TestBodyCompositionMeasurementCharacteristic:
 
         # Flags: 0x0000 (metric units), Body Fat: 250 (25.0% with 0.1% resolution)
         data = bytearray([0x00, 0x00, 0xFA, 0x00])  # 0x00FA = 250
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert hasattr(result, "body_fat_percentage")
         assert result.body_fat_percentage == pytest.approx(25.0, abs=0.1)
@@ -46,7 +46,7 @@ class TestBodyCompositionMeasurementCharacteristic:
 
         # Flags: 0x0001 (imperial units), Body Fat: 180 (18.0%)
         data = bytearray([0x01, 0x00, 0xB4, 0x00])  # 0x00B4 = 180
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert hasattr(result, "body_fat_percentage")
         assert result.body_fat_percentage == pytest.approx(18.0, abs=0.1)
@@ -58,7 +58,7 @@ class TestBodyCompositionMeasurementCharacteristic:
 
         # Flags: 0x0004 (user ID present), Body Fat: 250, User ID: 3
         data = bytearray([0x04, 0x00, 0xFA, 0x00, 0x03])
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert hasattr(result, "body_fat_percentage")
         assert hasattr(result, "user_id")
@@ -71,7 +71,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         # Flags: 0x0010 (muscle mass present), Body Fat: 250,
         # Muscle Mass: 10000 (50.0 kg)
         data = bytearray([0x10, 0x00, 0xFA, 0x00, 0x10, 0x27])  # 0x2710 = 10000
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert hasattr(result, "body_fat_percentage")
         assert hasattr(result, "muscle_mass")
@@ -85,7 +85,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         # Flags: 0x0011 (imperial + muscle mass), Body Fat: 250,
         # Muscle Mass: 11000 (110.0 lb)
         data = bytearray([0x11, 0x00, 0xFA, 0x00, 0xF8, 0x2A])  # 0x2AF8 = 11000
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert hasattr(result, "body_fat_percentage")
         assert hasattr(result, "muscle_mass")
@@ -98,7 +98,7 @@ class TestBodyCompositionMeasurementCharacteristic:
 
         # Too short data
         with pytest.raises(ValueError, match="at least 4 bytes"):
-            char.decode_value(bytearray([0x00, 0x00, 0xFA]))
+            char.parse_value(bytearray([0x00, 0x00, 0xFA]))
 
     def test_unit_property(self) -> None:
         """Test unit property - should return 'various' for multi-unit characteristic."""
@@ -122,7 +122,7 @@ class TestBodyCompositionFeatureCharacteristic:
         # Features: 0x0000001F (timestamp, multiple users, basal metabolism,
         # muscle mass, muscle %)
         data = bytearray([0x1F, 0x00, 0x00, 0x00])
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert result.timestamp_supported is True
         assert result.multiple_users_supported is True
@@ -136,7 +136,7 @@ class TestBodyCompositionFeatureCharacteristic:
 
         # Features: 0x00000000 (no features)
         data = bytearray([0x00, 0x00, 0x00, 0x00])
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert result.timestamp_supported is False
         assert result.multiple_users_supported is False
@@ -150,7 +150,7 @@ class TestBodyCompositionFeatureCharacteristic:
 
         # Too short data
         with pytest.raises(ValueError, match="at least 4 bytes"):
-            char.decode_value(bytearray([0x00, 0x00, 0x00]))
+            char.parse_value(bytearray([0x00, 0x00, 0x00]))
 
     def test_unit_property(self) -> None:
         """Test unit property (should be empty for feature characteristic)."""
@@ -182,7 +182,7 @@ class TestBodyCompositionFeatureCharacteristic:
         )
 
         # Encode the data
-        encoded = char.encode_value(test_data)
+        encoded = char.build_value(test_data)
 
         # Should produce the correct bytes
         assert len(encoded) == 4
@@ -196,10 +196,10 @@ class TestBodyCompositionFeatureCharacteristic:
         original_data = bytearray([0x1F, 0x00, 0x00, 0x00])
 
         # Parse the data
-        parsed = char.decode_value(original_data)
+        parsed = char.parse_value(original_data)
 
         # Encode it back (note: this will only preserve basic feature flags)
-        encoded = char.encode_value(parsed)
+        encoded = char.build_value(parsed)
 
         # Should preserve the basic feature bits
         assert encoded == original_data

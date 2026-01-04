@@ -3,6 +3,7 @@ from __future__ import annotations
 import msgspec
 
 from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext, DeviceInfo
 from bluetooth_sig.types import CharacteristicInfo
@@ -14,23 +15,35 @@ class DummyCalibration(msgspec.Struct, kw_only=True):
     value: float
 
 
-class CalibrationCharacteristic:
-    def __init__(self, uuid: str = "calib", _properties: set[str] | None = None) -> None:
-        self._char_uuid = uuid
+class CalibrationCharacteristic(CustomBaseCharacteristic):
+    """Test calibration characteristic."""
 
-    def decode_value(self, data: bytearray, _ctx: object | None = None) -> int:
+    _info = CharacteristicInfo(
+        uuid=BluetoothUUID("12345678-1234-1234-1234-123456789001"),
+        name="Test Calibration",
+        unit="",
+        value_type=ValueType.INT,
+    )
+
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
         # simple calibration: single uint8
         return int(data[0])
 
-    def encode_value(self, value: int) -> bytearray:
-        return bytearray([int(value)])
+    def _encode_value(self, data: int) -> bytearray:
+        return bytearray([int(data)])
 
 
-class MeasurementCharacteristic:
-    def __init__(self, uuid: str = "meas", _properties: set[str] | None = None) -> None:
-        self._char_uuid = uuid
+class MeasurementCharacteristic(CustomBaseCharacteristic):
+    """Test measurement characteristic."""
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
+    _info = CharacteristicInfo(
+        uuid=BluetoothUUID("12345678-1234-1234-1234-123456789002"),
+        name="Test Measurement",
+        unit="",
+        value_type=ValueType.FLOAT,
+    )
+
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
         raw = int.from_bytes(data[0:2], byteorder="little", signed=True)
         scale = 1.0
         if ctx and ctx.other_characteristics:
@@ -39,9 +52,9 @@ class MeasurementCharacteristic:
                 scale = float(calib.value)
         return raw * scale
 
-    def encode_value(self, value: int) -> bytearray:
+    def _encode_value(self, data: int) -> bytearray:
         # not used in test
-        return bytearray(int(value).to_bytes(2, byteorder="little", signed=True))
+        return bytearray(int(data).to_bytes(2, byteorder="little", signed=True))
 
 
 def test_context_parsing_simple() -> None:
@@ -64,6 +77,6 @@ def test_context_parsing_simple() -> None:
     meas = MeasurementCharacteristic()
     raw_meas = (123).to_bytes(2, byteorder="little", signed=True)
 
-    parsed_val = meas.decode_value(bytearray(raw_meas), ctx)
+    parsed = meas.parse_value(bytearray(raw_meas), ctx)
 
-    assert parsed_val == 123 * 2
+    assert parsed.value == 123 * 2

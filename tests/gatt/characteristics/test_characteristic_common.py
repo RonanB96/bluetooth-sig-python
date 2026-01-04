@@ -50,7 +50,7 @@ class CommonCharacteristicTests:
     Example:
         class TestBatteryLevelCharacteristic(CommonCharacteristicTests):
             @pytest.fixture
-            def characteristic(self) -> BaseCharacteristic:
+            def characteristic(self) -> BaseCharacteristic[Any]:
                 return BatteryLevelCharacteristic()
 
             @pytest.fixture
@@ -63,7 +63,7 @@ class CommonCharacteristicTests:
     """
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         """Default: fail with clear error if not overridden in subclass."""
         raise NotImplementedError(
             f"Test incomplete: missing 'characteristic' fixture in {type(self).__name__}. "
@@ -99,12 +99,14 @@ class CommonCharacteristicTests:
         return None
 
     # === behavioural Tests ===
-    def test_characteristic_uuid_matches_expected(self, characteristic: BaseCharacteristic, expected_uuid: str) -> None:
+    def test_characteristic_uuid_matches_expected(
+        self, characteristic: BaseCharacteristic[Any], expected_uuid: str
+    ) -> None:
         """Test that characteristic UUID matches the expected value."""
         assert characteristic.uuid == expected_uuid
 
     def test_parse_valid_data_succeeds(
-        self, characteristic: BaseCharacteristic, valid_test_data: list[CharacteristicTestData]
+        self, characteristic: BaseCharacteristic[Any], valid_test_data: list[CharacteristicTestData]
     ) -> None:
         """Test parsing valid data succeeds and returns meaningful result."""
         # Handle both single and multiple test cases
@@ -134,7 +136,9 @@ class CommonCharacteristicTests:
             )
 
     def test_decode_valid_data_returns_expected_value(
-        self, characteristic: BaseCharacteristic, valid_test_data: CharacteristicTestData | list[CharacteristicTestData]
+        self,
+        characteristic: BaseCharacteristic[Any],
+        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
     ) -> None:
         """Test raw decoding returns the exact expected value."""
         # Handle both single and multiple test cases
@@ -143,20 +147,22 @@ class CommonCharacteristicTests:
         for i, test_case in enumerate(test_cases):
             input_data = test_case.input_data
 
-            result = characteristic.decode_value(input_data)
+            result = characteristic.parse_value(input_data)
             case_desc = f"Test case {i + 1} ({test_case.description})"
-            assert result is not None, f"{case_desc}: decode_value should return a value, not None"
+            assert result.value is not None, f"{case_desc}: decode_value should return a value, not None"
 
             # CRITICAL: Validate that the decoded value exactly matches expected value
             self._assert_values_equal(
-                result, test_case.expected_value, f"decode_value result (test case {i + 1}: {test_case.description})"
+                result.value,
+                test_case.expected_value,
+                f"decode_value result (test case {i + 1}: {test_case.description})",
             )
 
     def _assert_values_equal(self, actual: object, expected: object, context: str) -> None:
         """Assert two values are equal with tolerance for floating point."""
         if isinstance(expected, float) and isinstance(actual, float):
             # Handle floating point precision - use relative tolerance for large numbers
-            tolerance = max(1e-6, abs(expected) * 1e-9) if expected != 0 else 1e-6
+            tolerance = max(1e-6, abs(expected) * 1e-9) if expected != 0.0 else 1e-6
             assert abs(actual - expected) < tolerance, (
                 f"{context}: expected {expected}, got {actual} (diff: {abs(actual - expected)})"
             )
@@ -173,7 +179,7 @@ class CommonCharacteristicTests:
             # Direct equality for all other types
             assert actual == expected, f"{context}: expected {expected}, got {actual}"
 
-    def test_empty_data_handling(self, characteristic: BaseCharacteristic) -> None:
+    def test_empty_data_handling(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that empty data is handled appropriately."""
         result = characteristic.parse_value(bytearray())
 
@@ -183,7 +189,9 @@ class CommonCharacteristicTests:
             assert result.error_message.strip(), "Failed parsing should have meaningful error message"
 
     def test_oversized_data_validation(
-        self, characteristic: BaseCharacteristic, valid_test_data: CharacteristicTestData | list[CharacteristicTestData]
+        self,
+        characteristic: BaseCharacteristic[Any],
+        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
     ) -> None:
         """Test that excessively large data is properly validated."""
         # Use first test case if list, otherwise use single test case
@@ -199,11 +207,11 @@ class CommonCharacteristicTests:
         if hasattr(characteristic, "expected_length") and characteristic.expected_length is not None:
             expected_len = characteristic.expected_length
             if len(oversized_data) > expected_len:
-                assert not result.parse_success or result.field_errors, (
+                assert not result.parse_success or (result.value is not None and result.value.field_errors), (
                     f"Oversized data ({len(oversized_data)} > {expected_len}) should trigger validation"
                 )
 
-    def test_length_validation_behaviour(self, characteristic: BaseCharacteristic) -> None:
+    def test_length_validation_behaviour(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that length validation actually validates when configured."""
         # Test that characteristics with expected_length reject wrong-sized data
         if hasattr(characteristic, "expected_length") and characteristic.expected_length is not None:
@@ -220,7 +228,9 @@ class CommonCharacteristicTests:
             assert not result.parse_success, f"Should reject data longer than {expected_len} bytes"
 
     def test_range_validation_behaviour(
-        self, characteristic: BaseCharacteristic, valid_test_data: CharacteristicTestData | list[CharacteristicTestData]
+        self,
+        characteristic: BaseCharacteristic[Any],
+        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
     ) -> None:
         """Test that characteristics handle malformed data appropriately."""
         # Use first test case if list, otherwise use single test case
@@ -242,7 +252,7 @@ class CommonCharacteristicTests:
                     assert result.error_message.strip(), "Failed parsing should have meaningful error message"
                 # If it succeeds, that's also acceptable (some characteristics are very tolerant)
 
-    def test_uuid_resolution_behaviour(self, characteristic: BaseCharacteristic, expected_uuid: str) -> None:
+    def test_uuid_resolution_behaviour(self, characteristic: BaseCharacteristic[Any], expected_uuid: str) -> None:
         """Test that UUID resolution works and matches expected value."""
         # This tests actual behaviour: does the UUID resolution system work?
 
@@ -255,7 +265,7 @@ class CommonCharacteristicTests:
         info_uuid = str(characteristic.info.uuid)
         assert info_uuid.upper() == str(converted_uuid).upper(), "info.uuid should match characteristic.uuid"
 
-    def test_decode_exception_handling(self, characteristic: BaseCharacteristic) -> None:
+    def test_decode_exception_handling(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that decode_value handles extreme cases gracefully."""
         extreme_cases = [
             bytearray([0xFF] * 1000),  # Massive data
@@ -265,14 +275,16 @@ class CommonCharacteristicTests:
 
         for test_data in extreme_cases:
             try:
-                characteristic.decode_value(test_data)
+                characteristic.parse_value(test_data)
                 # If it succeeds, that's fine - no crash is good
             except Exception as e:
                 # If it fails, should have meaningful error message
                 assert str(e).strip(), f"Exception should have meaningful message: {e}"
 
     def test_undersized_data_handling(
-        self, characteristic: BaseCharacteristic, valid_test_data: CharacteristicTestData | list[CharacteristicTestData]
+        self,
+        characteristic: BaseCharacteristic[Any],
+        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
     ) -> None:
         """Test handling of data that's too short."""
         # Use first test case if list, otherwise use single test case
@@ -286,7 +298,9 @@ class CommonCharacteristicTests:
                 assert result.error_message.strip(), "Should have meaningful error for short data"
 
     def test_parse_decode_consistency(
-        self, characteristic: BaseCharacteristic, valid_test_data: CharacteristicTestData | list[CharacteristicTestData]
+        self,
+        characteristic: BaseCharacteristic[Any],
+        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
     ) -> None:
         """Test that parse_value and decode_value return consistent results."""
         # Use first test case if list, otherwise use single test case
@@ -294,28 +308,30 @@ class CommonCharacteristicTests:
         input_data = test_case.input_data
 
         parse_result = characteristic.parse_value(input_data)
-        decode_result = characteristic.decode_value(input_data)
+        decode_result = characteristic._decode_value(input_data)
 
         if parse_result.parse_success:
             # If parsing succeeded, the values should be equivalent
             self._assert_values_equal(parse_result.value, decode_result, "parse vs decode consistency")
 
     def test_round_trip(
-        self, characteristic: BaseCharacteristic, valid_test_data: CharacteristicTestData | list[CharacteristicTestData]
+        self,
+        characteristic: BaseCharacteristic[Any],
+        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
     ) -> None:
         """Test that encoding and decoding preserve data (round trip)."""
         test_cases = valid_test_data if isinstance(valid_test_data, list) else [valid_test_data]
 
         for i, test_case in enumerate(test_cases):
             case_desc = f"Test case {i + 1} ({test_case.description})"
-            parsed = characteristic.decode_value(test_case.input_data)
-            encoded = characteristic.encode_value(parsed)
+            parsed = characteristic.parse_value(test_case.input_data)
+            encoded = characteristic.build_value(parsed.value)
             assert encoded == test_case.input_data, f"{case_desc}: Round trip failed - encoded data differs from input"
 
     # === Dependency Tests ===
     def test_dependency_declarations_have_tests(
         self,
-        characteristic: BaseCharacteristic,
+        characteristic: BaseCharacteristic[Any],
         dependency_test_data: list[DependencyTestData] | None,
     ) -> None:
         """Verify that characteristics with dependencies have dependency tests.
@@ -373,7 +389,7 @@ class CommonCharacteristicTests:
 
     def test_dependency_parsing_with_dependencies_present(
         self,
-        characteristic: BaseCharacteristic,
+        characteristic: BaseCharacteristic[Any],
         dependency_test_data: list[DependencyTestData] | None,
     ) -> None:
         """Test characteristic parsing when dependencies are present in context.
@@ -429,15 +445,15 @@ class CommonCharacteristicTests:
             ctx = CharacteristicContext(other_characteristics=other_chars) if other_chars else None
 
             # Parse with context
-            result = characteristic.decode_value(char_data, ctx=ctx)
+            result = characteristic.parse_value(char_data, ctx=ctx)
 
             # Should parse successfully and match expected value
             assert result is not None, f"{case_desc}: decode_value returned None when dependencies present"
-            self._assert_values_equal(result, test_case.expected_with, f"{case_desc} with dependencies")
+            self._assert_values_equal(result.value, test_case.expected_with, f"{case_desc} with dependencies")
 
     def test_dependency_parsing_without_dependencies(
         self,
-        characteristic: BaseCharacteristic,
+        characteristic: BaseCharacteristic[Any],
         dependency_test_data: list[DependencyTestData] | None,
     ) -> None:
         """Test characteristic parsing when optional dependencies are absent.
@@ -462,20 +478,22 @@ class CommonCharacteristicTests:
                     # Test expects failure - use broad exception since different characteristics
                     # may raise different exceptions (InsufficientDataError, ValueRangeError, etc.)
                     with pytest.raises(Exception):  # noqa: B017
-                        characteristic.decode_value(test_case.without_dependency_data, ctx=None)
+                        characteristic.parse_value(test_case.without_dependency_data, ctx=None)
                 else:
                     # Test expects degraded parsing (still works but limited)
-                    result = characteristic.decode_value(test_case.without_dependency_data, ctx=None)
-                    self._assert_values_equal(result, test_case.expected_without, f"{case_desc} without dependencies")
+                    result = characteristic.parse_value(test_case.without_dependency_data, ctx=None)
+                    self._assert_values_equal(
+                        result.value, test_case.expected_without, f"{case_desc} without dependencies"
+                    )
             else:
                 # Only optional dependencies - should always work
-                result = characteristic.decode_value(test_case.without_dependency_data, ctx=None)
+                result = characteristic.parse_value(test_case.without_dependency_data, ctx=None)
                 assert result is not None, f"{case_desc}: Should parse without optional dependencies"
-                self._assert_values_equal(result, test_case.expected_without, f"{case_desc} without dependencies")
+                self._assert_values_equal(result.value, test_case.expected_without, f"{case_desc} without dependencies")
 
     def test_dependency_uuids_are_valid(
         self,
-        characteristic: BaseCharacteristic,
+        characteristic: BaseCharacteristic[Any],
     ) -> None:
         """Verify that declared dependency UUIDs are valid and resolvable.
 

@@ -29,7 +29,7 @@ class MultiFieldCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.DICT,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
         """Decode multiple fields with explicit trace entries."""
         if len(data) < 4:
             # Raise ParseFieldException with field information
@@ -72,7 +72,7 @@ class MultiFieldCharacteristic(CustomBaseCharacteristic):
             "humidity": humidity,
         }
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:
+    def _encode_value(self, data: dict[str, Any]) -> bytearray:
         """Encode multi-field data."""
         result = bytearray()
         result.append(data["flags"])
@@ -286,11 +286,11 @@ class TestGenericErrorExtraction:
             min_value: int | float | None = 0
             max_value: int | float | None = 100
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 """Return value that will fail validation."""
                 return 200  # Out of range
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
         char = GenericErrorCharacteristic()
@@ -374,11 +374,11 @@ class TestTraceControlPerformance:
             # Disable trace collection for performance
             _enable_parse_trace = False
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 """Simple decode."""
                 return int(data[0])
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 """Simple encode."""
                 return bytearray([data])
 
@@ -409,11 +409,11 @@ class TestTraceControlPerformance:
 
             # Don't set _enable_parse_trace - should default to True
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 """Simple decode."""
                 return int(data[0])
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 """Simple encode."""
                 return bytearray([data])
 
@@ -441,11 +441,11 @@ class TestTraceControlPerformance:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 """Simple decode."""
                 return int(data[0])
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 """Simple encode."""
                 return bytearray([data])
 

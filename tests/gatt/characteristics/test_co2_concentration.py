@@ -37,8 +37,8 @@ class TestCO2ConcentrationCharacteristic(CommonCharacteristicTests):
         """Test CO2 concentration boundary values and validation."""
         # Test normal values
         test_data = bytearray([0x34, 0x12])  # 4660 ppm
-        result = characteristic.decode_value(test_data)
-        assert result == 4660
+        result = characteristic.parse_value(test_data)
+        assert result.value == 4660
 
         # Test max valid value (65533 ppm)
         high_data = bytearray([0xFD, 0xFF])  # 65533 ppm
@@ -54,7 +54,7 @@ class TestCO2ConcentrationCharacteristic(CommonCharacteristicTests):
         assert result.parse_success
         assert result.special_value is not None
         assert result.special_value.raw_value == 65534
-        assert "65534 or greater" in result.special_value.meaning.lower()
+        assert "65534 or greater" in result.value.meaning.lower()
 
         # Test 0xFFFF (65535) - special value meaning "not known"
         unknown_data = bytearray([0xFF, 0xFF])  # 65535 / 0xFFFF
@@ -62,4 +62,4 @@ class TestCO2ConcentrationCharacteristic(CommonCharacteristicTests):
         assert result.parse_success
         assert result.special_value is not None
         assert result.special_value.raw_value == 65535
-        assert "not known" in result.special_value.meaning.lower()
+        assert "not known" in result.value.meaning.lower()

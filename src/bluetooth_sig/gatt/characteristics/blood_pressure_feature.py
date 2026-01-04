@@ -36,7 +36,7 @@ class BloodPressureFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # py
     multiple_bond_support: bool
 
 
-class BloodPressureFeatureCharacteristic(BaseCharacteristic):
+class BloodPressureFeatureCharacteristic(BaseCharacteristic[BloodPressureFeatureData]):
     """Blood Pressure Feature characteristic (0x2A49).
 
     Used to expose the supported features of a blood pressure monitoring
@@ -50,7 +50,7 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
     min_value: int = 0
     max_value: int = UINT16_MAX
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureFeatureData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureFeatureData:
         """Parse blood pressure feature data according to Bluetooth specification.
 
         Format: Features(2) - 16-bit bitmap indicating supported features.
@@ -85,7 +85,7 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic):
             multiple_bond_support=multiple_bond_support,
         )
 
-    def encode_value(self, data: BloodPressureFeatureData) -> bytearray:
+    def _encode_value(self, data: BloodPressureFeatureData) -> bytearray:
         """Encode BloodPressureFeatureData back to bytes.
 
         Args:

@@ -49,7 +49,7 @@ class BarometricPressureTrend(IntEnum):
             return cls.UNKNOWN
 
 
-class BarometricPressureTrendCharacteristic(BaseCharacteristic):
+class BarometricPressureTrendCharacteristic(BaseCharacteristic[BarometricPressureTrend]):
     """Barometric Pressure Trend characteristic (0x2AA3).
 
     org.bluetooth.characteristic.barometric_pressure_trend
@@ -71,20 +71,20 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic):
 
     enum_class = BarometricPressureTrend
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BarometricPressureTrend:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BarometricPressureTrend:
         """Parse barometric pressure trend and return enum.
 
         Maps reserved value (0xFF) and invalid values to UNKNOWN.
         """
         # Use template to parse uint8
-        raw_value = self._template.decode_value(data, offset=0, ctx=ctx)
+        raw_value = self._template._decode_value(data, offset=0, ctx=ctx)  # pylint: disable=protected-access
         # Convert to enum with fallback
         return BarometricPressureTrend.from_value(raw_value)
 
-    def encode_value(self, data: BarometricPressureTrend | int) -> bytearray:
+    def _encode_value(self, data: BarometricPressureTrend | int) -> bytearray:
         """Encode barometric pressure trend enum to bytes."""
         if isinstance(data, BarometricPressureTrend):
             value = data.value
         else:
             value = int(data)
-        return self._template.encode_value(value)
+        return self._template._encode_value(value)  # pylint: disable=protected-access

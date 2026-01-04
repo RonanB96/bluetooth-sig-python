@@ -160,7 +160,7 @@ class BodyCompositionMeasurementData(msgspec.Struct, frozen=True, kw_only=True):
                 raise ValueError(f"User ID must be 0-255, got {self.user_id}")
 
 
-class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
+class BodyCompositionMeasurementCharacteristic(BaseCharacteristic[BodyCompositionMeasurementData]):
     """Body Composition Measurement characteristic (0x2A9C).
 
     Used to transmit body composition measurement data including body
@@ -176,7 +176,9 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 50  # + Timestamp(7) + UserID(1) + Multiple measurements maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BodyCompositionMeasurementData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None
+    ) -> BodyCompositionMeasurementData:
         """Parse body composition measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Body Fat %(2) + [Timestamp(7)] + [User ID(1)] +
@@ -235,7 +237,7 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic):
             height=other.height,
         )
 
-    def encode_value(self, data: BodyCompositionMeasurementData) -> bytearray:
+    def _encode_value(self, data: BodyCompositionMeasurementData) -> bytearray:
         """Encode body composition measurement value back to bytes.
 
         Args:

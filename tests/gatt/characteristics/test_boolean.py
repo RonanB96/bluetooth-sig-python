@@ -36,33 +36,33 @@ class TestBooleanCharacteristic(CommonCharacteristicTests):
     def test_false_value(self) -> None:
         """Test decoding False value."""
         char = BooleanCharacteristic()
-        result = char.decode_value(bytearray([0]))
-        assert result is False
-        assert isinstance(result, bool)
+        result = char.parse_value(bytearray([0]))
+        assert result.value is False
+        assert isinstance(result.value, bool)
 
     def test_true_value(self) -> None:
         """Test decoding True value."""
         char = BooleanCharacteristic()
-        result = char.decode_value(bytearray([1]))
-        assert result is True
-        assert isinstance(result, bool)
+        result = char.parse_value(bytearray([1]))
+        assert result.value is True
+        assert isinstance(result.value, bool)
 
     def test_encode_false(self) -> None:
         """Test encoding False value."""
         char = BooleanCharacteristic()
-        encoded = char.encode_value(False)
+        encoded = char.build_value(False)
         assert encoded == bytearray([0])
 
     def test_encode_true(self) -> None:
         """Test encoding True value."""
         char = BooleanCharacteristic()
-        encoded = char.encode_value(True)
+        encoded = char.build_value(True)
         assert encoded == bytearray([1])
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = BooleanCharacteristic()
         for value in [False, True]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
-            assert decoded == value
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
+            assert decoded.value == value

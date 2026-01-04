@@ -87,7 +87,7 @@ class TestBatchParsingPerformance:
     ) -> None:
         """Compare batch vs individual parsing."""
 
-        def batch_parse() -> dict[str, CharacteristicData]:
+        def batch_parse() -> dict[str, CharacteristicData[Any]]:
             return translator.parse_characteristics(batch_characteristics_small)  # type: ignore[arg-type]
 
         # Benchmark batch parsing
@@ -130,8 +130,8 @@ class TestThroughput:
     ) -> None:
         """Measure single characteristic parsing throughput."""
 
-        def parse_loop() -> list[CharacteristicData]:
-            results: list[CharacteristicData] = []
+        def parse_loop() -> list[CharacteristicData[Any]]:
+            results: list[CharacteristicData[Any]] = []
             for _ in range(100):
                 result = translator.parse_characteristic("2A19", battery_level_data)  # type: ignore[arg-type]
                 results.append(result)
@@ -146,8 +146,8 @@ class TestThroughput:
     ) -> None:
         """Measure batch parsing throughput."""
 
-        def batch_loop() -> list[dict[str, CharacteristicData]]:
-            results: list[dict[str, CharacteristicData]] = []
+        def batch_loop() -> list[dict[str, CharacteristicData[Any]]]:
+            results: list[dict[str, CharacteristicData[Any]]] = []
             for _ in range(100):
                 result = translator.parse_characteristics(batch_characteristics_small)  # type: ignore[arg-type]
                 results.append(result)

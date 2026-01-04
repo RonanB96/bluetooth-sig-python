@@ -85,7 +85,7 @@ class WeightMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylin
                 raise ValueError(f"User ID must be 0-255, got {self.user_id}")
 
 
-class WeightMeasurementCharacteristic(BaseCharacteristic):
+class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData]):
     """Weight Measurement characteristic (0x2A9D).
 
     Used to transmit weight measurement data with optional fields.
@@ -100,7 +100,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 21  # + Timestamp(7) + UserID(1) + BMI(2) + Height(2) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> WeightMeasurementData:  # pylint: disable=too-many-locals
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> WeightMeasurementData:  # pylint: disable=too-many-locals
         """Parse weight measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +
@@ -184,7 +184,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic):
             height_unit=height_unit,
         )
 
-    def encode_value(self, data: WeightMeasurementData) -> bytearray:  # pylint: disable=too-many-branches # Complex measurement data with many optional fields
+    def _encode_value(self, data: WeightMeasurementData) -> bytearray:  # pylint: disable=too-many-branches # Complex measurement data with many optional fields
         """Encode weight measurement value back to bytes.
 
         Args:

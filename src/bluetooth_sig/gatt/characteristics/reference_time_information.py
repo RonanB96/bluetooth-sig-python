@@ -50,7 +50,7 @@ class ReferenceTimeInformationData(msgspec.Struct):
     hours_since_update: int  # 0-23, 255 means >=255 days
 
 
-class ReferenceTimeInformationCharacteristic(BaseCharacteristic):
+class ReferenceTimeInformationCharacteristic(BaseCharacteristic[ReferenceTimeInformationData]):
     """Reference Time Information characteristic (0x2A14).
 
     Represents information about the reference time source including type,
@@ -67,7 +67,7 @@ class ReferenceTimeInformationCharacteristic(BaseCharacteristic):
 
     expected_length: int = 4  # Time Source(1) + Time Accuracy(1) + Days(1) + Hours(1)
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ReferenceTimeInformationData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ReferenceTimeInformationData:
         """Decode Reference Time Information data from bytes.
 
         Args:
@@ -108,7 +108,7 @@ class ReferenceTimeInformationCharacteristic(BaseCharacteristic):
             hours_since_update=hours_since_update,
         )
 
-    def encode_value(self, data: ReferenceTimeInformationData) -> bytearray:
+    def _encode_value(self, data: ReferenceTimeInformationData) -> bytearray:
         """Encode Reference Time Information data to bytes.
 
         Args:

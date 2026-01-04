@@ -60,32 +60,32 @@ class TestPreferredUnitsCharacteristic(CommonCharacteristicTests):
     def test_preferred_units_values(self, characteristic: PreferredUnitsCharacteristic, units_value: int) -> None:
         """Test preferred units with various valid unit UUIDs."""
         data = bytearray([units_value & 0xFF, (units_value >> 8) & 0xFF])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = PreferredUnitsData(units=[BluetoothUUID(units_value)])
-        assert result == expected
+        assert result.value == expected
 
     def test_preferred_units_boundary_values(self, characteristic: PreferredUnitsCharacteristic) -> None:
         """Test preferred units boundary values using actual unit UUIDs."""
         # Test first unit UUID (0x2700 = unitless)
-        result = characteristic.decode_value(bytearray([0x00, 0x27]))
-        assert result == PreferredUnitsData(units=[BluetoothUUID(0x2700)])
+        result = characteristic.parse_value(bytearray([0x00, 0x27]))
+        assert result.value == PreferredUnitsData(units=[BluetoothUUID(0x2700)])
 
         # Test last unit UUID (0x27C9 = Gravity)
-        result = characteristic.decode_value(bytearray([0xC9, 0x27]))
-        assert result == PreferredUnitsData(units=[BluetoothUUID(0x27C9)])
+        result = characteristic.parse_value(bytearray([0xC9, 0x27]))
+        assert result.value == PreferredUnitsData(units=[BluetoothUUID(0x27C9)])
 
     def test_preferred_units_multiple_values(self, characteristic: PreferredUnitsCharacteristic) -> None:
         """Test preferred units with multiple unit values."""
         # Test with two actual unit UUIDs: 0x2700 (unitless), 0x2701 (length)
         data = bytearray([0x00, 0x27, 0x01, 0x27])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = PreferredUnitsData(units=[BluetoothUUID(0x2700), BluetoothUUID(0x2701)])
-        assert result == expected
+        assert result.value == expected
 
     def test_preferred_units_encoding(self, characteristic: PreferredUnitsCharacteristic) -> None:
         """Test encoding preferred units back to bytes."""
         data = PreferredUnitsData(units=[BluetoothUUID(0x2700), BluetoothUUID(0x2701), BluetoothUUID(0x2702)])
-        result = characteristic.encode_value(data)
+        result = characteristic.build_value(data)
         expected = bytearray([0x00, 0x27, 0x01, 0x27, 0x02, 0x27])
         assert result == expected
 

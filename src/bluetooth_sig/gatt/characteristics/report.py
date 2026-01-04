@@ -18,7 +18,7 @@ class ReportData(msgspec.Struct, frozen=True):
     data: bytes
 
 
-class ReportCharacteristic(BaseCharacteristic):
+class ReportCharacteristic(BaseCharacteristic[ReportData]):
     """Report characteristic (0x2A4D).
 
     org.bluetooth.characteristic.report
@@ -29,7 +29,7 @@ class ReportCharacteristic(BaseCharacteristic):
     min_length = 1
     expected_type = bytes
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ReportData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ReportData:
         """Parse report data.
 
         Args:
@@ -41,7 +41,7 @@ class ReportCharacteristic(BaseCharacteristic):
         """
         return ReportData(data=bytes(data))
 
-    def encode_value(self, data: ReportData) -> bytearray:
+    def _encode_value(self, data: ReportData) -> bytearray:
         """Encode report data back to bytes.
 
         Args:

@@ -35,19 +35,19 @@ class TestGustFactorCharacteristic(CommonCharacteristicTests):
     def test_no_gust(self) -> None:
         """Test no gust factor."""
         char = GustFactorCharacteristic()
-        result = char.decode_value(bytearray([0]))
-        assert result == 0.0
+        result = char.parse_value(bytearray([0]))
+        assert result.value == 0.0
 
     def test_moderate_gust(self) -> None:
         """Test moderate gust factor (10.0)."""
         char = GustFactorCharacteristic()
-        result = char.decode_value(bytearray([100]))
-        assert result == 10.0
+        result = char.parse_value(bytearray([100]))
+        assert result.value == 10.0
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = GustFactorCharacteristic()
         for value in [0.0, 5.0, 15.0, 25.5]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
-            assert decoded == value
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
+            assert decoded.value == value

@@ -199,10 +199,18 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
 
     def test_weight_measurement_invalid_data(self, characteristic: WeightMeasurementCharacteristic) -> None:
         """Test weight measurement error handling."""
-        # Too short data
-        with pytest.raises(ValueError, match="Weight Measurement data must be at least 3 bytes"):
-            characteristic.decode_value(bytearray([0x00, 0x01]))
+        # Too short data - parse_value returns parse_success=False
+        result = characteristic.parse_value(bytearray([0x00, 0x01]))
+        assert result.parse_success is False
+        assert result.error_message == (
+            "Length validation failed for Weight Measurement: expected at least 3 bytes, got 2 "
+            "(class-level constraint for WeightMeasurementCharacteristic)"
+        )
 
         # Missing weight data
-        with pytest.raises(ValueError, match="Weight Measurement data must be at least 3 bytes"):
-            characteristic.decode_value(bytearray([0x00]))
+        result = characteristic.parse_value(bytearray([0x00]))
+        assert result.parse_success is False
+        assert result.error_message == (
+            "Length validation failed for Weight Measurement: expected at least 3 bytes, got 1 "
+            "(class-level constraint for WeightMeasurementCharacteristic)"
+        )

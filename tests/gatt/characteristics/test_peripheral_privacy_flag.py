@@ -32,19 +32,19 @@ class TestPeripheralPrivacyFlagCharacteristic(CommonCharacteristicTests):
     def test_privacy_disabled(self) -> None:
         """Test privacy flag disabled."""
         char = PeripheralPrivacyFlagCharacteristic()
-        result = char.decode_value(bytearray([0]))
-        assert result is False
+        result = char.parse_value(bytearray([0]))
+        assert result.value is False
 
     def test_privacy_enabled(self) -> None:
         """Test privacy flag enabled."""
         char = PeripheralPrivacyFlagCharacteristic()
-        result = char.decode_value(bytearray([1]))
-        assert result is True
+        result = char.parse_value(bytearray([1]))
+        assert result.value is True
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = PeripheralPrivacyFlagCharacteristic()
         for value in [False, True]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
-            assert decoded == value
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
+            assert decoded.value == value

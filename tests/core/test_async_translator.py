@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
 import pytest
 
@@ -135,7 +136,7 @@ class TestAsyncIntegrationPatterns:
 
         translator = BluetoothSIGTranslator()
 
-        async def parse_task(uuid: str, data: bytes) -> CharacteristicData:
+        async def parse_task(uuid: str, data: bytes) -> CharacteristicData[Any]:
             return await translator.parse_characteristic_async(uuid, data)
 
         # Use gather for concurrent parsing

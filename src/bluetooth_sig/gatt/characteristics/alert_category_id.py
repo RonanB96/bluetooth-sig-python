@@ -9,7 +9,7 @@ from .base import BaseCharacteristic
 from .templates import Uint8Template
 
 
-class AlertCategoryIdCharacteristic(BaseCharacteristic):
+class AlertCategoryIdCharacteristic(BaseCharacteristic[AlertCategoryID]):
     """Alert Category ID characteristic (0x2A43).
 
     org.bluetooth.characteristic.alert_category_id
@@ -40,7 +40,7 @@ class AlertCategoryIdCharacteristic(BaseCharacteristic):
 
     _template = Uint8Template()
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertCategoryID:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertCategoryID:
         """Decode alert category ID from raw bytes.
 
         Args:
@@ -54,12 +54,12 @@ class AlertCategoryIdCharacteristic(BaseCharacteristic):
             ValueError: If data is less than 1 byte or value is invalid
 
         """
-        raw_value = self._template.decode_value(data, offset=0, ctx=ctx)
+        raw_value = self._template._decode_value(data, offset=0, ctx=ctx)  # pylint: disable=protected-access
 
         # Validate against known values using the existing validation function
         return validate_category_id(raw_value)
 
-    def encode_value(self, data: AlertCategoryID | int) -> bytearray:
+    def _encode_value(self, data: AlertCategoryID | int) -> bytearray:
         """Encode alert category ID to raw bytes.
 
         Args:
@@ -78,4 +78,4 @@ class AlertCategoryIdCharacteristic(BaseCharacteristic):
         # Validate the value
         validate_category_id(int_value)
 
-        return self._template.encode_value(int_value)
+        return self._template._encode_value(int_value)  # pylint: disable=protected-access

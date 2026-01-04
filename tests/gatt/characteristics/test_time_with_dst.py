@@ -121,7 +121,7 @@ class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
             adjust_reason=AdjustReason.from_raw(0),
         )
         with pytest.raises(ValueRangeError, match="fractions256"):
-            characteristic.encode_value(data)
+            characteristic.build_value(data)
 
     def test_time_with_dst_invalid_adjust_reason(self, characteristic: TimeWithDstCharacteristic) -> None:
         """Test that invalid adjust reason values are rejected during encoding."""
@@ -134,7 +134,7 @@ class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
             adjust_reason=AdjustReason(256),  # Invalid (max is 255)
         )
         with pytest.raises(ValueRangeError, match="adjust_reason"):
-            characteristic.encode_value(data)
+            characteristic.build_value(data)
 
     def test_time_with_dst_roundtrip(self, characteristic: TimeWithDstCharacteristic) -> None:
         """Test encode/decode roundtrip consistency."""
@@ -145,7 +145,7 @@ class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
             adjust_reason=AdjustReason.CHANGE_OF_DST,
         )
 
-        encoded = characteristic.encode_value(original)
+        encoded = characteristic.build_value(original)
         result = characteristic.parse_value(encoded)
 
         assert result.parse_success

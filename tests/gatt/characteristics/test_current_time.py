@@ -104,23 +104,26 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
                 0x00,  # Adjust Reason: none
             ]
         )
-        result = characteristic.decode_value(data)
-        assert result.date_time is None  # Unknown date
-        assert result.day_of_week == DayOfWeek.MONDAY
+        result = characteristic.parse_value(data)
+        assert result.value is not None
+        assert result.value.date_time is None  # Unknown date
+        assert result.value.day_of_week == DayOfWeek.MONDAY
 
     def test_current_time_boundary_year(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test current time with boundary year values."""
         # Minimum valid year (1582)
         data_min = bytearray([0x2E, 0x06, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00])
-        result_min = characteristic.decode_value(data_min)
-        assert result_min.date_time is not None
-        assert result_min.date_time.year == 1582
+        result_min = characteristic.parse_value(data_min)
+        assert result_min.value is not None
+        assert result_min.value.date_time is not None
+        assert result_min.value.date_time.year == 1582
 
         # Maximum valid year (9999)
         data_max = bytearray([0x0F, 0x27, 0x0C, 0x1F, 0x17, 0x3B, 0x3B, 0x07, 0xFF, 0x0F])
-        result_max = characteristic.decode_value(data_max)
-        assert result_max.date_time is not None
-        assert result_max.date_time.year == 9999
+        result_max = characteristic.parse_value(data_max)
+        assert result_max.value is not None
+        assert result_max.value.date_time is not None
+        assert result_max.value.date_time.year == 9999
 
     def test_current_time_invalid_year(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that invalid years are rejected."""
@@ -191,23 +194,26 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
     ) -> None:
         """Test all valid day of week values."""
         data = bytearray([0xE9, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00, day_of_week, 0x00, 0x00])
-        result = characteristic.decode_value(data)
-        assert result.day_of_week == expected_enum
+        result = characteristic.parse_value(data)
+        assert result.value is not None
+        assert result.value.day_of_week == expected_enum
 
     def test_current_time_adjust_reason_flags(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test adjust reason bitfield values."""
         # Manual time update
         data_manual = bytearray([0xE9, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01])
-        result = characteristic.decode_value(data_manual)
-        assert result.adjust_reason & AdjustReason.MANUAL_TIME_UPDATE
+        result = characteristic.parse_value(data_manual)
+        assert result.value is not None
+        assert result.value.adjust_reason & AdjustReason.MANUAL_TIME_UPDATE
 
         # Multiple reasons
         data_multi = bytearray([0xE9, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0F])
-        result = characteristic.decode_value(data_multi)
-        assert result.adjust_reason & AdjustReason.MANUAL_TIME_UPDATE
-        assert result.adjust_reason & AdjustReason.EXTERNAL_REFERENCE_TIME_UPDATE
-        assert result.adjust_reason & AdjustReason.CHANGE_OF_TIME_ZONE
-        assert result.adjust_reason & AdjustReason.CHANGE_OF_DST
+        result = characteristic.parse_value(data_multi)
+        assert result.value is not None
+        assert result.value.adjust_reason & AdjustReason.MANUAL_TIME_UPDATE
+        assert result.value.adjust_reason & AdjustReason.EXTERNAL_REFERENCE_TIME_UPDATE
+        assert result.value.adjust_reason & AdjustReason.CHANGE_OF_TIME_ZONE
+        assert result.value.adjust_reason & AdjustReason.CHANGE_OF_DST
 
     def test_current_time_roundtrip(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that encode/decode are inverse operations."""
@@ -218,10 +224,11 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
             adjust_reason=AdjustReason.EXTERNAL_REFERENCE_TIME_UPDATE,
         )
 
-        encoded = characteristic.encode_value(original)
-        decoded = characteristic.decode_value(encoded)
+        encoded = characteristic.build_value(original)
+        decoded = characteristic.parse_value(encoded)
+        assert decoded.value is not None
 
-        assert decoded.date_time == original.date_time
-        assert decoded.day_of_week == original.day_of_week
-        assert decoded.fractions256 == original.fractions256
-        assert decoded.adjust_reason == original.adjust_reason
+        assert decoded.value.date_time == original.date_time
+        assert decoded.value.day_of_week == original.day_of_week
+        assert decoded.value.fractions256 == original.fractions256
+        assert decoded.value.adjust_reason == original.adjust_reason

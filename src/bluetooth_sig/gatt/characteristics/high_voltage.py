@@ -7,7 +7,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint24Template
 
 
-class HighVoltageCharacteristic(BaseCharacteristic):
+class HighVoltageCharacteristic(BaseCharacteristic[float]):
     """High Voltage characteristic (0x2BE0).
 
     org.bluetooth.characteristic.high_voltage

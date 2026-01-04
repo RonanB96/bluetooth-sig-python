@@ -36,20 +36,20 @@ class TestChromaticityCoordinateCharacteristic(CommonCharacteristicTests):
     def test_minimum_value(self) -> None:
         """Test minimum chromaticity coordinate."""
         char = ChromaticityCoordinateCharacteristic()
-        result = char.decode_value(bytearray([16, 0]))
-        assert result == 0
+        result = char.parse_value(bytearray([16, 0]))
+        assert result.value == 0
 
     def test_maximum_value(self) -> None:
         """Test near minimum chromaticity coordinate."""
         char = ChromaticityCoordinateCharacteristic()
-        result = char.decode_value(bytearray([17, 0]))
-        assert result == 1
+        result = char.parse_value(bytearray([17, 0]))
+        assert result.value == 1
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = ChromaticityCoordinateCharacteristic()
         # Scaling: value = raw - 16, so integer values round-trip exactly
         for value in [0, 1, 100, 1000, 65535 - 16]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
-            assert decoded == value, f"Round trip failed for {value}: got {decoded}"
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
+            assert decoded.value == value, f"Round trip failed for {value}: got {decoded}"

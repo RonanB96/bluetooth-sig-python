@@ -14,7 +14,7 @@ class TemperatureValues:  # pylint: disable=too-few-public-methods
     VALUE_UNKNOWN = -32768  # Indicates value is not known (as sint16, 0x8000)
 
 
-class TemperatureCharacteristic(BaseCharacteristic):
+class TemperatureCharacteristic(BaseCharacteristic[float | None]):
     """Temperature characteristic (0x2A6E).
 
     org.bluetooth.characteristic.temperature
@@ -24,7 +24,7 @@ class TemperatureCharacteristic(BaseCharacteristic):
 
     expected_type: type | None = float  # Allows both float and None (for unknown value)
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode temperature characteristic.
 
         Decodes a 16-bit signed integer representing temperature in 0.01°C increments
@@ -45,7 +45,7 @@ class TemperatureCharacteristic(BaseCharacteristic):
             return None
         return raw_value * 0.01
 
-    def encode_value(self, data: float) -> bytearray:
+    def _encode_value(self, data: float) -> bytearray:
         """Encode temperature value."""
         raw_value = int(data / 0.01)
         return DataParser.encode_int16(raw_value, signed=True)

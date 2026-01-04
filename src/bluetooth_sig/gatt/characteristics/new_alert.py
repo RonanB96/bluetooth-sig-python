@@ -25,7 +25,7 @@ class NewAlertData(msgspec.Struct):
     text_string_information: str  # 0-18 characters
 
 
-class NewAlertCharacteristic(BaseCharacteristic):
+class NewAlertCharacteristic(BaseCharacteristic[NewAlertData]):
     """New Alert characteristic (0x2A46).
 
     Represents the category, count, and brief text for a new alert.
@@ -41,7 +41,7 @@ class NewAlertCharacteristic(BaseCharacteristic):
     min_length: int = 2  # Category ID(1) + Number of New Alert(1)
     allow_variable_length: bool = True  # Optional text string
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> NewAlertData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> NewAlertData:
         """Decode New Alert data from bytes.
 
         Args:
@@ -76,7 +76,7 @@ class NewAlertCharacteristic(BaseCharacteristic):
             text_string_information=text_string_information,
         )
 
-    def encode_value(self, data: NewAlertData) -> bytearray:
+    def _encode_value(self, data: NewAlertData) -> bytearray:
         """Encode New Alert data to bytes.
 
         Args:

@@ -48,7 +48,7 @@ class PulseOximetryData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: d
     supported_features: PLXFeatureFlags | None = None  # PLX Features from context (0x2A60)
 
 
-class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
+class PulseOximetryMeasurementCharacteristic(BaseCharacteristic[PulseOximetryData]):
     """PLX Continuous Measurement characteristic (0x2A5F).
 
     Used to transmit SpO2 (blood oxygen saturation) and pulse rate
@@ -64,7 +64,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
     max_length: int | None = 16  # + Timestamp(7) + MeasurementStatus(2) + DeviceStatus(3) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(  # pylint: disable=too-many-locals,too-many-branches  # Complexity needed for spec parsing
+    def _decode_value(  # pylint: disable=too-many-locals,too-many-branches  # Complexity needed for spec parsing
         self, data: bytearray, ctx: CharacteristicContext | None = None
     ) -> PulseOximetryData:
         """Parse pulse oximetry measurement data according to Bluetooth specification.
@@ -138,7 +138,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic):
             supported_features=supported_features,
         )
 
-    def encode_value(self, data: PulseOximetryData) -> bytearray:
+    def _encode_value(self, data: PulseOximetryData) -> bytearray:
         """Encode pulse oximetry measurement value back to bytes.
 
         Args:

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
@@ -14,7 +16,7 @@ class TestTemperatureCharacteristic(CommonCharacteristicTests):
     """Test Temperature characteristic implementation."""
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         """Provide Temperature characteristic for testing."""
         return TemperatureCharacteristic()
 
@@ -45,7 +47,7 @@ class TestTemperatureCharacteristic(CommonCharacteristicTests):
         ]
 
     # === Temperature-Specific Tests ===
-    def test_temperature_precision_and_boundaries(self, characteristic: BaseCharacteristic) -> None:
+    def test_temperature_precision_and_boundaries(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test temperature precision and boundary values."""
         # Test freezing point (0°C)
         result = characteristic.parse_value(bytearray([0x00, 0x00]))
@@ -64,7 +66,7 @@ class TestTemperatureCharacteristic(CommonCharacteristicTests):
         assert result.value is not None
         assert abs(result.value - 21.48) < 0.01
 
-    def test_temperature_extreme_values(self, characteristic: BaseCharacteristic) -> None:
+    def test_temperature_extreme_values(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test extreme temperature values within valid range."""
         # Test maximum positive value
         max_data = bytearray([SINT16_MAX & 0xFF, (SINT16_MAX >> 8) & 0xFF])  # 32767 = 327.67°C

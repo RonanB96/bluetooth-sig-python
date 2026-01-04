@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint32Template
 
 
-class DatabaseChangeIncrementCharacteristic(BaseCharacteristic):
+class DatabaseChangeIncrementCharacteristic(BaseCharacteristic[int]):
     """Database Change Increment characteristic (0x2A99).
 
     org.bluetooth.characteristic.database_change_increment

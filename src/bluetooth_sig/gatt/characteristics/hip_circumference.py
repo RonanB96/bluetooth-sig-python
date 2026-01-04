@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class HipCircumferenceCharacteristic(BaseCharacteristic):
+class HipCircumferenceCharacteristic(BaseCharacteristic[float]):
     """Hip Circumference characteristic (0x2A8F).
 
     org.bluetooth.characteristic.hip_circumference

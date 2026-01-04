@@ -13,7 +13,7 @@ class AccelerationValues:  # pylint: disable=too-few-public-methods
     VALUE_NOT_KNOWN = 0x7FFFFFFF
 
 
-class AccelerationCharacteristic(BaseCharacteristic):
+class AccelerationCharacteristic(BaseCharacteristic[float | None]):
     """Acceleration characteristic (0x2C06).
 
     org.bluetooth.characteristic.acceleration
@@ -24,7 +24,7 @@ class AccelerationCharacteristic(BaseCharacteristic):
 
     _manual_unit: str | None = "m/s²"  # Manual override due to YAML typo (metres_per_seconds_squared)
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode acceleration characteristic.
 
         Decodes a 32-bit signed integer representing acceleration in 0.001 m/s² increments
@@ -45,7 +45,7 @@ class AccelerationCharacteristic(BaseCharacteristic):
             return None
         return raw_value * 0.001
 
-    def encode_value(self, data: float) -> bytearray:
+    def _encode_value(self, data: float) -> bytearray:
         """Encode acceleration value."""
         raw_value = int(data / 0.001)
         return DataParser.encode_int32(raw_value, signed=True)

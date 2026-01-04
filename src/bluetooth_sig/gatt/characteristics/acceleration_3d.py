@@ -8,7 +8,7 @@ from .templates import VectorData
 from .utils import DataParser
 
 
-class Acceleration3DCharacteristic(BaseCharacteristic):
+class Acceleration3DCharacteristic(BaseCharacteristic[VectorData]):
     """Acceleration - 3D characteristic (0x2C1D).
 
     org.bluetooth.characteristic.acceleration_3d
@@ -23,7 +23,7 @@ class Acceleration3DCharacteristic(BaseCharacteristic):
     # BaseCharacteristic handles validation
     expected_length = 3
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VectorData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VectorData:
         """Parse 3D acceleration (3 x sint8).
 
         Args:
@@ -43,7 +43,7 @@ class Acceleration3DCharacteristic(BaseCharacteristic):
             z_axis=z_raw * self.resolution,
         )
 
-    def encode_value(self, data: VectorData) -> bytearray:
+    def _encode_value(self, data: VectorData) -> bytearray:
         """Encode 3D acceleration.
 
         Args:

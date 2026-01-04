@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import types
-from typing import cast
+from typing import Any, cast
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
@@ -44,7 +44,7 @@ async def demo_basic_usage(address: str, connection_manager: ConnectionManagerPr
         print("✅ Connected, reading characteristics...")
 
         common_uuids = ["2A00", "2A19", "2A29", "2A24", "2A25", "2A26", "2A27", "2A28"]
-        parsed_results: dict[str, CharacteristicData] = {}
+        parsed_results: dict[str, CharacteristicData[Any]] = {}
 
         for uuid_short in common_uuids:
             try:
@@ -62,7 +62,7 @@ async def demo_basic_usage(address: str, connection_manager: ConnectionManagerPr
         print("✅ Disconnected")
 
         # Convert to BluetoothUUID-keyed mapping for the display helper
-        normalized: dict[BluetoothUUID, CharacteristicData] = {}
+        normalized: dict[BluetoothUUID, CharacteristicData[Any]] = {}
         for k, v in parsed_results.items():
             try:
                 normalized[BluetoothUUID(k)] = v
@@ -103,7 +103,7 @@ async def demo_service_discovery(address: str, connection_manager: ConnectionMan
         total_chars = 0
         parsed_chars = 0
 
-        parsed_results: dict[str, CharacteristicData] = {}
+        parsed_results: dict[str, CharacteristicData[Any]] = {}
 
         for service_uuid, service_info in services.items():
             service_name = translator.get_service_info_by_uuid(service_uuid)
@@ -148,7 +148,7 @@ async def demo_service_discovery(address: str, connection_manager: ConnectionMan
         print(f"\n📊 Device summary: {device}")
         print(f"📊 Total characteristics: {total_chars}, Successfully parsed: {parsed_chars}")
 
-        normalized: dict[BluetoothUUID, CharacteristicData] = {}
+        normalized: dict[BluetoothUUID, CharacteristicData[Any]] = {}
         for k, v in parsed_results.items():
             try:
                 normalized[BluetoothUUID(k)] = v
@@ -164,7 +164,7 @@ async def demo_service_discovery(address: str, connection_manager: ConnectionMan
 
 async def comprehensive_device_analysis_bleak_retry(
     address: str, target_uuids: list[str]
-) -> dict[str, CharacteristicData]:
+) -> dict[str, CharacteristicData[Any]]:
     """Analyze a BLE device using Bleak-retry.
 
     Args:
@@ -189,7 +189,7 @@ async def comprehensive_device_analysis_bleak_retry(
 
         read_results = await read_characteristics_with_manager(manager, target_uuids)
 
-        parsed: dict[str, CharacteristicData] = {}
+        parsed: dict[str, CharacteristicData[Any]] = {}
         for short_uuid, read_result in read_results.items():
             try:
                 parsed_outcome = translator.parse_characteristic(short_uuid, read_result.raw_data)

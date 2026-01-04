@@ -50,15 +50,15 @@ class TestHighResolutionHeightCharacteristic(CommonCharacteristicTests):
     ) -> None:
         """Test high resolution height with various valid values."""
         data = bytearray([raw_value & 0xFF, (raw_value >> 8) & 0xFF])
-        result = characteristic.decode_value(data)
-        assert result == expected_height
+        result = characteristic.parse_value(data)
+        assert result.value == expected_height
 
     def test_high_resolution_height_boundary_values(self, characteristic: HighResolutionHeightCharacteristic) -> None:
         """Test high resolution height boundary values."""
         # Test minimum value (0 cm)
-        result = characteristic.decode_value(bytearray([0, 0]))
-        assert result == 0.0
+        result = characteristic.parse_value(bytearray([0, 0]))
+        assert result.value == 0.0
 
         # Test maximum value (655.35 cm)
-        result = characteristic.decode_value(bytearray([0xFF, 0xFF]))
-        assert result == 655.35
+        result = characteristic.parse_value(bytearray([0xFF, 0xFF]))
+        assert result.value == 655.35

@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint16Template
 
 
-class SedentaryIntervalNotificationCharacteristic(BaseCharacteristic):
+class SedentaryIntervalNotificationCharacteristic(BaseCharacteristic[int]):
     """Sedentary Interval Notification characteristic (0x2B4F).
 
     org.bluetooth.characteristic.sedentary_interval_notification

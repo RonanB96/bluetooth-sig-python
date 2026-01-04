@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Utf8StringTemplate
 
 
-class HardwareRevisionStringCharacteristic(BaseCharacteristic):
+class HardwareRevisionStringCharacteristic(BaseCharacteristic[str]):
     """Hardware Revision String characteristic (0x2A27).
 
     org.bluetooth.characteristic.hardware_revision_string

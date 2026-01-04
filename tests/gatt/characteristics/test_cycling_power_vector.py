@@ -163,12 +163,13 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         crank_time = 1024  # 1 second
         first_angle = 90  # 0.5 degrees (90 / 180)
         test_data = struct.pack("<BHHH", flags, crank_revs, crank_time, first_angle)
-        result = char.decode_value(bytearray(test_data))
+        result = char.parse_value(bytearray(test_data))
+        assert result.value is not None
 
-        assert result.flags == CyclingPowerVectorFlags(0)
-        assert result.crank_revolution_data.crank_revolutions == 1234
-        assert result.crank_revolution_data.last_crank_event_time == 1.0
-        assert result.first_crank_measurement_angle == 0.5
+        assert result.value.flags == CyclingPowerVectorFlags(0)
+        assert result.value.crank_revolution_data.crank_revolutions == 1234
+        assert result.value.crank_revolution_data.last_crank_event_time == 1.0
+        assert result.value.first_crank_measurement_angle == 0.5
         assert char.unit == "various"
 
     def test_cycling_power_vector_with_force_array(self) -> None:
@@ -183,13 +184,14 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         force1 = 100  # 100 N
         force2 = 150  # 150 N
         test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, force1, force2)
-        result = char.decode_value(bytearray(test_data))
+        result = char.parse_value(bytearray(test_data))
+        assert result.value is not None
 
-        assert result.flags == CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT
-        assert result.crank_revolution_data.crank_revolutions == 1234
-        assert result.crank_revolution_data.last_crank_event_time == 1.0
-        assert result.first_crank_measurement_angle == 1.0
-        assert result.instantaneous_force_magnitude_array == (100.0, 150.0)
+        assert result.value.flags == CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT
+        assert result.value.crank_revolution_data.crank_revolutions == 1234
+        assert result.value.crank_revolution_data.last_crank_event_time == 1.0
+        assert result.value.first_crank_measurement_angle == 1.0
+        assert result.value.instantaneous_force_magnitude_array == (100.0, 150.0)
 
     def test_cycling_power_vector_with_torque_array(self) -> None:
         """Test cycling power vector with torque magnitude array."""
@@ -203,22 +205,31 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         torque1 = 160  # 5.0 Nm (160 / 32)
         torque2 = 192  # 6.0 Nm (192 / 32)
         test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, torque1, torque2)
-        result = char.decode_value(bytearray(test_data))
+        result = char.parse_value(bytearray(test_data))
+        assert result.value is not None
 
-        assert result.flags == CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
-        assert result.crank_revolution_data.crank_revolutions == 1234
-        assert result.crank_revolution_data.last_crank_event_time == 1.0
-        assert result.first_crank_measurement_angle == 2.0
-        assert result.instantaneous_torque_magnitude_array == (5.0, 6.0)
+        assert result.value.flags == CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
+        assert result.value.crank_revolution_data.crank_revolutions == 1234
+        assert result.value.crank_revolution_data.last_crank_event_time == 1.0
+        assert result.value.first_crank_measurement_angle == 2.0
+        assert result.value.instantaneous_torque_magnitude_array == (5.0, 6.0)
 
     def test_cycling_power_vector_invalid_data(self) -> None:
         """Test cycling power vector with invalid data."""
         char = CyclingPowerVectorCharacteristic()
 
-        # Test insufficient data
-        with pytest.raises(ValueError, match="must be at least 7 bytes"):
-            char.decode_value(bytearray([0x01, 0x02, 0x03]))
+        # Test insufficient data - parse_value returns parse_success=False
+        result = char.parse_value(bytearray([0x01, 0x02, 0x03]))
+        assert result.parse_success is False
+        assert result.error_message == (
+            "Length validation failed for Cycling Power Vector: expected at least 7 bytes, got 3 "
+            "(class-level constraint for CyclingPowerVectorCharacteristic)"
+        )
 
-        # Test empty data
-        with pytest.raises(ValueError, match="must be at least 7 bytes"):
-            char.decode_value(bytearray())
+        # Test empty data - also returns parse_success=False
+        result = char.parse_value(bytearray())
+        assert result.parse_success is False
+        assert result.error_message == (
+            "Length validation failed for Cycling Power Vector: expected at least 7 bytes, got 0 "
+            "(class-level constraint for CyclingPowerVectorCharacteristic)"
+        )

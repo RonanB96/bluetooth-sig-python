@@ -24,7 +24,7 @@ class RingerSettingData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: d
     setting: RingerSetting
 
 
-class RingerSettingCharacteristic(BaseCharacteristic):
+class RingerSettingCharacteristic(BaseCharacteristic[RingerSettingData]):
     """Ringer Setting characteristic (0x2A41).
 
     org.bluetooth.characteristic.ringer_setting
@@ -35,7 +35,7 @@ class RingerSettingCharacteristic(BaseCharacteristic):
     Values 2-255: Reserved for future use
     """
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RingerSettingData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RingerSettingData:
         """Parse ringer setting data according to Bluetooth specification.
 
         Args:
@@ -58,7 +58,7 @@ class RingerSettingCharacteristic(BaseCharacteristic):
 
         return RingerSettingData(setting=setting)
 
-    def encode_value(self, data: RingerSettingData) -> bytearray:
+    def _encode_value(self, data: RingerSettingData) -> bytearray:
         """Encode RingerSettingData back to bytes.
 
         Args:

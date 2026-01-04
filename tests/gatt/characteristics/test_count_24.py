@@ -37,19 +37,21 @@ class TestCount24Characteristic(CommonCharacteristicTests):
     def test_zero_count(self) -> None:
         """Test zero count."""
         char = Count24Characteristic()
-        result = char.decode_value(bytearray([0, 0, 0]))
-        assert result == 0
+        result = char.parse_value(bytearray([0, 0, 0]))
+        assert result.value == 0
 
     def test_maximum_count(self) -> None:
         """Test maximum count value."""
         char = Count24Characteristic()
-        result = char.decode_value(bytearray([255, 255, 255]))
-        assert result == 16777215
+        result = char.parse_value(bytearray([255, 255, 255]))
+        # 16777215 is a special value meaning "not known"
+        assert result.parse_success
+        assert result.raw_int == 16777215
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = Count24Characteristic()
         for value in [0, 1, 100, 65536, 16777214]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
-            assert decoded == value
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
+            assert decoded.value == value

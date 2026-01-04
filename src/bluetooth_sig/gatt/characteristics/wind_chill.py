@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledSint8Template
 
 
-class WindChillCharacteristic(BaseCharacteristic):
+class WindChillCharacteristic(BaseCharacteristic[float]):
     """Wind Chill characteristic (0x2A79).
 
     org.bluetooth.characteristic.wind_chill

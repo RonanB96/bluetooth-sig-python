@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import BodyCompositionFeatureCharacteristic
@@ -18,7 +20,7 @@ class TestBodyCompositionFeatureCharacteristic(CommonCharacteristicTests):
     characteristic_cls = BodyCompositionFeatureCharacteristic
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return BodyCompositionFeatureCharacteristic()
 
     @pytest.fixture

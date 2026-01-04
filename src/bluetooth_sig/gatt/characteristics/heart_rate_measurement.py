@@ -93,7 +93,7 @@ class HeartRateData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disab
                 )
 
 
-class HeartRateMeasurementCharacteristic(BaseCharacteristic):
+class HeartRateMeasurementCharacteristic(BaseCharacteristic[HeartRateData]):
     """Heart Rate Measurement characteristic (0x2A37).
 
     Used in Heart Rate Service (spec: Heart Rate Service 1.0, Heart Rate Profile 1.0)
@@ -136,7 +136,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
     min_length: int = 2  # Flags(1) + HR(1/2)
     allow_variable_length: bool = True  # Optional energy expended and RR intervals
 
-    def decode_value(  # pylint: disable=too-many-branches  # Branches needed for spec-compliant parsing
+    def _decode_value(  # pylint: disable=too-many-branches  # Branches needed for spec-compliant parsing
         self, data: bytearray, ctx: CharacteristicContext | None = None
     ) -> HeartRateData:
         """Parse heart rate measurement data according to Bluetooth specification.
@@ -212,7 +212,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
             sensor_location=sensor_location,
         )
 
-    def encode_value(self, data: HeartRateData) -> bytearray:
+    def _encode_value(self, data: HeartRateData) -> bytearray:
         """Encode HeartRateData back to bytes.
 
         The inverse of decode_value respecting the same flag semantics.

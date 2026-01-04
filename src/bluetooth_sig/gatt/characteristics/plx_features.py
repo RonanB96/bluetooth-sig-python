@@ -27,7 +27,7 @@ class PLXFeatureFlags(IntFlag):
     # Bits 8-15 are reserved for future use
 
 
-class PLXFeaturesCharacteristic(BaseCharacteristic):
+class PLXFeaturesCharacteristic(BaseCharacteristic[PLXFeatureFlags]):
     """PLX Features characteristic (0x2A60).
 
     Describes the supported features of a pulse oximeter device.
@@ -38,7 +38,7 @@ class PLXFeaturesCharacteristic(BaseCharacteristic):
 
     expected_length: int | None = 2
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PLXFeatureFlags:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PLXFeatureFlags:
         """Decode PLX features from raw bytes.
 
         Args:
@@ -54,7 +54,7 @@ class PLXFeaturesCharacteristic(BaseCharacteristic):
         raw_value = DataParser.parse_int16(data, 0, signed=False)
         return PLXFeatureFlags(raw_value)
 
-    def encode_value(self, data: PLXFeatureFlags | int) -> bytearray:
+    def _encode_value(self, data: PLXFeatureFlags | int) -> bytearray:
         """Encode PLX features to bytes.
 
         Args:

@@ -7,7 +7,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class VoltageFrequencyCharacteristic(BaseCharacteristic):
+class VoltageFrequencyCharacteristic(BaseCharacteristic[float]):
     """Voltage Frequency characteristic (0x2BE8).
 
     org.bluetooth.characteristic.voltage_frequency

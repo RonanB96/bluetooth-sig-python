@@ -48,25 +48,25 @@ class TestNonMethaneVOCConcentrationCharacteristic(CommonCharacteristicTests):
         # Test normal parsing - IEEE 11073 SFLOAT format
         # Example: 0x1234 = exponent=1, mantissa=564 = 564 * 10^1 = 5640
         test_data = bytearray([0x34, 0x12])  # IEEE 11073 SFLOAT little endian
-        parsed = characteristic.decode_value(test_data)
-        assert isinstance(parsed, float)
+        parsed = characteristic.parse_value(test_data)
+        assert isinstance(parsed.value, float)
 
     def test_tvoc_concentration_special_values(self, characteristic: NonMethaneVOCConcentrationCharacteristic) -> None:
         """Test TVOC concentration special values per IEEE 11073 SFLOAT."""
         # Test IEEE 11073 special values
 
         # Test 0x07FF (NaN)
-        result = characteristic.decode_value(bytearray([0xFF, 0x07]))
-        assert math.isnan(result), f"Expected NaN, got {result}"
+        result = characteristic.parse_value(bytearray([0xFF, 0x07]))
+        assert math.isnan(result.value), f"Expected NaN, got {result}"
 
         # Test 0x0800 (NRes - Not a valid result)
-        result = characteristic.decode_value(bytearray([0x00, 0x08]))
-        assert math.isnan(result), f"Expected NaN, got {result}"
+        result = characteristic.parse_value(bytearray([0x00, 0x08]))
+        assert math.isnan(result.value), f"Expected NaN, got {result}"
 
         # Test 0x07FE (+INFINITY)
-        result = characteristic.decode_value(bytearray([0xFE, 0x07]))
-        assert math.isinf(result) and result > 0, f"Expected +inf, got {result}"
+        result = characteristic.parse_value(bytearray([0xFE, 0x07]))
+        assert math.isinf(result.value) and result.value > 0, f"Expected +inf, got {result}"
 
         # Test 0x0802 (-INFINITY)
-        result = characteristic.decode_value(bytearray([0x02, 0x08]))
-        assert math.isinf(result) and result < 0, f"Expected -inf, got {result}"
+        result = characteristic.parse_value(bytearray([0x02, 0x08]))
+        assert math.isinf(result.value) and result.value < 0, f"Expected -inf, got {result}"

@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import UncertaintyCharacteristic
-from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -44,30 +43,31 @@ class TestUncertaintyCharacteristic(CommonCharacteristicTests):
 
         # Test normal parsing
         test_data = bytearray([0x69])  # 105 = 10.5m
-        parsed = characteristic.decode_value(test_data)
-        assert parsed == 10.5
+        parsed = characteristic.parse_value(test_data)
+        assert parsed.value == 10.5
 
     def test_uncertainty_error_handling(self, characteristic: UncertaintyCharacteristic) -> None:
         """Test Uncertainty error handling."""
-        # Test insufficient data
-        with pytest.raises(InsufficientDataError, match="need 1 bytes, got 0"):
-            characteristic.decode_value(bytearray())
+        # Test insufficient data - parse_value returns parse_success=False
+        result = characteristic.parse_value(bytearray([]))
+        assert result.parse_success is False
+        assert result.error_message == "Failed to parse int8 data []: need 1 bytes, got 0"
 
     def test_uncertainty_boundary_values(self, characteristic: UncertaintyCharacteristic) -> None:
         """Test Uncertainty boundary values."""
         # Minimum
         data_min = bytearray([0x00])
-        result = characteristic.decode_value(data_min)
-        assert result == 0.0
+        result = characteristic.parse_value(data_min)
+        assert result.value == 0.0
 
         # Maximum (255 * 0.1 = 25.5m)
         data_max = bytearray([0xFF])
-        result = characteristic.decode_value(data_max)
-        assert result == 25.5
+        result = characteristic.parse_value(data_max)
+        assert result.value == 25.5
 
     def test_uncertainty_round_trip(self, characteristic: UncertaintyCharacteristic) -> None:
         """Test encode/decode round trip."""
         test_value = 12.3
-        encoded = characteristic.encode_value(test_value)
-        decoded = characteristic.decode_value(encoded)
-        assert decoded == test_value
+        encoded = characteristic.build_value(test_value)
+        decoded = characteristic.parse_value(encoded)
+        assert decoded.value == test_value

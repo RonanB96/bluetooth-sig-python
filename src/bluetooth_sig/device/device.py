@@ -69,7 +69,7 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         self,
         char_data: dict[str, bytes],
         ctx: CharacteristicContext | None = None,
-    ) -> dict[str, CharacteristicData]:
+    ) -> dict[str, CharacteristicData[Any]]:
         """Parse multiple characteristics at once."""
 
     @abstractmethod
@@ -78,7 +78,7 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         uuid: str,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-    ) -> CharacteristicData:
+    ) -> CharacteristicData[Any]:
         """Parse a single characteristic's raw bytes."""
 
     @abstractmethod
@@ -235,7 +235,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             raise RuntimeError("No connection manager attached to Device")
         await self.connection_manager.disconnect()
 
-    def _get_cached_characteristic(self, char_uuid: BluetoothUUID) -> BaseCharacteristic | None:
+    def _get_cached_characteristic(self, char_uuid: BluetoothUUID) -> BaseCharacteristic[Any] | None:
         """Get cached characteristic instance from services.
 
         Single source of truth for characteristics - searches across all services.
@@ -244,8 +244,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Args:
             char_uuid: UUID of the characteristic to find
 
-        Returns:
-            BaseCharacteristic instance if found, None otherwise
+        Returns: BaseCharacteristic[Any] instance if found, None otherwise
 
         """
         char_uuid_str = str(char_uuid)
@@ -254,7 +253,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 return service.characteristics[char_uuid_str]
         return None
 
-    def _cache_characteristic(self, char_uuid: BluetoothUUID, char_instance: BaseCharacteristic) -> None:
+    def _cache_characteristic(self, char_uuid: BluetoothUUID, char_instance: BaseCharacteristic[Any]) -> None:
         """Store characteristic instance in services cache.
 
         Only updates existing characteristic entries - does not create new services.
@@ -262,7 +261,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Args:
             char_uuid: UUID of the characteristic
-            char_instance: BaseCharacteristic instance to cache
+            char_instance: BaseCharacteristic[Any] instance to cache
 
         """
         char_uuid_str = str(char_uuid)
@@ -277,7 +276,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             char_uuid_str,
         )
 
-    def _create_unknown_characteristic(self, dep_uuid: BluetoothUUID) -> BaseCharacteristic:
+    def _create_unknown_characteristic(self, dep_uuid: BluetoothUUID) -> BaseCharacteristic[Any]:
         """Create an unknown characteristic instance for a UUID not in registry.
 
         Args:
@@ -295,8 +294,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self,
         dep_uuid: BluetoothUUID,
         is_required: bool,
-        dep_class: type[BaseCharacteristic],
-    ) -> CharacteristicDataProtocol | None:
+        dep_class: type[BaseCharacteristic[Any]],
+    ) -> CharacteristicDataProtocol[Any] | None:
         """Resolve a single dependency by reading and parsing it.
 
         Args:
@@ -346,7 +345,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     async def _ensure_dependencies_resolved(
         self,
-        char_class: type[BaseCharacteristic],
+        char_class: type[BaseCharacteristic[Any]],
         resolution_mode: DependencyResolutionMode,
     ) -> CharacteristicContext:
         """Ensure all dependencies for a characteristic are resolved.
@@ -867,7 +866,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         # Route to vendor interpreter and return result
         return self._interpret_advertisement(advertisement)
 
-    def get_characteristic_data(self, char_uuid: BluetoothUUID) -> CharacteristicData | None:
+    def get_characteristic_data(self, char_uuid: BluetoothUUID) -> CharacteristicData[Any] | None:
         """Get parsed characteristic data - single source of truth via characteristic.last_parsed.
 
         Searches across all services to find the characteristic by UUID.

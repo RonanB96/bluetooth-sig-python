@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from types import TracebackType
-from typing import cast
+from typing import Any, cast
 
 from ..gatt.characteristics.base import CharacteristicData
 from ..types import CharacteristicContext
@@ -41,7 +41,7 @@ class AsyncParsingSession:
         self.context = ctx
         # CharacteristicData implements CharacteristicDataProtocol structurally
         # Store as concrete type for clarity, compatible with protocol at usage
-        self.results: dict[str, CharacteristicData] = {}
+        self.results: dict[str, CharacteristicData[Any]] = {}
 
     async def __aenter__(self) -> AsyncParsingSession:
         """Enter async context."""
@@ -61,7 +61,7 @@ class AsyncParsingSession:
         self,
         uuid: str | BluetoothUUID,
         data: bytes,
-    ) -> CharacteristicData:
+    ) -> CharacteristicData[Any]:
         """Parse characteristic with accumulated context.
 
         Args:

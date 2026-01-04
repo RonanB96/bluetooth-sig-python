@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import time
+from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
@@ -18,7 +19,7 @@ from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 
 async def robust_device_reading(
     address: str, backend: str = "bleak-retry", retries: int = 3
-) -> dict[str, CharacteristicData]:
+) -> dict[str, CharacteristicData[Any]]:
     """Robust device reading with automatic retry and error recovery.
 
     Args:
@@ -63,7 +64,7 @@ async def robust_device_reading(
     except Exception as e:
         print(f"⚠️ Service discovery failed, trying predefined characteristics: {e}")
 
-    results: dict[str, CharacteristicData] = {}
+    results: dict[str, CharacteristicData[Any]] = {}
     for uuid in target_uuids:
         try:
             parsed = await device.read(uuid)
@@ -81,7 +82,7 @@ async def robust_device_reading(
     return results
 
 
-async def robust_service_discovery(address: str) -> dict[str, CharacteristicData]:
+async def robust_service_discovery(address: str) -> dict[str, CharacteristicData[Any]]:
     """Discover all services and characteristics with robust connection.
 
     Args:

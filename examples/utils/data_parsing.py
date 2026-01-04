@@ -101,7 +101,7 @@ def _display_raw_data(_char_uuid_short: str, raw_bytes: bytes) -> None:
 
 
 def display_parsed_results(
-    results: dict[str, dict[str, Any] | CharacteristicData] | dict[BluetoothUUID, CharacteristicData],
+    results: dict[str, dict[str, Any] | CharacteristicData[Any]] | dict[BluetoothUUID, CharacteristicData[Any]],
     title: str = "Parsed Results",
 ) -> None:
     """Display parsed results when callers already have parsed output.
@@ -114,7 +114,7 @@ def display_parsed_results(
     print("=" * 50)
 
     # Normalize BluetoothUUID keys to short-string form if necessary
-    normalized: dict[str, dict[str, Any] | CharacteristicData] = {}
+    normalized: dict[str, dict[str, Any] | CharacteristicData[Any]] = {}
     for key, value in results.items():
         if isinstance(key, BluetoothUUID):
             key_str = str(key)

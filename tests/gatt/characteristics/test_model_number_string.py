@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import ModelNumberStringCharacteristic
@@ -12,7 +14,7 @@ class TestModelNumberStringCharacteristic(CommonCharacteristicTests):
     characteristic_cls = ModelNumberStringCharacteristic
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return ModelNumberStringCharacteristic()
 
     @pytest.fixture

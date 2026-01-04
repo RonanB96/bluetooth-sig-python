@@ -56,18 +56,18 @@ class TestBatteryLevelCharacteristic(CommonCharacteristicTests):
     def test_battery_level_various_values(self, characteristic: BatteryLevelCharacteristic, battery_level: int) -> None:
         """Test battery level with various valid values."""
         data = bytearray([battery_level])
-        result = characteristic.decode_value(data)
-        assert result == battery_level
+        result = characteristic.parse_value(data)
+        assert result.value == battery_level
 
     def test_battery_level_boundary_values(self, characteristic: BatteryLevelCharacteristic) -> None:
         """Test battery level boundary values (0% and 100%)."""
         # Test 0% battery
-        result = characteristic.decode_value(bytearray([0]))
-        assert result == 0
+        result = characteristic.parse_value(bytearray([0]))
+        assert result.value == 0
 
         # Test 100% battery
-        result = characteristic.decode_value(bytearray([100]))
-        assert result == 100
+        result = characteristic.parse_value(bytearray([100]))
+        assert result.value == 100
 
     def test_battery_level_out_of_range_validation(self, characteristic: BatteryLevelCharacteristic) -> None:
         """Test that values > 100% are rejected."""

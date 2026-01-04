@@ -41,29 +41,29 @@ class TestPM1ConcentrationCharacteristic(CommonCharacteristicTests):
 
         # Test normal parsing
         test_data = bytearray([0x32, 0x00])  # 50 µg/m³ little endian
-        parsed = characteristic.decode_value(test_data)
-        assert parsed == 50
+        parsed = characteristic.parse_value(test_data)
+        assert parsed.value == 50
 
     def test_pm1_concentration_boundary_values(self, characteristic: PM1ConcentrationCharacteristic) -> None:
         """Test PM1 concentration boundary values."""
         # Clean air
         data_min = bytearray([0x00, 0x00])
-        assert characteristic.decode_value(data_min) == 0.0
+        assert characteristic.parse_value(data_min).value == 0.0
 
         # Maximum
         data_max = bytearray([0xFF, 0xFF])
-        assert characteristic.decode_value(data_max) == 65535.0
+        assert characteristic.parse_value(data_max).value == 65535.0
 
     def test_pm1_concentration_air_quality_levels(self, characteristic: PM1ConcentrationCharacteristic) -> None:
         """Test PM1 concentration air quality levels."""
         # Good (10 µg/m³)
         data_good = bytearray([0x0A, 0x00])
-        assert characteristic.decode_value(data_good) == 10.0
+        assert characteristic.parse_value(data_good).value == 10.0
 
         # Moderate (50 µg/m³)
         data_moderate = bytearray([0x32, 0x00])
-        assert characteristic.decode_value(data_moderate) == 50.0
+        assert characteristic.parse_value(data_moderate).value == 50.0
 
         # Unhealthy (150 µg/m³)
         data_unhealthy = bytearray([0x96, 0x00])
-        assert characteristic.decode_value(data_unhealthy) == 150.0
+        assert characteristic.parse_value(data_unhealthy).value == 150.0

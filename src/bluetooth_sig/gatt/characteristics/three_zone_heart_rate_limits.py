@@ -16,7 +16,7 @@ class ThreeZoneHeartRateLimitsData(msgspec.Struct, frozen=True, kw_only=True):
     moderate_hard_limit: int
 
 
-class ThreeZoneHeartRateLimitsCharacteristic(BaseCharacteristic):
+class ThreeZoneHeartRateLimitsCharacteristic(BaseCharacteristic[ThreeZoneHeartRateLimitsData]):
     """Three Zone Heart Rate Limits characteristic (0x2A94).
 
     org.bluetooth.characteristic.three_zone_heart_rate_limits
@@ -26,7 +26,7 @@ class ThreeZoneHeartRateLimitsCharacteristic(BaseCharacteristic):
     (Hard, Moderate, and Light) of a user.
     """
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ThreeZoneHeartRateLimitsData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ThreeZoneHeartRateLimitsData:
         """Decode Three Zone Heart Rate Limits from raw bytes.
 
         Args:
@@ -44,7 +44,7 @@ class ThreeZoneHeartRateLimitsCharacteristic(BaseCharacteristic):
             moderate_hard_limit=moderate_hard_limit,
         )
 
-    def encode_value(self, data: ThreeZoneHeartRateLimitsData) -> bytearray:
+    def _encode_value(self, data: ThreeZoneHeartRateLimitsData) -> bytearray:
         """Encode Three Zone Heart Rate Limits to raw bytes.
 
         Args:

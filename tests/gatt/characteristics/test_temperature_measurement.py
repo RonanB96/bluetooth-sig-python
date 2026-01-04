@@ -175,10 +175,12 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
 
     def test_temperature_measurement_invalid_data(self, characteristic: TemperatureMeasurementCharacteristic) -> None:
         """Test temperature measurement error handling."""
-        # Too short data
-        with pytest.raises(ValueError, match="Temperature Measurement data must be at least 5 bytes"):
-            characteristic.decode_value(bytearray([0x00, 0x01]))
+        # Too short data - parse_value returns parse_success=False
+        result = characteristic.parse_value(bytearray([0x00, 0x01]))
+        assert result.parse_success is False
+        assert "at least 5 bytes" in (result.error_message or "")
 
         # Missing temperature data
-        with pytest.raises(ValueError, match="Temperature Measurement data must be at least 5 bytes"):
-            characteristic.decode_value(bytearray([0x00]))
+        result = characteristic.parse_value(bytearray([0x00]))
+        assert result.parse_success is False
+        assert "at least 5 bytes" in (result.error_message or "")

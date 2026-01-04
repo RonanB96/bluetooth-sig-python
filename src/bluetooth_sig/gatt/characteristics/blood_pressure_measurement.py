@@ -76,7 +76,7 @@ class BloodPressureMeasurementCharacteristic(BaseBloodPressureCharacteristic):
     min_length: int = 7  # Flags(1) + Systolic(2) + Diastolic(2) + MAP(2)
     allow_variable_length: bool = True  # Optional timestamp, pulse rate, user ID, status
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureData:  # pylint: disable=too-many-locals
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureData:  # pylint: disable=too-many-locals
         """Parse blood pressure measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Systolic(2) + Diastolic(2) + MAP(2) + [Timestamp(7)] +
@@ -125,7 +125,7 @@ class BloodPressureMeasurementCharacteristic(BaseBloodPressureCharacteristic):
             flags=flags,
         )
 
-    def encode_value(self, data: BloodPressureData) -> bytearray:
+    def _encode_value(self, data: BloodPressureData) -> bytearray:
         """Encode BloodPressureData back to bytes.
 
         Args:

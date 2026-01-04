@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import msgspec
 
@@ -53,7 +53,7 @@ class DeviceService(msgspec.Struct, kw_only=True):
     The characteristics dictionary stores BaseCharacteristic instances.
     Access parsed data via characteristic.last_parsed property.
 
-    This provides a single source of truth: BaseCharacteristic instances
+    This provides a single source of truth: BaseCharacteristic[Any] instances
     maintain their own last_parsed CharacteristicData.
 
     Example::
@@ -67,11 +67,11 @@ class DeviceService(msgspec.Struct, kw_only=True):
             print(f"Battery: {battery_char.last_parsed.value}%")
 
         # Or decode new data
-        parsed_value = battery_char.decode_value(raw_data)
+        parsed_value = battery_char.parse_value(raw_data)
     """
 
     service: BaseGattService
-    characteristics: dict[str, BaseCharacteristic] = msgspec.field(default_factory=dict)
+    characteristics: dict[str, BaseCharacteristic[Any]] = msgspec.field(default_factory=dict)
 
 
 class DeviceEncryption(msgspec.Struct, kw_only=True):

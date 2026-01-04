@@ -8,6 +8,7 @@ import importlib
 import inspect
 import pkgutil
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -49,7 +50,7 @@ def discover_service_classes() -> list[type[BaseGattService]]:
     return service_classes
 
 
-def discover_characteristic_classes() -> list[type[BaseCharacteristic]]:
+def discover_characteristic_classes() -> list[type[BaseCharacteristic[Any]]]:
     """Dynamically discover all characteristic classes."""
     characteristic_classes = []
     characteristics_module = importlib.import_module("bluetooth_sig.gatt.characteristics")
@@ -83,11 +84,11 @@ class TestCharacteristicRegistryValidation:
     """Test all characteristics against the YAML registry."""
 
     @pytest.fixture(scope="class")
-    def characteristic_classes(self) -> list[type[BaseCharacteristic]]:
+    def characteristic_classes(self) -> list[type[BaseCharacteristic[Any]]]:
         """Get all characteristic classes."""
         return discover_characteristic_classes()
 
-    def test_all_characteristics_discovered(self, characteristic_classes: list[type[BaseCharacteristic]]) -> None:
+    def test_all_characteristics_discovered(self, characteristic_classes: list[type[BaseCharacteristic[Any]]]) -> None:
         """Test that characteristics were discovered."""
         assert len(characteristic_classes) > 0, "No characteristic classes were discovered"
 
@@ -96,7 +97,7 @@ class TestCharacteristicRegistryValidation:
         print(f"Discovered characteristics: {char_names}")
 
     @pytest.mark.parametrize("char_class", discover_characteristic_classes())
-    def test_characteristic_uuid_resolution(self, char_class: type[BaseCharacteristic]) -> None:
+    def test_characteristic_uuid_resolution(self, char_class: type[BaseCharacteristic[Any]]) -> None:
         """Test that each characteristic can resolve its UUID from the
         registry.
         """
@@ -124,7 +125,7 @@ class TestCharacteristicRegistryValidation:
         """Ensure registries are reset after each test."""
 
     @pytest.mark.parametrize("char_class", discover_characteristic_classes())
-    def test_characteristic_in_yaml_registry(self, char_class: type[BaseCharacteristic]) -> None:
+    def test_characteristic_in_yaml_registry(self, char_class: type[BaseCharacteristic[Any]]) -> None:
         """Test that each characteristic exists in the YAML registry with
         correct information.
         """
@@ -161,7 +162,7 @@ class TestCharacteristicRegistryValidation:
             pytest.fail(f"Characteristic {char_class.__name__} registry validation failed: {e}")
 
     @pytest.mark.parametrize("char_class", discover_characteristic_classes())
-    def test_characteristic_properties(self, char_class: type[BaseCharacteristic]) -> None:
+    def test_characteristic_properties(self, char_class: type[BaseCharacteristic[Any]]) -> None:
         """Test that each characteristic has valid properties."""
         try:
             # Use Progressive API Level 1 - SIG characteristics with no parameters
@@ -179,10 +180,10 @@ class TestCharacteristicRegistryValidation:
             )
 
             # Verify decode_value method exists
-            assert hasattr(char, "decode_value"), (
+            assert hasattr(char, "_decode_value"), (
                 f"Characteristic {char_class.__name__} should have decode_value method"
             )
-            assert callable(char.decode_value), f"Characteristic {char_class.__name__} decode_value should be callable"
+            assert callable(char._decode_value), f"Characteristic {char_class.__name__} decode_value should be callable"
 
             # Verify unit property exists
             assert hasattr(char, "unit"), f"Characteristic {char_class.__name__} should have unit property"
@@ -192,7 +193,7 @@ class TestCharacteristicRegistryValidation:
             pytest.fail(f"Characteristic {char_class.__name__} properties validation failed: {e}")
 
     @pytest.mark.parametrize("char_class", discover_characteristic_classes())
-    def test_characteristic_name_resolution(self, char_class: type[BaseCharacteristic]) -> None:
+    def test_characteristic_name_resolution(self, char_class: type[BaseCharacteristic[Any]]) -> None:
         """Test that each characteristic can resolve its name correctly."""
         try:
             char = char_class()
@@ -351,10 +352,10 @@ class TestNameResolutionFallback:
                 value_type=ValueType.FLOAT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
                 return 0.0
 
-            def encode_value(self, data: bytearray) -> bytearray:
+            def _encode_value(self, data: bytearray) -> bytearray:
                 """Test implementation."""
                 return bytearray([0, 0])
 
@@ -438,10 +439,10 @@ class TestNameResolutionFallback:
                 value_type=ValueType.STRING,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
                 return ""
 
-            def encode_value(self, data: bytearray) -> bytearray:
+            def _encode_value(self, data: bytearray) -> bytearray:
                 """Test implementation."""
                 return bytearray()
 
@@ -476,10 +477,10 @@ class TestNameResolutionFallback:
                 value_type=ValueType.STRING,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
                 return ""
 
-            def encode_value(self, data: bytearray) -> bytearray:
+            def _encode_value(self, data: bytearray) -> bytearray:
                 """Test implementation."""
                 return bytearray()
 
@@ -571,7 +572,7 @@ class TestNameResolutionFallback:
             expected_uuid,
             expected_name,
         ) in chars_without_explicit_names:
-            char_instance: BaseCharacteristic = char_class()  # Explicit type to fix mypy inference
+            char_instance: BaseCharacteristic[Any] = char_class()  # Explicit type to fix mypy inference
             # Should NOT have explicit _characteristic_name attribute
             assert not hasattr(char_instance, "_characteristic_name") or char_instance._characteristic_name is None  # type: ignore[protected-access]
             assert char_instance.uuid == expected_uuid

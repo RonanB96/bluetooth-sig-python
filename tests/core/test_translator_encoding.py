@@ -212,7 +212,7 @@ class TestRoundTrip:
         decoded = translator.parse_characteristic("2A19", encoded)
 
         assert decoded.parse_success is True
-        assert decoded.value == original_value
+        assert decoded == original_value
 
     def test_acceleration_round_trip(self) -> None:
         """Test acceleration 3D encode/decode round trip."""

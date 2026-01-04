@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import CSCMeasurementCharacteristic
@@ -16,7 +18,7 @@ from .test_characteristic_common import CharacteristicTestData, CommonCharacteri
 
 class TestCSCMeasurementCharacteristic(CommonCharacteristicTests):
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return CSCMeasurementCharacteristic()
 
     @pytest.fixture

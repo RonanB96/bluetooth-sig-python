@@ -27,7 +27,7 @@ class LoggingTestCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.DICT,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
         """Decode with potential field errors."""
         if len(data) < 3:
             raise ParseFieldException(
@@ -50,7 +50,7 @@ class LoggingTestCharacteristic(CustomBaseCharacteristic):
 
         return {"value": value, "extra": int.from_bytes(data[1:3], byteorder="little")}
 
-    def encode_value(self, data: dict[str, Any]) -> bytearray:
+    def _encode_value(self, data: dict[str, Any]) -> bytearray:
         """Encode test data."""
         result = bytearray([data["value"]])
         result.extend(data["extra"].to_bytes(2, byteorder="little"))
@@ -154,7 +154,7 @@ class TestLoggingFieldErrors:
                 value_type=ValueType.DICT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
                 """Decode with validation that can fail in multiple fields."""
                 # Check field 1
                 if len(data) < 2:
@@ -178,7 +178,7 @@ class TestLoggingFieldErrors:
 
                 return {"field1": data[0], "field2": data[1]}
 
-            def encode_value(self, data: dict[str, Any]) -> bytearray:
+            def _encode_value(self, data: dict[str, Any]) -> bytearray:
                 """Encode multi-field data."""
                 return bytearray([data["field1"], data["field2"]])
 

@@ -28,7 +28,7 @@ class CSCFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disa
     multiple_sensor_locations_supported: bool
 
 
-class CSCFeatureCharacteristic(BaseCharacteristic):
+class CSCFeatureCharacteristic(BaseCharacteristic[CSCFeatureData]):
     """CSC Feature characteristic (0x2A5C).
 
     Used to expose the supported features of a CSC sensor.
@@ -38,7 +38,7 @@ class CSCFeatureCharacteristic(BaseCharacteristic):
 
     expected_length: int = 2
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CSCFeatureData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CSCFeatureData:
         """Parse CSC feature data.
 
         Format: 16-bit feature bitmask (little endian).
@@ -68,7 +68,7 @@ class CSCFeatureCharacteristic(BaseCharacteristic):
             multiple_sensor_locations_supported=bool(feature_mask & CSCFeatures.MULTIPLE_SENSOR_LOCATIONS_SUPPORTED),
         )
 
-    def encode_value(self, data: CSCFeatureData) -> bytearray:
+    def _encode_value(self, data: CSCFeatureData) -> bytearray:
         """Encode CSC feature value back to bytes.
 
         Args:

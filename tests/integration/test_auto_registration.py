@@ -30,7 +30,7 @@ class LocalTemperatureCharacteristic(CustomBaseCharacteristic):
         name="Local Temperature Characteristic",
     )
 
-    def decode_value(self, data: bytearray, ctx: Any = None) -> float:  # noqa: ANN401
+    def _decode_value(self, data: bytearray, ctx: Any = None) -> float:  # noqa: ANN401
         # Expect 2-byte format: int8 (whole degrees) + uint8 decimal (00-99)
         if len(data) != 2:
             # For test, accept single byte too
@@ -39,7 +39,7 @@ class LocalTemperatureCharacteristic(CustomBaseCharacteristic):
         dec = int(data[1])
         return float(whole + dec / 100.0)
 
-    def encode_value(self, data: float) -> bytearray:
+    def _encode_value(self, data: float) -> bytearray:
         whole = int(data)
         dec = int((data - whole) * 100)
         return bytearray([whole & 0xFF, dec & 0xFF])
@@ -133,7 +133,7 @@ class TestAutoRegistration:
                 uuid=BluetoothUUID("12345678-1234-5678-1234-567812345678"),
             )
 
-            def decode_value(self, data: bytearray, ctx: Any = None) -> int:  # noqa: ANN401
+            def _decode_value(self, data: bytearray, ctx: Any = None) -> int:  # noqa: ANN401
                 """Decode single byte as integer."""
                 return int(data[0]) if data else 0
 

@@ -132,7 +132,7 @@ class TestOverheadAnalysis:
         from bluetooth_sig.types.gatt_enums import ValueType
         from bluetooth_sig.types.uuid import BluetoothUUID
 
-        def create_result() -> CharacteristicData:
+        def create_result() -> CharacteristicData[Any]:
             info = CharacteristicInfo(
                 uuid=BluetoothUUID("2A19"),
                 name="Battery Level",

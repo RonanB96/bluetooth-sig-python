@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Utf8StringTemplate
 
 
-class LocationNameCharacteristic(BaseCharacteristic):
+class LocationNameCharacteristic(BaseCharacteristic[str]):
     """Location Name characteristic (0x2AB5).
 
     org.bluetooth.characteristic.location_name

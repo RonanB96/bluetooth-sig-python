@@ -17,7 +17,7 @@ class FourZoneHeartRateLimitsData(msgspec.Struct, frozen=True, kw_only=True):
     hard_maximum_limit: int
 
 
-class FourZoneHeartRateLimitsCharacteristic(BaseCharacteristic):
+class FourZoneHeartRateLimitsCharacteristic(BaseCharacteristic[FourZoneHeartRateLimitsData]):
     """Four Zone Heart Rate Limits characteristic (0x2B4C).
 
     org.bluetooth.characteristic.four_zone_heart_rate_limits
@@ -27,7 +27,7 @@ class FourZoneHeartRateLimitsCharacteristic(BaseCharacteristic):
     (Maximum, Hard, Moderate, and Light) of a user.
     """
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> FourZoneHeartRateLimitsData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> FourZoneHeartRateLimitsData:
         """Decode Four Zone Heart Rate Limits from raw bytes.
 
         Args:
@@ -47,7 +47,7 @@ class FourZoneHeartRateLimitsCharacteristic(BaseCharacteristic):
             hard_maximum_limit=hard_maximum_limit,
         )
 
-    def encode_value(self, data: FourZoneHeartRateLimitsData) -> bytearray:
+    def _encode_value(self, data: FourZoneHeartRateLimitsData) -> bytearray:
         """Encode Four Zone Heart Rate Limits to raw bytes.
 
         Args:

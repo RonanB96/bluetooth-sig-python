@@ -53,52 +53,53 @@ class TestPowerSpecificationCharacteristic(CommonCharacteristicTests):
     def test_power_specification_special_values(self, characteristic: PowerSpecificationCharacteristic) -> None:
         """Test special values for power specification."""
         # Test "value is not valid" (0xFFFFFE) for all fields
-        result = characteristic.decode_value(bytearray([0xFE, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF]))
+        result = characteristic.parse_value(bytearray([0xFE, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF]))
         expected = PowerSpecificationData(minimum=None, typical=None, maximum=None)
-        assert result == expected
+        assert result.value == expected
 
         # Test "value is not known" (0xFFFFFF) for all fields
-        result = characteristic.decode_value(bytearray([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]))
+        result = characteristic.parse_value(bytearray([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]))
         expected = PowerSpecificationData(minimum=None, typical=None, maximum=None)
-        assert result == expected
+        assert result.value == expected
 
         # Test mixed valid and special values
-        result = characteristic.decode_value(
+        result = characteristic.parse_value(
             bytearray([0x0A, 0x00, 0x00, 0xFE, 0xFF, 0xFF, 0x14, 0x00, 0x00])  # 1.0 W, invalid, 2.0 W
         )
         expected = PowerSpecificationData(minimum=1.0, typical=None, maximum=2.0)
-        assert result == expected
+        assert result.value == expected
 
     def test_power_specification_encoding(self, characteristic: PowerSpecificationCharacteristic) -> None:
         """Test encoding power specification values."""
         # Test encoding normal values
         data = PowerSpecificationData(minimum=1.0, typical=2.0, maximum=3.0)
-        encoded = characteristic.encode_value(data)
+        encoded = characteristic.build_value(data)
         assert encoded == bytearray([0x0A, 0x00, 0x00, 0x14, 0x00, 0x00, 0x1E, 0x00, 0x00])
 
         # Test encoding with None values (should encode as unknown)
         data = PowerSpecificationData(minimum=1.0, typical=None, maximum=2.0)
-        encoded = characteristic.encode_value(data)
+        encoded = characteristic.build_value(data)
         assert encoded == bytearray([0x0A, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x14, 0x00, 0x00])
 
         # Test encoding zero values
         data = PowerSpecificationData(minimum=0.0, typical=0.0, maximum=0.0)
-        encoded = characteristic.encode_value(data)
+        encoded = characteristic.build_value(data)
         assert encoded == bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
 
     def test_power_specification_precision(self, characteristic: PowerSpecificationCharacteristic) -> None:
         """Test power specification precision and rounding."""
         # Test precision (0.1 W resolution)
         data = PowerSpecificationData(minimum=1.05, typical=2.15, maximum=3.25)
-        encoded = characteristic.encode_value(data)
+        encoded = characteristic.build_value(data)
         # Python uses banker's rounding: 10.5→10, 21.499...→21, 32.5→32
         assert encoded == bytearray([0x0A, 0x00, 0x00, 0x15, 0x00, 0x00, 0x20, 0x00, 0x00])
 
         # Decode back to verify
-        decoded = characteristic.decode_value(encoded)
-        assert decoded.minimum == 1.0
-        assert decoded.typical == 2.1
-        assert decoded.maximum == 3.2
+        decoded = characteristic.parse_value(encoded)
+        assert decoded.value is not None
+        assert decoded.value.minimum == 1.0
+        assert decoded.value.typical == 2.1
+        assert decoded.value.maximum == 3.2
 
     def test_power_specification_data_class(self) -> None:
         """Test PowerSpecificationData class methods."""

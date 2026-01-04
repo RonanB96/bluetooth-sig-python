@@ -71,7 +71,7 @@ class GlucoseFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: 
     feature_count: int
 
 
-class GlucoseFeatureCharacteristic(BaseCharacteristic):
+class GlucoseFeatureCharacteristic(BaseCharacteristic[GlucoseFeatureData]):
     """Glucose Feature characteristic (0x2A51).
 
     Used to expose the supported features of a glucose monitoring
@@ -87,7 +87,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
     max_length: int = 2  # Features(2) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(  # pylint: disable=too-many-locals
+    def _decode_value(  # pylint: disable=too-many-locals
         self, data: bytearray, ctx: CharacteristicContext | None = None
     ) -> GlucoseFeatureData:
         """Parse glucose feature data according to Bluetooth specification.
@@ -141,7 +141,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic):
             feature_count=len(enabled_features),
         )
 
-    def encode_value(self, data: GlucoseFeatureData) -> bytearray:
+    def _encode_value(self, data: GlucoseFeatureData) -> bytearray:
         """Encode GlucoseFeatureData back to bytes.
 
         Args:

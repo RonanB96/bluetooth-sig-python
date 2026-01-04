@@ -51,7 +51,7 @@ class CyclingPowerMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  #
             raise ValueError("Instantaneous power must be a uint16 value (0-UINT16_MAX)")
 
 
-class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
+class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasurementData]):
     """Cycling Power Measurement characteristic (0x2A63).
 
     Used to transmit cycling power measurement data including
@@ -74,7 +74,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
     min_length: int = 4  # Flags(2) + Instantaneous Power(2)
     allow_variable_length: bool = True  # Many optional fields based on flags
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerMeasurementData:  # pylint: disable=too-many-locals # Complex parsing with many optional fields
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerMeasurementData:  # pylint: disable=too-many-locals # Complex parsing with many optional fields
         """Parse cycling power measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +
@@ -180,7 +180,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             last_crank_event_time=last_crank_event_time,
         )
 
-    def encode_value(self, data: CyclingPowerMeasurementData) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements # Complex cycling power measurement with numerous optional fields
+    def _encode_value(self, data: CyclingPowerMeasurementData) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements # Complex cycling power measurement with numerous optional fields
         """Encode cycling power measurement value back to bytes.
 
         Args:

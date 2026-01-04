@@ -139,7 +139,7 @@ class ServiceCharacteristicInfo(CharacteristicInfo):
     is_required: bool = False
     is_conditional: bool = False
     condition_description: str = ""
-    char_class: type[BaseCharacteristic] | None = None
+    char_class: type[BaseCharacteristic[Any]] | None = None
 
 
 class ServiceCompletenessReport(msgspec.Struct, kw_only=True):  # pylint: disable=too-many-instance-attributes
@@ -191,7 +191,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         # Store provided info or None (will be resolved in __post_init__)
         self._provided_info = info
 
-        self.characteristics: dict[BluetoothUUID, BaseCharacteristic] = {}
+        self.characteristics: dict[BluetoothUUID, BaseCharacteristic[Any]] = {}
 
         # Set validation attributes from ServiceValidationConfig
         if validation:
@@ -585,7 +585,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
                     char_class = _char_spec.char_class  # New format
                 else:
                     char_class = cast(
-                        type[BaseCharacteristic], _char_spec
+                        type[BaseCharacteristic[Any]], _char_spec
                     )  # Legacy format: value is the class directly
 
                 missing[char_name] = ServiceCharacteristicInfo(
@@ -678,7 +678,9 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             if hasattr(char_spec, "char_class"):
                 char_class = char_spec.char_class  # New format
             else:
-                char_class = cast(type[BaseCharacteristic], char_spec)  # Legacy format: value is the class directly
+                char_class = cast(
+                    type[BaseCharacteristic[Any]], char_spec
+                )  # Legacy format: value is the class directly
 
         status = self._get_characteristic_status(char_info)
 

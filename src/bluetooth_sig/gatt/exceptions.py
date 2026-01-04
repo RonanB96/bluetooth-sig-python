@@ -77,7 +77,7 @@ class ParseFieldError(DataParsingError):
 
     """
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    # pylint: disable=too-many-arguments
     # NOTE: More arguments than standard limit required for complete field-level diagnostics
     def __init__(
         self,

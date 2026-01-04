@@ -7,7 +7,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint24Template
 
 
-class PollenConcentrationCharacteristic(BaseCharacteristic):
+class PollenConcentrationCharacteristic(BaseCharacteristic[float]):
     """Pollen concentration measurement characteristic (0x2A75).
 
     Uses uint24 (3 bytes) format as per SIG specification.

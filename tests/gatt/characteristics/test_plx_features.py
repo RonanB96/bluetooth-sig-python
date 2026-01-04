@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import PLXFeatureFlags, PLXFeaturesCharacteristic
@@ -16,7 +18,7 @@ class TestPLXFeaturesCharacteristic(CommonCharacteristicTests):
     characteristic_cls = PLXFeaturesCharacteristic
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return PLXFeaturesCharacteristic()
 
     @pytest.fixture
@@ -95,23 +97,22 @@ class TestPLXFeaturesCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_invalid_length(self, characteristic: BaseCharacteristic) -> None:
-        """Test that invalid data length raises InsufficientDataError."""
-        from bluetooth_sig.gatt.exceptions import InsufficientDataError
+    def test_invalid_length(self, characteristic: BaseCharacteristic[Any]) -> None:
+        """Test that invalid data length results in parse failure."""
+        # parse_value returns parse_success=False for insufficient data
+        result = characteristic.parse_value(bytearray([]))
+        assert result.parse_success is False
 
-        with pytest.raises(InsufficientDataError):
-            characteristic.decode_value(bytearray([]))
+        result = characteristic.parse_value(bytearray([0x00]))
+        assert result.parse_success is False
 
-        with pytest.raises(InsufficientDataError):
-            characteristic.decode_value(bytearray([0x00]))
-
-    def test_encode_value(self, characteristic: BaseCharacteristic) -> None:
+    def test_encode_value(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test encoding PLX features to bytes."""
-        assert characteristic.encode_value(PLXFeatureFlags(0x0000)) == bytearray([0x00, 0x00])
-        assert characteristic.encode_value(PLXFeatureFlags.MEASUREMENT_STATUS_SUPPORT) == bytearray([0x01, 0x00])
-        assert characteristic.encode_value(
+        assert characteristic.build_value(PLXFeatureFlags(0x0000)) == bytearray([0x00, 0x00])
+        assert characteristic.build_value(PLXFeatureFlags.MEASUREMENT_STATUS_SUPPORT) == bytearray([0x01, 0x00])
+        assert characteristic.build_value(
             PLXFeatureFlags.MEASUREMENT_STATUS_SUPPORT
             | PLXFeatureFlags.DEVICE_AND_SENSOR_STATUS_SUPPORT
             | PLXFeatureFlags.MEASUREMENT_STORAGE_SUPPORT
         ) == bytearray([0x07, 0x00])
-        assert characteristic.encode_value(PLXFeatureFlags(0xFFFF)) == bytearray([0xFF, 0xFF])
+        assert characteristic.build_value(PLXFeatureFlags(0xFFFF)) == bytearray([0xFF, 0xFF])

@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Float32Template
 
 
-class CoefficientCharacteristic(BaseCharacteristic):
+class CoefficientCharacteristic(BaseCharacteristic[float]):
     """Coefficient characteristic (0x2AFA).
 
     org.bluetooth.characteristic.coefficient

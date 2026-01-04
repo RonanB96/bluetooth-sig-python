@@ -18,7 +18,7 @@ class FiveZoneHeartRateLimitsData(msgspec.Struct, frozen=True, kw_only=True):
     hard_maximum_limit: int
 
 
-class FiveZoneHeartRateLimitsCharacteristic(BaseCharacteristic):
+class FiveZoneHeartRateLimitsCharacteristic(BaseCharacteristic[FiveZoneHeartRateLimitsData]):
     """Five Zone Heart Rate Limits characteristic (0x2A8B).
 
     org.bluetooth.characteristic.five_zone_heart_rate_limits
@@ -28,7 +28,7 @@ class FiveZoneHeartRateLimitsCharacteristic(BaseCharacteristic):
     (Maximum, Hard, Moderate, Light, and Very Light) of a user.
     """
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> FiveZoneHeartRateLimitsData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> FiveZoneHeartRateLimitsData:
         """Decode Five Zone Heart Rate Limits from raw bytes.
 
         Args:
@@ -50,7 +50,7 @@ class FiveZoneHeartRateLimitsCharacteristic(BaseCharacteristic):
             hard_maximum_limit=hard_maximum_limit,
         )
 
-    def encode_value(self, data: FiveZoneHeartRateLimitsData) -> bytearray:
+    def _encode_value(self, data: FiveZoneHeartRateLimitsData) -> bytearray:
         """Encode Five Zone Heart Rate Limits to raw bytes.
 
         Args:

@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class WaistCircumferenceCharacteristic(BaseCharacteristic):
+class WaistCircumferenceCharacteristic(BaseCharacteristic[float]):
     """Waist Circumference characteristic (0x2A97).
 
     org.bluetooth.characteristic.waist_circumference

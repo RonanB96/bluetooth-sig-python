@@ -11,6 +11,7 @@ Usage:
 """
 
 import asyncio
+from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.gatt.characteristics.base import CharacteristicData
@@ -122,7 +123,7 @@ async def concurrent_parsing_example() -> None:
     print("Concurrent Parsing Example")
     print("=" * 50)
 
-    async def parse_battery(device_id: int, level: int) -> tuple[int, CharacteristicData]:
+    async def parse_battery(device_id: int, level: int) -> tuple[int, CharacteristicData[Any]]:
         """Simulate parsing battery from a device."""
         await asyncio.sleep(0.1)  # Simulate network delay
         data = bytes([level])

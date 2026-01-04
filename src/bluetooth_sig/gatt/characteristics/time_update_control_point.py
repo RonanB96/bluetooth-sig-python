@@ -17,7 +17,7 @@ class TimeUpdateControlPointCommand(IntEnum):
     CANCEL_REFERENCE_UPDATE = 0x02
 
 
-class TimeUpdateControlPointCharacteristic(BaseCharacteristic):
+class TimeUpdateControlPointCharacteristic(BaseCharacteristic[TimeUpdateControlPointCommand]):
     """Time Update Control Point characteristic.
 
     Allows a client to request or cancel reference time updates.
@@ -32,18 +32,18 @@ class TimeUpdateControlPointCharacteristic(BaseCharacteristic):
         super().__init__()
         self._template = Uint8Template()
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TimeUpdateControlPointCommand:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TimeUpdateControlPointCommand:
         """Decode the raw data to TimeUpdateControlPointCommand."""
         if self._template is None:
             raise RuntimeError("Template not initialized")
-        value = self._template.decode_value(data)
+        value = self._template._decode_value(data)  # pylint: disable=protected-access
         try:
             return TimeUpdateControlPointCommand(value)
         except ValueError as e:
             raise ValueError(f"Invalid Time Update Control Point command: {value}") from e
 
-    def encode_value(self, data: TimeUpdateControlPointCommand) -> bytearray:
+    def _encode_value(self, data: TimeUpdateControlPointCommand) -> bytearray:
         """Encode TimeUpdateControlPointCommand to bytes."""
         if self._template is None:
             raise RuntimeError("Template not initialized")
-        return self._template.encode_value(int(data))
+        return self._template._encode_value(int(data))  # pylint: disable=protected-access

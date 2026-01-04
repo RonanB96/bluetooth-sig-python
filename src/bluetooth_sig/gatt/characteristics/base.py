@@ -77,7 +77,7 @@ import os
 import re
 from abc import ABC, ABCMeta
 from functools import cached_property, lru_cache
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 import msgspec
 
@@ -113,9 +113,14 @@ from ..uuid_registry import uuid_registry
 from .templates import CodingTemplate
 from .utils.extractors import get_extractor
 
+# Type variable for generic characteristic return types
+T = TypeVar("T")
 
-class CharacteristicData(msgspec.Struct, kw_only=True):
+
+class CharacteristicData(msgspec.Struct, Generic[T], kw_only=True):
     """Parse result container with back-reference to characteristic.
+
+    Generic over T, the type of the parsed value.
 
     Field descriptions:
         characteristic: The BaseCharacteristic instance that parsed this data
@@ -129,8 +134,8 @@ class CharacteristicData(msgspec.Struct, kw_only=True):
         validation: Structured validation results with errors and warnings
     """
 
-    characteristic: BaseCharacteristic
-    value: Any | None = None
+    characteristic: BaseCharacteristic[Any]
+    value: T | None = None
     raw_data: bytes = b""
     raw_int: int | None = None
     special_value: SpecialValueResult | None = None
@@ -193,7 +198,7 @@ class SIGCharacteristicResolver:
     camel_case_to_display_name = staticmethod(NameNormalizer.camel_case_to_display_name)
 
     @staticmethod
-    def resolve_for_class(char_class: type[BaseCharacteristic]) -> CharacteristicInfo:
+    def resolve_for_class(char_class: type[BaseCharacteristic[Any]]) -> CharacteristicInfo:
         """Resolve CharacteristicInfo for a SIG characteristic class.
 
         Args:
@@ -220,7 +225,7 @@ class SIGCharacteristicResolver:
         raise UUIDResolutionError(char_class.__name__, [char_class.__name__])
 
     @staticmethod
-    def resolve_yaml_spec_for_class(char_class: type[BaseCharacteristic]) -> CharacteristicSpec | None:
+    def resolve_yaml_spec_for_class(char_class: type[BaseCharacteristic[Any]]) -> CharacteristicSpec | None:
         """Resolve YAML spec for a characteristic class using shared name variant logic."""
         # Get explicit name if set
         characteristic_name = getattr(char_class, "_characteristic_name", None)
@@ -238,7 +243,7 @@ class SIGCharacteristicResolver:
 
     @staticmethod
     def _create_info_from_yaml(
-        yaml_spec: CharacteristicSpec, char_class: type[BaseCharacteristic]
+        yaml_spec: CharacteristicSpec, char_class: type[BaseCharacteristic[Any]]
     ) -> CharacteristicInfo:
         """Create CharacteristicInfo from YAML spec, resolving metadata via registry classes."""
         value_type = DataType.from_string(yaml_spec.data_type).to_value_type()
@@ -264,7 +269,7 @@ class SIGCharacteristicResolver:
         )
 
     @staticmethod
-    def resolve_from_registry(char_class: type[BaseCharacteristic]) -> CharacteristicInfo | None:
+    def resolve_from_registry(char_class: type[BaseCharacteristic[Any]]) -> CharacteristicInfo | None:
         """Fallback to registry resolution using shared search strategy."""
         # Use shared registry search strategy
         search_strategy = CharacteristicRegistrySearch()
@@ -307,8 +312,10 @@ class CharacteristicMeta(ABCMeta):
         return new_class
 
 
-class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Base class for all GATT characteristics.
+
+    Generic over T, the return type of _decode_value().
 
     Automatically resolves UUID, unit, and value_type from Bluetooth SIG YAML specifications.
     Supports manual overrides via _manual_unit and _manual_value_type attributes.
@@ -336,13 +343,13 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             max_value = 65535  # UINT16_MAX
             expected_type = int
 
-            def decode_value(self, data: bytearray) -> int:
+            def _decode_value(self, data: bytearray) -> int:
                 # Just parse - validation happens automatically in parse_value
                 return DataParser.parse_int16(data, 0, signed=False)
 
         # Before: BatteryLevelCharacteristic with hardcoded validation
         # class BatteryLevelCharacteristic(BaseCharacteristic):
-        #     def decode_value(self, data: bytearray) -> int:
+        #     def _decode_value(self, data: bytearray) -> int:
         #         if not data:
         #             raise ValueError("Battery level data must be at least 1 byte")
         #         level = data[0]
@@ -357,7 +364,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         #     max_value = 100  # PERCENTAGE_MAX
         #     expected_type = int
         #
-        #     def decode_value(self, data: bytearray) -> int:
+        #     def _decode_value(self, data: bytearray) -> int:
         #         return data[0]  # Validation happens automatically
     """
 
@@ -389,8 +396,8 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     _allows_sig_override = False
 
     # Multi-characteristic parsing support (Progressive API Level 5)
-    _required_dependencies: list[type[BaseCharacteristic]] = []  # Dependencies that MUST be present
-    _optional_dependencies: list[type[BaseCharacteristic]] = []  # Dependencies that enrich parsing when available
+    _required_dependencies: list[type[BaseCharacteristic[Any]]] = []  # Dependencies that MUST be present
+    _optional_dependencies: list[type[BaseCharacteristic[Any]]] = []  # Dependencies that enrich parsing when available
 
     # Parse trace control (for performance tuning)
     # Can be configured via BLUETOOTH_SIG_ENABLE_PARSE_TRACE environment variable
@@ -463,7 +470,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         self._descriptors: dict[str, BaseDescriptor] = {}
 
         # Last parsed result
-        self.last_parsed: CharacteristicData | None = None
+        self.last_parsed: CharacteristicData[Any] | None = None
 
         # Call post-init to resolve characteristic info
         self.__post_init__()
@@ -693,7 +700,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         return res.value_type if res is not None else None
 
     @classmethod
-    def _normalize_dependency_class(cls, dep_class: type[BaseCharacteristic]) -> str | None:
+    def _normalize_dependency_class(cls, dep_class: type[BaseCharacteristic[Any]]) -> str | None:
         """Resolve a dependency class to its canonical UUID string.
 
         Args:
@@ -722,7 +729,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
     def _resolve_dependencies(self, attr_name: str) -> list[str]:
         """Resolve dependency class references to canonical UUID strings."""
-        dependency_classes: list[type[BaseCharacteristic]] = []
+        dependency_classes: list[type[BaseCharacteristic[Any]]] = []
 
         declared = getattr(self.__class__, attr_name, []) or []
         dependency_classes.extend(declared)
@@ -845,8 +852,10 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         except ValueError:
             return False
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> Any:  # noqa: ANN401  # Context and return types vary by characteristic
-        """Parse the characteristic's raw value.
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> T:  # noqa: ANN401  # Context and return types vary by characteristic
+        """Internal parse the characteristic's raw value with no validation.
+
+        This is expected to be called from parse_value() which handles validation.
 
         If _template is set, uses the template's decode_value method.
         Otherwise, subclasses must override this method.
@@ -863,7 +872,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         """
         if self._template is not None:
-            return self._template.decode_value(data, offset=0, ctx=ctx)
+            return self._template._decode_value(data, offset=0, ctx=ctx)  # pylint: disable=protected-access
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
     def _is_validation_enabled(self) -> bool:
@@ -1079,7 +1088,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def _get_dependency_from_context(
         self,
         ctx: CharacteristicContext,
-        dep_class: type[BaseCharacteristic],
+        dep_class: type[BaseCharacteristic[Any]],
     ) -> CharacteristicDataProtocol | None:
         """Get dependency from context using type-safe class reference.
 
@@ -1117,7 +1126,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
     def get_context_characteristic(
         self,
         ctx: CharacteristicContext | None,
-        characteristic_name: CharacteristicName | str | type[BaseCharacteristic],
+        characteristic_name: CharacteristicName | str | type[BaseCharacteristic[Any]],
     ) -> CharacteristicDataProtocol | None:
         """Find a characteristic in a context by name or class.
 
@@ -1244,7 +1253,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
         if not isinstance(parsed_value, SpecialValueResult):
             if enable_trace:
                 parse_trace.append("Decoding value")
-            parsed_value = self.decode_value(data_bytes, ctx)
+            parsed_value = self._decode_value(data_bytes, ctx)
 
         if enable_trace:
             parse_trace.append("Validating range")
@@ -1263,7 +1272,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         return parsed_value
 
-    def parse_value(self, data: bytes | bytearray, ctx: CharacteristicContext | None = None) -> CharacteristicData:
+    def parse_value(self, data: bytes | bytearray, ctx: CharacteristicContext | None = None) -> CharacteristicData[T]:
         """Parse raw characteristic data into structured value with validation.
 
         Uses the pipeline: bytes → [Extractor] → raw_int → [Special Check] → [Translator] → typed_value
@@ -1337,8 +1346,10 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             self.last_parsed = result
             return result
 
-    def encode_value(self, data: Any) -> bytearray:  # noqa: ANN401
-        """Encode the characteristic's value to raw bytes.
+    def _encode_value(self, data: Any) -> bytearray:  # noqa: ANN401
+        """Internal encode the characteristic's value to raw bytes with no validation.
+
+        This is expected to called from build_value() after validation.
 
         If _template is set, uses the template's encode_value method.
         Otherwise, subclasses must override this method.
@@ -1358,7 +1369,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
 
         """
         if self._template is not None:
-            return self._template.encode_value(data)
+            return self._template._encode_value(data)  # pylint: disable=protected-access
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override encode_value()")
 
     def build_value(self, data: Any) -> bytearray:  # noqa: ANN401
@@ -1407,7 +1418,7 @@ class BaseCharacteristic(ABC, metaclass=CharacteristicMeta):  # pylint: disable=
             if enable_trace:
                 build_trace.append("Encoding value")
             # Encode the validated value
-            encoded = self.encode_value(data)
+            encoded = self._encode_value(data)
 
             if enable_trace:
                 build_trace.append(f"Validating encoded length (got {len(encoded)} bytes)")

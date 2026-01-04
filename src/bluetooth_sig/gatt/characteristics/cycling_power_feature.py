@@ -30,7 +30,7 @@ class CyclingPowerFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pyl
     crank_revolution_data_supported: bool
 
 
-class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
+class CyclingPowerFeatureCharacteristic(BaseCharacteristic[CyclingPowerFeatureData]):
     """Cycling Power Feature characteristic (0x2A65).
 
     Used to expose the supported features of a cycling power sensor.
@@ -40,7 +40,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
 
     expected_length: int = 4
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerFeatureData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerFeatureData:
         """Parse cycling power feature data.
 
         Format: 32-bit feature bitmask (little endian).
@@ -71,7 +71,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic):
             crank_revolution_data_supported=bool(feature_mask & CyclingPowerFeatures.CRANK_REVOLUTION_DATA_SUPPORTED),
         )
 
-    def encode_value(self, data: CyclingPowerFeatureData) -> bytearray:
+    def _encode_value(self, data: CyclingPowerFeatureData) -> bytearray:
         """Encode cycling power feature value back to bytes.
 
         Args:

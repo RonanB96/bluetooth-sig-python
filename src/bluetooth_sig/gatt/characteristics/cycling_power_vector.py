@@ -46,7 +46,7 @@ class CyclingPowerVectorData(msgspec.Struct, frozen=True, kw_only=True):  # pyli
             raise ValueError("First crank measurement angle must be 0-360 degrees")
 
 
-class CyclingPowerVectorCharacteristic(BaseCharacteristic):
+class CyclingPowerVectorCharacteristic(BaseCharacteristic[CyclingPowerVectorData]):
     """Cycling Power Vector characteristic (0x2A64).
 
     Used to transmit detailed cycling power vector data including force
@@ -59,7 +59,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
 
     _manual_unit: str = "various"  # Multiple units in vector data
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerVectorData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerVectorData:
         """Parse cycling power vector data according to Bluetooth specification.
 
         Format: Flags(1) + Crank Revolution Data(2) + Last Crank Event Time(2) +
@@ -135,7 +135,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic):
             instantaneous_torque_magnitude_array=tuple(torque_magnitudes_list) if torque_magnitudes_list else None,
         )
 
-    def encode_value(self, data: CyclingPowerVectorData) -> bytearray:  # pylint: disable=too-many-branches # Complex cycling power vector with optional fields
+    def _encode_value(self, data: CyclingPowerVectorData) -> bytearray:  # pylint: disable=too-many-branches # Complex cycling power vector with optional fields
         """Encode cycling power vector value back to bytes.
 
         Args:

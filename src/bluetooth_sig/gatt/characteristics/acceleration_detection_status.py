@@ -15,7 +15,7 @@ class AccelerationDetectionStatus(IntEnum):
     CHANGE_DETECTED = 1
 
 
-class AccelerationDetectionStatusCharacteristic(BaseCharacteristic):
+class AccelerationDetectionStatusCharacteristic(BaseCharacteristic[int]):
     """Acceleration Detection Status characteristic (0x2C0B).
 
     org.bluetooth.characteristic.acceleration_detection_status

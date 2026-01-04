@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import PLXFeatureFlags, PulseOximetryMeasurementCharacteristic
@@ -11,7 +13,7 @@ from .test_characteristic_common import CharacteristicTestData, CommonCharacteri
 
 class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return PulseOximetryMeasurementCharacteristic()
 
     @pytest.fixture
@@ -43,17 +45,19 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_pulse_oximetry_without_context_backward_compatibility(self, characteristic: BaseCharacteristic) -> None:
+    def test_pulse_oximetry_without_context_backward_compatibility(
+        self, characteristic: BaseCharacteristic[Any]
+    ) -> None:
         """Test that parsing works without context (backward compatibility)."""
         plx_data = bytearray([0x00, 0x62, 0x80, 0x48, 0x80])  # SpO2=98%, pulse=72 bpm
-        result = characteristic.decode_value(plx_data, ctx=None)
+        result = characteristic.parse_value(plx_data, ctx=None)
 
-        assert isinstance(result, PulseOximetryData)
-        assert result.spo2 == 98.0
-        assert result.pulse_rate == 72.0
-        assert result.supported_features is None  # No context available
+        assert isinstance(result.value, PulseOximetryData)
+        assert result.value.spo2 == 98.0
+        assert result.value.pulse_rate == 72.0
+        assert result.value.supported_features is None  # No context available
 
-    def test_pulse_oximetry_with_plx_features_context(self, characteristic: BaseCharacteristic) -> None:
+    def test_pulse_oximetry_with_plx_features_context(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test pulse oximetry parsing with PLX features from context."""
         from typing import cast
 
@@ -87,16 +91,17 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
 
         # Parse with context
         plx_data = bytearray([0x00, 0x62, 0x80, 0x48, 0x80])  # SpO2=98%, pulse=72 bpm
-        result = characteristic.decode_value(plx_data, ctx)
+        result = characteristic.parse_value(plx_data, ctx)
 
-        assert result.spo2 == 98.0
-        assert result.pulse_rate == 72.0
+        assert result.value is not None
+        assert result.value.spo2 == 98.0
+        assert result.value.pulse_rate == 72.0
         assert (
-            result.supported_features
+            result.value.supported_features
             == PLXFeatureFlags.MEASUREMENT_STATUS_SUPPORT | PLXFeatureFlags.DEVICE_AND_SENSOR_STATUS_SUPPORT
         )
 
-    def test_pulse_oximetry_with_various_plx_features(self, characteristic: BaseCharacteristic) -> None:
+    def test_pulse_oximetry_with_various_plx_features(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test pulse oximetry with various PLX feature flags."""
         from typing import cast
 
@@ -139,13 +144,14 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
             )
 
             plx_data = bytearray([0x00, 0x5F, 0x80, 0x4C, 0x80])  # SpO2=95%, pulse=76 bpm
-            result = characteristic.decode_value(plx_data, ctx)
+            result = characteristic.parse_value(plx_data, ctx)
 
-            assert result.spo2 == 95.0
-            assert result.pulse_rate == 76.0
-            assert result.supported_features == feature_value
+            assert result.value is not None
+            assert result.value.spo2 == 95.0
+            assert result.value.pulse_rate == 76.0
+            assert result.value.supported_features == feature_value
 
-    def test_pulse_oximetry_context_with_missing_plx_features(self, characteristic: BaseCharacteristic) -> None:
+    def test_pulse_oximetry_context_with_missing_plx_features(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that pulse oximetry works when context exists but PLX features don't."""
         from bluetooth_sig.gatt.context import CharacteristicContext
 
@@ -153,8 +159,9 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         ctx = CharacteristicContext(other_characteristics={})
 
         plx_data = bytearray([0x00, 0x62, 0x80, 0x48, 0x80])  # SpO2=98%, pulse=72 bpm
-        result = characteristic.decode_value(plx_data, ctx)
+        result = characteristic.parse_value(plx_data, ctx)
 
-        assert result.spo2 == 98.0
-        assert result.pulse_rate == 72.0
-        assert result.supported_features is None  # Graceful handling of missing context data
+        assert result.value is not None
+        assert result.value.spo2 == 98.0
+        assert result.value.pulse_rate == 72.0
+        assert result.value.supported_features is None  # Graceful handling of missing context data
