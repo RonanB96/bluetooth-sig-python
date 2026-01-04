@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import IlluminanceCharacteristic
@@ -12,7 +14,7 @@ class TestIlluminanceCharacteristic(CommonCharacteristicTests):
     characteristic_cls = IlluminanceCharacteristic
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return IlluminanceCharacteristic()
 
     @pytest.fixture

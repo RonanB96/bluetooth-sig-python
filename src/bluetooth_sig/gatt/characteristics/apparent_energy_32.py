@@ -15,7 +15,7 @@ class ApparentEnergy32Values:  # pylint: disable=too-few-public-methods
     VALUE_UNKNOWN = 0xFFFFFFFF  # Indicates value is not known
 
 
-class ApparentEnergy32Characteristic(BaseCharacteristic):
+class ApparentEnergy32Characteristic(BaseCharacteristic[float | None]):
     """Apparent Energy 32 characteristic (0x2B89).
 
     org.bluetooth.characteristic.apparent_energy_32
@@ -27,7 +27,7 @@ class ApparentEnergy32Characteristic(BaseCharacteristic):
         "kVAh"  # YAML: electrical_apparent_energy.kilovolt_ampere_hour, units.yaml: energy.kilovolt_ampere_hour
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode apparent energy 32 characteristic.
 
         Decodes a 32-bit unsigned integer representing apparent energy in 0.001 kVAh increments
@@ -48,7 +48,7 @@ class ApparentEnergy32Characteristic(BaseCharacteristic):
             return None
         return raw_value * 0.001
 
-    def encode_value(self, data: float) -> bytearray:
+    def _encode_value(self, data: float) -> bytearray:
         """Encode apparent energy value."""
         raw_value = int(data / 0.001)
         return DataParser.encode_int32(raw_value, signed=False)

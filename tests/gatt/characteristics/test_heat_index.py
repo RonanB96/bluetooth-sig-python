@@ -44,36 +44,36 @@ class TestHeatIndexCharacteristic(CommonCharacteristicTests):
         """Test heat index characteristic parsing."""
         # Test normal temperature
         data = bytearray([35])  # 35°C
-        assert characteristic.decode_value(data) == 35.0
+        assert characteristic.parse_value(data).value == 35.0
 
         # Test max uint8
         data = bytearray([UINT8_MAX])  # UINT8_MAX°C
-        assert characteristic.decode_value(data) == UINT8_MAX
+        assert characteristic.parse_value(data).value == UINT8_MAX
 
     def test_heat_index_boundary_values(self, characteristic: HeatIndexCharacteristic) -> None:
         """Test heat index boundary values."""
         # Minimum (0°C)
         data_min = bytearray([0])
-        assert characteristic.decode_value(data_min) == 0.0
+        assert characteristic.parse_value(data_min).value == 0.0
 
         # Maximum (255°C)
         data_max = bytearray([UINT8_MAX])
-        assert characteristic.decode_value(data_max) == 255.0
+        assert characteristic.parse_value(data_max).value == 255.0
 
     def test_heat_index_danger_levels(self, characteristic: HeatIndexCharacteristic) -> None:
         """Test heat index danger levels based on typical thresholds."""
         # Caution (27°C)
         data_caution = bytearray([27])
-        assert characteristic.decode_value(data_caution) == 27.0
+        assert characteristic.parse_value(data_caution).value == 27.0
 
         # Extreme caution (32°C)
         data_extreme_caution = bytearray([32])
-        assert characteristic.decode_value(data_extreme_caution) == 32.0
+        assert characteristic.parse_value(data_extreme_caution).value == 32.0
 
         # Danger (41°C)
         data_danger = bytearray([41])
-        assert characteristic.decode_value(data_danger) == 41.0
+        assert characteristic.parse_value(data_danger).value == 41.0
 
         # Extreme danger (54°C)
         data_extreme_danger = bytearray([54])
-        assert characteristic.decode_value(data_extreme_danger) == 54.0
+        assert characteristic.parse_value(data_extreme_danger).value == 54.0

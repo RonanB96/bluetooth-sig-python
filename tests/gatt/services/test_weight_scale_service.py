@@ -31,7 +31,7 @@ class TestWeightMeasurementCharacteristic:
 
         # Flags: 0x00 (metric units), Weight: 14000 (70.00 kg with 0.005 kg resolution)
         data = bytearray([0x00, 0x70, 0x36])  # 0x3670 = 13936
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert hasattr(result, "weight")
         assert result.weight == pytest.approx(69.68, abs=0.01)  # 13936 * 0.005
@@ -45,7 +45,7 @@ class TestWeightMeasurementCharacteristic:
         # Flags: 0x01 (imperial units), Weight: 15000
         # (150.00 lb with 0.01 lb resolution)
         data = bytearray([0x01, 0x98, 0x3A])  # 0x3A98 = 15000
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert hasattr(result, "weight")
         assert result.weight == pytest.approx(150.0, abs=0.01)  # 15000 * 0.01
@@ -58,7 +58,7 @@ class TestWeightMeasurementCharacteristic:
 
         # Flags: 0x04 (user ID present), Weight: 14000, User ID: 5
         data = bytearray([0x04, 0x70, 0x36, 0x05])
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert hasattr(result, "weight")
         assert hasattr(result, "user_id")
@@ -70,7 +70,7 @@ class TestWeightMeasurementCharacteristic:
 
         # Too short data
         with pytest.raises(ValueError, match="at least 3 bytes"):
-            char.decode_value(bytearray([0x00, 0x70]))
+            char.parse_value(bytearray([0x00, 0x70]))
 
     def test_unit_property(self) -> None:
         """Test unit property."""
@@ -94,7 +94,7 @@ class TestWeightScaleFeatureCharacteristic:
         # Features: 0x0000000F (timestamp, multiple users, BMI supported,
         # weight resolution 1)
         data = bytearray([0x0F, 0x00, 0x00, 0x00])
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert result.timestamp_supported is True
         assert result.multiple_users_supported is True
@@ -107,7 +107,7 @@ class TestWeightScaleFeatureCharacteristic:
 
         # Features: 0x00000000 (no features)
         data = bytearray([0x00, 0x00, 0x00, 0x00])
-        result = char.decode_value(data)
+        result = char.parse_value(data)
 
         assert result.timestamp_supported is False
         assert result.multiple_users_supported is False
@@ -120,7 +120,7 @@ class TestWeightScaleFeatureCharacteristic:
 
         # Too short data
         with pytest.raises(ValueError, match="at least 4 bytes"):
-            char.decode_value(bytearray([0x00, 0x00, 0x00]))
+            char.parse_value(bytearray([0x00, 0x00, 0x00]))
 
     def test_unit_property(self) -> None:
         """Test unit property (should be empty for feature characteristic)."""

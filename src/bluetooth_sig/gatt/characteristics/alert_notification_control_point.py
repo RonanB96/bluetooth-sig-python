@@ -24,7 +24,7 @@ class AlertNotificationControlPointData(msgspec.Struct):
     category_id: AlertCategoryID
 
 
-class AlertNotificationControlPointCharacteristic(BaseCharacteristic):
+class AlertNotificationControlPointCharacteristic(BaseCharacteristic[AlertNotificationControlPointData]):
     """Alert Notification Control Point characteristic (0x2A44).
 
     Control point for enabling/disabling notifications and requesting immediate alerts.
@@ -47,7 +47,7 @@ class AlertNotificationControlPointCharacteristic(BaseCharacteristic):
     min_length: int = 2  # Command ID + Category ID
     allow_variable_length: bool = True  # Some commands may have additional data
 
-    def decode_value(
+    def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None
     ) -> AlertNotificationControlPointData:
         """Decode Alert Notification Control Point data from bytes.
@@ -83,7 +83,7 @@ class AlertNotificationControlPointCharacteristic(BaseCharacteristic):
             category_id=category_id,
         )
 
-    def encode_value(self, data: AlertNotificationControlPointData) -> bytearray:
+    def _encode_value(self, data: AlertNotificationControlPointData) -> bytearray:
         """Encode Alert Notification Control Point data to bytes.
 
         Args:

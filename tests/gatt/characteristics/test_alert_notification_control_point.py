@@ -64,8 +64,9 @@ class TestAlertNotificationControlPointCharacteristic(CommonCharacteristicTests)
     ) -> None:
         """Test all valid command IDs."""
         data = bytearray([command_id, 0x00])
-        result = characteristic.decode_value(data)
-        assert result.command_id == expected_enum
+        result = characteristic.parse_value(data)
+        assert result.value is not None
+        assert result.value.command_id == expected_enum
 
     def test_invalid_command_id(self, characteristic: AlertNotificationControlPointCharacteristic) -> None:
         """Test that invalid command IDs are rejected."""
@@ -84,16 +85,18 @@ class TestAlertNotificationControlPointCharacteristic(CommonCharacteristicTests)
     def test_notify_immediately_command(self, characteristic: AlertNotificationControlPointCharacteristic) -> None:
         """Test notify immediately command."""
         data = bytearray([0x04, 0x03])  # Notify New Alert Immediately, Call category
-        result = characteristic.decode_value(data)
-        assert result.command_id == AlertNotificationCommandID.NOTIFY_NEW_ALERT_IMMEDIATELY
-        assert result.category_id == AlertCategoryID.CALL
+        result = characteristic.parse_value(data)
+        assert result.value is not None
+        assert result.value.command_id == AlertNotificationCommandID.NOTIFY_NEW_ALERT_IMMEDIATELY
+        assert result.value.category_id == AlertCategoryID.CALL
 
     def test_roundtrip(self, characteristic: AlertNotificationControlPointCharacteristic) -> None:
         """Test encode/decode roundtrip."""
         original = AlertNotificationControlPointData(
             command_id=AlertNotificationCommandID.DISABLE_UNREAD_STATUS, category_id=AlertCategoryID.SMS_MMS
         )
-        encoded = characteristic.encode_value(original)
-        decoded = characteristic.decode_value(encoded)
-        assert decoded.command_id == original.command_id
-        assert decoded.category_id == original.category_id
+        encoded = characteristic.build_value(original)
+        decoded = characteristic.parse_value(encoded)
+        assert decoded.value is not None
+        assert decoded.value.command_id == original.command_id
+        assert decoded.value.category_id == original.category_id

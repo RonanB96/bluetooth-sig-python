@@ -166,7 +166,7 @@ char = BatteryLevelCharacteristic()
 
 # Automatic validation
 try:
-    char.decode_value(bytearray([150]))  # Invalid: > 100
+    char.parse_value(bytearray([150]))  # Invalid: > 100
 except Exception as e:
     print(e)  # "Invalid percentage: 150 (expected range [0, 100])"
 ```

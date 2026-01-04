@@ -42,7 +42,7 @@ class PowerSpecificationData:
         return f"PowerSpecificationData(minimum={self.minimum}, typical={self.typical}, maximum={self.maximum})"
 
 
-class PowerSpecificationCharacteristic(BaseCharacteristic):
+class PowerSpecificationCharacteristic(BaseCharacteristic[PowerSpecificationData]):
     """Power Specification characteristic (0x2B06).
 
     org.bluetooth.characteristic.power_specification
@@ -50,7 +50,7 @@ class PowerSpecificationCharacteristic(BaseCharacteristic):
     The Power Specification characteristic is used to represent a specification of power values.
     """
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PowerSpecificationData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PowerSpecificationData:
         """Decode the power specification values."""
         # Parse three uint24 values (little-endian)
         minimum_raw = DataParser.parse_int24(data, 0, signed=False)
@@ -71,7 +71,7 @@ class PowerSpecificationCharacteristic(BaseCharacteristic):
             maximum=_convert_value(maximum_raw),
         )
 
-    def encode_value(self, data: PowerSpecificationData) -> bytearray:  # noqa: D202
+    def _encode_value(self, data: PowerSpecificationData) -> bytearray:  # noqa: D202
         """Encode the power specification values."""
 
         # Convert float values to uint24 with 0.1 W resolution, handling special values

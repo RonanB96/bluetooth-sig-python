@@ -105,7 +105,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         uuid: str,
         raw_data: bytes | bytearray,
         ctx: CharacteristicContext | None = None,
-    ) -> CharacteristicData:
+    ) -> CharacteristicData[Any]:
         r"""Parse a characteristic's raw data using Bluetooth SIG standards.
 
         Args:
@@ -236,7 +236,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 encoded = characteristic.build_value(value)
                 logger.debug("Successfully encoded %s with validation", characteristic.name)
             else:
-                encoded = characteristic.encode_value(value)
+                encoded = characteristic._encode_value(value)  # pylint: disable=protected-access
                 logger.debug("Successfully encoded %s without validation", characteristic.name)
             return bytes(encoded)
         except Exception as e:
@@ -244,7 +244,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             raise
 
     def _get_characteristic_value_type_class(  # pylint: disable=too-many-return-statements,too-many-branches
-        self, characteristic: BaseCharacteristic
+        self, characteristic: BaseCharacteristic[Any]
     ) -> type[Any] | None:
         """Get the Python type class that a characteristic expects.
 
@@ -256,19 +256,20 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         """
         # Try to infer from decode_value return type annotation (resolve string annotations)
-        if hasattr(characteristic, "decode_value"):
+        if hasattr(characteristic, "_decode_value"):
             try:
                 # Use get_type_hints to resolve string annotations
                 # Need to pass the characteristic's module globals to resolve forward references
                 module = inspect.getmodule(characteristic.__class__)
                 globalns = getattr(module, "__dict__", {}) if module else {}
-                type_hints = typing.get_type_hints(characteristic.decode_value, globalns=globalns)
+                type_hints = typing.get_type_hints(characteristic._decode_value, globalns=globalns)  # pylint: disable=protected-access
                 return_type = type_hints.get("return")
                 if return_type and return_type is not type(None):
                     return return_type  # type: ignore[no-any-return]
             except Exception:  # pylint: disable=broad-exception-caught
                 # Fallback to direct signature inspection
-                sig = inspect.signature(characteristic.decode_value)
+                return_type = inspect.signature(characteristic._decode_value).return_annotation  # pylint: disable=protected-access
+                sig = inspect.signature(characteristic._decode_value)
                 return_annotation = sig.return_annotation
                 if return_annotation and return_annotation != inspect.Parameter.empty:
                     # Check if it's not just a string annotation
@@ -657,7 +658,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self,
         char_data: dict[str, bytes],
         ctx: CharacteristicContext | None = None,
-    ) -> dict[str, CharacteristicData]:
+    ) -> dict[str, CharacteristicData[Any]]:
         r"""Parse multiple characteristics at once with dependency-aware ordering.
 
         This method automatically handles multi-characteristic dependencies by parsing
@@ -700,7 +701,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self,
         char_data: dict[str, bytes],
         ctx: CharacteristicContext | None,
-    ) -> dict[str, CharacteristicData]:
+    ) -> dict[str, CharacteristicData[Any]]:
         """Parse multiple characteristics using dependency-aware ordering."""
         logger.debug("Batch parsing %d characteristics", len(char_data))
 
@@ -715,7 +716,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         # Build base context
         base_context = ctx
 
-        results: dict[str, CharacteristicData] = {}
+        results: dict[str, CharacteristicData[Any]] = {}
         for uuid_str in sorted_uuids:
             raw_data = char_data[uuid_str]
             characteristic = uuid_to_characteristic.get(uuid_str)
@@ -752,9 +753,9 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
     def _prepare_characteristic_dependencies(
         self, characteristic_data: Mapping[str, bytes]
-    ) -> tuple[dict[str, BaseCharacteristic], dict[str, list[str]], dict[str, list[str]]]:
+    ) -> tuple[dict[str, BaseCharacteristic[Any]], dict[str, list[str]], dict[str, list[str]]]:
         """Instantiate characteristics once and collect declared dependencies."""
-        uuid_to_characteristic: dict[str, BaseCharacteristic] = {}
+        uuid_to_characteristic: dict[str, BaseCharacteristic[Any]] = {}
         uuid_to_required_deps: dict[str, list[str]] = {}
         uuid_to_optional_deps: dict[str, list[str]] = {}
 
@@ -803,7 +804,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self,
         uuid: str,
         required_deps: list[str],
-        results: Mapping[str, CharacteristicData],
+        results: Mapping[str, CharacteristicData[Any]],
         base_context: CharacteristicContext | None,
     ) -> list[str]:
         """Determine which required dependencies are unavailable for a characteristic."""
@@ -837,9 +838,9 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self,
         uuid: str,
         raw_data: bytes,
-        characteristic: BaseCharacteristic | None,
+        characteristic: BaseCharacteristic[Any] | None,
         missing_required: list[str],
-    ) -> CharacteristicData:
+    ) -> CharacteristicData[Any]:
         """Create a failure result when required dependencies are absent."""
         char_name = characteristic.name if characteristic else "Unknown"
         error = MissingDependencyError(char_name, missing_required)
@@ -874,7 +875,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self,
         uuid: str,
         optional_deps: list[str],
-        results: Mapping[str, CharacteristicData],
+        results: Mapping[str, CharacteristicData[Any]],
         base_context: CharacteristicContext | None,
     ) -> None:
         """Emit debug logs when optional dependencies are unavailable."""
@@ -895,7 +896,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
     def _build_parse_context(
         self,
         base_context: CharacteristicContext | None,
-        results: Mapping[str, CharacteristicData],
+        results: Mapping[str, CharacteristicData[Any]],
     ) -> CharacteristicContext:
         """Construct the context passed to per-characteristic parsers."""
         results_mapping = cast(Mapping[str, CharacteristicDataProtocol], results)
@@ -987,7 +988,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
     def register_custom_characteristic_class(
         self,
         uuid_or_name: str,
-        cls: type[BaseCharacteristic],
+        cls: type[BaseCharacteristic[Any]],
         info: CharacteristicInfo | None = None,
         override: bool = False,
     ) -> None:
@@ -1080,7 +1081,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         uuid: str | BluetoothUUID,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-    ) -> CharacteristicData:
+    ) -> CharacteristicData[Any]:
         """Parse characteristic data in an async-compatible manner.
 
         This is an async wrapper that allows characteristic parsing to be used
@@ -1112,7 +1113,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self,
         char_data: dict[str, bytes],
         ctx: CharacteristicContext | None = None,
-    ) -> dict[str, CharacteristicData]:
+    ) -> dict[str, CharacteristicData[Any]]:
         """Parse multiple characteristics in an async-compatible manner.
 
         This is an async wrapper for batch characteristic parsing. The parsing

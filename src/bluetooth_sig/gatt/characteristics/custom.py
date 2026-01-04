@@ -8,7 +8,7 @@ from ...types import CharacteristicInfo
 from .base import BaseCharacteristic, ValidationConfig
 
 
-class CustomBaseCharacteristic(BaseCharacteristic):
+class CustomBaseCharacteristic(BaseCharacteristic[Any]):
     r"""Helper base class for custom characteristic implementations.
 
     This class provides a wrapper around physical BLE characteristics that are not

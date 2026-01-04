@@ -20,7 +20,7 @@ class BodySensorLocation(IntEnum):
     FOOT = 6
 
 
-class BodySensorLocationCharacteristic(BaseCharacteristic):
+class BodySensorLocationCharacteristic(BaseCharacteristic[int]):
     """Body Sensor Location characteristic (0x2A38).
 
     Represents the location of a sensor on the human body.

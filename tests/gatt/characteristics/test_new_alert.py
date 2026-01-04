@@ -45,19 +45,21 @@ class TestNewAlertCharacteristic(CommonCharacteristicTests):
     def test_new_alert_without_text(self, characteristic: NewAlertCharacteristic) -> None:
         """Test new alert with no text information."""
         data = bytearray([0x00, 0x01])  # Simple Alert, 1 new alert, no text
-        result = characteristic.decode_value(data)
-        assert result.category_id == AlertCategoryID.SIMPLE_ALERT
-        assert result.number_of_new_alert == 1
-        assert result.text_string_information == ""
+        result = characteristic.parse_value(data)
+        assert result.value is not None
+        assert result.value.category_id == AlertCategoryID.SIMPLE_ALERT
+        assert result.value.number_of_new_alert == 1
+        assert result.value.text_string_information == ""
 
     def test_new_alert_with_max_text(self, characteristic: NewAlertCharacteristic) -> None:
         """Test new alert with maximum 18-character text."""
         text = "A" * 18
         data = bytearray([0x03, 0x02]) + text.encode("utf-8")  # Call, 2 alerts, 18 chars
-        result = characteristic.decode_value(data)
-        assert result.category_id == AlertCategoryID.CALL
-        assert result.number_of_new_alert == 2
-        assert result.text_string_information == text
+        result = characteristic.parse_value(data)
+        assert result.value is not None
+        assert result.value.category_id == AlertCategoryID.CALL
+        assert result.value.number_of_new_alert == 2
+        assert result.value.text_string_information == text
 
     def test_new_alert_text_too_long(self, characteristic: NewAlertCharacteristic) -> None:
         """Test that text longer than 18 characters is rejected."""
@@ -79,8 +81,9 @@ class TestNewAlertCharacteristic(CommonCharacteristicTests):
         original = NewAlertData(
             category_id=AlertCategoryID.SMS_MMS, number_of_new_alert=5, text_string_information="Alice"
         )
-        encoded = characteristic.encode_value(original)
-        decoded = characteristic.decode_value(encoded)
-        assert decoded.category_id == original.category_id
-        assert decoded.number_of_new_alert == original.number_of_new_alert
-        assert decoded.text_string_information == original.text_string_information
+        encoded = characteristic.build_value(original)
+        decoded = characteristic.parse_value(encoded)
+        assert decoded.value is not None
+        assert decoded.value.category_id == original.category_id
+        assert decoded.value.number_of_new_alert == original.number_of_new_alert
+        assert decoded.value.text_string_information == original.text_string_information

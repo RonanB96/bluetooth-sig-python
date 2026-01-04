@@ -72,7 +72,7 @@ class PLXSpotCheckData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: di
     supported_features: PLXFeatureFlags | None = None  # Optional PLX features from context (PLXFeatureFlags enum)
 
 
-class PLXSpotCheckMeasurementCharacteristic(BaseCharacteristic):
+class PLXSpotCheckMeasurementCharacteristic(BaseCharacteristic[PLXSpotCheckData]):
     """PLX Spot-Check Measurement characteristic (0x2A5E).
 
     Used to transmit single SpO2 (blood oxygen saturation) and pulse rate
@@ -88,7 +88,7 @@ class PLXSpotCheckMeasurementCharacteristic(BaseCharacteristic):
     max_length: int | None = 12  # + MeasurementStatus(2) + DeviceAndSensorStatus(3) + PulseAmplitudeIndex(2) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(  # pylint: disable=too-many-locals,too-many-branches  # Complexity needed for spec parsing
+    def _decode_value(  # pylint: disable=too-many-locals,too-many-branches  # Complexity needed for spec parsing
         self, data: bytearray, ctx: CharacteristicContext | None = None
     ) -> PLXSpotCheckData:
         """Parse PLX spot-check measurement data according to Bluetooth specification.
@@ -157,7 +157,7 @@ class PLXSpotCheckMeasurementCharacteristic(BaseCharacteristic):
             supported_features=supported_features,
         )
 
-    def encode_value(self, data: PLXSpotCheckData) -> bytearray:
+    def _encode_value(self, data: PLXSpotCheckData) -> bytearray:
         """Encode PLX spot-check measurement value back to bytes.
 
         Args:

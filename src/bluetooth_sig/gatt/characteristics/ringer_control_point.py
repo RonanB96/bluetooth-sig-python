@@ -23,7 +23,7 @@ class RingerControlPointData(msgspec.Struct, frozen=True, kw_only=True):  # pyli
     command: RingerControlCommand
 
 
-class RingerControlPointCharacteristic(BaseCharacteristic):
+class RingerControlPointCharacteristic(BaseCharacteristic[RingerControlPointData]):
     """Ringer Control Point characteristic (0x2A40).
 
     org.bluetooth.characteristic.ringer_control_point
@@ -41,7 +41,7 @@ class RingerControlPointCharacteristic(BaseCharacteristic):
     min_length = 1
     expected_type = bytes
 
-    def encode_value(self, data: RingerControlPointData) -> bytearray:
+    def _encode_value(self, data: RingerControlPointData) -> bytearray:
         """Encode RingerControlPointData command to bytes.
 
         Args:

@@ -15,7 +15,7 @@ class HeartRateControlCommand(IntEnum):
     RESET_ENERGY_EXPENDED = 0x01
 
 
-class HeartRateControlPointCharacteristic(BaseCharacteristic):
+class HeartRateControlPointCharacteristic(BaseCharacteristic[int]):
     """Heart Rate Control Point characteristic (0x2A39).
 
     org.bluetooth.characteristic.heart_rate_control_point

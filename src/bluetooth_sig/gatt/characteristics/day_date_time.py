@@ -23,7 +23,7 @@ class DayDateTimeData(msgspec.Struct, frozen=True, kw_only=True):
     day_of_week: int
 
 
-class DayDateTimeCharacteristic(BaseCharacteristic):
+class DayDateTimeCharacteristic(BaseCharacteristic[DayDateTimeData]):
     """Day Date Time characteristic (0x2A0A).
 
     org.bluetooth.characteristic.day_date_time
@@ -34,7 +34,7 @@ class DayDateTimeCharacteristic(BaseCharacteristic):
     _manual_value_type = "DayDateTimeData"
     expected_length = 8
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> DayDateTimeData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> DayDateTimeData:
         """Parse day date time value.
 
         Args:
@@ -54,7 +54,7 @@ class DayDateTimeCharacteristic(BaseCharacteristic):
         )
         return DayDateTimeData(dt=dt, day_of_week=data[7])
 
-    def encode_value(self, data: DayDateTimeData) -> bytearray:
+    def _encode_value(self, data: DayDateTimeData) -> bytearray:
         """Encode day date time value back to bytes.
 
         Args:

@@ -7,7 +7,7 @@ from .base import BaseCharacteristic
 from .templates import ConcentrationTemplate
 
 
-class PM1ConcentrationCharacteristic(BaseCharacteristic):
+class PM1ConcentrationCharacteristic(BaseCharacteristic[float]):
     """Particulate Matter - PM1 Concentration characteristic (0x2BD5).
 
     org.bluetooth.characteristic.particulate_matter_pm1_concentration

@@ -39,7 +39,7 @@ class ActivityGoalData(msgspec.Struct, frozen=True, kw_only=True):
     duration_intensity_walking: int | None = None
 
 
-class ActivityGoalCharacteristic(BaseCharacteristic):
+class ActivityGoalCharacteristic(BaseCharacteristic[ActivityGoalData]):
     """Activity Goal characteristic (0x2B4E).
 
     org.bluetooth.characteristic.activity_goal
@@ -52,7 +52,7 @@ class ActivityGoalCharacteristic(BaseCharacteristic):
     max_length: int = 22  # Max length with all optional fields present
     allow_variable_length: bool = True  # Variable based on presence flags
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ActivityGoalData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ActivityGoalData:
         """Decode Activity Goal from raw bytes.
 
         Args:
@@ -135,7 +135,7 @@ class ActivityGoalCharacteristic(BaseCharacteristic):
             duration_intensity_walking=duration_intensity_walking,
         )
 
-    def encode_value(self, data: ActivityGoalData) -> bytearray:
+    def _encode_value(self, data: ActivityGoalData) -> bytearray:
         """Encode Activity Goal to raw bytes.
 
         Args:

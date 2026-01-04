@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import IEEE11073FloatTemplate
 
 
-class AmmoniaConcentrationCharacteristic(BaseCharacteristic):
+class AmmoniaConcentrationCharacteristic(BaseCharacteristic[float]):
     """Ammonia concentration measurement characteristic (0x2BCF).
 
     Uses IEEE 11073 SFLOAT format (medfloat16) as per SIG specification.

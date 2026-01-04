@@ -57,20 +57,20 @@ class TestThreeZoneHeartRateLimitsCharacteristic(CommonCharacteristicTests):
     ) -> None:
         """Test three zone heart rate limits with various valid values."""
         data = bytearray([light_limit, hard_limit])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = ThreeZoneHeartRateLimitsData(light_moderate_limit=light_limit, moderate_hard_limit=hard_limit)
-        assert result == expected
+        assert result.value == expected
 
     def test_three_zone_heart_rate_limits_boundary_values(
         self, characteristic: ThreeZoneHeartRateLimitsCharacteristic
     ) -> None:
         """Test three zone heart rate limits boundary values."""
         # Test minimum values (0 BPM)
-        result = characteristic.decode_value(bytearray([0, 0]))
+        result = characteristic.parse_value(bytearray([0, 0]))
         expected = ThreeZoneHeartRateLimitsData(light_moderate_limit=0, moderate_hard_limit=0)
-        assert result == expected
+        assert result.value == expected
 
         # Test maximum values (255 BPM)
-        result = characteristic.decode_value(bytearray([255, 255]))
+        result = characteristic.parse_value(bytearray([255, 255]))
         expected = ThreeZoneHeartRateLimitsData(light_moderate_limit=255, moderate_hard_limit=255)
-        assert result == expected
+        assert result.value == expected

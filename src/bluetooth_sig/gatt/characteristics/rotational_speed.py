@@ -14,7 +14,7 @@ class RotationalSpeedValues:  # pylint: disable=too-few-public-methods
     VALUE_NOT_KNOWN = 0x7FFFFFFF
 
 
-class RotationalSpeedCharacteristic(BaseCharacteristic):
+class RotationalSpeedCharacteristic(BaseCharacteristic[float | None]):
     """Rotational Speed characteristic (0x2C09).
 
     org.bluetooth.characteristic.rotational_speed
@@ -25,7 +25,7 @@ class RotationalSpeedCharacteristic(BaseCharacteristic):
 
     _manual_unit: str | None = "RPM"  # YAML ID mismatch: has rotational_speed.*, should be angular_velocity.*
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode rotational speed characteristic.
 
         Decodes a 32-bit signed integer representing speed in RPM
@@ -46,7 +46,7 @@ class RotationalSpeedCharacteristic(BaseCharacteristic):
             return None
         return float(raw_value)
 
-    def encode_value(self, data: float) -> bytearray:
+    def _encode_value(self, data: float) -> bytearray:
         """Encode rotational speed value."""
         if not SINT32_MIN <= data <= SINT32_MAX - 1:
             raise ValueError(f"Rotational speed value {data} out of valid range")

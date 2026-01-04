@@ -42,7 +42,7 @@ class ElectricCurrentStatisticsData(msgspec.Struct, frozen=True, kw_only=True): 
                 )
 
 
-class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
+class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic[ElectricCurrentStatisticsData]):
     """Electric Current Statistics characteristic (0x2AF1).
 
     org.bluetooth.characteristic.electric_current_statistics
@@ -58,7 +58,7 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured ElectricCurrentStatisticsData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ElectricCurrentStatisticsData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ElectricCurrentStatisticsData:
         """Parse current statistics data (3x uint16 in units of 0.01 A).
 
         Args:
@@ -86,7 +86,7 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic):
             average=avg_current_raw * 0.01,
         )
 
-    def encode_value(self, data: ElectricCurrentStatisticsData) -> bytearray:
+    def _encode_value(self, data: ElectricCurrentStatisticsData) -> bytearray:
         """Encode electric current statistics value back to bytes.
 
         Args:

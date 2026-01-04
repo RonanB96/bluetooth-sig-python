@@ -43,16 +43,16 @@ class TestDstOffsetCharacteristic(CommonCharacteristicTests):
     def test_standard_time(self) -> None:
         """Test standard time (no DST offset)."""
         char = DstOffsetCharacteristic()
-        result = char.decode_value(bytearray([0]))
-        assert result == DSTOffset.STANDARD_TIME
-        assert isinstance(result, DSTOffset)
+        result = char.parse_value(bytearray([0]))
+        assert result.value == DSTOffset.STANDARD_TIME
+        assert isinstance(result.value, DSTOffset)
 
     def test_daylight_time(self) -> None:
         """Test daylight saving time offset."""
         char = DstOffsetCharacteristic()
-        result = char.decode_value(bytearray([4]))
-        assert result == DSTOffset.DAYLIGHT_TIME
-        assert isinstance(result, DSTOffset)
+        result = char.parse_value(bytearray([4]))
+        assert result.value == DSTOffset.DAYLIGHT_TIME
+        assert isinstance(result.value, DSTOffset)
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
@@ -63,7 +63,7 @@ class TestDstOffsetCharacteristic(CommonCharacteristicTests):
             DSTOffset.DAYLIGHT_TIME,
             DSTOffset.DOUBLE_DAYLIGHT,
         ]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
-            assert decoded == value
-            assert isinstance(decoded, DSTOffset)
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
+            assert decoded.value == value
+            assert isinstance(decoded.value, DSTOffset)

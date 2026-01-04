@@ -55,10 +55,11 @@ class TestLatitudeCharacteristic(CommonCharacteristicTests):
         test_values = [45.1234567, -33.9876543, 0.0000001, -0.0000001]
 
         for expected_lat in test_values:
-            encoded = characteristic.encode_value(expected_lat)
-            decoded = characteristic.decode_value(encoded)
+            encoded = characteristic.build_value(expected_lat)
+            decoded = characteristic.parse_value(encoded)
+            assert decoded.value is not None
             # Should be accurate to within the resolution (10^-7 degrees)
-            precision_error = abs(decoded - expected_lat)
+            precision_error = abs(decoded.value - expected_lat)
             assert precision_error < characteristic.DEGREE_SCALING_FACTOR, (
                 f"Precision lost for {expected_lat}: got {decoded}, error={precision_error}"
             )

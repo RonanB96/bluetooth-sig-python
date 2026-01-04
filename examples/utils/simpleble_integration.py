@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import types
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.gatt.characteristics.base import CharacteristicData
@@ -95,7 +95,7 @@ class SimpleService:
 def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,duplicate-code
     address: str,
     simpleble_module: types.ModuleType,
-) -> dict[str, CharacteristicData]:
+) -> dict[str, CharacteristicData[Any]]:
     # NOTE: Result parsing pattern duplicates shared_utils and data_parsing display logic.
     # Duplication justified because:
     # 1. SimplePyBLE is synchronous, shared utils are async (different execution models)
@@ -118,7 +118,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,
     # and then parse the results using the BluetoothSIGTranslator.
     translator = BluetoothSIGTranslator()
 
-    async def _collect() -> dict[str, CharacteristicData]:
+    async def _collect() -> dict[str, CharacteristicData[Any]]:
         manager = SimplePyBLEConnectionManager(address, timeout=10.0)
         try:
             await manager.connect()
@@ -142,7 +142,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,
 
             read_results = await read_characteristics_with_manager(manager, target_uuids)
 
-            parsed: dict[str, CharacteristicData] = {}
+            parsed: dict[str, CharacteristicData[Any]] = {}
             for short_uuid, read_result in read_results.items():
                 try:
                     parsed_outcome = translator.parse_characteristic(short_uuid, read_result.raw_data)

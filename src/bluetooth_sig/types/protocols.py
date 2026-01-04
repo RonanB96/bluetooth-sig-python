@@ -47,6 +47,6 @@ class CharacteristicProtocol(Protocol):
         """Parse raw data into characteristic value."""
         ...  # pylint: disable=unnecessary-ellipsis  # Ellipsis is required for Protocol method stubs
 
-    def encode_value(self, value: Any) -> bytearray:  # noqa: ANN401
+    def _encode_value(self, value: Any) -> bytearray:  # noqa: ANN401
         """Encode characteristic value into raw data."""
         ...  # pylint: disable=unnecessary-ellipsis  # Ellipsis is required for Protocol method stubs

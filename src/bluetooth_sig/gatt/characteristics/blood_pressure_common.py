@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import IntFlag
-from typing import Protocol
+from typing import Any, Protocol
 
 import msgspec
 
@@ -46,7 +46,7 @@ class BloodPressureDataProtocol(Protocol):
         """Pressure unit for blood pressure measurement."""
 
 
-class BaseBloodPressureCharacteristic(BaseCharacteristic):
+class BaseBloodPressureCharacteristic(BaseCharacteristic[Any]):
     """Base class for blood pressure characteristics with common parsing logic."""
 
     _is_base_class = True  # Exclude from characteristic discovery

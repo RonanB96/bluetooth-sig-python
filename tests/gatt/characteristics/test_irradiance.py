@@ -35,19 +35,19 @@ class TestIrradianceCharacteristic(CommonCharacteristicTests):
     def test_zero_irradiance(self) -> None:
         """Test zero irradiance."""
         char = IrradianceCharacteristic()
-        result = char.decode_value(bytearray([0, 0]))
-        assert result == 0
+        result = char.parse_value(bytearray([0, 0]))
+        assert result.value == 0
 
     def test_typical_irradiance(self) -> None:
         """Test typical irradiance value."""
         char = IrradianceCharacteristic()
-        result = char.decode_value(bytearray([0xE8, 0x03]))  # 1000 W/m²
-        assert result == 1000
+        result = char.parse_value(bytearray([0xE8, 0x03]))  # 1000 W/m²
+        assert result.value == 1000
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = IrradianceCharacteristic()
         for value in [0, 500, 1000, 65535]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
-            assert decoded == value
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
+            assert decoded.value == value

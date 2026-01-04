@@ -28,13 +28,13 @@ class ValidationHelperCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
         """Simple decode - just parse as uint16."""
         if len(data) < 2:
             raise ValueError("Need at least 2 bytes")
         return int.from_bytes(data[:2], byteorder="little", signed=False)
 
-    def encode_value(self, data: int) -> bytearray:
+    def _encode_value(self, data: int) -> bytearray:
         """Simple encode."""
         return bytearray(data.to_bytes(2, byteorder="little", signed=False))
 
@@ -49,11 +49,11 @@ class NoValidationCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
         """Simple decode without validation."""
         return 42
 
-    def encode_value(self, data: int) -> bytearray:
+    def _encode_value(self, data: int) -> bytearray:
         """Simple encode."""
         return bytearray([42])
 
@@ -72,7 +72,7 @@ class TestBaseCharacteristicValidation:
         assert result.value == 50
         assert result.error_message == ""
         assert result.raw_data == bytes([50, 0])
-        assert result.name == "Test Validation"
+        assert result.characteristic._info.name == "Test Validation"
 
     def test_failed_parse_with_length_validation(self) -> None:
         """Test parsing failure when length validation fails."""
@@ -113,10 +113,10 @@ class TestBaseCharacteristicValidation:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return 5  # Below min_value of 10
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
         char = MinValueCharacteristic()
@@ -141,12 +141,12 @@ class TestBaseCharacteristicValidation:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(
+            def _decode_value(
                 self, data: bytearray, ctx: CharacteristicContext | None = None
             ) -> int:  # Returns int but expects float
                 return 42
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
         char = TypeValidationCharacteristic()
@@ -181,10 +181,10 @@ class TestBaseCharacteristicValidation:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return len(data)
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
         char = MinLengthCharacteristic()
@@ -212,10 +212,10 @@ class TestBaseCharacteristicValidation:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return len(data)
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
         char = MaxLengthCharacteristic()
@@ -241,10 +241,10 @@ class TestBaseCharacteristicValidation:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 raise ValueError("Custom decode error")
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
         char = ExceptionCharacteristic()
@@ -268,11 +268,11 @@ class TestBaseCharacteristicValidation:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 # This will raise struct.error due to insufficient data
                 return int(struct.unpack("<I", data)[0])  # Needs 4 bytes for uint32
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray()
 
         char = StructErrorCharacteristic()
@@ -352,11 +352,11 @@ class TestValidationControl:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
                 # Returns string but expected_type is int
                 return "not an int"
 
-            def encode_value(self, data: str) -> bytearray:
+            def _encode_value(self, data: str) -> bytearray:
                 return bytearray([42])
 
         # With validation enabled (default) - should fail

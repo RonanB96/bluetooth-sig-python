@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import TxPowerLevelCharacteristic
@@ -12,7 +14,7 @@ class TestTxPowerLevelCharacteristic(CommonCharacteristicTests):
     characteristic_cls = TxPowerLevelCharacteristic
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return TxPowerLevelCharacteristic()
 
     @pytest.fixture

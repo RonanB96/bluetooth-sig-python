@@ -10,7 +10,7 @@ from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
 
-class UnknownCharacteristic(BaseCharacteristic):
+class UnknownCharacteristic(BaseCharacteristic[bytes]):
     """Generic characteristic implementation for unknown/non-SIG characteristics.
 
     This class provides basic functionality for characteristics that are not
@@ -47,7 +47,7 @@ class UnknownCharacteristic(BaseCharacteristic):
 
         super().__init__(info=info, properties=properties)
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bytes:  # Context type varies
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bytes:  # Context type varies
         """Return raw bytes for unknown characteristics.
 
         Args:
@@ -60,7 +60,7 @@ class UnknownCharacteristic(BaseCharacteristic):
         """
         return bytes(data)
 
-    def encode_value(self, data: Any) -> bytearray:  # noqa: ANN401  # Accepts bytes-like objects
+    def _encode_value(self, data: Any) -> bytearray:  # noqa: ANN401  # Accepts bytes-like objects
         """Encode data to bytes for unknown characteristics.
 
         Args:

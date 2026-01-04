@@ -48,15 +48,15 @@ class TestRestingHeartRateCharacteristic(CommonCharacteristicTests):
     def test_resting_heart_rate_values(self, characteristic: RestingHeartRateCharacteristic, resting_hr: int) -> None:
         """Test resting heart rate with various valid values."""
         data = bytearray([resting_hr])
-        result = characteristic.decode_value(data)
-        assert result == resting_hr
+        result = characteristic.parse_value(data)
+        assert result.value == resting_hr
 
     def test_resting_heart_rate_boundary_values(self, characteristic: RestingHeartRateCharacteristic) -> None:
         """Test resting heart rate boundary values."""
         # Test minimum (0 bpm)
-        result = characteristic.decode_value(bytearray([0]))
-        assert result == 0
+        result = characteristic.parse_value(bytearray([0]))
+        assert result.value == 0
 
         # Test maximum (255 bpm)
-        result = characteristic.decode_value(bytearray([255]))
-        assert result == 255
+        result = characteristic.parse_value(bytearray([255]))
+        assert result.value == 255

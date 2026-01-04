@@ -75,7 +75,7 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[DeviceInfo]:
 
 def read_and_parse_with_simpleble(
     address: str, target_uuids: list[str] | None = None
-) -> dict[str, ReadResult] | dict[str, CharacteristicData]:
+) -> dict[str, ReadResult] | dict[str, CharacteristicData[Any]]:
     """Read characteristics from a BLE device using SimpleBLE and parse with SIG standards."""
     from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
 
@@ -116,7 +116,7 @@ def handle_device_operations_simpleble(args: argparse.Namespace) -> None:
 
 
 def display_simpleble_results(
-    results: dict[str, ReadResult] | dict[str, CharacteristicData] | dict[BluetoothUUID, CharacteristicData],
+    results: dict[str, ReadResult] | dict[str, CharacteristicData[Any]] | dict[BluetoothUUID, CharacteristicData[Any]],
 ) -> None:
     """Display SimpleBLE results in a consistent format.
 
@@ -130,7 +130,7 @@ def display_simpleble_results(
     # Normalise BluetoothUUID keys to short strings if needed. Use a
     # precise union type for values so the type checker can narrow
     # correctly on runtime type checks.
-    normalized: dict[str, ReadResult | CharacteristicData | dict[str, Any]] = {}
+    normalized: dict[str, ReadResult | CharacteristicData[Any] | dict[str, Any]] = {}
     for k, v in results.items():
         key_str = str(k)
         normalized[key_str] = v  # type: ignore[assignment]

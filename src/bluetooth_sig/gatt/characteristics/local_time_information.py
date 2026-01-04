@@ -71,7 +71,7 @@ class LocalTimeInformationData(msgspec.Struct, frozen=True, kw_only=True):  # py
     total_offset_hours: float | None = None
 
 
-class LocalTimeInformationCharacteristic(BaseCharacteristic):
+class LocalTimeInformationCharacteristic(BaseCharacteristic[LocalTimeInformationData]):
     """Local Time Information characteristic (0x2A0F).
 
     org.bluetooth.characteristic.local_time_information
@@ -85,7 +85,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
 
     expected_length: int = 2  # Timezone(1) + DST Offset(1)
 
-    def decode_value(  # pylint: disable=too-many-locals
+    def _decode_value(  # pylint: disable=too-many-locals
         self,
         data: bytearray,
         ctx: CharacteristicContext | None = None,
@@ -164,7 +164,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic):
             total_offset_hours=total_offset,
         )
 
-    def encode_value(self, data: LocalTimeInformationData) -> bytearray:
+    def _encode_value(self, data: LocalTimeInformationData) -> bytearray:
         """Encode LocalTimeInformationData back to bytes.
 
         Args:

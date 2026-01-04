@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint8Template
 
 
-class UVIndexCharacteristic(BaseCharacteristic):
+class UVIndexCharacteristic(BaseCharacteristic[int]):
     """UV Index characteristic (0x2A76).
 
     org.bluetooth.characteristic.uv_index

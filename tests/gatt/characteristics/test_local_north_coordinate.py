@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import LocalNorthCoordinateCharacteristic
-from bluetooth_sig.gatt.exceptions import InsufficientDataError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -46,30 +45,31 @@ class TestLocalNorthCoordinateCharacteristic(CommonCharacteristicTests):
 
         # Test normal parsing
         test_data = bytearray([0xED, 0x03, 0x00])  # 1005 = 100.5m
-        parsed = characteristic.decode_value(test_data)
-        assert parsed == 100.5
+        parsed = characteristic.parse_value(test_data)
+        assert parsed.value == 100.5
 
     def test_local_north_coordinate_error_handling(self, characteristic: LocalNorthCoordinateCharacteristic) -> None:
         """Test Local North Coordinate error handling."""
-        # Test insufficient data
-        with pytest.raises(InsufficientDataError, match="need 3 bytes, got 2"):
-            characteristic.decode_value(bytearray([0x12, 0x34]))
+        # Test insufficient data - parse_value returns parse_success=False
+        result = characteristic.parse_value(bytearray([0x12]))
+        assert result.parse_success is False
+        assert "3 bytes, got 1" in (result.error_message or "")
 
     def test_local_north_coordinate_boundary_values(self, characteristic: LocalNorthCoordinateCharacteristic) -> None:
         """Test Local North Coordinate boundary values."""
         # Maximum positive (8388607 * 0.1 = 838860.7m)
         data_max = bytearray([0xFF, 0xFF, 0x7F])
-        result = characteristic.decode_value(data_max)
-        assert abs(result - 838860.7) < 0.1
+        result = characteristic.parse_value(data_max)
+        assert abs(result.value - 838860.7) < 0.1
 
         # Maximum negative (-8388608 * 0.1 = -838860.8m)
         data_min = bytearray([0x00, 0x00, 0x80])
-        result = characteristic.decode_value(data_min)
-        assert abs(result - (-838860.8)) < 0.1
+        result = characteristic.parse_value(data_min)
+        assert abs(result.value - (-838860.8)) < 0.1
 
     def test_local_north_coordinate_round_trip(self, characteristic: LocalNorthCoordinateCharacteristic) -> None:
         """Test encode/decode round trip."""
         test_value = 123.4
-        encoded = characteristic.encode_value(test_value)
-        decoded = characteristic.decode_value(encoded)
-        assert decoded == test_value
+        encoded = characteristic.build_value(test_value)
+        decoded = characteristic.parse_value(encoded)
+        assert decoded.value == test_value

@@ -61,33 +61,32 @@ class TestSportTypeForAerobicAndAnaerobicThresholdsCharacteristic(CommonCharacte
     ) -> None:
         """Test sport type with various valid values."""
         data = bytearray([sport_type_value])
-        result = characteristic.decode_value(data)
-        assert result == expected_enum
+        result = characteristic.parse_value(data)
+        assert result.value == expected_enum
 
     def test_sport_type_boundary_values(
         self, characteristic: SportTypeForAerobicAndAnaerobicThresholdsCharacteristic
     ) -> None:
         """Test sport type boundary values."""
         # Test minimum value (0)
-        result = characteristic.decode_value(bytearray([0]))
-        assert result == SportType.UNSPECIFIED
+        result = characteristic.parse_value(bytearray([0]))
+        assert result.value == SportType.UNSPECIFIED
 
         # Test maximum valid value (11)
-        result = characteristic.decode_value(bytearray([11]))
-        assert result == SportType.WHOLE_BODY_EXERCISING
+        result = characteristic.parse_value(bytearray([11]))
+        assert result.value == SportType.WHOLE_BODY_EXERCISING
 
     def test_sport_type_invalid_values(
         self, characteristic: SportTypeForAerobicAndAnaerobicThresholdsCharacteristic
     ) -> None:
         """Test sport type with invalid values."""
-        from bluetooth_sig.gatt.exceptions import ValueRangeError
-
-        # Test invalid value (12 is reserved)
-        with pytest.raises(ValueRangeError, match="Invalid SportType"):
-            characteristic.decode_value(bytearray([12]))
+        # Test invalid value (12 is reserved) - parse_value returns parse_success=False
+        result = characteristic.parse_value(bytearray([12]))
+        assert result.parse_success is False
+        assert "SportType" in (result.error_message or "")
 
     def test_sport_type_encoding(self, characteristic: SportTypeForAerobicAndAnaerobicThresholdsCharacteristic) -> None:
         """Test encoding sport type back to bytes."""
         data = SportType.RUNNING_TREADMILL
-        result = characteristic.encode_value(data)
+        result = characteristic.build_value(data)
         assert result == bytearray([1])

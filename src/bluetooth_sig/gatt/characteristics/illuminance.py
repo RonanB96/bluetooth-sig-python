@@ -20,7 +20,7 @@ class IlluminanceValues:  # pylint: disable=too-few-public-methods
     VALUE_UNKNOWN = 0xFFFFFF  # Indicates value is not known
 
 
-class IlluminanceCharacteristic(BaseCharacteristic):
+class IlluminanceCharacteristic(BaseCharacteristic[float | None]):
     """Illuminance characteristic (0x2AFB).
 
     Measures light intensity in lux (lumens per square meter).
@@ -29,7 +29,7 @@ class IlluminanceCharacteristic(BaseCharacteristic):
 
     resolution: float = 0.01
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode illuminance characteristic.
 
         Decodes a 24-bit unsigned integer representing illuminance in 0.01 lux increments
@@ -50,7 +50,7 @@ class IlluminanceCharacteristic(BaseCharacteristic):
             return None
         return raw_value * self.resolution
 
-    def encode_value(self, data: float) -> bytearray:
+    def _encode_value(self, data: float) -> bytearray:
         """Encode illuminance value."""
         raw_value = int(data / self.resolution)
         return DataParser.encode_int24(raw_value, signed=False)

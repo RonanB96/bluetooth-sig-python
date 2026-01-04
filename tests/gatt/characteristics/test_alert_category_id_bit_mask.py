@@ -74,40 +74,40 @@ class TestAlertCategoryIdBitMaskCharacteristic(CommonCharacteristicTests):
             | AlertCategoryBitMask.INSTANT_MESSAGE
         )
 
-        encoded = characteristic.encode_value(all_categories)
+        encoded = characteristic.build_value(all_categories)
         assert isinstance(encoded, bytearray)
         assert len(encoded) == 2
         assert encoded[0] == 0xFF  # Lower byte
         assert encoded[1] == 0x03  # Upper byte (bits 8-9 set)
 
-        decoded = characteristic.decode_value(encoded)
-        assert decoded == all_categories
+        decoded = characteristic.parse_value(encoded)
+        assert decoded.value == all_categories
 
     def test_no_categories_enabled(self, characteristic: AlertCategoryIdBitMaskCharacteristic) -> None:
         """Test that no categories enabled works."""
         no_categories = AlertCategoryBitMask(0)
 
-        encoded = characteristic.encode_value(no_categories)
+        encoded = characteristic.build_value(no_categories)
         assert isinstance(encoded, bytearray)
         assert len(encoded) == 2
         assert encoded[0] == 0x00
         assert encoded[1] == 0x00
 
-        decoded = characteristic.decode_value(encoded)
-        assert decoded == no_categories
+        decoded = characteristic.parse_value(encoded)
+        assert decoded.value == no_categories
 
     def test_single_category(self, characteristic: AlertCategoryIdBitMaskCharacteristic) -> None:
         """Test enabling a single category."""
         single_category = AlertCategoryBitMask.SIMPLE_ALERT
 
-        encoded = characteristic.encode_value(single_category)
+        encoded = characteristic.build_value(single_category)
         assert isinstance(encoded, bytearray)
         assert len(encoded) == 2
         assert encoded[0] == 0x01  # Bit 0 set
         assert encoded[1] == 0x00
 
-        decoded = characteristic.decode_value(encoded)
-        assert decoded == single_category
+        decoded = characteristic.parse_value(encoded)
+        assert decoded.value == single_category
 
     def test_roundtrip(self, characteristic: AlertCategoryIdBitMaskCharacteristic) -> None:
         """Test round-trip encoding/decoding for various combinations."""
@@ -119,6 +119,6 @@ class TestAlertCategoryIdBitMaskCharacteristic(CommonCharacteristicTests):
         ]
 
         for mask in test_masks:
-            encoded = characteristic.encode_value(mask)
-            decoded = characteristic.decode_value(encoded)
-            assert decoded == mask
+            encoded = characteristic.build_value(mask)
+            decoded = characteristic.parse_value(encoded)
+            assert decoded.value == mask

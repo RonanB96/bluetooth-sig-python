@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import BodySensorLocation, HeartRateMeasurementCharacteristic
@@ -17,7 +19,7 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
     characteristic_cls = HeartRateMeasurementCharacteristic
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return HeartRateMeasurementCharacteristic()
 
     @pytest.fixture
@@ -79,16 +81,16 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_heart_rate_without_context_backward_compatibility(self, characteristic: BaseCharacteristic) -> None:
+    def test_heart_rate_without_context_backward_compatibility(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that parsing works without context (backward compatibility)."""
         hr_data = bytearray([0x00, 0x3C])  # 60 BPM
-        result = characteristic.decode_value(hr_data, ctx=None)
+        result = characteristic.parse_value(hr_data, ctx=None)
 
-        assert isinstance(result, HeartRateData)
-        assert result.heart_rate == 60
-        assert result.sensor_location is None  # No context available
+        assert isinstance(result.value, HeartRateData)
+        assert result.value.heart_rate == 60
+        assert result.value.sensor_location is None  # No context available
 
-    def test_heart_rate_with_sensor_location_context(self, characteristic: BaseCharacteristic) -> None:
+    def test_heart_rate_with_sensor_location_context(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test heart rate parsing with sensor location from context."""
         from typing import cast
 
@@ -122,12 +124,12 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
 
         # Parse with context
         hr_data = bytearray([0x00, 0x3C])  # 60 BPM
-        result = characteristic.decode_value(hr_data, ctx)
+        result = characteristic.parse_value(hr_data, ctx)
 
-        assert result.heart_rate == 60
-        assert result.sensor_location == BodySensorLocation.WRIST
+        assert result.value.heart_rate == 60
+        assert result.value.sensor_location == BodySensorLocation.WRIST
 
-    def test_heart_rate_with_different_sensor_locations(self, characteristic: BaseCharacteristic) -> None:
+    def test_heart_rate_with_different_sensor_locations(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test heart rate with various sensor locations."""
         from typing import cast
 
@@ -169,12 +171,12 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
             )
 
             hr_data = bytearray([0x00, 0x46])  # 70 BPM
-            result = characteristic.decode_value(hr_data, ctx)
+            result = characteristic.parse_value(hr_data, ctx)
 
-            assert result.heart_rate == 70
-            assert result.sensor_location == expected_enum
+            assert result.value.heart_rate == 70
+            assert result.value.sensor_location == expected_enum
 
-    def test_heart_rate_context_with_missing_sensor_location(self, characteristic: BaseCharacteristic) -> None:
+    def test_heart_rate_context_with_missing_sensor_location(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that heart rate works when context exists but sensor location doesn't."""
         from bluetooth_sig.gatt.context import CharacteristicContext
 
@@ -182,7 +184,7 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
         ctx = CharacteristicContext(other_characteristics={})
 
         hr_data = bytearray([0x00, 0x50])  # 80 BPM
-        result = characteristic.decode_value(hr_data, ctx)
+        result = characteristic.parse_value(hr_data, ctx)
 
-        assert result.heart_rate == 80
-        assert result.sensor_location is None  # Graceful handling of missing context data
+        assert result.value.heart_rate == 80
+        assert result.value.sensor_location is None  # Graceful handling of missing context data

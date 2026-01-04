@@ -8,7 +8,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class MagneticDeclinationCharacteristic(BaseCharacteristic):
+class MagneticDeclinationCharacteristic(BaseCharacteristic[float]):
     """Magnetic Declination characteristic (0x2A2C).
 
     org.bluetooth.characteristic.magnetic_declination
@@ -32,7 +32,7 @@ class MagneticDeclinationCharacteristic(BaseCharacteristic):
 
     expected_type: type = float
 
-    def encode_value(self, data: float) -> bytearray:
+    def _encode_value(self, data: float) -> bytearray:
         """Encode magnetic declination value back to bytes.
 
         Args:
@@ -48,4 +48,4 @@ class MagneticDeclinationCharacteristic(BaseCharacteristic):
         declination = declination % 360.0
 
         # Use template encoding after normalization
-        return super().encode_value(declination)
+        return super()._encode_value(declination)

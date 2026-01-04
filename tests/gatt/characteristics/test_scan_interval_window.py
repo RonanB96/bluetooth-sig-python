@@ -73,28 +73,28 @@ class TestScanIntervalWindowCharacteristic(CommonCharacteristicTests):
         data.extend(scan_interval.to_bytes(2, byteorder="little"))
         data.extend(scan_window.to_bytes(2, byteorder="little"))
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = ScanIntervalWindowData(scan_interval=scan_interval, scan_window=scan_window)
-        assert result == expected
+        assert result.value == expected
 
     def test_scan_interval_window_boundary_values(self, characteristic: ScanIntervalWindowCharacteristic) -> None:
         """Test scan interval window boundary values."""
         # Test minimum values
         data = bytearray([0x04, 0x00, 0x04, 0x00])  # SCAN_INTERVAL_MIN, SCAN_WINDOW_MIN
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = ScanIntervalWindowData(
             scan_interval=ScanIntervalWindowData.SCAN_INTERVAL_MIN, scan_window=ScanIntervalWindowData.SCAN_WINDOW_MIN
         )
-        assert result == expected
+        assert result.value == expected
 
         # Test maximum values
         data = bytearray([0x00, 0x40, 0x00, 0x20])  # SCAN_INTERVAL_MAX, SCAN_INTERVAL_MAX//2
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = ScanIntervalWindowData(
             scan_interval=ScanIntervalWindowData.SCAN_INTERVAL_MAX,
             scan_window=ScanIntervalWindowData.SCAN_INTERVAL_MAX // 2,
         )
-        assert result == expected
+        assert result.value == expected
 
     def test_scan_interval_window_invalid_length(self, characteristic: ScanIntervalWindowCharacteristic) -> None:
         """Test that invalid data lengths are rejected."""
@@ -147,7 +147,7 @@ class TestScanIntervalWindowCharacteristic(CommonCharacteristicTests):
         """Test that encoding and decoding preserve data."""
         original = ScanIntervalWindowData(scan_interval=0x0020, scan_window=0x0010)
 
-        encoded = characteristic.encode_value(original)
-        decoded = characteristic.decode_value(encoded)
+        encoded = characteristic.build_value(original)
+        decoded = characteristic.parse_value(encoded)
 
-        assert decoded == original
+        assert decoded.value == original

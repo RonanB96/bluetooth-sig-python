@@ -32,7 +32,7 @@ class RSCFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disa
     multiple_sensor_locations_supported: bool
 
 
-class RSCFeatureCharacteristic(BaseCharacteristic):
+class RSCFeatureCharacteristic(BaseCharacteristic[RSCFeatureData]):
     """RSC Feature characteristic (0x2A54).
 
     Used to expose the supported features of an RSC sensor.
@@ -42,7 +42,7 @@ class RSCFeatureCharacteristic(BaseCharacteristic):
 
     expected_length: int = 2
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RSCFeatureData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RSCFeatureData:
         """Parse RSC feature data.
 
         Format: 16-bit feature bitmask (little endian).
@@ -76,7 +76,7 @@ class RSCFeatureCharacteristic(BaseCharacteristic):
             multiple_sensor_locations_supported=bool(feature_mask & RSCFeatures.MULTIPLE_SENSOR_LOCATIONS_SUPPORTED),
         )
 
-    def encode_value(self, data: RSCFeatureData) -> bytearray:
+    def _encode_value(self, data: RSCFeatureData) -> bytearray:
         """Encode RSC feature value back to bytes.
 
         Args:

@@ -128,7 +128,7 @@ class GlucoseMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pyli
         return value in {0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
 
 
-class GlucoseMeasurementCharacteristic(BaseCharacteristic):
+class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData]):
     """Glucose Measurement characteristic (0x2A18).
 
     Used to transmit glucose concentration measurements with timestamps
@@ -143,7 +143,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
     max_length: int = 17  # Ensured consistency with GlucoseMeasurementData
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> GlucoseMeasurementData:  # pylint: disable=too-many-locals
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> GlucoseMeasurementData:  # pylint: disable=too-many-locals
         """Parse glucose measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + Base Time(7) + [Time Offset(2)] +
@@ -234,7 +234,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic):
             sensor_status=sensor_status,
         )
 
-    def encode_value(self, data: GlucoseMeasurementData) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches # Complex medical data encoding
+    def _encode_value(self, data: GlucoseMeasurementData) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches # Complex medical data encoding
         """Encode glucose measurement value back to bytes.
 
         Args:

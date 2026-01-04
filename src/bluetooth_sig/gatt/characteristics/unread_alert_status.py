@@ -24,7 +24,7 @@ class UnreadAlertStatusData(msgspec.Struct):
     unread_count: int  # 0-254, 255 means >254
 
 
-class UnreadAlertStatusCharacteristic(BaseCharacteristic):
+class UnreadAlertStatusCharacteristic(BaseCharacteristic[UnreadAlertStatusData]):
     """Unread Alert Status characteristic (0x2A45).
 
     Represents the number of unread alerts in a specific category.
@@ -38,7 +38,7 @@ class UnreadAlertStatusCharacteristic(BaseCharacteristic):
 
     expected_length: int | None = 2
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> UnreadAlertStatusData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> UnreadAlertStatusData:
         """Decode Unread Alert Status data from bytes.
 
         Args:
@@ -64,7 +64,7 @@ class UnreadAlertStatusCharacteristic(BaseCharacteristic):
             unread_count=unread_count,
         )
 
-    def encode_value(self, data: UnreadAlertStatusData) -> bytearray:
+    def _encode_value(self, data: UnreadAlertStatusData) -> bytearray:
         """Encode Unread Alert Status data to bytes.
 
         Args:

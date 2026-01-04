@@ -10,7 +10,7 @@ from .templates import VectorData
 from .utils import DataParser
 
 
-class MagneticFluxDensity3DCharacteristic(BaseCharacteristic):
+class MagneticFluxDensity3DCharacteristic(BaseCharacteristic[VectorData]):
     """Magnetic Flux Density - 3D characteristic (0x2AA1).
 
     org.bluetooth.characteristic.magnetic_flux_density_3d
@@ -32,7 +32,7 @@ class MagneticFluxDensity3DCharacteristic(BaseCharacteristic):
     resolution: float = 1e-7
     expected_length: int = 6  # 3 x sint16
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VectorData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VectorData:
         """Parse 3D magnetic flux density (3 x sint16 with resolution).
 
         Args:
@@ -57,7 +57,7 @@ class MagneticFluxDensity3DCharacteristic(BaseCharacteristic):
             x_axis=x_raw * self.resolution, y_axis=y_raw * self.resolution, z_axis=z_raw * self.resolution
         )
 
-    def encode_value(self, data: VectorData) -> bytearray:
+    def _encode_value(self, data: VectorData) -> bytearray:
         """Encode 3D magnetic flux density."""
         x_raw = int(data.x_axis / self.resolution)
         y_raw = int(data.y_axis / self.resolution)

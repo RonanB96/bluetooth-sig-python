@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint8Template
 
 
-class AnaerobicThresholdCharacteristic(BaseCharacteristic):
+class AnaerobicThresholdCharacteristic(BaseCharacteristic[int]):
     """Anaerobic Threshold characteristic (0x2A83).
 
     org.bluetooth.characteristic.anaerobic_threshold

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import PollenConcentrationCharacteristic
@@ -14,7 +16,7 @@ class TestPollenConcentrationCharacteristic(CommonCharacteristicTests):
     """Test Pollen Concentration characteristic implementation."""
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         """Provide Pollen Concentration characteristic for testing."""
         return PollenConcentrationCharacteristic()
 
@@ -49,12 +51,12 @@ class TestPollenConcentrationCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_pollen_concentration_parsing(self, characteristic: BaseCharacteristic) -> None:
+    def test_pollen_concentration_parsing(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test Pollen Concentration characteristic parsing."""
         # Test metadata
         assert characteristic.unit == "grains/m³"
 
         # Test normal parsing: 123456 count/m³
         test_data = bytearray([0x40, 0xE2, 0x01])  # 123456 in 24-bit little endian
-        parsed = characteristic.decode_value(test_data)
-        assert parsed == 123456.0  # Returns float now
+        parsed = characteristic.parse_value(test_data)
+        assert parsed.value == 123456.0  # Returns float now

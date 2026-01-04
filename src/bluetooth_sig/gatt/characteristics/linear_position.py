@@ -14,7 +14,7 @@ class LinearPositionValues:  # pylint: disable=too-few-public-methods
     VALUE_NOT_KNOWN = 0x7FFFFFFF
 
 
-class LinearPositionCharacteristic(BaseCharacteristic):
+class LinearPositionCharacteristic(BaseCharacteristic[float | None]):
     """Linear Position characteristic (0x2C08).
 
     org.bluetooth.characteristic.linear_position
@@ -25,7 +25,7 @@ class LinearPositionCharacteristic(BaseCharacteristic):
 
     expected_length: int = 4  # sint32
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode linear position characteristic.
 
         Decodes a 32-bit signed integer representing position in 10^-7 m increments
@@ -46,7 +46,7 @@ class LinearPositionCharacteristic(BaseCharacteristic):
             return None
         return raw_value * 1e-7
 
-    def encode_value(self, data: float) -> bytearray:
+    def _encode_value(self, data: float) -> bytearray:
         """Encode linear position value."""
         if not SINT32_MIN <= data <= SINT32_MAX - 1:
             raise ValueError(f"Linear position value {data} out of valid range")

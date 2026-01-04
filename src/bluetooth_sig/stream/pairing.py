@@ -10,7 +10,7 @@ sequence numbers, timestamps, or other identifiers.
 from __future__ import annotations
 
 from collections.abc import Hashable
-from typing import Callable
+from typing import Any, Callable
 
 from ..core.translator import BluetoothSIGTranslator
 from ..gatt.characteristics.base import CharacteristicData
@@ -28,7 +28,7 @@ class DependencyPairingBuffer:
         group_key: Function that extracts a grouping key from each parsed notification.
             Called as ``group_key(uuid, parsed_result)`` and must return a hashable value.
         on_pair: Callback invoked with complete parsed pairs as
-            ``on_pair(results: dict[str, CharacteristicData])``.
+            ``on_pair(results: dict[str, CharacteristicData[Any]])``.
 
     Note:
         Does not manage BLE subscriptions. Callers handle connection and notification setup.
@@ -39,8 +39,8 @@ class DependencyPairingBuffer:
         *,
         translator: BluetoothSIGTranslator,
         required_uuids: set[str],
-        group_key: Callable[[str, CharacteristicData], Hashable],
-        on_pair: Callable[[dict[str, CharacteristicData]], None],
+        group_key: Callable[[str, CharacteristicData[Any]], Hashable],
+        on_pair: Callable[[dict[str, CharacteristicData[Any]]], None],
     ) -> None:
         """Initialize the pairing buffer."""
         self._translator = translator

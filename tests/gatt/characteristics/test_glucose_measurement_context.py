@@ -273,9 +273,10 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
         # Use the first test case (basic context)
         test_data = valid_test_data[0].input_data
 
-        result = characteristic.decode_value(test_data)
-        assert result.sequence_number == 42
-        assert result.flags == GlucoseMeasurementContextFlags(0)
+        result = characteristic.parse_value(test_data)
+        assert result.value is not None
+        assert result.value.sequence_number == 42
+        assert result.value.flags == GlucoseMeasurementContextFlags(0)
 
     def test_glucose_context_with_carbohydrate(self, characteristic: GlucoseMeasurementContextCharacteristic) -> None:
         """Test glucose context with carbohydrate data."""
@@ -291,10 +292,11 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(test_data)
-        assert result.carbohydrate_id == CarbohydrateType.BREAKFAST
+        result = characteristic.parse_value(test_data)
+        assert result.value is not None
+        assert result.value.carbohydrate_id == CarbohydrateType.BREAKFAST
         # Human-readable name should match the enum's string representation
-        assert str(result.carbohydrate_id) == "Breakfast"
+        assert str(result.value.carbohydrate_id) == "Breakfast"
 
     def test_glucose_context_with_meal(self, characteristic: GlucoseMeasurementContextCharacteristic) -> None:
         """Test glucose context with meal information."""
@@ -308,12 +310,18 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(test_data)
-        assert result.meal == MealType.POSTPRANDIAL
+        result = characteristic.parse_value(test_data)
+        assert result.value is not None
+        assert result.value.meal == MealType.POSTPRANDIAL
         # Human-readable meal name should match the enum's string representation
-        assert str(result.meal) == "Postprandial (after meal)"
+        assert str(result.value.meal) == "Postprandial (after meal)"
 
     def test_glucose_context_invalid_data(self, characteristic: GlucoseMeasurementContextCharacteristic) -> None:
         """Test glucose context with invalid data."""
-        with pytest.raises(ValueError, match="must be at least 3 bytes"):
-            characteristic.decode_value(bytearray([0x00, 0x01]))
+        # parse_value returns parse_success=False for invalid data
+        result = characteristic.parse_value(bytearray([0x00, 0x01]))
+        assert result.parse_success is False
+        assert result.error_message == (
+            "Length validation failed for Glucose Measurement Context: expected at least 3 bytes, got 2 "
+            "(class-level constraint for GlucoseMeasurementContextCharacteristic)"
+        )

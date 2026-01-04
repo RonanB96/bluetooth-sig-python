@@ -10,7 +10,7 @@ from .templates import Vector2DData
 from .utils import DataParser
 
 
-class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
+class MagneticFluxDensity2DCharacteristic(BaseCharacteristic[Vector2DData]):
     """Magnetic Flux Density - 2D characteristic (0x2AA0).
 
     org.bluetooth.characteristic.magnetic_flux_density_2d
@@ -32,7 +32,7 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
     resolution: float = 1e-7
     expected_length: int = 4  # 2 x sint16
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> Vector2DData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> Vector2DData:
         """Parse 2D magnetic flux density (2 x sint16 with resolution).
 
         Args:
@@ -51,7 +51,7 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic):
 
         return Vector2DData(x_axis=x_raw * self.resolution, y_axis=y_raw * self.resolution)
 
-    def encode_value(self, data: Vector2DData) -> bytearray:
+    def _encode_value(self, data: Vector2DData) -> bytearray:
         """Encode 2D magnetic flux density."""
         x_raw = int(data.x_axis / self.resolution)
         y_raw = int(data.y_axis / self.resolution)

@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Utf8StringTemplate
 
 
-class EmailAddressCharacteristic(BaseCharacteristic):
+class EmailAddressCharacteristic(BaseCharacteristic[str]):
     """Email Address characteristic (0x2A88).
 
     org.bluetooth.characteristic.email_address

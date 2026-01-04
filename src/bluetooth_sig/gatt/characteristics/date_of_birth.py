@@ -10,7 +10,7 @@ from .utils import DataParser
 DateOfBirthData = DateData
 
 
-class DateOfBirthCharacteristic(BaseCharacteristic):
+class DateOfBirthCharacteristic(BaseCharacteristic[DateOfBirthData]):
     """Date of Birth characteristic (0x2A85).
 
     org.bluetooth.characteristic.date_of_birth
@@ -18,7 +18,7 @@ class DateOfBirthCharacteristic(BaseCharacteristic):
     Date of Birth characteristic.
     """
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> DateOfBirthData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> DateOfBirthData:
         """Decode Date of Birth from raw bytes.
 
         Args:
@@ -39,7 +39,7 @@ class DateOfBirthCharacteristic(BaseCharacteristic):
 
         return DateOfBirthData(year=year, month=month, day=day)
 
-    def encode_value(self, data: DateOfBirthData) -> bytearray:
+    def _encode_value(self, data: DateOfBirthData) -> bytearray:
         """Encode Date of Birth to raw bytes.
 
         Args:

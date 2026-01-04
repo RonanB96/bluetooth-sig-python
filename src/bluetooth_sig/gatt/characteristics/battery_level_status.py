@@ -52,7 +52,7 @@ class BatteryLevelStatus(msgspec.Struct):
     battery_fault: bool | None = None
 
 
-class BatteryLevelStatusCharacteristic(BaseCharacteristic):
+class BatteryLevelStatusCharacteristic(BaseCharacteristic[BatteryLevelStatus]):
     """Battery Level Status characteristic (0x2BED).
 
     org.bluetooth.characteristic.battery_level_status
@@ -90,7 +90,7 @@ class BatteryLevelStatusCharacteristic(BaseCharacteristic):
     min_length = 3  # flags (1) + power_state (2)
     max_length = 7  # + identifier (2) + battery_level (1) + additional_status (1)
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BatteryLevelStatus:  # pylint: disable=too-many-locals
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BatteryLevelStatus:  # pylint: disable=too-many-locals
         """Decode the battery level status value."""
         offset = 0
 
@@ -163,7 +163,7 @@ class BatteryLevelStatusCharacteristic(BaseCharacteristic):
             battery_fault=battery_fault,
         )
 
-    def encode_value(self, data: BatteryLevelStatus) -> bytearray:
+    def _encode_value(self, data: BatteryLevelStatus) -> bytearray:
         """Encode the battery level status value."""
         result = bytearray()
 

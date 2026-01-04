@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.core import BluetoothSIGTranslator
@@ -44,13 +46,13 @@ def test_glucose_pairing_out_of_order() -> None:
     gm_uuid = str(GlucoseMeasurementCharacteristic().uuid)
     gmc_uuid = str(GlucoseMeasurementContextCharacteristic().uuid)
 
-    paired: list[dict[str, CharacteristicData]] = []
+    paired: list[dict[str, CharacteristicData[Any]]] = []
 
     def group_key(uuid: str, parsed: CharacteristicData) -> int:
         assert parsed.value is not None
         return int(parsed.value.sequence_number)
 
-    def on_pair(results: dict[str, CharacteristicData]) -> None:
+    def on_pair(results: dict[str, CharacteristicData[Any]]) -> None:
         paired.append(results)
 
     buf = DependencyPairingBuffer(
@@ -86,7 +88,7 @@ def test_glucose_missing_counterpart_no_callback() -> None:
         assert parsed.value is not None
         return int(parsed.value.sequence_number)
 
-    def on_pair(_results: dict[str, CharacteristicData]) -> None:
+    def on_pair(_results: dict[str, CharacteristicData[Any]]) -> None:
         nonlocal called
         called = True
 
@@ -112,7 +114,7 @@ def test_glucose_mismatched_sequence_numbers_callback_validation() -> None:
         # Force same group for both notifications regardless of seq to trigger batch
         return "force-same"
 
-    def on_pair(results: dict[str, CharacteristicData]) -> None:
+    def on_pair(results: dict[str, CharacteristicData[Any]]) -> None:
         # User implements validation in callback
         gm = results[gm_uuid]
         gmc = results[gmc_uuid]
@@ -144,9 +146,9 @@ def test_generic_reuse_with_synthetic_key() -> None:
     def group_key(_uuid: str, _parsed: CharacteristicData) -> str:
         return "room-1"
 
-    captured: list[dict[str, CharacteristicData]] = []
+    captured: list[dict[str, CharacteristicData[Any]]] = []
 
-    def on_pair(results: dict[str, CharacteristicData]) -> None:
+    def on_pair(results: dict[str, CharacteristicData[Any]]) -> None:
         captured.append(results)
 
     buf = DependencyPairingBuffer(
@@ -188,7 +190,7 @@ def test_blood_pressure_pairing_multiple_sessions() -> None:
     bpm_uuid = str(BloodPressureMeasurementCharacteristic().uuid)
     icp_uuid = str(IntermediateCuffPressureCharacteristic().uuid)
 
-    sessions: list[dict[str, CharacteristicData]] = []
+    sessions: list[dict[str, CharacteristicData[Any]]] = []
 
     def group_key(_uuid: str, parsed: CharacteristicData) -> datetime:
         # Group by timestamp - notifications with same timestamp are from same session
@@ -196,7 +198,7 @@ def test_blood_pressure_pairing_multiple_sessions() -> None:
             return parsed.value.optional_fields.timestamp  # type: ignore[attr-defined,union-attr,no-any-return]
         raise ValueError("Test requires timestamp for grouping")
 
-    def on_pair(results: dict[str, CharacteristicData]) -> None:
+    def on_pair(results: dict[str, CharacteristicData[Any]]) -> None:
         sessions.append(results)
 
     buf = DependencyPairingBuffer(

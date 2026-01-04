@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint16Template
 
 
-class CaloricIntakeCharacteristic(BaseCharacteristic):
+class CaloricIntakeCharacteristic(BaseCharacteristic[int]):
     """Caloric Intake characteristic (0x2B45).
 
     org.bluetooth.characteristic.caloric_intake

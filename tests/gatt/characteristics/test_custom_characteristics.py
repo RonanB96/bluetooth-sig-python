@@ -46,11 +46,11 @@ class SimpleTemperatureSensor(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
         """Parse temperature as signed 16-bit integer."""
         return DataParser.parse_int16(data, 0, signed=True)
 
-    def encode_value(self, data: int) -> bytearray:
+    def _encode_value(self, data: int) -> bytearray:
         """Encode temperature as signed 16-bit integer."""
         return DataParser.encode_int16(data, signed=True)
 
@@ -101,7 +101,7 @@ class MultiSensorCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.BYTES,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> EnvironmentalReading:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> EnvironmentalReading:
         """Parse multi-field environmental data."""
         if len(data) < 12:
             raise ValueError("Multi-sensor data requires at least 12 bytes")
@@ -118,7 +118,7 @@ class MultiSensorCharacteristic(CustomBaseCharacteristic):
             timestamp=timestamp,
         )
 
-    def encode_value(self, data: EnvironmentalReading) -> bytearray:
+    def _encode_value(self, data: EnvironmentalReading) -> bytearray:
         """Encode environmental reading."""
         output_data = bytearray()
         output_data.extend(DataParser.encode_int16(int(data.temperature * 100), signed=True))
@@ -147,11 +147,11 @@ class DeviceSerialNumberCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.STRING,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
         """Parse serial number as UTF-8 string."""
         return data.decode("utf-8").strip()
 
-    def encode_value(self, data: str) -> bytearray:
+    def _encode_value(self, data: str) -> bytearray:
         """Encode serial number as UTF-8."""
         return bytearray(data.encode("utf-8"))
 
@@ -174,7 +174,7 @@ class DeviceStatusFlags(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, bool]:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, bool]:
         """Parse status flags and return dict of flag states."""
         flags = data[0]
         return {
@@ -186,7 +186,7 @@ class DeviceStatusFlags(CustomBaseCharacteristic):
             "wifi_connected": bool(flags & 0x20),
         }
 
-    def encode_value(self, data: dict[str, bool]) -> bytearray:
+    def _encode_value(self, data: dict[str, bool]) -> bytearray:
         """Encode status flags dict to byte."""
         byte = 0
         if data.get("powered_on", False):
@@ -230,7 +230,7 @@ class TestCustomCharacteristicVariants:
         assert result.value == -10
 
         # Test round-trip
-        encoded = sensor.encode_value(25)
+        encoded = sensor.build_value(25)
         result = sensor.parse_value(encoded)
         assert result.value == 25
 
@@ -315,7 +315,7 @@ class TestCustomCharacteristicVariants:
         assert result.value == "SN123456789"
         assert result.characteristic.info.value_type == ValueType.STRING
 
-        encoded = char.encode_value("TEST12345")
+        encoded = char.build_value("TEST12345")
         result = char.parse_value(encoded)
         assert result.value == "TEST12345"
 
@@ -351,7 +351,7 @@ class TestCustomCharacteristicVariants:
             "bluetooth_connected": False,
             "wifi_connected": True,
         }
-        encoded = char.encode_value(flags)
+        encoded = char.build_value(flags)
         assert encoded[0] == 0x23  # 0x01 | 0x02 | 0x20
 
     def test_custom_battery_level_override(self) -> None:
@@ -490,10 +490,10 @@ class TestCustomCharacteristicErrorHandling:
 
             class MissingInfoCharacteristic(CustomBaseCharacteristic):
                 # Missing _info attribute entirely
-                def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+                def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                     return 0
 
-                def encode_value(self, data: int) -> bytearray:
+                def _encode_value(self, data: int) -> bytearray:
                     return bytearray()
 
             _ = MissingInfoCharacteristic()  # Should raise ValueError
@@ -510,7 +510,7 @@ class TestCustomCharacteristicErrorHandling:
                     value_type=ValueType.INT,
                 )
 
-                def decode_value(  # pylint: disable=duplicate-code
+                def _decode_value(  # pylint: disable=duplicate-code
                     # NOTE: Minimal characteristic implementation duplicates other test fixtures.
                     # Duplication justified because:
                     # 1. Test isolation - each test creates its own custom characteristic
@@ -522,11 +522,11 @@ class TestCustomCharacteristicErrorHandling:
                 ) -> int:
                     return 0
 
-                def encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
+                def _encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
                     return bytearray()
 
-                namespace["decode_value"] = decode_value
-                namespace["encode_value"] = encode_value
+                namespace["_decode_value"] = _decode_value
+                namespace["_encode_value"] = _encode_value
 
             new_class(
                 "UnauthorizedSIGOverride",
@@ -574,7 +574,7 @@ class TestCustomCharacteristicEdgeCases:
         sensor = SimpleTemperatureSensor()
 
         # Max temperature (85°C)
-        data = sensor.encode_value(85)
+        data = sensor.build_value(85)
         result = sensor.parse_value(data)
         assert result.parse_success is True
         assert result.value == 85
@@ -584,7 +584,7 @@ class TestCustomCharacteristicEdgeCases:
         sensor = SimpleTemperatureSensor()
 
         # Min temperature (-40°C)
-        data = sensor.encode_value(-40)
+        data = sensor.build_value(-40)
         result = sensor.parse_value(data)
         assert result.parse_success is True
         assert result.value == -40
@@ -595,7 +595,7 @@ class TestCustomCharacteristicEdgeCases:
 
         # Test with special characters
         special_serial = "SN-2024_#001"
-        encoded = char.encode_value(special_serial)
+        encoded = char.build_value(special_serial)
         result = char.parse_value(encoded)
         assert result.parse_success is True
         assert result.value == special_serial
@@ -622,10 +622,10 @@ class TestCustomBaseCharacteristicAPI:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return DataParser.parse_int16(data, 0, signed=False)
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return DataParser.encode_int16(data, signed=False)
 
         # Should create without explicit info parameter
@@ -656,10 +656,10 @@ class TestCustomBaseCharacteristicAPI:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return DataParser.parse_int16(data, 0, signed=False)
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return DataParser.encode_int16(data, signed=False)
 
         # Create with manual info override
@@ -690,7 +690,7 @@ class TestCustomBaseCharacteristicAPI:
                     value_type=ValueType.INT,
                 )
 
-                def decode_value(  # pylint: disable=duplicate-code
+                def _decode_value(  # pylint: disable=duplicate-code
                     # NOTE: Minimal characteristic implementation duplicates other test fixtures.
                     # Duplication justified because:
                     # 1. Test isolation - each test creates its own custom characteristic
@@ -702,11 +702,11 @@ class TestCustomBaseCharacteristicAPI:
                 ) -> int:
                     return data[0]
 
-                def encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
+                def _encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
                     return bytearray([data])
 
-                namespace["decode_value"] = decode_value
-                namespace["encode_value"] = encode_value
+                namespace["_decode_value"] = _decode_value
+                namespace["encode_value"] = _encode_value
 
             new_class(
                 "BadSIGOverride",
@@ -728,7 +728,7 @@ class TestCustomBaseCharacteristicAPI:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(  # pylint: disable=duplicate-code
+            def _decode_value(  # pylint: disable=duplicate-code
                 # NOTE: Minimal characteristic implementation duplicates other test fixtures.
                 # Duplication justified because:
                 # 1. Test isolation - each test creates its own custom characteristic
@@ -740,7 +740,7 @@ class TestCustomBaseCharacteristicAPI:
             ) -> int:
                 return data[0]
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray([data])
 
         # Should create successfully
@@ -755,10 +755,10 @@ class TestCustomBaseCharacteristicAPI:
         class MissingInfoCharacteristic(CustomBaseCharacteristic):
             """Should fail: no _info provided."""
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return data[0]
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray([data])
 
         with pytest.raises(ValueError, match="requires either 'info' parameter or '_info' class attribute"):
@@ -777,10 +777,10 @@ class TestCustomBaseCharacteristicAPI:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return data[0]
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray([data])
 
         # Should create successfully without override flag

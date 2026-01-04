@@ -95,7 +95,7 @@ class TestAlertCategoryIdCharacteristic(CommonCharacteristicTests):
         self, characteristic: AlertCategoryIdCharacteristic, enum_value: AlertCategoryID
     ) -> None:
         """Test encoding AlertCategoryID enum values."""
-        encoded = characteristic.encode_value(enum_value)
+        encoded = characteristic.build_value(enum_value)
         assert isinstance(encoded, bytearray)
         assert len(encoded) == 1
         assert encoded[0] == enum_value.value
@@ -105,7 +105,7 @@ class TestAlertCategoryIdCharacteristic(CommonCharacteristicTests):
         self, characteristic: AlertCategoryIdCharacteristic, int_value: int
     ) -> None:
         """Test encoding integer values."""
-        encoded = characteristic.encode_value(int_value)
+        encoded = characteristic.build_value(int_value)
         assert isinstance(encoded, bytearray)
         assert len(encoded) == 1
         assert encoded[0] == int_value
@@ -113,14 +113,14 @@ class TestAlertCategoryIdCharacteristic(CommonCharacteristicTests):
     def test_alert_category_id_roundtrip(self, characteristic: AlertCategoryIdCharacteristic) -> None:
         """Test round-trip encoding/decoding."""
         for category in AlertCategoryID:
-            encoded = characteristic.encode_value(category)
-            decoded = characteristic.decode_value(encoded)
-            assert decoded == category
+            encoded = characteristic.build_value(category)
+            decoded = characteristic.parse_value(encoded)
+            assert decoded.value == category
 
     def test_alert_category_id_enum_values(self, characteristic: AlertCategoryIdCharacteristic) -> None:
         """Test that all enum values are properly handled."""
         for category in AlertCategoryID:
-            encoded = characteristic.encode_value(category)
-            decoded = characteristic.decode_value(encoded)
-            assert decoded == category
-            assert isinstance(decoded, AlertCategoryID)
+            encoded = characteristic.build_value(category)
+            decoded = characteristic.parse_value(encoded)
+            assert decoded.value == category
+            assert isinstance(decoded.value, AlertCategoryID)

@@ -118,7 +118,7 @@ class CyclingPowerResponseValue(IntEnum):
         return names[self]
 
 
-class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
+class CyclingPowerControlPointCharacteristic(BaseCharacteristic[CyclingPowerControlPointData]):
     """Cycling Power Control Point characteristic (0x2A66).
 
     Used for control and configuration of cycling power sensors.
@@ -142,7 +142,7 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
     TWO_BYTE_PARAM_LENGTH = 3  # op_code(1) + param(2)
     RESPONSE_CODE_LENGTH = 3  # op_code(1) + request(1) + response(1)
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerControlPointData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerControlPointData:
         """Parse cycling power control point data.
 
         Format: Op Code(1) + [Request Parameter] or Response Code(1) + [Response Parameter].
@@ -194,7 +194,7 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic):
             response_value=params.response_value,
         )
 
-    def encode_value(self, data: CyclingPowerControlPointData | int) -> bytearray:
+    def _encode_value(self, data: CyclingPowerControlPointData | int) -> bytearray:
         """Encode cycling power control point value back to bytes.
 
         Args:

@@ -8,7 +8,7 @@ from .base import BaseCharacteristic
 from .utils import DataParser
 
 
-class AlertCategoryIdBitMaskCharacteristic(BaseCharacteristic):
+class AlertCategoryIdBitMaskCharacteristic(BaseCharacteristic[AlertCategoryBitMask]):
     """Alert Category ID Bit Mask characteristic (0x2A42).
 
     org.bluetooth.characteristic.alert_category_id_bit_mask
@@ -37,7 +37,7 @@ class AlertCategoryIdBitMaskCharacteristic(BaseCharacteristic):
 
     expected_length: int | None = 2
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertCategoryBitMask:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertCategoryBitMask:
         """Decode Alert Category ID Bit Mask data from bytes.
 
         Args:
@@ -54,7 +54,7 @@ class AlertCategoryIdBitMaskCharacteristic(BaseCharacteristic):
         mask_value = DataParser.parse_int16(data, 0, signed=False)
         return AlertCategoryBitMask(mask_value)
 
-    def encode_value(self, data: AlertCategoryBitMask | int) -> bytearray:
+    def _encode_value(self, data: AlertCategoryBitMask | int) -> bytearray:
         """Encode Alert Category ID Bit Mask data to bytes.
 
         Args:

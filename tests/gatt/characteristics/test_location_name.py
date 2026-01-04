@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
@@ -61,30 +63,30 @@ class TestLocationNameCharacteristic(CommonCharacteristicTests):
         ]
 
         for test_str in test_strings:
-            encoded = characteristic.encode_value(test_str)
-            decoded = characteristic.decode_value(encoded)
-            assert decoded == test_str, f"UTF-8 round trip failed for: {test_str!r}"
+            encoded = characteristic.build_value(test_str)
+            decoded = characteristic.parse_value(encoded)
+            assert decoded.value == test_str, f"UTF-8 round trip failed for: {test_str!r}"
 
     def test_location_name_null_termination(self, characteristic: LocationNameCharacteristic) -> None:
         """Test that null-terminated strings are handled correctly."""
         # Test with null terminator
         null_terminated = bytearray(b"Garage\x00")
-        result = characteristic.decode_value(null_terminated)
-        assert result == "Garage", f"Expected 'Garage', got {result!r}"
+        result = characteristic.parse_value(null_terminated)
+        assert result.value == "Garage", f"Expected 'Garage', got {result!r}"
 
         # Test without null terminator
         no_null = bytearray(b"Garage")
-        result = characteristic.decode_value(no_null)
-        assert result == "Garage", f"Expected 'Garage', got {result!r}"
+        result = characteristic.parse_value(no_null)
+        assert result.value == "Garage", f"Expected 'Garage', got {result!r}"
 
     def test_location_name_empty_string(self, characteristic: LocationNameCharacteristic) -> None:
         """Test empty string handling."""
         empty_data = bytearray()
-        result = characteristic.decode_value(empty_data)
-        assert result == "", "Empty data should decode to empty string"
+        result = characteristic.parse_value(empty_data)
+        assert result.value == "", "Empty data should decode to empty string"
 
         # Test encoding empty string
-        encoded = characteristic.encode_value("")
+        encoded = characteristic.build_value("")
         assert encoded == bytearray(), "Empty string should encode to empty bytes"
 
     def test_location_name_round_trip(self, characteristic: LocationNameCharacteristic) -> None:
@@ -96,13 +98,15 @@ class TestLocationNameCharacteristic(CommonCharacteristicTests):
         ]
 
         for expected_str, input_data in test_cases:
-            decoded = characteristic.decode_value(input_data)
-            encoded = characteristic.encode_value(decoded)
-            re_decoded = characteristic.decode_value(encoded)
-            assert re_decoded == expected_str, f"Round trip failed for: {expected_str!r}"
+            decoded = characteristic.parse_value(input_data)
+            encoded = characteristic.build_value(decoded.value)
+            re_decoded = characteristic.parse_value(encoded)
+            assert re_decoded.value == expected_str, f"Round trip failed for: {expected_str!r}"
 
     def test_round_trip(
-        self, characteristic: BaseCharacteristic, valid_test_data: CharacteristicTestData | list[CharacteristicTestData]
+        self,
+        characteristic: BaseCharacteristic[Any],
+        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
     ) -> None:
         """Override round trip test to exclude null-terminated strings with extra data."""
         # Use only the first 3 test cases that can round trip exactly
@@ -110,6 +114,6 @@ class TestLocationNameCharacteristic(CommonCharacteristicTests):
 
         for i, test_case in enumerate(round_trip_data):
             case_desc = f"Test case {i + 1} ({test_case.description})"
-            parsed = characteristic.decode_value(test_case.input_data)
-            encoded = characteristic.encode_value(parsed)
+            parsed = characteristic.parse_value(test_case.input_data)
+            encoded = characteristic.build_value(parsed.value)
             assert encoded == test_case.input_data, f"{case_desc}: Round trip failed - encoded data differs from input"

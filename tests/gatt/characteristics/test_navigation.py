@@ -168,9 +168,9 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
         self, characteristic: NavigationCharacteristic, flags: int, data: bytearray, expected: dict[str, Any]
     ) -> None:
         """Test navigation with various flag combinations."""
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         for field, expected_value in expected.items():
-            actual_value = getattr(result, field)
+            actual_value = getattr(result.value, field)
             if field == "estimated_time_of_arrival" and expected_value is not None:
                 assert actual_value is not None
                 # Could check specific date if needed
@@ -190,9 +190,9 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(data)
-        assert result.bearing == 0.0
-        assert result.heading == 0.0
+        result = characteristic.parse_value(data)
+        assert result.value.bearing == 0.0
+        assert result.value.heading == 0.0
 
     def test_navigation_maximum_values(self, characteristic: NavigationCharacteristic) -> None:
         """Test navigation with maximum bearing and heading values."""
@@ -207,20 +207,20 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(data)
-        assert result.bearing == 359.99
-        assert result.heading == 359.99
+        result = characteristic.parse_value(data)
+        assert result.value.bearing == 359.99
+        assert result.value.heading == 359.99
 
     def test_navigation_boundary_values(self, characteristic: NavigationCharacteristic) -> None:
         """Test navigation boundary values."""
         # Test 359.99 degrees (maximum)
         data = bytearray([0x00, 0x00, 0x9F, 0x8C, 0x9F, 0x8C])
-        result = characteristic.decode_value(data)
-        assert result.bearing == 359.99
-        assert result.heading == 359.99
+        result = characteristic.parse_value(data)
+        assert result.value.bearing == 359.99
+        assert result.value.heading == 359.99
 
         # Test 0 degrees (minimum)
         data = bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-        result = characteristic.decode_value(data)
-        assert result.bearing == 0.0
-        assert result.heading == 0.0
+        result = characteristic.parse_value(data)
+        assert result.value.bearing == 0.0
+        assert result.value.heading == 0.0

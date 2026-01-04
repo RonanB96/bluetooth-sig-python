@@ -18,7 +18,7 @@ class ConnectionParametersData(msgspec.Struct, frozen=True, kw_only=True):
     timeout: int  # Connection supervision timeout in ms
 
 
-class PeripheralPreferredConnectionParametersCharacteristic(BaseCharacteristic):
+class PeripheralPreferredConnectionParametersCharacteristic(BaseCharacteristic[ConnectionParametersData]):
     """Peripheral Preferred Connection Parameters characteristic (0x2A04).
 
     org.bluetooth.characteristic.gap.peripheral_preferred_connection_parameters
@@ -29,7 +29,7 @@ class PeripheralPreferredConnectionParametersCharacteristic(BaseCharacteristic):
     _manual_value_type = "ConnectionParametersData"
     expected_length = 8
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ConnectionParametersData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ConnectionParametersData:
         """Parse connection parameters.
 
         Args:
@@ -51,7 +51,7 @@ class PeripheralPreferredConnectionParametersCharacteristic(BaseCharacteristic):
             timeout=timeout_raw * 10,
         )
 
-    def encode_value(self, data: ConnectionParametersData) -> bytearray:
+    def _encode_value(self, data: ConnectionParametersData) -> bytearray:
         """Encode connection parameters.
 
         Args:

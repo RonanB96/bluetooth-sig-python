@@ -76,12 +76,14 @@ class TestBondManagementFeatureCharacteristic(CommonCharacteristicTests):
     def test_feature_flags_parsing(self, characteristic: BondManagementFeatureCharacteristic) -> None:
         """Test parsing of feature flags."""
         data = bytearray([1, 1, 0])  # First two features supported
-        result = characteristic.decode_value(data)
-        assert result.delete_bond_of_requesting_device_supported is True
-        assert result.delete_all_bonds_on_server_supported is True
-        assert result.delete_all_but_active_bond_on_server_supported is False
+        result = characteristic.parse_value(data)
+        assert result.value.delete_bond_of_requesting_device_supported is True
+        assert result.value.delete_all_bonds_on_server_supported is True
+        assert result.value.delete_all_but_active_bond_on_server_supported is False
 
     def test_insufficient_data(self, characteristic: BondManagementFeatureCharacteristic) -> None:
-        """Test that insufficient data raises ValueError."""
-        with pytest.raises(ValueError, match="expected 3 bytes"):
-            characteristic.decode_value(bytearray([1, 1]))  # Only 2 bytes
+        """Test that insufficient data results in parse failure."""
+        # parse_value returns parse_success=False for insufficient data
+        result = characteristic.parse_value(bytearray([1, 1]))  # Only 2 bytes
+        assert result.parse_success is False
+        assert "3 bytes" in (result.error_message or "")

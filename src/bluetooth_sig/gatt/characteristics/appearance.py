@@ -9,7 +9,7 @@ from .base import BaseCharacteristic
 from .utils import DataParser
 
 
-class AppearanceCharacteristic(BaseCharacteristic):
+class AppearanceCharacteristic(BaseCharacteristic[AppearanceData]):
     """Appearance characteristic (0x2A01).
 
     org.bluetooth.characteristic.gap.appearance
@@ -20,7 +20,7 @@ class AppearanceCharacteristic(BaseCharacteristic):
     _manual_value_type = "AppearanceData"
     expected_length = 2
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AppearanceData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AppearanceData:
         """Parse appearance value with human-readable info.
 
         Args:
@@ -38,7 +38,7 @@ class AppearanceCharacteristic(BaseCharacteristic):
             info=appearance_info,
         )
 
-    def encode_value(self, data: AppearanceData) -> bytearray:
+    def _encode_value(self, data: AppearanceData) -> bytearray:
         """Encode appearance value back to bytes.
 
         Args:

@@ -250,11 +250,12 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
         # Use the first test case (basic measurement)
         test_data = valid_test_data[0].input_data
 
-        result: BodyCompositionMeasurementData = characteristic.decode_value(test_data)
-        assert result.body_fat_percentage == 5.0
-        assert result.measurement_units == MeasurementSystem.METRIC
-        assert result.muscle_mass is None
-        assert result.impedance is None
+        result = characteristic.parse_value(test_data)
+        assert result.value is not None
+        assert result.value.body_fat_percentage == 5.0
+        assert result.value.measurement_units == MeasurementSystem.METRIC
+        assert result.value.muscle_mass is None
+        assert result.value.impedance is None
 
     def test_body_composition_with_muscle_data(self, characteristic: BodyCompositionMeasurementCharacteristic) -> None:
         """Test body composition with muscle mass and percentage."""
@@ -272,10 +273,11 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(test_data)
-        assert result.muscle_mass == 30.0
-        assert result.muscle_percentage == 15.0
-        assert result.muscle_mass_unit == WeightUnit.KG
+        result = characteristic.parse_value(test_data)
+        assert result.value is not None
+        assert result.value.muscle_mass == 30.0
+        assert result.value.muscle_percentage == 15.0
+        assert result.value.muscle_mass_unit == WeightUnit.KG
 
     def test_body_composition_imperial_units(self, characteristic: BodyCompositionMeasurementCharacteristic) -> None:
         """Test body composition with imperial units."""
@@ -289,12 +291,17 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(test_data)
-        assert result.measurement_units == MeasurementSystem.IMPERIAL
-        assert result.body_fat_percentage == 12.0
+        result = characteristic.parse_value(test_data)
+        assert result.value is not None
+        assert result.value.measurement_units == MeasurementSystem.IMPERIAL
+        assert result.value.body_fat_percentage == 12.0
 
     def test_body_composition_invalid_data(self, characteristic: BodyCompositionMeasurementCharacteristic) -> None:
         """Test body composition with invalid data."""
-        # Too short data
-        with pytest.raises(ValueError, match="must be at least 4 bytes"):
-            characteristic.decode_value(bytearray([0x00, 0x01]))
+        # Too short data - parse_value returns parse_success=False
+        result = characteristic.parse_value(bytearray([0x00, 0x01]))
+        assert result.parse_success is False
+        assert result.error_message == (
+            "Length validation failed for Body Composition Measurement: expected at least 4 bytes, got 2 "
+            "(class-level constraint for BodyCompositionMeasurementCharacteristic)"
+        )

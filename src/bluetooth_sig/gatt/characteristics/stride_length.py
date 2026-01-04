@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class StrideLengthCharacteristic(BaseCharacteristic):
+class StrideLengthCharacteristic(BaseCharacteristic[float]):
     """Stride Length characteristic (0x2B49).
 
     org.bluetooth.characteristic.stride_length

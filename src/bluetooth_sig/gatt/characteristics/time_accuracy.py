@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint8Template
 
 
-class TimeAccuracyCharacteristic(BaseCharacteristic):
+class TimeAccuracyCharacteristic(BaseCharacteristic[int]):
     """Time Accuracy characteristic (0x2A12).
 
     org.bluetooth.characteristic.time_accuracy

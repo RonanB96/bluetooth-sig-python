@@ -14,7 +14,7 @@ class ForceValues:  # pylint: disable=too-few-public-methods
     VALUE_NOT_KNOWN = 0x7FFFFFFF
 
 
-class ForceCharacteristic(BaseCharacteristic):
+class ForceCharacteristic(BaseCharacteristic[float | None]):
     """Force characteristic (0x2C07).
 
     org.bluetooth.characteristic.force
@@ -24,7 +24,7 @@ class ForceCharacteristic(BaseCharacteristic):
 
     expected_length: int = 4  # sint32
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode force characteristic.
 
         Decodes a 32-bit signed integer representing force in 0.001 N increments
@@ -45,7 +45,7 @@ class ForceCharacteristic(BaseCharacteristic):
             return None
         return raw_value * 0.001
 
-    def encode_value(self, data: float) -> bytearray:
+    def _encode_value(self, data: float) -> bytearray:
         """Encode force value."""
         if not SINT32_MIN <= data <= SINT32_MAX - 1:
             raise ValueError(f"Force value {data} out of valid range")

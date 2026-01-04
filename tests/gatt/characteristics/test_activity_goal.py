@@ -66,7 +66,7 @@ class TestActivityGoalCharacteristic(CommonCharacteristicTests):
         """Test activity goal with only total energy expenditure present."""
         # Presence flags: 0x01 (bit 0 set), Total energy expenditure: 500 kcal
         data = bytearray([0x01, 0xF4, 0x01])  # 0x01F4 = 500
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = ActivityGoalData(
             presence_flags=ActivityGoalPresenceFlags.TOTAL_ENERGY_EXPENDITURE,
             total_energy_expenditure=500,
@@ -77,14 +77,14 @@ class TestActivityGoalCharacteristic(CommonCharacteristicTests):
             duration_normal_walking=None,
             duration_intensity_walking=None,
         )
-        assert result == expected
+        assert result.value == expected
 
     def test_activity_goal_multiple_fields(self, characteristic: ActivityGoalCharacteristic) -> None:
         """Test activity goal with multiple fields present."""
         # Presence flags: 0x03 (bits 0 and 1 set)
         # Total energy expenditure: 1000 kcal, Normal walking steps: 5000
         data = bytearray([0x03, 0xE8, 0x03, 0x88, 0x13, 0x00])  # 0x03E8 = 1000, 0x001388 = 5000
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = ActivityGoalData(
             presence_flags=ActivityGoalPresenceFlags.TOTAL_ENERGY_EXPENDITURE
             | ActivityGoalPresenceFlags.NORMAL_WALKING_STEPS,
@@ -96,7 +96,7 @@ class TestActivityGoalCharacteristic(CommonCharacteristicTests):
             duration_normal_walking=None,
             duration_intensity_walking=None,
         )
-        assert result == expected
+        assert result.value == expected
 
     def test_activity_goal_all_fields(self, characteristic: ActivityGoalCharacteristic) -> None:
         """Test activity goal with all fields present."""
@@ -127,7 +127,7 @@ class TestActivityGoalCharacteristic(CommonCharacteristicTests):
                 0x00,  # Duration intensity walking: 1600
             ]
         )
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = ActivityGoalData(
             presence_flags=ActivityGoalPresenceFlags.TOTAL_ENERGY_EXPENDITURE
             | ActivityGoalPresenceFlags.NORMAL_WALKING_STEPS
@@ -144,12 +144,12 @@ class TestActivityGoalCharacteristic(CommonCharacteristicTests):
             duration_normal_walking=3200,
             duration_intensity_walking=1600,
         )
-        assert result == expected
+        assert result.value == expected
 
     def test_activity_goal_no_fields(self, characteristic: ActivityGoalCharacteristic) -> None:
         """Test activity goal with no fields present."""
         data = bytearray([0x00])  # Presence flags only, no fields
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = ActivityGoalData(
             presence_flags=ActivityGoalPresenceFlags(0),
             total_energy_expenditure=None,
@@ -160,4 +160,4 @@ class TestActivityGoalCharacteristic(CommonCharacteristicTests):
             duration_normal_walking=None,
             duration_intensity_walking=None,
         )
-        assert result == expected
+        assert result.value == expected

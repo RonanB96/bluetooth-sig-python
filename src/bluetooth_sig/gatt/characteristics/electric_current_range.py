@@ -30,7 +30,7 @@ class ElectricCurrentRangeData(msgspec.Struct, frozen=True, kw_only=True):  # py
             raise ValueError(f"Maximum current {self.max} A is outside valid range (0.0 to {max_current_value} A)")
 
 
-class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
+class ElectricCurrentRangeCharacteristic(BaseCharacteristic[ElectricCurrentRangeData]):
     """Electric Current Range characteristic (0x2AEF).
 
     org.bluetooth.characteristic.electric_current_range
@@ -46,7 +46,7 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured ElectricCurrentRangeData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ElectricCurrentRangeData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ElectricCurrentRangeData:
         """Parse current range data (2x uint16 in units of 0.01 A).
 
         Args:
@@ -69,7 +69,7 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic):
 
         return ElectricCurrentRangeData(min=min_current_raw * 0.01, max=max_current_raw * 0.01)
 
-    def encode_value(self, data: ElectricCurrentRangeData) -> bytearray:
+    def _encode_value(self, data: ElectricCurrentRangeData) -> bytearray:
         """Encode electric current range value back to bytes.
 
         Args:

@@ -15,7 +15,7 @@ class ProtocolMode(IntEnum):
     REPORT_PROTOCOL = 1
 
 
-class ProtocolModeCharacteristic(BaseCharacteristic):
+class ProtocolModeCharacteristic(BaseCharacteristic[int]):
     """Protocol Mode characteristic (0x2A4E).
 
     org.bluetooth.characteristic.protocol_mode
