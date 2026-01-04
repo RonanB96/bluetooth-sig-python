@@ -133,7 +133,7 @@ class TestPositionQualityCharacteristic(CommonCharacteristicTests):
         """Test position quality with various flag combinations."""
         result = characteristic.parse_value(data)
         for field, expected_value in expected.items():
-            actual_value = getattr(result.value, field)
+            actual_value = getattr(result, field)
             assert actual_value == expected_value, f"Field {field}: expected {expected_value}, got {actual_value}"
 
     def test_position_quality_all_fields(self, characteristic: PositionQualityCharacteristic) -> None:
@@ -161,28 +161,28 @@ class TestPositionQualityCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert result.value.number_of_beacons_in_solution == 5
-        assert result.value.number_of_beacons_in_view == 10
-        assert result.value.time_to_first_fix == 100.0
-        assert result.value.ehpe == 2.0
-        assert result.value.evpe == 3.0
-        assert result.value.hdop == 4.0
-        assert result.value.vdop == 5.0
+        assert result is not None
+        assert result.number_of_beacons_in_solution == 5
+        assert result.number_of_beacons_in_view == 10
+        assert result.time_to_first_fix == 100.0
+        assert result.ehpe == 2.0
+        assert result.evpe == 3.0
+        assert result.hdop == 4.0
+        assert result.vdop == 5.0
 
     def test_position_quality_minimal_data(self, characteristic: PositionQualityCharacteristic) -> None:
         """Test position quality with minimal data (only flags)."""
         data = bytearray([0x00, 0x00])  # No fields present
 
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert result.value.number_of_beacons_in_solution is None
-        assert result.value.number_of_beacons_in_view is None
-        assert result.value.time_to_first_fix is None
-        assert result.value.ehpe is None
-        assert result.value.evpe is None
-        assert result.value.hdop is None
-        assert result.value.vdop is None
+        assert result is not None
+        assert result.number_of_beacons_in_solution is None
+        assert result.number_of_beacons_in_view is None
+        assert result.time_to_first_fix is None
+        assert result.ehpe is None
+        assert result.evpe is None
+        assert result.hdop is None
+        assert result.vdop is None
 
     def test_position_quality_precision_values(self, characteristic: PositionQualityCharacteristic) -> None:
         """Test position quality precision values."""
@@ -199,8 +199,8 @@ class TestPositionQualityCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert result.value.ehpe is None
-        assert result.value.evpe is None
-        assert result.value.hdop is None
-        assert result.value.vdop == 0.5
+        assert result is not None
+        assert result.ehpe is None
+        assert result.evpe is None
+        assert result.hdop is None
+        assert result.vdop == 0.5

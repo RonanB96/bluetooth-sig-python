@@ -69,9 +69,9 @@ class TestLongitudeCharacteristic(CommonCharacteristicTests):
         for expected_lon in test_values:
             encoded = characteristic.build_value(expected_lon)
             decoded = characteristic.parse_value(encoded)
-            assert decoded.value is not None
+            assert decoded is not None
             # Should be accurate to within the resolution (10^-7 degrees)
-            precision_error = abs(decoded.value - expected_lon)
+            precision_error = abs(decoded - expected_lon)
             assert precision_error < characteristic.DEGREE_SCALING_FACTOR, (
                 f"Precision lost for {expected_lon}: got {decoded}, error={precision_error}"
             )

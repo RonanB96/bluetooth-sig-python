@@ -52,10 +52,10 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         plx_data = bytearray([0x00, 0x62, 0x80, 0x48, 0x80])  # SpO2=98%, pulse=72 bpm
         result = characteristic.parse_value(plx_data, ctx=None)
 
-        assert isinstance(result.value, PulseOximetryData)
-        assert result.value.spo2 == 98.0
-        assert result.value.pulse_rate == 72.0
-        assert result.value.supported_features is None  # No context available
+        assert isinstance(result, PulseOximetryData)
+        assert result.spo2 == 98.0
+        assert result.pulse_rate == 72.0
+        assert result.supported_features is None  # No context available
 
     def test_pulse_oximetry_with_plx_features_context(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test pulse oximetry parsing with PLX features from context."""
@@ -93,11 +93,11 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         plx_data = bytearray([0x00, 0x62, 0x80, 0x48, 0x80])  # SpO2=98%, pulse=72 bpm
         result = characteristic.parse_value(plx_data, ctx)
 
-        assert result.value is not None
-        assert result.value.spo2 == 98.0
-        assert result.value.pulse_rate == 72.0
+        assert result is not None
+        assert result.spo2 == 98.0
+        assert result.pulse_rate == 72.0
         assert (
-            result.value.supported_features
+            result.supported_features
             == PLXFeatureFlags.MEASUREMENT_STATUS_SUPPORT | PLXFeatureFlags.DEVICE_AND_SENSOR_STATUS_SUPPORT
         )
 
@@ -146,10 +146,10 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
             plx_data = bytearray([0x00, 0x5F, 0x80, 0x4C, 0x80])  # SpO2=95%, pulse=76 bpm
             result = characteristic.parse_value(plx_data, ctx)
 
-            assert result.value is not None
-            assert result.value.spo2 == 95.0
-            assert result.value.pulse_rate == 76.0
-            assert result.value.supported_features == feature_value
+            assert result is not None
+            assert result.spo2 == 95.0
+            assert result.pulse_rate == 76.0
+            assert result.supported_features == feature_value
 
     def test_pulse_oximetry_context_with_missing_plx_features(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that pulse oximetry works when context exists but PLX features don't."""
@@ -161,7 +161,7 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         plx_data = bytearray([0x00, 0x62, 0x80, 0x48, 0x80])  # SpO2=98%, pulse=72 bpm
         result = characteristic.parse_value(plx_data, ctx)
 
-        assert result.value is not None
-        assert result.value.spo2 == 98.0
-        assert result.value.pulse_rate == 72.0
-        assert result.value.supported_features is None  # Graceful handling of missing context data
+        assert result is not None
+        assert result.spo2 == 98.0
+        assert result.pulse_rate == 72.0
+        assert result.supported_features is None  # Graceful handling of missing context data

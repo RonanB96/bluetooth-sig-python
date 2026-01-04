@@ -46,10 +46,10 @@ class TestPeripheralPreferredConnectionParametersCharacteristic(CommonCharacteri
         """Test fast connection parameters."""
         char = PeripheralPreferredConnectionParametersCharacteristic()
         result = char.parse_value(bytearray([6, 0, 6, 0, 0, 0, 100, 0]))
-        assert result.value.min_interval == 7.5  # 6 * 1.25
-        assert result.value.max_interval == 7.5  # 6 * 1.25
-        assert result.value.latency == 0
-        assert result.value.timeout == 1000  # 100 * 10
+        assert result.min_interval == 7.5  # 6 * 1.25
+        assert result.max_interval == 7.5  # 6 * 1.25
+        assert result.latency == 0
+        assert result.timeout == 1000  # 100 * 10
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve data."""
@@ -57,4 +57,4 @@ class TestPeripheralPreferredConnectionParametersCharacteristic(CommonCharacteri
         original = ConnectionParametersData(min_interval=80, max_interval=100, latency=0, timeout=200)
         encoded = char.build_value(original)
         decoded = char.parse_value(encoded)
-        assert decoded.value == original
+        assert decoded == original

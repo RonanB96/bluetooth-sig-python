@@ -47,7 +47,7 @@ class TestNitrogenDioxideConcentrationCharacteristic(CommonCharacteristicTests):
         # Test normal parsing
         test_data = bytearray([0x32, 0x00])  # 50 ppb little endian
         parsed = characteristic.parse_value(test_data)
-        assert parsed.value == 50
+        assert parsed == 50
 
     def test_nitrogen_dioxide_concentration_boundary_values(
         self, characteristic: NitrogenDioxideConcentrationCharacteristic

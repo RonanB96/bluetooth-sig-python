@@ -63,5 +63,5 @@ class TestMagneticFluxDensity2DCharacteristic(CommonCharacteristicTests):
         test_data = bytearray(struct.pack("<hh", 1000, -500))
         parsed = characteristic.parse_value(test_data)
 
-        assert abs(parsed.value.x_axis - 1e-4) < 1e-10  # 1000 * 10^-7 = 1e-4
-        assert abs(parsed.value.y_axis - (-5e-5)) < 1e-10  # -500 * 10^-7 = -5e-5
+        assert abs(parsed.x_axis - 1e-4) < 1e-10  # 1000 * 10^-7 = 1e-4
+        assert abs(parsed.y_axis - (-5e-5)) < 1e-10  # -500 * 10^-7 = -5e-5

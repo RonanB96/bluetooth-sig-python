@@ -40,13 +40,13 @@ class TestTemperatureTypeCharacteristic(CommonCharacteristicTests):
         """Test armpit temperature type."""
         char = TemperatureTypeCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result.value == 1
+        assert result == 1
 
     def test_mouth_type(self) -> None:
         """Test mouth temperature type."""
         char = TemperatureTypeCharacteristic()
         result = char.parse_value(bytearray([6]))
-        assert result.value == 6
+        assert result == 6
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
@@ -54,4 +54,4 @@ class TestTemperatureTypeCharacteristic(CommonCharacteristicTests):
         for temp_type in range(1, 10):
             encoded = char.build_value(temp_type)
             decoded = char.parse_value(encoded)
-            assert decoded.value == temp_type
+            assert decoded == temp_type

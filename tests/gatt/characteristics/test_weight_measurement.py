@@ -199,18 +199,18 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
 
     def test_weight_measurement_invalid_data(self, characteristic: WeightMeasurementCharacteristic) -> None:
         """Test weight measurement error handling."""
-        # Too short data - parse_value returns parse_success=False
-        result = characteristic.parse_value(bytearray([0x00, 0x01]))
-        assert result.parse_success is False
-        assert result.error_message == (
-            "Length validation failed for Weight Measurement: expected at least 3 bytes, got 2 "
-            "(class-level constraint for WeightMeasurementCharacteristic)"
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
+        # Too short data - parse_value raises CharacteristicParseError
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x01]))
+        assert "Length validation failed for Weight Measurement: expected at least 3 bytes, got 2" in str(
+            exc_info.value
         )
 
         # Missing weight data
-        result = characteristic.parse_value(bytearray([0x00]))
-        assert result.parse_success is False
-        assert result.error_message == (
-            "Length validation failed for Weight Measurement: expected at least 3 bytes, got 1 "
-            "(class-level constraint for WeightMeasurementCharacteristic)"
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00]))
+        assert "Length validation failed for Weight Measurement: expected at least 3 bytes, got 1" in str(
+            exc_info.value
         )

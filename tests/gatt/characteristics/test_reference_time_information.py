@@ -9,6 +9,7 @@ from bluetooth_sig.gatt.characteristics.reference_time_information import (
     ReferenceTimeInformationData,
     TimeSource,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -75,8 +76,8 @@ class TestReferenceTimeInformationCharacteristic(CommonCharacteristicTests):
         """Test all valid time source values."""
         data = bytearray([time_source, 0x00, 0x00, 0x00])
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert result.value.time_source == expected_enum
+        assert result is not None
+        assert result.time_source == expected_enum
 
     def test_reference_time_information_time_accuracy_boundary_values(
         self, characteristic: ReferenceTimeInformationCharacteristic
@@ -85,26 +86,26 @@ class TestReferenceTimeInformationCharacteristic(CommonCharacteristicTests):
         # Minimum accuracy (0 = 0ms drift)
         data_min = bytearray([0x01, 0x00, 0x00, 0x00])
         result_min = characteristic.parse_value(data_min)
-        assert result_min.value is not None
-        assert result_min.value.time_accuracy == 0
+        assert result_min is not None
+        assert result_min.time_accuracy == 0
 
         # Maximum valid accuracy (253 = 31.625s drift)
         data_max_valid = bytearray([0x01, 0xFD, 0x00, 0x00])
         result_max_valid = characteristic.parse_value(data_max_valid)
-        assert result_max_valid.value is not None
-        assert result_max_valid.value.time_accuracy == 253
+        assert result_max_valid is not None
+        assert result_max_valid.time_accuracy == 253
 
         # Out of range indicator (254 = >31.625s drift)
         data_out_of_range = bytearray([0x01, 0xFE, 0x00, 0x00])
         result_out_of_range = characteristic.parse_value(data_out_of_range)
-        assert result_out_of_range.value is not None
-        assert result_out_of_range.value.time_accuracy == 254
+        assert result_out_of_range is not None
+        assert result_out_of_range.time_accuracy == 254
 
         # Unknown accuracy (255)
         data_unknown = bytearray([0x01, 0xFF, 0x00, 0x00])
         result_unknown = characteristic.parse_value(data_unknown)
-        assert result_unknown.value is not None
-        assert result_unknown.value.time_accuracy == 255
+        assert result_unknown is not None
+        assert result_unknown.time_accuracy == 255
 
     def test_reference_time_information_days_since_update_boundary_values(
         self, characteristic: ReferenceTimeInformationCharacteristic
@@ -113,20 +114,20 @@ class TestReferenceTimeInformationCharacteristic(CommonCharacteristicTests):
         # Minimum days (0)
         data_min = bytearray([0x01, 0x00, 0x00, 0x00])
         result_min = characteristic.parse_value(data_min)
-        assert result_min.value is not None
-        assert result_min.value.days_since_update == 0
+        assert result_min is not None
+        assert result_min.days_since_update == 0
 
         # Maximum valid days (254)
         data_max = bytearray([0x01, 0x00, 0xFE, 0x00])
         result_max = characteristic.parse_value(data_max)
-        assert result_max.value is not None
-        assert result_max.value.days_since_update == 254
+        assert result_max is not None
+        assert result_max.days_since_update == 254
 
         # Out of range indicator (255 = >=255 days)
         data_out_of_range = bytearray([0x01, 0x00, 0xFF, 0x00])
         result_out_of_range = characteristic.parse_value(data_out_of_range)
-        assert result_out_of_range.value is not None
-        assert result_out_of_range.value.days_since_update == 255
+        assert result_out_of_range is not None
+        assert result_out_of_range.days_since_update == 255
 
     def test_reference_time_information_hours_since_update_valid_values(
         self, characteristic: ReferenceTimeInformationCharacteristic
@@ -135,20 +136,20 @@ class TestReferenceTimeInformationCharacteristic(CommonCharacteristicTests):
         # Minimum hours (0)
         data_min = bytearray([0x01, 0x00, 0x00, 0x00])
         result_min = characteristic.parse_value(data_min)
-        assert result_min.value is not None
-        assert result_min.value.hours_since_update == 0
+        assert result_min is not None
+        assert result_min.hours_since_update == 0
 
         # Maximum valid hours (23)
         data_max = bytearray([0x01, 0x00, 0x00, 0x17])
         result_max = characteristic.parse_value(data_max)
-        assert result_max.value is not None
-        assert result_max.value.hours_since_update == 23
+        assert result_max is not None
+        assert result_max.hours_since_update == 23
 
         # Out of range indicator (255 = >=255 days)
         data_out_of_range = bytearray([0x01, 0x00, 0x00, 0xFF])
         result_out_of_range = characteristic.parse_value(data_out_of_range)
-        assert result_out_of_range.value is not None
-        assert result_out_of_range.value.hours_since_update == 255
+        assert result_out_of_range is not None
+        assert result_out_of_range.hours_since_update == 255
 
     def test_reference_time_information_invalid_hours_since_update(
         self, characteristic: ReferenceTimeInformationCharacteristic
@@ -156,9 +157,9 @@ class TestReferenceTimeInformationCharacteristic(CommonCharacteristicTests):
         """Test that invalid hours since update values are rejected."""
         # Hours: 24 (invalid, should be 0-23 or 255)
         data_invalid = bytearray([0x01, 0x00, 0x00, 0x18])
-        result = characteristic.parse_value(data_invalid)
-        assert not result.parse_success
-        assert "hours since update" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data_invalid)
+        assert "hours since update" in str(exc_info.value).lower()
 
     def test_reference_time_information_invalid_time_source(
         self, characteristic: ReferenceTimeInformationCharacteristic
@@ -166,9 +167,9 @@ class TestReferenceTimeInformationCharacteristic(CommonCharacteristicTests):
         """Test that invalid time source values are rejected."""
         # Time source: 100 (reserved, should be 0-7)
         data_invalid = bytearray([0x64, 0x00, 0x00, 0x00])
-        result = characteristic.parse_value(data_invalid)
-        assert not result.parse_success
-        assert "time source" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data_invalid)
+        assert "time source" in str(exc_info.value).lower()
 
     def test_reference_time_information_gps_zero_drift(
         self, characteristic: ReferenceTimeInformationCharacteristic
@@ -176,11 +177,11 @@ class TestReferenceTimeInformationCharacteristic(CommonCharacteristicTests):
         """Test GPS time source with zero drift and no update."""
         data = bytearray([0x02, 0x00, 0x00, 0x00])  # GPS, 0ms accuracy, 0 days + 0 hours
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert result.value.time_source == TimeSource.GPS
-        assert result.value.time_accuracy == 0
-        assert result.value.days_since_update == 0
-        assert result.value.hours_since_update == 0
+        assert result is not None
+        assert result.time_source == TimeSource.GPS
+        assert result.time_accuracy == 0
+        assert result.days_since_update == 0
+        assert result.hours_since_update == 0
 
     def test_reference_time_information_not_synchronized_unknown_accuracy(
         self, characteristic: ReferenceTimeInformationCharacteristic
@@ -188,11 +189,11 @@ class TestReferenceTimeInformationCharacteristic(CommonCharacteristicTests):
         """Test not synchronized time source with unknown accuracy."""
         data = bytearray([0x07, 0xFF, 0xFF, 0xFF])  # Not synchronized, unknown accuracy, >=255 days
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert result.value.time_source == TimeSource.NOT_SYNCHRONIZED
-        assert result.value.time_accuracy == 255  # Unknown
-        assert result.value.days_since_update == 255  # >=255 days
-        assert result.value.hours_since_update == 255  # >=255 days
+        assert result is not None
+        assert result.time_source == TimeSource.NOT_SYNCHRONIZED
+        assert result.time_accuracy == 255  # Unknown
+        assert result.days_since_update == 255  # >=255 days
+        assert result.hours_since_update == 255  # >=255 days
 
     def test_reference_time_information_roundtrip(self, characteristic: ReferenceTimeInformationCharacteristic) -> None:
         """Test that encode/decode are inverse operations."""
@@ -206,8 +207,8 @@ class TestReferenceTimeInformationCharacteristic(CommonCharacteristicTests):
         encoded = characteristic.build_value(original)
         decoded = characteristic.parse_value(encoded)
 
-        assert decoded.value is not None
-        assert decoded.value.time_source == original.time_source
-        assert decoded.value.time_accuracy == original.time_accuracy
-        assert decoded.value.days_since_update == original.days_since_update
-        assert decoded.value.hours_since_update == original.hours_since_update
+        assert decoded is not None
+        assert decoded.time_source == original.time_source
+        assert decoded.time_accuracy == original.time_accuracy
+        assert decoded.days_since_update == original.days_since_update
+        assert decoded.hours_since_update == original.hours_since_update

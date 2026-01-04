@@ -55,14 +55,14 @@ class TestStrideLengthCharacteristic(CommonCharacteristicTests):
         """Test stride length with various valid values."""
         data = bytearray([raw_value & 0xFF, (raw_value >> 8) & 0xFF])
         result = characteristic.parse_value(data)
-        assert result.value == expected_length
+        assert result == expected_length
 
     def test_stride_length_boundary_values(self, characteristic: StrideLengthCharacteristic) -> None:
         """Test stride length boundary values."""
         # Test minimum value (0 m)
         result = characteristic.parse_value(bytearray([0, 0]))
-        assert result.value == 0.0
+        assert result == 0.0
 
         # Test maximum value (65.535 m)
         result = characteristic.parse_value(bytearray([0xFF, 0xFF]))
-        assert result.value == 65.535
+        assert result == 65.535

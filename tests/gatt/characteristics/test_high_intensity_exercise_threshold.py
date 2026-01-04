@@ -75,11 +75,11 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
 
         data = bytearray([42])
         result = characteristic.parse_value(data)
-        assert isinstance(result.value, HighIntensityExerciseThresholdData)
-        assert result.value.field_selector == 42
-        assert result.value.threshold_energy_expenditure is None
-        assert result.value.threshold_metabolic_equivalent is None
-        assert result.value.threshold_percentage_max_heart_rate is None
+        assert isinstance(result, HighIntensityExerciseThresholdData)
+        assert result.field_selector == 42
+        assert result.threshold_energy_expenditure is None
+        assert result.threshold_metabolic_equivalent is None
+        assert result.threshold_percentage_max_heart_rate is None
 
     def test_field_selector_1_with_energy_expenditure(
         self, characteristic: HighIntensityExerciseThresholdCharacteristic
@@ -92,11 +92,11 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         # field_selector=1, energy_expenditure=5 (5*1000=5000 joules)
         data = bytearray([1, 0x05, 0x00])  # little-endian uint16: 5
         result = characteristic.parse_value(data)
-        assert isinstance(result.value, HighIntensityExerciseThresholdData)
-        assert result.value.field_selector == 1
-        assert result.value.threshold_energy_expenditure == 5000
-        assert result.value.threshold_metabolic_equivalent is None
-        assert result.value.threshold_percentage_max_heart_rate is None
+        assert isinstance(result, HighIntensityExerciseThresholdData)
+        assert result.field_selector == 1
+        assert result.threshold_energy_expenditure == 5000
+        assert result.threshold_metabolic_equivalent is None
+        assert result.threshold_percentage_max_heart_rate is None
 
     def test_field_selector_2_with_metabolic_equivalent(
         self, characteristic: HighIntensityExerciseThresholdCharacteristic
@@ -109,11 +109,11 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         # field_selector=2, metabolic_equivalent=15 (15*0.1=1.5 MET)
         data = bytearray([2, 15])
         result = characteristic.parse_value(data)
-        assert isinstance(result.value, HighIntensityExerciseThresholdData)
-        assert result.value.field_selector == 2
-        assert result.value.threshold_energy_expenditure is None
-        assert result.value.threshold_metabolic_equivalent == 1.5
-        assert result.value.threshold_percentage_max_heart_rate is None
+        assert isinstance(result, HighIntensityExerciseThresholdData)
+        assert result.field_selector == 2
+        assert result.threshold_energy_expenditure is None
+        assert result.threshold_metabolic_equivalent == 1.5
+        assert result.threshold_percentage_max_heart_rate is None
 
     def test_field_selector_3_with_heart_rate_percentage(
         self, characteristic: HighIntensityExerciseThresholdCharacteristic
@@ -126,11 +126,11 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         # field_selector=3, heart_rate_percentage=75
         data = bytearray([3, 75])
         result = characteristic.parse_value(data)
-        assert isinstance(result.value, HighIntensityExerciseThresholdData)
-        assert result.value.field_selector == 3
-        assert result.value.threshold_energy_expenditure is None
-        assert result.value.threshold_metabolic_equivalent is None
-        assert result.value.threshold_percentage_max_heart_rate == 75
+        assert isinstance(result, HighIntensityExerciseThresholdData)
+        assert result.field_selector == 3
+        assert result.threshold_energy_expenditure is None
+        assert result.threshold_metabolic_equivalent is None
+        assert result.threshold_percentage_max_heart_rate == 75
 
     @pytest.mark.parametrize(
         "threshold_value",
@@ -152,12 +152,12 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
 
         data = bytearray([threshold_value])
         result = characteristic.parse_value(data)
-        assert isinstance(result.value, HighIntensityExerciseThresholdData)
-        assert result.value.field_selector == threshold_value
+        assert isinstance(result, HighIntensityExerciseThresholdData)
+        assert result.field_selector == threshold_value
         # When only 1 byte provided, all threshold fields should be None
-        assert result.value.threshold_energy_expenditure is None
-        assert result.value.threshold_metabolic_equivalent is None
-        assert result.value.threshold_percentage_max_heart_rate is None
+        assert result.threshold_energy_expenditure is None
+        assert result.threshold_metabolic_equivalent is None
+        assert result.threshold_percentage_max_heart_rate is None
 
     def test_high_intensity_exercise_threshold_boundary_values(
         self, characteristic: HighIntensityExerciseThresholdCharacteristic
@@ -169,16 +169,16 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
 
         # Test minimum value (0%)
         result = characteristic.parse_value(bytearray([0]))
-        assert isinstance(result.value, HighIntensityExerciseThresholdData)
-        assert result.value.field_selector == 0
-        assert result.value.threshold_energy_expenditure is None
-        assert result.value.threshold_metabolic_equivalent is None
-        assert result.value.threshold_percentage_max_heart_rate is None
+        assert isinstance(result, HighIntensityExerciseThresholdData)
+        assert result.field_selector == 0
+        assert result.threshold_energy_expenditure is None
+        assert result.threshold_metabolic_equivalent is None
+        assert result.threshold_percentage_max_heart_rate is None
 
         # Test maximum value (255%)
         result = characteristic.parse_value(bytearray([255]))
-        assert isinstance(result.value, HighIntensityExerciseThresholdData)
-        assert result.value.field_selector == 255
-        assert result.value.threshold_energy_expenditure is None
-        assert result.value.threshold_metabolic_equivalent is None
-        assert result.value.threshold_percentage_max_heart_rate is None
+        assert isinstance(result, HighIntensityExerciseThresholdData)
+        assert result.field_selector == 255
+        assert result.threshold_energy_expenditure is None
+        assert result.threshold_metabolic_equivalent is None
+        assert result.threshold_percentage_max_heart_rate is None

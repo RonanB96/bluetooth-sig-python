@@ -49,14 +49,14 @@ class TestAnaerobicThresholdCharacteristic(CommonCharacteristicTests):
         """Test anaerobic threshold with various valid values."""
         data = bytearray([thresh])
         result = characteristic.parse_value(data)
-        assert result.value == thresh
+        assert result == thresh
 
     def test_anaerobic_thresh_boundary_values(self, characteristic: AnaerobicThresholdCharacteristic) -> None:
         """Test anaerobic threshold boundary values."""
         # Test minimum (0 bpm)
         result = characteristic.parse_value(bytearray([0]))
-        assert result.value == 0
+        assert result == 0
 
         # Test maximum (255 bpm)
         result = characteristic.parse_value(bytearray([255]))
-        assert result.value == 255
+        assert result == 255

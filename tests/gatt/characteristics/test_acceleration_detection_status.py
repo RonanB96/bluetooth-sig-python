@@ -33,10 +33,10 @@ class TestAccelerationDetectionStatusCharacteristic(CommonCharacteristicTests):
         """Test no acceleration detected."""
         char = AccelerationDetectionStatusCharacteristic()
         result = char.parse_value(bytearray([0]))
-        assert result.value == 0
+        assert result == 0
 
     def test_acceleration_detected(self) -> None:
         """Test acceleration detected."""
         char = AccelerationDetectionStatusCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result.value == 1
+        assert result == 1

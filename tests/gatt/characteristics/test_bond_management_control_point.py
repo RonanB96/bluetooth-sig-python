@@ -47,15 +47,15 @@ class TestBondManagementControlPointCharacteristic(CommonCharacteristicTests):
         """Test parsing of control commands."""
         # Test delete bond command
         result = characteristic.parse_value(bytearray([0x01]))
-        assert result.value == BondManagementCommand.DELETE_BOND_OF_REQUESTING_DEVICE
+        assert result == BondManagementCommand.DELETE_BOND_OF_REQUESTING_DEVICE
 
         # Test delete all bonds command
         result = characteristic.parse_value(bytearray([0x02]))
-        assert result.value == BondManagementCommand.DELETE_ALL_BONDS_ON_SERVER
+        assert result == BondManagementCommand.DELETE_ALL_BONDS_ON_SERVER
 
         # Test delete all but active command
         result = characteristic.parse_value(bytearray([0x03]))
-        assert result.value == BondManagementCommand.DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER
+        assert result == BondManagementCommand.DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER
 
     def test_invalid_command(self, characteristic: BondManagementControlPointCharacteristic) -> None:
         """Test that invalid commands result in parse failure."""

@@ -54,14 +54,14 @@ class TestCaloricIntakeCharacteristic(CommonCharacteristicTests):
         """Test caloric intake with various valid values."""
         data = bytearray([calories & 0xFF, (calories >> 8) & 0xFF])
         result = characteristic.parse_value(data)
-        assert result.value == calories
+        assert result == calories
 
     def test_caloric_intake_boundary_values(self, characteristic: CaloricIntakeCharacteristic) -> None:
         """Test caloric intake boundary values."""
         # Test minimum value (0 calories)
         result = characteristic.parse_value(bytearray([0, 0]))
-        assert result.value == 0
+        assert result == 0
 
         # Test maximum value (65535 calories)
         result = characteristic.parse_value(bytearray([0xFF, 0xFF]))
-        assert result.value == 65535
+        assert result == 65535

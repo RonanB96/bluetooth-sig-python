@@ -49,7 +49,7 @@ class TestNonMethaneVOCConcentrationCharacteristic(CommonCharacteristicTests):
         # Example: 0x1234 = exponent=1, mantissa=564 = 564 * 10^1 = 5640
         test_data = bytearray([0x34, 0x12])  # IEEE 11073 SFLOAT little endian
         parsed = characteristic.parse_value(test_data)
-        assert isinstance(parsed.value, float)
+        assert isinstance(parsed, float)
 
     def test_tvoc_concentration_special_values(self, characteristic: NonMethaneVOCConcentrationCharacteristic) -> None:
         """Test TVOC concentration special values per IEEE 11073 SFLOAT."""
@@ -57,16 +57,16 @@ class TestNonMethaneVOCConcentrationCharacteristic(CommonCharacteristicTests):
 
         # Test 0x07FF (NaN)
         result = characteristic.parse_value(bytearray([0xFF, 0x07]))
-        assert math.isnan(result.value), f"Expected NaN, got {result}"
+        assert math.isnan(result), f"Expected NaN, got {result}"
 
         # Test 0x0800 (NRes - Not a valid result)
         result = characteristic.parse_value(bytearray([0x00, 0x08]))
-        assert math.isnan(result.value), f"Expected NaN, got {result}"
+        assert math.isnan(result), f"Expected NaN, got {result}"
 
         # Test 0x07FE (+INFINITY)
         result = characteristic.parse_value(bytearray([0xFE, 0x07]))
-        assert math.isinf(result.value) and result.value > 0, f"Expected +inf, got {result}"
+        assert math.isinf(result) and result > 0, f"Expected +inf, got {result}"
 
         # Test 0x0802 (-INFINITY)
         result = characteristic.parse_value(bytearray([0x02, 0x08]))
-        assert math.isinf(result.value) and result.value < 0, f"Expected -inf, got {result}"
+        assert math.isinf(result) and result < 0, f"Expected -inf, got {result}"

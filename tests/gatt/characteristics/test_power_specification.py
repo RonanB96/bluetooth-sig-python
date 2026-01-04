@@ -55,19 +55,19 @@ class TestPowerSpecificationCharacteristic(CommonCharacteristicTests):
         # Test "value is not valid" (0xFFFFFE) for all fields
         result = characteristic.parse_value(bytearray([0xFE, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF]))
         expected = PowerSpecificationData(minimum=None, typical=None, maximum=None)
-        assert result.value == expected
+        assert result == expected
 
         # Test "value is not known" (0xFFFFFF) for all fields
         result = characteristic.parse_value(bytearray([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]))
         expected = PowerSpecificationData(minimum=None, typical=None, maximum=None)
-        assert result.value == expected
+        assert result == expected
 
         # Test mixed valid and special values
         result = characteristic.parse_value(
             bytearray([0x0A, 0x00, 0x00, 0xFE, 0xFF, 0xFF, 0x14, 0x00, 0x00])  # 1.0 W, invalid, 2.0 W
         )
         expected = PowerSpecificationData(minimum=1.0, typical=None, maximum=2.0)
-        assert result.value == expected
+        assert result == expected
 
     def test_power_specification_encoding(self, characteristic: PowerSpecificationCharacteristic) -> None:
         """Test encoding power specification values."""
@@ -96,10 +96,10 @@ class TestPowerSpecificationCharacteristic(CommonCharacteristicTests):
 
         # Decode back to verify
         decoded = characteristic.parse_value(encoded)
-        assert decoded.value is not None
-        assert decoded.value.minimum == 1.0
-        assert decoded.value.typical == 2.1
-        assert decoded.value.maximum == 3.2
+        assert decoded is not None
+        assert decoded.minimum == 1.0
+        assert decoded.typical == 2.1
+        assert decoded.maximum == 3.2
 
     def test_power_specification_data_class(self) -> None:
         """Test PowerSpecificationData class methods."""

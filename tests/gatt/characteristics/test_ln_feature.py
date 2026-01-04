@@ -214,9 +214,9 @@ class TestLNFeatureCharacteristic(CommonCharacteristicTests):
         data = bytearray(features_bitmap.to_bytes(4, byteorder="little"))
 
         result = characteristic.parse_value(data)
-        assert result.value.features_bitmap == features_bitmap
+        assert result.features_bitmap == features_bitmap
         for field, expected in expected_features.items():
-            assert getattr(result.value, field) == expected, f"Field {field} should be {expected}"
+            assert getattr(result, field) == expected, f"Field {field} should be {expected}"
 
     def test_ln_feature_all_features_enabled(self, characteristic: LNFeatureCharacteristic) -> None:
         """Test LN feature with all features enabled."""
@@ -225,11 +225,11 @@ class TestLNFeatureCharacteristic(CommonCharacteristicTests):
         data = bytearray(features_bitmap.to_bytes(4, byteorder="little"))
 
         result = characteristic.parse_value(data)
-        assert result.value.features_bitmap == features_bitmap
+        assert result.features_bitmap == features_bitmap
         # Check that all boolean features are True
         feature_fields = [field for field in dir(result) if field.endswith("_supported") and not field.startswith("_")]
         for field in feature_fields:
-            assert getattr(result.value, field) is True, f"Field {field} should be True for all features enabled"
+            assert getattr(result, field) is True, f"Field {field} should be True for all features enabled"
 
     def test_ln_feature_no_features_enabled(self, characteristic: LNFeatureCharacteristic) -> None:
         """Test LN feature with no features enabled."""
@@ -238,8 +238,8 @@ class TestLNFeatureCharacteristic(CommonCharacteristicTests):
         data = bytearray(features_bitmap.to_bytes(4, byteorder="little"))
 
         result = characteristic.parse_value(data)
-        assert result.value.features_bitmap == features_bitmap
+        assert result.features_bitmap == features_bitmap
         # Check that all boolean features are False
         feature_fields = [field for field in dir(result) if field.endswith("_supported") and not field.startswith("_")]
         for field in feature_fields:
-            assert getattr(result.value, field) is False, f"Field {field} should be False for no features enabled"
+            assert getattr(result, field) is False, f"Field {field} should be False for no features enabled"

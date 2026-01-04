@@ -34,13 +34,13 @@ class TestDayOfWeekCharacteristic(CommonCharacteristicTests):
         """Test Monday (day 1)."""
         char = DayOfWeekCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result.value == 1
+        assert result == 1
 
     def test_sunday(self) -> None:
         """Test Sunday (day 7)."""
         char = DayOfWeekCharacteristic()
         result = char.parse_value(bytearray([7]))
-        assert result.value == 7
+        assert result == 7
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
@@ -48,4 +48,4 @@ class TestDayOfWeekCharacteristic(CommonCharacteristicTests):
         for day in range(1, 8):  # Days 1-7
             encoded = char.build_value(day)
             decoded = char.parse_value(encoded)
-            assert decoded.value == day
+            assert decoded == day

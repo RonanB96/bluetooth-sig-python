@@ -77,12 +77,12 @@ class TestBatteryCriticalStatusCharacteristic(CommonCharacteristicTests):
         for bit_name, bit_mask in bits:
             # Test bit set
             result = characteristic.parse_value(bytearray([bit_mask]))
-            assert getattr(result.value, bit_name) is True, f"Bit {bit_name} should be True when set"
+            assert getattr(result, bit_name) is True, f"Bit {bit_name} should be True when set"
 
             # Test bit clear (all other bits set)
             inverted_mask = 0xFF ^ bit_mask
             result = characteristic.parse_value(bytearray([inverted_mask]))
-            assert getattr(result.value, bit_name) is False, f"Bit {bit_name} should be False when clear"
+            assert getattr(result, bit_name) is False, f"Bit {bit_name} should be False when clear"
 
     def test_battery_critical_status_multiple_bits(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test multiple bits set simultaneously."""
@@ -94,15 +94,13 @@ class TestBatteryCriticalStatusCharacteristic(CommonCharacteristicTests):
         for mask, expected_bits in test_cases:
             result = characteristic.parse_value(bytearray([mask]))
             for bit_name in expected_bits:
-                assert getattr(result.value, bit_name) is True, f"Bit {bit_name} should be True in mask {mask:02X}"
+                assert getattr(result, bit_name) is True, f"Bit {bit_name} should be True in mask {mask:02X}"
 
             # Check other bits are False
             all_bits = ["critical_power_state", "immediate_service_required"]
             for bit_name in all_bits:
                 if bit_name not in expected_bits:
-                    assert getattr(result.value, bit_name) is False, (
-                        f"Bit {bit_name} should be False in mask {mask:02X}"
-                    )
+                    assert getattr(result, bit_name) is False, f"Bit {bit_name} should be False in mask {mask:02X}"
 
     def test_battery_critical_status_encoding(self, characteristic: BatteryCriticalStatusCharacteristic) -> None:
         """Test encoding BatteryCriticalStatus to bytes."""
@@ -136,7 +134,7 @@ class TestBatteryCriticalStatusCharacteristic(CommonCharacteristicTests):
 
         for value in test_values:
             decoded = characteristic.parse_value(bytearray([value]))
-            encoded = characteristic.build_value(decoded.value)
+            encoded = characteristic.build_value(decoded)
             assert encoded == bytearray([value]), f"Round-trip failed for value {value:02X}"
 
     def test_characteristic_metadata(self, characteristic: BatteryCriticalStatusCharacteristic) -> None:

@@ -60,19 +60,19 @@ class TestLocalTimeInformationCharacteristic(CommonCharacteristicTests):
         test_data = bytearray([8, 4])  # timezone=+2h (8*15min), dst=+1h (value 4)
         parsed = characteristic.parse_value(test_data)
 
-        assert parsed.value is not None
-        assert parsed.value.timezone.description == "UTC+02:00"
-        assert parsed.value.timezone.offset_hours == 2.0
-        assert parsed.value.dst_offset.description == "Daylight Time"
-        assert parsed.value.dst_offset.offset_hours == 1.0
-        assert parsed.value.total_offset_hours == 3.0
+        assert parsed is not None
+        assert parsed.timezone.description == "UTC+02:00"
+        assert parsed.timezone.offset_hours == 2.0
+        assert parsed.dst_offset.description == "Daylight Time"
+        assert parsed.dst_offset.offset_hours == 1.0
+        assert parsed.total_offset_hours == 3.0
 
         # Test unknown values
         unknown_data = bytearray([0x80, 0xFF])  # unknown timezone and DST
         parsed_unknown = characteristic.parse_value(unknown_data)
-        assert parsed_unknown.value is not None
-        assert parsed_unknown.value.timezone.description == "Unknown"
-        assert parsed_unknown.value.dst_offset.description == "DST offset unknown"
+        assert parsed_unknown is not None
+        assert parsed_unknown.timezone.description == "Unknown"
+        assert parsed_unknown.dst_offset.description == "DST offset unknown"
 
     def test_local_time_information_encode_value(self, characteristic: LocalTimeInformationCharacteristic) -> None:
         """Test encoding LocalTimeInformationData back to bytes."""
@@ -113,7 +113,7 @@ class TestLocalTimeInformationCharacteristic(CommonCharacteristicTests):
         parsed = characteristic.parse_value(original_data)
 
         # Encode it back
-        encoded = characteristic.build_value(parsed.value)
+        encoded = characteristic.build_value(parsed)
 
         # Should match the original
         assert encoded == original_data

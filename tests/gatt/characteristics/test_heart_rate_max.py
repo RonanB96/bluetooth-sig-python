@@ -49,14 +49,14 @@ class TestHeartRateMaxCharacteristic(CommonCharacteristicTests):
         """Test heart rate max with various valid values."""
         data = bytearray([heart_rate_max])
         result = characteristic.parse_value(data)
-        assert result.value == heart_rate_max
+        assert result == heart_rate_max
 
     def test_heart_rate_max_boundary_values(self, characteristic: HeartRateMaxCharacteristic) -> None:
         """Test heart rate max boundary values."""
         # Test minimum (0 bpm)
         result = characteristic.parse_value(bytearray([0]))
-        assert result.value == 0
+        assert result == 0
 
         # Test maximum (255 bpm)
         result = characteristic.parse_value(bytearray([255]))
-        assert result.value == 255
+        assert result == 255

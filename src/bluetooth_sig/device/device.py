@@ -21,7 +21,7 @@ from ..advertising import (
     advertising_interpreter_registry,
 )
 from ..gatt.characteristics import CharacteristicName
-from ..gatt.characteristics.base import BaseCharacteristic, CharacteristicData
+from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
 from ..gatt.characteristics.unknown import UnknownCharacteristic
 from ..gatt.context import CharacteristicContext, DeviceInfo
@@ -31,7 +31,6 @@ from ..gatt.services import ServiceName
 from ..types import (
     AdvertisementData,
     AdvertisingData,
-    CharacteristicDataProtocol,
     CharacteristicInfo,
     DescriptorData,
     DescriptorInfo,
@@ -69,7 +68,7 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         self,
         char_data: dict[str, bytes],
         ctx: CharacteristicContext | None = None,
-    ) -> dict[str, CharacteristicData[Any]]:
+    ) -> dict[str, Any]:
         """Parse multiple characteristics at once."""
 
     @abstractmethod
@@ -78,7 +77,7 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         uuid: str,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-    ) -> CharacteristicData[Any]:
+    ) -> Any:
         """Parse a single characteristic's raw bytes."""
 
     @abstractmethod
@@ -295,7 +294,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         dep_uuid: BluetoothUUID,
         is_required: bool,
         dep_class: type[BaseCharacteristic[Any]],
-    ) -> CharacteristicDataProtocol[Any] | None:
+    ) -> Any | None:
         """Resolve a single dependency by reading and parsing it.
 
         Args:
@@ -372,7 +371,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         required_deps = getattr(char_class, "_required_dependencies", [])
 
         # Build context with resolved dependencies
-        context_chars: dict[str, CharacteristicDataProtocol] = {}
+        context_chars: dict[str, Any] = {}
 
         for dep_class in required_deps + optional_deps:
             is_required = dep_class in required_deps
@@ -866,7 +865,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         # Route to vendor interpreter and return result
         return self._interpret_advertisement(advertisement)
 
-    def get_characteristic_data(self, char_uuid: BluetoothUUID) -> CharacteristicData[Any] | None:
+    def get_characteristic_data(self, char_uuid: BluetoothUUID) -> Any | None:
         """Get parsed characteristic data - single source of truth via characteristic.last_parsed.
 
         Searches across all services to find the characteristic by UUID.
@@ -875,14 +874,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             char_uuid: UUID of the characteristic
 
         Returns:
-            CharacteristicData (last parsed result) if found, None otherwise.
+            Parsed characteristic value if found, None otherwise.
 
         Example::
 
             # Search for characteristic across all services
             battery_data = device.get_characteristic_data(BluetoothUUID("2A19"))
-            if battery_data:
-                print(f"Battery: {battery_data.value}%")
+            if battery_data is not None:
+                print(f"Battery: {battery_data}%")
 
         """
         char_instance = self._get_cached_characteristic(char_uuid)

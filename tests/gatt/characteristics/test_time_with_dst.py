@@ -8,6 +8,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.templates import TimeData
 from bluetooth_sig.gatt.characteristics.time_with_dst import TimeWithDstCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.gatt_enums import AdjustReason, DayOfWeek
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -91,24 +92,24 @@ class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
         data_max_fractions = bytearray([0xE8, 0x07, 0x03, 0x0A, 0x02, 0x00, 0x00, 0x07, 0xFF, 0x08])
         result_fractions = characteristic.parse_value(data_max_fractions)
         assert result_fractions.parse_success
-        assert result_fractions.value is not None
-        assert result_fractions.value.fractions256 == 255
+        assert result_fractions is not None
+        assert result_fractions.fractions256 == 255
 
         # Maximum adjust reason (255, but reserved bits are masked to 15)
         data_max_adjust = bytearray([0xE8, 0x07, 0x03, 0x0A, 0x02, 0x00, 0x00, 0x07, 0x00, 0xFF])
         result_adjust = characteristic.parse_value(data_max_adjust)
         assert result_adjust.parse_success
-        assert result_adjust.value is not None
+        assert result_adjust is not None
         # Reserved bits (4-7) are masked out, so 255 becomes 15 (all defined flags)
-        assert result_adjust.value.adjust_reason == AdjustReason(15)
+        assert result_adjust.adjust_reason == AdjustReason(15)
 
     def test_time_with_dst_invalid_day_of_week(self, characteristic: TimeWithDstCharacteristic) -> None:
         """Test that invalid day of week values are rejected."""
         # Day of week = 8 (invalid, max is 7)
         data = bytearray([0xE8, 0x07, 0x03, 0x0A, 0x02, 0x00, 0x00, 0x08, 0x00, 0x00])
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
-        assert "day_of_week" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data)
+        assert "day_of_week" in str(exc_info.value).lower()
 
     def test_time_with_dst_invalid_fractions256(self, characteristic: TimeWithDstCharacteristic) -> None:
         """Test that invalid fractions256 values are rejected during encoding."""
@@ -148,6 +149,5 @@ class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
         encoded = characteristic.build_value(original)
         result = characteristic.parse_value(encoded)
 
-        assert result.parse_success
-        assert result.value is not None
-        assert result.value == original
+        assert result is not None
+        assert result == original

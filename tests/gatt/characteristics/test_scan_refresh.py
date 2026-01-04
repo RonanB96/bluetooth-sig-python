@@ -33,13 +33,13 @@ class TestScanRefreshCharacteristic(CommonCharacteristicTests):
         """Test no refresh required."""
         char = ScanRefreshCharacteristic()
         result = char.parse_value(bytearray([0]))
-        assert result.value == 0
+        assert result == 0
 
     def test_refresh_required(self) -> None:
         """Test server requires refresh."""
         char = ScanRefreshCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result.value == 1
+        assert result == 1
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
@@ -47,4 +47,4 @@ class TestScanRefreshCharacteristic(CommonCharacteristicTests):
         for value in [0, 1]:
             encoded = char.build_value(value)
             decoded = char.parse_value(encoded)
-            assert decoded.value == value
+            assert decoded == value

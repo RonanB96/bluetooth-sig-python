@@ -62,7 +62,7 @@ class TestSportTypeForAerobicAndAnaerobicThresholdsCharacteristic(CommonCharacte
         """Test sport type with various valid values."""
         data = bytearray([sport_type_value])
         result = characteristic.parse_value(data)
-        assert result.value == expected_enum
+        assert result == expected_enum
 
     def test_sport_type_boundary_values(
         self, characteristic: SportTypeForAerobicAndAnaerobicThresholdsCharacteristic
@@ -70,11 +70,11 @@ class TestSportTypeForAerobicAndAnaerobicThresholdsCharacteristic(CommonCharacte
         """Test sport type boundary values."""
         # Test minimum value (0)
         result = characteristic.parse_value(bytearray([0]))
-        assert result.value == SportType.UNSPECIFIED
+        assert result == SportType.UNSPECIFIED
 
         # Test maximum valid value (11)
         result = characteristic.parse_value(bytearray([11]))
-        assert result.value == SportType.WHOLE_BODY_EXERCISING
+        assert result == SportType.WHOLE_BODY_EXERCISING
 
     def test_sport_type_invalid_values(
         self, characteristic: SportTypeForAerobicAndAnaerobicThresholdsCharacteristic

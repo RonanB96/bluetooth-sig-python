@@ -119,7 +119,7 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
             service_required=None,
             battery_fault=None,
         )
-        assert result.value == expected
+        assert result == expected
 
     def test_battery_level_status_power_state_bits(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test power state bit field parsing."""
@@ -144,16 +144,16 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
             ]
         )
         result = characteristic.parse_value(data)
-        assert result.value is not None
-        assert result.value.battery_present is True
-        assert result.value.wired_external_power_connected == PowerConnectionState.UNKNOWN
-        assert result.value.wireless_external_power_connected == PowerConnectionState.UNKNOWN
-        assert result.value.battery_charge_state == BatteryChargeState.UNKNOWN
-        assert result.value.battery_charge_level == BatteryChargeLevel.UNKNOWN
-        assert result.value.charging_type == BatteryChargingType.FLOAT
-        assert result.value.charging_fault_battery is True
-        assert result.value.charging_fault_external_power is True
-        assert result.value.charging_fault_other is True
+        assert result is not None
+        assert result.battery_present is True
+        assert result.wired_external_power_connected == PowerConnectionState.UNKNOWN
+        assert result.wireless_external_power_connected == PowerConnectionState.UNKNOWN
+        assert result.battery_charge_state == BatteryChargeState.UNKNOWN
+        assert result.battery_charge_level == BatteryChargeLevel.UNKNOWN
+        assert result.charging_type == BatteryChargingType.FLOAT
+        assert result.charging_fault_battery is True
+        assert result.charging_fault_external_power is True
+        assert result.charging_fault_other is True
 
     def test_battery_level_status_encoding(self, characteristic: BatteryLevelStatusCharacteristic) -> None:
         """Test encoding BatteryLevelStatus to bytes."""
@@ -212,7 +212,7 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
         )
         encoded = characteristic.build_value(original)
         decoded = characteristic.parse_value(encoded)
-        assert decoded.value == original
+        assert decoded == original
 
     def test_insufficient_data_error(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that insufficient data results in parse failure."""

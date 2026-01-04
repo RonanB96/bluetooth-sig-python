@@ -62,14 +62,14 @@ class TestMagneticDeclinationCharacteristic(CommonCharacteristicTests):
         # Test normal parsing: 18000 (in 0.01 degrees) = 180.00 degrees
         test_data = bytearray([0x40, 0x46])  # 18000 in little endian uint16
         parsed = characteristic.parse_value(test_data)
-        assert parsed.value == 179.84
+        assert parsed == 179.84
 
         # Test boundary values
         zero_data = bytearray([0x00, 0x00])  # 0 degrees
-        assert characteristic.parse_value(zero_data).value == 0.0
+        assert characteristic.parse_value(zero_data) == 0.0
 
         max_data = bytearray([0x9F, 0x8C])  # 35999 = 359.99 degrees
-        assert characteristic.parse_value(max_data).value == 359.99
+        assert characteristic.parse_value(max_data) == 359.99
 
     def test_magnetic_declination_error_handling(self, characteristic: MagneticDeclinationCharacteristic) -> None:
         """Test Magnetic Declination error handling."""
@@ -82,12 +82,12 @@ class TestMagneticDeclinationCharacteristic(CommonCharacteristicTests):
         """Test magnetic declination cardinal directions."""
         # North (0°)
         data_north = bytearray([0x00, 0x00])
-        assert characteristic.parse_value(data_north).value == 0.0
+        assert characteristic.parse_value(data_north) == 0.0
 
         # East (90°)
         data_east = bytearray([0x28, 0x23])  # 9000 * 0.01 = 90.0
-        assert characteristic.parse_value(data_east).value == 90.0
+        assert characteristic.parse_value(data_east) == 90.0
 
         # West (270°)
         data_west = bytearray([0x78, 0x69])  # 27000 * 0.01 = 270.0
-        assert characteristic.parse_value(data_west).value == 270.0
+        assert characteristic.parse_value(data_west) == 270.0

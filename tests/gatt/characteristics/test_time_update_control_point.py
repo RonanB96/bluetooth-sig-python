@@ -54,9 +54,9 @@ class TestTimeUpdateControlPointCharacteristic(CommonCharacteristicTests):
         assert encoded == bytearray([0x01])
 
         # Test decoding
-        decoded = char.parse_value(encoded).value
+        decoded = char.parse_value(encoded)
         assert decoded is not None
-        assert decoded.value == command
+        assert decoded == command
 
     def test_cancel_reference_update_command(self) -> None:
         """Test CANCEL_REFERENCE_UPDATE command encoding/decoding."""
@@ -68,9 +68,9 @@ class TestTimeUpdateControlPointCharacteristic(CommonCharacteristicTests):
         assert encoded == bytearray([0x02])
 
         # Test decoding
-        decoded = char.parse_value(encoded).value
+        decoded = char.parse_value(encoded)
         assert decoded is not None
-        assert decoded.value == command
+        assert decoded == command
 
     def test_invalid_command_raises_error(self) -> None:
         """Test that invalid command values result in parse failure."""

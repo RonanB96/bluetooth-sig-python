@@ -11,17 +11,15 @@ from graphlib import TopologicalSorter
 from typing import Any, cast
 
 from ..gatt.characteristics import templates
-from ..gatt.characteristics.base import BaseCharacteristic, CharacteristicData
+from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
-from ..gatt.characteristics.unknown import UnknownCharacteristic
-from ..gatt.exceptions import MissingDependencyError
+from ..gatt.exceptions import CharacteristicParseError, MissingDependencyError, SpecialValueDetected
 from ..gatt.services import ServiceName
 from ..gatt.services.base import BaseGattService
 from ..gatt.services.registry import GattServiceRegistry
 from ..gatt.uuid_registry import uuid_registry
 from ..types import (
     CharacteristicContext,
-    CharacteristicDataProtocol,
     CharacteristicInfo,
     ServiceInfo,
     SIGInfo,
@@ -105,7 +103,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         uuid: str,
         raw_data: bytes | bytearray,
         ctx: CharacteristicContext | None = None,
-    ) -> CharacteristicData[Any]:
+    ) -> Any:
         r"""Parse a characteristic's raw data using Bluetooth SIG standards.
 
         Args:
@@ -114,7 +112,11 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             ctx: Optional CharacteristicContext providing device-level info
 
         Returns:
-            CharacteristicData with parsed value and metadata
+            Parsed value of the appropriate type
+
+        Raises:
+            SpecialValueDetected: Special sentinel value detected
+            CharacteristicParseError: Parse/validation failure
 
         Example:
             Parse battery level data::
@@ -122,8 +124,11 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 from bluetooth_sig import BluetoothSIGTranslator
 
                 translator = BluetoothSIGTranslator()
-                result = translator.parse_characteristic("2A19", b"\x64")
-                print(f"Battery: {result.value}%")  # Battery: 100%
+                try:
+                    value = translator.parse_characteristic("2A19", b"\x64")
+                    print(f"Battery: {value}%")  # Battery: 100%
+                except CharacteristicParseError as e:
+                    print(f"Parse failed: {e}")
 
         """
         logger.debug("Parsing characteristic UUID=%s, data_len=%d", uuid, len(raw_data))
@@ -133,36 +138,25 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         if characteristic:
             logger.debug("Found parser for UUID=%s: %s", uuid, type(characteristic).__name__)
-            # Use the parse_value method; pass context when provided.
-            result = characteristic.parse_value(raw_data, ctx)
-
-            if result.parse_success:
-                logger.debug("Successfully parsed %s: %s", characteristic.name, result.value)
-            else:
-                logger.warning("Parse failed for %s: %s", characteristic.name, result.error_message)
-
+            # Use the parse_value method which raises exceptions on failure
+            try:
+                value = characteristic.parse_value(raw_data, ctx)
+                logger.debug("Successfully parsed %s: %s", characteristic.name, value)
+                return value
+            except SpecialValueDetected as e:
+                logger.debug("Special value detected for %s: %s", characteristic.name, e.special_value.meaning)
+                raise
+            except CharacteristicParseError as e:
+                logger.warning("Parse failed for %s: %s", characteristic.name, e)
+                raise
         else:
-            # No parser found, return fallback result
+            # No parser found, raise an error
             logger.info("No parser available for UUID=%s", uuid)
-
-            fallback_info = CharacteristicInfo(
-                uuid=BluetoothUUID(uuid),
-                name="Unknown",
-                value_type=ValueType.UNKNOWN,
-                unit="",
+            raise CharacteristicParseError(
+                message=f"No parser available for characteristic UUID: {uuid}",
+                characteristic=None,  # type: ignore[arg-type]
+                raw_data=raw_data,
             )
-            fallback_char = UnknownCharacteristic(info=fallback_info)
-            # Ensure raw bytes are passed as immutable bytes object
-            raw_bytes = bytes(raw_data) if isinstance(raw_data, (bytearray, memoryview)) else raw_data
-            result = CharacteristicData(
-                characteristic=fallback_char,
-                value=raw_bytes,
-                raw_data=raw_bytes,
-                parse_success=False,
-                error_message="No parser available for this characteristic UUID",
-            )
-
-        return result
 
     def encode_characteristic(
         self,
@@ -658,7 +652,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self,
         char_data: dict[str, bytes],
         ctx: CharacteristicContext | None = None,
-    ) -> dict[str, CharacteristicData[Any]]:
+    ) -> dict[str, Any]:
         r"""Parse multiple characteristics at once with dependency-aware ordering.
 
         This method automatically handles multi-characteristic dependencies by parsing
@@ -675,10 +669,11 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             ctx: Optional CharacteristicContext used as the starting context
 
         Returns:
-            Dictionary mapping UUIDs to CharacteristicData results
+            Dictionary mapping UUIDs to parsed values
 
         Raises:
             ValueError: If circular dependencies are detected
+            CharacteristicParseError: If parsing fails for any characteristic
 
         Example:
             Parse multiple environmental characteristics::
@@ -690,9 +685,12 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                     "2A6E": b"\\x0A\\x00",  # Temperature
                     "2A6F": b"\\x32\\x00",  # Humidity
                 }
-                results = translator.parse_characteristics(data)
-                for uuid, result in results.items():
-                    print(f"{uuid}: {result.value}")
+                try:
+                    results = translator.parse_characteristics(data)
+                    for uuid, value in results.items():
+                        print(f"{uuid}: {value}")
+                except CharacteristicParseError as e:
+                    print(f"Parse failed: {e}")
 
         """
         return self._parse_characteristics_batch(char_data, ctx)
@@ -701,7 +699,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self,
         char_data: dict[str, bytes],
         ctx: CharacteristicContext | None,
-    ) -> dict[str, CharacteristicData[Any]]:
+    ) -> dict[str, Any]:
         """Parse multiple characteristics using dependency-aware ordering."""
         logger.debug("Batch parsing %d characteristics", len(char_data))
 
@@ -716,7 +714,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         # Build base context
         base_context = ctx
 
-        results: dict[str, CharacteristicData[Any]] = {}
+        results: dict[str, Any] = {}
         for uuid_str in sorted_uuids:
             raw_data = char_data[uuid_str]
             characteristic = uuid_to_characteristic.get(uuid_str)
@@ -729,13 +727,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             )
 
             if missing_required:
-                results[uuid_str] = self._build_missing_dependency_failure(
-                    uuid_str,
-                    raw_data,
-                    characteristic,
-                    missing_required,
-                )
-                continue
+                raise MissingDependencyError(characteristic.name if characteristic else "Unknown", missing_required)
 
             self._log_optional_dependency_gaps(
                 uuid_str,
@@ -746,7 +738,12 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
             parse_context = self._build_parse_context(base_context, results)
 
-            results[uuid_str] = self.parse_characteristic(uuid_str, raw_data, ctx=parse_context)
+            try:
+                value = self.parse_characteristic(uuid_str, raw_data, ctx=parse_context)
+                results[uuid_str] = value
+            except (CharacteristicParseError, SpecialValueDetected):
+                # Re-raise parse errors for individual characteristics
+                raise
 
         logger.debug("Batch parsing complete: %d results", len(results))
         return results
@@ -804,7 +801,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self,
         uuid: str,
         required_deps: list[str],
-        results: Mapping[str, CharacteristicData[Any]],
+        results: Mapping[str, Any],
         base_context: CharacteristicContext | None,
     ) -> list[str]:
         """Determine which required dependencies are unavailable for a characteristic."""
@@ -818,13 +815,11 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         for dep_uuid in required_deps:
             if dep_uuid in results:
-                if not results[dep_uuid].parse_success:
-                    missing.append(dep_uuid)
+                # If it's in results, it was successfully parsed
                 continue
 
             if other_characteristics and dep_uuid in other_characteristics:
-                if not other_characteristics[dep_uuid].parse_success:
-                    missing.append(dep_uuid)
+                # If it's in context, assume it's available
                 continue
 
             missing.append(dep_uuid)
@@ -834,48 +829,11 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         return missing
 
-    def _build_missing_dependency_failure(
-        self,
-        uuid: str,
-        raw_data: bytes,
-        characteristic: BaseCharacteristic[Any] | None,
-        missing_required: list[str],
-    ) -> CharacteristicData[Any]:
-        """Create a failure result when required dependencies are absent."""
-        char_name = characteristic.name if characteristic else "Unknown"
-        error = MissingDependencyError(char_name, missing_required)
-        logger.warning("Skipping %s due to missing required dependencies: %s", uuid, missing_required)
-
-        # Create a characteristic to hold the failure info
-        if characteristic is not None:
-            failure_char = characteristic
-        else:
-            fallback_info = self.get_characteristic_info_by_uuid(uuid)
-            if fallback_info is not None:
-                failure_info = fallback_info
-            else:
-                failure_info = CharacteristicInfo(
-                    uuid=BluetoothUUID(uuid),
-                    name=char_name,
-                    value_type=ValueType.UNKNOWN,
-                    unit="",
-                )
-
-            failure_char = UnknownCharacteristic(info=failure_info)
-
-        return CharacteristicData(
-            characteristic=failure_char,
-            value=None,
-            raw_data=raw_data,
-            parse_success=False,
-            error_message=str(error),
-        )
-
     def _log_optional_dependency_gaps(
         self,
         uuid: str,
         optional_deps: list[str],
-        results: Mapping[str, CharacteristicData[Any]],
+        results: Mapping[str, Any],
         base_context: CharacteristicContext | None,
     ) -> None:
         """Emit debug logs when optional dependencies are unavailable."""
@@ -896,10 +854,10 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
     def _build_parse_context(
         self,
         base_context: CharacteristicContext | None,
-        results: Mapping[str, CharacteristicData[Any]],
+        results: Mapping[str, Any],
     ) -> CharacteristicContext:
         """Construct the context passed to per-characteristic parsers."""
-        results_mapping = cast(Mapping[str, CharacteristicDataProtocol], results)
+        results_mapping = cast(Mapping[str, Any], results)
 
         if base_context is not None:
             return CharacteristicContext(
@@ -940,13 +898,19 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         """
         try:
             # Attempt to parse the data - if it succeeds, format is valid
-            parsed = self.parse_characteristic(uuid, data)
-            expected = parsed.characteristic.expected_length
+            self.parse_characteristic(uuid, data)
+            # Try to get expected_length
+            try:
+                bt_uuid = BluetoothUUID(uuid)
+                char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(bt_uuid)
+                expected = char_class.expected_length if char_class else None
+            except Exception:  # pylint: disable=broad-exception-caught
+                expected = None
             return ValidationResult(
-                is_valid=parsed.parse_success,
+                is_valid=True,
                 actual_length=len(data),
                 expected_length=expected,
-                error_message=parsed.error_message,
+                error_message=None,
             )
         except Exception as e:  # pylint: disable=broad-exception-caught
             # If parsing failed, data format is invalid
@@ -1081,7 +1045,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         uuid: str | BluetoothUUID,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-    ) -> CharacteristicData[Any]:
+    ) -> Any:
         """Parse characteristic data in an async-compatible manner.
 
         This is an async wrapper that allows characteristic parsing to be used
@@ -1094,14 +1058,21 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             ctx: Optional context providing device-level info
 
         Returns:
-            CharacteristicData with parsed value and metadata
+            Parsed characteristic value
+
+        Raises:
+            SpecialValueDetected: Special sentinel value detected
+            CharacteristicParseError: Parse/validation failure
 
         Example::
 
             async with BleakClient(address) as client:
                 data = await client.read_gatt_char("2A19")
-                result = await translator.parse_characteristic_async("2A19", data)
-                print(f"Battery: {result.value}%")
+                try:
+                    value = await translator.parse_characteristic_async("2A19", data)
+                    print(f"Battery: {value}%")
+                except CharacteristicParseError as e:
+                    print(f"Parse failed: {e}")
         """
         # Convert to string for consistency with sync API
         uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
@@ -1113,7 +1084,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self,
         char_data: dict[str, bytes],
         ctx: CharacteristicContext | None = None,
-    ) -> dict[str, CharacteristicData[Any]]:
+    ) -> dict[str, Any]:
         """Parse multiple characteristics in an async-compatible manner.
 
         This is an async wrapper for batch characteristic parsing. The parsing
@@ -1125,7 +1096,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             ctx: Optional context
 
         Returns:
-            Dictionary mapping UUIDs to CharacteristicData results
+            Dictionary mapping UUIDs to parsed values
 
         Example::
 
@@ -1137,8 +1108,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
                 # Parse all asynchronously
                 results = await translator.parse_characteristics_async(char_data)
-                for uuid, result in results.items():
-                    print(f"{uuid}: {result.value}")
+                for uuid, value in results.items():
+                    print(f"{uuid}: {value}")
         """
         # Delegate directly to sync implementation
         # The sync implementation already handles dependency ordering

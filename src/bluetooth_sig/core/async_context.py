@@ -6,9 +6,7 @@ from collections.abc import Mapping
 from types import TracebackType
 from typing import Any, cast
 
-from ..gatt.characteristics.base import CharacteristicData
 from ..types import CharacteristicContext
-from ..types.protocols import CharacteristicDataProtocol
 from ..types.uuid import BluetoothUUID
 from .translator import BluetoothSIGTranslator
 
@@ -39,9 +37,8 @@ class AsyncParsingSession:
         """
         self.translator = translator
         self.context = ctx
-        # CharacteristicData implements CharacteristicDataProtocol structurally
-        # Store as concrete type for clarity, compatible with protocol at usage
-        self.results: dict[str, CharacteristicData[Any]] = {}
+        # Store parsed characteristic values for context sharing
+        self.results: dict[str, Any] = {}
 
     async def __aenter__(self) -> AsyncParsingSession:
         """Enter async context."""
@@ -61,7 +58,7 @@ class AsyncParsingSession:
         self,
         uuid: str | BluetoothUUID,
         data: bytes,
-    ) -> CharacteristicData[Any]:
+    ) -> Any:
         """Parse characteristic with accumulated context.
 
         Args:
@@ -69,11 +66,11 @@ class AsyncParsingSession:
             data: Raw bytes
 
         Returns:
-            CharacteristicData
+            Parsed characteristic value
         """
         # Update context with previous results
         # Cast dict to Mapping to satisfy CharacteristicContext type requirements
-        results_as_mapping = cast(Mapping[str, CharacteristicDataProtocol], self.results)
+        results_as_mapping = cast(Mapping[str, Any], self.results)
 
         if self.context is None:
             self.context = CharacteristicContext(other_characteristics=results_as_mapping)

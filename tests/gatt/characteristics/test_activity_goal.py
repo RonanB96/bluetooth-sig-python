@@ -77,7 +77,7 @@ class TestActivityGoalCharacteristic(CommonCharacteristicTests):
             duration_normal_walking=None,
             duration_intensity_walking=None,
         )
-        assert result.value == expected
+        assert result == expected
 
     def test_activity_goal_multiple_fields(self, characteristic: ActivityGoalCharacteristic) -> None:
         """Test activity goal with multiple fields present."""
@@ -96,7 +96,7 @@ class TestActivityGoalCharacteristic(CommonCharacteristicTests):
             duration_normal_walking=None,
             duration_intensity_walking=None,
         )
-        assert result.value == expected
+        assert result == expected
 
     def test_activity_goal_all_fields(self, characteristic: ActivityGoalCharacteristic) -> None:
         """Test activity goal with all fields present."""
@@ -144,7 +144,7 @@ class TestActivityGoalCharacteristic(CommonCharacteristicTests):
             duration_normal_walking=3200,
             duration_intensity_walking=1600,
         )
-        assert result.value == expected
+        assert result == expected
 
     def test_activity_goal_no_fields(self, characteristic: ActivityGoalCharacteristic) -> None:
         """Test activity goal with no fields present."""
@@ -160,4 +160,4 @@ class TestActivityGoalCharacteristic(CommonCharacteristicTests):
             duration_normal_walking=None,
             duration_intensity_walking=None,
         )
-        assert result.value == expected
+        assert result == expected

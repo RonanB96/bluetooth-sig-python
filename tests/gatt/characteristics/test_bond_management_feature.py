@@ -77,9 +77,9 @@ class TestBondManagementFeatureCharacteristic(CommonCharacteristicTests):
         """Test parsing of feature flags."""
         data = bytearray([1, 1, 0])  # First two features supported
         result = characteristic.parse_value(data)
-        assert result.value.delete_bond_of_requesting_device_supported is True
-        assert result.value.delete_all_bonds_on_server_supported is True
-        assert result.value.delete_all_but_active_bond_on_server_supported is False
+        assert result.delete_bond_of_requesting_device_supported is True
+        assert result.delete_all_bonds_on_server_supported is True
+        assert result.delete_all_but_active_bond_on_server_supported is False
 
     def test_insufficient_data(self, characteristic: BondManagementFeatureCharacteristic) -> None:
         """Test that insufficient data results in parse failure."""

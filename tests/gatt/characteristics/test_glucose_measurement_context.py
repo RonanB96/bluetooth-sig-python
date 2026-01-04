@@ -274,9 +274,9 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
         test_data = valid_test_data[0].input_data
 
         result = characteristic.parse_value(test_data)
-        assert result.value is not None
-        assert result.value.sequence_number == 42
-        assert result.value.flags == GlucoseMeasurementContextFlags(0)
+        assert result is not None
+        assert result.sequence_number == 42
+        assert result.flags == GlucoseMeasurementContextFlags(0)
 
     def test_glucose_context_with_carbohydrate(self, characteristic: GlucoseMeasurementContextCharacteristic) -> None:
         """Test glucose context with carbohydrate data."""
@@ -293,10 +293,10 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(test_data)
-        assert result.value is not None
-        assert result.value.carbohydrate_id == CarbohydrateType.BREAKFAST
+        assert result is not None
+        assert result.carbohydrate_id == CarbohydrateType.BREAKFAST
         # Human-readable name should match the enum's string representation
-        assert str(result.value.carbohydrate_id) == "Breakfast"
+        assert str(result.carbohydrate_id) == "Breakfast"
 
     def test_glucose_context_with_meal(self, characteristic: GlucoseMeasurementContextCharacteristic) -> None:
         """Test glucose context with meal information."""
@@ -311,10 +311,10 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
         )
 
         result = characteristic.parse_value(test_data)
-        assert result.value is not None
-        assert result.value.meal == MealType.POSTPRANDIAL
+        assert result is not None
+        assert result.meal == MealType.POSTPRANDIAL
         # Human-readable meal name should match the enum's string representation
-        assert str(result.value.meal) == "Postprandial (after meal)"
+        assert str(result.meal) == "Postprandial (after meal)"
 
     def test_glucose_context_invalid_data(self, characteristic: GlucoseMeasurementContextCharacteristic) -> None:
         """Test glucose context with invalid data."""

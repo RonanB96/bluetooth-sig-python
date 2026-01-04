@@ -52,4 +52,4 @@ class TestManufacturerNameStringCharacteristic(CommonCharacteristicTests):
         """Test that null-terminated strings are handled correctly."""
         data_with_null = bytearray(b"Test\x00Extra")
         result = characteristic.parse_value(data_with_null)
-        assert result.value == "Test"  # Should stop at null terminator
+        assert result == "Test"  # Should stop at null terminator

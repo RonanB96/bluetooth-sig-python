@@ -51,17 +51,17 @@ class TestAgeCharacteristic(CommonCharacteristicTests):
         """Test age with various valid values."""
         data = bytearray([age])
         result = characteristic.parse_value(data)
-        assert result.parse_success
-        assert result.value == age
+
+        assert result == age
 
     def test_age_boundary_values(self, characteristic: AgeCharacteristic) -> None:
         """Test age boundary values (0 and 255)."""
         # Test 0 years
         result = characteristic.parse_value(bytearray([0]))
-        assert result.parse_success
-        assert result.value == 0
+
+        assert result == 0
 
         # Test maximum age (255)
         result = characteristic.parse_value(bytearray([255]))
-        assert result.parse_success
-        assert result.value == 255
+
+        assert result == 255

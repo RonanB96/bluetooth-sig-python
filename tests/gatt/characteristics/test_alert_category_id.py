@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics.alert_category_id import AlertCategoryIdCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types import AlertCategoryID
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -67,14 +68,14 @@ class TestAlertCategoryIdCharacteristic(CommonCharacteristicTests):
     def test_alert_category_id_reserved_values_rejected(self, characteristic: AlertCategoryIdCharacteristic) -> None:
         """Test that reserved values (0x0A-0xFA) are rejected."""
         # Test reserved value 0x0A
-        result = characteristic.parse_value(bytearray([0x0A]))
-        assert not result.parse_success
-        assert "reserved" in result.error_message.lower() or "invalid" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x0A]))
+        assert "reserved" in str(exc_info.value).lower() or "invalid" in str(exc_info.value).lower()
 
         # Test higher reserved value 0xFA
-        result = characteristic.parse_value(bytearray([0xFA]))
-        assert not result.parse_success
-        assert "reserved" in result.error_message.lower() or "invalid" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0xFA]))
+        assert "reserved" in str(exc_info.value).lower() or "invalid" in str(exc_info.value).lower()
 
     def test_alert_category_id_service_specific_values_accepted(
         self, characteristic: AlertCategoryIdCharacteristic
@@ -82,13 +83,13 @@ class TestAlertCategoryIdCharacteristic(CommonCharacteristicTests):
         """Test that service-specific values (0xFB-0xFF) are accepted."""
         # Test service-specific value 0xFB
         result = characteristic.parse_value(bytearray([0xFB]))
-        assert result.parse_success
-        assert result.value == AlertCategoryID.SIMPLE_ALERT  # Should map to SIMPLE_ALERT
+
+        assert result == AlertCategoryID.SIMPLE_ALERT  # Should map to SIMPLE_ALERT
 
         # Test service-specific value 0xFF
         result = characteristic.parse_value(bytearray([0xFF]))
-        assert result.parse_success
-        assert result.value == AlertCategoryID.SIMPLE_ALERT  # Should map to SIMPLE_ALERT
+
+        assert result == AlertCategoryID.SIMPLE_ALERT  # Should map to SIMPLE_ALERT
 
     @pytest.mark.parametrize("enum_value", list(AlertCategoryID))
     def test_alert_category_id_encoding_enum(
@@ -115,12 +116,12 @@ class TestAlertCategoryIdCharacteristic(CommonCharacteristicTests):
         for category in AlertCategoryID:
             encoded = characteristic.build_value(category)
             decoded = characteristic.parse_value(encoded)
-            assert decoded.value == category
+            assert decoded == category
 
     def test_alert_category_id_enum_values(self, characteristic: AlertCategoryIdCharacteristic) -> None:
         """Test that all enum values are properly handled."""
         for category in AlertCategoryID:
             encoded = characteristic.build_value(category)
             decoded = characteristic.parse_value(encoded)
-            assert decoded.value == category
-            assert isinstance(decoded.value, AlertCategoryID)
+            assert decoded == category
+            assert isinstance(decoded, AlertCategoryID)

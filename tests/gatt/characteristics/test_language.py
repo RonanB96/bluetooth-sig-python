@@ -60,16 +60,16 @@ class TestLanguageCharacteristic(CommonCharacteristicTests):
         """Test language with various valid language codes."""
         data = bytearray(language_code.encode("utf-8"))
         result = characteristic.parse_value(data)
-        assert result.value == language_code
+        assert result == language_code
 
     def test_language_empty(self, characteristic: LanguageCharacteristic) -> None:
         """Test empty language."""
         result = characteristic.parse_value(bytearray())
-        assert result.value == ""
+        assert result == ""
 
     def test_language_long_code(self, characteristic: LanguageCharacteristic) -> None:
         """Test language with longer language tag."""
         language = "en-US"
         data = bytearray(language.encode("utf-8"))
         result = characteristic.parse_value(data)
-        assert result.value == language
+        assert result == language

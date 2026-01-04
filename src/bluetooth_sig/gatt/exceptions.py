@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..types import ParseFieldError as FieldError
+from ..types import SpecialValueResult
+from ..types.data_types import ValidationAccumulator
 from ..types.uuid import BluetoothUUID
 
 
@@ -363,3 +366,151 @@ class UUIDCollisionError(BluetoothSIGError):
             f"Use allow_sig_override=True if you intentionally want to override this SIG characteristic."
         )
         super().__init__(message)
+
+
+class CharacteristicParseError(CharacteristicError):
+    """Raised when characteristic parsing fails.
+
+    Preserves all debugging context from parsing attempt.
+
+    Attributes:
+        message: Human-readable error message
+        name: Characteristic name
+        uuid: Characteristic UUID
+        raw_data: Exact bytes that failed (useful: hex dump debugging)
+        raw_int: Extracted integer value (useful: check bit patterns)
+        field_errors: Field-level errors (useful: complex multi-field characteristics)
+        parse_trace: Step-by-step execution log (useful: debug parser flow)
+        validation: Accumulated validation results (useful: see all warnings/errors)
+
+    """
+
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    # NOTE: Multiple arguments required for complete diagnostic context
+    def __init__(
+        self,
+        message: str,
+        name: str,
+        uuid: BluetoothUUID,
+        raw_data: bytes,
+        raw_int: int | None = None,
+        field_errors: list[FieldError] | None = None,
+        parse_trace: list[str] | None = None,
+        validation: ValidationAccumulator | None = None,
+    ) -> None:
+        """Initialize parse error with diagnostic context.
+
+        Args:
+            message: Human-readable error message
+            name: Characteristic name
+            uuid: Characteristic UUID
+            raw_data: Raw bytes that failed to parse
+            raw_int: Extracted integer (if extraction succeeded)
+            field_errors: Field-level parsing errors
+            parse_trace: Step-by-step execution log
+            validation: Accumulated validation results
+
+        """
+        super().__init__(message)
+        self.name = name
+        self.uuid = uuid
+        self.raw_data = raw_data
+        self.raw_int = raw_int
+        self.field_errors = field_errors or []
+        self.parse_trace = parse_trace or []
+        self.validation = validation
+
+    def __str__(self) -> str:
+        """Format error with field-level details."""
+        base = f"{self.name} ({self.uuid}): {self.args[0]}"
+        if self.field_errors:
+            field_msgs = [f"  - {e.field}: {e.reason}" for e in self.field_errors]
+            return f"{base}\nField errors:\n" + "\n".join(field_msgs)
+        return base
+
+
+class SpecialValueDetected(CharacteristicError):
+    """Raised when a special sentinel value is detected.
+
+    Special values represent exceptional conditions: "value is not known", "NaN",
+    "measurement not possible", etc. These are semantically distinct from parse failures.
+
+    This exception is raised when a valid parse detects a special sentinel value
+    (e.g., 0x8000 = "value is not known", 0x7FFFFFFF = "NaN"). The parsing succeeded,
+    but the result indicates an exceptional state rather than a normal value.
+
+    Most code should catch this separately from CharacteristicParseError to distinguish:
+    - Parse failure (malformed data, wrong length, invalid format)
+    - Special value detection (well-formed data indicating exceptional state)
+
+    Attributes:
+        special_value: The detected special value with meaning and raw bytes
+        name: Characteristic name
+        uuid: Characteristic UUID
+        raw_data: Raw bytes containing the special value
+        raw_int: The raw integer value (typically the sentinel value)
+
+    """
+
+    def __init__(
+        self,
+        special_value: SpecialValueResult,
+        name: str,
+        uuid: BluetoothUUID,
+        raw_data: bytes,
+        raw_int: int | None = None,
+    ) -> None:
+        """Initialize special value detected exception.
+
+        Args:
+            special_value: The detected SpecialValueResult
+            name: Characteristic name
+            uuid: Characteristic UUID
+            raw_data: Raw bytes containing the special value
+            raw_int: The raw integer value
+
+        """
+        message = f"{name} ({uuid}): Special value detected: {special_value.meaning}"
+        super().__init__(message)
+        self.special_value = special_value
+        self.name = name
+        self.uuid = uuid
+        self.raw_data = raw_data
+        self.raw_int = raw_int
+
+
+class CharacteristicEncodeError(CharacteristicError):
+    """Raised when characteristic encoding fails.
+
+    Attributes:
+        message: Human-readable error message
+        name: Characteristic name
+        uuid: Characteristic UUID
+        value: The value that failed to encode
+        validation: Accumulated validation results
+
+    """
+
+    def __init__(
+        self,
+        message: str,
+        name: str,
+        uuid: BluetoothUUID,
+        value: Any,  # noqa: ANN401  # Any value type
+        validation: ValidationAccumulator | None = None,
+    ) -> None:
+        """Initialize encode error.
+
+        Args:
+            message: Human-readable error message
+            name: Characteristic name
+            uuid: Characteristic UUID
+            value: The value that failed to encode
+            validation: Accumulated validation results
+
+        """
+        super().__init__(message)
+        self.name = name
+        self.uuid = uuid
+        self.value = value
+        self.validation = validation

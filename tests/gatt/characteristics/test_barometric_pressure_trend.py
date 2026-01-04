@@ -67,12 +67,12 @@ class TestBarometricPressureTrendCharacteristic(CommonCharacteristicTests):
         for value, expected in test_cases:
             test_data = bytearray([value])
             parsed = characteristic.parse_value(test_data)
-            assert parsed.value == expected
+            assert parsed == expected
 
         # Test reserved value
         reserved_data = bytearray([UINT8_MAX])
         parsed = characteristic.parse_value(reserved_data)
-        assert parsed.value == BarometricPressureTrend.UNKNOWN  # Falls back to UNKNOWN
+        assert parsed == BarometricPressureTrend.UNKNOWN  # Falls back to UNKNOWN
 
     @pytest.mark.parametrize(
         "value,expected_trend",
@@ -91,4 +91,4 @@ class TestBarometricPressureTrendCharacteristic(CommonCharacteristicTests):
         """Test all valid barometric pressure trend values."""
         data = bytearray([value])
         result = characteristic.parse_value(data)
-        assert result.value == expected_trend
+        assert result == expected_trend

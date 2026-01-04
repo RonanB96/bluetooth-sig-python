@@ -74,7 +74,7 @@ class TestTimeUpdateStateCharacteristic(CommonCharacteristicTests):
 
         # Test decoding
         decoded = char.parse_value(encoded)
-        assert decoded.value == state
+        assert decoded == state
 
     def test_pending_state_canceled_result(self) -> None:
         """Test PENDING state with CANCELED result."""
@@ -90,7 +90,7 @@ class TestTimeUpdateStateCharacteristic(CommonCharacteristicTests):
 
         # Test decoding
         decoded = char.parse_value(encoded)
-        assert decoded.value == state
+        assert decoded == state
 
     def test_updating_state_timeout_result(self) -> None:
         """Test UPDATING state with TIMEOUT result."""
@@ -106,7 +106,7 @@ class TestTimeUpdateStateCharacteristic(CommonCharacteristicTests):
 
         # Test decoding
         decoded = char.parse_value(encoded)
-        assert decoded.value == state
+        assert decoded == state
 
     def test_invalid_length_raises_error(self) -> None:
         """Test that invalid data lengths result in parse failure."""

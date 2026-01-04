@@ -164,12 +164,12 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         first_angle = 90  # 0.5 degrees (90 / 180)
         test_data = struct.pack("<BHHH", flags, crank_revs, crank_time, first_angle)
         result = char.parse_value(bytearray(test_data))
-        assert result.value is not None
+        assert result is not None
 
-        assert result.value.flags == CyclingPowerVectorFlags(0)
-        assert result.value.crank_revolution_data.crank_revolutions == 1234
-        assert result.value.crank_revolution_data.last_crank_event_time == 1.0
-        assert result.value.first_crank_measurement_angle == 0.5
+        assert result.flags == CyclingPowerVectorFlags(0)
+        assert result.crank_revolution_data.crank_revolutions == 1234
+        assert result.crank_revolution_data.last_crank_event_time == 1.0
+        assert result.first_crank_measurement_angle == 0.5
         assert char.unit == "various"
 
     def test_cycling_power_vector_with_force_array(self) -> None:
@@ -185,13 +185,13 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         force2 = 150  # 150 N
         test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, force1, force2)
         result = char.parse_value(bytearray(test_data))
-        assert result.value is not None
+        assert result is not None
 
-        assert result.value.flags == CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT
-        assert result.value.crank_revolution_data.crank_revolutions == 1234
-        assert result.value.crank_revolution_data.last_crank_event_time == 1.0
-        assert result.value.first_crank_measurement_angle == 1.0
-        assert result.value.instantaneous_force_magnitude_array == (100.0, 150.0)
+        assert result.flags == CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT
+        assert result.crank_revolution_data.crank_revolutions == 1234
+        assert result.crank_revolution_data.last_crank_event_time == 1.0
+        assert result.first_crank_measurement_angle == 1.0
+        assert result.instantaneous_force_magnitude_array == (100.0, 150.0)
 
     def test_cycling_power_vector_with_torque_array(self) -> None:
         """Test cycling power vector with torque magnitude array."""
@@ -206,13 +206,13 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         torque2 = 192  # 6.0 Nm (192 / 32)
         test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, torque1, torque2)
         result = char.parse_value(bytearray(test_data))
-        assert result.value is not None
+        assert result is not None
 
-        assert result.value.flags == CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
-        assert result.value.crank_revolution_data.crank_revolutions == 1234
-        assert result.value.crank_revolution_data.last_crank_event_time == 1.0
-        assert result.value.first_crank_measurement_angle == 2.0
-        assert result.value.instantaneous_torque_magnitude_array == (5.0, 6.0)
+        assert result.flags == CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
+        assert result.crank_revolution_data.crank_revolutions == 1234
+        assert result.crank_revolution_data.last_crank_event_time == 1.0
+        assert result.first_crank_measurement_angle == 2.0
+        assert result.instantaneous_torque_magnitude_array == (5.0, 6.0)
 
     def test_cycling_power_vector_invalid_data(self) -> None:
         """Test cycling power vector with invalid data."""

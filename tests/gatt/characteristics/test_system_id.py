@@ -45,9 +45,9 @@ class TestSystemIdCharacteristic(CommonCharacteristicTests):
         """Test decoding system ID."""
         char = SystemIdCharacteristic()
         result = char.parse_value(bytearray([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]))
-        assert result.value is not None
-        assert result.value.manufacturer_id == bytes([0x01, 0x02, 0x03, 0x04, 0x05])
-        assert result.value.oui == bytes([0x06, 0x07, 0x08])
+        assert result is not None
+        assert result.manufacturer_id == bytes([0x01, 0x02, 0x03, 0x04, 0x05])
+        assert result.oui == bytes([0x06, 0x07, 0x08])
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve data."""
@@ -55,4 +55,4 @@ class TestSystemIdCharacteristic(CommonCharacteristicTests):
         original = SystemIdData(manufacturer_id=bytes([0xAA, 0xBB, 0xCC, 0xDD, 0xEE]), oui=bytes([0x11, 0x22, 0x33]))
         encoded = char.build_value(original)
         decoded = char.parse_value(encoded)
-        assert decoded.value == original
+        assert decoded == original

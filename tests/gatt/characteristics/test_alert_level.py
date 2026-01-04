@@ -42,15 +42,17 @@ class TestAlertLevelCharacteristic(CommonCharacteristicTests):
 
     def test_alert_level_reserved_values_rejected(self, characteristic: AlertLevelCharacteristic) -> None:
         """Test that reserved values (0x03-0xFF) are rejected."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         # Test reserved value 0x03
-        result = characteristic.parse_value(bytearray([0x03]))
-        assert not result.parse_success
-        assert "reserved" in result.error_message.lower() or "invalid" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x03]))
+        assert "reserved" in str(exc_info.value).lower() or "invalid" in str(exc_info.value).lower()
 
         # Test higher reserved value 0xFF
-        result = characteristic.parse_value(bytearray([0xFF]))
-        assert not result.parse_success
-        assert "reserved" in result.error_message.lower() or "invalid" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0xFF]))
+        assert "reserved" in str(exc_info.value).lower() or "invalid" in str(exc_info.value).lower()
 
     @pytest.mark.parametrize(
         "alert_level",
@@ -77,8 +79,7 @@ class TestAlertLevelCharacteristic(CommonCharacteristicTests):
         for level in [AlertLevel.NO_ALERT, AlertLevel.MILD_ALERT, AlertLevel.HIGH_ALERT]:
             encoded = characteristic.build_value(level)
             result = characteristic.parse_value(encoded)
-            assert result.parse_success
-            assert result.value == level
+            assert result == level
 
     def test_alert_level_enum_values(self) -> None:
         """Test AlertLevel enum has correct values per spec."""

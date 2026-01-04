@@ -83,7 +83,6 @@ import msgspec
 
 from ...registry.uuids.units import units_registry
 from ...types import (
-    CharacteristicDataProtocol,
     CharacteristicInfo,
     SpecialValueResult,
     SpecialValueRule,
@@ -106,7 +105,13 @@ from ..descriptor_utils import validate_value_against_descriptor_range as _valid
 from ..descriptors import BaseDescriptor
 from ..descriptors.cccd import CCCDDescriptor
 from ..descriptors.characteristic_presentation_format import CharacteristicPresentationFormatData
-from ..exceptions import ParseFieldError, UUIDResolutionError, ValueRangeError
+from ..exceptions import (
+    CharacteristicEncodeError,
+    CharacteristicParseError,
+    ParseFieldError,
+    SpecialValueDetected,
+    UUIDResolutionError,
+)
 from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
 from ..special_values_resolver import SpecialValueResolver
 from ..uuid_registry import uuid_registry
@@ -115,60 +120,6 @@ from .utils.extractors import get_extractor
 
 # Type variable for generic characteristic return types
 T = TypeVar("T")
-
-
-class CharacteristicData(msgspec.Struct, Generic[T], kw_only=True):
-    """Parse result container with back-reference to characteristic.
-
-    Generic over T, the type of the parsed value.
-
-    Field descriptions:
-        characteristic: The BaseCharacteristic instance that parsed this data
-        value: Parsed and validated value
-        raw_data: Original raw bytes
-        raw_int: Raw integer value extracted from bytes before translation
-        parse_success: Whether parsing succeeded
-        error_message: Error description if parse failed
-        field_errors: Field-level parsing errors
-        parse_trace: Detailed parsing steps for debugging
-        validation: Structured validation results with errors and warnings
-    """
-
-    characteristic: BaseCharacteristic[Any]
-    value: T | None = None
-    raw_data: bytes = b""
-    raw_int: int | None = None
-    special_value: SpecialValueResult | None = None
-    parse_success: bool = False
-    error_message: str = ""
-    field_errors: list[FieldError] = msgspec.field(default_factory=list)
-    parse_trace: list[str] = msgspec.field(default_factory=list)
-    validation: ValidationAccumulator | None = None
-
-    @property
-    def info(self) -> CharacteristicInfo:
-        """Characteristic metadata."""
-        return self.characteristic.info
-
-    @property
-    def name(self) -> str:
-        """Characteristic name."""
-        return self.characteristic.name
-
-    @property
-    def uuid(self) -> BluetoothUUID:
-        """Characteristic UUID."""
-        return self.characteristic.uuid
-
-    @property
-    def unit(self) -> str:
-        """Unit of measurement."""
-        return self.characteristic.unit
-
-    @property
-    def properties(self) -> list[GattProperty]:
-        """BLE GATT properties."""
-        return self.characteristic.properties
 
 
 class ValidationConfig(msgspec.Struct, kw_only=True):
@@ -414,7 +365,6 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         info: CharacteristicInfo | None = None,
         validation: ValidationConfig | None = None,
         properties: list[GattProperty] | None = None,
-        validate: bool = True,
     ) -> None:
         """Initialize characteristic with structured configuration.
 
@@ -422,7 +372,6 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             info: Complete characteristic information (optional for SIG characteristics)
             validation: Validation constraints configuration (optional)
             properties: Runtime BLE properties discovered from device (optional)
-            validate: Enable validation during parse/encode (default: True)
 
         """
         # Store provided info or None (will be resolved in __post_init__)
@@ -439,9 +388,6 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         self._manual_unit: str | None = self.__class__._manual_unit
         self._manual_value_type: ValueType | str | None = self.__class__._manual_value_type
         self.value_type: ValueType = ValueType.UNKNOWN
-
-        # Validation control
-        self._validate_enabled = validate
 
         # Set validation attributes from ValidationConfig or class defaults
         if validation:
@@ -469,8 +415,8 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         # Descriptor support
         self._descriptors: dict[str, BaseDescriptor] = {}
 
-        # Last parsed result
-        self.last_parsed: CharacteristicData[Any] | None = None
+        # Last parsed value for caching/debugging
+        self.last_parsed: Any = None
 
         # Call post-init to resolve characteristic info
         self.__post_init__()
@@ -875,15 +821,11 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             return self._template._decode_value(data, offset=0, ctx=ctx)  # pylint: disable=protected-access
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
-    def _is_validation_enabled(self) -> bool:
-        """Check if validation is enabled for this characteristic instance.
-
-        Returns:
-            True if validation should be performed, False to skip all validation
-        """
-        return self._validate_enabled
-
-    def _validate_range(self, value: Any, ctx: CharacteristicContext | None = None) -> ValidationAccumulator:  # noqa: ANN401  # Validates values of various numeric types  # pylint: disable=too-many-branches  # Complex validation with multiple precedence levels
+    def _validate_range(
+        self,
+        value: Any,  # noqa: ANN401  # Validates values of various numeric types
+        ctx: CharacteristicContext | None = None,
+    ) -> ValidationAccumulator:  # pylint: disable=too-many-branches  # Complex validation with multiple precedence levels
         """Validate value is within min/max range from both class attributes and descriptors.
 
         Validation precedence:
@@ -899,10 +841,6 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             ValidationReport with errors if validation fails
         """
         result = ValidationAccumulator()
-
-        # Skip validation if disabled
-        if not self._is_validation_enabled():
-            return result
 
         # Skip validation for SpecialValueResult
         if isinstance(value, SpecialValueResult):
@@ -968,12 +906,16 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         return result
 
     def _validate_type(self, value: Any) -> ValidationAccumulator:  # noqa: ANN401
-        """Validate value type matches expected_type if specified."""
-        result = ValidationAccumulator()
+        """Validate value type matches expected_type if specified.
 
-        # Skip validation if disabled
-        if not self._is_validation_enabled():
-            return result
+        Args:
+            value: The value to validate
+            validate: Whether validation is enabled
+
+        Returns:
+            ValidationReport with errors if validation fails
+        """
+        result = ValidationAccumulator()
 
         if self.expected_type is not None and not isinstance(value, (self.expected_type, SpecialValueResult)):
             error_msg = (
@@ -985,12 +927,15 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         return result
 
     def _validate_length(self, data: bytes | bytearray) -> ValidationAccumulator:
-        """Validate data length meets requirements."""
-        result = ValidationAccumulator()
+        """Validate data length meets requirements.
 
-        # Skip validation if disabled
-        if not self._is_validation_enabled():
-            return result
+        Args:
+            data: The data to validate
+
+        Returns:
+            ValidationReport with errors if validation fails
+        """
+        result = ValidationAccumulator()
 
         length = len(data)
 
@@ -1089,7 +1034,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         self,
         ctx: CharacteristicContext,
         dep_class: type[BaseCharacteristic[Any]],
-    ) -> CharacteristicDataProtocol | None:
+    ) -> Any:
         """Get dependency from context using type-safe class reference.
 
         Args:
@@ -1097,7 +1042,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             dep_class: Dependency characteristic class to look up
 
         Returns:
-            CharacteristicData if found in context, None otherwise
+            Parsed characteristic value if found in context, None otherwise
 
         """
         # Resolve class to UUID
@@ -1127,7 +1072,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         self,
         ctx: CharacteristicContext | None,
         characteristic_name: CharacteristicName | str | type[BaseCharacteristic[Any]],
-    ) -> CharacteristicDataProtocol | None:
+    ) -> Any:
         """Find a characteristic in a context by name or class.
 
         Args:
@@ -1135,7 +1080,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             characteristic_name: Enum, string name, or characteristic class.
 
         Returns:
-            Characteristic data if found, None otherwise.
+            Parsed characteristic value if found, None otherwise.
 
         """
         if not ctx or not ctx.other_characteristics:
@@ -1207,9 +1152,16 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         return True
 
     def _perform_parse_validation(
-        self, data_bytes: bytearray, enable_trace: bool, parse_trace: list[str], validation: ValidationAccumulator
+        self,
+        data_bytes: bytearray,
+        enable_trace: bool,
+        parse_trace: list[str],
+        validation: ValidationAccumulator,
+        validate: bool,
     ) -> None:
         """Perform initial validation on parse data."""
+        if not validate:
+            return
         if enable_trace:
             parse_trace.append(f"Validating data length (got {len(data_bytes)} bytes)")
         length_validation = self._validate_length(data_bytes)
@@ -1247,6 +1199,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         parse_trace: list[str],
         ctx: CharacteristicContext | None,
         validation: ValidationAccumulator,
+        validate: bool,
     ) -> Any:  # noqa: ANN401
         """Decode value if not special and perform validation."""
         # If not a special value, decode using the characteristic's decode_value method
@@ -1254,6 +1207,9 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             if enable_trace:
                 parse_trace.append("Decoding value")
             parsed_value = self._decode_value(data_bytes, ctx)
+
+        if not validate:
+            return parsed_value
 
         if enable_trace:
             parse_trace.append("Validating range")
@@ -1272,79 +1228,79 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
 
         return parsed_value
 
-    def parse_value(self, data: bytes | bytearray, ctx: CharacteristicContext | None = None) -> CharacteristicData[T]:
-        """Parse raw characteristic data into structured value with validation.
+    def parse_value(
+        self, data: bytes | bytearray, ctx: CharacteristicContext | None = None, validate: bool = True
+    ) -> T:
+        """Parse characteristic data.
 
-        Uses the pipeline: bytes → [Extractor] → raw_int → [Special Check] → [Translator] → typed_value
-
-        Args:
-            data: Raw bytes from the characteristic read
-            ctx: Optional context with device info and other characteristics
-
-        Returns:
-            CharacteristicData with parsed value (stored in self.last_parsed)
+        Returns: Parsed value of type T
+        Raises:
+            SpecialValueDetected: Special sentinel (0x8000="unknown", 0x7FFFFFFF="NaN")
+            CharacteristicParseError: Parse/validation failure
         """
         data_bytes = bytearray(data)
         enable_trace = self._is_parse_trace_enabled()
-        parse_trace: list[str] = []
-        if enable_trace:
-            parse_trace = ["Starting parse"]
+        parse_trace: list[str] = ["Starting parse"] if enable_trace else []
         field_errors: list[FieldError] = []
         validation = ValidationAccumulator()
+        raw_int: int | None = None
 
         try:
             # Perform initial validation
-            self._perform_parse_validation(data_bytes, enable_trace, parse_trace, validation)
+            self._perform_parse_validation(data_bytes, enable_trace, parse_trace, validation, validate)
 
             # Extract raw int and check for special values
             raw_int, parsed_value = self._extract_and_check_special_value(data_bytes, enable_trace, parse_trace, ctx)
 
+            # Special value detection - raise specialized exception
+            if isinstance(parsed_value, SpecialValueResult):
+                if enable_trace:
+                    parse_trace.append(f"Detected special value: {parsed_value.meaning}")
+                raise SpecialValueDetected(
+                    special_value=parsed_value, name=self.name, uuid=self.uuid, raw_data=bytes(data), raw_int=raw_int
+                )
+
             # Decode and validate value
             parsed_value = self._decode_and_validate_value(
-                parsed_value, data_bytes, enable_trace, parse_trace, ctx, validation
+                parsed_value, data_bytes, enable_trace, parse_trace, ctx, validation, validate
             )
 
             if enable_trace:
-                parse_trace.append("completed successfully")
-            result = CharacteristicData(
-                characteristic=self,
-                value=parsed_value,
-                raw_data=bytes(data),
-                raw_int=raw_int,
-                special_value=parsed_value if isinstance(parsed_value, SpecialValueResult) else None,
-                parse_success=True,
-                error_message="",
-                field_errors=field_errors,
-                parse_trace=parse_trace,
-                validation=validation,
-            )
-            self.last_parsed = result
-            return result
-        except Exception as e:  # pylint: disable=broad-exception-caught
+                parse_trace.append("Parse completed successfully")
+
+            # Cache the parsed value for debugging/caching purposes
+            self.last_parsed = parsed_value
+
+            return parsed_value
+
+        except SpecialValueDetected:
+            # Re-raise special value exceptions as-is
+            raise
+        except Exception as e:
             if enable_trace:
-                if isinstance(e, ParseFieldError):
-                    parse_trace.append(f"Field error: {str(e)}")
-                    field_error = FieldError(
-                        field=e.field,
-                        reason=e.field_reason,
-                        offset=e.offset,
-                        raw_slice=bytes(e.data) if hasattr(e, "data") else None,
-                    )
-                    field_errors.append(field_error)
-                else:
-                    parse_trace.append(f"Parse failed: {str(e)}")
-            result = CharacteristicData(
-                characteristic=self,
-                value=None,
+                parse_trace.append(f"Parse failed: {type(e).__name__}: {e}")
+
+            # Handle field errors
+            if isinstance(e, ParseFieldError):
+                field_error = FieldError(
+                    field=e.field,
+                    reason=e.field_reason,
+                    offset=e.offset,
+                    raw_slice=bytes(e.data) if hasattr(e, "data") else None,
+                )
+                field_errors.append(field_error)
+
+            # Raise structured parse error
+            raise CharacteristicParseError(
+                message=str(e),
+                name=self.name,
+                uuid=self.uuid,
                 raw_data=bytes(data),
-                parse_success=False,
-                error_message=str(e),
+                raw_int=raw_int if raw_int is not None else None,
                 field_errors=field_errors,
                 parse_trace=parse_trace,
                 validation=validation,
-            )
-            self.last_parsed = result
-            return result
+            ) from e
 
     def _encode_value(self, data: Any) -> bytearray:  # noqa: ANN401
         """Internal encode the characteristic's value to raw bytes with no validation.
@@ -1372,69 +1328,114 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             return self._template._encode_value(data)  # pylint: disable=protected-access
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override encode_value()")
 
-    def build_value(self, data: Any) -> bytearray:  # noqa: ANN401
-        """Build characteristic bytes from value with validation.
-
-        High-level encoding method that validates before encoding, mirroring
-        how parse_value() validates after decode_value().
+    def build_value(self, data: T | SpecialValueResult, validate: bool = True) -> bytearray:
+        """Encode value or special value to characteristic bytes.
 
         Args:
-            data: Value to encode (type depends on characteristic)
+            data: Value to encode (type T) or special value to encode
+            validate: Enable validation (type, range, length checks)
+                      Note: Special values bypass validation
 
         Returns:
-            Validated and encoded bytes for characteristic write
+            Encoded bytes ready for BLE write
 
         Raises:
-            ValueError: If data fails validation
-            TypeError: If data type is incorrect
-            NotImplementedError: If characteristic doesn't support encoding
+            CharacteristicEncodeError: If encoding or validation fails
+
+        Examples:
+            # Normal value
+            data = char.build_value(37.5)  # Returns: bytearray([0xAA, 0x0E])
+
+            # Special value (for testing/simulation)
+            from bluetooth_sig.types import SpecialValueResult, SpecialValueType
+            special = SpecialValueResult(
+                raw_value=0x8000,
+                meaning="value is not known",
+                value_type=SpecialValueType.NOT_KNOWN
+            )
+            data = char.build_value(special)  # Returns: bytearray([0x00, 0x80])
+
+            # With validation disabled (for debugging)
+            data = char.build_value(200.0, validate=False)  # Allows out-of-range
+
+            # Error handling
+            try:
+                data = char.build_value(value)
+            except CharacteristicEncodeError as e:
+                print(f"Encode failed: {e}")
 
         """
         enable_trace = self._is_parse_trace_enabled()
-        build_trace: list[str] = []
-        if enable_trace:
-            # TODO Make traces unique and more useful
-            build_trace.append("Starting build")
+        build_trace: list[str] = ["Starting build"] if enable_trace else []
+        validation = ValidationAccumulator()
+
+        # Special value encoding - bypass validation
+        if isinstance(data, SpecialValueResult):
+            if enable_trace:
+                build_trace.append(f"Encoding special value: {data.meaning}")
+            try:
+                return self._pack_raw_int(data.raw_value)
+            except Exception as e:
+                raise CharacteristicEncodeError(
+                    message=f"Failed to encode special value: {e}",
+                    name=self.name,
+                    uuid=self.uuid,
+                    value=data,
+                    validation=None,
+                ) from e
 
         try:
-            if enable_trace:
-                build_trace.append("Validating type")
-            type_validation = self._validate_type(data)
-            if not type_validation.valid:
-                raise ValueError("; ".join(type_validation.errors))
+            # Type validation
+            if validate:
+                if enable_trace:
+                    build_trace.append("Validating type")
+                type_validation = self._validate_type(data)
+                validation.errors.extend(type_validation.errors)
+                validation.warnings.extend(type_validation.warnings)
+                if not type_validation.valid:
+                    raise TypeError("; ".join(type_validation.errors))
 
-            if enable_trace:
-                build_trace.append("Validating range")
-            # Validate range for numeric types
-            if isinstance(data, (int, float)):
-                range_validation = self._validate_range(data)
+            # Range validation for numeric types
+            if validate and isinstance(data, (int, float)):
+                if enable_trace:
+                    build_trace.append("Validating range")
+                range_validation = self._validate_range(data, ctx=None)
+                validation.errors.extend(range_validation.errors)
+                validation.warnings.extend(range_validation.warnings)
                 if not range_validation.valid:
-                    # Construct ValueRangeError with proper arguments
-                    # Extract min/max from validation errors or use class attributes
-                    min_val = self.min_value
-                    max_val = self.max_value
-                    raise ValueRangeError(self.name, data, min_val, max_val)
+                    raise ValueError("; ".join(range_validation.errors))
 
+            # Encode
             if enable_trace:
                 build_trace.append("Encoding value")
-            # Encode the validated value
             encoded = self._encode_value(data)
 
-            if enable_trace:
-                build_trace.append(f"Validating encoded length (got {len(encoded)} bytes)")
-            # Validate encoded length
-            length_validation = self._validate_length(encoded)
-            if not length_validation.valid:
-                raise ValueError("; ".join(length_validation.errors))
+            # Length validation
+            if validate:
+                if enable_trace:
+                    build_trace.append("Validating encoded length")
+                length_validation = self._validate_length(encoded)
+                validation.errors.extend(length_validation.errors)
+                validation.warnings.extend(length_validation.warnings)
+                if not length_validation.valid:
+                    raise ValueError("; ".join(length_validation.errors))
 
             if enable_trace:
                 build_trace.append("Build completed successfully")
 
             return encoded
+
         except Exception as e:
             if enable_trace:
-                build_trace.append(f"Build failed: {str(e)}")
-            raise
+                build_trace.append(f"Build failed: {type(e).__name__}: {e}")
+
+            raise CharacteristicEncodeError(
+                message=str(e),
+                name=self.name,
+                uuid=self.uuid,
+                value=data,
+                validation=validation,
+            ) from e
 
     # -------------------- Encoding helpers for special values --------------------
     def encode_special(self, value_type: SpecialValueType) -> bytearray:

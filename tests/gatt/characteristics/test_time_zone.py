@@ -56,9 +56,9 @@ class TestTimeZoneCharacteristic(CommonCharacteristicTests):
         for offset, expected in test_cases:
             test_data = bytearray(struct.pack("b", offset))  # signed byte
             parsed = characteristic.parse_value(test_data)
-            assert parsed.value == expected
+            assert parsed == expected
 
         # Test unknown value
         unknown_data = bytearray([0x80])  # SINT8_MIN
         parsed = characteristic.parse_value(unknown_data)
-        assert parsed.value == "Unknown"
+        assert parsed == "Unknown"
