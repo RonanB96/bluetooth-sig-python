@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Utf8StringTemplate
 
 
-class LanguageCharacteristic(BaseCharacteristic):
+class LanguageCharacteristic(BaseCharacteristic[str]):
     """Language characteristic (0x2AA2).
 
     org.bluetooth.characteristic.language

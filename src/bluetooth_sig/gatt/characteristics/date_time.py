@@ -10,7 +10,7 @@ from .base import BaseCharacteristic
 from .utils import DataParser
 
 
-class DateTimeCharacteristic(BaseCharacteristic):
+class DateTimeCharacteristic(BaseCharacteristic[datetime]):
     """Date Time characteristic (0x2A08).
 
     org.bluetooth.characteristic.date_time
@@ -21,7 +21,7 @@ class DateTimeCharacteristic(BaseCharacteristic):
     _manual_value_type = ValueType.DATETIME
     expected_length = 7
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> datetime:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> datetime:
         """Parse date time value.
 
         Args:
@@ -40,7 +40,7 @@ class DateTimeCharacteristic(BaseCharacteristic):
             second=data[6],
         )
 
-    def encode_value(self, data: datetime) -> bytearray:
+    def _encode_value(self, data: datetime) -> bytearray:
         """Encode datetime value back to bytes.
 
         Args:

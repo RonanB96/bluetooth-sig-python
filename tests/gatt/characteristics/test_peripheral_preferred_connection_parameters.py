@@ -45,7 +45,7 @@ class TestPeripheralPreferredConnectionParametersCharacteristic(CommonCharacteri
     def test_fast_connection_parameters(self) -> None:
         """Test fast connection parameters."""
         char = PeripheralPreferredConnectionParametersCharacteristic()
-        result = char.decode_value(bytearray([6, 0, 6, 0, 0, 0, 100, 0]))
+        result = char.parse_value(bytearray([6, 0, 6, 0, 0, 0, 100, 0]))
         assert result.min_interval == 7.5  # 6 * 1.25
         assert result.max_interval == 7.5  # 6 * 1.25
         assert result.latency == 0
@@ -55,6 +55,6 @@ class TestPeripheralPreferredConnectionParametersCharacteristic(CommonCharacteri
         """Test encoding and decoding preserve data."""
         char = PeripheralPreferredConnectionParametersCharacteristic()
         original = ConnectionParametersData(min_interval=80, max_interval=100, latency=0, timeout=200)
-        encoded = char.encode_value(original)
-        decoded = char.decode_value(encoded)
+        encoded = char.build_value(original)
+        decoded = char.parse_value(encoded)
         assert decoded == original

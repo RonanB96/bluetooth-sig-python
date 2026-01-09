@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import HardwareRevisionStringCharacteristic
@@ -12,7 +14,7 @@ class TestHardwareRevisionStringCharacteristic(CommonCharacteristicTests):
     characteristic_cls = HardwareRevisionStringCharacteristic
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return HardwareRevisionStringCharacteristic()
 
     @pytest.fixture

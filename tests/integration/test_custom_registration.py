@@ -31,11 +31,11 @@ class CustomCharacteristicImpl(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
         """Parse test data as uint16."""
         return DataParser.parse_int16(bytes(data), 0, signed=False)
 
-    def encode_value(self, data: int) -> bytearray:
+    def _encode_value(self, data: int) -> bytearray:
         """Encode value to bytes (required abstract method)."""
         return bytearray(data.to_bytes(2, "little", signed=False))
 
@@ -174,9 +174,7 @@ class TestRuntimeRegistration:
         test_data = bytes([0x34, 0x12])  # 0x1234 = 4660
         result = translator.parse_characteristic("abcd1234-0000-1000-8000-00805f9b34fb", test_data)
 
-        assert result.parse_success
-        assert result.value == 4660
-        assert result.name == "CustomCharacteristicImpl"
+        assert result == 4660
 
     def test_conflict_detection(self) -> None:
         """Test that conflicts with SIG entries are detected."""
@@ -262,7 +260,7 @@ class TestRuntimeRegistration:
                     }
                 )
 
-                def decode_value(  # pylint: disable=duplicate-code
+                def _decode_value(  # pylint: disable=duplicate-code
                     # NOTE: Minimal characteristic implementation duplicates other test fixtures.
                     # Duplication justified because:
                     # 1. Test isolation - each test creates its own custom characteristic
@@ -274,11 +272,11 @@ class TestRuntimeRegistration:
                 ) -> int:
                     return data[0]
 
-                def encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
+                def _encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
                     return bytearray([data])
 
-                namespace["decode_value"] = decode_value
-                namespace["encode_value"] = encode_value
+                namespace["_decode_value"] = _decode_value
+                namespace["_encode_value"] = _encode_value
 
             new_class(
                 "SIGOverrideWithoutPermission",
@@ -301,7 +299,7 @@ class TestRuntimeRegistration:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(  # pylint: disable=duplicate-code
+            def _decode_value(  # pylint: disable=duplicate-code
                 # NOTE: Minimal characteristic implementation duplicates other test fixtures.
                 # Duplication justified because:
                 # 1. Test isolation - each test creates its own custom characteristic
@@ -313,7 +311,7 @@ class TestRuntimeRegistration:
             ) -> int:
                 return data[0]
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray([data])
 
         # Should work without error

@@ -67,9 +67,8 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
         data = bytearray([0x40, 0x00])  # Phone (64)
         result = characteristic.parse_value(data)
 
-        assert result.parse_success
-        assert isinstance(result.value, AppearanceData)
-        assert result.value.raw_value == 64
+        assert isinstance(result, AppearanceData)
+        assert result.raw_value == 64
 
     def test_decode_with_known_appearance(self, characteristic: AppearanceCharacteristic) -> None:
         """Test decoding appearance with registry lookup."""
@@ -77,14 +76,13 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
         data = bytearray([0x41, 0x03])
         result = characteristic.parse_value(data)
 
-        assert result.parse_success
-        assert result.value is not None
-        assert result.value.raw_value == 833
+        assert result is not None
+        assert result.raw_value == 833
         # If registry is loaded, should have info
-        if result.value.info:
-            assert result.value.category == "Heart Rate Sensor"
-            assert result.value.subcategory == "Heart Rate Belt"
-            assert result.value.full_name == "Heart Rate Sensor: Heart Rate Belt"
+        if result.info:
+            assert result.category == "Heart Rate Sensor"
+            assert result.subcategory == "Heart Rate Belt"
+            assert result.full_name == "Heart Rate Sensor: Heart Rate Belt"
 
     def test_decode_category_only_appearance(self, characteristic: AppearanceCharacteristic) -> None:
         """Test decoding appearance with category only (no subcategory)."""
@@ -92,13 +90,12 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
         data = bytearray([0x40, 0x00])
         result = characteristic.parse_value(data)
 
-        assert result.parse_success
-        assert result.value is not None
-        assert result.value.raw_value == 64
-        if result.value.info:
-            assert result.value.category == "Phone"
-            assert result.value.subcategory is None
-            assert result.value.full_name == "Phone"
+        assert result is not None
+        assert result.raw_value == 64
+        if result.info:
+            assert result.category == "Phone"
+            assert result.subcategory is None
+            assert result.full_name == "Phone"
 
     def test_decode_unknown_appearance(self, characteristic: AppearanceCharacteristic) -> None:
         """Test decoding unknown appearance code."""
@@ -106,29 +103,26 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
         data = bytearray([0x00, 0x00])
         result = characteristic.parse_value(data)
 
-        assert result.parse_success
-        assert result.value is not None
-        assert result.value.raw_value == 0
+        assert result is not None
+        assert result.raw_value == 0
         # Should still return AppearanceData even if unknown
-        if result.value.info:
-            assert result.value.category == "Unknown"
+        if result.info:
+            assert result.category == "Unknown"
 
     def test_int_conversion(self, characteristic: AppearanceCharacteristic) -> None:
         """Test that AppearanceData can be converted to int."""
         data = bytearray([0x41, 0x03])
         result = characteristic.parse_value(data)
 
-        assert result.parse_success
-        assert result.value is not None
-        assert int(result.value) == 833
-        assert result.value.raw_value == 833
+        assert result is not None
+        assert int(result) == 833
+        assert result.raw_value == 833
 
     def test_encode_value_with_appearance_data(self, characteristic: AppearanceCharacteristic) -> None:
         """Test encoding AppearanceData back to bytes."""
         data = bytearray([0x41, 0x03])
-        result = characteristic.parse_value(data)
-        assert result.value is not None
-        appearance_data = result.value
+        appearance_data = characteristic.parse_value(data)
+        assert appearance_data is not None
 
         # Encode it back
         encoded = characteristic.build_value(appearance_data)
@@ -151,10 +145,9 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
         # Encode and decode round-trip with human-readable data
         encoded = characteristic.build_value(hr_belt_data)
         result = characteristic.parse_value(encoded)
-        assert result.parse_success
-        assert result.value is not None
-        assert result.value.full_name == hr_belt_data.full_name
-        assert result.value.raw_value == hr_belt_data.raw_value
+        assert result is not None
+        assert result.full_name == hr_belt_data.full_name
+        assert result.raw_value == hr_belt_data.raw_value
 
     def test_from_category_invalid(self) -> None:
         """Test that from_category raises ValueError for invalid categories."""
@@ -170,11 +163,10 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
         data = bytearray([0xFF, 0xFF])
         result = characteristic.parse_value(data)
 
-        assert result.parse_success
-        assert result.value is not None
-        assert result.value.raw_value == 65535
+        assert result is not None
+        assert result.raw_value == 65535
         # Properties should handle None gracefully
-        if result.value.info is None:
-            assert result.value.category is None
-            assert result.value.subcategory is None
-            assert result.value.full_name is None
+        if result.info is None:
+            assert result.category is None
+            assert result.subcategory is None
+            assert result.full_name is None

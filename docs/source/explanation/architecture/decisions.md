@@ -83,7 +83,7 @@ class Temperature(BaseCharacteristic):
 # 2560 * 0.01 = 25.6°C
 temperature_data = bytearray([0x00, 0x0A])  # 2560 in little-endian
 temp_char = Temperature()
-result = temp_char.decode_value(temperature_data)
+result = temp_char.parse_value(temperature_data)
 print(f"Temperature: {result}°C")  # Temperature: 25.6°C
 ```
 

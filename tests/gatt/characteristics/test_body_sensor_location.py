@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import BodySensorLocation, BodySensorLocationCharacteristic
@@ -16,7 +18,7 @@ class TestBodySensorLocationCharacteristic(CommonCharacteristicTests):
     characteristic_cls = BodySensorLocationCharacteristic
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return BodySensorLocationCharacteristic()
 
     @pytest.fixture
@@ -63,29 +65,34 @@ class TestBodySensorLocationCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_invalid_length(self, characteristic: BaseCharacteristic) -> None:
+    def test_invalid_length(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that invalid data length raises error."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         # Empty data - will fail when trying to access data[0]
-        result = characteristic.parse_value(bytearray([]))
-        assert not result.parse_success
-        assert "need 1 bytes" in result.error_message or "insufficient" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([]))
+        assert "need 1 bytes" in str(exc_info.value).lower() or "insufficient" in str(exc_info.value).lower()
 
         # Too much data - characteristic only reads first byte, extra bytes ignored
         result = characteristic.parse_value(bytearray([0x00, 0x00]))
-        assert result.parse_success  # Should succeed, only first byte is read
-        assert result.value == BodySensorLocation.OTHER
+        # Should succeed, only first byte is read
+        assert result == BodySensorLocation.OTHER
 
-    def test_invalid_value(self, characteristic: BaseCharacteristic) -> None:
-        """Test that invalid location value raises ValueRangeError."""
-        from bluetooth_sig.gatt.exceptions import ValueRangeError
+    def test_invalid_value(self, characteristic: BaseCharacteristic[Any]) -> None:
+        """Test that invalid location value results in parse failure."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
-        with pytest.raises(ValueRangeError, match="Invalid BodySensorLocation"):
-            characteristic.decode_value(bytearray([0x07]))  # Out of range
+        # parse_value now raises CharacteristicParseError for invalid values
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x07]))  # Out of range
+        assert "BodySensorLocation" in str(exc_info.value)
 
-        with pytest.raises(ValueRangeError, match="Invalid BodySensorLocation"):
-            characteristic.decode_value(bytearray([0xFF]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0xFF]))
+        assert "BodySensorLocation" in str(exc_info.value)
 
-    def test_encode_value(self, characteristic: BaseCharacteristic) -> None:
+    def test_encode_value(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test encoding body sensor location to bytes."""
         assert characteristic.build_value(BodySensorLocation.WRIST) == bytearray([0x02])
         assert characteristic.build_value(BodySensorLocation.CHEST) == bytearray([0x01])

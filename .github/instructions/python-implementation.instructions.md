@@ -32,7 +32,7 @@ applyTo: "**/*.py,**/pyproject.toml,**/requirements*.txt,**/setup.py"
 
 **Example - CORRECT:**
 ```python
-def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
+def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
     """Decode temperature characteristic.
 
     Args:
@@ -50,7 +50,7 @@ def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None
 
 **Example - WRONG:**
 ```python
-def decode_value(self, data, ctx=None):  # ❌ No types!
+def _decode_value(self, data, ctx=None):  # ❌ No types!
     """Decode temperature characteristic."""
     ...
 ```
@@ -173,7 +173,7 @@ def _parse_legacy_advertising(self, raw_data: bytes) -> None:
 ```python
 from bluetooth_sig.gatt.exceptions import InsufficientDataError, ValueRangeError
 
-def decode_value(self, data: bytearray) -> int:
+def _decode_value(self, data: bytearray) -> int:
     """Decode battery level (0-100%)."""
     if len(data) < 1:
         raise InsufficientDataError(
@@ -201,7 +201,7 @@ For each characteristic:
 
 **Example:**
 ```python
-def decode_value(self, data: bytearray) -> float | None:
+def _decode_value(self, data: bytearray) -> float | None:
     """Decode humidity with special value handling."""
     if len(data) != 2:
         raise InsufficientDataError(f"Humidity requires 2 bytes, got {len(data)}")

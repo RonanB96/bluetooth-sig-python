@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from types import TracebackType
-from typing import cast
+from typing import Any, TypeVar, cast, overload
 
-from ..gatt.characteristics.base import CharacteristicData
+from ..gatt.characteristics.base import BaseCharacteristic
 from ..types import CharacteristicContext
-from ..types.protocols import CharacteristicDataProtocol
 from ..types.uuid import BluetoothUUID
 from .translator import BluetoothSIGTranslator
+
+# Type variable for generic characteristic return types
+T = TypeVar("T")
 
 
 class AsyncParsingSession:
@@ -39,9 +41,8 @@ class AsyncParsingSession:
         """
         self.translator = translator
         self.context = ctx
-        # CharacteristicData implements CharacteristicDataProtocol structurally
-        # Store as concrete type for clarity, compatible with protocol at usage
-        self.results: dict[str, CharacteristicData] = {}
+        # Store parsed characteristic values for context sharing
+        self.results: dict[str, Any] = {}
 
     async def __aenter__(self) -> AsyncParsingSession:
         """Enter async context."""
@@ -57,23 +58,37 @@ class AsyncParsingSession:
         # Cleanup if needed
         return False
 
+    @overload
     async def parse(
         self,
-        uuid: str | BluetoothUUID,
+        char: type[BaseCharacteristic[T]],
         data: bytes,
-    ) -> CharacteristicData:
+    ) -> T: ...
+
+    @overload
+    async def parse(
+        self,
+        char: str | BluetoothUUID,
+        data: bytes,
+    ) -> Any: ...  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+
+    async def parse(
+        self,
+        char: str | BluetoothUUID | type[BaseCharacteristic[T]],
+        data: bytes,
+    ) -> T | Any:  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
         """Parse characteristic with accumulated context.
 
         Args:
-            uuid: Characteristic UUID
+            char: Characteristic class (type-safe) or UUID string/BluetoothUUID (not type-safe).
             data: Raw bytes
 
         Returns:
-            CharacteristicData
+            Parsed characteristic value. Return type is inferred when passing characteristic class.
         """
         # Update context with previous results
         # Cast dict to Mapping to satisfy CharacteristicContext type requirements
-        results_as_mapping = cast(Mapping[str, CharacteristicDataProtocol], self.results)
+        results_as_mapping = cast(Mapping[str, Any], self.results)
 
         if self.context is None:
             self.context = CharacteristicContext(other_characteristics=results_as_mapping)
@@ -85,8 +100,17 @@ class AsyncParsingSession:
                 raw_service=self.context.raw_service,
             )
 
-        # Parse with context
-        uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
+        # Handle characteristic class input (type-safe path)
+        if isinstance(char, type) and issubclass(char, BaseCharacteristic):
+            result = await self.translator.parse_characteristic_async(char, data, self.context)
+            # Store result using UUID string key
+            char_instance = char()
+            uuid_str = str(char_instance.uuid)
+            self.results[uuid_str] = result
+            return result
+
+        # Parse with context (not type-safe path)
+        uuid_str = str(char) if isinstance(char, BluetoothUUID) else char
         result = await self.translator.parse_characteristic_async(uuid_str, data, self.context)
 
         # Store result for future context using string UUID key

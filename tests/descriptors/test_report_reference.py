@@ -15,7 +15,7 @@ class TestReportReferenceDescriptor:
         data = b"\x01\x00"  # Report ID 1
 
         result = rr.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, ReportReferenceData)
         assert result.value.report_id == 0x0001
 
@@ -25,7 +25,7 @@ class TestReportReferenceDescriptor:
         data = b"\x01"  # Too short
 
         result = rr.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Report Reference data must be exactly 2 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:

@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledSint24Template
 
 
-class LocalNorthCoordinateCharacteristic(BaseCharacteristic):
+class LocalNorthCoordinateCharacteristic(BaseCharacteristic[float]):
     """Local North Coordinate characteristic (0x2AB0).
 
     org.bluetooth.characteristic.local_north_coordinate

@@ -50,15 +50,17 @@ class TestWaistCircumferenceCharacteristic(CommonCharacteristicTests):
         # Convert cm to scaled uint16 (waist / 0.01)
         scaled_value = int(waist_cm / 0.01)
         data = bytearray([scaled_value & 0xFF, (scaled_value >> 8) & 0xFF])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
+        assert result is not None
         assert abs(result - waist_cm) < 0.01  # Allow small floating point error
 
     def test_waist_circ_boundary_values(self, characteristic: WaistCircumferenceCharacteristic) -> None:
         """Test waist circumference boundary values."""
         # Test minimum (0 cm)
-        result = characteristic.decode_value(bytearray([0, 0]))
+        result = characteristic.parse_value(bytearray([0, 0]))
         assert result == 0.0
 
         # Test maximum (655.35 cm)
-        result = characteristic.decode_value(bytearray([0xFF, 0xFF]))
+        result = characteristic.parse_value(bytearray([0xFF, 0xFF]))
+        assert result is not None
         assert abs(result - 655.35) < 0.01

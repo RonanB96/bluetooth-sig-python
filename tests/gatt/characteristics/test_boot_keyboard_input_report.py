@@ -45,7 +45,7 @@ class TestBootKeyboardInputReportCharacteristic(CommonCharacteristicTests):
     def test_no_keys_pressed(self) -> None:
         """Test report with no keys pressed."""
         char = BootKeyboardInputReportCharacteristic()
-        result = char.decode_value(bytearray([0, 0, 0, 0, 0, 0, 0, 0]))
+        result = char.parse_value(bytearray([0, 0, 0, 0, 0, 0, 0, 0]))
         assert result.modifiers == KeyboardModifiers(0)
         assert result.reserved == 0
         assert result.keycodes == (0, 0, 0, 0, 0, 0)
@@ -53,7 +53,7 @@ class TestBootKeyboardInputReportCharacteristic(CommonCharacteristicTests):
     def test_single_key_with_modifier(self) -> None:
         """Test single key with modifier."""
         char = BootKeyboardInputReportCharacteristic()
-        result = char.decode_value(bytearray([0x02, 0, 4, 0, 0, 0, 0, 0]))
+        result = char.parse_value(bytearray([0x02, 0, 4, 0, 0, 0, 0, 0]))
         assert result.modifiers == KeyboardModifiers.LEFT_SHIFT
         assert result.keycodes[0] == 4  # 'a' key
 
@@ -63,6 +63,6 @@ class TestBootKeyboardInputReportCharacteristic(CommonCharacteristicTests):
         original = BootKeyboardInputReportData(
             modifiers=KeyboardModifiers.LEFT_SHIFT, reserved=0, keycodes=(4, 5, 6, 0, 0, 0)
         )
-        encoded = char.encode_value(original)
-        decoded = char.decode_value(encoded)
+        encoded = char.build_value(original)
+        decoded = char.parse_value(encoded)
         assert decoded == original

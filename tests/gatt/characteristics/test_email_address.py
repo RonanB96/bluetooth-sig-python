@@ -58,17 +58,17 @@ class TestEmailAddressCharacteristic(CommonCharacteristicTests):
     def test_email_values(self, characteristic: EmailAddressCharacteristic, email: str) -> None:
         """Test email address with various valid values."""
         data = bytearray(email.encode("utf-8"))
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == email
 
     def test_email_empty(self, characteristic: EmailAddressCharacteristic) -> None:
         """Test empty email address."""
-        result = characteristic.decode_value(bytearray())
+        result = characteristic.parse_value(bytearray())
         assert result == ""
 
     def test_email_unicode(self, characteristic: EmailAddressCharacteristic) -> None:
         """Test email address with unicode characters."""
         email = "tëst@example.com"
         data = bytearray(email.encode("utf-8"))
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == email

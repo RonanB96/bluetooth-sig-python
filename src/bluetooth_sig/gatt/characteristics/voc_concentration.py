@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint16Template
 
 
-class VOCConcentrationCharacteristic(BaseCharacteristic):
+class VOCConcentrationCharacteristic(BaseCharacteristic[int]):
     """Volatile Organic Compounds concentration characteristic (0x2BE7).
 
     Uses uint16 format as per SIG specification.

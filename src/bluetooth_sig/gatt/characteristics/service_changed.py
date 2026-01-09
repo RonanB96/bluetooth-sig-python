@@ -21,7 +21,7 @@ class ServiceChangedData(msgspec.Struct, frozen=True, kw_only=True):
     end_handle: int
 
 
-class ServiceChangedCharacteristic(BaseCharacteristic):
+class ServiceChangedCharacteristic(BaseCharacteristic[ServiceChangedData]):
     """Service Changed characteristic (0x2A05).
 
     org.bluetooth.characteristic.gatt.service_changed
@@ -33,7 +33,7 @@ class ServiceChangedCharacteristic(BaseCharacteristic):
 
     expected_length = 4
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ServiceChangedData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ServiceChangedData:
         """Parse service changed value.
 
         Args:
@@ -47,7 +47,7 @@ class ServiceChangedCharacteristic(BaseCharacteristic):
         end_handle = DataParser.parse_int16(data, 2, signed=False)
         return ServiceChangedData(start_handle=start_handle, end_handle=end_handle)
 
-    def encode_value(self, data: ServiceChangedData) -> bytearray:
+    def _encode_value(self, data: ServiceChangedData) -> bytearray:
         """Encode service changed value back to bytes.
 
         Args:

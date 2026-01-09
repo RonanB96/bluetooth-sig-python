@@ -7,7 +7,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class RainfallCharacteristic(BaseCharacteristic):
+class RainfallCharacteristic(BaseCharacteristic[float]):
     """Rainfall characteristic (0x2A78).
 
     org.bluetooth.characteristic.rainfall

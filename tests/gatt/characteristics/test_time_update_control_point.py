@@ -8,6 +8,7 @@ from bluetooth_sig.gatt.characteristics.time_update_control_point import (
     TimeUpdateControlPointCharacteristic,
     TimeUpdateControlPointCommand,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -50,11 +51,12 @@ class TestTimeUpdateControlPointCharacteristic(CommonCharacteristicTests):
         command = TimeUpdateControlPointCommand.GET_REFERENCE_UPDATE
 
         # Test encoding
-        encoded = char.encode_value(command)
+        encoded = char.build_value(command)
         assert encoded == bytearray([0x01])
 
         # Test decoding
-        decoded = char.parse_value(encoded).value
+        decoded = char.parse_value(encoded)
+        assert decoded is not None
         assert decoded == command
 
     def test_cancel_reference_update_command(self) -> None:
@@ -63,21 +65,22 @@ class TestTimeUpdateControlPointCharacteristic(CommonCharacteristicTests):
         command = TimeUpdateControlPointCommand.CANCEL_REFERENCE_UPDATE
 
         # Test encoding
-        encoded = char.encode_value(command)
+        encoded = char.build_value(command)
         assert encoded == bytearray([0x02])
 
         # Test decoding
-        decoded = char.parse_value(encoded).value
+        decoded = char.parse_value(encoded)
+        assert decoded is not None
         assert decoded == command
 
     def test_invalid_command_raises_error(self) -> None:
         """Test that invalid command values result in parse failure."""
         char = TimeUpdateControlPointCharacteristic()
 
-        # Test invalid data during parsing
-        result = char.parse_value(bytearray([0xFF]))
-        assert not result.parse_success
-        assert "Invalid Time Update Control Point command" in result.error_message
+        # Test invalid data during parsing - raises CharacteristicParseError
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([0xFF]))
+        assert "invalid" in str(exc_info.value).lower()
 
     def test_command_enum_values(self) -> None:
         """Test that command enum has expected values."""

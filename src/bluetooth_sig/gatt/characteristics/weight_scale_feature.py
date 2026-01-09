@@ -93,7 +93,7 @@ class WeightScaleFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pyli
             raise ValueError("Raw value must be a 32-bit unsigned integer")
 
 
-class WeightScaleFeatureCharacteristic(BaseCharacteristic):
+class WeightScaleFeatureCharacteristic(BaseCharacteristic[WeightScaleFeatureData]):
     """Weight Scale Feature characteristic (0x2A9E).
 
     Used to indicate which optional features are supported by the weight
@@ -108,7 +108,7 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
     max_length: int = 4  # Features(4) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> WeightScaleFeatureData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> WeightScaleFeatureData:
         """Parse weight scale feature data according to Bluetooth specification.
 
         Format: Features(4 bytes) - bitmask indicating supported features.
@@ -139,7 +139,7 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic):
             height_measurement_resolution=self._get_height_resolution(features_raw),
         )
 
-    def encode_value(self, data: WeightScaleFeatureData) -> bytearray:
+    def _encode_value(self, data: WeightScaleFeatureData) -> bytearray:
         """Encode weight scale feature value back to bytes.
 
         Args:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import SerialNumberStringCharacteristic
@@ -12,7 +14,7 @@ class TestSerialNumberStringCharacteristic(CommonCharacteristicTests):
     characteristic_cls = SerialNumberStringCharacteristic
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return SerialNumberStringCharacteristic()
 
     @pytest.fixture

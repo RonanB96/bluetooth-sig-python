@@ -34,7 +34,6 @@ from .alert import (
     AlertCategoryBitMask,
     AlertCategoryID,
     AlertNotificationCommandID,
-    validate_category_id,
 )
 from .appearance import AppearanceData
 from .base_types import SIGInfo
@@ -62,7 +61,7 @@ from .ead import (
     EncryptedAdvertisingData,
 )
 from .location import PositionStatus
-from .protocols import CharacteristicDataProtocol
+from .protocols import CharacteristicProtocol
 from .registry.ad_types import AdTypeInfo
 from .registry.appearance_info import AppearanceInfo
 from .registry.class_of_device import ClassOfDeviceInfo
@@ -120,8 +119,8 @@ __all__ = [
     "BLEAdvertisingPDU",
     "BLEExtendedHeader",
     "CharacteristicContext",
-    "CharacteristicDataProtocol",
     "CharacteristicInfo",
+    "CharacteristicProtocol",
     "ClassOfDeviceInfo",
     "ConcentrationUnit",
     "CoreAdvertisingData",
@@ -175,5 +174,4 @@ __all__ = [
     "ValidationResult",
     "WeightUnit",
     "classify_special_value",
-    "validate_category_id",
 ]

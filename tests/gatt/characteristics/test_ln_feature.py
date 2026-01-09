@@ -213,7 +213,7 @@ class TestLNFeatureCharacteristic(CommonCharacteristicTests):
         """Test LN feature with various feature combinations."""
         data = bytearray(features_bitmap.to_bytes(4, byteorder="little"))
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.features_bitmap == features_bitmap
         for field, expected in expected_features.items():
             assert getattr(result, field) == expected, f"Field {field} should be {expected}"
@@ -224,7 +224,7 @@ class TestLNFeatureCharacteristic(CommonCharacteristicTests):
         features_bitmap = 0xFFFFFFFF
         data = bytearray(features_bitmap.to_bytes(4, byteorder="little"))
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.features_bitmap == features_bitmap
         # Check that all boolean features are True
         feature_fields = [field for field in dir(result) if field.endswith("_supported") and not field.startswith("_")]
@@ -237,7 +237,7 @@ class TestLNFeatureCharacteristic(CommonCharacteristicTests):
         features_bitmap = 0x00000000
         data = bytearray(features_bitmap.to_bytes(4, byteorder="little"))
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.features_bitmap == features_bitmap
         # Check that all boolean features are False
         feature_fields = [field for field in dir(result) if field.endswith("_supported") and not field.startswith("_")]

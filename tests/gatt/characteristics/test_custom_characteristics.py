@@ -22,6 +22,7 @@ from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.templates import ScaledUint16Template, Uint8Template
 from bluetooth_sig.gatt.characteristics.utils import DataParser
 from bluetooth_sig.gatt.context import CharacteristicContext
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -46,11 +47,11 @@ class SimpleTemperatureSensor(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
         """Parse temperature as signed 16-bit integer."""
         return DataParser.parse_int16(data, 0, signed=True)
 
-    def encode_value(self, data: int) -> bytearray:
+    def _encode_value(self, data: int) -> bytearray:
         """Encode temperature as signed 16-bit integer."""
         return DataParser.encode_int16(data, signed=True)
 
@@ -101,7 +102,7 @@ class MultiSensorCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.BYTES,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> EnvironmentalReading:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> EnvironmentalReading:
         """Parse multi-field environmental data."""
         if len(data) < 12:
             raise ValueError("Multi-sensor data requires at least 12 bytes")
@@ -118,7 +119,7 @@ class MultiSensorCharacteristic(CustomBaseCharacteristic):
             timestamp=timestamp,
         )
 
-    def encode_value(self, data: EnvironmentalReading) -> bytearray:
+    def _encode_value(self, data: EnvironmentalReading) -> bytearray:
         """Encode environmental reading."""
         output_data = bytearray()
         output_data.extend(DataParser.encode_int16(int(data.temperature * 100), signed=True))
@@ -147,11 +148,11 @@ class DeviceSerialNumberCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.STRING,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
         """Parse serial number as UTF-8 string."""
         return data.decode("utf-8").strip()
 
-    def encode_value(self, data: str) -> bytearray:
+    def _encode_value(self, data: str) -> bytearray:
         """Encode serial number as UTF-8."""
         return bytearray(data.encode("utf-8"))
 
@@ -174,7 +175,7 @@ class DeviceStatusFlags(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, bool]:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, bool]:
         """Parse status flags and return dict of flag states."""
         flags = data[0]
         return {
@@ -186,7 +187,7 @@ class DeviceStatusFlags(CustomBaseCharacteristic):
             "wifi_connected": bool(flags & 0x20),
         }
 
-    def encode_value(self, data: dict[str, bool]) -> bytearray:
+    def _encode_value(self, data: dict[str, bool]) -> bytearray:
         """Encode status flags dict to byte."""
         byte = 0
         if data.get("powered_on", False):
@@ -219,20 +220,18 @@ class TestCustomCharacteristicVariants:
         # Test parsing positive temperature
         data = bytearray([0x14, 0x00])  # 20°C
         result = sensor.parse_value(data)
-        assert result.parse_success is True
-        assert result.value == 20
-        assert result.characteristic.info.unit == "°C"
+        assert result == 20
+        assert sensor.info.unit == "°C"
 
         # Test parsing negative temperature
         data = bytearray([0xF6, 0xFF])  # -10°C
         result = sensor.parse_value(data)
-        assert result.parse_success is True
-        assert result.value == -10
+        assert result == -10
 
         # Test round-trip
-        encoded = sensor.encode_value(25)
+        encoded = sensor.build_value(25)
         result = sensor.parse_value(encoded)
-        assert result.value == 25
+        assert result == 25
 
     def test_simple_temperature_validation(self) -> None:
         """Test temperature sensor validation."""
@@ -240,9 +239,9 @@ class TestCustomCharacteristicVariants:
 
         # Test validation: length check
         short_data = bytearray([0x14])
-        result = sensor.parse_value(short_data)
-        assert result.parse_success is False
-        assert "expected exactly 2 bytes, got 1" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            sensor.parse_value(short_data)
+        assert "expected exactly 2 bytes, got 1" in str(exc_info.value).lower()
 
         # Test validation: range check (simulate out of range)
         # The sensor will decode the value, but validation will fail if out of range
@@ -255,15 +254,13 @@ class TestCustomCharacteristicVariants:
         # Test parsing: 5000 * 0.01 = 50.00%
         data = bytearray([0x88, 0x13])
         result = sensor.parse_value(data)
-        assert result.parse_success is True
-        assert result.value == 50.0
-        assert result.characteristic.info.unit == "%"
+        assert result == 50.0
+        assert sensor.info.unit == "%"
 
         # Test max humidity
         data = bytearray([0x10, 0x27])  # 10000 * 0.01 = 100.0%
         result = sensor.parse_value(data)
-        assert result.parse_success is True
-        assert result.value == 100.0
+        assert result == 100.0
 
     def test_multi_sensor_characteristic(self) -> None:
         """Test multi-field environmental sensor."""
@@ -288,12 +285,11 @@ class TestCustomCharacteristicVariants:
         )
 
         result = sensor.parse_value(data)
-        assert result.parse_success is True
-        assert isinstance(result.value, EnvironmentalReading)
-        assert abs(result.value.temperature - 25.5) < 0.1  # Allow floating point tolerance
-        assert result.value.humidity == 60.0
-        assert result.value.pressure == 101325
-        assert result.value.timestamp == 1610612736
+        assert isinstance(result, EnvironmentalReading)
+        assert abs(result.temperature - 25.5) < 0.1  # Allow floating point tolerance
+        assert result.humidity == 60.0
+        assert result.pressure == 101325
+        assert result.timestamp == 1610612736
 
     def test_multi_sensor_length_validation(self) -> None:
         """Test multi-sensor minimum length validation."""
@@ -301,8 +297,8 @@ class TestCustomCharacteristicVariants:
 
         # Too short data
         short_data = bytearray([0x01, 0x02, 0x03])
-        result = sensor.parse_value(short_data)
-        assert result.parse_success is False
+        with pytest.raises(CharacteristicParseError):
+            sensor.parse_value(short_data)
 
     def test_device_serial_number(self) -> None:
         """Test string-based serial number characteristic."""
@@ -311,13 +307,12 @@ class TestCustomCharacteristicVariants:
         # Test parsing serial number
         data = bytearray(b"SN123456789")
         result = char.parse_value(data)
-        assert result.parse_success is True
-        assert result.value == "SN123456789"
-        assert result.characteristic.info.value_type == ValueType.STRING
+        assert result == "SN123456789"
+        assert char.info.value_type == ValueType.STRING
 
-        encoded = char.encode_value("TEST12345")
+        encoded = char.build_value("TEST12345")
         result = char.parse_value(encoded)
-        assert result.value == "TEST12345"
+        assert result == "TEST12345"
 
     def test_device_status_flags(self) -> None:
         """Test device status flags characteristic."""
@@ -326,21 +321,19 @@ class TestCustomCharacteristicVariants:
         # Test all flags off
         data = bytearray([0x00])
         result = char.parse_value(data)
-        assert result.parse_success is True
-        assert isinstance(result.value, dict)
-        # Pylint false positive: result.value is dict, but pylint doesn't recognize msgspec.Struct returns
-        assert result.value["powered_on"] is False  # pylint: disable=unsubscriptable-object
-        assert result.value["charging"] is False  # pylint: disable=unsubscriptable-object
-        assert result.value["error"] is False  # pylint: disable=unsubscriptable-object
+        assert isinstance(result, dict)
+        # Pylint false positive: result is dict, but pylint doesn't recognize msgspec.Struct returns
+        assert result["powered_on"] is False  # pylint: disable=unsubscriptable-object
+        assert result["charging"] is False  # pylint: disable=unsubscriptable-object
+        assert result["error"] is False  # pylint: disable=unsubscriptable-object
 
         # Test multiple flags on: powered_on + bluetooth_connected
         data = bytearray([0x11])  # 0x01 | 0x10
         result = char.parse_value(data)
-        assert result.parse_success is True
-        assert result.value is not None
-        assert result.value["powered_on"] is True  # pylint: disable=unsubscriptable-object
-        assert result.value["bluetooth_connected"] is True  # pylint: disable=unsubscriptable-object
-        assert result.value["charging"] is False  # pylint: disable=unsubscriptable-object
+        assert result is not None
+        assert result["powered_on"] is True  # pylint: disable=unsubscriptable-object
+        assert result["bluetooth_connected"] is True  # pylint: disable=unsubscriptable-object
+        assert result["charging"] is False  # pylint: disable=unsubscriptable-object
 
         # Test round-trip
         flags = {
@@ -351,7 +344,7 @@ class TestCustomCharacteristicVariants:
             "bluetooth_connected": False,
             "wifi_connected": True,
         }
-        encoded = char.encode_value(flags)
+        encoded = char.build_value(flags)
         assert encoded[0] == 0x23  # 0x01 | 0x02 | 0x20
 
     def test_custom_battery_level_override(self) -> None:
@@ -385,8 +378,7 @@ class TestCustomCharacteristicVariants:
         # Test parsing
         data = bytearray([85])  # 85%
         result = char.parse_value(data)
-        assert result.parse_success is True
-        assert result.value == 85
+        assert result == 85
 
     def test_custom_characteristics_have_is_custom_marker(self) -> None:
         """Verify all custom characteristics have _is_custom marker."""
@@ -442,8 +434,7 @@ class TestCustomCharacteristicRegistration:
             bytes(data),
         )
 
-        assert result.parse_success is True
-        assert result.value == 20
+        assert result == 20
 
     def test_register_multi_field_characteristic(self) -> None:
         """Test registering multi-field characteristic."""
@@ -477,8 +468,7 @@ class TestCustomCharacteristicRegistration:
             bytes(data),
         )
 
-        assert result.parse_success is True
-        assert isinstance(result.value, EnvironmentalReading)
+        assert isinstance(result, EnvironmentalReading)
 
 
 class TestCustomCharacteristicErrorHandling:
@@ -490,10 +480,10 @@ class TestCustomCharacteristicErrorHandling:
 
             class MissingInfoCharacteristic(CustomBaseCharacteristic):
                 # Missing _info attribute entirely
-                def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+                def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                     return 0
 
-                def encode_value(self, data: int) -> bytearray:
+                def _encode_value(self, data: int) -> bytearray:
                     return bytearray()
 
             _ = MissingInfoCharacteristic()  # Should raise ValueError
@@ -510,7 +500,7 @@ class TestCustomCharacteristicErrorHandling:
                     value_type=ValueType.INT,
                 )
 
-                def decode_value(  # pylint: disable=duplicate-code
+                def _decode_value(  # pylint: disable=duplicate-code
                     # NOTE: Minimal characteristic implementation duplicates other test fixtures.
                     # Duplication justified because:
                     # 1. Test isolation - each test creates its own custom characteristic
@@ -522,11 +512,11 @@ class TestCustomCharacteristicErrorHandling:
                 ) -> int:
                     return 0
 
-                def encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
+                def _encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
                     return bytearray()
 
-                namespace["decode_value"] = decode_value
-                namespace["encode_value"] = encode_value
+                namespace["_decode_value"] = _decode_value
+                namespace["_encode_value"] = _encode_value
 
             new_class(
                 "UnauthorizedSIGOverride",
@@ -540,9 +530,8 @@ class TestCustomCharacteristicErrorHandling:
         sensor = SimpleTemperatureSensor()
 
         # Empty data should trigger error
-        result = sensor.parse_value(bytearray())
-        assert result.parse_success is False
-        assert result.value is None
+        with pytest.raises(CharacteristicParseError):
+            sensor.parse_value(bytearray())
 
     def test_validation_error_handling(self) -> None:
         """Test that validation errors are properly handled."""
@@ -550,8 +539,8 @@ class TestCustomCharacteristicErrorHandling:
 
         # Value over 100% should fail validation
         data = bytearray([0xF4, 0x27])  # 10228 * 0.01 = 102.28%
-        result = sensor.parse_value(data)
-        assert result.parse_success is False
+        with pytest.raises(CharacteristicParseError):
+            sensor.parse_value(data)
 
 
 class TestCustomCharacteristicEdgeCases:
@@ -566,28 +555,26 @@ class TestCustomCharacteristicEdgeCases:
         ]
 
         for char in chars:
-            result = char.parse_value(bytearray())
-            assert result.parse_success is False
+            with pytest.raises(CharacteristicParseError):
+                char.parse_value(bytearray())
 
     def test_maximum_values(self) -> None:
         """Test handling of maximum values."""
         sensor = SimpleTemperatureSensor()
 
         # Max temperature (85°C)
-        data = sensor.encode_value(85)
+        data = sensor.build_value(85)
         result = sensor.parse_value(data)
-        assert result.parse_success is True
-        assert result.value == 85
+        assert result == 85
 
     def test_minimum_values(self) -> None:
         """Test handling of minimum values."""
         sensor = SimpleTemperatureSensor()
 
         # Min temperature (-40°C)
-        data = sensor.encode_value(-40)
+        data = sensor.build_value(-40)
         result = sensor.parse_value(data)
-        assert result.parse_success is True
-        assert result.value == -40
+        assert result == -40
 
     def test_string_encoding_edge_cases(self) -> None:
         """Test string encoding with special characters."""
@@ -595,10 +582,9 @@ class TestCustomCharacteristicEdgeCases:
 
         # Test with special characters
         special_serial = "SN-2024_#001"
-        encoded = char.encode_value(special_serial)
+        encoded = char.build_value(special_serial)
         result = char.parse_value(encoded)
-        assert result.parse_success is True
-        assert result.value == special_serial
+        assert result == special_serial
 
 
 class TestCustomBaseCharacteristicAPI:
@@ -622,10 +608,10 @@ class TestCustomBaseCharacteristicAPI:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return DataParser.parse_int16(data, 0, signed=False)
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return DataParser.encode_int16(data, signed=False)
 
         # Should create without explicit info parameter
@@ -640,8 +626,8 @@ class TestCustomBaseCharacteristicAPI:
         # Should work for parsing
         test_data = bytearray([0x32, 0x00])  # 50 in little-endian
         result = char.parse_value(test_data)
-        assert result.parse_success
-        assert result.value == 50
+
+        assert result == 50
 
     def test_manual_info_override(self) -> None:
         """Test that manual info parameter still works (backwards compatibility)."""
@@ -656,10 +642,10 @@ class TestCustomBaseCharacteristicAPI:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return DataParser.parse_int16(data, 0, signed=False)
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return DataParser.encode_int16(data, signed=False)
 
         # Create with manual info override
@@ -690,7 +676,7 @@ class TestCustomBaseCharacteristicAPI:
                     value_type=ValueType.INT,
                 )
 
-                def decode_value(  # pylint: disable=duplicate-code
+                def _decode_value(  # pylint: disable=duplicate-code
                     # NOTE: Minimal characteristic implementation duplicates other test fixtures.
                     # Duplication justified because:
                     # 1. Test isolation - each test creates its own custom characteristic
@@ -702,11 +688,11 @@ class TestCustomBaseCharacteristicAPI:
                 ) -> int:
                     return data[0]
 
-                def encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
+                def _encode_value(self: CustomBaseCharacteristic, data: int) -> bytearray:
                     return bytearray([data])
 
-                namespace["decode_value"] = decode_value
-                namespace["encode_value"] = encode_value
+                namespace["_decode_value"] = _decode_value
+                namespace["encode_value"] = _encode_value
 
             new_class(
                 "BadSIGOverride",
@@ -728,7 +714,7 @@ class TestCustomBaseCharacteristicAPI:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(  # pylint: disable=duplicate-code
+            def _decode_value(  # pylint: disable=duplicate-code
                 # NOTE: Minimal characteristic implementation duplicates other test fixtures.
                 # Duplication justified because:
                 # 1. Test isolation - each test creates its own custom characteristic
@@ -740,7 +726,7 @@ class TestCustomBaseCharacteristicAPI:
             ) -> int:
                 return data[0]
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray([data])
 
         # Should create successfully
@@ -755,10 +741,10 @@ class TestCustomBaseCharacteristicAPI:
         class MissingInfoCharacteristic(CustomBaseCharacteristic):
             """Should fail: no _info provided."""
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return data[0]
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray([data])
 
         with pytest.raises(ValueError, match="requires either 'info' parameter or '_info' class attribute"):
@@ -777,10 +763,10 @@ class TestCustomBaseCharacteristicAPI:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return data[0]
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray([data])
 
         # Should create successfully without override flag

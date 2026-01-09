@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import PressureTemplate
 
 
-class PressureCharacteristic(BaseCharacteristic):
+class PressureCharacteristic(BaseCharacteristic[float]):
     """Pressure characteristic (0x2A6D).
 
     org.bluetooth.characteristic.pressure

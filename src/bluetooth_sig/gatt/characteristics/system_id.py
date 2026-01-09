@@ -20,7 +20,7 @@ class SystemIdData(msgspec.Struct, frozen=True, kw_only=True):
     oui: bytes
 
 
-class SystemIdCharacteristic(BaseCharacteristic):
+class SystemIdCharacteristic(BaseCharacteristic[SystemIdData]):
     """System ID characteristic (0x2A23).
 
     org.bluetooth.characteristic.system_id
@@ -31,7 +31,7 @@ class SystemIdCharacteristic(BaseCharacteristic):
     _manual_value_type = "SystemIdData"
     expected_length = 8
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> SystemIdData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> SystemIdData:
         """Parse System ID.
 
         Args:
@@ -46,7 +46,7 @@ class SystemIdCharacteristic(BaseCharacteristic):
             oui=bytes(data[5:8]),
         )
 
-    def encode_value(self, data: SystemIdData) -> bytearray:
+    def _encode_value(self, data: SystemIdData) -> bytearray:
         """Encode System ID.
 
         Args:

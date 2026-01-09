@@ -9,7 +9,7 @@ import msgspec
 from ..constants import UINT8_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .rsc_feature import RSCFeatureCharacteristic, RSCFeatureData
+from .rsc_feature import RSCFeatureCharacteristic
 from .utils import DataParser
 
 
@@ -37,7 +37,7 @@ class RSCMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: 
             raise ValueError("Cadence must be a uint8 value (0-UINT8_MAX)")
 
 
-class RSCMeasurementCharacteristic(BaseCharacteristic):
+class RSCMeasurementCharacteristic(BaseCharacteristic[RSCMeasurementData]):
     """RSC (Running Speed and Cadence) Measurement characteristic (0x2A53).
 
     Used to transmit running speed and cadence data.
@@ -62,13 +62,10 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
         """
         # Get RSC Feature characteristic from context
-        feature_char = self.get_context_characteristic(ctx, RSCFeatureCharacteristic)
-        if feature_char is None or not feature_char.parse_success or feature_char.value is None:
+        feature_data = self.get_context_characteristic(ctx, RSCFeatureCharacteristic)
+        if feature_data is None:
             # No feature characteristic available, skip validation
             return
-
-        # Get the already-parsed feature data from context
-        feature_data: RSCFeatureData = feature_char.value
 
         # Validate optional fields against supported features
         if data.instantaneous_stride_length is not None and not feature_data.instantaneous_stride_length_supported:
@@ -77,7 +74,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
         if data.total_distance is not None and not feature_data.total_distance_supported:
             raise ValueError("Total distance reported but not supported by device features")
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RSCMeasurementData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RSCMeasurementData:
         """Parse RSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Instantaneous Speed(2) + Instantaneous Cadence(1) +
@@ -137,7 +134,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic):
 
         return measurement_data
 
-    def encode_value(self, data: RSCMeasurementData) -> bytearray:
+    def _encode_value(self, data: RSCMeasurementData) -> bytearray:
         """Encode RSC measurement value back to bytes.
 
         Args:

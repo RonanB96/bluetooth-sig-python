@@ -48,15 +48,15 @@ class TestVO2MaxCharacteristic(CommonCharacteristicTests):
     def test_vo2_max_values(self, characteristic: VO2MaxCharacteristic, vo2_max: int) -> None:
         """Test VO2 max with various valid values."""
         data = bytearray([vo2_max])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == vo2_max
 
     def test_vo2_max_boundary_values(self, characteristic: VO2MaxCharacteristic) -> None:
         """Test VO2 max boundary values."""
         # Test minimum (0)
-        result = characteristic.decode_value(bytearray([0]))
+        result = characteristic.parse_value(bytearray([0]))
         assert result == 0
 
         # Test maximum (255)
-        result = characteristic.decode_value(bytearray([255]))
+        result = characteristic.parse_value(bytearray([255]))
         assert result == 255

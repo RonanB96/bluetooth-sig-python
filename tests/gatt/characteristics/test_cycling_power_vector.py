@@ -12,6 +12,7 @@ from bluetooth_sig.gatt.characteristics.cycling_power_vector import (
     CyclingPowerVectorData,
     CyclingPowerVectorFlags,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -163,7 +164,8 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         crank_time = 1024  # 1 second
         first_angle = 90  # 0.5 degrees (90 / 180)
         test_data = struct.pack("<BHHH", flags, crank_revs, crank_time, first_angle)
-        result = char.decode_value(bytearray(test_data))
+        result = char.parse_value(bytearray(test_data))
+        assert result is not None
 
         assert result.flags == CyclingPowerVectorFlags(0)
         assert result.crank_revolution_data.crank_revolutions == 1234
@@ -183,7 +185,8 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         force1 = 100  # 100 N
         force2 = 150  # 150 N
         test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, force1, force2)
-        result = char.decode_value(bytearray(test_data))
+        result = char.parse_value(bytearray(test_data))
+        assert result is not None
 
         assert result.flags == CyclingPowerVectorFlags.INSTANTANEOUS_FORCE_MAGNITUDE_ARRAY_PRESENT
         assert result.crank_revolution_data.crank_revolutions == 1234
@@ -203,7 +206,8 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         torque1 = 160  # 5.0 Nm (160 / 32)
         torque2 = 192  # 6.0 Nm (192 / 32)
         test_data = struct.pack("<BHHHhh", flags, crank_revs, crank_time, first_angle, torque1, torque2)
-        result = char.decode_value(bytearray(test_data))
+        result = char.parse_value(bytearray(test_data))
+        assert result is not None
 
         assert result.flags == CyclingPowerVectorFlags.INSTANTANEOUS_TORQUE_MAGNITUDE_ARRAY_PRESENT
         assert result.crank_revolution_data.crank_revolutions == 1234
@@ -216,9 +220,11 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         char = CyclingPowerVectorCharacteristic()
 
         # Test insufficient data
-        with pytest.raises(ValueError, match="must be at least 7 bytes"):
-            char.decode_value(bytearray([0x01, 0x02, 0x03]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([0x01, 0x02, 0x03]))
+        assert "expected at least 7 bytes, got 3" in str(exc_info.value)
 
-        # Test empty data
-        with pytest.raises(ValueError, match="must be at least 7 bytes"):
-            char.decode_value(bytearray())
+        # Test empty data - also raises CharacteristicParseError
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray())
+        assert "expected at least 7 bytes, got 0" in str(exc_info.value)

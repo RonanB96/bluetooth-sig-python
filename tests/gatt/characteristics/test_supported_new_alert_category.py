@@ -57,7 +57,8 @@ class TestSupportedNewAlertCategoryCharacteristic(CommonCharacteristicTests):
     def test_all_categories_enabled(self, characteristic: SupportedNewAlertCategoryCharacteristic) -> None:
         """Test with all defined categories enabled."""
         data = bytearray([0xFF, 0x03])  # All 10 defined bits set
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
+        assert result is not None
         assert result & AlertCategoryBitMask.SIMPLE_ALERT
         assert result & AlertCategoryBitMask.EMAIL
         assert result & AlertCategoryBitMask.INSTANT_MESSAGE
@@ -65,12 +66,13 @@ class TestSupportedNewAlertCategoryCharacteristic(CommonCharacteristicTests):
     def test_no_categories_enabled(self, characteristic: SupportedNewAlertCategoryCharacteristic) -> None:
         """Test with no categories enabled."""
         data = bytearray([0x00, 0x00])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
+        assert result is not None
         assert result == 0
 
     def test_roundtrip(self, characteristic: SupportedNewAlertCategoryCharacteristic) -> None:
         """Test encode/decode roundtrip."""
         original = AlertCategoryBitMask.EMAIL | AlertCategoryBitMask.HIGH_PRIORITIZED_ALERT
-        encoded = characteristic.encode_value(original)
-        decoded = characteristic.decode_value(encoded)
+        encoded = characteristic.build_value(original)
+        decoded = characteristic.parse_value(encoded)
         assert decoded == original

@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Utf8StringTemplate
 
 
-class FirstNameCharacteristic(BaseCharacteristic):
+class FirstNameCharacteristic(BaseCharacteristic[str]):
     """First Name characteristic (0x2A8B).
 
     org.bluetooth.characteristic.first_name

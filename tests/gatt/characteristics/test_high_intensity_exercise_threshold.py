@@ -74,7 +74,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         )
 
         data = bytearray([42])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert isinstance(result, HighIntensityExerciseThresholdData)
         assert result.field_selector == 42
         assert result.threshold_energy_expenditure is None
@@ -91,7 +91,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
 
         # field_selector=1, energy_expenditure=5 (5*1000=5000 joules)
         data = bytearray([1, 0x05, 0x00])  # little-endian uint16: 5
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert isinstance(result, HighIntensityExerciseThresholdData)
         assert result.field_selector == 1
         assert result.threshold_energy_expenditure == 5000
@@ -108,7 +108,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
 
         # field_selector=2, metabolic_equivalent=15 (15*0.1=1.5 MET)
         data = bytearray([2, 15])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert isinstance(result, HighIntensityExerciseThresholdData)
         assert result.field_selector == 2
         assert result.threshold_energy_expenditure is None
@@ -125,7 +125,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
 
         # field_selector=3, heart_rate_percentage=75
         data = bytearray([3, 75])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert isinstance(result, HighIntensityExerciseThresholdData)
         assert result.field_selector == 3
         assert result.threshold_energy_expenditure is None
@@ -151,7 +151,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         )
 
         data = bytearray([threshold_value])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert isinstance(result, HighIntensityExerciseThresholdData)
         assert result.field_selector == threshold_value
         # When only 1 byte provided, all threshold fields should be None
@@ -168,7 +168,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         )
 
         # Test minimum value (0%)
-        result = characteristic.decode_value(bytearray([0]))
+        result = characteristic.parse_value(bytearray([0]))
         assert isinstance(result, HighIntensityExerciseThresholdData)
         assert result.field_selector == 0
         assert result.threshold_energy_expenditure is None
@@ -176,7 +176,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         assert result.threshold_percentage_max_heart_rate is None
 
         # Test maximum value (255%)
-        result = characteristic.decode_value(bytearray([255]))
+        result = characteristic.parse_value(bytearray([255]))
         assert isinstance(result, HighIntensityExerciseThresholdData)
         assert result.field_selector == 255
         assert result.threshold_energy_expenditure is None

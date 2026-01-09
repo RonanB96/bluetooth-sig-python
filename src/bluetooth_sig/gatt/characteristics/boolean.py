@@ -7,7 +7,7 @@ from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
 
-class BooleanCharacteristic(BaseCharacteristic):
+class BooleanCharacteristic(BaseCharacteristic[bool]):
     """Boolean characteristic (0x2AE2).
 
     org.bluetooth.characteristic.boolean
@@ -18,7 +18,7 @@ class BooleanCharacteristic(BaseCharacteristic):
     _manual_value_type = ValueType.BOOL
     expected_length = 1
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bool:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bool:
         """Parse boolean value.
 
         Args:
@@ -30,7 +30,7 @@ class BooleanCharacteristic(BaseCharacteristic):
         """
         return bool(data[0])
 
-    def encode_value(self, data: bool) -> bytearray:
+    def _encode_value(self, data: bool) -> bytearray:
         """Encode boolean value back to bytes.
 
         Args:

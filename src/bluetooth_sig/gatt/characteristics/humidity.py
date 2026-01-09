@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class HumidityCharacteristic(BaseCharacteristic):
+class HumidityCharacteristic(BaseCharacteristic[float]):
     """Humidity characteristic (0x2A6F).
 
     org.bluetooth.characteristic.humidity

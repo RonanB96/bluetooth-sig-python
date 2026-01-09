@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint8Template
 
 
-class UserIndexCharacteristic(BaseCharacteristic):
+class UserIndexCharacteristic(BaseCharacteristic[int]):
     """User Index characteristic (0x2A9A).
 
     org.bluetooth.characteristic.user_index

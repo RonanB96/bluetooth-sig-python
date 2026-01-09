@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint16Template
 
 
-class Count16Characteristic(BaseCharacteristic):
+class Count16Characteristic(BaseCharacteristic[int]):
     """Count 16 characteristic (0x2AEA).
 
     org.bluetooth.characteristic.count_16

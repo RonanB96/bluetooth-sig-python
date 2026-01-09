@@ -37,19 +37,25 @@ class TestCount24Characteristic(CommonCharacteristicTests):
     def test_zero_count(self) -> None:
         """Test zero count."""
         char = Count24Characteristic()
-        result = char.decode_value(bytearray([0, 0, 0]))
+        result = char.parse_value(bytearray([0, 0, 0]))
         assert result == 0
 
     def test_maximum_count(self) -> None:
-        """Test maximum count value."""
+        """Test maximum count value (special value)."""
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+
         char = Count24Characteristic()
-        result = char.decode_value(bytearray([255, 255, 255]))
-        assert result == 16777215
+        # 16777215 is a special value meaning "not known"
+        with pytest.raises(SpecialValueDetected) as exc_info:
+            char.parse_value(bytearray([255, 255, 255]))
+
+        assert exc_info.value.raw_int == 16777215
+        assert "not known" in exc_info.value.special_value.meaning.lower()
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = Count24Characteristic()
         for value in [0, 1, 100, 65536, 16777214]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
             assert decoded == value

@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint8Template
 
 
-class DayOfWeekCharacteristic(BaseCharacteristic):
+class DayOfWeekCharacteristic(BaseCharacteristic[int]):
     """Day of Week characteristic (0x2A09).
 
     org.bluetooth.characteristic.day_of_week

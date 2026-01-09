@@ -23,8 +23,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from typing import Any
 
-from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from examples.utils.models import DeviceInfo, ReadResult
 
 # Type alias for the scanning helper imported from the BluePy integration
@@ -68,14 +68,14 @@ def scan_for_devices(timeout: float = 10.0) -> list[DeviceInfo]:
         return []
 
 
-async def demonstrate_bluepy_device_reading(address: str) -> dict[str, CharacteristicData]:
+async def demonstrate_bluepy_device_reading(address: str) -> dict[str, Any]:
     """Demonstrate reading characteristics from a BLE device using BluePy.
 
     Args:
         address: BLE device address
 
     Returns:
-        Dictionary of parsed characteristic data
+        Dictionary of parsed characteristic values
 
     """
     try:
@@ -95,10 +95,10 @@ async def demonstrate_bluepy_device_reading(address: str) -> dict[str, Character
 
         print(f"\n📊 Successfully read {len(parsed_results_map)} characteristics")
 
-        # Extract CharacteristicData from ReadResult
-        final_results: dict[str, CharacteristicData] = {}
+        # Extract parsed values from ReadResult
+        final_results: dict[str, Any] = {}
         for uuid, result in parsed_results_map.items():
-            if result.parsed:
+            if result.parsed is not None:
                 final_results[uuid] = result.parsed
 
         return final_results

@@ -50,25 +50,25 @@ class TestRainfallCharacteristic(CommonCharacteristicTests):
 
         # Test normal parsing: 1250 mm rainfall
         test_data = bytearray([0xE2, 0x04])  # 1250 in little endian uint16
-        parsed = characteristic.decode_value(test_data)
+        parsed = characteristic.parse_value(test_data)
         assert parsed == 1250.0
 
     def test_rainfall_boundary_values(self, characteristic: RainfallCharacteristic) -> None:
         """Test rainfall boundary values."""
         # No rainfall
         data_zero = bytearray([0x00, 0x00])
-        assert characteristic.decode_value(data_zero) == 0.0
+        assert characteristic.parse_value(data_zero) == 0.0
 
         # Maximum rainfall
         data_max = bytearray([0xFF, 0xFF])
-        assert characteristic.decode_value(data_max) == 65535.0
+        assert characteristic.parse_value(data_max) == 65535.0
 
     def test_rainfall_typical_values(self, characteristic: RainfallCharacteristic) -> None:
         """Test typical rainfall values."""
         # Light rain (10 mm)
         data_light = bytearray([0x0A, 0x00])
-        assert characteristic.decode_value(data_light) == 10.0
+        assert characteristic.parse_value(data_light) == 10.0
 
         # Moderate rain (100 mm)
         data_moderate = bytearray([0x64, 0x00])
-        assert characteristic.decode_value(data_moderate) == 100.0
+        assert characteristic.parse_value(data_moderate) == 100.0

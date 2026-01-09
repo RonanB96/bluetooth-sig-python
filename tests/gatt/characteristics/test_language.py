@@ -59,17 +59,17 @@ class TestLanguageCharacteristic(CommonCharacteristicTests):
     def test_language_values(self, characteristic: LanguageCharacteristic, language_code: str) -> None:
         """Test language with various valid language codes."""
         data = bytearray(language_code.encode("utf-8"))
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == language_code
 
     def test_language_empty(self, characteristic: LanguageCharacteristic) -> None:
         """Test empty language."""
-        result = characteristic.decode_value(bytearray())
+        result = characteristic.parse_value(bytearray())
         assert result == ""
 
     def test_language_long_code(self, characteristic: LanguageCharacteristic) -> None:
         """Test language with longer language tag."""
         language = "en-US"
         data = bytearray(language.encode("utf-8"))
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == language

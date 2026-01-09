@@ -41,7 +41,7 @@ class TestAcceleration3DCharacteristic(CommonCharacteristicTests):
     def test_zero_acceleration(self) -> None:
         """Test zero acceleration values."""
         char = Acceleration3DCharacteristic()
-        result = char.decode_value(bytearray([0, 0, 0]))
+        result = char.parse_value(bytearray([0, 0, 0]))
         assert result.x_axis == 0.0
         assert result.y_axis == 0.0
         assert result.z_axis == 0.0
@@ -49,7 +49,7 @@ class TestAcceleration3DCharacteristic(CommonCharacteristicTests):
     def test_positive_values(self) -> None:
         """Test positive acceleration values."""
         char = Acceleration3DCharacteristic()
-        result = char.decode_value(bytearray([10, 20, 30]))
+        result = char.parse_value(bytearray([10, 20, 30]))
         assert result.x_axis == pytest.approx(0.1)
         assert result.y_axis == pytest.approx(0.2)
         assert result.z_axis == pytest.approx(0.3)
@@ -58,8 +58,8 @@ class TestAcceleration3DCharacteristic(CommonCharacteristicTests):
         """Test encoding and decoding preserve values."""
         char = Acceleration3DCharacteristic()
         original = VectorData(x_axis=0.5, y_axis=-0.3, z_axis=1.0)
-        encoded = char.encode_value(original)
-        decoded = char.decode_value(encoded)
+        encoded = char.build_value(original)
+        decoded = char.parse_value(encoded)
         assert decoded.x_axis == pytest.approx(original.x_axis, abs=0.02)
         assert decoded.y_axis == pytest.approx(original.y_axis, abs=0.02)
         assert decoded.z_axis == pytest.approx(original.z_axis, abs=0.02)

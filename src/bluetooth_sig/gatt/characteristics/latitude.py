@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledSint32Template
 
 
-class LatitudeCharacteristic(BaseCharacteristic):
+class LatitudeCharacteristic(BaseCharacteristic[float]):
     """Latitude characteristic (0x2AAE).
 
     org.bluetooth.characteristic.latitude

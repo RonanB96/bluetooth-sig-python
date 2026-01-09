@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class WeightCharacteristic(BaseCharacteristic):
+class WeightCharacteristic(BaseCharacteristic[float]):
     """Weight characteristic (0x2A98).
 
     org.bluetooth.characteristic.weight

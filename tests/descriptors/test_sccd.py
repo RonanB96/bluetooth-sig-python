@@ -15,7 +15,7 @@ class TestServerCharacteristicConfigurationDescriptor:
         data = b"\x01\x00"  # Broadcasts enabled
 
         result = sccd.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, SCCDData)
         assert result.value.broadcasts_enabled is True
 
@@ -25,7 +25,7 @@ class TestServerCharacteristicConfigurationDescriptor:
         data = b"\x01"  # Too short
 
         result = sccd.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "SCCD data must be exactly 2 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:

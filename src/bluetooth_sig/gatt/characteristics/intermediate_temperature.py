@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import IEEE11073FloatTemplate
 
 
-class IntermediateTemperatureCharacteristic(BaseCharacteristic):
+class IntermediateTemperatureCharacteristic(BaseCharacteristic[float]):
     """Intermediate Temperature characteristic (0x2A1E).
 
     org.bluetooth.characteristic.intermediate_temperature

@@ -41,29 +41,29 @@ class TestOzoneConcentrationCharacteristic(CommonCharacteristicTests):
 
         # Test normal parsing
         test_data = bytearray([0x64, 0x00])  # 100 ppb little endian
-        parsed = characteristic.decode_value(test_data)
+        parsed = characteristic.parse_value(test_data)
         assert parsed == 100
 
     def test_ozone_concentration_boundary_values(self, characteristic: OzoneConcentrationCharacteristic) -> None:
         """Test ozone concentration boundary values."""
         # Minimum value
         data_min = bytearray([0x00, 0x00])
-        assert characteristic.decode_value(data_min) == 0.0
+        assert characteristic.parse_value(data_min) == 0.0
 
         # Maximum value (uint16 max)
         data_max = bytearray([0xFF, 0xFF])
-        assert characteristic.decode_value(data_max) == 65535.0
+        assert characteristic.parse_value(data_max) == 65535.0
 
     def test_ozone_concentration_typical_values(self, characteristic: OzoneConcentrationCharacteristic) -> None:
         """Test typical ozone concentration values."""
         # Low concentration (50 ppb)
         data_low = bytearray([0x32, 0x00])
-        assert characteristic.decode_value(data_low) == 50.0
+        assert characteristic.parse_value(data_low) == 50.0
 
         # Moderate concentration (100 ppb)
         data_moderate = bytearray([0x64, 0x00])
-        assert characteristic.decode_value(data_moderate) == 100.0
+        assert characteristic.parse_value(data_moderate) == 100.0
 
         # High concentration (500 ppb)
         data_high = bytearray([0xF4, 0x01])
-        assert characteristic.decode_value(data_high) == 500.0
+        assert characteristic.parse_value(data_high) == 500.0

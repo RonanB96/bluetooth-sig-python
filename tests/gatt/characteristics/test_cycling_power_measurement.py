@@ -160,7 +160,8 @@ class TestCyclingPowerMeasurementCharacteristic(CommonCharacteristicTests):
         flags = 0x0000  # No optional fields
         power = 250  # 250 watts
         test_data = struct.pack("<Hh", flags, power)
-        result = characteristic.decode_value(bytearray(test_data))
+        result = characteristic.parse_value(bytearray(test_data))
+        assert result is not None
 
         assert result.flags == 0
         assert result.instantaneous_power == 250
@@ -174,7 +175,8 @@ class TestCyclingPowerMeasurementCharacteristic(CommonCharacteristicTests):
         power = 300
         balance = 100  # 50% (100 * 0.5%)
         test_data = struct.pack("<HhB", flags, power, balance)
-        result = characteristic.decode_value(bytearray(test_data))
+        result = characteristic.parse_value(bytearray(test_data))
+        assert result is not None
 
         assert result.flags == 1
         assert result.instantaneous_power == 300
@@ -190,7 +192,8 @@ class TestCyclingPowerMeasurementCharacteristic(CommonCharacteristicTests):
         wheel_revs = 12345
         wheel_time = 2048  # 1 second in 1/2048 units
         test_data = struct.pack("<HhIH", flags, power, wheel_revs, wheel_time)
-        result = characteristic.decode_value(bytearray(test_data))
+        result = characteristic.parse_value(bytearray(test_data))
+        assert result is not None
 
         assert result.flags == 16
         assert result.instantaneous_power == 320

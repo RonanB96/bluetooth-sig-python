@@ -53,17 +53,17 @@ class TestLastNameCharacteristic(CommonCharacteristicTests):
     def test_last_name_values(self, characteristic: LastNameCharacteristic, last_name: str) -> None:
         """Test last name with various valid values."""
         data = bytearray(last_name.encode("utf-8"))
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == last_name
 
     def test_last_name_empty(self, characteristic: LastNameCharacteristic) -> None:
         """Test empty last name."""
-        result = characteristic.decode_value(bytearray())
+        result = characteristic.parse_value(bytearray())
         assert result == ""
 
     def test_last_name_unicode(self, characteristic: LastNameCharacteristic) -> None:
         """Test last name with unicode characters."""
         name = "Muñoz"
         data = bytearray(name.encode("utf-8"))
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == name

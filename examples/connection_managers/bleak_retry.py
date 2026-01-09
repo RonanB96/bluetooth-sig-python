@@ -158,7 +158,7 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
                 service_instance = service_class()
 
                 # Populate characteristics with actual class instances
-                characteristics: dict[str, BaseCharacteristic] = {}
+                characteristics: dict[str, BaseCharacteristic[Any]] = {}
                 for char in bleak_service.characteristics:
                     char_uuid = BluetoothUUID(char.uuid)
 

@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Sint8Template
 
 
-class FloorNumberCharacteristic(BaseCharacteristic):
+class FloorNumberCharacteristic(BaseCharacteristic[int]):
     """Floor Number characteristic (0x2AB2).
 
     org.bluetooth.characteristic.floor_number

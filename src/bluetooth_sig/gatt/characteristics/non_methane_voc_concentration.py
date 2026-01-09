@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import IEEE11073FloatTemplate
 
 
-class NonMethaneVOCConcentrationCharacteristic(BaseCharacteristic):
+class NonMethaneVOCConcentrationCharacteristic(BaseCharacteristic[float]):
     """Non-Methane Volatile Organic Compounds concentration characteristic (0x2BD3).
 
     Uses IEEE 11073 SFLOAT format (medfloat16) as per SIG specification.

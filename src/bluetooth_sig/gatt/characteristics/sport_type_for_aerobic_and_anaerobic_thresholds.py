@@ -25,7 +25,7 @@ class SportType(IntEnum):
     WHOLE_BODY_EXERCISING = 11
 
 
-class SportTypeForAerobicAndAnaerobicThresholdsCharacteristic(BaseCharacteristic):
+class SportTypeForAerobicAndAnaerobicThresholdsCharacteristic(BaseCharacteristic[int]):
     """Sport Type for Aerobic and Anaerobic Thresholds characteristic (0x2A93).
 
     org.bluetooth.characteristic.sport_type_for_aerobic_and_anaerobic_thresholds

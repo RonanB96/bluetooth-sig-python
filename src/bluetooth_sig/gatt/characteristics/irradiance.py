@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint16Template
 
 
-class IrradianceCharacteristic(BaseCharacteristic):
+class IrradianceCharacteristic(BaseCharacteristic[int]):
     """Irradiance characteristic (0x2A77).
 
     org.bluetooth.characteristic.irradiance

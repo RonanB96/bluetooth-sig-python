@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from enum import IntEnum
 
-from bluetooth_sig.types.context import CharacteristicContext
-
 from .base import BaseCharacteristic
-from .templates import Uint8Template
+from .templates import EnumTemplate
 
 
 class TimeUpdateControlPointCommand(IntEnum):
@@ -17,7 +15,7 @@ class TimeUpdateControlPointCommand(IntEnum):
     CANCEL_REFERENCE_UPDATE = 0x02
 
 
-class TimeUpdateControlPointCharacteristic(BaseCharacteristic):
+class TimeUpdateControlPointCharacteristic(BaseCharacteristic[TimeUpdateControlPointCommand]):
     """Time Update Control Point characteristic.
 
     Allows a client to request or cancel reference time updates.
@@ -27,23 +25,4 @@ class TimeUpdateControlPointCharacteristic(BaseCharacteristic):
     - 0x02: Cancel Reference Time Update
     """
 
-    def __init__(self) -> None:
-        """Initialize the Time Update Control Point characteristic."""
-        super().__init__()
-        self._template = Uint8Template()
-
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TimeUpdateControlPointCommand:
-        """Decode the raw data to TimeUpdateControlPointCommand."""
-        if self._template is None:
-            raise RuntimeError("Template not initialized")
-        value = self._template.decode_value(data)
-        try:
-            return TimeUpdateControlPointCommand(value)
-        except ValueError as e:
-            raise ValueError(f"Invalid Time Update Control Point command: {value}") from e
-
-    def encode_value(self, data: TimeUpdateControlPointCommand) -> bytearray:
-        """Encode TimeUpdateControlPointCommand to bytes."""
-        if self._template is None:
-            raise RuntimeError("Template not initialized")
-        return self._template.encode_value(int(data))
+    _template = EnumTemplate.uint8(TimeUpdateControlPointCommand)

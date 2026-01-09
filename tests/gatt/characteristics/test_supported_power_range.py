@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import SupportedPowerRangeCharacteristic
@@ -11,7 +13,7 @@ from .test_characteristic_common import CharacteristicTestData, CommonCharacteri
 
 class TestSupportedPowerRangeCharacteristic(CommonCharacteristicTests):
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return SupportedPowerRangeCharacteristic()
 
     @pytest.fixture

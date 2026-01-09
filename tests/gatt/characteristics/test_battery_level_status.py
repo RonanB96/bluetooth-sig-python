@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
@@ -10,7 +12,7 @@ from bluetooth_sig.gatt.characteristics.battery_level_status import (
     BatteryLevelStatusCharacteristic,
     BatteryLevelStatusFlags,
 )
-from bluetooth_sig.gatt.exceptions import InsufficientDataError
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.battery import (
     BatteryChargeLevel,
     BatteryChargeState,
@@ -25,7 +27,7 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
     """Test Battery Level Status characteristic implementation."""
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         """Provide Battery Level Status characteristic for testing."""
         return BatteryLevelStatusCharacteristic()
 
@@ -92,7 +94,7 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
 
     # === Battery Level Status-Specific Tests ===
 
-    def test_battery_level_status_minimal(self, characteristic: BaseCharacteristic) -> None:
+    def test_battery_level_status_minimal(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test minimal battery level status with only required fields."""
         data = bytearray(
             [
@@ -101,7 +103,7 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
                 0x00,  # battery present
             ]
         )
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = BatteryLevelStatus(
             flags=BatteryLevelStatusFlags(0x00),
             battery_present=True,
@@ -120,7 +122,7 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
         )
         assert result == expected
 
-    def test_battery_level_status_power_state_bits(self, characteristic: BaseCharacteristic) -> None:
+    def test_battery_level_status_power_state_bits(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test power state bit field parsing."""
         # Construct power state with specific valid enum values
         # Power state is uint16: bits laid out as:
@@ -142,7 +144,8 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
                 0x78,  # High byte of power state
             ]
         )
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
+        assert result is not None
         assert result.battery_present is True
         assert result.wired_external_power_connected == PowerConnectionState.UNKNOWN
         assert result.wireless_external_power_connected == PowerConnectionState.UNKNOWN
@@ -176,7 +179,7 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
             service_required=ServiceRequiredState.TRUE,
             battery_fault=False,
         )
-        encoded = characteristic.encode_value(status)
+        encoded = characteristic.build_value(status)
         expected = bytearray(
             [
                 0x07,  # flags
@@ -208,17 +211,17 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
             service_required=ServiceRequiredState.FALSE,
             battery_fault=True,
         )
-        encoded = characteristic.encode_value(original)
-        decoded = characteristic.decode_value(encoded)
+        encoded = characteristic.build_value(original)
+        decoded = characteristic.parse_value(encoded)
         assert decoded == original
 
-    def test_insufficient_data_error(self, characteristic: BaseCharacteristic) -> None:
-        """Test that insufficient data raises error."""
-        with pytest.raises(InsufficientDataError):
-            characteristic.decode_value(bytearray([0x00]))  # too short, missing power state
+    def test_insufficient_data_error(self, characteristic: BaseCharacteristic[Any]) -> None:
+        """Test that insufficient data results in parse failure."""
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([0x00]))  # too short, missing power state
 
-    def test_invalid_flags_optional_missing(self, characteristic: BaseCharacteristic) -> None:
-        """Test that setting flags for optional fields but not providing data raises error."""
+    def test_invalid_flags_optional_missing(self, characteristic: BaseCharacteristic[Any]) -> None:
+        """Test that setting flags for optional fields but not providing data results in parse failure."""
         # Flags say identifier present, but no identifier data
         data = bytearray(
             [
@@ -228,8 +231,8 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
                 # missing identifier
             ]
         )
-        with pytest.raises(InsufficientDataError):
-            characteristic.decode_value(data)
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(data)
 
     def test_characteristic_metadata(self, characteristic: BatteryLevelStatusCharacteristic) -> None:
         """Test characteristic metadata."""

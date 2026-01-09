@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint24Template
 
 
-class Count24Characteristic(BaseCharacteristic):
+class Count24Characteristic(BaseCharacteristic[int]):
     """Count 24 characteristic (0x2AEB).
 
     org.bluetooth.characteristic.count_24

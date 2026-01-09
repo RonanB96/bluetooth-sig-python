@@ -13,6 +13,7 @@ from bluetooth_sig.gatt.characteristics.glucose_measurement import (
     GlucoseType,
     SampleLocation,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -224,7 +225,8 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
         # Use the first test case (basic measurement)
         test_data = valid_test_data[0].input_data
 
-        result: GlucoseMeasurementData = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.sequence_number == 42
         assert result.glucose_concentration == 120.0
         assert result.glucose_type is None
@@ -251,7 +253,8 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.glucose_type == GlucoseType.CAPILLARY_WHOLE_BLOOD
         assert result.sample_location == SampleLocation.FINGER
 
@@ -277,14 +280,16 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.sensor_status == 1
 
     def test_glucose_measurement_invalid_data(self, characteristic: GlucoseMeasurementCharacteristic) -> None:
         """Test glucose measurement with invalid data."""
         # Too short data
-        with pytest.raises(ValueError, match="must be at least 12 bytes"):
-            characteristic.decode_value(bytearray([0x00, 0x01]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x01]))
+        assert "at least 12 bytes" in str(exc_info.value)
 
     def test_glucose_type_names(self) -> None:
         """Test glucose type name mapping."""

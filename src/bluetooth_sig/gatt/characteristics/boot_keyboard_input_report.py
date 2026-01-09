@@ -37,7 +37,7 @@ class BootKeyboardInputReportData(msgspec.Struct, frozen=True, kw_only=True):
     keycodes: tuple[int, ...]
 
 
-class BootKeyboardInputReportCharacteristic(BaseCharacteristic):
+class BootKeyboardInputReportCharacteristic(BaseCharacteristic[BootKeyboardInputReportData]):
     """Boot Keyboard Input Report characteristic (0x2A22).
 
     org.bluetooth.characteristic.boot_keyboard_input_report
@@ -55,7 +55,7 @@ class BootKeyboardInputReportCharacteristic(BaseCharacteristic):
     max_length = 8
     allow_variable_length = True
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BootKeyboardInputReportData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BootKeyboardInputReportData:
         """Parse HID keyboard report.
 
         Args:
@@ -75,7 +75,7 @@ class BootKeyboardInputReportCharacteristic(BaseCharacteristic):
             keycodes=keycodes,
         )
 
-    def encode_value(self, data: BootKeyboardInputReportData) -> bytearray:
+    def _encode_value(self, data: BootKeyboardInputReportData) -> bytearray:
         """Encode keyboard report to bytes.
 
         Args:

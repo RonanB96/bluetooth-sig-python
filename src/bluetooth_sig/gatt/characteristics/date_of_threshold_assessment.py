@@ -12,7 +12,7 @@ from .utils.ieee11073_parser import IEEE11073Parser
 DateOfThresholdAssessmentData = DateData
 
 
-class DateOfThresholdAssessmentCharacteristic(BaseCharacteristic):
+class DateOfThresholdAssessmentCharacteristic(BaseCharacteristic[DateOfThresholdAssessmentData]):
     """Date of Threshold Assessment characteristic (0x2A86).
 
     org.bluetooth.characteristic.date_of_threshold_assessment
@@ -22,7 +22,7 @@ class DateOfThresholdAssessmentCharacteristic(BaseCharacteristic):
 
     expected_length: int = 4  # Year(2) + Month(1) + Day(1)
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> DateOfThresholdAssessmentData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> DateOfThresholdAssessmentData:
         """Decode Date of Threshold Assessment from raw bytes.
 
         Args:
@@ -49,7 +49,7 @@ class DateOfThresholdAssessmentCharacteristic(BaseCharacteristic):
 
         return DateOfThresholdAssessmentData(year=year, month=month, day=day)
 
-    def encode_value(self, data: DateOfThresholdAssessmentData) -> bytearray:
+    def _encode_value(self, data: DateOfThresholdAssessmentData) -> bytearray:
         """Encode Date of Threshold Assessment to bytes.
 
         Args:

@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ConcentrationTemplate
 
 
-class NitrogenDioxideConcentrationCharacteristic(BaseCharacteristic):
+class NitrogenDioxideConcentrationCharacteristic(BaseCharacteristic[float]):
     """Nitrogen dioxide concentration measurement characteristic (0x2BD2).
 
     Represents nitrogen dioxide (NO2) concentration in parts per billion

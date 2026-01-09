@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import IEEE11073FloatTemplate
 
 
-class CarbonMonoxideConcentrationCharacteristic(BaseCharacteristic):
+class CarbonMonoxideConcentrationCharacteristic(BaseCharacteristic[float]):
     """Carbon Monoxide Concentration characteristic (0x2BD0).
 
     org.bluetooth.characteristic.carbon_monoxide_concentration

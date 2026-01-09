@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class HighResolutionHeightCharacteristic(BaseCharacteristic):
+class HighResolutionHeightCharacteristic(BaseCharacteristic[float]):
     """High Resolution Height characteristic (0x2B47).
 
     org.bluetooth.characteristic.high_resolution_height

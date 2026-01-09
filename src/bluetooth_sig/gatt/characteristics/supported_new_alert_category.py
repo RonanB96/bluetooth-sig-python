@@ -15,7 +15,7 @@ from .base import BaseCharacteristic
 from .utils import DataParser
 
 
-class SupportedNewAlertCategoryCharacteristic(BaseCharacteristic):
+class SupportedNewAlertCategoryCharacteristic(BaseCharacteristic[AlertCategoryBitMask]):
     """Supported New Alert Category characteristic (0x2A47).
 
     Represents which alert categories the server supports for new alerts
@@ -32,7 +32,7 @@ class SupportedNewAlertCategoryCharacteristic(BaseCharacteristic):
     min_length: int | None = 1
     max_length: int | None = 2
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertCategoryBitMask:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertCategoryBitMask:
         """Decode Supported New Alert Category data from bytes.
 
         Args:
@@ -52,7 +52,7 @@ class SupportedNewAlertCategoryCharacteristic(BaseCharacteristic):
         mask_value = DataParser.parse_int16(data, 0, signed=False)
         return AlertCategoryBitMask(mask_value)
 
-    def encode_value(self, data: AlertCategoryBitMask | int) -> bytearray:
+    def _encode_value(self, data: AlertCategoryBitMask | int) -> bytearray:
         """Encode Supported New Alert Category data to bytes.
 
         Args:

@@ -36,19 +36,19 @@ class TestMeasurementIntervalCharacteristic(CommonCharacteristicTests):
     def test_disabled_interval(self) -> None:
         """Test disabled measurement interval."""
         char = MeasurementIntervalCharacteristic()
-        result = char.decode_value(bytearray([0, 0]))
+        result = char.parse_value(bytearray([0, 0]))
         assert result == 0
 
     def test_one_minute_interval(self) -> None:
         """Test 1 minute measurement interval."""
         char = MeasurementIntervalCharacteristic()
-        result = char.decode_value(bytearray([60, 0]))
+        result = char.parse_value(bytearray([60, 0]))
         assert result == 60
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = MeasurementIntervalCharacteristic()
         for value in [0, 1, 60, 3600, 65535]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
             assert decoded == value

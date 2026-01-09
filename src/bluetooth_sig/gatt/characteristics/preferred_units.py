@@ -19,7 +19,7 @@ class PreferredUnitsData(msgspec.Struct, frozen=True, kw_only=True):
     units: list[BluetoothUUID]
 
 
-class PreferredUnitsCharacteristic(BaseCharacteristic):
+class PreferredUnitsCharacteristic(BaseCharacteristic[PreferredUnitsData]):
     """Preferred Units characteristic (0x2B46).
 
     org.bluetooth.characteristic.preferred_units
@@ -32,7 +32,7 @@ class PreferredUnitsCharacteristic(BaseCharacteristic):
     min_length = 0
     allow_variable_length = True
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PreferredUnitsData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PreferredUnitsData:
         """Decode Preferred Units from raw bytes.
 
         Args:
@@ -56,7 +56,7 @@ class PreferredUnitsCharacteristic(BaseCharacteristic):
 
         return PreferredUnitsData(units=units)
 
-    def encode_value(self, data: PreferredUnitsData) -> bytearray:
+    def _encode_value(self, data: PreferredUnitsData) -> bytearray:
         """Encode Preferred Units to raw bytes.
 
         Args:

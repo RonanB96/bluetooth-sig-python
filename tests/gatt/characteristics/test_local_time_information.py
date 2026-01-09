@@ -58,8 +58,9 @@ class TestLocalTimeInformationCharacteristic(CommonCharacteristicTests):
 
         # Test normal parsing: UTC+2 with DST (+1 hour)
         test_data = bytearray([8, 4])  # timezone=+2h (8*15min), dst=+1h (value 4)
-        parsed = characteristic.decode_value(test_data)
+        parsed = characteristic.parse_value(test_data)
 
+        assert parsed is not None
         assert parsed.timezone.description == "UTC+02:00"
         assert parsed.timezone.offset_hours == 2.0
         assert parsed.dst_offset.description == "Daylight Time"
@@ -68,7 +69,8 @@ class TestLocalTimeInformationCharacteristic(CommonCharacteristicTests):
 
         # Test unknown values
         unknown_data = bytearray([0x80, 0xFF])  # unknown timezone and DST
-        parsed_unknown = characteristic.decode_value(unknown_data)
+        parsed_unknown = characteristic.parse_value(unknown_data)
+        assert parsed_unknown is not None
         assert parsed_unknown.timezone.description == "Unknown"
         assert parsed_unknown.dst_offset.description == "DST offset unknown"
 
@@ -96,7 +98,7 @@ class TestLocalTimeInformationCharacteristic(CommonCharacteristicTests):
         )
 
         # Encode the data
-        encoded = characteristic.encode_value(test_data)
+        encoded = characteristic.build_value(test_data)
 
         # Should produce the correct bytes
         assert len(encoded) == 2
@@ -108,10 +110,10 @@ class TestLocalTimeInformationCharacteristic(CommonCharacteristicTests):
         original_data = bytearray([8, 4])
 
         # Parse the data
-        parsed = characteristic.decode_value(original_data)
+        parsed = characteristic.parse_value(original_data)
 
         # Encode it back
-        encoded = characteristic.encode_value(parsed)
+        encoded = characteristic.build_value(parsed)
 
         # Should match the original
         assert encoded == original_data

@@ -40,13 +40,13 @@ class TestReconnectionAddressCharacteristic(CommonCharacteristicTests):
     def test_decode_address(self) -> None:
         """Test decoding reconnection address."""
         char = ReconnectionAddressCharacteristic()
-        result = char.decode_value(bytearray([0x01, 0x02, 0x03, 0x04, 0x05, 0x06]))
+        result = char.parse_value(bytearray([0x01, 0x02, 0x03, 0x04, 0x05, 0x06]))
         assert result == "01:02:03:04:05:06"
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve address."""
         char = ReconnectionAddressCharacteristic()
         original = "AA:BB:CC:DD:EE:FF"
-        encoded = char.encode_value(original)
-        decoded = char.decode_value(encoded)
+        encoded = char.build_value(original)
+        decoded = char.parse_value(encoded)
         assert decoded == original

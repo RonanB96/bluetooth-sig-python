@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint8Template
 
 
-class UncertaintyCharacteristic(BaseCharacteristic):
+class UncertaintyCharacteristic(BaseCharacteristic[float]):
     """Uncertainty characteristic (0x2AB4).
 
     org.bluetooth.characteristic.uncertainty

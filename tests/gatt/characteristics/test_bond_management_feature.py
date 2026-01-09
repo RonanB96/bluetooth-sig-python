@@ -6,6 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import BondManagementFeatureCharacteristic
 from bluetooth_sig.gatt.characteristics.bond_management_feature import BondManagementFeatureData
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -76,12 +77,14 @@ class TestBondManagementFeatureCharacteristic(CommonCharacteristicTests):
     def test_feature_flags_parsing(self, characteristic: BondManagementFeatureCharacteristic) -> None:
         """Test parsing of feature flags."""
         data = bytearray([1, 1, 0])  # First two features supported
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.delete_bond_of_requesting_device_supported is True
         assert result.delete_all_bonds_on_server_supported is True
         assert result.delete_all_but_active_bond_on_server_supported is False
 
     def test_insufficient_data(self, characteristic: BondManagementFeatureCharacteristic) -> None:
-        """Test that insufficient data raises ValueError."""
-        with pytest.raises(ValueError, match="expected 3 bytes"):
-            characteristic.decode_value(bytearray([1, 1]))  # Only 2 bytes
+        """Test that insufficient data results in parse failure."""
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([1, 1]))  # Only 2 bytes
+
+        assert "3 bytes" in str(exc_info.value)

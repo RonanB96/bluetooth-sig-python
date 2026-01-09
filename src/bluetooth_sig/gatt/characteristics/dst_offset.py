@@ -18,7 +18,7 @@ class DSTOffset(IntEnum):
     UNKNOWN = 255
 
 
-class DstOffsetCharacteristic(BaseCharacteristic):
+class DstOffsetCharacteristic(BaseCharacteristic[int]):
     """DST Offset characteristic (0x2A0D).
 
     org.bluetooth.characteristic.dst_offset

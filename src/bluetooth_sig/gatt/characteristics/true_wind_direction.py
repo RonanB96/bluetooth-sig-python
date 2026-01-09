@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class TrueWindDirectionCharacteristic(BaseCharacteristic):
+class TrueWindDirectionCharacteristic(BaseCharacteristic[float]):
     """True Wind Direction characteristic (0x2A71).
 
     org.bluetooth.characteristic.true_wind_direction

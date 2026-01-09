@@ -11,12 +11,12 @@ VALUE_NOT_VALID = 0xFFFFFE  # Indicates value is not valid
 VALUE_UNKNOWN = 0xFFFFFF  # Indicates value is not known
 
 
-class ApparentPowerCharacteristic(BaseCharacteristic):
+class ApparentPowerCharacteristic(BaseCharacteristic[float | None]):
     """Apparent Power characteristic."""
 
     _manual_unit: str | None = "VA"  # YAML: electrical_apparent_power.volt_ampere, units.yaml: power.volt_ampere
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
         """Decode the apparent power value."""
         value = DataParser.parse_int24(data, 0, signed=False)
 
@@ -27,7 +27,7 @@ class ApparentPowerCharacteristic(BaseCharacteristic):
 
         return value * 0.1  # Resolution 0.1 VA
 
-    def encode_value(self, data: float) -> bytearray:
+    def _encode_value(self, data: float) -> bytearray:
         """Encode the apparent power value."""
         encoded = int(data / 0.1)
         return DataParser.encode_int24(encoded, signed=False)

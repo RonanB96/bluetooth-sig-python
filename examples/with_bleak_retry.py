@@ -10,15 +10,13 @@ from __future__ import annotations
 import argparse
 import asyncio
 import time
+from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
-from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 
 
-async def robust_device_reading(
-    address: str, backend: str = "bleak-retry", retries: int = 3
-) -> dict[str, CharacteristicData]:
+async def robust_device_reading(address: str, backend: str = "bleak-retry", retries: int = 3) -> dict[str, Any]:
     """Robust device reading with automatic retry and error recovery.
 
     Args:
@@ -27,7 +25,7 @@ async def robust_device_reading(
         retries: Number of connection retry attempts
 
     Returns:
-        Dictionary of parsed characteristic data
+        Dictionary of parsed characteristic values
 
     """
     if backend != "bleak-retry":
@@ -63,14 +61,13 @@ async def robust_device_reading(
     except Exception as e:
         print(f"⚠️ Service discovery failed, trying predefined characteristics: {e}")
 
-    results: dict[str, CharacteristicData] = {}
+    results: dict[str, Any] = {}
     for uuid in target_uuids:
         try:
             parsed = await device.read(uuid)
-            if parsed and getattr(parsed, "parse_success", False):
+            if parsed is not None:
                 results[uuid] = parsed
-                unit_str = f" {parsed.unit}" if parsed.unit else ""
-                print(f"✅ {uuid}: {parsed.name}: {parsed.value}{unit_str}")
+                print(f"✅ {uuid}: {parsed}")
             else:
                 print(f"⚠️ {uuid}: Parse failed or no data")
         except Exception as e:
@@ -81,7 +78,7 @@ async def robust_device_reading(
     return results
 
 
-async def robust_service_discovery(address: str) -> dict[str, CharacteristicData]:
+async def robust_service_discovery(address: str) -> dict[str, Any]:
     """Discover all services and characteristics with robust connection.
 
     Args:
@@ -108,10 +105,11 @@ async def perform_single_reading(address: str, translator: BluetoothSIGTranslato
         if raw_results:
             print(f"📊 Reading at {time.strftime('%H:%M:%S')}:")
             for uuid_short, read_result in raw_results.items():
-                result = translator.parse_characteristic(uuid_short, read_result.raw_data)
-                if result.parse_success:
-                    unit_str = f" {result.unit}" if result.unit else ""
-                    print(f"   {result.name}: {result.value}{unit_str}")
+                try:
+                    result = translator.parse_characteristic(uuid_short, read_result.raw_data)
+                    print(f"   {uuid_short}: {result}")
+                except Exception:  # pylint: disable=broad-exception-caught
+                    print(f"   {uuid_short}: Parse failed")
             return True
 
     except Exception as e:  # pylint: disable=broad-exception-caught

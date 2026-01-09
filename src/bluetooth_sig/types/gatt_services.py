@@ -6,7 +6,7 @@ NO LEGACY CODE SUPPORT - development phase only.
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 import msgspec
 
@@ -17,7 +17,7 @@ from .gatt_enums import CharacteristicName
 from .uuid import BluetoothUUID
 
 # Type variable for specific characteristic types
-CharacteristicTypeVar = TypeVar("CharacteristicTypeVar", bound=BaseCharacteristic)
+CharacteristicTypeVar = TypeVar("CharacteristicTypeVar", bound=BaseCharacteristic[Any])
 
 
 class CharacteristicSpec(msgspec.Struct, Generic[CharacteristicTypeVar], frozen=True, kw_only=True):
@@ -36,7 +36,7 @@ class CharacteristicSpec(msgspec.Struct, Generic[CharacteristicTypeVar], frozen=
     condition: str = ""
 
 
-def characteristic(name: CharacteristicName, required: bool = False) -> CharacteristicSpec[BaseCharacteristic]:
+def characteristic(name: CharacteristicName, required: bool = False) -> CharacteristicSpec[BaseCharacteristic[Any]]:
     """Create a CharacteristicSpec using the central registry for class mapping.
 
     This eliminates the need to manually specify the characteristic class
@@ -58,7 +58,7 @@ def characteristic(name: CharacteristicName, required: bool = False) -> Characte
 
 
 # Strong type definitions - using enums instead of strings for type safety
-CharacteristicCollection = dict[CharacteristicName, CharacteristicSpec[BaseCharacteristic]]
+CharacteristicCollection = dict[CharacteristicName, CharacteristicSpec[BaseCharacteristic[Any]]]
 """Maps characteristic names (enums) to their specifications - STRONG TYPING ONLY."""
 
 # Network/protocol data structures - these are inherently dynamic from BLE

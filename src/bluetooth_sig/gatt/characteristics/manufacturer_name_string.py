@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Utf8StringTemplate
 
 
-class ManufacturerNameStringCharacteristic(BaseCharacteristic):
+class ManufacturerNameStringCharacteristic(BaseCharacteristic[str]):
     """Manufacturer Name String characteristic (0x2A29).
 
     org.bluetooth.characteristic.manufacturer_name_string

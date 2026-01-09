@@ -103,7 +103,7 @@ class BodyCompositionFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # 
     height_measurement_resolution: HeightMeasurementResolution
 
 
-class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
+class BodyCompositionFeatureCharacteristic(BaseCharacteristic[BodyCompositionFeatureData]):
     """Body Composition Feature characteristic (0x2A9B).
 
     Used to indicate which optional features and measurements are
@@ -116,7 +116,7 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
     max_length: int = 4  # Features(4) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BodyCompositionFeatureData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BodyCompositionFeatureData:
         """Parse body composition feature data according to Bluetooth specification.
 
         Format: Features(4 bytes) - bitmask indicating supported measurements.
@@ -158,7 +158,7 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic):
             height_measurement_resolution=self._get_height_resolution(features_raw),
         )
 
-    def encode_value(self, data: BodyCompositionFeatureData) -> bytearray:
+    def _encode_value(self, data: BodyCompositionFeatureData) -> bytearray:
         """Encode BodyCompositionFeatureData back to bytes.
 
         Args:

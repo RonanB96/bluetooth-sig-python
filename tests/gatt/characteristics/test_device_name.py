@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import DeviceNameCharacteristic
@@ -12,7 +14,7 @@ class TestDeviceNameCharacteristic(CommonCharacteristicTests):
     characteristic_cls = DeviceNameCharacteristic
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return DeviceNameCharacteristic()
 
     @pytest.fixture

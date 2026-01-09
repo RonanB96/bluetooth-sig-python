@@ -15,7 +15,7 @@ class TestCharacteristicUserDescriptionDescriptor:
         data = b"Hello World"
 
         result = desc.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CharacteristicUserDescriptionData)
         assert result.value.description == "Hello World"
 
@@ -25,7 +25,7 @@ class TestCharacteristicUserDescriptionDescriptor:
         data = b""
 
         result = desc.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CharacteristicUserDescriptionData)
         assert result.value.description == ""
 
@@ -35,7 +35,7 @@ class TestCharacteristicUserDescriptionDescriptor:
         data = "温度传感器".encode()
 
         result = desc.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CharacteristicUserDescriptionData)
         assert result.value.description == "温度传感器"
 
@@ -45,7 +45,7 @@ class TestCharacteristicUserDescriptionDescriptor:
         data = b"\xff\xfe\xfd"  # Invalid UTF-8
 
         result = desc.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Invalid UTF-8 data" in result.error_message
 
     def test_get_description_helper(self) -> None:

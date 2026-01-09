@@ -15,10 +15,10 @@ from __future__ import annotations
 
 from ...types.gatt_enums import ValueType
 from .base import BaseCharacteristic
-from .templates import TimeDataTemplate
+from .templates import TimeData, TimeDataTemplate
 
 
-class CurrentTimeCharacteristic(BaseCharacteristic):
+class CurrentTimeCharacteristic(BaseCharacteristic[TimeData]):
     """Current Time characteristic (0x2A2B).
 
     Represents exact time with date, time, fractions, and adjustment reasons.
