@@ -652,7 +652,11 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             return None
 
     def _resolve_dependencies(self, attr_name: str) -> list[str]:
-        """Resolve dependency class references to canonical UUID strings."""
+        """Resolve dependency class references to canonical UUID strings.
+
+        Performance: Returns list[str] instead of list[BluetoothUUID] because
+        these are compared against dict[str, ...] keys in hot paths.
+        """
         dependency_classes: list[type[BaseCharacteristic[Any]]] = []
 
         declared = getattr(self.__class__, attr_name, []) or []
@@ -671,7 +675,10 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
 
     @property
     def required_dependencies(self) -> list[str]:
-        """Get resolved required dependency UUID strings."""
+        """Get resolved required dependency UUID strings.
+
+        Performance: Returns list[str] for efficient comparison with dict keys.
+        """
         if self._resolved_required_dependencies is None:
             self._resolved_required_dependencies = self._resolve_dependencies("_required_dependencies")
 
@@ -679,7 +686,10 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
 
     @property
     def optional_dependencies(self) -> list[str]:
-        """Get resolved optional dependency UUID strings."""
+        """Get resolved optional dependency UUID strings.
+
+        Performance: Returns list[str] for efficient comparison with dict keys.
+        """
         if self._resolved_optional_dependencies is None:
             self._resolved_optional_dependencies = self._resolve_dependencies("_optional_dependencies")
 
@@ -1044,14 +1054,14 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
     @lru_cache(maxsize=32)
     def _get_characteristic_uuid_by_name(
         characteristic_name: CharacteristicName | CharacteristicName | str,
-    ) -> str | None:
+    ) -> BluetoothUUID | None:
         """Get characteristic UUID by name using cached registry lookup."""
         # Convert enum to string value for registry lookup
         name_str = (
             characteristic_name.value if isinstance(characteristic_name, CharacteristicName) else characteristic_name
         )
         char_info = uuid_registry.get_characteristic_info(name_str)
-        return str(char_info.uuid) if char_info else None
+        return char_info.uuid if char_info else None
 
     def get_context_characteristic(
         self,
@@ -1082,7 +1092,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             configured_info: CharacteristicInfo | None = getattr(characteristic_name, "_configured_info", None)
             if configured_info is not None:
                 # Custom characteristic with explicit _configured_info
-                char_uuid: str = str(configured_info.uuid)
+                char_uuid= configured_info.uuid
             else:
                 # SIG characteristic: convert class name to SIG name and resolve via registry
                 class_name: str = characteristic_name.__name__
@@ -1091,7 +1101,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
                 # Insert spaces before capital letters to get SIG name
                 sig_name: str = re.sub(r"(?<!^)(?=[A-Z])", " ", name_without_suffix)
                 # Look up UUID via registry
-                resolved_uuid: str | None = self._get_characteristic_uuid_by_name(sig_name)
+                resolved_uuid = self._get_characteristic_uuid_by_name(sig_name)
                 if resolved_uuid is None:
                     return None
                 char_uuid = resolved_uuid
@@ -1102,7 +1112,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
                 return None
             char_uuid = resolved_uuid
 
-        return ctx.other_characteristics.get(char_uuid)
+        return ctx.other_characteristics.get(str(char_uuid))
 
     def _check_special_value(self, raw_value: int) -> int | SpecialValueResult:
         """Check if raw value is a special sentinel value and return appropriate result.

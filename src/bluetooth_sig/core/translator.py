@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import struct
 import typing
 from collections.abc import Mapping
 from graphlib import TopologicalSorter
@@ -13,7 +14,12 @@ from typing import Any, TypeVar, overload
 from ..gatt.characteristics import templates
 from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
-from ..gatt.exceptions import CharacteristicParseError, MissingDependencyError, SpecialValueDetected
+from ..gatt.exceptions import (
+    CharacteristicError,
+    CharacteristicParseError,
+    MissingDependencyError,
+    SpecialValueDetected,
+)
 from ..gatt.services import ServiceName
 from ..gatt.services.base import BaseGattService
 from ..gatt.services.registry import GattServiceRegistry
@@ -29,6 +35,7 @@ from ..types.gatt_enums import CharacteristicName, ValueType
 from ..types.uuid import BluetoothUUID
 
 # Type alias for characteristic data in process_services
+# Performance: str keys (normalized UUIDs) instead of BluetoothUUID for fast lookups
 CharacteristicDataDict = dict[str, Any]
 
 # Type variable for generic characteristic return types
@@ -95,6 +102,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             return
         self.__class__._instance_lock = True
 
+        # Performance: Use str keys (normalized UUIDs) for fast dict lookups
         self._services: dict[str, BaseGattService] = {}
 
     def __str__(self) -> str:
@@ -326,8 +334,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 return_type = type_hints.get("return")
                 if return_type and return_type is not type(None):
                     return return_type  # type: ignore[no-any-return]
-            except Exception:  # pylint: disable=broad-exception-caught
-                # Fallback to direct signature inspection
+            except (TypeError, AttributeError, NameError):
+                # Fallback to direct signature inspection if type hints fail
                 return_type = inspect.signature(characteristic._decode_value).return_annotation  # pylint: disable=protected-access
                 sig = inspect.signature(characteristic._decode_value)
                 return_annotation = sig.return_annotation
@@ -459,7 +467,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         try:
             temp_char = char_class()
             return temp_char.info
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (TypeError, ValueError, AttributeError):
+            # Instantiation may fail if characteristic requires parameters or has missing dependencies
             return None
 
     def get_characteristic_uuid_by_name(self, name: CharacteristicName) -> BluetoothUUID | None:
@@ -512,7 +521,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         try:
             temp_char = char_class()
             return temp_char.info
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (TypeError, ValueError, AttributeError):
+            # Instantiation may fail if characteristic requires parameters or has missing dependencies
             return None
 
     def get_service_info_by_name(self, name: str) -> ServiceInfo | None:
@@ -561,7 +571,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 name=temp_service.name,
                 characteristics=char_infos,
             )
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (TypeError, ValueError, AttributeError):
+            # Service instantiation may fail if it requires parameters or has missing data
             return None
 
     def list_supported_characteristics(self) -> dict[str, str]:
@@ -682,7 +693,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                     value_type=value_type,
                     unit=char_info.unit or "",
                 )
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (KeyError, ValueError, AttributeError):  # Registry lookups may fail, fall through to service lookup
             pass
 
         # Try service
@@ -804,12 +815,9 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
             parse_context = self._build_parse_context(base_context, results)
 
-            try:
-                value = self.parse_characteristic(uuid_str, raw_data, ctx=parse_context)
-                results[uuid_str] = value
-            except (CharacteristicParseError, SpecialValueDetected):
-                # Re-raise parse errors for individual characteristics - intentional passthrough
-                raise  # pylint: disable=try-except-raise
+            # Let parse errors propagate to caller
+            value = self.parse_characteristic(uuid_str, raw_data, ctx=parse_context)
+            results[uuid_str] = value
 
         logger.debug("Batch parsing complete: %d results", len(results))
         return results
@@ -818,6 +826,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self, characteristic_data: Mapping[str, bytes]
     ) -> tuple[dict[str, BaseCharacteristic[Any]], dict[str, list[str]], dict[str, list[str]]]:
         """Instantiate characteristics once and collect declared dependencies."""
+        # Performance: All dicts use str keys (UUID strings) for O(1) lookups in hot paths
         uuid_to_characteristic: dict[str, BaseCharacteristic[Any]] = {}
         uuid_to_required_deps: dict[str, list[str]] = {}
         uuid_to_optional_deps: dict[str, list[str]] = {}
@@ -968,7 +977,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 bt_uuid = BluetoothUUID(uuid)
                 char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(bt_uuid)
                 expected = char_class.expected_length if char_class else None
-            except Exception:  # pylint: disable=broad-exception-caught
+            except (ValueError, AttributeError):
+                # UUID parsing or class lookup may fail
                 expected = None
             return ValidationResult(
                 is_valid=True,
@@ -976,14 +986,15 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 expected_length=expected,
                 error_message="",
             )
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            # If parsing failed, data format is invalid
-            # Try to get expected_length even on failure
+        except (CharacteristicParseError, ValueError, TypeError, struct.error, CharacteristicError) as e:
+            # Parsing failed - data format is invalid
+            # Try to get expected_length even on failure for better error reporting
             try:
                 bt_uuid = BluetoothUUID(uuid)
                 char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(bt_uuid)
                 expected = char_class.expected_length if char_class else None
-            except Exception:  # pylint: disable=broad-exception-caught
+            except (ValueError, AttributeError):
+                # UUID parsing or class lookup may fail
                 expected = None
             return ValidationResult(
                 is_valid=False,

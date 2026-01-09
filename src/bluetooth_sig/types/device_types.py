@@ -71,6 +71,7 @@ class DeviceService(msgspec.Struct, kw_only=True):
     """
 
     service: BaseGattService
+    # Performance: str keys (UUID strings) for fast characteristic lookups by UUID
     characteristics: dict[str, BaseCharacteristic[Any]] = msgspec.field(default_factory=dict)
 
 
