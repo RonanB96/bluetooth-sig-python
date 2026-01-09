@@ -51,15 +51,11 @@ class TestAltitudeCharacteristic(CommonCharacteristicTests):
 
     def test_altitude_error_handling(self, characteristic: AltitudeCharacteristic) -> None:
         """Test Altitude error handling."""
-        # Test insufficient data - parse_value raises CharacteristicParseError
         with pytest.raises(CharacteristicParseError) as exc_info:
             characteristic.parse_value(bytearray([0x12]))
-        assert str(exc_info.value) == (
-            "Length validation failed for Altitude: expected exactly 2 bytes, got 1 "
-            "(class-level constraint for AltitudeCharacteristic); "
-            "Length validation failed for Altitude: expected at least 2 bytes, got 1 "
-            "(class-level constraint for AltitudeCharacteristic)"
-        )
+
+        assert "Length validation failed" in str(exc_info.value)
+        assert "expected exactly 2 bytes" in str(exc_info.value)
 
     def test_altitude_boundary_values(self, characteristic: AltitudeCharacteristic) -> None:
         """Test Altitude boundary values."""

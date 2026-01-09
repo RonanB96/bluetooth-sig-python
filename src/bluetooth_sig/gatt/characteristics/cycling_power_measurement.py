@@ -9,7 +9,7 @@ import msgspec
 from ..constants import SINT16_MAX, SINT16_MIN, UINT8_MAX, UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .cycling_power_feature import CyclingPowerFeatureCharacteristic, CyclingPowerFeatureData
+from .cycling_power_feature import CyclingPowerFeatureCharacteristic
 from .utils import DataParser
 
 
@@ -142,10 +142,9 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasu
 
         # Validate flags against Cycling Power Feature if available
         if ctx is not None:
-            feature_char = self.get_context_characteristic(ctx, CyclingPowerFeatureCharacteristic)
-            if feature_char and feature_char.parse_success and feature_char.value is not None:
-                # feature_char.value is the CyclingPowerFeatureData struct
-                feature_data: CyclingPowerFeatureData = feature_char.value
+            feature_data = self.get_context_characteristic(ctx, CyclingPowerFeatureCharacteristic)
+            if feature_data is not None:
+                # feature_data is the CyclingPowerFeatureData struct
 
                 # Check if reported features are supported
                 reported_features = int(flags)

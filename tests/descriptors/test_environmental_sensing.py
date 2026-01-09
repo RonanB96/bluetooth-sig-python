@@ -24,7 +24,7 @@ class TestEnvironmentalSensingConfigurationDescriptor:
         data = b"\x07\x00"
 
         result = esc.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, EnvironmentalSensingConfigurationData)
         assert result.value.trigger_logic_value is True
         assert result.value.transmission_interval_present is True
@@ -37,7 +37,7 @@ class TestEnvironmentalSensingConfigurationDescriptor:
         data = b"\x07"  # Too short
 
         result = esc.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Environmental Sensing Configuration data must be exactly 2 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:
@@ -57,7 +57,7 @@ class TestEnvironmentalSensingMeasurementDescriptor:
         data = b"\x01\x00\x00\x02\x00\x00\x03\x00\x00\x04\x05\x00"
 
         result = esm.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, EnvironmentalSensingMeasurementData)
         assert result.value.sampling_function == 0x000001
         assert result.value.measurement_period == 0x000002
@@ -71,7 +71,7 @@ class TestEnvironmentalSensingMeasurementDescriptor:
         data = b"\x07\x00"  # Too short (2 bytes instead of 12)
 
         result = esm.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Environmental Sensing Measurement data must be exactly 12 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:
@@ -90,7 +90,7 @@ class TestEnvironmentalSensingTriggerSettingDescriptor:
         data = b"\x01\x0a\x00"
 
         result = ests.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, EnvironmentalSensingTriggerSettingData)
         assert result.value.condition == 0x01
         assert result.value.operand == 0x000A
@@ -101,7 +101,7 @@ class TestEnvironmentalSensingTriggerSettingDescriptor:
         data = b"\x01\x00"  # Too short (2 bytes instead of 3)
 
         result = ests.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Environmental Sensing Trigger Setting data must be exactly 3 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:

@@ -100,13 +100,13 @@ class TestScanIntervalWindowCharacteristic(CommonCharacteristicTests):
     def test_scan_interval_window_invalid_length(self, characteristic: ScanIntervalWindowCharacteristic) -> None:
         """Test that invalid data lengths are rejected."""
         # Too short
-        result = characteristic.parse_value(bytearray([0x04, 0x00, 0x04]))  # 3 bytes
-        assert not result.parse_success
-        assert "4 bytes" in result.error_message
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x04, 0x00, 0x04]))  # 3 bytes
+        assert "4 bytes" in str(exc_info.value)
 
         # Too long
-        result = characteristic.parse_value(bytearray([0x04, 0x00, 0x04, 0x00, 0xFF]))  # 5 bytes
-        assert not result.parse_success
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([0x04, 0x00, 0x04, 0x00, 0xFF]))  # 5 bytes
 
     def test_scan_interval_window_scan_window_too_large(self, characteristic: ScanIntervalWindowCharacteristic) -> None:
         """Test that scan window > scan interval is rejected."""
@@ -120,18 +120,18 @@ class TestScanIntervalWindowCharacteristic(CommonCharacteristicTests):
         """Test that out-of-range values are rejected."""
         # scan_interval too low
         data = bytearray([0x03, 0x00, 0x03, 0x00])  # SCAN_INTERVAL_MIN-1, SCAN_WINDOW_MIN-1
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(data)
 
         # scan_interval too high
         data = bytearray([0x01, 0x40, 0x00, 0x20])  # SCAN_INTERVAL_MAX+1, SCAN_WINDOW_MAX//2
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(data)
 
         # scan_window too low
         data = bytearray([0x04, 0x00, 0x03, 0x00])  # SCAN_INTERVAL_MIN, SCAN_WINDOW_MIN-1
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(data)
 
     def test_scan_interval_window_milliseconds_conversion(self) -> None:
         """Test millisecond conversion properties."""

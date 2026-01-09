@@ -15,7 +15,7 @@ class TestValidRangeDescriptor:
         data = b"\x00\x00\xff\xff"  # Min: 0, Max: 65535
 
         result = valid_range.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, ValidRangeData)
         assert result.value.min_value == 0
         assert result.value.max_value == 65535
@@ -26,7 +26,7 @@ class TestValidRangeDescriptor:
         data = b"\x00\x00"  # Too short
 
         result = valid_range.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Valid Range data expected 4 bytes, got 2" in result.error_message
 
     def test_validate_value_in_range(self) -> None:
@@ -35,7 +35,8 @@ class TestValidRangeDescriptor:
         data = b"\x0a\x00\x64\x00"  # Min: 10, Max: 100
 
         result = valid_range.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
+        assert isinstance(result.value, ValidRangeData)
 
         # Test validation
         assert valid_range.is_value_in_range(data, 50) is True

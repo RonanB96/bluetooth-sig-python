@@ -6,6 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import GlucoseFeatureCharacteristic, GlucoseFeatures
 from bluetooth_sig.gatt.characteristics.glucose_feature import GlucoseFeatureData
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -113,10 +114,10 @@ class TestGlucoseFeatureCharacteristic(CommonCharacteristicTests):
 
     def test_glucose_feature_invalid_data(self, characteristic: GlucoseFeatureCharacteristic) -> None:
         """Test glucose feature with invalid data."""
-        # parse_value returns parse_success=False for invalid data
-        result = characteristic.parse_value(bytearray([0x00]))
-        assert result.parse_success is False
-        assert "2 bytes, got 1" in (result.error_message or "")
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00]))
+
+        assert "2 bytes, got 1" in str(exc_info.value)
 
     def test_glucose_feature_encode_value(self, characteristic: GlucoseFeatureCharacteristic) -> None:
         """Test encoding GlucoseFeatureData back to bytes."""

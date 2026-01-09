@@ -74,7 +74,7 @@ class TestAutoRegistration:
         # Verify it's registered
         raw_data = bytes([0x18, 0x32])  # 24.50°C (24 whole + 50 decimal)
         result = translator.parse_characteristic(str(info.uuid), raw_data)
-        assert result.value == 24.5
+        assert result == 24.5
 
     def test_auto_registration_on_init(self) -> None:
         """Test that characteristic auto-registers when instantiated."""
@@ -88,7 +88,7 @@ class TestAutoRegistration:
 
         raw_data = bytes([0x18, 0x32])  # 24.50°C (24 whole + 50 decimal)
         result = translator.parse_characteristic(str(info.uuid), raw_data)
-        assert result.value == 24.5
+        assert result == 24.5
 
     def test_auto_registration_idempotent(self) -> None:
         """Test that multiple instantiations don't cause duplicate registrations."""
@@ -104,7 +104,7 @@ class TestAutoRegistration:
 
         raw_data = bytes([0x18, 0x32])  # 24.50°C (24 whole + 50 decimal)
         result = translator.parse_characteristic(str(info.uuid), raw_data)
-        assert result.value == 24.5
+        assert result == 24.5
 
     def test_default_auto_register_is_true(self) -> None:
         """Test that auto_register defaults to True."""
@@ -120,7 +120,7 @@ class TestAutoRegistration:
         translator = BluetoothSIGTranslator.get_instance()
         raw_data = bytes([0x18, 0x32])  # 24.50°C
         result = translator.parse_characteristic(str(info.uuid), raw_data)
-        assert result.value == 24.5
+        assert result == 24.5
 
     def test_dynamic_custom_characteristic_auto_registration(self) -> None:
         """Test auto-registration with dynamically created custom characteristic."""
@@ -146,4 +146,4 @@ class TestAutoRegistration:
             "12345678-1234-5678-1234-567812345678",
             bytes([42]),
         )
-        assert result.value == 42
+        assert result == 42

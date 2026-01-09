@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import msgspec
 
-from ...types import ALERT_TEXT_MAX_LENGTH, AlertCategoryID, validate_category_id
+from ...types import ALERT_TEXT_MAX_LENGTH, AlertCategoryID
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -57,7 +57,7 @@ class NewAlertCharacteristic(BaseCharacteristic[NewAlertData]):
         """
         # Parse Category ID (1 byte)
         category_id_raw = DataParser.parse_int8(data, 0, signed=False)
-        category_id = validate_category_id(category_id_raw)
+        category_id = AlertCategoryID(category_id_raw)
 
         # Parse Number of New Alert (1 byte)
         number_of_new_alert = DataParser.parse_int8(data, 1, signed=False)
@@ -93,7 +93,6 @@ class NewAlertCharacteristic(BaseCharacteristic[NewAlertData]):
 
         # Encode Category ID (1 byte)
         category_id_value = int(data.category_id)
-        validate_category_id(category_id_value)  # Validate the category ID value
         result.append(category_id_value)
 
         # Encode Number of New Alert (1 byte)

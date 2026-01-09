@@ -74,14 +74,14 @@ class TestAlertNotificationControlPointCharacteristic(CommonCharacteristicTests)
         data = bytearray([0x06, 0x00])  # 6 is reserved
         with pytest.raises(CharacteristicParseError) as exc_info:
             characteristic.parse_value(data)
-        assert "command id" in str(exc_info.value).lower()
+        assert "6 is not a valid AlertNotificationCommandID" in str(exc_info.value)
 
     def test_invalid_category_id(self, characteristic: AlertNotificationControlPointCharacteristic) -> None:
         """Test that invalid category IDs are rejected."""
         data = bytearray([0x00, 0x0A])  # 10 is reserved
         with pytest.raises(CharacteristicParseError) as exc_info:
             characteristic.parse_value(data)
-        assert "category id" in str(exc_info.value).lower()
+        assert "10 is not a valid AlertCategoryID" in str(exc_info.value)
 
     def test_notify_immediately_command(self, characteristic: AlertNotificationControlPointCharacteristic) -> None:
         """Test notify immediately command."""

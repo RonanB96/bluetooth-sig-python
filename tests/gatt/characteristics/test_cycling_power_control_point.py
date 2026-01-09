@@ -12,6 +12,7 @@ from bluetooth_sig.gatt.characteristics.cycling_power_control_point import (
     CyclingPowerOpCode,
     CyclingPowerResponseValue,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -199,10 +200,7 @@ class TestCyclingPowerControlPointCharacteristic(CommonCharacteristicTests):
         """Test cycling power control point with invalid data."""
         char = CyclingPowerControlPointCharacteristic()
 
-        # Test empty data - parse_value returns parse_success=False with length error
-        result = char.parse_value(bytearray())
-        assert result.parse_success is False
-        assert result.error_message == (
-            "Length validation failed for Cycling Power Control Point: expected at least 1 bytes, got 0 "
-            "(class-level constraint for CyclingPowerControlPointCharacteristic)"
-        )
+        # Test empty data
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray())
+        assert "expected at least 1 bytes, got 0" in str(exc_info.value)

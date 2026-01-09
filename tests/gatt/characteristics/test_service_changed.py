@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import ServiceChangedCharacteristic, ServiceChangedData
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -76,21 +77,15 @@ class TestServiceChangedCharacteristic(CommonCharacteristicTests):
         """Test that invalid data lengths result in parse failure."""
         char = ServiceChangedCharacteristic()
 
-        # Test too short - parse_value returns parse_success=False
-        result = char.parse_value(bytearray([0x00, 0x00]))
-        assert result.parse_success is False
-        assert result.error_message == (
-            "Length validation failed for Service Changed: expected exactly 4 bytes, got 2 "
-            "(class-level constraint for ServiceChangedCharacteristic)"
-        )
+        # Test too short
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([0x00, 0x00]))
+        assert "expected exactly 4 bytes, got 2" in str(exc_info.value)
 
         # Test too long - should also fail with exact length validation
-        result = char.parse_value(bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
-        assert result.parse_success is False
-        assert result.error_message == (
-            "Length validation failed for Service Changed: expected exactly 4 bytes, got 6 "
-            "(class-level constraint for ServiceChangedCharacteristic)"
-        )
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        assert "expected exactly 4 bytes, got 6" in str(exc_info.value)
 
     def test_round_trip_encoding(self) -> None:
         """Test that encoding and decoding preserve data."""

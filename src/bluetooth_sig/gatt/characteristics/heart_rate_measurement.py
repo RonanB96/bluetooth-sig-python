@@ -191,10 +191,9 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic[HeartRateData]):
         # Context enhancement: Body Sensor Location
         sensor_location = None
         if ctx:
-            sensor_location_char = self.get_context_characteristic(ctx, CharacteristicName.BODY_SENSOR_LOCATION)
-            if sensor_location_char and sensor_location_char.parse_success:
+            location_value = self.get_context_characteristic(ctx, CharacteristicName.BODY_SENSOR_LOCATION)
+            if location_value is not None:
                 # Body Sensor Location is a uint8 enum value (0-6)
-                location_value: int = sensor_location_char.value
                 try:
                     sensor_location = BodySensorLocation(location_value)
                 except ValueError:

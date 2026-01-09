@@ -98,6 +98,31 @@ For testing, mock at the data level—the translator accepts raw bytes without h
 
 ______________________________________________________________________
 
+## ⚠️ Type Safety for Dynamic UUID Parsing
+
+**Partially supported:**
+
+When parsing characteristics via UUID strings (discovered at runtime), return types are `Any` because Python's type system cannot infer the concrete type from a runtime string value.
+
+**Solution:** Pass characteristic classes directly for full type safety:
+
+```python
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+
+translator = BluetoothSIGTranslator()
+
+# Type-safe: IDE automatically infers return type as int
+level = translator.parse_characteristic(BatteryLevelCharacteristic, data)
+
+# Not type-safe: returns Any (type determined at runtime)
+result = translator.parse_characteristic("2A19", data)
+```
+
+See [Type-Safe vs Dynamic Parsing](../how-to/usage.md#type-safe-vs-dynamic-parsing) for detailed guidance.
+
+______________________________________________________________________
+
 ## ❌ Connection Manager Implementations
 
 The library provides `ConnectionManagerProtocol` (abstract base class) but **not** production-ready adapters. Example adapters in `examples/connection_managers/` demonstrate the pattern for bleak, simplepyble, and bluepy—adapt these for your needs.
@@ -110,6 +135,8 @@ ______________________________________________________________________
 |----------|--------|
 | BLE GATT parsing | ✅ Supported |
 | Device abstraction | ✅ Supported (requires adapter) |
+| Type-safe parsing (class input) | ✅ Supported |
+| Type-safe parsing (UUID string) | ⚠️ Returns `Any` |
 | Bluetooth Classic | ❌ Not supported |
 | BLE stack/protocols | ❌ Not implemented |
 | Hardware abstraction | ❌ Not included |

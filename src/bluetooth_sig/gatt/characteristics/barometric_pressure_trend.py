@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from enum import IntEnum
 
-from ..constants import UINT8_MAX
-from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .templates import Uint8Template
+from .templates import EnumTemplate
 
 
 class BarometricPressureTrend(IntEnum):
@@ -60,31 +58,7 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic[BarometricPressur
     enumerated values.
     """
 
-    # YAML has no range constraint; enforce uint8 domain for enum conversion.
-    min_value: int | float | None = 0
-    max_value: int | float | None = UINT8_MAX
-
-    _template = Uint8Template()  # Used for base uint8 parsing, then converted to enum
+    _template = EnumTemplate.uint8(BarometricPressureTrend)
 
     # Manual override: YAML indicates uint8->int but we return enum
     _manual_value_type = "BarometricPressureTrend"
-
-    enum_class = BarometricPressureTrend
-
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BarometricPressureTrend:
-        """Parse barometric pressure trend and return enum.
-
-        Maps reserved value (0xFF) and invalid values to UNKNOWN.
-        """
-        # Use template to parse uint8
-        raw_value = self._template._decode_value(data, offset=0, ctx=ctx)  # pylint: disable=protected-access
-        # Convert to enum with fallback
-        return BarometricPressureTrend.from_value(raw_value)
-
-    def _encode_value(self, data: BarometricPressureTrend | int) -> bytearray:
-        """Encode barometric pressure trend enum to bytes."""
-        if isinstance(data, BarometricPressureTrend):
-            value = data.value
-        else:
-            value = int(data)
-        return self._template._encode_value(value)  # pylint: disable=protected-access

@@ -10,6 +10,7 @@ from bluetooth_sig.gatt.characteristics.weight_scale_feature import (
     WeightMeasurementResolution,
     WeightScaleFeatureCharacteristic,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.gatt.services.weight_scale import WeightScaleService
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
@@ -69,7 +70,7 @@ class TestWeightMeasurementCharacteristic:
         char = WeightMeasurementCharacteristic()
 
         # Too short data
-        with pytest.raises(ValueError, match="at least 3 bytes"):
+        with pytest.raises(CharacteristicParseError, match="at least 3 bytes"):
             char.parse_value(bytearray([0x00, 0x70]))
 
     def test_unit_property(self) -> None:
@@ -119,7 +120,7 @@ class TestWeightScaleFeatureCharacteristic:
         char = WeightScaleFeatureCharacteristic()
 
         # Too short data
-        with pytest.raises(ValueError, match="at least 4 bytes"):
+        with pytest.raises(CharacteristicParseError, match="at least 4 bytes"):
             char.parse_value(bytearray([0x00, 0x00, 0x00]))
 
     def test_unit_property(self) -> None:

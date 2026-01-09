@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 
 from bluetooth_sig.core.translator import BluetoothSIGTranslator
-from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 
 
 @pytest.mark.benchmark
@@ -35,7 +34,7 @@ class TestLibraryVsManual:
     ) -> None:
         """Library battery level parsing."""
         result = benchmark(translator.parse_characteristic, "2A19", battery_level_data)
-        assert result.value == 85
+        assert result == 85
 
     def test_temperature_manual(self, benchmark: Any, temperature_data: bytearray) -> None:
         """Manual temperature parsing."""
@@ -55,7 +54,7 @@ class TestLibraryVsManual:
     ) -> None:
         """Library temperature parsing."""
         result = benchmark(translator.parse_characteristic, "2A6E", temperature_data)
-        assert abs(result.value - 24.04) < 0.01
+        assert abs(result - 24.04) < 0.01
 
     def test_humidity_manual(self, benchmark: Any, humidity_data: bytearray) -> None:
         """Manual humidity parsing."""
@@ -79,7 +78,7 @@ class TestLibraryVsManual:
     ) -> None:
         """Library humidity parsing."""
         result = benchmark(translator.parse_characteristic, "2A6F", humidity_data)
-        assert abs(result.value - 49.22) < 0.01
+        assert abs(result - 49.22) < 0.01
 
 
 @pytest.mark.benchmark
@@ -114,41 +113,20 @@ class TestOverheadAnalysis:
 
     def test_struct_creation_overhead(self, benchmark: Any) -> None:
         """Measure overhead of creating result structures."""
-        # CharacteristicData is a gatt-level ParseResult that holds a `characteristic`
-        # reference. Construct a minimal fake characteristic instance for the test.
-        from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-        from bluetooth_sig.types.data_types import CharacteristicInfo
+        from bluetooth_sig.gatt.characteristics.heart_rate_measurement import (
+            HeartRateData,
+            HeartRateMeasurementFlags,
+            SensorContactState,
+        )
 
-        class _FakeCharacteristic:
-            properties: list[object]
-
-            def __init__(self, info: CharacteristicInfo) -> None:
-                self.info = info
-                self.name = info.name
-                self.uuid = info.uuid
-                self.unit = info.unit
-                self.properties = []
-
-        from bluetooth_sig.types.gatt_enums import ValueType
-        from bluetooth_sig.types.uuid import BluetoothUUID
-
-        def create_result() -> CharacteristicData[Any]:
-            info = CharacteristicInfo(
-                uuid=BluetoothUUID("2A19"),
-                name="Battery Level",
-                unit="%",
-                value_type=ValueType.INT,
-            )
-            fake_char = _FakeCharacteristic(info)
-            # Cast to BaseCharacteristic for type checker compatibility
-            from typing import cast
-
-            return CharacteristicData(
-                characteristic=cast(BaseCharacteristic, fake_char),
-                value=85,
-                raw_data=bytes([85]),
-                parse_success=True,
+        def create_result() -> HeartRateData:
+            return HeartRateData(
+                heart_rate=85,
+                sensor_contact=SensorContactState.NOT_SUPPORTED,
+                energy_expended=None,
+                rr_intervals=(),
+                flags=HeartRateMeasurementFlags(0),
             )
 
         result = benchmark(create_result)
-        assert result.value == 85
+        assert result.heart_rate == 85

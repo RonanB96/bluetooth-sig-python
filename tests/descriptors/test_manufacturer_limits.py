@@ -16,7 +16,7 @@ class TestManufacturerLimitsDescriptor:
         data = b"\x00\x00\xff\xff"
 
         result = ml.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, ManufacturerLimitsData)
         assert result.value.min_limit == 0x0000
         assert result.value.max_limit == 0xFFFF
@@ -27,7 +27,7 @@ class TestManufacturerLimitsDescriptor:
         data = b"\x00\x00"  # Too short
 
         result = ml.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Manufacturer Limits data expected 4 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:

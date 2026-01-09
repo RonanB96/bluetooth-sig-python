@@ -16,7 +16,7 @@ class TestCharacteristicAggregateFormatDescriptor:
         data = b"\x01\x00\x02\x00"
 
         result = caf.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CharacteristicAggregateFormatData)
         assert result.value.attribute_handles == [0x0001, 0x0002]
 
@@ -26,7 +26,7 @@ class TestCharacteristicAggregateFormatDescriptor:
         data = b"\x01\x00"
 
         result = caf.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CharacteristicAggregateFormatData)
         assert result.value.attribute_handles == [0x0001]
 
@@ -36,7 +36,7 @@ class TestCharacteristicAggregateFormatDescriptor:
         data = b"\x01"  # Odd length (should be even)
 
         result = caf.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "must have even length" in result.error_message
 
     def test_uuid_resolution(self) -> None:

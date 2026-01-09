@@ -15,7 +15,7 @@ class TestExternalReportReferenceDescriptor:
         data = b"\x01\x00"  # Report ID 1
 
         result = err.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, ExternalReportReferenceData)
         assert result.value.external_report_id == 0x0001
 
@@ -25,7 +25,7 @@ class TestExternalReportReferenceDescriptor:
         data = b"\x01\x00\x02"  # Too long
 
         result = err.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "External Report Reference data must be exactly 2 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:

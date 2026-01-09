@@ -16,7 +16,7 @@ class TestMeasurementDescriptionDescriptor:
         data = b"Temperature"
 
         result = md.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, MeasurementDescriptionData)
         assert result.value.description == "Temperature"
 
@@ -26,7 +26,7 @@ class TestMeasurementDescriptionDescriptor:
         data = b"\xff\xfe\xfd"  # Invalid UTF-8
 
         result = md.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Invalid UTF-8 data" in result.error_message
 
     def test_uuid_resolution(self) -> None:

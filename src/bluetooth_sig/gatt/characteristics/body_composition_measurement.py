@@ -214,9 +214,9 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic[BodyCompositio
 
         # Validate against Body Composition Feature if context is available
         if ctx is not None:
-            feature_char = self.get_context_characteristic(ctx, BodyCompositionFeatureCharacteristic)
-            if feature_char and feature_char.parse_success and feature_char.value:
-                self._validate_against_feature_characteristic(basic, mass, other, feature_char.value)
+            feature_value = self.get_context_characteristic(ctx, BodyCompositionFeatureCharacteristic)
+            if feature_value is not None:
+                self._validate_against_feature_characteristic(basic, mass, other, feature_value)
 
         # Create struct with all parsed values
         return BodyCompositionMeasurementData(

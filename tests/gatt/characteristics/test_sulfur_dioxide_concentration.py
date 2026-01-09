@@ -56,11 +56,11 @@ class TestSulfurDioxideConcentrationCharacteristic(CommonCharacteristicTests):
         """Test boundary values for SO2 concentration."""
         # Clean air
         data_min = bytearray([0x00, 0x00])
-        assert characteristic.parse_value(data_min).value == 0.0
+        assert characteristic.parse_value(data_min) == 0.0
 
         # Maximum
         data_max = bytearray([0xFF, 0xFF])
-        assert characteristic.parse_value(data_max).value == 65535.0
+        assert characteristic.parse_value(data_max) == 65535.0
 
     def test_sulfur_dioxide_concentration_typical_levels(
         self, characteristic: SulfurDioxideConcentrationCharacteristic
@@ -68,8 +68,8 @@ class TestSulfurDioxideConcentrationCharacteristic(CommonCharacteristicTests):
         """Test typical SO2 concentration levels."""
         # Typical urban (20 ppb)
         data_urban = bytearray([0x14, 0x00])
-        assert characteristic.parse_value(data_urban).value == 20.0
+        assert characteristic.parse_value(data_urban) == 20.0
 
         # High pollution (500 ppb)
         data_high = bytearray([0xF4, 0x01])
-        assert characteristic.parse_value(data_high).value == 500.0
+        assert characteristic.parse_value(data_high) == 500.0

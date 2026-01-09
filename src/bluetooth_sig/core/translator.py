@@ -8,7 +8,7 @@ import logging
 import typing
 from collections.abc import Mapping
 from graphlib import TopologicalSorter
-from typing import Any, cast
+from typing import Any, TypeVar, overload
 
 from ..gatt.characteristics import templates
 from ..gatt.characteristics.base import BaseCharacteristic
@@ -30,6 +30,9 @@ from ..types.uuid import BluetoothUUID
 
 # Type alias for characteristic data in process_services
 CharacteristicDataDict = dict[str, Any]
+
+# Type variable for generic characteristic return types
+T = TypeVar("T")
 
 logger = logging.getLogger(__name__)
 
@@ -98,46 +101,83 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         """Return string representation of the translator."""
         return "BluetoothSIGTranslator(pure SIG standards)"
 
+    @overload
     def parse_characteristic(
         self,
-        uuid: str,
+        char: type[BaseCharacteristic[T]],
+        raw_data: bytes | bytearray,
+        ctx: CharacteristicContext | None = ...,
+    ) -> T: ...
+
+    @overload
+    def parse_characteristic(
+        self,
+        char: str,
+        raw_data: bytes | bytearray,
+        ctx: CharacteristicContext | None = ...,
+    ) -> Any: ...  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+
+    def parse_characteristic(
+        self,
+        char: str | type[BaseCharacteristic[T]],
         raw_data: bytes | bytearray,
         ctx: CharacteristicContext | None = None,
-    ) -> Any:
+    ) -> T | Any:  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
         r"""Parse a characteristic's raw data using Bluetooth SIG standards.
 
         Args:
-            uuid: The characteristic UUID (with or without dashes)
+            char: Characteristic class (type-safe) or UUID string (not type-safe).
             raw_data: Raw bytes from the characteristic (bytes or bytearray)
             ctx: Optional CharacteristicContext providing device-level info
 
         Returns:
-            Parsed value of the appropriate type
+            Parsed value. Return type is inferred when passing characteristic class.
+
+            - Primitives: ``int``, ``float``, ``str``, ``bool``
+            - Dataclasses: ``NavigationData``, ``HeartRateMeasurement``, etc.
+            - Special values: ``SpecialValueResult`` (via exception)
 
         Raises:
             SpecialValueDetected: Special sentinel value detected
             CharacteristicParseError: Parse/validation failure
 
-        Example:
-            Parse battery level data::
+        Example::
 
-                from bluetooth_sig import BluetoothSIGTranslator
+            from bluetooth_sig import BluetoothSIGTranslator
+            from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 
-                translator = BluetoothSIGTranslator()
-                try:
-                    value = translator.parse_characteristic("2A19", b"\x64")
-                    print(f"Battery: {value}%")  # Battery: 100%
-                except CharacteristicParseError as e:
-                    print(f"Parse failed: {e}")
+            translator = BluetoothSIGTranslator()
+
+            # Type-safe: pass characteristic class, return type is inferred
+            level: int = translator.parse_characteristic(BatteryLevelCharacteristic, b"\\x64")
+
+            # Not type-safe: pass UUID string, returns Any
+            value = translator.parse_characteristic("2A19", b"\\x64")
 
         """
-        logger.debug("Parsing characteristic UUID=%s, data_len=%d", uuid, len(raw_data))
+        # Handle characteristic class input (type-safe path)
+        if isinstance(char, type) and issubclass(char, BaseCharacteristic):
+            char_instance = char()
+            logger.debug("Parsing characteristic class=%s, data_len=%d", char.__name__, len(raw_data))
+            try:
+                value = char_instance.parse_value(raw_data, ctx)
+                logger.debug("Successfully parsed %s: %s", char_instance.name, value)
+                return value
+            except SpecialValueDetected as e:
+                logger.debug("Special value detected for %s: %s", char_instance.name, e.special_value.meaning)
+                raise
+            except CharacteristicParseError as e:
+                logger.warning("Parse failed for %s: %s", char_instance.name, e)
+                raise
+
+        # Handle string UUID input (not type-safe path)
+        logger.debug("Parsing characteristic UUID=%s, data_len=%d", char, len(raw_data))
 
         # Create characteristic instance for parsing
-        characteristic = CharacteristicRegistry.create_characteristic(uuid)
+        characteristic = CharacteristicRegistry.create_characteristic(char)
 
         if characteristic:
-            logger.debug("Found parser for UUID=%s: %s", uuid, type(characteristic).__name__)
+            logger.debug("Found parser for UUID=%s: %s", char, type(characteristic).__name__)
             # Use the parse_value method which raises exceptions on failure
             try:
                 value = characteristic.parse_value(raw_data, ctx)
@@ -151,32 +191,41 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 raise
         else:
             # No parser found, raise an error
-            logger.info("No parser available for UUID=%s", uuid)
+            logger.info("No parser available for UUID=%s", char)
             raise CharacteristicParseError(
-                message=f"No parser available for characteristic UUID: {uuid}",
-                characteristic=None,  # type: ignore[arg-type]
-                raw_data=raw_data,
+                message=f"No parser available for characteristic UUID: {char}",
+                name="Unknown",
+                uuid=BluetoothUUID(char),
+                raw_data=bytes(raw_data),
             )
+
+    @overload
+    def encode_characteristic(
+        self,
+        char: type[BaseCharacteristic[T]],
+        value: T,
+        validate: bool = ...,
+    ) -> bytes: ...
+
+    @overload
+    def encode_characteristic(
+        self,
+        char: str,
+        value: Any,  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+        validate: bool = ...,
+    ) -> bytes: ...
 
     def encode_characteristic(
         self,
-        uuid: str,
-        value: Any,  # noqa: ANN401
+        char: str | type[BaseCharacteristic[T]],
+        value: T | Any,  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
         validate: bool = True,
     ) -> bytes:
-        """Encode a value for writing to a characteristic.
-
-        This method provides the high-level API for encoding characteristic values,
-        mirroring how parse_characteristic() works for reading. It handles both
-        dataclass instances and dictionary inputs, automatically converting dicts
-        to the appropriate type.
+        r"""Encode a value for writing to a characteristic.
 
         Args:
-            uuid: The characteristic UUID (with or without dashes)
-            value: The value to encode. Can be:
-                - A dataclass instance of the characteristic's expected type
-                - A dictionary with fields matching the characteristic's type
-                - A primitive value (int, float, str, bool) for simple characteristics
+            char: Characteristic class (type-safe) or UUID string (not type-safe).
+            value: The value to encode. Type is checked when using characteristic class.
             validate: If True, validates the value before encoding (default: True)
 
         Returns:
@@ -185,31 +234,48 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Raises:
             ValueError: If UUID is invalid, characteristic not found, or value is invalid
             TypeError: If value type doesn't match characteristic's expected type
+            CharacteristicEncodeError: If encoding fails
 
-        Example:
-            Encode battery level for writing::
+        Example::
 
-                from bluetooth_sig import BluetoothSIGTranslator
+            from bluetooth_sig import BluetoothSIGTranslator
+            from bluetooth_sig.gatt.characteristics import AlertLevelCharacteristic
+            from bluetooth_sig.gatt.characteristics.alert_level import AlertLevel
 
-                translator = BluetoothSIGTranslator()
+            translator = BluetoothSIGTranslator()
 
-                # Simple value
-                data = translator.encode_characteristic("2A19", 85)
-                await client.write_gatt_char("2A19", data)
+            # Type-safe: pass characteristic class and typed value
+            data: bytes = translator.encode_characteristic(AlertLevelCharacteristic, AlertLevel.HIGH)
 
-                # Dict for complex types
-                data = translator.encode_characteristic("2C1D", {"x_axis": 1.5, "y_axis": 0.5, "z_axis": 9.8})
-                await client.write_gatt_char("2C1D", data)
+            # Not type-safe: pass UUID string
+            data = translator.encode_characteristic("2A06", 2)
 
         """
-        logger.debug("Encoding characteristic UUID=%s, value=%s", uuid, value)
+        # Handle characteristic class input (type-safe path)
+        if isinstance(char, type) and issubclass(char, BaseCharacteristic):
+            char_instance = char()
+            logger.debug("Encoding characteristic class=%s, value=%s", char.__name__, value)
+            try:
+                if validate:
+                    encoded = char_instance.build_value(value)
+                    logger.debug("Successfully encoded %s with validation", char_instance.name)
+                else:
+                    encoded = char_instance._encode_value(value)  # pylint: disable=protected-access
+                    logger.debug("Successfully encoded %s without validation", char_instance.name)
+                return bytes(encoded)
+            except Exception as e:
+                logger.error("Encoding failed for %s: %s", char_instance.name, e)
+                raise
+
+        # Handle string UUID input (not type-safe path)
+        logger.debug("Encoding characteristic UUID=%s, value=%s", char, value)
 
         # Create characteristic instance
-        characteristic = CharacteristicRegistry.create_characteristic(uuid)
+        characteristic = CharacteristicRegistry.create_characteristic(char)
         if not characteristic:
-            raise ValueError(f"No encoder available for characteristic UUID: {uuid}")
+            raise ValueError(f"No encoder available for characteristic UUID: {char}")
 
-        logger.debug("Found encoder for UUID=%s: %s", uuid, type(characteristic).__name__)
+        logger.debug("Found encoder for UUID=%s: %s", char, type(characteristic).__name__)
 
         # Handle dict input - convert to proper type
         if isinstance(value, dict):
@@ -222,7 +288,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                     logger.debug("Converted dict to %s", value_type.__name__)
                 except (TypeError, ValueError) as e:
                     type_name = getattr(value_type, "__name__", str(value_type))
-                    raise TypeError(f"Failed to convert dict to {type_name} for characteristic {uuid}: {e}") from e
+                    raise TypeError(f"Failed to convert dict to {type_name} for characteristic {char}: {e}") from e
 
         # Encode using build_value (with validation) or encode_value (without)
         try:
@@ -742,8 +808,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 value = self.parse_characteristic(uuid_str, raw_data, ctx=parse_context)
                 results[uuid_str] = value
             except (CharacteristicParseError, SpecialValueDetected):
-                # Re-raise parse errors for individual characteristics
-                raise
+                # Re-raise parse errors for individual characteristics - intentional passthrough
+                raise  # pylint: disable=try-except-raise
 
         logger.debug("Batch parsing complete: %d results", len(results))
         return results
@@ -857,17 +923,15 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         results: Mapping[str, Any],
     ) -> CharacteristicContext:
         """Construct the context passed to per-characteristic parsers."""
-        results_mapping = cast(Mapping[str, Any], results)
-
         if base_context is not None:
             return CharacteristicContext(
                 device_info=base_context.device_info,
                 advertisement=base_context.advertisement,
-                other_characteristics=results_mapping,
+                other_characteristics=results,
                 raw_service=base_context.raw_service,
             )
 
-        return CharacteristicContext(other_characteristics=results_mapping)
+        return CharacteristicContext(other_characteristics=results)
 
     def get_characteristics_info_by_uuids(self, uuids: list[str]) -> dict[str, CharacteristicInfo | None]:
         """Get information about multiple characteristics by UUID.
@@ -910,7 +974,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 is_valid=True,
                 actual_length=len(data),
                 expected_length=expected,
-                error_message=None,
+                error_message="",
             )
         except Exception as e:  # pylint: disable=broad-exception-caught
             # If parsing failed, data format is invalid
@@ -1040,12 +1104,28 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
     # Async methods for non-blocking operation in async contexts
 
+    @overload
     async def parse_characteristic_async(
         self,
-        uuid: str | BluetoothUUID,
+        char: type[BaseCharacteristic[T]],
+        raw_data: bytes,
+        ctx: CharacteristicContext | None = ...,
+    ) -> T: ...
+
+    @overload
+    async def parse_characteristic_async(
+        self,
+        char: str | BluetoothUUID,
+        raw_data: bytes,
+        ctx: CharacteristicContext | None = ...,
+    ) -> Any: ...  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+
+    async def parse_characteristic_async(
+        self,
+        char: str | BluetoothUUID | type[BaseCharacteristic[T]],
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-    ) -> Any:
+    ) -> T | Any:  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
         """Parse characteristic data in an async-compatible manner.
 
         This is an async wrapper that allows characteristic parsing to be used
@@ -1053,12 +1133,12 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         a fast, CPU-bound operation that doesn't benefit from async I/O.
 
         Args:
-            uuid: The characteristic UUID (string or BluetoothUUID)
+            char: Characteristic class (type-safe) or UUID string/BluetoothUUID (not type-safe).
             raw_data: Raw bytes from the characteristic
             ctx: Optional context providing device-level info
 
         Returns:
-            Parsed characteristic value
+            Parsed value. Return type is inferred when passing characteristic class.
 
         Raises:
             SpecialValueDetected: Special sentinel value detected
@@ -1068,14 +1148,22 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
             async with BleakClient(address) as client:
                 data = await client.read_gatt_char("2A19")
-                try:
-                    value = await translator.parse_characteristic_async("2A19", data)
-                    print(f"Battery: {value}%")
-                except CharacteristicParseError as e:
-                    print(f"Parse failed: {e}")
+
+                # Type-safe: pass characteristic class
+                from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+
+                level: int = await translator.parse_characteristic_async(BatteryLevelCharacteristic, data)
+
+                # Not type-safe: pass UUID string
+                value = await translator.parse_characteristic_async("2A19", data)
+
         """
+        # Handle characteristic class input (type-safe path)
+        if isinstance(char, type) and issubclass(char, BaseCharacteristic):
+            return self.parse_characteristic(char, raw_data, ctx)
+
         # Convert to string for consistency with sync API
-        uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
+        uuid_str = str(char) if isinstance(char, BluetoothUUID) else char
 
         # Delegate to sync implementation
         return self.parse_characteristic(uuid_str, raw_data, ctx)

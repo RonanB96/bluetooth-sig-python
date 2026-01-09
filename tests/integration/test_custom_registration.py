@@ -174,9 +174,7 @@ class TestRuntimeRegistration:
         test_data = bytes([0x34, 0x12])  # 0x1234 = 4660
         result = translator.parse_characteristic("abcd1234-0000-1000-8000-00805f9b34fb", test_data)
 
-        assert result.parse_success
-        assert result.value == 4660
-        assert result.name == "CustomCharacteristicImpl"
+        assert result == 4660
 
     def test_conflict_detection(self) -> None:
         """Test that conflicts with SIG entries are detected."""

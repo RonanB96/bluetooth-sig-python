@@ -75,7 +75,7 @@ class TestNewAlertCharacteristic(CommonCharacteristicTests):
         data = bytearray([0x0A, 0x01])  # 10 is reserved
         with pytest.raises(CharacteristicParseError) as exc_info:
             characteristic.parse_value(data)
-        assert "category id" in str(exc_info.value).lower()
+        assert "alertcategoryid" in str(exc_info.value).lower()
 
     def test_roundtrip(self, characteristic: NewAlertCharacteristic) -> None:
         """Test encode/decode roundtrip."""

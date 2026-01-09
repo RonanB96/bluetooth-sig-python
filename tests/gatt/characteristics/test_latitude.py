@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics.latitude import LatitudeCharacteristic
-from bluetooth_sig.gatt.exceptions import ValueRangeError
+from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -47,7 +47,7 @@ class TestLatitudeCharacteristic(CommonCharacteristicTests):
         invalid_values = [-90.1, 90.1, -100.0, 100.0]
 
         for invalid_lat in invalid_values:
-            with pytest.raises(ValueRangeError):
+            with pytest.raises(CharacteristicEncodeError):
                 characteristic.build_value(invalid_lat)
 
     def test_latitude_precision(self, characteristic: LatitudeCharacteristic) -> None:

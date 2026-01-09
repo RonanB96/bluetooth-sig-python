@@ -10,6 +10,7 @@ from bluetooth_sig.gatt.characteristics.time_update_state import (
     TimeUpdateState,
     TimeUpdateStateCharacteristic,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -112,31 +113,31 @@ class TestTimeUpdateStateCharacteristic(CommonCharacteristicTests):
         """Test that invalid data lengths result in parse failure."""
         char = TimeUpdateStateCharacteristic()
 
-        # Test too short - parse_value returns parse_success=False
-        result = char.parse_value(bytearray([0x00]))
-        assert result.parse_success is False
-        assert result.error_message == "Time Update State requires 2 bytes, got 1"
+        # Test too short
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([0x00]))
+        assert "Time Update State requires 2 bytes, got 1" in str(exc_info.value)
 
-        # Test too long - also returns parse_success=False
-        result = char.parse_value(bytearray([0x00, 0x00, 0x00]))
-        assert result.parse_success is False
-        assert result.error_message == "Time Update State requires 2 bytes, got 3"
+        # Test too long - also raises CharacteristicParseError
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([0x00, 0x00, 0x00]))
+        assert "Time Update State requires 2 bytes, got 3" in str(exc_info.value)
 
     def test_invalid_current_state_raises_error(self) -> None:
         """Test that invalid current state values result in parse failure."""
         char = TimeUpdateStateCharacteristic()
 
-        # Test invalid current state - parse_value returns parse_success=False
-        result = char.parse_value(bytearray([0xFF, 0x00]))
-        assert result.parse_success is False
+        # Test invalid current state
+        with pytest.raises(CharacteristicParseError):
+            char.parse_value(bytearray([0xFF, 0x00]))
 
     def test_invalid_result_raises_error(self) -> None:
         """Test that invalid result values result in parse failure."""
         char = TimeUpdateStateCharacteristic()
 
-        # Test invalid result - parse_value returns parse_success=False
-        result = char.parse_value(bytearray([0x00, 0xFF]))
-        assert result.parse_success is False
+        # Test invalid result
+        with pytest.raises(CharacteristicParseError):
+            char.parse_value(bytearray([0x00, 0xFF]))
 
     def test_current_state_enum_values(self) -> None:
         """Test that current state enum has expected values."""

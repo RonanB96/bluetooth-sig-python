@@ -30,7 +30,6 @@ from typing import Any
 
 import simplepyble
 
-from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from bluetooth_sig.types.uuid import BluetoothUUID
 from examples.utils.models import DeviceInfo, ReadResult
 
@@ -75,7 +74,7 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[DeviceInfo]:
 
 def read_and_parse_with_simpleble(
     address: str, target_uuids: list[str] | None = None
-) -> dict[str, ReadResult] | dict[str, CharacteristicData[Any]]:
+) -> dict[str, ReadResult] | dict[str, Any]:
     """Read characteristics from a BLE device using SimpleBLE and parse with SIG standards."""
     from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
 
@@ -116,47 +115,36 @@ def handle_device_operations_simpleble(args: argparse.Namespace) -> None:
 
 
 def display_simpleble_results(
-    results: dict[str, ReadResult] | dict[str, CharacteristicData[Any]] | dict[BluetoothUUID, CharacteristicData[Any]],
+    results: dict[str, ReadResult] | dict[str, Any] | dict[BluetoothUUID, Any],
 ) -> None:
     """Display SimpleBLE results in a consistent format.
 
     Accepts either a mapping of short UUID strings to :class:`ReadResult`
-    or to :class:`CharacteristicData` objects produced by the translator.
+    or to parsed values produced by the translator.
     """
     if not results:
         print("No results to display")
         return
 
-    # Normalise BluetoothUUID keys to short strings if needed. Use a
-    # precise union type for values so the type checker can narrow
-    # correctly on runtime type checks.
-    normalized: dict[str, ReadResult | CharacteristicData[Any] | dict[str, Any]] = {}
+    # Normalise BluetoothUUID keys to short strings if needed.
+    normalized: dict[str, ReadResult | dict[str, Any] | Any] = {}
     for k, v in results.items():
         key_str = str(k)
-        normalized[key_str] = v  # type: ignore[assignment]
+        normalized[key_str] = v
 
     for uuid_short, value in normalized.items():
         # ReadResult from connection helpers
         if isinstance(value, ReadResult):
-            if value.parsed and getattr(value.parsed, "parse_success", False):
-                unit_str = f" {value.parsed.unit}" if getattr(value.parsed, "unit", None) else ""
-                print(f"{value.parsed.name}: {value.parsed.value}{unit_str}")
+            if value.parsed is not None:
+                print(f"{uuid_short}: {value.parsed}")
             elif value.error:
                 print(f"{uuid_short}: Error - {value.error}")
             else:
                 print(f"{uuid_short}: Raw {len(value.raw_data)} bytes (read_time={value.read_time:.3f}s)")
 
-        # CharacteristicData objects
-        elif isinstance(value, CharacteristicData):
-            if value.parse_success:
-                unit_str = f" {value.unit}" if value.unit else ""
-                print(f"{value.name}: {value.value}{unit_str}")
-            else:
-                print(f"{str(value.uuid)}: Parse failed")
-
         # Loose dict fallback (legacy forms)
         elif isinstance(value, dict):
-            mapping = value  # type: ignore[assignment]
+            mapping = value
             if mapping.get("parse_success"):
                 unit_val = mapping.get("unit", "")
                 unit_str = f" {unit_val}" if unit_val else ""
@@ -169,7 +157,8 @@ def display_simpleble_results(
                 print(f"{uuid_short}: Unknown legacy dict format")
 
         else:
-            print(f"{uuid_short}: Unsupported result type: {type(value)!r}")  # type: ignore[unreachable]
+            # Direct parsed value
+            print(f"{uuid_short}: {value}")
 
 
 def main() -> None:  # pylint: disable=too-many-nested-blocks

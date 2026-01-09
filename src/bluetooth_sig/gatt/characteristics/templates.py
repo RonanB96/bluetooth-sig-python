@@ -65,16 +65,30 @@ from .utils.translators import (
 )
 
 # =============================================================================
+# TYPE VARIABLES
+# =============================================================================
+
+# Type variable for CodingTemplate generic - represents the decoded value type
+T_co = TypeVar("T_co", covariant=True)
+
+# Type variable for EnumTemplate - bound to IntEnum
+T = TypeVar("T", bound=IntEnum)
+
+
+# =============================================================================
 # LEVEL 4 BASE CLASS
 # =============================================================================
 
 
-class CodingTemplate(ABC):
+class CodingTemplate(ABC, Generic[T_co]):
     """Abstract base class for coding templates.
 
     Templates are pure coding utilities that don't inherit from BaseCharacteristic.
     They provide coding strategies that can be injected into characteristics.
     All templates MUST inherit from this base class and implement the required methods.
+
+    Generic over T_co, the type of value produced by _decode_value.
+    Concrete templates specify their return type, e.g., CodingTemplate[int].
 
     Pipeline Integration:
         Simple templates (single-field) expose `extractor` and `translator` properties
@@ -82,7 +96,7 @@ class CodingTemplate(ABC):
     """
 
     @abstractmethod
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> Any:  # noqa: ANN401  # Returns various types (int, float, str, dataclass)
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> T_co:
         """Decode raw bytes to typed value.
 
         Args:
@@ -91,12 +105,12 @@ class CodingTemplate(ABC):
             ctx: Optional context for parsing
 
         Returns:
-            Parsed value of appropriate type (int, float, str, bytes, or custom dataclass)
+            Parsed value of type T_co
 
         """
 
     @abstractmethod
-    def _encode_value(self, value: Any) -> bytearray:  # noqa: ANN401  # Accepts various value types (int, float, str, dataclass)
+    def encode_value(self, value: T_co) -> bytearray:  # type: ignore[misc]  # Covariant type in parameter is intentional for encode/decode symmetry
         """Encode typed value to raw bytes.
 
         Args:
@@ -159,19 +173,11 @@ class TimeData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=to
 
 
 # =============================================================================
-# TYPE VARIABLES
-# =============================================================================
-
-
-T = TypeVar("T", bound=IntEnum)
-
-
-# =============================================================================
 # BASIC INTEGER TEMPLATES
 # =============================================================================
 
 
-class Uint8Template(CodingTemplate):
+class Uint8Template(CodingTemplate[int]):
     """Template for 8-bit unsigned integer parsing (0-255)."""
 
     @property
@@ -189,20 +195,20 @@ class Uint8Template(CodingTemplate):
         """Return identity translator for no scaling."""
         return IDENTITY
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse 8-bit unsigned integer."""
         if len(data) < offset + 1:
             raise InsufficientDataError("uint8", data[offset:], 1)
         return self.extractor.extract(data, offset)
 
-    def _encode_value(self, value: int) -> bytearray:
+    def encode_value(self, value: int) -> bytearray:
         """Encode uint8 value to bytes."""
         if not 0 <= value <= UINT8_MAX:
             raise ValueError(f"Value {value} out of range for uint8 (0-{UINT8_MAX})")
         return self.extractor.pack(value)
 
 
-class Sint8Template(CodingTemplate):
+class Sint8Template(CodingTemplate[int]):
     """Template for 8-bit signed integer parsing (-128 to 127)."""
 
     @property
@@ -220,20 +226,20 @@ class Sint8Template(CodingTemplate):
         """Return identity translator for no scaling."""
         return IDENTITY
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse 8-bit signed integer."""
         if len(data) < offset + 1:
             raise InsufficientDataError("sint8", data[offset:], 1)
         return self.extractor.extract(data, offset)
 
-    def _encode_value(self, value: int) -> bytearray:
+    def encode_value(self, value: int) -> bytearray:
         """Encode sint8 value to bytes."""
         if not SINT8_MIN <= value <= SINT8_MAX:
             raise ValueError(f"Value {value} out of range for sint8 ({SINT8_MIN} to {SINT8_MAX})")
         return self.extractor.pack(value)
 
 
-class Uint16Template(CodingTemplate):
+class Uint16Template(CodingTemplate[int]):
     """Template for 16-bit unsigned integer parsing (0-65535)."""
 
     @property
@@ -251,20 +257,20 @@ class Uint16Template(CodingTemplate):
         """Return identity translator for no scaling."""
         return IDENTITY
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse 16-bit unsigned integer."""
         if len(data) < offset + 2:
             raise InsufficientDataError("uint16", data[offset:], 2)
         return self.extractor.extract(data, offset)
 
-    def _encode_value(self, value: int) -> bytearray:
+    def encode_value(self, value: int) -> bytearray:
         """Encode uint16 value to bytes."""
         if not 0 <= value <= UINT16_MAX:
             raise ValueError(f"Value {value} out of range for uint16 (0-{UINT16_MAX})")
         return self.extractor.pack(value)
 
 
-class Sint16Template(CodingTemplate):
+class Sint16Template(CodingTemplate[int]):
     """Template for 16-bit signed integer parsing (-32768 to 32767)."""
 
     @property
@@ -282,20 +288,20 @@ class Sint16Template(CodingTemplate):
         """Return identity translator for no scaling."""
         return IDENTITY
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse 16-bit signed integer."""
         if len(data) < offset + 2:
             raise InsufficientDataError("sint16", data[offset:], 2)
         return self.extractor.extract(data, offset)
 
-    def _encode_value(self, value: int) -> bytearray:
+    def encode_value(self, value: int) -> bytearray:
         """Encode sint16 value to bytes."""
         if not SINT16_MIN <= value <= SINT16_MAX:
             raise ValueError(f"Value {value} out of range for sint16 ({SINT16_MIN} to {SINT16_MAX})")
         return self.extractor.pack(value)
 
 
-class Uint24Template(CodingTemplate):
+class Uint24Template(CodingTemplate[int]):
     """Template for 24-bit unsigned integer parsing (0-16777215)."""
 
     @property
@@ -313,20 +319,20 @@ class Uint24Template(CodingTemplate):
         """Return identity translator for no scaling."""
         return IDENTITY
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse 24-bit unsigned integer."""
         if len(data) < offset + 3:
             raise InsufficientDataError("uint24", data[offset:], 3)
         return self.extractor.extract(data, offset)
 
-    def _encode_value(self, value: int) -> bytearray:
+    def encode_value(self, value: int) -> bytearray:
         """Encode uint24 value to bytes."""
         if not 0 <= value <= UINT24_MAX:
             raise ValueError(f"Value {value} out of range for uint24 (0-{UINT24_MAX})")
         return self.extractor.pack(value)
 
 
-class Uint32Template(CodingTemplate):
+class Uint32Template(CodingTemplate[int]):
     """Template for 32-bit unsigned integer parsing."""
 
     @property
@@ -344,20 +350,20 @@ class Uint32Template(CodingTemplate):
         """Return identity translator for no scaling."""
         return IDENTITY
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse 32-bit unsigned integer."""
         if len(data) < offset + 4:
             raise InsufficientDataError("uint32", data[offset:], 4)
         return self.extractor.extract(data, offset)
 
-    def _encode_value(self, value: int) -> bytearray:
+    def encode_value(self, value: int) -> bytearray:
         """Encode uint32 value to bytes."""
         if not 0 <= value <= UINT32_MAX:
             raise ValueError(f"Value {value} out of range for uint32 (0-{UINT32_MAX})")
         return self.extractor.pack(value)
 
 
-class EnumTemplate(CodingTemplate, Generic[T]):
+class EnumTemplate(CodingTemplate[T]):
     """Template for IntEnum encoding/decoding with configurable byte size.
 
     Maps raw integer bytes to Python IntEnum instances through extraction and validation.
@@ -382,13 +388,13 @@ class EnumTemplate(CodingTemplate, Generic[T]):
         >>> template = EnumTemplate(Status, UINT8)
         >>>
         >>> # Decode from bytes
-        >>> status = template._decode_value(bytearray([0x01]))  # Status.ACTIVE
+        >>> status = template.decode_value(bytearray([0x01]))  # Status.ACTIVE
         >>>
         >>> # Encode enum to bytes
-        >>> data = template._encode_value(Status.ERROR)  # bytearray([0x02])
+        >>> data = template.encode_value(Status.ERROR)  # bytearray([0x02])
         >>>
         >>> # Encode int to bytes (also supported)
-        >>> data = template._encode_value(2)  # bytearray([0x02])
+        >>> data = template.encode_value(2)  # bytearray([0x02])
     """
 
     def __init__(self, enum_class: type[T], extractor: RawExtractor) -> None:
@@ -417,7 +423,7 @@ class EnumTemplate(CodingTemplate, Generic[T]):
         """Get IDENTITY translator for enums (no scaling needed)."""
         return IDENTITY
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> T:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> T:
         """Decode bytes to enum instance.
 
         Args:
@@ -449,7 +455,7 @@ class EnumTemplate(CodingTemplate, Generic[T]):
             max_val = max(valid_values)
             raise ValueRangeError(self._enum_class.__name__, raw_value, min_val, max_val) from e
 
-    def _encode_value(self, value: T | int) -> bytearray:
+    def encode_value(self, value: T | int) -> bytearray:
         """Encode enum instance or int to bytes.
 
         Args:
@@ -574,7 +580,7 @@ class EnumTemplate(CodingTemplate, Generic[T]):
 # =============================================================================
 
 
-class ScaledTemplate(CodingTemplate):
+class ScaledTemplate(CodingTemplate[float]):
     """Base class for scaled integer templates.
 
     Handles common scaling logic: value = (raw + offset) * scale_factor
@@ -616,12 +622,12 @@ class ScaledTemplate(CodingTemplate):
         """Get the value translator for pipeline access."""
         return self._translator
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
         """Parse scaled integer value."""
         raw_value = self._extractor.extract(data, offset)
         return self._translator.translate(raw_value)
 
-    def _encode_value(self, value: float) -> bytearray:
+    def encode_value(self, value: float) -> bytearray:
         """Encode scaled value to bytes."""
         raw_value = self._translator.untranslate(value)
         self._check_range(raw_value)
@@ -913,7 +919,7 @@ class ScaledSint32Template(ScaledTemplate):
 # =============================================================================
 
 
-class PercentageTemplate(CodingTemplate):
+class PercentageTemplate(CodingTemplate[int]):
     """Template for percentage values (0-100%) using uint8."""
 
     @property
@@ -931,7 +937,7 @@ class PercentageTemplate(CodingTemplate):
         """Return identity translator since validation is separate from translation."""
         return IDENTITY
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> int:
         """Parse percentage value."""
         if len(data) < offset + 1:
             raise InsufficientDataError("percentage", data[offset:], 1)
@@ -940,7 +946,7 @@ class PercentageTemplate(CodingTemplate):
             raise ValueRangeError("percentage", value, 0, PERCENTAGE_MAX)
         return self.translator.translate(value)
 
-    def _encode_value(self, value: int) -> bytearray:
+    def encode_value(self, value: int) -> bytearray:
         """Encode percentage value to bytes."""
         if not 0 <= value <= PERCENTAGE_MAX:
             raise ValueError(f"Percentage value {value} out of range (0-{PERCENTAGE_MAX})")
@@ -948,7 +954,7 @@ class PercentageTemplate(CodingTemplate):
         return self.extractor.pack(raw)
 
 
-class TemperatureTemplate(CodingTemplate):
+class TemperatureTemplate(CodingTemplate[float]):
     """Template for standard Bluetooth SIG temperature format (sint16, 0.01°C resolution)."""
 
     def __init__(self) -> None:
@@ -970,16 +976,16 @@ class TemperatureTemplate(CodingTemplate):
         """Return the linear translator from the underlying scaled template."""
         return self._scaled_template.translator
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
         """Parse temperature in 0.01°C resolution."""
-        return self._scaled_template._decode_value(data, offset)  # pylint: disable=protected-access
+        return self._scaled_template.decode_value(data, offset)  # pylint: disable=protected-access
 
-    def _encode_value(self, value: float) -> bytearray:
+    def encode_value(self, value: float) -> bytearray:
         """Encode temperature to bytes."""
-        return self._scaled_template._encode_value(value)  # pylint: disable=protected-access
+        return self._scaled_template.encode_value(value)  # pylint: disable=protected-access
 
 
-class ConcentrationTemplate(CodingTemplate):
+class ConcentrationTemplate(CodingTemplate[float]):
     """Template for concentration measurements with configurable resolution.
 
     Used for environmental sensors like CO2, VOC, particulate matter, etc.
@@ -1039,16 +1045,16 @@ class ConcentrationTemplate(CodingTemplate):
         """Return the linear translator from the underlying scaled template."""
         return self._scaled_template.translator
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
         """Parse concentration with resolution."""
-        return self._scaled_template._decode_value(data, offset)  # pylint: disable=protected-access
+        return self._scaled_template.decode_value(data, offset)  # pylint: disable=protected-access
 
-    def _encode_value(self, value: float) -> bytearray:
+    def encode_value(self, value: float) -> bytearray:
         """Encode concentration value to bytes."""
-        return self._scaled_template._encode_value(value)  # pylint: disable=protected-access
+        return self._scaled_template.encode_value(value)  # pylint: disable=protected-access
 
 
-class PressureTemplate(CodingTemplate):
+class PressureTemplate(CodingTemplate[float]):
     """Template for pressure measurements (uint32, 0.1 Pa resolution)."""
 
     def __init__(self) -> None:
@@ -1070,16 +1076,16 @@ class PressureTemplate(CodingTemplate):
         """Return the linear translator from the underlying scaled template."""
         return self._scaled_template.translator
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
         """Parse pressure in 0.1 Pa resolution (returns Pa)."""
-        return self._scaled_template._decode_value(data, offset)  # pylint: disable=protected-access
+        return self._scaled_template.decode_value(data, offset)  # pylint: disable=protected-access
 
-    def _encode_value(self, value: float) -> bytearray:
+    def encode_value(self, value: float) -> bytearray:
         """Encode pressure to bytes."""
-        return self._scaled_template._encode_value(value)  # pylint: disable=protected-access
+        return self._scaled_template.encode_value(value)  # pylint: disable=protected-access
 
 
-class TimeDataTemplate(CodingTemplate):
+class TimeDataTemplate(CodingTemplate[TimeData]):
     """Template for Bluetooth SIG time data parsing (10 bytes).
 
     Used for Current Time and Time with DST characteristics.
@@ -1096,7 +1102,7 @@ class TimeDataTemplate(CodingTemplate):
         """Size: 10 bytes."""
         return self.LENGTH
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> TimeData:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> TimeData:
         """Parse time data from bytes."""
         if len(data) < offset + self.LENGTH:
             raise InsufficientDataError("time data", data[offset:], self.LENGTH)
@@ -1127,7 +1133,7 @@ class TimeDataTemplate(CodingTemplate):
             date_time=date_time, day_of_week=day_of_week, fractions256=fractions256, adjust_reason=adjust_reason
         )
 
-    def _encode_value(self, value: TimeData) -> bytearray:
+    def encode_value(self, value: TimeData) -> bytearray:
         """Encode time data to bytes."""
         result = bytearray()
 
@@ -1156,7 +1162,7 @@ class TimeDataTemplate(CodingTemplate):
         return result
 
 
-class IEEE11073FloatTemplate(CodingTemplate):
+class IEEE11073FloatTemplate(CodingTemplate[float]):
     """Template for IEEE 11073 SFLOAT format (16-bit medical device float)."""
 
     @property
@@ -1174,20 +1180,20 @@ class IEEE11073FloatTemplate(CodingTemplate):
         """Get SFLOAT translator."""
         return SFLOAT
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
         """Parse IEEE 11073 SFLOAT format."""
         if len(data) < offset + 2:
             raise InsufficientDataError("IEEE11073 SFLOAT", data[offset:], 2)
         raw = self.extractor.extract(data, offset)
         return self.translator.translate(raw)
 
-    def _encode_value(self, value: float) -> bytearray:
+    def encode_value(self, value: float) -> bytearray:
         """Encode value to IEEE 11073 SFLOAT format."""
         raw = self.translator.untranslate(value)
         return self.extractor.pack(raw)
 
 
-class Float32Template(CodingTemplate):
+class Float32Template(CodingTemplate[float]):
     """Template for IEEE-754 32-bit float parsing."""
 
     @property
@@ -1200,13 +1206,13 @@ class Float32Template(CodingTemplate):
         """Get float32 extractor."""
         return FLOAT32
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
         """Parse IEEE-754 32-bit float."""
         if len(data) < offset + 4:
             raise InsufficientDataError("float32", data[offset:], 4)
         return DataParser.parse_float32(data, offset)
 
-    def _encode_value(self, value: float) -> bytearray:
+    def encode_value(self, value: float) -> bytearray:
         """Encode float32 value to bytes."""
         return DataParser.encode_float32(float(value))
 
@@ -1216,7 +1222,7 @@ class Float32Template(CodingTemplate):
 # =============================================================================
 
 
-class Utf8StringTemplate(CodingTemplate):
+class Utf8StringTemplate(CodingTemplate[str]):
     """Template for UTF-8 string parsing with variable length."""
 
     def __init__(self, max_length: int = 256) -> None:
@@ -1233,7 +1239,7 @@ class Utf8StringTemplate(CodingTemplate):
         """Size: Variable (0 to max_length)."""
         return self.max_length
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> str:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> str:
         """Parse UTF-8 string from remaining data."""
         if offset >= len(data):
             return ""
@@ -1251,7 +1257,7 @@ class Utf8StringTemplate(CodingTemplate):
         except UnicodeDecodeError as e:
             raise ValueError(f"Invalid UTF-8 string data: {e}") from e
 
-    def _encode_value(self, value: str) -> bytearray:
+    def encode_value(self, value: str) -> bytearray:
         """Encode string to UTF-8 bytes."""
         encoded = value.encode("utf-8")
         if len(encoded) > self.max_length:
@@ -1259,7 +1265,7 @@ class Utf8StringTemplate(CodingTemplate):
         return bytearray(encoded)
 
 
-class Utf16StringTemplate(CodingTemplate):
+class Utf16StringTemplate(CodingTemplate[str]):
     """Template for UTF-16LE string parsing with variable length."""
 
     # Unicode constants for UTF-16 validation
@@ -1283,7 +1289,7 @@ class Utf16StringTemplate(CodingTemplate):
         """Size: Variable (0 to max_length, even bytes only)."""
         return self.max_length
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> str:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> str:
         """Parse UTF-16LE string from remaining data."""
         if offset >= len(data):
             return ""
@@ -1315,7 +1321,7 @@ class Utf16StringTemplate(CodingTemplate):
         except UnicodeDecodeError as e:
             raise ValueError(f"Invalid UTF-16LE string data: {e}") from e
 
-    def _encode_value(self, value: str) -> bytearray:
+    def encode_value(self, value: str) -> bytearray:
         """Encode string to UTF-16LE bytes."""
         encoded = value.encode("utf-16-le")
         if len(encoded) > self.max_length:
@@ -1328,7 +1334,7 @@ class Utf16StringTemplate(CodingTemplate):
 # =============================================================================
 
 
-class VectorTemplate(CodingTemplate):
+class VectorTemplate(CodingTemplate[VectorData]):
     """Template for 3D vector measurements (x, y, z float32 components)."""
 
     @property
@@ -1336,7 +1342,7 @@ class VectorTemplate(CodingTemplate):
         """Size: 12 bytes (3 x float32)."""
         return 12
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> VectorData:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> VectorData:
         """Parse 3D vector data."""
         if len(data) < offset + 12:
             raise InsufficientDataError("3D vector", data[offset:], 12)
@@ -1347,7 +1353,7 @@ class VectorTemplate(CodingTemplate):
 
         return VectorData(x_axis=x_axis, y_axis=y_axis, z_axis=z_axis)
 
-    def _encode_value(self, value: VectorData) -> bytearray:
+    def encode_value(self, value: VectorData) -> bytearray:
         """Encode 3D vector data to bytes."""
         result = bytearray()
         result.extend(DataParser.encode_float32(value.x_axis))
@@ -1356,7 +1362,7 @@ class VectorTemplate(CodingTemplate):
         return result
 
 
-class Vector2DTemplate(CodingTemplate):
+class Vector2DTemplate(CodingTemplate[Vector2DData]):
     """Template for 2D vector measurements (x, y float32 components)."""
 
     @property
@@ -1364,7 +1370,7 @@ class Vector2DTemplate(CodingTemplate):
         """Size: 8 bytes (2 x float32)."""
         return 8
 
-    def _decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> Vector2DData:
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> Vector2DData:
         """Parse 2D vector data."""
         if len(data) < offset + 8:
             raise InsufficientDataError("2D vector", data[offset:], 8)
@@ -1374,7 +1380,7 @@ class Vector2DTemplate(CodingTemplate):
 
         return Vector2DData(x_axis=x_axis, y_axis=y_axis)
 
-    def _encode_value(self, value: Vector2DData) -> bytearray:
+    def encode_value(self, value: Vector2DData) -> bytearray:
         """Encode 2D vector data to bytes."""
         result = bytearray()
         result.extend(DataParser.encode_float32(value.x_axis))

@@ -67,26 +67,30 @@ class TestBodySensorLocationCharacteristic(CommonCharacteristicTests):
 
     def test_invalid_length(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that invalid data length raises error."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         # Empty data - will fail when trying to access data[0]
-        result = characteristic.parse_value(bytearray([]))
-        assert not result.parse_success
-        assert "need 1 bytes" in result.error_message or "insufficient" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([]))
+        assert "need 1 bytes" in str(exc_info.value).lower() or "insufficient" in str(exc_info.value).lower()
 
         # Too much data - characteristic only reads first byte, extra bytes ignored
         result = characteristic.parse_value(bytearray([0x00, 0x00]))
-        assert result.parse_success  # Should succeed, only first byte is read
+        # Should succeed, only first byte is read
         assert result == BodySensorLocation.OTHER
 
     def test_invalid_value(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that invalid location value results in parse failure."""
-        # parse_value returns CharacteristicData with parse_success=False for invalid values
-        result = characteristic.parse_value(bytearray([0x07]))  # Out of range
-        assert result.parse_success is False
-        assert "BodySensorLocation" in (result.error_message or "")
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
-        result = characteristic.parse_value(bytearray([0xFF]))
-        assert result.parse_success is False
-        assert "BodySensorLocation" in (result.error_message or "")
+        # parse_value now raises CharacteristicParseError for invalid values
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x07]))  # Out of range
+        assert "BodySensorLocation" in str(exc_info.value)
+
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0xFF]))
+        assert "BodySensorLocation" in str(exc_info.value)
 
     def test_encode_value(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test encoding body sensor location to bytes."""

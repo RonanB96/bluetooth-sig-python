@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import UncertaintyCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -48,10 +49,10 @@ class TestUncertaintyCharacteristic(CommonCharacteristicTests):
 
     def test_uncertainty_error_handling(self, characteristic: UncertaintyCharacteristic) -> None:
         """Test Uncertainty error handling."""
-        # Test insufficient data - parse_value returns parse_success=False
-        result = characteristic.parse_value(bytearray([]))
-        assert result.parse_success is False
-        assert result.error_message == "Failed to parse int8 data []: need 1 bytes, got 0"
+        # Test insufficient data
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([]))
+        assert "need 1 bytes, got 0" in str(exc_info.value)
 
     def test_uncertainty_boundary_values(self, characteristic: UncertaintyCharacteristic) -> None:
         """Test Uncertainty boundary values."""

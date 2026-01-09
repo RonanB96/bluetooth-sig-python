@@ -11,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.body_composition_feature import (
     MassMeasurementResolution,
 )
 from bluetooth_sig.gatt.characteristics.body_composition_measurement import BodyCompositionMeasurementCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.gatt.services.body_composition import BodyCompositionService
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
@@ -97,7 +98,7 @@ class TestBodyCompositionMeasurementCharacteristic:
         char = BodyCompositionMeasurementCharacteristic()
 
         # Too short data
-        with pytest.raises(ValueError, match="at least 4 bytes"):
+        with pytest.raises(CharacteristicParseError, match="at least 4 bytes"):
             char.parse_value(bytearray([0x00, 0x00, 0xFA]))
 
     def test_unit_property(self) -> None:
@@ -149,7 +150,7 @@ class TestBodyCompositionFeatureCharacteristic:
         char = BodyCompositionFeatureCharacteristic()
 
         # Too short data
-        with pytest.raises(ValueError, match="at least 4 bytes"):
+        with pytest.raises(CharacteristicParseError, match="at least 4 bytes"):
             char.parse_value(bytearray([0x00, 0x00, 0x00]))
 
     def test_unit_property(self) -> None:

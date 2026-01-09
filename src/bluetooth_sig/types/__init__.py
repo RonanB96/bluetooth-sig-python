@@ -34,7 +34,6 @@ from .alert import (
     AlertCategoryBitMask,
     AlertCategoryID,
     AlertNotificationCommandID,
-    validate_category_id,
 )
 from .appearance import AppearanceData
 from .base_types import SIGInfo
@@ -175,5 +174,4 @@ __all__ = [
     "ValidationResult",
     "WeightUnit",
     "classify_special_value",
-    "validate_category_id",
 ]

@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import LocalNorthCoordinateCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -50,10 +51,10 @@ class TestLocalNorthCoordinateCharacteristic(CommonCharacteristicTests):
 
     def test_local_north_coordinate_error_handling(self, characteristic: LocalNorthCoordinateCharacteristic) -> None:
         """Test Local North Coordinate error handling."""
-        # Test insufficient data - parse_value returns parse_success=False
-        result = characteristic.parse_value(bytearray([0x12]))
-        assert result.parse_success is False
-        assert "3 bytes, got 1" in (result.error_message or "")
+        # Test insufficient data
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x12]))
+        assert "3 bytes, got 1" in str(exc_info.value)
 
     def test_local_north_coordinate_boundary_values(self, characteristic: LocalNorthCoordinateCharacteristic) -> None:
         """Test Local North Coordinate boundary values."""

@@ -69,10 +69,8 @@ class TestBaseCharacteristicValidation:
         value = char.parse_value(data)
 
         assert value == 50
-        # Check last_parsed for debugging info
-        assert char.last_parsed is not None
-        assert char.last_parsed.raw_data == bytes([50, 0])
-        assert char.last_parsed.characteristic._info.name == "Test Validation"
+        assert char.last_parsed == 50
+        assert char._info.name == "Test Validation"
 
     def test_failed_parse_with_length_validation(self) -> None:
         """Test parsing failure when length validation fails."""

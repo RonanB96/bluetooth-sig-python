@@ -15,7 +15,7 @@ class TestCCCDDescriptor:
         data = b"\x01\x00"  # Notifications enabled
 
         result = cccd.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CCCDData)
         assert result.value.notifications_enabled is True
         assert result.value.indications_enabled is False
@@ -26,7 +26,7 @@ class TestCCCDDescriptor:
         data = b"\x02\x00"  # Indications enabled
 
         result = cccd.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CCCDData)
         assert result.value.notifications_enabled is False
         assert result.value.indications_enabled is True
@@ -37,7 +37,7 @@ class TestCCCDDescriptor:
         data = b"\x03\x00"  # Both enabled
 
         result = cccd.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CCCDData)
         assert result.value.notifications_enabled is True
         assert result.value.indications_enabled is True
@@ -48,7 +48,7 @@ class TestCCCDDescriptor:
         data = b"\x00\x00"  # All disabled
 
         result = cccd.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CCCDData)
         assert result.value.notifications_enabled is False
         assert result.value.indications_enabled is False
@@ -59,7 +59,7 @@ class TestCCCDDescriptor:
         data = b"\x01"  # Too short
 
         result = cccd.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "CCCD data must be exactly 2 bytes" in result.error_message
 
     def test_create_enable_values(self) -> None:

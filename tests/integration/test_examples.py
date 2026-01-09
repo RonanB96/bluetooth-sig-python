@@ -283,11 +283,11 @@ def test_simpleble_integration_missing_backend(monkeypatch: pytest.MonkeyPatch) 
 
 
 class TestCanonicalShapes:
-    """Test that examples use canonical data shapes (CharacteristicData, ReadResult)."""
+    """Test that examples use canonical data shapes (parsed values, ReadResult)."""
 
     @pytest.mark.asyncio
     async def test_robust_device_reading_success_canonical_shape(self) -> None:
-        """Test that robust_device_reading returns canonical CharacteristicData dict on success."""
+        """Test that robust_device_reading returns dict of parsed values on success."""
         # This would normally require a real device, but we're testing the shape
         # In a real scenario, this would connect to a device and return parsed data
         # For testing purposes, we verify the function signature and return type
@@ -298,8 +298,8 @@ class TestCanonicalShapes:
         sig = inspect.signature(robust_device_reading)
         return_annotation = sig.return_annotation
 
-        # Verify return type annotation is canonical
-        assert str(return_annotation) == "dict[str, CharacteristicData]"
+        # Verify return type annotation is dict[str, Any]
+        assert "dict[str, Any]" in str(return_annotation)
 
     @pytest.mark.asyncio
     async def test_robust_device_reading_parse_failure_handling(self) -> None:
@@ -356,26 +356,21 @@ class TestCanonicalShapes:
 
     @pytest.mark.asyncio
     async def test_robust_service_discovery_canonical_shape(self) -> None:
-        """Test that robust_service_discovery returns canonical CharacteristicData dict."""
-        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+        """Test that robust_service_discovery returns dict of parsed values."""
         from examples.with_bleak_retry import robust_service_discovery
 
         # Currently returns empty dict, but should maintain canonical shape
         result = await robust_service_discovery("00:11:22:33:44:55")
 
         assert isinstance(result, dict)
-        # All values should be CharacteristicData instances if present
-        for value in result.values():
-            assert isinstance(value, CharacteristicData)
+        # Values are now parsed values directly (not CharacteristicData wrappers)
 
     def test_canonical_shape_imports(self) -> None:
-        """Test that canonical shape types are properly imported."""
-        # Verify that CharacteristicData is imported and available
-        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+        """Test that canonical parse exception types are properly imported."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError, SpecialValueDetected
 
-        # Should be able to instantiate (basic smoke test)
-        # Note: This tests import availability, not full functionality
-        assert CharacteristicData is not None
+        assert CharacteristicParseError is not None
+        assert SpecialValueDetected is not None
 
 
 if __name__ == "__main__":

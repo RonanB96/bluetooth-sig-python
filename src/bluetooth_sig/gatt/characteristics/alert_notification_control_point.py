@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import msgspec
 
-from ...types import ALERT_COMMAND_MAX, AlertCategoryID, AlertNotificationCommandID, validate_category_id
+from ...types import AlertCategoryID, AlertNotificationCommandID
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -53,30 +53,22 @@ class AlertNotificationControlPointCharacteristic(BaseCharacteristic[AlertNotifi
         """Decode Alert Notification Control Point data from bytes.
 
         Args:
-            data: Raw characteristic data (2 bytes)
+            data: Raw characteristic data (2 bytes, length validated by BaseCharacteristic)
             ctx: Optional characteristic context
 
         Returns:
             AlertNotificationControlPointData with all fields
 
         Raises:
-            ValueError: If data is insufficient or contains invalid values
+            ValueError: If data contains invalid values
 
         """
-        if len(data) < 2:
-            raise ValueError(
-                f"Insufficient data for Alert Notification Control Point: expected 2 bytes, got {len(data)}"
-            )
-
         # Parse Command ID (1 byte)
-        command_id_raw = DataParser.parse_int8(data, 0, signed=False)
-        if command_id_raw > ALERT_COMMAND_MAX:
-            raise ValueError(f"Invalid command ID: {command_id_raw} (valid range: 0-{ALERT_COMMAND_MAX})")
-        command_id = AlertNotificationCommandID(command_id_raw)
+        command_id = AlertNotificationCommandID(DataParser.parse_int8(data, 0, signed=False))
 
         # Parse Category ID (1 byte)
         category_id_raw = DataParser.parse_int8(data, 1, signed=False)
-        category_id = validate_category_id(category_id_raw)
+        category_id = AlertCategoryID(category_id_raw)
 
         return AlertNotificationControlPointData(
             command_id=command_id,
@@ -97,16 +89,6 @@ class AlertNotificationControlPointCharacteristic(BaseCharacteristic[AlertNotifi
 
         """
         result = bytearray()
-
-        # Encode Command ID (1 byte)
-        command_id_value = int(data.command_id)
-        if command_id_value > ALERT_COMMAND_MAX:
-            raise ValueError(f"Invalid command ID: {command_id_value} (valid range: 0-{ALERT_COMMAND_MAX})")
-        result.append(command_id_value)
-
-        # Encode Category ID (1 byte)
-        category_id_value = int(data.category_id)
-        validate_category_id(category_id_value)  # Validate the category ID value
-        result.append(category_id_value)
-
+        result.append(int(data.command_id))
+        result.append(int(data.category_id))
         return result

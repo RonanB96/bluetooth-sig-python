@@ -152,6 +152,72 @@ result = await translator.parse_characteristic_async("2A19", bytes([85]))
 
 Prefer the existing examples for full context: see `examples/async_ble_integration.py`.
 
+## Type-Safe vs Dynamic Parsing
+
+This library provides two approaches to characteristic parsing, each suited to different use cases.
+
+### Type-Safe: Characteristic Classes (Recommended)
+
+When you know the characteristic type at compile time, pass the characteristic class directly. This enables full type checking—the return type is automatically inferred from the class:
+
+```python
+from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.gatt.characteristics import (
+    BatteryLevelCharacteristic,
+    HeartRateMeasurementCharacteristic,
+)
+
+translator = BluetoothSIGTranslator()
+
+# Type-safe: IDE automatically infers return type as int
+raw_data = bytearray([85])
+level = translator.parse_characteristic(BatteryLevelCharacteristic, raw_data)
+print(f"Battery: {level}%")  # IDE knows level is int
+
+# Type-safe: IDE infers return type as HeartRateData
+hr_data = bytearray([0x00, 72])
+heart_rate = translator.parse_characteristic(
+    HeartRateMeasurementCharacteristic, hr_data
+)
+print(f"Heart rate: {heart_rate.heart_rate} bpm")  # IDE provides autocompletion
+
+# Type-safe encoding: IDE validates input type matches characteristic
+encoded = translator.encode_characteristic(BatteryLevelCharacteristic, 85)
+```
+
+**Why use this approach?**
+
+- IDE automatically infers return types—no manual type hints needed
+- Autocompletion shows available fields on parsed data
+- Type errors caught at compile time
+- No need to access `.value` from a result wrapper
+
+### Dynamic: UUID Strings
+
+For characteristics discovered at runtime (scanning unknown devices), use UUID strings. The return type is `Any` because the characteristic type is determined at runtime:
+
+```python
+from bluetooth_sig import BluetoothSIGTranslator
+
+translator = BluetoothSIGTranslator()
+
+# Not type-safe: returns ParseResult with value as Any
+result = translator.parse_characteristic("2A19", bytearray([85]))
+print(f"{result.info.name}: {result.value}%")
+
+# Loop through discovered characteristics
+for char_uuid in discovered_uuids:
+    if translator.supports(char_uuid):
+        result = translator.parse_characteristic(char_uuid, raw_data)
+        print(f"{result.info.name}: {result.value}")
+```
+
+**When to use this approach?**
+
+- Scanning unknown devices
+- Building generic BLE explorers
+- Dynamic characteristic discovery
+
 ## Real-World Usage Patterns
 
 ### Pattern 1: Fitness Tracker (Heart Rate + Battery)
@@ -467,7 +533,10 @@ async def main():
     translator = BluetoothSIGTranslator()
 
     # Device requires a connection manager - use one from examples/
-    from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+    from examples.connection_managers.bleak_retry import (
+        BleakRetryConnectionManager,
+    )
+
     connection_manager = BleakRetryConnectionManager(SIMULATED_DEVICE_ADDRESS)
 
     # Create device with connection manager and translator
@@ -516,7 +585,10 @@ async def discover_device(device_address):
     translator = BluetoothSIGTranslator()
 
     # Create connection manager and device
-    from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+    from examples.connection_managers.bleak_retry import (
+        BleakRetryConnectionManager,
+    )
+
     connection_manager = BleakRetryConnectionManager(device_address)
     device = Device(connection_manager, translator)
 
@@ -569,7 +641,9 @@ char = BatteryLevelCharacteristic()
 
 # Disable for permissive parsing
 char_permissive = BatteryLevelCharacteristic(validate=False)
-result = char_permissive.parse_value(bytearray([200]))  # Succeeds despite out-of-range
+result = char_permissive.parse_value(
+    bytearray([200])
+)  # Succeeds despite out-of-range
 ```
 
 Use `validate=False` for testing with synthetic data or debugging firmware. Keep validation enabled (default) for production code.

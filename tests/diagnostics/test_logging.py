@@ -21,7 +21,7 @@ class TestTranslatorLogging:
 
         result = translator.parse_characteristic("2A19", battery_data)
 
-        assert result.parse_success
+        assert result == 100
         # Check that debug logs were captured
         assert any("Parsing characteristic" in record.message for record in caplog.records)
         assert any("Found parser" in record.message for record in caplog.records)
@@ -42,27 +42,32 @@ class TestTranslatorLogging:
 
     def test_logging_info_level(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test info level logging for unknown characteristics."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         caplog.set_level(logging.INFO)
 
         translator = BluetoothSIGTranslator()
         unknown_data = bytes([0x01, 0x02])
 
         # Use a valid UUID format for an unknown characteristic
-        result = translator.parse_characteristic("00001234-0000-1000-8000-00805F9B34FB", unknown_data)
+        with pytest.raises(CharacteristicParseError):
+            translator.parse_characteristic("00001234-0000-1000-8000-00805F9B34FB", unknown_data)
 
-        assert not result.parse_success
         info_messages = [r.message for r in caplog.records if r.levelno == logging.INFO]
         assert any("No parser available" in msg for msg in info_messages)
 
     def test_logging_warning_level(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test warning level logging for parse failures."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         caplog.set_level(logging.WARNING)
 
         translator = BluetoothSIGTranslator()
         # Invalid data that should fail parsing (too short for battery level)
         invalid_data = bytes([])
 
-        translator.parse_characteristic("2A19", invalid_data)
+        with pytest.raises(CharacteristicParseError):
+            translator.parse_characteristic("2A19", invalid_data)
 
         # Should have warning about parse failure
         # May or may not have warnings depending on characteristic implementation

@@ -47,24 +47,24 @@ class TestApparentWindSpeedCharacteristic(CommonCharacteristicTests):
         """Test apparent wind speed characteristic parsing."""
         # Test parsing similar to true wind
         speed_data = bytearray([0x64, 0x00])  # 100 * 0.01 = 1.0 m/s
-        assert characteristic.parse_value(speed_data).value == 1.0
+        assert characteristic.parse_value(speed_data) == 1.0
 
     def test_apparent_wind_speed_boundary_values(self, characteristic: ApparentWindSpeedCharacteristic) -> None:
         """Test boundary apparent wind speed values."""
         # Calm
         data_min = bytearray([0x00, 0x00])
-        assert characteristic.parse_value(data_min).value == 0.0
+        assert characteristic.parse_value(data_min) == 0.0
 
         # Maximum
         data_max = bytearray([0xFF, 0xFF])
-        assert characteristic.parse_value(data_max).value == 655.35
+        assert characteristic.parse_value(data_max) == 655.35
 
     def test_apparent_wind_speed_various_conditions(self, characteristic: ApparentWindSpeedCharacteristic) -> None:
         """Test apparent wind speed under various conditions."""
         # Light breeze (5 m/s)
         data_light = bytearray([0xF4, 0x01])  # 500 * 0.01
-        assert characteristic.parse_value(data_light).value == 5.0
+        assert characteristic.parse_value(data_light) == 5.0
 
         # Strong breeze (15 m/s)
         data_strong = bytearray([0xDC, 0x05])  # 1500 * 0.01
-        assert characteristic.parse_value(data_strong).value == 15.0
+        assert characteristic.parse_value(data_strong) == 15.0

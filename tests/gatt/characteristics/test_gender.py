@@ -70,7 +70,7 @@ class TestGenderCharacteristic(CommonCharacteristicTests):
 
     def test_gender_invalid_values(self, characteristic: GenderCharacteristic) -> None:
         """Test gender with invalid values."""
-        # Test invalid value (3 is reserved) - parse_value raises CharacteristicParseError
+        # Test invalid value (3 is reserved)
         from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
         with pytest.raises(CharacteristicParseError) as exc_info:

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import msgspec
 
-from ...types import AlertCategoryID, validate_category_id
+from ...types import AlertCategoryID
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -54,7 +54,7 @@ class UnreadAlertStatusCharacteristic(BaseCharacteristic[UnreadAlertStatusData])
         """
         # Parse Category ID (1 byte)
         category_id_raw = DataParser.parse_int8(data, 0, signed=False)
-        category_id = validate_category_id(category_id_raw)
+        category_id = AlertCategoryID(category_id_raw)
 
         # Parse Unread Count (1 byte)
         unread_count = DataParser.parse_int8(data, 1, signed=False)
@@ -81,7 +81,6 @@ class UnreadAlertStatusCharacteristic(BaseCharacteristic[UnreadAlertStatusData])
 
         # Encode Category ID (1 byte)
         category_id_value = int(data.category_id)
-        validate_category_id(category_id_value)  # Validate the category ID value
         result.append(category_id_value)
 
         # Encode Unread Count (1 byte)

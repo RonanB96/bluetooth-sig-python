@@ -16,7 +16,7 @@ class TestProcessTolerancesDescriptor:
         data = b"\x01\x00\x00\x00"
 
         result = pt.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, ProcessTolerancesData)
         assert result.value.tolerance_min == 0x0001
         assert result.value.tolerance_max == 0x0000
@@ -27,7 +27,7 @@ class TestProcessTolerancesDescriptor:
         data = b"\x01\x00\x00"  # Too short
 
         result = pt.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Process Tolerances data expected 4 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:

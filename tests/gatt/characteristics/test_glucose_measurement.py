@@ -13,6 +13,7 @@ from bluetooth_sig.gatt.characteristics.glucose_measurement import (
     GlucoseType,
     SampleLocation,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -285,10 +286,10 @@ class TestGlucoseMeasurementCharacteristic(CommonCharacteristicTests):
 
     def test_glucose_measurement_invalid_data(self, characteristic: GlucoseMeasurementCharacteristic) -> None:
         """Test glucose measurement with invalid data."""
-        # Too short data - parse_value returns parse_success=False
-        result = characteristic.parse_value(bytearray([0x00, 0x01]))
-        assert result.parse_success is False
-        assert "at least 12 bytes" in (result.error_message or "")
+        # Too short data
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x01]))
+        assert "at least 12 bytes" in str(exc_info.value)
 
     def test_glucose_type_names(self) -> None:
         """Test glucose type name mapping."""

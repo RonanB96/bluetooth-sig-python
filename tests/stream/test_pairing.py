@@ -194,8 +194,10 @@ def test_blood_pressure_pairing_multiple_sessions() -> None:
 
     def group_key(_uuid: str, parsed: Any) -> datetime:
         # Group by timestamp - notifications with same timestamp are from same session
-        if parsed.optional_fields.timestamp:
-            return parsed.optional_fields.timestamp
+        ts = parsed.optional_fields.timestamp
+        if ts is not None:
+            assert isinstance(ts, datetime)
+            return ts
         raise ValueError("Test requires timestamp for grouping")
 
     def on_pair(results: dict[str, Any]) -> None:

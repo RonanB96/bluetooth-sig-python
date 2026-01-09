@@ -6,6 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import ManufacturerNameStringCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -43,10 +44,10 @@ class TestManufacturerNameStringCharacteristic(CommonCharacteristicTests):
     def test_invalid_utf8_raises_value_error(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that invalid UTF-8 data results in parse failure."""
         invalid_utf8 = bytearray([0xFF, 0xFE, 0xFD])  # Invalid UTF-8 sequence
-        # parse_value returns parse_success=False for invalid UTF-8
-        result = characteristic.parse_value(invalid_utf8)
-        assert result.parse_success is False
-        assert "Invalid UTF-8 string data" in (result.error_message or "")
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(invalid_utf8)
+
+        assert "Invalid UTF-8 string data" in str(exc_info.value)
 
     def test_null_terminated_string_handling(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that null-terminated strings are handled correctly."""

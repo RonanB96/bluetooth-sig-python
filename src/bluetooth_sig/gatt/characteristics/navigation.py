@@ -61,7 +61,7 @@ class NavigationCharacteristic(BaseCharacteristic[NavigationData]):
     _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
 
     min_length = 6  # Flags(2) + Bearing(2) + Heading(2) minimum
-    max_length = 16  # + RemainingDistance(3) + RemainingVerticalDistance(3) + EstimatedTimeOfArrival(7) maximum
+    max_length = 19  # + RemainingDistance(3) + RemainingVerticalDistance(3) + EstimatedTimeOfArrival(7) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
     # Bit masks and shifts for status information in flags
