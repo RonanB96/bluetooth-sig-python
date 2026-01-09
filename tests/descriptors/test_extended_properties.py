@@ -15,7 +15,7 @@ class TestCharacteristicExtendedPropertiesDescriptor:
         data = b"\x01\x00"  # Reliable Write enabled
 
         result = ext_props.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CharacteristicExtendedPropertiesData)
         assert result.value.reliable_write is True
         assert result.value.writable_auxiliaries is False
@@ -26,7 +26,7 @@ class TestCharacteristicExtendedPropertiesDescriptor:
         data = b"\x03\x00"  # Reliable Write and Writable Auxiliaries enabled
 
         result = ext_props.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CharacteristicExtendedPropertiesData)
         assert result.value.reliable_write is True
         assert result.value.writable_auxiliaries is True
@@ -37,7 +37,7 @@ class TestCharacteristicExtendedPropertiesDescriptor:
         data = b"\x01"  # Too short
 
         result = ext_props.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Extended Properties data must be exactly 2 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:

@@ -10,6 +10,7 @@ from bluetooth_sig.gatt.characteristics.rsc_measurement import (
     RSCMeasurementData,
     RSCMeasurementFlags,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
 
@@ -205,15 +206,15 @@ class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
 
     def test_rsc_measurement_invalid_data(self, characteristic: RSCMeasurementCharacteristic) -> None:
         """Test RSC measurement error handling."""
-        # Too short data - parse_value returns parse_success=False
-        result = characteristic.parse_value(bytearray([0x00, 0x01, 0x02]))
-        assert result.parse_success is False
-        assert "at least 4 bytes" in (result.error_message or "")
+        # Too short data
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x01, 0x02]))
+        assert "at least 4 bytes" in str(exc_info.value)
 
         # Missing required data
-        result = characteristic.parse_value(bytearray([0x00]))
-        assert result.parse_success is False
-        assert "at least 4 bytes" in (result.error_message or "")
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00]))
+        assert "at least 4 bytes" in str(exc_info.value)
 
     def test_rsc_measurement_encoding_units(self, characteristic: RSCMeasurementCharacteristic) -> None:
         """Test RSC measurement encoding units and precision."""

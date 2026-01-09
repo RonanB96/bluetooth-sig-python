@@ -22,6 +22,7 @@ from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.characteristics.templates import ScaledUint16Template, Uint8Template
 from bluetooth_sig.gatt.characteristics.utils import DataParser
 from bluetooth_sig.gatt.context import CharacteristicContext
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -219,14 +220,12 @@ class TestCustomCharacteristicVariants:
         # Test parsing positive temperature
         data = bytearray([0x14, 0x00])  # 20°C
         result = sensor.parse_value(data)
-        assert result.parse_success is True
         assert result == 20
-        assert result.characteristic.info.unit == "°C"
+        assert sensor.info.unit == "°C"
 
         # Test parsing negative temperature
         data = bytearray([0xF6, 0xFF])  # -10°C
         result = sensor.parse_value(data)
-        assert result.parse_success is True
         assert result == -10
 
         # Test round-trip
@@ -240,9 +239,9 @@ class TestCustomCharacteristicVariants:
 
         # Test validation: length check
         short_data = bytearray([0x14])
-        result = sensor.parse_value(short_data)
-        assert result.parse_success is False
-        assert "expected exactly 2 bytes, got 1" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            sensor.parse_value(short_data)
+        assert "expected exactly 2 bytes, got 1" in str(exc_info.value).lower()
 
         # Test validation: range check (simulate out of range)
         # The sensor will decode the value, but validation will fail if out of range
@@ -255,14 +254,12 @@ class TestCustomCharacteristicVariants:
         # Test parsing: 5000 * 0.01 = 50.00%
         data = bytearray([0x88, 0x13])
         result = sensor.parse_value(data)
-        assert result.parse_success is True
         assert result == 50.0
-        assert result.characteristic.info.unit == "%"
+        assert sensor.info.unit == "%"
 
         # Test max humidity
         data = bytearray([0x10, 0x27])  # 10000 * 0.01 = 100.0%
         result = sensor.parse_value(data)
-        assert result.parse_success is True
         assert result == 100.0
 
     def test_multi_sensor_characteristic(self) -> None:
@@ -288,7 +285,6 @@ class TestCustomCharacteristicVariants:
         )
 
         result = sensor.parse_value(data)
-        assert result.parse_success is True
         assert isinstance(result, EnvironmentalReading)
         assert abs(result.temperature - 25.5) < 0.1  # Allow floating point tolerance
         assert result.humidity == 60.0
@@ -301,8 +297,8 @@ class TestCustomCharacteristicVariants:
 
         # Too short data
         short_data = bytearray([0x01, 0x02, 0x03])
-        result = sensor.parse_value(short_data)
-        assert result.parse_success is False
+        with pytest.raises(CharacteristicParseError):
+            sensor.parse_value(short_data)
 
     def test_device_serial_number(self) -> None:
         """Test string-based serial number characteristic."""
@@ -311,9 +307,8 @@ class TestCustomCharacteristicVariants:
         # Test parsing serial number
         data = bytearray(b"SN123456789")
         result = char.parse_value(data)
-        assert result.parse_success is True
         assert result == "SN123456789"
-        assert result.characteristic.info.value_type == ValueType.STRING
+        assert char.info.value_type == ValueType.STRING
 
         encoded = char.build_value("TEST12345")
         result = char.parse_value(encoded)
@@ -326,7 +321,6 @@ class TestCustomCharacteristicVariants:
         # Test all flags off
         data = bytearray([0x00])
         result = char.parse_value(data)
-        assert result.parse_success is True
         assert isinstance(result, dict)
         # Pylint false positive: result is dict, but pylint doesn't recognize msgspec.Struct returns
         assert result["powered_on"] is False  # pylint: disable=unsubscriptable-object
@@ -336,7 +330,6 @@ class TestCustomCharacteristicVariants:
         # Test multiple flags on: powered_on + bluetooth_connected
         data = bytearray([0x11])  # 0x01 | 0x10
         result = char.parse_value(data)
-        assert result.parse_success is True
         assert result is not None
         assert result["powered_on"] is True  # pylint: disable=unsubscriptable-object
         assert result["bluetooth_connected"] is True  # pylint: disable=unsubscriptable-object
@@ -385,7 +378,6 @@ class TestCustomCharacteristicVariants:
         # Test parsing
         data = bytearray([85])  # 85%
         result = char.parse_value(data)
-        assert result.parse_success is True
         assert result == 85
 
     def test_custom_characteristics_have_is_custom_marker(self) -> None:
@@ -442,7 +434,6 @@ class TestCustomCharacteristicRegistration:
             bytes(data),
         )
 
-        assert result.parse_success is True
         assert result == 20
 
     def test_register_multi_field_characteristic(self) -> None:
@@ -477,7 +468,6 @@ class TestCustomCharacteristicRegistration:
             bytes(data),
         )
 
-        assert result.parse_success is True
         assert isinstance(result, EnvironmentalReading)
 
 
@@ -540,9 +530,8 @@ class TestCustomCharacteristicErrorHandling:
         sensor = SimpleTemperatureSensor()
 
         # Empty data should trigger error
-        result = sensor.parse_value(bytearray())
-        assert result.parse_success is False
-        assert result is None
+        with pytest.raises(CharacteristicParseError):
+            sensor.parse_value(bytearray())
 
     def test_validation_error_handling(self) -> None:
         """Test that validation errors are properly handled."""
@@ -550,8 +539,8 @@ class TestCustomCharacteristicErrorHandling:
 
         # Value over 100% should fail validation
         data = bytearray([0xF4, 0x27])  # 10228 * 0.01 = 102.28%
-        result = sensor.parse_value(data)
-        assert result.parse_success is False
+        with pytest.raises(CharacteristicParseError):
+            sensor.parse_value(data)
 
 
 class TestCustomCharacteristicEdgeCases:
@@ -566,8 +555,8 @@ class TestCustomCharacteristicEdgeCases:
         ]
 
         for char in chars:
-            result = char.parse_value(bytearray())
-            assert result.parse_success is False
+            with pytest.raises(CharacteristicParseError):
+                char.parse_value(bytearray())
 
     def test_maximum_values(self) -> None:
         """Test handling of maximum values."""
@@ -576,7 +565,6 @@ class TestCustomCharacteristicEdgeCases:
         # Max temperature (85°C)
         data = sensor.build_value(85)
         result = sensor.parse_value(data)
-        assert result.parse_success is True
         assert result == 85
 
     def test_minimum_values(self) -> None:
@@ -586,7 +574,6 @@ class TestCustomCharacteristicEdgeCases:
         # Min temperature (-40°C)
         data = sensor.build_value(-40)
         result = sensor.parse_value(data)
-        assert result.parse_success is True
         assert result == -40
 
     def test_string_encoding_edge_cases(self) -> None:
@@ -597,7 +584,6 @@ class TestCustomCharacteristicEdgeCases:
         special_serial = "SN-2024_#001"
         encoded = char.build_value(special_serial)
         result = char.parse_value(encoded)
-        assert result.parse_success is True
         assert result == special_serial
 
 

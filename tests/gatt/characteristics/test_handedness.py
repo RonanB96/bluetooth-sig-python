@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import Handedness, HandednessCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -83,10 +84,10 @@ class TestHandednessCharacteristic(CommonCharacteristicTests):
 
     def test_handedness_invalid_values(self, characteristic: HandednessCharacteristic) -> None:
         """Test handedness with invalid values."""
-        # Test invalid value (0x04 is reserved) - parse_value returns parse_success=False
-        result = characteristic.parse_value(bytearray([0x04]))
-        assert result.parse_success is False
-        assert result.error_message == "Invalid Handedness: 4 (expected range [0, 3])"
+        # Test invalid value (0x04 is reserved)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x04]))
+        assert "Invalid Handedness: 4" in str(exc_info.value)
 
     def test_handedness_encoding(self, characteristic: HandednessCharacteristic) -> None:
         """Test encoding handedness back to bytes."""

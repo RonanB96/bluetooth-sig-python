@@ -8,6 +8,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import PLXFeatureFlags, PLXFeaturesCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -99,12 +100,11 @@ class TestPLXFeaturesCharacteristic(CommonCharacteristicTests):
 
     def test_invalid_length(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that invalid data length results in parse failure."""
-        # parse_value returns parse_success=False for insufficient data
-        result = characteristic.parse_value(bytearray([]))
-        assert result.parse_success is False
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([]))
 
-        result = characteristic.parse_value(bytearray([0x00]))
-        assert result.parse_success is False
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([0x00]))
 
     def test_encode_value(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test encoding PLX features to bytes."""

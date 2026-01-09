@@ -11,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.glucose_measurement_context import (
     GlucoseMeasurementContextFlags,
     MealType,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
 
@@ -318,10 +319,7 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
 
     def test_glucose_context_invalid_data(self, characteristic: GlucoseMeasurementContextCharacteristic) -> None:
         """Test glucose context with invalid data."""
-        # parse_value returns parse_success=False for invalid data
-        result = characteristic.parse_value(bytearray([0x00, 0x01]))
-        assert result.parse_success is False
-        assert result.error_message == (
-            "Length validation failed for Glucose Measurement Context: expected at least 3 bytes, got 2 "
-            "(class-level constraint for GlucoseMeasurementContextCharacteristic)"
-        )
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x01]))
+
+        assert "expected at least 3 bytes, got 2" in str(exc_info.value)

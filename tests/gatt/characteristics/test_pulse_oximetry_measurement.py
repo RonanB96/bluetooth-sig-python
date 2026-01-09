@@ -59,34 +59,16 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
 
     def test_pulse_oximetry_with_plx_features_context(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test pulse oximetry parsing with PLX features from context."""
-        from typing import cast
-
-        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
-        from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
         from bluetooth_sig.gatt.context import CharacteristicContext
-        from bluetooth_sig.types import CharacteristicDataProtocol, CharacteristicInfo
         from bluetooth_sig.types.uuid import BluetoothUUID
-
-        # Mock context with PLX Features (0x2A60)
-        # Example features: 0x0003 = Measurement Status Support + Device Status Support
-        plx_features_char = UnknownCharacteristic(
-            info=CharacteristicInfo(
-                uuid=BluetoothUUID("2A60"),
-                name="PLX Features",
-            )
-        )
-        plx_features = CharacteristicData(
-            characteristic=plx_features_char,
-            value=PLXFeatureFlags.MEASUREMENT_STATUS_SUPPORT | PLXFeatureFlags.DEVICE_AND_SENSOR_STATUS_SUPPORT,
-            raw_data=bytes([0x03, 0x00]),
-            parse_success=True,
-            error_message="",
-        )
 
         # Use full UUID format to match translator behaviour
         plx_features_uuid = BluetoothUUID("2A60").dashed_form
         ctx = CharacteristicContext(
-            other_characteristics={plx_features_uuid: cast(CharacteristicDataProtocol, plx_features)}
+            other_characteristics={
+                plx_features_uuid: PLXFeatureFlags.MEASUREMENT_STATUS_SUPPORT
+                | PLXFeatureFlags.DEVICE_AND_SENSOR_STATUS_SUPPORT
+            }
         )
 
         # Parse with context
@@ -103,12 +85,7 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
 
     def test_pulse_oximetry_with_various_plx_features(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test pulse oximetry with various PLX feature flags."""
-        from typing import cast
-
-        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
-        from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
         from bluetooth_sig.gatt.context import CharacteristicContext
-        from bluetooth_sig.types import CharacteristicDataProtocol, CharacteristicInfo
         from bluetooth_sig.types.uuid import BluetoothUUID
 
         # Test various feature combinations
@@ -123,25 +100,10 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         ]
 
         for feature_value in feature_values:
-            plx_features_char = UnknownCharacteristic(
-                info=CharacteristicInfo(
-                    uuid=BluetoothUUID("2A60"),
-                    name="PLX Features",
-                )
-            )
-            plx_features = CharacteristicData(
-                characteristic=plx_features_char,
-                value=feature_value,
-                raw_data=int(feature_value).to_bytes(2, byteorder="little"),
-                parse_success=True,
-                error_message="",
-            )
-
             # Use full UUID format to match translator behaviour
+            # Context now stores raw parsed values directly
             plx_features_uuid = BluetoothUUID("2A60").dashed_form
-            ctx = CharacteristicContext(
-                other_characteristics={plx_features_uuid: cast(CharacteristicDataProtocol, plx_features)}
-            )
+            ctx = CharacteristicContext(other_characteristics={plx_features_uuid: feature_value})
 
             plx_data = bytearray([0x00, 0x5F, 0x80, 0x4C, 0x80])  # SpO2=95%, pulse=76 bpm
             result = characteristic.parse_value(plx_data, ctx)

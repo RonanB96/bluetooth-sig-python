@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError, SpecialValueDetected
 from bluetooth_sig.types.uuid import BluetoothUUID
 from examples.utils.models import ReadResult
 
@@ -35,14 +35,20 @@ async def parse_and_display_results(
 
     for uuid_short, read_result in raw_results.items():
         try:
-            parse_outcome = translator.parse_characteristic(uuid_short, read_result.raw_data)
-            read_result.parsed = parse_outcome
-            if parse_outcome.parse_success:
-                unit_str = f" {parse_outcome.unit}" if parse_outcome.unit else ""
-                print(f"   ✅ {parse_outcome.name}: {parse_outcome.value}{unit_str}")
-            else:
-                read_result.error = parse_outcome.error_message
-                print(f"   ❌ {uuid_short}: Parse failed - {parse_outcome.error_message}")
+            value = translator.parse_characteristic(uuid_short, read_result.raw_data)
+            read_result.parsed = value
+            # Get characteristic info for display
+            char_info = translator.get_characteristic_info_by_uuid(uuid_short)
+            name = char_info.name if char_info else uuid_short
+            unit = char_info.unit if char_info else ""
+            unit_str = f" {unit}" if unit else ""
+            print(f"   ✅ {name}: {value}{unit_str}")
+        except SpecialValueDetected as e:
+            read_result.parsed = e.special_value
+            print(f"   ⚠️ {e.name}: {e.special_value.meaning}")
+        except CharacteristicParseError as e:
+            read_result.error = str(e)
+            print(f"   ❌ {uuid_short}: Parse failed - {e}")
         except Exception as exc:  # pylint: disable=broad-exception-caught
             read_result.error = str(exc)
             print(f"   💥 {uuid_short}: Exception - {exc}")
@@ -76,14 +82,20 @@ def parse_and_display_results_sync(
 
     for uuid_short, read_result in raw_results.items():
         try:
-            parse_outcome = translator.parse_characteristic(uuid_short, read_result.raw_data)
-            read_result.parsed = parse_outcome
-            if parse_outcome.parse_success:
-                unit_str = f" {parse_outcome.unit}" if parse_outcome.unit else ""
-                print(f"   ✅ {parse_outcome.name}: {parse_outcome.value}{unit_str}")
-            else:
-                read_result.error = parse_outcome.error_message
-                print(f"   ❌ {uuid_short}: Parse failed - {parse_outcome.error_message}")
+            value = translator.parse_characteristic(uuid_short, read_result.raw_data)
+            read_result.parsed = value
+            # Get characteristic info for display
+            char_info = translator.get_characteristic_info_by_uuid(uuid_short)
+            name = char_info.name if char_info else uuid_short
+            unit = char_info.unit if char_info else ""
+            unit_str = f" {unit}" if unit else ""
+            print(f"   ✅ {name}: {value}{unit_str}")
+        except SpecialValueDetected as e:
+            read_result.parsed = e.special_value
+            print(f"   ⚠️ {e.name}: {e.special_value.meaning}")
+        except CharacteristicParseError as e:
+            read_result.error = str(e)
+            print(f"   ❌ {uuid_short}: Parse failed - {e}")
         except Exception as exc:  # pylint: disable=broad-exception-caught
             read_result.error = str(exc)
             print(f"   💥 {uuid_short}: Exception - {exc}")
@@ -101,20 +113,20 @@ def _display_raw_data(_char_uuid_short: str, raw_bytes: bytes) -> None:
 
 
 def display_parsed_results(
-    results: dict[str, dict[str, Any] | CharacteristicData[Any]] | dict[BluetoothUUID, CharacteristicData[Any]],
+    results: dict[str, dict[str, Any] | Any] | dict[BluetoothUUID, Any],
     title: str = "Parsed Results",
 ) -> None:
     """Display parsed results when callers already have parsed output.
 
     Accepts either the structured dict format produced by
     :func:`parse_and_display_results` or a mapping from
-    :class:`BluetoothUUID` to :class:`CharacteristicData`.
+    :class:`BluetoothUUID` to parsed values.
     """
     print(f"\n🔎 {title}")
     print("=" * 50)
 
     # Normalize BluetoothUUID keys to short-string form if necessary
-    normalized: dict[str, dict[str, Any] | CharacteristicData[Any]] = {}
+    normalized: dict[str, dict[str, Any] | Any] = {}
     for key, value in results.items():
         if isinstance(key, BluetoothUUID):
             key_str = str(key)
@@ -123,16 +135,8 @@ def display_parsed_results(
         normalized[key_str] = value
 
     for uuid_short, result in normalized.items():
-        # CharacteristicData objects (from translator.parse_characteristic)
-        if isinstance(result, CharacteristicData):
-            if result.parse_success:
-                unit_str = f" {result.unit}" if result.unit else ""
-                print(f"   ✅ {result.name}: {result.value}{unit_str}")
-            else:
-                print(f"   ❌ {uuid_short}: Parse failed")
-
         # Structured dict output matching parse_and_display_results
-        elif isinstance(result, dict):
+        if isinstance(result, dict):
             if result.get("error"):
                 print(f"   ❌ {uuid_short}: {result.get('error')}")
             else:
@@ -141,9 +145,9 @@ def display_parsed_results(
                 unit_val = result.get("unit")
                 unit_str = f" {unit_val}" if unit_val else ""
                 print(f"   ✅ {name}: {value_val}{unit_str}")
-        # All expected value shapes are handled above. If a caller provides
-        # an unexpected value type the behaviour is undefined — prefer a
-        # strict failure mode to masking bugs.
+        else:
+            # Raw parsed value - display directly
+            print(f"   ✅ {uuid_short}: {result}")
 
 
 def _parse_characteristic_data(
@@ -151,21 +155,28 @@ def _parse_characteristic_data(
 ) -> dict[str, Any] | None:
     """Parse characteristic data and return structured results."""
     try:
-        result = translator.parse_characteristic(char_uuid_short, raw_data)
-
-        if result.parse_success:
-            return {
-                "uuid": char_uuid_short,
-                "name": result.name,
-                "value": result.value,
-                "unit": result.unit,
-                "properties": getattr(result, "properties", []),
-                "raw_data": raw_data,
-            }
-
-        print(f"     ❌ Parse failed: {result.error_message}")
+        value = translator.parse_characteristic(char_uuid_short, raw_data)
+        char_info = translator.get_characteristic_info_by_uuid(char_uuid_short)
+        return {
+            "uuid": char_uuid_short,
+            "name": char_info.name if char_info else char_uuid_short,
+            "value": value,
+            "unit": char_info.unit if char_info else "",
+            "properties": [],
+            "raw_data": raw_data,
+        }
+    except SpecialValueDetected as e:
+        return {
+            "uuid": char_uuid_short,
+            "name": e.name,
+            "value": e.special_value,
+            "unit": "",
+            "properties": [],
+            "raw_data": raw_data,
+        }
+    except CharacteristicParseError as e:
+        print(f"     ❌ Parse failed: {e}")
         return None
-
     except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"     💥 Parsing exception: {e}")
         return None

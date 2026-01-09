@@ -28,7 +28,7 @@ class DebugUtils:
         """Validate that parse/encode operations preserve data integrity."""
         try:
             parsed = characteristic.parse_value(original_data)
-            encoded = characteristic.build_value(parsed.value)
+            encoded = characteristic.build_value(parsed)
             return bool(original_data == encoded)
         except Exception:  # pylint: disable=broad-except
             return False

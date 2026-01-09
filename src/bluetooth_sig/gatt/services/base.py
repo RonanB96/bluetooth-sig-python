@@ -109,9 +109,9 @@ class ServiceValidationResult(msgspec.Struct, kw_only=True):
     """Result of service validation."""
 
     status: ServiceHealthStatus
-    missing_required: list[BaseCharacteristic] = msgspec.field(default_factory=list)
-    missing_optional: list[BaseCharacteristic] = msgspec.field(default_factory=list)
-    invalid_characteristics: list[BaseCharacteristic] = msgspec.field(default_factory=list)
+    missing_required: list[BaseCharacteristic[Any]] = msgspec.field(default_factory=list)
+    missing_optional: list[BaseCharacteristic[Any]] = msgspec.field(default_factory=list)
+    invalid_characteristics: list[BaseCharacteristic[Any]] = msgspec.field(default_factory=list)
     warnings: list[str] = msgspec.field(default_factory=list)
     errors: list[str] = msgspec.field(default_factory=list)
 
@@ -152,10 +152,10 @@ class ServiceCompletenessReport(msgspec.Struct, kw_only=True):  # pylint: disabl
     characteristics_present: int
     characteristics_expected: int
     characteristics_required: int
-    present_characteristics: list[BaseCharacteristic] = msgspec.field(default_factory=list)
-    missing_required: list[BaseCharacteristic] = msgspec.field(default_factory=list)
-    missing_optional: list[BaseCharacteristic] = msgspec.field(default_factory=list)
-    invalid_characteristics: list[BaseCharacteristic] = msgspec.field(default_factory=list)
+    present_characteristics: list[BaseCharacteristic[Any]] = msgspec.field(default_factory=list)
+    missing_required: list[BaseCharacteristic[Any]] = msgspec.field(default_factory=list)
+    missing_optional: list[BaseCharacteristic[Any]] = msgspec.field(default_factory=list)
+    invalid_characteristics: list[BaseCharacteristic[Any]] = msgspec.field(default_factory=list)
     warnings: list[str] = msgspec.field(default_factory=list)
     errors: list[str] = msgspec.field(default_factory=list)
     missing_details: dict[str, ServiceCharacteristicInfo] = msgspec.field(default_factory=dict)
@@ -294,7 +294,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         """
         # Build expected mapping keyed by CharacteristicName enum for type safety.
-        expected: dict[CharacteristicName, CharacteristicSpec[BaseCharacteristic]] = {}
+        expected: dict[CharacteristicName, CharacteristicSpec[BaseCharacteristic[Any]]] = {}
 
         # Check if the service defines a service_characteristics dictionary
         svc_chars = getattr(cls, "service_characteristics", None)
@@ -399,14 +399,14 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
             self.characteristics[uuid_obj] = char_instance
 
-    def get_characteristic(self, uuid: BluetoothUUID) -> GattCharacteristic | None:
+    def get_characteristic(self, uuid: BluetoothUUID) -> GattCharacteristic[Any] | None:
         """Get a characteristic by UUID."""
         if isinstance(uuid, str):
             uuid = BluetoothUUID(uuid)
         return self.characteristics.get(uuid)
 
     @property
-    def supported_characteristics(self) -> set[BaseCharacteristic]:
+    def supported_characteristics(self) -> set[BaseCharacteristic[Any]]:
         """Get the set of characteristic UUIDs supported by this service."""
         # Return set of characteristic instances, not UUID strings
         return set(self.characteristics.values())

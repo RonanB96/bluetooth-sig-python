@@ -57,18 +57,18 @@ class TestRainfallCharacteristic(CommonCharacteristicTests):
         """Test rainfall boundary values."""
         # No rainfall
         data_zero = bytearray([0x00, 0x00])
-        assert characteristic.parse_value(data_zero).value == 0.0
+        assert characteristic.parse_value(data_zero) == 0.0
 
         # Maximum rainfall
         data_max = bytearray([0xFF, 0xFF])
-        assert characteristic.parse_value(data_max).value == 65535.0
+        assert characteristic.parse_value(data_max) == 65535.0
 
     def test_rainfall_typical_values(self, characteristic: RainfallCharacteristic) -> None:
         """Test typical rainfall values."""
         # Light rain (10 mm)
         data_light = bytearray([0x0A, 0x00])
-        assert characteristic.parse_value(data_light).value == 10.0
+        assert characteristic.parse_value(data_light) == 10.0
 
         # Moderate rain (100 mm)
         data_moderate = bytearray([0x64, 0x00])
-        assert characteristic.parse_value(data_moderate).value == 100.0
+        assert characteristic.parse_value(data_moderate) == 100.0

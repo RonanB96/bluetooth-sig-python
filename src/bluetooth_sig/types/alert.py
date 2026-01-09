@@ -41,6 +41,12 @@ class AlertCategoryID(IntEnum):
     SCHEDULE = 7
     HIGH_PRIORITIZED_ALERT = 8
     INSTANT_MESSAGE = 9
+    # Service-specific values (251-255)
+    SERVICE_SPECIFIC_1 = 251
+    SERVICE_SPECIFIC_2 = 252
+    SERVICE_SPECIFIC_3 = 253
+    SERVICE_SPECIFIC_4 = 254
+    SERVICE_SPECIFIC_5 = 255
 
 
 class AlertCategoryBitMask(IntFlag):
@@ -71,29 +77,3 @@ class AlertNotificationCommandID(IntEnum):
     DISABLE_UNREAD_STATUS = 3
     NOTIFY_NEW_ALERT_IMMEDIATELY = 4
     NOTIFY_UNREAD_STATUS_IMMEDIATELY = 5
-
-
-def validate_category_id(category_id_raw: int) -> AlertCategoryID:
-    """Validate and convert raw category ID value.
-
-    Args:
-        category_id_raw: Raw category ID value (0-255)
-
-    Returns:
-        AlertCategoryID enum value
-
-    Raises:
-        ValueError: If category ID is in reserved range (10-250)
-
-    """
-    if not (category_id_raw <= ALERT_CATEGORY_DEFINED_MAX or category_id_raw >= ALERT_CATEGORY_SERVICE_SPECIFIC_MIN):
-        raise ValueError(
-            f"Invalid category ID: {category_id_raw} "
-            f"(valid: 0-{ALERT_CATEGORY_DEFINED_MAX} or "
-            f"{ALERT_CATEGORY_SERVICE_SPECIFIC_MIN}-255)"
-        )
-    return (
-        AlertCategoryID(category_id_raw)
-        if category_id_raw <= ALERT_CATEGORY_DEFINED_MAX
-        else AlertCategoryID.SIMPLE_ALERT
-    )

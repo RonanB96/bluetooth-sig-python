@@ -38,8 +38,8 @@ class TestWindChillCharacteristic(CommonCharacteristicTests):
         """Test wind chill characteristic parsing."""
         # Test negative temperature
         data = bytearray([256 - 15])  # -15°C
-        assert characteristic.parse_value(data).value == -15.0
+        assert characteristic.parse_value(data) == -15.0
 
         # Test positive temperature
         data = bytearray([5])  # 5°C
-        assert characteristic.parse_value(data).value == 5.0
+        assert characteristic.parse_value(data) == 5.0

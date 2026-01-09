@@ -104,9 +104,9 @@ class CSCMeasurementCharacteristic(BaseCharacteristic[CSCMeasurementData]):
 
         # Validate flags against CSC Feature if available
         if ctx is not None:
-            feature_char = self.get_context_characteristic(ctx, CSCFeatureCharacteristic)
-            if feature_char and feature_char.parse_success and feature_char.value is not None:
-                self._validate_against_feature(flags, feature_char.value)
+            feature_value = self.get_context_characteristic(ctx, CSCFeatureCharacteristic)
+            if feature_value is not None:
+                self._validate_against_feature(flags, feature_value)
 
         return CSCMeasurementData(
             flags=flags,

@@ -326,7 +326,6 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
     _manual_size: int | None = None
     _is_template: bool = False
 
-    # Validation attributes (Progressive API Level 2)
     min_value: int | float | None = None
     max_value: int | float | None = None
     expected_length: int | None = None
@@ -335,8 +334,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
     allow_variable_length: bool = False
     expected_type: type | None = None
 
-    # Template support (Progressive API Level 4)
-    _template: CodingTemplate | None = None  # CodingTemplate instance for composition
+    _template: CodingTemplate[T] | None = None
 
     # YAML automation attributes
     _yaml_data_type: str | None = None
@@ -346,7 +344,6 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
 
     _allows_sig_override = False
 
-    # Multi-characteristic parsing support (Progressive API Level 5)
     _required_dependencies: list[type[BaseCharacteristic[Any]]] = []  # Dependencies that MUST be present
     _optional_dependencies: list[type[BaseCharacteristic[Any]]] = []  # Dependencies that enrich parsing when available
 
@@ -416,7 +413,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         self._descriptors: dict[str, BaseDescriptor] = {}
 
         # Last parsed value for caching/debugging
-        self.last_parsed: Any = None
+        self.last_parsed: T | None = None
 
         # Call post-init to resolve characteristic info
         self.__post_init__()
@@ -798,7 +795,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         except ValueError:
             return False
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> T:  # noqa: ANN401  # Context and return types vary by characteristic
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> T:
         """Internal parse the characteristic's raw value with no validation.
 
         This is expected to be called from parse_value() which handles validation.
@@ -818,7 +815,9 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
 
         """
         if self._template is not None:
-            return self._template._decode_value(data, offset=0, ctx=ctx)  # pylint: disable=protected-access
+            return self._template.decode_value(  # pylint: disable=protected-access
+                data, offset=0, ctx=ctx
+            )
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
     def _validate_range(
@@ -1034,15 +1033,20 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         self,
         ctx: CharacteristicContext,
         dep_class: type[BaseCharacteristic[Any]],
-    ) -> Any:
+    ) -> Any:  # noqa: ANN401  # Dependency type determined by dep_class at runtime
         """Get dependency from context using type-safe class reference.
+
+        Note:
+            Returns ``Any`` because the dependency type is determined at runtime
+            by ``dep_class``. For type-safe access, the caller should know the
+            expected type based on the class they pass in.
 
         Args:
             ctx: Characteristic context containing other characteristics
             dep_class: Dependency characteristic class to look up
 
         Returns:
-            Parsed characteristic value if found in context, None otherwise
+            Parsed characteristic value if found in context, None otherwise.
 
         """
         # Resolve class to UUID
@@ -1072,8 +1076,13 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         self,
         ctx: CharacteristicContext | None,
         characteristic_name: CharacteristicName | str | type[BaseCharacteristic[Any]],
-    ) -> Any:
+    ) -> Any:  # noqa: ANN401  # Type determined by characteristic_name at runtime
         """Find a characteristic in a context by name or class.
+
+        Note:
+            Returns ``Any`` because the characteristic type is determined at
+            runtime by ``characteristic_name``. For type-safe access, use direct
+            characteristic class instantiation instead of this lookup method.
 
         Args:
             ctx: Context containing other characteristics.
@@ -1151,7 +1160,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         # Default to enabled
         return True
 
-    def _perform_parse_validation(
+    def _perform_parse_validation(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         data_bytes: bytearray,
         enable_trace: bool,
@@ -1172,7 +1181,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
 
     def _extract_and_check_special_value(  # pylint: disable=unused-argument  # ctx used in get_valid_range_from_context by callers
         self, data_bytes: bytearray, enable_trace: bool, parse_trace: list[str], ctx: CharacteristicContext | None
-    ) -> tuple[int | None, Any]:
+    ) -> tuple[int | None, int | SpecialValueResult | None]:
         """Extract raw int and check for special values."""
         # Extract raw integer using the pipeline
         raw_int = self._extract_raw_int(data_bytes, enable_trace, parse_trace)
@@ -1193,40 +1202,37 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
 
     def _decode_and_validate_value(  # pylint: disable=too-many-arguments,too-many-positional-arguments  # All parameters necessary for decode/validate pipeline
         self,
-        parsed_value: Any,  # noqa: ANN401
         data_bytes: bytearray,
         enable_trace: bool,
         parse_trace: list[str],
         ctx: CharacteristicContext | None,
         validation: ValidationAccumulator,
         validate: bool,
-    ) -> Any:  # noqa: ANN401
-        """Decode value if not special and perform validation."""
-        # If not a special value, decode using the characteristic's decode_value method
-        if not isinstance(parsed_value, SpecialValueResult):
+    ) -> T:
+        """Decode value and perform validation.
+
+        At this point, special values have already been handled by the caller.
+        """
+        if enable_trace:
+            parse_trace.append("Decoding value")
+        decoded_value: T = self._decode_value(data_bytes, ctx)
+
+        if validate:
             if enable_trace:
-                parse_trace.append("Decoding value")
-            parsed_value = self._decode_value(data_bytes, ctx)
-
-        if not validate:
-            return parsed_value
-
-        if enable_trace:
-            parse_trace.append("Validating range")
-        range_validation = self._validate_range(parsed_value, ctx)
-        validation.errors.extend(range_validation.errors)
-        validation.warnings.extend(range_validation.warnings)
-        if not range_validation.valid:
-            raise ValueError("; ".join(range_validation.errors))
-        if enable_trace:
-            parse_trace.append("Validating type")
-        type_validation = self._validate_type(parsed_value)
-        validation.errors.extend(type_validation.errors)
-        validation.warnings.extend(type_validation.warnings)
-        if not type_validation.valid:
-            raise ValueError("; ".join(type_validation.errors))
-
-        return parsed_value
+                parse_trace.append("Validating range")
+            range_validation = self._validate_range(decoded_value, ctx)
+            validation.errors.extend(range_validation.errors)
+            validation.warnings.extend(range_validation.warnings)
+            if not range_validation.valid:
+                raise ValueError("; ".join(range_validation.errors))
+            if enable_trace:
+                parse_trace.append("Validating type")
+            type_validation = self._validate_type(decoded_value)
+            validation.errors.extend(type_validation.errors)
+            validation.warnings.extend(type_validation.warnings)
+            if not type_validation.valid:
+                raise ValueError("; ".join(type_validation.errors))
+        return decoded_value
 
     def parse_value(
         self, data: bytes | bytearray, ctx: CharacteristicContext | None = None, validate: bool = True
@@ -1261,17 +1267,17 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
                 )
 
             # Decode and validate value
-            parsed_value = self._decode_and_validate_value(
-                parsed_value, data_bytes, enable_trace, parse_trace, ctx, validation, validate
+            decoded_value = self._decode_and_validate_value(
+                data_bytes, enable_trace, parse_trace, ctx, validation, validate
             )
 
             if enable_trace:
                 parse_trace.append("Parse completed successfully")
 
             # Cache the parsed value for debugging/caching purposes
-            self.last_parsed = parsed_value
+            self.last_parsed = decoded_value
 
-            return parsed_value
+            return decoded_value
 
         except SpecialValueDetected:
             # Re-raise special value exceptions as-is
@@ -1325,10 +1331,12 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
 
         """
         if self._template is not None:
-            return self._template._encode_value(data)  # pylint: disable=protected-access
+            return self._template.encode_value(data)  # pylint: disable=protected-access
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override encode_value()")
 
-    def build_value(self, data: T | SpecialValueResult, validate: bool = True) -> bytearray:
+    def build_value(  # pylint: disable=too-many-branches
+        self, data: T | SpecialValueResult, validate: bool = True
+    ) -> bytearray:
         """Encode value or special value to characteristic bytes.
 
         Args:

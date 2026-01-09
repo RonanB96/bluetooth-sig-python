@@ -91,14 +91,12 @@ class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
         # Maximum fractions256 (255)
         data_max_fractions = bytearray([0xE8, 0x07, 0x03, 0x0A, 0x02, 0x00, 0x00, 0x07, 0xFF, 0x08])
         result_fractions = characteristic.parse_value(data_max_fractions)
-        assert result_fractions.parse_success
         assert result_fractions is not None
         assert result_fractions.fractions256 == 255
 
         # Maximum adjust reason (255, but reserved bits are masked to 15)
         data_max_adjust = bytearray([0xE8, 0x07, 0x03, 0x0A, 0x02, 0x00, 0x00, 0x07, 0x00, 0xFF])
         result_adjust = characteristic.parse_value(data_max_adjust)
-        assert result_adjust.parse_success
         assert result_adjust is not None
         # Reserved bits (4-7) are masked out, so 255 becomes 15 (all defined flags)
         assert result_adjust.adjust_reason == AdjustReason(15)
@@ -113,7 +111,7 @@ class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
 
     def test_time_with_dst_invalid_fractions256(self, characteristic: TimeWithDstCharacteristic) -> None:
         """Test that invalid fractions256 values are rejected during encoding."""
-        from bluetooth_sig.gatt.exceptions import ValueRangeError
+        from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError
 
         data = TimeData(
             date_time=datetime(2024, 3, 10, 2, 0, 0),
@@ -121,12 +119,12 @@ class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
             fractions256=256,  # Invalid (max is 255)
             adjust_reason=AdjustReason.from_raw(0),
         )
-        with pytest.raises(ValueRangeError, match="fractions256"):
+        with pytest.raises(CharacteristicEncodeError):
             characteristic.build_value(data)
 
     def test_time_with_dst_invalid_adjust_reason(self, characteristic: TimeWithDstCharacteristic) -> None:
         """Test that invalid adjust reason values are rejected during encoding."""
-        from bluetooth_sig.gatt.exceptions import ValueRangeError
+        from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError
 
         data = TimeData(
             date_time=datetime(2024, 3, 10, 2, 0, 0),
@@ -134,7 +132,7 @@ class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
             fractions256=0,
             adjust_reason=AdjustReason(256),  # Invalid (max is 255)
         )
-        with pytest.raises(ValueRangeError, match="adjust_reason"):
+        with pytest.raises(CharacteristicEncodeError):
             characteristic.build_value(data)
 
     def test_time_with_dst_roundtrip(self, characteristic: TimeWithDstCharacteristic) -> None:

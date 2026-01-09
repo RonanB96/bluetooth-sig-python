@@ -13,7 +13,9 @@ from bluetooth_sig import BluetoothSIGTranslator, Device
 For Device usage, you also need a connection manager:
 
 ```python
-from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+from examples.connection_managers.bleak_retry import (
+    BleakRetryConnectionManager,
+)
 ```
 
 Import from submodules when you need specific features:
@@ -53,7 +55,9 @@ adv_data = parser.parse_advertising_data(raw_adv_bytes)
 Import the characteristic class directly:
 
 ```python
-from bluetooth_sig.gatt.characteristics import HeartRateMeasurementCharacteristic
+from bluetooth_sig.gatt.characteristics import (
+    HeartRateMeasurementCharacteristic,
+)
 
 hr_char = HeartRateMeasurementCharacteristic()
 hr_bytes = bytearray([0x00, 0x3C])  # Example: 60 BPM
@@ -67,6 +71,7 @@ Import the data types you need:
 ```python
 from bluetooth_sig import CharacteristicData, CharacteristicInfo
 
+
 def process_characteristic(data: CharacteristicData) -> None:
     if data.parse_success:
         print(f"{data.info.name}: {data.value}")
@@ -78,7 +83,9 @@ Import Device and a connection manager:
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator, Device
-from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+from examples.connection_managers.bleak_retry import (
+    BleakRetryConnectionManager,
+)
 
 translator = BluetoothSIGTranslator()
 connection_manager = BleakRetryConnectionManager("AA:BB:CC:DD:EE:FF")
@@ -105,6 +112,7 @@ Import base classes:
 ```python
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.types.data_types import CharacteristicInfo
+
 
 class MyCustomCharacteristic(BaseCharacteristic):
     _info = CharacteristicInfo(
@@ -219,7 +227,9 @@ from bluetooth_sig import BluetoothSIGTranslator, CharacteristicData
 
 # bluetooth-sig submodules
 from bluetooth_sig.advertising import AdvertisingPDUParser
-from bluetooth_sig.gatt.characteristics import HeartRateMeasurementCharacteristic
+from bluetooth_sig.gatt.characteristics import (
+    HeartRateMeasurementCharacteristic,
+)
 ```
 
 ## Related Documentation

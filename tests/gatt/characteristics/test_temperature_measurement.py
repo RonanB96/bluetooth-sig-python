@@ -11,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.temperature_measurement import (
     TemperatureMeasurementData,
     TemperatureMeasurementFlags,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.units import TemperatureUnit
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
@@ -175,12 +176,12 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
 
     def test_temperature_measurement_invalid_data(self, characteristic: TemperatureMeasurementCharacteristic) -> None:
         """Test temperature measurement error handling."""
-        # Too short data - parse_value returns parse_success=False
-        result = characteristic.parse_value(bytearray([0x00, 0x01]))
-        assert result.parse_success is False
-        assert "at least 5 bytes" in (result.error_message or "")
+        # Too short data
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x01]))
+        assert "at least 5 bytes" in str(exc_info.value)
 
         # Missing temperature data
-        result = characteristic.parse_value(bytearray([0x00]))
-        assert result.parse_success is False
-        assert "at least 5 bytes" in (result.error_message or "")
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00]))
+        assert "at least 5 bytes" in str(exc_info.value)

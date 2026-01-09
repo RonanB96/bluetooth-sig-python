@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import SportType, SportTypeForAerobicAndAnaerobicThresholdsCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -80,10 +81,10 @@ class TestSportTypeForAerobicAndAnaerobicThresholdsCharacteristic(CommonCharacte
         self, characteristic: SportTypeForAerobicAndAnaerobicThresholdsCharacteristic
     ) -> None:
         """Test sport type with invalid values."""
-        # Test invalid value (12 is reserved) - parse_value returns parse_success=False
-        result = characteristic.parse_value(bytearray([12]))
-        assert result.parse_success is False
-        assert "SportType" in (result.error_message or "")
+        # Test invalid value (12 is reserved)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([12]))
+        assert "SportType" in str(exc_info.value)
 
     def test_sport_type_encoding(self, characteristic: SportTypeForAerobicAndAnaerobicThresholdsCharacteristic) -> None:
         """Test encoding sport type back to bytes."""

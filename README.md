@@ -13,7 +13,7 @@ A pure Python library for Bluetooth SIG standards interpretation, providing comp
 ## Features
 
 - ✅ **Standards-Based**: Official Bluetooth SIG YAML registry with automatic UUID resolution
-- ✅ **Type-Safe**: Convert raw Bluetooth data to meaningful values with comprehensive typing
+- ✅ **Type-Safe**: Characteristic classes provide compile-time type checking; UUID strings return dynamic types
 - ✅ **Modern Python**: msgspec-based design with Python 3.9+ compatibility
 - ✅ **Comprehensive**: Support for 200+ GATT characteristics across multiple service categories
 - ✅ **Production Ready**: Extensive validation and comprehensive testing
@@ -28,111 +28,104 @@ pip install bluetooth-sig
 
 ## Quick Start
 
+**Recommended**: Use characteristic classes for type-safe parsing when you know the characteristic type.
+
+```python
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+
+# Type-safe: return type is automatically inferred as int
+char = BatteryLevelCharacteristic()
+level = char.parse_value(bytearray([85]))  # IDE knows this is int
+print(f"Battery: {level}%")  # Battery: 85%
+
+encoded = char.build_value(85)
+```
+
+For unknown characteristics discovered at runtime, use UUID strings:
+
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.types.gatt_enums import ServiceName, CharacteristicName
 
 translator = BluetoothSIGTranslator()
 
-# Type-safe service discovery
+# Service discovery: identify services by UUID or name
 service_info = translator.get_service_info_by_name(ServiceName.BATTERY.value)
 print(f"Service: {service_info.name}")  # Service: Battery
 print(f"UUID: {service_info.uuid}")  # UUID: 0000180F-0000-1000-8000-00805F9B34FB
 
-# Type-safe characteristic info access
-char_info = translator.get_characteristic_info_by_name(CharacteristicName.BATTERY_LEVEL)
-print(f"Characteristic: {char_info.name}")  # Characteristic: Battery Level
-print(f"UUID: {char_info.uuid}")  # UUID: 00002A19-0000-1000-8000-00805F9B34FB
+# Characteristic parsing: returns Any (type determined at runtime)
+result = translator.parse_characteristic("2A19", bytearray([85]))
+print(f"{result.info.name}: {result.value}%")  # Battery Level: 85%
 ```
 
 ## Usage Approaches
 
-**Choose the approach that fits your use case** - all patterns are fully supported:
+**Choose the approach that fits your use case:**
 
-### Type-Safe Characteristic Classes
+### Direct Characteristic Classes
 
-Direct access when you know the characteristic type:
+When you know the characteristic type, use the class directly for full type inference:
 
 ```python
-from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
-from bluetooth_sig.gatt.characteristics.acceleration_3d import Acceleration3DCharacteristic
+from bluetooth_sig.gatt.characteristics import HeartRateMeasurementCharacteristic
 
-# Simple characteristic
-battery_char = BatteryLevelCharacteristic()
-raw_data = bytearray([85])  # Example data: 85%
-level = battery_char.parse_value(raw_data).value  # Returns: int (0-100)
-encoded = battery_char.build_value(85)  # Returns: bytearray([85])
-
-# Complex characteristic with typed results
-accel_char = Acceleration3DCharacteristic()
-accel_raw_data = bytearray([0x96, 0xCE, 0xD4])  # Example 3D acceleration data (3 bytes)
-parsed = accel_char.parse_value(accel_raw_data)
-data = parsed.value  # VectorData(x_axis=..., y_axis=..., z_axis=...)
-encoded = accel_char.build_value(data)  # Type-safe encoding and returns bytearray to writing
+# Complex: structured dataclass with autocompletion
+heart_rate = HeartRateMeasurementCharacteristic()
+hr_data = heart_rate.parse_value(bytearray([0x00, 72]))  # IDE infers HeartRateData
+print(f"{hr_data.heart_rate} bpm")
+encoded = heart_rate.build_value(hr_data)
 ```
 
-### Translator with Enums
+### Translator API
 
-UUID resolution with characteristic name enums:
+For scanning unknown devices or working with UUID strings:
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
 
-# Get UUID from characteristic name
-char_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
-raw_data = await client.read_gatt_char(str(char_uuid))
-
-# Parse with automatic type resolution
-result = translator.parse_characteristic(str(char_uuid), raw_data)
-print(f"{result.info.name}: {result.value}%")
-
-# Encode with type safety
-data = translator.encode_characteristic(str(char_uuid), 85)
-await client.write_gatt_char(str(char_uuid), data)  # SKIP: async write operation
+# Discover and parse any characteristic by UUID
+for char in client.services.characteristics:
+    uuid_str = str(char.uuid)
+    if translator.supports(uuid_str):
+        raw_data = await client.read_gatt_char(uuid_str)  # SKIP: async
+        result = translator.parse_characteristic(uuid_str, raw_data)
+        print(f"{result.info.name}: {result.value}")  # Returns Any
+    else:
+        print(f"Unknown characteristic UUID: {uuid_str}")
 ```
 
-### Device Class with Connection Management
+Pass a characteristic class to the translator for type-safe parsing:
 
-High-level device abstraction (requires connection manager implementation):
+```python
+from bluetooth_sig.gatt.characteristics import TemperatureMeasurementCharacteristic
+
+# Type-safe via translator: IDE infers TemperatureMeasurementData
+temp = translator.parse_characteristic(TemperatureMeasurementCharacteristic, raw_data)
+print(f"{temp.temperature}°C")
+```
+
+### Device Abstraction
+
+Combines connection management with type-safe operations:
 
 ```python
 # SKIP: Requires connection manager implementation
 from bluetooth_sig.device import Device
-from bluetooth_sig.types.gatt_enums import CharacteristicName
+from bluetooth_sig.gatt.characteristics import HumidityCharacteristic
 
 device = Device(connection_manager, translator)
 await device.connect()
 
-# Type-safe reads with automatic parsing
-battery = await device.read(CharacteristicName.BATTERY_LEVEL)
-print(f"Battery: {battery.value}%")
+# Type-safe: IDE infers float from characteristic class
+humidity = await device.read(HumidityCharacteristic)
+print(f"Humidity: {humidity}%")
 
-# Type-safe writes
-data = translator.encode_characteristic_by_name(CharacteristicName.BATTERY_LEVEL, 85)
-await device.write(CharacteristicName.BATTERY_LEVEL, data)
-```
-
-### Parsing Unknown Characteristics
-
-Discover and parse characteristics from unknown devices:
-
-```python
-from bluetooth_sig import BluetoothSIGTranslator
-
-translator = BluetoothSIGTranslator()
-
-# Loop through discovered characteristic UUIDs
-for char in client.services.characteristics:
-    uuid_str = str(char.uuid)
-    if translator.supports(uuid_str):
-        raw_data = await client.read_gatt_char(uuid_str)
-        result = translator.parse_characteristic(uuid_str, raw_data)
-        print(f"{result.info.name}: {result.value}")
-    else:
-        print(f"Unknown characteristic UUID: {uuid_str}")
+# Dynamic: returns Any when using enum/string
+from bluetooth_sig.types.gatt_enums import CharacteristicName
+result = await device.read(CharacteristicName.TEMPERATURE)
 ```
 
 **[→ See comprehensive usage guide](https://ronanb96.github.io/bluetooth-sig-python/usage/)** for validation control, context parameters, and advanced patterns

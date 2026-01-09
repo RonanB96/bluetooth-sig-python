@@ -133,7 +133,7 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
         data_high = bytearray([0x10, 0x27, 0x01, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00])
         with pytest.raises(CharacteristicParseError) as exc_info:
             characteristic.parse_value(data_high)
-        assert "year" in str(exc_info.value).lower() or "out of range" in result.error_message.lower()
+        assert "year" in str(exc_info.value).lower() or "out of range" in str(exc_info.value).lower()
 
     def test_current_time_invalid_month(self, characteristic: CurrentTimeCharacteristic) -> None:
         """Test that invalid months are rejected."""

@@ -201,7 +201,7 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
         """Test weight measurement error handling."""
         from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
-        # Too short data - parse_value raises CharacteristicParseError
+        # Too short data
         with pytest.raises(CharacteristicParseError) as exc_info:
             characteristic.parse_value(bytearray([0x00, 0x01]))
         assert "Length validation failed for Weight Measurement: expected at least 3 bytes, got 2" in str(

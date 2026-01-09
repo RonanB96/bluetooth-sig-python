@@ -9,7 +9,7 @@ import msgspec
 from ..constants import UINT8_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .rsc_feature import RSCFeatureCharacteristic, RSCFeatureData
+from .rsc_feature import RSCFeatureCharacteristic
 from .utils import DataParser
 
 
@@ -62,13 +62,10 @@ class RSCMeasurementCharacteristic(BaseCharacteristic[RSCMeasurementData]):
 
         """
         # Get RSC Feature characteristic from context
-        feature_char = self.get_context_characteristic(ctx, RSCFeatureCharacteristic)
-        if feature_char is None or not feature_char.parse_success or feature_char.value is None:
+        feature_data = self.get_context_characteristic(ctx, RSCFeatureCharacteristic)
+        if feature_data is None:
             # No feature characteristic available, skip validation
             return
-
-        # Get the already-parsed feature data from context
-        feature_data: RSCFeatureData = feature_char.value
 
         # Validate optional fields against supported features
         if data.instantaneous_stride_length is not None and not feature_data.instantaneous_stride_length_supported:

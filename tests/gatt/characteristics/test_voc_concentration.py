@@ -50,22 +50,19 @@ class TestVOCConcentrationCharacteristic(CommonCharacteristicTests):
 
     def test_voc_concentration_special_values(self, characteristic: VOCConcentrationCharacteristic) -> None:
         """Test VOC concentration special values per SIG specification."""
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+
         # Test 0xFFFE (value is 65534 or greater per SIG spec)
         test_data = bytearray([0xFE, 0xFF])
-        result = characteristic.parse_value(test_data)
-
-        assert result is not None
-        assert hasattr(result, "raw_value")
-        assert result.raw_value == 65534
+        with pytest.raises(SpecialValueDetected) as exc_info:
+            characteristic.parse_value(test_data)
+        assert exc_info.value.raw_int == 65534
 
         # Test 0xFFFF (value is not known per SIG spec)
-        # The uint16 template returns the raw value 65535
         test_data = bytearray([0xFF, 0xFF])
-        result = characteristic.parse_value(test_data)
-
-        assert result is not None
-        assert hasattr(result, "raw_value")
-        assert result.raw_value == 65535
+        with pytest.raises(SpecialValueDetected) as exc_info:
+            characteristic.parse_value(test_data)
+        assert exc_info.value.raw_int == 65535
 
         # Test encoding of normal values
         encoded = characteristic.build_value(1024)

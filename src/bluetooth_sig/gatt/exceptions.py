@@ -80,7 +80,7 @@ class ParseFieldError(DataParsingError):
 
     """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     # NOTE: More arguments than standard limit required for complete field-level diagnostics
     def __init__(
         self,
@@ -452,6 +452,7 @@ class SpecialValueDetected(CharacteristicError):
 
     """
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         special_value: SpecialValueResult,
@@ -491,6 +492,7 @@ class CharacteristicEncodeError(CharacteristicError):
 
     """
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         message: str,

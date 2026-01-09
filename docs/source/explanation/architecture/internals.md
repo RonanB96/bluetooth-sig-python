@@ -272,6 +272,7 @@ expected_length = 1
 min_value = 0
 max_value = 100
 
+
 def _decode_value(self, data: bytearray) -> int:
     return data[0]  # Validation automatic
 ```
@@ -627,7 +628,9 @@ from bluetooth_sig.gatt.context import CharacteristicContext
 class DependentCharacteristic(BaseCharacteristic):
     _required_dependencies = [ContextInfoCharacteristic]
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext) -> int:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext
+    ) -> int:
         # Access dependency from context
         context_info = ctx.dependencies.get("context_info")
         # Use dependency to enrich parsing

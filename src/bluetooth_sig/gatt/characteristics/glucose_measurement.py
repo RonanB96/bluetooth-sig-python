@@ -217,9 +217,9 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
 
         # Validate sensor status against Glucose Feature if available
         if ctx is not None and sensor_status is not None:
-            feature_char = self.get_context_characteristic(ctx, GlucoseFeatureCharacteristic)
-            if feature_char and feature_char.parse_success and feature_char.value is not None:
-                self._validate_sensor_status_against_feature(sensor_status, feature_char.value)
+            feature_value = self.get_context_characteristic(ctx, GlucoseFeatureCharacteristic)
+            if feature_value is not None:
+                self._validate_sensor_status_against_feature(sensor_status, feature_value)
 
         # Create result with all parsed values
         return GlucoseMeasurementData(

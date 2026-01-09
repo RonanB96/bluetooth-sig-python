@@ -273,7 +273,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
         return unit_spec
 
-    def register_characteristic(  # pylint: disable=too-many-arguments
+    def register_characteristic(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         uuid: BluetoothUUID,
         name: str,

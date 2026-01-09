@@ -11,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.body_composition_measurement import (
     BodyCompositionMeasurementCharacteristic,
     BodyCompositionMeasurementData,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
@@ -298,10 +299,7 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
 
     def test_body_composition_invalid_data(self, characteristic: BodyCompositionMeasurementCharacteristic) -> None:
         """Test body composition with invalid data."""
-        # Too short data - parse_value returns parse_success=False
-        result = characteristic.parse_value(bytearray([0x00, 0x01]))
-        assert result.parse_success is False
-        assert result.error_message == (
-            "Length validation failed for Body Composition Measurement: expected at least 4 bytes, got 2 "
-            "(class-level constraint for BodyCompositionMeasurementCharacteristic)"
-        )
+        # Too short data
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x01]))
+        assert "expected at least 4 bytes, got 2" in str(exc_info.value)

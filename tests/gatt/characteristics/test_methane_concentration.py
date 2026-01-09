@@ -47,18 +47,18 @@ class TestMethaneConcentrationCharacteristic(CommonCharacteristicTests):
         """Test boundary methane concentration values."""
         # No methane
         data_min = bytearray([0x00, 0x00])
-        assert characteristic.parse_value(data_min).value == 0
+        assert characteristic.parse_value(data_min) == 0
 
         # Maximum
         data_max = bytearray([0xFF, 0xFF])
-        assert characteristic.parse_value(data_max).value == 65535
+        assert characteristic.parse_value(data_max) == 65535
 
     def test_methane_concentration_typical_levels(self, characteristic: MethaneConcentrationCharacteristic) -> None:
         """Test typical methane concentration levels."""
         # Atmospheric level (2 ppm)
         data_atm = bytearray([0x02, 0x00])
-        assert characteristic.parse_value(data_atm).value == 2
+        assert characteristic.parse_value(data_atm) == 2
 
         # Elevated (50 ppm)
         data_elevated = bytearray([0x32, 0x00])
-        assert characteristic.parse_value(data_elevated).value == 50
+        assert characteristic.parse_value(data_elevated) == 50

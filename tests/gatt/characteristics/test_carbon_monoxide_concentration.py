@@ -67,9 +67,7 @@ class TestCarbonMonoxideConcentrationCharacteristic(CommonCharacteristicTests):
             encoded = characteristic.build_value(parsed)
             # Decode again and check the value matches
             re_decoded = characteristic.parse_value(encoded)
-            assert re_decoded == pytest.approx(parsed, rel=0.1), (
-                f"{case_desc}: Value changed during round trip"
-            )
+            assert re_decoded == pytest.approx(parsed, rel=0.1), f"{case_desc}: Value changed during round trip"
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""

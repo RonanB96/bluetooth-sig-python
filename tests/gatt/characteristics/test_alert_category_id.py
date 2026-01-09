@@ -81,15 +81,13 @@ class TestAlertCategoryIdCharacteristic(CommonCharacteristicTests):
         self, characteristic: AlertCategoryIdCharacteristic
     ) -> None:
         """Test that service-specific values (0xFB-0xFF) are accepted."""
-        # Test service-specific value 0xFB
+        # Test service-specific value 0xFB (251)
         result = characteristic.parse_value(bytearray([0xFB]))
+        assert result == AlertCategoryID.SERVICE_SPECIFIC_1
 
-        assert result == AlertCategoryID.SIMPLE_ALERT  # Should map to SIMPLE_ALERT
-
-        # Test service-specific value 0xFF
+        # Test service-specific value 0xFF (255)
         result = characteristic.parse_value(bytearray([0xFF]))
-
-        assert result == AlertCategoryID.SIMPLE_ALERT  # Should map to SIMPLE_ALERT
+        assert result == AlertCategoryID.SERVICE_SPECIFIC_5
 
     @pytest.mark.parametrize("enum_value", list(AlertCategoryID))
     def test_alert_category_id_encoding_enum(
@@ -106,7 +104,7 @@ class TestAlertCategoryIdCharacteristic(CommonCharacteristicTests):
         self, characteristic: AlertCategoryIdCharacteristic, int_value: int
     ) -> None:
         """Test encoding integer values."""
-        encoded = characteristic.build_value(int_value)
+        encoded = characteristic.build_value(AlertCategoryID(int_value))
         assert isinstance(encoded, bytearray)
         assert len(encoded) == 1
         assert encoded[0] == int_value

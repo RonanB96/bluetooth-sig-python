@@ -12,6 +12,7 @@ from bluetooth_sig.gatt.characteristics.battery_level_status import (
     BatteryLevelStatusCharacteristic,
     BatteryLevelStatusFlags,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.battery import (
     BatteryChargeLevel,
     BatteryChargeState,
@@ -216,9 +217,8 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
 
     def test_insufficient_data_error(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that insufficient data results in parse failure."""
-        # parse_value returns parse_success=False for insufficient data
-        result = characteristic.parse_value(bytearray([0x00]))  # too short, missing power state
-        assert result.parse_success is False
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([0x00]))  # too short, missing power state
 
     def test_invalid_flags_optional_missing(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that setting flags for optional fields but not providing data results in parse failure."""
@@ -231,8 +231,8 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
                 # missing identifier
             ]
         )
-        result = characteristic.parse_value(data)
-        assert result.parse_success is False
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(data)
 
     def test_characteristic_metadata(self, characteristic: BatteryLevelStatusCharacteristic) -> None:
         """Test characteristic metadata."""

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Protocol
 
 
 class CharacteristicProtocol(Protocol):
@@ -13,10 +13,18 @@ class CharacteristicProtocol(Protocol):
     Used primarily by debug utilities.
     """
 
-    def parse_value(self, data: bytearray) -> Any:  # noqa: ANN401
-        """Parse raw data into characteristic value."""
-        ...  # pylint: disable=unnecessary-ellipsis  # Ellipsis is required for Protocol method stubs
+    def _decode_value(self, data: bytearray) -> object:
+        """Decode raw data into characteristic value."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    def _encode_value(self, value: Any) -> bytearray:  # noqa: ANN401
-        """Encode characteristic value into raw data."""
-        ...  # pylint: disable=unnecessary-ellipsis  # Ellipsis is required for Protocol method stubs
+    def parse_value(self, data: bytearray) -> object:
+        """Parse raw data into characteristic value."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def build_value(self, data: object, validate: bool = True) -> bytearray:
+        """Encode characteristic value into raw bytes."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def _encode_value(self, value: object) -> bytearray:
+        """Internal encoding implementation."""
+        ...  # pylint: disable=unnecessary-ellipsis

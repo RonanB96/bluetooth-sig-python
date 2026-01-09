@@ -16,7 +16,7 @@ class TestIMDTriggerSettingDescriptor:
         data = b"\x01\x00"
 
         result = imd.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, IMDTriggerSettingData)
         assert result.value.trigger_setting == 0x0001
 
@@ -26,7 +26,7 @@ class TestIMDTriggerSettingDescriptor:
         data = b"\x01\x00\x00"  # Too long (3 bytes instead of 2)
 
         result = imd.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "IMD Trigger Setting data must be exactly 2 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:

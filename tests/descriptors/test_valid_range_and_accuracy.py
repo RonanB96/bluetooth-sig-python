@@ -16,7 +16,7 @@ class TestValidRangeAndAccuracyDescriptor:
         data = b"\x00\x00\xff\xff\x01\x00"
 
         result = vra.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, ValidRangeAndAccuracyData)
         assert result.value.min_value == 0x0000
         assert result.value.max_value == 0xFFFF
@@ -28,7 +28,7 @@ class TestValidRangeAndAccuracyDescriptor:
         data = b"\x00\x00\xff\xff"  # Too short
 
         result = vra.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Valid Range and Accuracy data expected 6 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:

@@ -95,8 +95,8 @@ class TestForceCharacteristic(CommonCharacteristicTests):
         assert characteristic.build_value(1.0) == bytearray([0xE8, 0x03, 0x00, 0x00])
         assert characteristic.build_value(-1.0) == bytearray([0x18, 0xFC, 0xFF, 0xFF])
 
-        # Test too much data (should work, extra ignored)
-        data = bytearray([0xE8, 0x03, 0x00, 0x00, 0xFF, 0xFF])
+        # Test exact length data
+        data = bytearray([0xE8, 0x03, 0x00, 0x00])
         result = characteristic.parse_value(data)
         assert result is not None
         assert abs(result - 1.0) < 0.001

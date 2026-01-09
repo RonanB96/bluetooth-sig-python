@@ -122,10 +122,10 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic[PulseOximetryDat
         # Context enhancement: PLX Features
         supported_features: PLXFeatureFlags | None = None
         if ctx:
-            plx_features_char = self.get_context_characteristic(ctx, CharacteristicName.PLX_FEATURES)
-            if plx_features_char and plx_features_char.parse_success:
+            plx_features_value = self.get_context_characteristic(ctx, CharacteristicName.PLX_FEATURES)
+            if plx_features_value is not None:
                 # PLX Features returns PLXFeatureFlags enum
-                supported_features = plx_features_char.value
+                supported_features = plx_features_value
 
         # Create immutable struct with all values
         return PulseOximetryData(

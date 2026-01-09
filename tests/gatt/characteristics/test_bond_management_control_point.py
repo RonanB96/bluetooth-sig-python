@@ -58,21 +58,22 @@ class TestBondManagementControlPointCharacteristic(CommonCharacteristicTests):
         assert result == BondManagementCommand.DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER
 
     def test_invalid_command(self, characteristic: BondManagementControlPointCharacteristic) -> None:
-        """Test that invalid commands result in parse failure."""
-        # parse_value returns parse_success=False for invalid commands
-        result = characteristic.parse_value(bytearray([0x04]))  # Invalid command
-        assert result.parse_success is False
-        assert result.error_message == "Invalid BondManagementCommand: 4 (expected range [1, 3])"
+        """Test that invalid commands raise CharacteristicParseError."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x04]))  # Invalid command
+
+        assert "Invalid BondManagementCommand" in str(exc_info.value)
 
     def test_insufficient_data(self, characteristic: BondManagementControlPointCharacteristic) -> None:
-        """Test that insufficient data results in parse failure."""
-        # parse_value returns parse_success=False for insufficient data
-        result = characteristic.parse_value(bytearray())  # Empty data
-        assert result.parse_success is False
-        assert result.error_message == (
-            "Length validation failed for Bond Management Control Point: expected at least 1 bytes, got 0 "
-            "(class-level constraint for BondManagementControlPointCharacteristic)"
-        )
+        """Test that insufficient data raises CharacteristicParseError."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray())  # Empty data
+
+        assert "Length validation failed" in str(exc_info.value)
 
     def test_encode_commands(self, characteristic: BondManagementControlPointCharacteristic) -> None:
         """Test encoding of control commands."""

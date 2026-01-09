@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import MagneticDeclinationCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -73,10 +74,10 @@ class TestMagneticDeclinationCharacteristic(CommonCharacteristicTests):
 
     def test_magnetic_declination_error_handling(self, characteristic: MagneticDeclinationCharacteristic) -> None:
         """Test Magnetic Declination error handling."""
-        # Test insufficient data - parse_value returns parse_success=False
-        result = characteristic.parse_value(bytearray([0x12]))
-        assert result.parse_success is False
-        assert result.error_message == "Failed to parse int16 data [12]: need 2 bytes, got 1"
+        # Test insufficient data
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x12]))
+        assert "need 2 bytes, got 1" in str(exc_info.value)
 
     def test_magnetic_declination_cardinal_directions(self, characteristic: MagneticDeclinationCharacteristic) -> None:
         """Test magnetic declination cardinal directions."""

@@ -12,6 +12,7 @@ from bluetooth_sig.gatt.characteristics.cycling_power_vector import (
     CyclingPowerVectorData,
     CyclingPowerVectorFlags,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -218,18 +219,12 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
         """Test cycling power vector with invalid data."""
         char = CyclingPowerVectorCharacteristic()
 
-        # Test insufficient data - parse_value returns parse_success=False
-        result = char.parse_value(bytearray([0x01, 0x02, 0x03]))
-        assert result.parse_success is False
-        assert result.error_message == (
-            "Length validation failed for Cycling Power Vector: expected at least 7 bytes, got 3 "
-            "(class-level constraint for CyclingPowerVectorCharacteristic)"
-        )
+        # Test insufficient data
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([0x01, 0x02, 0x03]))
+        assert "expected at least 7 bytes, got 3" in str(exc_info.value)
 
-        # Test empty data - also returns parse_success=False
-        result = char.parse_value(bytearray())
-        assert result.parse_success is False
-        assert result.error_message == (
-            "Length validation failed for Cycling Power Vector: expected at least 7 bytes, got 0 "
-            "(class-level constraint for CyclingPowerVectorCharacteristic)"
-        )
+        # Test empty data - also raises CharacteristicParseError
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray())
+        assert "expected at least 7 bytes, got 0" in str(exc_info.value)

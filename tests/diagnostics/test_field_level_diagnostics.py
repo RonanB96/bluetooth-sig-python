@@ -85,80 +85,84 @@ class MultiFieldCharacteristic(CustomBaseCharacteristic):
 class TestFieldLevelDiagnostics:
     """Test suite for field-level error reporting and parse traces."""
 
-    def test_parse_success_includes_trace(self) -> None:
-        """Test that successful parsing includes a parse trace."""
+    def test_parse_success_returns_value(self) -> None:
+        """Test that successful parsing returns the parsed value directly."""
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0xE8, 0x03, 50])  # flags=1, temp=10.00°C, humidity=50%
 
         result = char.parse_value(data)
 
-        assert result.parse_success is True
-        assert result.value is not None
-        assert len(result.parse_trace) > 0
-        assert "Starting parse" in result.parse_trace[0]
-        assert "completed successfully" in result.parse_trace[-1]
+        assert isinstance(result, dict)
+        assert result["flags"] == 1
+        assert result["temperature"] == pytest.approx(10.0)
+        assert result["humidity"] == 50
 
     def test_field_error_in_temperature(self) -> None:
         """Test that temperature field errors are captured with field information."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         char = MultiFieldCharacteristic()
         # Temperature value 6000 (0x1770) is out of range
         data = bytearray([0x01, 0x70, 0x17, 50])
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert result.value is None
-        assert len(result.field_errors) == 1
+        assert len(exc_info.value.field_errors) == 1
 
-        field_error = result.field_errors[0]
+        field_error = exc_info.value.field_errors[0]
         assert field_error.field == "temperature"
         assert "out of valid range" in field_error.reason
         assert field_error.offset == 1
 
     def test_field_error_in_humidity(self) -> None:
         """Test that humidity field errors are captured with field information."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         char = MultiFieldCharacteristic()
         # Humidity value 150 exceeds maximum 100
         data = bytearray([0x01, 0xE8, 0x03, 150])
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert result.value is None
-        assert len(result.field_errors) == 1
+        assert len(exc_info.value.field_errors) == 1
 
-        field_error = result.field_errors[0]
+        field_error = exc_info.value.field_errors[0]
         assert field_error.field == "humidity"
         assert "exceeds maximum 100%" in field_error.reason
         assert field_error.offset == 3
 
     def test_field_error_in_data_length(self) -> None:
         """Test that insufficient data errors are captured as field errors."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0xE8])  # Only 2 bytes, need 4
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert result.value is None
-        assert len(result.field_errors) == 1
+        assert len(exc_info.value.field_errors) == 1
 
-        field_error = result.field_errors[0]
+        field_error = exc_info.value.field_errors[0]
         assert field_error.field == "data_length"
         assert "need at least 4 bytes" in field_error.reason
         assert field_error.offset == 0
 
     def test_parse_trace_on_failure(self) -> None:
         """Test that parse trace captures steps leading to failure."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0x70, 0x17, 50])  # Temperature out of range
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert len(result.parse_trace) > 0
-        assert any("Starting parse" in step for step in result.parse_trace)
-        assert any("Field error" in step for step in result.parse_trace)
+        assert len(exc_info.value.parse_trace) > 0
+        assert any("Starting parse" in step for step in exc_info.value.parse_trace)
+        assert any("Field error" in step or "Parse failed" in step for step in exc_info.value.parse_trace)
 
     def test_debug_utils_format_field_error(self) -> None:
         """Test DebugUtils.format_field_error produces readable output."""
@@ -217,51 +221,56 @@ class TestFieldLevelDiagnostics:
 
     def test_field_error_includes_hex_context(self) -> None:
         """Test that field errors include hex dump context for debugging."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0x70, 0x17, 50])
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert len(result.field_errors) == 1
+        assert len(exc_info.value.field_errors) == 1
 
         # Format the error for display
-        formatted = DebugUtils.format_field_error(result.field_errors[0], data)
+        formatted = DebugUtils.format_field_error(exc_info.value.field_errors[0], data)
 
         # Should include hex representation
         assert "70" in formatted or "17" in formatted
 
-    def test_error_message_backward_compatibility(self) -> None:
-        """Test that error_message field is still populated for backward compatibility."""
+    def test_error_message_in_exception(self) -> None:
+        """Test that exception message contains field information."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0x70, 0x17, 50])
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert result.error_message != ""
-        assert "temperature" in result.error_message
+        assert "temperature" in str(exc_info.value)
 
-    def test_empty_field_errors_on_success(self) -> None:
-        """Test that successful parsing has empty field_errors list."""
+    def test_no_exception_on_valid_data(self) -> None:
+        """Test that valid data parses successfully without exception."""
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0xE8, 0x03, 50])
 
         result = char.parse_value(data)
 
-        assert result.parse_success is True
-        assert result.field_errors == []
+        assert isinstance(result, dict)
+        assert result["temperature"] == pytest.approx(10.0)
 
     def test_raw_slice_in_field_error(self) -> None:
         """Test that ParseFieldException captures raw data slice."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         char = MultiFieldCharacteristic()
         data = bytearray([0x01, 0x70, 0x17, 150])  # Humidity out of range
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
-        assert len(result.field_errors) == 1
-        assert result.field_errors[0].raw_slice is not None
+        assert len(exc_info.value.field_errors) == 1
+        assert exc_info.value.field_errors[0].raw_slice is not None
 
 
 class TestGenericErrorExtraction:
@@ -270,9 +279,10 @@ class TestGenericErrorExtraction:
     def test_generic_value_error_extraction(self) -> None:
         """Test that generic ValueError messages do not produce field errors.
 
-        Generic errors (not ParseFieldException) are reported in the main
-        error_message field but do not produce field_errors entries.
+        Generic errors (not ParseFieldException) are reported in the exception
+        message but do not produce field_errors entries.
         """
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
         class GenericErrorCharacteristic(CustomBaseCharacteristic):
             _info = CharacteristicInfo(
@@ -296,14 +306,14 @@ class TestGenericErrorExtraction:
         char = GenericErrorCharacteristic()
         data = bytearray([0xC8])
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        assert result.parse_success is False
         # Generic errors do not produce field_errors (no brittle string parsing)
-        assert len(result.field_errors) == 0
+        assert len(exc_info.value.field_errors) == 0
         # But the error message is still captured
-        assert "Value 200 is above maximum 100" in result.error_message
-        assert "Parse failed:" in result.parse_trace[-1]
+        assert "Value 200 is above maximum 100" in str(exc_info.value)
+        assert "Parse failed:" in exc_info.value.parse_trace[-1]
 
 
 class TestFieldErrorFormatting:
@@ -374,25 +384,28 @@ class TestTraceControlPerformance:
             # Disable trace collection for performance
             _enable_parse_trace = False
 
+            min_length = 1
+
             def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
-                """Simple decode."""
+                """Simple decode - fails with empty data."""
+                if len(data) == 0:
+                    raise ValueError("Need at least 1 byte")
                 return int(data[0])
 
             def _encode_value(self, data: int) -> bytearray:
                 """Simple encode."""
                 return bytearray([data])
 
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         char = NoTraceCharacteristic()
-        data = bytearray([42])
+        data = bytearray([])  # Empty data to trigger failure
 
-        result = char.parse_value(data)
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
-        # Parse should succeed
-        assert result.parse_success is True
-        assert result.value == 42
-
-        # But trace should be empty due to disabled flag
-        assert len(result.parse_trace) == 0
+        # Trace should be empty due to disabled flag
+        assert len(exc_info.value.parse_trace) == 0
 
     def test_trace_enabled_by_default(self) -> None:
         """Test that parse trace is enabled by default."""
@@ -409,29 +422,34 @@ class TestTraceControlPerformance:
 
             # Don't set _enable_parse_trace - should default to True
 
+            min_length = 1
+
             def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
-                """Simple decode."""
+                """Simple decode - fails with empty data."""
+                if len(data) == 0:
+                    raise ValueError("Need at least 1 byte")
                 return int(data[0])
 
             def _encode_value(self, data: int) -> bytearray:
                 """Simple encode."""
                 return bytearray([data])
 
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
         char = DefaultTraceCharacteristic()
-        data = bytearray([42])
+        data = bytearray([])  # Empty data to trigger failure
 
-        result = char.parse_value(data)
-
-        # Parse should succeed
-        assert result.parse_success is True
-        assert result.value == 42
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(data)
 
         # Trace should have entries by default
-        assert len(result.parse_trace) > 0
+        assert len(exc_info.value.parse_trace) > 0
 
     def test_trace_disabled_via_environment_variable(self) -> None:
         """Test that parse trace can be disabled via environment variable."""
         import os
+
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
         class EnvTraceCharacteristic(CustomBaseCharacteristic):
             _info = CharacteristicInfo(
@@ -441,8 +459,12 @@ class TestTraceControlPerformance:
                 value_type=ValueType.INT,
             )
 
+            min_length = 1
+
             def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
-                """Simple decode."""
+                """Simple decode - fails with empty data."""
+                if len(data) == 0:
+                    raise ValueError("Need at least 1 byte")
                 return int(data[0])
 
             def _encode_value(self, data: int) -> bytearray:
@@ -455,16 +477,13 @@ class TestTraceControlPerformance:
             os.environ["BLUETOOTH_SIG_ENABLE_PARSE_TRACE"] = "0"
 
             char = EnvTraceCharacteristic()
-            data = bytearray([42])
+            data = bytearray([])  # Empty data to trigger failure
 
-            result = char.parse_value(data)
-
-            # Parse should succeed
-            assert result.parse_success is True
-            assert result.value == 42
+            with pytest.raises(CharacteristicParseError) as exc_info:
+                char.parse_value(data)
 
             # Trace should be empty when disabled via env var
-            assert len(result.parse_trace) == 0
+            assert len(exc_info.value.parse_trace) == 0
         finally:
             # Restore original environment
             if old_value is None:

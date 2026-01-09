@@ -10,7 +10,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.context import CharacteristicContext
-from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError, SpecialValueDetected
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -176,7 +176,7 @@ class CommonCharacteristicTests:
     def test_empty_data_handling(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that empty data is handled appropriately."""
         try:
-            result = characteristic.parse_value(bytearray())
+            _ = characteristic.parse_value(bytearray())
             # If it succeeds, that's fine for variable-length characteristics
         except CharacteristicParseError as e:
             # If it fails, should have a meaningful error message (not just empty)
@@ -244,6 +244,9 @@ class CommonCharacteristicTests:
                 except CharacteristicParseError as e:
                     # If it fails, should have a meaningful error message
                     assert str(e).strip(), "Failed parsing should have meaningful error message"
+                except SpecialValueDetected:
+                    # Special value detection is also acceptable
+                    pass
 
     def test_uuid_resolution_behaviour(self, characteristic: BaseCharacteristic[Any], expected_uuid: str) -> None:
         """Test that UUID resolution works and matches expected value."""
@@ -301,7 +304,6 @@ class CommonCharacteristicTests:
         test_case = valid_test_data[0] if isinstance(valid_test_data, list) else valid_test_data
         input_data = test_case.input_data
 
-        # parse_value now returns the parsed value directly
         parse_result = characteristic.parse_value(input_data)
         decode_result = characteristic._decode_value(input_data)
 

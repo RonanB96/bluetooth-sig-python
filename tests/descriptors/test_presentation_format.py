@@ -17,7 +17,7 @@ class TestCharacteristicPresentationFormatDescriptor:
         data = b"\x06\x00\x2f\x27\x01\x00\x00"
 
         result = cpf.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, CharacteristicPresentationFormatData)
         assert result.value.format == 0x06  # UINT16
         assert result.value.exponent == 0
@@ -30,13 +30,15 @@ class TestCharacteristicPresentationFormatDescriptor:
         cpf = CharacteristicPresentationFormatDescriptor()
         # Known values: UINT16 (0x06), Celsius (0x272F)
         known = cpf.parse_value(b"\x06\x00\x2f\x27\x01\x00\x00")
-        assert known.parse_success and known.value is not None
+        assert known.parse_success is True
+        assert known.value is not None
         assert known.value.format_name == "uint16"
         assert known.value.unit_name is not None and "Celsius" in known.value.unit_name
 
         # Unknown values: 0xFF format, 0xFFFF unit
         unknown = cpf.parse_value(b"\xff\x00\xff\xff\x01\x00\x00")
-        assert unknown.parse_success and unknown.value is not None
+        assert unknown.parse_success is True
+        assert unknown.value is not None
         assert unknown.value.format_name is None
         assert unknown.value.unit_name is None
 
@@ -49,7 +51,8 @@ class TestCharacteristicPresentationFormatDescriptor:
         # Namespace: Bluetooth SIG (0x01), Description: 0x0001 (first)
         first_data = b"\x06\x00\x2f\x27\x01\x01\x00"
         result = cpf.parse_value(first_data)
-        assert result.parse_success and result.value is not None
+        assert result.parse_success is True
+        assert result.value is not None
         assert result.value.description == 0x0001
         assert result.value.description_name == "first"
 
@@ -57,21 +60,24 @@ class TestCharacteristicPresentationFormatDescriptor:
         # Namespace: Bluetooth SIG (0x01), Description: 0x010D (left)
         left_data = b"\x06\x00\x2f\x27\x01\x0d\x01"
         result = cpf.parse_value(left_data)
-        assert result.parse_success and result.value is not None
+        assert result.parse_success is True
+        assert result.value is not None
         assert result.value.description == 0x010D
         assert result.value.description_name == "left"
 
         # Test position description: description=0x010E -> "right"
         right_data = b"\x06\x00\x2f\x27\x01\x0e\x01"
         result = cpf.parse_value(right_data)
-        assert result.parse_success and result.value is not None
+        assert result.parse_success is True
+        assert result.value is not None
         assert result.value.description == 0x010E
         assert result.value.description_name == "right"
 
         # Test unknown description value should return None for description_name
         unknown_data = b"\x06\x00\x2f\x27\x01\xff\xff"
         result = cpf.parse_value(unknown_data)
-        assert result.parse_success and result.value is not None
+        assert result.parse_success is True
+        assert result.value is not None
         assert result.value.description == 0xFFFF
         assert result.value.description_name is None
 
@@ -79,7 +85,8 @@ class TestCharacteristicPresentationFormatDescriptor:
         # Namespace: Unknown (0x00), Description: 0x0001
         non_sig_data = b"\x06\x00\x2f\x27\x00\x01\x00"
         result = cpf.parse_value(non_sig_data)
-        assert result.parse_success and result.value is not None
+        assert result.parse_success is True
+        assert result.value is not None
         assert result.value.description == 0x0001
         assert result.value.description_name is None  # Not resolved for non-SIG namespace
 
@@ -89,7 +96,7 @@ class TestCharacteristicPresentationFormatDescriptor:
         data = b"\x06\x00\x2f\x27\x01\x00"  # Too short (6 bytes instead of 7)
 
         result = cpf.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Presentation Format data must be exactly 7 bytes" in result.error_message
 
     def test_helper_methods(self) -> None:

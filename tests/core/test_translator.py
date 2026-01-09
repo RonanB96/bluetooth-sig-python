@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types import ValidationResult
 from bluetooth_sig.types.gatt_enums import CharacteristicName, ServiceName
 
@@ -52,8 +53,7 @@ class TestBluetoothSIGTranslator:
         raw_data = b"\x64"  # 100 in binary
         unknown_uuid = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
 
-        # Should raise CharacteristicParseError for unknown UUID
-        with pytest.raises(Exception):  # Could be CharacteristicParseError or similar
+        with pytest.raises(CharacteristicParseError):
             translator.parse_characteristic(unknown_uuid, raw_data)
 
     def test_parse_characteristic_with_uuid_formats(self) -> None:
@@ -112,7 +112,9 @@ class TestBluetoothSIGTranslator:
 
         def parse_sensor_reading(char_uuid: str, raw_data: bytes) -> int:
             """Pure SIG standard translation - no connection dependencies."""
-            return translator.parse_characteristic(char_uuid, raw_data)
+            result = translator.parse_characteristic(char_uuid, raw_data)
+            assert isinstance(result, int)
+            return result
 
         # Test the pattern works
         result = parse_sensor_reading("2A19", b"\x64")

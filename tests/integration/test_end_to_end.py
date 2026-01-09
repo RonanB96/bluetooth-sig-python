@@ -7,15 +7,14 @@ depends on data from other characteristics, as specified in Bluetooth SIG specif
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 import pytest
 
 from bluetooth_sig.core import BluetoothSIGTranslator
-from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext
-from bluetooth_sig.types import CharacteristicDataProtocol, CharacteristicInfo
+from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.units import PressureUnit
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -102,9 +101,9 @@ class SensorReadingCharacteristic(CustomBaseCharacteristic):
 
         # Enhance with context if available (SIG pattern: optional enrichment)
         if ctx is not None and ctx.other_characteristics:
-            calib_char = ctx.other_characteristics.get("CA11B001-0000-1000-8000-00805F9B34FB")
-            if calib_char and calib_char.parse_success:
-                calibration_factor = calib_char.value
+            calib_value = ctx.other_characteristics.get("CA11B001-0000-1000-8000-00805F9B34FB")
+            if calib_value is not None:
+                calibration_factor = calib_value
                 # Note: In production, log when context is expected but missing
 
         return raw_value * calibration_factor
@@ -174,9 +173,8 @@ class SequencedDataCharacteristic(CustomBaseCharacteristic):
 
         # Match with context sequence number if available
         if ctx is not None and ctx.other_characteristics:
-            seq_char = ctx.other_characteristics.get("5E900001-0000-1000-8000-00805F9B34FB")
-            if seq_char and seq_char.parse_success:
-                expected_seq = seq_char.value
+            expected_seq = ctx.other_characteristics.get("5E900001-0000-1000-8000-00805F9B34FB")
+            if expected_seq is not None:
                 result["matched"] = seq_num == expected_seq
 
         return result
@@ -244,19 +242,17 @@ class TestMultiCharacteristicDependencies:
 
         calib_data = struct.pack("<f", 2.5)
 
-        result: CharacteristicData[Any] = translator.parse_characteristic(CALIBRATION_UUID, calib_data)
+        result = translator.parse_characteristic(CALIBRATION_UUID, calib_data)
 
-        assert result.parse_success is True
-        assert result.value == pytest.approx(2.5)
+        assert result == pytest.approx(2.5)
 
     def test_parse_dependent_characteristic_without_context(self, translator: BluetoothSIGTranslator) -> None:
         """Test that dependent characteristic works without context (standalone mode)."""
         sensor_data = (100).to_bytes(2, byteorder="little", signed=True)
 
-        result: CharacteristicData[Any] = translator.parse_characteristic(SENSOR_READING_UUID, sensor_data)
+        result = translator.parse_characteristic(SENSOR_READING_UUID, sensor_data)
 
-        assert result.parse_success is True
-        assert result.value == pytest.approx(100.0)
+        assert result == pytest.approx(100.0)
 
     def test_parse_dependent_characteristic_with_context(self, translator: BluetoothSIGTranslator) -> None:
         """Test that dependent characteristic uses context when available."""
@@ -265,21 +261,23 @@ class TestMultiCharacteristicDependencies:
         calib_data = struct.pack("<f", 2.5)
         sensor_data = (100).to_bytes(2, byteorder="little", signed=True)
 
-        calib_result: CharacteristicData[Any] = translator.parse_characteristic(CALIBRATION_UUID, calib_data)
+        # Parse calibration first to get its value
+        calib_result = translator.parse_characteristic(CALIBRATION_UUID, calib_data)
 
-        context_map = {
-            CALIBRATION_UUID: cast(CharacteristicDataProtocol, calib_result),
+        # Context now stores raw parsed values directly
+        context_map: dict[str, Any] = {
+            CALIBRATION_UUID: calib_result,
         }
         ctx = CharacteristicContext(other_characteristics=context_map)
 
-        sensor_result: CharacteristicData[Any] = translator.parse_characteristic(
+        sensor_result = translator.parse_characteristic(
             SENSOR_READING_UUID,
             sensor_data,
             ctx=ctx,
         )
 
-        assert sensor_result.parse_success is True
-        assert sensor_result.value == pytest.approx(250.0)
+        # 100 * 2.5 = 250.0
+        assert sensor_result == pytest.approx(250.0)
 
     def test_batch_parse_with_dependencies(self, translator: BluetoothSIGTranslator) -> None:
         """Test that parse_characteristics handles dependencies automatically."""
@@ -294,32 +292,32 @@ class TestMultiCharacteristicDependencies:
         }
 
         # Parse all characteristics in dependency order
-        results: dict[str, CharacteristicData[Any]] = translator.parse_characteristics(char_data)
+        results: dict[str, Any] = translator.parse_characteristics(char_data)
 
-        # Both should parse successfully
+        # Both should parse successfully (results returned, not CharacteristicData)
         assert len(results) == 2
-        assert all(r.parse_success for r in results.values())
 
-        # Calibration should have default value
-        calib_result: CharacteristicData[Any] = results[CALIBRATION_UUID]
-        assert calib_result.value == pytest.approx(2.5)
+        # Calibration should have the float value
+        calib_result = results[CALIBRATION_UUID]
+        assert calib_result == pytest.approx(2.5)
 
         # Sensor should use calibration from context (automatically provided)
-        sensor_result: CharacteristicData[Any] = results[SENSOR_READING_UUID]
-        assert sensor_result.value == pytest.approx(250.0)
+        sensor_result = results[SENSOR_READING_UUID]
+        assert sensor_result == pytest.approx(250.0)
 
     def test_missing_required_dependency_fails_fast(self, translator: BluetoothSIGTranslator) -> None:
-        """Missing required dependency should yield a clear failure result."""
+        """Missing required dependency should raise MissingDependencyError."""
+        from bluetooth_sig.gatt.exceptions import MissingDependencyError
+
         sensor_uuid = str(SensorReadingCharacteristic().info.uuid)
         raw_sensor = (100).to_bytes(2, byteorder="little", signed=True)
 
-        results = translator.parse_characteristics({sensor_uuid: raw_sensor})
+        # parse_characteristics now raises MissingDependencyError for missing required deps
+        with pytest.raises(MissingDependencyError) as exc_info:
+            translator.parse_characteristics({sensor_uuid: raw_sensor})
 
-        assert sensor_uuid in results
-        sensor_result = results[sensor_uuid]
-        assert sensor_result.parse_success is False
-        assert sensor_result.error_message is not None
-        assert "requires missing dependencies" in sensor_result.error_message
+        # Verify the error message mentions the missing dependency
+        assert "Sensor Reading" in str(exc_info.value) or "missing" in str(exc_info.value).lower()
 
     def test_optional_dependency_absent_still_succeeds(self, translator: BluetoothSIGTranslator) -> None:
         """Optional dependencies should not block parsing when unavailable."""
@@ -342,8 +340,7 @@ class TestMultiCharacteristicDependencies:
 
         assert bp_uuid in results
         bp_result = results[bp_uuid]
-        assert bp_result.parse_success is True
-        assert isinstance(bp_result.value, BloodPressureData)
+        assert isinstance(bp_result, BloodPressureData)
 
     def test_sequence_number_matching_pattern(self, translator: BluetoothSIGTranslator) -> None:
         """Test sequence number matching pattern (SIG specification pattern)."""
@@ -366,15 +363,13 @@ class TestMultiCharacteristicDependencies:
         seq_result = results[str(SequenceNumberCharacteristic._info.uuid)]
         data_result = results[str(SequencedDataCharacteristic._info.uuid)]
 
-        assert seq_result.parse_success is True
-        assert seq_result.value == 42
+        assert seq_result == 42
 
-        assert data_result.parse_success is True
-        assert data_result.value is not None
-        assert isinstance(data_result.value, dict)
-        assert data_result.value["sequence_number"] == 42
-        assert data_result.value["value"] == 123
-        assert data_result.value["matched"] is True  # Sequence numbers match
+        assert data_result is not None
+        assert isinstance(data_result, dict)
+        assert data_result["sequence_number"] == 42
+        assert data_result["value"] == 123
+        assert data_result["matched"] is True  # Sequence numbers match
 
     def test_sequence_number_mismatch(self, translator: BluetoothSIGTranslator) -> None:
         """Test that sequence number mismatch is detected."""
@@ -393,56 +388,33 @@ class TestMultiCharacteristicDependencies:
         )
 
         data_result = results[str(SequencedDataCharacteristic._info.uuid)]
-        assert data_result.parse_success is True
-        assert data_result.value is not None
-        assert isinstance(data_result.value, dict)
-        assert data_result.value["matched"] is False  # Sequence numbers don't match
+        assert data_result is not None
+        assert isinstance(data_result, dict)
+        assert data_result["matched"] is False  # Sequence numbers don't match
 
     def test_context_direct_access(self) -> None:
         """Test CharacteristicContext direct access to other_characteristics."""
-        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+        # Context now stores raw parsed values directly
+        calib_value = 2.5
 
-        # Create mock characteristic data
-        calib_info = CharacteristicInfo(
-            uuid=BluetoothUUID(str(CalibrationCharacteristic._info.uuid)),
-            name="Calibration",
-            unit="",
-            value_type=ValueType.FLOAT,
-        )
-        from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
-
-        calib_char = UnknownCharacteristic(info=calib_info)
-        calib_data = CharacteristicData(
-            characteristic=calib_char,
-            value=2.5,
-            raw_data=b"\x00\x00\x20\x40",
-            parse_success=True,
-        )
-
-        # Create context
-        from typing import cast
-
-        from bluetooth_sig.types.protocols import CharacteristicDataProtocol
-
-        ctx = CharacteristicContext(
-            other_characteristics={
-                str(CalibrationCharacteristic._info.uuid): cast(CharacteristicDataProtocol, calib_data)  # type: ignore[misc]
-            }
-        )
+        # Create context with raw value
+        ctx = CharacteristicContext(other_characteristics={str(CalibrationCharacteristic._info.uuid): calib_value})
 
         # Test direct access via other_characteristics
-        assert ctx.other_characteristics is not None
-        result = ctx.other_characteristics.get(str(CalibrationCharacteristic._info.uuid))
+        other_chars = ctx.other_characteristics
+        assert other_chars is not None
+        result = other_chars.get(str(CalibrationCharacteristic._info.uuid))
         assert result is not None
-        assert result.value == 2.5
+        assert result == 2.5
 
         # Test with non-existent UUID
-        result = ctx.other_characteristics.get("nonexistent")
+        result = other_chars.get("nonexistent")
         assert result is None
 
         # Test getting all characteristics
-        assert len(ctx.other_characteristics) == 1
-        assert str(CalibrationCharacteristic._info.uuid) in ctx.other_characteristics  # pylint: disable=unsupported-membership-test
+        assert len(other_chars) == 1
+        # Use .get() to verify presence as Mapping doesn't need 'in' operator
+        assert other_chars.get(str(CalibrationCharacteristic._info.uuid)) is not None
 
     def test_empty_context_access(self) -> None:
         """Test CharacteristicContext with empty other_characteristics."""
@@ -502,11 +474,10 @@ class TestMultiCharacteristicDependencies:
             str(CharB._info.uuid): b"\x02",
         }
 
-        results = translator.parse_characteristics(char_data)
-        assert len(results) == 2
-        # With circular required dependencies, both should fail to parse
-        # since each one waits for the other
-        assert not all(r.parse_success for r in results.values())
+        from bluetooth_sig.gatt.exceptions import MissingDependencyError
+
+        with pytest.raises(MissingDependencyError):
+            translator.parse_characteristics(char_data)
 
 
 class TestMultiCharacteristicExamples:
@@ -543,7 +514,7 @@ class TestMultiCharacteristicExamples:
 
         # Access parsed results
         sensor_result = results[str(SensorReadingCharacteristic._info.uuid)]
-        assert sensor_result.value == pytest.approx(250.0)  # 100 * 2.5
+        assert sensor_result == pytest.approx(250.0)  # 100 * 2.5
 
 
 class TestRequiredOptionalDependencies:
@@ -593,12 +564,11 @@ class TestRequiredOptionalDependencies:
                 value = int.from_bytes(bytes(data[:2]), byteorder="little", signed=False)
                 result = {"context_value": value, "has_measurement": False}
 
-                # Must have measurement from context
                 if ctx and ctx.other_characteristics:
                     meas = ctx.other_characteristics.get("0EA50001-0000-1000-8000-00805F9B34FB")
-                    if meas and meas.parse_success:
+                    if meas is not None:
                         result["has_measurement"] = True
-                        result["measurement_value"] = meas.value
+                        result["measurement_value"] = meas
 
                 return result
 
@@ -648,12 +618,11 @@ class TestRequiredOptionalDependencies:
                 value = int.from_bytes(bytes(data[:2]), byteorder="little", signed=False)
                 result = {"data_value": value, "enriched": False}
 
-                # Optionally use enrichment from context
                 if ctx and ctx.other_characteristics:
                     enrich = ctx.other_characteristics.get("E111C401-0000-1000-8000-00805F9B34FB")
-                    if enrich and enrich.parse_success:
+                    if enrich is not None:
                         result["enriched"] = True
-                        result["enriched_value"] = value * enrich.value
+                        result["enriched_value"] = value * enrich
 
                 return result
 
@@ -694,30 +663,26 @@ class TestRequiredOptionalDependencies:
                 measurement = ctx.other_characteristics.get(measurement_uuid)
                 context = ctx.other_characteristics.get(context_uuid)
 
-                if measurement is None or not measurement.parse_success:
-                    raise ValueError(
-                        "Measurement dependency must parse successfully before Multi Dependency characteristic"
-                    )
+                if measurement is None:
+                    raise ValueError("Measurement dependency must be present before Multi Dependency characteristic")
 
-                if context is None or not context.parse_success:
-                    raise ValueError(
-                        "Context dependency must parse successfully before Multi Dependency characteristic"
-                    )
+                if context is None:
+                    raise ValueError("Context dependency must be present before Multi Dependency characteristic")
 
                 result: dict[str, Any] = {
                     "measurement_ref": measurement_ref,
                     "context_ref": context_ref,
-                    "measurement_value": measurement.value,
-                    "context_value": context.value["context_value"],
-                    "measurement_match": measurement.value == measurement_ref,
-                    "context_match": context.value["context_value"] == context_ref,
+                    "measurement_value": measurement,
+                    "context_value": context["context_value"],
+                    "measurement_match": measurement == measurement_ref,
+                    "context_match": context["context_value"] == context_ref,
                     "enriched": False,
                 }
 
                 enrichment = ctx.other_characteristics.get(optional_uuid)
-                if enrichment and enrichment.parse_success:
+                if enrichment is not None:
                     result["enriched"] = True
-                    result["enriched_value"] = result["measurement_value"] * enrichment.value
+                    result["enriched_value"] = result["measurement_value"] * enrichment
 
                 return result
 
@@ -750,20 +715,17 @@ class TestRequiredOptionalDependencies:
 
     def test_missing_required_dependency_fails_fast(self, translator: BluetoothSIGTranslator) -> None:
         """Test that missing required dependencies result in parse failure."""
+        from bluetooth_sig.gatt.exceptions import MissingDependencyError
+
         # Try to parse context WITHOUT its required measurement
         char_data = {
             "C0111E11-0000-1000-8000-00805F9B34FB": (42).to_bytes(2, byteorder="little", signed=False),
         }
 
-        results = translator.parse_characteristics(char_data)
+        with pytest.raises(MissingDependencyError) as exc_info:
+            translator.parse_characteristics(char_data)
 
-        # Context should fail to parse due to missing required dependency
-        context_result = results["C0111E11-0000-1000-8000-00805F9B34FB"]
-        assert context_result.parse_success is False
-        assert "missing dependencies" in context_result.error_message.lower()
-        assert "0EA50001-0000-1000-8000-00805F9B34FB" in context_result.error_message
-        assert context_result.characteristic.info.uuid == BluetoothUUID("C0111E11-0000-1000-8000-00805F9B34FB")
-        assert context_result.characteristic.info.name == "Context"
+        assert "0EA50001-0000-1000-8000-00805F9B34FB" in str(exc_info.value)
 
     def test_optional_dependency_absent_still_succeeds(self, translator: BluetoothSIGTranslator) -> None:
         """Test that missing optional dependencies don't prevent parsing."""
@@ -776,11 +738,9 @@ class TestRequiredOptionalDependencies:
 
         # Data should parse successfully without enrichment
         data_result = results["DA1A0001-0000-1000-8000-00805F9B34FB"]
-        assert data_result.parse_success is True
-        assert data_result.value is not None
-        assert isinstance(data_result.value, dict)
-        assert data_result.value["data_value"] == 100
-        assert data_result.value["enriched"] is False
+        assert isinstance(data_result, dict)
+        assert data_result["data_value"] == 100
+        assert data_result["enriched"] is False
 
     def test_required_dependency_present_succeeds(self, translator: BluetoothSIGTranslator) -> None:
         """Test that required dependencies work when present."""
@@ -795,15 +755,12 @@ class TestRequiredOptionalDependencies:
         measurement_result = results["0EA50001-0000-1000-8000-00805F9B34FB"]
         context_result = results["C0111E11-0000-1000-8000-00805F9B34FB"]
 
-        assert measurement_result.parse_success is True
-        assert measurement_result.value == 123
+        assert measurement_result == 123
 
-        assert context_result.parse_success is True
-        assert context_result.value is not None
-        assert isinstance(context_result.value, dict)
-        assert context_result.value["context_value"] == 42
-        assert context_result.value["has_measurement"] is True
-        assert context_result.value["measurement_value"] == 123
+        assert isinstance(context_result, dict)
+        assert context_result["context_value"] == 42
+        assert context_result["has_measurement"] is True
+        assert context_result["measurement_value"] == 123
 
     def test_optional_dependency_present_enriches(self, translator: BluetoothSIGTranslator) -> None:
         """Test that optional dependencies enrich parsing when available."""
@@ -820,32 +777,28 @@ class TestRequiredOptionalDependencies:
         enrichment_result = results["E111C401-0000-1000-8000-00805F9B34FB"]
         data_result = results["DA1A0001-0000-1000-8000-00805F9B34FB"]
 
-        assert enrichment_result.parse_success is True
-        assert enrichment_result.value == pytest.approx(2.5)
+        assert enrichment_result == pytest.approx(2.5)
 
-        assert data_result.parse_success is True
-        assert data_result.value is not None
-        assert isinstance(data_result.value, dict)
-        assert data_result.value["data_value"] == 100
-        assert data_result.value["enriched"] is True
-        assert data_result.value["enriched_value"] == pytest.approx(250.0)
+        assert isinstance(data_result, dict)
+        assert data_result["data_value"] == 100
+        assert data_result["enriched"] is True
+        assert data_result["enriched_value"] == pytest.approx(250.0)
 
     def test_multi_dependency_missing_requirements_fails(self, translator: BluetoothSIGTranslator) -> None:
         """Multiple required dependencies must all be present."""
+        from bluetooth_sig.gatt.exceptions import MissingDependencyError
+
         multi_uuid = "F0EADF11-0000-1000-8000-00805F9B34FB"
         # Provide raw value referencing measurement/context data that is not supplied
         multi_raw = (123).to_bytes(2, byteorder="little", signed=False) + (42).to_bytes(
             2, byteorder="little", signed=False
         )
 
-        results = translator.parse_characteristics({multi_uuid: multi_raw})
+        with pytest.raises(MissingDependencyError) as exc_info:
+            translator.parse_characteristics({multi_uuid: multi_raw})
 
-        assert multi_uuid in results
-        multi_result = results[multi_uuid]
-        assert multi_result.parse_success is False
-        assert multi_result.error_message is not None
-        assert "0EA50001-0000-1000-8000-00805F9B34FB" in multi_result.error_message
-        assert "C0111E11-0000-1000-8000-00805F9B34FB" in multi_result.error_message
+        assert "0EA50001-0000-1000-8000-00805F9B34FB" in str(exc_info.value)
+        assert "C0111E11-0000-1000-8000-00805F9B34FB" in str(exc_info.value)
 
     def test_multi_dependency_with_required_only(self, translator: BluetoothSIGTranslator) -> None:
         """Multiple required dependencies allow parsing without optional enrichment."""
@@ -868,12 +821,10 @@ class TestRequiredOptionalDependencies:
         )
 
         multi_result = results[multi_uuid]
-        assert multi_result.parse_success is True
-        assert multi_result.value is not None
-        assert isinstance(multi_result.value, dict)
-        assert multi_result.value["measurement_match"] is True
-        assert multi_result.value["context_match"] is True
-        assert multi_result.value["enriched"] is False
+        assert isinstance(multi_result, dict)
+        assert multi_result["measurement_match"] is True
+        assert multi_result["context_match"] is True
+        assert multi_result["enriched"] is False
 
     def test_multi_dependency_with_optional_enrichment(self, translator: BluetoothSIGTranslator) -> None:
         """Optional dependency enriches result when provided."""
@@ -901,10 +852,8 @@ class TestRequiredOptionalDependencies:
         )
 
         multi_result = results[multi_uuid]
-        assert multi_result.parse_success is True
-        assert multi_result.value is not None
-        assert isinstance(multi_result.value, dict)
-        assert multi_result.value["measurement_match"] is True
-        assert multi_result.value["context_match"] is True
-        assert multi_result.value["enriched"] is True
-        assert multi_result.value["enriched_value"] == pytest.approx(300.0)
+        assert isinstance(multi_result, dict)
+        assert multi_result["measurement_match"] is True
+        assert multi_result["context_match"] is True
+        assert multi_result["enriched"] is True
+        assert multi_result["enriched_value"] == pytest.approx(300.0)

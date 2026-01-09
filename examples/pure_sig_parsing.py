@@ -80,17 +80,18 @@ def demonstrate_pure_sig_parsing() -> None:
         print(f"   Raw data: {test_case['data'].hex().upper()}")
 
         # Parse using pure SIG standards
-        result = translator.parse_characteristic(test_case["uuid"], test_case["data"])
+        try:
+            result = translator.parse_characteristic(test_case["uuid"], test_case["data"])
+            info = translator.get_characteristic_info_by_uuid(test_case["uuid"])
+            unit_str = f" {info.unit}" if info and info.unit else ""
+            print(f"   ✅ Parsed value: {result}{unit_str}")
+            if info and info.value_type:
+                print(f"   📋 Value type: {info.value_type}")
+            results[test_case["name"]] = result
+        except Exception as e:
+            print(f"   ❌ Parse failed: {e}")
+            results[test_case["name"]] = None
 
-        if result.parse_success:
-            unit_str = f" {result.characteristic.unit}" if result.characteristic.unit else ""
-            print(f"   ✅ Parsed value: {result.value}{unit_str}")
-            if getattr(result.characteristic.info, "value_type", None):
-                print(f"   📋 Value type: {result.characteristic.info.value_type}")
-        else:
-            print(f"   ❌ Parse failed: {result.error_message}")
-
-        results[test_case["name"]] = result
         print()
 
 
@@ -151,13 +152,11 @@ def demonstrate_batch_parsing() -> None:
     # Parse all characteristics
     results = translator.parse_characteristics(sensor_data)
 
-    for _uuid, result in results.items():
-        char_name = result.characteristic.name
-        if result.parse_success:
-            unit_str = f" {result.characteristic.unit}" if result.characteristic.unit else ""
-            print(f"📊 {char_name}: {result.value}{unit_str}")
-        else:
-            print(f"❌ {char_name}: Parse failed - {result.error_message}")
+    for uuid, result in results.items():
+        info = translator.get_characteristic_info_by_uuid(uuid)
+        char_name = info.name if info else uuid
+        unit_str = f" {info.unit}" if info and info.unit else ""
+        print(f"📊 {char_name}: {result}{unit_str}")
 
 
 def demonstrate_integration_pattern() -> None:
@@ -176,8 +175,9 @@ from bluetooth_sig import BluetoothSIGTranslator
 translator = BluetoothSIGTranslator()
 result = translator.parse_characteristic(uuid, raw_data)
 
-# Step 3: Use parsed result
-print(f"Value: {result.value} {result.unit}")
+# Step 3: Use parsed result (result is the value directly)
+info = translator.get_characteristic_info_by_uuid(uuid)
+print(f"Value: {result} {info.unit if info else ''}")
 
 This pattern works with:
 - bleak

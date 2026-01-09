@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from ...types import AlertCategoryID, validate_category_id
-from ..constants import UINT8_MAX
-from ..context import CharacteristicContext
+from ...types import AlertCategoryID
 from .base import BaseCharacteristic
-from .templates import Uint8Template
+from .templates import EnumTemplate
 
 
 class AlertCategoryIdCharacteristic(BaseCharacteristic[AlertCategoryID]):
@@ -15,7 +13,6 @@ class AlertCategoryIdCharacteristic(BaseCharacteristic[AlertCategoryID]):
     org.bluetooth.characteristic.alert_category_id
 
     The Alert Category ID characteristic is used to represent predefined categories of alerts and messages.
-    The structure of this characteristic is defined below.
 
     Valid values:
         - 0: Simple Alert
@@ -34,48 +31,4 @@ class AlertCategoryIdCharacteristic(BaseCharacteristic[AlertCategoryID]):
     Spec: Bluetooth SIG GATT Specification Supplement, Alert Category ID
     """
 
-    # YAML has no range constraint; enforce uint8 domain for category enum.
-    min_value: int | float | None = 0
-    max_value: int | float | None = UINT8_MAX
-
-    _template = Uint8Template()
-
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertCategoryID:
-        """Decode alert category ID from raw bytes.
-
-        Args:
-            data: Raw bytes from BLE characteristic (1 byte)
-            ctx: Optional context for parsing
-
-        Returns:
-            AlertCategoryID enum value
-
-        Raises:
-            ValueError: If data is less than 1 byte or value is invalid
-
-        """
-        raw_value = self._template._decode_value(data, offset=0, ctx=ctx)  # pylint: disable=protected-access
-
-        # Validate against known values using the existing validation function
-        return validate_category_id(raw_value)
-
-    def _encode_value(self, data: AlertCategoryID | int) -> bytearray:
-        """Encode alert category ID to raw bytes.
-
-        Args:
-            data: AlertCategoryID enum value or integer
-
-        Returns:
-            Encoded characteristic data (1 byte)
-
-        Raises:
-            ValueError: If data is not a valid category ID
-
-        """
-        # Convert AlertCategoryID to int if needed
-        int_value = int(data) if isinstance(data, AlertCategoryID) else data
-
-        # Validate the value
-        validate_category_id(int_value)
-
-        return self._template._encode_value(int_value)  # pylint: disable=protected-access
+    _template = EnumTemplate.uint8(AlertCategoryID)

@@ -12,6 +12,7 @@ from bluetooth_sig.gatt.characteristics.blood_pressure_measurement import (
     BloodPressureData,
     BloodPressureMeasurementCharacteristic,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.units import PressureUnit
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
@@ -348,10 +349,8 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
 
     def test_blood_pressure_invalid_data(self, characteristic: BloodPressureMeasurementCharacteristic) -> None:
         """Test blood pressure measurement with invalid data."""
-        # Test data too short - parse_value returns parse_success=False
-        result = characteristic.parse_value(bytearray([0x00, 0x78]))
-        assert result.parse_success is False
-        assert result.error_message == (
-            "Length validation failed for Blood Pressure Measurement: expected at least 7 bytes, got 2 "
-            "(class-level constraint for BloodPressureMeasurementCharacteristic)"
-        )
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x78]))
+
+        assert "Length validation failed" in str(exc_info.value)
+        assert "expected at least 7 bytes" in str(exc_info.value)

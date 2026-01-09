@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import msgspec
 
-from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
-from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext, DeviceInfo
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.gatt_enums import ValueType
@@ -48,8 +46,8 @@ class MeasurementCharacteristic(CustomBaseCharacteristic):
         scale = 1.0
         if ctx and ctx.other_characteristics:
             calib = ctx.other_characteristics.get("calib")
-            if calib and calib.value is not None:
-                scale = float(calib.value)
+            if calib is not None:
+                scale = float(calib)
         return raw * scale
 
     def _encode_value(self, data: int) -> bytearray:
@@ -58,20 +56,9 @@ class MeasurementCharacteristic(CustomBaseCharacteristic):
 
 
 def test_context_parsing_simple() -> None:
-    # Create fake parsed calibration using a mock characteristic
-
-    calib_info = CharacteristicInfo(
-        uuid=BluetoothUUID("2A19"),  # Use a valid UUID format
-        name="Calibration",
-        value_type=ValueType.INT,
-        unit="",
-    )
-    calib_char = UnknownCharacteristic(info=calib_info)
-    calib_data = CharacteristicData(characteristic=calib_char, value=2, raw_data=b"\x02", parse_success=True)
-
     ctx = CharacteristicContext(
         device_info=DeviceInfo(address="00:11:22:33:44:55"),
-        other_characteristics={"calib": calib_data},  # type: ignore[dict-item]
+        other_characteristics={"calib": 2},
     )
 
     meas = MeasurementCharacteristic()
@@ -79,4 +66,4 @@ def test_context_parsing_simple() -> None:
 
     parsed = meas.parse_value(bytearray(raw_meas), ctx)
 
-    assert parsed.value == 123 * 2
+    assert parsed == 123 * 2
