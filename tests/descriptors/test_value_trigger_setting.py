@@ -16,7 +16,7 @@ class TestValueTriggerSettingDescriptor:
         data = b"\x01\x0a"
 
         result = vts.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, ValueTriggerSettingData)
         assert result.value.condition == 0x01
         assert result.value.value == 0x0A
@@ -27,7 +27,7 @@ class TestValueTriggerSettingDescriptor:
         data = b"\x01"  # Too short (1 byte, need at least 2)
 
         result = vts.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Value Trigger Setting data must be at least 2 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:

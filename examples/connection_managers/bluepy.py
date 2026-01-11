@@ -10,7 +10,7 @@ import asyncio
 import inspect
 from collections.abc import AsyncIterator
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Callable, ClassVar
+from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from bluepy.btle import (
     ADDR_TYPE_RANDOM,
@@ -240,7 +240,7 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
                     service_instance = service_class()
 
                     # Populate characteristics with actual class instances
-                    characteristics: dict[str, BaseCharacteristic] = {}
+                    characteristics: dict[str, BaseCharacteristic[Any]] = {}
                     for char in bluepy_service.getCharacteristics():  # type: ignore[misc]
                         char_uuid = self.to_bluetooth_uuid(char.uuid)
 

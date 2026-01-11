@@ -37,19 +37,19 @@ class TestDatabaseChangeIncrementCharacteristic(CommonCharacteristicTests):
     def test_no_changes(self) -> None:
         """Test zero database changes."""
         char = DatabaseChangeIncrementCharacteristic()
-        result = char.decode_value(bytearray([0, 0, 0, 0]))
+        result = char.parse_value(bytearray([0, 0, 0, 0]))
         assert result == 0
 
     def test_single_change(self) -> None:
         """Test single database change."""
         char = DatabaseChangeIncrementCharacteristic()
-        result = char.decode_value(bytearray([1, 0, 0, 0]))
+        result = char.parse_value(bytearray([1, 0, 0, 0]))
         assert result == 1
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = DatabaseChangeIncrementCharacteristic()
         for value in [0, 1, 1000, 4294967295]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
             assert decoded == value

@@ -13,7 +13,7 @@ import inspect
 import logging
 from collections.abc import AsyncIterator, Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 import simplepyble
 
@@ -256,7 +256,7 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
                     )
 
                 # Populate characteristics with actual class instances
-                characteristics: dict[str, BaseCharacteristic] = {}
+                characteristics: dict[str, BaseCharacteristic[Any]] = {}
                 for char in simpleble_service.characteristics():
                     char_uuid = BluetoothUUID(char.uuid())
 

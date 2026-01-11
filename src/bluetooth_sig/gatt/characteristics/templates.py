@@ -65,16 +65,30 @@ from .utils.translators import (
 )
 
 # =============================================================================
+# TYPE VARIABLES
+# =============================================================================
+
+# Type variable for CodingTemplate generic - represents the decoded value type
+T_co = TypeVar("T_co", covariant=True)
+
+# Type variable for EnumTemplate - bound to IntEnum
+T = TypeVar("T", bound=IntEnum)
+
+
+# =============================================================================
 # LEVEL 4 BASE CLASS
 # =============================================================================
 
 
-class CodingTemplate(ABC):
+class CodingTemplate(ABC, Generic[T_co]):
     """Abstract base class for coding templates.
 
     Templates are pure coding utilities that don't inherit from BaseCharacteristic.
     They provide coding strategies that can be injected into characteristics.
     All templates MUST inherit from this base class and implement the required methods.
+
+    Generic over T_co, the type of value produced by _decode_value.
+    Concrete templates specify their return type, e.g., CodingTemplate[int].
 
     Pipeline Integration:
         Simple templates (single-field) expose `extractor` and `translator` properties
@@ -82,7 +96,7 @@ class CodingTemplate(ABC):
     """
 
     @abstractmethod
-    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> Any:  # noqa: ANN401  # Returns various types (int, float, str, dataclass)
+    def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> T_co:
         """Decode raw bytes to typed value.
 
         Args:
@@ -91,12 +105,12 @@ class CodingTemplate(ABC):
             ctx: Optional context for parsing
 
         Returns:
-            Parsed value of appropriate type (int, float, str, bytes, or custom dataclass)
+            Parsed value of type T_co
 
         """
 
     @abstractmethod
-    def encode_value(self, value: Any) -> bytearray:  # noqa: ANN401  # Accepts various value types (int, float, str, dataclass)
+    def encode_value(self, value: T_co) -> bytearray:  # type: ignore[misc]  # Covariant type in parameter is intentional for encode/decode symmetry
         """Encode typed value to raw bytes.
 
         Args:
@@ -159,19 +173,11 @@ class TimeData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=to
 
 
 # =============================================================================
-# TYPE VARIABLES
-# =============================================================================
-
-
-T = TypeVar("T", bound=IntEnum)
-
-
-# =============================================================================
 # BASIC INTEGER TEMPLATES
 # =============================================================================
 
 
-class Uint8Template(CodingTemplate):
+class Uint8Template(CodingTemplate[int]):
     """Template for 8-bit unsigned integer parsing (0-255)."""
 
     @property
@@ -202,7 +208,7 @@ class Uint8Template(CodingTemplate):
         return self.extractor.pack(value)
 
 
-class Sint8Template(CodingTemplate):
+class Sint8Template(CodingTemplate[int]):
     """Template for 8-bit signed integer parsing (-128 to 127)."""
 
     @property
@@ -233,7 +239,7 @@ class Sint8Template(CodingTemplate):
         return self.extractor.pack(value)
 
 
-class Uint16Template(CodingTemplate):
+class Uint16Template(CodingTemplate[int]):
     """Template for 16-bit unsigned integer parsing (0-65535)."""
 
     @property
@@ -264,7 +270,7 @@ class Uint16Template(CodingTemplate):
         return self.extractor.pack(value)
 
 
-class Sint16Template(CodingTemplate):
+class Sint16Template(CodingTemplate[int]):
     """Template for 16-bit signed integer parsing (-32768 to 32767)."""
 
     @property
@@ -295,7 +301,7 @@ class Sint16Template(CodingTemplate):
         return self.extractor.pack(value)
 
 
-class Uint24Template(CodingTemplate):
+class Uint24Template(CodingTemplate[int]):
     """Template for 24-bit unsigned integer parsing (0-16777215)."""
 
     @property
@@ -326,7 +332,7 @@ class Uint24Template(CodingTemplate):
         return self.extractor.pack(value)
 
 
-class Uint32Template(CodingTemplate):
+class Uint32Template(CodingTemplate[int]):
     """Template for 32-bit unsigned integer parsing."""
 
     @property
@@ -357,7 +363,7 @@ class Uint32Template(CodingTemplate):
         return self.extractor.pack(value)
 
 
-class EnumTemplate(CodingTemplate, Generic[T]):
+class EnumTemplate(CodingTemplate[T]):
     """Template for IntEnum encoding/decoding with configurable byte size.
 
     Maps raw integer bytes to Python IntEnum instances through extraction and validation.
@@ -574,7 +580,7 @@ class EnumTemplate(CodingTemplate, Generic[T]):
 # =============================================================================
 
 
-class ScaledTemplate(CodingTemplate):
+class ScaledTemplate(CodingTemplate[float]):
     """Base class for scaled integer templates.
 
     Handles common scaling logic: value = (raw + offset) * scale_factor
@@ -913,7 +919,7 @@ class ScaledSint32Template(ScaledTemplate):
 # =============================================================================
 
 
-class PercentageTemplate(CodingTemplate):
+class PercentageTemplate(CodingTemplate[int]):
     """Template for percentage values (0-100%) using uint8."""
 
     @property
@@ -948,7 +954,7 @@ class PercentageTemplate(CodingTemplate):
         return self.extractor.pack(raw)
 
 
-class TemperatureTemplate(CodingTemplate):
+class TemperatureTemplate(CodingTemplate[float]):
     """Template for standard Bluetooth SIG temperature format (sint16, 0.01°C resolution)."""
 
     def __init__(self) -> None:
@@ -972,14 +978,14 @@ class TemperatureTemplate(CodingTemplate):
 
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
         """Parse temperature in 0.01°C resolution."""
-        return self._scaled_template.decode_value(data, offset)
+        return self._scaled_template.decode_value(data, offset)  # pylint: disable=protected-access
 
     def encode_value(self, value: float) -> bytearray:
         """Encode temperature to bytes."""
-        return self._scaled_template.encode_value(value)
+        return self._scaled_template.encode_value(value)  # pylint: disable=protected-access
 
 
-class ConcentrationTemplate(CodingTemplate):
+class ConcentrationTemplate(CodingTemplate[float]):
     """Template for concentration measurements with configurable resolution.
 
     Used for environmental sensors like CO2, VOC, particulate matter, etc.
@@ -1041,14 +1047,14 @@ class ConcentrationTemplate(CodingTemplate):
 
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
         """Parse concentration with resolution."""
-        return self._scaled_template.decode_value(data, offset)
+        return self._scaled_template.decode_value(data, offset)  # pylint: disable=protected-access
 
     def encode_value(self, value: float) -> bytearray:
         """Encode concentration value to bytes."""
-        return self._scaled_template.encode_value(value)
+        return self._scaled_template.encode_value(value)  # pylint: disable=protected-access
 
 
-class PressureTemplate(CodingTemplate):
+class PressureTemplate(CodingTemplate[float]):
     """Template for pressure measurements (uint32, 0.1 Pa resolution)."""
 
     def __init__(self) -> None:
@@ -1072,14 +1078,14 @@ class PressureTemplate(CodingTemplate):
 
     def decode_value(self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None) -> float:
         """Parse pressure in 0.1 Pa resolution (returns Pa)."""
-        return self._scaled_template.decode_value(data, offset)
+        return self._scaled_template.decode_value(data, offset)  # pylint: disable=protected-access
 
     def encode_value(self, value: float) -> bytearray:
         """Encode pressure to bytes."""
-        return self._scaled_template.encode_value(value)
+        return self._scaled_template.encode_value(value)  # pylint: disable=protected-access
 
 
-class TimeDataTemplate(CodingTemplate):
+class TimeDataTemplate(CodingTemplate[TimeData]):
     """Template for Bluetooth SIG time data parsing (10 bytes).
 
     Used for Current Time and Time with DST characteristics.
@@ -1156,7 +1162,7 @@ class TimeDataTemplate(CodingTemplate):
         return result
 
 
-class IEEE11073FloatTemplate(CodingTemplate):
+class IEEE11073FloatTemplate(CodingTemplate[float]):
     """Template for IEEE 11073 SFLOAT format (16-bit medical device float)."""
 
     @property
@@ -1187,7 +1193,7 @@ class IEEE11073FloatTemplate(CodingTemplate):
         return self.extractor.pack(raw)
 
 
-class Float32Template(CodingTemplate):
+class Float32Template(CodingTemplate[float]):
     """Template for IEEE-754 32-bit float parsing."""
 
     @property
@@ -1216,7 +1222,7 @@ class Float32Template(CodingTemplate):
 # =============================================================================
 
 
-class Utf8StringTemplate(CodingTemplate):
+class Utf8StringTemplate(CodingTemplate[str]):
     """Template for UTF-8 string parsing with variable length."""
 
     def __init__(self, max_length: int = 256) -> None:
@@ -1259,7 +1265,7 @@ class Utf8StringTemplate(CodingTemplate):
         return bytearray(encoded)
 
 
-class Utf16StringTemplate(CodingTemplate):
+class Utf16StringTemplate(CodingTemplate[str]):
     """Template for UTF-16LE string parsing with variable length."""
 
     # Unicode constants for UTF-16 validation
@@ -1328,7 +1334,7 @@ class Utf16StringTemplate(CodingTemplate):
 # =============================================================================
 
 
-class VectorTemplate(CodingTemplate):
+class VectorTemplate(CodingTemplate[VectorData]):
     """Template for 3D vector measurements (x, y, z float32 components)."""
 
     @property
@@ -1356,7 +1362,7 @@ class VectorTemplate(CodingTemplate):
         return result
 
 
-class Vector2DTemplate(CodingTemplate):
+class Vector2DTemplate(CodingTemplate[Vector2DData]):
     """Template for 2D vector measurements (x, y float32 components)."""
 
     @property

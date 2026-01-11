@@ -45,7 +45,7 @@ class HidInformationData(msgspec.Struct, frozen=True, kw_only=True):
             raise ValueError(f"bCountryCode must be 0-{COUNTRY_CODE_MAX:#x}, got {self.b_country_code}")
 
 
-class HidInformationCharacteristic(BaseCharacteristic):
+class HidInformationCharacteristic(BaseCharacteristic[HidInformationData]):
     """HID Information characteristic (0x2A4A).
 
     org.bluetooth.characteristic.hid_information
@@ -55,7 +55,7 @@ class HidInformationCharacteristic(BaseCharacteristic):
 
     expected_length: int = 4  # bcdHID(2) + bCountryCode(1) + Flags(1)
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> HidInformationData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> HidInformationData:
         """Parse HID information data.
 
         Format: bcdHID(2) + bCountryCode(1) + Flags(1)
@@ -81,7 +81,7 @@ class HidInformationCharacteristic(BaseCharacteristic):
             flags=flags,
         )
 
-    def encode_value(self, data: HidInformationData) -> bytearray:
+    def _encode_value(self, data: HidInformationData) -> bytearray:
         """Encode HidInformationData back to bytes.
 
         Args:

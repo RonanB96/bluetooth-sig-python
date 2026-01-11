@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint8Template
 
 
-class AnaerobicHeartRateLowerLimitCharacteristic(BaseCharacteristic):
+class AnaerobicHeartRateLowerLimitCharacteristic(BaseCharacteristic[int]):
     """Anaerobic Heart Rate Lower Limit characteristic (0x2A81).
 
     org.bluetooth.characteristic.anaerobic_heart_rate_lower_limit

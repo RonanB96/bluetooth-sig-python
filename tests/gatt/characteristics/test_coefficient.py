@@ -36,19 +36,19 @@ class TestCoefficientCharacteristic(CommonCharacteristicTests):
     def test_zero_coefficient(self) -> None:
         """Test zero coefficient value."""
         char = CoefficientCharacteristic()
-        result = char.decode_value(bytearray([0x00, 0x00, 0x00, 0x00]))
+        result = char.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
         assert result == 0.0
 
     def test_maximum_coefficient(self) -> None:
         """Test maximum coefficient value."""
         char = CoefficientCharacteristic()
-        result = char.decode_value(bytearray([0xFF, 0xFF, 0x7F, 0x7F]))
+        result = char.parse_value(bytearray([0xFF, 0xFF, 0x7F, 0x7F]))
         assert result == pytest.approx(3.4028234663852886e38, rel=1e-5)
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = CoefficientCharacteristic()
         for value in [0.0, 1.0, 2.5, -1.5, 100.0]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
             assert decoded == pytest.approx(value)

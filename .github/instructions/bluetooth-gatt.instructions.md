@@ -89,14 +89,14 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 
 # SIG characteristic - auto-resolves from registry
 battery = BatteryLevelCharacteristic()
-value = battery.decode_value(data)
+value = battery.parse_value(data)
 
 # Custom characteristic - needs _info, but same usage pattern
 class MyCustomChar(BaseCharacteristic):
     _info = CharacteristicInfo(uuid=BluetoothUUID("XXXX"), name="My Custom")
 
 custom = MyCustomChar()
-value = custom.decode_value(data)  # Same method!
+value = custom.parse_value(data)  # Same method!
 ```
 
 ## Characteristic Implementation Pattern
@@ -161,7 +161,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic):
     min_length = 2  # BaseCharacteristic validates
     allow_variable_length = True
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> HeartRateData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> HeartRateData:
         """Parse heart rate measurement.
 
         Args:
@@ -263,7 +263,7 @@ class MyCharacteristicData(msgspec.Struct, frozen=True, kw_only=True):
     field1: int
     field2: int
 
-def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> MyCharacteristicData:
+def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> MyCharacteristicData:
     """Decode structured multi-field characteristic."""
     # BaseCharacteristic already validated length - just parse
     return MyCharacteristicData(
@@ -328,7 +328,7 @@ class MyCharacteristicData(msgspec.Struct, frozen=True, kw_only=True):
     """
     field: int
 
-def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> MyCharacteristicData:
+def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> MyCharacteristicData:
     """Parse complex characteristic."""
     # Length already validated by BaseCharacteristic
 
@@ -345,7 +345,7 @@ def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None
 
 # Usage in characteristic
 ```python
-def decode_value(self, data: bytearray) -> TemperatureMeasurement:
+def _decode_value(self, data: bytearray) -> TemperatureMeasurement:
     """Decode temperature measurement."""
     flags = TemperatureFlags.from_byte(data[0])
 
@@ -365,7 +365,7 @@ def decode_value(self, data: bytearray) -> TemperatureMeasurement:
 
 **Public APIs need complete docstrings:**
 ```python
-def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
+def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
     """Decode temperature characteristic.
 
     Decodes a 16-bit signed integer representing temperature in 0.01°C
@@ -394,7 +394,7 @@ def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None
 - [ ] Return typed data (int, float, msgspec.Struct, IntFlag, etc.)
 - [ ] Write tests with valid and invalid data
         >>> char = TemperatureCharacteristic()
-        >>> char.decode_value(bytearray([0x00, 0x10]))  # 4096 * 0.01 = 40.96°C
+        >>> char.parse_value(bytearray([0x00, 0x10]))  # 4096 * 0.01 = 40.96°C
         40.96
 
     Spec Reference:

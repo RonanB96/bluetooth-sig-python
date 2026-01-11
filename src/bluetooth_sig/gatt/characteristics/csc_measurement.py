@@ -35,7 +35,7 @@ class CSCMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: 
             raise ValueError("Flags must be a uint8 value (0-UINT8_MAX)")
 
 
-class CSCMeasurementCharacteristic(BaseCharacteristic):
+class CSCMeasurementCharacteristic(BaseCharacteristic[CSCMeasurementData]):
     """CSC (Cycling Speed and Cadence) Measurement characteristic (0x2A5B).
 
     Used to transmit cycling speed and cadence data.
@@ -56,7 +56,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
     # Time resolution constants
     CSC_TIME_RESOLUTION = 1024.0  # 1/1024 second resolution for both wheel and crank event times
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CSCMeasurementData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CSCMeasurementData:
         """Parse CSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + [Cumulative Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +
@@ -104,9 +104,9 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
 
         # Validate flags against CSC Feature if available
         if ctx is not None:
-            feature_char = self.get_context_characteristic(ctx, CSCFeatureCharacteristic)
-            if feature_char and feature_char.parse_success and feature_char.value is not None:
-                self._validate_against_feature(flags, feature_char.value)
+            feature_value = self.get_context_characteristic(ctx, CSCFeatureCharacteristic)
+            if feature_value is not None:
+                self._validate_against_feature(flags, feature_value)
 
         return CSCMeasurementData(
             flags=flags,
@@ -180,7 +180,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic):
         result.extend(DataParser.encode_int16(crank_event_time_raw, signed=False))
         return result
 
-    def encode_value(self, data: CSCMeasurementData) -> bytearray:
+    def _encode_value(self, data: CSCMeasurementData) -> bytearray:
         """Encode CSC measurement value back to bytes.
 
         Args:

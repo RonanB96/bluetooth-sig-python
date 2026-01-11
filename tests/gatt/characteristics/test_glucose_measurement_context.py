@@ -11,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.glucose_measurement_context import (
     GlucoseMeasurementContextFlags,
     MealType,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
 
@@ -273,7 +274,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
         # Use the first test case (basic context)
         test_data = valid_test_data[0].input_data
 
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.sequence_number == 42
         assert result.flags == GlucoseMeasurementContextFlags(0)
 
@@ -291,7 +293,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.carbohydrate_id == CarbohydrateType.BREAKFAST
         # Human-readable name should match the enum's string representation
         assert str(result.carbohydrate_id) == "Breakfast"
@@ -308,12 +311,15 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.meal == MealType.POSTPRANDIAL
         # Human-readable meal name should match the enum's string representation
         assert str(result.meal) == "Postprandial (after meal)"
 
     def test_glucose_context_invalid_data(self, characteristic: GlucoseMeasurementContextCharacteristic) -> None:
         """Test glucose context with invalid data."""
-        with pytest.raises(ValueError, match="must be at least 3 bytes"):
-            characteristic.decode_value(bytearray([0x00, 0x01]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x01]))
+
+        assert "expected at least 3 bytes, got 2" in str(exc_info.value)

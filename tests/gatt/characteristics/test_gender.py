@@ -51,33 +51,34 @@ class TestGenderCharacteristic(CommonCharacteristicTests):
     ) -> None:
         """Test gender with various valid values."""
         data = bytearray([gender_code])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == expected_enum
 
     def test_gender_boundary_values(self, characteristic: GenderCharacteristic) -> None:
         """Test gender boundary values."""
         # Test male (0)
-        result = characteristic.decode_value(bytearray([0]))
+        result = characteristic.parse_value(bytearray([0]))
         assert result == Gender.MALE
 
         # Test female (1)
-        result = characteristic.decode_value(bytearray([1]))
+        result = characteristic.parse_value(bytearray([1]))
         assert result == Gender.FEMALE
 
         # Test unspecified (2)
-        result = characteristic.decode_value(bytearray([2]))
+        result = characteristic.parse_value(bytearray([2]))
         assert result == Gender.UNSPECIFIED
 
     def test_gender_invalid_values(self, characteristic: GenderCharacteristic) -> None:
         """Test gender with invalid values."""
         # Test invalid value (3 is reserved)
-        from bluetooth_sig.gatt.exceptions import ValueRangeError
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
-        with pytest.raises(ValueRangeError, match="Invalid Gender"):
-            characteristic.decode_value(bytearray([3]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([3]))
+        assert "Invalid Gender: 3 (expected range [0, 2])" in str(exc_info.value)
 
     def test_gender_encoding(self, characteristic: GenderCharacteristic) -> None:
         """Test encoding gender back to bytes."""
         data = Gender.FEMALE
-        result = characteristic.encode_value(data)
+        result = characteristic.build_value(data)
         assert result == bytearray([1])

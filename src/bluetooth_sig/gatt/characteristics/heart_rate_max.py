@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint8Template
 
 
-class HeartRateMaxCharacteristic(BaseCharacteristic):
+class HeartRateMaxCharacteristic(BaseCharacteristic[int]):
     """Heart Rate Max characteristic (0x2A8D).
 
     org.bluetooth.characteristic.heart_rate_max

@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Utf8StringTemplate
 
 
-class DeviceNameCharacteristic(BaseCharacteristic):
+class DeviceNameCharacteristic(BaseCharacteristic[str]):
     """Device Name characteristic (0x2A00).
 
     org.bluetooth.characteristic.gap.device_name

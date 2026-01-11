@@ -14,10 +14,10 @@ Based on Bluetooth SIG GATT Specification:
 from __future__ import annotations
 
 from .base import BaseCharacteristic
-from .templates import TimeDataTemplate
+from .templates import TimeData, TimeDataTemplate
 
 
-class TimeWithDstCharacteristic(BaseCharacteristic):
+class TimeWithDstCharacteristic(BaseCharacteristic[TimeData]):
     """Time with DST characteristic (0x2A11).
 
     Represents the date and time when the next Daylight Saving Time change occurs.

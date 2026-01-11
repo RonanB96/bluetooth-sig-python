@@ -75,15 +75,15 @@ class TestDateOfBirthCharacteristic(CommonCharacteristicTests):
                 day,  # Day as uint8
             ]
         )
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == DateOfBirthData(year=year, month=month, day=day)
 
     def test_date_of_birth_boundary_values(self, characteristic: DateOfBirthCharacteristic) -> None:
         """Test date of birth boundary values."""
         # Test epoch (0, 0, 0)
-        result = characteristic.decode_value(bytearray([0x00, 0x00, 0x00, 0x00]))
+        result = characteristic.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
         assert result == DateOfBirthData(year=0, month=0, day=0)
 
         # Test maximum year value
-        result = characteristic.decode_value(bytearray([0xFF, 0xFF, 0x0C, 0x1F]))
+        result = characteristic.parse_value(bytearray([0xFF, 0xFF, 0x0C, 0x1F]))
         assert result == DateOfBirthData(year=65535, month=12, day=31)

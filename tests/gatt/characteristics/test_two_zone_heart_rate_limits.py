@@ -51,7 +51,7 @@ class TestTwoZoneHeartRateLimitsCharacteristic(CommonCharacteristicTests):
     ) -> None:
         """Test two zone heart rate limits with various valid values."""
         data = bytearray([heart_rate])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == heart_rate
 
     def test_two_zone_heart_rate_limits_boundary_values(
@@ -59,9 +59,9 @@ class TestTwoZoneHeartRateLimitsCharacteristic(CommonCharacteristicTests):
     ) -> None:
         """Test two zone heart rate limits boundary values."""
         # Test minimum value (0 BPM)
-        result = characteristic.decode_value(bytearray([0]))
+        result = characteristic.parse_value(bytearray([0]))
         assert result == 0
 
         # Test maximum value (255 BPM)
-        result = characteristic.decode_value(bytearray([255]))
+        result = characteristic.parse_value(bytearray([255]))
         assert result == 255

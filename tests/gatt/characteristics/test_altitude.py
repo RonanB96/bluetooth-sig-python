@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import AltitudeCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -45,32 +46,32 @@ class TestAltitudeCharacteristic(CommonCharacteristicTests):
 
         # Test normal parsing
         test_data = bytearray([0xED, 0x03])  # 1005 = 100.5m
-        parsed = characteristic.decode_value(test_data)
+        parsed = characteristic.parse_value(test_data)
         assert parsed == 100.5
 
     def test_altitude_error_handling(self, characteristic: AltitudeCharacteristic) -> None:
         """Test Altitude error handling."""
-        # Test insufficient data
-        from bluetooth_sig.gatt.exceptions import InsufficientDataError
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x12]))
 
-        with pytest.raises(InsufficientDataError, match="need 2 bytes, got 1"):
-            characteristic.decode_value(bytearray([0x12]))
+        assert "Length validation failed" in str(exc_info.value)
+        assert "expected exactly 2 bytes" in str(exc_info.value)
 
     def test_altitude_boundary_values(self, characteristic: AltitudeCharacteristic) -> None:
         """Test Altitude boundary values."""
         # Maximum positive (32767 * 0.1 = 3276.7m)
         data_max = bytearray([0xFF, 0x7F])
-        result = characteristic.decode_value(data_max)
+        result = characteristic.parse_value(data_max)
         assert abs(result - 3276.7) < 0.1
 
         # Maximum negative (-32768 * 0.1 = -3276.8m)
         data_min = bytearray([0x00, 0x80])
-        result = characteristic.decode_value(data_min)
+        result = characteristic.parse_value(data_min)
         assert abs(result - (-3276.8)) < 0.1
 
     def test_altitude_round_trip(self, characteristic: AltitudeCharacteristic) -> None:
         """Test encode/decode round trip."""
         test_value = 123.4
-        encoded = characteristic.encode_value(test_value)
-        decoded = characteristic.decode_value(encoded)
+        encoded = characteristic.build_value(test_value)
+        decoded = characteristic.parse_value(encoded)
         assert decoded == test_value

@@ -7,7 +7,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class AverageCurrentCharacteristic(BaseCharacteristic):
+class AverageCurrentCharacteristic(BaseCharacteristic[float]):
     """Average Current characteristic (0x2AE0).
 
     org.bluetooth.characteristic.average_current

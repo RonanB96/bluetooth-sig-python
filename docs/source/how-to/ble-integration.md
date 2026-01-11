@@ -135,6 +135,7 @@ asyncio.run(example())
 
 
 
+
 ```
 
 ## Integration with bleak-retry-connector

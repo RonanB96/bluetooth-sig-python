@@ -49,8 +49,9 @@ class TestMagneticFluxDensity3DCharacteristic(CommonCharacteristicTests):
 
         # Test normal parsing: X=1000, Y=-500, Z=2000
         test_data = bytearray(struct.pack("<hhh", 1000, -500, 2000))
-        parsed = characteristic.decode_value(test_data)
+        parsed = characteristic.parse_value(test_data)
 
+        assert parsed is not None
         assert abs(parsed.x_axis - 1e-4) < 1e-10
         assert abs(parsed.y_axis - (-5e-5)) < 1e-10
         assert abs(parsed.z_axis - 2e-4) < 1e-10

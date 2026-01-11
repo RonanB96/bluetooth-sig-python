@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
@@ -14,7 +16,7 @@ class TestRotationalSpeedCharacteristic(CommonCharacteristicTests):
     """Test Rotational Speed characteristic implementation."""
 
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         """Provide Rotational Speed characteristic for testing."""
         return RotationalSpeedCharacteristic()
 
@@ -51,60 +53,67 @@ class TestRotationalSpeedCharacteristic(CommonCharacteristicTests):
         ]
 
     # === Rotational Speed-Specific Tests ===
-    def test_rotational_speed_precision_and_boundaries(self, characteristic: BaseCharacteristic) -> None:
+    def test_rotational_speed_precision_and_boundaries(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test rotational speed precision and boundary values."""
         # Test zero speed
-        result = characteristic.decode_value(bytearray([0x00, 0x00, 0x00, 0x00]))
+        result = characteristic.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
         assert result == 0.0
 
         # Test positive speed (1500 RPM)
-        result = characteristic.decode_value(bytearray([0xDC, 0x05, 0x00, 0x00]))  # 1500 = 1500 RPM
+        result = characteristic.parse_value(bytearray([0xDC, 0x05, 0x00, 0x00]))  # 1500 = 1500 RPM
+        assert result is not None
         assert abs(result - 1500.0) < 0.001
 
         # Test negative speed (-500 RPM)
-        result = characteristic.decode_value(bytearray([0x0C, 0xFE, 0xFF, 0xFF]))  # -500 = -500 RPM
+        result = characteristic.parse_value(bytearray([0x0C, 0xFE, 0xFF, 0xFF]))  # -500 = -500 RPM
+        assert result is not None
         assert abs(result + 500.0) < 0.001
 
-    def test_rotational_speed_extreme_values(self, characteristic: BaseCharacteristic) -> None:
+    def test_rotational_speed_extreme_values(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test extreme rotational speed values within valid range."""
         # Test maximum positive value
         max_value = SINT32_MAX - 1
         max_data = bytearray(
             [max_value & 0xFF, (max_value >> 8) & 0xFF, (max_value >> 16) & 0xFF, (max_value >> 24) & 0xFF]
         )  # 2147483646 = 2147483646 RPM
-        result = characteristic.decode_value(max_data)
+        result = characteristic.parse_value(max_data)
+        assert result is not None
         assert abs(result - 2147483646.0) < 0.001
 
         # Test near-minimum negative value (-2147483646 RPM, which is -2147483646)
         min_data = bytearray([0x02, 0x00, 0x00, 0x80])  # -2147483646 = -2147483646 RPM
-        result = characteristic.decode_value(min_data)
+        result = characteristic.parse_value(min_data)
+        assert result is not None
         assert result is not None
         assert abs(result + 2147483646.0) < 0.001
 
         # Test "value is not known" special value
         unknown_data = bytearray([0xFF, 0xFF, 0xFF, 0x7F])  # 0x7FFFFFFF
-        result = characteristic.decode_value(unknown_data)
-        assert result is None
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+
+        with pytest.raises(SpecialValueDetected) as exc_info:
+            characteristic.parse_value(unknown_data)
+        assert exc_info.value.special_value.meaning == "value is not known"
 
     def test_rotational_speed_encoding_accuracy(self, characteristic: RotationalSpeedCharacteristic) -> None:
         """Test encoding produces correct byte sequences."""
         # Test encoding common speeds
-        assert characteristic.encode_value(0.0) == bytearray([0x00, 0x00, 0x00, 0x00])
-        assert characteristic.encode_value(1000.0) == bytearray([0xE8, 0x03, 0x00, 0x00])
-        assert characteristic.encode_value(-1000.0) == bytearray([0x18, 0xFC, 0xFF, 0xFF])
+        assert characteristic.build_value(0.0) == bytearray([0x00, 0x00, 0x00, 0x00])
+        assert characteristic.build_value(1000.0) == bytearray([0xE8, 0x03, 0x00, 0x00])
+        assert characteristic.build_value(-1000.0) == bytearray([0x18, 0xFC, 0xFF, 0xFF])
 
     def test_encode_value(self, characteristic: RotationalSpeedCharacteristic) -> None:
         """Test encoding rotational speed values."""
         # Test encoding positive speed
-        encoded = characteristic.encode_value(1500.0)
+        encoded = characteristic.build_value(1500.0)
         assert encoded == bytearray([0xDC, 0x05, 0x00, 0x00])
 
         # Test encoding zero
-        encoded = characteristic.encode_value(0.0)
+        encoded = characteristic.build_value(0.0)
         assert encoded == bytearray([0x00, 0x00, 0x00, 0x00])
 
         # Test encoding negative speed
-        encoded = characteristic.encode_value(-500.0)
+        encoded = characteristic.build_value(-500.0)
         assert encoded == bytearray([0x0C, 0xFE, 0xFF, 0xFF])
 
     def test_characteristic_metadata(self, characteristic: RotationalSpeedCharacteristic) -> None:

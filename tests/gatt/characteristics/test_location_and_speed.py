@@ -180,7 +180,7 @@ class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
         self, characteristic: LocationAndSpeedCharacteristic, flags: int, data: bytearray, expected: dict[str, Any]
     ) -> None:
         """Test location and speed with various flag combinations."""
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         for field, expected_value in expected.items():
             actual_value = getattr(result, field)
             if field == "utc_time" and expected_value is not None:
@@ -227,7 +227,7 @@ class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.instantaneous_speed == 10.0
         assert result.total_distance == 0.0
         assert result.latitude == 0.0
@@ -242,7 +242,7 @@ class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
         """Test location and speed with minimal data (only flags)."""
         data = bytearray([0x00, 0x00])  # No fields present
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.instantaneous_speed is None
         assert result.total_distance is None
         assert result.latitude is None

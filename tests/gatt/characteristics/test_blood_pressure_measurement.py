@@ -12,6 +12,7 @@ from bluetooth_sig.gatt.characteristics.blood_pressure_measurement import (
     BloodPressureData,
     BloodPressureMeasurementCharacteristic,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.units import PressureUnit
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
@@ -281,7 +282,8 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result: BloodPressureData = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.systolic == 120.0
         assert result.diastolic == 80.0
         assert result.mean_arterial_pressure == 90.0
@@ -316,7 +318,7 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result: BloodPressureData = characteristic.decode_value(test_data)
+        result: BloodPressureData = characteristic.parse_value(test_data)
         assert result.systolic == 120.0
         assert result.unit == PressureUnit.MMHG
         assert result.optional_fields.timestamp is not None
@@ -338,7 +340,8 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result: BloodPressureData = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.systolic == 16.0
         assert result.diastolic == 11.0
         assert result.mean_arterial_pressure == 12.0
@@ -346,6 +349,8 @@ class TestBloodPressureMeasurementCharacteristic(CommonCharacteristicTests):
 
     def test_blood_pressure_invalid_data(self, characteristic: BloodPressureMeasurementCharacteristic) -> None:
         """Test blood pressure measurement with invalid data."""
-        # Test data too short
-        with pytest.raises(ValueError, match="must be at least 7 bytes"):
-            characteristic.decode_value(bytearray([0x00, 0x78]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x78]))
+
+        assert "Length validation failed" in str(exc_info.value)
+        assert "expected at least 7 bytes" in str(exc_info.value)

@@ -34,7 +34,7 @@ class VoltageSpecificationData(msgspec.Struct, frozen=True, kw_only=True):  # py
             )
 
 
-class VoltageSpecificationCharacteristic(BaseCharacteristic):
+class VoltageSpecificationCharacteristic(BaseCharacteristic[VoltageSpecificationData]):
     """Voltage Specification characteristic (0x2B19).
 
     org.bluetooth.characteristic.voltage_specification
@@ -49,7 +49,7 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured VoltageSpecificationData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VoltageSpecificationData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VoltageSpecificationData:
         """Parse voltage specification data (2x uint16 in units of 1/64 V).
 
         Args:
@@ -72,7 +72,7 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic):
 
         return VoltageSpecificationData(minimum=min_voltage_raw / 64.0, maximum=max_voltage_raw / 64.0)
 
-    def encode_value(self, data: VoltageSpecificationData) -> bytearray:
+    def _encode_value(self, data: VoltageSpecificationData) -> bytearray:
         """Encode voltage specification value back to bytes.
 
         Args:

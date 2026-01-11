@@ -17,7 +17,7 @@ class BondManagementFeatureData(msgspec.Struct, frozen=True, kw_only=True):
     delete_all_but_active_bond_on_server_supported: bool
 
 
-class BondManagementFeatureCharacteristic(BaseCharacteristic):
+class BondManagementFeatureCharacteristic(BaseCharacteristic[BondManagementFeatureData]):
     """Bond Management Feature characteristic (0x2AA5).
 
     org.bluetooth.characteristic.bond_management_feature
@@ -31,7 +31,7 @@ class BondManagementFeatureCharacteristic(BaseCharacteristic):
     min_length = 3
     max_length = 3
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BondManagementFeatureData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BondManagementFeatureData:
         """Decode Bond Management Feature data from bytes.
 
         Args:
@@ -59,7 +59,7 @@ class BondManagementFeatureCharacteristic(BaseCharacteristic):
             delete_all_but_active_bond_on_server_supported=delete_all_but_active_supported,
         )
 
-    def encode_value(self, data: BondManagementFeatureData) -> bytearray:
+    def _encode_value(self, data: BondManagementFeatureData) -> bytearray:
         """Encode Bond Management Feature data to bytes.
 
         Args:

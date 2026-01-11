@@ -15,7 +15,7 @@ class TestNumberOfDigitalsDescriptor:
         data = b"\x02"  # 2 digitals (1 byte)
 
         result = nod.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, NumberOfDigitalsData)
         assert result.value.number_of_digitals == 0x02
 
@@ -25,7 +25,7 @@ class TestNumberOfDigitalsDescriptor:
         data = b"\x02\x00"  # Too long (2 bytes instead of 1)
 
         result = nod.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Number of Digitals data must be exactly 1 byte" in result.error_message
 
     def test_uuid_resolution(self) -> None:

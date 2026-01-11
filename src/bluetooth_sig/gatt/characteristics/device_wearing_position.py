@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint8Template
 
 
-class DeviceWearingPositionCharacteristic(BaseCharacteristic):
+class DeviceWearingPositionCharacteristic(BaseCharacteristic[int]):
     """Device Wearing Position characteristic (0x2B4B).
 
     org.bluetooth.characteristic.device_wearing_position

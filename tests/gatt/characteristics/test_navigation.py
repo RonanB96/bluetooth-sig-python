@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from datetime import datetime
 
 import pytest
 
@@ -76,61 +76,78 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
 
     # === Navigation-Specific Tests ===
     @pytest.mark.parametrize(
-        "flags,data,expected",
+        "data,expected",
         [
             # Basic: bearing and heading only
             (
-                0x0000,
-                bytearray([0x00, 0x00, 0x5A, 0x00, 0x2D, 0x01]),  # bearing=90.0, heading=301.0
-                {
-                    "bearing": 0.9,  # 90 * 0.01
-                    "heading": 3.01,  # 301 * 0.01
-                    "remaining_distance": None,
-                    "remaining_vertical_distance": None,
-                    "estimated_time_of_arrival": None,
-                },
+                bytearray([0x00, 0x00, 0x5A, 0x00, 0x2D, 0x01]),
+                NavigationData(
+                    flags=NavigationFlags(0),
+                    bearing=0.9,
+                    heading=3.01,
+                    remaining_distance=None,
+                    remaining_vertical_distance=None,
+                    estimated_time_of_arrival=None,
+                    position_status=PositionStatus.NO_POSITION,
+                    heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
+                    navigation_indicator_type=NavigationIndicatorType.TO_WAYPOINT,
+                    waypoint_reached=False,
+                    destination_reached=False,
+                ),
             ),
             # With remaining distance
             (
-                0x0001,  # REMAINING_DISTANCE_PRESENT
-                bytearray([0x01, 0x00, 0x5A, 0x00, 0x2D, 0x01, 0x00, 0x00, 0x00]),  # + distance=0
-                {
-                    "bearing": 0.9,
-                    "heading": 3.01,
-                    "remaining_distance": 0.0,
-                    "remaining_vertical_distance": None,
-                    "estimated_time_of_arrival": None,
-                },
+                bytearray([0x01, 0x00, 0x5A, 0x00, 0x2D, 0x01, 0x00, 0x00, 0x00]),
+                NavigationData(
+                    flags=NavigationFlags(0x0001),
+                    bearing=0.9,
+                    heading=3.01,
+                    remaining_distance=0.0,
+                    remaining_vertical_distance=None,
+                    estimated_time_of_arrival=None,
+                    position_status=PositionStatus.NO_POSITION,
+                    heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
+                    navigation_indicator_type=NavigationIndicatorType.TO_WAYPOINT,
+                    waypoint_reached=False,
+                    destination_reached=False,
+                ),
             ),
             # With remaining vertical distance
             (
-                0x0002,  # REMAINING_VERTICAL_DISTANCE_PRESENT
-                bytearray([0x02, 0x00, 0x5A, 0x00, 0x2D, 0x01, 0x00, 0x00, 0x00]),  # + vert_distance=0
-                {
-                    "bearing": 0.9,
-                    "heading": 3.01,
-                    "remaining_distance": None,
-                    "remaining_vertical_distance": 0.0,
-                    "estimated_time_of_arrival": None,
-                },
+                bytearray([0x02, 0x00, 0x5A, 0x00, 0x2D, 0x01, 0x00, 0x00, 0x00]),
+                NavigationData(
+                    flags=NavigationFlags(0x0002),
+                    bearing=0.9,
+                    heading=3.01,
+                    remaining_distance=None,
+                    remaining_vertical_distance=0.0,
+                    estimated_time_of_arrival=None,
+                    position_status=PositionStatus.POSITION_OK,  # Bits 1-2 = 0b01 = 1
+                    heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
+                    navigation_indicator_type=NavigationIndicatorType.TO_WAYPOINT,
+                    waypoint_reached=False,
+                    destination_reached=False,
+                ),
             ),
             # With ETA
             (
-                0x0004,  # ESTIMATED_TIME_OF_ARRIVAL_PRESENT
-                bytearray(
-                    [0x04, 0x00, 0x5A, 0x00, 0x2D, 0x01, 0xE7, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00]
-                ),  # + 2023-01-01
-                {
-                    "bearing": 0.9,
-                    "heading": 3.01,
-                    "remaining_distance": None,
-                    "remaining_vertical_distance": None,
-                    "estimated_time_of_arrival": "2023-01-01T00:00:00",
-                },
+                bytearray([0x04, 0x00, 0x5A, 0x00, 0x2D, 0x01, 0xE7, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00]),
+                NavigationData(
+                    flags=NavigationFlags(0x0004),
+                    bearing=0.9,
+                    heading=3.01,
+                    remaining_distance=None,
+                    remaining_vertical_distance=None,
+                    estimated_time_of_arrival=datetime(2023, 1, 1, 0, 0, 0),
+                    position_status=PositionStatus.ESTIMATED_POSITION,  # Bits 1-2 = 0b10 = 2
+                    heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
+                    navigation_indicator_type=NavigationIndicatorType.TO_WAYPOINT,
+                    waypoint_reached=False,
+                    destination_reached=False,
+                ),
             ),
             # All optional fields
             (
-                0x0007,  # All optional fields present
                 bytearray(
                     [
                         0x07,
@@ -141,41 +158,41 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
                         0x01,  # heading
                         0x00,
                         0x00,
-                        0x00,  # remaining_distance
+                        0x00,  # remaining_distance (3 bytes uint24)
                         0x00,
                         0x00,
-                        0x00,  # remaining_vertical_distance
+                        0x00,  # remaining_vertical_distance (3 bytes sint24)
                         0xE7,
-                        0x07,
-                        0x01,
-                        0x01,
-                        0x00,
-                        0x00,
-                        0x00,  # ETA
+                        0x07,  # ETA year: 2023 (little-endian)
+                        0x01,  # ETA month: 1
+                        0x01,  # ETA day: 1
+                        0x00,  # ETA hours: 0
+                        0x00,  # ETA minutes: 0
+                        0x00,  # ETA seconds: 0
                     ]
                 ),
-                {
-                    "bearing": 0.9,
-                    "heading": 3.01,
-                    "remaining_distance": 0.0,
-                    "remaining_vertical_distance": 0.0,
-                    "estimated_time_of_arrival": "2023-01-01T00:00:00",
-                },
+                NavigationData(
+                    flags=NavigationFlags(0x0007),
+                    bearing=0.9,
+                    heading=3.01,
+                    remaining_distance=0.0,
+                    remaining_vertical_distance=0.0,
+                    estimated_time_of_arrival=datetime(2023, 1, 1, 0, 0, 0),
+                    position_status=PositionStatus.LAST_KNOWN_POSITION,  # Bits 1-2 = 0b11 = 3
+                    heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
+                    navigation_indicator_type=NavigationIndicatorType.TO_WAYPOINT,
+                    waypoint_reached=False,
+                    destination_reached=False,
+                ),
             ),
         ],
     )
     def test_navigation_flag_combinations(
-        self, characteristic: NavigationCharacteristic, flags: int, data: bytearray, expected: dict[str, Any]
+        self, characteristic: NavigationCharacteristic, data: bytearray, expected: NavigationData
     ) -> None:
         """Test navigation with various flag combinations."""
-        result = characteristic.decode_value(data)
-        for field, expected_value in expected.items():
-            actual_value = getattr(result, field)
-            if field == "estimated_time_of_arrival" and expected_value is not None:
-                assert actual_value is not None
-                # Could check specific date if needed
-            else:
-                assert actual_value == expected_value, f"Field {field}: expected {expected_value}, got {actual_value}"
+        result = characteristic.parse_value(data)
+        assert result == expected
 
     def test_navigation_zero_values(self, characteristic: NavigationCharacteristic) -> None:
         """Test navigation with zero bearing and heading."""
@@ -190,7 +207,7 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.bearing == 0.0
         assert result.heading == 0.0
 
@@ -207,7 +224,7 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.bearing == 359.99
         assert result.heading == 359.99
 
@@ -215,12 +232,12 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
         """Test navigation boundary values."""
         # Test 359.99 degrees (maximum)
         data = bytearray([0x00, 0x00, 0x9F, 0x8C, 0x9F, 0x8C])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.bearing == 359.99
         assert result.heading == 359.99
 
         # Test 0 degrees (minimum)
         data = bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.bearing == 0.0
         assert result.heading == 0.0

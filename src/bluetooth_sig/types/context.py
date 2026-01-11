@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from typing import Any
 
 import msgspec
 
-from .protocols import CharacteristicDataProtocol
 from .registry.descriptor_types import DescriptorData
 from .uuid import BluetoothUUID
 
@@ -41,6 +41,6 @@ class CharacteristicContext(msgspec.Struct, kw_only=True):
 
     device_info: DeviceInfo | None = None
     advertisement: bytes = b""
-    other_characteristics: Mapping[str, CharacteristicDataProtocol] | None = None
+    other_characteristics: Mapping[str, Any] | None = None
     descriptors: Mapping[str, DescriptorData] | None = None
     raw_service: bytes = b""

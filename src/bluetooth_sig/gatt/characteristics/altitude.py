@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledSint16Template
 
 
-class AltitudeCharacteristic(BaseCharacteristic):
+class AltitudeCharacteristic(BaseCharacteristic[float]):
     """Altitude characteristic (0x2AB3).
 
     org.bluetooth.characteristic.altitude

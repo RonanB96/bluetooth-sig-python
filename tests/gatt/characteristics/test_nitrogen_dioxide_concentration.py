@@ -46,7 +46,7 @@ class TestNitrogenDioxideConcentrationCharacteristic(CommonCharacteristicTests):
 
         # Test normal parsing
         test_data = bytearray([0x32, 0x00])  # 50 ppb little endian
-        parsed = characteristic.decode_value(test_data)
+        parsed = characteristic.parse_value(test_data)
         assert parsed == 50
 
     def test_nitrogen_dioxide_concentration_boundary_values(
@@ -55,11 +55,11 @@ class TestNitrogenDioxideConcentrationCharacteristic(CommonCharacteristicTests):
         """Test boundary NO2 concentration values."""
         # Clean air
         data_min = bytearray([0x00, 0x00])
-        assert characteristic.decode_value(data_min) == 0
+        assert characteristic.parse_value(data_min) == 0
 
         # Maximum
         data_max = bytearray([0xFF, 0xFF])
-        assert characteristic.decode_value(data_max) == 65535
+        assert characteristic.parse_value(data_max) == 65535
 
     def test_nitrogen_dioxide_concentration_typical_levels(
         self, characteristic: NitrogenDioxideConcentrationCharacteristic
@@ -67,8 +67,8 @@ class TestNitrogenDioxideConcentrationCharacteristic(CommonCharacteristicTests):
         """Test typical NO2 concentration levels."""
         # Typical urban (40 ppb)
         data_urban = bytearray([0x28, 0x00])
-        assert characteristic.decode_value(data_urban) == 40
+        assert characteristic.parse_value(data_urban) == 40
 
         # High pollution (200 ppb)
         data_high = bytearray([0xC8, 0x00])
-        assert characteristic.decode_value(data_high) == 200
+        assert characteristic.parse_value(data_high) == 200

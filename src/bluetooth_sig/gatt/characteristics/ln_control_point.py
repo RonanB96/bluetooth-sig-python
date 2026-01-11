@@ -90,7 +90,7 @@ class LNControlPointData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: 
             raise ValueError("Op code must be a uint8 value (0-UINT8_MAX)")
 
 
-class LNControlPointCharacteristic(BaseCharacteristic):
+class LNControlPointCharacteristic(BaseCharacteristic[LNControlPointData]):
     """LN Control Point characteristic.
 
     Used to enable device-specific procedures related to the exchange of location and navigation information.
@@ -102,7 +102,7 @@ class LNControlPointCharacteristic(BaseCharacteristic):
     max_length = 18  # Op Code(1) + Parameter(max 17) maximum
     allow_variable_length: bool = True  # Variable parameter length
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> LNControlPointData:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> LNControlPointData:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         """Parse LN control point data according to Bluetooth specification.
 
         Format: Op Code(1) + Parameter(0-17).
@@ -193,7 +193,7 @@ class LNControlPointCharacteristic(BaseCharacteristic):
             response_parameter=response_parameter,
         )
 
-    def encode_value(self, data: LNControlPointData) -> bytearray:
+    def _encode_value(self, data: LNControlPointData) -> bytearray:
         """Encode LNControlPointData back to bytes.
 
         Args:

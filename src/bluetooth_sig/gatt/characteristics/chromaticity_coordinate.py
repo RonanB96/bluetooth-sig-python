@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class ChromaticityCoordinateCharacteristic(BaseCharacteristic):
+class ChromaticityCoordinateCharacteristic(BaseCharacteristic[float]):
     """Chromaticity Coordinate characteristic (0x2B1C).
 
     org.bluetooth.characteristic.chromaticity_coordinate

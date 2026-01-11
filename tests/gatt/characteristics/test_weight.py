@@ -51,20 +51,20 @@ class TestWeightCharacteristic(CommonCharacteristicTests):
         scaled_value = int(weight_kg / 0.005)
         data = bytearray([scaled_value & 0xFF, (scaled_value >> 8) & 0xFF])
         result = characteristic.parse_value(data)
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value - weight_kg) < 0.01  # Allow small floating point error
+
+        assert result is not None
+        assert abs(result - weight_kg) < 0.01  # Allow small floating point error
 
     def test_weight_boundary_values(self, characteristic: WeightCharacteristic) -> None:
         """Test weight boundary values."""
         # Test minimum weight (0 kg)
         result = characteristic.parse_value(bytearray([0, 0]))
-        assert result.parse_success
-        assert result.value is not None
-        assert result.value == 0.0
+
+        assert result is not None
+        assert result == 0.0
 
         # Test maximum weight (327.675 kg)
         result = characteristic.parse_value(bytearray([0xFF, 0xFF]))
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value - 327.675) < 0.01
+
+        assert result is not None
+        assert abs(result - 327.675) < 0.01

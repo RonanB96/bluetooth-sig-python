@@ -18,7 +18,7 @@ class HidControlPointCommand(IntEnum):
     EXIT_SUSPEND = 1
 
 
-class HidControlPointCharacteristic(BaseCharacteristic):
+class HidControlPointCharacteristic(BaseCharacteristic[int]):
     """HID Control Point characteristic (0x2A4C).
 
     org.bluetooth.characteristic.hid_control_point

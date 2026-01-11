@@ -2,37 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
-
-from .gatt_enums import GattProperty
-
-
-class CharacteristicDataProtocol(Protocol):  # pylint: disable=too-few-public-methods
-    """Minimal protocol describing the attributes used by parsers.
-
-    This avoids importing the full `CharacteristicData` type here and
-    gives callers a useful static type for `other_characteristics`.
-
-    Now includes field-level error reporting and parse trace capabilities
-    for improved diagnostics.
-    """
-
-    value: Any
-    raw_data: bytes
-    parse_success: bool
-
-    @property
-    def properties(self) -> list[GattProperty]:
-        """BLE GATT properties."""
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    @property
-    def name(self) -> str:
-        """Characteristic name."""
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    field_errors: list[Any]  # ParseFieldError, but avoid circular import
-    parse_trace: list[str]
+from typing import Protocol
 
 
 class CharacteristicProtocol(Protocol):
@@ -43,10 +13,18 @@ class CharacteristicProtocol(Protocol):
     Used primarily by debug utilities.
     """
 
-    def parse_value(self, data: bytearray) -> Any:  # noqa: ANN401
-        """Parse raw data into characteristic value."""
-        ...  # pylint: disable=unnecessary-ellipsis  # Ellipsis is required for Protocol method stubs
+    def _decode_value(self, data: bytearray) -> object:
+        """Decode raw data into characteristic value."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    def encode_value(self, value: Any) -> bytearray:  # noqa: ANN401
-        """Encode characteristic value into raw data."""
-        ...  # pylint: disable=unnecessary-ellipsis  # Ellipsis is required for Protocol method stubs
+    def parse_value(self, data: bytearray) -> object:
+        """Parse raw data into characteristic value."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def build_value(self, data: object, validate: bool = True) -> bytearray:
+        """Encode characteristic value into raw bytes."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def _encode_value(self, value: object) -> bytearray:
+        """Internal encoding implementation."""
+        ...  # pylint: disable=unnecessary-ellipsis

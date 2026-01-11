@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Protocol, TypeVar, cast, overload
 
 from ..advertising import (
     AdvertisingDataInterpreter,
@@ -21,7 +21,7 @@ from ..advertising import (
     advertising_interpreter_registry,
 )
 from ..gatt.characteristics import CharacteristicName
-from ..gatt.characteristics.base import BaseCharacteristic, CharacteristicData
+from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
 from ..gatt.characteristics.unknown import UnknownCharacteristic
 from ..gatt.context import CharacteristicContext, DeviceInfo
@@ -31,7 +31,6 @@ from ..gatt.services import ServiceName
 from ..types import (
     AdvertisementData,
     AdvertisingData,
-    CharacteristicDataProtocol,
     CharacteristicInfo,
     DescriptorData,
     DescriptorInfo,
@@ -39,6 +38,9 @@ from ..types import (
 from ..types.device_types import DeviceEncryption, DeviceService, ScannedDevice
 from ..types.uuid import BluetoothUUID
 from .connection import ConnectionManagerProtocol
+
+# Type variable for generic characteristic return types
+T = TypeVar("T")
 
 __all__ = [
     "Device",
@@ -69,7 +71,7 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         self,
         char_data: dict[str, bytes],
         ctx: CharacteristicContext | None = None,
-    ) -> dict[str, CharacteristicData]:
+    ) -> dict[str, Any]:
         """Parse multiple characteristics at once."""
 
     @abstractmethod
@@ -78,7 +80,7 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
         uuid: str,
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-    ) -> CharacteristicData:
+    ) -> Any:  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
         """Parse a single characteristic's raw bytes."""
 
     @abstractmethod
@@ -235,7 +237,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             raise RuntimeError("No connection manager attached to Device")
         await self.connection_manager.disconnect()
 
-    def _get_cached_characteristic(self, char_uuid: BluetoothUUID) -> BaseCharacteristic | None:
+    def _get_cached_characteristic(self, char_uuid: BluetoothUUID) -> BaseCharacteristic[Any] | None:
         """Get cached characteristic instance from services.
 
         Single source of truth for characteristics - searches across all services.
@@ -244,8 +246,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Args:
             char_uuid: UUID of the characteristic to find
 
-        Returns:
-            BaseCharacteristic instance if found, None otherwise
+        Returns: BaseCharacteristic[Any] instance if found, None otherwise
 
         """
         char_uuid_str = str(char_uuid)
@@ -254,7 +255,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 return service.characteristics[char_uuid_str]
         return None
 
-    def _cache_characteristic(self, char_uuid: BluetoothUUID, char_instance: BaseCharacteristic) -> None:
+    def _cache_characteristic(self, char_uuid: BluetoothUUID, char_instance: BaseCharacteristic[Any]) -> None:
         """Store characteristic instance in services cache.
 
         Only updates existing characteristic entries - does not create new services.
@@ -262,7 +263,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Args:
             char_uuid: UUID of the characteristic
-            char_instance: BaseCharacteristic instance to cache
+            char_instance: BaseCharacteristic[Any] instance to cache
 
         """
         char_uuid_str = str(char_uuid)
@@ -277,7 +278,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             char_uuid_str,
         )
 
-    def _create_unknown_characteristic(self, dep_uuid: BluetoothUUID) -> BaseCharacteristic:
+    def _create_unknown_characteristic(self, dep_uuid: BluetoothUUID) -> BaseCharacteristic[Any]:
         """Create an unknown characteristic instance for a UUID not in registry.
 
         Args:
@@ -295,8 +296,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self,
         dep_uuid: BluetoothUUID,
         is_required: bool,
-        dep_class: type[BaseCharacteristic],
-    ) -> CharacteristicDataProtocol | None:
+        dep_class: type[BaseCharacteristic[Any]],
+    ) -> Any | None:  # noqa: ANN401  # Dependency can be any characteristic type
         """Resolve a single dependency by reading and parsing it.
 
         Args:
@@ -346,7 +347,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     async def _ensure_dependencies_resolved(
         self,
-        char_class: type[BaseCharacteristic],
+        char_class: type[BaseCharacteristic[Any]],
         resolution_mode: DependencyResolutionMode,
     ) -> CharacteristicContext:
         """Ensure all dependencies for a characteristic are resolved.
@@ -373,7 +374,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         required_deps = getattr(char_class, "_required_dependencies", [])
 
         # Build context with resolved dependencies
-        context_chars: dict[str, CharacteristicDataProtocol] = {}
+        context_chars: dict[str, Any] = {}
 
         for dep_class in required_deps + optional_deps:
             is_required = dep_class in required_deps
@@ -417,22 +418,38 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             other_characteristics=context_chars,
         )
 
+    @overload
     async def read(
         self,
-        char_name: str | CharacteristicName,
+        char: type[BaseCharacteristic[T]],
+        resolution_mode: DependencyResolutionMode = ...,
+    ) -> T | None: ...
+
+    @overload
+    async def read(
+        self,
+        char: str | CharacteristicName,
+        resolution_mode: DependencyResolutionMode = ...,
+    ) -> Any | None: ...  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+
+    async def read(
+        self,
+        char: str | CharacteristicName | type[BaseCharacteristic[T]],
         resolution_mode: DependencyResolutionMode = DependencyResolutionMode.NORMAL,
-    ) -> Any | None:  # noqa: ANN401  # Returns characteristic-specific types
+    ) -> T | Any | None:  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
         """Read a characteristic value from the device.
 
         Args:
-            char_name: Name or enum of the characteristic to read
+            char: Name, enum, or characteristic class to read.
+                       Passing the class enables type-safe return values.
             resolution_mode: How to handle automatic dependency resolution:
                 - NORMAL: Auto-resolve dependencies, use cache when available (default)
                 - SKIP_DEPENDENCIES: Skip dependency resolution and validation
                 - FORCE_REFRESH: Re-read dependencies from device, ignoring cache
 
         Returns:
-            Parsed characteristic value or None if read fails
+            Parsed characteristic value or None if read fails.
+            Return type is inferred from characteristic class when provided.
 
         Raises:
             RuntimeError: If no connection manager is attached
@@ -440,29 +457,41 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Example::
 
-            # Read RSC Measurement - automatically reads/caches RSC Feature first
-            measurement = await device.read(CharacteristicName.RSC_MEASUREMENT)
+            # Type-safe: pass characteristic class, return type is inferred
+            from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 
-            # Read again - uses cached RSC Feature, no redundant BLE read
-            measurement2 = await device.read(CharacteristicName.RSC_MEASUREMENT)
+            level: int | None = await device.read(BatteryLevelCharacteristic)
 
-            # Force fresh read of feature characteristic
-            measurement3 = await device.read(
-                CharacteristicName.RSC_MEASUREMENT, resolution_mode=DependencyResolutionMode.FORCE_REFRESH
-            )
+            # Not type-safe: pass string/enum, returns Any
+            level = await device.read(CharacteristicName.BATTERY_LEVEL)
+            level = await device.read("2A19")
 
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
 
-        resolved_uuid = self._resolve_characteristic_name(char_name)
+        # Handle characteristic class input (type-safe path)
+        if isinstance(char, type) and issubclass(char, BaseCharacteristic):
+            char_class: type[BaseCharacteristic[Any]] = char
+            char_instance = char_class()
+            resolved_uuid = char_instance.uuid
 
-        char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(resolved_uuid)
+            ctx: CharacteristicContext | None = None
+            if resolution_mode != DependencyResolutionMode.SKIP_DEPENDENCIES:
+                ctx = await self._ensure_dependencies_resolved(char_class, resolution_mode)
+
+            raw = await self.connection_manager.read_gatt_char(resolved_uuid)
+            return char_instance.parse_value(raw, ctx=ctx)
+
+        # Handle string/enum input (not type-safe path)
+        resolved_uuid = self._resolve_characteristic_name(char)
+
+        char_class_lookup = CharacteristicRegistry.get_characteristic_class_by_uuid(resolved_uuid)
 
         # Resolve dependencies if characteristic class is known
-        ctx: CharacteristicContext | None = None
-        if char_class and resolution_mode != DependencyResolutionMode.SKIP_DEPENDENCIES:
-            ctx = await self._ensure_dependencies_resolved(char_class, resolution_mode)
+        ctx = None
+        if char_class_lookup and resolution_mode != DependencyResolutionMode.SKIP_DEPENDENCIES:
+            ctx = await self._ensure_dependencies_resolved(char_class_lookup, resolution_mode)
 
         # Read the characteristic
         raw = await self.connection_manager.read_gatt_char(resolved_uuid)
@@ -470,41 +499,142 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return parsed
 
-    async def write(self, char_name: str | CharacteristicName, data: bytes, response: bool = True) -> None:
-        """Write data to a characteristic on the device.
+    @overload
+    async def write(
+        self,
+        char: type[BaseCharacteristic[T]],
+        data: T,
+        response: bool = ...,
+    ) -> None: ...
+
+    @overload
+    async def write(
+        self,
+        char: str | CharacteristicName,
+        data: bytes,
+        response: bool = ...,
+    ) -> None: ...
+
+    async def write(
+        self,
+        char: str | CharacteristicName | type[BaseCharacteristic[T]],
+        data: bytes | T,
+        response: bool = True,
+    ) -> None:
+        r"""Write data to a characteristic on the device.
 
         Args:
-            char_name: Name or enum of the characteristic to write to
-            data: Raw bytes to write
+            char: Name, enum, or characteristic class to write to.
+                       Passing the class enables type-safe value encoding.
+            data: Raw bytes (for string/enum) or typed value (for characteristic class).
+                  When using characteristic class, the value is encoded using build_value().
             response: If True, use write-with-response (wait for acknowledgment).
                      If False, use write-without-response (faster but no confirmation).
                      Default is True for reliability.
 
         Raises:
             RuntimeError: If no connection manager is attached
+            CharacteristicEncodeError: If encoding fails (when using characteristic class)
+
+        Example::
+
+            # Type-safe: pass characteristic class and typed value
+            from bluetooth_sig.gatt.characteristics import AlertLevelCharacteristic
+
+            await device.write(AlertLevelCharacteristic, AlertLevel.HIGH)
+
+            # Not type-safe: pass raw bytes
+            await device.write("2A06", b"\x02")
+            await device.write(CharacteristicName.ALERT_LEVEL, b"\x02")
 
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
 
-        resolved_uuid = self._resolve_characteristic_name(char_name)
-        await self.connection_manager.write_gatt_char(resolved_uuid, data, response=response)
+        # Handle characteristic class input (type-safe path)
+        if isinstance(char, type) and issubclass(char, BaseCharacteristic):
+            char_instance = char()
+            resolved_uuid = char_instance.uuid
+            # data is typed value T, encode it
+            encoded = char_instance.build_value(data)  # type: ignore[arg-type]
+            await self.connection_manager.write_gatt_char(resolved_uuid, bytes(encoded), response=response)
+            return
 
-    async def start_notify(self, char_name: str | CharacteristicName, callback: Callable[[Any], None]) -> None:
+        # Handle string/enum input (not type-safe path)
+        # data must be bytes in this path
+        if not isinstance(data, (bytes, bytearray)):
+            raise TypeError(f"When using string/enum char_name, data must be bytes, got {type(data).__name__}")
+
+        resolved_uuid = self._resolve_characteristic_name(char)
+        # cast is safe: isinstance check above ensures data is bytes/bytearray
+        await self.connection_manager.write_gatt_char(resolved_uuid, cast(bytes, data), response=response)
+
+    @overload
+    async def start_notify(
+        self,
+        char: type[BaseCharacteristic[T]],
+        callback: Callable[[T], None],
+    ) -> None: ...
+
+    @overload
+    async def start_notify(
+        self,
+        char: str | CharacteristicName,
+        callback: Callable[[Any], None],
+    ) -> None: ...
+
+    async def start_notify(
+        self,
+        char: str | CharacteristicName | type[BaseCharacteristic[T]],
+        callback: Callable[[T], None] | Callable[[Any], None],
+    ) -> None:
         """Start notifications for a characteristic.
 
         Args:
-            char_name: Name or enum of the characteristic to monitor
-            callback: Function to call when notifications are received
+            char: Name, enum, or characteristic class to monitor.
+                  Passing the class enables type-safe callbacks.
+            callback: Function to call when notifications are received.
+                      Callback parameter type is inferred from characteristic class.
 
         Raises:
             RuntimeError: If no connection manager is attached
 
+        Example::
+
+            # Type-safe: callback receives typed value
+            from bluetooth_sig.gatt.characteristics import HeartRateMeasurementCharacteristic
+
+
+            def on_heart_rate(value: HeartRateMeasurementData) -> None:
+                print(f"Heart rate: {value.heart_rate}")
+
+
+            await device.start_notify(HeartRateMeasurementCharacteristic, on_heart_rate)
+
+            # Not type-safe: callback receives Any
+            await device.start_notify("2A37", lambda v: print(v))
+
         """
         if not self.connection_manager:
             raise RuntimeError("No connection manager attached to Device")
 
-        resolved_uuid = self._resolve_characteristic_name(char_name)
+        # Handle characteristic class input (type-safe path)
+        if isinstance(char, type) and issubclass(char, BaseCharacteristic):
+            char_instance = char()
+            resolved_uuid = char_instance.uuid
+
+            def _typed_cb(sender: str, data: bytes) -> None:
+                parsed = char_instance.parse_value(data)
+                try:
+                    callback(parsed)
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    logging.exception("Notification callback raised an exception: %s", exc)
+
+            await self.connection_manager.start_notify(resolved_uuid, _typed_cb)
+            return
+
+        # Handle string/enum input (not type-safe path)
+        resolved_uuid = self._resolve_characteristic_name(char)
 
         def _internal_cb(sender: str, data: bytes) -> None:
             parsed = self.translator.parse_characteristic(sender, data)
@@ -867,7 +997,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         # Route to vendor interpreter and return result
         return self._interpret_advertisement(advertisement)
 
-    def get_characteristic_data(self, char_uuid: BluetoothUUID) -> CharacteristicData | None:
+    def get_characteristic_data(self, char_uuid: BluetoothUUID) -> Any | None:  # noqa: ANN401  # Heterogeneous cache
         """Get parsed characteristic data - single source of truth via characteristic.last_parsed.
 
         Searches across all services to find the characteristic by UUID.
@@ -876,14 +1006,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             char_uuid: UUID of the characteristic
 
         Returns:
-            CharacteristicData (last parsed result) if found, None otherwise.
+            Parsed characteristic value if found, None otherwise.
 
         Example::
 
             # Search for characteristic across all services
             battery_data = device.get_characteristic_data(BluetoothUUID("2A19"))
-            if battery_data:
-                print(f"Battery: {battery_data.value}%")
+            if battery_data is not None:
+                print(f"Battery: {battery_data}%")
 
         """
         char_instance = self._get_cached_characteristic(char_uuid)

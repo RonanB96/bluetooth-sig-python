@@ -25,12 +25,12 @@ class BatteryCriticalStatusValues(IntFlag):  # pylint: disable=too-few-public-me
     IMMEDIATE_SERVICE_REQUIRED_MASK = 0x02
 
 
-class BatteryCriticalStatusCharacteristic(BaseCharacteristic):
+class BatteryCriticalStatusCharacteristic(BaseCharacteristic[BatteryCriticalStatus]):
     """Battery Critical Status characteristic."""
 
     _manual_unit: str | None = None  # Bitfield, no units
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BatteryCriticalStatus:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BatteryCriticalStatus:
         """Decode the battery critical status value."""
         value = DataParser.parse_int8(data, 0, signed=False)
 
@@ -39,7 +39,7 @@ class BatteryCriticalStatusCharacteristic(BaseCharacteristic):
             immediate_service_required=bool(value & BatteryCriticalStatusValues.IMMEDIATE_SERVICE_REQUIRED_MASK),
         )
 
-    def encode_value(self, data: BatteryCriticalStatus) -> bytearray:
+    def _encode_value(self, data: BatteryCriticalStatus) -> bytearray:
         """Encode the battery critical status value."""
         encoded = 0
         if data.critical_power_state:

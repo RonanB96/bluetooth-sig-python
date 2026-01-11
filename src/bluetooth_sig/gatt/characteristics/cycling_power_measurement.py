@@ -9,7 +9,7 @@ import msgspec
 from ..constants import SINT16_MAX, SINT16_MIN, UINT8_MAX, UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .cycling_power_feature import CyclingPowerFeatureCharacteristic, CyclingPowerFeatureData
+from .cycling_power_feature import CyclingPowerFeatureCharacteristic
 from .utils import DataParser
 
 
@@ -51,7 +51,7 @@ class CyclingPowerMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  #
             raise ValueError("Instantaneous power must be a uint16 value (0-UINT16_MAX)")
 
 
-class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
+class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasurementData]):
     """Cycling Power Measurement characteristic (0x2A63).
 
     Used to transmit cycling power measurement data including
@@ -74,7 +74,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
     min_length: int = 4  # Flags(2) + Instantaneous Power(2)
     allow_variable_length: bool = True  # Many optional fields based on flags
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerMeasurementData:  # pylint: disable=too-many-locals # Complex parsing with many optional fields
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerMeasurementData:  # pylint: disable=too-many-locals # Complex parsing with many optional fields
         """Parse cycling power measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +
@@ -142,10 +142,9 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
 
         # Validate flags against Cycling Power Feature if available
         if ctx is not None:
-            feature_char = self.get_context_characteristic(ctx, CyclingPowerFeatureCharacteristic)
-            if feature_char and feature_char.parse_success and feature_char.value is not None:
-                # feature_char.value is the CyclingPowerFeatureData struct
-                feature_data: CyclingPowerFeatureData = feature_char.value
+            feature_data = self.get_context_characteristic(ctx, CyclingPowerFeatureCharacteristic)
+            if feature_data is not None:
+                # feature_data is the CyclingPowerFeatureData struct
 
                 # Check if reported features are supported
                 reported_features = int(flags)
@@ -180,7 +179,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic):
             last_crank_event_time=last_crank_event_time,
         )
 
-    def encode_value(self, data: CyclingPowerMeasurementData) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements # Complex cycling power measurement with numerous optional fields
+    def _encode_value(self, data: CyclingPowerMeasurementData) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements # Complex cycling power measurement with numerous optional fields
         """Encode cycling power measurement value back to bytes.
 
         Args:

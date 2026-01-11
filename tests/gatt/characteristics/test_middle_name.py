@@ -53,17 +53,17 @@ class TestMiddleNameCharacteristic(CommonCharacteristicTests):
     def test_middle_name_values(self, characteristic: MiddleNameCharacteristic, middle_name: str) -> None:
         """Test middle name with various valid values."""
         data = bytearray(middle_name.encode("utf-8"))
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == middle_name
 
     def test_middle_name_empty(self, characteristic: MiddleNameCharacteristic) -> None:
         """Test empty middle name."""
-        result = characteristic.decode_value(bytearray())
+        result = characteristic.parse_value(bytearray())
         assert result == ""
 
     def test_middle_name_unicode(self, characteristic: MiddleNameCharacteristic) -> None:
         """Test middle name with unicode characters."""
         name = "José"
         data = bytearray(name.encode("utf-8"))
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == name

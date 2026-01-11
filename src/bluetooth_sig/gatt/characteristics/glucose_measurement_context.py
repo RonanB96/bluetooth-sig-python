@@ -265,7 +265,7 @@ class GlucoseMeasurementContextData(msgspec.Struct, frozen=True, kw_only=True): 
             raise ValueError("Sequence number must be a uint16 value (0-UINT16_MAX)")
 
 
-class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
+class GlucoseMeasurementContextCharacteristic(BaseCharacteristic[GlucoseMeasurementContextData]):
     """Glucose Measurement Context characteristic (0x2A34).
 
     Used to transmit additional context for glucose measurements
@@ -290,7 +290,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
     )
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> GlucoseMeasurementContextData:  # pylint: disable=too-many-locals
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> GlucoseMeasurementContextData:  # pylint: disable=too-many-locals
         """Parse glucose measurement context data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + [Extended Flags(1)] + [Carbohydrate ID(1) + Carb(2)] +
@@ -329,17 +329,16 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
         # SIG Specification: "Contains the sequence number of the corresponding Glucose Measurement"
         if ctx is not None and isinstance(ctx, CharacteristicContext):
             glucose_meas = self.get_context_characteristic(ctx, GlucoseMeasurementCharacteristic)
-            if glucose_meas and glucose_meas.parse_success:
+            if glucose_meas and hasattr(glucose_meas, "sequence_number"):
                 # Extract sequence number from GlucoseMeasurementData
-                if hasattr(glucose_meas.value, "sequence_number"):
-                    meas_seq = glucose_meas.value.sequence_number
-                    if meas_seq != sequence_number:
-                        logger.warning(
-                            "Glucose Measurement Context sequence number (%d) does not match "
-                            "Glucose Measurement sequence number (%d)",
-                            sequence_number,
-                            meas_seq,
-                        )
+                meas_seq = glucose_meas.sequence_number
+                if meas_seq != sequence_number:
+                    logger.warning(
+                        "Glucose Measurement Context sequence number (%d) does not match "
+                        "Glucose Measurement sequence number (%d)",
+                        sequence_number,
+                        meas_seq,
+                    )
 
         # Parse all optional fields based on flags
         extended = self._parse_extended_flags(data, flags, offset)
@@ -367,7 +366,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic):
             hba1c_percent=hba1c_percent,
         )
 
-    def encode_value(self, data: GlucoseMeasurementContextData) -> bytearray:
+    def _encode_value(self, data: GlucoseMeasurementContextData) -> bytearray:
         """Encode glucose measurement context value back to bytes.
 
         Args:

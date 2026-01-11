@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics.longitude import LongitudeCharacteristic
+from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -58,16 +59,17 @@ class TestLongitudeCharacteristic(CommonCharacteristicTests):
         invalid_values = [-180.1, 180.1, -200.0, 200.0]
 
         for invalid_lon in invalid_values:
-            with pytest.raises(ValueError, match="out of range"):
-                characteristic.encode_value(invalid_lon)
+            with pytest.raises(CharacteristicEncodeError):
+                characteristic.build_value(invalid_lon)
 
     def test_longitude_precision(self, characteristic: LongitudeCharacteristic) -> None:
         """Test that longitude encoding/decoding preserves precision."""
         test_values = [120.1234567, -45.9876543, 0.0000001, -0.0000001]
 
         for expected_lon in test_values:
-            encoded = characteristic.encode_value(expected_lon)
-            decoded = characteristic.decode_value(encoded)
+            encoded = characteristic.build_value(expected_lon)
+            decoded = characteristic.parse_value(encoded)
+            assert decoded is not None
             # Should be accurate to within the resolution (10^-7 degrees)
             precision_error = abs(decoded - expected_lon)
             assert precision_error < characteristic.DEGREE_SCALING_FACTOR, (

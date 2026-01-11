@@ -58,11 +58,13 @@ class TestEncodeCharacteristic:
         """Test encoding with validation catches invalid values."""
         translator = BluetoothSIGTranslator()
 
-        # Battery level must be 0-100, raises ValueRangeError (subclass of ValueError)
-        from bluetooth_sig.gatt.exceptions import ValueRangeError
+        # Battery level must be 0-100, raises CharacteristicEncodeError
+        from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError
 
-        with pytest.raises((ValueError, TypeError, ValueRangeError)):
+        with pytest.raises(CharacteristicEncodeError) as exc_info:
             translator.encode_characteristic("2A19", 200, validate=True)
+
+        assert "outside allowed range" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_encode_async(self) -> None:
@@ -91,13 +93,12 @@ class TestGetValueType:
         value_type = translator.get_value_type("2A00")  # Device Name
         assert value_type == ValueType.STRING
 
-    def test_get_value_type_bytes(self) -> None:
-        """Test getting value type for bytes characteristic."""
+    def test_get_value_type_various(self) -> None:
+        """Test getting value type for complex characteristic."""
         translator = BluetoothSIGTranslator()
 
         value_type = translator.get_value_type("2A37")  # Heart Rate Measurement
-        # Complex characteristics may return BYTES or INT depending on implementation
-        assert value_type in (ValueType.BYTES, ValueType.VARIOUS, ValueType.INT)
+        assert value_type == ValueType.VARIOUS
 
     def test_get_value_type_invalid_uuid(self) -> None:
         """Test getting value type with invalid UUID."""
@@ -211,8 +212,7 @@ class TestRoundTrip:
         encoded = translator.encode_characteristic("2A19", original_value)
         decoded = translator.parse_characteristic("2A19", encoded)
 
-        assert decoded.parse_success is True
-        assert decoded.value == original_value
+        assert decoded == original_value
 
     def test_acceleration_round_trip(self) -> None:
         """Test acceleration 3D encode/decode round trip."""
@@ -223,15 +223,10 @@ class TestRoundTrip:
         encoded = translator.encode_characteristic("2C1D", original_dict)
         decoded = translator.parse_characteristic("2C1D", encoded)
 
-        assert decoded.parse_success is True
-        assert hasattr(decoded.value, "x_axis")
-        # Allow small floating point tolerance due to quantization
-        decoded_x: float = decoded.value.x_axis  # type: ignore[union-attr]
-        decoded_y: float = decoded.value.y_axis  # type: ignore[union-attr]
-        decoded_z: float = decoded.value.z_axis  # type: ignore[union-attr]
-        assert abs(decoded_x - original_dict["x_axis"]) < 0.01
-        assert abs(decoded_y - original_dict["y_axis"]) < 0.01
-        assert abs(decoded_z - original_dict["z_axis"]) < 0.01
+        assert hasattr(decoded, "x_axis")
+        assert abs(decoded.x_axis - original_dict["x_axis"]) < 0.01
+        assert abs(decoded.y_axis - original_dict["y_axis"]) < 0.01
+        assert abs(decoded.z_axis - original_dict["z_axis"]) < 0.01
 
     def test_create_encode_parse_flow(self) -> None:
         """Test the complete flow: create -> encode -> parse."""
@@ -246,7 +241,6 @@ class TestRoundTrip:
         # Parse it back
         decoded = translator.parse_characteristic("2C1D", encoded)
 
-        assert decoded.parse_success is True
-        assert abs(decoded.value.x_axis - 0.5) < 0.01  # type: ignore[union-attr]
-        assert abs(decoded.value.y_axis - (-0.3)) < 0.01  # type: ignore[union-attr]
-        assert abs(decoded.value.z_axis - 1.0) < 0.01  # type: ignore[union-attr]
+        assert abs(decoded.x_axis - 0.5) < 0.01
+        assert abs(decoded.y_axis - (-0.3)) < 0.01
+        assert abs(decoded.z_axis - 1.0) < 0.01

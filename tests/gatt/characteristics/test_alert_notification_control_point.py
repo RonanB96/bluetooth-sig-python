@@ -8,6 +8,7 @@ from bluetooth_sig.gatt.characteristics.alert_notification_control_point import 
     AlertNotificationControlPointCharacteristic,
     AlertNotificationControlPointData,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types import AlertCategoryID, AlertNotificationCommandID
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -64,27 +65,29 @@ class TestAlertNotificationControlPointCharacteristic(CommonCharacteristicTests)
     ) -> None:
         """Test all valid command IDs."""
         data = bytearray([command_id, 0x00])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
+        assert result is not None
         assert result.command_id == expected_enum
 
     def test_invalid_command_id(self, characteristic: AlertNotificationControlPointCharacteristic) -> None:
         """Test that invalid command IDs are rejected."""
         data = bytearray([0x06, 0x00])  # 6 is reserved
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
-        assert "command id" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data)
+        assert "6 is not a valid AlertNotificationCommandID" in str(exc_info.value)
 
     def test_invalid_category_id(self, characteristic: AlertNotificationControlPointCharacteristic) -> None:
         """Test that invalid category IDs are rejected."""
         data = bytearray([0x00, 0x0A])  # 10 is reserved
-        result = characteristic.parse_value(data)
-        assert not result.parse_success
-        assert "category id" in result.error_message.lower()
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(data)
+        assert "10 is not a valid AlertCategoryID" in str(exc_info.value)
 
     def test_notify_immediately_command(self, characteristic: AlertNotificationControlPointCharacteristic) -> None:
         """Test notify immediately command."""
         data = bytearray([0x04, 0x03])  # Notify New Alert Immediately, Call category
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
+        assert result is not None
         assert result.command_id == AlertNotificationCommandID.NOTIFY_NEW_ALERT_IMMEDIATELY
         assert result.category_id == AlertCategoryID.CALL
 
@@ -93,7 +96,8 @@ class TestAlertNotificationControlPointCharacteristic(CommonCharacteristicTests)
         original = AlertNotificationControlPointData(
             command_id=AlertNotificationCommandID.DISABLE_UNREAD_STATUS, category_id=AlertCategoryID.SMS_MMS
         )
-        encoded = characteristic.encode_value(original)
-        decoded = characteristic.decode_value(encoded)
+        encoded = characteristic.build_value(original)
+        decoded = characteristic.parse_value(encoded)
+        assert decoded is not None
         assert decoded.command_id == original.command_id
         assert decoded.category_id == original.category_id

@@ -29,7 +29,7 @@ class SupportedPowerRangeData(msgspec.Struct, frozen=True, kw_only=True):  # pyl
             raise ValueError(f"Maximum power {self.maximum} W is outside valid range (SINT16_MIN to SINT16_MAX W)")
 
 
-class SupportedPowerRangeCharacteristic(BaseCharacteristic):
+class SupportedPowerRangeCharacteristic(BaseCharacteristic[SupportedPowerRangeData]):
     """Supported Power Range characteristic (0x2AD8).
 
     org.bluetooth.characteristic.supported_power_range
@@ -45,7 +45,7 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
     # Override since decode_value returns structured SupportedPowerRangeData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> SupportedPowerRangeData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> SupportedPowerRangeData:
         """Parse supported power range data (2x sint16 in watts).
 
         Args:
@@ -68,7 +68,7 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic):
 
         return SupportedPowerRangeData(minimum=min_power_raw, maximum=max_power_raw)
 
-    def encode_value(self, data: SupportedPowerRangeData) -> bytearray:
+    def _encode_value(self, data: SupportedPowerRangeData) -> bytearray:
         """Encode supported power range value back to bytes.
 
         Args:

@@ -8,7 +8,7 @@ from .base import BaseCharacteristic
 from .templates import ConcentrationTemplate
 
 
-class OzoneConcentrationCharacteristic(BaseCharacteristic):
+class OzoneConcentrationCharacteristic(BaseCharacteristic[float]):
     """Ozone concentration measurement characteristic (0x2BD4).
 
     Represents ozone concentration in parts per billion (ppb) with a

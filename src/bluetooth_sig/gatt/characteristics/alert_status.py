@@ -17,7 +17,7 @@ class AlertStatusData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: dis
     display_alert_status: bool
 
 
-class AlertStatusCharacteristic(BaseCharacteristic):
+class AlertStatusCharacteristic(BaseCharacteristic[AlertStatusData]):
     """Alert Status characteristic (0x2A3F).
 
     org.bluetooth.characteristic.alert_status
@@ -36,7 +36,7 @@ class AlertStatusCharacteristic(BaseCharacteristic):
     VIBRATE_STATE_MASK = 0x02  # Bit 1
     DISPLAY_ALERT_STATUS_MASK = 0x04  # Bit 2
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertStatusData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> AlertStatusData:
         """Parse alert status data according to Bluetooth specification.
 
         Args:
@@ -66,7 +66,7 @@ class AlertStatusCharacteristic(BaseCharacteristic):
             display_alert_status=display_alert_status,
         )
 
-    def encode_value(self, data: AlertStatusData) -> bytearray:
+    def _encode_value(self, data: AlertStatusData) -> bytearray:
         """Encode AlertStatusData back to bytes.
 
         Args:

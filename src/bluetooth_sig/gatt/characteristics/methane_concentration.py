@@ -7,7 +7,7 @@ from .base import BaseCharacteristic
 from .templates import ConcentrationTemplate
 
 
-class MethaneConcentrationCharacteristic(BaseCharacteristic):
+class MethaneConcentrationCharacteristic(BaseCharacteristic[float]):
     """Methane concentration measurement characteristic (0x2BD1).
 
     Represents methane concentration in parts per million (ppm) with a

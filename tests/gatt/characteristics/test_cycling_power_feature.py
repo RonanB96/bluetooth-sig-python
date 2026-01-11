@@ -61,7 +61,8 @@ class TestCyclingPowerFeatureCharacteristic(CommonCharacteristicTests):
         """Test parsing cycling power feature values."""
         # Test basic feature mask
         feature_data = struct.pack("<I", 0x0000000F)  # Multiple features enabled
-        result = characteristic.decode_value(bytearray(feature_data))
+        result = characteristic.parse_value(bytearray(feature_data))
+        assert result is not None
         assert result.features == (
             CyclingPowerFeatures.PEDAL_POWER_BALANCE_SUPPORTED
             | CyclingPowerFeatures.ACCUMULATED_ENERGY_SUPPORTED
@@ -75,7 +76,8 @@ class TestCyclingPowerFeatureCharacteristic(CommonCharacteristicTests):
 
         # Test single feature
         feature_data = struct.pack("<I", 0x00000001)  # Only pedal power balance
-        result = characteristic.decode_value(bytearray(feature_data))
+        result = characteristic.parse_value(bytearray(feature_data))
+        assert result is not None
         assert result.features == CyclingPowerFeatures.PEDAL_POWER_BALANCE_SUPPORTED
         assert result.pedal_power_balance_supported is True
         assert result.accumulated_energy_supported is False
@@ -84,7 +86,8 @@ class TestCyclingPowerFeatureCharacteristic(CommonCharacteristicTests):
 
         # Test no features
         feature_data = struct.pack("<I", 0x00000000)
-        result = characteristic.decode_value(bytearray(feature_data))
+        result = characteristic.parse_value(bytearray(feature_data))
+        assert result is not None
         assert result.features == CyclingPowerFeatures(0)
         assert result.pedal_power_balance_supported is False
         assert result.accumulated_energy_supported is False

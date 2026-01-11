@@ -253,7 +253,7 @@ Characteristics declare constraints as class attributes instead of implementing 
 **Before** (Manual Validation):
 
 ```python
-def decode_value(self, data: bytearray) -> int:
+def _decode_value(self, data: bytearray) -> int:
     if len(data) != 1:
         raise ValueError("Need 1 byte")
     level = data[0]
@@ -272,7 +272,8 @@ expected_length = 1
 min_value = 0
 max_value = 100
 
-def decode_value(self, data: bytearray) -> int:
+
+def _decode_value(self, data: bytearray) -> int:
     return data[0]  # Validation automatic
 ```
 
@@ -627,7 +628,9 @@ from bluetooth_sig.gatt.context import CharacteristicContext
 class DependentCharacteristic(BaseCharacteristic):
     _required_dependencies = [ContextInfoCharacteristic]
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext) -> int:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext
+    ) -> int:
         # Access dependency from context
         context_info = ctx.dependencies.get("context_info")
         # Use dependency to enrich parsing

@@ -7,7 +7,7 @@ from .base import BaseCharacteristic
 from .templates import Sint8Template
 
 
-class TxPowerLevelCharacteristic(BaseCharacteristic):
+class TxPowerLevelCharacteristic(BaseCharacteristic[int]):
     """Tx Power Level characteristic (0x2A07).
 
     org.bluetooth.characteristic.tx_power_level

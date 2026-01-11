@@ -25,10 +25,10 @@ class TestDescriptorIntegration:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return int.from_bytes(data, "little")
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray(data.to_bytes(2, "little"))
 
         char = MockCharacteristic()
@@ -57,10 +57,10 @@ class TestDescriptorIntegration:
                 value_type=ValueType.INT,
             )
 
-            def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
                 return int.from_bytes(data, "little")
 
-            def encode_value(self, data: int) -> bytearray:
+            def _encode_value(self, data: int) -> bytearray:
                 return bytearray(data.to_bytes(2, "little"))
 
         char = MockCharacteristic()

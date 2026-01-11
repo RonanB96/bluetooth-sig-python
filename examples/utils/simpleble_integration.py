@@ -9,10 +9,9 @@ from __future__ import annotations
 
 import asyncio
 import types
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.gatt.characteristics.base import CharacteristicData
 from examples.utils.models import DeviceInfo
 
 if TYPE_CHECKING:
@@ -95,11 +94,11 @@ class SimpleService:
 def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,duplicate-code
     address: str,
     simpleble_module: types.ModuleType,
-) -> dict[str, CharacteristicData]:
+) -> dict[str, Any]:
     # NOTE: Result parsing pattern duplicates shared_utils and data_parsing display logic.
     # Duplication justified because:
     # 1. SimplePyBLE is synchronous, shared utils are async (different execution models)
-    # 2. This returns CharacteristicData objects, shared utils return dicts (different types)
+    # 2. This returns parsed values directly, shared utils return dicts (different types)
     # 3. Example code prioritizes clarity over abstraction for educational purposes
     """Analyze a BLE device using SimplePyBLE (synchronous).
 
@@ -108,7 +107,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,
         simpleble_module: The imported simplepyble module
 
     Returns:
-        Mapping of short UUIDs to characteristic parse data
+        Mapping of short UUIDs to parsed characteristic values
 
     """
     if SimplePyBLEConnectionManager is None:
@@ -118,7 +117,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,
     # and then parse the results using the BluetoothSIGTranslator.
     translator = BluetoothSIGTranslator()
 
-    async def _collect() -> dict[str, CharacteristicData]:
+    async def _collect() -> dict[str, Any]:
         manager = SimplePyBLEConnectionManager(address, timeout=10.0)
         try:
             await manager.connect()
@@ -142,7 +141,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,
 
             read_results = await read_characteristics_with_manager(manager, target_uuids)
 
-            parsed: dict[str, CharacteristicData] = {}
+            parsed: dict[str, Any] = {}
             for short_uuid, read_result in read_results.items():
                 try:
                     parsed_outcome = translator.parse_characteristic(short_uuid, read_result.raw_data)

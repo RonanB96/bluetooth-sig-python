@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import PLXFeatureFlags, PulseOximetryMeasurementCharacteristic
@@ -11,7 +13,7 @@ from .test_characteristic_common import CharacteristicTestData, CommonCharacteri
 
 class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
     @pytest.fixture
-    def characteristic(self) -> BaseCharacteristic:
+    def characteristic(self) -> BaseCharacteristic[Any]:
         return PulseOximetryMeasurementCharacteristic()
 
     @pytest.fixture
@@ -43,52 +45,37 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_pulse_oximetry_without_context_backward_compatibility(self, characteristic: BaseCharacteristic) -> None:
+    def test_pulse_oximetry_without_context_backward_compatibility(
+        self, characteristic: BaseCharacteristic[Any]
+    ) -> None:
         """Test that parsing works without context (backward compatibility)."""
         plx_data = bytearray([0x00, 0x62, 0x80, 0x48, 0x80])  # SpO2=98%, pulse=72 bpm
-        result = characteristic.decode_value(plx_data, ctx=None)
+        result = characteristic.parse_value(plx_data, ctx=None)
 
         assert isinstance(result, PulseOximetryData)
         assert result.spo2 == 98.0
         assert result.pulse_rate == 72.0
         assert result.supported_features is None  # No context available
 
-    def test_pulse_oximetry_with_plx_features_context(self, characteristic: BaseCharacteristic) -> None:
+    def test_pulse_oximetry_with_plx_features_context(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test pulse oximetry parsing with PLX features from context."""
-        from typing import cast
-
-        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
-        from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
         from bluetooth_sig.gatt.context import CharacteristicContext
-        from bluetooth_sig.types import CharacteristicDataProtocol, CharacteristicInfo
         from bluetooth_sig.types.uuid import BluetoothUUID
-
-        # Mock context with PLX Features (0x2A60)
-        # Example features: 0x0003 = Measurement Status Support + Device Status Support
-        plx_features_char = UnknownCharacteristic(
-            info=CharacteristicInfo(
-                uuid=BluetoothUUID("2A60"),
-                name="PLX Features",
-            )
-        )
-        plx_features = CharacteristicData(
-            characteristic=plx_features_char,
-            value=PLXFeatureFlags.MEASUREMENT_STATUS_SUPPORT | PLXFeatureFlags.DEVICE_AND_SENSOR_STATUS_SUPPORT,
-            raw_data=bytes([0x03, 0x00]),
-            parse_success=True,
-            error_message="",
-        )
 
         # Use full UUID format to match translator behaviour
         plx_features_uuid = BluetoothUUID("2A60").dashed_form
         ctx = CharacteristicContext(
-            other_characteristics={plx_features_uuid: cast(CharacteristicDataProtocol, plx_features)}
+            other_characteristics={
+                plx_features_uuid: PLXFeatureFlags.MEASUREMENT_STATUS_SUPPORT
+                | PLXFeatureFlags.DEVICE_AND_SENSOR_STATUS_SUPPORT
+            }
         )
 
         # Parse with context
         plx_data = bytearray([0x00, 0x62, 0x80, 0x48, 0x80])  # SpO2=98%, pulse=72 bpm
-        result = characteristic.decode_value(plx_data, ctx)
+        result = characteristic.parse_value(plx_data, ctx)
 
+        assert result is not None
         assert result.spo2 == 98.0
         assert result.pulse_rate == 72.0
         assert (
@@ -96,14 +83,9 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
             == PLXFeatureFlags.MEASUREMENT_STATUS_SUPPORT | PLXFeatureFlags.DEVICE_AND_SENSOR_STATUS_SUPPORT
         )
 
-    def test_pulse_oximetry_with_various_plx_features(self, characteristic: BaseCharacteristic) -> None:
+    def test_pulse_oximetry_with_various_plx_features(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test pulse oximetry with various PLX feature flags."""
-        from typing import cast
-
-        from bluetooth_sig.gatt.characteristics.base import CharacteristicData
-        from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
         from bluetooth_sig.gatt.context import CharacteristicContext
-        from bluetooth_sig.types import CharacteristicDataProtocol, CharacteristicInfo
         from bluetooth_sig.types.uuid import BluetoothUUID
 
         # Test various feature combinations
@@ -118,34 +100,20 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         ]
 
         for feature_value in feature_values:
-            plx_features_char = UnknownCharacteristic(
-                info=CharacteristicInfo(
-                    uuid=BluetoothUUID("2A60"),
-                    name="PLX Features",
-                )
-            )
-            plx_features = CharacteristicData(
-                characteristic=plx_features_char,
-                value=feature_value,
-                raw_data=int(feature_value).to_bytes(2, byteorder="little"),
-                parse_success=True,
-                error_message="",
-            )
-
             # Use full UUID format to match translator behaviour
+            # Context now stores raw parsed values directly
             plx_features_uuid = BluetoothUUID("2A60").dashed_form
-            ctx = CharacteristicContext(
-                other_characteristics={plx_features_uuid: cast(CharacteristicDataProtocol, plx_features)}
-            )
+            ctx = CharacteristicContext(other_characteristics={plx_features_uuid: feature_value})
 
             plx_data = bytearray([0x00, 0x5F, 0x80, 0x4C, 0x80])  # SpO2=95%, pulse=76 bpm
-            result = characteristic.decode_value(plx_data, ctx)
+            result = characteristic.parse_value(plx_data, ctx)
 
+            assert result is not None
             assert result.spo2 == 95.0
             assert result.pulse_rate == 76.0
             assert result.supported_features == feature_value
 
-    def test_pulse_oximetry_context_with_missing_plx_features(self, characteristic: BaseCharacteristic) -> None:
+    def test_pulse_oximetry_context_with_missing_plx_features(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that pulse oximetry works when context exists but PLX features don't."""
         from bluetooth_sig.gatt.context import CharacteristicContext
 
@@ -153,8 +121,9 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         ctx = CharacteristicContext(other_characteristics={})
 
         plx_data = bytearray([0x00, 0x62, 0x80, 0x48, 0x80])  # SpO2=98%, pulse=72 bpm
-        result = characteristic.decode_value(plx_data, ctx)
+        result = characteristic.parse_value(plx_data, ctx)
 
+        assert result is not None
         assert result.spo2 == 98.0
         assert result.pulse_rate == 72.0
         assert result.supported_features is None  # Graceful handling of missing context data

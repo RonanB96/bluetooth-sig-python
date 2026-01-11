@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import ServiceChangedCharacteristic, ServiceChangedData
-from bluetooth_sig.gatt.exceptions import InsufficientDataError
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -53,11 +53,11 @@ class TestServiceChangedCharacteristic(CommonCharacteristicTests):
         service_changed = ServiceChangedData(start_handle=0x0020, end_handle=0x0025)
 
         # Test encoding
-        encoded = char.encode_value(service_changed)
+        encoded = char.build_value(service_changed)
         assert encoded == bytearray([0x20, 0x00, 0x25, 0x00])
 
         # Test decoding
-        decoded = char.decode_value(encoded)
+        decoded = char.parse_value(encoded)
         assert decoded == service_changed
 
     def test_multiple_services_changed(self) -> None:
@@ -66,33 +66,34 @@ class TestServiceChangedCharacteristic(CommonCharacteristicTests):
         service_changed = ServiceChangedData(start_handle=0x0010, end_handle=0x0050)
 
         # Test encoding
-        encoded = char.encode_value(service_changed)
+        encoded = char.build_value(service_changed)
         assert encoded == bytearray([0x10, 0x00, 0x50, 0x00])
 
         # Test decoding
-        decoded = char.decode_value(encoded)
+        decoded = char.parse_value(encoded)
         assert decoded == service_changed
 
     def test_invalid_length_raises_error(self) -> None:
-        """Test that invalid data lengths raise InsufficientDataError."""
+        """Test that invalid data lengths result in parse failure."""
         char = ServiceChangedCharacteristic()
 
         # Test too short
-        with pytest.raises(InsufficientDataError):
-            char.decode_value(bytearray([0x00, 0x00]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([0x00, 0x00]))
+        assert "expected exactly 4 bytes, got 2" in str(exc_info.value)
 
-        # Test too long - this should still work, just use first 4 bytes
-        result = char.decode_value(bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
-        assert result.start_handle == 0
-        assert result.end_handle == 0
+        # Test too long - should also fail with exact length validation
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        assert "expected exactly 4 bytes, got 6" in str(exc_info.value)
 
     def test_round_trip_encoding(self) -> None:
         """Test that encoding and decoding preserve data."""
         char = ServiceChangedCharacteristic()
         original = ServiceChangedData(start_handle=0xABCD, end_handle=0xEF01)
 
-        encoded = char.encode_value(original)
-        decoded = char.decode_value(encoded)
+        encoded = char.build_value(original)
+        decoded = char.parse_value(encoded)
 
         assert decoded == original
         assert encoded == bytearray([0xCD, 0xAB, 0x01, 0xEF])  # Little endian

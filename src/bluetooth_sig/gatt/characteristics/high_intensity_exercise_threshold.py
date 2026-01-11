@@ -25,7 +25,7 @@ class HighIntensityExerciseThresholdData(msgspec.Struct):
     threshold_percentage_max_heart_rate: int | None = None
 
 
-class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic):
+class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic[HighIntensityExerciseThresholdData]):
     """High Intensity Exercise Threshold characteristic (0x2B4D).
 
     org.bluetooth.characteristic.high_intensity_exercise_threshold
@@ -45,7 +45,7 @@ class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic):
     min_length: int | None = 1
     max_length: int | None = 3
 
-    def decode_value(
+    def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None
     ) -> HighIntensityExerciseThresholdData:
         """Parse High Intensity Exercise Threshold with conditional fields.
@@ -83,7 +83,7 @@ class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic):
             threshold_percentage_max_heart_rate=threshold_hr,
         )
 
-    def encode_value(self, data: HighIntensityExerciseThresholdData) -> bytearray:
+    def _encode_value(self, data: HighIntensityExerciseThresholdData) -> bytearray:
         """Encode High Intensity Exercise Threshold.
 
         Args:

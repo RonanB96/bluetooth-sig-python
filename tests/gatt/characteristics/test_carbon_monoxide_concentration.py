@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import CarbonMonoxideConcentrationCharacteristic
@@ -40,18 +42,18 @@ class TestCarbonMonoxideConcentrationCharacteristic(CommonCharacteristicTests):
     def test_zero_concentration(self) -> None:
         """Test zero CO concentration."""
         char = CarbonMonoxideConcentrationCharacteristic()
-        result = char.decode_value(bytearray([0x00, 0x80]))
+        result = char.parse_value(bytearray([0x00, 0x80]))
         assert result == 0.0
 
     def test_typical_concentration(self) -> None:
         """Test typical CO concentration value."""
         char = CarbonMonoxideConcentrationCharacteristic()
-        result = char.decode_value(bytearray([0x64, 0x00]))
+        result = char.parse_value(bytearray([0x64, 0x00]))
         assert result == pytest.approx(1.0e-6, abs=1e-9)
 
     def test_round_trip(
         self,
-        characteristic: BaseCharacteristic,
+        characteristic: BaseCharacteristic[Any],
         valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
     ) -> None:
         """Test round trip with value comparison (SFLOAT has precision limits)."""
@@ -60,17 +62,17 @@ class TestCarbonMonoxideConcentrationCharacteristic(CommonCharacteristicTests):
         for i, test_case in enumerate(test_cases):
             case_desc = f"Test case {i + 1} ({test_case.description})"
             # Decode the input
-            parsed = characteristic.decode_value(test_case.input_data)
+            parsed = characteristic.parse_value(test_case.input_data)
             # Re-encode the parsed value
-            encoded = characteristic.encode_value(parsed)
+            encoded = characteristic.build_value(parsed)
             # Decode again and check the value matches
-            re_decoded = characteristic.decode_value(encoded)
+            re_decoded = characteristic.parse_value(encoded)
             assert re_decoded == pytest.approx(parsed, rel=0.1), f"{case_desc}: Value changed during round trip"
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = CarbonMonoxideConcentrationCharacteristic()
         for value in [0.0, 1.0, 10.0, 100.0]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
             assert decoded == pytest.approx(value, rel=0.01)

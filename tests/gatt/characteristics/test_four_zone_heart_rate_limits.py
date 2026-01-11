@@ -65,7 +65,7 @@ class TestFourZoneHeartRateLimitsCharacteristic(CommonCharacteristicTests):
     ) -> None:
         """Test four zone heart rate limits with various valid values."""
         data = bytearray([light_limit, moderate_limit, hard_limit])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         expected = FourZoneHeartRateLimitsData(
             light_moderate_limit=light_limit, moderate_hard_limit=moderate_limit, hard_maximum_limit=hard_limit
         )
@@ -76,12 +76,12 @@ class TestFourZoneHeartRateLimitsCharacteristic(CommonCharacteristicTests):
     ) -> None:
         """Test four zone heart rate limits boundary values."""
         # Test minimum values (0 BPM)
-        result = characteristic.decode_value(bytearray([0, 0, 0]))
+        result = characteristic.parse_value(bytearray([0, 0, 0]))
         expected = FourZoneHeartRateLimitsData(light_moderate_limit=0, moderate_hard_limit=0, hard_maximum_limit=0)
         assert result == expected
 
         # Test maximum values (255 BPM)
-        result = characteristic.decode_value(bytearray([255, 255, 255]))
+        result = characteristic.parse_value(bytearray([255, 255, 255]))
         expected = FourZoneHeartRateLimitsData(
             light_moderate_limit=255, moderate_hard_limit=255, hard_maximum_limit=255
         )

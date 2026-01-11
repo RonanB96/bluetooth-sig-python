@@ -65,7 +65,7 @@ class LNFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disab
     position_status_supported: bool
 
 
-class LNFeatureCharacteristic(BaseCharacteristic):
+class LNFeatureCharacteristic(BaseCharacteristic[LNFeatureData]):
     """LN Feature characteristic.
 
     Used to represent the supported features of a location and navigation sensor.
@@ -74,7 +74,7 @@ class LNFeatureCharacteristic(BaseCharacteristic):
     min_length = 4
     _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> LNFeatureData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> LNFeatureData:
         """Parse LN feature data according to Bluetooth specification.
 
         Format: Features(4) - 32-bit bitmap indicating supported features.
@@ -137,7 +137,7 @@ class LNFeatureCharacteristic(BaseCharacteristic):
 
         return LNFeatureData(features_bitmap=features_bitmap, **features)
 
-    def encode_value(self, data: LNFeatureData) -> bytearray:
+    def _encode_value(self, data: LNFeatureData) -> bytearray:
         """Encode LNFeatureData back to bytes.
 
         Args:

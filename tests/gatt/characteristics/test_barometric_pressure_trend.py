@@ -7,6 +7,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics import BarometricPressureTrendCharacteristic
 from bluetooth_sig.gatt.characteristics.barometric_pressure_trend import BarometricPressureTrend
 from bluetooth_sig.gatt.constants import UINT8_MAX
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -66,13 +67,14 @@ class TestBarometricPressureTrendCharacteristic(CommonCharacteristicTests):
 
         for value, expected in test_cases:
             test_data = bytearray([value])
-            parsed = characteristic.decode_value(test_data)
+            parsed = characteristic.parse_value(test_data)
             assert parsed == expected
 
-        # Test reserved value
+        # Test reserved value - raises error for invalid enum
         reserved_data = bytearray([UINT8_MAX])
-        parsed = characteristic.decode_value(reserved_data)
-        assert parsed == BarometricPressureTrend.UNKNOWN  # Falls back to UNKNOWN
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(reserved_data)
+        assert "invalid" in str(exc_info.value).lower()
 
     @pytest.mark.parametrize(
         "value,expected_trend",
@@ -90,5 +92,5 @@ class TestBarometricPressureTrendCharacteristic(CommonCharacteristicTests):
     ) -> None:
         """Test all valid barometric pressure trend values."""
         data = bytearray([value])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == expected_trend

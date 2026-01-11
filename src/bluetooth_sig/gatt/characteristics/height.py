@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class HeightCharacteristic(BaseCharacteristic):
+class HeightCharacteristic(BaseCharacteristic[float]):
     """Height characteristic (0x2A8E).
 
     org.bluetooth.characteristic.height

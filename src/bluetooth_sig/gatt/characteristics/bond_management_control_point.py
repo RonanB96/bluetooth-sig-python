@@ -16,7 +16,7 @@ class BondManagementCommand(IntEnum):
     DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER = 0x03
 
 
-class BondManagementControlPointCharacteristic(BaseCharacteristic):
+class BondManagementControlPointCharacteristic(BaseCharacteristic[int]):
     """Bond Management Control Point characteristic (0x2AA4).
 
     org.bluetooth.characteristic.bond_management_control_point

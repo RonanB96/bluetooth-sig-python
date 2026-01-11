@@ -137,9 +137,10 @@ class TestDeviceAsyncRead:
         device, manager = device_with_manager
         manager.read_char_return = b"\x50"  # 80%
 
-        _ = await device.read("180F")  # Battery service UUID
+        result = await device.read("2A19")  # Battery Level characteristic UUID
 
         assert len(manager.read_char_calls) == 1
+        assert result == 0x50  # Parsed battery level
 
     @pytest.mark.asyncio
     async def test_write_with_response(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:

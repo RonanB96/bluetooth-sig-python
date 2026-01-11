@@ -48,7 +48,7 @@ class TestPnpIdCharacteristic(CommonCharacteristicTests):
     def test_bluetooth_sig_vendor(self) -> None:
         """Test PnP ID with Bluetooth SIG vendor."""
         char = PnpIdCharacteristic()
-        result = char.decode_value(bytearray([1, 0x0A, 0x00, 0x0B, 0x00, 0x01, 0x00]))
+        result = char.parse_value(bytearray([1, 0x0A, 0x00, 0x0B, 0x00, 0x01, 0x00]))
         assert result.vendor_id_source == VendorIdSource.BLUETOOTH_SIG
         assert result.vendor_id == 0x000A
         assert result.product_id == 0x000B
@@ -60,6 +60,6 @@ class TestPnpIdCharacteristic(CommonCharacteristicTests):
         original = PnpIdData(
             vendor_id_source=VendorIdSource.USB_IF, vendor_id=0x1234, product_id=0x5678, product_version=0x0100
         )
-        encoded = char.encode_value(original)
-        decoded = char.decode_value(encoded)
+        encoded = char.build_value(original)
+        decoded = char.parse_value(encoded)
         assert decoded == original

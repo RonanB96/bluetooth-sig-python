@@ -7,7 +7,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint16Template
 
 
-class ElectricCurrentCharacteristic(BaseCharacteristic):
+class ElectricCurrentCharacteristic(BaseCharacteristic[float]):
     """Electric Current characteristic (0x2AEE).
 
     org.bluetooth.characteristic.electric_current

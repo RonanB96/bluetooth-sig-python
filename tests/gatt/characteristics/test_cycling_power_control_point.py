@@ -12,6 +12,7 @@ from bluetooth_sig.gatt.characteristics.cycling_power_control_point import (
     CyclingPowerOpCode,
     CyclingPowerResponseValue,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -143,7 +144,8 @@ class TestCyclingPowerControlPointCharacteristic(CommonCharacteristicTests):
         # Test simple op code without parameters
         op_code = 0x03  # Request Supported Sensor Locations
         test_data = struct.pack("<B", op_code)
-        result = char.decode_value(bytearray(test_data))
+        result = char.parse_value(bytearray(test_data))
+        assert result is not None
 
         assert result.op_code.value == 3
         assert str(result.op_code) == "Request Supported Sensor Locations"
@@ -158,7 +160,8 @@ class TestCyclingPowerControlPointCharacteristic(CommonCharacteristicTests):
         op_code = 0x01
         cumulative_value = 123456
         test_data = struct.pack("<BI", op_code, cumulative_value)
-        result = char.decode_value(bytearray(test_data))
+        result = char.parse_value(bytearray(test_data))
+        assert result is not None
 
         assert result.op_code.value == 1
         assert str(result.op_code) == "Set Cumulative Value"
@@ -168,7 +171,8 @@ class TestCyclingPowerControlPointCharacteristic(CommonCharacteristicTests):
         op_code = 0x04
         crank_length = 350  # 175.0 mm (350 * 0.5)
         test_data = struct.pack("<BH", op_code, crank_length)
-        result = char.decode_value(bytearray(test_data))
+        result = char.parse_value(bytearray(test_data))
+        assert result is not None
 
         assert result.op_code.value == 4
         assert str(result.op_code) == "Set Crank Length"
@@ -183,7 +187,8 @@ class TestCyclingPowerControlPointCharacteristic(CommonCharacteristicTests):
         request_op_code = 0x03  # Original request
         response_value = 0x01  # Success
         test_data = struct.pack("<BBB", op_code, request_op_code, response_value)
-        result = char.decode_value(bytearray(test_data))
+        result = char.parse_value(bytearray(test_data))
+        assert result is not None
 
         assert result.op_code.value == 32
         assert str(result.op_code) == "Response Code"
@@ -196,5 +201,6 @@ class TestCyclingPowerControlPointCharacteristic(CommonCharacteristicTests):
         char = CyclingPowerControlPointCharacteristic()
 
         # Test empty data
-        with pytest.raises(ValueError, match="must be at least 1 byte"):
-            char.decode_value(bytearray())
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            char.parse_value(bytearray())
+        assert "expected at least 1 bytes, got 0" in str(exc_info.value)

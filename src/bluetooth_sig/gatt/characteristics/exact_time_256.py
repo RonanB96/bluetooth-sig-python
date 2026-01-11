@@ -25,7 +25,7 @@ class ExactTime256Data(msgspec.Struct, frozen=True, kw_only=True):
     fractions256: int
 
 
-class ExactTime256Characteristic(BaseCharacteristic):
+class ExactTime256Characteristic(BaseCharacteristic[ExactTime256Data]):
     """Exact Time 256 characteristic (0x2A0C).
 
     org.bluetooth.characteristic.exact_time_256
@@ -36,7 +36,7 @@ class ExactTime256Characteristic(BaseCharacteristic):
     _manual_value_type = "ExactTime256Data"
     expected_length = 9
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ExactTime256Data:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ExactTime256Data:
         """Parse exact time 256 value.
 
         Args:
@@ -56,7 +56,7 @@ class ExactTime256Characteristic(BaseCharacteristic):
         )
         return ExactTime256Data(dt=dt, day_of_week=data[7], fractions256=data[8])
 
-    def encode_value(self, data: ExactTime256Data) -> bytearray:
+    def _encode_value(self, data: ExactTime256Data) -> bytearray:
         """Encode exact time 256 value back to bytes.
 
         Args:

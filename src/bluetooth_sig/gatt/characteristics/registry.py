@@ -8,6 +8,7 @@ types.gatt_enums to avoid circular imports.
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from typing_extensions import TypeGuard
 
@@ -23,7 +24,7 @@ from .base import BaseCharacteristic
 __all__ = ["CharacteristicName", "get_characteristic_class_map", "CharacteristicRegistry"]
 
 
-def _is_characteristic_subclass(candidate: object) -> TypeGuard[type[BaseCharacteristic]]:
+def _is_characteristic_subclass(candidate: object) -> TypeGuard[type[BaseCharacteristic[Any]]]:
     """Type guard to check if candidate is a BaseCharacteristic subclass.
 
     Args:
@@ -82,7 +83,7 @@ class _RegistryKeyBuilder:
         return uuid_to_enum
 
 
-def get_characteristic_class_map() -> dict[CharacteristicName, type[BaseCharacteristic]]:
+def get_characteristic_class_map() -> dict[CharacteristicName, type[BaseCharacteristic[Any]]]:
     """Get the current characteristic class map.
 
     Backward compatibility function that returns the current registry state.
@@ -93,17 +94,17 @@ def get_characteristic_class_map() -> dict[CharacteristicName, type[BaseCharacte
     return CharacteristicRegistry.get_instance()._get_enum_map()  # pylint: disable=protected-access
 
 
-class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseCharacteristic]):
+class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseCharacteristic[Any]]):
     """Encapsulates all GATT characteristic registry operations."""
 
     _MODULE_EXCLUSIONS = {"__main__", "__init__", "base", "registry", "templates"}
     _NON_ALPHANUMERIC_RE = re.compile(r"[^a-z0-9]+")
 
-    def _get_base_class(self) -> type[BaseCharacteristic]:
+    def _get_base_class(self) -> type[BaseCharacteristic[Any]]:
         """Return the base class for characteristic validation."""
         return BaseCharacteristic
 
-    def _discover_sig_classes(self) -> list[type[BaseCharacteristic]]:
+    def _discover_sig_classes(self) -> list[type[BaseCharacteristic[Any]]]:
         """Discover all SIG-defined characteristic classes in the package."""
         package_name = __package__ or "bluetooth_sig.gatt.characteristics"
         module_names = ModuleDiscovery.iter_module_names(package_name, self._MODULE_EXCLUSIONS)
@@ -138,9 +139,9 @@ class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseChara
 
         return uuid_to_enum
 
-    def _build_enum_map(self) -> dict[CharacteristicName, type[BaseCharacteristic]]:
+    def _build_enum_map(self) -> dict[CharacteristicName, type[BaseCharacteristic[Any]]]:
         """Build the enum → class mapping using runtime discovery."""
-        mapping: dict[CharacteristicName, type[BaseCharacteristic]] = {}
+        mapping: dict[CharacteristicName, type[BaseCharacteristic[Any]]] = {}
         uuid_to_enum = self._build_uuid_to_enum_map()
 
         for char_cls in self._discover_sig_classes():
@@ -178,7 +179,7 @@ class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseChara
 
     @classmethod
     def register_characteristic_class(
-        cls, uuid: str | BluetoothUUID | int, char_cls: type[BaseCharacteristic], override: bool = False
+        cls, uuid: str | BluetoothUUID | int, char_cls: type[BaseCharacteristic[Any]], override: bool = False
     ) -> None:
         """Register a custom characteristic class at runtime.
 
@@ -197,7 +198,7 @@ class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseChara
         instance.unregister_class(uuid)
 
     @classmethod
-    def get_characteristic_class(cls, name: CharacteristicName) -> type[BaseCharacteristic] | None:
+    def get_characteristic_class(cls, name: CharacteristicName) -> type[BaseCharacteristic[Any]] | None:
         """Get the characteristic class for a given CharacteristicName enum.
 
         Backward compatibility wrapper for get_class_by_enum().
@@ -206,7 +207,7 @@ class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseChara
         return instance.get_class_by_enum(name)
 
     @classmethod
-    def get_characteristic_class_by_uuid(cls, uuid: str | BluetoothUUID | int) -> type[BaseCharacteristic] | None:
+    def get_characteristic_class_by_uuid(cls, uuid: str | BluetoothUUID | int) -> type[BaseCharacteristic[Any]] | None:
         """Get the characteristic class for a given UUID.
 
         Backward compatibility wrapper for get_class_by_uuid().
@@ -215,7 +216,7 @@ class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseChara
         return instance.get_class_by_uuid(uuid)
 
     @classmethod
-    def create_characteristic(cls, uuid: str | BluetoothUUID | int) -> BaseCharacteristic | None:
+    def create_characteristic(cls, uuid: str | BluetoothUUID | int) -> BaseCharacteristic[Any] | None:
         """Create a characteristic instance from a UUID.
 
         Args:
@@ -251,7 +252,7 @@ class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseChara
         return list(CharacteristicName)
 
     @classmethod
-    def get_all_characteristics(cls) -> dict[CharacteristicName, type[BaseCharacteristic]]:
+    def get_all_characteristics(cls) -> dict[CharacteristicName, type[BaseCharacteristic[Any]]]:
         """Get all registered characteristic classes."""
         instance = cls.get_instance()
         return instance._get_enum_map().copy()  # pylint: disable=protected-access

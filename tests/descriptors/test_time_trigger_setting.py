@@ -16,7 +16,7 @@ class TestTimeTriggerSettingDescriptor:
         data = b"\x00\x0a\x00"
 
         result = tts.parse_value(data)
-        assert result.parse_success
+        assert result.parse_success is True
         assert isinstance(result.value, TimeTriggerSettingData)
         assert result.value.time_interval == 0x000A00
 
@@ -26,7 +26,7 @@ class TestTimeTriggerSettingDescriptor:
         data = b"\x00\x0a\x00\x00"  # Too long (4 bytes instead of 3)
 
         result = tts.parse_value(data)
-        assert not result.parse_success
+        assert result.parse_success is False
         assert "Time Trigger Setting data must be exactly 3 bytes" in result.error_message
 
     def test_uuid_resolution(self) -> None:

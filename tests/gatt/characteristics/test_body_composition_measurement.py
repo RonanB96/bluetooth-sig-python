@@ -11,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.body_composition_measurement import (
     BodyCompositionMeasurementCharacteristic,
     BodyCompositionMeasurementData,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
@@ -250,7 +251,8 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
         # Use the first test case (basic measurement)
         test_data = valid_test_data[0].input_data
 
-        result: BodyCompositionMeasurementData = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.body_fat_percentage == 5.0
         assert result.measurement_units == MeasurementSystem.METRIC
         assert result.muscle_mass is None
@@ -272,7 +274,8 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.muscle_mass == 30.0
         assert result.muscle_percentage == 15.0
         assert result.muscle_mass_unit == WeightUnit.KG
@@ -289,12 +292,14 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.measurement_units == MeasurementSystem.IMPERIAL
         assert result.body_fat_percentage == 12.0
 
     def test_body_composition_invalid_data(self, characteristic: BodyCompositionMeasurementCharacteristic) -> None:
         """Test body composition with invalid data."""
         # Too short data
-        with pytest.raises(ValueError, match="must be at least 4 bytes"):
-            characteristic.decode_value(bytearray([0x00, 0x01]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x01]))
+        assert "expected at least 4 bytes, got 2" in str(exc_info.value)

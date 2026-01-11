@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledSint32Template
 
 
-class LongitudeCharacteristic(BaseCharacteristic):
+class LongitudeCharacteristic(BaseCharacteristic[float]):
     """Longitude characteristic (0x2AAF).
 
     org.bluetooth.characteristic.longitude
@@ -24,19 +24,3 @@ class LongitudeCharacteristic(BaseCharacteristic):
     expected_type = float
 
     _template = ScaledSint32Template(scale_factor=DEGREE_SCALING_FACTOR)
-
-    def encode_value(self, data: float) -> bytearray:
-        """Encode longitude with range validation.
-
-        Args:
-            data: Longitude value in degrees (-180 to +180)
-
-        Returns:
-            Encoded characteristic data (4 bytes)
-
-        Raises:
-            ValueError: If longitude is outside valid range [-180, 180]
-        """
-        if not self.min_value <= data <= self.max_value:
-            raise ValueError(f"Longitude {data} out of range [{self.min_value}, {self.max_value}]")
-        return self._template.encode_value(data)

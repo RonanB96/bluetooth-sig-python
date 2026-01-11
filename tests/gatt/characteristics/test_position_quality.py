@@ -131,7 +131,7 @@ class TestPositionQualityCharacteristic(CommonCharacteristicTests):
         self, characteristic: PositionQualityCharacteristic, flags: int, data: bytearray, expected: dict[str, Any]
     ) -> None:
         """Test position quality with various flag combinations."""
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         for field, expected_value in expected.items():
             actual_value = getattr(result, field)
             assert actual_value == expected_value, f"Field {field}: expected {expected_value}, got {actual_value}"
@@ -160,7 +160,8 @@ class TestPositionQualityCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
+        assert result is not None
         assert result.number_of_beacons_in_solution == 5
         assert result.number_of_beacons_in_view == 10
         assert result.time_to_first_fix == 100.0
@@ -173,7 +174,8 @@ class TestPositionQualityCharacteristic(CommonCharacteristicTests):
         """Test position quality with minimal data (only flags)."""
         data = bytearray([0x00, 0x00])  # No fields present
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
+        assert result is not None
         assert result.number_of_beacons_in_solution is None
         assert result.number_of_beacons_in_view is None
         assert result.time_to_first_fix is None
@@ -196,7 +198,8 @@ class TestPositionQualityCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
+        assert result is not None
         assert result.ehpe is None
         assert result.evpe is None
         assert result.hdop is None

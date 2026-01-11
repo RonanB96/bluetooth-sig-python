@@ -16,7 +16,7 @@ class Gender(IntEnum):
     UNSPECIFIED = 2
 
 
-class GenderCharacteristic(BaseCharacteristic):
+class GenderCharacteristic(BaseCharacteristic[int]):
     """Gender characteristic (0x2A8C).
 
     org.bluetooth.characteristic.gender

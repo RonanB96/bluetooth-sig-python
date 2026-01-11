@@ -541,21 +541,24 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             if gss_spec:
                 description = gss_spec.description
 
-                # Use primary field for metadata extraction
-                primary = gss_spec.primary_field
-                if primary:
-                    data_type = primary.type
-                    field_size = str(primary.fixed_size) if primary.fixed_size else primary.size
+                # Only set data_type for single-field characteristics
+                # Multi-field characteristics have complex structures and no single data type
+                if len(gss_spec.structure) == 1:
+                    # Use primary field for metadata extraction
+                    primary = gss_spec.primary_field
+                    if primary:
+                        data_type = primary.type
+                        field_size = str(primary.fixed_size) if primary.fixed_size else primary.size
 
-                    # Use FieldSpec's unit_id property (auto-parsed from description)
-                    if primary.unit_id:
-                        unit_id = f"org.bluetooth.unit.{primary.unit_id}"
-                        unit_symbol = self._convert_bluetooth_unit_to_readable(primary.unit_id)
-                        base_unit = unit_id
+                        # Use FieldSpec's unit_id property (auto-parsed from description)
+                        if primary.unit_id:
+                            unit_id = f"org.bluetooth.unit.{primary.unit_id}"
+                            unit_symbol = self._convert_bluetooth_unit_to_readable(primary.unit_id)
+                            base_unit = unit_id
 
-                    # Get resolution from FieldSpec
-                    if primary.resolution is not None:
-                        resolution_text = f"Resolution: {primary.resolution}"
+                        # Get resolution from FieldSpec
+                        if primary.resolution is not None:
+                            resolution_text = f"Resolution: {primary.resolution}"
 
             # 4. Use existing unit/value_type from CharacteristicInfo if GSS didn't provide them
             if not unit_symbol and char_info.unit:

@@ -37,7 +37,7 @@ class TimeUpdateResult(IntEnum):
     UPDATE_NOT_ATTEMPTED_AFTER_RESET = 0x05
 
 
-class TimeUpdateStateCharacteristic(BaseCharacteristic):
+class TimeUpdateStateCharacteristic(BaseCharacteristic[TimeUpdateState]):
     """Time Update State characteristic.
 
     Indicates the current state of time update operations.
@@ -51,7 +51,7 @@ class TimeUpdateStateCharacteristic(BaseCharacteristic):
         """Initialize the Time Update State characteristic."""
         super().__init__()
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TimeUpdateState:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TimeUpdateState:
         """Decode the raw data to TimeUpdateState."""
         if len(data) != 2:
             raise ValueError(f"Time Update State requires 2 bytes, got {len(data)}")
@@ -61,6 +61,6 @@ class TimeUpdateStateCharacteristic(BaseCharacteristic):
 
         return TimeUpdateState(current_state=current_state, result=result)
 
-    def encode_value(self, data: TimeUpdateState) -> bytearray:
+    def _encode_value(self, data: TimeUpdateState) -> bytearray:
         """Encode TimeUpdateState to bytes."""
         return bytearray([int(data.current_state), int(data.result)])

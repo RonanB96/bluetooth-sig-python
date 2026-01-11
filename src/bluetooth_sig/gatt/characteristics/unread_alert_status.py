@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import msgspec
 
-from ...types import AlertCategoryID, validate_category_id
+from ...types import AlertCategoryID
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -24,7 +24,7 @@ class UnreadAlertStatusData(msgspec.Struct):
     unread_count: int  # 0-254, 255 means >254
 
 
-class UnreadAlertStatusCharacteristic(BaseCharacteristic):
+class UnreadAlertStatusCharacteristic(BaseCharacteristic[UnreadAlertStatusData]):
     """Unread Alert Status characteristic (0x2A45).
 
     Represents the number of unread alerts in a specific category.
@@ -38,7 +38,7 @@ class UnreadAlertStatusCharacteristic(BaseCharacteristic):
 
     expected_length: int | None = 2
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> UnreadAlertStatusData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> UnreadAlertStatusData:
         """Decode Unread Alert Status data from bytes.
 
         Args:
@@ -54,7 +54,7 @@ class UnreadAlertStatusCharacteristic(BaseCharacteristic):
         """
         # Parse Category ID (1 byte)
         category_id_raw = DataParser.parse_int8(data, 0, signed=False)
-        category_id = validate_category_id(category_id_raw)
+        category_id = AlertCategoryID(category_id_raw)
 
         # Parse Unread Count (1 byte)
         unread_count = DataParser.parse_int8(data, 1, signed=False)
@@ -64,7 +64,7 @@ class UnreadAlertStatusCharacteristic(BaseCharacteristic):
             unread_count=unread_count,
         )
 
-    def encode_value(self, data: UnreadAlertStatusData) -> bytearray:
+    def _encode_value(self, data: UnreadAlertStatusData) -> bytearray:
         """Encode Unread Alert Status data to bytes.
 
         Args:
@@ -81,7 +81,6 @@ class UnreadAlertStatusCharacteristic(BaseCharacteristic):
 
         # Encode Category ID (1 byte)
         category_id_value = int(data.category_id)
-        validate_category_id(category_id_value)  # Validate the category ID value
         result.append(category_id_value)
 
         # Encode Unread Count (1 byte)

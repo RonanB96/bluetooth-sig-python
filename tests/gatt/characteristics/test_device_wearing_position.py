@@ -53,15 +53,15 @@ class TestDeviceWearingPositionCharacteristic(CommonCharacteristicTests):
     ) -> None:
         """Test device wearing position with various valid values."""
         data = bytearray([position_value])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == position_value
 
     def test_device_wearing_position_boundary_values(self, characteristic: DeviceWearingPositionCharacteristic) -> None:
         """Test device wearing position boundary values."""
         # Test minimum value (0)
-        result = characteristic.decode_value(bytearray([0]))
+        result = characteristic.parse_value(bytearray([0]))
         assert result == 0
 
         # Test maximum value (255)
-        result = characteristic.decode_value(bytearray([255]))
+        result = characteristic.parse_value(bytearray([255]))
         assert result == 255

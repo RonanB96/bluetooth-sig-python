@@ -38,7 +38,7 @@ class TemperatureMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # 
             raise ValueError(f"Temperature unit must be CELSIUS or FAHRENHEIT, got {self.unit}")
 
 
-class TemperatureMeasurementCharacteristic(BaseCharacteristic):
+class TemperatureMeasurementCharacteristic(BaseCharacteristic[TemperatureMeasurementData]):
     """Temperature Measurement characteristic (0x2A1C).
 
     Used in Health Thermometer Service for medical temperature readings.
@@ -50,7 +50,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
     max_length: int | None = 13  # + Timestamp(7) + TemperatureType(1) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
         """Parse temperature measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Temperature Value(4) + [Timestamp(7)] + [Temperature Type(1)].
@@ -100,7 +100,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic):
             temperature_type=temperature_type,
         )
 
-    def encode_value(self, data: TemperatureMeasurementData) -> bytearray:
+    def _encode_value(self, data: TemperatureMeasurementData) -> bytearray:
         """Encode temperature measurement value back to bytes.
 
         Args:

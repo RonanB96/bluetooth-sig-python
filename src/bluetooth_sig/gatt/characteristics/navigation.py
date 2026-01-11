@@ -52,7 +52,7 @@ class HeadingSource(IntEnum):
     HEADING_BASED_ON_MAGNETIC_COMPASS = 1
 
 
-class NavigationCharacteristic(BaseCharacteristic):
+class NavigationCharacteristic(BaseCharacteristic[NavigationData]):
     """Navigation characteristic.
 
     Used to represent data related to a navigation sensor.
@@ -61,7 +61,7 @@ class NavigationCharacteristic(BaseCharacteristic):
     _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
 
     min_length = 6  # Flags(2) + Bearing(2) + Heading(2) minimum
-    max_length = 16  # + RemainingDistance(3) + RemainingVerticalDistance(3) + EstimatedTimeOfArrival(7) maximum
+    max_length = 19  # + RemainingDistance(3) + RemainingVerticalDistance(3) + EstimatedTimeOfArrival(7) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
     # Bit masks and shifts for status information in flags
@@ -74,7 +74,7 @@ class NavigationCharacteristic(BaseCharacteristic):
     WAYPOINT_REACHED_MASK = 0x0080
     DESTINATION_REACHED_MASK = 0x0100
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> NavigationData:  # pylint: disable=too-many-locals
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> NavigationData:  # pylint: disable=too-many-locals
         """Parse navigation data according to Bluetooth specification.
 
         Format: Flags(2) + Bearing(2) + Heading(2) + [Remaining Distance(3)] +
@@ -145,7 +145,7 @@ class NavigationCharacteristic(BaseCharacteristic):
             destination_reached=destination_reached,
         )
 
-    def encode_value(self, data: NavigationData) -> bytearray:
+    def _encode_value(self, data: NavigationData) -> bytearray:
         """Encode NavigationData back to bytes.
 
         Args:

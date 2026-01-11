@@ -144,16 +144,15 @@ class TestGlucoseService(CommonServiceTests):
 
         # Both should parse successfully
         assert len(results) == 2
-        assert all(r.parse_success for r in results.values())
 
         # Check sequence numbers match
         glucose_result = results["00002A18-0000-1000-8000-00805F9B34FB"]
         context_result = results["00002A34-0000-1000-8000-00805F9B34FB"]
 
-        assert glucose_result.value is not None
-        assert context_result.value is not None
-        assert glucose_result.value.sequence_number == 42
-        assert context_result.value.sequence_number == 42
+        assert glucose_result is not None
+        assert context_result is not None
+        assert glucose_result.sequence_number == 42
+        assert context_result.sequence_number == 42
 
     def test_glucose_context_sequence_mismatch_warning(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test that mismatched sequence numbers generate a warning."""
@@ -194,9 +193,8 @@ class TestGlucoseService(CommonServiceTests):
         with caplog.at_level(logging.WARNING):
             results = translator.parse_characteristics(char_data)
 
-        # Both should still parse successfully
+        # Both should still parse successfully (values returned directly)
         assert len(results) == 2
-        assert all(r.parse_success for r in results.values())
 
         # Check that warning was logged about mismatch
         assert any("does not match" in record.message for record in caplog.records)

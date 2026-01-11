@@ -46,41 +46,45 @@ class TestBondManagementControlPointCharacteristic(CommonCharacteristicTests):
     def test_command_parsing(self, characteristic: BondManagementControlPointCharacteristic) -> None:
         """Test parsing of control commands."""
         # Test delete bond command
-        result = characteristic.decode_value(bytearray([0x01]))
+        result = characteristic.parse_value(bytearray([0x01]))
         assert result == BondManagementCommand.DELETE_BOND_OF_REQUESTING_DEVICE
 
         # Test delete all bonds command
-        result = characteristic.decode_value(bytearray([0x02]))
+        result = characteristic.parse_value(bytearray([0x02]))
         assert result == BondManagementCommand.DELETE_ALL_BONDS_ON_SERVER
 
         # Test delete all but active command
-        result = characteristic.decode_value(bytearray([0x03]))
+        result = characteristic.parse_value(bytearray([0x03]))
         assert result == BondManagementCommand.DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER
 
     def test_invalid_command(self, characteristic: BondManagementControlPointCharacteristic) -> None:
-        """Test that invalid commands raise ValueRangeError."""
-        from bluetooth_sig.gatt.exceptions import ValueRangeError
+        """Test that invalid commands raise CharacteristicParseError."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
-        with pytest.raises(ValueRangeError, match="Invalid BondManagementCommand"):
-            characteristic.decode_value(bytearray([0x04]))  # Invalid command
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x04]))  # Invalid command
+
+        assert "Invalid BondManagementCommand" in str(exc_info.value)
 
     def test_insufficient_data(self, characteristic: BondManagementControlPointCharacteristic) -> None:
-        """Test that insufficient data raises InsufficientDataError."""
-        from bluetooth_sig.gatt.exceptions import InsufficientDataError
+        """Test that insufficient data raises CharacteristicParseError."""
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
-        with pytest.raises(InsufficientDataError, match="need 1 bytes"):
-            characteristic.decode_value(bytearray())  # Empty data
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray())  # Empty data
+
+        assert "Length validation failed" in str(exc_info.value)
 
     def test_encode_commands(self, characteristic: BondManagementControlPointCharacteristic) -> None:
         """Test encoding of control commands."""
         # Test encoding delete bond command
-        data = characteristic.encode_value(BondManagementCommand.DELETE_BOND_OF_REQUESTING_DEVICE)
+        data = characteristic.build_value(BondManagementCommand.DELETE_BOND_OF_REQUESTING_DEVICE)
         assert data == bytearray([0x01])
 
         # Test encoding delete all bonds command
-        data = characteristic.encode_value(BondManagementCommand.DELETE_ALL_BONDS_ON_SERVER)
+        data = characteristic.build_value(BondManagementCommand.DELETE_ALL_BONDS_ON_SERVER)
         assert data == bytearray([0x02])
 
         # Test encoding delete all but active command
-        data = characteristic.encode_value(BondManagementCommand.DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER)
+        data = characteristic.build_value(BondManagementCommand.DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER)
         assert data == bytearray([0x03])

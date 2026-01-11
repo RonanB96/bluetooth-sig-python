@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
+from bluetooth_sig.types.units import SpecialValueType
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -38,29 +39,30 @@ class TestHumidityCharacteristic(CommonCharacteristicTests):
         """Test humidity precision and valid range boundaries."""
         # Test 0% humidity (boundary)
         result = characteristic.parse_value(bytearray([0x00, 0x00]))
-        assert result.parse_success
-        assert result.value == 0.0
+
+        assert result == 0.0
 
         # Test 100% humidity (boundary)
         result = characteristic.parse_value(bytearray([0x10, 0x27]))  # 10000 = 100.00%
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value - 100.0) < 0.01
+
+        assert result is not None
+        assert abs(result - 100.0) < 0.01
 
         # Test precision (50.00%)
         result = characteristic.parse_value(bytearray([0x88, 0x13]))  # 5000 = 50.00%
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value - 50.0) < 0.01
+
+        assert result is not None
+        assert abs(result - 50.0) < 0.01
 
     def test_humidity_out_of_range_validation(self, characteristic: HumidityCharacteristic) -> None:
-        """Test that special value 0xFFFF returns SpecialValueResult."""
-        # Test special value 0xFFFF should return SpecialValueResult (value is not known)
-        result = characteristic.parse_value(bytearray([0xFF, 0xFF]))
-        assert result.parse_success
-        assert result.special_value is not None
-        assert result.special_value.meaning == "value is not known"
-        assert result.value == result.special_value
+        """Test that special value 0xFFFF raises SpecialValueDetected."""
+        # Test special value 0xFFFF should raise SpecialValueDetected (value is not known)
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+
+        with pytest.raises(SpecialValueDetected) as exc_info:
+            characteristic.parse_value(bytearray([0xFF, 0xFF]))
+        assert exc_info.value.special_value.meaning == "value is not known"
+        assert exc_info.value.special_value.value_type == SpecialValueType.UNKNOWN
 
     def test_humidity_encoding_accuracy(self, characteristic: HumidityCharacteristic) -> None:
         """Test encoding produces correct byte sequences."""
@@ -74,9 +76,9 @@ class TestHumidityCharacteristic(CommonCharacteristicTests):
         # Test normal value
         data = bytearray([0x88, 0x13])  # 5000 = 50.00%
         result = characteristic.parse_value(data)
-        assert result.parse_success
-        assert result.value is not None
-        assert abs(result.value - 50.0) < 0.01
+
+        assert result is not None
+        assert abs(result - 50.0) < 0.01
 
     def test_characteristic_metadata(self, characteristic: HumidityCharacteristic) -> None:
         """Test characteristic metadata."""
@@ -89,10 +91,10 @@ class TestHumidityCharacteristic(CommonCharacteristicTests):
         # Test precision
         data = bytearray([0x01, 0x00])  # 1 = 0.01%
         result = characteristic.parse_value(data)
-        assert result.parse_success
-        assert result.value == 0.01
+
+        assert result == 0.01
 
         data = bytearray([0x0A, 0x00])  # 10 = 0.10%
         result = characteristic.parse_value(data)
-        assert result.parse_success
-        assert result.value == 0.10
+
+        assert result == 0.10

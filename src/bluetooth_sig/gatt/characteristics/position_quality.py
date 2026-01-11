@@ -39,7 +39,7 @@ class PositionQualityData(msgspec.Struct, frozen=True, kw_only=True):  # pylint:
     position_status: PositionStatus | None = None
 
 
-class PositionQualityCharacteristic(BaseCharacteristic):
+class PositionQualityCharacteristic(BaseCharacteristic[PositionQualityData]):
     """Position Quality characteristic.
 
     Used to represent data related to the quality of a position measurement.
@@ -56,7 +56,7 @@ class PositionQualityCharacteristic(BaseCharacteristic):
     POSITION_STATUS_MASK = 0x0180
     POSITION_STATUS_SHIFT = 7
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PositionQualityData:  # pylint: disable=too-many-locals
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PositionQualityData:  # pylint: disable=too-many-locals
         """Parse position quality data according to Bluetooth specification.
 
         Format: Flags(2) + [Number of Beacons in Solution(1)] + [Number of Beacons in View(1)] +
@@ -133,7 +133,7 @@ class PositionQualityCharacteristic(BaseCharacteristic):
             position_status=position_status,
         )
 
-    def encode_value(self, data: PositionQualityData) -> bytearray:
+    def _encode_value(self, data: PositionQualityData) -> bytearray:
         """Encode PositionQualityData back to bytes.
 
         Args:

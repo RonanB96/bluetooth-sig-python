@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Uint16Template
 
 
-class MeasurementIntervalCharacteristic(BaseCharacteristic):
+class MeasurementIntervalCharacteristic(BaseCharacteristic[int]):
     """Measurement Interval characteristic (0x2A21).
 
     org.bluetooth.characteristic.measurement_interval

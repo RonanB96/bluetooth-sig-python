@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import Handedness, HandednessCharacteristic
-from bluetooth_sig.gatt.exceptions import ValueRangeError
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -61,35 +61,36 @@ class TestHandednessCharacteristic(CommonCharacteristicTests):
     ) -> None:
         """Test handedness with various valid values."""
         data = bytearray([handedness_value])
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result == expected_enum
 
     def test_handedness_boundary_values(self, characteristic: HandednessCharacteristic) -> None:
         """Test handedness boundary values."""
         # Test left handed (0x00)
-        result = characteristic.decode_value(bytearray([0x00]))
+        result = characteristic.parse_value(bytearray([0x00]))
         assert result == Handedness.LEFT_HANDED
 
         # Test right handed (0x01)
-        result = characteristic.decode_value(bytearray([0x01]))
+        result = characteristic.parse_value(bytearray([0x01]))
         assert result == Handedness.RIGHT_HANDED
 
         # Test ambidextrous (0x02)
-        result = characteristic.decode_value(bytearray([0x02]))
+        result = characteristic.parse_value(bytearray([0x02]))
         assert result == Handedness.AMBIDEXTROUS
 
         # Test unspecified (0x03)
-        result = characteristic.decode_value(bytearray([0x03]))
+        result = characteristic.parse_value(bytearray([0x03]))
         assert result == Handedness.UNSPECIFIED
 
     def test_handedness_invalid_values(self, characteristic: HandednessCharacteristic) -> None:
         """Test handedness with invalid values."""
         # Test invalid value (0x04 is reserved)
-        with pytest.raises(ValueRangeError, match="Invalid Handedness: 4"):
-            characteristic.decode_value(bytearray([0x04]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x04]))
+        assert "Invalid Handedness: 4" in str(exc_info.value)
 
     def test_handedness_encoding(self, characteristic: HandednessCharacteristic) -> None:
         """Test encoding handedness back to bytes."""
         data = Handedness.RIGHT_HANDED
-        result = characteristic.encode_value(data)
+        result = characteristic.build_value(data)
         assert result == bytearray([0x01])

@@ -24,7 +24,7 @@ class TimeSource(IntEnum):
     NOT_SYNCHRONIZED = 7
 
 
-class TimeSourceCharacteristic(BaseCharacteristic):
+class TimeSourceCharacteristic(BaseCharacteristic[int]):
     """Time Source characteristic (0x2A13).
 
     org.bluetooth.characteristic.time_source

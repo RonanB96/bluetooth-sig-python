@@ -38,7 +38,7 @@ class PnpIdData(msgspec.Struct, frozen=True, kw_only=True):
     product_version: int
 
 
-class PnpIdCharacteristic(BaseCharacteristic):
+class PnpIdCharacteristic(BaseCharacteristic[PnpIdData]):
     """PnP ID characteristic (0x2A50).
 
     org.bluetooth.characteristic.pnp_id
@@ -49,7 +49,7 @@ class PnpIdCharacteristic(BaseCharacteristic):
     _manual_value_type = "PnpIdData"
     expected_length = 7
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PnpIdData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PnpIdData:
         """Parse PnP ID.
 
         Args:
@@ -66,7 +66,7 @@ class PnpIdCharacteristic(BaseCharacteristic):
             product_version=DataParser.parse_int16(data, 5, signed=False),
         )
 
-    def encode_value(self, data: PnpIdData) -> bytearray:
+    def _encode_value(self, data: PnpIdData) -> bytearray:
         """Encode PnP ID.
 
         Args:

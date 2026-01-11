@@ -7,7 +7,7 @@ from .base import BaseCharacteristic
 from .templates import ConcentrationTemplate
 
 
-class CO2ConcentrationCharacteristic(BaseCharacteristic):
+class CO2ConcentrationCharacteristic(BaseCharacteristic[float]):
     r"""Carbon Dioxide concentration characteristic (0x2B8C).
 
     YAML registry name uses LaTeX subscript form ("CO\\textsubscript{2} Concentration").

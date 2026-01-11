@@ -32,18 +32,18 @@ class TestHeartRateControlPointCharacteristic(CommonCharacteristicTests):
     def test_reset_energy_expended(self) -> None:
         """Test reset energy expended command."""
         char = HeartRateControlPointCharacteristic()
-        result = char.decode_value(bytearray([1]))
+        result = char.parse_value(bytearray([1]))
         assert result == 1
 
     def test_encode_reset_command(self) -> None:
         """Test encoding reset command."""
         char = HeartRateControlPointCharacteristic()
-        encoded = char.encode_value(1)
+        encoded = char.build_value(1)
         assert encoded == bytearray([1])
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = HeartRateControlPointCharacteristic()
-        encoded = char.encode_value(1)
-        decoded = char.decode_value(encoded)
+        encoded = char.build_value(1)
+        decoded = char.parse_value(encoded)
         assert decoded == 1

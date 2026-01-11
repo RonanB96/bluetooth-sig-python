@@ -13,7 +13,7 @@ from .base import BaseCharacteristic
 from .templates import Uint8Template
 
 
-class NoiseCharacteristic(BaseCharacteristic):
+class NoiseCharacteristic(BaseCharacteristic[int]):
     """Noise characteristic (0x2BE4) - Sound pressure level measurement.
 
     Represents sound pressure level in decibels (dB SPL) per SIG specification.

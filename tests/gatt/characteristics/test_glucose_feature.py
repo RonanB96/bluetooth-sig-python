@@ -6,6 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import GlucoseFeatureCharacteristic, GlucoseFeatures
 from bluetooth_sig.gatt.characteristics.glucose_feature import GlucoseFeatureData
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -83,7 +84,7 @@ class TestGlucoseFeatureCharacteristic(CommonCharacteristicTests):
         """Test basic glucose feature data parsing."""
         test_data = valid_test_data[0].input_data
 
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
         assert result.features_bitmap == GlucoseFeatures(0x0403)
         assert result.low_battery_detection is True
         assert result.sensor_malfunction_detection is True
@@ -94,7 +95,7 @@ class TestGlucoseFeatureCharacteristic(CommonCharacteristicTests):
         """Test glucose feature with all features disabled."""
         test_data = bytearray([0x00, 0x00])
 
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
         assert result.features_bitmap == GlucoseFeatures(0x0000)
         assert result.low_battery_detection is False
         assert result.sensor_malfunction_detection is False
@@ -113,10 +114,10 @@ class TestGlucoseFeatureCharacteristic(CommonCharacteristicTests):
 
     def test_glucose_feature_invalid_data(self, characteristic: GlucoseFeatureCharacteristic) -> None:
         """Test glucose feature with invalid data."""
-        from bluetooth_sig.gatt.exceptions import InsufficientDataError
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00]))
 
-        with pytest.raises(InsufficientDataError, match="int16"):
-            characteristic.decode_value(bytearray([0x00]))
+        assert "2 bytes, got 1" in str(exc_info.value)
 
     def test_glucose_feature_encode_value(self, characteristic: GlucoseFeatureCharacteristic) -> None:
         """Test encoding GlucoseFeatureData back to bytes."""
@@ -145,7 +146,7 @@ class TestGlucoseFeatureCharacteristic(CommonCharacteristicTests):
         )
 
         # Encode the data
-        encoded = characteristic.encode_value(test_data)
+        encoded = characteristic.build_value(test_data)
 
         # Should produce the correct bytes
         assert len(encoded) == 2
@@ -157,10 +158,10 @@ class TestGlucoseFeatureCharacteristic(CommonCharacteristicTests):
         original_data = bytearray([0x03, 0x04])  # Low Battery + Sensor Malfunction + Multiple Bond
 
         # Parse the data
-        parsed = characteristic.decode_value(original_data)
+        parsed = characteristic.parse_value(original_data)
 
         # Encode it back
-        encoded = characteristic.encode_value(parsed)
+        encoded = characteristic.build_value(parsed)
 
         # Should match the original
         assert encoded == original_data

@@ -22,7 +22,7 @@ class AlertLevel(IntEnum):
     HIGH_ALERT = 0x02
 
 
-class AlertLevelCharacteristic(BaseCharacteristic):
+class AlertLevelCharacteristic(BaseCharacteristic[int]):
     """Alert Level characteristic (0x2A06).
 
     org.bluetooth.characteristic.alert_level

@@ -42,7 +42,7 @@ class TestExactTime256Characteristic(CommonCharacteristicTests):
     def test_decode_with_fractions(self) -> None:
         """Test decoding exact time with 1/256 second fractions."""
         char = ExactTime256Characteristic()
-        result = char.decode_value(bytearray([0xE3, 0x07, 12, 25, 10, 30, 45, 3, 128]))
+        result = char.parse_value(bytearray([0xE3, 0x07, 12, 25, 10, 30, 45, 3, 128]))
         assert result.dt == datetime(2019, 12, 25, 10, 30, 45)
         assert result.day_of_week == 3
         assert result.fractions256 == 128  # 128/256 = 0.5 seconds
@@ -51,6 +51,6 @@ class TestExactTime256Characteristic(CommonCharacteristicTests):
         """Test encoding and decoding preserve data."""
         char = ExactTime256Characteristic()
         original = ExactTime256Data(dt=datetime(2023, 6, 15, 14, 30, 0), day_of_week=4, fractions256=64)
-        encoded = char.encode_value(original)
-        decoded = char.decode_value(encoded)
+        encoded = char.build_value(original)
+        decoded = char.parse_value(encoded)
         assert decoded == original

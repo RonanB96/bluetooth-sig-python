@@ -11,9 +11,10 @@ Usage:
 """
 
 import asyncio
+from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.gatt.characteristics.base import CharacteristicData
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 # Optional: Import bleak if available
 try:
@@ -72,12 +73,11 @@ async def scan_and_connect() -> None:
                             # Read characteristic
                             data = await client.read_gatt_char(char.uuid)
 
-                            # Parse with async API - convert bytearray to bytes
-                            result = await translator.parse_characteristic_async(str(char.uuid), bytes(data))
-
-                            if result.parse_success:
-                                print(f"  ✅ {result.name}: {result.value} {result.unit}")
-                            else:
+                            # Parse with async API - returns value directly
+                            try:
+                                result = await translator.parse_characteristic_async(str(char.uuid), bytes(data))
+                                print(f"  ✅ {char.uuid}: {result}")
+                            except CharacteristicParseError:
                                 print(f"  ❓ {char.uuid}: <unknown>")
 
                         except (BleakError, asyncio.TimeoutError, OSError) as e:
@@ -108,10 +108,7 @@ async def batch_parsing_example() -> None:
 
     print(f"\nParsed {len(results)} characteristic(s):")
     for uuid, result in results.items():
-        if result.parse_success:
-            print(f"  {result.name} ({uuid}): {result.value} {result.unit}")
-        else:
-            print(f"  {uuid}: Parse failed - {result.error_message}")
+        print(f"  {uuid}: {result}")
 
 
 async def concurrent_parsing_example() -> None:
@@ -122,7 +119,7 @@ async def concurrent_parsing_example() -> None:
     print("Concurrent Parsing Example")
     print("=" * 50)
 
-    async def parse_battery(device_id: int, level: int) -> tuple[int, CharacteristicData]:
+    async def parse_battery(device_id: int, level: int) -> tuple[int, Any]:
         """Simulate parsing battery from a device."""
         await asyncio.sleep(0.1)  # Simulate network delay
         data = bytes([level])
@@ -137,7 +134,7 @@ async def concurrent_parsing_example() -> None:
 
     print("\nResults:")
     for device_id, result in results:
-        print(f"  Device {device_id}: {result.value}%")
+        print(f"  Device {device_id}: {result}%")
 
 
 async def context_manager_example() -> None:
@@ -154,10 +151,10 @@ async def context_manager_example() -> None:
     async with AsyncParsingSession(translator) as session:
         # Parse multiple characteristics with shared context
         result1 = await session.parse("2A19", bytes([75]))
-        print(f"  Battery Level: {result1.value}%")
+        print(f"  Battery Level: {result1}%")
 
         result2 = await session.parse("2A6E", bytes([0x90, 0x01]))
-        print(f"  Temperature: {result2.value}°C")
+        print(f"  Temperature: {result2}°C")
 
         print(f"\nTotal characteristics parsed in session: {len(session.results)}")
 

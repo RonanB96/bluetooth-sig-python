@@ -35,7 +35,7 @@ class BootMouseInputReportData(msgspec.Struct, frozen=True, kw_only=True):
     wheel: int | None = None
 
 
-class BootMouseInputReportCharacteristic(BaseCharacteristic):
+class BootMouseInputReportCharacteristic(BaseCharacteristic[BootMouseInputReportData]):
     """Boot Mouse Input Report characteristic (0x2A33).
 
     org.bluetooth.characteristic.boot_mouse_input_report
@@ -53,7 +53,7 @@ class BootMouseInputReportCharacteristic(BaseCharacteristic):
     max_length = 4
     allow_variable_length = True
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BootMouseInputReportData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BootMouseInputReportData:
         """Parse HID mouse report.
 
         Args:
@@ -75,7 +75,7 @@ class BootMouseInputReportCharacteristic(BaseCharacteristic):
             wheel=wheel,
         )
 
-    def encode_value(self, data: BootMouseInputReportData) -> bytearray:
+    def _encode_value(self, data: BootMouseInputReportData) -> bytearray:
         """Encode mouse report to bytes.
 
         Args:

@@ -7,7 +7,7 @@ from .base import BaseCharacteristic
 from .templates import ConcentrationTemplate
 
 
-class SulfurDioxideConcentrationCharacteristic(BaseCharacteristic):
+class SulfurDioxideConcentrationCharacteristic(BaseCharacteristic[float]):
     """Sulfur Dioxide Concentration characteristic (0x2BD8).
 
     org.bluetooth.characteristic.sulfur_dioxide_concentration

@@ -271,7 +271,7 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
         self, characteristic: LNControlPointCharacteristic, data: bytearray, expected: dict[str, Any]
     ) -> None:
         """Test LN control point with various operations."""
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         for field, expected_value in expected.items():
             actual_value = getattr(result, field)
             if expected_value is not None and isinstance(expected_value, str):
@@ -291,7 +291,7 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.op_code == LNControlPointOpCode.RESPONSE_CODE
         assert result.request_op_code == LNControlPointOpCode.SET_CUMULATIVE_VALUE
         assert result.response_value == LNControlPointResponseValue.SUCCESS
@@ -311,7 +311,7 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.op_code == LNControlPointOpCode.RESPONSE_CODE
         assert result.request_op_code == LNControlPointOpCode.MASK_LOCATION_AND_SPEED_CHARACTERISTIC_CONTENT
         assert result.response_value == LNControlPointResponseValue.OP_CODE_NOT_SUPPORTED
@@ -326,7 +326,7 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.op_code == LNControlPointOpCode.NAVIGATION_CONTROL
         assert result.navigation_control_value == 0x01
 
@@ -339,6 +339,6 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
             ]
         )
 
-        result = characteristic.decode_value(data)
+        result = characteristic.parse_value(data)
         assert result.op_code == LNControlPointOpCode.NAVIGATION_CONTROL
         assert result.navigation_control_value == 0x00

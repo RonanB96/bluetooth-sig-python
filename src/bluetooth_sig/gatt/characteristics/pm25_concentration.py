@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ConcentrationTemplate
 
 
-class PM25ConcentrationCharacteristic(BaseCharacteristic):
+class PM25ConcentrationCharacteristic(BaseCharacteristic[float]):
     """PM2.5 particulate matter concentration characteristic (0x2BD6).
 
     Represents particulate matter PM2.5 concentration in micrograms per

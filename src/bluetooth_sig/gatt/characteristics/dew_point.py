@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledSint8Template
 
 
-class DewPointCharacteristic(BaseCharacteristic):
+class DewPointCharacteristic(BaseCharacteristic[float]):
     """Dew Point characteristic (0x2A7B).
 
     org.bluetooth.characteristic.dew_point

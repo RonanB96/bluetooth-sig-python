@@ -10,6 +10,7 @@ from bluetooth_sig.gatt.characteristics.rsc_measurement import (
     RSCMeasurementData,
     RSCMeasurementFlags,
 )
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
 
@@ -206,28 +207,33 @@ class TestRSCMeasurementCharacteristic(CommonCharacteristicTests):
     def test_rsc_measurement_invalid_data(self, characteristic: RSCMeasurementCharacteristic) -> None:
         """Test RSC measurement error handling."""
         # Too short data
-        with pytest.raises(ValueError, match="RSC Measurement data must be at least 4 bytes"):
-            characteristic.decode_value(bytearray([0x00, 0x01, 0x02]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x01, 0x02]))
+        assert "at least 4 bytes" in str(exc_info.value)
 
         # Missing required data
-        with pytest.raises(ValueError, match="RSC Measurement data must be at least 4 bytes"):
-            characteristic.decode_value(bytearray([0x00]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x00]))
+        assert "at least 4 bytes" in str(exc_info.value)
 
     def test_rsc_measurement_encoding_units(self, characteristic: RSCMeasurementCharacteristic) -> None:
         """Test RSC measurement encoding units and precision."""
         # Test speed encoding (1/256 m/s resolution)
         test_data = bytearray([0x00, 0x01, 0x00, 0x00])  # speed = 1/256 m/s (1 * 1/256)
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert abs(result.instantaneous_speed - (1 / 256)) < 1e-10
 
         # Test stride length encoding (0.01 m resolution)
         test_data = bytearray([0x01, 0x00, 0x01, 0x00, 0x01, 0x00])  # stride = 0.01 m
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.instantaneous_stride_length == 0.01
 
         # Test total distance encoding (0.1 m resolution)
         test_data = bytearray([0x02, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00])  # distance = 0.1 m
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
+        assert result is not None
         assert result.total_distance == 0.1
 
     def test_rsc_measurement_declares_dependencies(self) -> None:

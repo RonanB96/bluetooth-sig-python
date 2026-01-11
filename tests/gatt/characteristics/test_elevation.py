@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import ElevationCharacteristic
-from bluetooth_sig.gatt.exceptions import InsufficientDataError
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -43,39 +43,40 @@ class TestElevationCharacteristic(CommonCharacteristicTests):
 
         # Test normal parsing: 50000 (in 0.01 meters) = 500.00 meters
         test_data = bytearray([0x50, 0xC3, 0x00])  # 50000 in 24-bit little endian
-        parsed = characteristic.decode_value(test_data)
+        parsed = characteristic.parse_value(test_data)
         assert parsed == 500.0
 
         # Test negative elevation (below sea level)
         neg_data = bytearray([0xFF, 0xFF, 0xFF])  # -1 in 24-bit signed
-        parsed_neg = characteristic.decode_value(neg_data)
+        parsed_neg = characteristic.parse_value(neg_data)
         assert parsed_neg == -0.01
 
     def test_elevation_error_handling(self, characteristic: ElevationCharacteristic) -> None:
         """Test Elevation error handling."""
         # Test insufficient data
-        with pytest.raises(InsufficientDataError, match="need 3 bytes"):
-            characteristic.decode_value(bytearray([0x12, 0x34]))
+        with pytest.raises(CharacteristicParseError) as exc_info:
+            characteristic.parse_value(bytearray([0x12, 0x34]))
+        assert "3 bytes" in str(exc_info.value)
 
     def test_elevation_boundary_values(self, characteristic: ElevationCharacteristic) -> None:
         """Test elevation boundary values."""
         # Sea level
         data_sea = bytearray([0x00, 0x00, 0x00])
-        assert characteristic.decode_value(data_sea) == 0.0
+        assert characteristic.parse_value(data_sea) == 0.0
 
         # Below sea level (Dead Sea: -550m)
         data_below = bytearray([0x28, 0x29, 0xFF])  # -55000 * 0.01 = -550.0
-        result = characteristic.decode_value(data_below)
+        result = characteristic.parse_value(data_below)
         assert abs(result - (-550.0)) < 0.1  # Allow small floating point error
 
     def test_elevation_famous_heights(self, characteristic: ElevationCharacteristic) -> None:
         """Test elevations of famous locations."""
         # Mt. Everest (8848m)
         data_everest = bytearray([0x40, 0x80, 0x0D])  # 884800 * 0.01 = 8848.0
-        result = characteristic.decode_value(data_everest)
+        result = characteristic.parse_value(data_everest)
         assert abs(result - 8848.0) < 0.1
 
         # Denver "Mile High City" (~1600m)
         data_denver = bytearray([0x00, 0x71, 0x02])  # 160000 * 0.01 = 1600.0
-        result = characteristic.decode_value(data_denver)
+        result = characteristic.parse_value(data_denver)
         assert abs(result - 1600.0) < 0.1

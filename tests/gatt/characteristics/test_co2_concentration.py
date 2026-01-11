@@ -37,29 +37,29 @@ class TestCO2ConcentrationCharacteristic(CommonCharacteristicTests):
         """Test CO2 concentration boundary values and validation."""
         # Test normal values
         test_data = bytearray([0x34, 0x12])  # 4660 ppm
-        result = characteristic.decode_value(test_data)
+        result = characteristic.parse_value(test_data)
         assert result == 4660
 
         # Test max valid value (65533 ppm)
         high_data = bytearray([0xFD, 0xFF])  # 65533 ppm
         result = characteristic.parse_value(high_data)
-        assert result.parse_success
-        assert result.value == 65533
+
+        assert result == 65533
 
     def test_co2_concentration_validation_limits(self, characteristic: CO2ConcentrationCharacteristic) -> None:
         """Test CO2 concentration special value handling at overflow boundary."""
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+
         # Test 0xFFFE (65534) - special value meaning "65534 or greater" per SIG spec
         overflow_data = bytearray([0xFE, 0xFF])  # 65534 / 0xFFFE
-        result = characteristic.parse_value(overflow_data)
-        assert result.parse_success
-        assert result.special_value is not None
-        assert result.special_value.raw_value == 65534
-        assert "65534 or greater" in result.special_value.meaning.lower()
+        with pytest.raises(SpecialValueDetected) as exc_info:
+            characteristic.parse_value(overflow_data)
+        assert exc_info.value.special_value.raw_value == 65534
+        assert "65534 or greater" in exc_info.value.special_value.meaning.lower()
 
         # Test 0xFFFF (65535) - special value meaning "not known"
         unknown_data = bytearray([0xFF, 0xFF])  # 65535 / 0xFFFF
-        result = characteristic.parse_value(unknown_data)
-        assert result.parse_success
-        assert result.special_value is not None
-        assert result.special_value.raw_value == 65535
-        assert "not known" in result.special_value.meaning.lower()
+        with pytest.raises(SpecialValueDetected) as exc_info:
+            characteristic.parse_value(unknown_data)
+        assert exc_info.value.special_value.raw_value == 65535
+        assert "not known" in exc_info.value.special_value.meaning.lower()

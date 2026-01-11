@@ -42,7 +42,7 @@ class VoltageStatisticsData(msgspec.Struct, frozen=True, kw_only=True):  # pylin
                 )
 
 
-class VoltageStatisticsCharacteristic(BaseCharacteristic):
+class VoltageStatisticsCharacteristic(BaseCharacteristic[VoltageStatisticsData]):
     """Voltage Statistics characteristic (0x2B1A).
 
     org.bluetooth.characteristic.voltage_statistics
@@ -56,7 +56,7 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
     _manual_value_type: ValueType | str | None = ValueType.DICT
     expected_length: int = 6  # Minimum(2) + Maximum(2) + Average(2)
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VoltageStatisticsData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VoltageStatisticsData:
         """Parse voltage statistics data (3x uint16 in units of 1/64 V).
 
         Args:
@@ -86,7 +86,7 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic):
             average=avg_voltage_raw / 64.0,
         )
 
-    def encode_value(self, data: VoltageStatisticsData) -> bytearray:
+    def _encode_value(self, data: VoltageStatisticsData) -> bytearray:
         """Encode voltage statistics value back to bytes.
 
         Args:

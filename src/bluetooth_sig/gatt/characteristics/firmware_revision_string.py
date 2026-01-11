@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import Utf8StringTemplate
 
 
-class FirmwareRevisionStringCharacteristic(BaseCharacteristic):
+class FirmwareRevisionStringCharacteristic(BaseCharacteristic[str]):
     """Firmware Revision String characteristic (0x2A26).
 
     org.bluetooth.characteristic.firmware_revision_string

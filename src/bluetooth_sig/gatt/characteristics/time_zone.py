@@ -9,7 +9,7 @@ from .base import BaseCharacteristic
 from .utils import DataParser
 
 
-class TimeZoneCharacteristic(BaseCharacteristic):
+class TimeZoneCharacteristic(BaseCharacteristic[str]):
     """Time Zone characteristic (0x2A0E).
 
     org.bluetooth.characteristic.time_zone
@@ -23,7 +23,7 @@ class TimeZoneCharacteristic(BaseCharacteristic):
     # Manual override: YAML indicates sint8->int but we return descriptive strings
     _manual_value_type: ValueType | str | None = ValueType.STRING
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
         """Parse time zone data (sint8 in 15-minute increments from UTC)."""
         if len(data) < 1:
             raise ValueError("Time zone data must be at least 1 byte")
@@ -56,7 +56,7 @@ class TimeZoneCharacteristic(BaseCharacteristic):
             return f"UTC{sign}{hours_abs:02d}:00"
         return f"UTC{sign}{hours_abs:02d}:{minutes:02d}"
 
-    def encode_value(self, data: str | int) -> bytearray:
+    def _encode_value(self, data: str | int) -> bytearray:
         """Encode time zone value back to bytes.
 
         Args:

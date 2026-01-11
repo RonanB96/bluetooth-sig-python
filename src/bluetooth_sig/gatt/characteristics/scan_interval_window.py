@@ -8,7 +8,7 @@ from .base import BaseCharacteristic
 from .utils import DataParser
 
 
-class ScanIntervalWindowCharacteristic(BaseCharacteristic):
+class ScanIntervalWindowCharacteristic(BaseCharacteristic[ScanIntervalWindowData]):
     """Scan Interval Window characteristic (0x2A4F).
 
     org.bluetooth.characteristic.scan_interval_window
@@ -30,7 +30,7 @@ class ScanIntervalWindowCharacteristic(BaseCharacteristic):
     max_length = 4  # Fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ScanIntervalWindowData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ScanIntervalWindowData:
         """Parse scan interval window data.
 
         Args:
@@ -46,7 +46,7 @@ class ScanIntervalWindowCharacteristic(BaseCharacteristic):
 
         return ScanIntervalWindowData(scan_interval=scan_interval, scan_window=scan_window)
 
-    def encode_value(self, data: ScanIntervalWindowData) -> bytearray:
+    def _encode_value(self, data: ScanIntervalWindowData) -> bytearray:
         """Encode scan interval window value back to bytes.
 
         Args:

@@ -39,21 +39,21 @@ class TestCorrelatedColorTemperatureCharacteristic(CommonCharacteristicTests):
     def test_warm_white(self) -> None:
         """Test warm white color temperature (~5000K)."""
         char = CorrelatedColorTemperatureCharacteristic()
-        result = char.decode_value(bytearray([168, 19]))
+        result = char.parse_value(bytearray([168, 19]))
         assert result == 5032
 
     def test_cool_white(self) -> None:
         """Test cool white color temperature (~6500K)."""
         char = CorrelatedColorTemperatureCharacteristic()
         # 6500K represented as uint16
-        encoded = char.encode_value(6500)
-        decoded = char.decode_value(encoded)
+        encoded = char.build_value(6500)
+        decoded = char.parse_value(encoded)
         assert decoded == 6500
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = CorrelatedColorTemperatureCharacteristic()
         for value in [800, 2700, 5000, 6500, 65534]:
-            encoded = char.encode_value(value)
-            decoded = char.decode_value(encoded)
+            encoded = char.build_value(value)
+            decoded = char.parse_value(encoded)
             assert decoded == value

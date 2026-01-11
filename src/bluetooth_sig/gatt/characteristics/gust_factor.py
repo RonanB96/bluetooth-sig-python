@@ -6,7 +6,7 @@ from .base import BaseCharacteristic
 from .templates import ScaledUint8Template
 
 
-class GustFactorCharacteristic(BaseCharacteristic):
+class GustFactorCharacteristic(BaseCharacteristic[float]):
     """Gust Factor characteristic (0x2A74).
 
     org.bluetooth.characteristic.gust_factor
