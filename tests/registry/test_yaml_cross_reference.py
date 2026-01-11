@@ -70,15 +70,15 @@ class TestYAMLCrossReference:
 
         # Test Humidity characteristic
         humidity_char = HumidityCharacteristic()
-        battery_unit_id = humidity_char.get_yaml_unit_id()
+        humidity_unit_id = humidity_char.get_yaml_unit_id()
 
-        if battery_unit_id:
-            assert isinstance(battery_unit_id, str), f"Unit ID should be string, got {type(battery_unit_id)}"
-            assert "percentage" in battery_unit_id.lower(), (
-                f"Battery unit ID should reference percentage, got {battery_unit_id}"
+        if humidity_unit_id:
+            assert isinstance(humidity_unit_id, str), f"Unit ID should be string, got {type(humidity_unit_id)}"
+            assert "percentage" in humidity_unit_id.lower(), (
+                f"Humidity unit ID should reference percentage, got {humidity_unit_id}"
             )
 
-    def test_is_signed_from_yaml_comprehensive(self) -> None:
+    def test_is_signed_from_yaml_comprehensive(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test signed type detection for various data types."""
         # Test Temperature characteristic (should be signed)
         temp_char = TemperatureCharacteristic()
@@ -97,7 +97,7 @@ class TestYAMLCrossReference:
             ("float32", True),
             ("float64", True),
             # Unsigned types
-            ("uint16", False),
+            ("uint8", False),
             ("uint16", False),
             ("uint32", False),
             # Other types
@@ -110,8 +110,13 @@ class TestYAMLCrossReference:
         ]
 
         for data_type, expected_signed in test_cases:
-            # Temporarily set the data type
-            temp_char._yaml_data_type = data_type
+            # Create a mock spec object
+            from types import SimpleNamespace
+
+            mock_spec = SimpleNamespace(
+                data_type=data_type, field_size=None, unit_id=None, resolution_text=None, structure=[]
+            )
+            monkeypatch.setattr(temp_char, "_spec", mock_spec)
 
             is_signed = temp_char.is_signed_from_yaml()
             assert is_signed == expected_signed, (
@@ -182,10 +187,10 @@ class TestYAMLCrossReference:
 
         # Unit resolution should work with or without YAML
         temp_unit = temp_char.unit
-        battery_unit = humidity_char.unit
+        humidity_unit = humidity_char.unit
 
         assert temp_unit in ["°C", ""], f"Temperature unit should be °C or empty, got {temp_unit}"
-        assert battery_unit in ["%", ""], f"Battery unit should be % or empty, got {battery_unit}"
+        assert humidity_unit in ["%", ""], f"Humidity unit should be % or empty, got {humidity_unit}"
 
     def test_yaml_byte_order_hint(self) -> None:
         """Test byte order hint for characteristics."""

@@ -336,12 +336,6 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
 
     _template: CodingTemplate[T] | None = None
 
-    # YAML automation attributes
-    _yaml_data_type: str | None = None
-    _yaml_field_size: int | str | None = None
-    _yaml_unit_id: str | None = None
-    _yaml_resolution_text: str | None = None
-
     _allows_sig_override = False
 
     _required_dependencies: list[type[BaseCharacteristic[Any]]] = []  # Dependencies that MUST be present
@@ -427,12 +421,8 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             # Resolve characteristic information using proper resolver
             self._info = SIGCharacteristicResolver.resolve_for_class(type(self))
 
-        # Resolve GSS spec for description and detailed metadata
-        # NOTE: Custom characteristics will have _spec=None since they're not in GSS files.
-        # The spec and description properties gracefully handle None/empty values.
+        # Resolve YAML spec for access to detailed metadata
         self._spec = self._resolve_yaml_spec()
-
-        # Initialize SpecialValueResolver with spec-derived and class-level rules
         spec_rules: dict[int, SpecialValueRule] = {}
         for raw, meaning in self.gss_special_values.items():
             spec_rules[raw] = SpecialValueRule(
@@ -498,22 +488,13 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         class_name = self.__class__.__name__
         char_name = self._characteristic_name or class_name
 
-        # Pattern-based inference for common characteristics
-        measurement_patterns = [
-            "Measurement",
-            "Data",
-            "Reading",
-            "Value",
-            "Status",
-            "Feature",
-            "Capability",
-            "Support",
-            "Configuration",
-        ]
+        # Feature characteristics are bitfields and should be BITFIELD
+        if "Feature" in class_name or "Feature" in char_name:
+            return ValueType.BITFIELD
 
-        # If it contains measurement/data patterns, likely returns complex data -> bytes
-        if any(pattern in class_name or pattern in char_name for pattern in measurement_patterns):
-            return ValueType.BYTES
+        # Check if this is a multi-field characteristic (complex structure)
+        if self._spec and hasattr(self._spec, "structure") and len(self._spec.structure) > 1:
+            return ValueType.VARIOUS
 
         # Common simple value characteristics
         simple_int_patterns = ["Level", "Count", "Index", "ID", "Appearance"]
@@ -525,7 +506,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             return ValueType.STRING
 
         # Default fallback for complex characteristics
-        return ValueType.BYTES
+        return ValueType.VARIOUS
 
     def _resolve_yaml_spec(self) -> CharacteristicSpec | None:
         """Resolve specification using YAML cross-reference system."""
@@ -591,17 +572,17 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
                 unsigned_val = sv.raw_value
                 result[unsigned_val] = sv.meaning
 
-                # For values that could represent signed interpretations,
-                # add the signed equivalent based on common bit widths.
+                # For signed types, add the signed equivalent based on common bit widths.
                 # This handles cases like 0x8000 (32768) -> -32768 for sint16.
-                for bits in (8, 16, 24, 32):
-                    max_unsigned = (1 << bits) - 1
-                    sign_bit = 1 << (bits - 1)
-                    if sign_bit <= unsigned_val <= max_unsigned:
-                        # This value would be negative when interpreted as signed
-                        signed_val = unsigned_val - (1 << bits)
-                        if signed_val not in result:
-                            result[signed_val] = sv.meaning
+                if self.is_signed_from_yaml():
+                    for bits in (8, 16, 24, 32):
+                        max_unsigned = (1 << bits) - 1
+                        sign_bit = 1 << (bits - 1)
+                        if sign_bit <= unsigned_val <= max_unsigned:
+                            # This value would be negative when interpreted as signed
+                            signed_val = unsigned_val - (1 << bits)
+                            if signed_val not in result:
+                                result[signed_val] = sv.meaning
         return result
 
     def is_special_value(self, raw_value: int) -> bool:
@@ -1504,38 +1485,30 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
     # YAML automation helper methods
     def get_yaml_data_type(self) -> str | None:
         """Get the data type from YAML automation (e.g., 'sint16', 'uint8')."""
-        return self._yaml_data_type
+        return self._spec.data_type if self._spec else None
 
     def get_yaml_field_size(self) -> int | None:
         """Get the field size in bytes from YAML automation."""
-        field_size = self._yaml_field_size
+        field_size = self._spec.field_size if self._spec else None
         if field_size and isinstance(field_size, str) and field_size.isdigit():
             return int(field_size)
-        if isinstance(field_size, int):
-            return field_size
         return None
 
     def get_yaml_unit_id(self) -> str | None:
         """Get the Bluetooth SIG unit identifier from YAML automation."""
-        return self._yaml_unit_id
+        return self._spec.unit_id if self._spec else None
 
     def get_yaml_resolution_text(self) -> str | None:
         """Get the resolution description text from YAML automation."""
-        return self._yaml_resolution_text
+        return self._spec.resolution_text if self._spec else None
 
     def is_signed_from_yaml(self) -> bool:
         """Determine if the data type is signed based on YAML automation."""
         data_type = self.get_yaml_data_type()
         if not data_type:
             return False
-        # Check for signed integer types
-        if data_type.startswith("sint"):
-            return True
-        # Check for IEEE-11073 medical float types (signed)
-        if data_type in ("medfloat16", "medfloat32"):
-            return True
-        # Check for IEEE-754 floating point types (signed)
-        if data_type in ("float32", "float64"):
+        # Check for signed types: signed integers, medical floats, and standard floats
+        if data_type.startswith("sint") or data_type in ("medfloat16", "medfloat32", "float32", "float64"):
             return True
         return False
 

@@ -64,13 +64,17 @@ class TestApparentPowerCharacteristic(CommonCharacteristicTests):
 
     def test_apparent_power_special_values(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test special values for apparent power."""
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+
         # Test "value is not valid" (0xFFFFFE)
-        result = characteristic.parse_value(bytearray([0xFE, 0xFF, 0xFF]))
-        assert result is None
+        with pytest.raises(SpecialValueDetected) as exc_info:
+            characteristic.parse_value(bytearray([0xFE, 0xFF, 0xFF]))
+        assert exc_info.value.special_value.meaning == "value is not valid"
 
         # Test "value is not known" (0xFFFFFF)
-        result = characteristic.parse_value(bytearray([0xFF, 0xFF, 0xFF]))
-        assert result is None
+        with pytest.raises(SpecialValueDetected) as exc_info:
+            characteristic.parse_value(bytearray([0xFF, 0xFF, 0xFF]))
+        assert exc_info.value.special_value.meaning == "value is not known"
 
     def test_apparent_power_extreme_values(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test extreme apparent power values within valid range."""

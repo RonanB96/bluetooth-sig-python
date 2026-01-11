@@ -7,14 +7,7 @@ from .base import BaseCharacteristic
 from .utils.data_parser import DataParser
 
 
-# Special value constants for Temperature characteristic
-class TemperatureValues:  # pylint: disable=too-few-public-methods
-    """Special values for Temperature characteristic per Bluetooth SIG specification."""
-
-    VALUE_UNKNOWN = -32768  # Indicates value is not known (as sint16, 0x8000)
-
-
-class TemperatureCharacteristic(BaseCharacteristic[float | None]):
+class TemperatureCharacteristic(BaseCharacteristic[float]):
     """Temperature characteristic (0x2A6E).
 
     org.bluetooth.characteristic.temperature
@@ -41,8 +34,6 @@ class TemperatureCharacteristic(BaseCharacteristic[float | None]):
             InsufficientDataError: If data is not exactly 2 bytes
         """
         raw_value = DataParser.parse_int16(data, 0, signed=True)
-        if raw_value == TemperatureValues.VALUE_UNKNOWN:
-            return None
         return raw_value * 0.01
 
     def _encode_value(self, data: float) -> bytearray:

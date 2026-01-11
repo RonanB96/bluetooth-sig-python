@@ -26,8 +26,8 @@ class TestBodyCompositionMeasurementCharacteristic:
         """Test characteristic name resolution."""
         char = BodyCompositionMeasurementCharacteristic()
         assert char.name == "Body Composition Measurement"
-        # Value type resolved from GSS YAML (uint16 primary field -> INT)
-        assert char.value_type == ValueType.INT
+        # Value type for multi-field characteristic is VARIOUS
+        assert char.value_type == ValueType.VARIOUS
 
     def test_parse_basic_body_fat_metric(self) -> None:
         """Test parsing basic body fat percentage in metric units."""
@@ -114,7 +114,7 @@ class TestBodyCompositionFeatureCharacteristic:
         """Test characteristic name resolution."""
         char = BodyCompositionFeatureCharacteristic()
         assert char.name == "Body Composition Feature"
-        assert char.value_type == ValueType.BYTES
+        assert char.value_type == ValueType.BITFIELD
 
     def test_parse_basic_features(self) -> None:
         """Test parsing basic feature flags."""

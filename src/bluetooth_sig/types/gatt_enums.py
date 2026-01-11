@@ -82,6 +82,7 @@ class ValueType(Enum):
     INT = "int"
     FLOAT = "float"
     BYTES = "bytes"
+    BITFIELD = "bitfield"
     BOOL = "bool"
     DATETIME = "datetime"
     UUID = "uuid"

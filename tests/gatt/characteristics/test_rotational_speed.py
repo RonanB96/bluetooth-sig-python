@@ -89,8 +89,11 @@ class TestRotationalSpeedCharacteristic(CommonCharacteristicTests):
 
         # Test "value is not known" special value
         unknown_data = bytearray([0xFF, 0xFF, 0xFF, 0x7F])  # 0x7FFFFFFF
-        result = characteristic.parse_value(unknown_data)
-        assert result is None
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+
+        with pytest.raises(SpecialValueDetected) as exc_info:
+            characteristic.parse_value(unknown_data)
+        assert exc_info.value.special_value.meaning == "value is not known"
 
     def test_rotational_speed_encoding_accuracy(self, characteristic: RotationalSpeedCharacteristic) -> None:
         """Test encoding produces correct byte sequences."""

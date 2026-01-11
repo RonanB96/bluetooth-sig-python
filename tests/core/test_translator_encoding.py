@@ -93,13 +93,12 @@ class TestGetValueType:
         value_type = translator.get_value_type("2A00")  # Device Name
         assert value_type == ValueType.STRING
 
-    def test_get_value_type_bytes(self) -> None:
-        """Test getting value type for bytes characteristic."""
+    def test_get_value_type_various(self) -> None:
+        """Test getting value type for complex characteristic."""
         translator = BluetoothSIGTranslator()
 
         value_type = translator.get_value_type("2A37")  # Heart Rate Measurement
-        # Complex characteristics may return BYTES or INT depending on implementation
-        assert value_type in (ValueType.BYTES, ValueType.VARIOUS, ValueType.INT)
+        assert value_type == ValueType.VARIOUS
 
     def test_get_value_type_invalid_uuid(self) -> None:
         """Test getting value type with invalid UUID."""

@@ -7,15 +7,7 @@ from .base import BaseCharacteristic
 from .utils.data_parser import DataParser
 
 
-# Special value constants for Apparent Energy 32 characteristic
-class ApparentEnergy32Values:  # pylint: disable=too-few-public-methods
-    """Special values for Apparent Energy 32 characteristic per Bluetooth SIG specification."""
-
-    VALUE_NOT_VALID = 0xFFFFFFFE  # Indicates value is not valid
-    VALUE_UNKNOWN = 0xFFFFFFFF  # Indicates value is not known
-
-
-class ApparentEnergy32Characteristic(BaseCharacteristic[float | None]):
+class ApparentEnergy32Characteristic(BaseCharacteristic[float]):
     """Apparent Energy 32 characteristic (0x2B89).
 
     org.bluetooth.characteristic.apparent_energy_32
@@ -44,8 +36,6 @@ class ApparentEnergy32Characteristic(BaseCharacteristic[float | None]):
             InsufficientDataError: If data is not exactly 4 bytes
         """
         raw_value = DataParser.parse_int32(data, 0, signed=False)
-        if raw_value in (ApparentEnergy32Values.VALUE_NOT_VALID, ApparentEnergy32Values.VALUE_UNKNOWN):
-            return None
         return raw_value * 0.001
 
     def _encode_value(self, data: float) -> bytearray:
