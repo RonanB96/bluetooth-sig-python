@@ -55,7 +55,7 @@ class BootKeyboardInputReportCharacteristic(BaseCharacteristic[BootKeyboardInput
     max_length = 8
     allow_variable_length = True
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BootKeyboardInputReportData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> BootKeyboardInputReportData:
         """Parse HID keyboard report.
 
         Args:

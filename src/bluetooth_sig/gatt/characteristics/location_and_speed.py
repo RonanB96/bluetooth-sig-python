@@ -91,7 +91,7 @@ class LocationAndSpeedCharacteristic(BaseCharacteristic[LocationAndSpeedData]):
     HEADING_SOURCE_MASK = 0x2000
     HEADING_SOURCE_SHIFT = 13
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> LocationAndSpeedData:  # pylint: disable=too-many-locals
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> LocationAndSpeedData:  # pylint: disable=too-many-locals
         """Parse location and speed data according to Bluetooth specification.
 
         Format: Flags(2) + [Instantaneous Speed(2)] + [Total Distance(3)] + [Location - Latitude(4)] +

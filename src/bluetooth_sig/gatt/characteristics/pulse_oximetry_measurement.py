@@ -65,7 +65,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic[PulseOximetryDat
     allow_variable_length: bool = True  # Variable optional fields
 
     def _decode_value(  # pylint: disable=too-many-locals,too-many-branches  # Complexity needed for spec parsing
-        self, data: bytearray, ctx: CharacteristicContext | None = None
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> PulseOximetryData:
         """Parse pulse oximetry measurement data according to Bluetooth specification.
 

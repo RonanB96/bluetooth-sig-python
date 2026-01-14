@@ -102,7 +102,7 @@ class LNControlPointCharacteristic(BaseCharacteristic[LNControlPointData]):
     max_length = 18  # Op Code(1) + Parameter(max 17) maximum
     allow_variable_length: bool = True  # Variable parameter length
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> LNControlPointData:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> LNControlPointData:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         """Parse LN control point data according to Bluetooth specification.
 
         Format: Op Code(1) + Parameter(0-17).

@@ -38,7 +38,7 @@ class CSCFeatureCharacteristic(BaseCharacteristic[CSCFeatureData]):
 
     expected_length: int = 2
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CSCFeatureData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> CSCFeatureData:
         """Parse CSC feature data.
 
         Format: 16-bit feature bitmask (little endian).

@@ -100,7 +100,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
     max_length: int = 21  # + Timestamp(7) + UserID(1) + BMI(2) + Height(2) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> WeightMeasurementData:  # pylint: disable=too-many-locals
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> WeightMeasurementData:  # pylint: disable=too-many-locals
         """Parse weight measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +

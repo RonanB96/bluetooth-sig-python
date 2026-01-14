@@ -15,7 +15,7 @@ class PeripheralPrivacyFlagCharacteristic(BaseCharacteristic[bool]):
     Indicates whether privacy is enabled (True) or disabled (False).
     """
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bool:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> bool:
         """Decode the privacy flag value."""
         value = DataParser.parse_int8(data, 0, signed=False)
         return bool(value)

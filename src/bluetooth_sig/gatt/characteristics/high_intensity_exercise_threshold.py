@@ -46,7 +46,7 @@ class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic[HighIntens
     max_length: int | None = 3
 
     def _decode_value(
-        self, data: bytearray, ctx: CharacteristicContext | None = None
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> HighIntensityExerciseThresholdData:
         """Parse High Intensity Exercise Threshold with conditional fields.
 

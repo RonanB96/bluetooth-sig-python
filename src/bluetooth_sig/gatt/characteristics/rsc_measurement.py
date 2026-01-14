@@ -74,7 +74,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic[RSCMeasurementData]):
         if data.total_distance is not None and not feature_data.total_distance_supported:
             raise ValueError("Total distance reported but not supported by device features")
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> RSCMeasurementData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> RSCMeasurementData:
         """Parse RSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Instantaneous Speed(2) + Instantaneous Cadence(1) +

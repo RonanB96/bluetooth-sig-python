@@ -23,7 +23,7 @@ class Acceleration3DCharacteristic(BaseCharacteristic[VectorData]):
     # BaseCharacteristic handles validation
     expected_length = 3
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VectorData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> VectorData:
         """Parse 3D acceleration (3 x sint8).
 
         Args:

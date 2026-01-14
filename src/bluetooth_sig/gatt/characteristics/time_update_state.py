@@ -51,7 +51,7 @@ class TimeUpdateStateCharacteristic(BaseCharacteristic[TimeUpdateState]):
         """Initialize the Time Update State characteristic."""
         super().__init__()
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TimeUpdateState:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> TimeUpdateState:
         """Decode the raw data to TimeUpdateState."""
         if len(data) != 2:
             raise ValueError(f"Time Update State requires 2 bytes, got {len(data)}")

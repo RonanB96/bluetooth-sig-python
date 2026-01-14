@@ -786,7 +786,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         except ValueError:
             return False
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> T:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> T:
         """Internal parse the characteristic's raw value with no validation.
 
         This is expected to be called from parse_value() which handles validation.
@@ -797,6 +797,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         Args:
             data: Raw bytes from the characteristic read
             ctx: Optional context information for parsing
+            validate: Whether to validate ranges (default True)
 
         Returns:
             Parsed value in the appropriate type
@@ -807,7 +808,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         """
         if self._template is not None:
             return self._template.decode_value(  # pylint: disable=protected-access
-                data, offset=0, ctx=ctx
+                data, offset=0, ctx=ctx, validate=validate
             )
         raise NotImplementedError(f"{self.__class__.__name__} must either set _template or override decode_value()")
 
@@ -1092,7 +1093,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             configured_info: CharacteristicInfo | None = getattr(characteristic_name, "_configured_info", None)
             if configured_info is not None:
                 # Custom characteristic with explicit _configured_info
-                char_uuid= configured_info.uuid
+                char_uuid = configured_info.uuid
             else:
                 # SIG characteristic: convert class name to SIG name and resolve via registry
                 class_name: str = characteristic_name.__name__
@@ -1206,7 +1207,8 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         """
         if enable_trace:
             parse_trace.append("Decoding value")
-        decoded_value: T = self._decode_value(data_bytes, ctx)
+        # Pass validate flag directly to template decode_value method
+        decoded_value: T = self._decode_value(data_bytes, ctx, validate=validate)
 
         if validate:
             if enable_trace:

@@ -40,7 +40,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic[CyclingPowerFeatureDa
 
     expected_length: int = 4
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CyclingPowerFeatureData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> CyclingPowerFeatureData:
         """Parse cycling power feature data.
 
         Format: 32-bit feature bitmask (little endian).

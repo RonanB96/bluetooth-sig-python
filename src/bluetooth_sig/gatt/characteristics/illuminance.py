@@ -22,7 +22,7 @@ class IlluminanceCharacteristic(BaseCharacteristic[float]):
 
     resolution: float = 0.01
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> float:
         """Decode illuminance characteristic.
 
         Decodes a 24-bit unsigned integer representing illuminance in 0.01 lux increments

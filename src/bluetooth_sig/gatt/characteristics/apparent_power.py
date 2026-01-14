@@ -12,7 +12,7 @@ class ApparentPowerCharacteristic(BaseCharacteristic[float]):
 
     _manual_unit: str | None = "VA"  # YAML: electrical_apparent_power.volt_ampere, units.yaml: power.volt_ampere
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> float:
         """Decode the apparent power value."""
         value = DataParser.parse_int24(data, 0, signed=False)
 

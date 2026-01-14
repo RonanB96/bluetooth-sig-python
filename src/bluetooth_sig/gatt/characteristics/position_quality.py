@@ -56,7 +56,7 @@ class PositionQualityCharacteristic(BaseCharacteristic[PositionQualityData]):
     POSITION_STATUS_MASK = 0x0180
     POSITION_STATUS_SHIFT = 7
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PositionQualityData:  # pylint: disable=too-many-locals
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> PositionQualityData:  # pylint: disable=too-many-locals
         """Parse position quality data according to Bluetooth specification.
 
         Format: Flags(2) + [Number of Beacons in Solution(1)] + [Number of Beacons in View(1)] +

@@ -18,7 +18,7 @@ class LinearPositionCharacteristic(BaseCharacteristic[float]):
 
     expected_length: int = 4  # sint32
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> float | None:
         """Decode linear position characteristic.
 
         Decodes a 32-bit signed integer representing position in 10^-7 m increments

@@ -18,7 +18,7 @@ class BooleanCharacteristic(BaseCharacteristic[bool]):
     _manual_value_type = ValueType.BOOL
     expected_length = 1
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bool:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> bool:
         """Parse boolean value.
 
         Args:

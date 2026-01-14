@@ -21,7 +21,7 @@ class DateTimeCharacteristic(BaseCharacteristic[datetime]):
     _manual_value_type = ValueType.DATETIME
     expected_length = 7
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> datetime:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> datetime:
         """Parse date time value.
 
         Args:

@@ -18,7 +18,7 @@ class DateOfBirthCharacteristic(BaseCharacteristic[DateOfBirthData]):
     Date of Birth characteristic.
     """
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> DateOfBirthData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> DateOfBirthData:
         """Decode Date of Birth from raw bytes.
 
         Args:

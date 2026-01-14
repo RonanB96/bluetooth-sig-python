@@ -50,7 +50,7 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic[BloodPressureFeature
     min_value: int = 0
     max_value: int = UINT16_MAX
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureFeatureData:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> BloodPressureFeatureData:
         """Parse blood pressure feature data according to Bluetooth specification.
 
         Format: Features(2) - 16-bit bitmap indicating supported features.

@@ -48,7 +48,7 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic[ElectricCurr
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
     def _decode_value(
-        self, data: bytearray, _ctx: CharacteristicContext | None = None
+        self, data: bytearray, _ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> ElectricCurrentSpecificationData:
         """Parse current specification data (2x uint16 in units of 0.01 A).
 

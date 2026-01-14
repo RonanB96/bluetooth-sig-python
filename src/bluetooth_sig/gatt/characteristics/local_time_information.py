@@ -89,6 +89,8 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic[LocalTimeInformation
         self,
         data: bytearray,
         ctx: CharacteristicContext | None = None,
+        *,
+        validate: bool = True,
     ) -> LocalTimeInformationData:
         """Parse local time information data (2 bytes: time zone + DST offset).
 
