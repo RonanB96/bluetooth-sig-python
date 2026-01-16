@@ -27,15 +27,34 @@ from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 
 ## How to Import for Common Tasks
 
-### Task: Parse characteristic data
+### Task: Parse characteristic data (type-safe)
 
-Use the primary API:
+Import the characteristic class directly for full type inference:
+
+```python
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+
+battery = BatteryLevelCharacteristic()
+level = battery.parse_value(bytearray([85]))  # IDE knows: int
+encoded = battery.build_value(85)  # Encode back to bytes
+```
+
+### Task: Parse unknown characteristics (dynamic)
+
+Use the Translator when scanning unknown devices:
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
-result = translator.parse_characteristic("2A19", bytes([85]))
+
+# UUID and data from device discovery (replace with actual BLE reads)
+uuid = "2A19"  # Battery Level
+raw_data = bytearray([75])
+
+value = translator.parse_characteristic(uuid, raw_data)
+info = translator.get_characteristic_info_by_uuid(uuid)
+print(f"{info.name}: {value}")  # Battery Level: 75
 ```
 
 ### Task: Parse advertising packets
@@ -50,38 +69,84 @@ raw_adv_bytes = bytearray([0x02, 0x01, 0x06])  # Example advertising data
 adv_data = parser.parse_advertising_data(raw_adv_bytes)
 ```
 
-### Task: Work with a specific characteristic
+### Task: Work with multiple characteristics (type-safe)
 
-Import the characteristic class directly:
+Import characteristic classes for full IDE support:
+
+```python
+from bluetooth_sig.gatt.characteristics import (
+    BatteryLevelCharacteristic,
+    BodySensorLocationCharacteristic,
+    HeartRateMeasurementCharacteristic,
+)
+
+# Example data (replace with actual BLE reads)
+hr_bytes = bytearray([0x00, 75])  # Heart rate 75 bpm
+loc_bytes = bytearray([0x01])  # Chest location
+bat_bytes = bytearray([85])  # 85% battery
+
+hr_char = HeartRateMeasurementCharacteristic()
+sensor_char = BodySensorLocationCharacteristic()
+battery_char = BatteryLevelCharacteristic()
+
+# All have full type inference
+hr_data = hr_char.parse_value(hr_bytes)  # HeartRateData
+location = sensor_char.parse_value(loc_bytes)  # int
+level = battery_char.parse_value(bat_bytes)  # int
+```
+
+### Task: Add type hints to your code
+
+Import the data types you need. The library returns parsed values directly,
+so type hints use the actual value types:
 
 ```python
 from bluetooth_sig.gatt.characteristics import (
     HeartRateMeasurementCharacteristic,
 )
 
+# Example data (replace with actual BLE reads)
+raw_bytes = bytearray([0x00, 72])  # Heart rate 72 bpm
+
+# Type annotations use the characteristic's return type
 hr_char = HeartRateMeasurementCharacteristic()
-hr_bytes = bytearray([0x00, 0x3C])  # Example: 60 BPM
-hr_data = hr_char.parse_value(hr_bytes)
+hr_data = hr_char.parse_value(raw_bytes)  # IDE knows: HeartRateData
+
+# For dynamic parsing, return type is Any
+from bluetooth_sig import BluetoothSIGTranslator
+
+translator = BluetoothSIGTranslator()
+uuid = "2A37"
+data = bytearray([0x00, 72])
+value = translator.parse_characteristic(uuid, data)  # Returns Any
 ```
 
-### Task: Add type hints to your code
+### Task: Use the Device abstraction (type-safe)
 
-Import the data types you need:
+Import Device with characteristic classes:
 
 ```python
-from bluetooth_sig import CharacteristicData, CharacteristicInfo
+# SKIP: Requires async context and BLE hardware
+from bluetooth_sig import Device
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+from examples.connection_managers.bleak_retry import (
+    BleakRetryConnectionManager,
+)
 
+connection_manager = BleakRetryConnectionManager("AA:BB:CC:DD:EE:FF")
+device = Device(connection_manager)
 
-def process_characteristic(data: CharacteristicData) -> None:
-    if data.parse_success:
-        print(f"{data.info.name}: {data.value}")
+# Type-safe read - IDE knows level is int
+battery = BatteryLevelCharacteristic()
+level = await device.read_characteristic(battery)
 ```
 
-### Task: Use the Device abstraction
+### Task: Use the Device abstraction (dynamic)
 
-Import Device and a connection manager:
+Import Device with Translator for unknown devices:
 
 ```python
+# SKIP: Requires async context and BLE hardware
 from bluetooth_sig import BluetoothSIGTranslator, Device
 from examples.connection_managers.bleak_retry import (
     BleakRetryConnectionManager,
@@ -90,9 +155,11 @@ from examples.connection_managers.bleak_retry import (
 translator = BluetoothSIGTranslator()
 connection_manager = BleakRetryConnectionManager("AA:BB:CC:DD:EE:FF")
 device = Device(connection_manager, translator)
-```
 
-**Note**: Device requires a connection manager for BLE operations (connect, read, write, notifications). The address is provided to the connection manager, eliminating redundancy. Example implementations for Bleak, SimpleBLE, and BluePy are in `examples/connection_managers/`.
+# Dynamic read - returns CharacteristicData with Any value
+uuid_from_discovery = "2A19"  # Example: Battery Level from service discovery
+result = await device.read_characteristic_by_uuid(uuid_from_discovery)
+```
 
 ### Task: Work with registries programmatically
 
@@ -211,7 +278,7 @@ from bluetooth_sig.advertising import AdvertisingPDUParser
 
 1. **Start with the primary API**: Always begin with `BluetoothSIGTranslator` at the top level
 2. **Import what you use**: Only import from submodules when you need specific features
-3. **Use type hints**: Import data types (`CharacteristicData`, `CharacteristicInfo`, etc.) for better type checking
+3. **Use type hints**: Import data types (`CharacteristicInfo`, etc.) for better type checking
 4. **Avoid wildcards**: Never use `from bluetooth_sig import *` - be explicit about what you're importing
 5. **Group imports logically**:
 
@@ -223,7 +290,7 @@ import asyncio
 from bleak import BleakClient
 
 # bluetooth-sig primary API
-from bluetooth_sig import BluetoothSIGTranslator, CharacteristicData
+from bluetooth_sig import BluetoothSIGTranslator, CharacteristicInfo
 
 # bluetooth-sig submodules
 from bluetooth_sig.advertising import AdvertisingPDUParser

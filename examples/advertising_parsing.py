@@ -122,9 +122,21 @@ def display_advertising_data(
 
     # LE features and security
     if parsed_data.ad_structures.properties.le_supported_features:
-        found_fields.append(
-            f"LE Supported Features: {parsed_data.ad_structures.properties.le_supported_features.hex()}"
-        )
+        features = parsed_data.ad_structures.properties.le_supported_features
+        feature_list: list[str] = []
+        if features.le_encryption:
+            feature_list.append("LE Encryption")
+        if features.le_2m_phy:
+            feature_list.append("LE 2M PHY")
+        if features.le_coded_phy:
+            feature_list.append("LE Coded PHY")
+        if features.le_extended_advertising:
+            feature_list.append("Extended Advertising")
+        if features.le_periodic_advertising:
+            feature_list.append("Periodic Advertising")
+
+        features_display = ", ".join(feature_list) if feature_list else features.raw_value.hex()
+        found_fields.append(f"LE Supported Features: {features_display}")
     else:
         not_found_fields.append("LE Supported Features")
 
@@ -251,7 +263,10 @@ def display_advertising_data(
 
     if parsed_data.ad_structures.directed.peripheral_connection_interval_range:
         range_data = parsed_data.ad_structures.directed.peripheral_connection_interval_range
-        found_fields.append(f"Peripheral Connection Interval Range: {range_data.hex()}")
+        found_fields.append(
+            f"Peripheral Connection Interval Range: {range_data.min_interval_ms:.2f}ms - "
+            f"{range_data.max_interval_ms:.2f}ms"
+        )
     else:
         not_found_fields.append("Peripheral Connection Interval Range")
 

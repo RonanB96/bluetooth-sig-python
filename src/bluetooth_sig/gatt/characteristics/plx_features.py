@@ -38,7 +38,9 @@ class PLXFeaturesCharacteristic(BaseCharacteristic[PLXFeatureFlags]):
 
     expected_length: int | None = 2
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> PLXFeatureFlags:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> PLXFeatureFlags:
         """Decode PLX features from raw bytes.
 
         Args:

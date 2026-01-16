@@ -290,7 +290,9 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic[GlucoseMeasurem
     )
     allow_variable_length: bool = True  # Variable optional fields
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> GlucoseMeasurementContextData:  # pylint: disable=too-many-locals
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> GlucoseMeasurementContextData:  # pylint: disable=too-many-locals
         """Parse glucose measurement context data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + [Extended Flags(1)] + [Carbohydrate ID(1) + Carb(2)] +

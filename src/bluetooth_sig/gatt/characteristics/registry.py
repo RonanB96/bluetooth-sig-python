@@ -216,8 +216,8 @@ class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseChara
         return instance.get_class_by_uuid(uuid)
 
     @classmethod
-    def create_characteristic(cls, uuid: str | BluetoothUUID | int) -> BaseCharacteristic[Any] | None:
-        """Create a characteristic instance from a UUID.
+    def get_characteristic(cls, uuid: str | BluetoothUUID | int) -> BaseCharacteristic[Any] | None:
+        """Get a characteristic instance from a UUID.
 
         Args:
             uuid: The characteristic UUID (string, BluetoothUUID, or int)

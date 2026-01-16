@@ -33,7 +33,61 @@ python -m pytest tests/ -k "battery" -v
 
 One of the key advantages of this library's architecture is that you can test BLE data parsing **without any BLE hardware**.
 
-### Unit Testing Example
+### Type-Safe Unit Testing (Recommended)
+
+For known characteristics, use characteristic classes directly for full type inference in your tests:
+
+```python
+import pytest
+
+from bluetooth_sig.gatt.characteristics import (
+    BatteryLevelCharacteristic,
+    TemperatureCharacteristic,
+)
+
+
+class TestTypeSafeParsing:
+    """Type-safe tests with full IDE support."""
+
+    def test_battery_level_parsing(self):
+        """Test battery level with type-safe API."""
+        battery = BatteryLevelCharacteristic()
+        mock_data = bytearray([75])  # 75% battery
+
+        # Parse - result is int (IDE knows!)
+        level = battery.parse_value(mock_data)
+
+        assert level == 75
+        assert 0 <= level <= 100
+
+    def test_temperature_parsing(self):
+        """Test temperature with type-safe API."""
+        temp = TemperatureCharacteristic()
+        mock_data = bytearray([0x64, 0x09])  # 24.04°C
+
+        # Parse - result is Temperature dataclass (IDE knows!)
+        result = temp.parse_value(mock_data)
+
+        assert result.temperature == pytest.approx(24.04, rel=0.01)
+        assert isinstance(result.temperature, float)
+
+    def test_round_trip(self):
+        """Test encode/decode round-trip."""
+        battery = BatteryLevelCharacteristic()
+        original_value = 85
+
+        # Encode
+        encoded = battery.build_value(original_value)
+
+        # Decode back
+        decoded = battery.parse_value(encoded)
+
+        assert decoded == original_value
+```
+
+### Dynamic Unit Testing (Discovery Scenarios)
+
+Use the Translator API when testing code that handles unknown devices or UUID-based discovery:
 
 ```python
 import pytest
@@ -41,46 +95,49 @@ import pytest
 from bluetooth_sig import BluetoothSIGTranslator
 
 
-class TestBLEParsing:
-    """Test BLE characteristic parsing without hardware."""
+class TestDynamicParsing:
+    """Test dynamic parsing for discovery scenarios."""
 
     def test_battery_level_parsing(self):
-        """Test battery level parsing with mock data."""
-        # ============================================
-        # SIMULATED DATA - For testing without hardware
-        # ============================================
-        BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
+        """Test battery level parsing with UUID from discovery."""
+        # Simulates UUID received from BLE device discovery
+        battery_uuid = "2A19"  # From device.services
         mock_data = bytearray([75])  # 75% battery
 
         translator = BluetoothSIGTranslator()
 
-        # Parse
-        result = translator.parse_characteristic(BATTERY_LEVEL_UUID, mock_data)
+        # Parse - library auto-identifies the characteristic
+        value = translator.parse_characteristic(battery_uuid, mock_data)
+        info = translator.get_characteristic_info_by_uuid(battery_uuid)
 
-        # Assert
-        assert result.value == 75
-        assert 0 <= result.value <= 100
+        assert value == 75
+        assert info.name == "Battery Level"
 
-    def test_temperature_parsing(self):
-        """Test temperature parsing with mock data."""
-        # ============================================
-        # SIMULATED DATA - For testing without hardware
-        # ============================================
-        TEMP_UUID = "2A6E"  # Temperature characteristic UUID
-        mock_data = bytearray([0x64, 0x09])  # 24.04°C
+    def test_unknown_characteristic(self):
+        """Test handling of unknown/custom characteristics."""
+        custom_uuid = "12345678-1234-1234-1234-123456789abc"
+        mock_data = bytearray([0x01, 0x02, 0x03])
 
         translator = BluetoothSIGTranslator()
-        result = translator.parse_characteristic(TEMP_UUID, mock_data)
 
-        assert result.value == 24.04
-        assert isinstance(result.value, float)
+        # Unknown characteristics are not supported
+        assert not translator.supports(custom_uuid)
+
+        # Attempting to parse raises CharacteristicParseError
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+
+        with pytest.raises(CharacteristicParseError):
+            translator.parse_characteristic(custom_uuid, mock_data)
 ```
 
 ### Testing Error Conditions
 
+Test error handling with characteristic classes (type-safe):
+
 ```python
 import pytest
 
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 from bluetooth_sig.gatt.exceptions import (
     InsufficientDataError,
     ValueRangeError,
@@ -88,34 +145,68 @@ from bluetooth_sig.gatt.exceptions import (
 
 
 class TestErrorHandling:
-    """Test error handling without hardware."""
+    """Test error handling with type-safe API."""
 
     def test_insufficient_data(self):
         """Test error when data is too short."""
-        BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
-        translator = BluetoothSIGTranslator()
+        battery = BatteryLevelCharacteristic()
 
-        # Empty data
         with pytest.raises(InsufficientDataError):
-            translator.parse_characteristic(BATTERY_LEVEL_UUID, bytearray([]))
+            battery.parse_value(bytearray([]))  # Empty data
 
     def test_out_of_range_value(self):
         """Test error when value is out of range."""
-        BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
-        translator = BluetoothSIGTranslator()
+        battery = BatteryLevelCharacteristic()
 
-        # Battery level > 100%
         with pytest.raises(ValueRangeError):
-            translator.parse_characteristic(
-                BATTERY_LEVEL_UUID, bytearray([150])
-            )
+            battery.parse_value(bytearray([150]))  # > 100%
 ```
 
 ## Mocking BLE Interactions
 
 When integrating with BLE libraries, you can mock the BLE operations:
 
-### Mocking bleak
+### Type-Safe Mocking with bleak (Recommended)
+
+```python
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+
+
+@pytest.fixture
+def mock_bleak_client():
+    """Mock BleakClient for testing."""
+    with patch("bleak.BleakClient") as mock:
+        client = AsyncMock()
+        mock.return_value.__aenter__.return_value = client
+        yield client
+
+
+@pytest.mark.asyncio
+async def test_read_battery_type_safe(mock_bleak_client):
+    """Test reading battery level with type-safe API."""
+    battery = BatteryLevelCharacteristic()
+    mock_battery_data = bytearray([85])  # 85% battery
+
+    # Setup mock
+    mock_bleak_client.read_gatt_char.return_value = mock_battery_data
+
+    # Read using characteristic's UUID property
+    raw_data = await mock_bleak_client.read_gatt_char(str(battery.uuid))
+
+    # Parse with type-safety - level is int
+    level = battery.parse_value(bytearray(raw_data))
+
+    assert level == 85
+    mock_bleak_client.read_gatt_char.assert_called_once_with(str(battery.uuid))
+```
+
+### Dynamic Mocking with bleak
+
+For testing discovery scenarios with unknown UUIDs:
 
 ```python
 from unittest.mock import AsyncMock, patch
@@ -135,57 +226,51 @@ def mock_bleak_client():
 
 
 @pytest.mark.asyncio
-async def test_read_battery_with_mock(mock_bleak_client):
-    """Test reading battery level with mocked BLE."""
-    # ============================================
-    # TEST SETUP - Mocked BLE data
-    # ============================================
-    BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
+async def test_read_battery_dynamic(mock_bleak_client):
+    """Test reading battery level with dynamic API."""
+    # UUID from device discovery
+    discovered_uuid = "2A19"
     mock_battery_data = bytearray([85])  # 85% battery
 
-    # Setup mock
     mock_bleak_client.read_gatt_char.return_value = mock_battery_data
 
-    # Your application code
     translator = BluetoothSIGTranslator()
-    raw_data = await mock_bleak_client.read_gatt_char(BATTERY_LEVEL_UUID)
-    result = translator.parse_characteristic(BATTERY_LEVEL_UUID, raw_data)
+    raw_data = await mock_bleak_client.read_gatt_char(discovered_uuid)
+    value = translator.parse_characteristic(discovered_uuid, raw_data)
+    info = translator.get_characteristic_info_by_uuid(discovered_uuid)
 
-    # Assert
-    assert result.value == 85
-    mock_bleak_client.read_gatt_char.assert_called_once_with(
-        BATTERY_LEVEL_UUID
-    )
+    assert value == 85
+    assert info.name == "Battery Level"
 ```
 
 ### Mocking simplepyble
 
 ```python
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+from bluetooth_sig.gatt.services import BatteryService
 
 
 def test_read_battery_simplepyble_mock():
     """Test reading battery with mocked simplepyble."""
-    # ============================================
-    # TEST SETUP - Mocked BLE data
-    # ============================================
-    SERVICE_UUID = "180F"  # Battery Service
-    BATTERY_LEVEL_UUID = "2A19"  # Battery Level characteristic
+    battery = BatteryLevelCharacteristic()
+    battery_service = BatteryService()
     mock_battery_data = bytes([75])  # 75% battery
 
     # Create mock peripheral
     mock_peripheral = Mock()
     mock_peripheral.read.return_value = mock_battery_data
 
-    # Your application code
-    translator = BluetoothSIGTranslator()
-    raw_data = mock_peripheral.read(SERVICE_UUID, BATTERY_LEVEL_UUID)
-    result = translator.parse_characteristic(
-        BATTERY_LEVEL_UUID, bytearray(raw_data)
+    # Read using service and characteristic UUIDs
+    raw_data = mock_peripheral.read(
+        str(battery_service.uuid), str(battery.uuid)
     )
 
-    # Assert
-    assert result.value == 75
+    # Parse with type-safety
+    level = battery.parse_value(bytearray(raw_data))
+
+    assert level == 75
     mock_peripheral.read.assert_called_once()
 ```
 
@@ -234,14 +319,11 @@ def test_with_factory():
     temp_data = TestDataFactory.temperature(24.04)
     humidity_data = TestDataFactory.humidity(49.22)
 
-    # Test parsing
+    # Test parsing - returns values directly (not wrapped)
+    assert translator.parse_characteristic(BATTERY_UUID, battery_data) == 85
+    assert translator.parse_characteristic(TEMP_UUID, temp_data) == 24.04
     assert (
-        translator.parse_characteristic(BATTERY_UUID, battery_data).value == 85
-    )
-    assert translator.parse_characteristic(TEMP_UUID, temp_data).value == 24.04
-    assert (
-        translator.parse_characteristic(HUMIDITY_UUID, humidity_data).value
-        == 49.22
+        translator.parse_characteristic(HUMIDITY_UUID, humidity_data) == 49.22
     )
 ```
 
@@ -268,8 +350,8 @@ def test_battery_levels(battery_level, expected):
     BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
     translator = BluetoothSIGTranslator()
     data = bytearray([battery_level])
-    result = translator.parse_characteristic(BATTERY_LEVEL_UUID, data)
-    assert result.value == expected
+    value = translator.parse_characteristic(BATTERY_LEVEL_UUID, data)
+    assert value == expected
 
 
 @pytest.mark.parametrize(
@@ -319,10 +401,10 @@ def valid_temp_data():
 def test_with_fixtures(translator, valid_battery_data):
     """Test using fixtures."""
     BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
-    result = translator.parse_characteristic(
+    value = translator.parse_characteristic(
         BATTERY_LEVEL_UUID, valid_battery_data
     )
-    assert result.value == 75
+    assert value == 75
 ```
 
 ## Integration Testing
@@ -355,10 +437,10 @@ class TestIntegration:
         for uuid, data in sensor_data.items():
             results[uuid] = translator.parse_characteristic(uuid, data)
 
-        # Verify all parsed correctly
-        assert results[BATTERY_UUID].value == 85
-        assert results[TEMP_UUID].value == 24.04
-        assert results[HUMIDITY_UUID].value == 49.22
+        # Verify all parsed correctly - values returned directly
+        assert results[BATTERY_UUID] == 85
+        assert results[TEMP_UUID] == 24.04
+        assert results[HUMIDITY_UUID] == 49.22
 
     def test_uuid_resolution_workflow(self):
         """Test UUID resolution workflow."""
@@ -480,10 +562,10 @@ jobs:
 def test_battery_valid_value():
     BATTERY_LEVEL_UUID = "2A19"  # UUID from BLE spec
     translator = BluetoothSIGTranslator()
-    result = translator.parse_characteristic(
+    value = translator.parse_characteristic(
         BATTERY_LEVEL_UUID, bytearray([75])
     )
-    assert result.value == 75
+    assert value == 75
 
 
 def test_battery_invalid_value():
@@ -521,10 +603,10 @@ def test_temperature_parsing():
     translator = BluetoothSIGTranslator()
 
     # Act
-    result = translator.parse_characteristic(TEMP_UUID, data)
+    value = translator.parse_characteristic(TEMP_UUID, data)
 
     # Assert
-    assert result.value == 24.04
+    assert value == 24.04
 ```
 
 ## Next Steps

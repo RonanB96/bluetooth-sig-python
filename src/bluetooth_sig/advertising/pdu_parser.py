@@ -20,14 +20,23 @@ from bluetooth_sig.registry.core.appearance_values import appearance_values_regi
 from bluetooth_sig.registry.core.class_of_device import class_of_device_registry
 from bluetooth_sig.types import (
     AdvertisingData,
+    AdvertisingDataInfo,
     AdvertisingDataStructures,
+    AuxiliaryPointer,
     BLEAdvertisingFlags,
     BLEAdvertisingPDU,
     BLEExtendedHeader,
+    ConnectionIntervalRange,
+    CTEInfo,
+    CTEType,
     ExtendedAdvertisingData,
+    ExtendedHeaderFlags,
+    LEFeatures,
     PDUHeaderFlags,
     PDULayout,
     PDUType,
+    PHYType,
+    SyncInfo,
 )
 from bluetooth_sig.types.ad_types_constants import ADType
 from bluetooth_sig.types.appearance import AppearanceData
@@ -35,6 +44,37 @@ from bluetooth_sig.types.uri import URIData
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 logger = logging.getLogger(__name__)
+
+
+class _ExtendedHeaderBitMasks:
+    """Bit masks for parsing extended header fields (Core Spec Vol 6, Part B)."""
+
+    # CTE Info field (1 byte)
+    CTE_TIME_MASK: int = 0x1F  # Bits 0-4: CTE time (0-19)
+    CTE_TYPE_SHIFT: int = 6
+    CTE_TYPE_MASK: int = 0x03  # Bits 6-7: CTE type
+
+    # Advertising Data Info (ADI) field (2 bytes)
+    ADI_DID_MASK: int = 0x0FFF  # Bits 0-11: Data ID
+    ADI_SID_SHIFT: int = 12
+    ADI_SID_MASK: int = 0x0F  # Bits 12-15: Set ID
+
+    # Auxiliary Pointer field (3 bytes)
+    AUX_CHANNEL_MASK: int = 0x3F  # Bits 0-5: Channel index
+    AUX_CA_SHIFT: int = 6
+    AUX_OFFSET_UNITS_SHIFT: int = 7
+    AUX_OFFSET_SHIFT: int = 8
+    AUX_OFFSET_MASK: int = 0x1FFF  # Bits 8-20: 13-bit offset
+    AUX_PHY_SHIFT: int = 21
+    AUX_PHY_MASK: int = 0x07  # Bits 21-23: PHY
+
+    # SyncInfo field (18 bytes)
+    SYNC_OFFSET_MASK: int = 0x1FFF  # Bits 0-12: 13-bit offset
+    SYNC_OFFSET_UNITS_SHIFT: int = 13
+    SYNC_CHANNEL_MAP_MASK: int = 0x1FFFFFFFFF  # 37-bit channel map
+    SYNC_SCA_SHIFT: int = 5
+    SYNC_SCA_MASK: int = 0x07  # Bits 5-7: SCA
+    SYNC_ADDR_TYPE_SHIFT: int = 4
 
 
 class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
@@ -135,7 +175,7 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
         if len(data) < PDULayout.MIN_EXTENDED_PDU:
             return None
 
-        header = int.from_bytes(data[0 : PDULayout.PDU_HEADER], byteorder="little")
+        header = DataParser.parse_int16(data, 0, signed=False)
         pdu_type = header & PDUHeaderFlags.TYPE_MASK
         tx_add = bool(header & PDUHeaderFlags.TX_ADD_MASK)
         rx_add = bool(header & PDUHeaderFlags.RX_ADD_MASK)
@@ -174,6 +214,118 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
             extended_header=extended_header,
         )
 
+    @staticmethod
+    def _parse_address_to_string(addr_bytes: bytes) -> str:
+        """Convert 6-byte Bluetooth address to formatted string.
+
+        Args:
+            addr_bytes: 6-byte address in little-endian order
+
+        Returns:
+            Formatted address string (XX:XX:XX:XX:XX:XX)
+        """
+        return ":".join(f"{b:02X}" for b in addr_bytes[::-1])
+
+    @staticmethod
+    def _parse_cte_info(data: bytes) -> CTEInfo:
+        """Parse CTE info from raw byte.
+
+        Args:
+            data: 1-byte CTE info
+
+        Returns:
+            Parsed CTEInfo struct
+        """
+        cte_byte = data[0]
+        cte_time = cte_byte & _ExtendedHeaderBitMasks.CTE_TIME_MASK
+        cte_type_raw = (cte_byte >> _ExtendedHeaderBitMasks.CTE_TYPE_SHIFT) & _ExtendedHeaderBitMasks.CTE_TYPE_MASK
+        return CTEInfo(cte_time=cte_time, cte_type=CTEType(cte_type_raw))
+
+    @staticmethod
+    def _parse_advertising_data_info(data: bytes) -> AdvertisingDataInfo:
+        """Parse Advertising Data Info (ADI) from raw bytes.
+
+        Args:
+            data: 2-byte ADI field
+
+        Returns:
+            Parsed AdvertisingDataInfo struct
+        """
+        adi_value = DataParser.parse_int16(data, 0, signed=False)
+        did = adi_value & _ExtendedHeaderBitMasks.ADI_DID_MASK
+        sid = (adi_value >> _ExtendedHeaderBitMasks.ADI_SID_SHIFT) & _ExtendedHeaderBitMasks.ADI_SID_MASK
+        return AdvertisingDataInfo(advertising_data_id=did, advertising_set_id=sid)
+
+    @staticmethod
+    def _parse_auxiliary_pointer_struct(data: bytes) -> AuxiliaryPointer:
+        """Parse Auxiliary Pointer from raw bytes.
+
+        Args:
+            data: 3-byte AuxPtr field
+
+        Returns:
+            Parsed AuxiliaryPointer struct
+        """
+        aux_value = DataParser.parse_int24(data, 0, signed=False)
+        channel_index = aux_value & _ExtendedHeaderBitMasks.AUX_CHANNEL_MASK
+        ca = bool((aux_value >> _ExtendedHeaderBitMasks.AUX_CA_SHIFT) & 0x01)
+        offset_units = (aux_value >> _ExtendedHeaderBitMasks.AUX_OFFSET_UNITS_SHIFT) & 0x01
+        aux_offset = (aux_value >> _ExtendedHeaderBitMasks.AUX_OFFSET_SHIFT) & _ExtendedHeaderBitMasks.AUX_OFFSET_MASK
+        aux_phy_raw = (aux_value >> _ExtendedHeaderBitMasks.AUX_PHY_SHIFT) & _ExtendedHeaderBitMasks.AUX_PHY_MASK
+        aux_phy = PHYType(min(aux_phy_raw, PHYType.LE_CODED))  # Clamp to valid range
+        return AuxiliaryPointer(
+            channel_index=channel_index,
+            ca=ca,
+            offset_units=offset_units,
+            aux_offset=aux_offset,
+            aux_phy=aux_phy,
+        )
+
+    def _parse_sync_info(self, data: bytes) -> SyncInfo:
+        """Parse SyncInfo from raw bytes.
+
+        Args:
+            data: 18-byte SyncInfo field
+
+        Returns:
+            Parsed SyncInfo struct
+        """
+        # Bytes 0-1: Sync packet offset and units (13 bits offset + 1 bit units + 2 reserved)
+        offset_field = DataParser.parse_int16(data, 0, signed=False)
+        sync_packet_offset = offset_field & _ExtendedHeaderBitMasks.SYNC_OFFSET_MASK
+        offset_units = (offset_field >> _ExtendedHeaderBitMasks.SYNC_OFFSET_UNITS_SHIFT) & 0x01
+
+        # Bytes 2-3: Interval
+        interval = DataParser.parse_int16(data, 2, signed=False)
+
+        # Bytes 4-8: Channel map (37 bits, stored in 5 bytes)
+        # Note: 40-bit field exceeds DataParser's 32-bit limit, use int.from_bytes directly
+        channel_map = int.from_bytes(data[4:9], byteorder="little") & _ExtendedHeaderBitMasks.SYNC_CHANNEL_MAP_MASK
+
+        # Byte 9: SCA (3 bits) and other fields
+        sca_byte = DataParser.parse_int8(data, 9, signed=False)
+        sleep_clock_accuracy = (
+            sca_byte >> _ExtendedHeaderBitMasks.SYNC_SCA_SHIFT
+        ) & _ExtendedHeaderBitMasks.SYNC_SCA_MASK
+
+        # Bytes 10-15: Access Address (we interpret this as advertiser address)
+        advertising_address = self._parse_address_to_string(data[10:16])
+        advertising_address_type = (sca_byte >> _ExtendedHeaderBitMasks.SYNC_ADDR_TYPE_SHIFT) & 0x01
+
+        # Bytes 16-17: Sync counter/CRC init
+        sync_counter = DataParser.parse_int16(data, 16, signed=False)
+
+        return SyncInfo(
+            sync_packet_offset=sync_packet_offset,
+            offset_units=offset_units,
+            interval=interval,
+            channel_map=channel_map,
+            sleep_clock_accuracy=sleep_clock_accuracy,
+            advertising_address=advertising_address,
+            advertising_address_type=advertising_address_type,
+            sync_counter=sync_counter,
+        )
+
     def _parse_extended_header(self, data: bytes) -> BLEExtendedHeader | None:
         """Parse extended header from PDU data.
 
@@ -188,81 +340,107 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
         if len(data) < 1:
             return None
 
-        header = BLEExtendedHeader()
-        header.extended_header_length = data[0]
+        extended_header_length = data[0]
 
-        if len(data) < header.extended_header_length + 1:
+        if len(data) < extended_header_length + 1:
             return None
 
         adv_mode = data[1]
-        header.adv_mode = adv_mode
-
         offset = PDULayout.ADV_ADDR_OFFSET  # Start after length and mode bytes
 
-        if header.has_extended_advertiser_address:
+        extended_advertiser_address = ""
+        extended_target_address = ""
+        cte_info: CTEInfo | None = None
+        advertising_data_info: AdvertisingDataInfo | None = None
+        auxiliary_pointer: AuxiliaryPointer | None = None
+        sync_info: SyncInfo | None = None
+        tx_power: int | None = None
+        additional_controller_advertising_data = b""
+
+        # Check ADV_ADDR flag
+        if adv_mode & ExtendedHeaderFlags.ADV_ADDR:
             if offset + PDULayout.BLE_ADDR > len(data):
                 return None
-            header.extended_advertiser_address = data[offset : offset + PDULayout.BLE_ADDR]
+            extended_advertiser_address = self._parse_address_to_string(data[offset : offset + PDULayout.BLE_ADDR])
             offset += PDULayout.BLE_ADDR
 
-        if header.has_extended_target_address:
+        # Check TARGET_ADDR flag
+        if adv_mode & ExtendedHeaderFlags.TARGET_ADDR:
             if offset + PDULayout.BLE_ADDR > len(data):
                 return None
-            header.extended_target_address = data[offset : offset + PDULayout.BLE_ADDR]
+            extended_target_address = self._parse_address_to_string(data[offset : offset + PDULayout.BLE_ADDR])
             offset += PDULayout.BLE_ADDR
 
-        if header.has_cte_info:
+        # Check CTE_INFO flag
+        if adv_mode & ExtendedHeaderFlags.CTE_INFO:
             if offset + PDULayout.CTE_INFO > len(data):
                 return None
-            header.cte_info = data[offset : offset + PDULayout.CTE_INFO]
+            cte_info = self._parse_cte_info(data[offset : offset + PDULayout.CTE_INFO])
             offset += PDULayout.CTE_INFO
 
-        if header.has_advertising_data_info:
+        # Check ADV_DATA_INFO flag
+        if adv_mode & ExtendedHeaderFlags.ADV_DATA_INFO:
             if offset + PDULayout.ADV_DATA_INFO > len(data):
                 return None
-            header.advertising_data_info = data[offset : offset + PDULayout.ADV_DATA_INFO]
+            advertising_data_info = self._parse_advertising_data_info(data[offset : offset + PDULayout.ADV_DATA_INFO])
             offset += PDULayout.ADV_DATA_INFO
 
-        if header.has_auxiliary_pointer:
+        # Check AUX_PTR flag
+        if adv_mode & ExtendedHeaderFlags.AUX_PTR:
             if offset + PDULayout.AUX_PTR > len(data):
                 return None
-            header.auxiliary_pointer = data[offset : offset + PDULayout.AUX_PTR]
+            auxiliary_pointer = self._parse_auxiliary_pointer_struct(data[offset : offset + PDULayout.AUX_PTR])
             offset += PDULayout.AUX_PTR
 
-        if header.has_sync_info:
+        # Check SYNC_INFO flag
+        if adv_mode & ExtendedHeaderFlags.SYNC_INFO:
             if offset + PDULayout.SYNC_INFO > len(data):
                 return None
-            header.sync_info = data[offset : offset + PDULayout.SYNC_INFO]
+            sync_info = self._parse_sync_info(data[offset : offset + PDULayout.SYNC_INFO])
             offset += PDULayout.SYNC_INFO
 
-        if header.has_tx_power:
+        # Check TX_POWER flag
+        if adv_mode & ExtendedHeaderFlags.TX_POWER:
             if offset + PDULayout.TX_POWER > len(data):
                 return None
-            header.tx_power = int.from_bytes(
-                data[offset : offset + PDULayout.TX_POWER],
-                byteorder="little",
-                signed=True,
-            )
+            tx_power = DataParser.parse_int8(data, offset, signed=True)
             offset += PDULayout.TX_POWER
 
-        if header.has_additional_controller_data:
-            header.additional_controller_advertising_data = data[offset:]
+        # Check ACAD flag
+        if adv_mode & ExtendedHeaderFlags.ACAD:
+            additional_controller_advertising_data = data[offset:]
 
-        return header
+        return BLEExtendedHeader(
+            extended_header_length=extended_header_length,
+            adv_mode=adv_mode,
+            extended_advertiser_address=extended_advertiser_address,
+            extended_target_address=extended_target_address,
+            cte_info=cte_info,
+            advertising_data_info=advertising_data_info,
+            auxiliary_pointer=auxiliary_pointer,
+            sync_info=sync_info,
+            tx_power=tx_power,
+            additional_controller_advertising_data=additional_controller_advertising_data,
+        )
 
-    def _parse_auxiliary_packets(self, aux_ptr: bytes) -> list[BLEAdvertisingPDU]:
+    def _parse_auxiliary_packets(self, aux_ptr: AuxiliaryPointer) -> list[BLEAdvertisingPDU]:
         """Parse auxiliary packets referenced by auxiliary pointer.
 
         Args:
-            aux_ptr: Auxiliary pointer data
+            aux_ptr: Parsed AuxiliaryPointer struct
 
         Returns:
             List of auxiliary packets (currently returns empty list)
 
+        Note:
+            This is a placeholder. Full implementation would require
+            receiving raw PDU data from the auxiliary channel specified
+            in the AuxiliaryPointer (channel_index, aux_offset, aux_phy).
         """
-        if len(aux_ptr) != PDULayout.AUX_PTR:
-            return []
-
+        # Auxiliary packets are received over the air on a different channel
+        # at a later time. This cannot be parsed from a single PDU capture.
+        # The AuxiliaryPointer tells us where to listen, not the data itself.
+        _ = aux_ptr  # Acknowledge the parameter for future implementation
         return []
 
     def _parse_legacy_advertising(self, raw_data: bytes) -> AdvertisingData:
@@ -405,6 +583,11 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
                 parsed.core.service_data[service_uuid] = ad_data[2:]
                 if service_uuid not in parsed.core.service_uuids:
                     parsed.core.service_uuids.append(service_uuid)
+            elif ad_type == ADType.SERVICE_DATA_32BIT and len(ad_data) >= 4:
+                service_uuid = BluetoothUUID(DataParser.parse_int32(ad_data, 0, signed=False))
+                parsed.core.service_data[service_uuid] = ad_data[4:]
+                if service_uuid not in parsed.core.service_uuids:
+                    parsed.core.service_uuids.append(service_uuid)
             elif ad_type == ADType.SERVICE_DATA_128BIT and len(ad_data) >= 16:
                 service_uuid = BluetoothUUID(ad_data[:16].hex().upper())
                 parsed.core.service_data[service_uuid] = ad_data[16:]
@@ -417,7 +600,7 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
             elif ad_type == ADType.TRANSPORT_DISCOVERY_DATA:
                 parsed.location.transport_discovery_data = ad_data
             elif ad_type == ADType.LE_SUPPORTED_FEATURES:
-                parsed.properties.le_supported_features = ad_data
+                parsed.properties.le_supported_features = LEFeatures(raw_value=ad_data)
             elif ad_type == ADType.ENCRYPTED_ADVERTISING_DATA:
                 parsed.security.encrypted_advertising_data = ad_data
             elif ad_type == ADType.PERIODIC_ADVERTISING_RESPONSE_TIMING_INFORMATION:
@@ -465,8 +648,13 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
                 parsed.oob_security.security_manager_tk_value = ad_data
             elif ad_type == ADType.SECURITY_MANAGER_OUT_OF_BAND_FLAGS:
                 parsed.oob_security.security_manager_oob_flags = ad_data
-            elif ad_type == ADType.SLAVE_CONNECTION_INTERVAL_RANGE:
-                parsed.directed.peripheral_connection_interval_range = ad_data
+            elif ad_type == ADType.SLAVE_CONNECTION_INTERVAL_RANGE and len(ad_data) >= 4:
+                min_interval = DataParser.parse_int16(ad_data, 0, signed=False)
+                max_interval = DataParser.parse_int16(ad_data, 2, signed=False)
+                parsed.directed.peripheral_connection_interval_range = ConnectionIntervalRange(
+                    min_interval=min_interval,
+                    max_interval=max_interval,
+                )
             elif ad_type == ADType.SECURE_CONNECTIONS_CONFIRMATION_VALUE:
                 parsed.oob_security.secure_connections_confirmation = ad_data
             elif ad_type == ADType.SECURE_CONNECTIONS_RANDOM_VALUE:

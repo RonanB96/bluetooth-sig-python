@@ -34,7 +34,9 @@ class DayDateTimeCharacteristic(BaseCharacteristic[DayDateTimeData]):
     _manual_value_type = "DayDateTimeData"
     expected_length = 8
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> DayDateTimeData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> DayDateTimeData:
         """Parse day date time value.
 
         Args:

@@ -50,7 +50,9 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic[TemperatureMeasure
     max_length: int | None = 13  # + Timestamp(7) + TemperatureType(1) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> TemperatureMeasurementData:  # pylint: disable=too-many-locals
         """Parse temperature measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Temperature Value(4) + [Timestamp(7)] + [Temperature Type(1)].

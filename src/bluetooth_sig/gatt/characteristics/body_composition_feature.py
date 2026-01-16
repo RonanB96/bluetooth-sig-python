@@ -116,7 +116,9 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic[BodyCompositionFea
     max_length: int = 4  # Features(4) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> BodyCompositionFeatureData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> BodyCompositionFeatureData:
         """Parse body composition feature data according to Bluetooth specification.
 
         Format: Features(4 bytes) - bitmask indicating supported measurements.

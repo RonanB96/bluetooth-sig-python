@@ -31,7 +31,9 @@ class BondManagementFeatureCharacteristic(BaseCharacteristic[BondManagementFeatu
     min_length = 3
     max_length = 3
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> BondManagementFeatureData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> BondManagementFeatureData:
         """Decode Bond Management Feature data from bytes.
 
         Args:

@@ -53,7 +53,9 @@ class BootMouseInputReportCharacteristic(BaseCharacteristic[BootMouseInputReport
     max_length = 4
     allow_variable_length = True
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> BootMouseInputReportData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> BootMouseInputReportData:
         """Parse HID mouse report.
 
         Args:

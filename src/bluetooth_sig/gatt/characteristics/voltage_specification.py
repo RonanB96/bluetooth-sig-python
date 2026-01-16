@@ -49,7 +49,9 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic[VoltageSpecification
     # Override since decode_value returns structured VoltageSpecificationData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> VoltageSpecificationData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> VoltageSpecificationData:
         """Parse voltage specification data (2x uint16 in units of 1/64 V).
 
         Args:

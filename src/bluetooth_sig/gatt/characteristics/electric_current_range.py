@@ -46,7 +46,9 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic[ElectricCurrentRange
     # Override since decode_value returns structured ElectricCurrentRangeData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> ElectricCurrentRangeData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> ElectricCurrentRangeData:
         """Parse current range data (2x uint16 in units of 0.01 A).
 
         Args:

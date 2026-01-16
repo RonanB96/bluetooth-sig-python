@@ -18,7 +18,9 @@ class AccelerationCharacteristic(BaseCharacteristic[float]):
 
     _manual_unit: str | None = "m/s²"  # Manual override due to YAML typo (metres_per_seconds_squared)
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> float | None:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> float | None:
         """Decode acceleration characteristic.
 
         Decodes a 32-bit signed integer representing acceleration in 0.001 m/s² increments

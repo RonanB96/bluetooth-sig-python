@@ -32,7 +32,9 @@ class SupportedNewAlertCategoryCharacteristic(BaseCharacteristic[AlertCategoryBi
     min_length: int | None = 1
     max_length: int | None = 2
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> AlertCategoryBitMask:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> AlertCategoryBitMask:
         """Decode Supported New Alert Category data from bytes.
 
         Args:

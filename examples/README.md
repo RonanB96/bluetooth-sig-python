@@ -139,5 +139,4 @@ This examples directory follows these principles:
 1. **Minimal Overlap** - Each example focuses on a specific use case
 1. **Clean Separation** - Utilities are organized by functionality in the `utils/` package
 1. **Library Agnostic** - Core SIG parsing works with any BLE library
-1. **Production Ready** - Examples demonstrate robust patterns suitable for production use
-1. **Performance Aware** - Benchmarks and profiling tools help optimize real-world usage
+2. **Performance Aware** - Benchmarks and profiling tools help optimize real-world usage

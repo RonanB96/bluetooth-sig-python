@@ -20,7 +20,9 @@ class AppearanceCharacteristic(BaseCharacteristic[AppearanceData]):
     _manual_value_type = "AppearanceData"
     expected_length = 2
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> AppearanceData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> AppearanceData:
         """Parse appearance value with human-readable info.
 
         Args:

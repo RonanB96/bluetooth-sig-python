@@ -181,8 +181,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         # Handle string UUID input (not type-safe path)
         logger.debug("Parsing characteristic UUID=%s, data_len=%d", char, len(raw_data))
 
-        # Create characteristic instance for parsing
-        characteristic = CharacteristicRegistry.create_characteristic(char)
+        # Get characteristic instance for parsing
+        characteristic = CharacteristicRegistry.get_characteristic(char)
 
         if characteristic:
             logger.debug("Found parser for UUID=%s: %s", char, type(characteristic).__name__)
@@ -278,8 +278,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         # Handle string UUID input (not type-safe path)
         logger.debug("Encoding characteristic UUID=%s, value=%s", char, value)
 
-        # Create characteristic instance
-        characteristic = CharacteristicRegistry.create_characteristic(char)
+        # Get characteristic instance
+        characteristic = CharacteristicRegistry.get_characteristic(char)
         if not characteristic:
             raise ValueError(f"No encoder available for characteristic UUID: {char}")
 
@@ -525,19 +525,22 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             # Instantiation may fail if characteristic requires parameters or has missing dependencies
             return None
 
-    def get_service_info_by_name(self, name: str) -> ServiceInfo | None:
-        """Get service info by name instead of UUID.
+    def get_service_info_by_name(self, name: str | ServiceName) -> ServiceInfo | None:
+        """Get service info by name or enum instead of UUID.
 
         Args:
-            name: Service name
+            name: Service name string or ServiceName enum
 
         Returns:
             ServiceInfo if found, None otherwise
 
         """
+        # Convert enum to string value if needed
+        name_str = name.value if isinstance(name, ServiceName) else name
+
         # Use UUID registry for name-based lookup
         try:
-            uuid_info = uuid_registry.get_service_info(name)
+            uuid_info = uuid_registry.get_service_info(name_str)
             if uuid_info:
                 return ServiceInfo(uuid=uuid_info.uuid, name=uuid_info.name, characteristics=[])
         except Exception:  # pylint: disable=broad-exception-caught
@@ -832,7 +835,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         uuid_to_optional_deps: dict[str, list[str]] = {}
 
         for uuid in characteristic_data:
-            characteristic = CharacteristicRegistry.create_characteristic(uuid)
+            characteristic = CharacteristicRegistry.get_characteristic(uuid)
             if characteristic is None:
                 continue
 
@@ -1214,10 +1217,26 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         # The sync implementation already handles dependency ordering
         return self.parse_characteristics(char_data, ctx)
 
+    @overload
     async def encode_characteristic_async(
         self,
-        uuid: str | BluetoothUUID,
-        value: Any,  # noqa: ANN401
+        char: type[BaseCharacteristic[T]],
+        value: T,
+        validate: bool = ...,
+    ) -> bytes: ...
+
+    @overload
+    async def encode_characteristic_async(
+        self,
+        char: str | BluetoothUUID,
+        value: Any,  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+        validate: bool = ...,
+    ) -> bytes: ...
+
+    async def encode_characteristic_async(
+        self,
+        char: str | BluetoothUUID | type[BaseCharacteristic[T]],
+        value: T | Any,  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
         validate: bool = True,
     ) -> bytes:
         """Encode characteristic value in an async-compatible manner.
@@ -1227,8 +1246,9 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         a fast, CPU-bound operation that doesn't benefit from async I/O.
 
         Args:
-            uuid: The characteristic UUID (string or BluetoothUUID)
-            value: The value to encode (dataclass, dict, or primitive)
+            char: Characteristic class (type-safe) or UUID string/BluetoothUUID (not type-safe).
+            value: The value to encode (dataclass, dict, or primitive).
+                   Type is checked when using characteristic class.
             validate: If True, validates before encoding (default: True)
 
         Returns:
@@ -1237,11 +1257,23 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Example::
 
             async with BleakClient(address) as client:
-                data = await translator.encode_characteristic_async("2A19", 85)
-                await client.write_gatt_char("2A19", data)
+                from bluetooth_sig.gatt.characteristics import AlertLevelCharacteristic
+                from bluetooth_sig.gatt.characteristics.alert_level import AlertLevel
+
+                # Type-safe: pass characteristic class
+                data: bytes = await translator.encode_characteristic_async(AlertLevelCharacteristic, AlertLevel.HIGH)
+                await client.write_gatt_char(str(AlertLevelCharacteristic().uuid), data)
+
+                # Not type-safe: pass UUID string
+                data = await translator.encode_characteristic_async("2A06", 2)
+                await client.write_gatt_char("2A06", data)
         """
+        # Handle characteristic class input (type-safe path)
+        if isinstance(char, type) and issubclass(char, BaseCharacteristic):
+            return self.encode_characteristic(char, value, validate)
+
         # Convert to string for consistency with sync API
-        uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
+        uuid_str = str(char) if isinstance(char, BluetoothUUID) else char
 
         # Delegate to sync implementation
         return self.encode_characteristic(uuid_str, value, validate)
@@ -1279,8 +1311,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 await client.write_gatt_char("2C1D", data)
 
         """
-        # Create characteristic instance
-        characteristic = CharacteristicRegistry.create_characteristic(uuid)
+        # Get characteristic instance
+        characteristic = CharacteristicRegistry.get_characteristic(uuid)
         if not characteristic:
             raise ValueError(f"No characteristic found for UUID: {uuid}")
 

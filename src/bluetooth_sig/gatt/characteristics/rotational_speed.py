@@ -18,7 +18,9 @@ class RotationalSpeedCharacteristic(BaseCharacteristic[float]):
 
     _manual_unit: str | None = "RPM"  # YAML ID mismatch: has rotational_speed.*, should be angular_velocity.*
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> float | None:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> float | None:
         """Decode rotational speed characteristic.
 
         Decodes a 32-bit signed integer representing speed in RPM

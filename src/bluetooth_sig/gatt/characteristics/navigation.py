@@ -74,7 +74,9 @@ class NavigationCharacteristic(BaseCharacteristic[NavigationData]):
     WAYPOINT_REACHED_MASK = 0x0080
     DESTINATION_REACHED_MASK = 0x0100
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> NavigationData:  # pylint: disable=too-many-locals
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> NavigationData:  # pylint: disable=too-many-locals
         """Parse navigation data according to Bluetooth specification.
 
         Format: Flags(2) + Bearing(2) + Heading(2) + [Remaining Distance(3)] +

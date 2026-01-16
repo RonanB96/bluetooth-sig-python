@@ -17,7 +17,9 @@ class TemperatureCharacteristic(BaseCharacteristic[float]):
 
     expected_type: type | None = float  # Allows both float and None (for unknown value)
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> float | None:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> float | None:
         """Decode temperature characteristic.
 
         Decodes a 16-bit signed integer representing temperature in 0.01°C increments

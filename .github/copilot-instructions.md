@@ -1,16 +1,15 @@
 ﻿# Bluetooth SIG Standards Library - AI Agent Guidelines
 
-**TL;DR**: Initialize submodule → Check docs → Run tests → Fix → Lint → Done
+**TL;DR**: Check docs → Run tests → Fix → Lint → Done
 
 ---
 
-## Quick Start Checklist
+## Quick Start Checklist (Characteristic Implementation)
 
-Before any implementation:
-- [ ] **Submodule initialized**: `git submodule init && git submodule update`
-- [ ] **Documentation consulted**: Bluetooth SIG specs + Python docs
-- [ ] **Think first**: Use thinking tools to plan approach and edge cases
-- [ ] **Tests created**: Success + 2 failure modes minimum
+Before implementing a new characteristic:
+- [ ] **SIG spec consulted**: Check Bluetooth SIG assigned numbers + GSS YAML
+- [ ] **Think first**: Plan approach, edge cases, special values
+- [ ] **Tests created**: Success + 2 failure cases minimum
 - [ ] **Quality gates pass**: See validation commands below
 
 ---
@@ -78,7 +77,9 @@ The translation layer must remain framework-agnostic to support multiple backend
 ### 7. API Consistency
 **Custom and SIG characteristics MUST have identical usage patterns.**
 - Users should NOT need to know if characteristic is SIG-defined or custom
-- Both must support same methods: `decode_value()`, `encode_value()`
+- Both must support same methods: `parse_value()`, `build_value()`
+- **Primary API**: Direct characteristic/service classes (type-safe, IDE autocomplete)
+- **Secondary API**: `BluetoothSIGTranslator` for unknown/scanned UUIDs (returns `Any`)
 - See: `.github/instructions/bluetooth-gatt.instructions.md` for patterns
 
 ### 8. Quality Gates Must Pass
@@ -142,9 +143,10 @@ ALL must pass with zero errors. No exceptions.
 ### Three-Layer Architecture
 ```
 src/bluetooth_sig/
-├── core/              # High-level API (BluetoothSIGTranslator)
+├── core/              # BluetoothSIGTranslator, AsyncParsingSession
+├── device/            # Device class (high-level abstraction)
 ├── gatt/              # GATT parsing - NO framework imports allowed
-│   ├── characteristics/   # 70+ SIG characteristic implementations
+│   ├── characteristics/   # 200+ SIG characteristic implementations
 │   └── services/          # Service definitions
 └── registry/          # UUID resolution from YAML (bluetooth_sig/ submodule)
 ```

@@ -30,7 +30,9 @@ class ScanIntervalWindowCharacteristic(BaseCharacteristic[ScanIntervalWindowData
     max_length = 4  # Fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> ScanIntervalWindowData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> ScanIntervalWindowData:
         """Parse scan interval window data.
 
         Args:

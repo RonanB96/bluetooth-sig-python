@@ -3,6 +3,7 @@
 Two-layer architecture:
 - AdvertisingPDUParser: Low-level BLE PDU parsing (raw bytes → AD structures)
 - AdvertisingDataInterpreter[T]: Base class for vendor-specific data interpretation
+- ServiceDataParser: Parse service data using GATT characteristic classes
 - EAD: Encrypted advertising data support (Core Spec 1.23)
 """
 
@@ -29,11 +30,14 @@ from bluetooth_sig.advertising.registry import (
     AdvertisingInterpreterRegistry,
     advertising_interpreter_registry,
 )
+from bluetooth_sig.advertising.service_data_parser import ServiceDataParser
 from bluetooth_sig.types.address import bytes_to_mac_address, mac_address_to_bytes
 
 __all__ = [
     # PDU parser
     "AdvertisingPDUParser",
+    # Service data parser (GATT characteristic-based)
+    "ServiceDataParser",
     # Interpreter base class
     "AdvertisingDataInterpreter",
     "AdvertisingInterpreterInfo",

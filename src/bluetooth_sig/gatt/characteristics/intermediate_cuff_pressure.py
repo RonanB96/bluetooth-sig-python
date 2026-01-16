@@ -57,7 +57,9 @@ class IntermediateCuffPressureCharacteristic(BaseBloodPressureCharacteristic):
     min_length: int = 7  # Flags(1) + Current Cuff Pressure(2) + Unused(2) + Unused(2)
     allow_variable_length: bool = True  # Optional timestamp, pulse rate, user ID, status
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> IntermediateCuffPressureData:  # pylint: disable=too-many-locals
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> IntermediateCuffPressureData:  # pylint: disable=too-many-locals
         """Parse intermediate cuff pressure data according to Bluetooth specification.
 
         Format: Flags(1) + Current Cuff Pressure(2) + Unused(2) + Unused(2) + [Timestamp(7)] +

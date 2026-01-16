@@ -19,7 +19,9 @@ class ApparentEnergy32Characteristic(BaseCharacteristic[float]):
         "kVAh"  # YAML: electrical_apparent_energy.kilovolt_ampere_hour, units.yaml: energy.kilovolt_ampere_hour
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> float | None:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> float | None:
         """Decode apparent energy 32 characteristic.
 
         Decodes a 32-bit unsigned integer representing apparent energy in 0.001 kVAh increments

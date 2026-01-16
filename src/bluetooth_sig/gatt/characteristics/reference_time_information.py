@@ -67,7 +67,9 @@ class ReferenceTimeInformationCharacteristic(BaseCharacteristic[ReferenceTimeInf
 
     expected_length: int = 4  # Time Source(1) + Time Accuracy(1) + Days(1) + Hours(1)
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> ReferenceTimeInformationData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> ReferenceTimeInformationData:
         """Decode Reference Time Information data from bytes.
 
         Args:

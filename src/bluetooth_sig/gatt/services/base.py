@@ -383,7 +383,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         """
         for uuid_obj, char_info in characteristics.items():
-            char_instance = CharacteristicRegistry.create_characteristic(uuid=uuid_obj.normalized)
+            char_instance = CharacteristicRegistry.get_characteristic(uuid=uuid_obj.normalized)
 
             if char_instance is None:
                 # Create UnknownCharacteristic for unregistered characteristics

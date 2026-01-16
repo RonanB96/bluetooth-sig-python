@@ -45,7 +45,7 @@ flowchart TD
 
     Trans[BluetoothSIGTranslator<br/>.parse_characteristic]
 
-    CharReg[CharacteristicRegistry<br/>.create_characteristic]
+    CharReg[CharacteristicRegistry<br/>.get_characteristic]
     UuidReg[UuidRegistry<br/>.get_characteristic_info]
 
     InstChar[BatteryLevelCharacteristic<br/>instance created]
@@ -401,8 +401,8 @@ from bluetooth_sig.gatt.characteristics.registry import (
     CharacteristicRegistry,
 )
 
-# Create characteristic instance from UUID
-char = CharacteristicRegistry.create_characteristic("2A19")
+# Get characteristic instance from UUID
+char = CharacteristicRegistry.get_characteristic("2A19")
 
 # Get characteristic class from UUID
 CharClass = CharacteristicRegistry.get_characteristic_class_by_uuid("2A19")

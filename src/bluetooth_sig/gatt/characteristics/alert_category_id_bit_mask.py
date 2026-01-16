@@ -37,7 +37,9 @@ class AlertCategoryIdBitMaskCharacteristic(BaseCharacteristic[AlertCategoryBitMa
 
     expected_length: int | None = 2
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> AlertCategoryBitMask:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> AlertCategoryBitMask:
         """Decode Alert Category ID Bit Mask data from bytes.
 
         Args:

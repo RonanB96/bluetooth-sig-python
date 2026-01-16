@@ -35,7 +35,9 @@ class RingerSettingCharacteristic(BaseCharacteristic[RingerSettingData]):
     Values 2-255: Reserved for future use
     """
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> RingerSettingData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> RingerSettingData:
         """Parse ringer setting data according to Bluetooth specification.
 
         Args:

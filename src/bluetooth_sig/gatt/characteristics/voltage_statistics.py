@@ -56,7 +56,9 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic[VoltageStatisticsData])
     _manual_value_type: ValueType | str | None = ValueType.DICT
     expected_length: int = 6  # Minimum(2) + Maximum(2) + Average(2)
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> VoltageStatisticsData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> VoltageStatisticsData:
         """Parse voltage statistics data (3x uint16 in units of 1/64 V).
 
         Args:

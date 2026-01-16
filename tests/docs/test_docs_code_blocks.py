@@ -377,7 +377,6 @@ ALL_CODE_BLOCKS = collect_code_blocks()
 
 @pytest.mark.docs
 @pytest.mark.code_blocks
-@pytest.mark.built_docs
 @pytest.mark.parametrize(
     "doc_file,block_num,code",
     [

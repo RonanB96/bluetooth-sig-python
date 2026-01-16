@@ -41,7 +41,9 @@ class NewAlertCharacteristic(BaseCharacteristic[NewAlertData]):
     min_length: int = 2  # Category ID(1) + Number of New Alert(1)
     allow_variable_length: bool = True  # Optional text string
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> NewAlertData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> NewAlertData:
         """Decode New Alert data from bytes.
 
         Args:

@@ -17,7 +17,9 @@ class ForceCharacteristic(BaseCharacteristic[float]):
 
     expected_length: int = 4  # sint32
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> float:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> float:
         """Decode force characteristic.
 
         Decodes a 32-bit signed integer representing force in 0.001 N increments

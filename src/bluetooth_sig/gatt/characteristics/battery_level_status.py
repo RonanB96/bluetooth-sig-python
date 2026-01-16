@@ -90,7 +90,9 @@ class BatteryLevelStatusCharacteristic(BaseCharacteristic[BatteryLevelStatus]):
     min_length = 3  # flags (1) + power_state (2)
     max_length = 7  # + identifier (2) + battery_level (1) + additional_status (1)
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> BatteryLevelStatus:  # pylint: disable=too-many-locals
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> BatteryLevelStatus:  # pylint: disable=too-many-locals
         """Decode the battery level status value."""
         offset = 0
 

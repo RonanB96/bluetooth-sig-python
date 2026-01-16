@@ -164,18 +164,301 @@ class BLEAdvertisingFlags(IntFlag):
     RESERVED_BIT_7 = 0x80
 
 
+class CTEType(IntEnum):
+    """Constant Tone Extension (CTE) Types (Core Spec Vol 6, Part B, Section 2.5)."""
+
+    AOA = 0x00  # Angle of Arrival
+    AOD_1US = 0x01  # Angle of Departure with 1μs slots
+    AOD_2US = 0x02  # Angle of Departure with 2μs slots
+
+
+class CTEInfo(msgspec.Struct, kw_only=True):
+    """Constant Tone Extension (CTE) information (BLE 5.1+ Direction Finding).
+
+    Attributes:
+        cte_time: CTE length in 8μs units (0-19, representing 16-160μs)
+        cte_type: Type of CTE (AoA, AoD 1μs, or AoD 2μs)
+    """
+
+    cte_time: int
+    cte_type: CTEType
+
+
+class AdvertisingDataInfo(msgspec.Struct, kw_only=True):
+    """Advertising Data Info (ADI) field (BLE 5.0+).
+
+    Attributes:
+        advertising_data_id: Advertising Data ID (DID) - 12 bits
+        advertising_set_id: Advertising Set ID (SID) - 4 bits
+    """
+
+    advertising_data_id: int  # 12-bit DID (0-4095)
+    advertising_set_id: int  # 4-bit SID (0-15)
+
+
+class PHYType(IntEnum):
+    """PHY types for auxiliary channel (Core Spec Vol 6, Part B, Section 2.3.4.6)."""
+
+    LE_1M = 0x00
+    LE_2M = 0x01
+    LE_CODED = 0x02
+
+
+class AuxiliaryPointer(msgspec.Struct, kw_only=True):
+    """Auxiliary Pointer for chaining extended advertising packets (BLE 5.0+).
+
+    Attributes:
+        channel_index: Advertising channel index (0-39)
+        ca: Clock accuracy (0=51-500ppm, 1=0-50ppm)
+        offset_units: Units for aux_offset (0=30μs, 1=300μs)
+        aux_offset: Time offset to auxiliary packet (13 bits)
+        aux_phy: PHY used for auxiliary packet
+    """
+
+    channel_index: int  # 0-39
+    ca: bool
+    offset_units: int  # 0 or 1
+    aux_offset: int  # 13-bit value
+    aux_phy: PHYType
+
+
+class SyncInfo(msgspec.Struct, kw_only=True):
+    """Synchronization Info for Periodic Advertising (BLE 5.0+).
+
+    Attributes:
+        sync_packet_offset: Offset to first periodic advertising packet (13 bits, 30μs units)
+        offset_units: Units for sync_packet_offset (0=30μs, 1=300μs)
+        interval: Periodic advertising interval (1.25ms units, range: 7.5ms-81.91875s)
+        channel_map: Channel map for periodic advertising (37 bits)
+        sleep_clock_accuracy: Sleep clock accuracy (0-7, represents ppm ranges)
+        advertising_address: Advertiser address (6 bytes)
+        advertising_address_type: 0=Public, 1=Random
+        sync_counter: Synchronization counter for packet identification
+    """
+
+    sync_packet_offset: int  # 13 bits
+    offset_units: int  # 0 or 1
+    interval: int  # Periodic advertising interval in 1.25ms units
+    channel_map: int  # 37-bit channel map
+    sleep_clock_accuracy: int  # 0-7 (ppm ranges)
+    advertising_address: str  # MAC address
+    advertising_address_type: int  # 0 or 1
+    sync_counter: int  # Packet counter
+
+
+class ConnectionIntervalRange(msgspec.Struct, kw_only=True):
+    """Peripheral preferred connection interval range (Core Spec Supplement, Part A, Section 1.9).
+
+    Attributes:
+        min_interval: Minimum connection interval in 1.25ms units
+        max_interval: Maximum connection interval in 1.25ms units
+        min_interval_ms: Minimum connection interval in milliseconds
+        max_interval_ms: Maximum connection interval in milliseconds
+    """
+
+    INTERVAL_UNIT_MS: float = 1.25  # Connection interval unit in milliseconds
+
+    min_interval: int  # In 1.25ms units
+    max_interval: int  # In 1.25ms units
+
+    @property
+    def min_interval_ms(self) -> float:
+        """Get minimum interval in milliseconds."""
+        return self.min_interval * self.INTERVAL_UNIT_MS
+
+    @property
+    def max_interval_ms(self) -> float:
+        """Get maximum interval in milliseconds."""
+        return self.max_interval * self.INTERVAL_UNIT_MS
+
+
+class LEFeatureBits(IntFlag):
+    """LE Supported Features bit definitions (Core Spec Vol 6, Part B, Section 4.6).
+
+    Byte 0 features (bits 0-7).
+    """
+
+    # Byte 0 features
+    LE_ENCRYPTION = 0x0001
+    CONNECTION_PARAMETERS_REQUEST = 0x0002
+    EXTENDED_REJECT_INDICATION = 0x0004
+    PERIPHERAL_INITIATED_FEATURES_EXCHANGE = 0x0008
+    LE_PING = 0x0010
+    LE_DATA_PACKET_LENGTH_EXTENSION = 0x0020
+    LL_PRIVACY = 0x0040
+    EXTENDED_SCANNER_FILTER_POLICIES = 0x0080
+
+    # Byte 1 features (bits 8-15)
+    LE_2M_PHY = 0x0100
+    STABLE_MODULATION_INDEX_TX = 0x0200
+    STABLE_MODULATION_INDEX_RX = 0x0400
+    LE_CODED_PHY = 0x0800
+    LE_EXTENDED_ADVERTISING = 0x1000
+    LE_PERIODIC_ADVERTISING = 0x2000
+    CHANNEL_SELECTION_ALGORITHM_2 = 0x4000
+    LE_POWER_CLASS_1 = 0x8000
+
+    # Byte 2 features (bits 16-23)
+    MIN_NUMBER_OF_USED_CHANNELS = 0x010000
+    CONNECTION_CTE_REQUEST = 0x020000
+    CONNECTION_CTE_RESPONSE = 0x040000
+    CONNECTIONLESS_CTE_TX = 0x080000
+    CONNECTIONLESS_CTE_RX = 0x100000
+    ANTENNA_SWITCHING_TX = 0x200000
+    ANTENNA_SWITCHING_RX = 0x400000
+    RECEIVING_CTE = 0x800000
+
+
+class LEFeatures(msgspec.Struct, kw_only=True):
+    """LE Supported Features bit field (Core Spec Vol 6, Part B, Section 4.6).
+
+    Attributes:
+        raw_value: Raw feature bit field bytes (up to 8 bytes)
+    """
+
+    raw_value: bytes
+
+    def _get_features_int(self) -> int:
+        """Convert raw bytes to integer for bit checking."""
+        return int.from_bytes(self.raw_value, byteorder="little") if self.raw_value else 0
+
+    def _has_feature(self, feature: LEFeatureBits) -> bool:
+        """Check if a specific feature bit is set."""
+        return bool(self._get_features_int() & feature)
+
+    @property
+    def le_encryption(self) -> bool:
+        """LE Encryption supported."""
+        return self._has_feature(LEFeatureBits.LE_ENCRYPTION)
+
+    @property
+    def connection_parameters_request(self) -> bool:
+        """Connection Parameters Request Procedure."""
+        return self._has_feature(LEFeatureBits.CONNECTION_PARAMETERS_REQUEST)
+
+    @property
+    def extended_reject_indication(self) -> bool:
+        """Extended Reject Indication."""
+        return self._has_feature(LEFeatureBits.EXTENDED_REJECT_INDICATION)
+
+    @property
+    def peripheral_initiated_features_exchange(self) -> bool:
+        """Peripheral-initiated Features Exchange."""
+        return self._has_feature(LEFeatureBits.PERIPHERAL_INITIATED_FEATURES_EXCHANGE)
+
+    @property
+    def le_ping(self) -> bool:
+        """LE Ping."""
+        return self._has_feature(LEFeatureBits.LE_PING)
+
+    @property
+    def le_data_packet_length_extension(self) -> bool:
+        """LE Data Packet Length Extension."""
+        return self._has_feature(LEFeatureBits.LE_DATA_PACKET_LENGTH_EXTENSION)
+
+    @property
+    def ll_privacy(self) -> bool:
+        """LL Privacy."""
+        return self._has_feature(LEFeatureBits.LL_PRIVACY)
+
+    @property
+    def extended_scanner_filter_policies(self) -> bool:
+        """Extended Scanner Filter Policies."""
+        return self._has_feature(LEFeatureBits.EXTENDED_SCANNER_FILTER_POLICIES)
+
+    @property
+    def le_2m_phy(self) -> bool:
+        """LE 2M PHY."""
+        return self._has_feature(LEFeatureBits.LE_2M_PHY)
+
+    @property
+    def stable_modulation_index_tx(self) -> bool:
+        """Stable Modulation Index - Transmitter."""
+        return self._has_feature(LEFeatureBits.STABLE_MODULATION_INDEX_TX)
+
+    @property
+    def stable_modulation_index_rx(self) -> bool:
+        """Stable Modulation Index - Receiver."""
+        return self._has_feature(LEFeatureBits.STABLE_MODULATION_INDEX_RX)
+
+    @property
+    def le_coded_phy(self) -> bool:
+        """LE Coded PHY."""
+        return self._has_feature(LEFeatureBits.LE_CODED_PHY)
+
+    @property
+    def le_extended_advertising(self) -> bool:
+        """LE Extended Advertising."""
+        return self._has_feature(LEFeatureBits.LE_EXTENDED_ADVERTISING)
+
+    @property
+    def le_periodic_advertising(self) -> bool:
+        """LE Periodic Advertising."""
+        return self._has_feature(LEFeatureBits.LE_PERIODIC_ADVERTISING)
+
+    @property
+    def channel_selection_algorithm_2(self) -> bool:
+        """Channel Selection Algorithm #2."""
+        return self._has_feature(LEFeatureBits.CHANNEL_SELECTION_ALGORITHM_2)
+
+    @property
+    def le_power_class_1(self) -> bool:
+        """LE Power Class 1."""
+        return self._has_feature(LEFeatureBits.LE_POWER_CLASS_1)
+
+    @property
+    def min_number_of_used_channels(self) -> bool:
+        """Minimum Number of Used Channels Procedure."""
+        return self._has_feature(LEFeatureBits.MIN_NUMBER_OF_USED_CHANNELS)
+
+    @property
+    def connection_cte_request(self) -> bool:
+        """Connection CTE Request."""
+        return self._has_feature(LEFeatureBits.CONNECTION_CTE_REQUEST)
+
+    @property
+    def connection_cte_response(self) -> bool:
+        """Connection CTE Response."""
+        return self._has_feature(LEFeatureBits.CONNECTION_CTE_RESPONSE)
+
+    @property
+    def connectionless_cte_tx(self) -> bool:
+        """Connectionless CTE Transmitter."""
+        return self._has_feature(LEFeatureBits.CONNECTIONLESS_CTE_TX)
+
+    @property
+    def connectionless_cte_rx(self) -> bool:
+        """Connectionless CTE Receiver."""
+        return self._has_feature(LEFeatureBits.CONNECTIONLESS_CTE_RX)
+
+    @property
+    def antenna_switching_tx(self) -> bool:
+        """Antenna Switching During CTE Transmission."""
+        return self._has_feature(LEFeatureBits.ANTENNA_SWITCHING_TX)
+
+    @property
+    def antenna_switching_rx(self) -> bool:
+        """Antenna Switching During CTE Reception."""
+        return self._has_feature(LEFeatureBits.ANTENNA_SWITCHING_RX)
+
+    @property
+    def receiving_cte(self) -> bool:
+        """Receiving Constant Tone Extensions."""
+        return self._has_feature(LEFeatureBits.RECEIVING_CTE)
+
+
 class BLEExtendedHeader(msgspec.Struct, kw_only=True):
     """Extended Advertising Header fields (BLE 5.0+)."""
 
     extended_header_length: int = 0
     adv_mode: int = 0
 
-    extended_advertiser_address: bytes = b""
-    extended_target_address: bytes = b""
-    cte_info: bytes = b""
-    advertising_data_info: bytes = b""
-    auxiliary_pointer: bytes = b""
-    sync_info: bytes = b""
+    extended_advertiser_address: str = ""  # MAC address XX:XX:XX:XX:XX:XX
+    extended_target_address: str = ""  # MAC address XX:XX:XX:XX:XX:XX
+    cte_info: CTEInfo | None = None
+    advertising_data_info: AdvertisingDataInfo | None = None
+    auxiliary_pointer: AuxiliaryPointer | None = None
+    sync_info: SyncInfo | None = None
     tx_power: int | None = None
     additional_controller_advertising_data: bytes = b""
 
@@ -227,8 +510,8 @@ class BLEAdvertisingPDU(msgspec.Struct, kw_only=True):
     tx_add: bool
     rx_add: bool
     length: int
-    advertiser_address: bytes = b""
-    target_address: bytes = b""
+    advertiser_address: str = ""  # MAC address XX:XX:XX:XX:XX:XX
+    target_address: str = ""  # MAC address XX:XX:XX:XX:XX:XX
     payload: bytes = b""
     extended_header: BLEExtendedHeader | None = None
 
@@ -278,7 +561,7 @@ class DeviceProperties(msgspec.Struct, kw_only=True):
         appearance: Device appearance category and subcategory
         tx_power: Transmission power level in dBm
         le_role: LE role (peripheral, central, etc.)
-        le_supported_features: LE supported features bit field
+        le_supported_features: LE supported features with property accessors
         class_of_device: Classic Bluetooth Class of Device value
         class_of_device_info: Parsed Class of Device information
     """
@@ -287,7 +570,7 @@ class DeviceProperties(msgspec.Struct, kw_only=True):
     appearance: AppearanceData | None = None
     tx_power: int = 0
     le_role: int | None = None
-    le_supported_features: bytes = b""
+    le_supported_features: LEFeatures | None = None
     class_of_device: ClassOfDeviceInfo | None = None
 
 
@@ -302,7 +585,7 @@ class DirectedAdvertisingData(msgspec.Struct, kw_only=True):
         le_bluetooth_device_address: LE Bluetooth device address (AD 0x1B)
         advertising_interval: Advertising interval in 0.625ms units (AD 0x1A)
         advertising_interval_long: Long advertising interval (AD 0x2F)
-        peripheral_connection_interval_range: Preferred connection interval (AD 0x12)
+        peripheral_connection_interval_range: Preferred connection interval with min/max (AD 0x12)
     """
 
     public_target_address: list[str] = msgspec.field(default_factory=list)
@@ -310,7 +593,7 @@ class DirectedAdvertisingData(msgspec.Struct, kw_only=True):
     le_bluetooth_device_address: str = ""
     advertising_interval: int | None = None
     advertising_interval_long: int | None = None
-    peripheral_connection_interval_range: bytes = b""
+    peripheral_connection_interval_range: ConnectionIntervalRange | None = None
 
 
 class OOBSecurityData(msgspec.Struct, kw_only=True):

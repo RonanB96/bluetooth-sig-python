@@ -36,7 +36,9 @@ class AlertStatusCharacteristic(BaseCharacteristic[AlertStatusData]):
     VIBRATE_STATE_MASK = 0x02  # Bit 1
     DISPLAY_ALERT_STATUS_MASK = 0x04  # Bit 2
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> AlertStatusData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> AlertStatusData:
         """Parse alert status data according to Bluetooth specification.
 
         Args:

@@ -56,7 +56,9 @@ class CSCMeasurementCharacteristic(BaseCharacteristic[CSCMeasurementData]):
     # Time resolution constants
     CSC_TIME_RESOLUTION = 1024.0  # 1/1024 second resolution for both wheel and crank event times
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> CSCMeasurementData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> CSCMeasurementData:
         """Parse CSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + [Cumulative Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +

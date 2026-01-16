@@ -36,7 +36,9 @@ class BootKeyboardOutputReportCharacteristic(BaseCharacteristic[KeyboardLEDs]):
     max_length = 1
     allow_variable_length = False
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> KeyboardLEDs:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> KeyboardLEDs:
         """Parse keyboard LED states.
 
         Args:
