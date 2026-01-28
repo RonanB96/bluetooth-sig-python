@@ -126,6 +126,7 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic[BodyCompositionFea
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             BodyCompositionFeatureData containing parsed feature flags.
@@ -134,9 +135,6 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic[BodyCompositionFea
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 4:
-            raise ValueError("Body Composition Feature data must be at least 4 bytes")
-
         features_raw = DataParser.parse_int32(data, 0, signed=False)
 
         # Parse feature flags according to specification
@@ -165,6 +163,8 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic[BodyCompositionFea
 
         Args:
             data: BodyCompositionFeatureData instance to encode
+
+        validate: Whether to validate ranges (default True)
 
         Returns:
             Encoded bytes representing the body composition features

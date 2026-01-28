@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from enum import IntFlag
+from typing import Any, ClassVar
 
 import msgspec
 
@@ -81,7 +82,7 @@ class PLXSpotCheckMeasurementCharacteristic(BaseCharacteristic[PLXSpotCheckData]
 
     _characteristic_name: str = "PLX Spot-Check Measurement"
 
-    _optional_dependencies = [PLXFeaturesCharacteristic]
+    _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [PLXFeaturesCharacteristic]
 
     # Declarative validation (automatic)
     min_length: int | None = 5  # Flags(1) + SpO2(2) + PulseRate(2) minimum
@@ -104,15 +105,13 @@ class PLXSpotCheckMeasurementCharacteristic(BaseCharacteristic[PLXSpotCheckData]
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             PLXSpotCheckData containing parsed PLX spot-check data with optional
             context-enhanced information.
 
         """
-        if len(data) < 5:
-            raise ValueError("PLX Spot-Check Measurement data must be at least 5 bytes")
-
         flags = PLXSpotCheckFlags(data[0])
 
         # Parse SpO2 and pulse rate using IEEE-11073 SFLOAT format

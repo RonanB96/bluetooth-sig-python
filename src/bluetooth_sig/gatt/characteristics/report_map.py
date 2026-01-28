@@ -37,6 +37,7 @@ class ReportMapCharacteristic(BaseCharacteristic[ReportMapData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional context.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ReportMapData containing the report map bytes.

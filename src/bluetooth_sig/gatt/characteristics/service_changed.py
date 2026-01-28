@@ -41,6 +41,7 @@ class ServiceChangedCharacteristic(BaseCharacteristic[ServiceChangedData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ServiceChangedData with start_handle and end_handle.

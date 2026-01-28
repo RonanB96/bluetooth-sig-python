@@ -60,6 +60,7 @@ class ActivityGoalCharacteristic(BaseCharacteristic[ActivityGoalData]):
         Args:
             data: Raw bytes from BLE characteristic
             ctx: Optional context for parsing
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ActivityGoalData: Parsed activity goal

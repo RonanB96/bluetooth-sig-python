@@ -283,9 +283,10 @@ class BluetoothUUID:
             uuid_int = int(self.short_form, 16)
 
             # Check if it's in the SIG characteristic range using constants
-            return self.SIG_CHARACTERISTIC_MIN <= uuid_int <= self.SIG_CHARACTERISTIC_MAX
         except ValueError:
             return False
+        else:
+            return self.SIG_CHARACTERISTIC_MIN <= uuid_int <= self.SIG_CHARACTERISTIC_MAX
 
     def is_sig_service(self) -> bool:
         """Check if this UUID is a Bluetooth SIG assigned service UUID.
@@ -314,6 +315,7 @@ class BluetoothUUID:
             uuid_int = int(self.short_form, 16)
 
             # Check if it's in the SIG service range using constants
-            return self.SIG_SERVICE_MIN <= uuid_int <= self.SIG_SERVICE_MAX
         except ValueError:
             return False
+        else:
+            return self.SIG_SERVICE_MIN <= uuid_int <= self.SIG_SERVICE_MAX

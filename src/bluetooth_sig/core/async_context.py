@@ -76,7 +76,7 @@ class AsyncParsingSession:
         self,
         char: str | BluetoothUUID | type[BaseCharacteristic[T]],
         data: bytes,
-    ) -> T | Any:  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+    ) -> T | Any:  # Runtime UUID dispatch cannot be type-safe
         """Parse characteristic with accumulated context.
 
         Args:
@@ -88,7 +88,7 @@ class AsyncParsingSession:
         """
         # Update context with previous results
         # Cast dict to Mapping to satisfy CharacteristicContext type requirements
-        results_as_mapping = cast(Mapping[str, Any], self.results)
+        results_as_mapping = cast("Mapping[str, Any]", self.results)
 
         if self.context is None:
             self.context = CharacteristicContext(other_characteristics=results_as_mapping)

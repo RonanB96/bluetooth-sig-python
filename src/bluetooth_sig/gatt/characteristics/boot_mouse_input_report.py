@@ -6,6 +6,7 @@ from enum import IntFlag
 
 import msgspec
 
+from ..constants import SIZE_UINT32
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -61,6 +62,7 @@ class BootMouseInputReportCharacteristic(BaseCharacteristic[BootMouseInputReport
         Args:
             data: Raw bytearray from BLE characteristic (3-4 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             BootMouseInputReportData with parsed mouse state.
@@ -68,7 +70,7 @@ class BootMouseInputReportCharacteristic(BaseCharacteristic[BootMouseInputReport
         buttons = MouseButtons(data[0])
         x_displacement = DataParser.parse_int8(data, 1, signed=True)
         y_displacement = DataParser.parse_int8(data, 2, signed=True)
-        wheel = DataParser.parse_int8(data, 3, signed=True) if len(data) == 4 else None
+        wheel = DataParser.parse_int8(data, 3, signed=True) if len(data) == SIZE_UINT32 else None
 
         return BootMouseInputReportData(
             buttons=buttons,
@@ -82,6 +84,8 @@ class BootMouseInputReportCharacteristic(BaseCharacteristic[BootMouseInputReport
 
         Args:
             data: BootMouseInputReportData to encode
+
+        validate: Whether to validate ranges (default True)
 
         Returns:
             Encoded bytes (3-4 bytes depending on wheel presence)

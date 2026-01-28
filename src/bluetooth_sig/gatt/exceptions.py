@@ -429,7 +429,7 @@ class CharacteristicParseError(CharacteristicError):
         return base
 
 
-class SpecialValueDetected(CharacteristicError):
+class SpecialValueDetectedError(CharacteristicError):
     """Raised when a special sentinel value is detected.
 
     Special values represent exceptional conditions: "value is not known", "NaN",

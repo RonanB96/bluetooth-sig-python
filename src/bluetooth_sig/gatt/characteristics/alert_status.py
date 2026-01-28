@@ -30,6 +30,7 @@ class AlertStatusCharacteristic(BaseCharacteristic[AlertStatusData]):
     """
 
     expected_length: int = 1
+    min_length: int = 1
 
     # Bit masks for alert status flags
     RINGER_STATE_MASK = 0x01  # Bit 0
@@ -44,6 +45,7 @@ class AlertStatusCharacteristic(BaseCharacteristic[AlertStatusData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext (unused)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             AlertStatusData containing parsed alert status flags.
@@ -52,9 +54,6 @@ class AlertStatusCharacteristic(BaseCharacteristic[AlertStatusData]):
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 1:
-            raise ValueError("Alert Status data must be at least 1 byte")
-
         status_byte = DataParser.parse_int8(data, 0, signed=False)
 
         # Extract bit fields according to specification
@@ -73,6 +72,8 @@ class AlertStatusCharacteristic(BaseCharacteristic[AlertStatusData]):
 
         Args:
             data: AlertStatusData instance to encode
+
+        validate: Whether to validate ranges (default True)
 
         Returns:
             Encoded bytes representing the alert status

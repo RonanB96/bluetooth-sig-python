@@ -32,14 +32,14 @@ except ImportError:
 
 __all__ = [
     # Primary API
-    "BluetoothSIGTranslator",
     "AsyncParsingSession",
-    "Device",
+    "BluetoothSIGTranslator",
     # Essential types for type hints
     "CharacteristicInfo",
+    "Device",
+    "SIGInfo",
     "ServiceInfo",
     "ValidationResult",
-    "SIGInfo",
     # Version
     "__version__",
 ]

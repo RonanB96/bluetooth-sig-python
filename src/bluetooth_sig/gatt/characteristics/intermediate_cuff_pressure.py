@@ -30,10 +30,7 @@ class IntermediateCuffPressureData(msgspec.Struct, frozen=True, kw_only=True):  
         if self.unit not in (PressureUnit.MMHG, PressureUnit.KPA):
             raise ValueError(f"Cuff pressure unit must be MMHG or KPA, got {self.unit}")
 
-        if self.unit == PressureUnit.MMHG:
-            valid_range = (0, BLOOD_PRESSURE_MAX_MMHG)
-        else:  # kPa
-            valid_range = (0, BLOOD_PRESSURE_MAX_KPA)
+        valid_range = (0, BLOOD_PRESSURE_MAX_MMHG) if self.unit == PressureUnit.MMHG else (0, BLOOD_PRESSURE_MAX_KPA)
 
         if not valid_range[0] <= self.current_cuff_pressure <= valid_range[1]:
             raise ValueError(
@@ -70,6 +67,7 @@ class IntermediateCuffPressureCharacteristic(BaseBloodPressureCharacteristic):
             data: Raw bytearray from BLE characteristic
             ctx: Optional context providing access to Blood Pressure Feature characteristic
                 for validating which measurement status flags are supported
+            validate: Whether to validate ranges (default True)
 
         Returns:
             IntermediateCuffPressureData containing parsed cuff pressure data with metadata
@@ -79,9 +77,6 @@ class IntermediateCuffPressureCharacteristic(BaseBloodPressureCharacteristic):
         within the device's supported features as indicated by Blood Pressure Feature.
 
         """
-        if len(data) < 7:
-            raise ValueError("Intermediate Cuff Pressure data must be at least 7 bytes")
-
         flags = self._parse_blood_pressure_flags(data)
 
         # Parse required fields

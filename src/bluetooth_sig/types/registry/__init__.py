@@ -5,17 +5,17 @@ from __future__ import annotations
 __all__ = [
     "AdTypeInfo",
     "BaseUuidInfo",
-    "FieldInfo",
-    "UnitMetadata",
     "CharacteristicSpec",
-    "generate_basic_aliases",
+    "FieldInfo",
+    "KeyNameInfo",
+    "NameOpcodeTypeInfo",
+    "NameUuidTypeInfo",
+    "NameValueInfo",
+    "UnitMetadata",
     "UuidIdInfo",
     "ValueNameInfo",
     "ValueNameReferenceInfo",
-    "NameValueInfo",
-    "KeyNameInfo",
-    "NameUuidTypeInfo",
-    "NameOpcodeTypeInfo",
+    "generate_basic_aliases",
 ]
 
 from .ad_types import AdTypeInfo

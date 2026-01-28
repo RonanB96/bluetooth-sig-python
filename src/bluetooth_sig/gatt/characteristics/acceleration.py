@@ -20,7 +20,7 @@ class AccelerationCharacteristic(BaseCharacteristic[float]):
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
-    ) -> float | None:
+    ) -> float:
         """Decode acceleration characteristic.
 
         Decodes a 32-bit signed integer representing acceleration in 0.001 m/s² increments
@@ -29,6 +29,7 @@ class AccelerationCharacteristic(BaseCharacteristic[float]):
         Args:
             data: Raw bytes from BLE characteristic (exactly 4 bytes, little-endian)
             ctx: Optional context for parsing (device info, flags, etc.)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             Acceleration in meters per second squared

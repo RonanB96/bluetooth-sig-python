@@ -57,6 +57,7 @@ class PnpIdCharacteristic(BaseCharacteristic[PnpIdData]):
         Args:
             data: Raw bytearray (7 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             PnpIdData with vendor_id_source, vendor_id, product_id, product_version.

@@ -14,6 +14,9 @@ import msgspec
 from .characteristics.utils.ieee11073_parser import IEEE11073Parser
 from .constants import (
     ABSOLUTE_ZERO_CELSIUS,
+    EXTENDED_PERCENTAGE_MAX,
+    HEART_RATE_MAX,
+    HEART_RATE_MIN,
     MAX_CONCENTRATION_PPM,
     MAX_POWER_WATTS,
     MAX_TEMPERATURE_CELSIUS,
@@ -48,11 +51,9 @@ class ValidationRule(msgspec.Struct, kw_only=True):
                 raise ValueRangeError(self.field_name, value, min_val, max_val)
 
         # Custom validation
-        if self.custom_validator:
-            # Note: custom_validator is type-hinted as Callable, but pylint doesn't recognize this
-            if not self.custom_validator(value):  # pylint: disable=not-callable
-                message = self.error_message or f"Custom validation failed for {self.field_name}"
-                raise DataValidationError(self.field_name, value, message)
+        if self.custom_validator and not self.custom_validator(value):  # pylint: disable=not-callable
+            message = self.error_message or f"Custom validation failed for {self.field_name}"
+            raise DataValidationError(self.field_name, value, message)
 
 
 class StrictValidator(msgspec.Struct, kw_only=True):
@@ -82,24 +83,24 @@ class CommonValidators:
     """Collection of commonly used validation functions."""
 
     @staticmethod
-    def is_positive(value: int | float) -> bool:
+    def is_positive(value: float) -> bool:
         """Check if value is positive."""
         return value > 0
 
     @staticmethod
-    def is_non_negative(value: int | float) -> bool:
+    def is_non_negative(value: float) -> bool:
         """Check if value is non-negative."""
         return value >= 0
 
     @staticmethod
-    def is_valid_percentage(value: int | float) -> bool:
+    def is_valid_percentage(value: float) -> bool:
         """Check if value is a valid percentage (0-100)."""
         return 0 <= value <= PERCENTAGE_MAX
 
     @staticmethod
-    def is_valid_extended_percentage(value: int | float) -> bool:
+    def is_valid_extended_percentage(value: float) -> bool:
         """Check if value is a valid extended percentage (0-200)."""
-        return 0 <= value <= 200
+        return 0 <= value <= EXTENDED_PERCENTAGE_MAX
 
     @staticmethod
     def is_physical_temperature(value: float) -> bool:
@@ -112,14 +113,14 @@ class CommonValidators:
         return 0 <= value <= MAX_CONCENTRATION_PPM
 
     @staticmethod
-    def is_valid_power(value: int | float) -> bool:
+    def is_valid_power(value: float) -> bool:
         """Check if power value is reasonable."""
         return 0 <= value <= MAX_POWER_WATTS
 
     @staticmethod
     def is_valid_heart_rate(value: int) -> bool:
         """Check if heart rate is in human range."""
-        return 30 <= value <= 300  # Reasonable human heart rate range
+        return HEART_RATE_MIN <= value <= HEART_RATE_MAX  # Reasonable human heart rate range
 
     @staticmethod
     def is_valid_battery_level(value: int) -> bool:
@@ -179,8 +180,8 @@ TEMPERATURE_VALIDATOR.add_rule(
 def create_range_validator(
     field_name: str,
     expected_type: type,
-    min_value: int | float | None = None,
-    max_value: int | float | None = None,
+    min_value: float | None = None,
+    max_value: float | None = None,
     custom_validator: Callable[[Any], bool] | None = None,
 ) -> StrictValidator:
     """Factory function to create a validator for a specific range."""

@@ -165,7 +165,7 @@ class RangeDescriptorMixin:
         parsed = self._parse_descriptor_value(data)  # type: ignore[attr-defined]
         return parsed.max_value  # type: ignore[no-any-return]
 
-    def is_value_in_range(self, data: bytes, value: int | float) -> bool:
+    def is_value_in_range(self, data: bytes, value: float) -> bool:
         """Check if a value is within the valid range.
 
         Args:

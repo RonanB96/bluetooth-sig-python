@@ -53,6 +53,7 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic[SupportedPowerRangeDa
         Args:
             data: Raw bytes from the characteristic read.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             SupportedPowerRangeData with minimum and maximum power values in Watts.
@@ -61,9 +62,6 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic[SupportedPowerRangeDa
             ValueError: If data is insufficient.
 
         """
-        if len(data) < 4:
-            raise ValueError("Supported power range data must be at least 4 bytes")
-
         # Convert 2x sint16 (little endian) to power range in Watts
         min_power_raw = DataParser.parse_int16(data, 0, signed=True)
         max_power_raw = DataParser.parse_int16(data, 2, signed=True)

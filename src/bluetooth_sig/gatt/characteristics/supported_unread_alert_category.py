@@ -40,6 +40,7 @@ class SupportedUnreadAlertCategoryCharacteristic(BaseCharacteristic[AlertCategor
         Args:
             data: Raw characteristic data (2 bytes)
             ctx: Optional characteristic context
+            validate: Whether to validate ranges (default True)
 
         Returns:
             AlertCategoryBitMask flags
@@ -48,11 +49,6 @@ class SupportedUnreadAlertCategoryCharacteristic(BaseCharacteristic[AlertCategor
             ValueError: If data is insufficient
 
         """
-        if len(data) < 2:
-            raise ValueError(
-                f"Insufficient data for Supported Unread Alert Category: expected 2 bytes, got {len(data)}"
-            )
-
         mask_value = DataParser.parse_int16(data, 0, signed=False)
         return AlertCategoryBitMask(mask_value)
 

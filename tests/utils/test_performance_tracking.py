@@ -30,7 +30,9 @@ class TestPerformanceTracking:
         return BluetoothSIGTranslator()
 
     @pytest.mark.benchmark
-    def test_battery_level_parse_performance(self, translator: BluetoothSIGTranslator, benchmark: Any) -> None:  # noqa: ANN401  # pytest-benchmark fixture
+    def test_battery_level_parse_performance(
+        self, translator: BluetoothSIGTranslator, benchmark: Any
+    ) -> None:  # pytest-benchmark fixture
         """Benchmark battery level parsing performance."""
         battery_data = bytes([0x64])  # 100%
 
@@ -41,7 +43,9 @@ class TestPerformanceTracking:
         benchmark(parse_battery)
 
     @pytest.mark.benchmark
-    def test_temperature_parse_performance(self, translator: BluetoothSIGTranslator, benchmark: Any) -> None:  # noqa: ANN401  # pytest-benchmark fixture
+    def test_temperature_parse_performance(
+        self, translator: BluetoothSIGTranslator, benchmark: Any
+    ) -> None:  # pytest-benchmark fixture
         """Benchmark temperature parsing performance."""
         temp_data = bytes([0x64, 0x09])  # 24.20°C
 
@@ -52,7 +56,9 @@ class TestPerformanceTracking:
         benchmark(parse_temperature)
 
     @pytest.mark.benchmark
-    def test_batch_parse_performance(self, translator: BluetoothSIGTranslator, benchmark: Any) -> None:  # noqa: ANN401  # pytest-benchmark fixture
+    def test_batch_parse_performance(
+        self, translator: BluetoothSIGTranslator, benchmark: Any
+    ) -> None:  # pytest-benchmark fixture
         """Benchmark batch parsing performance for multiple characteristics."""
         sensor_data = {
             "2A19": bytes([0x55]),  # 85% battery
@@ -69,7 +75,9 @@ class TestPerformanceTracking:
         benchmark(parse_batch)
 
     @pytest.mark.benchmark
-    def test_uuid_resolution_performance(self, translator: BluetoothSIGTranslator, benchmark: Any) -> None:  # noqa: ANN401  # pytest-benchmark fixture
+    def test_uuid_resolution_performance(
+        self, translator: BluetoothSIGTranslator, benchmark: Any
+    ) -> None:  # pytest-benchmark fixture
         """Benchmark UUID resolution performance."""
 
         def resolve_uuid() -> None:

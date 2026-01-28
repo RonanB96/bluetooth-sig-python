@@ -6,6 +6,6 @@ from .async_context import AsyncParsingSession
 from .translator import BluetoothSIGTranslator
 
 __all__ = [
-    "BluetoothSIGTranslator",
     "AsyncParsingSession",
+    "BluetoothSIGTranslator",
 ]

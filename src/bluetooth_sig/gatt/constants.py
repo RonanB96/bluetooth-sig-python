@@ -63,3 +63,21 @@ MAX_CONCENTRATION_PPM = 65535.0  # Maximum concentration in ppm
 MAX_TEMPERATURE_CELSIUS = 1000.0  # Maximum reasonable temperature
 MAX_PRESSURE_PA = 200000.0  # Maximum atmospheric pressure (2000 hPa)
 MAX_POWER_WATTS = 65535.0  # Maximum power in watts
+
+# Human physiological ranges
+HEART_RATE_MIN = 30  # Minimum reasonable human heart rate (bpm)
+HEART_RATE_MAX = 300  # Maximum reasonable human heart rate (bpm)
+
+# Domain-specific constants
+DEGREES_IN_CIRCLE = 360  # Degrees in a complete circle
+MAX_YEAR_VALUE = 9999  # Maximum year value in date fields
+
+# Common protocol field sizes (in bytes)
+SIZE_UINT8 = 1
+SIZE_UINT16 = 2
+SIZE_UINT24 = 3
+SIZE_UINT32 = 4
+SIZE_UINT48 = 6
+SIZE_UINT64 = 8
+SIZE_UUID16 = 2
+SIZE_UUID128 = 16

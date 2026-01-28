@@ -97,6 +97,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic[GlucoseFeatureData]):
         Args:
             data: Raw bytearray from BLE characteristic
             ctx: Optional context information
+            validate: Whether to validate ranges (default True)
 
         Returns:
             GlucoseFeatureData containing parsed feature bitmap and details
@@ -194,11 +195,7 @@ class GlucoseFeatureCharacteristic(BaseCharacteristic[GlucoseFeatureData]):
             return f"Reserved feature bit {feature_bit}"
 
         # If caller passed a power-of-two flag value (e.g., 0x0001), use it
-        if feature_bit & (feature_bit - 1) == 0:
-            feature_value = feature_bit
-        else:
-            # Otherwise treat as bit index (0..15)
-            feature_value = 1 << feature_bit
+        feature_value = feature_bit if feature_bit & (feature_bit - 1) == 0 else 1 << feature_bit
 
         try:
             feature = GlucoseFeatures(feature_value)

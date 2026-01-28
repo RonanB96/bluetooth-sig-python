@@ -74,6 +74,11 @@ T_co = TypeVar("T_co", covariant=True)
 # Type variable for EnumTemplate - bound to IntEnum
 T = TypeVar("T", bound=IntEnum)
 
+# Resolution constants for common measurement scales
+_RESOLUTION_INTEGER = 1.0  # Integer resolution (10^0)
+_RESOLUTION_TENTH = 0.1  # 0.1 resolution (10^-1)
+_RESOLUTION_HUNDREDTH = 0.01  # 0.01 resolution (10^-2)
+
 
 # =============================================================================
 # LEVEL 4 BASE CLASS
@@ -676,7 +681,7 @@ class ScaledTemplate(CodingTemplate[float]):
         return cls(scale_factor=scale_factor, offset=offset)
 
     @classmethod
-    def from_letter_method(cls, M: int, d: int, b: int) -> ScaledTemplate:
+    def from_letter_method(cls, M: int, d: int, b: int) -> ScaledTemplate:  # noqa: N803
         """Create instance using Bluetooth SIG M, d, b parameters.
 
         Args:
@@ -1029,21 +1034,21 @@ class ConcentrationTemplate(CodingTemplate[float]):
         """
         # Convert resolution to M, d, b parameters when it fits the pattern
         # resolution = M * 10^d, so we find M and d such that M * 10^d = resolution
-        if resolution == 1.0:
-            # resolution = 1 * 10^0
+        if resolution == _RESOLUTION_INTEGER:
+            # resolution = 1 * 10^0  # noqa: ERA001
             self._scaled_template = ScaledUint16Template.from_letter_method(M=1, d=0, b=0)
-        elif resolution == 0.1:
-            # resolution = 1 * 10^-1
+        elif resolution == _RESOLUTION_TENTH:
+            # resolution = 1 * 10^-1  # noqa: ERA001
             self._scaled_template = ScaledUint16Template.from_letter_method(M=1, d=-1, b=0)
-        elif resolution == 0.01:
-            # resolution = 1 * 10^-2
+        elif resolution == _RESOLUTION_HUNDREDTH:
+            # resolution = 1 * 10^-2  # noqa: ERA001
             self._scaled_template = ScaledUint16Template.from_letter_method(M=1, d=-2, b=0)
         else:
             # Fallback to scale_factor for resolutions that don't fit M * 10^d pattern
             self._scaled_template = ScaledUint16Template(scale_factor=resolution)
 
     @classmethod
-    def from_letter_method(cls, M: int, d: int, b: int = 0) -> ConcentrationTemplate:
+    def from_letter_method(cls, M: int, d: int, b: int = 0) -> ConcentrationTemplate:  # noqa: N803
         """Create instance using Bluetooth SIG M, d, b parameters.
 
         Args:
@@ -1147,10 +1152,7 @@ class TimeDataTemplate(CodingTemplate[TimeData]):
         month = data[offset + 2]
         day = data[offset + 3]
 
-        if year == 0 or month == 0 or day == 0:
-            date_time = None
-        else:
-            date_time = IEEE11073Parser.parse_timestamp(data, offset)
+        date_time = None if year == 0 or month == 0 or day == 0 else IEEE11073Parser.parse_timestamp(data, offset)
 
         # Parse Day of Week (1 byte)
         day_of_week_raw = data[offset + 7]
@@ -1362,11 +1364,12 @@ class Utf16StringTemplate(CodingTemplate[str]):
             # Check for invalid surrogate pairs
             if validate and any(self.UNICODE_SURROGATE_START <= ord(c) <= self.UNICODE_SURROGATE_END for c in decoded):
                 raise ValueError("Invalid UTF-16LE string data: contains unpaired surrogates")
-            return decoded
         except UnicodeDecodeError as e:
             if validate:
                 raise ValueError(f"Invalid UTF-16LE string data: {e}") from e
             return ""
+        else:
+            return decoded
 
     def encode_value(self, value: str, *, validate: bool = True) -> bytearray:
         """Encode string to UTF-16LE bytes."""
@@ -1446,39 +1449,39 @@ class Vector2DTemplate(CodingTemplate[Vector2DData]):
 __all__ = [
     # Protocol
     "CodingTemplate",
-    # Data structures
-    "VectorData",
-    "Vector2DData",
-    "TimeData",
-    # Basic integer templates
-    "Uint8Template",
-    "Sint8Template",
-    "Uint16Template",
-    "Sint16Template",
-    "Uint24Template",
-    "Uint32Template",
+    "ConcentrationTemplate",
     # Enum template
     "EnumTemplate",
-    # Scaled templates
-    "ScaledUint16Template",
-    "ScaledSint16Template",
-    "ScaledSint8Template",
-    "ScaledUint8Template",
-    "ScaledUint32Template",
-    "ScaledUint24Template",
-    "ScaledSint24Template",
+    "Float32Template",
+    "IEEE11073FloatTemplate",
     # Domain-specific templates
     "PercentageTemplate",
-    "TemperatureTemplate",
-    "ConcentrationTemplate",
     "PressureTemplate",
+    "ScaledSint8Template",
+    "ScaledSint16Template",
+    "ScaledSint24Template",
+    "ScaledUint8Template",
+    # Scaled templates
+    "ScaledUint16Template",
+    "ScaledUint24Template",
+    "ScaledUint32Template",
+    "Sint8Template",
+    "Sint16Template",
+    "TemperatureTemplate",
+    "TimeData",
     "TimeDataTemplate",
-    "IEEE11073FloatTemplate",
-    "Float32Template",
+    # Basic integer templates
+    "Uint8Template",
+    "Uint16Template",
+    "Uint24Template",
+    "Uint32Template",
     # String templates
     "Utf8StringTemplate",
     "Utf16StringTemplate",
+    "Vector2DData",
+    "Vector2DTemplate",
+    # Data structures
+    "VectorData",
     # Vector templates
     "VectorTemplate",
-    "Vector2DTemplate",
 ]

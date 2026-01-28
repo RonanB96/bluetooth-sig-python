@@ -55,6 +55,7 @@ class UnknownCharacteristic(BaseCharacteristic[bytes]):
         Args:
             data: Raw bytes from the characteristic read
             ctx: Optional context (ignored)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             Raw bytes as-is

@@ -132,7 +132,7 @@ def _load_cache(cache_file: Path) -> dict[str, dict[str, Any]]:
         if isinstance(data, dict):
             # JSON deserialization returns 'Any' — cast to the expected cache
             # shape so static type checkers understand the return value.
-            return cast(dict[str, dict[str, Any]], data)
+            return cast("dict[str, dict[str, Any]]", data)
         return {}
     except (json.JSONDecodeError, OSError, ValueError):
         return {}
@@ -348,15 +348,14 @@ def generate_all_diagrams(
                 puml_mtime = max((p.stat().st_mtime_ns for p in existing_puml), default=0)
                 svg_mtime = min((s.stat().st_mtime_ns for s in existing_svg), default=0)
                 render_needed = force or (not existing_svg) or (puml_mtime > svg_mtime)
+            # No newly generated puml; render only if some puml exists and
+            # is newer than SVGs or missing SVGs
+            elif existing_puml:
+                puml_mtime = max(p.stat().st_mtime_ns for p in existing_puml)
+                svg_mtime = min((s.stat().st_mtime_ns for s in existing_svg), default=0)
+                render_needed = force or (not existing_svg) or (puml_mtime > svg_mtime)
             else:
-                # No newly generated puml; render only if some puml exists and
-                # is newer than SVGs or missing SVGs
-                if existing_puml:
-                    puml_mtime = max(p.stat().st_mtime_ns for p in existing_puml)
-                    svg_mtime = min((s.stat().st_mtime_ns for s in existing_svg), default=0)
-                    render_needed = force or (not existing_svg) or (puml_mtime > svg_mtime)
-                else:
-                    render_needed = False
+                render_needed = False
 
             if render_needed:
                 print(f"Rendering PUML -> SVG for {package} (PlantUML)")

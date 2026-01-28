@@ -202,11 +202,7 @@ class ScanFilter(msgspec.Struct, kw_only=True):
 
         # Check custom filter function
         filter_func = self.filter_func
-        if filter_func is not None:
-            if not filter_func(device):  # pylint: disable=not-callable
-                return False
-
-        return True
+        return not (filter_func is not None and not filter_func(device))  # pylint: disable=not-callable
 
 
 class ScanOptions(msgspec.Struct, kw_only=True):

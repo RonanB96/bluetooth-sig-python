@@ -7,6 +7,7 @@ from typing import Any
 
 import msgspec
 
+from .company import ManufacturerData
 from .registry.descriptor_types import DescriptorData
 from .uuid import BluetoothUUID
 
@@ -16,7 +17,7 @@ class DeviceInfo(msgspec.Struct, kw_only=True):
 
     address: str = ""
     name: str = ""
-    manufacturer_data: dict[int, bytes] = msgspec.field(default_factory=dict)
+    manufacturer_data: dict[int, ManufacturerData] = msgspec.field(default_factory=dict)
     service_uuids: list[BluetoothUUID] = msgspec.field(default_factory=list)
 
 

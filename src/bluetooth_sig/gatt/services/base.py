@@ -274,13 +274,11 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         """Check if this service matches the given UUID."""
         try:
             service_uuid = cls.get_class_uuid()
-            if isinstance(uuid, BluetoothUUID):
-                input_uuid = uuid
-            else:
-                input_uuid = BluetoothUUID(uuid)
-            return service_uuid == input_uuid
+            input_uuid = uuid if isinstance(uuid, BluetoothUUID) else BluetoothUUID(uuid)
         except (ValueError, UUIDResolutionError):
             return False
+        else:
+            return service_uuid == input_uuid
 
     @classmethod
     def get_expected_characteristics(cls) -> ServiceCharacteristicCollection:
@@ -515,9 +513,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
                 if len(result.missing_required) >= required_count
                 else ServiceHealthStatus.PARTIAL
             )
-        elif result.missing_optional and strict:
-            result.status = ServiceHealthStatus.FUNCTIONAL
-        elif result.warnings or result.invalid_characteristics:
+        elif (result.missing_optional and strict) or result.warnings or result.invalid_characteristics:
             result.status = ServiceHealthStatus.FUNCTIONAL
 
     def validate_service(self, strict: bool = False) -> ServiceValidationResult:  # pylint: disable=too-many-branches
@@ -585,7 +581,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
                     char_class = _char_spec.char_class  # New format
                 else:
                     char_class = cast(
-                        type[BaseCharacteristic[Any]], _char_spec
+                        "type[BaseCharacteristic[Any]]", _char_spec
                     )  # Legacy format: value is the class directly
 
                 missing[char_name] = ServiceCharacteristicInfo(
@@ -609,7 +605,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         `CharacteristicName` enums directly; this helper will only be used
         temporarily by migrating call sites.
         """
-        for enum_char in expected_chars.keys():
+        for enum_char in expected_chars:
             if enum_char.value == characteristic_name:
                 return enum_char
         return None
@@ -643,9 +639,10 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
                 # Try to validate the characteristic
                 char = self.characteristics[uuid_obj]
                 _ = char.uuid  # Basic validation
-                return CharacteristicStatus.PRESENT
             except (KeyError, AttributeError, ValueError, TypeError):
                 return CharacteristicStatus.INVALID
+            else:
+                return CharacteristicStatus.PRESENT
         return CharacteristicStatus.MISSING
 
     def get_characteristic_status(self, characteristic_name: CharacteristicName) -> ServiceCharacteristicInfo | None:
@@ -679,7 +676,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
                 char_class = char_spec.char_class  # New format
             else:
                 char_class = cast(
-                    type[BaseCharacteristic[Any]], char_spec
+                    "type[BaseCharacteristic[Any]]", char_spec
                 )  # Legacy format: value is the class directly
 
         status = self._get_characteristic_status(char_info)
@@ -707,10 +704,10 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         present_chars: list[str] = []
         for uuid, char in self.characteristics.items():
             try:
-                char_name = char.name if hasattr(char, "name") else f"UUID:{str(uuid)}"
+                char_name = char.name if hasattr(char, "name") else f"UUID:{uuid!s}"
                 present_chars.append(char_name)
             except (AttributeError, ValueError, TypeError):
-                present_chars.append(f"Invalid:{str(uuid)}")
+                present_chars.append(f"Invalid:{uuid!s}")
 
         missing_details = {
             name.value: ServiceCharacteristicInfo(

@@ -37,6 +37,10 @@ class PowerSpecificationData:
             return NotImplemented
         return self.minimum == other.minimum and self.typical == other.typical and self.maximum == other.maximum
 
+    def __hash__(self) -> int:
+        """Return hash for PowerSpecificationData."""
+        return hash((self.minimum, self.typical, self.maximum))
+
     def __repr__(self) -> str:
         """Return string representation."""
         return f"PowerSpecificationData(minimum={self.minimum}, typical={self.typical}, maximum={self.maximum})"
@@ -73,12 +77,11 @@ class PowerSpecificationCharacteristic(BaseCharacteristic[PowerSpecificationData
             maximum=_convert_value(maximum_raw),
         )
 
-    def _encode_value(self, data: PowerSpecificationData) -> bytearray:  # noqa: D202
+    def _encode_value(self, data: PowerSpecificationData) -> bytearray:
         """Encode the power specification values."""
 
         # Convert float values to uint24 with 0.1 W resolution, handling special values
         def _convert_to_raw(value: float | None) -> int:
-            # NOTE: D202 disabled on method - blank line required by black formatter for nested function
             if value is None:
                 return VALUE_UNKNOWN  # Use "not known" as default for None
             return round(value / 0.1)

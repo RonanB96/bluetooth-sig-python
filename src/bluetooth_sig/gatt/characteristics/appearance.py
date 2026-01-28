@@ -28,6 +28,7 @@ class AppearanceCharacteristic(BaseCharacteristic[AppearanceData]):
         Args:
             data: Raw bytearray from BLE characteristic (2 bytes).
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             AppearanceData with raw value and optional human-readable info.
@@ -45,6 +46,7 @@ class AppearanceCharacteristic(BaseCharacteristic[AppearanceData]):
 
         Args:
             data: Appearance value as AppearanceData
+
 
         Returns:
             Encoded bytes representing the appearance

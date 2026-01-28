@@ -84,14 +84,12 @@ class LNFeatureCharacteristic(BaseCharacteristic[LNFeatureData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             LNFeatureData containing parsed feature bitmap and capabilities.
 
         """
-        if len(data) < 4:
-            raise ValueError("LN Feature data must be at least 4 bytes")
-
         features_bitmap = DataParser.parse_int32(data, 0, signed=False)
 
         # Extract individual feature flags

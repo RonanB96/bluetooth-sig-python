@@ -152,6 +152,7 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic[CyclingPowerCont
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             CyclingPowerControlPointData containing parsed control point data.
@@ -160,9 +161,6 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic[CyclingPowerCont
             ValueError: If data format is invalid.
 
         """
-        if len(data) < MIN_OP_CODE_LENGTH:
-            raise ValueError("Cycling Power Control Point data must be at least 1 byte")
-
         op_code = data[0]
 
         # Parse additional data based on op code
@@ -284,10 +282,9 @@ class CyclingPowerControlPointCharacteristic(BaseCharacteristic[CyclingPowerCont
         elif op_code == CyclingPowerOpCode.MASK_CYCLING_POWER_MEASUREMENT:
             if len(data) >= self.TWO_BYTE_PARAM_LENGTH:
                 measurement_mask = DataParser.parse_int16(data, offset=1, signed=False)
-        elif op_code == CyclingPowerOpCode.RESPONSE_CODE:
-            if len(data) >= self.RESPONSE_CODE_LENGTH:
-                request_op_code = CyclingPowerOpCode(data[1])
-                response_value = CyclingPowerResponseValue(data[2])
+        elif op_code == CyclingPowerOpCode.RESPONSE_CODE and len(data) >= self.RESPONSE_CODE_LENGTH:
+            request_op_code = CyclingPowerOpCode(data[1])
+            response_value = CyclingPowerResponseValue(data[2])
 
         return OpCodeParameters(
             cumulative_value=cumulative_value,

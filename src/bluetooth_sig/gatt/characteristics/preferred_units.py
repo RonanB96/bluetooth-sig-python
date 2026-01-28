@@ -40,6 +40,7 @@ class PreferredUnitsCharacteristic(BaseCharacteristic[PreferredUnitsData]):
         Args:
             data: Raw bytes from BLE characteristic (variable length, multiples of 2)
             ctx: Optional context for parsing
+            validate: Whether to validate ranges (default True)
 
         Returns:
             PreferredUnitsData: Parsed preferred units as Bluetooth UUID objects

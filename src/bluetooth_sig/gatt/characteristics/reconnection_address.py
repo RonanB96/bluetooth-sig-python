@@ -23,6 +23,7 @@ class ReconnectionAddressCharacteristic(BaseCharacteristic[str]):
         Args:
             data: Raw bytearray (6 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             BD_ADDR as string (e.g., "AA:BB:CC:DD:EE:FF").

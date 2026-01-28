@@ -38,6 +38,7 @@ class ScanIntervalWindowCharacteristic(BaseCharacteristic[ScanIntervalWindowData
         Args:
             data: Raw bytearray from BLE characteristic (4 bytes).
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ScanIntervalWindowData with parsed scan parameters.

@@ -42,6 +42,7 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic[ElectricCurrentRange
 
     # Validation attributes
     expected_length: int = 4  # 2x uint16
+    min_length: int = 4
 
     # Override since decode_value returns structured ElectricCurrentRangeData
     _manual_value_type: ValueType | str | None = ValueType.DICT
@@ -54,6 +55,7 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic[ElectricCurrentRange
         Args:
             data: Raw bytes from the characteristic read.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ElectricCurrentRangeData with 'min' and 'max' current values in Amperes.
@@ -62,9 +64,6 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic[ElectricCurrentRange
             ValueError: If data is insufficient.
 
         """
-        if len(data) < 4:
-            raise ValueError("Electric current range data must be at least 4 bytes")
-
         # Convert 2x uint16 (little endian) to current range in Amperes
         min_current_raw = DataParser.parse_int16(data, 0, signed=False)
         max_current_raw = DataParser.parse_int16(data, 2, signed=False)

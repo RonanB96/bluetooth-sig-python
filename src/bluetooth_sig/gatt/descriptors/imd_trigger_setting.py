@@ -39,9 +39,6 @@ class IMDTriggerSettingDescriptor(BaseDescriptor):
         Raises:
             ValueError: If data is not exactly 2 bytes
         """
-        if len(data) != 2:
-            raise ValueError(f"IMD Trigger Setting data must be exactly 2 bytes, got {len(data)}")
-
         trigger_setting = DataParser.parse_int16(data, endian="little")
 
         return IMDTriggerSettingData(trigger_setting=trigger_setting)

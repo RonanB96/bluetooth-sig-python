@@ -29,6 +29,7 @@ class DateTimeCharacteristic(BaseCharacteristic[datetime]):
         Args:
             data: Raw bytearray from BLE characteristic (7 bytes, validated by base class).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             Python datetime object with parsed date and time.

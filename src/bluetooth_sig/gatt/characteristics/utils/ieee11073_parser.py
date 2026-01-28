@@ -38,8 +38,7 @@ class IEEE11073Parser:
 
     # IEEE-11073 FLOAT32 (32-bit) special values
     # Per IEEE 11073-20601 and Bluetooth GSS, exponent=0 with reserved mantissas:
-    # - Mantissa 0x7FFFFE (+Inf), 0x7FFFFF (NaN), 0x800000 (NRes),
-    #   0x800001 (RFU), 0x800002 (-Inf)
+    # Mantissa: 0x7FFFFE (+Inf), 0x7FFFFF (NaN), 0x800000 (NRes), 0x800001 (RFU), 0x800002 (-Inf)
     FLOAT32_NAN = 0x007FFFFF  # Exponent 0, mantissa 0x7FFFFF
     FLOAT32_POSITIVE_INFINITY = 0x007FFFFE  # Exponent 0, mantissa 0x7FFFFE
     FLOAT32_NEGATIVE_INFINITY = 0x00800002  # Exponent 0, mantissa 0x800002
@@ -168,7 +167,7 @@ class IEEE11073Parser:
             mantissa *= 10
             exponent -= 1
 
-        mantissa_int = int(round(mantissa))
+        mantissa_int = round(mantissa)
 
         # Pack into 16-bit value
         exponent += IEEE11073Parser.SFLOAT_EXPONENT_BIAS  # Add bias for storage

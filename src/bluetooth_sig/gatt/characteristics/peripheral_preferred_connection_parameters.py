@@ -37,6 +37,7 @@ class PeripheralPreferredConnectionParametersCharacteristic(BaseCharacteristic[C
         Args:
             data: Raw bytearray (8 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ConnectionParametersData with min_interval, max_interval, latency, timeout.

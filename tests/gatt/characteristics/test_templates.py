@@ -449,7 +449,7 @@ class TestUtf16StringTemplate:
     def test_decode_with_bom(self) -> None:
         """Test decoding UTF-16LE with BOM (should be stripped)."""
         template = Utf16StringTemplate()
-        # BOM (0xFEFF) + "Hi"
+        # Test data: UTF-16LE BOM (0xFEFF) followed by "Hi"
         data = bytearray(b"\xff\xfeH\x00i\x00")
         result = template.decode_value(data)
         assert result == "Hi"

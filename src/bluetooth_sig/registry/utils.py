@@ -7,6 +7,7 @@ from typing import Any, cast
 
 import msgspec
 
+from bluetooth_sig.gatt.constants import UINT16_MAX
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -28,7 +29,7 @@ def load_yaml_uuids(file_path: Path) -> list[dict[str, Any]]:
     if not isinstance(data, dict):
         return []
 
-    data_dict = cast(dict[str, Any], data)
+    data_dict = cast("dict[str, Any]", data)
     uuid_entries = data_dict.get("uuids")
     if not isinstance(uuid_entries, list):
         return []
@@ -36,7 +37,7 @@ def load_yaml_uuids(file_path: Path) -> list[dict[str, Any]]:
     typed_entries: list[dict[str, Any]] = []
     for entry in uuid_entries:
         if isinstance(entry, dict):
-            typed_entries.append(cast(dict[str, Any], entry))
+            typed_entries.append(cast("dict[str, Any]", entry))
 
     return typed_entries
 
@@ -50,11 +51,7 @@ def normalize_uuid_string(uuid: str | int) -> str:
     Returns:
         Normalized UUID string
     """
-    if isinstance(uuid, str):
-        uuid = uuid.replace("0x", "").replace("0X", "")
-    else:
-        uuid = hex(uuid)[2:].upper()
-    return uuid
+    return uuid.replace("0x", "").replace("0X", "") if isinstance(uuid, str) else hex(uuid)[2:].upper()
 
 
 def find_bluetooth_sig_path() -> Path | None:
@@ -94,7 +91,7 @@ def parse_bluetooth_uuid(uuid: str | int | BluetoothUUID) -> BluetoothUUID:
     if isinstance(uuid, int):
         uuid_str = hex(uuid)[2:].upper()
         # Pad to 4 characters only for 16-bit UUIDs (0x0000 - 0xFFFF)
-        if 0 <= uuid <= 0xFFFF:
+        if 0 <= uuid <= UINT16_MAX:
             uuid_str = uuid_str.zfill(4)
         return BluetoothUUID(uuid_str)
     uuid_str = str(uuid).replace("0x", "").replace("0X", "")

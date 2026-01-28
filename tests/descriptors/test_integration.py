@@ -25,7 +25,9 @@ class TestDescriptorIntegration:
                 value_type=ValueType.INT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return int.from_bytes(data, "little")
 
             def _encode_value(self, data: int) -> bytearray:
@@ -57,7 +59,9 @@ class TestDescriptorIntegration:
                 value_type=ValueType.INT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return int.from_bytes(data, "little")
 
             def _encode_value(self, data: int) -> bytearray:

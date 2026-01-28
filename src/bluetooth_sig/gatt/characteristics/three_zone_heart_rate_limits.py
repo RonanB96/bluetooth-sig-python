@@ -34,6 +34,7 @@ class ThreeZoneHeartRateLimitsCharacteristic(BaseCharacteristic[ThreeZoneHeartRa
         Args:
             data: Raw bytes from BLE characteristic (2 bytes)
             ctx: Optional context for parsing
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ThreeZoneHeartRateLimitsData: Parsed heart rate limits

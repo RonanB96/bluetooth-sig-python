@@ -8,7 +8,7 @@ types.gatt_enums to avoid circular imports.
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, ClassVar
 
 from typing_extensions import TypeGuard
 
@@ -21,7 +21,7 @@ from ..uuid_registry import uuid_registry
 from .base import BaseCharacteristic
 
 # Export for other modules to import
-__all__ = ["CharacteristicName", "get_characteristic_class_map", "CharacteristicRegistry"]
+__all__ = ["CharacteristicName", "CharacteristicRegistry", "get_characteristic_class_map"]
 
 
 def _is_characteristic_subclass(candidate: object) -> TypeGuard[type[BaseCharacteristic[Any]]]:
@@ -43,7 +43,7 @@ class _RegistryKeyBuilder:
 
     # Special cases for characteristics whose YAML names don't match enum display names
     # NOTE: CO2 uses LaTeX formatting in official Bluetooth SIG spec: "CO\textsubscript{2} Concentration"
-    _SPECIAL_INFO_NAME_TO_ENUM = {
+    _SPECIAL_INFO_NAME_TO_ENUM: ClassVar[dict[str, CharacteristicName]] = {
         "CO\\textsubscript{2} Concentration": CharacteristicName.CO2_CONCENTRATION,
     }
 
@@ -97,8 +97,8 @@ def get_characteristic_class_map() -> dict[CharacteristicName, type[BaseCharacte
 class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseCharacteristic[Any]]):
     """Encapsulates all GATT characteristic registry operations."""
 
-    _MODULE_EXCLUSIONS = {"__main__", "__init__", "base", "registry", "templates"}
-    _NON_ALPHANUMERIC_RE = re.compile(r"[^a-z0-9]+")
+    _MODULE_EXCLUSIONS: ClassVar[set[str]] = {"__main__", "__init__", "base", "registry", "templates"}
+    _NON_ALPHANUMERIC_RE: ClassVar[re.Pattern[str]] = re.compile(r"[^a-z0-9]+")
 
     def _get_base_class(self) -> type[BaseCharacteristic[Any]]:
         """Return the base class for characteristic validation."""
@@ -229,10 +229,7 @@ class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseChara
             ValueError: If uuid format is invalid
         """
         # Normalize to BluetoothUUID (let ValueError propagate for invalid format)
-        if isinstance(uuid, BluetoothUUID):
-            uuid_obj = uuid
-        else:
-            uuid_obj = BluetoothUUID(uuid)
+        uuid_obj = uuid if isinstance(uuid, BluetoothUUID) else BluetoothUUID(uuid)
 
         instance = cls.get_instance()
         char_cls = instance.get_class_by_uuid(uuid_obj)

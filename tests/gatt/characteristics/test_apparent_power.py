@@ -64,15 +64,15 @@ class TestApparentPowerCharacteristic(CommonCharacteristicTests):
 
     def test_apparent_power_special_values(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test special values for apparent power."""
-        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetectedError
 
         # Test "value is not valid" (0xFFFFFE)
-        with pytest.raises(SpecialValueDetected) as exc_info:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
             characteristic.parse_value(bytearray([0xFE, 0xFF, 0xFF]))
         assert exc_info.value.special_value.meaning == "value is not valid"
 
         # Test "value is not known" (0xFFFFFF)
-        with pytest.raises(SpecialValueDetected) as exc_info:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
             characteristic.parse_value(bytearray([0xFF, 0xFF, 0xFF]))
         assert exc_info.value.special_value.meaning == "value is not known"
 

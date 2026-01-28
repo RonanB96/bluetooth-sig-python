@@ -37,6 +37,7 @@ class CSCFeatureCharacteristic(BaseCharacteristic[CSCFeatureData]):
     """
 
     expected_length: int = 2
+    min_length: int = 2
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
@@ -48,6 +49,7 @@ class CSCFeatureCharacteristic(BaseCharacteristic[CSCFeatureData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             CSCFeatureData containing parsed feature flags.
@@ -56,9 +58,6 @@ class CSCFeatureCharacteristic(BaseCharacteristic[CSCFeatureData]):
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 2:
-            raise ValueError("CSC Feature data must be at least 2 bytes")
-
         # Parse 16-bit unsigned integer (little endian)
         feature_mask: int = DataParser.parse_int16(data, 0, signed=False)
 

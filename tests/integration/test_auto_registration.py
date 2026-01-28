@@ -6,12 +6,11 @@ register themselves with the global BluetoothSIGTranslator singleton when instan
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
+from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.types.data_types import CharacteristicInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -30,7 +29,9 @@ class LocalTemperatureCharacteristic(CustomBaseCharacteristic):
         name="Local Temperature Characteristic",
     )
 
-    def _decode_value(self, data: bytearray, ctx: Any = None) -> float:  # noqa: ANN401
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> float:
         # Expect 2-byte format: int8 (whole degrees) + uint8 decimal (00-99)
         if len(data) != 2:
             # For test, accept single byte too
@@ -133,7 +134,9 @@ class TestAutoRegistration:
                 uuid=BluetoothUUID("12345678-1234-5678-1234-567812345678"),
             )
 
-            def _decode_value(self, data: bytearray, ctx: Any = None) -> int:  # noqa: ANN401
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 """Decode single byte as integer."""
                 return int(data[0]) if data else 0
 

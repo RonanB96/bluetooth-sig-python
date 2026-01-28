@@ -12,10 +12,11 @@ This bridges the advertising and GATT layers:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
+from bluetooth_sig.types.company import ManufacturerData
 from bluetooth_sig.types.context import CharacteristicContext, DeviceInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -45,7 +46,7 @@ class ServiceDataParser:
     """
 
     # Cache characteristic instances by UUID for performance
-    _char_cache: dict[str, BaseCharacteristic[Any]] = {}
+    _char_cache: ClassVar[dict[str, BaseCharacteristic[Any]]] = {}
 
     @classmethod
     def get_characteristic(cls, uuid: BluetoothUUID) -> BaseCharacteristic[Any] | None:
@@ -74,7 +75,7 @@ class ServiceDataParser:
         cls._char_cache.clear()
 
     @staticmethod
-    def build_context(
+    def build_context(  # pylint: disable=too-many-arguments,too-many-positional-arguments  # Context builder needs all ad fields
         device_name: str = "",
         device_address: str = "",
         manufacturer_data: dict[int, bytes] | None = None,
@@ -96,11 +97,16 @@ class ServiceDataParser:
             CharacteristicContext populated with device info
 
         """
+        mfr_data_converted: dict[int, ManufacturerData] = {}
+        if manufacturer_data:
+            for company_id, payload in manufacturer_data.items():
+                mfr_data_converted[company_id] = ManufacturerData.from_id_and_payload(company_id, payload)
+
         return CharacteristicContext(
             device_info=DeviceInfo(
                 name=device_name,
                 address=device_address,
-                manufacturer_data=manufacturer_data or {},
+                manufacturer_data=mfr_data_converted,
                 service_uuids=service_uuids or [],
             ),
             advertisement=advertisement,
@@ -111,7 +117,7 @@ class ServiceDataParser:
         self,
         service_data: dict[BluetoothUUID, bytes],
         ctx: CharacteristicContext | None = None,
-    ) -> dict[BluetoothUUID, Any]:  # noqa: ANN401 - dynamic types from runtime lookup
+    ) -> dict[BluetoothUUID, Any]:
         """Parse service data using registered characteristic classes.
 
         Iterates through service data entries, looking up each UUID in the
@@ -129,7 +135,7 @@ class ServiceDataParser:
 
         Raises:
             CharacteristicParseError: If parsing fails (when validate=True)
-            SpecialValueDetected: If a special value sentinel is detected
+            SpecialValueDetectedError: If a special value sentinel is detected
 
         """
         results: dict[BluetoothUUID, Any] = {}

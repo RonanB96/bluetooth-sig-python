@@ -59,7 +59,7 @@ class ServiceMockConnectionManager(ConnectionManagerProtocol):
     def name(self) -> str:
         return "Service Mock Device"
 
-    async def connect(self) -> None:
+    async def connect(self, *, timeout: float = 10.0) -> None:
         self._connected = True
 
     async def disconnect(self) -> None:
@@ -104,7 +104,7 @@ class ServiceMockConnectionManager(ConnectionManagerProtocol):
         pass
 
     @classmethod
-    def convert_advertisement(cls, advertisement: object) -> AdvertisementData:
+    def convert_advertisement(cls, _advertisement: object) -> AdvertisementData:
         return AdvertisementData(
             ad_structures=AdvertisingDataStructures(core=CoreAdvertisingData()),
         )

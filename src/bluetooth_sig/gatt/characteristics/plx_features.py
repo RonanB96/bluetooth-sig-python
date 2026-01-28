@@ -46,6 +46,7 @@ class PLXFeaturesCharacteristic(BaseCharacteristic[PLXFeatureFlags]):
         Args:
             data: Raw bytes from BLE characteristic (2 bytes)
             ctx: Unused, for signature compatibility
+            validate: Whether to validate ranges (default True)
 
         Returns:
             PLXFeatureFlags enum with supported features

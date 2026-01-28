@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from enum import IntEnum, IntFlag
+from typing import Any, ClassVar
 
 import msgspec
 
@@ -282,7 +283,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic[GlucoseMeasurem
     _manual_unit: str = "various"  # Multiple units in context data
 
     # Declare dependency on Glucose Measurement for sequence number matching (REQUIRED)
-    _required_dependencies = [GlucoseMeasurementCharacteristic]
+    _required_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [GlucoseMeasurementCharacteristic]
 
     min_length: int | None = 3  # Flags(1) + Sequence(2) minimum
     max_length: int | None = (
@@ -292,7 +293,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic[GlucoseMeasurem
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
-    ) -> GlucoseMeasurementContextData:  # pylint: disable=too-many-locals
+    ) -> GlucoseMeasurementContextData:  # pylint: disable=too-many-locals  # Complex spec with many optional context fields
         """Parse glucose measurement context data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + [Extended Flags(1)] + [Carbohydrate ID(1) + Carb(2)] +
@@ -302,6 +303,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic[GlucoseMeasurem
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional context providing access to Glucose Measurement characteristic
+            validate: Whether to validate ranges (default True)
                 for sequence number validation.
 
         Returns:
@@ -316,9 +318,6 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic[GlucoseMeasurem
         where contexts are paired with measurements via sequence number matching.
 
         """
-        if len(data) < 3:
-            raise ValueError("Glucose Measurement Context data must be at least 3 bytes")
-
         flags_raw = data[0]
         flags = GlucoseMeasurementContextFlags(flags_raw)
         offset = 1
@@ -379,7 +378,7 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic[GlucoseMeasurem
 
         """
         sequence_number = data.sequence_number
-        if not 0 <= sequence_number <= 0xFFFF:
+        if not 0 <= sequence_number <= UINT16_MAX:
             raise ValueError(f"Sequence number {sequence_number} exceeds uint16 range")
 
         # Use the flags from the data structure

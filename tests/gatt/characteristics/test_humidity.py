@@ -55,11 +55,11 @@ class TestHumidityCharacteristic(CommonCharacteristicTests):
         assert abs(result - 50.0) < 0.01
 
     def test_humidity_out_of_range_validation(self, characteristic: HumidityCharacteristic) -> None:
-        """Test that special value 0xFFFF raises SpecialValueDetected."""
-        # Test special value 0xFFFF should raise SpecialValueDetected (value is not known)
-        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+        """Test that special value 0xFFFF raises SpecialValueDetectedError."""
+        # Test special value 0xFFFF should raise SpecialValueDetectedError (value is not known)
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetectedError
 
-        with pytest.raises(SpecialValueDetected) as exc_info:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
             characteristic.parse_value(bytearray([0xFF, 0xFF]))
         assert exc_info.value.special_value.meaning == "value is not known"
         assert exc_info.value.special_value.value_type == SpecialValueType.UNKNOWN

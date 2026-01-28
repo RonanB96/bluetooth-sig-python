@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from ...types.gatt_enums import ValueType
 from ...types.units import PhysicalUnit
 from ..context import CharacteristicContext
@@ -28,9 +30,10 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic[Vector2DData]):
     _manual_value_type: ValueType | str | None = ValueType.STRING  # Override since decode_value returns dict
     _manual_unit: str | None = PhysicalUnit.TESLA.value  # Tesla
 
-    _vector_components: list[str] = ["x_axis", "y_axis"]
+    _vector_components: ClassVar[list[str]] = ["x_axis", "y_axis"]
     resolution: float = 1e-7
     expected_length: int = 4  # 2 x sint16
+    min_length: int = 4
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
@@ -40,14 +43,12 @@ class MagneticFluxDensity2DCharacteristic(BaseCharacteristic[Vector2DData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             Vector2DData with x and y axis values in Tesla.
 
         """
-        if len(data) < 4:
-            raise ValueError("Insufficient data for 2D magnetic flux density (need 4 bytes)")
-
         x_raw = DataParser.parse_int16(data, 0, signed=True)
         y_raw = DataParser.parse_int16(data, 2, signed=True)
 

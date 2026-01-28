@@ -43,6 +43,7 @@ class RingerSettingCharacteristic(BaseCharacteristic[RingerSettingData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext (unused)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             RingerSettingData containing parsed ringer setting.

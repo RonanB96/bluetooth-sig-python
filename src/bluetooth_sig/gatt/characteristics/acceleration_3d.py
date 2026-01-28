@@ -31,6 +31,7 @@ class Acceleration3DCharacteristic(BaseCharacteristic[VectorData]):
         Args:
             data: Raw bytearray from BLE characteristic (3 bytes, validated by base class).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             VectorData with x, y, z axis values in gₙ (standard acceleration due to gravity).

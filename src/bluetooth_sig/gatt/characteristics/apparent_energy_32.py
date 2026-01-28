@@ -21,7 +21,7 @@ class ApparentEnergy32Characteristic(BaseCharacteristic[float]):
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
-    ) -> float | None:
+    ) -> float:
         """Decode apparent energy 32 characteristic.
 
         Decodes a 32-bit unsigned integer representing apparent energy in 0.001 kVAh increments
@@ -30,6 +30,7 @@ class ApparentEnergy32Characteristic(BaseCharacteristic[float]):
         Args:
             data: Raw bytes from BLE characteristic (exactly 4 bytes, little-endian)
             ctx: Optional context for parsing (device info, flags, etc.)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             Apparent energy in kilovolt ampere hours, or None if value is not valid or unknown

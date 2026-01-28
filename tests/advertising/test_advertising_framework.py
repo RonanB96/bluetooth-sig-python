@@ -5,12 +5,13 @@ from __future__ import annotations
 import msgspec
 
 from bluetooth_sig.advertising import (
-    AdvertisingDataInterpreter,
-    AdvertisingInterpreterInfo,
-    AdvertisingPDUParser,
     DataSource,
     DictKeyProvider,
 )
+from bluetooth_sig.advertising.base import InterpreterInfo, PayloadInterpreter
+from bluetooth_sig.advertising.pdu_parser import AdvertisingPDUParser
+from bluetooth_sig.advertising.result import InterpretationResult, InterpretationStatus
+from bluetooth_sig.advertising.state import DeviceAdvertisingState
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -57,192 +58,141 @@ class TestDictKeyProvider:
         assert provider.get_key("AA:BB:CC:DD:EE:FF") is None
 
 
-class TestAdvertisingDataInterpreter:
-    """Tests for AdvertisingDataInterpreter."""
+class TestPayloadInterpreter:
+    """Tests for PayloadInterpreter."""
 
     def test_interpreter_instance_attributes(self) -> None:
-        """Test interpreter instance has mac_address and bindkey."""
+        """Test interpreter instance has mac_address."""
+        from bluetooth_sig.advertising.base import AdvertisingData
 
-        class SimpleInterpreter(AdvertisingDataInterpreter[TestSensorData]):
-            _info = AdvertisingInterpreterInfo(company_id=0x1234, name="Test")
+        class SimpleInterpreter(PayloadInterpreter[TestSensorData]):
+            _info = InterpreterInfo(company_id=0x1234, name="Test")
 
             @classmethod
-            def supports(
-                cls,
-                manufacturer_data: dict[int, bytes],
-                service_data: dict[BluetoothUUID, bytes],
-                local_name: str | None,
-            ) -> bool:
-                return 0x1234 in manufacturer_data
+            def supports(cls, advertising_data: AdvertisingData) -> bool:
+                return 0x1234 in advertising_data.manufacturer_data
 
             def interpret(
                 self,
-                manufacturer_data: dict[int, bytes],
-                service_data: dict[BluetoothUUID, bytes],
-                local_name: str | None,
-                rssi: int,
-            ) -> TestSensorData:
-                return TestSensorData(device_type="Test")
+                advertising_data: AdvertisingData,
+                state: DeviceAdvertisingState,
+            ) -> InterpretationResult[TestSensorData]:
+                return InterpretationResult(
+                    data=TestSensorData(device_type="Test"),
+                    status=InterpretationStatus.SUCCESS,
+                )
 
-        key = bytes.fromhex("0123456789abcdef0123456789abcdef")
-        interpreter = SimpleInterpreter("AA:BB:CC:DD:EE:FF", bindkey=key)
+        interpreter = SimpleInterpreter("AA:BB:CC:DD:EE:FF")
 
         assert interpreter.mac_address == "AA:BB:CC:DD:EE:FF"
-        assert interpreter.bindkey == key
-        assert interpreter.state == {}
         assert interpreter.info.company_id == 0x1234
 
-    def test_interpreter_state_persistence(self) -> None:
-        """Test interpreter state persists across calls."""
 
-        class StatefulInterpreter(AdvertisingDataInterpreter[TestSensorData]):
-            _info = AdvertisingInterpreterInfo(company_id=0x5678, name="Stateful")
-
-            @classmethod
-            def supports(
-                cls,
-                manufacturer_data: dict[int, bytes],
-                service_data: dict[BluetoothUUID, bytes],
-                local_name: str | None,
-            ) -> bool:
-                return 0x5678 in manufacturer_data
-
-            def interpret(
-                self,
-                manufacturer_data: dict[int, bytes],
-                service_data: dict[BluetoothUUID, bytes],
-                local_name: str | None,
-                rssi: int,
-            ) -> TestSensorData:
-                counter = self.state.get("counter", 0) + 1
-                self.state["counter"] = counter
-                return TestSensorData(device_type=f"call_{counter}")
-
-        interpreter = StatefulInterpreter("AA:BB:CC:DD:EE:FF")
-
-        result1 = interpreter.interpret({0x5678: b"\x01"}, {}, None, -65)
-        assert result1.device_type == "call_1"
-
-        result2 = interpreter.interpret({0x5678: b"\x02"}, {}, None, -60)
-        assert result2.device_type == "call_2"
-
-        assert interpreter.state["counter"] == 2
-
-
-class TestAdvertisingInterpreterRegistry:
-    """Tests for AdvertisingInterpreterRegistry."""
+class TestPayloadInterpreterRegistry:
+    """Tests for PayloadInterpreterRegistry."""
 
     def test_find_interpreter_class(self) -> None:
         """Test finding an interpreter class by advertisement."""
-        from bluetooth_sig.advertising.registry import AdvertisingInterpreterRegistry
+        from bluetooth_sig.advertising.base import AdvertisingData
+        from bluetooth_sig.advertising.registry import PayloadInterpreterRegistry
+        from bluetooth_sig.types.company import ManufacturerData
 
-        registry = AdvertisingInterpreterRegistry()
+        registry = PayloadInterpreterRegistry()
 
-        class TestInterpreter(AdvertisingDataInterpreter[TestSensorData]):
-            _info = AdvertisingInterpreterInfo(
+        class TestInterpreter(PayloadInterpreter[TestSensorData]):
+            _info = InterpreterInfo(
                 company_id=0x9999,
                 name="Test",
                 data_source=DataSource.MANUFACTURER,
             )
 
             @classmethod
-            def supports(
-                cls,
-                manufacturer_data: dict[int, bytes],
-                service_data: dict[BluetoothUUID, bytes],
-                local_name: str | None,
-            ) -> bool:
-                return 0x9999 in manufacturer_data
+            def supports(cls, advertising_data: AdvertisingData) -> bool:
+                return 0x9999 in advertising_data.manufacturer_data
 
             def interpret(
                 self,
-                manufacturer_data: dict[int, bytes],
-                service_data: dict[BluetoothUUID, bytes],
-                local_name: str | None,
-                rssi: int,
-            ) -> TestSensorData:
-                return TestSensorData(device_type="Test")
+                advertising_data: AdvertisingData,
+                state: DeviceAdvertisingState,
+            ) -> InterpretationResult[TestSensorData]:
+                return InterpretationResult(
+                    data=TestSensorData(device_type="Test"),
+                    status=InterpretationStatus.SUCCESS,
+                )
 
         registry.register(TestInterpreter)
 
-        interpreter_class = registry.find_interpreter_class(
-            manufacturer_data={0x9999: b"\x01\x02\x03"},
-            service_data={},
-            local_name=None,
+        ad_data = AdvertisingData(
+            manufacturer_data={0x9999: ManufacturerData.from_id_and_payload(0x9999, b"\x01\x02\x03")},
         )
+        interpreter_class = registry.find_interpreter_class(ad_data)
         assert interpreter_class is TestInterpreter
 
     def test_find_all_interpreter_classes(self) -> None:
         """Test finding all matching interpreter classes."""
-        from bluetooth_sig.advertising.registry import AdvertisingInterpreterRegistry
+        from bluetooth_sig.advertising.base import AdvertisingData
+        from bluetooth_sig.advertising.registry import PayloadInterpreterRegistry
+        from bluetooth_sig.types.company import ManufacturerData
 
-        registry = AdvertisingInterpreterRegistry()
+        registry = PayloadInterpreterRegistry()
 
-        class Interpreter1(AdvertisingDataInterpreter[TestSensorData]):
-            _info = AdvertisingInterpreterInfo(company_id=0xAAAA, name="I1")
+        class Interpreter1(PayloadInterpreter[TestSensorData]):
+            _info = InterpreterInfo(company_id=0xAAAA, name="I1")
 
             @classmethod
-            def supports(
-                cls,
-                manufacturer_data: dict[int, bytes],
-                service_data: dict[BluetoothUUID, bytes],
-                local_name: str | None,
-            ) -> bool:
-                return 0xAAAA in manufacturer_data
+            def supports(cls, advertising_data: AdvertisingData) -> bool:
+                return 0xAAAA in advertising_data.manufacturer_data
 
             def interpret(
                 self,
-                manufacturer_data: dict[int, bytes],
-                service_data: dict[BluetoothUUID, bytes],
-                local_name: str | None,
-                rssi: int,
-            ) -> TestSensorData:
-                return TestSensorData(device_type="I1")
+                advertising_data: AdvertisingData,
+                state: DeviceAdvertisingState,
+            ) -> InterpretationResult[TestSensorData]:
+                return InterpretationResult(
+                    data=TestSensorData(device_type="I1"),
+                    status=InterpretationStatus.SUCCESS,
+                )
 
-        class Interpreter2(AdvertisingDataInterpreter[TestSensorData]):
-            _info = AdvertisingInterpreterInfo(company_id=0xAAAA, name="I2")
+        class Interpreter2(PayloadInterpreter[TestSensorData]):
+            _info = InterpreterInfo(company_id=0xAAAA, name="I2")
 
             @classmethod
-            def supports(
-                cls,
-                manufacturer_data: dict[int, bytes],
-                service_data: dict[BluetoothUUID, bytes],
-                local_name: str | None,
-            ) -> bool:
-                return 0xAAAA in manufacturer_data
+            def supports(cls, advertising_data: AdvertisingData) -> bool:
+                return 0xAAAA in advertising_data.manufacturer_data
 
             def interpret(
                 self,
-                manufacturer_data: dict[int, bytes],
-                service_data: dict[BluetoothUUID, bytes],
-                local_name: str | None,
-                rssi: int,
-            ) -> TestSensorData:
-                return TestSensorData(device_type="I2")
+                advertising_data: AdvertisingData,
+                state: DeviceAdvertisingState,
+            ) -> InterpretationResult[TestSensorData]:
+                return InterpretationResult(
+                    data=TestSensorData(device_type="I2"),
+                    status=InterpretationStatus.SUCCESS,
+                )
 
         registry.register(Interpreter1)
         registry.register(Interpreter2)
 
-        classes = registry.find_all_interpreter_classes(
-            manufacturer_data={0xAAAA: b"\x01"},
-            service_data={},
-            local_name=None,
+        ad_data = AdvertisingData(
+            manufacturer_data={0xAAAA: ManufacturerData.from_id_and_payload(0xAAAA, b"\x01")},
         )
+        classes = registry.find_all_interpreter_classes(ad_data)
         assert len(classes) == 2
         assert Interpreter1 in classes
         assert Interpreter2 in classes
 
     def test_no_matching_interpreter(self) -> None:
         """Test when no interpreter matches."""
-        from bluetooth_sig.advertising.registry import AdvertisingInterpreterRegistry
+        from bluetooth_sig.advertising.base import AdvertisingData
+        from bluetooth_sig.advertising.registry import PayloadInterpreterRegistry
+        from bluetooth_sig.types.company import ManufacturerData
 
-        registry = AdvertisingInterpreterRegistry()
+        registry = PayloadInterpreterRegistry()
 
-        result = registry.find_interpreter_class(
-            manufacturer_data={0x1111: b"\x01\x02\x03"},
-            service_data={},
-            local_name=None,
+        ad_data = AdvertisingData(
+            manufacturer_data={0x1111: ManufacturerData.from_id_and_payload(0x1111, b"\x01\x02\x03")},
         )
+        result = registry.find_interpreter_class(ad_data)
         assert result is None
 
 
@@ -258,7 +208,10 @@ class TestAdvertisingPDUParser:
         result = parser.parse_advertising_data(ad_data)
 
         assert 0x1234 in result.ad_structures.core.manufacturer_data
-        assert result.ad_structures.core.manufacturer_data[0x1234] == b"\x56"
+        mfr_data = result.ad_structures.core.manufacturer_data[0x1234]
+        assert mfr_data.company.id == 0x1234
+        assert mfr_data.company.name == "Unknown (0x1234)"
+        assert mfr_data.payload == b"\x56"
 
     def test_parse_service_data(self) -> None:
         """Test parsing service data from PDU."""

@@ -46,8 +46,6 @@ class ValidRangeAndAccuracyDescriptor(BaseDescriptor, RangeDescriptorMixin):
         """
         # Valid Range and Accuracy format: min_value + max_value + accuracy
         # For now, assume 6 bytes total (2 bytes each for uint16)
-        if len(data) != 6:
-            raise ValueError(f"Valid Range and Accuracy data expected 6 bytes, got {len(data)}")
 
         min_value = DataParser.parse_int16(data, offset=0, endian="little")
         max_value = DataParser.parse_int16(data, offset=2, endian="little")

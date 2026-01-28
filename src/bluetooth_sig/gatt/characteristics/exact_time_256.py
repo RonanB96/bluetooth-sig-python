@@ -44,6 +44,7 @@ class ExactTime256Characteristic(BaseCharacteristic[ExactTime256Data]):
         Args:
             data: Raw bytearray from BLE characteristic (9 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ExactTime256Data with datetime, day_of_week, and fractions256.

@@ -42,11 +42,11 @@ class TestCount24Characteristic(CommonCharacteristicTests):
 
     def test_maximum_count(self) -> None:
         """Test maximum count value (special value)."""
-        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetectedError
 
         char = Count24Characteristic()
         # 16777215 is a special value meaning "not known"
-        with pytest.raises(SpecialValueDetected) as exc_info:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
             char.parse_value(bytearray([255, 255, 255]))
 
         assert exc_info.value.raw_int == 16777215

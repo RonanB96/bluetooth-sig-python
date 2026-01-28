@@ -7,7 +7,7 @@ This directory contains GitHub Actions workflows for automated testing and code 
 ### Test and Coverage (`test-coverage.yml`)
 
 - **Triggers**: Push to `main`, Pull Requests to `main`
-- **Matrix**: Python 3.9, 3.12 (Home Assistant compatible versions)
+- **Matrix**: Python 3.9, 3.12
 - **Purpose**: Run comprehensive test suite with coverage reporting
 - **Features**:
   - Automatic git submodule initialization for `bluetooth_sig` dependency
@@ -21,10 +21,9 @@ This directory contains GitHub Actions workflows for automated testing and code 
 - **Python**: 3.12 (latest supported)
 - **Purpose**: Ensure code quality and consistent formatting
 - **Tools**:
-  - **flake8**: Style guide enforcement using `pyproject.toml` config (via flake8-pyproject)
-  - **black**: Code formatting verification with diff output
-  - **isort**: Import sorting verification with diff output
-  - **pylint**: Static code analysis (current score: 9.73/10)
+  - **ruff**: Formatting and linting
+  - **mypy**: strict for production code, lenient for tests/examples
+
 - **Environment Setup**: All tools run via `python -m` to ensure proper configuration loading
 
 ## Local Development

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import IntEnum, IntFlag
+from typing import Any, ClassVar
 
 import msgspec
 
-from ..constants import SINT16_MAX, SINT16_MIN
+from ..constants import SINT16_MAX, SINT16_MIN, UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .glucose_feature import GlucoseFeatureCharacteristic, GlucoseFeatureData, GlucoseFeatures
@@ -117,10 +118,9 @@ class GlucoseMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pyli
             # Allow any non-negative value (no SIG-specified range)
             if self.glucose_concentration < 0:
                 raise ValueError(f"Glucose concentration must be non-negative, got {self.glucose_concentration}")
-        else:  # mmol/L
-            # Allow any non-negative value (no SIG-specified range)
-            if self.glucose_concentration < 0:
-                raise ValueError(f"Glucose concentration must be non-negative, got {self.glucose_concentration}")
+        # Allow any non-negative value (no SIG-specified range)
+        elif self.glucose_concentration < 0:
+            raise ValueError(f"Glucose concentration must be non-negative, got {self.glucose_concentration}")
 
     @staticmethod
     def is_reserved_range(value: int) -> bool:
@@ -137,15 +137,15 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
 
     _manual_unit: str = "mg/dL or mmol/L"  # Unit depends on flags
 
-    _optional_dependencies = [GlucoseFeatureCharacteristic]
+    _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [GlucoseFeatureCharacteristic]
 
     min_length: int = 12  # Ensured consistency with GlucoseMeasurementData
     max_length: int = 17  # Ensured consistency with GlucoseMeasurementData
     allow_variable_length: bool = True  # Variable optional fields
 
-    def _decode_value(
+    def _decode_value(  # pylint: disable=too-many-locals  # Glucose spec with many optional fields
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
-    ) -> GlucoseMeasurementData:  # pylint: disable=too-many-locals
+    ) -> GlucoseMeasurementData:
         """Parse glucose measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + Base Time(7) + [Time Offset(2)] +
@@ -154,6 +154,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             GlucoseMeasurementData containing parsed glucose measurement data with metadata.
@@ -162,9 +163,6 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 12:
-            raise ValueError("Glucose Measurement data must be at least 12 bytes")
-
         flags = GlucoseMeasurementFlags(data[0])
         offset = 1
 
@@ -258,7 +256,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
             flags |= GlucoseMeasurementFlags.SENSOR_STATUS_ANNUNCIATION_PRESENT
 
         # Validate ranges
-        if not 0 <= data.sequence_number <= 0xFFFF:
+        if not 0 <= data.sequence_number <= UINT16_MAX:
             raise ValueError(f"Sequence number {data.sequence_number} exceeds uint16 range")
 
         # Start with flags, sequence number, and base time
@@ -295,7 +293,7 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
 
         # Add optional sensor status
         if data.sensor_status is not None:
-            if not 0 <= data.sensor_status <= 0xFFFF:
+            if not 0 <= data.sensor_status <= UINT16_MAX:
                 raise ValueError(f"Sensor status {data.sensor_status} exceeds uint16 range")
             result.extend(DataParser.encode_int16(data.sensor_status, signed=False))
 

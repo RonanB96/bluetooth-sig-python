@@ -52,8 +52,8 @@ class TestEnvironmentalSensingMeasurementDescriptor:
     def test_parse_es_measurement(self) -> None:
         """Test parsing environmental sensing measurement."""
         esm = EnvironmentalSensingMeasurementDescriptor()
-        # 12 bytes: sampling_function (3), measurement_period (3), update_interval (3),
-        # application (1), measurement_uncertainty (2)
+        # 12 bytes structure: sampling_function (3 bytes), measurement_period (3 bytes),
+        # update_interval (3 bytes), application (1 byte), measurement_uncertainty (2 bytes)
         data = b"\x01\x00\x00\x02\x00\x00\x03\x00\x00\x04\x05\x00"
 
         result = esm.parse_value(data)

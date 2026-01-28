@@ -26,11 +26,11 @@ class DateOfBirthCharacteristic(BaseCharacteristic[DateOfBirthData]):
         Args:
             data: Raw bytes from BLE characteristic (exactly 4 bytes)
             ctx: Optional context for parsing
+            validate: Whether to validate ranges (default True)
 
         Returns:
             DateOfBirthData: Parsed date of birth
         """
-        # Year is uint16 (little-endian)
         year = DataParser.parse_int16(data, offset=0, signed=False)
 
         # Month is uint8

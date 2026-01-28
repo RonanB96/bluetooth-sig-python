@@ -16,6 +16,9 @@ from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
+# Protocol constants
+_MIN_LENGTH_WITH_TEXT = 2  # Minimum length before text string information
+
 
 class NewAlertData(msgspec.Struct):
     """New Alert characteristic data structure."""
@@ -49,6 +52,7 @@ class NewAlertCharacteristic(BaseCharacteristic[NewAlertData]):
         Args:
             data: Raw characteristic data (minimum 2 bytes)
             ctx: Optional characteristic context
+            validate: Whether to validate ranges (default True)
 
         Returns:
             NewAlertData with all fields
@@ -66,7 +70,7 @@ class NewAlertCharacteristic(BaseCharacteristic[NewAlertData]):
 
         # Parse Text String Information (remaining bytes, max ALERT_TEXT_MAX_LENGTH characters)
         text_string_information = ""
-        if len(data) > 2:
+        if len(data) > _MIN_LENGTH_WITH_TEXT:
             text_bytes = data[2:]
             if len(text_bytes) > ALERT_TEXT_MAX_LENGTH:
                 raise ValueError(f"Text string too long: {len(text_bytes)} bytes (max {ALERT_TEXT_MAX_LENGTH})")

@@ -54,6 +54,8 @@ class HidInformationCharacteristic(BaseCharacteristic[HidInformationData]):
     """
 
     expected_length: int = 4  # bcdHID(2) + bCountryCode(1) + Flags(1)
+    min_length: int = 4
+    max_length: int = 4
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
@@ -65,13 +67,11 @@ class HidInformationCharacteristic(BaseCharacteristic[HidInformationData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional context.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             HidInformationData containing parsed HID information.
         """
-        if len(data) != HID_INFO_DATA_LENGTH:
-            raise ValueError(f"HID Information data must be exactly {HID_INFO_DATA_LENGTH} bytes, got {len(data)}")
-
         bcd_hid = DataParser.parse_int16(data, 0, signed=False)
         b_country_code = DataParser.parse_int8(data, 2, signed=False)
         flags_value = DataParser.parse_int8(data, 3, signed=False)

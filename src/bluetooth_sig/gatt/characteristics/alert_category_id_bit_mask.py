@@ -45,6 +45,7 @@ class AlertCategoryIdBitMaskCharacteristic(BaseCharacteristic[AlertCategoryBitMa
         Args:
             data: Raw characteristic data (2 bytes)
             ctx: Optional characteristic context
+            validate: Whether to validate ranges (default True)
 
         Returns:
             AlertCategoryBitMask flags
@@ -61,6 +62,7 @@ class AlertCategoryIdBitMaskCharacteristic(BaseCharacteristic[AlertCategoryBitMa
 
         Args:
             data: AlertCategoryBitMask or int value
+
 
         Returns:
             Encoded alert category ID bit mask (2 bytes)

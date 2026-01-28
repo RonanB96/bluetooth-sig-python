@@ -23,7 +23,6 @@ updates:
           - "patch"
       linting:
         patterns:
-          - "pylint"
           - "flake8*"
           - "black"
           - "isort"

@@ -379,10 +379,10 @@ class TestCanonicalShapes:
 
     def test_canonical_shape_imports(self) -> None:
         """Test that canonical parse exception types are properly imported."""
-        from bluetooth_sig.gatt.exceptions import CharacteristicParseError, SpecialValueDetected
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError, SpecialValueDetectedError
 
         assert CharacteristicParseError is not None
-        assert SpecialValueDetected is not None
+        assert SpecialValueDetectedError is not None
 
 
 if __name__ == "__main__":

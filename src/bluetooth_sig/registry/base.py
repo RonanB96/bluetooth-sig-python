@@ -401,21 +401,11 @@ class BaseUUIDClassRegistry(RegistryMixin, ABC, Generic[E, C]):
 
         # Validate that cls is actually a subclass of the base class
         base_class = self._get_base_class()
-        try:
-            if not issubclass(cls, base_class):
-                raise TypeError(f"Registered class must inherit from {base_class.__name__}, got {cls.__name__}")
-        except TypeError:
-            # issubclass raises TypeError if cls is not a class
-            raise TypeError(
-                f"Registered class must inherit from {base_class.__name__}, "
-                f"got non-class object of type {type(cls).__name__}"
-            ) from None
+        if not issubclass(cls, base_class):
+            raise TypeError(f"Registered class must inherit from {base_class.__name__}, got {cls.__name__}")
 
         # Normalize to BluetoothUUID
-        if isinstance(uuid, BluetoothUUID):
-            bt_uuid = uuid
-        else:
-            bt_uuid = BluetoothUUID(uuid)
+        bt_uuid = uuid if isinstance(uuid, BluetoothUUID) else BluetoothUUID(uuid)
 
         # Check for SIG class collision
         sig_classes = self._get_sig_classes_map()
@@ -447,10 +437,7 @@ class BaseUUIDClassRegistry(RegistryMixin, ABC, Generic[E, C]):
         Args:
             uuid: The UUID to unregister (string, BluetoothUUID, or int)
         """
-        if isinstance(uuid, BluetoothUUID):
-            bt_uuid = uuid
-        else:
-            bt_uuid = BluetoothUUID(uuid)
+        bt_uuid = uuid if isinstance(uuid, BluetoothUUID) else BluetoothUUID(uuid)
         with self._lock:
             self._custom_classes.pop(bt_uuid, None)
 
@@ -468,10 +455,7 @@ class BaseUUIDClassRegistry(RegistryMixin, ABC, Generic[E, C]):
         self._ensure_loaded()
 
         # Normalize to BluetoothUUID
-        if isinstance(uuid, BluetoothUUID):
-            bt_uuid = uuid
-        else:
-            bt_uuid = BluetoothUUID(uuid)
+        bt_uuid = uuid if isinstance(uuid, BluetoothUUID) else BluetoothUUID(uuid)
 
         # Check custom classes first
         with self._lock:

@@ -56,6 +56,9 @@ class PositionQualityCharacteristic(BaseCharacteristic[PositionQualityData]):
     POSITION_STATUS_MASK = 0x0180
     POSITION_STATUS_SHIFT = 7
 
+    # Maximum valid enum value for PositionStatus
+    _MAX_POSITION_STATUS_VALUE = 3
+
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> PositionQualityData:  # pylint: disable=too-many-locals
@@ -67,19 +70,19 @@ class PositionQualityCharacteristic(BaseCharacteristic[PositionQualityData]):
         Args:
             data: Raw bytearray from BLE characteristic
             ctx: Optional context providing surrounding context (may be None)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             PositionQualityData containing parsed position quality data
 
         """
-        if len(data) < 2:
-            raise ValueError("Position Quality data must be at least 2 bytes")
-
         flags = PositionQualityFlags(DataParser.parse_int16(data, 0, signed=False))
 
         # Extract status information from flags
         position_status_bits = (flags & self.POSITION_STATUS_MASK) >> self.POSITION_STATUS_SHIFT
-        position_status = PositionStatus(position_status_bits) if position_status_bits <= 3 else None
+        position_status = (
+            PositionStatus(position_status_bits) if position_status_bits <= self._MAX_POSITION_STATUS_VALUE else None
+        )
 
         # Parse optional fields
         number_of_beacons_in_solution: int | None = None

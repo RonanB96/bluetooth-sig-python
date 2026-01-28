@@ -54,9 +54,6 @@ class ReportReferenceDescriptor(BaseDescriptor):
         Raises:
             ValueError: If data is not exactly 2 bytes
         """
-        if len(data) != 2:
-            raise ValueError(f"Report Reference data must be exactly 2 bytes, got {len(data)}")
-
         return ReportReferenceData(
             report_id=DataParser.parse_int8(data, offset=0),
             report_type=DataParser.parse_int8(data, offset=1),

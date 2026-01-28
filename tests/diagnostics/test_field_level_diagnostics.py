@@ -29,7 +29,9 @@ class MultiFieldCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.DICT,
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> dict[str, Any]:
         """Decode multiple fields with explicit trace entries."""
         if len(data) < 4:
             # Raise ParseFieldException with field information
@@ -296,7 +298,9 @@ class TestGenericErrorExtraction:
             min_value: int | float | None = 0
             max_value: int | float | None = 100
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 """Return value that will fail validation."""
                 return 200  # Out of range
 
@@ -386,7 +390,9 @@ class TestTraceControlPerformance:
 
             min_length = 1
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 """Simple decode - fails with empty data."""
                 if len(data) == 0:
                     raise ValueError("Need at least 1 byte")
@@ -424,7 +430,9 @@ class TestTraceControlPerformance:
 
             min_length = 1
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 """Simple decode - fails with empty data."""
                 if len(data) == 0:
                     raise ValueError("Need at least 1 byte")
@@ -461,7 +469,9 @@ class TestTraceControlPerformance:
 
             min_length = 1
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 """Simple decode - fails with empty data."""
                 if len(data) == 0:
                     raise ValueError("Need at least 1 byte")

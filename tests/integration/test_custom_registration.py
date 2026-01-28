@@ -31,7 +31,7 @@ class CustomCharacteristicImpl(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
         """Parse test data as uint16."""
         return DataParser.parse_int16(bytes(data), 0, signed=False)
 
@@ -41,7 +41,7 @@ class CustomCharacteristicImpl(CustomBaseCharacteristic):
 
     @classmethod
     def from_uuid(
-        cls, uuid: str | BluetoothUUID, properties: set[GattProperty] | None = None
+        cls, uuid: str | BluetoothUUID, _properties: set[GattProperty] | None = None
     ) -> CustomCharacteristicImpl:
         """Create instance from UUID for registry compatibility (legacy support)."""
         if isinstance(uuid, str):
@@ -308,6 +308,8 @@ class TestRuntimeRegistration:
                 self,
                 data: bytearray,
                 ctx: CharacteristicContext | None = None,
+                *,
+                validate: bool = True,
             ) -> int:
                 return data[0]
 

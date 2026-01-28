@@ -12,6 +12,7 @@ from typing import cast
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.advertising import AdvertisingPDUParser
+from bluetooth_sig.types import ManufacturerData
 from bluetooth_sig.types.advertising import (
     AdvertisingData,
     AdvertisingDataStructures,
@@ -55,7 +56,7 @@ def display_advertising_data(
     if parsed_data.ad_structures.core.manufacturer_data:
         manufacturer_lines = ["Manufacturer Data:"]
         for company_id, data in parsed_data.ad_structures.core.manufacturer_data.items():
-            manufacturer_lines.append(f"  Company 0x{company_id:04X}: {data.hex()}")
+            manufacturer_lines.append(f"  Company 0x{company_id:04X}: {data.payload.hex()}")
         found_fields.extend(manufacturer_lines)
     else:
         not_found_fields.append("Manufacturer Data")
@@ -83,8 +84,8 @@ def display_advertising_data(
 
     if parsed_data.ad_structures.core.service_data:
         service_data_lines = ["Service Data:"]
-        for service_uuid, data in parsed_data.ad_structures.core.service_data.items():
-            service_data_lines.append(f"  Service {service_uuid}: {data.hex()}")
+        for service_uuid, svc_data in parsed_data.ad_structures.core.service_data.items():
+            service_data_lines.append(f"  Service {service_uuid}: {svc_data.hex()}")
         found_fields.extend(service_data_lines)
     else:
         not_found_fields.append("Service Data")
@@ -372,7 +373,7 @@ def demo_advertising_parsing() -> None:
     print("=" * 40)
 
     # Create parser and translator
-    # parser = AdvertisingPDUParser()  # Would be used for actual parsing
+    # Note: AdvertisingPDUParser would be used for actual BLE PDU parsing
     translator = BluetoothSIGTranslator()
 
     # Example advertising data (this would come from BLE scanning)
@@ -394,7 +395,7 @@ def demo_advertising_parsing() -> None:
     print(f"  Local name: {mock_advertising_data['local_name']}")
     print(f"  Service UUIDs: {mock_advertising_data['service_uuids']}")
 
-    manufacturer_data = cast(dict[int, bytes], mock_advertising_data["manufacturer_data"])
+    manufacturer_data = cast("dict[int, bytes]", mock_advertising_data["manufacturer_data"])
     if manufacturer_data:
         for company_id, data in manufacturer_data.items():
             print(f"  Manufacturer data (0x{company_id:04X}): {data.hex()}")
@@ -412,7 +413,7 @@ def demo_advertising_parsing() -> None:
 
         # Show service name resolution using translator
         print("\nService name resolution:")
-        service_uuids = cast(list[str], mock_advertising_data["service_uuids"])
+        service_uuids = cast("list[str]", mock_advertising_data["service_uuids"])
         for uuid in service_uuids:
             service_info = translator.get_service_info_by_uuid(uuid)
             if service_info:
@@ -469,8 +470,9 @@ async def main(
                 core=CoreAdvertisingData(
                     local_name="Test Device",
                     manufacturer_data={
-                        0x004C: (
-                            b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
+                        0x004C: ManufacturerData.from_id_and_payload(
+                            0x004C,
+                            b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5",
                         )
                     },
                     service_uuids=[BluetoothUUID("180F"), BluetoothUUID("180A")],  # Battery and Device Info services
@@ -504,8 +506,9 @@ async def main(
                 core=CoreAdvertisingData(
                     local_name="Extended Test Device",
                     manufacturer_data={
-                        0x004C: (
-                            b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5"
+                        0x004C: ManufacturerData.from_id_and_payload(
+                            0x004C,
+                            b"\x02\x15\xe2\xc5\x6d\xb5\xdf\xfb\x48\xd2\xb0\x60\xd0\xf5\xa7\x10\x96\xe0\x00\x00\x00\x00\xc5",
                         )
                     },
                     service_uuids=[BluetoothUUID("180F"), BluetoothUUID("180A")],  # Battery and Device Info services
@@ -533,7 +536,9 @@ async def main(
         results["parsed"] = {
             "local_name": parsed_data.ad_structures.core.local_name,
             "service_uuids": parsed_data.ad_structures.core.service_uuids,
-            "manufacturer_data": {k: v.hex() for k, v in parsed_data.ad_structures.core.manufacturer_data.items()},
+            "manufacturer_data": {
+                k: v.payload.hex() for k, v in parsed_data.ad_structures.core.manufacturer_data.items()
+            },
             "tx_power": parsed_data.ad_structures.properties.tx_power,
             "flags": parsed_data.ad_structures.properties.flags,
             "rssi": parsed_data.rssi,

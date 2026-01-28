@@ -61,14 +61,12 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic[TemperatureMeasure
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional context providing surrounding characteristic metadata when available.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             TemperatureMeasurementData containing parsed temperature data with metadata.
 
         """
-        if len(data) < 5:
-            raise ValueError("Temperature Measurement data must be at least 5 bytes")
-
         flags = TemperatureMeasurementFlags(data[0])
 
         # Parse temperature value (medfloat32 - IEEE 11073 medical float format)

@@ -45,8 +45,6 @@ class ManufacturerLimitsDescriptor(BaseDescriptor):
         """
         # Manufacturer Limits format: min_limit + max_limit
         # For now, assume 4 bytes total (2 bytes each for uint16)
-        if len(data) != 4:
-            raise ValueError(f"Manufacturer Limits data expected 4 bytes, got {len(data)}")
 
         min_limit = DataParser.parse_int16(data, offset=0, endian="little")
         max_limit = DataParser.parse_int16(data, offset=2, endian="little")
@@ -66,7 +64,7 @@ class ManufacturerLimitsDescriptor(BaseDescriptor):
         parsed = self._parse_descriptor_value(data)
         return parsed.max_limit
 
-    def is_value_within_limits(self, data: bytes, value: int | float) -> bool:
+    def is_value_within_limits(self, data: bytes, value: float) -> bool:
         """Check if a value is within manufacturer limits."""
         parsed = self._parse_descriptor_value(data)
         return parsed.min_limit <= value <= parsed.max_limit

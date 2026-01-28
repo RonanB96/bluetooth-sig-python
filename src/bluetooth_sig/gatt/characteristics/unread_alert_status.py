@@ -46,6 +46,7 @@ class UnreadAlertStatusCharacteristic(BaseCharacteristic[UnreadAlertStatusData])
         Args:
             data: Raw characteristic data (2 bytes)
             ctx: Optional characteristic context
+            validate: Whether to validate ranges (default True)
 
         Returns:
             UnreadAlertStatusData with all fields

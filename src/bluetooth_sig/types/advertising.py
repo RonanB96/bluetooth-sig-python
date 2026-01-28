@@ -16,6 +16,7 @@ from typing import Any
 import msgspec
 
 from bluetooth_sig.types.appearance import AppearanceData
+from bluetooth_sig.types.company import ManufacturerData
 from bluetooth_sig.types.registry.class_of_device import ClassOfDeviceInfo
 from bluetooth_sig.types.uri import URIData
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -309,7 +310,7 @@ class LEFeatureBits(IntFlag):
     RECEIVING_CTE = 0x800000
 
 
-class LEFeatures(msgspec.Struct, kw_only=True):
+class LEFeatures(msgspec.Struct, kw_only=True):  # pylint: disable=too-many-public-methods  # One property per LE feature bit
     """LE Supported Features bit field (Core Spec Vol 6, Part B, Section 4.6).
 
     Attributes:
@@ -535,8 +536,8 @@ class CoreAdvertisingData(msgspec.Struct, kw_only=True):
     """Core advertising data - device identification and services.
 
     Attributes:
-        manufacturer_data: Manufacturer-specific data keyed by company ID
-        manufacturer_names: Resolved company names keyed by company ID
+        manufacturer_data: Manufacturer-specific data keyed by company ID.
+                          Each entry contains resolved company info and payload bytes.
         service_uuids: List of advertised service UUIDs
         service_data: Service-specific data keyed by service UUID
         solicited_service_uuids: List of service UUIDs the device is seeking
@@ -544,8 +545,7 @@ class CoreAdvertisingData(msgspec.Struct, kw_only=True):
         uri_data: Parsed URI with scheme info from UriSchemesRegistry
     """
 
-    manufacturer_data: dict[int, bytes] = msgspec.field(default_factory=dict)
-    manufacturer_names: dict[int, str] = msgspec.field(default_factory=dict)
+    manufacturer_data: dict[int, ManufacturerData] = msgspec.field(default_factory=dict)
     service_uuids: list[BluetoothUUID] = msgspec.field(default_factory=list)
     service_data: dict[BluetoothUUID, bytes] = msgspec.field(default_factory=dict)
     solicited_service_uuids: list[BluetoothUUID] = msgspec.field(default_factory=list)
@@ -780,8 +780,8 @@ class AdvertisementData(msgspec.Struct, kw_only=True):
     rssi: int | None = None
 
     @property
-    def manufacturer_data(self) -> dict[int, bytes]:
-        """Convenience accessor for manufacturer data (company_id → payload)."""
+    def manufacturer_data(self) -> dict[int, ManufacturerData]:
+        """Convenience accessor for manufacturer data (company_id → ManufacturerData)."""
         return self.ad_structures.core.manufacturer_data
 
     @property

@@ -26,6 +26,7 @@ class BooleanCharacteristic(BaseCharacteristic[bool]):
         Args:
             data: Raw bytearray from BLE characteristic (1 byte, validated by base class).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             True if value is 1, False if value is 0.

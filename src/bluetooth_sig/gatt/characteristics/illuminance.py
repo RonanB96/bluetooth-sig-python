@@ -33,6 +33,7 @@ class IlluminanceCharacteristic(BaseCharacteristic[float]):
         Args:
             data: Raw bytes from BLE characteristic (exactly 3 bytes, little-endian)
             ctx: Optional context for parsing (device info, flags, etc.)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             Illuminance in lux

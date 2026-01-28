@@ -8,6 +8,10 @@ from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
+# Timezone offsets (15-minute increments from UTC)
+TIMEZONE_OFFSET_MIN = -48  # Minimum timezone offset in 15-minute increments (UTC-12:00)
+TIMEZONE_OFFSET_MAX = 56  # Maximum timezone offset in 15-minute increments (UTC+14:00)
+
 
 class TimeZoneCharacteristic(BaseCharacteristic[str]):
     """Time Zone characteristic (0x2A0E).
@@ -22,12 +26,10 @@ class TimeZoneCharacteristic(BaseCharacteristic[str]):
 
     # Manual override: YAML indicates sint8->int but we return descriptive strings
     _manual_value_type: ValueType | str | None = ValueType.STRING
+    min_length: int = 1
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> str:
         """Parse time zone data (sint8 in 15-minute increments from UTC)."""
-        if len(data) < 1:
-            raise ValueError("Time zone data must be at least 1 byte")
-
         # Parse sint8 value
         offset_raw = DataParser.parse_int8(data, 0, signed=True)
 
@@ -35,8 +37,8 @@ class TimeZoneCharacteristic(BaseCharacteristic[str]):
         if offset_raw == SINT8_MIN:
             return "Unknown"
 
-        # Validate range (-48 to +56 per specification)
-        if offset_raw < -48 or offset_raw > 56:
+        # Validate range (TIMEZONE_OFFSET_MIN to TIMEZONE_OFFSET_MAX per specification)
+        if offset_raw < TIMEZONE_OFFSET_MIN or offset_raw > TIMEZONE_OFFSET_MAX:
             return f"Reserved (value: {offset_raw})"
 
         # Convert 15-minute increments to hours and minutes
@@ -75,11 +77,11 @@ class TimeZoneCharacteristic(BaseCharacteristic[str]):
                 offset_raw = SINT8_MIN
             elif data.startswith("UTC"):
                 # Parse UTC offset format like "UTC+05:30" or "UTC-03:00"
-                try:
-                    offset_str = data[3:]  # Remove "UTC" prefix
-                    if offset_str[0] not in ["+", "-"]:
-                        raise ValueError("Invalid timezone format")
+                offset_str = data[3:]  # Remove "UTC" prefix
+                if not offset_str or offset_str[0] not in ["+", "-"]:
+                    raise ValueError("Invalid timezone format")
 
+                try:
                     sign = 1 if offset_str[0] == "+" else -1
                     time_part = offset_str[1:]
 
@@ -102,10 +104,12 @@ class TimeZoneCharacteristic(BaseCharacteristic[str]):
         else:
             raise TypeError("Time zone data must be a string or integer")
 
-        # Validate range for sint8 (SINT8_MIN to SINT8_MAX, but spec says -48 to +56 + special SINT8_MIN)
-        if offset_raw != SINT8_MIN and not -48 <= offset_raw <= 56:
+        # Validate range for sint8 (SINT8_MIN to SINT8_MAX)
+        # Spec allows TIMEZONE_OFFSET_MIN to TIMEZONE_OFFSET_MAX + special SINT8_MIN for unknown
+        if offset_raw != SINT8_MIN and not TIMEZONE_OFFSET_MIN <= offset_raw <= TIMEZONE_OFFSET_MAX:
             raise ValueError(
-                f"Time zone offset {offset_raw} is outside valid range (-48 to +56, or SINT8_MIN for unknown)"
+                f"Time zone offset {offset_raw} is outside valid range "
+                f"({TIMEZONE_OFFSET_MIN} to {TIMEZONE_OFFSET_MAX}, or SINT8_MIN for unknown)"
             )
 
         return bytearray(DataParser.encode_int8(offset_raw, signed=True))

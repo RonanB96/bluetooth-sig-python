@@ -57,6 +57,7 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic[VoltageSpecification
         Args:
             data: Raw bytes from the characteristic read.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             VoltageSpecificationData with 'minimum' and 'maximum' voltage specification values in Volts.
@@ -65,9 +66,6 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic[VoltageSpecification
             ValueError: If data is insufficient.
 
         """
-        if len(data) < 4:
-            raise ValueError("Voltage specification data must be at least 4 bytes")
-
         # Convert 2x uint16 (little endian) to voltage specification in Volts
         min_voltage_raw = DataParser.parse_int16(data, 0, signed=False)
         max_voltage_raw = DataParser.parse_int16(data, 2, signed=False)

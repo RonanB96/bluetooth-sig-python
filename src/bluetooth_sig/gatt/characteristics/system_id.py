@@ -39,6 +39,7 @@ class SystemIdCharacteristic(BaseCharacteristic[SystemIdData]):
         Args:
             data: Raw bytearray (8 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             SystemIdData with manufacturer_id (5 bytes) and oui (3 bytes).

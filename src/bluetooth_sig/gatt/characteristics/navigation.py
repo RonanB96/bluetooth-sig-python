@@ -74,9 +74,12 @@ class NavigationCharacteristic(BaseCharacteristic[NavigationData]):
     WAYPOINT_REACHED_MASK = 0x0080
     DESTINATION_REACHED_MASK = 0x0100
 
+    # Maximum valid enum value for PositionStatus
+    _MAX_POSITION_STATUS_VALUE = 3
+
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
-    ) -> NavigationData:  # pylint: disable=too-many-locals
+    ) -> NavigationData:  # pylint: disable=too-many-locals  # Navigation spec requires many fields
         """Parse navigation data according to Bluetooth specification.
 
         Format: Flags(2) + Bearing(2) + Heading(2) + [Remaining Distance(3)] +
@@ -85,14 +88,12 @@ class NavigationCharacteristic(BaseCharacteristic[NavigationData]):
         Args:
             data: Raw bytearray from BLE characteristic
             ctx: Optional context providing surrounding context (may be None)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             NavigationData containing parsed navigation data
 
         """
-        if len(data) < 6:
-            raise ValueError("Navigation data must be at least 6 bytes")
-
         flags = NavigationFlags(DataParser.parse_int16(data, 0, signed=False))
 
         # Unit is 1*10^-2 degrees
@@ -101,7 +102,9 @@ class NavigationCharacteristic(BaseCharacteristic[NavigationData]):
 
         # Extract status information from flags
         position_status_bits = (flags & self.POSITION_STATUS_MASK) >> self.POSITION_STATUS_SHIFT
-        position_status = PositionStatus(position_status_bits) if position_status_bits <= 3 else None
+        position_status = (
+            PositionStatus(position_status_bits) if position_status_bits <= self._MAX_POSITION_STATUS_VALUE else None
+        )
 
         heading_source_bit = (flags & self.HEADING_SOURCE_MASK) >> self.HEADING_SOURCE_SHIFT
         heading_source = HeadingSource(heading_source_bit)

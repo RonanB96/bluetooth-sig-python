@@ -6,7 +6,7 @@ from enum import IntFlag
 
 import msgspec
 
-from ..constants import SINT16_MAX, SINT16_MIN, UINT8_MAX
+from ..constants import DEGREES_IN_CIRCLE, SINT16_MAX, SINT16_MIN, UINT8_MAX, UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -42,7 +42,7 @@ class CyclingPowerVectorData(msgspec.Struct, frozen=True, kw_only=True):  # pyli
         """Validate cycling power vector data."""
         if not 0 <= int(self.flags) <= UINT8_MAX:
             raise ValueError("Flags must be a uint8 value (0-UINT8_MAX)")
-        if not 0 <= self.first_crank_measurement_angle <= 360:
+        if not 0 <= self.first_crank_measurement_angle <= DEGREES_IN_CIRCLE:
             raise ValueError("First crank measurement angle must be 0-360 degrees")
 
 
@@ -61,7 +61,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic[CyclingPowerVectorData
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
-    ) -> CyclingPowerVectorData:
+    ) -> CyclingPowerVectorData:  # pylint: disable=too-many-locals  # Vector data with multiple array fields
         """Parse cycling power vector data according to Bluetooth specification.
 
         Format: Flags(1) + Crank Revolution Data(2) + Last Crank Event Time(2) +
@@ -71,6 +71,7 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic[CyclingPowerVectorData
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             CyclingPowerVectorData containing parsed cycling power vector data.
@@ -82,9 +83,6 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic[CyclingPowerVectorData
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 7:
-            raise ValueError("Cycling Power Vector data must be at least 7 bytes")
-
         flags = CyclingPowerVectorFlags(data[0])
 
         # Parse crank revolution data (2 bytes)
@@ -171,11 +169,11 @@ class CyclingPowerVectorCharacteristic(BaseCharacteristic[CyclingPowerVectorData
         first_angle_raw = round(first_angle * 180)  # 1/180 degree units
 
         # Validate ranges
-        if not 0 <= crank_revolutions <= 0xFFFF:
+        if not 0 <= crank_revolutions <= UINT16_MAX:
             raise ValueError(f"Crank revolutions {crank_revolutions} exceeds uint16 range")
-        if not 0 <= crank_event_time_raw <= 0xFFFF:
+        if not 0 <= crank_event_time_raw <= UINT16_MAX:
             raise ValueError(f"Crank event time {crank_event_time_raw} exceeds uint16 range")
-        if not 0 <= first_angle_raw <= 0xFFFF:
+        if not 0 <= first_angle_raw <= UINT16_MAX:
             raise ValueError(f"First angle {first_angle_raw} exceeds uint16 range")
 
         # Build result

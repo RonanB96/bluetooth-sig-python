@@ -52,9 +52,6 @@ class CCCDDescriptor(BaseDescriptor):
         Raises:
             ValueError: If data is not exactly 2 bytes
         """
-        if len(data) != 2:
-            raise ValueError(f"CCCD data must be exactly 2 bytes, got {len(data)}")
-
         # Parse as little-endian uint16
         value = DataParser.parse_int16(data, endian="little")
 

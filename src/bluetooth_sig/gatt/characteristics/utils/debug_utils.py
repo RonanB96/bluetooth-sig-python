@@ -35,7 +35,7 @@ class DebugUtils:
 
     @staticmethod
     def format_measurement_value(
-        value: int | float | str | None,
+        value: float | str | None,
         unit: str | None = None,
         precision: int = 2,  # DebugUtils.DEFAULT_PRECISION,
     ) -> str:
@@ -43,10 +43,7 @@ class DebugUtils:
         if value is None:
             return "N/A"
 
-        if isinstance(value, float):
-            formatted = f"{value:.{precision}f}"
-        else:
-            formatted = str(value)
+        formatted = f"{value:.{precision}f}" if isinstance(value, float) else str(value)
 
         if unit:
             return f"{formatted} {unit}"

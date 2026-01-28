@@ -31,9 +31,9 @@ def _is_trusted_domain(url: str, trusted_domains: list[str]) -> bool:
             host = host.split(":")[0]
 
         for domain in trusted_domains:
-            domain = domain.lower()
+            domain_lower = domain.lower()
             # Exact match or subdomain match (e.g., "files.pypi.org" matches "pypi.org")
-            if host == domain or host.endswith("." + domain):
+            if host == domain_lower or host.endswith("." + domain_lower):
                 return True
         return False
     except Exception:

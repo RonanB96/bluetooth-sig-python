@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from enum import IntFlag
+from typing import Any, ClassVar
 
 import msgspec
 
@@ -57,7 +58,7 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic[PulseOximetryDat
 
     _characteristic_name: str = "PLX Continuous Measurement"
 
-    _optional_dependencies = [PLXFeaturesCharacteristic]
+    _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [PLXFeaturesCharacteristic]
 
     # Declarative validation (automatic)
     min_length: int | None = 5  # Flags(1) + SpO2(2) + PulseRate(2) minimum
@@ -80,15 +81,13 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic[PulseOximetryDat
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             PulseOximetryData containing parsed pulse oximetry data with optional
             context-enhanced information.
 
         """
-        if len(data) < 5:
-            raise ValueError("Pulse Oximetry Measurement data must be at least 5 bytes")
-
         flags = PulseOximetryFlags(data[0])
 
         # Parse SpO2 and pulse rate using IEEE-11073 SFLOAT format

@@ -28,7 +28,7 @@ YAML Metadata Resolution
 Characteristic metadata is automatically resolved from Bluetooth SIG YAML specifications:
 
 - UUID, name, value type from assigned numbers registry
-- Units, resolution, and scaling factors (M × 10^d + b formula)
+- Units, resolution, and scaling factors (M * 10^d + b formula)
 - Special sentinel values (e.g., 0x8000 = "value is not known")
 - Validation ranges and length constraints
 
@@ -77,7 +77,7 @@ import os
 import re
 from abc import ABC, ABCMeta
 from functools import cached_property, lru_cache
-from typing import Any, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar
 
 import msgspec
 
@@ -109,7 +109,7 @@ from ..exceptions import (
     CharacteristicEncodeError,
     CharacteristicParseError,
     ParseFieldError,
-    SpecialValueDetected,
+    SpecialValueDetectedError,
     UUIDResolutionError,
 )
 from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
@@ -258,9 +258,7 @@ class CharacteristicMeta(ABCMeta):
                     namespace["_is_template"] = False  # Mark as concrete characteristic
 
         # Create the class normally
-        new_class = super().__new__(mcs, name, bases, namespace, **kwargs)
-
-        return new_class
+        return super().__new__(mcs, name, bases, namespace, **kwargs)
 
 
 class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -338,8 +336,10 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
 
     _allows_sig_override = False
 
-    _required_dependencies: list[type[BaseCharacteristic[Any]]] = []  # Dependencies that MUST be present
-    _optional_dependencies: list[type[BaseCharacteristic[Any]]] = []  # Dependencies that enrich parsing when available
+    _required_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = []  # Dependencies that MUST be present
+    _optional_dependencies: ClassVar[
+        list[type[BaseCharacteristic[Any]]]
+    ] = []  # Dependencies that enrich parsing when available
 
     # Parse trace control (for performance tuning)
     # Can be configured via BLUETOOTH_SIG_ENABLE_PARSE_TRACE environment variable
@@ -567,7 +567,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             return {}
 
         result: dict[int, str] = {}
-        for field in self._spec.structure:
+        for field in self._spec.structure:  # pylint: disable=too-many-nested-blocks  # Spec requires nested iteration for special values
             for sv in field.special_values:
                 unsigned_val = sv.raw_value
                 result[unsigned_val] = sv.meaning
@@ -762,7 +762,6 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         """Fallback to basic registry resolution at class level."""
         try:
             registry_info = SIGCharacteristicResolver.resolve_from_registry(cls)
-            return registry_info.uuid if registry_info else None
         except (ValueError, KeyError, AttributeError, TypeError):
             # Registry resolution can fail for various reasons:
             # - ValueError: Invalid UUID format
@@ -770,6 +769,8 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             # - AttributeError: Missing expected attributes
             # - TypeError: Type mismatch in resolution
             return None
+        else:
+            return registry_info.uuid if registry_info else None
 
     @classmethod
     def matches_uuid(cls, uuid: str | BluetoothUUID) -> bool:
@@ -778,13 +779,11 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             class_uuid = cls._resolve_class_uuid()
             if class_uuid is None:
                 return False
-            if isinstance(uuid, BluetoothUUID):
-                input_uuid = uuid
-            else:
-                input_uuid = BluetoothUUID(uuid)
-            return class_uuid == input_uuid
+            input_uuid = uuid if isinstance(uuid, BluetoothUUID) else BluetoothUUID(uuid)
         except ValueError:
             return False
+        else:
+            return class_uuid == input_uuid
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> T:
         """Internal parse the characteristic's raw value with no validation.
@@ -797,6 +796,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         Args:
             data: Raw bytes from the characteristic read
             ctx: Optional context information for parsing
+            validate: Whether to validate ranges (default True)
             validate: Whether to validate ranges (default True)
 
         Returns:
@@ -816,7 +816,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         self,
         value: Any,  # noqa: ANN401  # Validates values of various numeric types
         ctx: CharacteristicContext | None = None,
-    ) -> ValidationAccumulator:  # pylint: disable=too-many-branches  # Complex validation with multiple precedence levels
+    ) -> ValidationAccumulator:  # pylint: disable=too-many-branches  # Multiple validation precedence levels per spec
         """Validate value is within min/max range from both class attributes and descriptors.
 
         Validation precedence:
@@ -1054,7 +1054,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
     @staticmethod
     @lru_cache(maxsize=32)
     def _get_characteristic_uuid_by_name(
-        characteristic_name: CharacteristicName | CharacteristicName | str,
+        characteristic_name: CharacteristicName | str,
     ) -> BluetoothUUID | None:
         """Get characteristic UUID by name using cached registry lookup."""
         # Convert enum to string value for registry lookup
@@ -1146,11 +1146,8 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         if env_value in ("0", "false", "no"):
             return False
 
-        if self._enable_parse_trace is False:
-            return False
-
-        # Default to enabled
-        return True
+        # Return True unless explicitly disabled
+        return self._enable_parse_trace is not False
 
     def _perform_parse_validation(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
@@ -1234,7 +1231,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
 
         Returns: Parsed value of type T
         Raises:
-            SpecialValueDetected: Special sentinel (0x8000="unknown", 0x7FFFFFFF="NaN")
+            SpecialValueDetectedError: Special sentinel (0x8000="unknown", 0x7FFFFFFF="NaN")
             CharacteristicParseError: Parse/validation failure
         """
         data_bytes = bytearray(data)
@@ -1244,21 +1241,21 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         validation = ValidationAccumulator()
         raw_int: int | None = None
 
+        # Perform initial validation
+        self._perform_parse_validation(data_bytes, enable_trace, parse_trace, validation, validate)
+
+        # Extract raw int and check for special values
+        raw_int, parsed_value = self._extract_and_check_special_value(data_bytes, enable_trace, parse_trace, ctx)
+
+        # Special value detection - raise specialized exception (outside try since we don't wrap it)
+        if isinstance(parsed_value, SpecialValueResult):
+            if enable_trace:
+                parse_trace.append(f"Detected special value: {parsed_value.meaning}")
+            raise SpecialValueDetectedError(
+                special_value=parsed_value, name=self.name, uuid=self.uuid, raw_data=bytes(data), raw_int=raw_int
+            )
+
         try:
-            # Perform initial validation
-            self._perform_parse_validation(data_bytes, enable_trace, parse_trace, validation, validate)
-
-            # Extract raw int and check for special values
-            raw_int, parsed_value = self._extract_and_check_special_value(data_bytes, enable_trace, parse_trace, ctx)
-
-            # Special value detection - raise specialized exception
-            if isinstance(parsed_value, SpecialValueResult):
-                if enable_trace:
-                    parse_trace.append(f"Detected special value: {parsed_value.meaning}")
-                raise SpecialValueDetected(
-                    special_value=parsed_value, name=self.name, uuid=self.uuid, raw_data=bytes(data), raw_int=raw_int
-                )
-
             # Decode and validate value
             decoded_value = self._decode_and_validate_value(
                 data_bytes, enable_trace, parse_trace, ctx, validation, validate
@@ -1270,11 +1267,8 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             # Cache the parsed value for debugging/caching purposes
             self.last_parsed = decoded_value
 
-            return decoded_value
+            return decoded_value  # noqa: TRY300
 
-        except SpecialValueDetected:
-            # Re-raise special value exceptions as-is
-            raise
         except Exception as e:
             if enable_trace:
                 parse_trace.append(f"Parse failed: {type(e).__name__}: {e}")
@@ -1394,7 +1388,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
                 validation.errors.extend(type_validation.errors)
                 validation.warnings.extend(type_validation.warnings)
                 if not type_validation.valid:
-                    raise TypeError("; ".join(type_validation.errors))
+                    raise TypeError("; ".join(type_validation.errors))  # noqa: TRY301
 
             # Range validation for numeric types
             if validate and isinstance(data, (int, float)):
@@ -1404,7 +1398,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
                 validation.errors.extend(range_validation.errors)
                 validation.warnings.extend(range_validation.warnings)
                 if not range_validation.valid:
-                    raise ValueError("; ".join(range_validation.errors))
+                    raise ValueError("; ".join(range_validation.errors))  # noqa: TRY301
 
             # Encode
             if enable_trace:
@@ -1419,12 +1413,10 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
                 validation.errors.extend(length_validation.errors)
                 validation.warnings.extend(length_validation.warnings)
                 if not length_validation.valid:
-                    raise ValueError("; ".join(length_validation.errors))
+                    raise ValueError("; ".join(length_validation.errors))  # noqa: TRY301
 
             if enable_trace:
                 build_trace.append("Build completed successfully")
-
-            return encoded
 
         except Exception as e:
             if enable_trace:
@@ -1437,6 +1429,8 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
                 value=data,
                 validation=validation,
             ) from e
+        else:
+            return encoded
 
     # -------------------- Encoding helpers for special values --------------------
     def encode_special(self, value_type: SpecialValueType) -> bytearray:
@@ -1520,9 +1514,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         if not data_type:
             return False
         # Check for signed types: signed integers, medical floats, and standard floats
-        if data_type.startswith("sint") or data_type in ("medfloat16", "medfloat32", "float32", "float64"):
-            return True
-        return False
+        return data_type.startswith("sint") or data_type in ("medfloat16", "medfloat32", "float32", "float64")
 
     # Descriptor support methods
 
@@ -1629,9 +1621,7 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         """
         return _get_user_description(ctx)
 
-    def validate_value_against_descriptor_range(
-        self, value: int | float, ctx: CharacteristicContext | None = None
-    ) -> bool:
+    def validate_value_against_descriptor_range(self, value: float, ctx: CharacteristicContext | None = None) -> bool:
         """Validate a value against descriptor-defined valid range.
 
         Args:

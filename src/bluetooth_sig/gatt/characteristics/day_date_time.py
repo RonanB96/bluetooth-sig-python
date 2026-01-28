@@ -42,6 +42,7 @@ class DayDateTimeCharacteristic(BaseCharacteristic[DayDateTimeData]):
         Args:
             data: Raw bytearray from BLE characteristic (8 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             DayDateTimeData with datetime and day_of_week.

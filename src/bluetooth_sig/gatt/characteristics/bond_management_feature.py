@@ -39,6 +39,7 @@ class BondManagementFeatureCharacteristic(BaseCharacteristic[BondManagementFeatu
         Args:
             data: Raw characteristic data (3 bytes)
             ctx: Optional characteristic context
+            validate: Whether to validate ranges (default True)
 
         Returns:
             BondManagementFeatureData with feature flags
@@ -47,9 +48,6 @@ class BondManagementFeatureCharacteristic(BaseCharacteristic[BondManagementFeatu
             ValueError: If data is insufficient
 
         """
-        if len(data) < 3:
-            raise ValueError(f"Insufficient data for Bond Management Feature: expected 3 bytes, got {len(data)}")
-
         # Parse feature flags (1 byte each)
         delete_bond_supported = bool(DataParser.parse_int8(data, 0, signed=False))
         delete_all_bonds_supported = bool(DataParser.parse_int8(data, 1, signed=False))
@@ -66,6 +64,8 @@ class BondManagementFeatureCharacteristic(BaseCharacteristic[BondManagementFeatu
 
         Args:
             data: BondManagementFeatureData to encode
+
+        validate: Whether to validate ranges (default True)
 
         Returns:
             Encoded feature flags (3 bytes)

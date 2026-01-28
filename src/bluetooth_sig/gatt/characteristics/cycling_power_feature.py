@@ -39,6 +39,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic[CyclingPowerFeatureDa
     """
 
     expected_length: int = 4
+    min_length: int = 4
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
@@ -50,6 +51,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic[CyclingPowerFeatureDa
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             CyclingPowerFeatureData containing parsed feature flags.
@@ -58,9 +60,6 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic[CyclingPowerFeatureDa
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 4:
-            raise ValueError("Cycling Power Feature data must be at least 4 bytes")
-
         # Parse 32-bit unsigned integer (little endian)
         feature_mask: int = DataParser.parse_int32(data, 0, signed=False)
 

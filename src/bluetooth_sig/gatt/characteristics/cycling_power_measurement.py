@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from enum import IntFlag
+from typing import Any, ClassVar
 
 import msgspec
 
-from ..constants import SINT16_MAX, SINT16_MIN, UINT8_MAX, UINT16_MAX
+from ..constants import SINT16_MAX, SINT16_MIN, UINT8_MAX, UINT16_MAX, UINT32_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .cycling_power_feature import CyclingPowerFeatureCharacteristic
@@ -69,14 +70,14 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasu
 
     _manual_unit: str = "W"  # Watts unit for power measurement
 
-    _optional_dependencies = [CyclingPowerFeatureCharacteristic]
+    _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [CyclingPowerFeatureCharacteristic]
 
     min_length: int = 4  # Flags(2) + Instantaneous Power(2)
     allow_variable_length: bool = True  # Many optional fields based on flags
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
-    ) -> CyclingPowerMeasurementData:  # pylint: disable=too-many-locals # Complex parsing with many optional fields
+    ) -> CyclingPowerMeasurementData:  # pylint: disable=too-many-locals  # Complex parsing with many optional fields
         """Parse cycling power measurement data according to Bluetooth specification.
 
         Format: Flags(2) + Instantaneous Power(2) + [Pedal Power Balance(1)] +
@@ -86,6 +87,7 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasu
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             CyclingPowerMeasurementData containing parsed power measurement data.
@@ -94,9 +96,6 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasu
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 4:
-            raise ValueError("Cycling Power Measurement data must be at least 4 bytes")
-
         # Parse flags (16-bit)
         flags = DataParser.parse_int16(data, 0, signed=False)
 
@@ -228,16 +227,16 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasu
 
         if accumulated_energy is not None:
             energy = int(accumulated_energy)
-            if not 0 <= energy <= 0xFFFF:
+            if not 0 <= energy <= UINT16_MAX:
                 raise ValueError(f"Accumulated energy {energy} exceeds uint16 range")
             result.extend(DataParser.encode_int16(energy, signed=False))
 
         if wheel_revolutions is not None and wheel_event_time is not None:
             wheel_rev = int(wheel_revolutions)
             wheel_time = round(wheel_event_time * self.WHEEL_TIME_RESOLUTION)
-            if not 0 <= wheel_rev <= 0xFFFFFFFF:
+            if not 0 <= wheel_rev <= UINT32_MAX:
                 raise ValueError(f"Wheel revolutions {wheel_rev} exceeds uint32 range")
-            if not 0 <= wheel_time <= 0xFFFF:
+            if not 0 <= wheel_time <= UINT16_MAX:
                 raise ValueError(f"Wheel event time {wheel_time} exceeds uint16 range")
             result.extend(DataParser.encode_int32(wheel_rev, signed=False))
             result.extend(DataParser.encode_int16(wheel_time, signed=False))
@@ -245,9 +244,9 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasu
         if crank_revolutions is not None and crank_event_time is not None:
             crank_rev = int(crank_revolutions)
             crank_time = round(crank_event_time * self.CRANK_TIME_RESOLUTION)
-            if not 0 <= crank_rev <= 0xFFFF:
+            if not 0 <= crank_rev <= UINT16_MAX:
                 raise ValueError(f"Crank revolutions {crank_rev} exceeds uint16 range")
-            if not 0 <= crank_time <= 0xFFFF:
+            if not 0 <= crank_time <= UINT16_MAX:
                 raise ValueError(f"Crank event time {crank_time} exceeds uint16 range")
             result.extend(DataParser.encode_int16(crank_rev, signed=False))
             result.extend(DataParser.encode_int16(crank_time, signed=False))

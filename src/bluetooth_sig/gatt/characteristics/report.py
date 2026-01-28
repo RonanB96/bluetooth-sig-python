@@ -37,6 +37,7 @@ class ReportCharacteristic(BaseCharacteristic[ReportData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional context.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ReportData containing the report bytes.
