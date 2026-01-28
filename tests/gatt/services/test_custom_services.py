@@ -99,7 +99,6 @@ class TestInitSubclassValidation:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("AA000001-0000-1000-8000-00805F9B34FB"),
                 name="Custom Service",
-                # description="Uses custom UUID",
             )
 
         # Should create without error
@@ -114,7 +113,6 @@ class TestInitSubclassValidation:
                 namespace["_info"] = ServiceInfo(
                     uuid=BluetoothUUID("180F"),  # Battery Service (SIG)
                     name="Unauthorized",
-                    # description="Should fail",
                 )
 
             new_class(
@@ -131,7 +129,6 @@ class TestInitSubclassValidation:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("180A"),  # Device Information (SIG)
                 name="Authorized Override",
-                # description="Should work",
             )
 
         service = AuthorizedSIGService()
@@ -146,7 +143,6 @@ class TestInitSubclassValidation:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("BB000001-0000-1000-8000-00805F9B34FB"),
                 name="Test Service",
-                # description="Test",
             )
 
         # pylint: disable=protected-access
@@ -205,7 +201,6 @@ class TestInitAndPostInit:
         manual_info = ServiceInfo(
             uuid=BluetoothUUID("FF000002-0000-1000-8000-00805F9B34FB"),
             name="Manual",
-            # description="Manual info",
         )
 
         service = service_cls(info=manual_info)
@@ -321,31 +316,12 @@ class TestProcessCharacteristics:
         assert long_uuid in service.characteristics
 
     # NOTE: This test is disabled because properties are now runtime attributes
-    # from actual BLE devices, not static CharacteristicInfo data.
+    # Properties should come from actual BLE devices, not static CharacteristicInfo data.
     # TODO: Update test to verify properties from actual device discovery
-    # def test_process_characteristics_extracts_properties(
-    #     self, service_class_factory: Callable[..., type[CustomBaseGattService]]
-    # ) -> None:
-    #     """Test that GATT properties are correctly extracted."""
-    #     service = service_class_factory()()
-    #     uuid = BluetoothUUID("AAAA0001-0000-1000-8000-00805F9B34FB")
-    #     discovered = {
-    #         uuid: CharacteristicInfo(
-    #             uuid=uuid,
-    #             name="",
-    #         ),
-    #     }
-    #
-    #     service.process_characteristics(discovered)
-    #     char = service.characteristics[uuid]
-    #
-    #     # Properties should come from actual device, not CharacteristicInfo
-    #     # TODO: Test with proper device discovery that includes properties
-    #     assert isinstance(char.properties, list)  # Properties list exists
 
 
 # ==============================================================================
-# Test: UnknownService
+# UnknownService Tests
 # ==============================================================================
 
 
@@ -405,7 +381,6 @@ class TestServiceRegistration:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("AA001000-0000-1000-8000-00805F9B34FB"),
                 name="Custom",
-                # description="Custom service",
             )
 
         # pylint: disable=protected-access
@@ -422,7 +397,6 @@ class TestServiceRegistration:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("AA001001-0000-1000-8000-00805F9B34FB"),
                 name="Custom",
-                # description="Custom service",
             )
 
         # pylint: disable=protected-access
@@ -443,7 +417,6 @@ class TestServiceRegistration:
             _info = ServiceInfo(
                 uuid=BluetoothUUID("AA001002-0000-1000-8000-00805F9B34FB"),
                 name="Custom",
-                # description="Custom service",
             )
 
         translator = BluetoothSIGTranslator()
@@ -672,5 +645,4 @@ class TestEdgeCases:
             _ = ServiceInfo(
                 uuid=BluetoothUUID(""),  # Empty UUID
                 name="Bad",
-                # description="Bad",
             )

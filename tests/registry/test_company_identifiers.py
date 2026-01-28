@@ -28,13 +28,13 @@ class TestCompanyIdentifiersRegistry:
         new_registry = CompanyIdentifiersRegistry()
 
         # Verify data is not loaded initially
-        assert not new_registry._loaded  # noqa: SLF001  # Testing internal state
+        assert not new_registry._loaded  # Testing internal state
 
         # First access should trigger loading
         result = new_registry.get_company_name(0x004C)
 
         # Now it should be loaded
-        assert new_registry._loaded  # noqa: SLF001  # Testing internal state
+        assert new_registry._loaded  # Testing internal state
 
         # If YAML loaded successfully, we should get a result for Apple
         if result:  # type: ignore[unreachable]  # Depends on YAML loading success
@@ -125,7 +125,7 @@ class TestCompanyIdentifiersRegistry:
         assert result is None or isinstance(result, str)
 
         # Registry should be marked as loaded regardless
-        assert new_registry._loaded  # noqa: SLF001  # Testing internal state
+        assert new_registry._loaded  # Testing internal state
 
     def test_zero_company_id(self, company_registry: CompanyIdentifiersRegistry) -> None:
         """Test handling of company ID 0."""

@@ -175,7 +175,7 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
         typed_structure: list[dict[str, Any]] = []
         for raw_field in structure:
             if isinstance(raw_field, dict):
-                typed_structure.append(cast(dict[str, Any], raw_field))
+                typed_structure.append(cast("dict[str, Any]", raw_field))
 
         if not typed_structure:
             return None, None
@@ -187,7 +187,7 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
             field_dict: dict[str, Any] = field
 
             if not value_type and isinstance(field_dict.get("type"), str):
-                yaml_type_value = cast(str, field_dict["type"])
+                yaml_type_value = cast("str", field_dict["type"])
                 value_type = self._convert_yaml_type_to_python_type(yaml_type_value)
 
             description_value = field_dict.get("description", "")
@@ -233,13 +233,13 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
         unit_line = None
 
         if "Base Unit:" in description:
-            # Format: "Base Unit:\norg.bluetooth.unit.xxx" or "Base Unit: org.bluetooth.unit.xxx"
+            # Two formats: "Base Unit:\norg.bluetooth.unit.xxx" or "Base Unit: org.bluetooth.unit.xxx"
             parts = description.split("Base Unit:")[1].split("\n")
             unit_line = parts[0].strip()
             if not unit_line and len(parts) > 1:  # Unit is on next line
                 unit_line = parts[1].strip()
         elif "Unit:" in description:
-            # Format: "Unit: org.bluetooth.unit.xxx" (inline)
+            # Inline format: "Unit: org.bluetooth.unit.xxx"
             unit_line = description.split("Unit:")[1].split("\n")[0].strip()
 
         if unit_line and "org.bluetooth.unit." in unit_line:

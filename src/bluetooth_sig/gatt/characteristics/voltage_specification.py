@@ -49,12 +49,15 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic[VoltageSpecification
     # Override since decode_value returns structured VoltageSpecificationData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VoltageSpecificationData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> VoltageSpecificationData:
         """Parse voltage specification data (2x uint16 in units of 1/64 V).
 
         Args:
             data: Raw bytes from the characteristic read.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             VoltageSpecificationData with 'minimum' and 'maximum' voltage specification values in Volts.
@@ -63,9 +66,6 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic[VoltageSpecification
             ValueError: If data is insufficient.
 
         """
-        if len(data) < 4:
-            raise ValueError("Voltage specification data must be at least 4 bytes")
-
         # Convert 2x uint16 (little endian) to voltage specification in Volts
         min_voltage_raw = DataParser.parse_int16(data, 0, signed=False)
         max_voltage_raw = DataParser.parse_int16(data, 2, signed=False)

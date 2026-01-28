@@ -76,6 +76,7 @@ Don't parse characteristics you won't use:
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 translator = BluetoothSIGTranslator()
 
@@ -84,14 +85,18 @@ all_notifications = [
     ("2A19", bytearray([75])),  # Battery Level - NEEDED
     ("2A6E", bytearray([0x54, 0x09])),  # Temperature - NEEDED
     ("2A6F", bytearray([0x54, 0x09])),  # Humidity - NEEDED
-    ("2A23", bytearray([0x12, 0x34, 0x56, 0x78])),  # System ID - not needed
-    ("2A29", bytearray([0x41, 0x63, 0x6D, 0x65])),  # Manufacturer - not needed
-    ("2A50", bytearray([0x01, 0x02, 0x03, 0x04])),  # PnP ID - not needed
+    # System ID requires 8 bytes
+    ("2A23", bytearray([0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0])),
+    ("2A29", bytearray([0x41, 0x63, 0x6D, 0x65])),  # Manufacturer Name
+    ("2A50", bytearray([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])),  # PnP ID
 ]
 
 # ❌ Bad: Parse everything (wastes CPU on unused characteristics)
 for char_uuid, data in all_notifications:
-    result = translator.parse_characteristic(char_uuid, data)
+    try:
+        result = translator.parse_characteristic(char_uuid, data)
+    except CharacteristicParseError:
+        pass  # Handle parse failures
     # Parsed 6 characteristics but only use 3
 
 # ✅ Good: Parse selectively (only what you need)

@@ -23,7 +23,7 @@ async def main() -> None:
     from examples.utils.demo_functions import demo_basic_usage as demo_basic_usage_fn
 
     # Address is guaranteed to be non-None since require_address=True
-    address = cast(str, common_args.address)
+    address = cast("str", common_args.address)
     await demo_basic_usage_fn(address, connection_manager)
 
 

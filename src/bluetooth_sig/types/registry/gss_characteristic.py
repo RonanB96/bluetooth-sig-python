@@ -123,8 +123,7 @@ class FieldSpec(msgspec.Struct, frozen=True, kw_only=True):
         if match:
             # Remove internal spaces from captured values
             m_val = int(match.group(1).replace(" ", ""))
-            d_val = int(match.group(2).replace(" ", ""))
-            # b_val = int(match.group(3).replace(" ", ""))  # Offset, not used
+            d_val = int(match.group(2).replace(" ", ""))  # b_val (offset) is not used
             return float(m_val * (10**d_val))
         return None
 
@@ -139,7 +138,7 @@ class FieldSpec(msgspec.Struct, frozen=True, kw_only=True):
         - "Minimum: X" and "Maximum: Y"
         - "Minimum value: X" and "Maximum value: Y"
         """
-        # Pattern: "Allowed range is/: X to Y" or "Range: X to Y"
+        # Regex pattern: "Allowed range is/: X to Y" or "Range: X to Y"
         match = re.search(
             r"(?:Allowed\s+)?range(?:\s+is)?[:\s]+([+-]?\d+\.?\d*)\s*to\s*([+-]?\d+\.?\d*)",
             self.description,

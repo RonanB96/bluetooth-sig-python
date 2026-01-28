@@ -15,9 +15,11 @@ class TemperatureCharacteristic(BaseCharacteristic[float]):
     Temperature measurement characteristic.
     """
 
-    expected_type: type | None = float  # Allows both float and None (for unknown value)
+    expected_type: type | None = float
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float | None:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> float:
         """Decode temperature characteristic.
 
         Decodes a 16-bit signed integer representing temperature in 0.01°C increments
@@ -26,6 +28,7 @@ class TemperatureCharacteristic(BaseCharacteristic[float]):
         Args:
             data: Raw bytes from BLE characteristic (exactly 2 bytes, little-endian)
             ctx: Optional context for parsing (device info, flags, etc.)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             Temperature in degrees Celsius, or None if value is unknown (-32768)

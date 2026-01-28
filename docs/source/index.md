@@ -14,20 +14,56 @@ The **Bluetooth SIG Standards Library** provides comprehensive GATT characterist
 ## Key Features
 
 - ✅ **Standards-Based**: Official Bluetooth SIG YAML registry with automatic UUID resolution
-- ✅ **Type-Safe**: Convert raw Bluetooth data to meaningful sensor values with comprehensive typing
+- ✅ **Type-Safe**: Characteristic classes provide compile-time type checking and IDE autocomplete
 - ✅ **Modern Python**: msgspec-based design with Python 3.9+ compatibility
-- ✅ **Comprehensive**: Support for 70+ GATT characteristics across multiple service categories
-- ✅ **Production Ready**: Extensive validation, perfect code quality scores, and comprehensive testing
+- ✅ **Comprehensive**: Support for 200+ GATT characteristics across multiple service categories
 - ✅ **Framework Agnostic**: Works with any BLE connection library (bleak, simplepyble, etc.)
 
 ## Quick Example
+
+**Device abstraction** (recommended for backend abstraction):
+
+```python
+# SKIP: Requires actual BLE device connection
+from bluetooth_sig import BluetoothSIGTranslator, Device
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+
+# Connection manager for your BLE backend
+from examples.connection_managers.bleak_retry import (
+    BleakRetryConnectionManager,
+)
+
+
+async def main():
+    translator = BluetoothSIGTranslator()
+    device = Device(
+        BleakRetryConnectionManager("AA:BB:CC:DD:EE:FF"), translator
+    )
+
+    await device.connect()
+    battery = await device.read(BatteryLevelCharacteristic)  # IDE knows: int
+    print(f"Battery: {battery}%")
+    await device.disconnect()
+```
+
+**Type-safe parsing** (direct characteristic access):
+
+```python
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+
+battery = BatteryLevelCharacteristic()
+level = battery.parse_value(bytearray([85]))  # IDE infers int
+print(f"Battery: {level}%")  # Battery: 85%
+```
+
+**Dynamic parsing** (for scanning unknown devices):
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
-service_info = translator.get_sig_info_by_uuid("180F")  # Battery
-char_info = translator.get_sig_info_by_uuid("2A19")  # Battery Level
+result = translator.parse_characteristic("2A19", bytearray([85]))
+print(f"Battery Level: {result}%")  # Battery Level: 85%
 ```
 
 ## Getting Started
@@ -53,7 +89,7 @@ Install via pip or from source
 :link: how-to/usage
 :link-type: doc
 
-Learn how to use the library
+Real-world usage patterns
 :::
 
 :::{grid-item-card} 📚 API Reference
@@ -64,6 +100,17 @@ Detailed API documentation
 :::
 
 ::::
+
+## Which Guide Should I Read?
+
+| I want to...                                | Read this                                             |
+| ------------------------------------------- | ----------------------------------------------------- |
+| Get started quickly                         | [Quick Start](tutorials/quickstart.md)                |
+| Choose the right API approach               | [Choosing the Right API](explanation/api-overview.md) |
+| Integrate with bleak or other BLE libraries | [BLE Integration Guide](how-to/ble-integration.md)    |
+| See real-world usage patterns               | [Usage Guide](how-to/usage.md)                        |
+| Use async patterns                          | [Async Usage](how-to/async-usage.md)                  |
+| Understand the library's purpose            | [Why Use This Library](explanation/why-use.md)        |
 
 ## Why Choose This Library?
 

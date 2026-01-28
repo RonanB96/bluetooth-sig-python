@@ -10,7 +10,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.context import CharacteristicContext
-from bluetooth_sig.gatt.exceptions import CharacteristicParseError, SpecialValueDetected
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError, SpecialValueDetectedError
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -244,7 +244,7 @@ class CommonCharacteristicTests:
                 except CharacteristicParseError as e:
                     # If it fails, should have a meaningful error message
                     assert str(e).strip(), "Failed parsing should have meaningful error message"
-                except SpecialValueDetected:
+                except SpecialValueDetectedError:
                     # Special value detection is also acceptable
                     pass
 
@@ -378,10 +378,9 @@ class CommonCharacteristicTests:
                 f"{type(characteristic).__name__} has dependencies but dependency_test_data is empty. "
                 f"Provide at least one test case for dependency validation."
             )
-        else:
-            # No dependencies declared - dependency tests optional
-            if dependency_test_data is not None:
-                pytest.skip(f"{type(characteristic).__name__} has no dependencies, skipping dependency tests")
+        # No dependencies declared - dependency tests optional
+        elif dependency_test_data is not None:
+            pytest.skip(f"{type(characteristic).__name__} has no dependencies, skipping dependency tests")
 
     def test_dependency_parsing_with_dependencies_present(
         self,

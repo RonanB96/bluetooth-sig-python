@@ -91,7 +91,13 @@ class LocationAndSpeedCharacteristic(BaseCharacteristic[LocationAndSpeedData]):
     HEADING_SOURCE_MASK = 0x2000
     HEADING_SOURCE_SHIFT = 13
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> LocationAndSpeedData:  # pylint: disable=too-many-locals
+    # Maximum valid enum values
+    _MAX_POSITION_STATUS_VALUE = 3
+    _MAX_ELEVATION_SOURCE_VALUE = 3
+
+    def _decode_value(  # pylint: disable=too-many-locals  # Location spec with many positional fields
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> LocationAndSpeedData:
         """Parse location and speed data according to Bluetooth specification.
 
         Format: Flags(2) + [Instantaneous Speed(2)] + [Total Distance(3)] + [Location - Latitude(4)] +
@@ -100,25 +106,29 @@ class LocationAndSpeedCharacteristic(BaseCharacteristic[LocationAndSpeedData]):
         Args:
             data: Raw bytearray from BLE characteristic
             ctx: Optional context providing surrounding context (may be None)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             LocationAndSpeedData containing parsed location and speed data
 
         """
-        if len(data) < 2:
-            raise ValueError("Location and Speed data must be at least 2 bytes")
-
         flags = LocationAndSpeedFlags(DataParser.parse_int16(data, 0, signed=False))
 
         # Extract status information from flags
         position_status_bits = (flags & self.POSITION_STATUS_MASK) >> self.POSITION_STATUS_SHIFT
-        position_status = PositionStatus(position_status_bits) if position_status_bits <= 3 else None
+        position_status = (
+            PositionStatus(position_status_bits) if position_status_bits <= self._MAX_POSITION_STATUS_VALUE else None
+        )
 
         speed_distance_format_bit = (flags & self.SPEED_DISTANCE_FORMAT_MASK) >> self.SPEED_DISTANCE_FORMAT_SHIFT
         speed_and_distance_format = SpeedAndDistanceFormat(speed_distance_format_bit)
 
         elevation_source_bits = (flags & self.ELEVATION_SOURCE_MASK) >> self.ELEVATION_SOURCE_SHIFT
-        elevation_source = ElevationSource(elevation_source_bits) if elevation_source_bits <= 3 else None
+        elevation_source = (
+            ElevationSource(elevation_source_bits)
+            if elevation_source_bits <= self._MAX_ELEVATION_SOURCE_VALUE
+            else None
+        )
 
         heading_source_bit = (flags & self.HEADING_SOURCE_MASK) >> self.HEADING_SOURCE_SHIFT
         heading_source = HeadingSource(heading_source_bit)

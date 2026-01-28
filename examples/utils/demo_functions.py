@@ -116,7 +116,7 @@ async def demo_service_discovery(address: str, connection_manager: ConnectionMan
                 for char_uuid, _char_info in characteristics.items():
                     total_chars += 1
                     try:
-                        short_uuid = char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
+                        short_uuid = BluetoothUUID(char_uuid).short_form
                         parsed = await device.read(short_uuid)
 
                         if parsed is not None:
@@ -130,7 +130,7 @@ async def demo_service_discovery(address: str, connection_manager: ConnectionMan
                             else:
                                 print(f"        • {short_uuid}: Unknown characteristic")
                     except Exception as e:  # pylint: disable=broad-exception-caught
-                        short_uuid = char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
+                        short_uuid = BluetoothUUID(char_uuid).short_form
                         char_info_obj = translator.get_characteristic_info_by_uuid(short_uuid)
                         if char_info_obj:
                             print(f"        ❌ {short_uuid}: {char_info_obj.name} (error: {e})")
@@ -240,7 +240,7 @@ async def demo_library_comparison(address: str, target_uuids: list[str] | None =
             simple_results = await asyncio.to_thread(
                 comprehensive_device_analysis_simpleble,
                 address,
-                cast(types.ModuleType, simplepyble_module),
+                cast("types.ModuleType", simplepyble_module),
             )
             if comparison_results.data is None:
                 comparison_results.data = simple_results

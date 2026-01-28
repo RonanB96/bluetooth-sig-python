@@ -246,7 +246,7 @@ The library currently supports **{len(characteristics)}** GATT characteristics:
 
             if service_class and hasattr(service_class, "service_characteristics"):
                 # Get the characteristics defined in this service
-                for char_name_enum in service_class.service_characteristics.keys():
+                for char_name_enum in service_class.service_characteristics:
                     # Convert enum to readable name
                     char_display_name = char_name_enum.value.replace("_", " ").title()
 

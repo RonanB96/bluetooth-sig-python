@@ -7,7 +7,7 @@ depends on data from other characteristics, as specified in Bluetooth SIG specif
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 
@@ -38,7 +38,9 @@ class CalibrationCharacteristic(CustomBaseCharacteristic):
     min_length = 4
     expected_type = float
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> float:
         """Parse calibration factor as float32.
 
         This characteristic is independent and does not use context.
@@ -46,7 +48,7 @@ class CalibrationCharacteristic(CustomBaseCharacteristic):
         import struct
         from typing import cast
 
-        return cast(float, struct.unpack("<f", bytes(data))[0])
+        return cast("float", struct.unpack("<f", bytes(data))[0])
 
     def _encode_value(self, data: float) -> bytearray:
         """Encode calibration factor."""
@@ -73,12 +75,14 @@ class SensorReadingCharacteristic(CustomBaseCharacteristic):
     )
 
     # Reference calibration directly (no hardcoded UUIDs)
-    _required_dependencies = [CalibrationCharacteristic]
+    _required_dependencies: ClassVar[list[type]] = [CalibrationCharacteristic]
 
     min_length = 2
     expected_type = float
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> float:
         """Parse sensor reading and apply calibration if available.
 
         Args:
@@ -128,7 +132,7 @@ class SequenceNumberCharacteristic(CustomBaseCharacteristic):
     min_length = 2
     expected_type = int
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
         """Parse sequence number as uint16."""
         return int.from_bytes(bytes(data[:2]), byteorder="little", signed=False)
 
@@ -154,12 +158,14 @@ class SequencedDataCharacteristic(CustomBaseCharacteristic):
 
     # Declare dependency using direct class reference (following Django ForeignKey pattern)
 
-    _required_dependencies = [SequenceNumberCharacteristic]
+    _required_dependencies: ClassVar[list[type]] = [SequenceNumberCharacteristic]
 
     min_length = 4
     expected_type = dict
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> dict[str, Any]:
         """Parse sequenced data with optional sequence number validation.
 
         SIG Pattern:
@@ -435,9 +441,11 @@ class TestMultiCharacteristicDependencies:
                 value_type=ValueType.INT,
             )
             # Forward reference will be resolved after CharB is defined
-            _required_dependencies = []
+            _required_dependencies: ClassVar[list[type]] = []
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return int(data[0])
 
             def _encode_value(self, data: int) -> bytearray:
@@ -451,9 +459,11 @@ class TestMultiCharacteristicDependencies:
                 value_type=ValueType.INT,
             )
             # Reference CharA directly (no hardcoding)
-            _required_dependencies = [CharA]
+            _required_dependencies: ClassVar[list[type]] = [CharA]
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return int(data[0])
 
             def _encode_value(self, data: int) -> bytearray:
@@ -539,7 +549,9 @@ class TestRequiredOptionalDependencies:
             min_length = 2
             expected_type = int
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return int.from_bytes(bytes(data[:2]), byteorder="little", signed=False)
 
             def _encode_value(self, data: int) -> bytearray:
@@ -555,12 +567,14 @@ class TestRequiredOptionalDependencies:
                 value_type=ValueType.DICT,
             )
 
-            _required_dependencies = [MeasurementCharacteristic]
+            _required_dependencies: ClassVar[list[type]] = [MeasurementCharacteristic]
 
             min_length = 2
             expected_type = dict
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> dict[str, Any]:
                 value = int.from_bytes(bytes(data[:2]), byteorder="little", signed=False)
                 result = {"context_value": value, "has_measurement": False}
 
@@ -588,11 +602,13 @@ class TestRequiredOptionalDependencies:
             min_length = 4
             expected_type = float
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> float:
                 import struct
                 from typing import cast
 
-                return cast(float, struct.unpack("<f", bytes(data[:4]))[0])
+                return cast("float", struct.unpack("<f", bytes(data[:4]))[0])
 
             def _encode_value(self, data: float) -> bytearray:
                 import struct
@@ -609,12 +625,14 @@ class TestRequiredOptionalDependencies:
                 value_type=ValueType.DICT,
             )
 
-            _optional_dependencies = [EnrichmentCharacteristic]
+            _optional_dependencies: ClassVar[list[type]] = [EnrichmentCharacteristic]
 
             min_length = 2
             expected_type = dict
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> dict[str, Any]:
                 value = int.from_bytes(bytes(data[:2]), byteorder="little", signed=False)
                 result = {"data_value": value, "enriched": False}
 
@@ -639,8 +657,11 @@ class TestRequiredOptionalDependencies:
                 value_type=ValueType.DICT,
             )
 
-            _required_dependencies = [MeasurementCharacteristic, ContextCharacteristic]
-            _optional_dependencies = [EnrichmentCharacteristic]
+            _required_dependencies: ClassVar[list[type]] = [
+                MeasurementCharacteristic,
+                ContextCharacteristic,
+            ]
+            _optional_dependencies: ClassVar[list[type]] = [EnrichmentCharacteristic]
 
             min_length = 4
             expected_type = dict
@@ -649,6 +670,8 @@ class TestRequiredOptionalDependencies:
                 self,
                 data: bytearray,
                 ctx: CharacteristicContext | None = None,
+                *,
+                validate: bool = True,
             ) -> dict[str, Any]:
                 measurement_ref = int.from_bytes(bytes(data[:2]), byteorder="little", signed=False)
                 context_ref = int.from_bytes(bytes(data[2:4]), byteorder="little", signed=False)

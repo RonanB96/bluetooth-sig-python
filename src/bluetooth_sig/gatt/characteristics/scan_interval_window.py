@@ -30,12 +30,15 @@ class ScanIntervalWindowCharacteristic(BaseCharacteristic[ScanIntervalWindowData
     max_length = 4  # Fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ScanIntervalWindowData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> ScanIntervalWindowData:
         """Parse scan interval window data.
 
         Args:
             data: Raw bytearray from BLE characteristic (4 bytes).
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ScanIntervalWindowData with parsed scan parameters.

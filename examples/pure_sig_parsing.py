@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Pure SIG parsing examples for bluetooth_sig.
 
-This module demonstrates parsing characteristic data using only the
-Bluetooth SIG translator without requiring BLE hardware.
+This module demonstrates parsing characteristic data without requiring BLE hardware.
+Two approaches are shown:
+
+1. **Type-safe** (recommended): Use characteristic classes directly for full IDE inference
+2. **Dynamic**: Use Translator with UUID strings for scanning unknown devices
 """
 
 from __future__ import annotations
@@ -22,12 +25,60 @@ class TestCase(TypedDict):
     description: str
 
 
-def demonstrate_pure_sig_parsing() -> None:
-    """Demonstrate pure SIG parsing with various characteristic types."""
-    print("🔵 Pure Bluetooth SIG Standards Parsing Demo")
-    print("=" * 50)
-    print("This demo shows parsing raw characteristic data using official SIG standards.")
-    print("No BLE hardware or connections required!\n")
+def demonstrate_type_safe_parsing() -> None:
+    """Demonstrate type-safe parsing with characteristic classes (recommended).
+
+    Use this approach when you know the characteristic type at compile time.
+    The IDE infers return types automatically.
+    """
+    print("🔵 Type-Safe Parsing (Recommended for Known Devices)")
+    print("=" * 55)
+    print("Use characteristic classes directly for full IDE type inference.\n")
+
+    from bluetooth_sig.gatt.characteristics import (
+        BatteryLevelCharacteristic,
+        HeartRateMeasurementCharacteristic,
+        HumidityCharacteristic,
+        TemperatureCharacteristic,
+    )
+
+    # Simple characteristics: return primitive types
+    battery = BatteryLevelCharacteristic()
+    level = battery.parse_value(bytearray([85]))  # IDE knows: int
+    print(f"📊 Battery Level: {level}% (type: {type(level).__name__})")
+
+    temp = TemperatureCharacteristic()
+    temp_value = temp.parse_value(bytearray([0x64, 0x09]))  # IDE knows: float
+    print(f"📊 Temperature: {temp_value}°C (type: {type(temp_value).__name__})")
+
+    humidity = HumidityCharacteristic()
+    humidity_value = humidity.parse_value(bytearray([0x3A, 0x13]))  # IDE knows: float
+    print(f"📊 Humidity: {humidity_value}% (type: {type(humidity_value).__name__})")
+
+    # Complex characteristics: return structured dataclasses
+    heart_rate = HeartRateMeasurementCharacteristic()
+    hr_data = heart_rate.parse_value(bytearray([0x00, 72]))  # IDE knows: HeartRateData
+    print(f"📊 Heart Rate: {hr_data.heart_rate} bpm (type: {type(hr_data).__name__})")
+    print(f"   Sensor contact: {hr_data.sensor_contact}")
+
+    # Encoding: build_value converts back to bytes
+    encoded = battery.build_value(85)
+    print(f"\n✅ Encode 85% battery → {encoded.hex()}")
+
+    encoded_hr = heart_rate.build_value(hr_data)
+    print(f"✅ Encode heart rate data → {encoded_hr.hex()}")
+    print()
+
+
+def demonstrate_dynamic_parsing() -> None:
+    """Demonstrate dynamic parsing with UUID strings (for device scanning).
+
+    Use this approach when scanning unknown devices or building generic BLE explorers.
+    Return type is Any since the characteristic type is determined at runtime.
+    """
+    print("🔵 Dynamic Parsing (For Scanning Unknown Devices)")
+    print("=" * 55)
+    print("Use Translator with UUID strings when characteristic type is unknown.\n")
 
     translator = BluetoothSIGTranslator()
 
@@ -160,47 +211,49 @@ def demonstrate_batch_parsing() -> None:
 
 
 def demonstrate_integration_pattern() -> None:
-    """Show the recommended integration pattern for BLE libraries."""
-    print("\n🔧 Integration Pattern for BLE Libraries")
-    print("=" * 50)
+    """Show the recommended integration patterns for BLE libraries."""
+    print("\n🔧 Integration Patterns for BLE Libraries")
+    print("=" * 55)
     print(
         """
-The bluetooth_sig library provides pure SIG translation that works with ANY BLE library:
+Choose your approach based on your use case:
 
-# Step 1: Get raw data (using any BLE library)
-raw_data = await your_ble_library.read_characteristic(device, uuid)
+# TYPE-SAFE (recommended for known devices):
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 
-# Step 2: Parse with bluetooth_sig (connection-agnostic)
+battery = BatteryLevelCharacteristic()
+raw_data = await your_ble_library.read_characteristic(device, "2A19")
+level = battery.parse_value(raw_data)  # IDE knows: int
+encoded = battery.build_value(85)      # Encode back to bytes
+
+# DYNAMIC (for scanning unknown devices):
 from bluetooth_sig import BluetoothSIGTranslator
+
 translator = BluetoothSIGTranslator()
-result = translator.parse_characteristic(uuid, raw_data)
+for uuid in discovered_uuids:
+    if translator.supports(uuid):
+        result = translator.parse_characteristic(uuid, raw_data)
+        print(f"{result.info.name}: {result.value}")  # Returns Any
 
-# Step 3: Use parsed result (result is the value directly)
-info = translator.get_characteristic_info_by_uuid(uuid)
-print(f"Value: {result} {info.unit if info else ''}")
-
-This pattern works with:
-- bleak
-- bleak-retry-connector
-- simplepyble
-- Any custom BLE implementation
+Both patterns work with bleak, simplepyble, or any BLE library.
 """
     )
 
 
 if __name__ == "__main__":
     print("🚀 Bluetooth SIG Pure Standards Parsing Demo")
-    print("This example demonstrates framework-agnostic SIG standard interpretation\n")
+    print("Demonstrates type-safe and dynamic parsing approaches\n")
 
     try:
         # Run all demonstrations
-        demonstrate_pure_sig_parsing()
+        demonstrate_type_safe_parsing()
+        demonstrate_dynamic_parsing()
         demonstrate_uuid_resolution()
         demonstrate_batch_parsing()
         demonstrate_integration_pattern()
 
         print("\n✅ Demo completed successfully!")
-        print("The bluetooth_sig library is ready for integration with your BLE library of choice.")
+        print("Use characteristic classes for known devices, Translator for scanning.")
 
     except Exception as e:  # pylint: disable=broad-except
         print(f"\n❌ Demo failed: {e}")

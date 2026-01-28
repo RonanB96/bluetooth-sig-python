@@ -26,27 +26,27 @@ from .services.base import BaseGattService
 from .uuid_registry import UuidRegistry, uuid_registry
 
 __all__ = [
-    "BaseGattService",
-    "BaseCharacteristic",
-    "CharacteristicSpec",
-    "FieldInfo",
-    "UnitMetadata",
-    "UuidRegistry",
-    "uuid_registry",
     # Constants
     "ABSOLUTE_ZERO_CELSIUS",
     "PERCENTAGE_MAX",
-    "SINT16_MAX",
     "SINT8_MAX",
     "SINT8_MIN",
+    "SINT16_MAX",
     "TEMPERATURE_RESOLUTION",
-    "UINT16_MAX",
     "UINT8_MAX",
+    "UINT16_MAX",
+    "BaseCharacteristic",
+    "BaseGattService",
     # Exceptions
     "BluetoothSIGError",
     "CharacteristicError",
+    "CharacteristicSpec",
     "DataParsingError",
+    "FieldInfo",
     "ServiceError",
     "UUIDResolutionError",
+    "UnitMetadata",
+    "UuidRegistry",
     "ValueRangeError",
+    "uuid_registry",
 ]

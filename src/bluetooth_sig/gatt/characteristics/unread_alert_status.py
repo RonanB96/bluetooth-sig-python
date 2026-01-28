@@ -38,12 +38,15 @@ class UnreadAlertStatusCharacteristic(BaseCharacteristic[UnreadAlertStatusData])
 
     expected_length: int | None = 2
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> UnreadAlertStatusData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> UnreadAlertStatusData:
         """Decode Unread Alert Status data from bytes.
 
         Args:
             data: Raw characteristic data (2 bytes)
             ctx: Optional characteristic context
+            validate: Whether to validate ranges (default True)
 
         Returns:
             UnreadAlertStatusData with all fields

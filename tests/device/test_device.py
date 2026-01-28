@@ -8,9 +8,10 @@ import pytest
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
+from bluetooth_sig.device.connected import DeviceEncryption
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
 from bluetooth_sig.types.advertising import AdvertisementData, AdvertisingDataStructures, CoreAdvertisingData
-from bluetooth_sig.types.device_types import DeviceEncryption, DeviceService
+from bluetooth_sig.types.device_types import DeviceService
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -44,7 +45,7 @@ class MockConnectionManager(ConnectionManagerProtocol):
         """Mock device name."""
         return "Mock Device"
 
-    async def connect(self) -> None:
+    async def connect(self, *, timeout: float = 10.0) -> None:
         self._connected = True
 
     async def disconnect(self) -> None:
@@ -153,7 +154,8 @@ class TestDevice:
         assert self.device.name == ""
         assert self.device.services == {}
         assert isinstance(self.device.encryption, DeviceEncryption)
-        assert self.device.advertiser_data is not None
+        # last_advertisement should be None until an advertisement is parsed
+        assert self.device.last_advertisement is None
 
     def test_device_string_representation(self) -> None:
         """Test Device string representation."""
@@ -191,10 +193,9 @@ class TestDevice:
 
         self.device.parse_raw_advertisement(adv_data)
 
-        assert self.device.advertiser_data is not None
-        assert self.device.advertiser_data.raw_data == adv_data
-        assert self.device.advertiser_data.ad_structures.core.local_name == "Test Device"
-        assert self.device.advertiser_data.ad_structures.properties.flags == 0x06
+        assert self.device.last_advertisement is not None
+        assert self.device.last_advertisement.ad_structures.core.local_name == "Test Device"
+        assert self.device.last_advertisement.ad_structures.properties.flags == 0x06
         assert self.device.name == "Test Device"  # Should update device name
 
     def test_parse_raw_advertisement_manufacturer(self) -> None:
@@ -214,8 +215,9 @@ class TestDevice:
 
         self.device.parse_raw_advertisement(adv_data)
 
-        assert self.device.advertiser_data is not None
-        assert self.device.advertiser_data.ad_structures.core.manufacturer_data[0x004C] == b"\x01\x02\x03"
+        assert self.device.last_advertisement is not None
+        assert 0x004C in self.device.last_advertisement.ad_structures.core.manufacturer_data
+        assert self.device.last_advertisement.ad_structures.core.manufacturer_data[0x004C].payload == b"\x01\x02\x03"
 
     def test_parse_raw_advertisement_service_uuids(self) -> None:
         """Test advertiser data parsing with service UUIDs."""
@@ -231,8 +233,8 @@ class TestDevice:
 
         self.device.parse_raw_advertisement(adv_data)
 
-        assert self.device.advertiser_data is not None
-        assert "180F" in self.device.advertiser_data.ad_structures.core.service_uuids
+        assert self.device.last_advertisement is not None
+        assert "180F" in self.device.last_advertisement.ad_structures.core.service_uuids
 
     def test_parse_raw_advertisement_tx_power(self) -> None:
         """Test advertiser data parsing with TX power."""
@@ -247,8 +249,8 @@ class TestDevice:
 
         self.device.parse_raw_advertisement(adv_data)
 
-        assert self.device.advertiser_data is not None
-        assert self.device.advertiser_data.ad_structures.properties.tx_power == -4
+        assert self.device.last_advertisement is not None
+        assert self.device.last_advertisement.ad_structures.properties.tx_power == -4
 
     def test_device_with_advertiser_context(self) -> None:
         """Test device functionality with advertiser data context."""
@@ -283,48 +285,52 @@ class TestDevice:
         self.device.parse_raw_advertisement(adv_data)
 
         # Verify advertiser data was parsed
-        assert self.device.advertiser_data is not None
+        assert self.device.last_advertisement is not None
         assert self.device.name == "Test Device"
 
-    def test_is_connected_property(self) -> None:
+    @pytest.mark.asyncio
+    async def test_is_connected_property(self) -> None:
         """Test is_connected property behaviour."""
         # Test with disconnected connection manager
         mock_manager = MockConnectionManager(connected=False)
         device = Device(mock_manager, self.translator)
         assert device.is_connected is False
 
-        # Test with connected connection manager
-        mock_manager = MockConnectionManager(connected=True)
+        # Test with connected connection manager - need to actually call connect()
+        mock_manager = MockConnectionManager(connected=False)
         device = Device(mock_manager, self.translator)
+        await device.connect()
         assert device.is_connected is True
 
-    def test_is_connected_edge_cases(self) -> None:
+    @pytest.mark.asyncio
+    async def test_is_connected_edge_cases(self) -> None:
         """Test is_connected property edge cases."""
         # Test connection manager state change
-        mock_manager = MockConnectionManager(connected=True)
+        mock_manager = MockConnectionManager(connected=False)
         device = Device(mock_manager, self.translator)
+        await device.connect()
         assert device.is_connected is True
 
-        # Change state through manager using provided synchronous helper
-        mock_manager.disconnect_sync()
+        # Change state through disconnect
+        await device.disconnect()
         assert device.is_connected is False
 
     # Test None return value from manager is handled in separate test
 
-    def test_is_connected_error_handling(self) -> None:
+    @pytest.mark.asyncio
+    async def test_is_connected_error_handling(self) -> None:
         """Test is_connected property error handling."""
         # Test manager that raises exception - use module-level FaultyManager
         faulty_manager = FaultyManager()
         # cast to ConnectionManagerProtocol to satisfy static type checking
-        device = Device(cast(ConnectionManagerProtocol, faulty_manager), self.translator)
+        device = Device(cast("ConnectionManagerProtocol", faulty_manager), self.translator)
 
-        # Should propagate the exception
-        with pytest.raises(RuntimeError, match="Connection check failed"):
-            _ = device.is_connected
+        # is_connected should return False even if manager is faulty (uses internal state)
+        assert device.is_connected is False
 
         # Test manager without is_connected property - use module-level IncompleteManager
         incomplete_manager = IncompleteManager()
-        device = Device(cast(ConnectionManagerProtocol, incomplete_manager), self.translator)
+        device = Device(cast("ConnectionManagerProtocol", incomplete_manager), self.translator)
 
         # Should return False for manager without is_connected property
         assert self.device.is_connected is False
@@ -334,7 +340,7 @@ class TestDevice:
         False.
         """
         none_manager = NoneManager()
-        device = Device(cast(ConnectionManagerProtocol, none_manager), self.translator)
+        device = Device(cast("ConnectionManagerProtocol", none_manager), self.translator)
         assert device.is_connected is False
 
     def test_connection_manager_protocol_interface(self) -> None:

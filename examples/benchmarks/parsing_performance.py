@@ -265,7 +265,7 @@ def print_summary(session: ProfilingSession) -> None:
    - Use streaming/generator patterns for large batches
 
 4. Code hot paths identified:
-   - CharacteristicRegistry.create_characteristic (UUID lookup)
+   - CharacteristicRegistry.get_characteristic (UUID lookup)
    - Characteristic.parse_value (parsing logic)
    - Context building in batch operations
     """)

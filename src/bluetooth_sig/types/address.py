@@ -6,6 +6,8 @@ This module provides utilities for working with Bluetooth device addresses
 
 from __future__ import annotations
 
+from bluetooth_sig.gatt.constants import SIZE_UINT48
+
 
 def mac_address_to_bytes(mac_address: str) -> bytes:
     """Convert a MAC address string to 6 bytes.
@@ -25,7 +27,7 @@ def mac_address_to_bytes(mac_address: str) -> bytes:
     """
     # Remove colons/dashes and convert to bytes
     cleaned = mac_address.replace(":", "").replace("-", "")
-    if len(cleaned) != 12:
+    if len(cleaned) != (SIZE_UINT48 * 2):  # 6 bytes = 12 hex characters
         msg = f"Invalid MAC address format: {mac_address}"
         raise ValueError(msg)
 
@@ -52,10 +54,10 @@ def bytes_to_mac_address(data: bytes | bytearray) -> str:
         >>> bytes_to_mac_address(bytes.fromhex("aabbccddeeff"))
         'AA:BB:CC:DD:EE:FF'
     """
-    if len(data) != 6:
+    if len(data) != SIZE_UINT48:
         msg = f"MAC address must be exactly 6 bytes, got {len(data)}"
         raise ValueError(msg)
     return ":".join(f"{b:02X}" for b in data)
 
 
-__all__ = ["mac_address_to_bytes", "bytes_to_mac_address"]
+__all__ = ["bytes_to_mac_address", "mac_address_to_bytes"]

@@ -52,12 +52,15 @@ class ActivityGoalCharacteristic(BaseCharacteristic[ActivityGoalData]):
     max_length: int = 22  # Max length with all optional fields present
     allow_variable_length: bool = True  # Variable based on presence flags
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ActivityGoalData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> ActivityGoalData:
         """Decode Activity Goal from raw bytes.
 
         Args:
             data: Raw bytes from BLE characteristic
             ctx: Optional context for parsing
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ActivityGoalData: Parsed activity goal

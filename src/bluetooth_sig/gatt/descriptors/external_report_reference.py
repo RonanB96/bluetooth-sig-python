@@ -39,9 +39,6 @@ class ExternalReportReferenceDescriptor(BaseDescriptor):
         Raises:
             ValueError: If data is not exactly 2 bytes
         """
-        if len(data) != 2:
-            raise ValueError(f"External Report Reference data must be exactly 2 bytes, got {len(data)}")
-
         external_report_id = DataParser.parse_int16(data, endian="little")
 
         return ExternalReportReferenceData(external_report_id=external_report_id)

@@ -7,6 +7,7 @@ from typing import Any
 
 import msgspec
 
+from .company import ManufacturerData
 from .registry.descriptor_types import DescriptorData
 from .uuid import BluetoothUUID
 
@@ -16,7 +17,7 @@ class DeviceInfo(msgspec.Struct, kw_only=True):
 
     address: str = ""
     name: str = ""
-    manufacturer_data: dict[int, bytes] = msgspec.field(default_factory=dict)
+    manufacturer_data: dict[int, ManufacturerData] = msgspec.field(default_factory=dict)
     service_uuids: list[BluetoothUUID] = msgspec.field(default_factory=list)
 
 
@@ -36,6 +37,7 @@ class CharacteristicContext(msgspec.Struct, kw_only=True):
         descriptors: Mapping from descriptor UUID string to parsed descriptor data.
             Provides access to characteristic descriptors during parsing.
         raw_service: Optional raw service-level payload when applicable.
+        validate: Whether to perform validation during parsing (range checks, etc.).
 
     """
 
@@ -44,3 +46,4 @@ class CharacteristicContext(msgspec.Struct, kw_only=True):
     other_characteristics: Mapping[str, Any] | None = None
     descriptors: Mapping[str, DescriptorData] | None = None
     raw_service: bytes = b""
+    validate: bool = True

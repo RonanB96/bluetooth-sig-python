@@ -48,13 +48,14 @@ class AlertNotificationControlPointCharacteristic(BaseCharacteristic[AlertNotifi
     allow_variable_length: bool = True  # Some commands may have additional data
 
     def _decode_value(
-        self, data: bytearray, ctx: CharacteristicContext | None = None
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> AlertNotificationControlPointData:
         """Decode Alert Notification Control Point data from bytes.
 
         Args:
             data: Raw characteristic data (2 bytes, length validated by BaseCharacteristic)
             ctx: Optional characteristic context
+            validate: Whether to perform validation (currently unused)
 
         Returns:
             AlertNotificationControlPointData with all fields

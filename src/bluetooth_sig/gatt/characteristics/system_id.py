@@ -31,12 +31,15 @@ class SystemIdCharacteristic(BaseCharacteristic[SystemIdData]):
     _manual_value_type = "SystemIdData"
     expected_length = 8
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> SystemIdData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> SystemIdData:
         """Parse System ID.
 
         Args:
             data: Raw bytearray (8 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             SystemIdData with manufacturer_id (5 bytes) and oui (3 bytes).

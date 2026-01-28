@@ -26,12 +26,15 @@ class ThreeZoneHeartRateLimitsCharacteristic(BaseCharacteristic[ThreeZoneHeartRa
     (Hard, Moderate, and Light) of a user.
     """
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ThreeZoneHeartRateLimitsData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> ThreeZoneHeartRateLimitsData:
         """Decode Three Zone Heart Rate Limits from raw bytes.
 
         Args:
             data: Raw bytes from BLE characteristic (2 bytes)
             ctx: Optional context for parsing
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ThreeZoneHeartRateLimitsData: Parsed heart rate limits

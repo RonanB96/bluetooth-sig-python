@@ -6,6 +6,7 @@ from enum import IntFlag
 
 import msgspec
 
+from ..constants import SIZE_UINT16
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
@@ -55,18 +56,21 @@ class BootKeyboardInputReportCharacteristic(BaseCharacteristic[BootKeyboardInput
     max_length = 8
     allow_variable_length = True
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BootKeyboardInputReportData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> BootKeyboardInputReportData:
         """Parse HID keyboard report.
 
         Args:
             data: Raw bytearray from BLE characteristic (1-8 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             BootKeyboardInputReportData with parsed keyboard state.
         """
         modifiers = KeyboardModifiers(data[0])
-        reserved = data[1] if len(data) >= 2 else 0
+        reserved = data[1] if len(data) >= SIZE_UINT16 else 0
         keycodes = tuple(data[i] for i in range(2, len(data)))
 
         return BootKeyboardInputReportData(
@@ -80,6 +84,8 @@ class BootKeyboardInputReportCharacteristic(BaseCharacteristic[BootKeyboardInput
 
         Args:
             data: BootKeyboardInputReportData to encode
+
+        validate: Whether to validate ranges (default True)
 
         Returns:
             Encoded bytes (8 bytes total)

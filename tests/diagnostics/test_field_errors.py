@@ -27,7 +27,9 @@ class LoggingTestCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.DICT,
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> dict[str, Any]:
         """Decode with potential field errors."""
         if len(data) < 3:
             raise ParseFieldException(
@@ -169,7 +171,9 @@ class TestLoggingFieldErrors:
                 value_type=ValueType.DICT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, Any]:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> dict[str, Any]:
                 """Decode with validation that can fail in multiple fields."""
                 # Check field 1
                 if len(data) < 2:

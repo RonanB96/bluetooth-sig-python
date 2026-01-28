@@ -50,7 +50,9 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic[BloodPressureFeature
     min_value: int = 0
     max_value: int = UINT16_MAX
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> BloodPressureFeatureData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> BloodPressureFeatureData:
         """Parse blood pressure feature data according to Bluetooth specification.
 
         Format: Features(2) - 16-bit bitmap indicating supported features.
@@ -58,14 +60,12 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic[BloodPressureFeature
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             BloodPressureFeatureData containing parsed feature bitmap and capabilities.
 
         """
-        if len(data) < 2:
-            raise ValueError("Blood Pressure Feature data must be at least 2 bytes")
-
         features_bitmap = DataParser.parse_int16(data, 0, signed=False)
 
         body_movement_detection = bool(features_bitmap & BloodPressureFeatures.BODY_MOVEMENT_DETECTION)
@@ -90,6 +90,7 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic[BloodPressureFeature
 
         Args:
             data: BloodPressureFeatureData instance to encode
+
 
         Returns:
             Encoded bytes representing the blood pressure features

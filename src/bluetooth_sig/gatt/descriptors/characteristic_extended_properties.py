@@ -7,6 +7,7 @@ from enum import IntFlag
 import msgspec
 
 from ..characteristics.utils import DataParser
+from ..constants import SIZE_UINT16
 from .base import BaseDescriptor
 
 
@@ -49,7 +50,7 @@ class CharacteristicExtendedPropertiesDescriptor(BaseDescriptor):
         Raises:
             ValueError: If data is not exactly 2 bytes
         """
-        if len(data) != 2:
+        if len(data) != SIZE_UINT16:
             raise ValueError(f"Characteristic Extended Properties data must be exactly 2 bytes, got {len(data)}")
 
         # Parse as little-endian uint16

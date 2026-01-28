@@ -69,7 +69,7 @@ class TestAdvertisingPDUParserAppearance:
 
     def test_parse_appearance_unknown(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing unknown appearance value."""
-        # Unknown: 0 (0x0000)
+        # Unknown appearance value: 0 (0x0000)
         ad_data = bytearray(
             [
                 3,  # Length
@@ -155,7 +155,7 @@ class TestAdvertisingPDUParserAppearance:
 
     def test_parse_computer_subcategories(self, parser: AdvertisingPDUParser) -> None:
         """Test parsing various computer subcategories."""
-        # Desktop: (2 << 6) | 1 = 129 (0x0081)
+        # Desktop Workstation: Category 2, Subcategory 1 → 129 (0x0081)
         ad_data_desktop = bytearray([3, ADType.APPEARANCE, 0x81, 0x00])
         result_desktop = parser.parse_advertising_data(bytes(ad_data_desktop))
 
@@ -166,7 +166,7 @@ class TestAdvertisingPDUParserAppearance:
             assert result_desktop.ad_structures.properties.appearance.info.subcategory is not None
             assert result_desktop.ad_structures.properties.appearance.info.subcategory.name == "Desktop Workstation"
 
-        # Laptop: (2 << 6) | 3 = 131 (0x0083)
+        # Laptop: Category 2, Subcategory 3 → 131 (0x0083)
         ad_data_laptop = bytearray([3, ADType.APPEARANCE, 0x83, 0x00])
         result_laptop = parser.parse_advertising_data(bytes(ad_data_laptop))
 

@@ -47,7 +47,7 @@ class SimpleTemperatureSensor(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
         """Parse temperature as signed 16-bit integer."""
         return DataParser.parse_int16(data, 0, signed=True)
 
@@ -102,7 +102,9 @@ class MultiSensorCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.BYTES,
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> EnvironmentalReading:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> EnvironmentalReading:
         """Parse multi-field environmental data."""
         if len(data) < 12:
             raise ValueError("Multi-sensor data requires at least 12 bytes")
@@ -148,7 +150,7 @@ class DeviceSerialNumberCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.STRING,
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> str:
         """Parse serial number as UTF-8 string."""
         return data.decode("utf-8").strip()
 
@@ -175,7 +177,9 @@ class DeviceStatusFlags(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> dict[str, bool]:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> dict[str, bool]:
         """Parse status flags and return dict of flag states."""
         flags = data[0]
         return {
@@ -480,7 +484,9 @@ class TestCustomCharacteristicErrorHandling:
 
             class MissingInfoCharacteristic(CustomBaseCharacteristic):
                 # Missing _info attribute entirely
-                def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+                def _decode_value(
+                    self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+                ) -> int:
                     return 0
 
                 def _encode_value(self, data: int) -> bytearray:
@@ -608,7 +614,9 @@ class TestCustomBaseCharacteristicAPI:
                 value_type=ValueType.INT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return DataParser.parse_int16(data, 0, signed=False)
 
             def _encode_value(self, data: int) -> bytearray:
@@ -642,7 +650,9 @@ class TestCustomBaseCharacteristicAPI:
                 value_type=ValueType.INT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return DataParser.parse_int16(data, 0, signed=False)
 
             def _encode_value(self, data: int) -> bytearray:
@@ -723,6 +733,8 @@ class TestCustomBaseCharacteristicAPI:
                 self,
                 data: bytearray,
                 ctx: CharacteristicContext | None = None,
+                *,
+                validate: bool = True,
             ) -> int:
                 return data[0]
 
@@ -741,7 +753,9 @@ class TestCustomBaseCharacteristicAPI:
         class MissingInfoCharacteristic(CustomBaseCharacteristic):
             """Should fail: no _info provided."""
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return data[0]
 
             def _encode_value(self, data: int) -> bytearray:
@@ -763,7 +777,9 @@ class TestCustomBaseCharacteristicAPI:
                 value_type=ValueType.INT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return data[0]
 
             def _encode_value(self, data: int) -> bytearray:

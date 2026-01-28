@@ -48,8 +48,6 @@ class ValidRangeDescriptor(BaseDescriptor, RangeDescriptorMixin):
         """
         # Valid Range format: min_value (same format as characteristic) + max_value
         # For now, assume 4 bytes total (2 bytes min + 2 bytes max for uint16)
-        if len(data) != 4:
-            raise ValueError(f"Valid Range data expected 4 bytes, got {len(data)}")
 
         min_value = DataParser.parse_int16(data, offset=0, endian="little")
         max_value = DataParser.parse_int16(data, offset=2, endian="little")

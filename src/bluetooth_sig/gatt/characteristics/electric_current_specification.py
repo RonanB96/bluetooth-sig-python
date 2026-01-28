@@ -43,17 +43,19 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic[ElectricCurr
 
     # Validation attributes
     expected_length: int = 4  # 2x uint16
+    min_length: int = 4
 
     # Override since decode_value returns structured ElectricCurrentSpecificationData
     _manual_value_type: ValueType | str | None = ValueType.DICT
 
     def _decode_value(
-        self, data: bytearray, _ctx: CharacteristicContext | None = None
+        self, data: bytearray, _ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> ElectricCurrentSpecificationData:
         """Parse current specification data (2x uint16 in units of 0.01 A).
 
         Args:
             data: Raw bytes from the characteristic read
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ElectricCurrentSpecificationData with 'minimum' and 'maximum' current specification values in Amperes
@@ -62,9 +64,6 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic[ElectricCurr
             ValueError: If data is insufficient
 
         """
-        if len(data) < 4:
-            raise ValueError("Electric current specification data must be at least 4 bytes")
-
         # Convert 2x uint16 (little endian) to current specification in Amperes
         min_current_raw = DataParser.parse_int16(data, 0, signed=False)
         max_current_raw = DataParser.parse_int16(data, 2, signed=False)

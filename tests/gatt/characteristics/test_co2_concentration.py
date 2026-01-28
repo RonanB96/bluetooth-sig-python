@@ -48,18 +48,18 @@ class TestCO2ConcentrationCharacteristic(CommonCharacteristicTests):
 
     def test_co2_concentration_validation_limits(self, characteristic: CO2ConcentrationCharacteristic) -> None:
         """Test CO2 concentration special value handling at overflow boundary."""
-        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetectedError
 
         # Test 0xFFFE (65534) - special value meaning "65534 or greater" per SIG spec
         overflow_data = bytearray([0xFE, 0xFF])  # 65534 / 0xFFFE
-        with pytest.raises(SpecialValueDetected) as exc_info:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
             characteristic.parse_value(overflow_data)
         assert exc_info.value.special_value.raw_value == 65534
         assert "65534 or greater" in exc_info.value.special_value.meaning.lower()
 
         # Test 0xFFFF (65535) - special value meaning "not known"
         unknown_data = bytearray([0xFF, 0xFF])  # 65535 / 0xFFFF
-        with pytest.raises(SpecialValueDetected) as exc_info:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
             characteristic.parse_value(unknown_data)
         assert exc_info.value.special_value.raw_value == 65535
         assert "not known" in exc_info.value.special_value.meaning.lower()

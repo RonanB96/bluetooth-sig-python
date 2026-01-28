@@ -68,9 +68,9 @@ ServiceDiscoveryData = dict[BluetoothUUID, CharacteristicInfo]
 
 # Export helper function
 __all__ = [
+    "CharacteristicCollection",
     "CharacteristicSpec",
     "CharacteristicTypeVar",
-    "CharacteristicCollection",
     "ServiceDiscoveryData",
     "characteristic",
 ]

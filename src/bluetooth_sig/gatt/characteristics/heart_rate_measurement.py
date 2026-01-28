@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from enum import IntEnum, IntFlag
+from typing import Any, ClassVar
 
 import msgspec
 
@@ -128,7 +129,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic[HeartRateData]):
 
     """
 
-    _optional_dependencies = [BodySensorLocationCharacteristic]
+    _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [BodySensorLocationCharacteristic]
 
     # RR-Interval resolution: 1/1024 seconds per unit
     RR_INTERVAL_RESOLUTION = RR_INTERVAL_RESOLUTION
@@ -137,7 +138,7 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic[HeartRateData]):
     allow_variable_length: bool = True  # Optional energy expended and RR intervals
 
     def _decode_value(  # pylint: disable=too-many-branches  # Branches needed for spec-compliant parsing
-        self, data: bytearray, ctx: CharacteristicContext | None = None
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> HeartRateData:
         """Parse heart rate measurement data according to Bluetooth specification.
 
@@ -150,15 +151,13 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic[HeartRateData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to perform validation (currently unused).
 
         Returns:
             HeartRateData containing parsed heart rate data with metadata and optional
             context-enhanced information.
 
         """
-        if len(data) < 2:
-            raise ValueError("Heart rate measurement data must be at least 2 bytes")
-
         flags = HeartRateMeasurementFlags(data[0])
         offset = 1
 
@@ -199,7 +198,8 @@ class HeartRateMeasurementCharacteristic(BaseCharacteristic[HeartRateData]):
                 except ValueError:
                     # Invalid value outside enum range, leave as None
                     logger.warning(
-                        f"Invalid Body Sensor Location value {location_value} in context (valid range: 0-6), ignoring"
+                        "Invalid Body Sensor Location value %s in context (valid range: 0-6), ignoring",
+                        location_value,
                     )
 
         return HeartRateData(

@@ -41,10 +41,9 @@ def test_pages_have_navigation_structure(html_files: list[Path]) -> None:
                 if not attrs and soup.find(tag):
                     found_nav = True
                     break
-            else:
-                if attrs and soup.find(attrs=attrs):  # type: ignore[arg-type]
-                    found_nav = True
-                    break
+            elif attrs and soup.find(attrs=attrs):  # type: ignore[arg-type]
+                found_nav = True
+                break
 
         if not found_nav:
             issues.append(f"{html_file.name}: No navigation structure found")
@@ -136,9 +135,8 @@ def test_sidebar_exists(html_files: list[Path]) -> None:
                     element = soup.find(tag, attrs=attrs)  # type: ignore[arg-type]
                 else:
                     element = soup.find(tag)
-            else:
-                if attrs:
-                    element = soup.find(attrs=attrs)  # type: ignore[arg-type]
+            elif attrs:
+                element = soup.find(attrs=attrs)  # type: ignore[arg-type]
 
             if element:
                 # Verify sidebar has links

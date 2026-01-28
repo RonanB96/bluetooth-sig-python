@@ -245,7 +245,7 @@ def test_how_to_guides_are_task_focused(docs_source_dir: Path) -> None:
 def test_markdown_links_have_descriptive_text(all_markdown_files: list[Path]) -> None:
     """Test that markdown links have descriptive text, not bare URLs."""
     issues = []
-    # Match [text](url)
+    # Regex pattern to match markdown links with format: text in brackets, URL in parentheses
     link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
     for file in all_markdown_files:

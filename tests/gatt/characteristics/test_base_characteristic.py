@@ -28,7 +28,7 @@ class ValidationHelperCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
         """Simple decode - just parse as uint16."""
         if len(data) < 2:
             raise ValueError("Need at least 2 bytes")
@@ -49,7 +49,7 @@ class NoValidationCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
         """Simple decode without validation."""
         return 42
 
@@ -109,7 +109,9 @@ class TestBaseCharacteristicValidation:
                 value_type=ValueType.INT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return 5  # Below min_value of 10
 
             def _encode_value(self, data: int) -> bytearray:
@@ -137,7 +139,7 @@ class TestBaseCharacteristicValidation:
             )
 
             def _decode_value(
-                self, data: bytearray, ctx: CharacteristicContext | None = None
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
             ) -> int:  # Returns int but expects float
                 return 42
 
@@ -174,7 +176,9 @@ class TestBaseCharacteristicValidation:
                 value_type=ValueType.INT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return len(data)
 
             def _encode_value(self, data: int) -> bytearray:
@@ -204,7 +208,9 @@ class TestBaseCharacteristicValidation:
                 value_type=ValueType.INT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 return len(data)
 
             def _encode_value(self, data: int) -> bytearray:
@@ -232,7 +238,9 @@ class TestBaseCharacteristicValidation:
                 value_type=ValueType.INT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 raise ValueError("Custom decode error")
 
             def _encode_value(self, data: int) -> bytearray:
@@ -258,7 +266,9 @@ class TestBaseCharacteristicValidation:
                 value_type=ValueType.INT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> int:
                 # This will raise struct.error due to insufficient data
                 return int(struct.unpack("<I", data)[0])  # Needs 4 bytes for uint32
 
@@ -341,7 +351,9 @@ class TestValidationControl:
                 value_type=ValueType.INT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> str:
                 # Returns string but expected_type is int
                 return "not an int"
 

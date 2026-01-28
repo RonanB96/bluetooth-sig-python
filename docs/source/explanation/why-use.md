@@ -65,13 +65,17 @@ SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
 BATTERY_LEVEL_UUID = "2A19"  # UUID from your BLE library
 
 # Get structured data, not raw bytes
-battery_data = translator.parse_characteristic(
+from bluetooth_sig import BluetoothSIGTranslator
+
+translator = BluetoothSIGTranslator()
+battery_level = translator.parse_characteristic(
     BATTERY_LEVEL_UUID, SIMULATED_BATTERY_DATA
 )
 
-# battery_data is a typed msgspec struct with validation
-assert battery_data.value == 85
-assert 0 <= battery_data.value <= 100  # Automatically validated
+# For simple characteristics, result is the value directly
+print(f"Battery: {battery_level}%")  # Battery: 85%
+assert battery_level == 85
+assert 0 <= battery_level <= 100  # Automatically validated during parsing
 ```
 
 ### ✅ Complete Parsing Example
@@ -87,7 +91,6 @@ translator = BluetoothSIGTranslator()
 
 # Example: Reading temperature from a BLE environmental sensor
 TEMPERATURE_UUID = "2A6E"  # Official SIG UUID for Temperature
-SERVICE_UUID = "181A"  # Environmental Sensing Service
 
 # Step 1: Connect to device (using your BLE library)
 # raw_bytes = await your_ble_client.read_gatt_char(TEMPERATURE_UUID)
@@ -95,16 +98,16 @@ SERVICE_UUID = "181A"  # Environmental Sensing Service
 # Step 2: Simulate real BLE data for this example
 raw_temperature_bytes = bytearray(
     [0x0A, 0x01]
-)  # 266 = 0x010A in little-endian
+)  # 266 = 0x010A in little-endian = 2.66°C
 
 # Step 3: Parse with bluetooth-sig (handles all complexity)
-temperature_data = translator.parse_characteristic(
+temperature = translator.parse_characteristic(
     TEMPERATURE_UUID, raw_temperature_bytes
 )
 
-# Result: Fully typed, validated data structure
-print(f"Temperature: {temperature_data.value}°C")  # "Temperature: 26.6°C"
-print(f"Units: {temperature_data.unit}")  # "Units: celsius"
+# For Temperature (2A6E), result is a float in Celsius
+# The characteristic spec defines resolution as 0.01°C
+print(f"Temperature: {temperature}°C")  # "Temperature: 2.66°C"
 ```
 
 ## When Should You Use This Library?

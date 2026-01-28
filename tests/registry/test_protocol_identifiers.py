@@ -15,7 +15,7 @@ def protocol_identifiers_registry() -> ProtocolIdentifiersRegistry:
     """Get the protocol identifiers registry singleton instance."""
     # NOTE: cast required because BaseRegistry.get_instance() returns BaseRegistry[T]
     # but we know the concrete type is ProtocolIdentifiersRegistry
-    return cast(ProtocolIdentifiersRegistry, ProtocolIdentifiersRegistry.get_instance())
+    return cast("ProtocolIdentifiersRegistry", ProtocolIdentifiersRegistry.get_instance())
 
 
 class TestProtocolIdentifiersRegistry:  # pylint: disable=too-many-public-methods

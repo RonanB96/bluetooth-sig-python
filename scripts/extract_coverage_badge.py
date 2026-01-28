@@ -33,9 +33,8 @@ def extract_coverage_percentage(coverage_xml_path: str) -> float:
 
     # Get line coverage percentage from the root element
     line_rate = float(root.attrib["line-rate"])
-    coverage_pct = round(line_rate * 100, 1)
+    return round(line_rate * 100, 1)
 
-    return coverage_pct
 
 
 def get_coverage_color(coverage_pct: float) -> str:

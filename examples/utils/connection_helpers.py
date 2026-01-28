@@ -73,7 +73,7 @@ async def read_characteristics_with_manager(
             # Expand short UUIDs into the full 128-bit form for adapters
             expanded: list[str] = []
             for uuid in target_uuids:
-                if len(uuid) == 4:
+                if len(uuid) == BluetoothUUID.UUID_SHORT_LEN:
                     expanded.append(f"0000{uuid}-0000-1000-8000-00805F9B34FB")
                 else:
                     expanded.append(uuid)
@@ -86,11 +86,11 @@ async def read_characteristics_with_manager(
                 raw_data = await connection_manager.read_gatt_char(BluetoothUUID(uuid))
                 read_time = time.time() - read_start
 
-                uuid_key = uuid[4:8].upper() if len(uuid) > 8 else uuid.upper()
+                uuid_key = BluetoothUUID(uuid).short_form
                 results[uuid_key] = ReadResult(raw_data=bytes(raw_data), read_time=read_time)
                 print(f"  {uuid_key}: {len(raw_data)} bytes")
             except Exception as exc:  # pylint: disable=broad-exception-caught
-                uuid_key = uuid[4:8].upper() if len(uuid) > 8 else uuid.upper()
+                uuid_key = BluetoothUUID(uuid).short_form
                 results[uuid_key] = ReadResult(raw_data=b"", read_time=0.0, error=str(exc))
                 print(f"  {uuid_key}: {exc}")
 

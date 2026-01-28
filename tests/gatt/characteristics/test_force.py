@@ -85,9 +85,9 @@ class TestForceCharacteristic(CommonCharacteristicTests):
 
         # Test "value is not known" special value
         unknown_data = bytearray([0xFF, 0xFF, 0xFF, 0x7F])  # 0x7FFFFFFF
-        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetectedError
 
-        with pytest.raises(SpecialValueDetected) as exc_info:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
             characteristic.parse_value(unknown_data)
         assert exc_info.value.special_value.meaning == "value is not known"
 

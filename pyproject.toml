@@ -47,7 +47,6 @@ dev = [
     "pytest-cov>=6.2,<8",
     "nest-asyncio>=1.5.0",
     "pytest-benchmark~=5.1",
-    "pylint~=3.3",
     "ruff~=0.13",
     "pydocstyle~=6.3",
     "types-PyYAML~=6.0",
@@ -95,7 +94,6 @@ docs = [
     "linkify-it-py>=2.0.0",
     "pymdown-extensions>=10.0.0",
     "pydeps>=1.12.0",
-    "pylint~=3.3",
 ]
 
 [project.scripts]
@@ -139,47 +137,6 @@ packages = ["src/bluetooth_sig"]
 [tool.hatch.metadata]
 allow-direct-references = true
 
-[tool.pylint.MAIN]
-source-roots = ["src"]
-ignore = ["CVS", ".git", "__pycache__", ".venv", "_version.py"]
-ignore-paths = ["^.git/.*$", "^.venv/.*$"]
-persistent = true
-jobs = 0
-output-format = "colorized"
-msg-template = "{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
-extension-pkg-allow-list = ["playwright"]
-ignored-modules = ["playwright", "playwright.sync_api"]
-
-[tool.pylint.DESIGN]
-# Allow registries to have similar patterns - they inherit from base class
-# Browse groups and declarations share common lookup patterns by design
-min-similarity-lines = 15
-
-[tool.pylint.FORMAT]
-# Line length is handled by ruff - DO NOT SET max-line-length
-# This section intentionally left without line length constraints
-
-[tool.pylint.MESSAGE_CONTROL]
-# Only globally disable issues that are handled by other tools or are project-wide
-disable = [
-    "C0103", # invalid-name (project uses some non-snake_case names for SIG constants)
-    "C0301", # line-too-long (formatting handled by ruff)
-    "W0311", # bad-indentation (formatting handled by ruff)
-    "W0511", # fixme (TODO comments are useful throughout)
-    "C0411", # wrong-import-order (handled by ruff import sorting)
-    "C0412", # ungrouped-imports (handled by ruff import sorting)
-    "C0413", # wrong-import-position (handled by ruff import sorting)
-    "E0611", # no-name-in-module (editable install issue affects entire project)
-    "R0903", # too-few-public-methods (not applicable to data structures like msgspec.Struct)
-    "W1203", # logging-fstring-interpolation (f-strings in logging are fine for performance)
-    ]
-
-# Note: Other issues like broad-exception-caught, no-member, redefined-outer-name
-# are now handled with targeted inline disables in specific files where they're needed.
-
-[tool.pylint.BASIC]
-good-names = ["id", "i", "j", "k", "ex", "Run", "_", "fp", "e"]
-
 [tool.ruff]
 line-length = 120
 # Allow Ruff to apply safe, automatic fixes by default when invoked without
@@ -191,19 +148,26 @@ exclude = [".git", "__pycache__", "build", "dist", ".venv", ".venv*", ".eggs", "
 
 [tool.ruff.lint]
 select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # Pyflakes
-    "I",   # isort
-    "B",   # flake8-bugbear
-    "UP",  # pyupgrade
-    "ANN", # flake8-annotations - enforce type hints
-    "D",   # pydocstyle (Google-style docstrings)
+    "E", "W", "F", "I",
+    "B", "UP", "ANN", "D",
+    "C4",   # comprehensions
+    "SIM",  # simplify
+    "A",    # builtins shadowing
+    "ARG",  # unused arguments
+    "PTH",  # pathlib rules
+    "TRY",  # better exception handling
+    "RET",  # return statements consistency
+    "ERA",  # commented-out code
+    "RUF",  # ruff-specific rules
+    "PL",   # Pylint-compatible checks
+    "N",    # pep8-naming conventions
+    "G",    # flake8-logging-format
 ]
 ignore = [
-    "E701", # Multiple statements on one line (colon)
-    "E702", # Multiple statements on one line (semicolon)
-    "C901", # Function is too complex (we have some complex parsing functions)
+    "E701",    # Multiple statements on one line (colon)
+    "E702",    # Multiple statements on one line (semicolon)
+    "TRY003",  # long Exception message
+    "G004",    # Logging statement uses f-string (allow f-strings in logging)
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -213,24 +177,43 @@ ignore = [
 # docstring-related (D...) codes in those paths so we can focus fixes on
 # production code under `src/`.
 "tests/**" = [
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D107",
-    "D205",
-    "D401",
-    "D417",
-    # Tests frequently employ pytest fixtures which are referenced by name
-    # as function parameters. This pattern can trigger redefinition or
-    # "redefined outer name" style diagnostics from static analyzers like
-    # Pyflakes/Ruff. Allow this pattern in tests explicitly.
-    "F811",
-    # pytest-benchmark doesn't have type stubs, so we must use Any for benchmark fixtures
-    "ANN401",
+    "PLC0415", # Allow lazy imports for test dependencies
+    "PLR2004", # Allow magic numbers in test data
+    "ARG001", "ARG002", "ARG003", "ARG004", "ARG005",  # Allow all unused arguments in tests
+    "D100", "D101", "D102", "D103", "D104", "D105", "D107", "D205", "D401", "D417",  # Docstring rules
+    "F811",    # Pytest fixtures trigger redefinition warnings
+    "ANN401",  # pytest-benchmark doesn't have type stubs
+    "PTH123",  # Allow builtin open() in tests
+    "RUF043",  # Allow regex patterns without escaping in pytest.raises
+    "SIM102", "SIM108", "SIM118",  # Allow various code patterns in tests
+    "RET504",  # Allow unnecessary variable assignment before return
+    "TRY300",  # Allow statements in try blocks
 ]
+"examples/**" = [
+    "PLR0912", "PLR0913", "PLR0915",  # Allow complex demo code
+    "PLC0415",  # Allow lazy imports for optional dependencies
+    "PTH100", "PTH118", "PTH120",  # Allow os.path for compatibility examples
+    "TRY300", "TRY301",  # Allow various exception patterns
+    "SIM105", "SIM118",  # Allow various code simplifications
+    "RUF001", "RUF006", "RUF015",  # Allow various patterns
+    "N806", "ARG001",  # Allow naming and unused args
+    "D100", "D101", "D102", "D103", "D104", "D105", "D107", "D205", "D401", "D417",  # Docstrings
+]
+"src/bluetooth_sig/gatt/characteristics/**" = [
+    "ARG002",  # Characteristics implement common interface - unused params are expected
+]
+
+[tool.ruff.lint.pylint]
+# Pylint-specific settings for PL rules - adjusted for complex parsing logic
+max-args = 10          # Protocol implementations may need many parameters
+max-branches = 25      # Parsing functions need complex branching for protocol variants
+max-returns = 10       # Protocol parsers have multiple valid exit points
+max-statements = 100   # Protocol parsing functions can be legitimately long
+
+[tool.ruff.lint.pep8-naming]
+# Allow specific short variable names that are conventional in BLE/math contexts
+classmethod-decorators = ["classmethod"]
+extend-ignore-names = ["id", "i", "j", "k", "ex", "Run", "_", "fp", "e"]
 
 [tool.ruff.lint.pydocstyle]
 # Make Ruff's pydocstyle plugin use the same Google convention the project
@@ -337,3 +320,6 @@ convention = "google"
 # Prevent inheriting a parent pydocstyle config which could change the
 # effective set of checked codes; keep the repository config deterministic.
 inherit = false
+# D202: No blank lines allowed after function docstring - conflicts with Black
+# formatter when there are nested functions (Black requires blank line)
+add-ignore = ["D202"]

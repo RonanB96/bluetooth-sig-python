@@ -27,12 +27,15 @@ class FourZoneHeartRateLimitsCharacteristic(BaseCharacteristic[FourZoneHeartRate
     (Maximum, Hard, Moderate, and Light) of a user.
     """
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> FourZoneHeartRateLimitsData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> FourZoneHeartRateLimitsData:
         """Decode Four Zone Heart Rate Limits from raw bytes.
 
         Args:
             data: Raw bytes from BLE characteristic (3 bytes)
             ctx: Optional context for parsing
+            validate: Whether to validate ranges (default True)
 
         Returns:
             FourZoneHeartRateLimitsData: Parsed heart rate limits

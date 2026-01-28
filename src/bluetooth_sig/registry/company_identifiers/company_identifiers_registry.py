@@ -48,7 +48,7 @@ class CompanyIdentifiersRegistry(BaseGenericRegistry[CompanyIdentifierInfo]):
         if not isinstance(data, dict):
             return
 
-        data_dict = cast(dict[str, Any], data)
+        data_dict = cast("dict[str, Any]", data)
         company_entries = data_dict.get("company_identifiers")
         if not isinstance(company_entries, list):
             return

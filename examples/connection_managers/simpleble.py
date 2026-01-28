@@ -23,6 +23,7 @@ from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 from bluetooth_sig.gatt.services.unknown import UnknownService
+from bluetooth_sig.types import ManufacturerData
 from bluetooth_sig.types.advertising import (
     AdvertisementData,
     AdvertisingDataStructures,
@@ -138,8 +139,13 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         self._cached_services: list[DeviceService] | None = None
         self._latest_advertisement: AdvertisementData | None = None
 
-    async def connect(self) -> None:
-        """Connect to the device."""
+    async def connect(self, *, timeout: float = 10.0) -> None:
+        """Connect to the device.
+
+        Args:
+            timeout: Connection timeout in seconds.
+
+        """
 
         def _connect() -> None:
             # pylint: disable=no-member  # Stub exists but pylint doesn't recognize it
@@ -148,7 +154,9 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
                 raise RuntimeError("No BLE adapters found")
             self.adapter = adapters[0]
 
-            self.adapter.scan_for(2000)
+            # Use timeout for scanning (converted to milliseconds)
+            scan_time_ms = min(int(timeout * 1000), 5000)  # Cap at 5 seconds for scan
+            self.adapter.scan_for(scan_time_ms)
             for peripheral in self.adapter.scan_get_results():
                 if peripheral.address().upper() == self.address.upper():
                     self.peripheral = peripheral
@@ -573,10 +581,10 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         """
         peripheral: simplepyble.Peripheral = advertisement  # type: ignore[assignment]
 
-        # Extract manufacturer data from peripheral
-        manufacturer_data: dict[int, bytes] = {}
-        for company_id, data in peripheral.manufacturer_data().items():
-            manufacturer_data[company_id] = bytes(data)
+        manufacturer_data_converted = {
+            company_id: ManufacturerData.from_id_and_payload(company_id, bytes(data))
+            for company_id, data in peripheral.manufacturer_data().items()
+        }
 
         # Extract service UUIDs - services() returns service objects with uuid() method
         # Note: services() may be empty before connection; use it if available
@@ -584,12 +592,12 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         try:
             for svc in peripheral.services():
                 service_uuids.append(BluetoothUUID(str(svc.uuid())))
-        except Exception:  # noqa: BLE001 - SimplePyBLE may raise various exceptions
+        except Exception:
             logger.debug("Failed to get service UUIDs from peripheral %s", peripheral.address(), exc_info=True)
 
         # Build CoreAdvertisingData
         core_data = CoreAdvertisingData(
-            manufacturer_data=manufacturer_data,
+            manufacturer_data=manufacturer_data_converted,
             service_uuids=service_uuids,
             service_data={},  # SimplePyBLE doesn't expose service data separately
             local_name=peripheral.identifier() or "",
@@ -599,7 +607,7 @@ class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
         tx_power = 0
         try:
             tx_power = peripheral.tx_power()
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.debug("Failed to get tx_power from peripheral %s", peripheral.address(), exc_info=True)
 
         properties = DeviceProperties(

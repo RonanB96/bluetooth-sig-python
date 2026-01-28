@@ -8,6 +8,16 @@ from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
+# Field selector values
+_FIELD_SELECTOR_ENERGY = 1
+_FIELD_SELECTOR_MET = 2
+_FIELD_SELECTOR_HR_PERCENTAGE = 3
+
+# Minimum data lengths for each field selector
+_MIN_LENGTH_ENERGY = 3  # 1 byte selector + 2 bytes uint16
+_MIN_LENGTH_MET = 2  # 1 byte selector + 1 byte uint8
+_MIN_LENGTH_HR = 2  # 1 byte selector + 1 byte uint8
+
 
 class HighIntensityExerciseThresholdData(msgspec.Struct):
     """High Intensity Exercise Threshold parsed data.
@@ -38,7 +48,7 @@ class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic[HighIntens
       - 2 = Threshold as Metabolic Equivalent (uint8, 0 or 1 byte)
       - 3 = Threshold as Percentage of Maximum Heart Rate (uint8, 0 or 1 byte)
 
-    Total payload: 1–3 bytes
+    Total payload: 1-3 bytes
     """
 
     # YAML specifies variable fields based on Field Selector value
@@ -46,13 +56,14 @@ class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic[HighIntens
     max_length: int | None = 3
 
     def _decode_value(
-        self, data: bytearray, ctx: CharacteristicContext | None = None
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> HighIntensityExerciseThresholdData:
         """Parse High Intensity Exercise Threshold with conditional fields.
 
         Args:
-            data: Raw bytes (1–3 bytes)
+            data: Raw bytes (1-3 bytes)
             ctx: Optional context
+            validate: Whether to validate ranges (default True)
 
         Returns:
             HighIntensityExerciseThresholdData with field_selector and optional threshold
@@ -63,15 +74,15 @@ class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic[HighIntens
         threshold_hr = None
 
         # Parse optional threshold field based on selector
-        if field_selector == 1 and len(data) >= 3:
+        if field_selector == _FIELD_SELECTOR_ENERGY and len(data) >= _MIN_LENGTH_ENERGY:
             # Energy Expenditure per Hour (uint16, resolution 1000 J)
             threshold = DataParser.parse_int16(data, 1, signed=False)
             threshold_energy = threshold * 1000  # Convert to joules
-        elif field_selector == 2 and len(data) >= 2:
+        elif field_selector == _FIELD_SELECTOR_MET and len(data) >= _MIN_LENGTH_MET:
             # Metabolic Equivalent (uint8, resolution 0.1 MET)
             threshold = int(data[1])
             threshold_met = threshold * 0.1
-        elif field_selector == 3 and len(data) >= 2:
+        elif field_selector == _FIELD_SELECTOR_HR_PERCENTAGE and len(data) >= _MIN_LENGTH_HR:
             # Percentage of Maximum Heart Rate (uint8)
             threshold = int(data[1])
             threshold_hr = threshold
@@ -90,19 +101,22 @@ class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic[HighIntens
             data: HighIntensityExerciseThresholdData instance
 
         Returns:
-            Encoded bytes (1–3 bytes)
+            Encoded bytes (1-3 bytes)
         """
         result = bytearray([data.field_selector])
 
-        if data.field_selector == 1 and data.threshold_energy_expenditure is not None:
+        if data.field_selector == _FIELD_SELECTOR_ENERGY and data.threshold_energy_expenditure is not None:
             # Convert joules back to 1000 J units
             energy_value = int(data.threshold_energy_expenditure / 1000)
             result.extend(DataParser.encode_int16(energy_value, signed=False))
-        elif data.field_selector == 2 and data.threshold_metabolic_equivalent is not None:
+        elif data.field_selector == _FIELD_SELECTOR_MET and data.threshold_metabolic_equivalent is not None:
             # Convert 0.1 MET units back to uint8
             met_value = int(data.threshold_metabolic_equivalent / 0.1)
             result.append(met_value)
-        elif data.field_selector == 3 and data.threshold_percentage_max_heart_rate is not None:
+        elif (
+            data.field_selector == _FIELD_SELECTOR_HR_PERCENTAGE
+            and data.threshold_percentage_max_heart_rate is not None
+        ):
             hr_value = int(data.threshold_percentage_max_heart_rate)
             result.append(hr_value)
 

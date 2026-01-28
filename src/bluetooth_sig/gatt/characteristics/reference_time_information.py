@@ -66,13 +66,17 @@ class ReferenceTimeInformationCharacteristic(BaseCharacteristic[ReferenceTimeInf
     """
 
     expected_length: int = 4  # Time Source(1) + Time Accuracy(1) + Days(1) + Hours(1)
+    min_length: int = 4
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ReferenceTimeInformationData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> ReferenceTimeInformationData:
         """Decode Reference Time Information data from bytes.
 
         Args:
             data: Raw characteristic data (4 bytes)
             ctx: Optional characteristic context
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ReferenceTimeInformationData with all fields
@@ -81,12 +85,6 @@ class ReferenceTimeInformationCharacteristic(BaseCharacteristic[ReferenceTimeInf
             ValueError: If data is insufficient or contains invalid values
 
         """
-        if len(data) < REFERENCE_TIME_INFO_LENGTH:
-            raise ValueError(
-                f"Insufficient data for Reference Time Information: "
-                f"expected {REFERENCE_TIME_INFO_LENGTH} bytes, got {len(data)}"
-            )
-
         # Parse Time Source (1 byte)
         time_source_raw = DataParser.parse_int8(data, 0, signed=False)
         time_source = _validate_time_source(time_source_raw)

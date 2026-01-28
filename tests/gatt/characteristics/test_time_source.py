@@ -55,7 +55,7 @@ class TestTimeSourceCharacteristic(CommonCharacteristicTests):
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = TimeSourceCharacteristic()
-        for source in range(0, 7):
+        for source in range(7):
             encoded = char.build_value(source)
             decoded = char.parse_value(encoded)
             assert decoded == source

@@ -90,7 +90,7 @@ def build_ead_nonce(
         msg = f"Device address must be {EAD_ADDRESS_SIZE} bytes, got {len(device_address)}"
         raise ValueError(msg)
 
-    # Nonce: Randomizer(5) + Address(6) + Padding(2)
+    # Nonce structure: Randomizer(5 bytes) + Address(6 bytes) + Padding(2 bytes)
     padding = b"\x00\x00"
     return randomizer + device_address + padding
 

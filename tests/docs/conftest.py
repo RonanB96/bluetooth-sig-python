@@ -140,12 +140,11 @@ def pytest_xdist_auto_num_workers(config: pytest.Config) -> int:
                 file_count = len(test_files_config)
         except (json.JSONDecodeError, ValueError):
             file_count = ESTIMATED_HTML_FILE_COUNT
+    # Default: test all files
+    elif DOCS_BUILD_DIR.exists():
+        file_count = len(list(DOCS_BUILD_DIR.rglob("*.html")))
     else:
-        # Default: test all files
-        if DOCS_BUILD_DIR.exists():
-            file_count = len(list(DOCS_BUILD_DIR.rglob("*.html")))
-        else:
-            file_count = ESTIMATED_HTML_FILE_COUNT
+        file_count = ESTIMATED_HTML_FILE_COUNT
 
     # Calculate optimal workers based on file count and available CPUs
     cpu_count = multiprocessing.cpu_count()
@@ -206,7 +205,7 @@ def find_available_port(start_port: int = 8000, max_attempts: int = 10) -> int:
 
 
 @pytest.fixture(scope="session")
-def docs_server_port(worker_id: str) -> Generator[int, None, None]:
+def docs_server_port(worker_id: str) -> int:
     """Fixture providing a unique port for each worker's docs server.
 
     Each pytest-xdist worker gets its own HTTP server on a unique port:
@@ -235,7 +234,7 @@ def docs_server_port(worker_id: str) -> Generator[int, None, None]:
         port = find_available_port()
 
     print(f"🔌 Worker {worker_id} assigned port {port}", flush=True)
-    yield port
+    return port
 
 
 @pytest.fixture(scope="session")
@@ -268,10 +267,10 @@ def docs_server(docs_server_port: int, worker_id: str) -> Generator[str, None, N
 
     # Each worker starts its own server (no coordination needed)
     class Handler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(*args, directory=str(DOCS_BUILD_DIR), **kwargs)
 
-        def log_message(self, format: str, *args: Any) -> None:  # noqa: ANN401, ARG002 # pylint: disable=redefined-builtin
+        def log_message(self, format: str, *args: Any) -> None:  # pylint: disable=redefined-builtin # noqa: A002
             """Suppress server log messages."""
 
     # Use ThreadingHTTPServer for concurrent request handling
@@ -298,7 +297,7 @@ def docs_server(docs_server_port: int, worker_id: str) -> Generator[str, None, N
                 with urllib.request.urlopen(f"{base_url}/index.html", timeout=1):
                     print(f"✅ Worker {worker_id} server ready on port {docs_server_port}", flush=True)
                     break
-            except Exception:  # noqa: S110 - broad catch needed for server health check
+            except Exception:
                 time.sleep(SERVER_HEALTH_CHECK_INTERVAL_SECONDS)
         else:
             server.shutdown()
@@ -365,7 +364,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 
             # Handle empty list - skip all tests (no docs changes)
             if test_files_config == []:
-                print("ℹ️  No documentation changes detected, skipping all tests")
+                print("[INFO] No documentation changes detected, skipping all tests")
                 metafunc.parametrize("html_file", [], ids=[])
                 return
 

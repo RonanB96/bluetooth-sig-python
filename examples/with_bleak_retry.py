@@ -14,6 +14,7 @@ from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
+from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 async def robust_device_reading(address: str, backend: str = "bleak-retry", retries: int = 3) -> dict[str, Any]:
@@ -51,7 +52,7 @@ async def robust_device_reading(address: str, backend: str = "bleak-retry", retr
         for _service_uuid, service_info in services.items():
             for char_uuid in service_info.characteristics.keys():
                 # Convert full UUID to short form for comparison
-                short_uuid = char_uuid[4:8].upper() if len(char_uuid) > 8 else char_uuid.upper()
+                short_uuid = BluetoothUUID(char_uuid).short_form
                 available_uuids.append(short_uuid)
         print(f"✅ Found {len(available_uuids)} readable characteristics")
 

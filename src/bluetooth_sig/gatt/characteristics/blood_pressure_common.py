@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import IntFlag
-from typing import Any, Protocol
+from typing import Any, ClassVar, Protocol
 
 import msgspec
 
@@ -54,7 +54,7 @@ class BaseBloodPressureCharacteristic(BaseCharacteristic[Any]):
     _manual_value_type = "string"  # Override since decode_value returns dataclass
 
     # Declare optional dependency on Blood Pressure Feature for status interpretation
-    _optional_dependencies = [BloodPressureFeatureCharacteristic]
+    _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [BloodPressureFeatureCharacteristic]
 
     min_length = 7  # Flags(1) + Pressure values minimum
     max_length = 19  # + Timestamp(7) + PulseRate(2) + UserID(1) + MeasurementStatus(2) maximum

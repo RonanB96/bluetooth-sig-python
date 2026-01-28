@@ -107,6 +107,11 @@ from datetime import datetime
 
 import msgspec
 
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
+from bluetooth_sig.gatt.exceptions import InsufficientDataError
+from bluetooth_sig.types import CharacteristicInfo
+from bluetooth_sig.types.uuid import BluetoothUUID
+
 
 class SensorReading(msgspec.Struct, frozen=True, kw_only=True):
     """Multi-field sensor reading."""
@@ -115,13 +120,12 @@ class SensorReading(msgspec.Struct, frozen=True, kw_only=True):
     humidity: float
     pressure: float
     timestamp: datetime
-```
 
-```python
+
 class MultiSensorCharacteristic(CustomBaseCharacteristic):
     """Multi-sensor characteristic with multiple fields."""
 
-    _info = CharacteristicInfo(uuid=BluetoothUUID("WXYZ"), name="Multi Sensor")
+    _info = CharacteristicInfo(uuid=BluetoothUUID("BCDE"), name="Multi Sensor")
 
     def _decode_value(self, data: bytearray) -> SensorReading:
         """Decode multi-field sensor data.
@@ -150,10 +154,9 @@ class MultiSensorCharacteristic(CustomBaseCharacteristic):
         press_raw = int.from_bytes(data[4:8], byteorder="little", signed=False)
         pressure = press_raw * 0.1
 
-        # SKIP: Incomplete class definition example
         # Parse timestamp
         ts_raw = int.from_bytes(data[8:16], byteorder="little", signed=False)
-        timestamp = ts_raw  # Unix timestamp
+        timestamp = datetime.fromtimestamp(ts_raw)  # Unix timestamp
 
         return SensorReading(
             temperature=temperature,

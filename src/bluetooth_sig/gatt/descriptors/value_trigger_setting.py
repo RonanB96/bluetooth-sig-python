@@ -57,9 +57,6 @@ class ValueTriggerSettingDescriptor(BaseDescriptor):
         Raises:
             ValueError: If data is too short
         """
-        if len(data) < 2:
-            raise ValueError(f"Value Trigger Setting data must be at least 2 bytes, got {len(data)}")
-
         condition = DataParser.parse_int8(data, offset=0)
 
         # For simplicity, assume the value is a uint8 following the condition

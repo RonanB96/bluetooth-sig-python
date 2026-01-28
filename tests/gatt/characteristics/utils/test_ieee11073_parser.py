@@ -125,17 +125,17 @@ class TestIEEE11073FLOAT32Parser:
         - NRes: 0x00800000 (exponent=0, mantissa=0x800000)
         - RFU: 0x00800001 (exponent=0, mantissa=0x800001)
         """
-        # NaN
-        data = bytearray([0xFF, 0xFF, 0x7F, 0x00])  # 0x007FFFFF
+        # Test NaN value
+        data = bytearray([0xFF, 0xFF, 0x7F, 0x00])  # Special value for NaN: 0x007FFFFF
         assert math.isnan(IEEE11073Parser.parse_float32(data))
 
-        # +Infinity (0x007FFFFE)
-        data = bytearray([0xFE, 0xFF, 0x7F, 0x00])  # 0x007FFFFE
+        # Test +Infinity value using special reserved value 0x007FFFFE
+        data = bytearray([0xFE, 0xFF, 0x7F, 0x00])
         assert math.isinf(IEEE11073Parser.parse_float32(data))
         assert IEEE11073Parser.parse_float32(data) > 0
 
-        # -Infinity (0x00800002)
-        data = bytearray([0x02, 0x00, 0x80, 0x00])  # 0x00800002
+        # Test -Infinity value using special reserved value 0x00800002
+        data = bytearray([0x02, 0x00, 0x80, 0x00])
         assert math.isinf(IEEE11073Parser.parse_float32(data))
         assert IEEE11073Parser.parse_float32(data) < 0
 
@@ -184,11 +184,11 @@ class TestIEEE11073FLOAT32Parser:
         result = IEEE11073Parser.encode_float32(float("nan"))
         assert result == bytearray([0xFF, 0xFF, 0x7F, 0x00])
 
-        # +Infinity (0x007FFFFE in little-endian)
+        # Encode +Infinity to little-endian bytes with special value 0x007FFFFE
         result = IEEE11073Parser.encode_float32(float("inf"))
         assert result == bytearray([0xFE, 0xFF, 0x7F, 0x00])
 
-        # -Infinity (0x00800002 in little-endian)
+        # Encode -Infinity to little-endian bytes with special value 0x00800002
         result = IEEE11073Parser.encode_float32(float("-inf"))
         assert result == bytearray([0x02, 0x00, 0x80, 0x00])
 

@@ -140,8 +140,8 @@ class TestYAMLCrossReference:
         """Test that characteristics created via registry use YAML
         automation.
         """
-        # Create Temperature characteristic via registry
-        temp_char = CharacteristicRegistry.create_characteristic("2A6E")
+        # Get Temperature characteristic via registry
+        temp_char = CharacteristicRegistry.get_characteristic("2A6E")
 
         if temp_char:
             # Should have YAML automation available
@@ -159,8 +159,8 @@ class TestYAMLCrossReference:
             assert field_size is None or isinstance(field_size, int)
             assert isinstance(is_signed, bool)
 
-        # Create Humidity characteristic via registry
-        humidity_char = CharacteristicRegistry.create_characteristic("2A6F")
+        # Get Humidity characteristic via registry
+        humidity_char = CharacteristicRegistry.get_characteristic("2A6F")
 
         if humidity_char:
             # Should have YAML automation available

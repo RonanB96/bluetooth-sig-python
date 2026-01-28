@@ -28,6 +28,7 @@ from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
+from bluetooth_sig.types import ManufacturerData
 from bluetooth_sig.types.ad_types_constants import ADType
 from bluetooth_sig.types.advertising import (
     AdvertisementData,
@@ -100,11 +101,18 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
         """
         return BluetoothUUID(str(uuid))
 
-    async def connect(self) -> None:
-        """Connect to device."""
+    async def connect(self, *, timeout: float = 10.0) -> None:
+        """Connect to device.
+
+        Args:
+            timeout: Connection timeout in seconds.
+
+        """
 
         def _connect() -> None:
             try:
+                # Peripheral() doesn't support timeout parameter directly, but connection
+                # timeout is handled at the Bluetooth stack level
                 self.periph = Peripheral(self.address, addrType=self.addr_type)
                 self._cached_services = None  # Clear cache on new connection
             except BTLEException as e:
@@ -120,7 +128,11 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
                 else:
                     raise RuntimeError(f"Failed to connect to {self.address}: {e}") from e
 
-        await asyncio.get_event_loop().run_in_executor(self.executor, _connect)
+        # Use timeout with run_in_executor
+        try:
+            await asyncio.wait_for(asyncio.get_event_loop().run_in_executor(self.executor, _connect), timeout=timeout)
+        except asyncio.TimeoutError:
+            raise TimeoutError(f"Connection to {self.address} timed out after {timeout}s") from None
 
     async def disconnect(self) -> None:
         """Disconnect from device."""
@@ -138,7 +150,8 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
         """Check if connected.
 
         Returns:
-            True if connected
+            True if connected.
+
         """
         return self.periph is not None
 
@@ -146,13 +159,14 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
         """Read GATT characteristic.
 
         Args:
-            char_uuid: Characteristic UUID
+            char_uuid: Characteristic UUID.
 
         Returns:
-            Raw characteristic bytes
+            Raw characteristic bytes.
 
         Raises:
-            RuntimeError: If not connected or read fails
+            RuntimeError: If not connected or read fails.
+
         """
 
         def _read() -> bytes:
@@ -514,6 +528,10 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
             Values are hex strings that need conversion to bytes.
 
         """
+        # Constants for data parsing
+        _COMPANY_ID_LENGTH = 2
+        _SERVICE_UUID16_LENGTH = 2
+
         manufacturer_data: dict[int, bytes] = {}
         service_uuids: list[str] = []
         service_data: dict[BluetoothUUID, bytes] = {}
@@ -530,15 +548,13 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
                 ad_bytes = value.encode("utf-8") if isinstance(value, str) else b""
 
             # Device names
-            if ad_type == ADType.COMPLETE_LOCAL_NAME:
-                local_name = ad_bytes.decode("utf-8", errors="replace")
-            elif ad_type == ADType.SHORTENED_LOCAL_NAME and not local_name:
+            if ad_type == ADType.COMPLETE_LOCAL_NAME or (ad_type == ADType.SHORTENED_LOCAL_NAME and not local_name):
                 local_name = ad_bytes.decode("utf-8", errors="replace")
 
             # Manufacturer data (first 2 bytes are company ID, little-endian)
-            elif ad_type == ADType.MANUFACTURER_SPECIFIC_DATA and len(ad_bytes) >= 2:
-                company_id = int.from_bytes(ad_bytes[:2], byteorder="little")
-                manufacturer_data[company_id] = ad_bytes[2:]
+            elif ad_type == ADType.MANUFACTURER_SPECIFIC_DATA and len(ad_bytes) >= _COMPANY_ID_LENGTH:
+                company_id = int.from_bytes(ad_bytes[:_COMPANY_ID_LENGTH], byteorder="little")
+                manufacturer_data[company_id] = ad_bytes[_COMPANY_ID_LENGTH:]
 
             # 16-bit Service UUIDs
             elif ad_type in (ADType.INCOMPLETE_16BIT_SERVICE_UUIDS, ADType.COMPLETE_16BIT_SERVICE_UUIDS):
@@ -567,16 +583,21 @@ class BluePyConnectionManager(ConnectionManagerProtocol):
                         service_uuids.append(formatted)
 
             # 16-bit Service Data
-            elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_bytes) >= 2:
-                uuid16 = int.from_bytes(ad_bytes[:2], byteorder="little")
-                service_data[BluetoothUUID(f"{uuid16:04X}")] = ad_bytes[2:]
+            elif ad_type == ADType.SERVICE_DATA_16BIT and len(ad_bytes) >= _SERVICE_UUID16_LENGTH:
+                uuid16 = int.from_bytes(ad_bytes[:_SERVICE_UUID16_LENGTH], byteorder="little")
+                service_data[BluetoothUUID(f"{uuid16:04X}")] = ad_bytes[_SERVICE_UUID16_LENGTH:]
 
             # TX Power Level
             elif ad_type == ADType.TX_POWER_LEVEL and len(ad_bytes) >= 1:
                 tx_power = int.from_bytes(ad_bytes[:1], byteorder="little", signed=True)
 
+        manufacturer_data_converted = {
+            company_id: ManufacturerData.from_id_and_payload(company_id, payload)
+            for company_id, payload in manufacturer_data.items()
+        }
+
         core_data = CoreAdvertisingData(
-            manufacturer_data=manufacturer_data,
+            manufacturer_data=manufacturer_data_converted,
             service_uuids=[BluetoothUUID(uuid) for uuid in service_uuids],
             service_data=service_data,
             local_name=local_name,

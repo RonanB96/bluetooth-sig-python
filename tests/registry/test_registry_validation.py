@@ -364,7 +364,9 @@ class TestNameResolutionFallback:
                 value_type=ValueType.FLOAT,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> float:
                 return 0.0
 
             def _encode_value(self, data: bytearray) -> bytearray:
@@ -451,7 +453,9 @@ class TestNameResolutionFallback:
                 value_type=ValueType.STRING,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> str:
                 return ""
 
             def _encode_value(self, data: bytearray) -> bytearray:
@@ -489,7 +493,9 @@ class TestNameResolutionFallback:
                 value_type=ValueType.STRING,
             )
 
-            def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> str:
+            def _decode_value(
+                self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+            ) -> str:
                 return ""
 
             def _encode_value(self, data: bytearray) -> bytearray:

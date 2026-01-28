@@ -18,12 +18,15 @@ class BooleanCharacteristic(BaseCharacteristic[bool]):
     _manual_value_type = ValueType.BOOL
     expected_length = 1
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bool:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> bool:
         """Parse boolean value.
 
         Args:
             data: Raw bytearray from BLE characteristic (1 byte, validated by base class).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             True if value is 1, False if value is 0.

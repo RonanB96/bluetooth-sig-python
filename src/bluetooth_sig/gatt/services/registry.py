@@ -8,6 +8,8 @@ of keeping __init__.py files lightweight.
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from typing_extensions import TypeGuard
 
 from ...registry.base import BaseUUIDClassRegistry
@@ -20,9 +22,9 @@ from ..uuid_registry import uuid_registry
 from .base import BaseGattService
 
 __all__ = [
+    "GattServiceRegistry",
     "ServiceName",
     "get_service_class_map",
-    "GattServiceRegistry",
 ]
 
 
@@ -50,7 +52,7 @@ def get_service_class_map() -> dict[ServiceName, type[BaseGattService]]:
 class GattServiceRegistry(BaseUUIDClassRegistry[ServiceName, BaseGattService]):
     """Registry for all supported GATT services."""
 
-    _MODULE_EXCLUSIONS = {"__main__", "__init__", "base", "registry"}
+    _MODULE_EXCLUSIONS: ClassVar[set[str]] = {"__main__", "__init__", "base", "registry"}
 
     def _get_base_class(self) -> type[BaseGattService]:
         """Return the base class for service validation."""
@@ -155,10 +157,7 @@ class GattServiceRegistry(BaseUUIDClassRegistry[ServiceName, BaseGattService]):
             ValueError: If uuid format is invalid
         """
         # Normalize to BluetoothUUID (let ValueError propagate)
-        if isinstance(uuid, BluetoothUUID):
-            bt_uuid = uuid
-        else:
-            bt_uuid = BluetoothUUID(uuid)
+        bt_uuid = uuid if isinstance(uuid, BluetoothUUID) else BluetoothUUID(uuid)
 
         instance = cls.get_instance()
         service_cls = instance.get_class_by_uuid(bt_uuid)

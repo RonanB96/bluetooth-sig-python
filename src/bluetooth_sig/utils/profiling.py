@@ -202,10 +202,7 @@ def format_comparison(results: dict[str, TimingResult], baseline: str | None = N
 
         if baseline_time and name != baseline:
             ratio = result.avg_time / baseline_time
-            if ratio < 1:
-                comparison = f"{1 / ratio:.2f}x faster"
-            else:
-                comparison = f"{ratio:.2f}x slower"
+            comparison = f"{1 / ratio:.2f}x faster" if ratio < 1 else f"{ratio:.2f}x slower"
         elif name == baseline:
             comparison = "(baseline)"
         else:

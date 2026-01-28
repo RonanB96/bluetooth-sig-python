@@ -25,6 +25,7 @@ from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
+from bluetooth_sig.types import ManufacturerData
 from bluetooth_sig.types.advertising import (
     AdvertisementData,
     AdvertisingDataStructures,
@@ -88,12 +89,17 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
         # Use the Bleak-style callback directly
         return BleakClient(self.address, timeout=self.timeout, disconnected_callback=self._bleak_callback)
 
-    async def connect(self) -> None:
-        """Connect to the device with retry logic."""
+    async def connect(self, *, timeout: float = 10.0) -> None:
+        """Connect to the device with retry logic.
+
+        Args:
+            timeout: Connection timeout in seconds.
+
+        """
         last_exception = None
         for attempt in range(self.max_attempts):
             try:
-                await self.client.connect()
+                await self.client.connect(timeout=timeout)
                 self._cached_services = None  # Clear cache on new connection
                 return
             except (OSError, TimeoutError) as e:
@@ -379,8 +385,13 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
         service_uuids = [BluetoothUUID(uuid) for uuid in (bleak_adv.service_uuids or [])]
         service_data = {BluetoothUUID(uuid): data for uuid, data in (bleak_adv.service_data or {}).items()}
 
+        manufacturer_data_converted = {
+            company_id: ManufacturerData.from_id_and_payload(company_id, payload)
+            for company_id, payload in (bleak_adv.manufacturer_data or {}).items()
+        }
+
         core_data = CoreAdvertisingData(
-            manufacturer_data=bleak_adv.manufacturer_data or {},
+            manufacturer_data=manufacturer_data_converted,
             service_uuids=service_uuids,
             service_data=service_data,
             local_name=bleak_adv.local_name or "",

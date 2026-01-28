@@ -44,9 +44,6 @@ class EnvironmentalSensingTriggerSettingDescriptor(BaseDescriptor):
         Raises:
             ValueError: If data is not exactly 3 bytes
         """
-        if len(data) != 3:
-            raise ValueError(f"Environmental Sensing Trigger Setting data must be exactly 3 bytes, got {len(data)}")
-
         return EnvironmentalSensingTriggerSettingData(
             condition=DataParser.parse_int8(data, offset=0),
             operand=DataParser.parse_int16(data, offset=1, endian="little"),

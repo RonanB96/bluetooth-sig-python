@@ -40,16 +40,6 @@ from .tx_power import TxPowerService
 from .weight_scale import WeightScaleService
 
 __all__ = [
-    # Registry components
-    "GattServiceRegistry",
-    "get_service_class_map",
-    "ServiceName",
-    # Service validation and status classes
-    "ServiceHealthStatus",
-    "CharacteristicStatus",
-    "ServiceValidationResult",
-    "ServiceCharacteristicInfo",
-    "ServiceCompletenessReport",
     # Individual service classes for backward compatibility
     "AlertNotificationService",
     "AutomationIOService",
@@ -57,11 +47,14 @@ __all__ = [
     "BloodPressureService",
     "BodyCompositionService",
     "BondManagementService",
+    "CharacteristicStatus",
     "CurrentTimeService",
     "CyclingPowerService",
     "CyclingSpeedAndCadenceService",
     "DeviceInformationService",
     "EnvironmentalSensingService",
+    # Registry components
+    "GattServiceRegistry",
     "GenericAccessService",
     "GenericAttributeService",
     "GlucoseService",
@@ -76,6 +69,13 @@ __all__ = [
     "ReferenceTimeUpdateService",
     "RunningSpeedAndCadenceService",
     "ScanParametersService",
+    "ServiceCharacteristicInfo",
+    "ServiceCompletenessReport",
+    # Service validation and status classes
+    "ServiceHealthStatus",
+    "ServiceName",
+    "ServiceValidationResult",
     "TxPowerService",
     "WeightScaleService",
+    "get_service_class_map",
 ]

@@ -39,9 +39,6 @@ class TimeTriggerSettingDescriptor(BaseDescriptor):
         Raises:
             ValueError: If data is not exactly 3 bytes
         """
-        if len(data) != 3:
-            raise ValueError(f"Time Trigger Setting data must be exactly 3 bytes, got {len(data)}")
-
         # Parse as uint24 (3 bytes)
         time_interval = DataParser.parse_int32(data + b"\x00", endian="little") & 0xFFFFFF
 

@@ -96,7 +96,7 @@ class LinearTranslator(ValueTranslator[float]):
         Humidity 0.01% resolution: LinearTranslator(scale_factor=0.01, offset=0)
     """
 
-    __slots__ = ("_scale_factor", "_offset")
+    __slots__ = ("_offset", "_scale_factor")
 
     def __init__(self, scale_factor: float = 1.0, offset: int = 0) -> None:
         """Initialize with scaling parameters.

@@ -47,12 +47,15 @@ class UnknownCharacteristic(BaseCharacteristic[bytes]):
 
         super().__init__(info=info, properties=properties)
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> bytes:  # Context type varies
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> bytes:  # Context type varies
         """Return raw bytes for unknown characteristics.
 
         Args:
             data: Raw bytes from the characteristic read
             ctx: Optional context (ignored)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             Raw bytes as-is

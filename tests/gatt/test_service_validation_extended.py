@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import cast
+from typing import Any, cast
 
 from bluetooth_sig.gatt.characteristics import BaseCharacteristic, BatteryLevelCharacteristic
 from bluetooth_sig.gatt.services import BatteryService, CharacteristicStatus, ServiceHealthStatus
@@ -147,7 +147,7 @@ class TestServiceValidationEdgeCasesExtended:
                     else first_optional_spec
                 )
                 # Cast to concrete class type for static type checkers
-                first_optional_class = cast(type[BaseCharacteristic], first_optional_class)
+                first_optional_class = cast("type[BaseCharacteristic[Any]]", first_optional_class)
                 optional_char = first_optional_class()
                 service.characteristics[BluetoothUUID("12345678-1234-5678-9abc-def012345678")] = optional_char
 
@@ -167,7 +167,7 @@ class TestServiceValidationEdgeCasesExtended:
                     else first_required_spec
                 )
                 # Cast to concrete class type for static type checkers
-                first_required_class = cast(type[BaseCharacteristic], first_required_class)
+                first_required_class = cast("type[BaseCharacteristic[Any]]", first_required_class)
                 required_char = first_required_class()
                 service.characteristics[BluetoothUUID("87654321-4321-8765-cba9-876543210fed")] = required_char
 
