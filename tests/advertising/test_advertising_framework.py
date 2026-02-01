@@ -10,7 +10,6 @@ from bluetooth_sig.advertising import (
 )
 from bluetooth_sig.advertising.base import InterpreterInfo, PayloadInterpreter
 from bluetooth_sig.advertising.pdu_parser import AdvertisingPDUParser
-from bluetooth_sig.advertising.result import InterpretationResult, InterpretationStatus
 from bluetooth_sig.advertising.state import DeviceAdvertisingState
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -76,11 +75,8 @@ class TestPayloadInterpreter:
                 self,
                 advertising_data: AdvertisingData,
                 state: DeviceAdvertisingState,
-            ) -> InterpretationResult[TestSensorData]:
-                return InterpretationResult(
-                    data=TestSensorData(device_type="Test"),
-                    status=InterpretationStatus.SUCCESS,
-                )
+            ) -> TestSensorData:
+                return TestSensorData(device_type="Test")
 
         interpreter = SimpleInterpreter("AA:BB:CC:DD:EE:FF")
 
@@ -114,11 +110,8 @@ class TestPayloadInterpreterRegistry:
                 self,
                 advertising_data: AdvertisingData,
                 state: DeviceAdvertisingState,
-            ) -> InterpretationResult[TestSensorData]:
-                return InterpretationResult(
-                    data=TestSensorData(device_type="Test"),
-                    status=InterpretationStatus.SUCCESS,
-                )
+            ) -> TestSensorData:
+                return TestSensorData(device_type="Test")
 
         registry.register(TestInterpreter)
 
@@ -147,11 +140,8 @@ class TestPayloadInterpreterRegistry:
                 self,
                 advertising_data: AdvertisingData,
                 state: DeviceAdvertisingState,
-            ) -> InterpretationResult[TestSensorData]:
-                return InterpretationResult(
-                    data=TestSensorData(device_type="I1"),
-                    status=InterpretationStatus.SUCCESS,
-                )
+            ) -> TestSensorData:
+                return TestSensorData(device_type="I1")
 
         class Interpreter2(PayloadInterpreter[TestSensorData]):
             _info = InterpreterInfo(company_id=0xAAAA, name="I2")
@@ -164,11 +154,8 @@ class TestPayloadInterpreterRegistry:
                 self,
                 advertising_data: AdvertisingData,
                 state: DeviceAdvertisingState,
-            ) -> InterpretationResult[TestSensorData]:
-                return InterpretationResult(
-                    data=TestSensorData(device_type="I2"),
-                    status=InterpretationStatus.SUCCESS,
-                )
+            ) -> TestSensorData:
+                return TestSensorData(device_type="I2")
 
         registry.register(Interpreter1)
         registry.register(Interpreter2)

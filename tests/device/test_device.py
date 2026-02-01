@@ -10,7 +10,8 @@ from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
 from bluetooth_sig.device.connected import DeviceEncryption
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
-from bluetooth_sig.types.advertising import AdvertisementData, AdvertisingDataStructures, CoreAdvertisingData
+from bluetooth_sig.types.advertising.ad_structures import AdvertisingDataStructures, CoreAdvertisingData
+from bluetooth_sig.types.advertising.result import AdvertisementData
 from bluetooth_sig.types.device_types import DeviceService
 from bluetooth_sig.types.uuid import BluetoothUUID
 

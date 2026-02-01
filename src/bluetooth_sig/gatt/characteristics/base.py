@@ -1241,13 +1241,23 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
         validation = ValidationAccumulator()
         raw_int: int | None = None
 
-        # Perform initial validation
-        self._perform_parse_validation(data_bytes, enable_trace, parse_trace, validation, validate)
+        try:
+            self._perform_parse_validation(data_bytes, enable_trace, parse_trace, validation, validate)
+            raw_int, parsed_value = self._extract_and_check_special_value(data_bytes, enable_trace, parse_trace, ctx)
+        except Exception as e:
+            if enable_trace:
+                parse_trace.append(f"Parse failed: {type(e).__name__}: {e}")
+            raise CharacteristicParseError(
+                message=str(e),
+                name=self.name,
+                uuid=self.uuid,
+                raw_data=bytes(data),
+                raw_int=raw_int,
+                field_errors=field_errors,
+                parse_trace=parse_trace,
+                validation=validation,
+            ) from e
 
-        # Extract raw int and check for special values
-        raw_int, parsed_value = self._extract_and_check_special_value(data_bytes, enable_trace, parse_trace, ctx)
-
-        # Special value detection - raise specialized exception (outside try since we don't wrap it)
         if isinstance(parsed_value, SpecialValueResult):
             if enable_trace:
                 parse_trace.append(f"Detected special value: {parsed_value.meaning}")
@@ -1256,44 +1266,37 @@ class BaseCharacteristic(ABC, Generic[T], metaclass=CharacteristicMeta):  # pyli
             )
 
         try:
-            # Decode and validate value
             decoded_value = self._decode_and_validate_value(
                 data_bytes, enable_trace, parse_trace, ctx, validation, validate
             )
-
-            if enable_trace:
-                parse_trace.append("Parse completed successfully")
-
-            # Cache the parsed value for debugging/caching purposes
-            self.last_parsed = decoded_value
-
-            return decoded_value  # noqa: TRY300
-
         except Exception as e:
             if enable_trace:
                 parse_trace.append(f"Parse failed: {type(e).__name__}: {e}")
-
-            # Handle field errors
             if isinstance(e, ParseFieldError):
-                field_error = FieldError(
-                    field=e.field,
-                    reason=e.field_reason,
-                    offset=e.offset,
-                    raw_slice=bytes(e.data) if hasattr(e, "data") else None,
+                field_errors.append(
+                    FieldError(
+                        field=e.field,
+                        reason=e.field_reason,
+                        offset=e.offset,
+                        raw_slice=bytes(e.data) if hasattr(e, "data") else None,
+                    )
                 )
-                field_errors.append(field_error)
-
-            # Raise structured parse error
             raise CharacteristicParseError(
                 message=str(e),
                 name=self.name,
                 uuid=self.uuid,
                 raw_data=bytes(data),
-                raw_int=raw_int if raw_int is not None else None,
+                raw_int=raw_int,
                 field_errors=field_errors,
                 parse_trace=parse_trace,
                 validation=validation,
             ) from e
+
+        if enable_trace:
+            parse_trace.append("Parse completed successfully")
+
+        self.last_parsed = decoded_value
+        return decoded_value
 
     def _encode_value(self, data: Any) -> bytearray:  # noqa: ANN401
         """Internal encode the characteristic's value to raw bytes with no validation.

@@ -47,7 +47,6 @@ class AppearanceCharacteristic(BaseCharacteristic[AppearanceData]):
         Args:
             data: Appearance value as AppearanceData
 
-
         Returns:
             Encoded bytes representing the appearance
         """

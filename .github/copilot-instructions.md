@@ -38,8 +38,9 @@ Every new function needs tests: success + 2 failure cases minimum. Run `python -
 Run `./scripts/lint.sh --all` before completion (pipe to file, don't grep output). Fix issues, don't suppress them. For iteration, rerun only failing linter (`./scripts/lint.sh --mypy`), then rerun all at end.
 
 ### 6. Documentation Policy
-**FORBIDDEN**: Updating README.md automatically
-**ALLOWED**: Inline comments and docstrings (mandatory for new code)
+- Updating documentation (./docs/) will be asked directly if needed.
+- If making code changes that will break the code blocks in the docs, update those code blocks too.
+- Inline comments and docstrings (mandatory for new code)
 
 ---
 

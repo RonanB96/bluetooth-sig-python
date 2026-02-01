@@ -10,7 +10,11 @@ Two-layer architecture:
 State Management:
     Interpreters do NOT manage state. The caller (connection manager, device tracker)
     owns the DeviceAdvertisingState and passes it to interpreters.
-    Interpreters receive state and return InterpretationResult with any updates.
+    Interpreters update state directly and raise exceptions for errors.
+
+Error Handling:
+    Interpreters raise exceptions (EncryptionRequiredError, DecryptionFailedError, etc.)
+    instead of returning status codes. This is consistent with GATT characteristic parsing.
 """
 
 from __future__ import annotations
@@ -32,6 +36,15 @@ from bluetooth_sig.advertising.encryption import (
     EADKeyProvider,
     EncryptionKeyProvider,
 )
+from bluetooth_sig.advertising.exceptions import (
+    AdvertisingError,
+    AdvertisingParseError,
+    DecryptionFailedError,
+    DuplicatePacketError,
+    EncryptionRequiredError,
+    ReplayDetectedError,
+    UnsupportedVersionError,
+)
 from bluetooth_sig.advertising.pdu_parser import AdvertisingPDUParser
 from bluetooth_sig.advertising.registry import (
     PayloadContext,
@@ -39,7 +52,6 @@ from bluetooth_sig.advertising.registry import (
     parse_advertising_payloads,
     payload_interpreter_registry,
 )
-from bluetooth_sig.advertising.result import InterpretationResult, InterpretationStatus
 from bluetooth_sig.advertising.service_data_parser import ServiceDataParser
 from bluetooth_sig.advertising.service_resolver import (
     AdvertisingServiceResolver,
@@ -59,28 +71,33 @@ from bluetooth_sig.types.company import CompanyIdentifier, ManufacturerData
 
 __all__ = [
     "AdvertisingData",
+    "AdvertisingError",
     "AdvertisingPDUParser",
+    "AdvertisingParseError",
     "AdvertisingServiceResolver",
     "CompanyIdentifier",
     "DataSource",
+    "DecryptionFailedError",
     "DeviceAdvertisingState",
     "DictKeyProvider",
+    "DuplicatePacketError",
     "EADDecryptor",
     "EADKeyProvider",
     "EncryptionKeyProvider",
+    "EncryptionRequiredError",
     "EncryptionState",
-    "InterpretationResult",
-    "InterpretationStatus",
     "InterpreterInfo",
     "ManufacturerData",
     "PacketState",
     "PayloadContext",
     "PayloadInterpreter",
     "PayloadInterpreterRegistry",
+    "ReplayDetectedError",
     "ResolvedService",
     "SIGCharacteristicData",
     "SIGCharacteristicInterpreter",
     "ServiceDataParser",
+    "UnsupportedVersionError",
     "build_ead_nonce",
     "bytes_to_mac_address",
     "decrypt_ead",

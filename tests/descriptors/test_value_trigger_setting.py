@@ -28,7 +28,7 @@ class TestValueTriggerSettingDescriptor:
 
         result = vts.parse_value(data)
         assert result.parse_success is False
-        assert "Value Trigger Setting data must be at least 2 bytes" in result.error_message
+        assert "need 1 bytes, got 0" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Value Trigger Setting has correct UUID."""

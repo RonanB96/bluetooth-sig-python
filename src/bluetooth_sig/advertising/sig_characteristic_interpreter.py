@@ -21,7 +21,7 @@ from bluetooth_sig.advertising.base import (
     InterpreterInfo,
     PayloadInterpreter,
 )
-from bluetooth_sig.advertising.result import InterpretationResult, InterpretationStatus
+from bluetooth_sig.advertising.exceptions import AdvertisingParseError
 from bluetooth_sig.advertising.state import DeviceAdvertisingState
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -66,9 +66,11 @@ class SIGCharacteristicInterpreter(PayloadInterpreter[SIGCharacteristicData]):
             rssi=-60,
         )
 
-        result = interpreter.interpret(ad_data, state)
-        if result.is_success:
-            print(f"Parsed: {result.data.parsed_value}")
+        try:
+            data = interpreter.interpret(ad_data, state)
+            print(f"Parsed: {data.parsed_value}")
+        except AdvertisingParseError as e:
+            print(f"Parse failed: {e}")
 
     """
 
@@ -98,7 +100,7 @@ class SIGCharacteristicInterpreter(PayloadInterpreter[SIGCharacteristicData]):
         self,
         advertising_data: AdvertisingData,
         state: DeviceAdvertisingState,
-    ) -> InterpretationResult[SIGCharacteristicData]:
+    ) -> SIGCharacteristicData:
         """Interpret service data using SIG characteristic definitions.
 
         Finds the first service data UUID that matches a registered characteristic
@@ -106,10 +108,13 @@ class SIGCharacteristicInterpreter(PayloadInterpreter[SIGCharacteristicData]):
 
         Args:
             advertising_data: Complete advertising data from BLE packet.
-            state: Current device advertising state.
+            state: Current device advertising state (unused, no encryption).
 
         Returns:
-            InterpretationResult with SIGCharacteristicData on success.
+            SIGCharacteristicData with parsed characteristic value.
+
+        Raises:
+            AdvertisingParseError: If no matching characteristic or parsing fails.
 
         """
         del state  # Required by interface but not used in this implementation
@@ -122,27 +127,25 @@ class SIGCharacteristicInterpreter(PayloadInterpreter[SIGCharacteristicData]):
                 char_instance = char_class()
                 parsed_value = char_instance.parse_value(payload)
 
-                return InterpretationResult(
-                    status=InterpretationStatus.SUCCESS,
-                    data=SIGCharacteristicData(
-                        uuid=uuid,
-                        characteristic_name=char_class.__name__,
-                        parsed_value=parsed_value,
-                    ),
+                return SIGCharacteristicData(
+                    uuid=uuid,
+                    characteristic_name=char_class.__name__,
+                    parsed_value=parsed_value,
                 )
-            except Exception as e:  # pylint: disable=broad-exception-caught
+            except Exception as e:
                 logger.warning(
                     "Failed to parse SIG characteristic %s: %s",
                     char_class.__name__,
                     e,
                 )
-                return InterpretationResult(
-                    status=InterpretationStatus.PARSE_ERROR,
-                    error_message=f"Failed to parse {char_class.__name__}: {e}",
-                )
+                raise AdvertisingParseError(
+                    message=f"Failed to parse {char_class.__name__}: {e}",
+                    raw_data=payload,
+                    interpreter_name=self._info.name,
+                ) from e
 
         # No matching characteristic found
-        return InterpretationResult(
-            status=InterpretationStatus.PARSE_ERROR,
-            error_message="No matching SIG characteristic found in service data",
+        raise AdvertisingParseError(
+            message="No matching SIG characteristic found in service data",
+            interpreter_name=self._info.name,
         )

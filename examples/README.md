@@ -93,7 +93,7 @@ python -m examples.benchmarks.parsing_performance --quick
 - Real-world scenario simulation
 - Optimization recommendations
 
-See [`../docs/PERFORMANCE.md`](../docs/PERFORMANCE.md) for detailed performance guide.
+See [`../docs/source/how-to/performance-tuning.md`](../docs/source/how-to/performance-tuning.md) for detailed performance guide.
 
 ## Utilities Package
 
@@ -137,6 +137,6 @@ The examples will automatically use available BLE libraries and handle library a
 This examples directory follows these principles:
 
 1. **Minimal Overlap** - Each example focuses on a specific use case
-1. **Clean Separation** - Utilities are organized by functionality in the `utils/` package
-1. **Library Agnostic** - Core SIG parsing works with any BLE library
-2. **Performance Aware** - Benchmarks and profiling tools help optimize real-world usage
+2. **Clean Separation** - Utilities are organized by functionality in the `utils/` package
+3. **Library Agnostic** - Core SIG parsing works with any BLE library
+4. **Performance Aware** - Benchmarks and profiling tools help optimize real-world usage

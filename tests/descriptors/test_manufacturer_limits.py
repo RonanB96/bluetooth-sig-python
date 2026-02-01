@@ -28,7 +28,7 @@ class TestManufacturerLimitsDescriptor:
 
         result = ml.parse_value(data)
         assert result.parse_success is False
-        assert "Manufacturer Limits data expected 4 bytes" in result.error_message
+        assert "need 2 bytes, got 0" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Manufacturer Limits has correct UUID."""

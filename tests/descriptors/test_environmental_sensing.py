@@ -38,7 +38,7 @@ class TestEnvironmentalSensingConfigurationDescriptor:
 
         result = esc.parse_value(data)
         assert result.parse_success is False
-        assert "Environmental Sensing Configuration data must be exactly 2 bytes" in result.error_message
+        assert "need 2 bytes, got 1" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Environmental Sensing Configuration has correct UUID."""
@@ -72,7 +72,7 @@ class TestEnvironmentalSensingMeasurementDescriptor:
 
         result = esm.parse_value(data)
         assert result.parse_success is False
-        assert "Environmental Sensing Measurement data must be exactly 12 bytes" in result.error_message
+        assert "need 4 bytes, got 2" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Environmental Sensing Measurement has correct UUID."""
@@ -102,7 +102,7 @@ class TestEnvironmentalSensingTriggerSettingDescriptor:
 
         result = ests.parse_value(data)
         assert result.parse_success is False
-        assert "Environmental Sensing Trigger Setting data must be exactly 3 bytes" in result.error_message
+        assert "need 2 bytes, got 1" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Environmental Sensing Trigger Setting has correct UUID."""

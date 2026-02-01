@@ -155,7 +155,7 @@ class VendorSensorCharacteristic(CustomBaseCharacteristic):
     expected_type = SensorReading
 
     def _decode_value(
-        self, data: bytearray, ctx: CharacteristicContext | None = None
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> SensorReading:
         # Parse temperature (signed 16-bit, 0.01°C resolution)
         temp_raw = int.from_bytes(data[0:2], "little", signed=True)

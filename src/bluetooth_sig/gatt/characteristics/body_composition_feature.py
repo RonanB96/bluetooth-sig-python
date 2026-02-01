@@ -164,8 +164,6 @@ class BodyCompositionFeatureCharacteristic(BaseCharacteristic[BodyCompositionFea
         Args:
             data: BodyCompositionFeatureData instance to encode
 
-        validate: Whether to validate ranges (default True)
-
         Returns:
             Encoded bytes representing the body composition features
 

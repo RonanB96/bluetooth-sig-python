@@ -63,7 +63,6 @@ class AlertCategoryIdBitMaskCharacteristic(BaseCharacteristic[AlertCategoryBitMa
         Args:
             data: AlertCategoryBitMask or int value
 
-
         Returns:
             Encoded alert category ID bit mask (2 bytes)
 

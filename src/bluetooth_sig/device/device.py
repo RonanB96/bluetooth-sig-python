@@ -25,11 +25,11 @@ from ..gatt.descriptors.base import BaseDescriptor
 from ..gatt.descriptors.registry import DescriptorRegistry
 from ..gatt.services import ServiceName
 from ..types import (
-    AdvertisementData,
     CharacteristicInfo,
     DescriptorData,
     DescriptorInfo,
 )
+from ..types.advertising.result import AdvertisementData
 from ..types.device_types import ScannedDevice
 from ..types.uuid import BluetoothUUID
 from .advertising import DeviceAdvertising

@@ -11,8 +11,8 @@ from bluetooth_sig.advertising.base import (
     InterpreterInfo,
     PayloadInterpreter,
 )
+from bluetooth_sig.advertising.exceptions import AdvertisingParseError
 from bluetooth_sig.advertising.registry import PayloadInterpreterRegistry
-from bluetooth_sig.advertising.result import InterpretationResult, InterpretationStatus
 from bluetooth_sig.advertising.state import DeviceAdvertisingState
 from bluetooth_sig.types import ManufacturerData
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -85,24 +85,24 @@ class SimpleTestInterpreter(PayloadInterpreter[SensorDataStub]):
         self,
         advertising_data: AdvertisingData,
         state: DeviceAdvertisingState,
-    ) -> InterpretationResult[SensorDataStub]:
+    ) -> SensorDataStub:
         """Parse test sensor data."""
         mfr_data = advertising_data.manufacturer_data.get(0x1234)
         data = mfr_data.payload if mfr_data else b""
         if len(data) < 4:
-            return InterpretationResult(
-                status=InterpretationStatus.PARSE_ERROR,
-                error_message="Payload too short",
+            raise AdvertisingParseError(
+                message="Payload too short",
+                raw_data=data,
+                interpreter_name=self._info.name,
             )
 
         temperature = int.from_bytes(data[0:2], "little", signed=True) / 100.0
         humidity = int.from_bytes(data[2:4], "little") / 100.0
 
-        return InterpretationResult(
-            status=InterpretationStatus.SUCCESS,
-            data=SensorDataStub(temperature=temperature, humidity=humidity),
-            updated_device_type="Test Sensor",
-        )
+        # Update state directly
+        state.device_type = "Test Sensor"
+
+        return SensorDataStub(temperature=temperature, humidity=humidity)
 
 
 class TestPayloadInterpreter:
@@ -145,11 +145,9 @@ class TestPayloadInterpreter:
         )
         result = interpreter.interpret(ad_data, state)
 
-        assert result.status == InterpretationStatus.SUCCESS
-        assert result.data is not None
-        assert result.data.temperature == 25.50
-        assert result.data.humidity == 60.00
-        assert result.updated_device_type == "Test Sensor"
+        assert result.temperature == 25.50
+        assert result.humidity == 60.00
+        assert state.device_type == "Test Sensor"
 
     def test_interpret_parse_error(self) -> None:
         """Test interpretation with parse error."""
@@ -160,11 +158,11 @@ class TestPayloadInterpreter:
         ad_data = AdvertisingData(
             manufacturer_data={0x1234: ManufacturerData.from_id_and_payload(0x1234, b"\x00")}, rssi=-60
         )
-        result = interpreter.interpret(ad_data, state)
 
-        assert result.status == InterpretationStatus.PARSE_ERROR
-        assert result.data is None
-        assert result.error_message == "Payload too short"
+        with pytest.raises(AdvertisingParseError) as exc_info:
+            interpreter.interpret(ad_data, state)
+
+        assert "Payload too short" in str(exc_info.value)
 
 
 class TestPayloadInterpreterRegistry:
@@ -271,11 +269,8 @@ class ServiceDataInterpreter(PayloadInterpreter[SensorDataStub]):
         self,
         advertising_data: AdvertisingData,
         state: DeviceAdvertisingState,
-    ) -> InterpretationResult[SensorDataStub]:
-        return InterpretationResult(
-            status=InterpretationStatus.SUCCESS,
-            data=SensorDataStub(temperature=22.0),
-        )
+    ) -> SensorDataStub:
+        return SensorDataStub(temperature=22.0)
 
 
 class TestServiceDataRouting:

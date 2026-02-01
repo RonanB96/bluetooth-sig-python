@@ -55,7 +55,7 @@ class DeviceAdvertisingState(msgspec.Struct, kw_only=True, frozen=False):
     """Complete advertising state for a device.
 
     Managed by caller (connection manager, device tracker).
-    Passed to interpreter, interpreter returns InterpretationResult with any updates.
+    Passed to interpreter; interpreter updates state directly.
 
     Attributes:
         address: Device MAC address or platform identifier.

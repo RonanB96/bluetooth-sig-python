@@ -24,12 +24,12 @@ from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 from bluetooth_sig.gatt.services.unknown import UnknownService
 from bluetooth_sig.types import ManufacturerData
-from bluetooth_sig.types.advertising import (
-    AdvertisementData,
+from bluetooth_sig.types.advertising.ad_structures import (
     AdvertisingDataStructures,
     CoreAdvertisingData,
     DeviceProperties,
 )
+from bluetooth_sig.types.advertising.result import AdvertisementData
 from bluetooth_sig.types.data_types import CharacteristicInfo
 from bluetooth_sig.types.device_types import (
     DeviceService,

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.advertising import AdvertisingPDUParser
-from bluetooth_sig.types import AdvertisingData
+from bluetooth_sig.types.advertising.result import AdvertisingData
 
 
 class TestAdvertisingPDUParserClassOfDevice:

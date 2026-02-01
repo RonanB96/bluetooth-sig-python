@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import msgspec
 
-from .advertising import AdvertisementData
+from .advertising.result import AdvertisementData
 from .uuid import BluetoothUUID
 
 # Type alias for scanning mode

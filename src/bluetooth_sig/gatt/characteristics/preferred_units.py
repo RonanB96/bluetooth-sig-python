@@ -70,7 +70,8 @@ class PreferredUnitsCharacteristic(BaseCharacteristic[PreferredUnitsData]):
         """
         result = bytearray()
         for unit_uuid in data.units:
-            unit_value = unit_uuid.int_value
+            # Extract 16-bit short form value from UUID for encoding
+            unit_value = int(unit_uuid.short_form, 16)
             result.extend(DataParser.encode_int16(unit_value, signed=False))
         return result
 

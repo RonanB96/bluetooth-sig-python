@@ -277,8 +277,8 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
             input_uuid = uuid if isinstance(uuid, BluetoothUUID) else BluetoothUUID(uuid)
         except (ValueError, UUIDResolutionError):
             return False
-        else:
-            return service_uuid == input_uuid
+
+        return service_uuid == input_uuid
 
     @classmethod
     def get_expected_characteristics(cls) -> ServiceCharacteristicCollection:

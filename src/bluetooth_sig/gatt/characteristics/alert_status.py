@@ -73,8 +73,6 @@ class AlertStatusCharacteristic(BaseCharacteristic[AlertStatusData]):
         Args:
             data: AlertStatusData instance to encode
 
-        validate: Whether to validate ranges (default True)
-
         Returns:
             Encoded bytes representing the alert status
 

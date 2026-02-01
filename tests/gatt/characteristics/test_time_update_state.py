@@ -116,12 +116,12 @@ class TestTimeUpdateStateCharacteristic(CommonCharacteristicTests):
         # Test too short
         with pytest.raises(CharacteristicParseError) as exc_info:
             char.parse_value(bytearray([0x00]))
-        assert "Time Update State requires 2 bytes, got 1" in str(exc_info.value)
+        assert "expected at least 2 bytes, got 1" in str(exc_info.value)
 
         # Test too long - also raises CharacteristicParseError
         with pytest.raises(CharacteristicParseError) as exc_info:
             char.parse_value(bytearray([0x00, 0x00, 0x00]))
-        assert "Time Update State requires 2 bytes, got 3" in str(exc_info.value)
+        assert "expected at most 2 bytes, got 3" in str(exc_info.value)
 
     def test_invalid_current_state_raises_error(self) -> None:
         """Test that invalid current state values result in parse failure."""

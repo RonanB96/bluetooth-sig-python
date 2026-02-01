@@ -17,7 +17,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Callable, ClassVar
 
-from bluetooth_sig.types.advertising import AdvertisementData
+from bluetooth_sig.types.advertising.result import AdvertisementData
 from bluetooth_sig.types.device_types import (
     DeviceService,
     ScanFilter,

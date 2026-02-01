@@ -26,7 +26,7 @@ class TestReportReferenceDescriptor:
 
         result = rr.parse_value(data)
         assert result.parse_success is False
-        assert "Report Reference data must be exactly 2 bytes" in result.error_message
+        assert "need 1 bytes, got 0" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Report Reference has correct UUID."""

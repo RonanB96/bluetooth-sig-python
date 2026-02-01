@@ -9,7 +9,20 @@ Advertising data interpretation follows a two-layer architecture:
 2. Payload Interpretation (PayloadInterpreter): AD structures → typed results
    - Interprets vendor-specific protocols (BTHome, Xiaomi, RuuviTag, etc.)
    - Returns strongly-typed sensor data (temperature, humidity, etc.)
-   - State managed externally by caller; interpreter returns state updates
+   - State managed externally by caller; interpreter updates state directly
+   - Errors are raised as exceptions (consistent with GATT characteristic parsing)
+
+Error Handling:
+    Interpreters raise exceptions for error conditions instead of returning
+    status codes. This is consistent with GATT characteristic parsing.
+
+    Exceptions:
+        EncryptionRequiredError: Payload encrypted, no bindkey available
+        DecryptionFailedError: Decryption failed (wrong key or corrupt data)
+        ReplayDetectedError: Counter not increasing (potential replay attack)
+        DuplicatePacketError: Same packet_id as previous
+        AdvertisingParseError: General parse failure
+        UnsupportedVersionError: Unknown protocol version
 """
 
 from __future__ import annotations
@@ -20,7 +33,6 @@ from typing import Generic, TypeVar
 
 import msgspec
 
-from bluetooth_sig.advertising.result import InterpretationResult
 from bluetooth_sig.advertising.state import DeviceAdvertisingState
 from bluetooth_sig.types.company import ManufacturerData
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -83,18 +95,19 @@ class PayloadInterpreter(ABC, Generic[T]):
 
     Interprets raw bytes from BLE advertisements into typed domain objects.
     State is managed externally by the caller - interpreter receives state
-    and returns InterpretationResult with parsed data and any state updates.
+    and updates it directly. Errors are raised as exceptions.
 
     Encryption Flow (following BTHome/Xiaomi patterns):
         1. Check if payload is encrypted (flag byte in payload header)
         2. If encrypted, check state.encryption.bindkey
-        3. If no bindkey, return InterpretationStatus.ENCRYPTION_REQUIRED
+        3. If no bindkey, raise EncryptionRequiredError
         4. Extract counter from payload, compare to state.encryption.encryption_counter
-        5. If counter <= old counter, return InterpretationStatus.REPLAY_DETECTED
+        5. If counter <= old counter, raise ReplayDetectedError
         6. Attempt decryption with AES-CCM
-        7. If decryption fails, return InterpretationStatus.DECRYPTION_FAILED
+        7. If decryption fails, raise DecryptionFailedError
         8. Parse decrypted payload
-        9. Return result with updated_encryption_counter and updated_bindkey_verified
+        9. Update state.encryption.encryption_counter directly
+        10. Return parsed data
 
     Example:
         class BTHomeInterpreter(PayloadInterpreter[BTHomeData]):
@@ -109,7 +122,10 @@ class PayloadInterpreter(ABC, Generic[T]):
                 return "0000fcd2-0000-1000-8000-00805f9b34fb" in advertising_data.service_data
 
             def interpret(self, advertising_data, state):
-                # Parse BTHome service data and return InterpretationResult[BTHomeData]
+                # Parse BTHome service data
+                # Update state.encryption.encryption_counter if encrypted
+                # Raise exceptions on error
+                # Return BTHomeData on success
                 ...
 
     """
@@ -145,7 +161,6 @@ class PayloadInterpreter(ABC, Generic[T]):
         if not hasattr(cls, "_info"):
             return
 
-        # TODO
         # Lazy import to avoid circular dependency at module load time
         from bluetooth_sig.advertising.registry import payload_interpreter_registry  # noqa: PLC0415
 
@@ -172,14 +187,24 @@ class PayloadInterpreter(ABC, Generic[T]):
         self,
         advertising_data: AdvertisingData,
         state: DeviceAdvertisingState,
-    ) -> InterpretationResult[T]:
-        """Interpret payload bytes and return typed result with state updates.
+    ) -> T:
+        """Interpret payload bytes and return typed result.
+
+        Updates state directly (state is mutable). Raises exceptions for errors.
 
         Args:
             advertising_data: Complete advertising data from BLE packet.
-            state: Current device advertising state (caller-managed).
+            state: Current device advertising state (caller-managed, mutable).
 
         Returns:
-            InterpretationResult with parsed data, status, and state updates.
+            Parsed data of type T.
+
+        Raises:
+            EncryptionRequiredError: Payload encrypted, no bindkey available.
+            DecryptionFailedError: Decryption failed.
+            ReplayDetectedError: Encryption counter not increasing.
+            DuplicatePacketError: Same packet_id as previous.
+            AdvertisingParseError: General parse failure.
+            UnsupportedVersionError: Unknown protocol version.
 
         """

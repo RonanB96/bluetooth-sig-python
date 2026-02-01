@@ -18,28 +18,32 @@ from bluetooth_sig.gatt.constants import SIZE_UINT16, SIZE_UINT24, SIZE_UINT32, 
 from bluetooth_sig.registry.core.ad_types import ad_types_registry
 from bluetooth_sig.registry.core.appearance_values import appearance_values_registry
 from bluetooth_sig.registry.core.class_of_device import class_of_device_registry
-from bluetooth_sig.types import (
-    AdvertisingData,
-    AdvertisingDataInfo,
+from bluetooth_sig.types import ManufacturerData
+from bluetooth_sig.types.ad_types_constants import ADType
+from bluetooth_sig.types.advertising.ad_structures import (
     AdvertisingDataStructures,
-    AuxiliaryPointer,
-    BLEAdvertisingFlags,
-    BLEAdvertisingPDU,
-    BLEExtendedHeader,
     ConnectionIntervalRange,
+    ExtendedAdvertisingData,
+)
+from bluetooth_sig.types.advertising.extended import (
+    AdvertisingDataInfo,
+    AuxiliaryPointer,
     CTEInfo,
     CTEType,
-    ExtendedAdvertisingData,
-    ExtendedHeaderFlags,
-    LEFeatures,
-    ManufacturerData,
-    PDUHeaderFlags,
-    PDULayout,
-    PDUType,
     PHYType,
     SyncInfo,
 )
-from bluetooth_sig.types.ad_types_constants import ADType
+from bluetooth_sig.types.advertising.features import LEFeatures
+from bluetooth_sig.types.advertising.flags import BLEAdvertisingFlags
+from bluetooth_sig.types.advertising.pdu import (
+    BLEAdvertisingPDU,
+    BLEExtendedHeader,
+    ExtendedHeaderFlags,
+    PDUHeaderFlags,
+    PDULayout,
+    PDUType,
+)
+from bluetooth_sig.types.advertising.result import AdvertisingData
 from bluetooth_sig.types.appearance import AppearanceData
 from bluetooth_sig.types.uri import URIData
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -495,6 +499,23 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
         return uuids
 
     @staticmethod
+    def _parse_32bit_uuids(ad_data: bytes) -> list[BluetoothUUID]:
+        """Parse list of 32-bit service UUIDs from raw data.
+
+        Args:
+            ad_data: Raw UUID data
+
+        Returns:
+            List of BluetoothUUID objects
+        """
+        uuids: list[BluetoothUUID] = []
+        for j in range(0, len(ad_data), 4):
+            if j + 3 < len(ad_data):
+                uuid_32 = DataParser.parse_int32(ad_data, j, signed=False)
+                uuids.append(BluetoothUUID(uuid_32))
+        return uuids
+
+    @staticmethod
     def _parse_128bit_uuids(ad_data: bytes) -> list[BluetoothUUID]:
         """Parse list of 128-bit service UUIDs from raw data.
 
@@ -529,8 +550,16 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
         """
         if ad_type in (ADType.INCOMPLETE_16BIT_SERVICE_UUIDS, ADType.COMPLETE_16BIT_SERVICE_UUIDS):
             parsed.core.service_uuids.extend(self._parse_16bit_uuids(ad_data))
+        elif ad_type in (ADType.INCOMPLETE_32BIT_SERVICE_UUIDS, ADType.COMPLETE_32BIT_SERVICE_UUIDS):
+            parsed.core.service_uuids.extend(self._parse_32bit_uuids(ad_data))
         elif ad_type in (ADType.INCOMPLETE_128BIT_SERVICE_UUIDS, ADType.COMPLETE_128BIT_SERVICE_UUIDS):
             parsed.core.service_uuids.extend(self._parse_128bit_uuids(ad_data))
+        elif ad_type == ADType.SOLICITED_SERVICE_UUIDS_16BIT:
+            parsed.core.solicited_service_uuids.extend(self._parse_16bit_uuids(ad_data))
+        elif ad_type == ADType.SOLICITED_SERVICE_UUIDS_32BIT:
+            parsed.core.solicited_service_uuids.extend(self._parse_32bit_uuids(ad_data))
+        elif ad_type == ADType.SOLICITED_SERVICE_UUIDS_128BIT:
+            parsed.core.solicited_service_uuids.extend(self._parse_128bit_uuids(ad_data))
         elif ad_type in (ADType.SHORTENED_LOCAL_NAME, ADType.COMPLETE_LOCAL_NAME):
             try:
                 parsed.core.local_name = ad_data.decode("utf-8")

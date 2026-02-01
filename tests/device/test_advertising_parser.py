@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from bluetooth_sig.advertising import AdvertisingPDUParser
-from bluetooth_sig.types.advertising import (
-    AdvertisingDataStructures,
-    BLEAdvertisingFlags,
+from bluetooth_sig.types.advertising.ad_structures import AdvertisingDataStructures
+from bluetooth_sig.types.advertising.flags import BLEAdvertisingFlags
+from bluetooth_sig.types.advertising.pdu import (
     BLEAdvertisingPDU,
     BLEExtendedHeader,
     ExtendedHeaderFlags,
@@ -126,7 +126,7 @@ class TestAdvertisingDataStructures:
 
     def test_dataclass_with_data(self) -> None:
         """Test AdvertisingDataStructures with populated data."""
-        from bluetooth_sig.types.advertising import CoreAdvertisingData, DeviceProperties
+        from bluetooth_sig.types.advertising.ad_structures import CoreAdvertisingData, DeviceProperties
         from bluetooth_sig.types.company import CompanyIdentifier, ManufacturerData
 
         test_mfr_data = ManufacturerData(company=CompanyIdentifier.from_id(0x1234), payload=b"test_data")

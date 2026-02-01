@@ -33,7 +33,6 @@ NC='\033[0m' # No Color
 
 # Folders to lint/format
 RUFF_FOLDERS="src/ tests/ examples/"
-BLUETOOTH_SIG_FOLDERS="src/bluetooth_sig"
 EXAMPLES_FOLDERS="examples"
 TEST_FOLDERS="tests"
 

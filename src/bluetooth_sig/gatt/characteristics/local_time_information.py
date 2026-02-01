@@ -103,7 +103,6 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic[LocalTimeInformation
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
             validate: Whether to validate ranges (default True)
-            validate: Whether to validate ranges (default True)
 
         """
         # Parse time zone (sint8)

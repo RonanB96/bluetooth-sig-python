@@ -12,7 +12,6 @@ from bluetooth_sig.advertising.base import (
     DataSource,
     PayloadInterpreter,
 )
-from bluetooth_sig.advertising.result import InterpretationResult, InterpretationStatus
 from bluetooth_sig.advertising.state import DeviceAdvertisingState
 from bluetooth_sig.types.company import ManufacturerData
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -198,7 +197,7 @@ def parse_advertising_payloads(
     state: DeviceAdvertisingState | None = None,
     *,
     registry: PayloadInterpreterRegistry | None = None,
-) -> list[InterpretationResult[Any]]:
+) -> list[Any]:
     """Auto-discover and parse all payloads in an advertisement.
 
     This is the high-level "just parse everything" API.
@@ -212,7 +211,8 @@ def parse_advertising_payloads(
         registry: Interpreter registry to use (defaults to global registry).
 
     Returns:
-        List of interpretation results from all matching interpreters.
+        List of parsed data from all matching interpreters.
+        Failed interpretations are silently skipped (exceptions logged).
 
     Example:
         from bluetooth_sig.advertising import parse_advertising_payloads, PayloadContext
@@ -224,12 +224,11 @@ def parse_advertising_payloads(
             context=context,
         )
 
-        for result in results:
-            if result.is_success:
-                print(f"Parsed {result.data}")
+        for data in results:
+            print(f"Parsed {data}")
 
     """
-    results: list[InterpretationResult[Any]] = []
+    results: list[Any] = []
 
     # Use global registry if none provided
     if registry is None:
@@ -263,15 +262,10 @@ def parse_advertising_payloads(
     for interpreter_class in interpreter_classes:
         try:
             interpreter = interpreter_class(context.mac_address)
-            result = interpreter.interpret(ad_data, state)
-            results.append(result)
-        except Exception as e:  # pylint: disable=broad-exception-caught  # Catch all interpreter errors
-            # Catch interpreter errors and return as parse error
-            results.append(
-                InterpretationResult(
-                    status=InterpretationStatus.PARSE_ERROR,
-                    error_message=f"{interpreter_class.__name__}: {e}",
-                )
-            )
+            data = interpreter.interpret(ad_data, state)
+            results.append(data)
+        except Exception:  # pylint: disable=broad-exception-caught  # Catch all interpreter errors
+            # Log and continue to next interpreter
+            logger.debug("Interpreter %s failed", interpreter_class.__name__, exc_info=True)
 
     return results

@@ -124,8 +124,8 @@ advertising_data = parser.parse_advertising_data(raw_bytes)
 
 # Check for extended advertising fields
 if advertising_data.extended:
-    print(f"PHY: {advertising_data.extended.primary_phy}")
-    print(f"Data status: {advertising_data.extended.data_status}")
+    print(f"Extended payload: {advertising_data.extended.extended_payload.hex()}")
+    print(f"Aux packets: {len(advertising_data.extended.auxiliary_packets)}")
 ```
 
 ## Filtering Devices
@@ -209,23 +209,23 @@ For vendor-specific advertising protocols (BTHome, Xiaomi, RuuviTag, etc.), crea
 The library uses a two-layer architecture:
 
 1. **PDU Parsing** (`AdvertisingPDUParser`) — Raw bytes → AD structures
-2. **Data Interpretation** (`AdvertisingDataInterpreter`) — AD structures → typed results
+2. **Payload Interpretation** (`PayloadInterpreter`) — AD structures → typed results
 
 Custom interpreters implement the second layer.
 
 ### Creating a Custom Interpreter
 
 ```python
-from typing import Any
-
 import msgspec
 
 from bluetooth_sig.advertising import (
-    AdvertisingDataInterpreter,
-    AdvertisingInterpreterInfo,
     DataSource,
+    DeviceAdvertisingState,
+    InterpreterInfo,
+    PayloadInterpreter,
 )
-from bluetooth_sig.types.uuid import BluetoothUUID
+from bluetooth_sig.advertising.base import AdvertisingData
+from bluetooth_sig.types.company import ManufacturerData
 
 
 class MySensorData(msgspec.Struct):
@@ -236,35 +236,28 @@ class MySensorData(msgspec.Struct):
     battery: int
 
 
-class MySensorInterpreter(AdvertisingDataInterpreter[MySensorData]):
+class MySensorInterpreter(PayloadInterpreter[MySensorData]):
     """Interpreter for My Sensor advertising protocol."""
 
-    _info = AdvertisingInterpreterInfo(
+    _info = InterpreterInfo(
         company_id=0x1234,  # Your company ID
         name="My Sensor",
         data_source=DataSource.MANUFACTURER,
     )
 
     @classmethod
-    def supports(
-        cls,
-        manufacturer_data: dict[int, bytes],
-        service_data: dict[BluetoothUUID, bytes],
-        local_name: str | None,
-    ) -> bool:
+    def supports(cls, advertising_data: AdvertisingData) -> bool:
         """Check if this interpreter handles the advertisement."""
-        # Quick check based on company ID presence
-        return 0x1234 in manufacturer_data
+        return 0x1234 in advertising_data.manufacturer_data
 
     def interpret(
         self,
-        manufacturer_data: dict[int, bytes],
-        service_data: dict[BluetoothUUID, bytes],
-        local_name: str | None,
-        rssi: int,
+        advertising_data: AdvertisingData,
+        state: DeviceAdvertisingState,
     ) -> MySensorData:
         """Parse manufacturer data into typed result."""
-        data = manufacturer_data[0x1234]
+        manufacturer_entry = advertising_data.manufacturer_data[0x1234]
+        data = manufacturer_entry.payload
 
         # Parse your protocol (example format)
         temperature = int.from_bytes(data[0:2], "little") / 100.0
@@ -286,10 +279,12 @@ For protocols using service data instead of manufacturer data:
 import msgspec
 
 from bluetooth_sig.advertising import (
-    AdvertisingDataInterpreter,
-    AdvertisingInterpreterInfo,
     DataSource,
+    DeviceAdvertisingState,
+    InterpreterInfo,
+    PayloadInterpreter,
 )
+from bluetooth_sig.advertising.base import AdvertisingData
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 BTHOME_UUID = BluetoothUUID("0000fcd2-0000-1000-8000-00805f9b34fb")
@@ -303,32 +298,25 @@ class BTHomeData(msgspec.Struct):
     battery: int | None = None
 
 
-class BTHomeInterpreter(AdvertisingDataInterpreter[BTHomeData]):
+class BTHomeInterpreter(PayloadInterpreter[BTHomeData]):
     """Example BTHome-style interpreter."""
 
-    _info = AdvertisingInterpreterInfo(
+    _info = InterpreterInfo(
         service_uuid=BTHOME_UUID,
         name="BTHome",
         data_source=DataSource.SERVICE,
     )
 
     @classmethod
-    def supports(
-        cls,
-        manufacturer_data: dict[int, bytes],
-        service_data: dict[BluetoothUUID, bytes],
-        local_name: str | None,
-    ) -> bool:
-        return BTHOME_UUID in service_data
+    def supports(cls, advertising_data: AdvertisingData) -> bool:
+        return BTHOME_UUID in advertising_data.service_data
 
     def interpret(
         self,
-        manufacturer_data: dict[int, bytes],
-        service_data: dict[BluetoothUUID, bytes],
-        local_name: str | None,
-        rssi: int,
+        advertising_data: AdvertisingData,
+        state: DeviceAdvertisingState,
     ) -> BTHomeData:
-        data = service_data[BTHOME_UUID]
+        data = advertising_data.service_data[BTHOME_UUID]
         # Parse BTHome format (simplified example)
         return BTHomeData(temperature=22.5, humidity=45.0, battery=85)
 ```
@@ -342,8 +330,10 @@ Interpreters are automatically registered when defined (via `__init_subclass__`)
 ```python
 from bluetooth_sig.advertising import (
     AdvertisingPDUParser,
-    advertising_interpreter_registry,
+    DeviceAdvertisingState,
+    payload_interpreter_registry,
 )
+from bluetooth_sig.advertising.base import AdvertisingData
 
 parser = AdvertisingPDUParser()
 
@@ -365,74 +355,90 @@ raw_bytes = bytearray(
         0x55,  # Manufacturer data (5 bytes)
     ]
 )
-advertising_data = parser.parse_advertising_data(raw_bytes)
+pdu_data = parser.parse_advertising_data(raw_bytes)
+
+# Build AdvertisingData for interpreter routing
+# pdu_data.ad_structures.core.manufacturer_data already contains ManufacturerData objects
+advertising_data = AdvertisingData(
+    manufacturer_data=pdu_data.ad_structures.core.manufacturer_data,
+    service_data=pdu_data.ad_structures.core.service_data,
+    local_name=pdu_data.ad_structures.core.local_name,
+    rssi=pdu_data.rssi,
+)
 
 # Find interpreter for this advertisement
-interpreter_class = advertising_interpreter_registry.find_interpreter_class(
-    manufacturer_data=advertising_data.ad_structures.core.manufacturer_data,
-    service_data=advertising_data.ad_structures.core.service_data,
-    local_name=advertising_data.ad_structures.core.local_name,
-)
+interpreter_class = payload_interpreter_registry.find_interpreter_class(advertising_data)
 
 if interpreter_class:
     # Create interpreter instance for this device
     interpreter = interpreter_class(mac_address="AA:BB:CC:DD:EE:FF")
 
+    # Create state for this device (caller-managed)
+    state = DeviceAdvertisingState()
+
     # Interpret the data
-    result = interpreter.interpret(
-        manufacturer_data=advertising_data.ad_structures.core.manufacturer_data,
-        service_data=advertising_data.ad_structures.core.service_data,
-        local_name=advertising_data.ad_structures.core.local_name,
-        rssi=advertising_data.rssi or 0,
-    )
+    result = interpreter.interpret(advertising_data, state)
     print(f"Interpreted: {result}")
 ```
 
 ### Encrypted Advertising
 
-For protocols with encrypted payloads, pass a bindkey:
+For protocols with encrypted payloads, set the bindkey in the device state:
 
 ```python
 # SKIP: Depends on MySensorInterpreter class defined in previous examples
-interpreter = MySensorInterpreter(
-    mac_address="AA:BB:CC:DD:EE:FF",
-    bindkey=bytes.fromhex("0123456789ABCDEF0123456789ABCDEF"),
-)
+from bluetooth_sig.advertising import DeviceAdvertisingState
 
-# Access bindkey in interpret() method
-# self.bindkey contains the encryption key
+interpreter = MySensorInterpreter(mac_address="AA:BB:CC:DD:EE:FF")
+
+# Create state with bindkey for encrypted devices
+state = DeviceAdvertisingState()
+state.encryption.bindkey = bytes.fromhex("0123456789ABCDEF0123456789ABCDEF")
+
+# The interpret() method checks state.encryption.bindkey for decryption
 ```
 
 ### Stateful Interpreters
 
-Interpreters maintain state across calls (useful for packet counters, replay protection):
+State is managed externally by the caller via `DeviceAdvertisingState`:
 
 ```python
-class StatefulInterpreter(AdvertisingDataInterpreter[MySensorData]):
-    def interpret(self, manufacturer_data, service_data, local_name, rssi):
-        # Access persistent state
-        last_packet_id = self.state.get("last_packet_id", 0)
+# SKIP: Depends on classes defined in previous examples
+from bluetooth_sig.advertising import DeviceAdvertisingState
+from bluetooth_sig.advertising.base import AdvertisingData
+
+
+class StatefulInterpreter(PayloadInterpreter[MySensorData]):
+    def interpret(
+        self,
+        advertising_data: AdvertisingData,
+        state: DeviceAdvertisingState,
+    ) -> MySensorData:
+        # Access packet state from caller-managed state
+        last_packet_id = state.packets.last_packet_id or 0
 
         # Parse current packet
-        current_id = manufacturer_data[0x1234][0]
+        manufacturer_entry = advertising_data.manufacturer_data[0x1234]
+        current_id = manufacturer_entry.payload[0]
 
         if current_id <= last_packet_id:
             raise ValueError("Replay detected")
 
-        # Update state
-        self.state["last_packet_id"] = current_id
+        # Update state (mutable, changes visible to caller)
+        state.packets.last_packet_id = current_id
 
         # Continue parsing...
+        return MySensorData(temperature=0.0, humidity=0.0, battery=0)
 ```
 
 ### Unregistering Interpreters
 
 ```python
 # SKIP: Depends on MySensorInterpreter class defined in previous examples
-from bluetooth_sig.advertising import advertising_interpreter_registry
+from bluetooth_sig.advertising import payload_interpreter_registry
 
 # Remove a specific interpreter
-advertising_interpreter_registry.unregister(MySensorInterpreter)
+payload_interpreter_registry.unregister(MySensorInterpreter)
 ```
 
 ## See Also

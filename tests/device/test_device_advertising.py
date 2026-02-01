@@ -5,10 +5,11 @@ from __future__ import annotations
 from unittest.mock import Mock
 
 import msgspec
+import pytest
 
 from bluetooth_sig.advertising.base import AdvertisingData, InterpreterInfo, PayloadInterpreter
+from bluetooth_sig.advertising.exceptions import AdvertisingParseError
 from bluetooth_sig.advertising.registry import PayloadInterpreterRegistry
-from bluetooth_sig.advertising.result import InterpretationResult, InterpretationStatus
 from bluetooth_sig.advertising.state import DeviceAdvertisingState
 from bluetooth_sig.device.advertising import DeviceAdvertising
 from bluetooth_sig.types.company import ManufacturerData
@@ -38,20 +39,18 @@ class MockInterpreter(PayloadInterpreter[SensorDataStub]):
         self,
         advertising_data: AdvertisingData,
         state: DeviceAdvertisingState,
-    ) -> InterpretationResult[SensorDataStub]:
+    ) -> SensorDataStub:
         manufacturer_data = advertising_data.manufacturer_data.get(0x1234)
         if manufacturer_data is None or len(manufacturer_data.payload) < 2:
-            return InterpretationResult(
-                status=InterpretationStatus.PARSE_ERROR,
-                error_message="Payload too short",
+            raise AdvertisingParseError(
+                message="Payload too short",
+                interpreter_name="MockInterpreter",
             )
 
         temp = int.from_bytes(manufacturer_data.payload[0:2], "little", signed=True) / 100.0
-        return InterpretationResult(
-            status=InterpretationStatus.SUCCESS,
-            data=SensorDataStub(temperature=temp),
-            updated_device_type="Mock Sensor",
-        )
+        # Update state with device type
+        state.device_type = "Mock Sensor"
+        return SensorDataStub(temperature=temp)
 
 
 class TestDeviceAdvertisingInit:
@@ -100,7 +99,8 @@ class TestDeviceAdvertisingInterpreterRegistration:
         adv = DeviceAdvertising("AA:BB:CC:DD:EE:FF", mock_cm)
         interpreter = MockInterpreter("AA:BB:CC:DD:EE:FF")
 
-        adv.register_interpreter("mock", interpreter)
+        # Variance: MockInterpreter[SensorDataStub] not directly assignable to PayloadInterpreter[object]
+        adv.register_interpreter("mock", interpreter)  # type: ignore[arg-type]
 
         assert adv.get_interpreter("mock") is interpreter
 
@@ -114,12 +114,10 @@ class TestDeviceAdvertisingInterpreterRegistration:
 class TestDeviceAdvertisingProcess:
     """Tests for process method."""
 
-    def test_process_with_named_interpreter(self) -> None:
-        """Test processing with a specific interpreter by name."""
+    def test_process_with_interpreter_class(self) -> None:
+        """Test processing with a specific interpreter class (type-safe)."""
         mock_cm = Mock()
         adv = DeviceAdvertising("AA:BB:CC:DD:EE:FF", mock_cm)
-        interpreter = MockInterpreter("AA:BB:CC:DD:EE:FF")
-        adv.register_interpreter("mock", interpreter)
 
         # Temperature: 2550 = 25.50°C
         payload = b"\xf6\x09"
@@ -127,32 +125,17 @@ class TestDeviceAdvertisingProcess:
             manufacturer_data={0x1234: ManufacturerData.from_id_and_payload(0x1234, payload)},
             service_data={},
         )
-        result = adv.process(ad_data, interpreter_name="mock")
+        result = adv.process(ad_data, interpreter=MockInterpreter)
 
-        assert result.status == InterpretationStatus.SUCCESS
-        assert result.data is not None
-        assert result.data.temperature == 25.50
-
-    def test_process_with_unknown_interpreter_name(self) -> None:
-        """Test processing with unknown interpreter name returns error."""
-        mock_cm = Mock()
-        adv = DeviceAdvertising("AA:BB:CC:DD:EE:FF", mock_cm)
-
-        ad_data = AdvertisingData(
-            manufacturer_data={0x1234: ManufacturerData.from_id_and_payload(0x1234, b"\x00\x00")},
-            service_data={},
-        )
-        result = adv.process(ad_data, interpreter_name="nonexistent")
-
-        assert result.status == InterpretationStatus.PARSE_ERROR
-        assert "not registered" in (result.error_message or "")
+        assert result is not None
+        assert result.temperature == 25.50
 
     def test_process_auto_select_interpreter(self) -> None:
         """Test automatic interpreter selection."""
         mock_cm = Mock()
         adv = DeviceAdvertising("AA:BB:CC:DD:EE:FF", mock_cm)
         interpreter = MockInterpreter("AA:BB:CC:DD:EE:FF")
-        adv.register_interpreter("mock", interpreter)
+        adv.register_interpreter("mock", interpreter)  # type: ignore[arg-type]
 
         payload = b"\xf6\\x09"
         ad_data = AdvertisingData(
@@ -161,10 +144,10 @@ class TestDeviceAdvertisingProcess:
         )
         result = adv.process(ad_data)
 
-        assert result.status == InterpretationStatus.SUCCESS
+        assert result is not None
 
     def test_process_no_matching_interpreter(self) -> None:
-        """Test processing with no matching interpreter."""
+        """Test processing with no matching interpreter raises error."""
         mock_cm = Mock()
         adv = DeviceAdvertising("AA:BB:CC:DD:EE:FF", mock_cm)
 
@@ -172,10 +155,11 @@ class TestDeviceAdvertisingProcess:
             manufacturer_data={0x5678: ManufacturerData.from_id_and_payload(0x5678, b"\x00\x00")},
             service_data={},
         )
-        result = adv.process(ad_data)
 
-        assert result.status == InterpretationStatus.PARSE_ERROR
-        assert "No interpreter found" in (result.error_message or "")
+        with pytest.raises(AdvertisingParseError) as exc_info:
+            adv.process(ad_data)
+
+        assert "No interpreter found" in str(exc_info.value)
 
     def test_process_with_registry_auto_detection(self) -> None:
         """Test auto-detection via registry."""
@@ -194,14 +178,14 @@ class TestDeviceAdvertisingProcess:
         )
         result = adv.process(ad_data)
 
-        assert result.status == InterpretationStatus.SUCCESS
+        assert result is not None
 
     def test_process_updates_state_on_success(self) -> None:
         """Test that successful processing updates state."""
         mock_cm = Mock()
         adv = DeviceAdvertising("AA:BB:CC:DD:EE:FF", mock_cm)
         interpreter = MockInterpreter("AA:BB:CC:DD:EE:FF")
-        adv.register_interpreter("mock", interpreter)
+        adv.register_interpreter("mock", interpreter)  # type: ignore[arg-type]
 
         payload = b"\xf6\\x09"
         ad_data = AdvertisingData(
@@ -218,16 +202,16 @@ class TestDeviceAdvertisingProcess:
         mock_cm = Mock()
         adv = DeviceAdvertising("AA:BB:CC:DD:EE:FF", mock_cm)
         interpreter = MockInterpreter("AA:BB:CC:DD:EE:FF")
-        adv.register_interpreter("mock", interpreter)
+        adv.register_interpreter("mock", interpreter)  # type: ignore[arg-type]
 
         # Too short payload
         ad_data = AdvertisingData(
             manufacturer_data={0x1234: ManufacturerData.from_id_and_payload(0x1234, b"\x00")},
             service_data={},
         )
-        result = adv.process(ad_data)
 
-        assert result.status == InterpretationStatus.PARSE_ERROR
+        with pytest.raises(AdvertisingParseError):
+            adv.process(ad_data)
 
 
 class TestDeviceAdvertisingStateManagement:
@@ -246,7 +230,7 @@ class TestDeviceAdvertisingStateManagement:
         mock_cm = Mock()
         adv = DeviceAdvertising("AA:BB:CC:DD:EE:FF", mock_cm)
         interpreter = MockInterpreter("AA:BB:CC:DD:EE:FF")
-        adv.register_interpreter("mock", interpreter)
+        adv.register_interpreter("mock", interpreter)  # type: ignore[arg-type]
 
         # First call
         ad_data = AdvertisingData(

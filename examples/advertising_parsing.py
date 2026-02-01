@@ -13,12 +13,12 @@ from typing import cast
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.advertising import AdvertisingPDUParser
 from bluetooth_sig.types import ManufacturerData
-from bluetooth_sig.types.advertising import (
-    AdvertisingData,
+from bluetooth_sig.types.advertising.ad_structures import (
     AdvertisingDataStructures,
-    BLEAdvertisingFlags,
     MeshAndBroadcastData,
 )
+from bluetooth_sig.types.advertising.flags import BLEAdvertisingFlags
+from bluetooth_sig.types.advertising.result import AdvertisingData
 from bluetooth_sig.types.appearance import AppearanceData
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -462,7 +462,7 @@ async def main(
         print("Mock BLE Device Results with SIG Parsing:")
         print()
 
-        from bluetooth_sig.types.advertising import CoreAdvertisingData, DeviceProperties
+        from bluetooth_sig.types.advertising.ad_structures import CoreAdvertisingData, DeviceProperties
 
         parsed_data = AdvertisingData(
             raw_data=b"mock_data",
@@ -494,7 +494,7 @@ async def main(
         print("Mock Extended BLE Device Results with SIG Parsing:")
         print()
 
-        from bluetooth_sig.types.advertising import (
+        from bluetooth_sig.types.advertising.ad_structures import (
             CoreAdvertisingData,
             DeviceProperties,
             ExtendedAdvertisingData,
