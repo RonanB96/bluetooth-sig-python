@@ -40,6 +40,7 @@ class BluetoothUUID:
     SIG_SERVICE_MAX = 0x185C  # 6236
 
     UUID_SHORT_LEN = 4
+    UUID_32BIT_LEN = 8
     UUID_FULL_LEN = 32
 
     def __init__(self, uuid: str | int | BluetoothUUID) -> None:
@@ -79,42 +80,57 @@ class BluetoothUUID:
         if not re.match(r"^[0-9A-F]+$", cleaned):
             raise ValueError(f"Invalid UUID format: {uuid}")
 
-        # Determine if it's 16-bit or 128-bit
+        # Determine if it's 16-bit, 32-bit, or 128-bit
         if len(cleaned) == BluetoothUUID.UUID_SHORT_LEN:
-            # 16-bit UUID - expand to 128-bit
+            # 16-bit UUID - expand to 128-bit using SIG base
             return f"0000{cleaned}{BluetoothUUID.SIG_BASE_SUFFIX}"
+        if len(cleaned) == BluetoothUUID.UUID_32BIT_LEN:
+            # 32-bit UUID - expand to 128-bit using SIG base
+            return f"{cleaned}{BluetoothUUID.SIG_BASE_SUFFIX}"
         if len(cleaned) == BluetoothUUID.UUID_FULL_LEN:
             # Already 128-bit
             return cleaned
-        raise ValueError(f"Invalid UUID length: {len(cleaned)} (expected 4 or 32 characters)")
+        raise ValueError(f"Invalid UUID length: {len(cleaned)} (expected 4, 8, or 32 characters)")
 
     @staticmethod
     def _normalize_uuid_from_int(uuid_int: int) -> str:
-        """Normalize UUID from integer to uppercase hex string."""
+        """Normalize UUID from integer to uppercase hex string.
+
+        16-bit and 32-bit UUIDs are expanded using the Bluetooth SIG base UUID:
+        - 16-bit 0x180F becomes 0000180F-0000-1000-8000-00805F9B34FB
+        - 32-bit 0x12345678 becomes 12345678-0000-1000-8000-00805F9B34FB
+
+        """
         if uuid_int < 0:
             raise ValueError(f"UUID integer cannot be negative: {uuid_int}")
 
         # Convert to hex and remove 0x prefix
         hex_str = hex(uuid_int)[2:].upper()
 
-        # Pad to appropriate length
+        # Determine UUID type and expand appropriately
         if len(hex_str) <= BluetoothUUID.UUID_SHORT_LEN:
-            # 16-bit UUID
+            # 16-bit UUID - expand to full 128-bit using SIG base
             hex_str = hex_str.zfill(BluetoothUUID.UUID_SHORT_LEN)
-        elif len(hex_str) <= BluetoothUUID.UUID_FULL_LEN:
+            return f"0000{hex_str}{BluetoothUUID.SIG_BASE_SUFFIX}"
+        if len(hex_str) <= BluetoothUUID.UUID_32BIT_LEN:
+            # 32-bit UUID - expand to full 128-bit using SIG base
+            hex_str = hex_str.zfill(BluetoothUUID.UUID_32BIT_LEN)
+            return f"{hex_str}{BluetoothUUID.SIG_BASE_SUFFIX}"
+        if len(hex_str) <= BluetoothUUID.UUID_FULL_LEN:
             # 128-bit UUID
-            hex_str = hex_str.zfill(BluetoothUUID.UUID_FULL_LEN)
-        else:
-            raise ValueError(f"UUID integer too large: {uuid_int}")
+            return hex_str.zfill(BluetoothUUID.UUID_FULL_LEN)
 
-        return hex_str
+        raise ValueError(f"UUID integer too large: {uuid_int}")
 
     @staticmethod
     def _is_valid_normalized_uuid(normalized: str) -> bool:
         """Check if normalized UUID string is valid."""
-        return len(normalized) in (BluetoothUUID.UUID_SHORT_LEN, BluetoothUUID.UUID_FULL_LEN) and bool(
-            re.match(r"^[0-9A-F]+$", normalized)
+        valid_lengths = (
+            BluetoothUUID.UUID_SHORT_LEN,
+            BluetoothUUID.UUID_32BIT_LEN,
+            BluetoothUUID.UUID_FULL_LEN,
         )
+        return len(normalized) in valid_lengths and bool(re.match(r"^[0-9A-F]+$", normalized))
 
     @property
     def normalized(self) -> str:
@@ -281,11 +297,11 @@ class BluetoothUUID:
         try:
             # Use existing short_form property instead of manual string slicing
             uuid_int = int(self.short_form, 16)
-
-            # Check if it's in the SIG characteristic range using constants
-            return self.SIG_CHARACTERISTIC_MIN <= uuid_int <= self.SIG_CHARACTERISTIC_MAX
         except ValueError:
             return False
+
+        # Check if it's in the SIG characteristic range using constants
+        return self.SIG_CHARACTERISTIC_MIN <= uuid_int <= self.SIG_CHARACTERISTIC_MAX
 
     def is_sig_service(self) -> bool:
         """Check if this UUID is a Bluetooth SIG assigned service UUID.
@@ -312,8 +328,8 @@ class BluetoothUUID:
         try:
             # Use existing short_form property instead of manual string slicing
             uuid_int = int(self.short_form, 16)
-
-            # Check if it's in the SIG service range using constants
-            return self.SIG_SERVICE_MIN <= uuid_int <= self.SIG_SERVICE_MAX
         except ValueError:
             return False
+
+        # Check if it's in the SIG service range using constants
+        return self.SIG_SERVICE_MIN <= uuid_int <= self.SIG_SERVICE_MAX

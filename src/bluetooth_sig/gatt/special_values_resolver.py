@@ -61,7 +61,7 @@ class SpecialValueResolver:
     # -------------------------- resolution API ----------------------------
     def resolve(self, raw_value: int) -> SpecialValueResult | None:
         """Return SpecialValueResult if raw_value is special, otherwise None."""
-        # priority: user_overrides > class_rules > spec_rules
+        # Resolution priority: user_overrides > class_rules > spec_rules
         if raw_value in self._user_overrides:
             rule = self._user_overrides[raw_value]
             if rule is None:  # explicit disable

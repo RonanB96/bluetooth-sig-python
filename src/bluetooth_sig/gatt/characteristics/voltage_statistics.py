@@ -55,13 +55,17 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic[VoltageStatisticsData])
     # Override since decode_value returns structured VoltageStatisticsData
     _manual_value_type: ValueType | str | None = ValueType.DICT
     expected_length: int = 6  # Minimum(2) + Maximum(2) + Average(2)
+    min_length: int = 6
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> VoltageStatisticsData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> VoltageStatisticsData:
         """Parse voltage statistics data (3x uint16 in units of 1/64 V).
 
         Args:
             data: Raw bytes from the characteristic read.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             VoltageStatisticsData with 'minimum', 'maximum', and 'average' voltage values in Volts.
@@ -72,9 +76,6 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic[VoltageStatisticsData])
             ValueError: If data is insufficient.
 
         """
-        if len(data) < 6:
-            raise ValueError("Voltage statistics data must be at least 6 bytes")
-
         # Convert 3x uint16 (little endian) to voltage statistics in Volts
         min_voltage_raw = DataParser.parse_int16(data, 0, signed=False)
         max_voltage_raw = DataParser.parse_int16(data, 2, signed=False)

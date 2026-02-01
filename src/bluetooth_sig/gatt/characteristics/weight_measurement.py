@@ -9,7 +9,7 @@ import msgspec
 
 from bluetooth_sig.types.units import HeightUnit, MeasurementSystem, WeightUnit
 
-from ..constants import UINT8_MAX
+from ..constants import UINT8_MAX, UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
@@ -51,10 +51,9 @@ class WeightMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylin
             # Allow any non-negative weight (no SIG-specified range)
             if self.weight < 0:
                 raise ValueError(f"Weight in kg must be non-negative, got {self.weight}")
-        else:  # imperial
-            # Allow any non-negative weight (no SIG-specified range)
-            if self.weight < 0:
-                raise ValueError(f"Weight in lb must be non-negative, got {self.weight}")
+        # Allow any non-negative weight (no SIG-specified range)
+        elif self.weight < 0:
+            raise ValueError(f"Weight in lb must be non-negative, got {self.weight}")
 
         # Validate height_unit consistency if height present
         if self.height is not None:
@@ -68,21 +67,17 @@ class WeightMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylin
                 # Allow any non-negative height (no SIG-specified range)
                 if self.height < 0:
                     raise ValueError(f"Height in m must be non-negative, got {self.height}")
-            else:  # imperial
-                # Allow any non-negative height (no SIG-specified range)
-                if self.height < 0:
-                    raise ValueError(f"Height in in must be non-negative, got {self.height}")
+            # Allow any non-negative height (no SIG-specified range)
+            elif self.height < 0:
+                raise ValueError(f"Height in in must be non-negative, got {self.height}")
 
         # Validate BMI if present
-        if self.bmi is not None:
-            # Allow any non-negative BMI (no SIG-specified range)
-            if self.bmi < 0:
-                raise ValueError(f"BMI must be non-negative, got {self.bmi}")
+        if self.bmi is not None and self.bmi < 0:
+            raise ValueError(f"BMI must be non-negative, got {self.bmi}")
 
         # Validate user_id if present
-        if self.user_id is not None:
-            if not 0 <= self.user_id <= 255:
-                raise ValueError(f"User ID must be 0-255, got {self.user_id}")
+        if self.user_id is not None and not 0 <= self.user_id <= UINT8_MAX:
+            raise ValueError(f"User ID must be 0-{UINT8_MAX}, got {self.user_id}")
 
 
 class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData]):
@@ -100,7 +95,9 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
     max_length: int = 21  # + Timestamp(7) + UserID(1) + BMI(2) + Height(2) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> WeightMeasurementData:  # pylint: disable=too-many-locals
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> WeightMeasurementData:  # pylint: disable=too-many-locals  # Weight measurement with optional fields
         """Parse weight measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Weight(2) + [Timestamp(7)] + [User ID(1)] +
@@ -109,6 +106,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             WeightMeasurementData containing parsed weight measurement data.
@@ -117,15 +115,10 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 3:
-            raise ValueError("Weight Measurement data must be at least 3 bytes")
-
         flags = WeightMeasurementFlags(data[0])
         offset = 1
 
         # Parse weight value (uint16 with 0.005 kg resolution)
-        if len(data) < offset + 2:
-            raise ValueError("Insufficient data for weight value")
         weight_raw = DataParser.parse_int16(data, offset, signed=False)
         offset += 2
 
@@ -213,7 +206,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
         else:  # SI units (kilograms)
             weight_raw = round(data.weight / 0.005)  # 0.005 kg resolution
 
-        if not 0 <= weight_raw <= 0xFFFF:
+        if not 0 <= weight_raw <= UINT16_MAX:
             raise ValueError(f"Weight value {weight_raw} exceeds uint16 range")
 
         # Start with flags and weight
@@ -231,7 +224,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
 
         if data.bmi is not None:
             bmi_raw = round(data.bmi / 0.1)  # 0.1 resolution
-            if not 0 <= bmi_raw <= 0xFFFF:
+            if not 0 <= bmi_raw <= UINT16_MAX:
                 raise ValueError(f"BMI value {bmi_raw} exceeds uint16 range")
             result.extend(DataParser.encode_int16(bmi_raw, signed=False))
 
@@ -241,7 +234,7 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
             else:  # SI units (meters)
                 height_raw = round(data.height / 0.001)  # 0.001 m resolution
 
-            if not 0 <= height_raw <= 0xFFFF:
+            if not 0 <= height_raw <= UINT16_MAX:
                 raise ValueError(f"Height value {height_raw} exceeds uint16 range")
             result.extend(DataParser.encode_int16(height_raw, signed=False))
 

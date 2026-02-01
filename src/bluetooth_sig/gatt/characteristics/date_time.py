@@ -21,12 +21,15 @@ class DateTimeCharacteristic(BaseCharacteristic[datetime]):
     _manual_value_type = ValueType.DATETIME
     expected_length = 7
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> datetime:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> datetime:
         """Parse date time value.
 
         Args:
             data: Raw bytearray from BLE characteristic (7 bytes, validated by base class).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             Python datetime object with parsed date and time.

@@ -45,8 +45,6 @@ class ProcessTolerancesDescriptor(BaseDescriptor):
         """
         # Process Tolerances format: tolerance_min + tolerance_max
         # For now, assume 4 bytes total (2 bytes each for uint16)
-        if len(data) != 4:
-            raise ValueError(f"Process Tolerances data expected 4 bytes, got {len(data)}")
 
         tolerance_min = DataParser.parse_int16(data, offset=0, endian="little")
         tolerance_max = DataParser.parse_int16(data, offset=2, endian="little")

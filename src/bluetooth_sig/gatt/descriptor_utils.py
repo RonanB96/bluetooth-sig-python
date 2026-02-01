@@ -105,7 +105,7 @@ def get_user_description_from_context(ctx: CharacteristicContext | None = None) 
     return None
 
 
-def validate_value_against_descriptor_range(value: int | float, ctx: CharacteristicContext | None = None) -> bool:
+def validate_value_against_descriptor_range(value: float, ctx: CharacteristicContext | None = None) -> bool:
     """Validate a value against descriptor-defined valid range.
 
     Args:

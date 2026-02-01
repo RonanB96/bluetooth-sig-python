@@ -66,9 +66,7 @@ def _fake_generate_pydeps_svg(_package: str, _out_svg: Path, _max_bacon: int = 2
     return True
 
 
-def test_generate_class_puml_api_and_files(  # noqa: F811
-    fake_package: Path, output_puml_dir: Path, monkeypatch: MonkeyPatch
-) -> None:
+def test_generate_class_puml_api_and_files(fake_package: Path, output_puml_dir: Path, monkeypatch: MonkeyPatch) -> None:
     """Test that PUML files are generated when pyreverse API is available."""
     monkeypatch.setattr(gen, "_try_pyreverse", _mock_pyreverse_success)
     # Ensure plantuml rendering is not attempted in this unit test;
@@ -80,7 +78,7 @@ def test_generate_class_puml_api_and_files(  # noqa: F811
     assert "class Fake" in classes_file.read_text(), "PUML content should contain expected class"
 
 
-def test_generate_class_puml_missing_tools(  # noqa: F811
+def test_generate_class_puml_missing_tools(
     missing_package: Path, missing_output_puml_dir: Path, monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]
 ) -> None:
     """Test behaviour when pyreverse tools are not available."""
@@ -93,7 +91,7 @@ def test_generate_class_puml_missing_tools(  # noqa: F811
     assert PUML_NOT_AVAILABLE_MESSAGE in captured.out, "Should warn about missing tools"
 
 
-def test_generate_class_puml_pyreverse_success(  # noqa: F811
+def test_generate_class_puml_pyreverse_success(
     fake_package: Path, output_puml_dir: Path, monkeypatch: MonkeyPatch
 ) -> None:
     """When pyreverse is available it should be used and write a PUML file."""

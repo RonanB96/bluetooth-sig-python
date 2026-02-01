@@ -23,11 +23,11 @@ class TestIMDTriggerSettingDescriptor:
     def test_parse_invalid_length(self) -> None:
         """Test parsing IMD trigger setting with invalid length."""
         imd = IMDTriggerSettingDescriptor()
-        data = b"\x01\x00\x00"  # Too long (3 bytes instead of 2)
+        data = b"\x01"  # Too short (1 byte instead of 2)
 
         result = imd.parse_value(data)
         assert result.parse_success is False
-        assert "IMD Trigger Setting data must be exactly 2 bytes" in result.error_message
+        assert "need 2 bytes, got 1" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that IMD Trigger Setting has correct UUID."""

@@ -10,7 +10,10 @@ from __future__ import annotations
 from typing import Any
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.gatt.exceptions import CharacteristicParseError, SpecialValueDetected
+from bluetooth_sig.gatt.exceptions import (
+    CharacteristicParseError,
+    SpecialValueDetectedError,
+)
 from bluetooth_sig.types.uuid import BluetoothUUID
 from examples.utils.models import ReadResult
 
@@ -43,7 +46,7 @@ async def parse_and_display_results(
             unit = char_info.unit if char_info else ""
             unit_str = f" {unit}" if unit else ""
             print(f"   ✅ {name}: {value}{unit_str}")
-        except SpecialValueDetected as e:
+        except SpecialValueDetectedError as e:
             read_result.parsed = e.special_value
             print(f"   ⚠️ {e.name}: {e.special_value.meaning}")
         except CharacteristicParseError as e:
@@ -90,7 +93,7 @@ def parse_and_display_results_sync(
             unit = char_info.unit if char_info else ""
             unit_str = f" {unit}" if unit else ""
             print(f"   ✅ {name}: {value}{unit_str}")
-        except SpecialValueDetected as e:
+        except SpecialValueDetectedError as e:
             read_result.parsed = e.special_value
             print(f"   ⚠️ {e.name}: {e.special_value.meaning}")
         except CharacteristicParseError as e:
@@ -128,10 +131,7 @@ def display_parsed_results(
     # Normalize BluetoothUUID keys to short-string form if necessary
     normalized: dict[str, dict[str, Any] | Any] = {}
     for key, value in results.items():
-        if isinstance(key, BluetoothUUID):
-            key_str = str(key)
-        else:
-            key_str = str(key)
+        key_str = str(key)
         normalized[key_str] = value
 
     for uuid_short, result in normalized.items():
@@ -165,7 +165,7 @@ def _parse_characteristic_data(
             "properties": [],
             "raw_data": raw_data,
         }
-    except SpecialValueDetected as e:
+    except SpecialValueDetectedError as e:
         return {
             "uuid": char_uuid_short,
             "name": e.name,

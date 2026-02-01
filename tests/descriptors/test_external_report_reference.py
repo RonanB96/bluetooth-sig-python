@@ -22,11 +22,11 @@ class TestExternalReportReferenceDescriptor:
     def test_parse_invalid_length(self) -> None:
         """Test parsing external report reference with invalid length."""
         err = ExternalReportReferenceDescriptor()
-        data = b"\x01\x00\x02"  # Too long
+        data = b"\x01"  # Too short (1 byte instead of 2)
 
         result = err.parse_value(data)
         assert result.parse_success is False
-        assert "External Report Reference data must be exactly 2 bytes" in result.error_message
+        assert "need 2 bytes, got 1" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that External Report Reference has correct UUID."""

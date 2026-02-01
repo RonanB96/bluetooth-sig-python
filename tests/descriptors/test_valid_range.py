@@ -27,7 +27,7 @@ class TestValidRangeDescriptor:
 
         result = valid_range.parse_value(data)
         assert result.parse_success is False
-        assert "Valid Range data expected 4 bytes, got 2" in result.error_message
+        assert "need 2 bytes, got 0" in result.error_message
 
     def test_validate_value_in_range(self) -> None:
         """Test validating a value within range."""

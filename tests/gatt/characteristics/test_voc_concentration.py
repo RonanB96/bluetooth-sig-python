@@ -50,17 +50,17 @@ class TestVOCConcentrationCharacteristic(CommonCharacteristicTests):
 
     def test_voc_concentration_special_values(self, characteristic: VOCConcentrationCharacteristic) -> None:
         """Test VOC concentration special values per SIG specification."""
-        from bluetooth_sig.gatt.exceptions import SpecialValueDetected
+        from bluetooth_sig.gatt.exceptions import SpecialValueDetectedError
 
         # Test 0xFFFE (value is 65534 or greater per SIG spec)
         test_data = bytearray([0xFE, 0xFF])
-        with pytest.raises(SpecialValueDetected) as exc_info:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
             characteristic.parse_value(test_data)
         assert exc_info.value.raw_int == 65534
 
         # Test 0xFFFF (value is not known per SIG spec)
         test_data = bytearray([0xFF, 0xFF])
-        with pytest.raises(SpecialValueDetected) as exc_info:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
             characteristic.parse_value(test_data)
         assert exc_info.value.raw_int == 65535
 

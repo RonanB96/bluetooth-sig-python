@@ -113,6 +113,8 @@ class BaseUUIDRegistry(RegistryMixin, ABC, Generic[U]):
         """Initialize the registry."""
         self._lock = threading.RLock()
         self._loaded: bool = False  # Initialized in base class, accessed by subclasses
+        # Performance: Use str keys instead of BluetoothUUID for O(1) dict lookups
+        # String hashing is faster and these dicts are accessed frequently
         self._canonical_store: dict[str, U] = {}  # normalized_uuid -> info
         self._alias_index: dict[str, str] = {}  # lowercased_alias -> normalized_uuid
         self._runtime_overrides: dict[str, U] = {}  # normalized_uuid -> original SIG info
@@ -243,24 +245,25 @@ class BaseUUIDRegistry(RegistryMixin, ABC, Generic[U]):
     def _create_runtime_info(self, entry: object, uuid: BluetoothUUID) -> U:
         """Create runtime info from entry."""
 
-    def remove_runtime_override(self, normalized_uuid: str) -> None:
+    def remove_runtime_override(self, normalized_uuid: BluetoothUUID) -> None:
         """Remove runtime override, restoring original SIG info if available.
 
         Args:
-            normalized_uuid: Normalized UUID string
+            normalized_uuid: UUID to remove override for
         """
         self._ensure_loaded()
         with self._lock:
             # Restore original SIG info if we have it
-            if normalized_uuid in self._runtime_overrides:
-                original_info = self._runtime_overrides.pop(normalized_uuid)
+            uuid_key = normalized_uuid.full_form
+            if uuid_key in self._runtime_overrides:
+                original_info = self._runtime_overrides.pop(uuid_key)
                 self._store_info(original_info)
-            elif normalized_uuid in self._canonical_store:
+            elif uuid_key in self._canonical_store:
                 # Remove runtime entry entirely
                 # NOTE: Runtime tracking is registry-specific (e.g., uuid_registry uses _runtime_uuids set)
-                del self._canonical_store[normalized_uuid]
+                del self._canonical_store[uuid_key]
                 # Remove associated aliases
-                aliases_to_remove = [alias for alias, key in self._alias_index.items() if key == normalized_uuid]
+                aliases_to_remove = [alias for alias, key in self._alias_index.items() if key == uuid_key]
                 for alias in aliases_to_remove:
                     del self._alias_index[alias]
 
@@ -398,21 +401,11 @@ class BaseUUIDClassRegistry(RegistryMixin, ABC, Generic[E, C]):
 
         # Validate that cls is actually a subclass of the base class
         base_class = self._get_base_class()
-        try:
-            if not issubclass(cls, base_class):
-                raise TypeError(f"Registered class must inherit from {base_class.__name__}, got {cls.__name__}")
-        except TypeError:
-            # issubclass raises TypeError if cls is not a class
-            raise TypeError(
-                f"Registered class must inherit from {base_class.__name__}, "
-                f"got non-class object of type {type(cls).__name__}"
-            ) from None
+        if not issubclass(cls, base_class):
+            raise TypeError(f"Registered class must inherit from {base_class.__name__}, got {cls.__name__}")
 
         # Normalize to BluetoothUUID
-        if isinstance(uuid, BluetoothUUID):
-            bt_uuid = uuid
-        else:
-            bt_uuid = BluetoothUUID(uuid)
+        bt_uuid = uuid if isinstance(uuid, BluetoothUUID) else BluetoothUUID(uuid)
 
         # Check for SIG class collision
         sig_classes = self._get_sig_classes_map()
@@ -444,10 +437,7 @@ class BaseUUIDClassRegistry(RegistryMixin, ABC, Generic[E, C]):
         Args:
             uuid: The UUID to unregister (string, BluetoothUUID, or int)
         """
-        if isinstance(uuid, BluetoothUUID):
-            bt_uuid = uuid
-        else:
-            bt_uuid = BluetoothUUID(uuid)
+        bt_uuid = uuid if isinstance(uuid, BluetoothUUID) else BluetoothUUID(uuid)
         with self._lock:
             self._custom_classes.pop(bt_uuid, None)
 
@@ -465,10 +455,7 @@ class BaseUUIDClassRegistry(RegistryMixin, ABC, Generic[E, C]):
         self._ensure_loaded()
 
         # Normalize to BluetoothUUID
-        if isinstance(uuid, BluetoothUUID):
-            bt_uuid = uuid
-        else:
-            bt_uuid = BluetoothUUID(uuid)
+        bt_uuid = uuid if isinstance(uuid, BluetoothUUID) else BluetoothUUID(uuid)
 
         # Check custom classes first
         with self._lock:

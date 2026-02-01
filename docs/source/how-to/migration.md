@@ -57,12 +57,6 @@ async with BleakClient(device_address) as client:
 import asyncio
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
-
-# ============================================
-# SIMULATED DATA - Replace with actual device
-# ============================================
-SIMULATED_DEVICE_ADDRESS = "AA:BB:CC:DD:EE:FF"
 
 
 async def main():
@@ -70,14 +64,13 @@ async def main():
 
     # Note: This is a simplified example - in production, use actual BleakClient
     def heart_rate_handler(sender, data: bytearray):
-        parsed = translator.parse_characteristic("2A37", data)
-        if parsed.parse_success:
-            hr_data = parsed.value  # HeartRateMeasurementData
-            print(f"HR: {hr_data.heart_rate} bpm")
-            if hr_data.energy_expended:
-                print(f"Energy: {hr_data.energy_expended} kJ")
-            if hr_data.rr_intervals:
-                print(f"RR intervals: {hr_data.rr_intervals} seconds")
+        # Returns HeartRateData directly - type-safe dataclass
+        hr_data = translator.parse_characteristic("2A37", data)
+        print(f"HR: {hr_data.heart_rate} bpm")
+        if hr_data.energy_expended:
+            print(f"Energy: {hr_data.energy_expended} kJ")
+        if hr_data.rr_intervals:
+            print(f"RR intervals: {hr_data.rr_intervals} seconds")
 
     # Test with sample data
     heart_rate_handler(None, bytearray([0x00, 0x55]))
@@ -137,35 +130,20 @@ async def main():
     SIMULATED_TEMP_DATA = bytearray([0x64, 0x09])  # Simulates 24.04°C
     SIMULATED_HUMIDITY_DATA = bytearray([0x3A, 0x13])  # Simulates 49.22%
 
-    # Example with mock data - you can use UUIDs or CharacteristicName string names
-    from bluetooth_sig.types.gatt_enums import CharacteristicName
+    # Parse each characteristic - returns values directly
+    battery = translator.parse_characteristic(
+        "2A19", SIMULATED_BATTERY_DATA
+    )  # int
+    temp = translator.parse_characteristic(
+        "2A6E", SIMULATED_TEMP_DATA
+    )  # float
+    humidity = translator.parse_characteristic(
+        "2A6F", SIMULATED_HUMIDITY_DATA
+    )  # float
 
-    # Using UUIDs from your BLE library
-    battery_uuid = "2A19"
-    temp_uuid = "2A6E"
-    humidity_uuid = "2A6F"
-
-    # Or using CharacteristicName enum for string names (both work!)
-    # battery_name = CharacteristicName.BATTERY_LEVEL  # Resolves to "Battery Level"
-
-    # Parse all at once
-    results = translator.parse_characteristics(
-        {
-            battery_uuid: SIMULATED_BATTERY_DATA,
-            temp_uuid: SIMULATED_TEMP_DATA,
-            humidity_uuid: SIMULATED_HUMIDITY_DATA,
-        }
-    )
-
-    print(
-        f"Battery: {results[battery_uuid].value}{results[battery_uuid].info.unit or ''}"
-    )
-    print(
-        f"Temp: {results[temp_uuid].value}{results[temp_uuid].info.unit or ''}"
-    )
-    print(
-        f"Humidity: {results[humidity_uuid].value}{results[humidity_uuid].info.unit or ''}"
-    )
+    print(f"Battery: {battery}%")
+    print(f"Temp: {temp}°C")
+    print(f"Humidity: {humidity}%")
 
 
 asyncio.run(main())
@@ -220,7 +198,7 @@ async with BleakClient(device_address) as client:
 **After** (with automatic dependency resolution):
 
 ```python
-# SKIP: Async function needs completion
+# SKIP: Requires BLE hardware and bleak client connection
 import asyncio
 
 from bluetooth_sig import BluetoothSIGTranslator
@@ -237,17 +215,15 @@ async def main():
     # Example of handling paired characteristics
     def combined_handler(char_uuid: str, data: bytearray):
         # Parse immediately to get the sequence number
+        # Returns the parsed value directly (GlucoseMeasurement or GlucoseMeasurementContext)
         parsed = translator.parse_characteristic(char_uuid, data)
-
-        if not parsed.parse_success:
-            return
 
         # Cache using the parsed sequence number
         if char_uuid == gm_uuid:
-            seq = parsed.value.sequence_number
+            seq = parsed.sequence_number
             measurements_cache[seq] = data
         elif char_uuid == gmc_uuid:
-            seq = parsed.value.sequence_number
+            seq = parsed.sequence_number
             contexts_cache[seq] = data
 
         # Parse pairs when we have matching sequence numbers
@@ -262,8 +238,8 @@ async def main():
                 }
             )
 
-            gm = results[gm_uuid].value  # GlucoseMeasurementData
-            gmc = results[gmc_uuid].value  # GlucoseMeasurementContextData
+            gm = results[gm_uuid]  # GlucoseMeasurementData directly
+            gmc = results[gmc_uuid]  # GlucoseMeasurementContextData directly
             print(f"Seq {seq}: Glucose {gm.glucose_concentration} {gm.unit}")
             print(f"Seq {seq}: Carbs {gmc.carbohydrate} g")
 
@@ -320,6 +296,7 @@ async with BleakClient(device_address) as client:
 import asyncio
 
 from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 # ============================================
 # SIMULATED DATA - Replace with actual BLE reads
@@ -337,14 +314,18 @@ async def main():
         "2A37": SIMULATED_HR_DATA,  # Heart Rate
     }
 
-    for uuid, value in characteristics.items():
-        parsed = translator.parse_characteristic(uuid, value)
-        if parsed.parse_success:
-            print(
-                f"  {parsed.info.name}: {parsed.value} {parsed.info.unit or ''}"
-            )
-        else:
-            print(f"  {uuid}: {value.hex()} (unknown)")
+    for uuid, raw_bytes in characteristics.items():
+        try:
+            result = translator.parse_characteristic(uuid, raw_bytes)
+            info = translator.get_characteristic_info_by_uuid(uuid)
+            # For simple types (int/float), result is the value directly
+            # For complex types, result is a dataclass with fields
+            if hasattr(result, "heart_rate"):
+                print(f"  {info.name}: {result.heart_rate} bpm")
+            else:
+                print(f"  {info.name}: {result}")
+        except CharacteristicParseError:
+            print(f"  {uuid}: {raw_bytes.hex()} (parse failed)")
 
 
 asyncio.run(main())
@@ -365,24 +346,26 @@ If characteristics depend on each other (e.g., Glucose Measurement + Context), p
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 
-# ============================================
-# SIMULATED DATA - Replace with actual BLE reads
-# ============================================
-gm_bytes = bytearray([0x00, 0x01, 0x02])  # Simulated glucose measurement
-gmc_bytes = bytearray([0x03, 0x04])  # Simulated glucose context
+# Example data (replace with actual BLE reads)
+bpm_bytes = bytearray(
+    [0x00, 0x78, 0x00, 0x50, 0x00, 0x46, 0x00]
+)  # Blood Pressure
+battery_bytes = bytearray([85])  # Battery Level
 
 translator = BluetoothSIGTranslator()
 
-gm_uuid = "2A18"
-gmc_uuid = "2A34"
+bpm_uuid = "2A35"
+battery_uuid = "2A19"
 
 values = {
-    gm_uuid: gm_bytes,
-    gmc_uuid: gmc_bytes,
+    bpm_uuid: bpm_bytes,
+    battery_uuid: battery_bytes,
 }
 results = translator.parse_characteristics(values)
+
+print(f"Blood Pressure: {results[bpm_uuid]}")
+print(f"Battery: {results[battery_uuid]}%")
 ```
 
 ### With Connection Managers
@@ -392,23 +375,21 @@ Example adapters are provided in `examples/connection_managers/` as references.
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
 
-# ============================================
-# SIMULATED DATA - Replace with actual BLE reads
-# ============================================
-glucose_measurement_bytes = bytearray(
-    [0x00, 0x01, 0x02]
-)  # Simulated glucose measurement
-glucose_context_bytes = bytearray([0x03, 0x04])  # Simulated glucose context
+# Example data (replace with actual BLE reads)
+heart_rate_bytes = bytearray([0x00, 75])  # Heart Rate 75 bpm
+battery_bytes = bytearray([92])  # Battery 92%
 
 translator = BluetoothSIGTranslator()
 
 # Simple batch parsing
 char_data = {
-    "2A18": glucose_measurement_bytes,
-    "2A34": glucose_context_bytes,
+    "2A37": heart_rate_bytes,
+    "2A19": battery_bytes,
 }
 
 results = translator.parse_characteristics(char_data)
+print(f"Heart Rate: {results['2A37']}")
+print(f"Battery: {results['2A19']}%")
 ```
 
 ### With descriptors/services (adapters in examples)
@@ -417,7 +398,7 @@ results = translator.parse_characteristics(char_data)
 - SimplePyBLE: `examples/connection_managers/simpleble.py`
 
 ```python
-# SKIP: Requires external modules
+# SKIP: Requires BLE connection (client.services from bleak)
 from bluetooth_sig import CharacteristicName
 from bluetooth_sig.types.io import to_parse_inputs
 from examples.connection_managers.bleak_utils import bleak_services_to_batch
@@ -451,16 +432,18 @@ translator = BluetoothSIGTranslator()
 device = Device(address, translator)
 
 # Your manager implements ConnectionManagerProtocol (connect/read/write/notify/etc.)
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 from examples.connection_managers.bleak_retry import (
     BleakRetryConnectionManager,
 )
 
+battery = BatteryLevelCharacteristic()
 manager = BleakRetryConnectionManager(address)
 device.attach_connection_manager(manager)
 await device.connect()
 
-battery_uuid = "2A19"
-parsed = await device.read(battery_uuid)
+# Type-safe read with characteristic class
+parsed = await device.read(BatteryLevelCharacteristic)
 await device.disconnect()
 ```
 
@@ -487,29 +470,25 @@ These adapters are intentionally kept in examples to avoid hard dependencies. Co
 # SKIP: Requires Home Assistant
 from homeassistant.components import bluetooth
 
-from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
-
-translator = BluetoothSIGTranslator()
+from bluetooth_sig.gatt.characteristics import TemperatureCharacteristic
 
 
 class MySensorEntity(SensorEntity):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._temp_uuid = "2A6E"
+        self._temp = TemperatureCharacteristic()
 
     def _async_handle_bluetooth_event(
         self, service_info: BluetoothServiceInfoBleak, change: BluetoothChange
     ) -> None:
         """Handle bluetooth callback."""
         # Your existing connection/read logic
-        char_data = self._read_characteristic(self._temp_uuid)
+        char_data = self._read_characteristic(str(self._temp.uuid))
 
-        # Parse with library
-        result = translator.parse_characteristic(self._temp_uuid, char_data)
-        if result.parse_success:
-            self._attr_native_value = result.value
-            self._attr_native_unit_of_measurement = result.unit
+        # Type-safe parsing - IDE knows value is float
+        value = self._temp.parse_value(bytearray(char_data))
+        self._attr_native_value = value
+        self._attr_native_unit_of_measurement = self._temp.unit
 ```
 
 ### SimplePyBLE Pattern
@@ -518,9 +497,9 @@ class MySensorEntity(SensorEntity):
 # SKIP: Requires SimplePyBLE
 import simplepyble
 
-from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 
-translator = BluetoothSIGTranslator()
+battery = BatteryLevelCharacteristic()
 
 peripheral = simplepyble.Peripheral()
 peripheral.connect_to_address(device_address)
@@ -529,11 +508,14 @@ for service in peripheral.services():
     for characteristic in service.characteristics():
         try:
             data = peripheral.read(service.uuid(), characteristic.uuid())
-            result = translator.parse_characteristic(
+            value = translator.parse_characteristic(
                 characteristic.uuid(), data
             )
-            if result.parse_success:
-                print(f"{result.name}: {result.value} {result.unit}")
+            info = translator.get_characteristic_info_by_uuid(
+                characteristic.uuid()
+            )
+            if info:
+                print(f"{info.name}: {value} {info.unit or ''}")
         except Exception as e:
             print(f"Error reading {characteristic.uuid()}: {e}")
 ```
@@ -543,7 +525,7 @@ for service in peripheral.services():
 - **Unknown UUID**: Ensure you're using the correct SIG UUID (short or full).
 - **Parse failed**: Check spec constraints (length, range); `result.error_message` explains the issue.
 - **Descriptor-dependent parsing**: Pass descriptor bytes via `descriptor_data` or use the example adapters.
-- **Home Assistant-style (advertising)**: This library focuses on GATT characteristic parsing; advertising parsers are out of scope.
+- **Advertising data**: Use `AdvertisingPDUParser` for parsing advertising packets—see [Advertising Parsing Guide](advertising-parsing.md).
 - **Type hints not working**: Ensure you're using Python 3.10+ for best type checking support.
 
 ## Next Steps
@@ -561,6 +543,7 @@ The `DependencyPairingBuffer` helper buffers notifications and groups them using
 ### Real-World Scenario: Blood Pressure Monitor
 
 ```python
+# SKIP: Requires BLE hardware connection
 from datetime import datetime
 
 from bluetooth_sig import BluetoothSIGTranslator
@@ -574,29 +557,30 @@ icp_uuid = "2A36"
 
 
 def group_by_timestamp(uuid: str, parsed) -> datetime:
-    """Group notifications by their timestamp - same session = same timestamp."""
-    if not parsed.parse_success or parsed.value is None:
-        raise ValueError("Unable to derive grouping key: parse failed")
+    """Group notifications by their timestamp - same session = same timestamp.
 
+    Args:
+        uuid: The characteristic UUID (for reference)
+        parsed: The parsed value directly (BloodPressureMeasurement or IntermediateCuffPressure)
+    """
     # Both characteristics have optional timestamp fields
-    if parsed.value.optional_fields.timestamp:
-        return parsed.value.optional_fields.timestamp
+    if hasattr(parsed, "optional_fields") and parsed.optional_fields.timestamp:
+        return parsed.optional_fields.timestamp
 
     # Fallback: use current time or synthetic session tracking
     raise ValueError("Timestamp required for grouping")
 
 
 def on_measurement_complete(results):
-    """Called when both BPM and ICP arrive for the same timestamp."""
-    bpm = results[bpm_uuid].value
-    icp = results[icp_uuid].value
+    """Called when both BPM and ICP arrive for the same timestamp.
 
-    print(
-        f"Blood Pressure: {bpm.systolic}/{bpm.diastolic} {results[bpm_uuid].unit}"
-    )
-    print(
-        f"Max Cuff Pressure: {icp.current_cuff_pressure} {results[icp_uuid].unit}"
-    )
+    Results is dict[str, Any] where values are parsed dataclasses directly.
+    """
+    bpm = results[bpm_uuid]  # BloodPressureMeasurement directly
+    icp = results[icp_uuid]  # IntermediateCuffPressure directly
+
+    print(f"Blood Pressure: {bpm.systolic}/{bpm.diastolic} mmHg")
+    print(f"Max Cuff Pressure: {icp.current_cuff_pressure} mmHg")
 
     # Store to database, update UI, etc.
 
@@ -631,54 +615,46 @@ async with BleakClient(device_address) as client:
 
 **With the buffer**: Automatically groups by timestamp, handles out-of-order arrival, and triggers your callback only when complete pairs arrive.
 
-### Glucose Example (Sequence Number Pairing)
+### Paired Characteristics Example
 
-For Glucose monitors, pair by sequence number and validate in your callback:
+Group characteristics by a key (e.g., timestamp, sequence number) and trigger a callback when all required characteristics arrive:
 
 ```python
-# SKIP: Stream example needs completion
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.stream import DependencyPairingBuffer
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
 
-gm_uuid = "2A18"
-gmc_uuid = "2A34"
+hr_uuid = "2A37"  # Heart Rate Measurement
+bat_uuid = "2A19"  # Battery Level
+
+received_pairs = []
 
 
-def group_by_sequence(uuid: str, parsed) -> int:
-    """Both measurement and context have sequence_number field."""
-    if not parsed.parse_success or parsed.value is None:
-        raise ValueError("Unable to derive grouping key: parse failed")
-    return int(parsed.value.sequence_number)
-
-
-def on_glucose_pair(results):
-    gm = results[gm_uuid].value
-    gmc = results[gmc_uuid].value
-
-    # Validate sequence numbers match (per GLS v1.0.1 spec requirement)
-    if gm.sequence_number != gmc.sequence_number:
-        raise ValueError(
-            f"Sequence mismatch: measurement={gm.sequence_number}, "
-            f"context={gmc.sequence_number}"
-        )
-
-    print(f"Glucose: {gm.glucose_concentration} {results[gm_uuid].unit}")
-    print(f"Carbs: {gmc.carbohydrate} g, Meal: {gmc.meal}")
+def on_pair(results):
+    """Handle complete pair of characteristics."""
+    hr = results[hr_uuid]  # HeartRateData
+    bat = results[bat_uuid]  # int
+    received_pairs.append(results)
+    print(f"Heart Rate: {hr.heart_rate} bpm, Battery: {bat}%")
 
 
 buffer = DependencyPairingBuffer(
     translator=translator,
-    required_uuids={gm_uuid, gmc_uuid},
-    group_key=group_by_sequence,
-    on_pair=on_glucose_pair,
+    required_uuids={hr_uuid, bat_uuid},
+    group_key=lambda uuid, parsed: 0,  # All go to same group
+    on_pair=on_pair,
 )
 
-# In notification handlers
-buffer.ingest(gm_uuid, gm_bytes)
-buffer.ingest(gmc_uuid, gmc_bytes)
+# Example data (in real use, comes from BLE notifications)
+hr_bytes = bytearray([0x00, 75])  # Heart rate 75 bpm
+bat_bytes = bytearray([85])  # Battery 85%
+
+# Ingest data (order-independent)
+buffer.ingest(hr_uuid, hr_bytes)
+buffer.ingest(bat_uuid, bat_bytes)  # Triggers on_pair callback
+
+print(f"Total received: {len(received_pairs)}")
 ```
 
 ### Notes

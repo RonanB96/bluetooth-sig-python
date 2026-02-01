@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.advertising import AdvertisingPDUParser
-from bluetooth_sig.types import AdvertisingData
+from bluetooth_sig.types.advertising.result import AdvertisingData
 
 
 class TestAdvertisingPDUParserClassOfDevice:
@@ -171,11 +171,8 @@ class TestAdvertisingPDUParserClassOfDevice:
 
         assert result.ad_structures.properties.class_of_device is not None
         cod_info = result.ad_structures.properties.class_of_device
-        assert (
-            cod_info.major_class
-            and "Audio" in cod_info.major_class[0].name
-            or cod_info.major_class
-            and "Video" in cod_info.major_class[0].name
+        assert (cod_info.major_class and "Audio" in cod_info.major_class[0].name) or (
+            cod_info.major_class and "Video" in cod_info.major_class[0].name
         )
         assert cod_info.minor_class is not None
         assert cod_info.minor_class and "Headset" in cod_info.minor_class[0].name

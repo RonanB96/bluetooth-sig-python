@@ -8,10 +8,26 @@ from enum import IntEnum
 import msgspec
 
 from ...types.gatt_enums import ValueType
-from ..constants import UINT8_MAX
+from ..constants import UINT8_MAX, UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
+
+# Minimum data lengths for each operation
+_MIN_LEN_CUMULATIVE_VALUE = 5  # 1 byte op code + 4 bytes uint32
+_MIN_LEN_MASK_CONTENT = 3  # 1 byte op code + 2 bytes uint16
+_MIN_LEN_NAV_CONTROL = 2  # 1 byte op code + 1 byte value
+_MIN_LEN_ROUTE_NUMBER = 2  # 1 byte op code + 1 byte route number
+_MIN_LEN_FIX_RATE = 2  # 1 byte op code + 1 byte fix rate
+_MIN_LEN_ELEVATION = 5  # 1 byte op code + 4 bytes int32
+_MIN_LEN_RESPONSE = 3  # 1 byte op code + 1 byte request + 1 byte response
+
+# Response parameter lengths
+_RESPONSE_PARAM_OFFSET = 3  # Offset where response parameter starts
+_PARAM_LEN_UINT8 = 1
+_PARAM_LEN_UINT16 = 2
+_PARAM_LEN_UINT32 = 4
+_PARAM_LEN_TIMESTAMP = 7
 
 
 class LNControlPointOpCode(IntEnum):
@@ -102,7 +118,9 @@ class LNControlPointCharacteristic(BaseCharacteristic[LNControlPointData]):
     max_length = 18  # Op Code(1) + Parameter(max 17) maximum
     allow_variable_length: bool = True  # Variable parameter length
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> LNControlPointData:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    def _decode_value(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements  # Control point with many op codes
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> LNControlPointData:
         """Parse LN control point data according to Bluetooth specification.
 
         Format: Op Code(1) + Parameter(0-17).
@@ -110,14 +128,12 @@ class LNControlPointCharacteristic(BaseCharacteristic[LNControlPointData]):
         Args:
             data: Raw bytearray from BLE characteristic
             ctx: Optional context providing surrounding context (may be None)
+            validate: Whether to validate ranges (default True)
 
         Returns:
             LNControlPointData containing parsed control point data
 
         """
-        if len(data) < 1:
-            raise ValueError("LN Control Point data must be at least 1 byte")
-
         op_code = LNControlPointOpCode(data[0])
 
         # Initialize optional fields
@@ -133,51 +149,46 @@ class LNControlPointCharacteristic(BaseCharacteristic[LNControlPointData]):
         response_parameter: int | str | datetime | bytearray | None = None
 
         if op_code == LNControlPointOpCode.SET_CUMULATIVE_VALUE:
-            if len(data) >= 5:
+            if len(data) >= _MIN_LEN_CUMULATIVE_VALUE:
                 cumulative_value = DataParser.parse_int32(data, 1, signed=False)
         elif op_code == LNControlPointOpCode.MASK_LOCATION_AND_SPEED_CHARACTERISTIC_CONTENT:
-            if len(data) >= 3:
+            if len(data) >= _MIN_LEN_MASK_CONTENT:
                 content_mask = DataParser.parse_int16(data, 1, signed=False)
         elif op_code == LNControlPointOpCode.NAVIGATION_CONTROL:
-            if len(data) >= 2:
+            if len(data) >= _MIN_LEN_NAV_CONTROL:
                 navigation_control_value = data[1]
-        elif op_code == LNControlPointOpCode.REQUEST_NAME_OF_ROUTE:
-            if len(data) >= 2:
-                route_number = data[1]
-        elif op_code == LNControlPointOpCode.SELECT_ROUTE:
-            if len(data) >= 2:
+        elif op_code in (LNControlPointOpCode.REQUEST_NAME_OF_ROUTE, LNControlPointOpCode.SELECT_ROUTE):
+            if len(data) >= _MIN_LEN_ROUTE_NUMBER:
                 route_number = data[1]
         elif op_code == LNControlPointOpCode.SET_FIX_RATE:
-            if len(data) >= 2:
+            if len(data) >= _MIN_LEN_FIX_RATE:
                 fix_rate = data[1]
         elif op_code == LNControlPointOpCode.SET_ELEVATION:
-            if len(data) >= 5:
+            if len(data) >= _MIN_LEN_ELEVATION:
                 # Unit is 1/100 m
                 elevation = DataParser.parse_int32(data, 1, signed=True) / 100.0
-        elif op_code == LNControlPointOpCode.RESPONSE_CODE:
-            if len(data) >= 3:
-                request_op_code = LNControlPointOpCode(data[1])
-                response_value = LNControlPointResponseValue(data[2])
-                # Parse response parameter based on request op code
-                if len(data) > 3:
-                    parameter_length = len(data) - 3
-                    if request_op_code == LNControlPointOpCode.REQUEST_NUMBER_OF_ROUTES:
-                        response_parameter = DataParser.parse_int16(data, 3, signed=False)
-                    elif request_op_code == LNControlPointOpCode.REQUEST_NAME_OF_ROUTE:
-                        response_parameter = data[3:].decode("utf-8", errors="ignore")
-                    else:
-                        # For other responses, parse based on parameter length
-                        if parameter_length == 1:
-                            response_parameter = data[3]
-                        elif parameter_length == 2:
-                            response_parameter = DataParser.parse_int16(data, 3, signed=False)
-                        elif parameter_length == 4:
-                            response_parameter = DataParser.parse_int32(data, 3, signed=False)
-                        elif parameter_length == 7:
-                            response_parameter = IEEE11073Parser.parse_timestamp(data, 3)
-                        else:
-                            # Unknown parameter format, store as bytes
-                            response_parameter = data[3:]
+        elif op_code == LNControlPointOpCode.RESPONSE_CODE and len(data) >= _MIN_LEN_RESPONSE:
+            request_op_code = LNControlPointOpCode(data[1])
+            response_value = LNControlPointResponseValue(data[2])
+            # Parse response parameter based on request op code
+            if len(data) > _RESPONSE_PARAM_OFFSET:
+                parameter_length = len(data) - _RESPONSE_PARAM_OFFSET
+                if request_op_code == LNControlPointOpCode.REQUEST_NUMBER_OF_ROUTES:
+                    response_parameter = DataParser.parse_int16(data, _RESPONSE_PARAM_OFFSET, signed=False)
+                elif request_op_code == LNControlPointOpCode.REQUEST_NAME_OF_ROUTE:
+                    response_parameter = data[_RESPONSE_PARAM_OFFSET:].decode("utf-8", errors="ignore")
+                # For other responses, parse based on parameter length
+                elif parameter_length == _PARAM_LEN_UINT8:
+                    response_parameter = data[_RESPONSE_PARAM_OFFSET]
+                elif parameter_length == _PARAM_LEN_UINT16:
+                    response_parameter = DataParser.parse_int16(data, _RESPONSE_PARAM_OFFSET, signed=False)
+                elif parameter_length == _PARAM_LEN_UINT32:
+                    response_parameter = DataParser.parse_int32(data, _RESPONSE_PARAM_OFFSET, signed=False)
+                elif parameter_length == _PARAM_LEN_TIMESTAMP:
+                    response_parameter = IEEE11073Parser.parse_timestamp(data, _RESPONSE_PARAM_OFFSET)
+                else:
+                    # Unknown parameter format, store as bytes
+                    response_parameter = data[_RESPONSE_PARAM_OFFSET:]
 
         return LNControlPointData(
             op_code=op_code,
@@ -250,9 +261,9 @@ class LNControlPointCharacteristic(BaseCharacteristic[LNControlPointData]):
                 result.append(data.response_value)
             if data.response_parameter is not None:
                 if isinstance(data.response_parameter, int):
-                    if data.response_parameter <= 0xFF:
+                    if data.response_parameter <= UINT8_MAX:
                         result.append(data.response_parameter)
-                    elif data.response_parameter <= 0xFFFF:
+                    elif data.response_parameter <= UINT16_MAX:
                         result.extend(DataParser.encode_int16(data.response_parameter, signed=False))
                 elif isinstance(data.response_parameter, str):
                     result.extend(data.response_parameter.encode("utf-8"))

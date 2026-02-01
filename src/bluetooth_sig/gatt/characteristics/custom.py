@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from ...types import CharacteristicInfo
 from .base import BaseCharacteristic, ValidationConfig
@@ -37,7 +37,7 @@ class CustomBaseCharacteristic(BaseCharacteristic[Any]):
     _is_base_class = True  # Exclude from registry validation tests
     _configured_info: CharacteristicInfo | None = None  # Stores class-level _info
     _allows_sig_override = False  # Default: no SIG override permission
-    _registry_tracker: set[str] = set()  # Track registered UUIDs to avoid duplicates
+    _registry_tracker: ClassVar[set[str]] = set()  # Track registered UUIDs to avoid duplicates
 
     @classmethod
     def get_configured_info(cls) -> CharacteristicInfo | None:
@@ -120,7 +120,9 @@ class CustomBaseCharacteristic(BaseCharacteristic[Any]):
         if auto_register:
             # TODO
             # NOTE: Import here to avoid circular import (translator imports characteristics)
-            from ...core.translator import BluetoothSIGTranslator  # pylint: disable=import-outside-toplevel
+            from ...core.translator import (  # noqa: PLC0415
+                BluetoothSIGTranslator,  # pylint: disable=import-outside-toplevel
+            )
 
             # Get the singleton translator instance
             translator = BluetoothSIGTranslator.get_instance()

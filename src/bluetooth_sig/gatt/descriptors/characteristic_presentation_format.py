@@ -138,9 +138,6 @@ class CharacteristicPresentationFormatDescriptor(BaseDescriptor):
         Raises:
             ValueError: If data is not exactly 7 bytes
         """
-        if len(data) != 7:
-            raise ValueError(f"Characteristic Presentation Format data must be exactly 7 bytes, got {len(data)}")
-
         format_val = DataParser.parse_int8(data, offset=0)
         namespace_val = DataParser.parse_int8(data, offset=4)
         unit_val = DataParser.parse_int16(data, offset=2, endian="little")

@@ -33,6 +33,11 @@ from examples.utils.library_detection import (
     show_library_availability,
 )
 
+# Display constants
+_MAX_SERVICES_TO_DISPLAY = 5
+_MAX_DEVICES_TO_DISPLAY = 10
+_APPLE_COMPANY_ID = 0x004C
+
 
 def format_device(device: ScannedDevice, indent: str = "  ") -> str:
     """Format a ScannedDevice for display."""
@@ -46,9 +51,11 @@ def format_device(device: ScannedDevice, indent: str = "  ") -> str:
 
         core = adv.ad_structures.core
         if core.service_uuids:
-            lines.append(f"{indent}Services: {', '.join(str(uuid) for uuid in core.service_uuids[:5])}")
-            if len(core.service_uuids) > 5:
-                lines.append(f"{indent}          ... and {len(core.service_uuids) - 5} more")
+            uuid_list = ", ".join(str(uuid) for uuid in core.service_uuids[:_MAX_SERVICES_TO_DISPLAY])
+            lines.append(f"{indent}Services: {uuid_list}")
+            if len(core.service_uuids) > _MAX_SERVICES_TO_DISPLAY:
+                remaining = len(core.service_uuids) - _MAX_SERVICES_TO_DISPLAY
+                lines.append(f"{indent}          ... and {remaining} more")
 
         if core.manufacturer_data:
             mfr_ids = list(core.manufacturer_data.keys())
@@ -70,12 +77,12 @@ async def test_basic_scan(
     devices = await manager.scan(timeout=timeout)
 
     print(f"\nFound {len(devices)} devices:")
-    for i, device in enumerate(devices[:10], 1):
+    for i, device in enumerate(devices[:_MAX_DEVICES_TO_DISPLAY], 1):
         print(f"\n[{i}] {device.name or device.address}")
         print(format_device(device))
 
-    if len(devices) > 10:
-        print(f"\n... and {len(devices) - 10} more devices")
+    if len(devices) > _MAX_DEVICES_TO_DISPLAY:
+        print(f"\n... and {len(devices) - _MAX_DEVICES_TO_DISPLAY} more devices")
 
     return devices
 
@@ -202,7 +209,7 @@ async def test_find_by_filter(
         if device.advertisement_data is None:
             return False
         mfr = device.advertisement_data.ad_structures.core.manufacturer_data
-        return 0x004C in mfr  # Apple's company ID
+        return _APPLE_COMPANY_ID in mfr  # Apple's company ID
 
     start = datetime.now()
     device = await manager.find_device(ScanFilter(filter_func=has_apple_data), timeout=timeout)
@@ -298,11 +305,11 @@ async def test_passive_scan(
             scanning_mode="passive",
         )
         print(f"\n✅ Found {len(devices)} devices in passive mode")
-        for device in devices[:5]:
+        for device in devices[:_MAX_SERVICES_TO_DISPLAY]:
             print(f"  - {device.name or device.address}")
 
-        if len(devices) > 5:
-            print(f"  ... and {len(devices) - 5} more")
+        if len(devices) > _MAX_SERVICES_TO_DISPLAY:
+            print(f"  ... and {len(devices) - _MAX_SERVICES_TO_DISPLAY} more")
         return devices
     except Exception as e:
         # Catch any unexpected errors

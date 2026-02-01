@@ -36,12 +36,15 @@ class BootKeyboardOutputReportCharacteristic(BaseCharacteristic[KeyboardLEDs]):
     max_length = 1
     allow_variable_length = False
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> KeyboardLEDs:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> KeyboardLEDs:
         """Parse keyboard LED states.
 
         Args:
             data: Raw bytearray from BLE characteristic (1 byte).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             KeyboardLEDs with parsed LED states.
@@ -53,6 +56,8 @@ class BootKeyboardOutputReportCharacteristic(BaseCharacteristic[KeyboardLEDs]):
 
         Args:
             data: KeyboardLEDs to encode
+
+        validate: Whether to validate ranges (default True)
 
         Returns:
             Encoded bytes (1 byte)

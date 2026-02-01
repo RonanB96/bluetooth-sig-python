@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from enum import IntFlag
+from typing import Any, ClassVar
 
 import msgspec
 
-from ..constants import UINT8_MAX
+from ..constants import UINT8_MAX, UINT16_MAX, UINT32_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .csc_feature import CSCFeatureCharacteristic, CSCFeatureData
@@ -46,7 +47,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic[CSCMeasurementData]):
 
     # Declare optional dependency on CSC Feature for validation
     # This ensures CSC Feature is parsed first when both are present
-    _optional_dependencies = [CSCFeatureCharacteristic]
+    _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [CSCFeatureCharacteristic]
 
     # Validation: min 1 byte (flags), max 11 bytes (flags + wheel + crank data)
     min_length = 1
@@ -56,7 +57,9 @@ class CSCMeasurementCharacteristic(BaseCharacteristic[CSCMeasurementData]):
     # Time resolution constants
     CSC_TIME_RESOLUTION = 1024.0  # 1/1024 second resolution for both wheel and crank event times
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> CSCMeasurementData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> CSCMeasurementData:
         """Parse CSC measurement data according to Bluetooth specification.
 
         Format: Flags(1) + [Cumulative Wheel Revolutions(4)] + [Last Wheel Event Time(2)] +
@@ -65,6 +68,7 @@ class CSCMeasurementCharacteristic(BaseCharacteristic[CSCMeasurementData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             CSCMeasurementData containing parsed CSC data.
@@ -73,9 +77,6 @@ class CSCMeasurementCharacteristic(BaseCharacteristic[CSCMeasurementData]):
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 1:
-            raise ValueError("CSC Measurement data must be at least 1 byte")
-
         flags = CSCMeasurementFlags(data[0])
         offset = 1
 
@@ -136,11 +137,11 @@ class CSCMeasurementCharacteristic(BaseCharacteristic[CSCMeasurementData]):
         wheel_event_time = float(data.last_wheel_event_time)
 
         # Validate ranges
-        if not 0 <= wheel_revolutions <= 0xFFFFFFFF:
+        if not 0 <= wheel_revolutions <= UINT32_MAX:
             raise ValueError(f"Wheel revolutions {wheel_revolutions} exceeds uint32 range")
 
         wheel_event_time_raw = round(wheel_event_time * self.CSC_TIME_RESOLUTION)
-        if not 0 <= wheel_event_time_raw <= 0xFFFF:
+        if not 0 <= wheel_event_time_raw <= UINT16_MAX:
             raise ValueError(f"Wheel event time {wheel_event_time_raw} exceeds uint16 range")
 
         result = bytearray()
@@ -168,11 +169,11 @@ class CSCMeasurementCharacteristic(BaseCharacteristic[CSCMeasurementData]):
         crank_event_time = float(data.last_crank_event_time)
 
         # Validate ranges
-        if not 0 <= crank_revolutions <= 0xFFFF:
+        if not 0 <= crank_revolutions <= UINT16_MAX:
             raise ValueError(f"Crank revolutions {crank_revolutions} exceeds uint16 range")
 
         crank_event_time_raw = round(crank_event_time * self.CSC_TIME_RESOLUTION)
-        if not 0 <= crank_event_time_raw <= 0xFFFF:
+        if not 0 <= crank_event_time_raw <= UINT16_MAX:
             raise ValueError(f"Crank event time {crank_event_time_raw} exceeds uint16 range")
 
         result = bytearray()

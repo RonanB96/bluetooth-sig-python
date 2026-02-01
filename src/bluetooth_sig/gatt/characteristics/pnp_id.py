@@ -49,12 +49,15 @@ class PnpIdCharacteristic(BaseCharacteristic[PnpIdData]):
     _manual_value_type = "PnpIdData"
     expected_length = 7
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PnpIdData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> PnpIdData:
         """Parse PnP ID.
 
         Args:
             data: Raw bytearray (7 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             PnpIdData with vendor_id_source, vendor_id, product_id, product_version.

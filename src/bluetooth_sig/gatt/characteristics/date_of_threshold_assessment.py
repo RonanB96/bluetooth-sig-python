@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from ...types import DateData
+from ..constants import MAX_YEAR_VALUE
 from ..context import CharacteristicContext
-from ..exceptions import InsufficientDataError, ValueRangeError
+from ..exceptions import ValueRangeError
 from .base import BaseCharacteristic
 from .utils import DataParser
 from .utils.ieee11073_parser import IEEE11073Parser
@@ -21,13 +22,18 @@ class DateOfThresholdAssessmentCharacteristic(BaseCharacteristic[DateOfThreshold
     """
 
     expected_length: int = 4  # Year(2) + Month(1) + Day(1)
+    min_length: int = 4
+    max_length: int = 4
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> DateOfThresholdAssessmentData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> DateOfThresholdAssessmentData:
         """Decode Date of Threshold Assessment from raw bytes.
 
         Args:
             data: Raw bytes from BLE characteristic (4 bytes)
             ctx: Optional context for parsing
+            validate: Whether to validate ranges (default True)
 
         Returns:
             DateOfThresholdAssessmentData with year, month, day
@@ -35,10 +41,6 @@ class DateOfThresholdAssessmentCharacteristic(BaseCharacteristic[DateOfThreshold
         Raises:
             InsufficientDataError: If data length is not exactly 4 bytes
         """
-        if len(data) != 4:
-            raise InsufficientDataError("Date of Threshold Assessment", data, 4)
-
-        # Year is uint16 (little-endian)
         year = DataParser.parse_int16(data, 0, signed=False)
 
         # Month is uint8
@@ -62,8 +64,8 @@ class DateOfThresholdAssessmentCharacteristic(BaseCharacteristic[DateOfThreshold
             ValueRangeError: If year, month, or day are out of valid range
         """
         # Validate year
-        if not ((data.year == 0) or (IEEE11073Parser.IEEE11073_MIN_YEAR <= data.year <= 9999)):
-            raise ValueRangeError("year", data.year, IEEE11073Parser.IEEE11073_MIN_YEAR, 9999)
+        if not ((data.year == 0) or (IEEE11073Parser.IEEE11073_MIN_YEAR <= data.year <= MAX_YEAR_VALUE)):
+            raise ValueRangeError("year", data.year, IEEE11073Parser.IEEE11073_MIN_YEAR, MAX_YEAR_VALUE)
 
         # Validate month
         if not ((data.month == 0) or (IEEE11073Parser.MONTH_MIN <= data.month <= IEEE11073Parser.MONTH_MAX)):

@@ -6,6 +6,7 @@ from enum import IntEnum, IntFlag
 
 import msgspec
 
+from ..constants import UINT32_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import BitFieldUtils, DataParser
@@ -89,7 +90,7 @@ class WeightScaleFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pyli
 
     def __post_init__(self) -> None:
         """Validate weight scale feature data."""
-        if not 0 <= self.raw_value <= 0xFFFFFFFF:
+        if not 0 <= self.raw_value <= UINT32_MAX:
             raise ValueError("Raw value must be a 32-bit unsigned integer")
 
 
@@ -108,7 +109,9 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic[WeightScaleFeatureData
     max_length: int = 4  # Features(4) fixed length
     allow_variable_length: bool = False  # Fixed length
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> WeightScaleFeatureData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> WeightScaleFeatureData:
         """Parse weight scale feature data according to Bluetooth specification.
 
         Format: Features(4 bytes) - bitmask indicating supported features.
@@ -116,6 +119,7 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic[WeightScaleFeatureData
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             WeightScaleFeatureData containing parsed feature flags.
@@ -124,9 +128,6 @@ class WeightScaleFeatureCharacteristic(BaseCharacteristic[WeightScaleFeatureData
             ValueError: If data format is invalid.
 
         """
-        if len(data) < 4:
-            raise ValueError("Weight Scale Feature data must be at least 4 bytes")
-
         features_raw = DataParser.parse_int32(data, 0, signed=False)
 
         # Parse feature flags according to specification

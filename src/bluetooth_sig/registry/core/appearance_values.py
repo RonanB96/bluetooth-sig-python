@@ -12,6 +12,7 @@ from typing import cast
 
 import msgspec
 
+from bluetooth_sig.gatt.constants import UINT16_MAX
 from bluetooth_sig.registry.base import BaseGenericRegistry
 from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.registry.appearance_info import AppearanceInfo, AppearanceSubcategoryInfo
@@ -145,8 +146,8 @@ class AppearanceValuesRegistry(BaseGenericRegistry[AppearanceInfo]):
             ...     print(info.full_name)  # "Heart Rate Sensor: Heart Rate Belt"
         """
         # Validate input range for 16-bit appearance code
-        if not 0 <= appearance_code <= 65535:
-            raise ValueError(f"Appearance code must be in range 0-65535, got {appearance_code}")
+        if not 0 <= appearance_code <= UINT16_MAX:
+            raise ValueError(f"Appearance code must be in range 0-{UINT16_MAX}, got {appearance_code}")
 
         self._ensure_loaded()
         return self._appearances.get(appearance_code)
@@ -187,4 +188,4 @@ class AppearanceValuesRegistry(BaseGenericRegistry[AppearanceInfo]):
 
 
 # Singleton instance for global use
-appearance_values_registry = cast(AppearanceValuesRegistry, AppearanceValuesRegistry.get_instance())
+appearance_values_registry = cast("AppearanceValuesRegistry", AppearanceValuesRegistry.get_instance())

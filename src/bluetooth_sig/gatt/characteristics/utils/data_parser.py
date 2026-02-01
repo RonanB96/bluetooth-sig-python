@@ -10,13 +10,19 @@ from ...constants import (
     SINT8_MIN,
     SINT16_MAX,
     SINT16_MIN,
+    SINT24_MAX,
+    SINT24_MIN,
     SINT32_MAX,
     SINT32_MIN,
     UINT8_MAX,
     UINT16_MAX,
+    UINT24_MAX,
     UINT32_MAX,
 )
 from ...exceptions import InsufficientDataError, ValueRangeError
+
+# Sign threshold for int8 values (values >= 128 are negative when signed)
+_INT8_SIGN_THRESHOLD = 128
 
 
 class DataParser:
@@ -32,7 +38,7 @@ class DataParser:
         if len(data) < offset + 1:
             raise InsufficientDataError("int8", data[offset:], 1)
         value = data[offset]
-        if signed and value >= 128:
+        if signed and value >= _INT8_SIGN_THRESHOLD:
             return value - 256
         return value
 
@@ -107,9 +113,8 @@ class DataParser:
         if signed:
             if not SINT8_MIN <= value <= SINT8_MAX:
                 raise ValueRangeError("sint8", value, SINT8_MIN, SINT8_MAX)
-        else:
-            if not 0 <= value <= UINT8_MAX:
-                raise ValueRangeError("uint8", value, 0, UINT8_MAX)
+        elif not 0 <= value <= UINT8_MAX:
+            raise ValueRangeError("uint8", value, 0, UINT8_MAX)
         return bytearray(value.to_bytes(1, byteorder="little", signed=signed))
 
     @staticmethod
@@ -118,9 +123,8 @@ class DataParser:
         if signed:
             if not SINT16_MIN <= value <= SINT16_MAX:
                 raise ValueRangeError("sint16", value, SINT16_MIN, SINT16_MAX)
-        else:
-            if not 0 <= value <= UINT16_MAX:
-                raise ValueRangeError("uint16", value, 0, UINT16_MAX)
+        elif not 0 <= value <= UINT16_MAX:
+            raise ValueRangeError("uint16", value, 0, UINT16_MAX)
         return bytearray(value.to_bytes(2, byteorder=endian, signed=signed))
 
     @staticmethod
@@ -129,20 +133,18 @@ class DataParser:
         if signed:
             if not SINT32_MIN <= value <= SINT32_MAX:
                 raise ValueRangeError("sint32", value, SINT32_MIN, SINT32_MAX)
-        else:
-            if not 0 <= value <= UINT32_MAX:
-                raise ValueRangeError("uint32", value, 0, UINT32_MAX)
+        elif not 0 <= value <= UINT32_MAX:
+            raise ValueRangeError("uint32", value, 0, UINT32_MAX)
         return bytearray(value.to_bytes(4, byteorder=endian, signed=signed))
 
     @staticmethod
     def encode_int24(value: int, signed: bool = False, endian: Literal["little", "big"] = "little") -> bytearray:
         """Encode 24-bit integer with configurable endianness and signed/unsigned validation."""
         if signed:
-            if not -0x800000 <= value <= 0x7FFFFF:
-                raise ValueRangeError("sint24", value, -0x800000, 0x7FFFFF)
-        else:
-            if not 0 <= value <= 0xFFFFFF:
-                raise ValueRangeError("uint24", value, 0, 0xFFFFFF)
+            if not SINT24_MIN <= value <= SINT24_MAX:
+                raise ValueRangeError("sint24", value, SINT24_MIN, SINT24_MAX)
+        elif not 0 <= value <= UINT24_MAX:
+            raise ValueRangeError("uint24", value, 0, UINT24_MAX)
         return bytearray(value.to_bytes(3, byteorder=endian, signed=signed))
 
     @staticmethod

@@ -53,8 +53,7 @@ class NameNormalizer:
         # Insert space before uppercase that follows lowercase or digit
         result = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", result)
         # Insert space before trailing numbers
-        result = re.sub(r"([a-z])(\d+)", r"\1 \2", result)
-        return result
+        return re.sub(r"([a-z])(\d+)", r"\1 \2", result)
 
     @staticmethod
     def remove_suffix(name: str, suffix: str) -> str:

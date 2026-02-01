@@ -58,7 +58,7 @@ class TestTrueWindSpeedCharacteristic(CommonCharacteristicTests):
 
     def test_true_wind_speed_boundary_values(self, characteristic: TrueWindSpeedCharacteristic) -> None:
         """Test boundary wind speed values."""
-        # Minimum (calm)
+        # Test minimum wind speed value (calm, no wind)
         data_min = bytearray([0x00, 0x00])
         assert characteristic.parse_value(data_min) == 0.0
 

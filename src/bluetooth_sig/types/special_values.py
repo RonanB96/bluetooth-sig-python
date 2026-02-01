@@ -88,6 +88,6 @@ class SpecialValueResult(msgspec.Struct, frozen=True, kw_only=True):
 
 
 __all__ = [
-    "SpecialValueRule",
     "SpecialValueResult",
+    "SpecialValueRule",
 ]

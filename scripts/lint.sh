@@ -33,7 +33,6 @@ NC='\033[0m' # No Color
 
 # Folders to lint/format
 RUFF_FOLDERS="src/ tests/ examples/"
-BLUETOOTH_SIG_FOLDERS="src/bluetooth_sig"
 EXAMPLES_FOLDERS="examples"
 TEST_FOLDERS="tests"
 
@@ -150,157 +149,6 @@ run_ruff() {
         fi
         return 0
     fi
-}
-
-
-# Run pylint
-# shellcheck disable=SC2120
-run_pylint() {
-    # Usage: run_pylint [is_parallel] [logfile]
-    local is_parallel="${1:-false}"
-    local _logfile="${2:-}"
-
-    if [ "$is_parallel" != "true" ]; then
-        print_header "Running pylint"
-    fi
-
-    if ! command -v pylint >/dev/null 2>&1; then
-        print_error "pylint not found. Install with: pip install pylint"
-        return 1
-    fi
-
-    local exit_code=0
-    local production_failed=0
-    local tests_failed=0
-
-    # Run pylint on production code (strict requirements)
-    if [ "$is_parallel" != "true" ]; then
-        echo "Checking production code..."
-    fi
-    # Use persistent cache for better performance
-    # shellcheck disable=SC2086  # BLUETOOTH_SIG_FOLDERS is intentionally space-separated
-    run_capture "pylint --jobs=4 --persistent=n $BLUETOOTH_SIG_FOLDERS"
-    PROD_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
-
-    # Extract production score
-    PROD_SCORE=$(echo "$PROD_PYLINT_OUTPUT" | sed -n 's/.*rated at \([0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
-
-    if [ "$is_parallel" != "true" ]; then
-        echo "Production pylint output:"
-        echo "$PROD_PYLINT_OUTPUT"
-        echo ""
-        echo "Production pylint score: $PROD_SCORE/10"
-    fi
-
-    # Production code must be perfect
-    if [ "$PROD_SCORE" != "10.00" ]; then
-        if [ "$is_parallel" != "true" ]; then
-            print_error "Production pylint score must be exactly 10.00/10. Current score: $PROD_SCORE/10"
-            echo "Please fix all pylint issues in production code or add justified disable comments."
-        fi
-        exit_code=1
-        production_failed=1
-    else
-        if [ "$is_parallel" != "true" ]; then
-            print_success "Production code achieved perfect pylint score: 10.00/10"
-        fi
-    fi
-
-    if [ "$is_parallel" != "true" ]; then
-        echo ""
-    fi
-
-    # Run pylint on tests (ignore common test-specific issues - see detailed comments below)
-    if [ "$is_parallel" != "true" ]; then
-        echo "Checking test code..."
-    fi
-    local TEST_PYLINT_OUTPUT
-    # Temporarily allow pylint to fail for test-specific disabled checks
-    # Disabled pylint checks for test files (acceptable for test code):
-    # C0114: missing-module-docstring - Test modules often don't need docstrings
-    # C0115: missing-class-docstring - Test classes often don't need docstrings
-    # C0116: missing-function-docstring - Test methods often don't need docstrings
-    # W0212: protected-access - Tests frequently access private/protected members
-    # C0415: import-outside-toplevel - Tests may import conditionally or inside functions
-    # W0718: broad-exception-caught - Tests may catch broad exceptions for robustness
-    # R0914: too-many-locals - Complex tests may need many local variables
-    # R0912: too-many-branches - Test logic may have many conditional branches
-    # R0915: too-many-statements - Test setup/verification may have many statements
-    # R1702: too-many-nested-blocks - Test logic may be deeply nested
-    # C1803: use-implicit-booleaness-not-comparison - Tests may use dict == {} instead of not dict
-    # W0105: pointless-string-statement - Tests may have string literals for debugging
-    # R0903: too-few-public-methods - Test classes may have few public methods
-    # W0201: attribute-defined-outside-init - Test attributes set in setup methods
-    # W0621: redefined-outer-name - Tests may shadow variable names
-    # W0404: reimported - Tests may reimport modules
-    # W0221: arguments-differ - Test methods may have different signatures than base
-    # E0401: import-error - Tests may import modules that aren't available in test environment
-    # R0801: duplicate-code - Test fixtures may have similar boilerplate code
-    run_capture "pylint --jobs=4 --persistent=n --disable=C0114,C0115,C0116,W0212,C0415,W0718,W0613,R0914,R0912,R0915,R1702,C1803,W0105,R0903,W0201,W0621,W0404,W0221,E0401,R0801 $TEST_FOLDERS $EXAMPLES_FOLDERS"
-    local TEST_PYLINT_EXIT_CODE=$?
-    TEST_PYLINT_OUTPUT="$CAPTURE_OUTPUT"
-    local TEST_PYLINT_HAS_MESSAGES=0
-    if printf '%s\n' "$TEST_PYLINT_OUTPUT" | grep -Eq ':[[:space:]]*\[[A-Z]'; then
-        TEST_PYLINT_HAS_MESSAGES=1
-    fi
-    if [ $TEST_PYLINT_EXIT_CODE -ne 0 ]; then
-        tests_failed=1
-    fi
-
-    # Always show detailed test output in non-parallel mode
-    if [ "$is_parallel" != "true" ]; then
-        echo "Test pylint output (ignoring common test issues):"
-        echo "$TEST_PYLINT_OUTPUT"
-    else
-        # In parallel mode, write a combined pylint report to the logfile so
-        # both production and test outputs (and approximate exit statuses)
-        # are always present. This avoids partial logfile contents when the
-        # helper runs in a background subshell.
-        if [ -n "${_logfile}" ]; then
-            tmpfile="${_logfile}.$$.$RANDOM.tmp"
-            {
-                printf "=== PYLINT: production ===\n"
-                printf "%s\n" "$PROD_PYLINT_OUTPUT"
-                printf "\n=== PYLINT: tests (common issues ignored) ===\n"
-                printf "%s\n" "$TEST_PYLINT_OUTPUT"
-                printf "\n=== PYLINT: summary ===\n"
-                printf "production_score=%s\n" "${PROD_SCORE:-unknown}"
-                printf "test_exit_code=%s\n" "${TEST_PYLINT_EXIT_CODE:-unknown}"
-                printf "test_messages_present=%s\n" "${TEST_PYLINT_HAS_MESSAGES:-0}"
-            } >"$tmpfile" || true
-            mv "$tmpfile" "$_logfile" || true
-        fi
-        # Also output to stdout for spawn_bg to capture when there are errors
-        if [ $production_failed -eq 1 ] || [ $tests_failed -eq 1 ]; then
-            echo "=== PYLINT OUTPUT ==="
-            if [ $production_failed -eq 1 ]; then
-                echo "Production pylint score: $PROD_SCORE/10 (must be 10.00)"
-                echo "$PROD_PYLINT_OUTPUT"
-            fi
-            if [ $tests_failed -eq 1 ]; then
-                echo "Test pylint issues:"
-                echo "$TEST_PYLINT_OUTPUT"
-            fi
-            echo "=== END PYLINT OUTPUT ==="
-        fi
-    fi
-
-    # Check if pylint passed after disabling common issues
-    if [ $TEST_PYLINT_EXIT_CODE -ne 0 ]; then
-        if [ "$is_parallel" != "true" ]; then
-            print_error "Test code has pylint issues even after disabling common test-specific checks"
-        fi
-        exit_code=1
-    else
-        if [ "$is_parallel" != "true" ]; then
-            print_success "Test code passed pylint checks (common test issues ignored)"
-        fi
-        if [ $TEST_PYLINT_HAS_MESSAGES -eq 1 ] && [ "$is_parallel" != "true" ]; then
-            print_warning "pylint reported warnings/errors in tests/examples"
-        fi
-    fi
-
-    return $exit_code
 }
 
 # Run mypy type checking
@@ -569,7 +417,8 @@ run_pydocstyle() {
     local PYDOCSTYLE_FOLDERS="src examples"
     local PYDOCSTYLE_OUTPUT
     # shellcheck disable=SC2086  # PYDOCSTYLE_FOLDERS is intentionally space-separated
-    run_capture "pydocstyle --convention=google $PYDOCSTYLE_FOLDERS"
+    # D202 ignored: Black formatter requires blank line before nested functions
+    run_capture "pydocstyle --convention=google --add-ignore=D202 $PYDOCSTYLE_FOLDERS"
     local PYDOCSTYLE_EXIT_CODE=$?
     PYDOCSTYLE_OUTPUT="$CAPTURE_OUTPUT"
 
@@ -648,12 +497,6 @@ run_all_checks() {
 
         echo ""
 
-        if ! run_pylint; then
-            exit_code=1
-        fi
-
-        echo ""
-
         if ! run_mypy; then
             exit_code=1
         fi
@@ -708,12 +551,6 @@ run_all_checks_parallel() {
         set -e
         if [ $code -eq 0 ]; then
             print_success "$name passed"
-            if [ -n "${logfile:-}" ] && [ -f "$logfile" ] && [ "$name" = "pylint" ]; then
-                if grep -q 'test_messages_present=1' "$logfile"; then
-                    print_warning "pylint reported warnings/errors in tests/examples"
-                    sed -n '1,200p' "$logfile" || true
-                fi
-            fi
         else
             print_error "$name failed"
             exit_code=1
@@ -791,22 +628,19 @@ run_all_checks_parallel() {
 
     # Start backgrounded helper functions and capture pids via pidfiles
     spawn_bg run_ruff "$LOGDIR/ruff.out" "$LOGDIR/ruff.pid"
-    spawn_bg run_pylint "$LOGDIR/pylint.out" "$LOGDIR/pylint.pid"
     spawn_bg run_mypy "$LOGDIR/mypy.out" "$LOGDIR/mypy.pid"
     spawn_bg run_shellcheck "$LOGDIR/shellcheck.out" "$LOGDIR/shellcheck.pid"
     spawn_bg run_pydocstyle "$LOGDIR/pydocstyle.out" "$LOGDIR/pydocstyle.pid"
 
     pid_ruff=$(cat "$LOGDIR/ruff.pid")
-    pid_pylint=$(cat "$LOGDIR/pylint.pid")
     pid_mypy=$(cat "$LOGDIR/mypy.pid")
     pid_shellcheck=$(cat "$LOGDIR/shellcheck.pid")
     pid_pydocstyle=$(cat "$LOGDIR/pydocstyle.pid")
 
-    echo "⏳ Running comprehensive checks in parallel (ruff, pylint(prod/examples/test), mypy(prod/examples/tests), shellcheck, pydocstyle)..."
+    echo "⏳ Running comprehensive checks in parallel (ruff, mypy(prod/examples/tests), shellcheck, pydocstyle)..."
 
     # Wait & report using the helper to reduce duplication
     wait_and_report "$pid_ruff" "ruff" "$LOGDIR/ruff.out"
-    wait_and_report "$pid_pylint" "pylint" "$LOGDIR/pylint.out"
     wait_and_report "$pid_mypy" "mypy" "$LOGDIR/mypy.out"
     wait_and_report "$pid_shellcheck" "shellcheck" "$LOGDIR/shellcheck.out"
     wait_and_report "$pid_pydocstyle" "pydocstyle" "$LOGDIR/pydocstyle.out"
@@ -854,11 +688,6 @@ while [[ $# -gt 0 ]]; do
             run_ruff
             exit $?
             ;;
-        --pylint)
-            check_venv
-            run_pylint
-            exit $?
-            ;;
         --mypy)
             check_venv
             run_mypy
@@ -889,8 +718,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --path, -p <path>   Run checks in specified project path"
             echo ""
             echo "Individual tools:"
-            echo "  --ruff              Run ruff linting (replaces flake8)"
-            echo "  --pylint            Run pylint analysis (production: 10.00/10, tests: ignores common test issues)"
+            echo "  --ruff              Run ruff linting (replaces flake8 and pylint)"
             echo "  --mypy              Run mypy type checking (production: strict, tests: lenient)"
             echo "  --shellcheck        Run shellcheck shell script analysis"
             echo "  --doc               Run pydocstyle docstring analysis (Google style)"
@@ -901,7 +729,6 @@ while [[ $# -gt 0 ]]; do
             echo "  $0 --all            # Same as above (parallel by default)"
             echo "  $0 --sequential     # Run all comprehensive checks sequentially"
             echo "  $0 --ruff           # Run only ruff"
-            echo "  $0 --pylint         # Run only pylint"
             echo "  $0 --mypy           # Run only mypy"
             echo "  $0 --shellcheck     # Run only shellcheck"
             echo "  $0 --doc            # Run only pydocstyle"

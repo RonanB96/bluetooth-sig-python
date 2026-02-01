@@ -20,7 +20,8 @@ from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
 from bluetooth_sig.device.connection import ConnectionManagerProtocol
 from bluetooth_sig.gatt.descriptors.cccd import CCCDDescriptor
-from bluetooth_sig.types.advertising import AdvertisementData, AdvertisingDataStructures, CoreAdvertisingData
+from bluetooth_sig.types.advertising.ad_structures import AdvertisingDataStructures, CoreAdvertisingData
+from bluetooth_sig.types.advertising.result import AdvertisementData
 from bluetooth_sig.types.device_types import DeviceService
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -64,7 +65,7 @@ class AsyncMockConnectionManager(ConnectionManagerProtocol):
     def name(self) -> str:
         return "Async Mock Device"
 
-    async def connect(self) -> None:
+    async def connect(self, *, timeout: float = 10.0) -> None:
         self._connected = True
 
     async def disconnect(self) -> None:
@@ -110,7 +111,7 @@ class AsyncMockConnectionManager(ConnectionManagerProtocol):
         self.disconnected_callback = callback
 
     @classmethod
-    def convert_advertisement(cls, advertisement: object) -> AdvertisementData:
+    def convert_advertisement(cls, _advertisement: object) -> AdvertisementData:
         return AdvertisementData(
             ad_structures=AdvertisingDataStructures(core=CoreAdvertisingData()),
         )
@@ -195,7 +196,7 @@ class TestDeviceAsyncRead:
         await device.start_notify("2A19", callback)
 
         # Simulate notification by calling the internal callback
-        internal_callback = list(manager.notify_callbacks.values())[0]
+        internal_callback = next(iter(manager.notify_callbacks.values()))
         internal_callback("2A19", b"\x64")  # Battery level 100%
 
         assert len(received_values) == 1
@@ -213,7 +214,7 @@ class TestDeviceAsyncRead:
         await device.start_notify("2A19", failing_callback)
 
         # Simulate notification - should not raise
-        internal_callback = list(manager.notify_callbacks.values())[0]
+        internal_callback = next(iter(manager.notify_callbacks.values()))
         # This should log the exception but not propagate it
         internal_callback("2A19", b"\x64")
 

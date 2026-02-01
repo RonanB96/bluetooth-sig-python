@@ -15,11 +15,7 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, Callable, Protocol, TypeVar, cast, overload
 
-from ..advertising import (
-    AdvertisingDataInterpreter,
-    AdvertisingPDUParser,
-    advertising_interpreter_registry,
-)
+from ..advertising.registry import PayloadInterpreterRegistry
 from ..gatt.characteristics import CharacteristicName
 from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
@@ -29,22 +25,25 @@ from ..gatt.descriptors.base import BaseDescriptor
 from ..gatt.descriptors.registry import DescriptorRegistry
 from ..gatt.services import ServiceName
 from ..types import (
-    AdvertisementData,
-    AdvertisingData,
     CharacteristicInfo,
     DescriptorData,
     DescriptorInfo,
 )
-from ..types.device_types import DeviceEncryption, DeviceService, ScannedDevice
+from ..types.advertising.result import AdvertisementData
+from ..types.device_types import ScannedDevice
 from ..types.uuid import BluetoothUUID
+from .advertising import DeviceAdvertising
+from .connected import DeviceConnected, DeviceEncryption, DeviceService
 from .connection import ConnectionManagerProtocol
 
 # Type variable for generic characteristic return types
 T = TypeVar("T")
 
 __all__ = [
-    "Device",
     "DependencyResolutionMode",
+    "Device",
+    "DeviceAdvertising",
+    "DeviceConnected",
     "SIGTranslatorProtocol",
 ]
 
@@ -96,37 +95,45 @@ class SIGTranslatorProtocol(Protocol):  # pylint: disable=too-few-public-methods
 
 
 class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
-    r"""High-level BLE device abstraction.
+    r"""High-level BLE device abstraction using composition pattern.
 
-    This class groups all services, characteristics, encryption requirements, and
-    advertiser data for a BLE device. It integrates with
-    [BluetoothSIGTranslator][bluetooth_sig.BluetoothSIGTranslator]
-    for parsing while providing a unified view of device state.
+    This class coordinates between connected GATT operations and advertising
+    packet interpretation through two subsystems:
+    - `device.connected` - GATT connection, services, characteristics
+    - `device.advertising` - Vendor-specific advertising interpretation
 
     Key features:
-    - Parse advertiser data from BLE scan results
-    - Discover GATT services and characteristics via connection manager
-    - Access parsed characteristic data by UUID
-    - Handle device encryption requirements
-    - Cache device information for performance
+    - Parse advertising data via `device.advertising` subsystem
+    - Manage GATT connections via `device.connected` subsystem
+    - Convenience methods delegate to appropriate subsystem
+    - Integrates with [BluetoothSIGTranslator][bluetooth_sig.BluetoothSIGTranslator]
+
+    Attributes:
+        advertising: DeviceAdvertising subsystem for vendor-specific interpretation
+        connected: DeviceConnected subsystem for GATT operations
+        translator: SIG translator for parsing characteristics
 
     Example:
-        Create and configure a device::
+        Create and use device with composition::
 
             from bluetooth_sig import BluetoothSIGTranslator
             from bluetooth_sig.device import Device
 
             translator = BluetoothSIGTranslator()
-            device = Device("AA:BB:CC:DD:EE:FF", translator)
+            device = Device(connection_manager, translator)
 
-            # Attach connection manager and discover services
-            device.attach_connection_manager(manager)
-            await device.connect()
-            await device.discover_services()
+            # Use connected subsystem for GATT operations
+            await device.connected.connect()
+            await device.connected.discover_services()
+            battery = await device.connected.read("2A19")
 
-            # Read characteristic
-            battery = await device.read("battery_level")
-            print(f"Battery: {battery.value}%")
+            # Use advertising subsystem for packet interpretation
+            device.advertising.set_bindkey(b"\\x01\\x02...")
+            result = device.advertising.process(advertising_data)
+
+            # Convenience methods delegate to subsystems
+            await device.connect()  # → device.connected.connect()
+            await device.read("battery_level")  # → device.connected.read()
 
     """
 
@@ -141,24 +148,21 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self.connection_manager = connection_manager
         self.translator = translator
         self._name: str = ""
-        self.services: dict[str, DeviceService] = {}
-        self.encryption = DeviceEncryption()
-        self.advertiser_data = AdvertisingData(raw_data=b"")
 
-        # Advertising PDU parser for handling raw advertising data
-        self._pdu_parser = AdvertisingPDUParser()
+        # Connected subsystem (composition pattern)
+        self.connected = DeviceConnected(
+            mac_address=self.address,
+            connection_manager=connection_manager,
+        )
 
-        # Cache of vendor-specific advertising interpreters (keyed by class name)
-        self._advertising_interpreters: dict[str, AdvertisingDataInterpreter[Any]] = {}
+        # Advertising subsystem (composition pattern)
+        self.advertising = DeviceAdvertising(self.address, connection_manager)
+        # Set up registry for auto-detection
+        self.advertising.set_registry(PayloadInterpreterRegistry())
 
-        # Optional bindkey for encrypted advertisements
-        self._advertising_bindkey: bytes | None = None
-
-        # Cache for device_info property
+        # Cache for device_info property and last advertisement
         self._device_info_cache: DeviceInfo | None = None
-
-        # Last interpreted advertisement (with vendor-specific data)
-        self._last_interpreted_advertisement: AdvertisementData | None = None
+        self._last_advertisement: AdvertisementData | None = None
 
     def __str__(self) -> str:
         """Return string representation of Device.
@@ -167,9 +171,33 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             str: String representation of Device.
 
         """
-        service_count = len(self.services)
-        char_count = sum(len(service.characteristics) for service in self.services.values())
+        service_count = len(self.connected.services)
+        char_count = sum(len(service.characteristics) for service in self.connected.services.values())
         return f"Device({self.address}, name={self.name}, {service_count} services, {char_count} characteristics)"
+
+    @property
+    def services(self) -> dict[str, DeviceService]:
+        """GATT services discovered on device.
+
+        Delegates to device.connected.services.
+
+        Returns:
+            Dictionary of service UUID → DeviceService
+
+        """
+        return self.connected.services
+
+    @property
+    def encryption(self) -> DeviceEncryption:
+        """Encryption state for connected device.
+
+        Delegates to device.connected.encryption.
+
+        Returns:
+            DeviceEncryption instance
+
+        """
+        return self.connected.encryption
 
     @property
     def address(self) -> str:
@@ -218,30 +246,29 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     async def connect(self) -> None:
         """Connect to the BLE device.
 
+        Convenience method that delegates to device.connected.connect().
+
         Raises:
             RuntimeError: If no connection manager is attached
 
         """
-        if not self.connection_manager:
-            raise RuntimeError("No connection manager attached to Device")
-        await self.connection_manager.connect()
+        await self.connected.connect()
 
     async def disconnect(self) -> None:
         """Disconnect from the BLE device.
 
+        Convenience method that delegates to device.connected.disconnect().
+
         Raises:
             RuntimeError: If no connection manager is attached
 
         """
-        if not self.connection_manager:
-            raise RuntimeError("No connection manager attached to Device")
-        await self.connection_manager.disconnect()
+        await self.connected.disconnect()
 
     def _get_cached_characteristic(self, char_uuid: BluetoothUUID) -> BaseCharacteristic[Any] | None:
         """Get cached characteristic instance from services.
 
-        Single source of truth for characteristics - searches across all services.
-        Access parsed data via characteristic.last_parsed property.
+        Delegates to device.connected.get_cached_characteristic().
 
         Args:
             char_uuid: UUID of the characteristic to find
@@ -249,34 +276,19 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: BaseCharacteristic[Any] instance if found, None otherwise
 
         """
-        char_uuid_str = str(char_uuid)
-        for service in self.services.values():
-            if char_uuid_str in service.characteristics:
-                return service.characteristics[char_uuid_str]
-        return None
+        return self.connected.get_cached_characteristic(char_uuid)
 
     def _cache_characteristic(self, char_uuid: BluetoothUUID, char_instance: BaseCharacteristic[Any]) -> None:
         """Store characteristic instance in services cache.
 
-        Only updates existing characteristic entries - does not create new services.
-        Characteristics must belong to a discovered service.
+        Delegates to device.connected.cache_characteristic().
 
         Args:
             char_uuid: UUID of the characteristic
             char_instance: BaseCharacteristic[Any] instance to cache
 
         """
-        char_uuid_str = str(char_uuid)
-        # Find existing service that should contain this characteristic
-        for service in self.services.values():
-            if char_uuid_str in service.characteristics:
-                service.characteristics[char_uuid_str] = char_instance
-                return
-        # Characteristic not in any discovered service - warn about missing service
-        logging.warning(
-            "Cannot cache characteristic %s - not found in any discovered service. Run discover_services() first.",
-            char_uuid_str,
-        )
+        self.connected.cache_characteristic(char_uuid, char_instance)
 
     def _create_unknown_characteristic(self, dep_uuid: BluetoothUUID) -> BaseCharacteristic[Any]:
         """Create an unknown characteristic instance for a UUID not in registry.
@@ -409,8 +421,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         device_info = DeviceInfo(
             address=self.address,
             name=self.name,
-            manufacturer_data=self.advertiser_data.ad_structures.core.manufacturer_data,
-            service_uuids=self.advertiser_data.ad_structures.core.service_uuids,
+            manufacturer_data=self._last_advertisement.ad_structures.core.manufacturer_data
+            if self._last_advertisement
+            else {},
+            service_uuids=self._last_advertisement.ad_structures.core.service_uuids if self._last_advertisement else [],
         )
 
         return CharacteristicContext(
@@ -436,7 +450,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self,
         char: str | CharacteristicName | type[BaseCharacteristic[T]],
         resolution_mode: DependencyResolutionMode = DependencyResolutionMode.NORMAL,
-    ) -> T | Any | None:  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+    ) -> T | Any | None:  # Runtime UUID dispatch cannot be type-safe
         """Read a characteristic value from the device.
 
         Args:
@@ -495,9 +509,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         # Read the characteristic
         raw = await self.connection_manager.read_gatt_char(resolved_uuid)
-        parsed = self.translator.parse_characteristic(str(resolved_uuid), raw, ctx=ctx)
-
-        return parsed
+        return self.translator.parse_characteristic(str(resolved_uuid), raw, ctx=ctx)
 
     @overload
     async def write(
@@ -567,7 +579,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         resolved_uuid = self._resolve_characteristic_name(char)
         # cast is safe: isinstance check above ensures data is bytes/bytearray
-        await self.connection_manager.write_gatt_char(resolved_uuid, cast(bytes, data), response=response)
+        await self.connection_manager.write_gatt_char(resolved_uuid, cast("bytes", data), response=response)
 
     @overload
     async def start_notify(
@@ -624,11 +636,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             resolved_uuid = char_instance.uuid
 
             def _typed_cb(sender: str, data: bytes) -> None:
+                del sender  # Required by callback interface
                 parsed = char_instance.parse_value(data)
                 try:
                     callback(parsed)
-                except Exception as exc:  # pylint: disable=broad-exception-caught
-                    logging.exception("Notification callback raised an exception: %s", exc)
+                except Exception:  # pylint: disable=broad-exception-caught
+                    logging.exception("Notification callback raised an exception")
 
             await self.connection_manager.start_notify(resolved_uuid, _typed_cb)
             return
@@ -640,8 +653,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             parsed = self.translator.parse_characteristic(sender, data)
             try:
                 callback(parsed)
-            except Exception as exc:  # pylint: disable=broad-exception-caught
-                logging.exception("Notification callback raised an exception: %s", exc)
+            except Exception:  # pylint: disable=broad-exception-caught
+                logging.exception("Notification callback raised an exception")
 
         await self.connection_manager.start_notify(resolved_uuid, _internal_cb)
 
@@ -698,16 +711,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             RuntimeError: If no connection manager is attached
 
         """
-        if not self.connection_manager:
-            raise RuntimeError("No connection manager attached to Device")
-
         # Extract UUID from BaseDescriptor if needed
-        if isinstance(desc_uuid, BaseDescriptor):
-            uuid = desc_uuid.uuid
-        else:
-            uuid = desc_uuid
+        uuid = desc_uuid.uuid if isinstance(desc_uuid, BaseDescriptor) else desc_uuid
 
-        raw_data = await self.connection_manager.read_gatt_descriptor(uuid)
+        raw_data = await self.connected.read_descriptor(uuid)
 
         # Try to create a descriptor instance and parse the data
         descriptor = DescriptorRegistry.create_descriptor(str(uuid))
@@ -735,54 +742,41 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             RuntimeError: If no connection manager is attached
 
         """
-        if not self.connection_manager:
-            raise RuntimeError("No connection manager attached to Device")
-
         # Extract UUID from BaseDescriptor if needed
-        if isinstance(desc_uuid, BaseDescriptor):
-            uuid = desc_uuid.uuid
-        else:
-            uuid = desc_uuid
+        uuid = desc_uuid.uuid if isinstance(desc_uuid, BaseDescriptor) else desc_uuid
 
         # Extract raw bytes from DescriptorData if needed
         raw_data: bytes
-        if isinstance(data, DescriptorData):
-            raw_data = data.raw_data
-        else:
-            raw_data = data
+        raw_data = data.raw_data if isinstance(data, DescriptorData) else data
 
-        await self.connection_manager.write_gatt_descriptor(uuid, raw_data)
+        await self.connected.write_descriptor(uuid, raw_data)
 
     async def pair(self) -> None:
         """Pair with the device.
 
-        Raises an exception if pairing fails.
+        Convenience method that delegates to device.connected.pair().
 
         Raises:
             RuntimeError: If no connection manager is attached
 
         """
-        if not self.connection_manager:
-            raise RuntimeError("No connection manager attached to Device")
-
-        await self.connection_manager.pair()
+        await self.connected.pair()
 
     async def unpair(self) -> None:
         """Unpair from the device.
 
-        Raises an exception if unpairing fails.
+        Convenience method that delegates to device.connected.unpair().
 
         Raises:
             RuntimeError: If no connection manager is attached
 
         """
-        if not self.connection_manager:
-            raise RuntimeError("No connection manager attached to Device")
-
-        await self.connection_manager.unpair()
+        await self.connected.unpair()
 
     async def read_rssi(self) -> int:
         """Read the RSSI (signal strength) of the connection.
+
+        Convenience method that delegates to device.connected.read_rssi().
 
         Returns:
             RSSI value in dBm (typically negative, e.g., -60)
@@ -791,13 +785,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             RuntimeError: If no connection manager is attached
 
         """
-        if not self.connection_manager:
-            raise RuntimeError("No connection manager attached to Device")
-
-        return await self.connection_manager.read_rssi()
+        return await self.connected.read_rssi()
 
     def set_disconnected_callback(self, callback: Callable[[], None]) -> None:
         """Set a callback to be invoked when the device disconnects.
+
+        Convenience method that delegates to device.connected.set_disconnected_callback().
 
         Args:
             callback: Function to call when disconnection occurs
@@ -806,14 +799,13 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             RuntimeError: If no connection manager is attached
 
         """
-        if not self.connection_manager:
-            raise RuntimeError("No connection manager attached to Device")
-
-        self.connection_manager.set_disconnected_callback(callback)
+        self.connected.set_disconnected_callback(callback)
 
     @property
     def mtu_size(self) -> int:
         """Get the negotiated MTU size in bytes.
+
+        Delegates to device.connected.mtu_size.
 
         Returns:
             The MTU size negotiated for this connection (typically 23-512 bytes)
@@ -822,22 +814,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             RuntimeError: If no connection manager is attached
 
         """
-        if not self.connection_manager:
-            raise RuntimeError("No connection manager attached to Device")
-
-        return self.connection_manager.mtu_size
-
-    def set_advertising_bindkey(self, bindkey: bytes | None) -> None:
-        """Set encryption key for encrypted advertising data.
-
-        Args:
-            bindkey: Encryption key bytes, or None to clear
-
-        """
-        self._advertising_bindkey = bindkey
-        # Update any existing interpreters
-        for interpreter in self._advertising_interpreters.values():
-            interpreter.bindkey = bindkey
+        return self.connected.mtu_size
 
     async def refresh_advertisement(self, refresh: bool = False) -> AdvertisementData | None:
         """Get advertisement data from the connection manager.
@@ -874,84 +851,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if advertisement is None:
             return None
 
-        # Process through the interpretation pipeline
-        self._process_advertisement(advertisement)
-        return self._last_interpreted_advertisement
-
-    def _process_advertisement(self, advertisement: AdvertisementData) -> None:
-        """Process advertisement data and store results.
-
-        Internal method that stores advertisement data and routes to
-        vendor interpreters for typed sensor data extraction.
-
-        Args:
-            advertisement: AdvertisementData from connection manager
-
-        """
-        # Store the advertisement data
-        self.advertiser_data = AdvertisingData(
-            raw_data=b"",  # Raw data not available from converted advertisements
-            ad_structures=advertisement.ad_structures,
-            rssi=advertisement.rssi,
-        )
+        # Process and cache the advertisement
+        processed_ad, _result = self.advertising.process_from_connection_manager(advertisement)
+        self._last_advertisement = processed_ad
 
         # Update device name if not set
         if advertisement.ad_structures.core.local_name and not self.name:
             self.name = advertisement.ad_structures.core.local_name
 
-        # Apply vendor interpretation and store result
-        interpreted = self._interpret_advertisement(advertisement)
-        # Store the interpreted result for later access
-        self._last_interpreted_advertisement = interpreted
-
-    def _interpret_advertisement(self, advertisement: AdvertisementData) -> AdvertisementData:
-        """Apply vendor interpretation to advertisement data.
-
-        Internal method that routes advertisement data to registered vendor
-        interpreters for typed sensor data extraction.
-
-        Args:
-            advertisement: AdvertisementData with ad_structures populated
-
-        Returns:
-            AdvertisementData with interpreted_data populated if a matching
-            vendor interpreter was found
-
-        """
-        # Route to vendor interpreter
-        interpreted_data: Any = None
-        interpreter_name: str | None = None
-
-        interpreter_class = advertising_interpreter_registry.find_interpreter_class(
-            advertisement.ad_structures.core.manufacturer_data,
-            advertisement.ad_structures.core.service_data,
-            advertisement.ad_structures.core.local_name or None,
-        )
-
-        if interpreter_class is not None:
-            # Get or create stateful interpreter for this device + interpreter type
-            class_name = interpreter_class.__name__
-            if class_name not in self._advertising_interpreters:
-                self._advertising_interpreters[class_name] = interpreter_class(
-                    self.address,
-                    bindkey=self._advertising_bindkey,
-                )
-
-            interpreter = self._advertising_interpreters[class_name]
-            interpreted_data = interpreter.interpret(
-                advertisement.ad_structures.core.manufacturer_data,
-                advertisement.ad_structures.core.service_data,
-                advertisement.ad_structures.core.local_name or None,
-                advertisement.rssi or 0,
-            )
-            interpreter_name = interpreter_class._info.name  # pylint: disable=protected-access
-
-        return AdvertisementData(
-            ad_structures=advertisement.ad_structures,
-            interpreted_data=interpreted_data,
-            interpreter_name=interpreter_name,
-            rssi=advertisement.rssi,
-        )
+        return processed_ad
 
     def parse_raw_advertisement(self, raw_data: bytes, rssi: int = 0) -> AdvertisementData:
         """Parse raw advertising PDU bytes directly.
@@ -974,28 +882,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             print(result.manufacturer_data)
 
         """
-        # Parse raw PDU bytes
-        pdu_result = self._pdu_parser.parse_advertising_data(raw_data)
-
-        # Store the parsed AdvertisingData (with raw_data) directly
-        self.advertiser_data = AdvertisingData(
-            raw_data=raw_data,
-            ad_structures=pdu_result.ad_structures,
-            rssi=rssi,
-        )
+        # Delegate to advertising subsystem
+        advertisement, _result = self.advertising.parse_raw_pdu(raw_data, rssi)
+        self._last_advertisement = advertisement
 
         # Update device name if present and not already set
-        if pdu_result.ad_structures.core.local_name and not self.name:
-            self.name = pdu_result.ad_structures.core.local_name
+        if advertisement.ad_structures.core.local_name and not self.name:
+            self.name = advertisement.ad_structures.core.local_name
 
-        # Create AdvertisementData for interpretation
-        advertisement = AdvertisementData(
-            ad_structures=pdu_result.ad_structures,
-            rssi=rssi,
-        )
-
-        # Route to vendor interpreter and return result
-        return self._interpret_advertisement(advertisement)
+        return advertisement
 
     def get_characteristic_data(self, char_uuid: BluetoothUUID) -> Any | None:  # noqa: ANN401  # Heterogeneous cache
         """Get parsed characteristic data - single source of truth via characteristic.last_parsed.
@@ -1066,19 +961,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             battery = await device.read("battery_level")
 
         """
-        if not self.connection_manager:
-            raise RuntimeError("No connection manager attached to Device")
+        # Delegate to connected subsystem
+        services_list = await self.connected.discover_services()
 
-        services_data = await self.connection_manager.get_services()
+        # Invalidate device_info cache since services changed
+        self._device_info_cache = None
 
-        # Store discovered services in our internal structure
-        for service_info in services_data:
-            service_uuid = str(service_info.service.uuid)
-            if service_uuid not in self.services:
-                # Store the service directly from connection manager
-                self.services[service_uuid] = service_info
-
-        return dict(self.services)
+        # Return as dict for backward compatibility
+        return {str(svc.uuid): svc for svc in services_list}
 
     async def get_characteristic_info(self, char_uuid: str) -> Any | None:  # noqa: ANN401  # Adapter-specific characteristic metadata
         """Get information about a characteristic from the connection manager.
@@ -1177,14 +1067,21 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             self._device_info_cache = DeviceInfo(
                 address=self.address,
                 name=self.name,
-                manufacturer_data=self.advertiser_data.ad_structures.core.manufacturer_data,
-                service_uuids=self.advertiser_data.ad_structures.core.service_uuids,
+                manufacturer_data=self._last_advertisement.ad_structures.core.manufacturer_data
+                if self._last_advertisement
+                else {},
+                service_uuids=self._last_advertisement.ad_structures.core.service_uuids
+                if self._last_advertisement
+                else [],
             )
         else:
             # Update existing cache object with current data
             self._device_info_cache.name = self.name
-            self._device_info_cache.manufacturer_data = self.advertiser_data.ad_structures.core.manufacturer_data
-            self._device_info_cache.service_uuids = self.advertiser_data.ad_structures.core.service_uuids
+            if self._last_advertisement:
+                self._device_info_cache.manufacturer_data = (
+                    self._last_advertisement.ad_structures.core.manufacturer_data
+                )
+                self._device_info_cache.service_uuids = self._last_advertisement.ad_structures.core.service_uuids
         return self._device_info_cache
 
     @property
@@ -1204,26 +1101,27 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     def is_connected(self) -> bool:
         """Check if the device is currently connected.
 
+        Delegates to device.connected.is_connected.
+
         Returns:
             True if connected, False otherwise
 
         """
-        return self.connection_manager.is_connected
+        return self.connected.is_connected
 
     @property
-    def interpreted_advertisement(self) -> AdvertisementData | None:
-        """Get the last interpreted advertisement data.
+    def last_advertisement(self) -> AdvertisementData | None:
+        """Get the last received advertisement data.
 
-        This is automatically populated when a connection manager pushes
-        advertisement data to the device. The data includes vendor-specific
-        interpretations if registered interpreters match.
+        This is automatically updated when advertisements are processed via
+        refresh_advertisement() or parse_raw_advertisement().
 
         Returns:
-            AdvertisementData with interpreted fields, or None if no
-            advertisement has been received yet.
+            AdvertisementData with AD structures and interpreted_data if available,
+            None if no advertisement has been received yet.
 
         """
-        return self._last_interpreted_advertisement
+        return self._last_advertisement
 
     def get_service_by_uuid(self, service_uuid: str) -> DeviceService | None:
         """Get a service by its UUID.

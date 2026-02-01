@@ -6,21 +6,60 @@ Advertising data interpretation follows a two-layer architecture:
    - Extracts manufacturer_data, service_data, flags, local_name, etc.
    - Framework-agnostic, works with raw BLE PDU bytes
 
-2. Data Interpretation (AdvertisingDataInterpreter): AD structures → typed results
+2. Payload Interpretation (PayloadInterpreter): AD structures → typed results
    - Interprets vendor-specific protocols (BTHome, Xiaomi, RuuviTag, etc.)
    - Returns strongly-typed sensor data (temperature, humidity, etc.)
-   - Maintains per-device state (encryption counters, packet IDs)
+   - State managed externally by caller; interpreter updates state directly
+   - Errors are raised as exceptions (consistent with GATT characteristic parsing)
+
+Error Handling:
+    Interpreters raise exceptions for error conditions instead of returning
+    status codes. This is consistent with GATT characteristic parsing.
+
+    Exceptions:
+        EncryptionRequiredError: Payload encrypted, no bindkey available
+        DecryptionFailedError: Decryption failed (wrong key or corrupt data)
+        ReplayDetectedError: Counter not increasing (potential replay attack)
+        DuplicatePacketError: Same packet_id as previous
+        AdvertisingParseError: General parse failure
+        UnsupportedVersionError: Unknown protocol version
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
 import msgspec
 
+from bluetooth_sig.advertising.state import DeviceAdvertisingState
+from bluetooth_sig.types.company import ManufacturerData
 from bluetooth_sig.types.uuid import BluetoothUUID
+
+
+class AdvertisingData(msgspec.Struct, kw_only=True, frozen=True):
+    """Complete advertising data from a BLE advertisement packet.
+
+    Encapsulates all extracted AD structures from a BLE PDU.
+    Interpreters access only the fields they need.
+
+    Attributes:
+        manufacturer_data: Company ID → ManufacturerData mapping.
+                          Each entry contains resolved company info and payload bytes.
+        service_data: Service UUID → payload bytes mapping.
+        local_name: Device local name (may contain protocol info).
+        rssi: Signal strength in dBm.
+        timestamp: Advertisement timestamp (Unix epoch seconds).
+
+    """
+
+    manufacturer_data: dict[int, ManufacturerData] = msgspec.field(default_factory=dict)
+    service_data: dict[BluetoothUUID, bytes] = msgspec.field(default_factory=dict)
+    local_name: str | None = None
+    rssi: int | None = None
+    timestamp: float | None = None
+
 
 # Generic type variable for interpreter result types
 T = TypeVar("T")
@@ -34,8 +73,16 @@ class DataSource(Enum):
     LOCAL_NAME = "local_name"
 
 
-class AdvertisingInterpreterInfo(msgspec.Struct, kw_only=True, frozen=True):
-    """Interpreter metadata for routing and identification."""
+class InterpreterInfo(msgspec.Struct, kw_only=True, frozen=True):
+    """Interpreter metadata for routing and identification.
+
+    Attributes:
+        company_id: Bluetooth SIG company ID for manufacturer data routing.
+        service_uuid: Service UUID for service data routing.
+        name: Human-readable interpreter name.
+        data_source: Primary data source for fast routing.
+
+    """
 
     company_id: int | None = None
     service_uuid: BluetoothUUID | None = None
@@ -43,50 +90,57 @@ class AdvertisingInterpreterInfo(msgspec.Struct, kw_only=True, frozen=True):
     data_source: DataSource = DataSource.MANUFACTURER
 
 
-class AdvertisingDataInterpreter(ABC, Generic[T]):
-    """Base class for vendor-specific advertising data interpretation.
+class PayloadInterpreter(ABC, Generic[T]):
+    """Base class for payload interpretation (service data + manufacturer data).
 
-    Interprets manufacturer_data and service_data from BLE advertisements
-    into strongly-typed domain objects (sensor readings, device state, etc.).
+    Interprets raw bytes from BLE advertisements into typed domain objects.
+    State is managed externally by the caller - interpreter receives state
+    and updates it directly. Errors are raised as exceptions.
 
-    Workflow:
-
-        1. Registry routes advertisement to interpreter class via supports()
-        2. Device creates/reuses interpreter instance per (mac_address, interpreter_type)
-        3. interpreter.interpret() decodes payload, returns typed result
-        4. Interpreter maintains internal state (counters, flags) across calls
+    Encryption Flow (following BTHome/Xiaomi patterns):
+        1. Check if payload is encrypted (flag byte in payload header)
+        2. If encrypted, check state.encryption.bindkey
+        3. If no bindkey, raise EncryptionRequiredError
+        4. Extract counter from payload, compare to state.encryption.encryption_counter
+        5. If counter <= old counter, raise ReplayDetectedError
+        6. Attempt decryption with AES-CCM
+        7. If decryption fails, raise DecryptionFailedError
+        8. Parse decrypted payload
+        9. Update state.encryption.encryption_counter directly
+        10. Return parsed data
 
     Example:
-        class BTHomeInterpreter(AdvertisingDataInterpreter[BTHomeData]):
-            _info = AdvertisingInterpreterInfo(
+        class BTHomeInterpreter(PayloadInterpreter[BTHomeData]):
+            _info = InterpreterInfo(
                 service_uuid=BluetoothUUID("0000fcd2-0000-1000-8000-00805f9b34fb"),
                 name="BTHome",
                 data_source=DataSource.SERVICE,
             )
 
             @classmethod
-            def supports(cls, manufacturer_data, service_data, local_name):
-                return "0000fcd2-0000-1000-8000-00805f9b34fb" in service_data
+            def supports(cls, advertising_data):
+                return "0000fcd2-0000-1000-8000-00805f9b34fb" in advertising_data.service_data
 
-            def interpret(self, manufacturer_data, service_data, local_name, rssi):
-                # Parse BTHome service data and return BTHomeData
+            def interpret(self, advertising_data, state):
+                # Parse BTHome service data
+                # Update state.encryption.encryption_counter if encrypted
+                # Raise exceptions on error
+                # Return BTHomeData on success
                 ...
+
     """
 
-    _info: AdvertisingInterpreterInfo
+    _info: InterpreterInfo
     _is_base_class: bool = False
 
-    def __init__(self, mac_address: str, bindkey: bytes | None = None) -> None:
+    def __init__(self, mac_address: str) -> None:
         """Create interpreter instance for a specific device.
 
         Args:
-            mac_address: BLE device address (used for encryption nonce)
-            bindkey: Optional encryption key for encrypted advertisements
+            mac_address: BLE device address (used for encryption nonce construction).
 
         """
         self._mac_address = mac_address
-        self._bindkey = bindkey
-        self._state: dict[str, Any] = {}
 
     @property
     def mac_address(self) -> str:
@@ -94,22 +148,7 @@ class AdvertisingDataInterpreter(ABC, Generic[T]):
         return self._mac_address
 
     @property
-    def bindkey(self) -> bytes | None:
-        """Encryption key for this device."""
-        return self._bindkey
-
-    @bindkey.setter
-    def bindkey(self, value: bytes | None) -> None:
-        """Set encryption key."""
-        self._bindkey = value
-
-    @property
-    def state(self) -> dict[str, Any]:
-        """Return the protocol-specific state dictionary."""
-        return self._state
-
-    @property
-    def info(self) -> AdvertisingInterpreterInfo:
+    def info(self) -> InterpreterInfo:
         """Interpreter metadata."""
         return self._info
 
@@ -122,42 +161,50 @@ class AdvertisingDataInterpreter(ABC, Generic[T]):
         if not hasattr(cls, "_info"):
             return
 
-        # pylint: disable-next=import-outside-toplevel,cyclic-import
-        from bluetooth_sig.advertising.registry import advertising_interpreter_registry
+        # Lazy import to avoid circular dependency at module load time
+        from bluetooth_sig.advertising.registry import payload_interpreter_registry  # noqa: PLC0415
 
-        advertising_interpreter_registry.register(cls)
+        payload_interpreter_registry.register(cls)
 
     @classmethod
     @abstractmethod
-    def supports(
-        cls,
-        manufacturer_data: dict[int, bytes],
-        service_data: dict[BluetoothUUID, bytes],
-        local_name: str | None,
-    ) -> bool:
+    def supports(cls, advertising_data: AdvertisingData) -> bool:
         """Check if this interpreter handles the advertisement.
 
         Called by registry for fast routing. Should be a quick check
         based on company_id, service_uuid, or local_name pattern.
+
+        Args:
+            advertising_data: Complete advertising data from BLE packet.
+
+        Returns:
+            True if this interpreter can handle the advertisement.
+
         """
 
     @abstractmethod
     def interpret(
         self,
-        manufacturer_data: dict[int, bytes],
-        service_data: dict[BluetoothUUID, bytes],
-        local_name: str | None,
-        rssi: int,
+        advertising_data: AdvertisingData,
+        state: DeviceAdvertisingState,
     ) -> T:
-        """Interpret advertisement data and return typed result.
+        """Interpret payload bytes and return typed result.
+
+        Updates state directly (state is mutable). Raises exceptions for errors.
 
         Args:
-            manufacturer_data: Company ID → payload bytes mapping
-            service_data: Service UUID → payload bytes mapping
-            local_name: Device local name (may contain protocol info)
-            rssi: Signal strength in dBm
+            advertising_data: Complete advertising data from BLE packet.
+            state: Current device advertising state (caller-managed, mutable).
 
         Returns:
-            Typed result specific to this interpreter (e.g., SensorData)
+            Parsed data of type T.
+
+        Raises:
+            EncryptionRequiredError: Payload encrypted, no bindkey available.
+            DecryptionFailedError: Decryption failed.
+            ReplayDetectedError: Encryption counter not increasing.
+            DuplicatePacketError: Same packet_id as previous.
+            AdvertisingParseError: General parse failure.
+            UnsupportedVersionError: Unknown protocol version.
 
         """

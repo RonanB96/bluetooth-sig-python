@@ -23,7 +23,7 @@ class CalibrationCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.INT,
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> int:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
         # simple calibration: single uint8
         return int(data[0])
 
@@ -41,7 +41,9 @@ class MeasurementCharacteristic(CustomBaseCharacteristic):
         value_type=ValueType.FLOAT,
     )
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> float:
         raw = int.from_bytes(data[0:2], byteorder="little", signed=True)
         scale = 1.0
         if ctx and ctx.other_characteristics:

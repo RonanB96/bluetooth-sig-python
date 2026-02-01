@@ -26,7 +26,7 @@ class TestServerCharacteristicConfigurationDescriptor:
 
         result = sccd.parse_value(data)
         assert result.parse_success is False
-        assert "SCCD data must be exactly 2 bytes" in result.error_message
+        assert "need 2 bytes, got 1" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that SCCD has correct UUID."""

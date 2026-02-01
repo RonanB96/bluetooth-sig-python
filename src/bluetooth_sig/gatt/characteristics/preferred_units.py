@@ -32,12 +32,15 @@ class PreferredUnitsCharacteristic(BaseCharacteristic[PreferredUnitsData]):
     min_length = 0
     allow_variable_length = True
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> PreferredUnitsData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> PreferredUnitsData:
         """Decode Preferred Units from raw bytes.
 
         Args:
             data: Raw bytes from BLE characteristic (variable length, multiples of 2)
             ctx: Optional context for parsing
+            validate: Whether to validate ranges (default True)
 
         Returns:
             PreferredUnitsData: Parsed preferred units as Bluetooth UUID objects
@@ -67,7 +70,8 @@ class PreferredUnitsCharacteristic(BaseCharacteristic[PreferredUnitsData]):
         """
         result = bytearray()
         for unit_uuid in data.units:
-            unit_value = unit_uuid.int_value
+            # Extract 16-bit short form value from UUID for encoding
+            unit_value = int(unit_uuid.short_form, 16)
             result.extend(DataParser.encode_int16(unit_value, signed=False))
         return result
 

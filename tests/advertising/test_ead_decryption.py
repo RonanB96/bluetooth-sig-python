@@ -87,7 +87,7 @@ class TestBuildEadNonce:
         nonce = build_ead_nonce(randomizer, address)
 
         assert len(nonce) == 13
-        # Nonce = randomizer(5) + address(6) + padding(2)
+        # Nonce structure: randomizer (5 bytes), address (6 bytes), padding (2 bytes)
         assert nonce[:5] == randomizer
         assert nonce[5:11] == address
         assert nonce[11:] == b"\x00\x00"

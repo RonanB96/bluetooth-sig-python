@@ -1,129 +1,60 @@
 ﻿# Bluetooth SIG Standards Library - AI Agent Guidelines
 
-**TL;DR**: Initialize submodule → Check docs → Run tests → Fix → Lint → Done
+**TL;DR**: Check docs → Run tests → Fix → Lint → Done
 
 ---
 
-## Quick Start Checklist
+## ABSOLUTE PROHIBITIONS (Read This First)
 
-Before any implementation:
-- [ ] **Submodule initialized**: `git submodule init && git submodule update`
-- [ ] **Documentation consulted**: Bluetooth SIG specs + Python docs
-- [ ] **Think first**: Use thinking tools to plan approach and edge cases
-- [ ] **Tests created**: Success + 2 failure modes minimum
-- [ ] **Quality gates pass**: See validation commands below
+**The following practices are FORBIDDEN. No exceptions. Violating these breaks the architecture:**
+
+### ❌ NEVER Use:
+- `TYPE_CHECKING` blocks or lazy imports in core logic
+- Hardcoded UUID strings (use the lib to resolve from registry)
+- `from typing import Optional` (use `Type | None`)
+- Bare `except:` or silent `pass`
+- Raw `dict`/`tuple` returns (use `msgspec.Struct`)
+- Untyped public function signatures
+
+**If you catch yourself typing any of the above, STOP. They are architectural violations.**
 
 ---
-
-## Prerequisites (BLOCKING)
-
-**The Bluetooth SIG submodule MUST be initialized before any work can begin.**
-
-```bash
-git submodule init && git submodule update
-python -c "import bluetooth_sig; print('✅ Ready')"
-```
-
-**Why this matters**: The registry system (`src/bluetooth_sig/registry/yaml_cross_reference.py`) loads UUID mappings from `bluetooth_sig/assigned_numbers/uuids/*.yaml`. Without the submodule, characteristic parsing and UUID resolution will fail at runtime. The code searches:
-1. Development: `bluetooth_sig/assigned_numbers/uuids/`
-2. Installed: `site-packages/bluetooth_sig/assigned_numbers/uuids/`
 
 ## Core Principles (Non-Negotiable)
 
-### 1. Research First
-**Document consultation is MANDATORY, not optional.**
-- ALWAYS check official Bluetooth SIG specifications before implementing
-- ALWAYS check Python stdlib docs for language features
-- State explicitly: "Based on [specific documentation], the approach is..."
-- If docs unavailable: state so explicitly and note verification needed
+### 1. Research First (MANDATORY)
+Consult official Bluetooth SIG specs and Python stdlib docs before implementing. State source explicitly: "Per [X documentation]..." or note if unavailable.
 
 ### 2. Think Before Acting
-**Always use available thinking tools before making changes.**
-- Before implementing: Think through approach, edge cases, and implications
-- Before testing: Think through what could go wrong
-- Before completing: Think through what might have been missed
-- Use structured thinking for complex changes
+Use available thinking tools before making changes—plan approach, edge cases, and implications.
 
 ### 3. Architecture Boundaries (ABSOLUTE)
-<architecture>
-**Forbidden imports in `src/bluetooth_sig/` modules:**
-- `from homeassistant` or any HA framework code
-- Integration-specific frameworks in core translation layer (`src/bluetooth_sig/gatt/`, `src/bluetooth_sig/registry/`)
-- Any dependency that couples GATT parsing to a specific backend
-
-**Violating this breaks the entire architecture. No exceptions.**
-
-The translation layer must remain framework-agnostic to support multiple backends (bleak, simplepyble, etc.).
-</architecture>
+`src/bluetooth_sig/` must remain framework-agnostic. NO imports from `homeassistant`, `bleak`, `simplepyble`, or any backend. Translation layer supports multiple backends.
 
 ### 4. No Untested Code
-**Testing is mandatory, not optional.**
-- Every new function/method needs tests
-- Minimum: success case + 2 failure cases
-- Run full test suite before completion: `python -m pytest tests/ -v`
-- Claiming "it works" without running tests is unacceptable
+Every new function needs tests: success + 2 failure cases minimum. Run `python -m pytest tests/ -v` before claiming completion.
 
-### 5. No Hardcoded UUIDs
-**NEVER hardcode UUID strings in implementation code.**
-- Use registry resolution: `CharacteristicName.BATTERY_LEVEL`
-- Custom characteristics need `_info` attribute with proper `CharacteristicInfo`
-- See: `.github/instructions/bluetooth-gatt.instructions.md` for details
+### 5. Quality Gates Must Pass
+Run `./scripts/lint.sh --all` before completion (pipe to file, don't grep output). Fix issues, don't suppress them. For iteration, rerun only failing linter (`./scripts/lint.sh --mypy`), then rerun all at end.
 
-### 6. Type Safety Required
-**Every public function MUST have complete, explicit type hints.**
-- Use modern union syntax: `Type | None` not `Optional[Type]`
-- Use dataclasses for structured data - NEVER return raw `dict` or `tuple`
-- See: `.github/instructions/python-implementation.instructions.md` for details
-
-### 7. API Consistency
-**Custom and SIG characteristics MUST have identical usage patterns.**
-- Users should NOT need to know if characteristic is SIG-defined or custom
-- Both must support same methods: `decode_value()`, `encode_value()`
-- See: `.github/instructions/bluetooth-gatt.instructions.md` for patterns
-
-### 8. Quality Gates Must Pass
-**All linting must pass before claiming completion.**
-- Run `./scripts/lint.sh --all` before every completion, docs don't need this linter script to be ran
-- Fix issues, don't suppress them unless documented
-- The linter script is slow, so grepping or tailing the output is banned, pipe it to a file and read the file instead
-- Never hide real problems with disables
-- If fixing linting errors, rerun only that linting tool to speed up iteration, i.e. `./scripts/lint.sh --mypy`. Then rerun all at the end.
-
-### 9. Documentation Policy
-**Do NOT generate or update summary documentation unless explicitly requested.**
-- ❌ **FORBIDDEN**: Updating README.md automatically
-- ✅ **ALLOWED**: Inline code comments and docstrings (mandatory for new code)
-- Focus on self-documenting code through clear naming and type hints
-
-### 10. Problem-Solving Philosophy
-**Fix root causes, don't hide symptoms.**
-- Understand linting errors before suppressing
-- Document reasoning with NOTE/TODO comments when suppressing
-- If adding same disable to many files, **stop and reconsider approach
-```
+### 6. Documentation Policy
+- Updating documentation (./docs/) will be asked directly if needed.
+- If making code changes that will break the code blocks in the docs, update those code blocks too.
+- Inline comments and docstrings (mandatory for new code)
 
 ---
 
-## Mandatory Workflow (Every Change)
+## Workflow (Every Change)
 
-<workflow>
-1. **Research**: Gather spec excerpts (length, units, encoding, special cases, valid ranges)
-2. **Think**: Use thinking tools to plan approach, consider edge cases
-3. **Design**: Define dataclass fields, validation attributes, and error modes
-4. **Implement**: Pure functions / dataclasses; no side effects in parsing beyond raising errors
-5. **Register**: Use registry APIs for UUID name resolution
-6. **Test**: Add/extend tests – success path + minimum 2 failure modes + registry resolution
-7. **Quality Gates**: Run all validation commands (see below)
-8. **Review**: Confirm all boxes in checklist can be ticked
-
-</workflow>
+1. **Research** → Consult specs, verify requirements, cite sources
+2. **Think** → Plan approach, edge cases, implications
+3. **Implement** → Pure functions/dataclasses following patterns (see path-specific instructions)
+4. **Test** → Success + 2 failure cases minimum
+5. **Validate** → Run quality gates (below)
 
 ---
 
 ## Quality Gates (Must ALL Pass)
-
-<validation>
-Run these commands before claiming completion:
 
 ```bash
 ./scripts/format.sh --fix
@@ -133,68 +64,51 @@ python -m pytest tests/ -v
 ```
 
 ALL must pass with zero errors. No exceptions.
-</validation>
 
 ---
 
-## Codebase Patterns (Concrete Examples)
+## Architecture Overview
 
-### Three-Layer Architecture
-```
-src/bluetooth_sig/
-├── core/              # High-level API (BluetoothSIGTranslator)
-├── gatt/              # GATT parsing - NO framework imports allowed
-│   ├── characteristics/   # 70+ SIG characteristic implementations
-│   └── services/          # Service definitions
-└── registry/          # UUID resolution from YAML (bluetooth_sig/ submodule)
-```
+**Two-Tier API Design:**
 
----
+1. **Direct Classes** (Type-Safe, Recommended):
+   ```python
+   from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+   char = BatteryLevelCharacteristic()
+   level: int = char.parse_value(bytearray([85]))  # IDE knows return type
+   ```
 
-## Path-Specific Instructions
+2. **Translator** (Dynamic, For Unknown UUIDs):
+   ```python
+   from bluetooth_sig import BluetoothSIGTranslator
+   translator = BluetoothSIGTranslator()
+   result = translator.parse_characteristic("2A19", bytearray([85]))  # Returns Any
+   ```
 
-Additional guidelines apply based on file type. See `.github/instructions/` for detailed requirements:
-
-- **Python Code**: `python-implementation.instructions.md` - Type hints, data modeling, error handling
-- **Testing**: `testing.instructions.md` - Test structure, fixtures, coverage requirements
-- **GATT Layer**: `bluetooth-gatt.instructions.md` - UUID registry, characteristic patterns, API consistency
-
-These path-specific instructions are automatically loaded when working with matching files.
+Path-specific instructions (python-implementation, testing, bluetooth-gatt) load automatically based on file type.
 
 ---
 
 ## Authoritative References
 
-Mandatory sources to consult (cite when non-trivial logic added/changed):
+Must consult and cite when adding non-trivial logic:
 - Bluetooth SIG Assigned Numbers: https://www.bluetooth.com/specifications/assigned-numbers/
-- Relevant SIG specification PDFs for services/characteristics being implemented
 - Python Standard Library: https://docs.python.org/
-- Project internal guides: `docs/AGENT_GUIDE.md`, `docs/BLUETOOTH_SIG_ARCHITECTURE.md`
+- Project guides: `docs/AGENT_GUIDE.md`, `docs/BLUETOOTH_SIG_ARCHITECTURE.md`
 
-If an official spec segment is unavailable: explicitly state unavailability, list fallback source, and mark logic for later verification.
+If spec unavailable: state explicitly, note verification needed.
 
 ---
 
-## Success Criteria
+## Completion Checklist
 
-A task is considered complete when ALL of these are true:
-
-□ Submodule initialized and verified
-□ Official documentation consulted and cited
+Task complete when ALL true:
+□ Submodule initialized, documentation cited
+□ Tests pass (success + 2 failures), quality gates pass
+□ No ABSOLUTE PROHIBITIONS violated (TYPE_CHECKING, lazy imports, hardcoded UUIDs, framework imports)
 □ Type hints complete on all public functions
-□ Tests created (success + 2 failure modes minimum)
-□ All quality gates pass: format + lint + tests
-□ No forbidden imports in `src/bluetooth_sig/`
-□ UUIDs resolved through registry (no hardcoded strings)
-□ API consistency maintained (SIG and custom characteristics identical usage)
 
 ---
 
-## Escalation Notes
-
-If a spec ambiguity is encountered: document it inline (comment), add TODO with spec link placeholder, create issue referencing required clarification, proceed with safest conservative parsing (reject over guess).
-
----
-
-Following these rules is mandatory; deviations must be justified explicitly.
+Following these rules is mandatory. Deviations require explicit justification.
 

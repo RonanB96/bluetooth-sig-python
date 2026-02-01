@@ -5,6 +5,7 @@ Deep dives into concepts, architecture, and design decisions behind the Bluetoot
 ## Core Concepts
 
 - **[Why Use This Library](why-use.md)** - Problems this library solves
+- **[Choosing the Right API](api-overview.md)** - Which parsing approach to use and when
 - **[What It Solves](what-it-solves.md)** - Standards interpretation, UUID management, and type safety
 - **[Limitations](limitations.md)** - What this library does NOT do
 
@@ -26,6 +27,7 @@ Deep dives into concepts, architecture, and design decisions behind the Bluetoot
 :hidden:
 
 why-use
+api-overview
 what-it-solves
 limitations
 architecture/overview

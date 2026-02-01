@@ -23,11 +23,11 @@ class TestTimeTriggerSettingDescriptor:
     def test_parse_invalid_length(self) -> None:
         """Test parsing time trigger setting with invalid length."""
         tts = TimeTriggerSettingDescriptor()
-        data = b"\x00\x0a\x00\x00"  # Too long (4 bytes instead of 3)
+        data = b"\x00\x0a"  # Too short (2 bytes instead of 3)
 
         result = tts.parse_value(data)
         assert result.parse_success is False
-        assert "Time Trigger Setting data must be exactly 3 bytes" in result.error_message
+        assert "need 4 bytes, got 3" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Time Trigger Setting has correct UUID."""

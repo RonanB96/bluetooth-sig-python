@@ -12,7 +12,7 @@ class TestProcessTolerancesDescriptor:
     def test_parse_process_tolerances(self) -> None:
         """Test parsing process tolerances."""
         pt = ProcessTolerancesDescriptor()
-        # Tolerance: 0x00000001
+        # Test data: 32-bit value 0x00000001
         data = b"\x01\x00\x00\x00"
 
         result = pt.parse_value(data)
@@ -28,7 +28,7 @@ class TestProcessTolerancesDescriptor:
 
         result = pt.parse_value(data)
         assert result.parse_success is False
-        assert "Process Tolerances data expected 4 bytes" in result.error_message
+        assert "need 2 bytes, got 1" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Process Tolerances has correct UUID."""

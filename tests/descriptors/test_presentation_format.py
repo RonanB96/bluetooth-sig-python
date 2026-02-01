@@ -97,7 +97,7 @@ class TestCharacteristicPresentationFormatDescriptor:
 
         result = cpf.parse_value(data)
         assert result.parse_success is False
-        assert "Presentation Format data must be exactly 7 bytes" in result.error_message
+        assert "need 2 bytes, got 1" in result.error_message
 
     def test_helper_methods(self) -> None:
         """Test helper methods for accessing format components."""

@@ -279,7 +279,7 @@ def create_mock_ble_context() -> dict[str, Any]:
     try:
         from bleak.exc import BleakError  # type: ignore
     except Exception:  # pragma: no cover - optional dependency
-        BleakError = Exception  # type: ignore
+        BleakError = Exception  # type: ignore  # noqa: N806
     # Create a singleton translator so doc code can use translator without explicit creation
     try:
         from bluetooth_sig import BluetoothSIGTranslator
@@ -289,7 +289,7 @@ def create_mock_ble_context() -> dict[str, Any]:
         translator_instance = None
 
     return {
-        "BleakClient": lambda addr: mock_client,
+        "BleakClient": lambda _addr: mock_client,
         "BleakScanner": mock_scanner,
         # Provide an asyncio proxy that exposes real asyncio.run but mocks sleep
         "asyncio": mock_asyncio,
@@ -334,7 +334,7 @@ def execute_code_block(code: str, file_path: Path, block_num: int) -> None:
         # Exec is required to execute user-provided code blocks; the
         # security-related warning is acknowledged but acceptable in this
         # isolated test environment. Disable pylint since this is intentional.
-        exec(code, namespace)  # noqa: S102  # pylint: disable=exec-used
+        exec(code, namespace)  # pylint: disable=exec-used
     except Exception as e:
         # Provide detailed error message with context
         error_msg = (
@@ -377,7 +377,6 @@ ALL_CODE_BLOCKS = collect_code_blocks()
 
 @pytest.mark.docs
 @pytest.mark.code_blocks
-@pytest.mark.built_docs
 @pytest.mark.parametrize(
     "doc_file,block_num,code",
     [

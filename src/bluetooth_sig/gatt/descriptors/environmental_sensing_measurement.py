@@ -50,9 +50,6 @@ class EnvironmentalSensingMeasurementDescriptor(BaseDescriptor):
         Raises:
             ValueError: If data is not exactly 12 bytes
         """
-        if len(data) != 12:
-            raise ValueError(f"Environmental Sensing Measurement data must be exactly 12 bytes, got {len(data)}")
-
         # For simplicity, treat uint24 values as uint32 (they'll fit)
         return EnvironmentalSensingMeasurementData(
             sampling_function=DataParser.parse_int32(data, offset=0, endian="little") & 0xFFFFFF,

@@ -38,7 +38,7 @@ class TestEnvironmentalSensingConfigurationDescriptor:
 
         result = esc.parse_value(data)
         assert result.parse_success is False
-        assert "Environmental Sensing Configuration data must be exactly 2 bytes" in result.error_message
+        assert "need 2 bytes, got 1" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Environmental Sensing Configuration has correct UUID."""
@@ -52,8 +52,8 @@ class TestEnvironmentalSensingMeasurementDescriptor:
     def test_parse_es_measurement(self) -> None:
         """Test parsing environmental sensing measurement."""
         esm = EnvironmentalSensingMeasurementDescriptor()
-        # 12 bytes: sampling_function (3), measurement_period (3), update_interval (3),
-        # application (1), measurement_uncertainty (2)
+        # 12 bytes structure: sampling_function (3 bytes), measurement_period (3 bytes),
+        # update_interval (3 bytes), application (1 byte), measurement_uncertainty (2 bytes)
         data = b"\x01\x00\x00\x02\x00\x00\x03\x00\x00\x04\x05\x00"
 
         result = esm.parse_value(data)
@@ -72,7 +72,7 @@ class TestEnvironmentalSensingMeasurementDescriptor:
 
         result = esm.parse_value(data)
         assert result.parse_success is False
-        assert "Environmental Sensing Measurement data must be exactly 12 bytes" in result.error_message
+        assert "need 4 bytes, got 2" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Environmental Sensing Measurement has correct UUID."""
@@ -102,7 +102,7 @@ class TestEnvironmentalSensingTriggerSettingDescriptor:
 
         result = ests.parse_value(data)
         assert result.parse_success is False
-        assert "Environmental Sensing Trigger Setting data must be exactly 3 bytes" in result.error_message
+        assert "need 2 bytes, got 1" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Environmental Sensing Trigger Setting has correct UUID."""

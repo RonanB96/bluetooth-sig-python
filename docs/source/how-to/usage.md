@@ -1,104 +1,129 @@
 # Usage
 
-**Key Principle**: You don't need to know Bluetooth UUIDs! This library automatically recognizes standard SIG characteristics and tells you what they are.
+This guide covers real-world usage patterns for the Bluetooth SIG Standards Library.
+
+**Key Principle**: You don't need to memorize Bluetooth UUIDs! When scanning unknown devices, this library automatically recognizes standard SIG characteristics and tells you what they are. When working with known devices, use characteristic classes directly for full type safety.
+
+## Which API Should I Use?
+
+See [API Overview](../explanation/api-overview.md) for guidance on choosing between the APIs like characteristic classes, the translator, and the Device abstraction etc.
+
+## Device Abstraction
+
+The `Device` class provides the highest-level API with automatic dependency resolution and caching. It requires a connection manager that implements `ConnectionManagerProtocol`.
+
+```python
+# SKIP: Requires BLE hardware and ConnectionManagerProtocol implementation
+from bluetooth_sig import BluetoothSIGTranslator, Device
+from bluetooth_sig.gatt.characteristics import (
+    BatteryLevelCharacteristic,
+    HeartRateMeasurementCharacteristic,
+)
+
+# connection_manager implements ConnectionManagerProtocol
+# See BLE Integration Guide for backend-specific examples
+device = Device(connection_manager, BluetoothSIGTranslator())
+
+await device.connect()
+
+# Type-safe: IDE knows battery is int
+battery = await device.read(BatteryLevelCharacteristic)
+print(f"Battery: {battery}%")
+
+# Complex type: IDE knows hr_data is HeartRateData
+hr_data = await device.read(HeartRateMeasurementCharacteristic)
+print(f"Heart Rate: {hr_data.heart_rate} bpm")
+
+# Dynamic: returns Any (for scanning/discovery)
+unknown_value = await device.read("2A6E")  # Temperature UUID
+```
+
+For connection manager setup, see the [BLE Integration Guide](ble-integration.md).
+
+## Type-Safe Parsing (Direct Classes)
+
+When you know the characteristic type, use classes directly for full IDE inference:
+
+```python
+from bluetooth_sig.gatt.characteristics import (
+    BatteryLevelCharacteristic,
+    HeartRateMeasurementCharacteristic,
+    TemperatureCharacteristic,
+)
+
+# ============================================
+# SIMULATED DATA - Replace with actual BLE reads
+# ============================================
+SIMULATED_BATTERY_DATA = bytearray([85])
+SIMULATED_HR_DATA = bytearray([0x00, 72])
+
+# Simple characteristic: IDE infers int
+battery = BatteryLevelCharacteristic()
+level = battery.parse_value(SIMULATED_BATTERY_DATA)  # level: int
+print(f"Battery: {level}%")  # Battery: 85%
+
+# Encode back to bytes
+encoded = battery.build_value(85)
+print(f"Encoded: {encoded.hex()}")  # Encoded: 55
+
+# Complex characteristic: IDE infers HeartRateData
+heart_rate = HeartRateMeasurementCharacteristic()
+hr_data = heart_rate.parse_value(SIMULATED_HR_DATA)  # hr_data: HeartRateData
+print(f"Heart rate: {hr_data.heart_rate} bpm")
+print(f"Sensor contact: {hr_data.sensor_contact}")
+
+# Encode structured data
+encoded_hr = heart_rate.build_value(hr_data)
+```
+
+**Benefits:**
+
+- IDE autocomplete on all parsed fields
+- Type errors caught at compile time
+- No wrapper objects—direct access to values
+
+## Dynamic Parsing (Device Scanning)
+
+For scanning unknown devices, use UUID strings. The return type is `Any`:
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 
-# ============================================
-# SIMULATED DATA - Replace with actual BLE read
-# ============================================
-SIMULATED_HEART_RATE_DATA = bytearray([72])  # Simulates 72 bpm heart rate
-# Example UUID from your BLE library - in reality you'd get this from device discovery
-UNKNOWN_UUID = (
-    "2A37"  # Heart Rate Measurement - you don't know what this is yet!
-)
-
-# Create translator instance
 translator = BluetoothSIGTranslator()
 
-# Get UUID from your BLE library, let the translator identify it
-result = translator.parse_characteristic(
+# ============================================
+# SIMULATED DATA - Replace with actual BLE reads
+# ============================================
+SIMULATED_HEART_RATE_DATA = bytearray([72])
+UNKNOWN_UUID = "2A37"  # UUID from device discovery
+
+# Parse: translator identifies and parses automatically
+value = translator.parse_characteristic(
     UNKNOWN_UUID, SIMULATED_HEART_RATE_DATA
 )
 
-# The library tells you what it is and parses it correctly
-print(f"This UUID is: {result.info.name}")  # "Heart Rate Measurement"
-print(f"Value: {result.value}")  # HeartRateData(heart_rate=72, ...)
+# value is the parsed result directly (type is Any at runtime)
+info = translator.get_characteristic_info_by_uuid(UNKNOWN_UUID)
+print(f"Identified as: {info.name}")  # "Heart Rate Measurement"
+print(f"Value: {value}")  # HeartRateData(heart_rate=72, ...)
 
-# Alternative: If you know what characteristic you want, convert enum to UUID
-hr_uuid = translator.get_characteristic_uuid_by_name(
-    CharacteristicName.HEART_RATE_MEASUREMENT
-)
-if hr_uuid:
-    result2 = translator.parse_characteristic(
-        str(hr_uuid), SIMULATED_HEART_RATE_DATA
-    )
-    print(
-        f"Heart Rate: {result2.value.heart_rate} bpm"
-    )  # Same result - library resolves enum to UUID
+# Useful pattern: loop through discovered characteristics
+# In real usage, each UUID would have its own data from BLE reads
+discovered_uuids = ["2A19", "2A6E", "2A37"]
+simulated_data = {
+    "2A19": bytearray([85]),  # Battery Level: 85%
+    "2A6E": bytearray([0xDC, 0x09]),  # Temperature: 25.24°C
+    "2A37": bytearray([0x00, 72]),  # Heart Rate: 72 bpm
+}
+for uuid in discovered_uuids:
+    if translator.supports(uuid):
+        raw_data = simulated_data[uuid]
+        parsed_value = translator.parse_characteristic(uuid, raw_data)
+        char_info = translator.get_characteristic_info_by_uuid(uuid)
+        print(f"{char_info.name}: {parsed_value}")
 ```
 
-## Basic Example: Understanding BLE Library Output
-
-BLE libraries like bleak and simplepyble give you UUIDs in various formats. Here's what you actually receive and how to parse it:
-
-```python
-from bleak import BleakClient
-
-from bluetooth_sig import BluetoothSIGTranslator
-
-
-async def discover_device_characteristics(address: str):
-    """Real-world example: What you get from bleak and how to parse it."""
-    translator = BluetoothSIGTranslator()
-
-    async with BleakClient(address) as client:
-        # 1. Bleak gives you services - you don't know what they are
-        services = await client.get_services()
-
-        for service in services:
-            # service.uuid is a string like "0000180f-0000-1000-8000-00805f9b34fb"
-            # This is the full 128-bit UUID format
-            print(f"\nService UUID: {service.uuid}")
-
-            # Identify what this service is
-            service_info = translator.get_sig_info_by_uuid(service.uuid)
-            if service_info:
-                print(f"  → Identified as: {service_info.name}")  # "Battery"
-
-            # 2. Bleak gives you characteristics - you don't know what they are
-            for char in service.characteristics:
-                # char.uuid is also a full 128-bit UUID string
-                print(f"  Characteristic UUID: {char.uuid}")
-
-                # Try to read the value (returns bytes/bytearray)
-                try:
-                    raw_data = await client.read_gatt_char(char.uuid)
-                    print(f"    Raw bytes: {raw_data.hex()}")
-
-                    # Let bluetooth-sig identify and parse it
-                    result = translator.parse_characteristic(
-                        char.uuid, raw_data
-                    )
-                    print(f"    → Identified as: {result.info.name}")
-                    print(f"    → Parsed value: {result.value}")
-
-                except Exception as e:
-                    print(f"    Could not read: {e}")
-
-
-# Example output you'd see:
-# Service UUID: 0000180f-0000-1000-8000-00805f9b34fb
-#   → Identified as: Battery
-#   Characteristic UUID: 00002a19-0000-1000-8000-00805f9b34fb
-#     Raw bytes: 55
-#     → Identified as: Battery Level
-#     → Parsed value: 85
-```
-
-### UUID Format Conversion
+## UUID Format Handling
 
 BLE libraries output UUIDs in different formats, but bluetooth-sig handles them all:
 
@@ -128,7 +153,8 @@ for uuid_format in formats:
     result = translator.parse_characteristic(
         str(uuid_format), SIMULATED_BATTERY_DATA
     )
-    print(f"{uuid_format:45} → {result.info.name}")
+    info = translator.get_characteristic_info_by_uuid(uuid_format)
+    print(f"{uuid_format:45} → {info.name}")
 
 # Output:
 # 00002A19-0000-1000-8000-00805F9B34FB         → Battery Level
@@ -139,221 +165,74 @@ for uuid_format in formats:
 
 For more basic usage examples, see the [Quick Start Guide](../tutorials/quickstart.md).
 
-### Async Usage
+For async parsing patterns, see the [Async Usage Guide](async-usage.md).
 
-If you are using an async BLE client (for example, bleak), you can await async wrappers without changing parsing logic:
+## Real-World Usage Patterns
+
+For complete examples with BLE connection code, see the [BLE Integration Guide](ble-integration.md).
+
+### Parsing Notifications
+
+Parse incoming notification data with type safety:
 
 ```python
-from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.gatt.characteristics import (
+    HeartRateMeasurementCharacteristic,
+)
 
-translator = BluetoothSIGTranslator()
-result = await translator.parse_characteristic_async("2A19", bytes([85]))
+heart_rate = HeartRateMeasurementCharacteristic()
+
+
+def on_heart_rate(sender, data: bytearray):
+    """Notification callback - parse with full type safety."""
+    hr_data = heart_rate.parse_value(data)
+    print(f"Heart Rate: {hr_data.heart_rate} bpm")
+    if hr_data.rr_intervals:
+        print(f"RR intervals: {hr_data.rr_intervals}")
+
+
+# Register callback with your BLE library's notification API
+# await client.start_notify(str(heart_rate.uuid), on_heart_rate)
 ```
 
-Prefer the existing examples for full context: see `examples/async_ble_integration.py`.
+### Pairing Multiple Characteristics
 
-## Type-Safe vs Dynamic Parsing
-
-This library provides two approaches to characteristic parsing, each suited to different use cases.
-
-### Type-Safe: Characteristic Classes (Recommended)
-
-When you know the characteristic type at compile time, pass the characteristic class directly. This enables full type checking—the return type is automatically inferred from the class:
+Use `DependencyPairingBuffer` when you need to wait for multiple characteristics before processing:
 
 ```python
+from typing import Any
+
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.gatt.characteristics import (
     BatteryLevelCharacteristic,
     HeartRateMeasurementCharacteristic,
 )
-
-translator = BluetoothSIGTranslator()
-
-# Type-safe: IDE automatically infers return type as int
-raw_data = bytearray([85])
-level = translator.parse_characteristic(BatteryLevelCharacteristic, raw_data)
-print(f"Battery: {level}%")  # IDE knows level is int
-
-# Type-safe: IDE infers return type as HeartRateData
-hr_data = bytearray([0x00, 72])
-heart_rate = translator.parse_characteristic(
-    HeartRateMeasurementCharacteristic, hr_data
-)
-print(f"Heart rate: {heart_rate.heart_rate} bpm")  # IDE provides autocompletion
-
-# Type-safe encoding: IDE validates input type matches characteristic
-encoded = translator.encode_characteristic(BatteryLevelCharacteristic, 85)
-```
-
-**Why use this approach?**
-
-- IDE automatically infers return types—no manual type hints needed
-- Autocompletion shows available fields on parsed data
-- Type errors caught at compile time
-- No need to access `.value` from a result wrapper
-
-### Dynamic: UUID Strings
-
-For characteristics discovered at runtime (scanning unknown devices), use UUID strings. The return type is `Any` because the characteristic type is determined at runtime:
-
-```python
-from bluetooth_sig import BluetoothSIGTranslator
-
-translator = BluetoothSIGTranslator()
-
-# Not type-safe: returns ParseResult with value as Any
-result = translator.parse_characteristic("2A19", bytearray([85]))
-print(f"{result.info.name}: {result.value}%")
-
-# Loop through discovered characteristics
-for char_uuid in discovered_uuids:
-    if translator.supports(char_uuid):
-        result = translator.parse_characteristic(char_uuid, raw_data)
-        print(f"{result.info.name}: {result.value}")
-```
-
-**When to use this approach?**
-
-- Scanning unknown devices
-- Building generic BLE explorers
-- Dynamic characteristic discovery
-
-## Real-World Usage Patterns
-
-### Pattern 1: Fitness Tracker (Heart Rate + Battery)
-
-Common in: Polar sensors, Fitbit devices, smartwatches
-
-```python
-from bleak import BleakClient
-
-from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
-
-translator = BluetoothSIGTranslator()
-
-
-async def monitor_fitness_device(address: str):
-    async with BleakClient(address) as client:
-        # Read battery level
-        battery_uuid = "2A19"
-        battery_data = await client.read_gatt_char(battery_uuid)
-        battery = translator.parse_characteristic(battery_uuid, battery_data)
-        print(f"Battery: {battery.value}%")
-
-        # Subscribe to heart rate notifications
-        hr_uuid = "2A37"
-
-        def heart_rate_callback(sender, data: bytearray):
-            hr = translator.parse_characteristic(hr_uuid, data)
-            if hr.parse_success:
-                hr_data = hr.value
-                print(f"Heart Rate: {hr_data.heart_rate} bpm")
-                if hr_data.rr_intervals:
-                    print(f"HRV: {hr_data.rr_intervals} seconds")
-
-        await client.start_notify(hr_uuid, heart_rate_callback)
-        await asyncio.sleep(30)  # Monitor for 30 seconds
-```
-
-### Pattern 2: Environmental Sensor Dashboard
-
-Common in: Xiaomi sensors, SwitchBot meters, Govee hygrometers
-
-```python
-from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
-
-translator = BluetoothSIGTranslator()
-
-
-async def read_environmental_sensors(devices: list[str]):
-    """Read temp/humidity from multiple sensors"""
-    for address in devices:
-        async with BleakClient(address) as client:
-            # Batch read multiple characteristics
-            temp_uuid = "2A6E"
-            humidity_uuid = "2A6F"
-            battery_uuid = "2A19"
-
-            temp_data = await client.read_gatt_char(temp_uuid)
-            humidity_data = await client.read_gatt_char(humidity_uuid)
-            battery_data = await client.read_gatt_char(battery_uuid)
-
-            results = translator.parse_characteristics(
-                {
-                    temp_uuid: temp_data,
-                    humidity_uuid: humidity_data,
-                    battery_uuid: battery_data,
-                }
-            )
-
-            print(f"Sensor {address}:")
-            print(f"  Temp: {results[temp_uuid].value}°C")
-            print(f"  Humidity: {results[humidity_uuid].value}%")
-            print(f"  Battery: {results[battery_uuid].value}%")
-```
-
-### Pattern 3: Medical Device (Blood Pressure Monitor)
-
-Common in: Omron blood pressure monitors, A&D medical devices, iHealth monitors
-
-```python
-from bluetooth_sig import BluetoothSIGTranslator, CharacteristicData
 from bluetooth_sig.stream.pairing import DependencyPairingBuffer
 
-translator = BluetoothSIGTranslator()
+hr = HeartRateMeasurementCharacteristic()
+battery = BatteryLevelCharacteristic()
 
 
-async def monitor_blood_pressure(address: str):
-    """
-    Blood pressure monitors send paired characteristics:
-    - Blood Pressure Measurement (0x2A35)
-    - Intermediate Cuff Pressure (0x2A36)
+def on_complete_reading(paired_data: dict[str, Any]):
+    """Called when both heart rate and battery level arrive."""
+    hr_data = paired_data[str(hr.uuid)]
+    battery_level = paired_data[str(battery.uuid)]
+    print(f"Heart Rate: {hr_data.heart_rate} bpm, Battery: {battery_level}%")
 
-    These arrive out-of-order and may interleave from multiple measurement sessions.
-    The pairing buffer groups them by timestamp automatically.
-    """
-    async with BleakClient(address) as client:
-        completed_readings = []
 
-        def on_complete_reading(paired_data: dict[str, CharacteristicData]):
-            """Called when both BPM and ICP arrive for a timestamp"""
-            bpm = paired_data["2A35"]
-            icp = paired_data["2A36"]
+buffer = DependencyPairingBuffer(
+    translator=BluetoothSIGTranslator(),
+    required_uuids={str(hr.uuid), str(battery.uuid)},
+    group_key=lambda uuid, parsed: 0,  # All notifications go to same group
+    on_pair=on_complete_reading,
+)
 
-            print(f"Reading at {bpm.value.timestamp}:")
-            print(f"  Final: {bpm.value.systolic}/{bpm.value.diastolic} mmHg")
-            print(f"  Peak cuff: {icp.value.systolic} mmHg")
-            completed_readings.append(paired_data)
+# Feed notification/read data into buffer
+hr_bytes = bytearray([0x00, 75])  # Heart rate: 75 bpm
+battery_bytes = bytearray([85])  # Battery: 85%
 
-        # Create pairing buffer that groups by timestamp
-        buffer = DependencyPairingBuffer(
-            translator=translator,
-            required_uuids={
-                "2A35",
-                "2A36",
-            },
-            group_key=lambda data: data.value.timestamp
-            if hasattr(data.value, "timestamp")
-            else None,
-            on_pair=on_complete_reading,
-        )
-
-        # Subscribe to both characteristics
-        bpm_uuid = "2A35"
-        icp_uuid = "2A36"
-
-        await client.start_notify(
-            bpm_uuid, lambda _, data: buffer.ingest(bpm_uuid, data)
-        )
-        await client.start_notify(
-            icp_uuid, lambda _, data: buffer.ingest(icp_uuid, data)
-        )
-
-        await asyncio.sleep(60)  # Monitor for 1 minute
-
-        print(f"\nCollected {len(completed_readings)} complete readings")
+buffer.ingest(str(hr.uuid), hr_bytes)
+buffer.ingest(str(battery.uuid), battery_bytes)  # Triggers on_complete_reading
 ```
 
 ## Dependency-Aware Batch Parsing (Recommended)
@@ -362,31 +241,36 @@ When multiple characteristics are related (e.g., Blood Pressure Measurement `0x2
 
 ```python
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 translator = BluetoothSIGTranslator()
 
-# Raw values obtained from your BLE stack (notifications or reads)
 bpm_uuid = "2A35"
 icp_uuid = "2A36"
+
+# Example data (replace with actual BLE reads)
+blood_pressure_measurement_bytes = bytearray(
+    [0x00, 0x78, 0x00, 0x50, 0x00, 0x46, 0x00]
+)
+intermediate_cuff_pressure_bytes = bytearray(
+    [0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00]
+)
 
 char_data = {
     bpm_uuid: blood_pressure_measurement_bytes,
     icp_uuid: intermediate_cuff_pressure_bytes,
 }
 
-
-# SKIP: Example showing SimpleBLE pattern
 results = translator.parse_characteristics(char_data)
 
-bpm_result = results[bpm_uuid]
-icp_result = results[icp_uuid]
+bpm_value = results[bpm_uuid]
+icp_value = results[icp_uuid]
 
-if bpm_result.parse_success and icp_result.parse_success:
-    print(
-        f"Blood Pressure: {bpm_result.value.systolic}/{bpm_result.value.diastolic} mmHg"
-    )
-    print(f"Peak Cuff Pressure: {icp_result.value.systolic} mmHg")
+print(
+    f"Blood Pressure: {bpm_value.systolic}/{bpm_value.diastolic} {bpm_value.unit.value}"
+)
+print(
+    f"Cuff Pressure: {icp_value.current_cuff_pressure} {icp_value.unit.value}"
+)
 ```
 
 This batch API is the most user-friendly path: you provide UUIDs and raw bytes; the library parses each characteristic according to its specification.
@@ -410,6 +294,15 @@ from bluetooth_sig.types.io import (
     to_parse_inputs,
 )
 
+# Blood pressure measurement requires at least 7 bytes
+blood_pressure_measurement_bytes = bytearray(
+    [0x00, 0x78, 0x00, 0x50, 0x00, 0x46, 0x00]
+)
+# Intermediate cuff pressure also requires at least 7 bytes
+intermediate_cuff_pressure_bytes = bytearray(
+    [0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00]
+)
+
 bpm_uuid = "2A35"
 icp_uuid = "2A36"
 
@@ -428,58 +321,7 @@ char_data, descriptor_data = to_parse_inputs(batch)
 results = BluetoothSIGTranslator().parse_characteristics(char_data)
 ```
 
-## Converting Bleak/SimpleBLE Data
-
-Example adapters for common connection managers are available in their respective files:
-
-- `bleak_services_to_batch()` in `examples/connection_managers/bleak_utils.py`
-- `simpleble_services_to_batch()` in `examples/connection_managers/simpleble.py`
-
-These helpers use duck typing to avoid introducing BLE backend dependencies into the core library.
-
-Usage sketch with Bleak:
-
-```python
-# SKIP: Example pattern - requires real BLE data
-# Example showing the pattern - in practice you'd get these from actual BLE reads
-from bluetooth_sig import BluetoothSIGTranslator
-
-translator = BluetoothSIGTranslator()
-bpm_uuid = "2A35"
-icp_uuid = "2A36"
-
-# Your BLE library gives you raw bytes from device
-char_data = {
-    bpm_uuid: blood_pressure_measurement_bytes,
-    icp_uuid: intermediate_cuff_pressure_bytes,
-}
-
-results = translator.parse_characteristics(char_data)
-for uuid, result in results.items():
-    if result.parse_success:
-        print(f"{result.info.name}: {result.value}")
-```
-
-The same pattern works with SimpleBLE:
-
-```python
-# SKIP: Example pattern - requires SimpleBLE data
-from bluetooth_sig import BluetoothSIGTranslator
-
-translator = BluetoothSIGTranslator()
-
-# Get raw bytes from SimpleBLE reads
-char_data = {
-    "2A19": battery_bytes,  # From SimpleBLE read
-    "2A6E": temp_bytes,  # From SimpleBLE read
-}
-
-results = translator.parse_characteristics(char_data)
-```
-
-These helpers align with what Bleak and SimpleBLE typically expose: service collections with characteristic entries (`uuid`, optional `properties`, optional `descriptors`). They avoid making network calls; provide `values_by_uuid` from your reads/notifications. Example adapters live under `examples/connection_managers/` and may need updates to match your backend versions—copy and tweak as needed.
-
-For a step-by-step porting overview (before/after), see the [Migration Guide](migration.md).
+For BLE library integration patterns (bleak, simplepyble, etc.), see the [BLE Integration Guide](ble-integration.md) and [Migration Guide](migration.md).
 
 ______________________________________________________________________
 
@@ -494,140 +336,34 @@ See the [Testing Guide](testing.md) for more on validating your setup and troubl
 
 ## Device Class
 
-The `Device` class provides a high-level abstraction for grouping BLE device services, characteristics, encryption requirements, and advertiser data. It serves as a pure SIG standards translator, not a BLE connection manager.
-
-### Basic Device Usage
+The `Device` class provides high-level device abstraction with service discovery, caching, and encryption tracking:
 
 ```python
+# SKIP: Requires BLE hardware and ConnectionManagerProtocol implementation
 from bluetooth_sig import BluetoothSIGTranslator, Device
-from bluetooth_sig.types.gatt_enums import CharacteristicName
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 
-# ============================================
-# SIMULATED DATA - Replace with actual device
-# ============================================
-SIMULATED_DEVICE_ADDRESS = (
-    "AA:BB:CC:DD:EE:FF"  # Example MAC address - use your actual device address
-)
-# Advertisement data encoding "Test Device" as local name
-SIMULATED_ADV_DATA = bytes(
-    [
-        0x0C,
-        0x09,
-        0x54,
-        0x65,
-        0x73,
-        0x74,
-        0x20,
-        0x44,
-        0x65,
-        0x76,
-        0x69,
-        0x63,
-        0x65,  # Local Name
-    ]
-)
+# connection_manager implements ConnectionManagerProtocol
+device = Device(connection_manager, BluetoothSIGTranslator())
 
+await device.connect()
+await device.discover_services()
 
-async def main():
-    # Create translator and connection manager
-    translator = BluetoothSIGTranslator()
+# Type-safe read
+battery = await device.read(BatteryLevelCharacteristic)
+print(f"Battery: {battery}%")
 
-    # Device requires a connection manager - use one from examples/
-    from examples.connection_managers.bleak_retry import (
-        BleakRetryConnectionManager,
-    )
-
-    connection_manager = BleakRetryConnectionManager(SIMULATED_DEVICE_ADDRESS)
-
-    # Create device with connection manager and translator
-    device = Device(connection_manager, translator)
-
-    # Parse raw advertisement PDU bytes
-    device.parse_raw_advertisement(SIMULATED_ADV_DATA)
-    print(f"Device name: {device.name}")
-
-    # Discover services (real workflow with connection manager)
-    await device.discover_services()
-
-    # SKIP: Example uses Device abstraction
-    # Read characteristic data using high-level enum
-    battery_uuid = "2A19"
-    battery_level = await device.read(battery_uuid)
-    print(f"Battery level: {battery_level.value}%")
-
-    # Check encryption requirements
-    print(f"Requires encryption: {device.encryption.requires_encryption}")
-    print(
-        f"Requires authentication: {device.encryption.requires_authentication}"
-    )
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(main())
+# Check encryption requirements
+print(f"Requires encryption: {device.encryption.requires_encryption}")
 ```
 
-### Device with BLE Connection Library
+**Device data structures:**
 
-The Device class integrates with any BLE connection library:
+- `DeviceService` — Groups a service with its parsed characteristics
+- `DeviceEncryption` — Tracks encryption and authentication requirements
+- `DeviceAdvertiserData` — Parsed advertisement data
 
-```python
-import asyncio
-
-from bleak import BleakClient
-
-from bluetooth_sig import BluetoothSIGTranslator, Device
-from bluetooth_sig.types.gatt_enums import CharacteristicName
-
-
-async def discover_device(device_address):
-    translator = BluetoothSIGTranslator()
-
-    # Create connection manager and device
-    from examples.connection_managers.bleak_retry import (
-        BleakRetryConnectionManager,
-    )
-
-    connection_manager = BleakRetryConnectionManager(device_address)
-    device = Device(connection_manager, translator)
-
-    async with BleakClient(device_address) as client:
-        # For integrated scanning, use connection manager's convert_advertisement()
-        # followed by device.update_advertisement()
-        # For raw PDU bytes: device.parse_raw_advertisement(raw_bytes)
-
-        # Discover services
-        services = await client.get_services()
-
-        for service in services:
-            # Collect characteristics for this service
-            for char in service.characteristics:
-                # Read characteristic value using device.read()
-                # Convert UUID string to BluetoothUUID
-                char_uuid = BluetoothUUID(char.uuid)
-                char_data = await device.read(char_uuid)
-                print(f"Characteristic {char.uuid}: {char_data.value}")
-
-    # Now you have a complete device representation
-    print(f"Device: {device}")
-    for service_uuid, service_data in device.services.items():
-        print(
-            f"Service {service_uuid}: {len(service_data.characteristics)} characteristics"
-        )
-
-    return device
-```
-
-### Device Data Structures
-
-The Device class uses several data structures:
-
-- `DeviceService`: Groups a service with its parsed characteristics
-- `DeviceEncryption`: Tracks encryption and authentication requirements
-- `DeviceAdvertiserData`: Parsed advertisement data including manufacturer info, service UUIDs, etc.
-
-All data structures follow the Bluetooth SIG specifications and provide type-safe access to device information.
+For connection manager setup, see the [BLE Integration Guide](ble-integration.md).
 
 ## Controlling Validation
 
@@ -636,14 +372,15 @@ By default, characteristics validate all data against Bluetooth SIG specificatio
 ```python
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 
-# Default: validation enabled
+# Create characteristic instance
 char = BatteryLevelCharacteristic()
 
-# Disable for permissive parsing
-char_permissive = BatteryLevelCharacteristic(validate=False)
-result = char_permissive.parse_value(
-    bytearray([200])
-)  # Succeeds despite out-of-range
+# Default: validation enabled (raises on out-of-range)
+# Disable for permissive parsing using validate=False on parse_value
+result = char.parse_value(
+    bytearray([50])  # Valid battery level
+)
+print(f"Battery: {result}%")  # Battery: 50%
 ```
 
 Use `validate=False` for testing with synthetic data or debugging firmware. Keep validation enabled (default) for production code.

@@ -60,7 +60,7 @@ class TestCCCDDescriptor:
 
         result = cccd.parse_value(data)
         assert result.parse_success is False
-        assert "CCCD data must be exactly 2 bytes" in result.error_message
+        assert "need 2 bytes, got 1" in result.error_message
 
     def test_create_enable_values(self) -> None:
         """Test creating CCCD enable values."""

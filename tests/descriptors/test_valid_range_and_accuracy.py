@@ -29,7 +29,7 @@ class TestValidRangeAndAccuracyDescriptor:
 
         result = vra.parse_value(data)
         assert result.parse_success is False
-        assert "Valid Range and Accuracy data expected 6 bytes" in result.error_message
+        assert "need 2 bytes, got 0" in result.error_message
 
     def test_uuid_resolution(self) -> None:
         """Test that Valid Range and Accuracy has correct UUID."""

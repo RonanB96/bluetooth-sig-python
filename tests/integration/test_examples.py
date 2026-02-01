@@ -119,14 +119,26 @@ class TestAdvertisingParsing:
 class TestPureSigParsing:
     """Test pure_sig_parsing.py example."""
 
-    def test_pure_sig_parsing_demo(self, capsys: pytest.CaptureFixture[str]) -> None:
-        """Test the pure SIG parsing demonstration."""
-        from examples.pure_sig_parsing import demonstrate_pure_sig_parsing
+    def test_type_safe_parsing_demo(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Test the type-safe parsing demonstration."""
+        from examples.pure_sig_parsing import demonstrate_type_safe_parsing
 
-        demonstrate_pure_sig_parsing()
+        demonstrate_type_safe_parsing()
         captured = capsys.readouterr()
 
-        assert "Pure Bluetooth SIG Standards Parsing Demo" in captured.out
+        assert "Type-Safe Parsing" in captured.out
+        assert "Battery Level" in captured.out
+        assert "Temperature" in captured.out
+        assert "Heart Rate" in captured.out
+
+    def test_dynamic_parsing_demo(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Test the dynamic parsing demonstration."""
+        from examples.pure_sig_parsing import demonstrate_dynamic_parsing
+
+        demonstrate_dynamic_parsing()
+        captured = capsys.readouterr()
+
+        assert "Dynamic Parsing" in captured.out
         assert "Battery Level" in captured.out
         assert "Device Name" in captured.out
         assert "Temperature" in captured.out
@@ -367,10 +379,10 @@ class TestCanonicalShapes:
 
     def test_canonical_shape_imports(self) -> None:
         """Test that canonical parse exception types are properly imported."""
-        from bluetooth_sig.gatt.exceptions import CharacteristicParseError, SpecialValueDetected
+        from bluetooth_sig.gatt.exceptions import CharacteristicParseError, SpecialValueDetectedError
 
         assert CharacteristicParseError is not None
-        assert SpecialValueDetected is not None
+        assert SpecialValueDetectedError is not None
 
 
 if __name__ == "__main__":

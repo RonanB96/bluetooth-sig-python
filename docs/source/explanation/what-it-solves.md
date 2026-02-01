@@ -48,8 +48,10 @@ def parse_temperature(data: bytes) -> float | None:
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()  # See quickstart guide for setup
+data = bytearray([0x04, 0x01])  # 260 = 26.0°C (resolution is 0.01°C)
 result = translator.parse_characteristic("2A6E", data)
 # Handles all validation, conversion, and edge cases automatically
+print(f"Temperature: {result}°C")  # Temperature: 2.6°C
 ```
 
 ### ✅ What We Solve (Standards Interpretation)
@@ -152,7 +154,7 @@ Raw BLE data is just bytes. Without proper typing:
 ### Untyped Approach
 
 ```python
-# SKIP: Example demonstrates problems with manual parsing and uses undefined variables
+# SKIP: Intentional anti-pattern demonstration
 # What does this return?
 def parse_battery(data: bytes):
     return data[0]
@@ -182,19 +184,17 @@ result = translator.parse_characteristic(
     str(battery_uuid), SIMULATED_BATTERY_DATA
 )
 
-# result is a typed msgspec struct
-# IDE autocomplete works
-# Type checkers (mypy) validate usage
-print(result.value)  # 85
-print(result.unit)  # "%"
+# For simple characteristics, result is the value directly
+print(result)  # 85
 
-# For complex characteristics
-temp_result = translator.parse_characteristic("2A1C", data)
-# Returns TemperatureMeasurement msgspec struct with:
-#   - value: float
-#   - unit: str
+# For complex characteristics, result is a typed dataclass
+temp_data = bytearray([0x00, 0xE4, 0x00, 0x00, 0x00])  # Flags + temperature
+temp_result = translator.parse_characteristic("2A1C", temp_data)
+# Returns TemperatureMeasurementData with:
+#   - temperature: float
+#   - unit: celsius or fahrenheit
 #   - timestamp: datetime | None
-#   - temperature_type: str | None
+print(temp_result.temperature)  # Temperature value
 ```
 
 - **Full type hints** - Every function and return type annotated
@@ -327,11 +327,14 @@ def parse_temp_measurement(data: bytes) -> dict:
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
+# Temperature Measurement requires at least 5 bytes (flags + FLOAT temperature)
+data = bytearray([0x00, 0xFE, 0x00, 0x01, 0x00])  # Celsius, ~25.4°C
 result = translator.parse_characteristic("2A1C", data)
 
-# Returns TemperatureMeasurement msgspec struct with all fields parsed
+# Returns TemperatureMeasurementData with all fields parsed
 # Handles all flag combinations automatically
 # Returns type-safe structured data
+print(result.temperature)  # Temperature in appropriate units
 ```
 
 ______________________________________________________________________

@@ -17,7 +17,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Callable, ClassVar
 
-from bluetooth_sig.types.advertising import AdvertisementData
+from bluetooth_sig.types.advertising.result import AdvertisementData
 from bluetooth_sig.types.device_types import (
     DeviceService,
     ScanFilter,
@@ -66,8 +66,13 @@ class ConnectionManagerProtocol(ABC):
         return self._address
 
     @abstractmethod
-    async def connect(self) -> None:
-        """Open a connection to the device."""
+    async def connect(self, *, timeout: float = 10.0) -> None:
+        """Open a connection to the device.
+
+        Args:
+            timeout: Connection timeout in seconds.
+
+        """
 
     @abstractmethod
     async def disconnect(self) -> None:
@@ -191,6 +196,60 @@ class ConnectionManagerProtocol(ABC):
             callback: Function to call when disconnection occurs
 
         """
+
+    def register_advertisement_callback(
+        self,
+        callback: Callable[[AdvertisementData], None],
+    ) -> None:
+        """Register a callback for advertisement updates.
+
+        This enables continuous monitoring of a device's advertisements even while
+        connected, useful for devices that update sensor data in advertisements.
+        The callback is invoked whenever new advertisement data is received.
+
+        Args:
+            callback: Function called with AdvertisementData when advertisements are
+                     received. Can be sync or async.
+
+        Raises:
+            NotImplementedError: If this backend doesn't support advertisement monitoring
+
+        Example::
+
+            def on_advertisement(ad: AdvertisementData) -> None:
+                if ad.interpreted_data:
+                    print(f"Sensor update: {ad.interpreted_data}")
+
+
+            # Register callback
+            manager.register_advertisement_callback(on_advertisement)
+
+            # Later, stop monitoring
+            manager.unregister_advertisement_callback(on_advertisement)
+
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support advertisement monitoring. "
+            "Use get_latest_advertisement() for polling instead."
+        )
+
+    def unregister_advertisement_callback(
+        self,
+        callback: Callable[[AdvertisementData], None],
+    ) -> None:
+        """Unregister a callback for advertisement updates.
+
+        Args:
+            callback: The callback function to remove
+
+        Raises:
+            NotImplementedError: If this backend doesn't support advertisement monitoring
+
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support advertisement monitoring. "
+            "Use get_latest_advertisement() for polling instead."
+        )
 
     @property
     @abstractmethod
@@ -386,6 +445,26 @@ class ConnectionManagerProtocol(ABC):
             Latest AdvertisementData, or None if none received yet
 
         """
+
+    def on_advertisement_received(self, advertisement: AdvertisementData) -> None:
+        """Handle new advertisement data received from the OS.
+
+        Backends should call this method from their scan/detection callbacks when new
+        advertisement data arrives. This enables caching and callback notifications.
+
+        Args:
+            advertisement: New AdvertisementData received from OS scan callbacks
+
+        Raises:
+            NotImplementedError: If this backend doesn't support advertisement monitoring
+
+        Note:
+            This is for backend implementations that support advertisement monitoring.
+            Application code should use get_latest_advertisement() to retrieve cached
+            data or register_advertisement_callback() for push notifications.
+
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} does not support advertisement monitoring")
 
     @classmethod
     @abstractmethod

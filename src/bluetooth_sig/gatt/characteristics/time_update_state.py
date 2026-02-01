@@ -47,15 +47,17 @@ class TimeUpdateStateCharacteristic(BaseCharacteristic[TimeUpdateState]):
     - Result: uint8 (0=Successful, 1=Canceled, etc.)
     """
 
+    min_length: int = 2
+    max_length: int = 2
+
     def __init__(self) -> None:
         """Initialize the Time Update State characteristic."""
         super().__init__()
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> TimeUpdateState:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> TimeUpdateState:
         """Decode the raw data to TimeUpdateState."""
-        if len(data) != 2:
-            raise ValueError(f"Time Update State requires 2 bytes, got {len(data)}")
-
         current_state = TimeUpdateCurrentState(data[0])
         result = TimeUpdateResult(data[1])
 

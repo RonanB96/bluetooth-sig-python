@@ -67,7 +67,7 @@ class TestBleakRetryConnectionManager:
             mock_client.services = []
 
             # Make async methods actually async
-            async def mock_connect() -> None:
+            async def mock_connect(timeout: float = 10.0) -> None:
                 pass
 
             async def mock_disconnect() -> None:

@@ -55,8 +55,8 @@ class SidebarParser(HTMLParser):  # pylint: disable=too-many-instance-attributes
         attrs_dict = dict(attrs)
 
         # Track sidebar tree
-        if "class" in attrs_dict and attrs_dict["class"]:
-            classes = attrs_dict["class"].split()
+        if attrs_dict.get("class"):
+            classes = attrs_dict["class"].split() if attrs_dict["class"] else []
             if CSS_CLASS_SIDEBAR_TREE in classes:
                 self.in_sidebar_tree = True
             if CSS_CLASS_TOCTREE_L1 in classes and self.in_sidebar_tree:

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from ...types.uuid import BluetoothUUID
 from .base import BaseDescriptor
 
@@ -9,7 +11,7 @@ from .base import BaseDescriptor
 class DescriptorRegistry:
     """Registry for descriptor classes."""
 
-    _registry: dict[str, type[BaseDescriptor]] = {}
+    _registry: ClassVar[dict[str, type[BaseDescriptor]]] = {}
 
     @classmethod
     def register(cls, descriptor_class: type[BaseDescriptor]) -> None:

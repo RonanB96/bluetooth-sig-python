@@ -1,27 +1,16 @@
-"""Data types for Bluetooth SIG standards."""
+"""Data types for Bluetooth SIG standards.
+
+Advertising types are now in the bluetooth_sig.types.advertising subpackage:
+    - pdu: PDUType, BLEAdvertisingPDU, PDUHeaderFlags, etc.
+    - extended: CTEInfo, AdvertisingDataInfo, AuxiliaryPointer, SyncInfo
+    - flags: BLEAdvertisingFlags
+    - features: LEFeatures, LEFeatureBits
+    - ad_structures: All *Data struct types (CoreAdvertisingData, etc.)
+    - result: AdvertisingData, AdvertisementData
+"""
 
 from __future__ import annotations
 
-from .advertising import (
-    AdvertisementData,
-    AdvertisingData,
-    AdvertisingDataStructures,
-    BLEAdvertisingFlags,
-    BLEAdvertisingPDU,
-    BLEExtendedHeader,
-    CoreAdvertisingData,
-    DeviceProperties,
-    DirectedAdvertisingData,
-    ExtendedAdvertisingData,
-    ExtendedHeaderFlags,
-    LocationAndSensingData,
-    MeshAndBroadcastData,
-    OOBSecurityData,
-    PDUHeaderFlags,
-    PDULayout,
-    PDUType,
-    SecurityData,
-)
 from .alert import (
     ALERT_CATEGORY_DEFINED_MAX,
     ALERT_CATEGORY_RESERVED_MAX,
@@ -38,6 +27,7 @@ from .alert import (
 from .appearance import AppearanceData
 from .base_types import SIGInfo
 from .battery import BatteryChargeLevel, BatteryChargeState, BatteryChargingType, BatteryFaultReason
+from .company import CompanyIdentifier, ManufacturerData
 from .context import CharacteristicContext, DeviceInfo
 from .data_types import (
     CharacteristicInfo,
@@ -95,16 +85,21 @@ from .uri import URIData
 
 __all__ = [
     "ALERT_CATEGORY_DEFINED_MAX",
-    "ALERT_CATEGORY_RESERVED_MIN",
     "ALERT_CATEGORY_RESERVED_MAX",
+    "ALERT_CATEGORY_RESERVED_MIN",
     "ALERT_CATEGORY_SERVICE_SPECIFIC_MIN",
     "ALERT_COMMAND_MAX",
     "ALERT_TEXT_MAX_LENGTH",
+    "EAD_ADDRESS_SIZE",
+    "EAD_IV_SIZE",
+    "EAD_MIC_SIZE",
+    "EAD_MIN_SIZE",
+    "EAD_NONCE_SIZE",
+    "EAD_RANDOMIZER_SIZE",
+    "EAD_SESSION_KEY_SIZE",
     "UNREAD_COUNT_MAX",
     "UNREAD_COUNT_MORE_THAN_MAX",
     "AdTypeInfo",
-    "AdvertisingData",
-    "AdvertisingDataStructures",
     "AlertCategoryBitMask",
     "AlertCategoryID",
     "AlertNotificationCommandID",
@@ -115,54 +110,33 @@ __all__ = [
     "BatteryChargeState",
     "BatteryChargingType",
     "BatteryFaultReason",
-    "BLEAdvertisingFlags",
-    "BLEAdvertisingPDU",
-    "BLEExtendedHeader",
     "CharacteristicContext",
     "CharacteristicInfo",
     "CharacteristicProtocol",
     "ClassOfDeviceInfo",
+    "CompanyIdentifier",
     "ConcentrationUnit",
-    "CoreAdvertisingData",
-    "DirectedAdvertisingData",
     "DateData",
     "DescriptorData",
     "DescriptorInfo",
     "DeviceInfo",
-    "DeviceProperties",
-    "EAD_ADDRESS_SIZE",
-    "EAD_IV_SIZE",
-    "EAD_MIC_SIZE",
-    "EAD_MIN_SIZE",
-    "EAD_NONCE_SIZE",
-    "EAD_RANDOMIZER_SIZE",
-    "EAD_SESSION_KEY_SIZE",
     "EADDecryptResult",
     "EADError",
     "EADKeyMaterial",
     "ElectricalUnit",
     "EncryptedAdvertisingData",
-    "ExtendedAdvertisingData",
-    "ExtendedHeaderFlags",
     "GlucoseConcentrationUnit",
     "HeightUnit",
     "LengthUnit",
-    "LocationAndSensingData",
+    "ManufacturerData",
     "MeasurementSystem",
-    "MeshAndBroadcastData",
-    "OOBSecurityData",
     "ParseFieldError",
-    "AdvertisementData",
-    "PDUHeaderFlags",
-    "PDULayout",
-    "PDUType",
     "PercentageUnit",
     "PhysicalUnit",
     "PositionStatus",
     "PressureUnit",
-    "SecurityData",
-    "ServiceInfo",
     "SIGInfo",
+    "ServiceInfo",
     "SoundUnit",
     "SpecialValueResult",
     "SpecialValueRule",

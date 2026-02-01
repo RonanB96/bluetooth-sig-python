@@ -74,7 +74,9 @@ class LNFeatureCharacteristic(BaseCharacteristic[LNFeatureData]):
     min_length = 4
     _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> LNFeatureData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> LNFeatureData:
         """Parse LN feature data according to Bluetooth specification.
 
         Format: Features(4) - 32-bit bitmap indicating supported features.
@@ -82,14 +84,12 @@ class LNFeatureCharacteristic(BaseCharacteristic[LNFeatureData]):
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         Returns:
             LNFeatureData containing parsed feature bitmap and capabilities.
 
         """
-        if len(data) < 4:
-            raise ValueError("LN Feature data must be at least 4 bytes")
-
         features_bitmap = DataParser.parse_int32(data, 0, signed=False)
 
         # Extract individual feature flags

@@ -36,12 +36,15 @@ class ExactTime256Characteristic(BaseCharacteristic[ExactTime256Data]):
     _manual_value_type = "ExactTime256Data"
     expected_length = 9
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> ExactTime256Data:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> ExactTime256Data:
         """Parse exact time 256 value.
 
         Args:
             data: Raw bytearray from BLE characteristic (9 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             ExactTime256Data with datetime, day_of_week, and fractions256.

@@ -11,6 +11,10 @@ from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
+# Timezone offsets (15-minute increments from UTC)
+TIMEZONE_OFFSET_MIN = -48  # Minimum timezone offset in 15-minute increments (UTC-12:00)
+TIMEZONE_OFFSET_MAX = 56  # Maximum timezone offset in 15-minute increments (UTC+14:00)
+
 
 class DSTOffset(IntEnum):
     """DST offset values as an IntEnum to avoid magic numbers.
@@ -84,22 +88,23 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic[LocalTimeInformation
     """
 
     expected_length: int = 2  # Timezone(1) + DST Offset(1)
+    min_length: int = 2
 
     def _decode_value(  # pylint: disable=too-many-locals
         self,
         data: bytearray,
         ctx: CharacteristicContext | None = None,
+        *,
+        validate: bool = True,
     ) -> LocalTimeInformationData:
         """Parse local time information data (2 bytes: time zone + DST offset).
 
         Args:
             data: Raw bytearray from BLE characteristic.
             ctx: Optional CharacteristicContext providing surrounding context (may be None).
+            validate: Whether to validate ranges (default True)
 
         """
-        if len(data) < 2:
-            raise ValueError("Local time information data must be at least 2 bytes")
-
         # Parse time zone (sint8)
         timezone_raw = DataParser.parse_int8(data, 0, signed=True)
 
@@ -110,7 +115,7 @@ class LocalTimeInformationCharacteristic(BaseCharacteristic[LocalTimeInformation
         if timezone_raw == SINT8_MIN:
             timezone_desc = "Unknown"
             timezone_hours = None
-        elif -48 <= timezone_raw <= 56:
+        elif TIMEZONE_OFFSET_MIN <= timezone_raw <= TIMEZONE_OFFSET_MAX:
             # pylint: disable=duplicate-code
             # NOTE: UTC offset formatting is shared with TimeZoneCharacteristic.
             # Both use identical 15-minute increment conversion per Bluetooth SIG time spec.

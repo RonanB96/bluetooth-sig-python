@@ -26,8 +26,7 @@ class SdoUuidsRegistry(BaseUUIDRegistry[SdoInfo]):
         # Remove multiple consecutive underscores
         normalized = re.sub(r"_+", "_", normalized)
         # Remove leading/trailing underscores
-        normalized = normalized.strip("_")
-        return normalized
+        return normalized.strip("_")
 
     def _load_yaml_path(self) -> str:
         """Return the YAML file path relative to bluetooth_sig/ root."""

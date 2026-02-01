@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import contextlib
+
 from bluetooth_sig.types.base_types import SIGInfo
 
 __all__ = [
@@ -56,11 +58,9 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
         self._gss_registry: GssRegistry | None = None
 
-        try:
-            self._load_uuids()
-        except (FileNotFoundError, Exception):  # pylint: disable=broad-exception-caught
+        with contextlib.suppress(FileNotFoundError, Exception):
             # If YAML loading fails, continue with empty registry
-            pass
+            self._load_uuids()
 
     def _store_service(self, info: ServiceInfo) -> None:
         """Store service info with canonical storage + aliases."""

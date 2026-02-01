@@ -34,12 +34,15 @@ class DayDateTimeCharacteristic(BaseCharacteristic[DayDateTimeData]):
     _manual_value_type = "DayDateTimeData"
     expected_length = 8
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> DayDateTimeData:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> DayDateTimeData:
         """Parse day date time value.
 
         Args:
             data: Raw bytearray from BLE characteristic (8 bytes).
             ctx: Optional CharacteristicContext.
+            validate: Whether to validate ranges (default True)
 
         Returns:
             DayDateTimeData with datetime and day_of_week.

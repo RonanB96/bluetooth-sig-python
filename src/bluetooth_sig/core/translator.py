@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import struct
 import typing
 from collections.abc import Mapping
 from graphlib import TopologicalSorter
@@ -13,7 +14,12 @@ from typing import Any, TypeVar, overload
 from ..gatt.characteristics import templates
 from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
-from ..gatt.exceptions import CharacteristicParseError, MissingDependencyError, SpecialValueDetected
+from ..gatt.exceptions import (
+    CharacteristicError,
+    CharacteristicParseError,
+    MissingDependencyError,
+    SpecialValueDetectedError,
+)
 from ..gatt.services import ServiceName
 from ..gatt.services.base import BaseGattService
 from ..gatt.services.registry import GattServiceRegistry
@@ -29,6 +35,7 @@ from ..types.gatt_enums import CharacteristicName, ValueType
 from ..types.uuid import BluetoothUUID
 
 # Type alias for characteristic data in process_services
+# Performance: str keys (normalized UUIDs) instead of BluetoothUUID for fast lookups
 CharacteristicDataDict = dict[str, Any]
 
 # Type variable for generic characteristic return types
@@ -95,6 +102,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             return
         self.__class__._instance_lock = True
 
+        # Performance: Use str keys (normalized UUIDs) for fast dict lookups
         self._services: dict[str, BaseGattService] = {}
 
     def __str__(self) -> str:
@@ -122,7 +130,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         char: str | type[BaseCharacteristic[T]],
         raw_data: bytes | bytearray,
         ctx: CharacteristicContext | None = None,
-    ) -> T | Any:  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+    ) -> T | Any:  # Runtime UUID dispatch cannot be type-safe
         r"""Parse a characteristic's raw data using Bluetooth SIG standards.
 
         Args:
@@ -138,7 +146,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             - Special values: ``SpecialValueResult`` (via exception)
 
         Raises:
-            SpecialValueDetected: Special sentinel value detected
+            SpecialValueDetectedError: Special sentinel value detected
             CharacteristicParseError: Parse/validation failure
 
         Example::
@@ -162,19 +170,20 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             try:
                 value = char_instance.parse_value(raw_data, ctx)
                 logger.debug("Successfully parsed %s: %s", char_instance.name, value)
-                return value
-            except SpecialValueDetected as e:
+            except SpecialValueDetectedError as e:
                 logger.debug("Special value detected for %s: %s", char_instance.name, e.special_value.meaning)
                 raise
             except CharacteristicParseError as e:
                 logger.warning("Parse failed for %s: %s", char_instance.name, e)
                 raise
+            else:
+                return value
 
         # Handle string UUID input (not type-safe path)
         logger.debug("Parsing characteristic UUID=%s, data_len=%d", char, len(raw_data))
 
-        # Create characteristic instance for parsing
-        characteristic = CharacteristicRegistry.create_characteristic(char)
+        # Get characteristic instance for parsing
+        characteristic = CharacteristicRegistry.get_characteristic(char)
 
         if characteristic:
             logger.debug("Found parser for UUID=%s: %s", char, type(characteristic).__name__)
@@ -182,13 +191,14 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             try:
                 value = characteristic.parse_value(raw_data, ctx)
                 logger.debug("Successfully parsed %s: %s", characteristic.name, value)
-                return value
-            except SpecialValueDetected as e:
+            except SpecialValueDetectedError as e:
                 logger.debug("Special value detected for %s: %s", characteristic.name, e.special_value.meaning)
                 raise
             except CharacteristicParseError as e:
                 logger.warning("Parse failed for %s: %s", characteristic.name, e)
                 raise
+            else:
+                return value
         else:
             # No parser found, raise an error
             logger.info("No parser available for UUID=%s", char)
@@ -218,7 +228,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
     def encode_characteristic(
         self,
         char: str | type[BaseCharacteristic[T]],
-        value: T | Any,  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+        value: T | Any,  # Runtime UUID dispatch cannot be type-safe
         validate: bool = True,
     ) -> bytes:
         r"""Encode a value for writing to a characteristic.
@@ -263,15 +273,15 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                     encoded = char_instance._encode_value(value)  # pylint: disable=protected-access
                     logger.debug("Successfully encoded %s without validation", char_instance.name)
                 return bytes(encoded)
-            except Exception as e:
-                logger.error("Encoding failed for %s: %s", char_instance.name, e)
+            except Exception:
+                logger.exception("Encoding failed for %s", char_instance.name)
                 raise
 
         # Handle string UUID input (not type-safe path)
         logger.debug("Encoding characteristic UUID=%s, value=%s", char, value)
 
-        # Create characteristic instance
-        characteristic = CharacteristicRegistry.create_characteristic(char)
+        # Get characteristic instance
+        characteristic = CharacteristicRegistry.get_characteristic(char)
         if not characteristic:
             raise ValueError(f"No encoder available for characteristic UUID: {char}")
 
@@ -299,8 +309,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 encoded = characteristic._encode_value(value)  # pylint: disable=protected-access
                 logger.debug("Successfully encoded %s without validation", characteristic.name)
             return bytes(encoded)
-        except Exception as e:
-            logger.error("Encoding failed for %s: %s", characteristic.name, e)
+        except Exception:
+            logger.exception("Encoding failed for %s", characteristic.name)
             raise
 
     def _get_characteristic_value_type_class(  # pylint: disable=too-many-return-statements,too-many-branches
@@ -322,29 +332,30 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 # Need to pass the characteristic's module globals to resolve forward references
                 module = inspect.getmodule(characteristic.__class__)
                 globalns = getattr(module, "__dict__", {}) if module else {}
-                type_hints = typing.get_type_hints(characteristic._decode_value, globalns=globalns)  # pylint: disable=protected-access
+                type_hints = typing.get_type_hints(characteristic._decode_value, globalns=globalns)  # pylint: disable=protected-access  # Need to inspect decode method signature
                 return_type = type_hints.get("return")
                 if return_type and return_type is not type(None):
                     return return_type  # type: ignore[no-any-return]
-            except Exception:  # pylint: disable=broad-exception-caught
-                # Fallback to direct signature inspection
-                return_type = inspect.signature(characteristic._decode_value).return_annotation  # pylint: disable=protected-access
-                sig = inspect.signature(characteristic._decode_value)
+            except (TypeError, AttributeError, NameError):
+                # Fallback to direct signature inspection if type hints fail
+                return_type = inspect.signature(characteristic._decode_value).return_annotation  # pylint: disable=protected-access  # Need signature access
+                sig = inspect.signature(characteristic._decode_value)  # pylint: disable=protected-access  # Duplicate for clarity
                 return_annotation = sig.return_annotation
-                if return_annotation and return_annotation != inspect.Parameter.empty:
-                    # Check if it's not just a string annotation
-                    if not isinstance(return_annotation, str):
-                        return return_annotation  # type: ignore[no-any-return]
+                if (
+                    return_annotation
+                    and return_annotation != inspect.Parameter.empty
+                    and not isinstance(return_annotation, str)
+                ):
+                    # Return non-string annotation
+                    return return_annotation  # type: ignore[no-any-return]
 
         # Try to get from _manual_value_type attribute
         # pylint: disable=protected-access  # Need to inspect manual type info
         if hasattr(characteristic, "_manual_value_type"):
             manual_type = characteristic._manual_value_type
-            if manual_type:
-                # If it's a string, try to resolve it from templates module
-                if isinstance(manual_type, str):
-                    if hasattr(templates, manual_type):
-                        return getattr(templates, manual_type)  # type: ignore[no-any-return]
+            if manual_type and isinstance(manual_type, str) and hasattr(templates, manual_type):
+                # Resolve string annotation from templates module
+                return getattr(templates, manual_type)  # type: ignore[no-any-return]
 
         # Try to get from template first
         # pylint: disable=protected-access  # Need to inspect template for type info
@@ -419,9 +430,10 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         try:
             bt_uuid = BluetoothUUID(uuid)
             char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(bt_uuid)
-            return char_class is not None
         except (ValueError, TypeError):
             return False
+        else:
+            return char_class is not None
 
     def get_characteristic_info_by_uuid(self, uuid: str) -> CharacteristicInfo | None:
         """Get information about a characteristic by UUID.
@@ -458,9 +470,11 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         # Create temporary instance to get metadata (no parameters needed for auto-resolution)
         try:
             temp_char = char_class()
-            return temp_char.info
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (TypeError, ValueError, AttributeError):
+            # Instantiation may fail if characteristic requires parameters or has missing dependencies
             return None
+        else:
+            return temp_char.info
 
     def get_characteristic_uuid_by_name(self, name: CharacteristicName) -> BluetoothUUID | None:
         """Get the UUID for a characteristic name enum.
@@ -511,23 +525,28 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         # For SIG characteristics, create temporary instance to get metadata
         try:
             temp_char = char_class()
-            return temp_char.info
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (TypeError, ValueError, AttributeError):
+            # Instantiation may fail if characteristic requires parameters or has missing dependencies
             return None
+        else:
+            return temp_char.info
 
-    def get_service_info_by_name(self, name: str) -> ServiceInfo | None:
-        """Get service info by name instead of UUID.
+    def get_service_info_by_name(self, name: str | ServiceName) -> ServiceInfo | None:
+        """Get service info by name or enum instead of UUID.
 
         Args:
-            name: Service name
+            name: Service name string or ServiceName enum
 
         Returns:
             ServiceInfo if found, None otherwise
 
         """
+        # Convert enum to string value if needed
+        name_str = name.value if isinstance(name, ServiceName) else name
+
         # Use UUID registry for name-based lookup
         try:
-            uuid_info = uuid_registry.get_service_info(name)
+            uuid_info = uuid_registry.get_service_info(name_str)
             if uuid_info:
                 return ServiceInfo(uuid=uuid_info.uuid, name=uuid_info.name, characteristics=[])
         except Exception:  # pylint: disable=broad-exception-caught
@@ -561,7 +580,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 name=temp_service.name,
                 characteristics=char_infos,
             )
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (TypeError, ValueError, AttributeError):
+            # Service instantiation may fail if it requires parameters or has missing data
             return None
 
     def list_supported_characteristics(self) -> dict[str, str]:
@@ -682,7 +702,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                     value_type=value_type,
                     unit=char_info.unit or "",
                 )
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (KeyError, ValueError, AttributeError):  # Registry lookups may fail, fall through to service lookup
             pass
 
         # Try service
@@ -804,12 +824,9 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
             parse_context = self._build_parse_context(base_context, results)
 
-            try:
-                value = self.parse_characteristic(uuid_str, raw_data, ctx=parse_context)
-                results[uuid_str] = value
-            except (CharacteristicParseError, SpecialValueDetected):
-                # Re-raise parse errors for individual characteristics - intentional passthrough
-                raise  # pylint: disable=try-except-raise
+            # Let parse errors propagate to caller
+            value = self.parse_characteristic(uuid_str, raw_data, ctx=parse_context)
+            results[uuid_str] = value
 
         logger.debug("Batch parsing complete: %d results", len(results))
         return results
@@ -818,12 +835,13 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         self, characteristic_data: Mapping[str, bytes]
     ) -> tuple[dict[str, BaseCharacteristic[Any]], dict[str, list[str]], dict[str, list[str]]]:
         """Instantiate characteristics once and collect declared dependencies."""
+        # Performance: All dicts use str keys (UUID strings) for O(1) lookups in hot paths
         uuid_to_characteristic: dict[str, BaseCharacteristic[Any]] = {}
         uuid_to_required_deps: dict[str, list[str]] = {}
         uuid_to_optional_deps: dict[str, list[str]] = {}
 
         for uuid in characteristic_data:
-            characteristic = CharacteristicRegistry.create_characteristic(uuid)
+            characteristic = CharacteristicRegistry.get_characteristic(uuid)
             if characteristic is None:
                 continue
 
@@ -858,10 +876,11 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             sorted_sequence = sorter.static_order()
             sorted_uuids = list(sorted_sequence)
             logger.debug("Dependency-sorted parsing order: %s", sorted_uuids)
-            return sorted_uuids
         except Exception as exc:  # pylint: disable=broad-exception-caught
             logger.warning("Dependency sorting failed: %s. Using original order.", exc)
             return list(characteristic_data.keys())
+        else:
+            return sorted_uuids
 
     def _find_missing_required_dependencies(
         self,
@@ -968,7 +987,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 bt_uuid = BluetoothUUID(uuid)
                 char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(bt_uuid)
                 expected = char_class.expected_length if char_class else None
-            except Exception:  # pylint: disable=broad-exception-caught
+            except (ValueError, AttributeError):
+                # UUID parsing or class lookup may fail
                 expected = None
             return ValidationResult(
                 is_valid=True,
@@ -976,14 +996,15 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 expected_length=expected,
                 error_message="",
             )
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            # If parsing failed, data format is invalid
-            # Try to get expected_length even on failure
+        except (CharacteristicParseError, ValueError, TypeError, struct.error, CharacteristicError) as e:
+            # Parsing failed - data format is invalid
+            # Try to get expected_length even on failure for better error reporting
             try:
                 bt_uuid = BluetoothUUID(uuid)
                 char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(bt_uuid)
                 expected = char_class.expected_length if char_class else None
-            except Exception:  # pylint: disable=broad-exception-caught
+            except (ValueError, AttributeError):
+                # UUID parsing or class lookup may fail
                 expected = None
             return ValidationResult(
                 is_valid=False,
@@ -1125,7 +1146,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         char: str | BluetoothUUID | type[BaseCharacteristic[T]],
         raw_data: bytes,
         ctx: CharacteristicContext | None = None,
-    ) -> T | Any:  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+    ) -> T | Any:  # Runtime UUID dispatch cannot be type-safe
         """Parse characteristic data in an async-compatible manner.
 
         This is an async wrapper that allows characteristic parsing to be used
@@ -1141,7 +1162,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             Parsed value. Return type is inferred when passing characteristic class.
 
         Raises:
-            SpecialValueDetected: Special sentinel value detected
+            SpecialValueDetectedError: Special sentinel value detected
             CharacteristicParseError: Parse/validation failure
 
         Example::
@@ -1203,10 +1224,26 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         # The sync implementation already handles dependency ordering
         return self.parse_characteristics(char_data, ctx)
 
+    @overload
     async def encode_characteristic_async(
         self,
-        uuid: str | BluetoothUUID,
-        value: Any,  # noqa: ANN401
+        char: type[BaseCharacteristic[T]],
+        value: T,
+        validate: bool = ...,
+    ) -> bytes: ...
+
+    @overload
+    async def encode_characteristic_async(
+        self,
+        char: str | BluetoothUUID,
+        value: Any,  # noqa: ANN401  # Runtime UUID dispatch cannot be type-safe
+        validate: bool = ...,
+    ) -> bytes: ...
+
+    async def encode_characteristic_async(
+        self,
+        char: str | BluetoothUUID | type[BaseCharacteristic[T]],
+        value: T | Any,  # Runtime UUID dispatch cannot be type-safe
         validate: bool = True,
     ) -> bytes:
         """Encode characteristic value in an async-compatible manner.
@@ -1216,8 +1253,9 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         a fast, CPU-bound operation that doesn't benefit from async I/O.
 
         Args:
-            uuid: The characteristic UUID (string or BluetoothUUID)
-            value: The value to encode (dataclass, dict, or primitive)
+            char: Characteristic class (type-safe) or UUID string/BluetoothUUID (not type-safe).
+            value: The value to encode (dataclass, dict, or primitive).
+                   Type is checked when using characteristic class.
             validate: If True, validates before encoding (default: True)
 
         Returns:
@@ -1226,11 +1264,23 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Example::
 
             async with BleakClient(address) as client:
-                data = await translator.encode_characteristic_async("2A19", 85)
-                await client.write_gatt_char("2A19", data)
+                from bluetooth_sig.gatt.characteristics import AlertLevelCharacteristic
+                from bluetooth_sig.gatt.characteristics.alert_level import AlertLevel
+
+                # Type-safe: pass characteristic class
+                data: bytes = await translator.encode_characteristic_async(AlertLevelCharacteristic, AlertLevel.HIGH)
+                await client.write_gatt_char(str(AlertLevelCharacteristic().uuid), data)
+
+                # Not type-safe: pass UUID string
+                data = await translator.encode_characteristic_async("2A06", 2)
+                await client.write_gatt_char("2A06", data)
         """
+        # Handle characteristic class input (type-safe path)
+        if isinstance(char, type) and issubclass(char, BaseCharacteristic):
+            return self.encode_characteristic(char, value, validate)
+
         # Convert to string for consistency with sync API
-        uuid_str = str(uuid) if isinstance(uuid, BluetoothUUID) else uuid
+        uuid_str = str(char) if isinstance(char, BluetoothUUID) else char
 
         # Delegate to sync implementation
         return self.encode_characteristic(uuid_str, value, validate)
@@ -1268,8 +1318,8 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 await client.write_gatt_char("2C1D", data)
 
         """
-        # Create characteristic instance
-        characteristic = CharacteristicRegistry.create_characteristic(uuid)
+        # Get characteristic instance
+        characteristic = CharacteristicRegistry.get_characteristic(uuid)
         if not characteristic:
             raise ValueError(f"No characteristic found for UUID: {uuid}")
 

@@ -43,7 +43,7 @@ class DeviceInfo(msgspec.Struct):
     raw: Any | None = None
 
 
-__all__ = ["ReadResult", "DeviceInfo"]
+__all__ = ["DeviceInfo", "ReadResult"]
 
 
 ComparisonData = Union[dict[str, ReadResult], dict[str, Any]]
@@ -63,4 +63,4 @@ class LibraryComparisonResult(msgspec.Struct):
     note: str | None = None
 
 
-__all__.extend(["LibraryComparisonResult", "ComparisonData"])
+__all__.extend(["ComparisonData", "LibraryComparisonResult"])

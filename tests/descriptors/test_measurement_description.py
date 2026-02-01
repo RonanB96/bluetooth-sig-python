@@ -12,7 +12,7 @@ class TestMeasurementDescriptionDescriptor:
     def test_parse_measurement_description(self) -> None:
         """Test parsing measurement description."""
         md = MeasurementDescriptionDescriptor()
-        # Description: "Temperature"
+        # Test data: String "Temperature"
         data = b"Temperature"
 
         result = md.parse_value(data)

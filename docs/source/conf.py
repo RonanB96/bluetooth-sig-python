@@ -591,9 +591,8 @@ def add_external_link_security(app: Sphinx, exception: Exception | None) -> None
                     new_rel_value = f"{rel_value} noopener noreferrer" if rel_value else "noopener noreferrer"
                     new_rel = f'rel="{new_rel_value}"'
                     return full_tag.replace(old_rel, new_rel, 1)
-                else:
-                    # Insert rel after href
-                    return re.sub(href_pattern, f'{href_pattern} rel="noopener noreferrer"', full_tag, count=1)
+                # Insert rel after href
+                return re.sub(href_pattern, f'{href_pattern} rel="noopener noreferrer"', full_tag, count=1)
 
             # Match opening anchor tags with external links
             # Captures the full opening tag and the href value

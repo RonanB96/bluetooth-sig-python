@@ -29,7 +29,7 @@ class DataValidator:
             raise DataValidationError("data_length", length, f"at most {expected_max} bytes")
 
     @staticmethod
-    def validate_range(value: int | float, min_val: int | float, max_val: int | float) -> None:
+    def validate_range(value: float, min_val: float, max_val: float) -> None:
         """Validate that a value is within the specified range."""
         if not min_val <= value <= max_val:
             raise ValueRangeError("value", value, min_val, max_val)
@@ -64,14 +64,14 @@ class DataValidator:
             raise ValueRangeError("temperature", value, min_celsius, max_celsius)
 
     @staticmethod
-    def validate_percentage(value: int | float, allow_over_100: bool = False) -> None:
+    def validate_percentage(value: float, allow_over_100: bool = False) -> None:
         """Validate percentage value (0-100% or 0-200% for some characteristics)."""
         max_value = EXTENDED_PERCENTAGE_MAX if allow_over_100 else PERCENTAGE_MAX
         if value < PERCENTAGE_MIN or value > max_value:
             raise ValueRangeError("percentage", value, 0, max_value)
 
     @staticmethod
-    def validate_power_range(value: int | float, max_watts: float = MAX_POWER_WATTS) -> None:
+    def validate_power_range(value: float, max_watts: float = MAX_POWER_WATTS) -> None:
         """Validate power measurement range."""
         if value < 0 or value > max_watts:
             raise ValueRangeError("power", value, 0, max_watts)
