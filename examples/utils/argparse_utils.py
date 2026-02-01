@@ -117,7 +117,6 @@ def create_connection_manager(
         return BleakRetryConnectionManager(address)
 
     if manager_name == "simplepyble":
-
         from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
 
         return SimplePyBLEConnectionManager(address)
