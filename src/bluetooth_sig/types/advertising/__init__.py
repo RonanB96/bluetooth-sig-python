@@ -8,3 +8,43 @@ This package contains types organized by category:
     - ad_structures: Parsed AD structure categories
     - result: Final composed advertising data types
 """
+
+from bluetooth_sig.types.advertising.ad_structures import (
+    AdvertisingDataStructures,
+    ConnectionIntervalRange,
+    CoreAdvertisingData,
+    DeviceProperties,
+    DirectedAdvertisingData,
+    ExtendedAdvertisingData,
+    LocationAndSensingData,
+    MeshAndBroadcastData,
+    OOBSecurityData,
+    SecurityData,
+)
+from bluetooth_sig.types.advertising.features import LEFeatures
+from bluetooth_sig.types.advertising.flags import BLEAdvertisingFlags
+from bluetooth_sig.types.advertising.pdu import BLEAdvertisingPDU
+from bluetooth_sig.types.advertising.result import AdvertisementData, AdvertisingData
+
+__all__ = [
+    # ad_structures types
+    "AdvertisingDataStructures",
+    "ConnectionIntervalRange",
+    "CoreAdvertisingData",
+    "DeviceProperties",
+    "DirectedAdvertisingData",
+    "ExtendedAdvertisingData",
+    "LocationAndSensingData",
+    "MeshAndBroadcastData",
+    "OOBSecurityData",
+    "SecurityData",
+    # features
+    "LEFeatures",
+    # flags
+    "BLEAdvertisingFlags",
+    # pdu
+    "BLEAdvertisingPDU",
+    # result types
+    "AdvertisementData",
+    "AdvertisingData",
+]
