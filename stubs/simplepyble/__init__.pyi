@@ -6,7 +6,6 @@ This file provides type annotations for the simplepyble library.
 Parameters in stub files are not actually used - they only provide type information.
 """
 
-
 from collections.abc import Callable, Sequence
 
 class Adapter:
