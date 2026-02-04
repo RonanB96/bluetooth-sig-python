@@ -31,7 +31,7 @@ class EADKeyProvider(Protocol):
     Implement this protocol to provide EAD key material for devices
     that use BLE-standard Encrypted Advertising Data.
 
-    Example:
+    Example::
         >>> class MyEADKeyProvider:
         ...     def __init__(self, keys: dict[str, EADKeyMaterial]):
         ...         self._keys = keys
@@ -60,7 +60,7 @@ class EncryptionKeyProvider(Protocol):
     Implement this protocol to provide encryption keys for devices
     that use encrypted advertising (e.g., Xiaomi MiBeacon, BTHome).
 
-    Example:
+    Example::
         >>> class MyKeyProvider:
         ...     def __init__(self, keys: dict[str, bytes]):
         ...         self._keys = keys
@@ -96,7 +96,7 @@ class DictKeyProvider:
         ead_keys: Dictionary mapping MAC addresses to EAD key material
         warned_macs: Set of MAC addresses that have already been warned about
 
-    Example:
+    Example::
         >>> provider = DictKeyProvider(
         ...     {
         ...         "AA:BB:CC:DD:EE:FF": bytes.fromhex("0123456789abcdef0123456789abcdef"),

@@ -299,7 +299,7 @@ def create_mock_ble_context() -> dict[str, Any]:
         "client": mock_client,
         "device": DummyDevice("AA:BB:CC:DD:EE:FF"),
         "Device": DummyDevice,
-        "BleakRetryConnectionManager": DummyConnectionManager,
+        "BleakRetryClientManager": DummyConnectionManager,
         "BleakError": BleakError,
         **stub_values,
     }

@@ -148,7 +148,7 @@ The dashboard provides:
 
 ## Running Benchmarks
 
-See [Performance Tuning Guide](../how-to/performance-tuning.md#running-benchmarks-locally) for instructions on running benchmarks locally.
+See [Performance Tuning Guide](../how-to/performance-tuning.md#benchmarks) for instructions on running benchmarks locally.
 
 ## Benchmark Maintenance
 

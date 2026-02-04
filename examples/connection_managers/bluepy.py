@@ -23,7 +23,7 @@ from bluepy.btle import (
     Service,
 )
 
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
@@ -50,11 +50,11 @@ from bluetooth_sig.types.gatt_enums import GattProperty
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-# pylint: disable=too-many-public-methods  # Implements ConnectionManagerProtocol interface
-class BluePyConnectionManager(ConnectionManagerProtocol):
-    """Connection manager using BluePy for BLE communication.
+# pylint: disable=too-many-public-methods  # Implements ClientManagerProtocol interface
+class BluePyClientManager(ClientManagerProtocol):
+    """Client manager using BluePy for BLE communication.
 
-    Implements ConnectionManagerProtocol to integrate BluePy with
+    Implements ClientManagerProtocol to integrate BluePy with
     the bluetooth-sig-python Device class.
     """
 

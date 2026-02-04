@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 import simplepyble
 
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
@@ -110,9 +110,9 @@ def simpleble_services_to_batch(
     return RawCharacteristicBatch(items=items)
 
 
-# pylint: disable=too-many-public-methods  # Implements full ConnectionManagerProtocol interface
-class SimplePyBLEConnectionManager(ConnectionManagerProtocol):
-    """Connection manager using SimplePyBLE for BLE communication."""
+# pylint: disable=too-many-public-methods  # Implements full ClientManagerProtocol interface
+class SimplePyBLEClientManager(ClientManagerProtocol):
+    """Client manager using SimplePyBLE for BLE communication."""
 
     supports_scanning: ClassVar[bool] = True
 

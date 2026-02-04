@@ -54,7 +54,7 @@ class SIGCharacteristicInterpreter(PayloadInterpreter[SIGCharacteristicData]):
     This interpreter checks service data UUIDs against the CharacteristicRegistry
     and parses the payload using the corresponding characteristic class.
 
-    Example:
+    Example::
         from bluetooth_sig.advertising.base import AdvertisingData
 
         interpreter = SIGCharacteristicInterpreter("AA:BB:CC:DD:EE:FF")

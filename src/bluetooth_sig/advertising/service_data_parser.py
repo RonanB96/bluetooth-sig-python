@@ -28,11 +28,11 @@ class ServiceDataParser:
     Both SIG-standard and custom-registered characteristics are supported via
     the unified CharacteristicRegistry.
 
-    Example:
+    Example::
         parser = ServiceDataParser()
 
         # Parse all service data from an advertisement
-        service_data = {BluetoothUUID("2A6E"): b'\xE8\x03'}  # Temperature
+        service_data = {BluetoothUUID("2A6E"): b"\xe8\x03"}  # Temperature
         results = parser.parse(service_data)
         # results = {BluetoothUUID("2A6E"): 10.0}  # Parsed temperature in °C
 

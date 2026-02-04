@@ -214,7 +214,7 @@ def parse_advertising_payloads(
         List of parsed data from all matching interpreters.
         Failed interpretations are silently skipped (exceptions logged).
 
-    Example:
+    Example::
         from bluetooth_sig.advertising import parse_advertising_payloads, PayloadContext
 
         context = PayloadContext(mac_address="AA:BB:CC:DD:EE:FF", rssi=-60)

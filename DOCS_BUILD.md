@@ -6,20 +6,39 @@ This guide explains how to build and serve the Bluetooth SIG Standards Library d
 
 ## Table of Contents
 
-- [Quick Start](#quick-start)
-- [Requirements](#requirements)
-  - [Python Dependencies](#python-dependencies)
-  - [System Dependencies](#system-dependencies)
-- [Build Commands](#build-commands)
-  - [Development Server](#development-server)
-  - [Production Build](#production-build)
-- [Generated Outputs](#generated-outputs)
-- [Configuration](#configuration)
-- [Troubleshooting](#troubleshooting)
-- [Development Tips](#development-tips)
-- [Performance Optimization](#performance-optimization)
-- [Integration with CI/CD](#integration-with-cicd)
-- [File Exclusions](#file-exclusions)
+- [Documentation Build Guide](#documentation-build-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Quick Start](#quick-start)
+  - [Requirements](#requirements)
+    - [Python Dependencies](#python-dependencies)
+    - [System Dependencies](#system-dependencies)
+      - [Ubuntu/Debian](#ubuntudebian)
+      - [Alpine Linux](#alpine-linux)
+      - [macOS (with Homebrew)](#macos-with-homebrew)
+      - [Windows](#windows)
+  - [Build Commands](#build-commands)
+    - [Development Server](#development-server)
+    - [Production Build](#production-build)
+    - [Other Useful Commands](#other-useful-commands)
+  - [Generated Outputs](#generated-outputs)
+    - [Site Structure](#site-structure)
+    - [Automatic Generation](#automatic-generation)
+    - [Diagram Generation](#diagram-generation)
+  - [Configuration](#configuration)
+    - [Sphinx Configuration](#sphinx-configuration)
+    - [Pre-Build Hooks](#pre-build-hooks)
+    - [Post-Build Hooks](#post-build-hooks)
+  - [Troubleshooting](#troubleshooting)
+    - [Sphinx Command Not Found](#sphinx-command-not-found)
+    - [PlantUML: Java Runtime Not Found](#plantuml-java-runtime-not-found)
+    - [Graphviz: Dot Command Not Found](#graphviz-dot-command-not-found)
+    - [API Documentation Missing](#api-documentation-missing)
+    - [Diagrams Not Generating](#diagrams-not-generating)
+    - [Build Warnings or Errors](#build-warnings-or-errors)
+  - [Development Tips](#development-tips)
+  - [Performance Optimization](#performance-optimization)
+  - [Integration with CI/CD](#integration-with-cicd)
+  - [File Exclusions](#file-exclusions)
 
 ## Quick Start
 
@@ -44,6 +63,7 @@ The generated site will be available at `http://127.0.0.1:8000/` when serving, o
 **Note**: Mermaid diagrams are rendered client-side via JavaScript and require no additional system dependencies.
 
 ## Requirements
+
 
 ### Python Dependencies
 

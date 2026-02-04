@@ -62,7 +62,7 @@ class AdvertisingServiceResolver:
     Maps service UUIDs advertised in BLE advertisements to their
     corresponding GATT service classes from the registry.
 
-    Example:
+    Example::
         resolver = AdvertisingServiceResolver()
 
         # Resolve a single UUID

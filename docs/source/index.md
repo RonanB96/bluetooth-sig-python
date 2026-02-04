@@ -30,14 +30,14 @@ from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 
 # Connection manager for your BLE backend
 from examples.connection_managers.bleak_retry import (
-    BleakRetryConnectionManager,
+    BleakRetryClientManager,
 )
 
 
 async def main():
     translator = BluetoothSIGTranslator()
     device = Device(
-        BleakRetryConnectionManager("AA:BB:CC:DD:EE:FF"), translator
+        BleakRetryClientManager("AA:BB:CC:DD:EE:FF"), translator
     )
 
     await device.connect()

@@ -12,6 +12,12 @@ from bluetooth_sig.types.advertising.flags import BLEAdvertisingFlags
 from bluetooth_sig.types.advertising.pdu import BLEAdvertisingPDU
 from bluetooth_sig.types.appearance import AppearanceData
 from bluetooth_sig.types.company import ManufacturerData
+from bluetooth_sig.types.mesh import (
+    MeshMessage,
+    ProvisioningBearerData,
+    SecureNetworkBeacon,
+    UnprovisionedDeviceBeacon,
+)
 from bluetooth_sig.types.registry.class_of_device import ClassOfDeviceInfo
 from bluetooth_sig.types.uri import URIData
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -149,19 +155,22 @@ class MeshAndBroadcastData(msgspec.Struct, kw_only=True):
     """Bluetooth Mesh and audio broadcast related data.
 
     Attributes:
-        mesh_message: Mesh Message
-        mesh_beacon: Mesh Beacon
-        pb_adv: Provisioning Bearer over advertising
-        broadcast_name: Broadcast name
+        mesh_message: Parsed Mesh Network PDU message
+        secure_network_beacon: Parsed Secure Network Beacon (provisioned nodes)
+        unprovisioned_device_beacon: Parsed Unprovisioned Device Beacon
+        provisioning_bearer: Parsed Provisioning Bearer (PB-ADV) data
+        broadcast_name: Broadcast name for LE Audio
         broadcast_code: Broadcast Code for encrypted audio
         biginfo: BIG Info for Broadcast Isochronous Groups
         periodic_advertising_response_timing: Periodic Advertising Response Timing Info
         electronic_shelf_label: Electronic Shelf Label data
+
     """
 
-    mesh_message: bytes = b""
-    mesh_beacon: bytes = b""
-    pb_adv: bytes = b""
+    mesh_message: MeshMessage | None = None
+    secure_network_beacon: SecureNetworkBeacon | None = None
+    unprovisioned_device_beacon: UnprovisionedDeviceBeacon | None = None
+    provisioning_bearer: ProvisioningBearerData | None = None
     broadcast_name: str = ""
     broadcast_code: bytes = b""
     biginfo: bytes = b""

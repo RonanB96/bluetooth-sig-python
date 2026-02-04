@@ -33,14 +33,14 @@ async def robust_device_reading(address: str, backend: str = "bleak-retry", retr
         print(f"❌ Only bleak-retry backend is supported in this example. Got: {backend}")
         return {}
 
-    from examples.connection_managers.bleak_retry import BleakRetryConnectionManager  # type: ignore
+    from examples.connection_managers.bleak_retry import BleakRetryClientManager  # type: ignore
 
     from .utils.mock_data import get_default_characteristic_uuids  # type: ignore
 
     target_uuids = get_default_characteristic_uuids()
     translator = BluetoothSIGTranslator()
 
-    manager = BleakRetryConnectionManager(address, max_attempts=retries)
+    manager = BleakRetryClientManager(address, max_attempts=retries)
     device = Device(manager, translator)
     await device.connect()
 
@@ -97,10 +97,10 @@ async def perform_single_reading(address: str, translator: BluetoothSIGTranslato
     """Perform a single reading cycle and return success status."""
     try:
         # Use robust connection with retry (import at runtime)
-        from examples.connection_managers.bleak_retry import BleakRetryConnectionManager  # type: ignore
+        from examples.connection_managers.bleak_retry import BleakRetryClientManager  # type: ignore
         from examples.utils.connection_helpers import read_characteristics_with_manager  # type: ignore
 
-        manager = BleakRetryConnectionManager(address)
+        manager = BleakRetryClientManager(address)
         raw_results = await read_characteristics_with_manager(manager, target_uuids)
 
         if raw_results:

@@ -10,7 +10,7 @@ class ParseTrace:
     if checks throughout the parsing code, improving performance when
     tracing is disabled.
 
-    Example:
+    Example::
         trace = ParseTrace(enabled=True)
         trace.append("Starting parse")
         trace.append("Validation complete")

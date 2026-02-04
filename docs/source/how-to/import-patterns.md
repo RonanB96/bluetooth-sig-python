@@ -14,7 +14,7 @@ For Device usage, you also need a connection manager:
 
 ```python
 from examples.connection_managers.bleak_retry import (
-    BleakRetryConnectionManager,
+    BleakRetryClientManager,
 )
 ```
 
@@ -130,10 +130,10 @@ Import Device with characteristic classes:
 from bluetooth_sig import Device
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 from examples.connection_managers.bleak_retry import (
-    BleakRetryConnectionManager,
+    BleakRetryClientManager,
 )
 
-connection_manager = BleakRetryConnectionManager("AA:BB:CC:DD:EE:FF")
+connection_manager = BleakRetryClientManager("AA:BB:CC:DD:EE:FF")
 device = Device(connection_manager)
 
 # Type-safe read - IDE knows level is int
@@ -149,11 +149,11 @@ Import Device with Translator for unknown devices:
 # SKIP: Requires async context and BLE hardware
 from bluetooth_sig import BluetoothSIGTranslator, Device
 from examples.connection_managers.bleak_retry import (
-    BleakRetryConnectionManager,
+    BleakRetryClientManager,
 )
 
 translator = BluetoothSIGTranslator()
-connection_manager = BleakRetryConnectionManager("AA:BB:CC:DD:EE:FF")
+connection_manager = BleakRetryClientManager("AA:BB:CC:DD:EE:FF")
 device = Device(connection_manager, translator)
 
 # Dynamic read - returns CharacteristicData with Any value
@@ -234,7 +234,7 @@ Import from specific modules as needed:
 
 **Connection managers** (from examples): `examples.connection_managers`
 
-- `BleakRetryConnectionManager` - Bleak-based async manager with retry logic
+- `BleakRetryClientManager` - Bleak-based async manager with retry logic
 - `SimplePyBLEConnectionManager` - SimplePyBLE synchronous adapter
 - `BluePyConnectionManager` - BluePy adapter
 

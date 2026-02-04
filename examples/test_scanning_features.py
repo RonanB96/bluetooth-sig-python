@@ -25,7 +25,7 @@ from datetime import datetime
 # Add project root to path for imports
 sys.path.insert(0, str(__file__).rsplit("/examples", 1)[0])
 
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.types.device_types import ScanFilter, ScannedDevice
 from examples.utils.library_detection import (
     AVAILABLE_LIBRARIES,
@@ -65,7 +65,7 @@ def format_device(device: ScannedDevice, indent: str = "  ") -> str:
 
 
 async def test_basic_scan(
-    manager: type[ConnectionManagerProtocol],
+    manager: type[ClientManagerProtocol],
     timeout: float = 5.0,
 ) -> list[ScannedDevice]:
     """Test basic scanning without filters."""
@@ -88,7 +88,7 @@ async def test_basic_scan(
 
 
 async def test_filtered_scan_rssi(
-    manager: type[ConnectionManagerProtocol],
+    manager: type[ClientManagerProtocol],
     timeout: float = 5.0,
     threshold: int = -70,
 ) -> list[ScannedDevice]:
@@ -110,7 +110,7 @@ async def test_filtered_scan_rssi(
 
 
 async def test_filtered_scan_service(
-    manager: type[ConnectionManagerProtocol],
+    manager: type[ClientManagerProtocol],
     timeout: float = 5.0,
 ) -> list[ScannedDevice]:
     """Test scanning with service UUID filter."""
@@ -146,7 +146,7 @@ async def test_filtered_scan_service(
 
 
 async def test_find_by_address(
-    manager: type[ConnectionManagerProtocol],
+    manager: type[ClientManagerProtocol],
     address: str,
     timeout: float = 10.0,
 ) -> ScannedDevice | None:
@@ -171,7 +171,7 @@ async def test_find_by_address(
 
 
 async def test_find_by_name(
-    manager: type[ConnectionManagerProtocol],
+    manager: type[ClientManagerProtocol],
     name: str,
     timeout: float = 10.0,
 ) -> ScannedDevice | None:
@@ -196,7 +196,7 @@ async def test_find_by_name(
 
 
 async def test_find_by_filter(
-    manager: type[ConnectionManagerProtocol],
+    manager: type[ClientManagerProtocol],
     timeout: float = 10.0,
 ) -> ScannedDevice | None:
     """Test finding a device by custom filter."""
@@ -225,7 +225,7 @@ async def test_find_by_filter(
 
 
 async def test_scan_with_callback(
-    manager: type[ConnectionManagerProtocol],
+    manager: type[ClientManagerProtocol],
     timeout: float = 5.0,
 ) -> list[ScannedDevice]:
     """Test scanning with real-time callback."""
@@ -257,7 +257,7 @@ async def test_scan_with_callback(
 
 
 async def test_scan_stream(
-    manager: type[ConnectionManagerProtocol],
+    manager: type[ClientManagerProtocol],
     timeout: float = 5.0,
     max_devices: int = 5,
 ) -> list[ScannedDevice]:
@@ -290,7 +290,7 @@ async def test_scan_stream(
 
 
 async def test_passive_scan(
-    manager: type[ConnectionManagerProtocol],
+    manager: type[ClientManagerProtocol],
     timeout: float = 3.0,
 ) -> list[ScannedDevice]:
     """Test passive scanning mode."""
@@ -318,7 +318,7 @@ async def test_passive_scan(
 
 
 async def run_all_tests(
-    manager: type[ConnectionManagerProtocol],
+    manager: type[ClientManagerProtocol],
     args: argparse.Namespace,
 ) -> None:
     """Run all scanning tests.

@@ -69,7 +69,7 @@ class URIData(msgspec.Struct, frozen=True, kw_only=True):
         Returns:
             URIData with decoded URI and scheme information
 
-        Example:
+        Example::
             >>> # 0x17 = "https:", followed by "//example.com"
             >>> uri_data = URIData.from_raw_data(b"\x17//example.com")
             >>> uri_data.full_uri

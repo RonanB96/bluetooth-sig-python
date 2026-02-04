@@ -12,44 +12,44 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+from examples.connection_managers.bleak_retry import BleakRetryClientManager
 from examples.connection_managers.bleak_utils import bleak_services_to_batch
-from examples.connection_managers.bluepy import BluePyConnectionManager
-from examples.connection_managers.simpleble import SimplePyBLEConnectionManager, simpleble_services_to_batch
+from examples.connection_managers.bluepy import BluePyClientManager
+from examples.connection_managers.simpleble import SimplePyBLEClientManager, simpleble_services_to_batch
 
 
-class TestBleakRetryConnectionManager:
-    """Test BleakRetryConnectionManager actual behaviour."""
+class TestBleakRetryClientManager:
+    """Test BleakRetryClientManager actual behaviour."""
 
     @pytest.fixture
-    def manager(self) -> BleakRetryConnectionManager:
-        """Create a BleakRetryConnectionManager instance for testing."""
+    def manager(self) -> BleakRetryClientManager:
+        """Create a BleakRetryClientManager instance for testing."""
         with patch("examples.connection_managers.bleak_retry.BleakClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.is_connected = False
             mock_client_class.return_value = mock_client
-            return BleakRetryConnectionManager("AA:BB:CC:DD:EE:FF")
+            return BleakRetryClientManager("AA:BB:CC:DD:EE:FF")
 
     @pytest.mark.asyncio
-    async def test_address_property(self, manager: BleakRetryConnectionManager) -> None:
+    async def test_address_property(self, manager: BleakRetryClientManager) -> None:
         """Test that address property returns the correct value."""
         assert manager.address == "AA:BB:CC:DD:EE:FF"
 
     @pytest.mark.asyncio
-    async def test_is_connected_initial_state(self, manager: BleakRetryConnectionManager) -> None:
+    async def test_is_connected_initial_state(self, manager: BleakRetryClientManager) -> None:
         """Test that is_connected is False initially."""
         assert manager.is_connected is False
 
     @pytest.mark.asyncio
     async def test_max_attempts_retry_logic(self) -> None:
-        """Test that BleakRetryConnectionManager respects max_attempts."""
+        """Test that BleakRetryClientManager respects max_attempts."""
         with patch("examples.connection_managers.bleak_retry.BleakClient") as mock_client_class:
             # Make connect always fail
             mock_client = MagicMock()
             mock_client.connect.side_effect = OSError("Connection failed")
             mock_client_class.return_value = mock_client
 
-            manager = BleakRetryConnectionManager("AA:BB:CC:DD:EE:FF", max_attempts=3)
+            manager = BleakRetryClientManager("AA:BB:CC:DD:EE:FF", max_attempts=3)
 
             # Should raise after 3 attempts
             with pytest.raises(OSError, match="Connection failed"):
@@ -77,7 +77,7 @@ class TestBleakRetryConnectionManager:
             mock_client.disconnect = mock_disconnect
             mock_client_class.return_value = mock_client
 
-            manager = BleakRetryConnectionManager("AA:BB:CC:DD:EE:FF")
+            manager = BleakRetryClientManager("AA:BB:CC:DD:EE:FF")
 
             # First call
             services1 = await manager.get_services()
@@ -102,9 +102,9 @@ class TestConnectionManagerConsistency:
     def test_consistent_method_signatures(self) -> None:
         """Test that all managers have consistent method signatures."""
         managers = [
-            ("BleakRetry", BleakRetryConnectionManager),
-            ("SimplePyBLE", SimplePyBLEConnectionManager),
-            ("BluePy", BluePyConnectionManager),
+            ("BleakRetry", BleakRetryClientManager),
+            ("SimplePyBLE", SimplePyBLEClientManager),
+            ("BluePy", BluePyClientManager),
         ]
 
         # Get method signatures from first manager
@@ -144,15 +144,15 @@ class TestConnectionManagerConsistency:
             mock_client = MagicMock()
             mock_client.is_connected = False
             mock_client_class.return_value = mock_client
-            bleak_instance = BleakRetryConnectionManager(test_address)
+            bleak_instance = BleakRetryClientManager(test_address)
             assert bleak_instance.address == test_address
 
         # Test SimplePyBLE
-        simpleble_instance = SimplePyBLEConnectionManager(test_address, timeout=10.0)
+        simpleble_instance = SimplePyBLEClientManager(test_address, timeout=10.0)
         assert simpleble_instance.address == test_address
 
         # Test BluePy
-        bluepy_instance = BluePyConnectionManager(test_address)
+        bluepy_instance = BluePyClientManager(test_address)
         assert bluepy_instance.address == test_address
 
 

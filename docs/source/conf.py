@@ -483,7 +483,27 @@ def run_pre_build_scripts(app: Sphinx, config: object) -> None:
             raise
 
     # =========================================================================
-    # Step 2: Generate architecture diagrams
+    # Step 2: Generate changelog from git history
+    # =========================================================================
+    changelog_output = repo_root / "docs" / "source" / "community" / "changelog.md"
+    try:
+        print("Generating changelog from git history via git-cliff...")
+        subprocess.run(
+            ["git-cliff", "--output", str(changelog_output)],
+            cwd=repo_root,
+            check=True,
+        )
+        print(f"✓ Changelog generated at {changelog_output}")
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        print(f"Warning: git-cliff changelog generation failed: {e}")
+        # Write a minimal placeholder so docs build doesn't break
+        changelog_output.write_text(
+            "# Changelog\n\nChangelog generation requires git-cliff. "
+            "Install with `pip install git-cliff`.\n"
+        )
+
+    # =========================================================================
+    # Step 3: Generate architecture diagrams
     # =========================================================================
     # Skip if SKIP_DIAGRAMS environment variable is set or diagrams deps missing
     if os.getenv("SKIP_DIAGRAMS"):

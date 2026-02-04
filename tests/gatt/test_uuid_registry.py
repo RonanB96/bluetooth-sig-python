@@ -295,48 +295,51 @@ class TestBluetoothUUID:
         assert BluetoothUUID("29FF").is_sig_characteristic() is False  # Below SIG range
         assert BluetoothUUID("2C25").is_sig_characteristic() is False  # Above SIG range
 
-    def test_bytes_property(self) -> None:
-        """Test .bytes property for binary representation."""
-        # Test with short form UUID
+    def test_to_bytes_method(self) -> None:
+        """Test to_bytes() method for binary representation."""
+        # Test with short form UUID (big-endian)
         uuid_short = BluetoothUUID("180F")  # Battery Service
         expected_bytes = bytes.fromhex("0000180f00001000800000805f9b34fb")
-        assert uuid_short.bytes == expected_bytes
-        assert len(uuid_short.bytes) == 16
+        assert uuid_short.to_bytes("big") == expected_bytes
+        assert len(uuid_short.to_bytes("big")) == 16
 
         # Test with full form UUID
         uuid_full = BluetoothUUID("0000180F-0000-1000-8000-00805F9B34FB")
-        assert uuid_full.bytes == expected_bytes
+        assert uuid_full.to_bytes("big") == expected_bytes
 
         # Verify both forms produce same bytes
-        assert uuid_short.bytes == uuid_full.bytes
+        assert uuid_short.to_bytes("big") == uuid_full.to_bytes("big")
 
         # Test with custom UUID
         custom_uuid = BluetoothUUID("12345678-1234-5678-9ABC-DEF012345678")
         expected_custom = bytes.fromhex("12345678123456789ABCDEF012345678")
-        assert custom_uuid.bytes == expected_custom
+        assert custom_uuid.to_bytes("big") == expected_custom
 
-    def test_bytes_le_property(self) -> None:
-        """Test .bytes_le property for little-endian binary representation."""
+    def test_to_bytes_little_endian(self) -> None:
+        """Test to_bytes() with little-endian byte order."""
         # Test with short form UUID
         uuid_short = BluetoothUUID("180F")
         expected_bytes_le = bytes.fromhex("fb349b5f80000080001000000f180000")
-        assert uuid_short.bytes_le == expected_bytes_le
-        assert len(uuid_short.bytes_le) == 16
+        assert uuid_short.to_bytes("little") == expected_bytes_le
+        assert len(uuid_short.to_bytes("little")) == 16
 
-        # Test that bytes and bytes_le are different (endianness matters)
-        assert uuid_short.bytes != uuid_short.bytes_le
+        # Test that big-endian and little-endian are different
+        assert uuid_short.to_bytes("big") != uuid_short.to_bytes("little")
 
-        # Test that reversing bytes_le gives bytes
-        assert bytes(reversed(uuid_short.bytes_le)) == uuid_short.bytes
+        # Test that reversing little-endian gives big-endian
+        assert bytes(reversed(uuid_short.to_bytes("little"))) == uuid_short.to_bytes("big")
+
+        # Test default is little-endian (BLE default)
+        assert uuid_short.to_bytes() == uuid_short.to_bytes("little")
 
     def test_bytes_roundtrip(self) -> None:
         """Test that UUID can be reconstructed from bytes."""
         original = BluetoothUUID("2A37")  # Heart Rate Measurement
 
-        # Reconstruct from bytes
-        uuid_bytes = original.bytes
+        # Reconstruct from bytes (big-endian)
+        uuid_bytes = original.to_bytes("big")
         reconstructed_int = int.from_bytes(uuid_bytes, byteorder="big")
         reconstructed = BluetoothUUID(reconstructed_int)
 
         assert original == reconstructed
-        assert original.bytes == reconstructed.bytes
+        assert original.to_bytes("big") == reconstructed.to_bytes("big")

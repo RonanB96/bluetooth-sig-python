@@ -443,6 +443,6 @@ payload_interpreter_registry.unregister(MySensorInterpreter)
 
 ## See Also
 
-- [API Overview](../explanation/api-overview.md#advertising-parsing) — Conceptual overview
+- [API Overview](../explanation/api-overview.md#advertising) — Conceptual overview
 - [Import Patterns](import-patterns.md) — Correct import statements
 - [examples/advertising_parsing.py](https://github.com/RonanB96/bluetooth-sig-python/blob/main/examples/advertising_parsing.py) — Complete working example

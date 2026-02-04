@@ -33,7 +33,7 @@ class AppearanceValuesRegistry(BaseGenericRegistry[AppearanceInfo]):
         This registry is thread-safe. Multiple threads can safely call
         get_appearance_info() concurrently.
 
-    Example:
+    Example::
         >>> registry = AppearanceValuesRegistry()
         >>> info = registry.get_appearance_info(833)
         >>> if info:
@@ -139,7 +139,7 @@ class AppearanceValuesRegistry(BaseGenericRegistry[AppearanceInfo]):
         Raises:
             ValueError: If appearance_code is outside valid range (0-65535)
 
-        Example:
+        Example::
             >>> registry = AppearanceValuesRegistry()
             >>> info = registry.get_appearance_info(833)
             >>> if info:
@@ -165,7 +165,7 @@ class AppearanceValuesRegistry(BaseGenericRegistry[AppearanceInfo]):
         Returns:
             AppearanceInfo if found, None otherwise
 
-        Example:
+        Example::
             >>> registry = AppearanceValuesRegistry()
             >>> info = registry.find_by_category_subcategory("Heart Rate Sensor", "Heart Rate Belt")
             >>> if info:

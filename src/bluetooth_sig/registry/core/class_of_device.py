@@ -68,7 +68,7 @@ class ClassOfDeviceRegistry(BaseGenericRegistry[ClassOfDeviceInfo]):
         This registry is thread-safe. Multiple threads can safely call
         decode_class_of_device() concurrently.
 
-    Example:
+    Example::
         >>> registry = ClassOfDeviceRegistry()
         >>> info = registry.decode_class_of_device(0x02010C)
         >>> print(info.full_description)  # "Computer: Laptop (Networking)"

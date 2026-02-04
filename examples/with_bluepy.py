@@ -79,13 +79,13 @@ async def demonstrate_bluepy_device_reading(address: str) -> dict[str, Any]:
 
     """
     try:
-        from examples.connection_managers.bluepy import BluePyConnectionManager
+        from examples.connection_managers.bluepy import BluePyClientManager
         from examples.utils.connection_helpers import read_characteristics_with_manager
 
         print(f"🔍 Connecting to {address} using BluePy...")
 
         # Create BluePy connection manager
-        connection_manager = BluePyConnectionManager(address)
+        connection_manager = BluePyClientManager(address)
 
         # Read characteristics using the common helper
         raw_results = await read_characteristics_with_manager(connection_manager)
@@ -120,11 +120,11 @@ async def demonstrate_bluepy_service_discovery(address: str) -> None:
 
     """
     try:
-        from examples.connection_managers.bluepy import BluePyConnectionManager
+        from examples.connection_managers.bluepy import BluePyClientManager
 
         print(f"🔍 Discovering services on {address} using BluePy...")
 
-        connection_manager = BluePyConnectionManager(address)
+        connection_manager = BluePyClientManager(address)
         await connection_manager.connect()
 
         # Get services using the connection manager

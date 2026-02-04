@@ -51,6 +51,18 @@ from .ead import (
     EncryptedAdvertisingData,
 )
 from .location import PositionStatus
+from .mesh import (
+    DEVICE_UUID_LENGTH,
+    NETWORK_ID_LENGTH,
+    NETWORK_KEY_LENGTH,
+    MeshBeaconType,
+    MeshCapabilities,
+    MeshMessage,
+    ProvisioningBearerData,
+    ProvisioningPDUType,
+    SecureNetworkBeacon,
+    UnprovisionedDeviceBeacon,
+)
 from .protocols import CharacteristicProtocol
 from .registry.ad_types import AdTypeInfo
 from .registry.appearance_info import AppearanceInfo
@@ -130,12 +142,21 @@ __all__ = [
     "LengthUnit",
     "ManufacturerData",
     "MeasurementSystem",
+    "MeshBeaconType",
+    "MeshCapabilities",
+    "MeshMessage",
+    "NETWORK_ID_LENGTH",
+    "NETWORK_KEY_LENGTH",
+    "DEVICE_UUID_LENGTH",
     "ParseFieldError",
+    "ProvisioningBearerData",
     "PercentageUnit",
     "PhysicalUnit",
     "PositionStatus",
     "PressureUnit",
+    "ProvisioningPDUType",
     "SIGInfo",
+    "SecureNetworkBeacon",
     "ServiceInfo",
     "SoundUnit",
     "SpecialValueResult",
@@ -143,6 +164,7 @@ __all__ = [
     "SpecialValueType",
     "TemperatureUnit",
     "URIData",
+    "UnprovisionedDeviceBeacon",
     "UriSchemeInfo",
     "ValidationAccumulator",
     "ValidationResult",

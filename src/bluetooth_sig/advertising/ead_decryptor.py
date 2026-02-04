@@ -75,7 +75,7 @@ def build_ead_nonce(
     Raises:
         ValueError: If randomizer is not 5 bytes or address is not 6 bytes
 
-    Example:
+    Example::
         >>> randomizer = bytes.fromhex("0102030405")
         >>> address = bytes.fromhex("aabbccddeeff")
         >>> nonce = build_ead_nonce(randomizer, address)
@@ -118,7 +118,7 @@ def decrypt_ead(  # pylint: disable=too-many-return-statements
     Returns:
         EADDecryptResult with success status and plaintext or error details
 
-    Example:
+    Example::
         >>> ead = EncryptedAdvertisingData.from_bytes(raw_advertisement)
         >>> result = decrypt_ead(ead, session_key, device_address)
         >>> if result.success:
@@ -192,7 +192,7 @@ def decrypt_ead_from_raw(
     Returns:
         EADDecryptResult with success status and plaintext or error details
 
-    Example:
+    Example::
         >>> result = decrypt_ead_from_raw(
         ...     raw_ead_data=advertisement_payload,
         ...     session_key=bytes.fromhex("0123456789abcdef0123456789abcdef"),
@@ -287,7 +287,7 @@ class EADDecryptor:
         Raises:
             ValueError: If session_key is not 16 bytes
 
-        Example:
+        Example::
             >>> decryptor = EADDecryptor.from_key(bytes.fromhex("0123456789abcdef0123456789abcdef"))
         """
         if len(session_key) != EAD_KEY_SIZE:
@@ -305,7 +305,7 @@ class EADDecryptor:
         Returns:
             Configured EADDecryptor instance
 
-        Example:
+        Example::
             >>> provider = DictKeyProvider()
             >>> provider.set_ead_key("AA:BB:CC:DD:EE:FF", key_material)
             >>> decryptor = EADDecryptor.from_provider(provider)

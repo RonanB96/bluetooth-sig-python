@@ -21,7 +21,7 @@ def mac_address_to_bytes(mac_address: str) -> bytes:
     Raises:
         ValueError: If MAC address format is invalid
 
-    Example:
+    Example::
         >>> mac_address_to_bytes("AA:BB:CC:DD:EE:FF").hex()
         'aabbccddeeff'
     """
@@ -50,7 +50,7 @@ def bytes_to_mac_address(data: bytes | bytearray) -> str:
     Raises:
         ValueError: If data is not exactly 6 bytes
 
-    Example:
+    Example::
         >>> bytes_to_mac_address(bytes.fromhex("aabbccddeeff"))
         'AA:BB:CC:DD:EE:FF'
     """

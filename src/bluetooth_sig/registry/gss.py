@@ -29,7 +29,7 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
     specifications with full field metadata. Implements singleton pattern
     with thread-safe lazy loading.
 
-    Example:
+    Example::
         registry = GssRegistry.get_instance()
         spec = registry.get_spec("Battery Level")
         if spec:

@@ -395,7 +395,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             ValueType enum if characteristic is found, None otherwise
 
-        Example:
+        Example::
             Check what type a characteristic returns::
 
                 from bluetooth_sig import BluetoothSIGTranslator
@@ -417,7 +417,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             True if the characteristic has a parser/encoder, False otherwise
 
-        Example:
+        Example::
             Check if characteristic is supported::
 
                 from bluetooth_sig import BluetoothSIGTranslator
@@ -447,7 +447,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Returns:
             [CharacteristicInfo][bluetooth_sig.CharacteristicInfo] with metadata or None if not found
 
-        Example:
+        Example::
             Get battery level characteristic info::
 
                 from bluetooth_sig import BluetoothSIGTranslator
@@ -761,7 +761,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             ValueError: If circular dependencies are detected
             CharacteristicParseError: If parsing fails for any characteristic
 
-        Example:
+        Example::
             Parse multiple environmental characteristics::
 
                 from bluetooth_sig import BluetoothSIGTranslator
@@ -1303,7 +1303,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
             ValueError: If UUID is invalid or characteristic not found
             TypeError: If kwargs don't match the characteristic's expected fields
 
-        Example:
+        Example::
             Create complex characteristic values::
 
                 from bluetooth_sig import BluetoothSIGTranslator

@@ -177,12 +177,17 @@ def display_advertising_data(
         not_found_fields.append("BIGInfo")
 
     if parsed_data.ad_structures.mesh.mesh_message:
-        found_fields.append(f"Mesh Message: {parsed_data.ad_structures.mesh.mesh_message.hex()}")
+        msg = parsed_data.ad_structures.mesh.mesh_message
+        found_fields.append(f"Mesh Message: src={msg.src:#06x} dst={msg.dst:#06x} seq={msg.seq}")
     else:
         not_found_fields.append("Mesh Message")
 
-    if parsed_data.ad_structures.mesh.mesh_beacon:
-        found_fields.append(f"Mesh Beacon: {parsed_data.ad_structures.mesh.mesh_beacon.hex()}")
+    if parsed_data.ad_structures.mesh.secure_network_beacon:
+        secure_beacon = parsed_data.ad_structures.mesh.secure_network_beacon
+        found_fields.append(f"Secure Network Beacon: network_id={secure_beacon.network_id.hex()}")
+    elif parsed_data.ad_structures.mesh.unprovisioned_device_beacon:
+        unprovisioned_beacon = parsed_data.ad_structures.mesh.unprovisioned_device_beacon
+        found_fields.append(f"Unprovisioned Device Beacon: uuid={unprovisioned_beacon.device_uuid.hex()}")
     else:
         not_found_fields.append("Mesh Beacon")
 
@@ -291,8 +296,9 @@ def display_advertising_data(
     else:
         not_found_fields.append("Channel Map Update Indication")
 
-    if parsed_data.ad_structures.mesh.pb_adv:
-        found_fields.append(f"PB-ADV: {parsed_data.ad_structures.mesh.pb_adv.hex()}")
+    if parsed_data.ad_structures.mesh.provisioning_bearer:
+        pb = parsed_data.ad_structures.mesh.provisioning_bearer
+        found_fields.append(f"PB-ADV: link_id={pb.link_id:#010x} transaction={pb.transaction_number}")
     else:
         not_found_fields.append("PB-ADV")
 

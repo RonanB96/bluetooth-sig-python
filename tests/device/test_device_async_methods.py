@@ -18,7 +18,7 @@ import pytest
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.gatt.descriptors.cccd import CCCDDescriptor
 from bluetooth_sig.types.advertising.ad_structures import AdvertisingDataStructures, CoreAdvertisingData
 from bluetooth_sig.types.advertising.result import AdvertisementData
@@ -27,7 +27,7 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 # pylint: disable=too-many-instance-attributes  # Mock needs to track all protocol state
-class AsyncMockConnectionManager(ConnectionManagerProtocol):
+class AsyncMockClientManager(ClientManagerProtocol):
     """Mock connection manager with async method tracking."""
 
     def __init__(
@@ -121,10 +121,10 @@ class AsyncMockConnectionManager(ConnectionManagerProtocol):
 
 
 @pytest.fixture
-def device_with_manager() -> tuple[Device, AsyncMockConnectionManager]:
+def device_with_manager() -> tuple[Device, AsyncMockClientManager]:
     """Create device with attached mock connection manager."""
     translator = BluetoothSIGTranslator()
-    manager = AsyncMockConnectionManager()
+    manager = AsyncMockClientManager()
     device = Device(manager, translator)
     return device, manager
 
@@ -133,7 +133,7 @@ class TestDeviceAsyncRead:
     """Tests for Device.read() async method."""
 
     @pytest.mark.asyncio
-    async def test_read_by_uuid_string(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
+    async def test_read_by_uuid_string(self, device_with_manager: tuple[Device, AsyncMockClientManager]) -> None:
         """Test reading characteristic by UUID string."""
         device, manager = device_with_manager
         manager.read_char_return = b"\x50"  # 80%
@@ -144,7 +144,7 @@ class TestDeviceAsyncRead:
         assert result == 0x50  # Parsed battery level
 
     @pytest.mark.asyncio
-    async def test_write_with_response(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
+    async def test_write_with_response(self, device_with_manager: tuple[Device, AsyncMockClientManager]) -> None:
         """Test writing characteristic with response (default)."""
         device, manager = device_with_manager
         data = b"\x01\x02\x03"
@@ -157,7 +157,7 @@ class TestDeviceAsyncRead:
         assert response is True
 
     @pytest.mark.asyncio
-    async def test_write_without_response(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
+    async def test_write_without_response(self, device_with_manager: tuple[Device, AsyncMockClientManager]) -> None:
         """Test writing characteristic without response."""
         device, manager = device_with_manager
         data = b"\x04\x05\x06"
@@ -169,7 +169,7 @@ class TestDeviceAsyncRead:
         assert response is False
 
     @pytest.mark.asyncio
-    async def test_start_notify(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
+    async def test_start_notify(self, device_with_manager: tuple[Device, AsyncMockClientManager]) -> None:
         """Test starting notifications for a characteristic."""
         device, manager = device_with_manager
         received_values: list[Any] = []
@@ -184,7 +184,7 @@ class TestDeviceAsyncRead:
 
     @pytest.mark.asyncio
     async def test_notification_callback_receives_parsed_data(
-        self, device_with_manager: tuple[Device, AsyncMockConnectionManager]
+        self, device_with_manager: tuple[Device, AsyncMockClientManager]
     ) -> None:
         """Test that notification callback receives parsed data."""
         device, manager = device_with_manager
@@ -203,7 +203,7 @@ class TestDeviceAsyncRead:
 
     @pytest.mark.asyncio
     async def test_notification_callback_exception_logged(
-        self, device_with_manager: tuple[Device, AsyncMockConnectionManager]
+        self, device_with_manager: tuple[Device, AsyncMockClientManager]
     ) -> None:
         """Test that exceptions in notification callback are logged but don't crash."""
         device, manager = device_with_manager
@@ -223,7 +223,7 @@ class TestDeviceAsyncPairing:
     """Tests for Device pairing methods."""
 
     @pytest.mark.asyncio
-    async def test_pair(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
+    async def test_pair(self, device_with_manager: tuple[Device, AsyncMockClientManager]) -> None:
         """Test pairing with device."""
         device, manager = device_with_manager
 
@@ -232,7 +232,7 @@ class TestDeviceAsyncPairing:
         assert manager.paired is True
 
     @pytest.mark.asyncio
-    async def test_unpair(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
+    async def test_unpair(self, device_with_manager: tuple[Device, AsyncMockClientManager]) -> None:
         """Test unpairing from device."""
         device, manager = device_with_manager
         manager.paired = True
@@ -242,7 +242,7 @@ class TestDeviceAsyncPairing:
         assert manager.paired is False
 
     @pytest.mark.asyncio
-    async def test_read_rssi(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
+    async def test_read_rssi(self, device_with_manager: tuple[Device, AsyncMockClientManager]) -> None:
         """Test reading RSSI value."""
         device, manager = device_with_manager
         manager.rssi_return = -72
@@ -251,7 +251,7 @@ class TestDeviceAsyncPairing:
 
         assert rssi == -72
 
-    def test_set_disconnected_callback(self, device_with_manager: tuple[Device, AsyncMockConnectionManager]) -> None:
+    def test_set_disconnected_callback(self, device_with_manager: tuple[Device, AsyncMockClientManager]) -> None:
         """Test setting disconnected callback."""
         device, manager = device_with_manager
         callback_called = []
@@ -265,9 +265,7 @@ class TestDeviceAsyncPairing:
         assert manager.disconnected_callback is not None
 
     @pytest.mark.asyncio
-    async def test_read_descriptor_by_uuid(
-        self, device_with_manager: tuple[Device, AsyncMockConnectionManager]
-    ) -> None:
+    async def test_read_descriptor_by_uuid(self, device_with_manager: tuple[Device, AsyncMockClientManager]) -> None:
         """Test reading descriptor by UUID."""
         device, _ = device_with_manager
         cccd_uuid = BluetoothUUID(0x2902)
@@ -277,9 +275,7 @@ class TestDeviceAsyncPairing:
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_write_descriptor_by_uuid(
-        self, device_with_manager: tuple[Device, AsyncMockConnectionManager]
-    ) -> None:
+    async def test_write_descriptor_by_uuid(self, device_with_manager: tuple[Device, AsyncMockClientManager]) -> None:
         """Test writing descriptor by UUID."""
         device, _ = device_with_manager
         cccd_uuid = BluetoothUUID(0x2902)
@@ -291,7 +287,7 @@ class TestDeviceAsyncPairing:
 
     @pytest.mark.asyncio
     async def test_write_descriptor_with_instance(
-        self, device_with_manager: tuple[Device, AsyncMockConnectionManager]
+        self, device_with_manager: tuple[Device, AsyncMockClientManager]
     ) -> None:
         """Test writing descriptor using descriptor instance."""
         device, _ = device_with_manager
