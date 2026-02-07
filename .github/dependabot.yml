@@ -4,7 +4,7 @@
 
 version: 2
 updates:
-  # Python dependencies via pip (pyproject.toml)
+  # Python dependencies - automatically reads from pyproject.toml
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
@@ -12,31 +12,6 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "UTC"
-    # Group related updates together to reduce PR noise
-    groups:
-      testing:
-        patterns:
-          - "pytest*"
-          - "*coverage*"
-        update-types:
-          - "minor"
-          - "patch"
-      linting:
-        patterns:
-          - "flake8*"
-          - "black"
-          - "isort"
-        update-types:
-          - "minor"
-          - "patch"
-      bluetooth:
-        patterns:
-          - "bleak"
-          - "asyncio-mqtt"
-        update-types:
-          - "minor"
-          - "patch"
-    # Security updates are always applied immediately
     open-pull-requests-limit: 5
     reviewers:
       - "RonanB96"
@@ -47,7 +22,7 @@ updates:
       prefix-development: "deps-dev"
       include: "scope"
 
-  # GitHub Actions dependencies
+  # GitHub Actions - automatically tracks all actions in workflows
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -55,14 +30,6 @@ updates:
       day: "monday"
       time: "10:00"
       timezone: "UTC"
-    # Group all GitHub Actions updates together
-    groups:
-      actions:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
     open-pull-requests-limit: 2
     reviewers:
       - "RonanB96"

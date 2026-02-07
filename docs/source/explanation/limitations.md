@@ -119,7 +119,7 @@ level = translator.parse_characteristic(BatteryLevelCharacteristic, data)
 result = translator.parse_characteristic("2A19", data)
 ```
 
-See [Type-Safe vs Dynamic Parsing](../how-to/usage.md#type-safe-vs-dynamic-parsing) for detailed guidance.
+See [Which API Should I Use?](../how-to/usage.md#which-api-should-i-use) for detailed guidance.
 
 ______________________________________________________________________
 
