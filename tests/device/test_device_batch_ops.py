@@ -17,7 +17,7 @@ import pytest
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.gatt.services.battery_service import BatteryService
 from bluetooth_sig.types.advertising.ad_structures import AdvertisingDataStructures, CoreAdvertisingData
 from bluetooth_sig.types.advertising.result import AdvertisementData
@@ -26,7 +26,7 @@ from bluetooth_sig.types.gatt_enums import CharacteristicName
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
-class ServiceMockConnectionManager(ConnectionManagerProtocol):
+class ServiceMockClientManager(ClientManagerProtocol):
     """Mock connection manager with service discovery support."""
 
     def __init__(
@@ -115,10 +115,10 @@ class ServiceMockConnectionManager(ConnectionManagerProtocol):
 
 
 @pytest.fixture
-def device_with_manager() -> tuple[Device, ServiceMockConnectionManager]:
+def device_with_manager() -> tuple[Device, ServiceMockClientManager]:
     """Create device with attached mock connection manager."""
     translator = BluetoothSIGTranslator()
-    manager = ServiceMockConnectionManager(connected=False)
+    manager = ServiceMockClientManager(connected=False)
     device = Device(manager, translator)
     return device, manager
 
@@ -127,7 +127,7 @@ class TestDeviceConnectDisconnect:
     """Tests for Device connect/disconnect methods."""
 
     @pytest.mark.asyncio
-    async def test_connect(self, device_with_manager: tuple[Device, ServiceMockConnectionManager]) -> None:
+    async def test_connect(self, device_with_manager: tuple[Device, ServiceMockClientManager]) -> None:
         """Test connecting to device."""
         device, manager = device_with_manager
         await manager.disconnect()
@@ -138,7 +138,7 @@ class TestDeviceConnectDisconnect:
         assert manager.is_connected is True
 
     @pytest.mark.asyncio
-    async def test_disconnect(self, device_with_manager: tuple[Device, ServiceMockConnectionManager]) -> None:
+    async def test_disconnect(self, device_with_manager: tuple[Device, ServiceMockClientManager]) -> None:
         """Test disconnecting from device."""
         device, manager = device_with_manager
         await manager.connect()
@@ -153,9 +153,7 @@ class TestDeviceServiceDiscovery:
     """Tests for Device service discovery."""
 
     @pytest.mark.asyncio
-    async def test_discover_services_empty(
-        self, device_with_manager: tuple[Device, ServiceMockConnectionManager]
-    ) -> None:
+    async def test_discover_services_empty(self, device_with_manager: tuple[Device, ServiceMockClientManager]) -> None:
         """Test discovering services when device has none."""
         device, manager = device_with_manager
         manager._services = []
@@ -166,7 +164,7 @@ class TestDeviceServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_discover_services_with_services(
-        self, device_with_manager: tuple[Device, ServiceMockConnectionManager]
+        self, device_with_manager: tuple[Device, ServiceMockClientManager]
     ) -> None:
         """Test discovering services returns found services."""
         device, manager = device_with_manager
@@ -187,7 +185,7 @@ class TestDeviceGetCharacteristicInfo:
 
     @pytest.mark.asyncio
     async def test_get_characteristic_info_not_found(
-        self, device_with_manager: tuple[Device, ServiceMockConnectionManager]
+        self, device_with_manager: tuple[Device, ServiceMockClientManager]
     ) -> None:
         """Test get_characteristic_info returns None when not found."""
         device, manager = device_with_manager
@@ -202,9 +200,7 @@ class TestDeviceReadMultiple:
     """Tests for Device.read_multiple()."""
 
     @pytest.mark.asyncio
-    async def test_read_multiple_success(
-        self, device_with_manager: tuple[Device, ServiceMockConnectionManager]
-    ) -> None:
+    async def test_read_multiple_success(self, device_with_manager: tuple[Device, ServiceMockClientManager]) -> None:
         """Test reading multiple characteristics."""
         device, manager = device_with_manager
 
@@ -215,7 +211,7 @@ class TestDeviceReadMultiple:
 
     @pytest.mark.asyncio
     async def test_read_multiple_partial_failure(
-        self, device_with_manager: tuple[Device, ServiceMockConnectionManager]
+        self, device_with_manager: tuple[Device, ServiceMockClientManager]
     ) -> None:
         """Test read_multiple handles partial failures gracefully."""
         device, manager = device_with_manager
@@ -240,9 +236,7 @@ class TestDeviceReadMultiple:
         # One should be None (failed), one should have a value
 
     @pytest.mark.asyncio
-    async def test_read_multiple_empty_list(
-        self, device_with_manager: tuple[Device, ServiceMockConnectionManager]
-    ) -> None:
+    async def test_read_multiple_empty_list(self, device_with_manager: tuple[Device, ServiceMockClientManager]) -> None:
         """Test read_multiple with empty list."""
         device, manager = device_with_manager
 
@@ -256,9 +250,7 @@ class TestDeviceWriteMultiple:
     """Tests for Device.write_multiple()."""
 
     @pytest.mark.asyncio
-    async def test_write_multiple_success(
-        self, device_with_manager: tuple[Device, ServiceMockConnectionManager]
-    ) -> None:
+    async def test_write_multiple_success(self, device_with_manager: tuple[Device, ServiceMockClientManager]) -> None:
         """Test writing multiple characteristics."""
         device, manager = device_with_manager
         data_map: dict[str | CharacteristicName, bytes] = {
@@ -274,7 +266,7 @@ class TestDeviceWriteMultiple:
 
     @pytest.mark.asyncio
     async def test_write_multiple_partial_failure(
-        self, device_with_manager: tuple[Device, ServiceMockConnectionManager]
+        self, device_with_manager: tuple[Device, ServiceMockClientManager]
     ) -> None:
         """Test write_multiple handles partial failures gracefully."""
         device, manager = device_with_manager
@@ -304,7 +296,7 @@ class TestDeviceWriteMultiple:
 
     @pytest.mark.asyncio
     async def test_write_multiple_without_response(
-        self, device_with_manager: tuple[Device, ServiceMockConnectionManager]
+        self, device_with_manager: tuple[Device, ServiceMockClientManager]
     ) -> None:
         """Test write_multiple with response=False."""
         device, manager = device_with_manager
@@ -317,9 +309,7 @@ class TestDeviceWriteMultiple:
         assert response is False
 
     @pytest.mark.asyncio
-    async def test_write_multiple_empty_map(
-        self, device_with_manager: tuple[Device, ServiceMockConnectionManager]
-    ) -> None:
+    async def test_write_multiple_empty_map(self, device_with_manager: tuple[Device, ServiceMockClientManager]) -> None:
         """Test write_multiple with empty map."""
         device, manager = device_with_manager
 

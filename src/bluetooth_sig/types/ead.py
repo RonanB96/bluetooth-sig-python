@@ -67,7 +67,7 @@ class EncryptedAdvertisingData(msgspec.Struct, frozen=True, kw_only=True):
         encrypted_payload: Variable-length encrypted data
         mic: 4-byte Message Integrity Check (authentication tag)
 
-    Example:
+    Example::
         >>> raw = bytes.fromhex("0102030405aabbccdd11223344")
         >>> ead = EncryptedAdvertisingData.from_bytes(raw)
         >>> print(ead.randomizer.hex())
@@ -94,7 +94,7 @@ class EncryptedAdvertisingData(msgspec.Struct, frozen=True, kw_only=True):
         Raises:
             ValueError: If data is shorter than minimum EAD size (9 bytes)
 
-        Example:
+        Example::
             >>> raw = bytes.fromhex("0102030405aabbccdd11223344")
             >>> ead = EncryptedAdvertisingData.from_bytes(raw)
             >>> len(ead.encrypted_payload)
@@ -158,7 +158,7 @@ class EADKeyMaterial(msgspec.Struct, frozen=True, kw_only=True):
         session_key: 16-byte AES-128 session key for encryption/decryption
         iv: 8-byte initialization vector (combined with randomizer for nonce)
 
-    Example:
+    Example::
         >>> key_material = EADKeyMaterial(
         ...     session_key=bytes.fromhex("0123456789abcdef0123456789abcdef"),
         ...     iv=bytes.fromhex("0102030405060708"),

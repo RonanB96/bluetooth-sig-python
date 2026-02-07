@@ -434,11 +434,11 @@ device = Device(address, translator)
 # Your manager implements ConnectionManagerProtocol (connect/read/write/notify/etc.)
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 from examples.connection_managers.bleak_retry import (
-    BleakRetryConnectionManager,
+    BleakRetryClientManager,
 )
 
 battery = BatteryLevelCharacteristic()
-manager = BleakRetryConnectionManager(address)
+manager = BleakRetryClientManager(address)
 device.attach_connection_manager(manager)
 await device.connect()
 

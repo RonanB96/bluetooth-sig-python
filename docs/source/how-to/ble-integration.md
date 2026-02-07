@@ -32,14 +32,14 @@ from bluetooth_sig.gatt.characteristics import (
 
 # Connection manager from examples - use for your BLE backend
 from examples.connection_managers.bleak_retry import (
-    BleakRetryConnectionManager,
+    BleakRetryClientManager,
 )
 
 
 async def use_device(address: str):
     """Recommended: Use Device abstraction for apps."""
     translator = BluetoothSIGTranslator()
-    connection_manager = BleakRetryConnectionManager(address)
+    connection_manager = BleakRetryClientManager(address)
     device = Device(connection_manager, translator)
 
     await device.connect()

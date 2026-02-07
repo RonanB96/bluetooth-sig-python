@@ -20,7 +20,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData as BleakAdvertisementData
 
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.unknown import UnknownCharacteristic
@@ -48,8 +48,8 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 logger = logging.getLogger(__name__)
 
 
-# pylint: disable=too-many-public-methods  # Implements full ConnectionManagerProtocol interface
-class BleakRetryConnectionManager(ConnectionManagerProtocol):
+# pylint: disable=too-many-public-methods  # Implements full ClientManagerProtocol interface
+class BleakRetryClientManager(ClientManagerProtocol):
     """Connection manager using Bleak with retry support for robust connections."""
 
     supports_scanning = True  # Bleak supports scanning
@@ -168,12 +168,24 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
                 for char in bleak_service.characteristics:
                     char_uuid = BluetoothUUID(char.uuid)
 
-                    # Convert Bleak properties to GattProperty enum
+                    # Convert Bleak properties to GattProperty flags
                     properties: list[GattProperty] = []
+                    prop_map = {
+                        "broadcast": GattProperty.BROADCAST,
+                        "read": GattProperty.READ,
+                        "write-without-response": GattProperty.WRITE_WITHOUT_RESPONSE,
+                        "write": GattProperty.WRITE,
+                        "notify": GattProperty.NOTIFY,
+                        "indicate": GattProperty.INDICATE,
+                        "authenticated-signed-writes": GattProperty.AUTHENTICATED_SIGNED_WRITES,
+                        "extended-properties": GattProperty.EXTENDED_PROPERTIES,
+                        "reliable-write": GattProperty.RELIABLE_WRITE,
+                        "writable-auxiliaries": GattProperty.WRITABLE_AUXILIARIES,
+                    }
                     for prop in char.properties:
-                        try:
-                            properties.append(GattProperty(prop))
-                        except ValueError:
+                        if prop in prop_map:
+                            properties.append(prop_map[prop])
+                        else:
                             logger.warning(f"Unknown GattProperty from Bleak: {prop}")
 
                     # Try to get the characteristic class from registry
@@ -331,12 +343,12 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
         Raises:
             NotImplementedError: Bleak requires disconnected_callback in __init__.
                                 Use the disconnected_callback parameter when creating
-                                the BleakRetryConnectionManager instead.
+                                the BleakRetryClientManager instead.
 
         """
         raise NotImplementedError(
             "Bleak requires disconnected_callback to be set during initialization. "
-            "Pass it to the BleakRetryConnectionManager constructor instead."
+            "Pass it to the BleakRetryClientManager constructor instead."
         )
 
     async def get_latest_advertisement(self, refresh: bool = False) -> AdvertisementData | None:
@@ -748,7 +760,7 @@ class BleakRetryConnectionManager(ConnectionManagerProtocol):
 
         Example::
 
-            async for device in BleakRetryConnectionManager.scan_stream(timeout=10.0):
+            async for device in BleakRetryClientManager.scan_stream(timeout=10.0):
                 print(f"Found: {device.name}")
                 if device.name == "My Target Device":
                     break  # Stop scanning early

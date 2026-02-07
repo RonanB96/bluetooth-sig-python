@@ -2,28 +2,28 @@
 """Generic notification handling utilities for examples.
 
 This module provides notification handling that works with any
-connection manager that implements the ConnectionManagerProtocol.
+client manager that implements the ClientManagerProtocol.
 """
 
 from __future__ import annotations
 
 import asyncio
 
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 async def handle_notifications_generic(
-    connection_manager: ConnectionManagerProtocol,
+    connection_manager: ClientManagerProtocol,
     characteristic_uuid: str,
     duration: int = 10,
 ) -> None:
     """Register and handle notifications from a characteristic for a period.
 
-    Works with any connection manager that implements ConnectionManagerProtocol.
+    Works with any client manager that implements ClientManagerProtocol.
 
     Args:
-        connection_manager: The connection manager to use
+        connection_manager: The client manager to use
         characteristic_uuid: UUID of the characteristic to monitor
         duration: How long to listen for notifications in seconds
     """

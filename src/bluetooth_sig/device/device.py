@@ -33,8 +33,8 @@ from ..types.advertising.result import AdvertisementData
 from ..types.device_types import ScannedDevice
 from ..types.uuid import BluetoothUUID
 from .advertising import DeviceAdvertising
+from .client import ClientManagerProtocol
 from .connected import DeviceConnected, DeviceEncryption, DeviceService
-from .connection import ConnectionManagerProtocol
 
 # Type variable for generic characteristic return types
 T = TypeVar("T")
@@ -113,7 +113,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         connected: DeviceConnected subsystem for GATT operations
         translator: SIG translator for parsing characteristics
 
-    Example:
+    Example::
         Create and use device with composition::
 
             from bluetooth_sig import BluetoothSIGTranslator
@@ -137,11 +137,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     """
 
-    def __init__(self, connection_manager: ConnectionManagerProtocol, translator: SIGTranslatorProtocol) -> None:
+    def __init__(self, connection_manager: ClientManagerProtocol, translator: SIGTranslatorProtocol) -> None:
         """Initialise Device instance with connection manager and translator.
 
         Args:
-            connection_manager: Connection manager implementing ConnectionManagerProtocol
+            connection_manager: Connection manager implementing ClientManagerProtocol
             translator: SIGTranslatorProtocol instance
 
         """
@@ -210,7 +210,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return self.connection_manager.address
 
     @staticmethod
-    async def scan(manager_class: type[ConnectionManagerProtocol], timeout: float = 5.0) -> list[ScannedDevice]:
+    async def scan(manager_class: type[ClientManagerProtocol], timeout: float = 5.0) -> list[ScannedDevice]:
         """Scan for nearby BLE devices using a specific connection manager.
 
         This is a static method that doesn't require a Device instance.
@@ -218,7 +218,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Args:
             manager_class: The connection manager class to use for scanning
-                          (e.g., BleakRetryConnectionManager)
+                          (e.g., BleakRetryClientManager)
             timeout: Scan duration in seconds (default: 5.0)
 
         Returns:
@@ -230,10 +230,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Example::
 
             from bluetooth_sig.device import Device
-            from connection_managers.bleak_retry import BleakRetryConnectionManager
+            from connection_managers.bleak_retry import BleakRetryClientManager
 
             # Scan for devices
-            devices = await Device.scan(BleakRetryConnectionManager, timeout=10.0)
+            devices = await Device.scan(BleakRetryClientManager, timeout=10.0)
 
             # Create Device instance for first discovered device
             if devices:
@@ -876,7 +876,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns:
             AdvertisementData with parsed AD structures and vendor interpretation
 
-        Example:
+        Example::
             # Parse raw PDU bytes directly
             result = device.parse_raw_advertisement(pdu_bytes, rssi=-65)
             print(result.manufacturer_data)

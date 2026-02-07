@@ -2,7 +2,7 @@
 """Connection helpers shared by examples.
 
 This module provides small, well-typed helpers that operate on the
-``ConnectionManagerProtocol`` abstraction used throughout the examples.
+``ClientManagerProtocol`` abstraction used throughout the examples.
 
 Historically these helpers lived in a deprecated ``shared_utils.py``
 module. They have been moved here so the examples can import them from
@@ -13,13 +13,13 @@ from __future__ import annotations
 
 import time
 
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.types.uuid import BluetoothUUID
 from examples.utils.models import ReadResult
 
 
 async def read_characteristics_with_manager(
-    connection_manager: ConnectionManagerProtocol,
+    connection_manager: ClientManagerProtocol,
     target_uuids: list[str] | None = None,
     timeout: float = 10.0,
 ) -> dict[str, ReadResult]:
@@ -32,7 +32,7 @@ async def read_characteristics_with_manager(
 
     Args:
         connection_manager: The connection manager implementing the
-            :class:`ConnectionManagerProtocol` interface.
+            :class:`ClientManagerProtocol` interface.
         target_uuids: Optional list of UUIDs to read. If ``None`` the
             function will perform a service discovery and attempt to read
             all readable characteristics it finds.

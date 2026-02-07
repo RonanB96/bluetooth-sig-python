@@ -15,12 +15,12 @@ from bluetooth_sig import BluetoothSIGTranslator
 from examples.utils.models import DeviceInfo
 
 if TYPE_CHECKING:
-    from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
+    from examples.connection_managers.simpleble import SimplePyBLEClientManager
 else:
     try:
-        from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
+        from examples.connection_managers.simpleble import SimplePyBLEClientManager
     except ImportError:
-        SimplePyBLEConnectionManager = None  # type: ignore[misc,assignment]
+        SimplePyBLEClientManager = None  # type: ignore[misc,assignment]
 
 
 def scan_devices_simpleble(  # pylint: disable=duplicate-code
@@ -110,7 +110,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,
         Mapping of short UUIDs to parsed characteristic values
 
     """
-    if SimplePyBLEConnectionManager is None:
+    if SimplePyBLEClientManager is None:
         raise ImportError("SimplePyBLE not available")
 
     # Reuse the canonical connection helper to read characteristics
@@ -118,7 +118,7 @@ def comprehensive_device_analysis_simpleble(  # pylint: disable=too-many-locals,
     translator = BluetoothSIGTranslator()
 
     async def _collect() -> dict[str, Any]:
-        manager = SimplePyBLEConnectionManager(address, timeout=10.0)
+        manager = SimplePyBLEClientManager(address, timeout=10.0)
         try:
             await manager.connect()
         except Exception as e:  # pylint: disable=broad-exception-caught

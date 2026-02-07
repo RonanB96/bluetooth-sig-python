@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import builtins
 import re
+from typing import Literal
 
 
 class BluetoothUUID:
@@ -43,6 +44,8 @@ class BluetoothUUID:
     UUID_32BIT_LEN = 8
     UUID_FULL_LEN = 32
 
+    _normalized: str
+
     def __init__(self, uuid: str | int | BluetoothUUID) -> None:
         """Initialize BluetoothUUID from a UUID string or integer.
 
@@ -54,6 +57,7 @@ class BluetoothUUID:
 
         """
         if isinstance(uuid, BluetoothUUID):
+            self._normalized = uuid.normalized
             return
 
         if isinstance(uuid, int):
@@ -176,34 +180,20 @@ class BluetoothUUID:
         """Get UUID as integer value."""
         return int(self._normalized, 16)
 
-    @property
-    def bytes(self) -> builtins.bytes:
-        """Get UUID as 16-byte binary representation (big-endian).
+    def to_bytes(self, byteorder: Literal["little", "big"] = "little") -> builtins.bytes:
+        """Get UUID as 16-byte binary representation.
 
-        Useful for BLE wire protocol operations where UUIDs need to be
-        transmitted in binary format.
+        BLE advertising uses little-endian by default.
 
-        Returns:
-            16 bytes representing the full 128-bit UUID in big-endian byte order
-
-        """
-        # Always use full form (128-bit) for bytes representation
-        full_int = int(self.full_form, 16)
-        return full_int.to_bytes(16, byteorder="big")
-
-    @property
-    def bytes_le(self) -> builtins.bytes:
-        """Get UUID as 16-byte binary representation (little-endian).
-
-        Some BLE operations require little-endian byte order.
+        Args:
+            byteorder: Byte order - "little" (default, for BLE) or "big".
 
         Returns:
-            16 bytes representing the full 128-bit UUID in little-endian byte order
+            16 bytes representing the full 128-bit UUID.
 
         """
-        # Always use full form (128-bit) for bytes representation
         full_int = int(self.full_form, 16)
-        return full_int.to_bytes(16, byteorder="little")
+        return full_int.to_bytes(16, byteorder=byteorder)
 
     def matches(self, other: str | BluetoothUUID) -> bool:
         """Check if this UUID matches another UUID (handles format conversion automatically)."""

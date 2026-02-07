@@ -37,7 +37,7 @@ class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):
         Raises:
             ValueError: If category/subcategory combination is not found in registry
 
-        Example:
+        Example::
             >>> data = AppearanceData.from_category("Heart Rate Sensor", "Heart Rate Belt")
             >>> data.raw_value
             833
@@ -105,7 +105,7 @@ class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):
         Returns:
             Formatted raw_value as string
 
-        Example:
+        Example::
             >>> data = AppearanceData(raw_value=833, info=None)
             >>> f"{data:04X}"
             '0341'

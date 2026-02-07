@@ -320,7 +320,7 @@ class TestCanonicalShapes:
         # and returns an empty or partial results dict
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        with patch("examples.connection_managers.bleak_retry.BleakRetryConnectionManager") as mock_manager_cls:
+        with patch("examples.connection_managers.bleak_retry.BleakRetryClientManager") as mock_manager_cls:
             mock_manager = MagicMock()
             mock_manager_cls.return_value = mock_manager
 
@@ -349,7 +349,7 @@ class TestCanonicalShapes:
         """Test that robust_device_reading handles connection errors gracefully."""
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        with patch("examples.connection_managers.bleak_retry.BleakRetryConnectionManager") as mock_manager_cls:
+        with patch("examples.connection_managers.bleak_retry.BleakRetryClientManager") as mock_manager_cls:
             mock_manager = MagicMock()
             mock_manager_cls.return_value = mock_manager
 

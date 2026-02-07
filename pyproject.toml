@@ -11,7 +11,7 @@ maintainers = [
 ]
 description = "Pure Bluetooth SIG standards library for characteristic and service interpretation"
 readme = "README.md"
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 requires-python = ">=3.9"
 keywords = ["bluetooth", "bluetooth-sig", "gatt", "standards"]
 classifiers = [
@@ -25,6 +25,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Communications",
     "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
 ]
 dependencies = [
     "pyyaml~=6.0.0",
@@ -34,9 +35,11 @@ dependencies = [
 ]
 
 [project.urls]
-bugs = "https://github.com/RonanB96/bluetooth-sig-python/issues"
-changelog = "https://github.com/RonanB96/bluetooth-sig-python/blob/master/changelog.md"
+documentation = "https://ronanb96.github.io/bluetooth-sig-python/"
+repository = "https://github.com/RonanB96/bluetooth-sig-python"
 homepage = "https://github.com/RonanB96/bluetooth-sig-python"
+bugs = "https://github.com/RonanB96/bluetooth-sig-python/issues"
+changelog = "https://ronanb96.github.io/bluetooth-sig-python/community/changelog.html"
 
 [project.optional-dependencies]
 dev = [
@@ -75,12 +78,13 @@ test = [
     "requests>=2.32.0"
 ]
 examples = [
-    # BLE libraries for example integrations (now required in main dependencies)
-    # kept here for documentation purposes only
+    # BLE client libraries for example integrations
     "bleak>=0.21.0",
     "bleak-retry-connector>=2.13.1,<3",
     "simplepyble>=0.10.3",
     "bluepy>=1.3.0",
+    # BLE server/peripheral library for encoding examples
+    "bless>=0.3.0",
 ]
 docs = [
     "sphinx>=7.2.0",
@@ -89,6 +93,7 @@ docs = [
     "myst-parser>=2.0.0",
     "sphinx-design>=0.5.0",
     "furo>=2024.1.29",
+    "git-cliff~=2.7",
     "sphinxcontrib-mermaid>=0.9.0",
     "sphinx-copybutton>=0.5.0",
     "linkify-it-py>=2.0.0",
@@ -296,6 +301,10 @@ warn_unused_ignores = false  # Allow extra type: ignore comments for flexibility
 disallow_any_unimported = false  # Allow untyped optional dependencies in examples
 
 [[tool.mypy.overrides]]
+module = "examples.backups.*"
+ignore_errors = true  # Old backup files - not part of active codebase
+
+[[tool.mypy.overrides]]
 module = "pydantic.*"
 # Optional dependency
 ignore_missing_imports = true
@@ -327,6 +336,52 @@ convention = "google"
 # Prevent inheriting a parent pydocstyle config which could change the
 # effective set of checked codes; keep the repository config deterministic.
 inherit = false
+
+[tool.git-cliff.changelog]
+# Auto-generated changelog from conventional commits
+# https://git-cliff.org/docs/configuration
+header = "# Changelog\n\nAll notable changes to this project are documented here.\nGenerated automatically from commit history.\n"
+body = """
+{%- macro remote_url() -%}
+  https://github.com/RonanB96/bluetooth-sig-python
+{%- endmacro -%}
+
+{% if version %}\
+## [{{ version | trim_start_matches(pat="v") }}]({{ remote_url() }}/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+## Unreleased
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim | upper_first }}
+{% for commit in commits %}
+- {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }}\
+{% if commit.breaking %} (**BREAKING**){% endif %}\
+{% if commit.body %}\
+\n  {{ commit.body | indent(prefix="  ") }}\
+{% endif %}
+{%- endfor %}
+{% endfor %}
+"""
+trim = true
+
+[tool.git-cliff.git]
+conventional_commits = true
+filter_unconventional = false
+commit_parsers = [
+    { message = "^feat", group = "Features" },
+    { message = "^fix", group = "Bug Fixes" },
+    { message = "^doc|^docs", group = "Documentation" },
+    { message = "^perf", group = "Performance" },
+    { message = "^refactor", group = "Refactoring" },
+    { message = "^test", group = "Testing" },
+    { message = "^ci", group = "CI/CD" },
+    { message = "^build", group = "Build" },
+    { message = "^chore", group = "Miscellaneous" },
+    { body = ".*security", group = "Security" },
+]
+filter_commits = false
+tag_pattern = "v[0-9].*"
+sort_commits = "newest"
 # D202: No blank lines allowed after function docstring - conflicts with Black
 # formatter when there are nested functions (Black requires blank line)
 add-ignore = ["D202"]

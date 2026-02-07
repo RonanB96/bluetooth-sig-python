@@ -8,8 +8,8 @@ import pytest
 
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.device.connected import DeviceEncryption
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
 from bluetooth_sig.types.advertising.ad_structures import AdvertisingDataStructures, CoreAdvertisingData
 from bluetooth_sig.types.advertising.result import AdvertisementData
 from bluetooth_sig.types.device_types import DeviceService
@@ -17,7 +17,7 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 
 
 # pylint: disable=too-many-public-methods  # Mock must implement full protocol interface
-class MockConnectionManager(ConnectionManagerProtocol):
+class MockClientManager(ClientManagerProtocol):
     """Mock connection manager for testing."""
 
     def __init__(self, address: str = "AA:BB:CC:DD:EE:FF", connected: bool = False, **kwargs: object) -> None:
@@ -145,7 +145,7 @@ class TestDevice:
         """Set up test fixtures."""
         self.translator = BluetoothSIGTranslator()
         self.device_address = "AA:BB:CC:DD:EE:FF"
-        self.mock_connection_manager = MockConnectionManager(self.device_address)
+        self.mock_connection_manager = MockClientManager(self.device_address)
         self.device = Device(self.mock_connection_manager, self.translator)
 
     def test_device_initialization(self) -> None:
@@ -293,12 +293,12 @@ class TestDevice:
     async def test_is_connected_property(self) -> None:
         """Test is_connected property behaviour."""
         # Test with disconnected connection manager
-        mock_manager = MockConnectionManager(connected=False)
+        mock_manager = MockClientManager(connected=False)
         device = Device(mock_manager, self.translator)
         assert device.is_connected is False
 
         # Test with connected connection manager - need to actually call connect()
-        mock_manager = MockConnectionManager(connected=False)
+        mock_manager = MockClientManager(connected=False)
         device = Device(mock_manager, self.translator)
         await device.connect()
         assert device.is_connected is True
@@ -307,7 +307,7 @@ class TestDevice:
     async def test_is_connected_edge_cases(self) -> None:
         """Test is_connected property edge cases."""
         # Test connection manager state change
-        mock_manager = MockConnectionManager(connected=False)
+        mock_manager = MockClientManager(connected=False)
         device = Device(mock_manager, self.translator)
         await device.connect()
         assert device.is_connected is True
@@ -323,35 +323,35 @@ class TestDevice:
         """Test is_connected property error handling."""
         # Test manager that raises exception - use module-level FaultyManager
         faulty_manager = FaultyManager()
-        # cast to ConnectionManagerProtocol to satisfy static type checking
-        device = Device(cast("ConnectionManagerProtocol", faulty_manager), self.translator)
+        # cast to ClientManagerProtocol to satisfy static type checking
+        device = Device(cast("ClientManagerProtocol", faulty_manager), self.translator)
 
         # is_connected should return False even if manager is faulty (uses internal state)
         assert device.is_connected is False
 
         # Test manager without is_connected property - use module-level IncompleteManager
         incomplete_manager = IncompleteManager()
-        device = Device(cast("ConnectionManagerProtocol", incomplete_manager), self.translator)
+        device = Device(cast("ClientManagerProtocol", incomplete_manager), self.translator)
 
         # Should return False for manager without is_connected property
-        assert self.device.is_connected is False
+        assert device.is_connected is False
 
     def test_is_connected_with_none_manager(self) -> None:
         """Test is_connected returns False when manager's is_connected returns
         False.
         """
         none_manager = NoneManager()
-        device = Device(cast("ConnectionManagerProtocol", none_manager), self.translator)
+        device = Device(cast("ClientManagerProtocol", none_manager), self.translator)
         assert device.is_connected is False
 
     def test_connection_manager_protocol_interface(self) -> None:
-        """Test that ConnectionManagerProtocol has the is_connected
+        """Test that ClientManagerProtocol has the is_connected
         property.
         """
         import inspect
 
         # Check that is_connected is part of the protocol interface
-        members = inspect.getmembers(ConnectionManagerProtocol)
+        members = inspect.getmembers(ClientManagerProtocol)
         protocol_attrs = [name for name, _ in members if not name.startswith("_")]
 
         # Verify is_connected is in the protocol

@@ -80,13 +80,13 @@ if bluepy_available:
 
 
 def get_connection_manager_class(manager_name: str) -> type:
-    """Get a connection manager class by name.
+    """Get a client manager class by name.
 
     Args:
-        manager_name: Name of the connection manager ('bleak-retry', 'simplepyble', etc.)
+        manager_name: Name of the client manager ('bleak-retry', 'simplepyble', etc.)
 
     Returns:
-        Connection manager class (not instance) implementing ConnectionManagerProtocol
+        Client manager class (not instance) implementing ClientManagerProtocol
 
     Raises:
         ValueError: If manager is not available or not supported
@@ -95,27 +95,27 @@ def get_connection_manager_class(manager_name: str) -> type:
     if manager_name not in AVAILABLE_LIBRARIES:
         available = list(AVAILABLE_LIBRARIES.keys())
         raise ValueError(
-            f"Connection manager '{manager_name}' not available. "
+            f"Client manager '{manager_name}' not available. "
             f"Available: {available}. "
             f"Install with: pip install .[examples]"
         )
 
     if manager_name == "bleak-retry":
-        from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+        from examples.connection_managers.bleak_retry import BleakRetryClientManager
 
-        return BleakRetryConnectionManager
+        return BleakRetryClientManager
 
     if manager_name == "simplepyble":
-        from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
+        from examples.connection_managers.simpleble import SimplePyBLEClientManager
 
-        return SimplePyBLEConnectionManager
+        return SimplePyBLEClientManager
 
     if manager_name == "bluepy":
-        from examples.connection_managers.bluepy import BluePyConnectionManager
+        from examples.connection_managers.bluepy import BluePyClientManager
 
-        return BluePyConnectionManager
+        return BluePyClientManager
 
-    raise ValueError(f"Unsupported connection manager: {manager_name}")
+    raise ValueError(f"Unsupported client manager: {manager_name}")
 
 
 def show_library_availability() -> bool:

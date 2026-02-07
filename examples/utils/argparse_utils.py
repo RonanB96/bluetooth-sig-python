@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse
 
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 
 from .library_detection import AVAILABLE_LIBRARIES, show_library_availability
 
@@ -86,15 +86,15 @@ def create_common_parser(
 def create_connection_manager(
     manager_name: str,
     address: str | None,
-) -> ConnectionManagerProtocol:
-    """Create a connection manager instance based on name.
+) -> ClientManagerProtocol:
+    """Create a client manager instance based on name.
 
     Args:
-        manager_name: Name of the connection manager ('bleak-retry', 'simplepyble', etc.)
+        manager_name: Name of the client manager ('bleak-retry', 'simplepyble', etc.)
         address: BLE device address (required, cannot be None)
 
     Returns:
-        ConnectionManagerProtocol instance
+        ClientManagerProtocol instance
 
     Raises:
         ValueError: If manager is not available, not supported, or address is None
@@ -112,26 +112,26 @@ def create_connection_manager(
         )
 
     if manager_name == "bleak-retry":
-        from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+        from examples.connection_managers.bleak_retry import BleakRetryClientManager
 
-        return BleakRetryConnectionManager(address)
+        return BleakRetryClientManager(address)
 
     if manager_name == "simplepyble":
-        from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
+        from examples.connection_managers.simpleble import SimplePyBLEClientManager
 
-        return SimplePyBLEConnectionManager(address)
+        return SimplePyBLEClientManager(address)
 
     if manager_name == "bluepy":
-        from examples.connection_managers.bluepy import BluePyConnectionManager
+        from examples.connection_managers.bluepy import BluePyClientManager
 
-        return BluePyConnectionManager(address)
+        return BluePyClientManager(address)
 
     if manager_name == "bleak":
         # Basic bleak without retry logic
-        from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+        from examples.connection_managers.bleak_retry import BleakRetryClientManager
 
         # For now, just use the retry version - could add a basic bleak version later
-        return BleakRetryConnectionManager(address)
+        return BleakRetryClientManager(address)
 
     raise ValueError(f"Unsupported connection manager: {manager_name}")
 

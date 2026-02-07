@@ -1,6 +1,6 @@
-"""Connection manager protocol for BLE transport adapters.
+"""Client manager protocol for BLE transport adapters.
 
-Defines an async abstract base class that adapter implementations (Bleak,
+Defines an async abstract base class that client adapter implementations (Bleak,
 SimplePyBLE, etc.) must inherit from so the `Device` class can operate
 independently of the underlying BLE library.
 
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from bluetooth_sig.types.device_types import ScanDetectionCallback
 
 
-class ConnectionManagerProtocol(ABC):
+class ClientManagerProtocol(ABC):
     """Abstract base class describing the transport operations Device expects.
 
     All methods are async so adapters can integrate naturally with async
@@ -488,4 +488,4 @@ class ConnectionManagerProtocol(ABC):
         """
 
 
-__all__ = ["ConnectionManagerProtocol"]
+__all__ = ["ClientManagerProtocol"]

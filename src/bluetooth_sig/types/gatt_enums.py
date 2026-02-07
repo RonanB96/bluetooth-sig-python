@@ -53,26 +53,30 @@ class AdjustReason(IntFlag):
         return cls(masked_value)
 
 
-class GattProperty(Enum):
-    """GATT characteristic properties defined by Bluetooth SIG."""
+class GattProperty(IntFlag):
+    """GATT characteristic properties defined by Bluetooth SIG.
 
-    BROADCAST = "broadcast"
-    READ = "read"
-    WRITE_WITHOUT_RESPONSE = "write-without-response"
-    WRITE = "write"
-    NOTIFY = "notify"
-    INDICATE = "indicate"
-    AUTHENTICATED_SIGNED_WRITES = "authenticated-signed-writes"
-    EXTENDED_PROPERTIES = "extended-properties"
-    RELIABLE_WRITE = "reliable-write"
-    WRITABLE_AUXILIARIES = "writable-auxiliaries"
-    # Encryption and authentication properties
-    ENCRYPT_READ = "encrypt-read"
-    ENCRYPT_WRITE = "encrypt-write"
-    ENCRYPT_NOTIFY = "encrypt-notify"
-    AUTH_READ = "auth-read"
-    AUTH_WRITE = "auth-write"
-    AUTH_NOTIFY = "auth-notify"
+    Uses IntFlag for bitwise operations when combining properties.
+    Bit values match the Bluetooth Core Specification.
+    """
+
+    BROADCAST = 0x0001
+    READ = 0x0002
+    WRITE_WITHOUT_RESPONSE = 0x0004
+    WRITE = 0x0008
+    NOTIFY = 0x0010
+    INDICATE = 0x0020
+    AUTHENTICATED_SIGNED_WRITES = 0x0040
+    EXTENDED_PROPERTIES = 0x0080
+    RELIABLE_WRITE = 0x0100
+    WRITABLE_AUXILIARIES = 0x0200
+    # Encryption and authentication properties (extended)
+    ENCRYPT_READ = 0x0400
+    ENCRYPT_WRITE = 0x0800
+    ENCRYPT_NOTIFY = 0x1000
+    AUTH_READ = 0x2000
+    AUTH_WRITE = 0x4000
+    AUTH_NOTIFY = 0x8000
 
 
 class ValueType(Enum):

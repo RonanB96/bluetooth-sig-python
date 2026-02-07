@@ -466,7 +466,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         Returns:
             GssCharacteristicSpec with full field structure, or None if not found
 
-        Example:
+        Example::
             gss = uuid_registry.get_gss_spec("Location and Speed")
             if gss:
                 for field in gss.structure:
@@ -514,7 +514,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         Returns:
             CharacteristicSpec with full metadata, or None if not found
 
-        Example:
+        Example::
             spec = uuid_registry.resolve_characteristic_spec("Temperature")
             if spec:
                 print(f"UUID: {spec.uuid}, Unit: {spec.unit_symbol}, Type: {spec.data_type}")

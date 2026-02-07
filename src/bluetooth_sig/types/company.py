@@ -24,7 +24,7 @@ class CompanyIdentifier(msgspec.Struct, kw_only=True, frozen=True):
         name: Resolved company name from Bluetooth SIG registry.
               Falls back to hex format if not found in registry.
 
-    Example:
+    Example::
         # Direct construction
         apple = CompanyIdentifier(id=0x004C, name="Apple, Inc.")
 
@@ -53,7 +53,7 @@ class CompanyIdentifier(msgspec.Struct, kw_only=True, frozen=True):
         Returns:
             CompanyIdentifier with resolved name from registry.
 
-        Example:
+        Example::
             >>> company = CompanyIdentifier.from_id(0x004C)
             >>> company.id
             76
@@ -82,9 +82,9 @@ class ManufacturerData(msgspec.Struct, kw_only=True, frozen=True):
         company: Resolved company identifier with ID and name.
         payload: Raw manufacturer-specific data bytes.
 
-    Example:
+    Example::
         # Parse from raw bytes
-        mfr_data = ManufacturerData.from_bytes(b'\x4C\x00\x02\x15...')
+        mfr_data = ManufacturerData.from_bytes(b"\x4c\x00\x02\x15...")
         print(mfr_data.company.name)  # "Apple, Inc."
         print(mfr_data.payload.hex())  # "0215..."
 
@@ -130,3 +130,12 @@ class ManufacturerData(msgspec.Struct, kw_only=True, frozen=True):
         """
         company = CompanyIdentifier.from_id(company_id)
         return cls(company=company, payload=payload)
+
+    def to_bytes(self) -> bytes:
+        """Encode manufacturer data to wire format.
+
+        Returns:
+            Encoded bytes: company ID (little-endian uint16) + payload.
+
+        """
+        return self.company.id.to_bytes(SIZE_UINT16, byteorder="little") + self.payload

@@ -109,7 +109,8 @@ class PayloadInterpreter(ABC, Generic[T]):
         9. Update state.encryption.encryption_counter directly
         10. Return parsed data
 
-    Example:
+    Example::
+
         class BTHomeInterpreter(PayloadInterpreter[BTHomeData]):
             _info = InterpreterInfo(
                 service_uuid=BluetoothUUID("0000fcd2-0000-1000-8000-00805f9b34fb"),

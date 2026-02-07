@@ -76,7 +76,7 @@ def read_and_parse_with_simpleble(
     address: str, target_uuids: list[str] | None = None
 ) -> dict[str, ReadResult] | dict[str, Any]:
     """Read characteristics from a BLE device using SimpleBLE and parse with SIG standards."""
-    from examples.connection_managers.simpleble import SimplePyBLEConnectionManager
+    from examples.connection_managers.simpleble import SimplePyBLEClientManager
 
     from .utils.simpleble_integration import comprehensive_device_analysis_simpleble
 
@@ -86,7 +86,7 @@ def read_and_parse_with_simpleble(
         return comprehensive_device_analysis_simpleble(address, simplepyble)
 
     async def _collect() -> dict[str, ReadResult]:
-        manager = SimplePyBLEConnectionManager(address, timeout=10.0)
+        manager = SimplePyBLEClientManager(address, timeout=10.0)
         from examples.utils.connection_helpers import read_characteristics_with_manager
 
         return await read_characteristics_with_manager(manager, target_uuids)

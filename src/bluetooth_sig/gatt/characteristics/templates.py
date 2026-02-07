@@ -519,7 +519,7 @@ class EnumTemplate(CodingTemplate[T]):
         Returns:
             Configured EnumTemplate instance
 
-        Example:
+        Example::
             >>> class Status(IntEnum):
             ...     IDLE = 0
             ...     ACTIVE = 1
@@ -537,7 +537,7 @@ class EnumTemplate(CodingTemplate[T]):
         Returns:
             Configured EnumTemplate instance
 
-        Example:
+        Example::
             >>> class ExtendedStatus(IntEnum):
             ...     STATE_1 = 0x0100
             ...     STATE_2 = 0x0200
@@ -567,7 +567,7 @@ class EnumTemplate(CodingTemplate[T]):
         Returns:
             Configured EnumTemplate instance
 
-        Example:
+        Example::
             >>> class Temperature(IntEnum):
             ...     FREEZING = -10
             ...     NORMAL = 0

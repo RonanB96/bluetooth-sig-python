@@ -2,7 +2,7 @@
 
 These helpers provide the example-level conveniences previously offered
 by the removed ``examples.utils.bleak_retry_integration`` module but
-delegate actual device interaction to the ``BleakRetryConnectionManager``
+delegate actual device interaction to the ``BleakRetryClientManager``
 implementation. Placing these helpers alongside the concrete manager
 keeps bleak imports in one place and satisfies tests that expect a
 fast-failure when bleak is not installed.
@@ -117,7 +117,7 @@ async def scan_with_bleak_retry(timeout: float = 10.0) -> list[DeviceInfo]:
 async def read_characteristics_bleak_retry(
     address: str, uuids: list[str] | None = None, max_attempts: int = 3, timeout: float = 30.0
 ) -> dict[str, ReadResult]:
-    """Read characteristics from a device using the BleakRetryConnectionManager.
+    """Read characteristics from a device using the BleakRetryClientManager.
 
     This is a thin convenience wrapper that constructs a manager and
     delegates to the canonical connection helper. It preserves the
@@ -128,8 +128,8 @@ async def read_characteristics_bleak_retry(
     # and environments without Bleak do not attempt to import BleakRetry
     # at module import time.
     bleak_mod = importlib.import_module("examples.connection_managers.bleak_retry")
-    BleakRetryConnectionManager = bleak_mod.BleakRetryConnectionManager
-    manager = BleakRetryConnectionManager(address, timeout=timeout, max_attempts=max_attempts)
+    BleakRetryClientManager = bleak_mod.BleakRetryClientManager
+    manager = BleakRetryClientManager(address, timeout=timeout, max_attempts=max_attempts)
     return await read_characteristics_with_manager(manager, uuids)
 
 
@@ -142,8 +142,8 @@ async def handle_notifications_bleak_retry(
     waits for the requested duration before cleaning up.
     """
     bleak_mod = importlib.import_module("examples.connection_managers.bleak_retry")
-    BleakRetryConnectionManager = bleak_mod.BleakRetryConnectionManager
-    manager = BleakRetryConnectionManager(address, timeout=timeout, max_attempts=max_attempts)
+    BleakRetryClientManager = bleak_mod.BleakRetryClientManager
+    manager = BleakRetryClientManager(address, timeout=timeout, max_attempts=max_attempts)
     await manager.connect()
 
     def _cb(char_uuid: str, data: bytes) -> None:

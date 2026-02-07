@@ -30,7 +30,7 @@ from bluetooth_sig.advertising.exceptions import (
 )
 from bluetooth_sig.advertising.registry import PayloadInterpreterRegistry
 from bluetooth_sig.advertising.state import DeviceAdvertisingState
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.types.advertising.result import AdvertisementData
 
 logger = logging.getLogger(__name__)
@@ -48,16 +48,18 @@ class DeviceAdvertising:  # pylint: disable=too-many-instance-attributes
         state: Current advertising state (caller-owned, mutable).
         mac_address: Device MAC address.
 
-    Example:
+    Example::
         device = Device(mac_address="AA:BB:CC:DD:EE:FF", translator=translator)
 
         # Set bindkey for encrypted advertisements
         device.advertising.set_bindkey(bytes.fromhex("0102030405060708090a0b0c0d0e0f10"))
 
+
         # Subscribe to continuous advertisement updates
         def on_advertisement(ad_data: AdvertisementData, data: Any) -> None:
             if data is not None:
                 print(f"Sensor data: {data}")
+
 
         device.advertising.subscribe(on_advertisement)
 
@@ -80,7 +82,7 @@ class DeviceAdvertising:  # pylint: disable=too-many-instance-attributes
 
     """
 
-    def __init__(self, mac_address: str, connection_manager: ConnectionManagerProtocol) -> None:
+    def __init__(self, mac_address: str, connection_manager: ClientManagerProtocol) -> None:
         """Initialise advertising subsystem.
 
         Args:
@@ -183,7 +185,7 @@ class DeviceAdvertising:  # pylint: disable=too-many-instance-attributes
             EncryptionRequiredError: Payload encrypted, no bindkey available.
             DecryptionFailedError: Decryption failed (wrong key or corrupt data).
 
-        Example:
+        Example::
             # Type-safe: IDE knows return type is BTHomeData
             data = device.advertising.process(ad_data, interpreter=BTHomeInterpreter)
 

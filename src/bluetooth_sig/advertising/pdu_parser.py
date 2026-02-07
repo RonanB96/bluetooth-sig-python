@@ -45,6 +45,13 @@ from bluetooth_sig.types.advertising.pdu import (
 )
 from bluetooth_sig.types.advertising.result import AdvertisingData
 from bluetooth_sig.types.appearance import AppearanceData
+from bluetooth_sig.types.mesh import (
+    MeshBeaconType,
+    MeshMessage,
+    ProvisioningBearerData,
+    SecureNetworkBeacon,
+    UnprovisionedDeviceBeacon,
+)
 from bluetooth_sig.types.uri import URIData
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -633,14 +640,33 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
         elif ad_type == ADType.BIGINFO:
             parsed.mesh.biginfo = ad_data
         elif ad_type == ADType.MESH_MESSAGE:
-            parsed.mesh.mesh_message = ad_data
+            parsed.mesh.mesh_message = MeshMessage.decode(ad_data)
         elif ad_type == ADType.MESH_BEACON:
-            parsed.mesh.mesh_beacon = ad_data
+            self._parse_mesh_beacon(ad_data, parsed)
         elif ad_type == ADType.PB_ADV:
-            parsed.mesh.pb_adv = ad_data
+            parsed.mesh.provisioning_bearer = ProvisioningBearerData.decode(ad_data)
         else:
             return False
         return True
+
+    def _parse_mesh_beacon(self, ad_data: bytes, parsed: AdvertisingDataStructures) -> None:
+        """Parse mesh beacon data into appropriate typed beacon.
+
+        Args:
+            ad_data: Raw beacon advertisement data
+            parsed: Advertising data structures to populate
+
+        """
+        if len(ad_data) < 1:
+            return
+
+        beacon_type = ad_data[0]
+        beacon_data = ad_data[1:]
+
+        if beacon_type == MeshBeaconType.SECURE_NETWORK:
+            parsed.mesh.secure_network_beacon = SecureNetworkBeacon.decode(beacon_data)
+        elif beacon_type == MeshBeaconType.UNPROVISIONED_DEVICE:
+            parsed.mesh.unprovisioned_device_beacon = UnprovisionedDeviceBeacon.decode(beacon_data)
 
     def _handle_security_ad_types(self, ad_type: int, ad_data: bytes, parsed: AdvertisingDataStructures) -> bool:
         """Handle security/pairing advertising data types.

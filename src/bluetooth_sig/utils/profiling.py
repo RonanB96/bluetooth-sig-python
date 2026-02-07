@@ -65,7 +65,7 @@ def timer(_operation: str = "operation") -> Generator[dict[str, float], None, No
     Yields:
         Dictionary that will contain 'elapsed' key with timing result
 
-    Example:
+    Example::
         >>> with timer("parse") as t:
         ...     parse_characteristic(data)
         >>> print(f"Elapsed: {t['elapsed']:.4f}s")
@@ -94,7 +94,7 @@ def benchmark_function(
     Returns:
         TimingResult with detailed performance metrics
 
-    Example:
+    Example::
         >>> result = benchmark_function(
         ...     lambda: translator.parse_characteristic("2A19", b"\\x64"),
         ...     iterations=10000,
@@ -154,7 +154,7 @@ def compare_implementations(
     Returns:
         Dictionary mapping implementation names to their TimingResults
 
-    Example:
+    Example::
         >>> results = compare_implementations(
         ...     {
         ...         "manual": lambda: manual_parse(data),

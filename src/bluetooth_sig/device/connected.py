@@ -15,7 +15,7 @@ from typing import Any
 
 import msgspec
 
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.services.base import BaseGattService
@@ -64,7 +64,7 @@ class DeviceConnected:
         services: Discovered GATT services by UUID string.
         encryption: Current encryption state.
 
-    Example:
+    Example::
         device = Device(mac_address="AA:BB:CC:DD:EE:FF", translator=translator)
 
         # Connect and discover services
@@ -72,13 +72,13 @@ class DeviceConnected:
         services = await device.connected.discover_services()
 
         # Read a characteristic
-        battery = await device.connected.read(
-            BluetoothUUID("00002a19-0000-1000-8000-00805f9b34fb")
-        )
+        battery = await device.connected.read(BluetoothUUID("00002a19-0000-1000-8000-00805f9b34fb"))
+
 
         # Subscribe to notifications
         async def on_heart_rate(value):
             print(f"Heart rate: {value}")
+
 
         await device.connected.subscribe(
             BluetoothUUID("00002a37-0000-1000-8000-00805f9b34fb"),
@@ -92,7 +92,7 @@ class DeviceConnected:
     def __init__(
         self,
         mac_address: str,
-        connection_manager: ConnectionManagerProtocol | None = None,
+        connection_manager: ClientManagerProtocol | None = None,
     ) -> None:
         """Initialise connection subsystem.
 
@@ -114,12 +114,12 @@ class DeviceConnected:
         return self._mac_address
 
     @property
-    def connection_manager(self) -> ConnectionManagerProtocol | None:
+    def connection_manager(self) -> ClientManagerProtocol | None:
         """Current connection manager."""
         return self._connection_manager
 
     @connection_manager.setter
-    def connection_manager(self, value: ConnectionManagerProtocol | None) -> None:
+    def connection_manager(self, value: ClientManagerProtocol | None) -> None:
         """Set connection manager."""
         self._connection_manager = value
 

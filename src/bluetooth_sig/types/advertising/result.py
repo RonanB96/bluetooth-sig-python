@@ -60,7 +60,7 @@ class AdvertisementData(msgspec.Struct, kw_only=True):
         interpreter_name: Name of the interpreter used (e.g., "BTHome", "Xiaomi"), or None
         rssi: Received signal strength indicator in dBm
 
-    Example:
+    Example::
         # Using connection manager (recommended)
         ad_data = BleakConnectionManager.convert_advertisement(bleak_advertisement)
         result = device.update_advertisement(ad_data)

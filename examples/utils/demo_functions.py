@@ -11,7 +11,7 @@ import types
 from typing import Any, cast
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.device.connection import ConnectionManagerProtocol
+from bluetooth_sig.device.client import ClientManagerProtocol
 from bluetooth_sig.device.device import Device
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -25,7 +25,7 @@ from .models import LibraryComparisonResult
 from .simpleble_integration import comprehensive_device_analysis_simpleble
 
 
-async def demo_basic_usage(address: str, connection_manager: ConnectionManagerProtocol) -> None:
+async def demo_basic_usage(address: str, connection_manager: ClientManagerProtocol) -> None:
     """Demonstrate basic usage of the bluetooth_sig library (migrated from shared_utils).
 
     This function is used by the top-level `examples/basic_usage.py` script as the
@@ -75,7 +75,7 @@ async def demo_basic_usage(address: str, connection_manager: ConnectionManagerPr
         print("This may be due to device being unavailable or connection issues.")
 
 
-async def demo_service_discovery(address: str, connection_manager: ConnectionManagerProtocol) -> None:
+async def demo_service_discovery(address: str, connection_manager: ClientManagerProtocol) -> None:
     """Demonstrate service discovery using the Device class (migrated from shared_utils).
 
     The original example enumerated services and attempted to read and parse
@@ -169,10 +169,10 @@ async def comprehensive_device_analysis_bleak_retry(address: str, target_uuids: 
 
     """
     from bluetooth_sig import BluetoothSIGTranslator
-    from examples.connection_managers.bleak_retry import BleakRetryConnectionManager
+    from examples.connection_managers.bleak_retry import BleakRetryClientManager
 
     translator = BluetoothSIGTranslator()
-    manager = BleakRetryConnectionManager(address)
+    manager = BleakRetryClientManager(address)
 
     try:
         await manager.connect()
