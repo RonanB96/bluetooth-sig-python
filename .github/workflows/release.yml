@@ -39,27 +39,8 @@ jobs:
           name: dist
           path: dist/
 
-  publish-testpypi:
-    name: Publish to Test PyPI
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment: testpypi
-    permissions:
-      id-token: write
-    steps:
-      - uses: actions/download-artifact@v7
-        with:
-          name: dist
-          path: dist/
-
-      - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-
   publish-pypi:
     name: Publish to PyPI
-    needs: publish-testpypi
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: pypi
