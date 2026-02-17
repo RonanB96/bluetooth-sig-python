@@ -18,16 +18,19 @@ from bluetooth_sig.device.connected import (
     DeviceEncryption,
     DeviceService,
 )
-from bluetooth_sig.device.device import Device, SIGTranslatorProtocol
+from bluetooth_sig.device.dependency_resolver import DependencyResolutionMode
+from bluetooth_sig.device.device import Device
 from bluetooth_sig.device.peripheral import (
     CharacteristicDefinition,
     PeripheralManagerProtocol,
     ServiceDefinition,
 )
+from bluetooth_sig.device.protocols import SIGTranslatorProtocol
 
 __all__ = [
     "CharacteristicDefinition",
     "ClientManagerProtocol",
+    "DependencyResolutionMode",
     "Device",
     "DeviceAdvertising",
     "DeviceConnected",

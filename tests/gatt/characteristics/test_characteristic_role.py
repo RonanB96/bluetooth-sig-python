@@ -9,15 +9,16 @@ from __future__ import annotations
 
 import pytest
 
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.types.gatt_enums import CharacteristicRole, ValueType
-
 
 # ---------------------------------------------------------------------------
 # Helper — instantiate a registered characteristic by its SIG name
 # ---------------------------------------------------------------------------
 
-def _get_char(sig_name: str):
+
+def _get_char(sig_name: str) -> BaseCharacteristic:  # type: ignore[type-arg]
     """Return an instance of the characteristic registered under *sig_name*.
 
     Raises ``KeyError`` if the name is not in the registry.
@@ -33,6 +34,7 @@ def _get_char(sig_name: str):
 # ---------------------------------------------------------------------------
 # MEASUREMENT — numeric / structured data with physical units
 # ---------------------------------------------------------------------------
+
 
 class TestMeasurementRole:
     """Characteristics that carry sensor data should be classified MEASUREMENT."""
@@ -62,13 +64,13 @@ class TestMeasurementRole:
     def test_measurement_characteristics(self, sig_name: str) -> None:
         char = _get_char(sig_name)
         assert char.role == CharacteristicRole.MEASUREMENT, (
-            f"{sig_name} expected MEASUREMENT, got {char.role.value} "
-            f"(vtype={char.value_type.name}, unit={char.unit!r})"
+            f"{sig_name} expected MEASUREMENT, got {char.role.value} (vtype={char.value_type.name}, unit={char.unit!r})"
         )
 
     def test_measurement_interval_by_name(self) -> None:
         """'Measurement Interval' matches the name rule even though it could
-        also match numeric-with-unit."""
+        also match numeric-with-unit.
+        """
         char = _get_char("Measurement Interval")
         assert char.role == CharacteristicRole.MEASUREMENT
 
@@ -76,6 +78,7 @@ class TestMeasurementRole:
 # ---------------------------------------------------------------------------
 # CONTROL — write-only control points
 # ---------------------------------------------------------------------------
+
 
 class TestControlRole:
     """Control Point characteristics should be classified CONTROL."""
@@ -100,6 +103,7 @@ class TestControlRole:
 # ---------------------------------------------------------------------------
 # FEATURE — capability bitfields
 # ---------------------------------------------------------------------------
+
 
 class TestFeatureRole:
     """Feature / capability bitfield characteristics should be FEATURE."""
@@ -127,6 +131,7 @@ class TestFeatureRole:
 # STATUS — state / enum reporting
 # ---------------------------------------------------------------------------
 
+
 class TestStatusRole:
     """Status reporting characteristics should be classified STATUS."""
 
@@ -148,6 +153,7 @@ class TestStatusRole:
 # ---------------------------------------------------------------------------
 # INFO — static metadata strings
 # ---------------------------------------------------------------------------
+
 
 class TestInfoRole:
     """String metadata characteristics should be classified INFO."""
@@ -176,19 +182,22 @@ class TestInfoRole:
 # Classification priority — earlier rules win over later ones
 # ---------------------------------------------------------------------------
 
+
 class TestRolePriority:
     """Verify that the priority ordering resolves ambiguity correctly."""
 
     def test_control_point_beats_measurement_name(self) -> None:
         """A hypothetical 'Measurement Control Point' would be CONTROL,
         not MEASUREMENT, because rule 1 fires before rule 3.
-        Verified via Heart Rate Control Point (INT, no unit)."""
+        Verified via Heart Rate Control Point (INT, no unit).
+        """
         char = _get_char("Heart Rate Control Point")
         assert char.role == CharacteristicRole.CONTROL
 
     def test_feature_bitfield_type_beats_unknown(self) -> None:
         """A BITFIELD value_type triggers FEATURE even without 'Feature'
-        in the name."""
+        in the name.
+        """
         char = _get_char("Body Composition Feature")
         assert char.value_type == ValueType.BITFIELD
         assert char.role == CharacteristicRole.FEATURE
@@ -198,17 +207,18 @@ class TestRolePriority:
 # UNKNOWN — characteristics that cannot be classified from metadata alone
 # ---------------------------------------------------------------------------
 
+
 class TestUnknownRole:
     """Characteristics with insufficient metadata remain UNKNOWN."""
 
     @pytest.mark.parametrize(
         "sig_name",
         [
-            "Alert Level",       # INT, no unit, no matching name pattern
-            "Appearance",        # VARIOUS, no unit
-            "Boolean",           # BOOL, no unit
-            "PnP ID",           # VARIOUS, no unit
-            "System ID",        # VARIOUS, no unit
+            "Alert Level",  # INT, no unit, no matching name pattern
+            "Appearance",  # VARIOUS, no unit
+            "Boolean",  # BOOL, no unit
+            "PnP ID",  # VARIOUS, no unit
+            "System ID",  # VARIOUS, no unit
         ],
     )
     def test_unknown_characteristics(self, sig_name: str) -> None:
@@ -219,6 +229,7 @@ class TestUnknownRole:
 # ---------------------------------------------------------------------------
 # Property semantics — caching, type
 # ---------------------------------------------------------------------------
+
 
 class TestRolePropertySemantics:
     """Verify that the role property behaves correctly as a cached_property."""
@@ -236,9 +247,10 @@ class TestRolePropertySemantics:
 
     def test_all_roles_are_valid_enum_members(self) -> None:
         """Every registered characteristic should return a valid
-        CharacteristicRole member."""
+        CharacteristicRole member.
+        """
         chars = CharacteristicRegistry.get_all_characteristics()
-        for name_enum, cls in chars.items():
+        for _name_enum, cls in chars.items():
             inst = cls()
             assert isinstance(inst.role, CharacteristicRole), (
                 f"{inst.name} returned {type(inst.role)} instead of CharacteristicRole"

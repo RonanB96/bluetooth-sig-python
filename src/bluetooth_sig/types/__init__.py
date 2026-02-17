@@ -37,7 +37,6 @@ from .data_types import (
     ValidationAccumulator,
     ValidationResult,
 )
-from .gatt_enums import CharacteristicRole
 from .ead import (
     EAD_ADDRESS_SIZE,
     EAD_IV_SIZE,
@@ -51,6 +50,7 @@ from .ead import (
     EADKeyMaterial,
     EncryptedAdvertisingData,
 )
+from .gatt_enums import CharacteristicRole
 from .location import PositionStatus
 from .mesh import (
     DEVICE_UUID_LENGTH,
