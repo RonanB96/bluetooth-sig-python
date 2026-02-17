@@ -37,6 +37,7 @@ from .data_types import (
     ValidationAccumulator,
     ValidationResult,
 )
+from .gatt_enums import CharacteristicRole
 from .ead import (
     EAD_ADDRESS_SIZE,
     EAD_IV_SIZE,
@@ -125,6 +126,7 @@ __all__ = [
     "CharacteristicContext",
     "CharacteristicInfo",
     "CharacteristicProtocol",
+    "CharacteristicRole",
     "ClassOfDeviceInfo",
     "CompanyIdentifier",
     "ConcentrationUnit",
