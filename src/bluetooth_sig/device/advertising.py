@@ -19,7 +19,8 @@ Error Handling:
 from __future__ import annotations
 
 import logging
-from typing import Callable, TypeVar, overload
+from collections.abc import Callable
+from typing import TypeVar, overload
 
 from bluetooth_sig.advertising import AdvertisingPDUParser
 from bluetooth_sig.advertising.base import AdvertisingData, PayloadInterpreter
@@ -198,7 +199,7 @@ class DeviceAdvertising:  # pylint: disable=too-many-instance-attributes
             interp_instance = interpreter(self._mac_address)
             cached_name = interp_instance.info.name or interpreter.__name__
             # Cache for future auto-detection (variance: T is subtype of object)
-            self._interpreters[cached_name] = interp_instance  # type: ignore[assignment]
+            self._interpreters[cached_name] = interp_instance  # type: ignore[assignment]  # Covariant T stored in dict; safe because interpreters are read-only after caching
             return self._run_interpreter(interp_instance, advertising_data)
 
         # Try registered interpreters first (returns object for dynamic dispatch)

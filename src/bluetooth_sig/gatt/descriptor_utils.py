@@ -86,7 +86,7 @@ def get_presentation_format_from_context(
     """
     descriptor_data = get_descriptor_from_context(ctx, CharacteristicPresentationFormatDescriptor)
     if descriptor_data and descriptor_data.value:
-        return descriptor_data.value  # type: ignore[no-any-return]
+        return descriptor_data.value  # type: ignore[no-any-return]  # Generic BaseDescriptor.value is Any; caller knows concrete type
     return None
 
 

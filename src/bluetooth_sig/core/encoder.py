@@ -154,7 +154,7 @@ class CharacteristicEncoder:
                 type_hints = typing.get_type_hints(characteristic._decode_value, globalns=globalns)  # pylint: disable=protected-access
                 return_type = type_hints.get("return")
                 if return_type and return_type is not type(None):
-                    return return_type  # type: ignore[no-any-return]
+                    return return_type  # type: ignore[no-any-return]  # Dynamic introspection of _decode_value return annotation
             except (TypeError, AttributeError, NameError):
                 return_type = inspect.signature(characteristic._decode_value).return_annotation  # pylint: disable=protected-access
                 sig = inspect.signature(characteristic._decode_value)  # pylint: disable=protected-access
@@ -164,13 +164,13 @@ class CharacteristicEncoder:
                     and return_annotation != inspect.Parameter.empty
                     and not isinstance(return_annotation, str)
                 ):
-                    return return_annotation  # type: ignore[no-any-return]
+                    return return_annotation  # type: ignore[no-any-return]  # Dynamic introspection fallback via inspect.signature
 
         # Try to get from _manual_value_type attribute
         if hasattr(characteristic, "_manual_value_type"):
             manual_type = characteristic._manual_value_type  # pylint: disable=protected-access
             if manual_type and isinstance(manual_type, str) and hasattr(templates, manual_type):
-                return getattr(templates, manual_type)  # type: ignore[no-any-return]
+                return getattr(templates, manual_type)  # type: ignore[no-any-return]  # Runtime template lookup by string name
 
         # Try to get from template
         if hasattr(characteristic, "_template") and characteristic._template:  # pylint: disable=protected-access
@@ -178,7 +178,7 @@ class CharacteristicEncoder:
             if hasattr(template, "__orig_class__"):
                 args = typing.get_args(template.__orig_class__)
                 if args:
-                    return args[0]  # type: ignore[no-any-return]
+                    return args[0]  # type: ignore[no-any-return]  # Generic type arg extraction from __orig_class__
 
         # For simple types, check info.value_type
         info = characteristic.info

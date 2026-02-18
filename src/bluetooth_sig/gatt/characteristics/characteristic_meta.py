@@ -94,9 +94,7 @@ class SIGCharacteristicResolver:
         return None
 
     @staticmethod
-    def _create_info_from_yaml(
-        yaml_spec: CharacteristicSpec, char_class: type
-    ) -> CharacteristicInfo:
+    def _create_info_from_yaml(yaml_spec: CharacteristicSpec, char_class: type) -> CharacteristicInfo:
         """Create CharacteristicInfo from YAML spec, resolving metadata via registry classes."""
         value_type = DataType.from_string(yaml_spec.data_type).to_value_type()
 

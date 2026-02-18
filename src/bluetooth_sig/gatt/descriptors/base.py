@@ -150,8 +150,8 @@ class RangeDescriptorMixin:
         Returns:
             Minimum valid value for the characteristic
         """
-        parsed = self._parse_descriptor_value(data)  # type: ignore[attr-defined]
-        return parsed.min_value  # type: ignore[no-any-return]
+        parsed = self._parse_descriptor_value(data)  # type: ignore[attr-defined]  # Mixin: concrete subclass provides _parse_descriptor_value
+        return parsed.min_value  # type: ignore[no-any-return]  # Parsed struct has typed fields
 
     def get_max_value(self, data: bytes) -> int | float:
         """Get the maximum valid value.
@@ -162,8 +162,8 @@ class RangeDescriptorMixin:
         Returns:
             Maximum valid value for the characteristic
         """
-        parsed = self._parse_descriptor_value(data)  # type: ignore[attr-defined]
-        return parsed.max_value  # type: ignore[no-any-return]
+        parsed = self._parse_descriptor_value(data)  # type: ignore[attr-defined]  # Mixin: concrete subclass provides _parse_descriptor_value
+        return parsed.max_value  # type: ignore[no-any-return]  # Parsed struct has typed fields
 
     def is_value_in_range(self, data: bytes, value: float) -> bool:
         """Check if a value is within the valid range.

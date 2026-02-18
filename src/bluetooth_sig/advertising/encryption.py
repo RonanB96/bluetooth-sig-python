@@ -12,14 +12,11 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import Protocol, TypeAlias, runtime_checkable
 
 from bluetooth_sig.types.ead import EADKeyMaterial
 
-if TYPE_CHECKING:
-    from typing_extensions import TypeAlias
-
-    AsyncKeyLookup: TypeAlias = Callable[[str], Awaitable[bytes | None]]
+AsyncKeyLookup: TypeAlias = Callable[[str], Awaitable[bytes | None]]
 
 logger = logging.getLogger(__name__)
 

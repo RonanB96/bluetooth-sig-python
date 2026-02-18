@@ -11,8 +11,8 @@ import contextlib
 import inspect
 import logging
 import sys
-from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import AsyncIterator, Callable
+from typing import TYPE_CHECKING, Any
 
 from bleak import BleakClient, BleakScanner
 from bleak.args.bluez import AdvertisementDataType, OrPattern  # type: ignore[attr-defined]

@@ -11,6 +11,7 @@ See :mod:`.role_classifier` for characteristic role inference.
 
 from __future__ import annotations
 
+import logging
 from abc import ABC
 from functools import cached_property
 from typing import Any, ClassVar, Generic, TypeVar
@@ -35,6 +36,8 @@ from .descriptor_mixin import DescriptorMixin
 from .pipeline import CharacteristicValidator, EncodePipeline, ParsePipeline
 from .role_classifier import classify_role
 from .templates import CodingTemplate
+
+logger = logging.getLogger(__name__)
 
 # Type variable for generic characteristic return types
 T = TypeVar("T")
@@ -408,7 +411,7 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
             if class_uuid is not None:
                 return str(class_uuid)
         except (ValueError, AttributeError, TypeError):
-            pass
+            logger.warning("Failed to resolve class UUID for dependency %s", dep_class.__name__)
 
         try:
             temp_instance = dep_class()
@@ -507,7 +510,7 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
             try:
                 return info.uuid
             except AttributeError:
-                pass
+                logger.warning("_info attribute has no uuid for class %s", cls.__name__)
 
         # Try cross-file resolution for SIG characteristics
         yaml_spec = cls._resolve_yaml_spec_class()

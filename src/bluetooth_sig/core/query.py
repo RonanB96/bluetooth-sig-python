@@ -281,7 +281,7 @@ class CharacteristicQueryEngine:
                     unit=char_info.unit or "",
                 )
         except (KeyError, ValueError, AttributeError):
-            pass
+            logger.warning("Failed to look up SIG info by name: %s", name)
 
         service_info = self.get_service_info_by_name(name)
         if service_info:

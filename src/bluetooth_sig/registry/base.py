@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from bluetooth_sig.registry.utils import (
     find_bluetooth_sig_path,
@@ -15,6 +17,8 @@ from bluetooth_sig.registry.utils import (
 )
 from bluetooth_sig.types.registry import BaseUuidInfo, generate_basic_aliases
 from bluetooth_sig.types.uuid import BluetoothUUID
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 E = TypeVar("E", bound=Enum)  # For enum-keyed registries
@@ -209,7 +213,7 @@ class BaseUUIDRegistry(RegistryMixin, ABC, Generic[U]):
                 if canonical_key in self._canonical_store:
                     return self._canonical_store[canonical_key]
             except ValueError:
-                pass
+                logger.warning("UUID normalization failed for registry lookup: %s", search_key)
 
             # Check alias index (normalized to lowercase)
             alias_key = self._alias_index.get(search_key.lower())
@@ -376,7 +380,7 @@ class BaseUUIDClassRegistry(RegistryMixin, ABC, Generic[E, C]):
             self._sig_class_cache = {}
             for cls in self._discover_sig_classes():
                 try:
-                    uuid_obj = cls.get_class_uuid()  # type: ignore[attr-defined]
+                    uuid_obj = cls.get_class_uuid()  # type: ignore[attr-defined]  # Generic C bound lacks this method; runtime dispatch is correct
                     if uuid_obj:
                         self._sig_class_cache[uuid_obj] = cls
                 except (AttributeError, ValueError):

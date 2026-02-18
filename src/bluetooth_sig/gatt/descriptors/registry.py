@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from typing import ClassVar
 
 from ...types.uuid import BluetoothUUID
 from .base import BaseDescriptor
+
+logger = logging.getLogger(__name__)
 
 
 class DescriptorRegistry:
@@ -23,7 +26,7 @@ class DescriptorRegistry:
             cls._registry[uuid_str] = descriptor_class
         except (ValueError, TypeError, AttributeError):
             # If we can't create an instance or resolve UUID, skip registration
-            pass
+            logger.warning("Failed to register descriptor class %s", descriptor_class.__name__)
 
     @classmethod
     def get_descriptor_class(cls, uuid: str | BluetoothUUID | int) -> type[BaseDescriptor] | None:

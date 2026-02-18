@@ -7,7 +7,8 @@ device.
 
 from __future__ import annotations
 
-from typing import Any, Callable, TypeVar, overload
+from collections.abc import Callable
+from typing import Any, TypeVar, overload
 
 from ..advertising.registry import PayloadInterpreterRegistry
 from ..gatt.characteristics import CharacteristicName
@@ -229,7 +230,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             ValueError: If required dependencies cannot be resolved
 
         """
-        return await self._char_io.read(char, resolution_mode)  # type: ignore[arg-type]
+        return await self._char_io.read(char, resolution_mode)
 
     @overload
     async def write(
@@ -267,7 +268,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             CharacteristicEncodeError: If encoding fails (when using characteristic class)
 
         """
-        await self._char_io.write(char, data, response=response)  # type: ignore[arg-type, misc]
+        await self._char_io.write(char, data, response=response)  # type: ignore[arg-type, misc]  # Union narrowing handled by overloads; mypy can't infer across delegation
 
     @overload
     async def start_notify(

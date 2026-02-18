@@ -8,10 +8,9 @@ from __future__ import annotations
 
 import inspect
 import pkgutil
+from collections.abc import Callable
 from importlib import import_module
-from typing import Any, Callable, TypeVar
-
-from typing_extensions import TypeGuard
+from typing import Any, TypeGuard, TypeVar
 
 
 class TypeValidator:  # pylint: disable=too-few-public-methods

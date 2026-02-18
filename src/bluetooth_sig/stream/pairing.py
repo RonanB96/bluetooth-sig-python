@@ -9,8 +9,8 @@ sequence numbers, timestamps, or other identifiers.
 
 from __future__ import annotations
 
-from collections.abc import Hashable
-from typing import Any, Callable
+from collections.abc import Callable, Hashable
+from typing import Any
 
 from ..core.translator import BluetoothSIGTranslator
 

@@ -65,7 +65,7 @@ class CodingTemplate(ABC, Generic[T_co]):
         """
 
     @abstractmethod
-    def encode_value(self, value: T_co, *, validate: bool = True) -> bytearray:  # type: ignore[misc]  # Covariant type in parameter is intentional for encode/decode symmetry
+    def encode_value(self, value: T_co, *, validate: bool = True) -> bytearray:  # type: ignore[misc]  # Covariant T_co in parameter is intentional for encode/decode symmetry
         """Encode typed value to raw bytes.
 
         Args:

@@ -356,7 +356,8 @@ class EADDecryptor:
             session_key = key_material.session_key
         else:
             # Static key guaranteed non-None by __init__ validation
-            session_key = self._static_key  # type: ignore[assignment]
+            assert self._static_key is not None, "EADDecryptor requires either a key provider or static key"
+            session_key = self._static_key
 
         # Parse raw data
         if len(raw_ead_data) < EAD_MIN_SIZE:

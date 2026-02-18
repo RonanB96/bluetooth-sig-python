@@ -1,7 +1,7 @@
 # Bluetooth SIG Standards Library
 
 [![Coverage Status](https://img.shields.io/endpoint?url=https://ronanb96.github.io/bluetooth-sig-python/coverage/coverage-badge.json)](https://ronanb96.github.io/bluetooth-sig-python/coverage/)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://img.shields.io/pypi/v/bluetooth-sig.svg)](https://pypi.org/project/bluetooth-sig/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://ronanb96.github.io/bluetooth-sig-python/)
@@ -14,7 +14,7 @@ A pure Python library for Bluetooth SIG standards interpretation, providing comp
 
 - ✅ **Standards-Based**: Official Bluetooth SIG YAML registry with automatic UUID resolution
 - ✅ **Type-Safe**: Characteristic classes provide compile-time type checking; UUID strings return dynamic types
-- ✅ **Modern Python**: msgspec-based design with Python 3.9+ compatibility
+- ✅ **Modern Python**: msgspec-based design with Python 3.10+ compatibility
 - ✅ **Comprehensive**: Support for 200+ GATT characteristics across multiple service categories
 - ✅ **Flexible Validation**: Enable/disable validation per-characteristic for testing or debugging
 - ✅ **Framework Agnostic**: Works with any BLE library (bleak, simplepyble, etc.)

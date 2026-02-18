@@ -7,7 +7,8 @@ including type-safe overloads for class-based and string/enum-based access.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast, overload
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 from ..gatt.characteristics import CharacteristicName
 from ..gatt.characteristics.base import BaseCharacteristic
@@ -176,7 +177,7 @@ class CharacteristicIO:
             char_instance = char()
             resolved_uuid = char_instance.uuid
             # data is typed value T, encode it
-            encoded = char_instance.build_value(data)  # type: ignore[arg-type]
+            encoded = char_instance.build_value(data)  # type: ignore[arg-type]  # T is erased at runtime; overload ensures type safety at call site
             await self._connection_manager.write_gatt_char(resolved_uuid, bytes(encoded), response=response)
             return
 
