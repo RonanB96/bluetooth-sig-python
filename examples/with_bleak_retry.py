@@ -30,7 +30,7 @@ async def robust_device_reading(address: str, backend: str = "bleak-retry", retr
 
     """
     if backend != "bleak-retry":
-        print(f"❌ Only bleak-retry backend is supported in this example. Got: {backend}")
+        print(f"Only bleak-retry backend is supported in this example. Got: {backend}")
         return {}
 
     from examples.connection_managers.bleak_retry import BleakRetryClientManager  # type: ignore
@@ -45,7 +45,7 @@ async def robust_device_reading(address: str, backend: str = "bleak-retry", retr
     await device.connect()
 
     # First discover what characteristics are actually available
-    print("🔍 Discovering available characteristics...")
+    print("Discovering available characteristics...")
     try:
         services = await device.discover_services()
         available_uuids = []
@@ -54,13 +54,13 @@ async def robust_device_reading(address: str, backend: str = "bleak-retry", retr
                 # Convert full UUID to short form for comparison
                 short_uuid = BluetoothUUID(char_uuid).short_form
                 available_uuids.append(short_uuid)
-        print(f"✅ Found {len(available_uuids)} readable characteristics")
+        print(f"Found {len(available_uuids)} readable characteristics")
 
         # Filter target UUIDs to only those available on this device
         target_uuids = [uuid for uuid in target_uuids if uuid.upper() in available_uuids]
-        print(f"📋 Will read {len(target_uuids)} matching characteristics: {target_uuids}")
+        print(f"Will read {len(target_uuids)} matching characteristics: {target_uuids}")
     except Exception as e:
-        print(f"⚠️ Service discovery failed, trying predefined characteristics: {e}")
+        print(f"Service discovery failed, trying predefined characteristics: {e}")
 
     results: dict[str, Any] = {}
     for uuid in target_uuids:
@@ -68,29 +68,15 @@ async def robust_device_reading(address: str, backend: str = "bleak-retry", retr
             parsed = await device.read(uuid)
             if parsed is not None:
                 results[uuid] = parsed
-                print(f"✅ {uuid}: {parsed}")
+                print(f"{uuid}: {parsed}")
             else:
-                print(f"⚠️ {uuid}: Parse failed or no data")
+                print(f"{uuid}: Parse failed or no data")
         except Exception as e:
-            print(f"❌ {uuid}: Read failed - {e}")
+            print(f"{uuid}: Read failed - {e}")
 
     await device.disconnect()
-    print(f"📊 Device results: {results}")
+    print(f"Device results: {results}")
     return results
-
-
-async def robust_service_discovery(address: str) -> dict[str, Any]:
-    """Discover all services and characteristics with robust connection.
-
-    Args:
-        address: BLE device address
-
-    Returns:
-        Dictionary of discovered services and characteristics
-
-    """
-    print(f"🔍 Service discovery with {address} - Feature not yet implemented")
-    return {}
 
 
 async def perform_single_reading(address: str, translator: BluetoothSIGTranslator, target_uuids: list[str]) -> bool:
@@ -104,7 +90,7 @@ async def perform_single_reading(address: str, translator: BluetoothSIGTranslato
         raw_results = await read_characteristics_with_manager(manager, target_uuids)
 
         if raw_results:
-            print(f"📊 Reading at {time.strftime('%H:%M:%S')}:")
+            print(f"Reading at {time.strftime('%H:%M:%S')}:")
             for uuid_short, read_result in raw_results.items():
                 try:
                     result = translator.parse_characteristic(uuid_short, read_result.raw_data)
@@ -114,7 +100,7 @@ async def perform_single_reading(address: str, translator: BluetoothSIGTranslato
             return True
 
     except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"⚠️  Reading failed: {e}")
+        print(f"Reading failed: {e}")
 
     return False
 
@@ -127,8 +113,8 @@ async def continuous_monitoring(address: str, duration: int = 60) -> None:  # py
         duration: Monitoring duration in seconds
 
     """
-    print(f"📊 Starting continuous monitoring of {address} for {duration}s...")
-    print("🔄 Auto-reconnection enabled")
+    print(f"Starting continuous monitoring of {address} for {duration}s...")
+    print("Auto-reconnection enabled")
 
     translator = BluetoothSIGTranslator()
     target_uuids = ["2A19", "2A6E", "2A6F"]  # Battery, Temperature, Humidity
@@ -145,18 +131,7 @@ async def continuous_monitoring(address: str, duration: int = 60) -> None:  # py
             await asyncio.sleep(5)
 
     except KeyboardInterrupt:
-        print(f"🛑 Monitoring stopped by user after {reading_count} readings")
-
-
-async def notification_monitoring(address: str, duration: int = 60) -> None:
-    """Monitor device notifications with robust connection.
-
-    Args:
-        address: BLE device address
-        duration: Monitoring duration in seconds
-
-    """
-    print(f"🔔 Notification monitoring with {address} for {duration}s - Feature not yet implemented")
+        print(f"Monitoring stopped by user after {reading_count} readings")
 
 
 async def main() -> None:
@@ -165,8 +140,6 @@ async def main() -> None:
     parser.add_argument("--address", "-a", help="BLE device address")
     parser.add_argument("--scan", "-s", action="store_true", help="Scan for devices")
     parser.add_argument("--monitor", "-m", action="store_true", help="Continuous monitoring")
-    parser.add_argument("--notifications", "-n", action="store_true", help="Monitor notifications")
-    parser.add_argument("--discover", "-d", action="store_true", help="Service discovery")
     parser.add_argument("--duration", "-t", type=int, default=60, help="Duration for monitoring")
 
     args = parser.parse_args()
@@ -189,10 +162,6 @@ async def main() -> None:
         if args.address:
             if args.monitor:
                 await continuous_monitoring(args.address, args.duration)
-            elif args.notifications:
-                await notification_monitoring(args.address, args.duration)
-            elif args.discover:
-                await robust_service_discovery(args.address)
             else:
                 await robust_device_reading(args.address)
         else:

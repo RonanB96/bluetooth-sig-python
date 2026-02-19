@@ -6,8 +6,6 @@ encoding, lifecycle management, value updates, and fluent configuration.
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 
 from bluetooth_sig.device.peripheral import PeripheralManagerProtocol
@@ -15,7 +13,6 @@ from bluetooth_sig.device.peripheral_device import HostedCharacteristic, Periphe
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 from bluetooth_sig.types.peripheral_types import CharacteristicDefinition, ServiceDefinition
 from bluetooth_sig.types.uuid import BluetoothUUID
-
 
 # ---------------------------------------------------------------------------
 # Mock backend
@@ -433,12 +430,7 @@ class TestFluentConfiguration:
 
     def test_chaining(self) -> None:
         device, backend = _make_device()
-        result = (
-            device
-            .with_tx_power(-5)
-            .with_connectable(True)
-            .with_discoverable(False)
-        )
+        result = device.with_tx_power(-5).with_connectable(True).with_discoverable(False)
         assert result is device
         assert backend.tx_power == -5
         assert backend.is_connectable_config is True

@@ -38,9 +38,9 @@ async def demo_basic_usage(address: str, connection_manager: ClientManagerProtoc
     device = Device(connection_manager, translator)
 
     try:
-        print("🔗 Connecting to device...")
+        print("Connecting to device...")
         await connection_manager.connect()
-        print("✅ Connected, reading characteristics...")
+        print("Connected, reading characteristics...")
 
         common_uuids = ["2A00", "2A19", "2A29", "2A24", "2A25", "2A26", "2A27", "2A28"]
         parsed_results: dict[str, Any] = {}
@@ -50,14 +50,14 @@ async def demo_basic_usage(address: str, connection_manager: ClientManagerProtoc
                 parsed = await device.read(uuid_short)
                 if parsed is not None:
                     parsed_results[uuid_short] = parsed
-                    print(f"  ✅ {uuid_short}: {parsed}")
+                    print(f"  {uuid_short}: {parsed}")
                 else:
                     print(f"  • {uuid_short}: Read failed or parse failed")
             except Exception as e:  # pylint: disable=broad-exception-caught
-                print(f"  ❌ {uuid_short}: Error - {e}")
+                print(f"  {uuid_short}: Error - {e}")
 
         await connection_manager.disconnect()
-        print("✅ Disconnected")
+        print("Disconnected")
 
         # Convert to BluetoothUUID-keyed mapping for the display helper
         normalized: dict[BluetoothUUID, Any] = {}
@@ -71,7 +71,7 @@ async def demo_basic_usage(address: str, connection_manager: ClientManagerProtoc
         display_parsed_results(normalized, title="Basic Usage Results")
 
     except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"❌ Basic usage demo failed: {e}")
+        print(f"Basic usage demo failed: {e}")
         print("This may be due to device being unavailable or connection issues.")
 
 
@@ -91,13 +91,13 @@ async def demo_service_discovery(address: str, connection_manager: ClientManager
     device = Device(connection_manager, translator)
 
     try:
-        print("🔍 Discovering services...")
+        print("Discovering services...")
         print("   Connecting to device...")
         await connection_manager.connect()
-        print("   ✅ Connected, discovering services...")
+        print("   Connected, discovering services...")
         services = await device.discover_services()
 
-        print(f"✅ Found {len(services)} services:")
+        print(f"Found {len(services)} services:")
         total_chars = 0
         parsed_chars = 0
 
@@ -106,9 +106,9 @@ async def demo_service_discovery(address: str, connection_manager: ClientManager
         for service_uuid, service_info in services.items():
             service_name = translator.get_service_info_by_uuid(service_uuid)
             if service_name:
-                print(f"  📋 {service_uuid}: {service_name.name}")
+                print(f"  {service_uuid}: {service_name.name}")
             else:
-                print(f"  📋 {service_uuid}: Unknown service")
+                print(f"  {service_uuid}: Unknown service")
 
             characteristics = service_info.characteristics
             if characteristics:
@@ -122,7 +122,7 @@ async def demo_service_discovery(address: str, connection_manager: ClientManager
                         if parsed is not None:
                             parsed_chars += 1
                             parsed_results[short_uuid] = parsed
-                            print(f"        ✅ {short_uuid}: {parsed}")
+                            print(f"        {short_uuid}: {parsed}")
                         else:
                             char_info_obj = translator.get_characteristic_info_by_uuid(short_uuid)
                             if char_info_obj:
@@ -133,15 +133,15 @@ async def demo_service_discovery(address: str, connection_manager: ClientManager
                         short_uuid = BluetoothUUID(char_uuid).short_form
                         char_info_obj = translator.get_characteristic_info_by_uuid(short_uuid)
                         if char_info_obj:
-                            print(f"        ❌ {short_uuid}: {char_info_obj.name} (error: {e})")
+                            print(f"        {short_uuid}: {char_info_obj.name} (error: {e})")
                         else:
-                            print(f"        ❌ {short_uuid}: Unknown characteristic (error: {e})")
+                            print(f"        {short_uuid}: Unknown characteristic (error: {e})")
 
         await connection_manager.disconnect()
-        print("   ✅ Disconnected")
+        print("   Disconnected")
 
-        print(f"\n📊 Device summary: {device}")
-        print(f"📊 Total characteristics: {total_chars}, Successfully parsed: {parsed_chars}")
+        print(f"\nDevice summary: {device}")
+        print(f"Total characteristics: {total_chars}, Successfully parsed: {parsed_chars}")
 
         normalized: dict[BluetoothUUID, Any] = {}
         for k, v in parsed_results.items():
@@ -153,7 +153,7 @@ async def demo_service_discovery(address: str, connection_manager: ClientManager
         display_parsed_results(normalized, title="Service Discovery Results")
 
     except Exception as e:  # pylint: disable=broad-exception-caught
-        print(f"❌ Service discovery failed: {e}")
+        print(f"Service discovery failed: {e}")
         print("This may be due to device being unavailable or connection issues.")
 
 
@@ -216,27 +216,27 @@ async def demo_library_comparison(address: str, target_uuids: list[str] | None =
 
     comparison_results = LibraryComparisonResult(status="ok", data=None)
 
-    print("🔍 Comparing BLE Libraries (bleak-retry and simpleble only)")
+    print("Comparing BLE Libraries (bleak-retry and simpleble only)")
     print("=" * 60)
 
     # Test Bleak-retry
     if bleak_retry_available:
         try:
-            print("\n🔁 Running Bleak-retry analysis...")
+            print("\nRunning Bleak-retry analysis...")
             if target_uuids is None:
                 target_uuids = ["2A19", "2A00"]  # Default UUIDs for demo
 
             bleak_results = await comprehensive_device_analysis_bleak_retry(address, target_uuids)
             comparison_results.data = bleak_results
         except Exception as e:  # pylint: disable=broad-exception-caught
-            print(f"❌ Bleak-retry analysis failed: {e}")
+            print(f"Bleak-retry analysis failed: {e}")
 
     await asyncio.sleep(1)
 
     # Test SimplePyBLE
     if simplepyble_available and simplepyble_module:
         try:
-            print("\n🔁 Running SimplePyBLE analysis...")
+            print("\nRunning SimplePyBLE analysis...")
             simple_results = await asyncio.to_thread(
                 comprehensive_device_analysis_simpleble,
                 address,
@@ -248,6 +248,6 @@ async def demo_library_comparison(address: str, target_uuids: list[str] | None =
                 # Merge results if both succeeded
                 comparison_results.data.update(simple_results)  # type: ignore[arg-type]
         except Exception as e:  # pylint: disable=broad-exception-caught
-            print(f"❌ SimplePyBLE analysis failed: {e}")
+            print(f"SimplePyBLE analysis failed: {e}")
 
     return comparison_results

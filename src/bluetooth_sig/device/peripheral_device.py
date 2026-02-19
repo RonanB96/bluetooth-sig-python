@@ -56,7 +56,7 @@ class HostedCharacteristic:
         """
         self.definition = definition
         self.characteristic = characteristic
-        self.last_value: Any = initial_value  # noqa: ANN401
+        self.last_value: Any = initial_value
 
 
 class PeripheralDevice:

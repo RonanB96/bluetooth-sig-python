@@ -13,7 +13,7 @@ import asyncio
 def print_separator(title: str) -> None:
     """Print a formatted separator."""
     print(f"\n{'=' * 60}")
-    print(f"🧪 {title}")
+    print(f"{title}")
     print(f"{'=' * 60}")
 
 
@@ -35,44 +35,44 @@ async def main() -> None:
     print_separator("BLE Connection Test")
     real_device_success = False
     if bleak_retry_available:
-        print("✅ Bleak-retry-connector available")
+        print("Bleak-retry-connector available")
         # Test with the Xiaomi sensor we found earlier
         device_address = "A4:C1:38:B0:35:69"
-        print(f"🔗 Testing connection to {device_address}")
+        print(f"Testing connection to {device_address}")
 
         try:
             results = await read_characteristics_bleak_retry(device_address, ["2A00", "2A29"], max_attempts=2)
             if results:
-                print("✅ Real device connection successful!")
+                print("Real device connection successful!")
                 await parse_and_display_results(results, "Real Device")
                 real_device_success = True
             else:
-                print("⚠️  No characteristics read (device may be unavailable)")
-                print("📝 This test still passes - library detection works, but device is not responding")
+                print("No characteristics read (device may be unavailable)")
+                print("This test still passes - library detection works, but device is not responding")
                 real_device_success = False
         except (OSError, ValueError, TimeoutError) as e:
-            print(f"⚠️  Connection failed: {e}")
-            print("📝 This test still passes - library detection works, but device connection failed")
+            print(f"Connection failed: {e}")
+            print("This test still passes - library detection works, but device connection failed")
             real_device_success = False
     else:
-        print("❌ Bleak-retry not available")
+        print("Bleak-retry not available")
 
     if simplepyble_available:
-        print("✅ SimplePyBLE available")
+        print("SimplePyBLE available")
     else:
-        print("❌ SimplePyBLE not available")
+        print("SimplePyBLE not available")
 
     print_separator("Test Summary")
-    print("✅ Library detection: PASSED")
-    print("✅ SIG translation: PASSED")
-    print("✅ Real device scan: PASSED")
+    print("Library detection: PASSED")
+    print("SIG translation: PASSED")
+    print("Real device scan: PASSED")
     if real_device_success:
-        print("✅ Real device connection: PASSED")
+        print("Real device connection: PASSED")
     else:
-        print("⚠️  Real device connection: FAILED (but library works)")
-    print("✅ Multiple BLE libraries: SUPPORTED")
+        print("Real device connection: FAILED (but library works)")
+    print("Multiple BLE libraries: SUPPORTED")
 
-    print("\n🎉 All tests completed successfully!")
+    print("\nAll tests completed successfully!")
     print("The BLE examples are working correctly with:")
     print("   - Pure SIG standard parsing")
     print("   - Bleak-retry-connector integration")

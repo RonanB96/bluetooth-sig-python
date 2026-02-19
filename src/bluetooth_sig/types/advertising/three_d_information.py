@@ -20,9 +20,9 @@ class ThreeDInformationFlags(IntFlag):
     """
 
     ASSOCIATION_NOTIFICATION = 0x01  # Bit 0: send association notification
-    BATTERY_LEVEL_REPORTING = 0x02   # Bit 1: device reports battery level
-    SEND_BATTERY_ON_STARTUP = 0x04   # Bit 2: send battery level on startup
-    FACTORY_TEST_MODE = 0x80         # Bit 7: factory test mode enabled
+    BATTERY_LEVEL_REPORTING = 0x02  # Bit 1: device reports battery level
+    SEND_BATTERY_ON_STARTUP = 0x04  # Bit 2: send battery level on startup
+    FACTORY_TEST_MODE = 0x80  # Bit 7: factory test mode enabled
 
 
 class ThreeDInformationData(msgspec.Struct, frozen=True, kw_only=True):

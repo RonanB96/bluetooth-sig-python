@@ -65,7 +65,7 @@ async def scan_and_connect() -> None:
 
             # Read and parse characteristics
             for service in service_list:
-                print(f"\n📦 Service: {service.uuid}")
+                print(f"\nService: {service.uuid}")
 
                 for char in service.characteristics:
                     if "read" in char.properties:
@@ -76,12 +76,12 @@ async def scan_and_connect() -> None:
                             # Parse with async API - returns value directly
                             try:
                                 result = await translator.parse_characteristic_async(str(char.uuid), bytes(data))
-                                print(f"  ✅ {char.uuid}: {result}")
+                                print(f"  {char.uuid}: {result}")
                             except CharacteristicParseError:
-                                print(f"  ❓ {char.uuid}: <unknown>")
+                                print(f"  {char.uuid}: <unknown>")
 
                         except (BleakError, asyncio.TimeoutError, OSError) as e:
-                            print(f"  ❌ Error reading {char.uuid}: {e}")
+                            print(f"  Error reading {char.uuid}: {e}")
 
     except (BleakError, asyncio.TimeoutError, OSError) as e:
         print(f"Connection error: {e}")

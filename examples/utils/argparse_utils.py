@@ -150,7 +150,7 @@ def validate_and_setup(args: argparse.Namespace) -> CommonArgs:
     """
     # Check if any BLE libraries are available
     if not AVAILABLE_LIBRARIES:
-        print("❌ No BLE libraries available!")
+        print("No BLE libraries available!")
         print("Install example dependencies with: pip install .[examples]")
         print("\nAvailable libraries:")
         show_library_availability()
@@ -164,7 +164,7 @@ def validate_and_setup(args: argparse.Namespace) -> CommonArgs:
 
     # Validate the connection manager is available
     if manager_name not in AVAILABLE_LIBRARIES:
-        print(f"❌ Connection manager '{manager_name}' not available!")
+        print(f"Connection manager '{manager_name}' not available!")
         print("Available managers:")
         for name, info in AVAILABLE_LIBRARIES.items():
             print(f"  - {name}: {info['description']}")

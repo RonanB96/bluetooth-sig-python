@@ -26,9 +26,9 @@ class TDSFlags(IntFlag):
     ROLE_SEEKER = 0x01
     ROLE_PROVIDER = 0x02
     ROLE_SEEKER_AND_PROVIDER = 0x03
-    INCOMPLETE = 0x04        # Bit 2: transport data is incomplete
-    STATE_OFF = 0x00         # Bits 3-4 = 0b00
-    STATE_ON = 0x08          # Bits 3-4 = 0b01
+    INCOMPLETE = 0x04  # Bit 2: transport data is incomplete
+    STATE_OFF = 0x00  # Bits 3-4 = 0b00
+    STATE_ON = 0x08  # Bits 3-4 = 0b01
     STATE_TEMPORARILY_UNAVAILABLE = 0x10  # Bits 3-4 = 0b10
 
 
@@ -110,11 +110,13 @@ class TransportDiscoveryData(msgspec.Struct, frozen=True, kw_only=True):
             transport_data = bytes(data[offset:end])
             offset = end
 
-            blocks.append(TransportBlock(
-                organization_id=org_id,
-                flags=tds_flags,
-                transport_data=transport_data,
-            ))
+            blocks.append(
+                TransportBlock(
+                    organization_id=org_id,
+                    flags=tds_flags,
+                    transport_data=transport_data,
+                )
+            )
 
         return cls(blocks=blocks)
 

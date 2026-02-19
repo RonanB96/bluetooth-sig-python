@@ -94,13 +94,13 @@ async def scan_with_bleak_retry(timeout: float = 10.0) -> list[DeviceInfo]:
 
     Returns a list of :class:`DeviceInfo` instances for example consumers.
     """
-    print(f"🔍 Scanning for BLE devices ({timeout}s)...")
+    print(f"Scanning for BLE devices ({timeout}s)...")
     # Import BleakScanner at runtime to avoid import-time dependency.
     bleak = importlib.import_module("bleak")
     BleakScanner = bleak.BleakScanner
     devices = await BleakScanner.discover(timeout=timeout)
 
-    print(f"\n📡 Found {len(devices)} devices:")
+    print(f"\nFound {len(devices)} devices:")
     normalized: list[DeviceInfo] = []
     for i, device in enumerate(devices, 1):
         name, address, rssi = safe_get_device_info(device)
@@ -151,9 +151,9 @@ async def handle_notifications_bleak_retry(
 
     try:
         await manager.start_notify(characteristic_uuid, _cb)
-        print("   🔔 Notifications enabled")
+        print("   Notifications enabled")
         await asyncio.sleep(duration)
         await manager.stop_notify(characteristic_uuid)
-        print("\n✅ Notification session completed")
+        print("\nNotification session completed")
     finally:
         await manager.disconnect()

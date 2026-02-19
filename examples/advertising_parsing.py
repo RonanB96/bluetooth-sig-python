@@ -311,14 +311,14 @@ def display_advertising_data(
 
     # Print found fields first
     if found_fields:
-        print("📋 FOUND FIELDS:")
+        print("FOUND FIELDS:")
         for field in found_fields:
             print(f"  {field}")
         print()
 
     # Print not found fields if flag enabled
     if show_not_found and not_found_fields:
-        print("❌ NOT FOUND FIELDS:")
+        print("NOT FOUND FIELDS:")
         for field in not_found_fields:
             print(f"  {field}")
         print()
@@ -356,13 +356,13 @@ def display_advertising_data(
             extended_not_found.append("Broadcast Code")
 
         if extended_found:
-            print("🔄 EXTENDED ADVERTISING - FOUND:")
+            print("EXTENDED ADVERTISING - FOUND:")
             for field in extended_found:
                 print(f"  {field}")
             print()
 
         if show_not_found and extended_not_found:
-            print("🔄 EXTENDED ADVERTISING - NOT FOUND:")
+            print("EXTENDED ADVERTISING - NOT FOUND:")
             for field in extended_not_found:
                 print(f"  {field}")
             print()
@@ -463,7 +463,7 @@ async def main(
             results["error"] = "invalid_hex"
             return results
     elif mock:
-        print("📝 USING MOCK LEGACY ADVERTISING DATA FOR DEMONSTRATION - No real BLE hardware required")
+        print("USING MOCK LEGACY ADVERTISING DATA FOR DEMONSTRATION - No real BLE hardware required")
         print()
         print("Mock BLE Device Results with SIG Parsing:")
         print()
@@ -495,7 +495,7 @@ async def main(
         display_advertising_data(parsed_data, translator, show_not_found, show_debug)
         results["used_mock"] = True
     elif extended_mock:
-        print("🔄 USING MOCK EXTENDED ADVERTISING DATA FOR DEMONSTRATION - No real BLE hardware required")
+        print("USING MOCK EXTENDED ADVERTISING DATA FOR DEMONSTRATION - No real BLE hardware required")
         print()
         print("Mock Extended BLE Device Results with SIG Parsing:")
         print()

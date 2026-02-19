@@ -31,7 +31,7 @@ def demonstrate_type_safe_parsing() -> None:
     Use this approach when you know the characteristic type at compile time.
     The IDE infers return types automatically.
     """
-    print("🔵 Type-Safe Parsing (Recommended for Known Devices)")
+    print("Type-Safe Parsing (Recommended for Known Devices)")
     print("=" * 55)
     print("Use characteristic classes directly for full IDE type inference.\n")
 
@@ -45,28 +45,28 @@ def demonstrate_type_safe_parsing() -> None:
     # Simple characteristics: return primitive types
     battery = BatteryLevelCharacteristic()
     level = battery.parse_value(bytearray([85]))  # IDE knows: int
-    print(f"📊 Battery Level: {level}% (type: {type(level).__name__})")
+    print(f"Battery Level: {level}% (type: {type(level).__name__})")
 
     temp = TemperatureCharacteristic()
     temp_value = temp.parse_value(bytearray([0x64, 0x09]))  # IDE knows: float
-    print(f"📊 Temperature: {temp_value}°C (type: {type(temp_value).__name__})")
+    print(f"Temperature: {temp_value}°C (type: {type(temp_value).__name__})")
 
     humidity = HumidityCharacteristic()
     humidity_value = humidity.parse_value(bytearray([0x3A, 0x13]))  # IDE knows: float
-    print(f"📊 Humidity: {humidity_value}% (type: {type(humidity_value).__name__})")
+    print(f"Humidity: {humidity_value}% (type: {type(humidity_value).__name__})")
 
     # Complex characteristics: return structured dataclasses
     heart_rate = HeartRateMeasurementCharacteristic()
     hr_data = heart_rate.parse_value(bytearray([0x00, 72]))  # IDE knows: HeartRateData
-    print(f"📊 Heart Rate: {hr_data.heart_rate} bpm (type: {type(hr_data).__name__})")
+    print(f"Heart Rate: {hr_data.heart_rate} bpm (type: {type(hr_data).__name__})")
     print(f"   Sensor contact: {hr_data.sensor_contact}")
 
     # Encoding: build_value converts back to bytes
     encoded = battery.build_value(85)
-    print(f"\n✅ Encode 85% battery → {encoded.hex()}")
+    print(f"\nEncode 85% battery → {encoded.hex()}")
 
     encoded_hr = heart_rate.build_value(hr_data)
-    print(f"✅ Encode heart rate data → {encoded_hr.hex()}")
+    print(f"Encode heart rate data → {encoded_hr.hex()}")
     print()
 
 
@@ -76,7 +76,7 @@ def demonstrate_dynamic_parsing() -> None:
     Use this approach when scanning unknown devices or building generic BLE explorers.
     Return type is Any since the characteristic type is determined at runtime.
     """
-    print("🔵 Dynamic Parsing (For Scanning Unknown Devices)")
+    print("Dynamic Parsing (For Scanning Unknown Devices)")
     print("=" * 55)
     print("Use Translator with UUID strings when characteristic type is unknown.\n")
 
@@ -126,7 +126,7 @@ def demonstrate_dynamic_parsing() -> None:
 
     results = {}
     for test_case in test_cases:
-        print(f"📊 {test_case['name']} ({test_case['uuid']})")
+        print(f"{test_case['name']} ({test_case['uuid']})")
         print(f"   Description: {test_case['description']}")
         print(f"   Raw data: {test_case['data'].hex().upper()}")
 
@@ -135,12 +135,12 @@ def demonstrate_dynamic_parsing() -> None:
             result = translator.parse_characteristic(test_case["uuid"], test_case["data"])
             info = translator.get_characteristic_info_by_uuid(test_case["uuid"])
             unit_str = f" {info.unit}" if info and info.unit else ""
-            print(f"   ✅ Parsed value: {result}{unit_str}")
+            print(f"   Parsed value: {result}{unit_str}")
             if info and info.value_type:
-                print(f"   📋 Value type: {info.value_type}")
+                print(f"   Value type: {info.value_type}")
             results[test_case["name"]] = result
         except Exception as e:
-            print(f"   ❌ Parse failed: {e}")
+            print(f"   Parse failed: {e}")
             results[test_case["name"]] = None
 
         print()
@@ -148,7 +148,7 @@ def demonstrate_dynamic_parsing() -> None:
 
 def demonstrate_uuid_resolution() -> None:
     """Demonstrate UUID resolution and characteristic information lookup."""
-    print("\n🔍 UUID Resolution and Characteristic Information")
+    print("\nUUID Resolution and Characteristic Information")
     print("=" * 50)
 
     translator = BluetoothSIGTranslator()
@@ -165,22 +165,22 @@ def demonstrate_uuid_resolution() -> None:
     print("Resolving various UUID formats:\n")
 
     for uuid in test_uuids:
-        print(f"🔗 UUID: {uuid}")
+        print(f"UUID: {uuid}")
 
         # Get characteristic information
         char_info = translator.get_characteristic_info_by_uuid(uuid)
         if char_info:
-            print(f"   ✅ Name: {char_info.name}")
-            print(f"   🏷️  Type: {char_info.value_type}")
-            print(f"   📏 Unit: {char_info.unit if char_info.unit else 'N/A'}")
+            print(f"   Name: {char_info.name}")
+            print(f"   Type: {char_info.value_type}")
+            print(f"   Unit: {char_info.unit if char_info.unit else 'N/A'}")
         else:
-            print("   ℹ️  Not found in characteristic registry")
+            print("   Not found in characteristic registry")
         print()
 
 
 def demonstrate_batch_parsing() -> None:
     """Demonstrate parsing multiple characteristics at once."""
-    print("\n📦 Batch Parsing Multiple Characteristics")
+    print("\nBatch Parsing Multiple Characteristics")
     print("=" * 50)
 
     translator = BluetoothSIGTranslator()
@@ -207,12 +207,12 @@ def demonstrate_batch_parsing() -> None:
         info = translator.get_characteristic_info_by_uuid(uuid)
         char_name = info.name if info else uuid
         unit_str = f" {info.unit}" if info and info.unit else ""
-        print(f"📊 {char_name}: {result}{unit_str}")
+        print(f"{char_name}: {result}{unit_str}")
 
 
 def demonstrate_integration_pattern() -> None:
     """Show the recommended integration patterns for BLE libraries."""
-    print("\n🔧 Integration Patterns for BLE Libraries")
+    print("\nIntegration Patterns for BLE Libraries")
     print("=" * 55)
     print(
         """
@@ -241,7 +241,7 @@ Both patterns work with bleak, simplepyble, or any BLE library.
 
 
 if __name__ == "__main__":
-    print("🚀 Bluetooth SIG Pure Standards Parsing Demo")
+    print("Bluetooth SIG Pure Standards Parsing Demo")
     print("Demonstrates type-safe and dynamic parsing approaches\n")
 
     try:
@@ -252,11 +252,11 @@ if __name__ == "__main__":
         demonstrate_batch_parsing()
         demonstrate_integration_pattern()
 
-        print("\n✅ Demo completed successfully!")
+        print("\nDemo completed successfully!")
         print("Use characteristic classes for known devices, Translator for scanning.")
 
     except Exception as e:  # pylint: disable=broad-except
-        print(f"\n❌ Demo failed: {e}")
+        print(f"\nDemo failed: {e}")
         import traceback
 
         traceback.print_exc()

@@ -161,7 +161,7 @@ def pytest_xdist_auto_num_workers(config: pytest.Config) -> int:
 
     # Log worker calculation for debugging
     print(
-        f"\n🔧 Dynamic worker calculation: {file_count} files, {cpu_count} CPUs → {workers} workers\n",
+        f"\nDynamic worker calculation: {file_count} files, {cpu_count} CPUs → {workers} workers\n",
         flush=True,
     )
 
@@ -233,7 +233,7 @@ def docs_server_port(worker_id: str) -> int:
         # Fallback for unexpected worker_id format
         port = find_available_port()
 
-    print(f"🔌 Worker {worker_id} assigned port {port}", flush=True)
+    print(f"Worker {worker_id} assigned port {port}", flush=True)
     return port
 
 
@@ -279,7 +279,7 @@ def docs_server(docs_server_port: int, worker_id: str) -> Generator[str, None, N
         allow_reuse_address = True
         daemon_threads = True  # Allow clean shutdown
 
-    print(f"🚀 Worker {worker_id} starting server on port {docs_server_port}", flush=True)
+    print(f"Worker {worker_id} starting server on port {docs_server_port}", flush=True)
 
     # Start server in a thread
     with ThreadedDocsServer(("127.0.0.1", docs_server_port), Handler) as server:
@@ -295,7 +295,7 @@ def docs_server(docs_server_port: int, worker_id: str) -> Generator[str, None, N
                 import urllib.request
 
                 with urllib.request.urlopen(f"{base_url}/index.html", timeout=1):
-                    print(f"✅ Worker {worker_id} server ready on port {docs_server_port}", flush=True)
+                    print(f"Worker {worker_id} server ready on port {docs_server_port}", flush=True)
                     break
             except Exception:
                 time.sleep(SERVER_HEALTH_CHECK_INTERVAL_SECONDS)
@@ -307,7 +307,7 @@ def docs_server(docs_server_port: int, worker_id: str) -> Generator[str, None, N
             yield base_url
         finally:
             # Ensure server shuts down even on KeyboardInterrupt (Ctrl+C)
-            print(f"🛑 Worker {worker_id} shutting down server on port {docs_server_port}", flush=True)
+            print(f"Worker {worker_id} shutting down server on port {docs_server_port}", flush=True)
             server.shutdown()
             server.server_close()
 
@@ -388,7 +388,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 
                 # Report missing files but continue with found files
                 if missing_files:
-                    print(f"⚠️  Skipping {len(missing_files)} non-existent files:")
+                    print(f"Skipping {len(missing_files)} non-existent files:")
                     for missing in missing_files[:5]:
                         print(f"     - {missing}")
                     if len(missing_files) > 5:

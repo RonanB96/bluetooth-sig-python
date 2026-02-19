@@ -40,21 +40,35 @@ class TestChannelMapUpdateDecode:
         """Standard decode scenarios for channel map update indication."""
         return [
             ADTypeTestData(
-                input_data=bytearray([
-                    0xFF, 0xFF, 0xFF, 0xFF, 0x1F,  # all 37 channels used
-                    0x64, 0x00,                      # instant = 100
-                ]),
+                input_data=bytearray(
+                    [
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0xFF,
+                        0x1F,  # all 37 channels used
+                        0x64,
+                        0x00,  # instant = 100
+                    ]
+                ),
                 expected_value=ChannelMapUpdateIndication(
-                    channel_map=b"\xFF\xFF\xFF\xFF\x1F",
+                    channel_map=b"\xff\xff\xff\xff\x1f",
                     instant=100,
                 ),
                 description="All channels used, instant = 100",
             ),
             ADTypeTestData(
-                input_data=bytearray([
-                    0x00, 0x00, 0x00, 0x00, 0x00,  # no channels used
-                    0x00, 0x00,                      # instant = 0
-                ]),
+                input_data=bytearray(
+                    [
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,  # no channels used
+                        0x00,
+                        0x00,  # instant = 0
+                    ]
+                ),
                 expected_value=ChannelMapUpdateIndication(
                     channel_map=b"\x00\x00\x00\x00\x00",
                     instant=0,
@@ -62,10 +76,17 @@ class TestChannelMapUpdateDecode:
                 description="No channels used, instant = 0",
             ),
             ADTypeTestData(
-                input_data=bytearray([
-                    0x01, 0x00, 0x00, 0x00, 0x00,  # only channel 0 used
-                    0xFF, 0xFF,                      # instant = 65535 (max uint16)
-                ]),
+                input_data=bytearray(
+                    [
+                        0x01,
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,  # only channel 0 used
+                        0xFF,
+                        0xFF,  # instant = 65535 (max uint16)
+                    ]
+                ),
                 expected_value=ChannelMapUpdateIndication(
                     channel_map=b"\x01\x00\x00\x00\x00",
                     instant=65535,
@@ -82,15 +103,23 @@ class TestChannelMapUpdateDecode:
 
     def test_decode_extra_bytes_ignored(self) -> None:
         """Trailing bytes beyond the 7-byte payload are ignored."""
-        data = bytearray([
-            0xFF, 0xFF, 0xFF, 0xFF, 0x1F,
-            0x0A, 0x00,
-            0xDE, 0xAD,  # extra
-        ])
+        data = bytearray(
+            [
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0x1F,
+                0x0A,
+                0x00,
+                0xDE,
+                0xAD,  # extra
+            ]
+        )
         result = ChannelMapUpdateIndication.decode(data)
 
         assert result.instant == 10
-        assert result.channel_map == b"\xFF\xFF\xFF\xFF\x1F"
+        assert result.channel_map == b"\xff\xff\xff\xff\x1f"
 
 
 class TestChannelMapUpdateErrors:
@@ -121,7 +150,7 @@ class TestIsChannelUsed:
     def all_channels_indication(self) -> ChannelMapUpdateIndication:
         """Indication with all 37 data channels used."""
         return ChannelMapUpdateIndication(
-            channel_map=b"\xFF\xFF\xFF\xFF\x1F",
+            channel_map=b"\xff\xff\xff\xff\x1f",
             instant=0,
         )
 
@@ -161,19 +190,19 @@ class TestIsChannelUsed:
 
     def test_channel_negative_raises(self) -> None:
         """Negative channel number raises ValueError."""
-        indication = ChannelMapUpdateIndication(channel_map=b"\xFF\xFF\xFF\xFF\x1F", instant=0)
+        indication = ChannelMapUpdateIndication(channel_map=b"\xff\xff\xff\xff\x1f", instant=0)
         with pytest.raises(ValueError, match="Channel must be 0-36"):
             indication.is_channel_used(-1)
 
     def test_channel_37_raises(self) -> None:
         """Channel 37 (first advertising channel) is out of data channel range."""
-        indication = ChannelMapUpdateIndication(channel_map=b"\xFF\xFF\xFF\xFF\x1F", instant=0)
+        indication = ChannelMapUpdateIndication(channel_map=b"\xff\xff\xff\xff\x1f", instant=0)
         with pytest.raises(ValueError, match="Channel must be 0-36"):
             indication.is_channel_used(37)
 
     def test_channel_255_raises(self) -> None:
         """Large channel number raises ValueError."""
-        indication = ChannelMapUpdateIndication(channel_map=b"\xFF\xFF\xFF\xFF\x1F", instant=0)
+        indication = ChannelMapUpdateIndication(channel_map=b"\xff\xff\xff\xff\x1f", instant=0)
         with pytest.raises(ValueError, match="Channel must be 0-36"):
             indication.is_channel_used(255)
 

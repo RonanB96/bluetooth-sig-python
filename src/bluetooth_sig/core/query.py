@@ -156,7 +156,7 @@ class CharacteristicQueryEngine:
             if uuid_info:
                 return ServiceInfo(uuid=uuid_info.uuid, name=uuid_info.name, characteristics=[])
         except Exception:  # pylint: disable=broad-exception-caught
-            pass
+            logger.warning("Failed to look up service info for name=%s", name_str, exc_info=True)
 
         return None
 

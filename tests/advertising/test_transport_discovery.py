@@ -40,53 +40,76 @@ class TestTransportDiscoveryDecode:
         """Standard decode scenarios for transport discovery blocks."""
         return [
             ADTypeTestData(
-                input_data=bytearray([
-                    0x01,       # org_id = 1 (Bluetooth SIG)
-                    0x02,       # flags = ROLE_PROVIDER
-                    0x03,       # transport_data_length = 3
-                    0xAA, 0xBB, 0xCC,  # transport_data
-                ]),
-                expected_value=TransportDiscoveryData(blocks=[
-                    TransportBlock(
-                        organization_id=1,
-                        flags=TDSFlags.ROLE_PROVIDER,
-                        transport_data=b"\xAA\xBB\xCC",
-                    ),
-                ]),
+                input_data=bytearray(
+                    [
+                        0x01,  # org_id = 1 (Bluetooth SIG)
+                        0x02,  # flags = ROLE_PROVIDER
+                        0x03,  # transport_data_length = 3
+                        0xAA,
+                        0xBB,
+                        0xCC,  # transport_data
+                    ]
+                ),
+                expected_value=TransportDiscoveryData(
+                    blocks=[
+                        TransportBlock(
+                            organization_id=1,
+                            flags=TDSFlags.ROLE_PROVIDER,
+                            transport_data=b"\xaa\xbb\xcc",
+                        ),
+                    ]
+                ),
                 description="Single block, provider role, 3 bytes payload",
             ),
             ADTypeTestData(
-                input_data=bytearray([
-                    # Block 1
-                    0x01, 0x03, 0x01, 0xFF,
-                    # Block 2
-                    0x02, 0x08, 0x02, 0x11, 0x22,
-                ]),
-                expected_value=TransportDiscoveryData(blocks=[
-                    TransportBlock(
-                        organization_id=1,
-                        flags=TDSFlags.ROLE_SEEKER_AND_PROVIDER,
-                        transport_data=b"\xFF",
-                    ),
-                    TransportBlock(
-                        organization_id=2,
-                        flags=TDSFlags.STATE_ON,
-                        transport_data=b"\x11\x22",
-                    ),
-                ]),
+                input_data=bytearray(
+                    [
+                        # Block 1
+                        0x01,
+                        0x03,
+                        0x01,
+                        0xFF,
+                        # Block 2
+                        0x02,
+                        0x08,
+                        0x02,
+                        0x11,
+                        0x22,
+                    ]
+                ),
+                expected_value=TransportDiscoveryData(
+                    blocks=[
+                        TransportBlock(
+                            organization_id=1,
+                            flags=TDSFlags.ROLE_SEEKER_AND_PROVIDER,
+                            transport_data=b"\xff",
+                        ),
+                        TransportBlock(
+                            organization_id=2,
+                            flags=TDSFlags.STATE_ON,
+                            transport_data=b"\x11\x22",
+                        ),
+                    ]
+                ),
                 description="Two blocks with different roles and states",
             ),
             ADTypeTestData(
-                input_data=bytearray([
-                    0x01, 0x00, 0x00,   # org=1, flags=0, data_length=0
-                ]),
-                expected_value=TransportDiscoveryData(blocks=[
-                    TransportBlock(
-                        organization_id=1,
-                        flags=TDSFlags(0),
-                        transport_data=b"",
-                    ),
-                ]),
+                input_data=bytearray(
+                    [
+                        0x01,
+                        0x00,
+                        0x00,  # org=1, flags=0, data_length=0
+                    ]
+                ),
+                expected_value=TransportDiscoveryData(
+                    blocks=[
+                        TransportBlock(
+                            organization_id=1,
+                            flags=TDSFlags(0),
+                            transport_data=b"",
+                        ),
+                    ]
+                ),
                 description="Single block with zero-length transport data",
             ),
         ]
@@ -104,10 +127,15 @@ class TestTransportDiscoveryDecode:
 
     def test_decode_incomplete_trailing_header_skipped(self) -> None:
         """Fewer than 3 trailing bytes after a valid block are silently ignored."""
-        data = bytearray([
-            0x01, 0x02, 0x00,   # valid block (0-length payload)
-            0xFF, 0xFE,          # 2 trailing bytes — not enough for a header
-        ])
+        data = bytearray(
+            [
+                0x01,
+                0x02,
+                0x00,  # valid block (0-length payload)
+                0xFF,
+                0xFE,  # 2 trailing bytes — not enough for a header
+            ]
+        )
         result = TransportDiscoveryData.decode(data)
 
         assert len(result.blocks) == 1
@@ -115,14 +143,19 @@ class TestTransportDiscoveryDecode:
 
     def test_decode_truncated_transport_data_clamped(self) -> None:
         """Transport data length exceeds remaining bytes — clamp to available."""
-        data = bytearray([
-            0x01, 0x00, 0x05,   # header says 5 bytes of transport data
-            0xAA, 0xBB,          # only 2 available
-        ])
+        data = bytearray(
+            [
+                0x01,
+                0x00,
+                0x05,  # header says 5 bytes of transport data
+                0xAA,
+                0xBB,  # only 2 available
+            ]
+        )
         result = TransportDiscoveryData.decode(data)
 
         assert len(result.blocks) == 1
-        assert result.blocks[0].transport_data == b"\xAA\xBB"
+        assert result.blocks[0].transport_data == b"\xaa\xbb"
 
 
 class TestTransportBlockProperties:

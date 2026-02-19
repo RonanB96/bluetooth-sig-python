@@ -85,8 +85,7 @@ class TestThreeDInformationDecode:
         result = ThreeDInformationData.decode(data)
 
         expected_flags = (
-            ThreeDInformationFlags.ASSOCIATION_NOTIFICATION
-            | ThreeDInformationFlags.BATTERY_LEVEL_REPORTING
+            ThreeDInformationFlags.ASSOCIATION_NOTIFICATION | ThreeDInformationFlags.BATTERY_LEVEL_REPORTING
         )
         assert result.flags == expected_flags
         assert result.path_loss_threshold == 20

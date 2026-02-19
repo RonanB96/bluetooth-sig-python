@@ -50,7 +50,7 @@ async def read_characteristics_with_manager(
 
     try:
         await connection_manager.connect()
-        print("✅ Connected, reading characteristics...")
+        print("Connected, reading characteristics...")
 
         # If no UUIDs were specified, discover services and pick readable
         # characteristics. The exact shape of ``get_services()`` can vary
@@ -95,7 +95,7 @@ async def read_characteristics_with_manager(
                 print(f"  {uuid_key}: {exc}")
 
         await connection_manager.disconnect()
-        print("✅ Disconnected")
+        print("Disconnected")
 
     except Exception as exc:  # pylint: disable=broad-exception-caught
         print(f"Connection failed: {exc}")

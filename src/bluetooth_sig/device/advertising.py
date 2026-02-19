@@ -296,9 +296,8 @@ class DeviceAdvertising:  # pylint: disable=too-many-instance-attributes
                     if interp.supports(base_advertising_data):
                         interpreter_name = name
                         break
-        except (AdvertisingParseError, EncryptionRequiredError, DecryptionFailedError):
-            # No data available on error
-            pass
+        except (AdvertisingParseError, EncryptionRequiredError, DecryptionFailedError) as exc:
+            logger.warning("Advertising parse/decrypt failed for process_advertisement: %s", exc)
 
         # Create enriched AdvertisementData with interpretation
         processed_advertisement = AdvertisementData(
@@ -370,9 +369,8 @@ class DeviceAdvertising:  # pylint: disable=too-many-instance-attributes
                     if interp.supports(base_advertising_data):
                         interpreter_name = name
                         break
-        except (AdvertisingParseError, EncryptionRequiredError, DecryptionFailedError):
-            # No data available on error
-            pass
+        except (AdvertisingParseError, EncryptionRequiredError, DecryptionFailedError) as exc:
+            logger.warning("Advertising parse/decrypt failed for parse_raw_pdu: %s", exc)
 
         # Create AdvertisementData with interpretation
         advertisement = AdvertisementData(

@@ -90,7 +90,7 @@ class TestAdvertisingParsing:
         await self._run_main_with_args(mock=True)
 
         captured = capsys.readouterr()
-        assert "📝 USING MOCK LEGACY ADVERTISING DATA FOR DEMONSTRATION" in captured.out
+        assert "USING MOCK LEGACY ADVERTISING DATA FOR DEMONSTRATION" in captured.out
         assert "Mock BLE Device Results with SIG Parsing:" in captured.out
         assert "Local Name: Test Device" in captured.out
         assert "Service UUIDs:" in captured.out
@@ -365,17 +365,6 @@ class TestCanonicalShapes:
                 # Should handle connection errors gracefully
                 with pytest.raises(ConnectionError):  # Connection failure should propagate
                     await robust_device_reading("00:11:22:33:44:55", retries=1)
-
-    @pytest.mark.asyncio
-    async def test_robust_service_discovery_canonical_shape(self) -> None:
-        """Test that robust_service_discovery returns dict of parsed values."""
-        from examples.with_bleak_retry import robust_service_discovery
-
-        # Currently returns empty dict, but should maintain canonical shape
-        result = await robust_service_discovery("00:11:22:33:44:55")
-
-        assert isinstance(result, dict)
-        # Values are now parsed values directly (not CharacteristicData wrappers)
 
     def test_canonical_shape_imports(self) -> None:
         """Test that canonical parse exception types are properly imported."""

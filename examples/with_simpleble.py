@@ -55,14 +55,14 @@ def scan_for_devices_simpleble(timeout: float = 10.0) -> list[DeviceInfo]:
     """
     from .utils.simpleble_integration import scan_devices_simpleble
 
-    print(f"🔍 Scanning for BLE devices ({timeout}s)...")
+    print(f"Scanning for BLE devices ({timeout}s)...")
     devices = scan_devices_simpleble(simplepyble, timeout)
 
     if not devices:
-        print("❌ No BLE adapters found or scan failed")
+        print("No BLE adapters found or scan failed")
         return []
 
-    print(f"\n📡 Found {len(devices)} devices:")
+    print(f"\nFound {len(devices)} devices:")
     for index, device in enumerate(devices, 1):
         name = device.name or "Unknown"
         address = device.address
@@ -82,7 +82,7 @@ def read_and_parse_with_simpleble(
 
     if target_uuids is None:
         # Use comprehensive device analysis for real device discovery
-        print("🔍 Using comprehensive device analysis...")
+        print("Using comprehensive device analysis...")
         return comprehensive_device_analysis_simpleble(address, simplepyble)
 
     async def _collect() -> dict[str, ReadResult]:
@@ -94,7 +94,7 @@ def read_and_parse_with_simpleble(
     raw_results: dict[str, ReadResult] = asyncio.run(_collect())
     parsed_results: dict[str, ReadResult] = parse_results(raw_results)
 
-    print(f"\n✅ Successfully read {len(parsed_results)} characteristics")
+    print(f"\nSuccessfully read {len(parsed_results)} characteristics")
     return parsed_results
 
 

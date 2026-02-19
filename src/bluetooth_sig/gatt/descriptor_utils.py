@@ -7,7 +7,7 @@ and are mirrored as methods in BaseCharacteristic for convenience.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from ..types import DescriptorData
 from .context import CharacteristicContext
@@ -86,7 +86,7 @@ def get_presentation_format_from_context(
     """
     descriptor_data = get_descriptor_from_context(ctx, CharacteristicPresentationFormatDescriptor)
     if descriptor_data and descriptor_data.value:
-        return descriptor_data.value  # type: ignore[no-any-return]  # Generic BaseDescriptor.value is Any; caller knows concrete type
+        return cast("CharacteristicPresentationFormatData", descriptor_data.value)
     return None
 
 
@@ -101,7 +101,7 @@ def get_user_description_from_context(ctx: CharacteristicContext | None = None) 
     """
     descriptor_data = get_descriptor_from_context(ctx, CharacteristicUserDescriptionDescriptor)
     if descriptor_data and descriptor_data.value:
-        return descriptor_data.value.description  # type: ignore[no-any-return]
+        return cast("str", descriptor_data.value.description)
     return None
 
 

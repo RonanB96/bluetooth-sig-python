@@ -25,6 +25,7 @@ from bluetooth_sig.types.advertising.ad_structures import (
     ConnectionIntervalRange,
     ExtendedAdvertisingData,
 )
+from bluetooth_sig.types.advertising.channel_map_update import ChannelMapUpdateIndication
 from bluetooth_sig.types.advertising.extended import (
     AdvertisingDataInfo,
     AuxiliaryPointer,
@@ -33,12 +34,9 @@ from bluetooth_sig.types.advertising.extended import (
     PHYType,
     SyncInfo,
 )
-from bluetooth_sig.types.advertising.channel_map_update import ChannelMapUpdateIndication
 from bluetooth_sig.types.advertising.features import LEFeatures
 from bluetooth_sig.types.advertising.flags import BLEAdvertisingFlags
 from bluetooth_sig.types.advertising.indoor_positioning import IndoorPositioningData
-from bluetooth_sig.types.advertising.three_d_information import ThreeDInformationData
-from bluetooth_sig.types.advertising.transport_discovery import TransportDiscoveryData
 from bluetooth_sig.types.advertising.pdu import (
     BLEAdvertisingPDU,
     BLEExtendedHeader,
@@ -48,6 +46,8 @@ from bluetooth_sig.types.advertising.pdu import (
     PDUType,
 )
 from bluetooth_sig.types.advertising.result import AdvertisingData
+from bluetooth_sig.types.advertising.three_d_information import ThreeDInformationData
+from bluetooth_sig.types.advertising.transport_discovery import TransportDiscoveryData
 from bluetooth_sig.types.appearance import AppearanceData
 from bluetooth_sig.types.mesh import (
     MeshBeaconType,

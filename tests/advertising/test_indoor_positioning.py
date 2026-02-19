@@ -48,12 +48,20 @@ class TestIndoorPositioningDecode:
                 description="Config-only, no optional fields (WGS84 mode)",
             ),
             ADTypeTestData(
-                input_data=bytearray([
-                    0x06,                            # LATITUDE_PRESENT | LONGITUDE_PRESENT
-                    0x40, 0x42, 0x0F, 0x00,          # latitude  = 1_000_000 (little-endian)
-                    0x80, 0x84, 0x1E, 0x00,          # longitude = 2_000_000
-                    0xAA,                             # uncertainty
-                ]),
+                input_data=bytearray(
+                    [
+                        0x06,  # LATITUDE_PRESENT | LONGITUDE_PRESENT
+                        0x40,
+                        0x42,
+                        0x0F,
+                        0x00,  # latitude  = 1_000_000 (little-endian)
+                        0x80,
+                        0x84,
+                        0x1E,
+                        0x00,  # longitude = 2_000_000
+                        0xAA,  # uncertainty
+                    ]
+                ),
                 expected_value=IndoorPositioningData(
                     config=IndoorPositioningConfig.LATITUDE_PRESENT | IndoorPositioningConfig.LONGITUDE_PRESENT,
                     is_local_coordinates=False,
@@ -64,12 +72,16 @@ class TestIndoorPositioningDecode:
                 description="WGS84 lat+lon with uncertainty",
             ),
             ADTypeTestData(
-                input_data=bytearray([
-                    0x19,                   # COORDINATE_SYSTEM_LOCAL | LOCAL_NORTH_PRESENT | LOCAL_EAST_PRESENT
-                    0xE8, 0x03,             # local_north = 1000 (0.01 m units)
-                    0xD0, 0x07,             # local_east  = 2000
-                    0x55,                   # uncertainty
-                ]),
+                input_data=bytearray(
+                    [
+                        0x19,  # COORDINATE_SYSTEM_LOCAL | LOCAL_NORTH_PRESENT | LOCAL_EAST_PRESENT
+                        0xE8,
+                        0x03,  # local_north = 1000 (0.01 m units)
+                        0xD0,
+                        0x07,  # local_east  = 2000
+                        0x55,  # uncertainty
+                    ]
+                ),
                 expected_value=IndoorPositioningData(
                     config=(
                         IndoorPositioningConfig.COORDINATE_SYSTEM_LOCAL
@@ -84,15 +96,24 @@ class TestIndoorPositioningDecode:
                 description="Local coordinate system with north+east and uncertainty",
             ),
             ADTypeTestData(
-                input_data=bytearray([
-                    0xE6,                           # LAT | LON | TX_POWER | FLOOR | ALTITUDE (WGS84)
-                    0x60, 0x79, 0xFE, 0xFF,         # latitude  = -100_000 (signed)
-                    0xC0, 0xF2, 0xFC, 0xFF,         # longitude = -200_000 (signed)
-                    0xEC,                            # tx_power  = -20 dBm (signed)
-                    0x14,                            # floor_number = 20 (offset -20 → floor 0)
-                    0x10, 0x27,                      # altitude = 10000 (0.01 m units)
-                    0x42,                            # uncertainty
-                ]),
+                input_data=bytearray(
+                    [
+                        0xE6,  # LAT | LON | TX_POWER | FLOOR | ALTITUDE (WGS84)
+                        0x60,
+                        0x79,
+                        0xFE,
+                        0xFF,  # latitude  = -100_000 (signed)
+                        0xC0,
+                        0xF2,
+                        0xFC,
+                        0xFF,  # longitude = -200_000 (signed)
+                        0xEC,  # tx_power  = -20 dBm (signed)
+                        0x14,  # floor_number = 20 (offset -20 → floor 0)
+                        0x10,
+                        0x27,  # altitude = 10000 (0.01 m units)
+                        0x42,  # uncertainty
+                    ]
+                ),
                 expected_value=IndoorPositioningData(
                     config=IndoorPositioningConfig(0xE6),
                     is_local_coordinates=False,
@@ -115,11 +136,16 @@ class TestIndoorPositioningDecode:
 
     def test_decode_wgs84_latitude_only(self) -> None:
         """Decode WGS84 payload with only latitude present (no longitude)."""
-        data = bytearray([
-            0x02,                       # LATITUDE_PRESENT only
-            0x00, 0xE1, 0xF5, 0x05,    # latitude = 100_000_000
-            0x80,                        # uncertainty
-        ])
+        data = bytearray(
+            [
+                0x02,  # LATITUDE_PRESENT only
+                0x00,
+                0xE1,
+                0xF5,
+                0x05,  # latitude = 100_000_000
+                0x80,  # uncertainty
+            ]
+        )
         result = IndoorPositioningData.decode(data)
 
         assert result.is_local_coordinates is False
@@ -129,11 +155,14 @@ class TestIndoorPositioningDecode:
 
     def test_decode_local_north_only(self) -> None:
         """Decode local coordinate payload with only north present."""
-        data = bytearray([
-            0x09,               # COORDINATE_SYSTEM_LOCAL | LOCAL_NORTH_PRESENT
-            0x01, 0x00,         # local_north = 1
-            0x00,               # uncertainty
-        ])
+        data = bytearray(
+            [
+                0x09,  # COORDINATE_SYSTEM_LOCAL | LOCAL_NORTH_PRESENT
+                0x01,
+                0x00,  # local_north = 1
+                0x00,  # uncertainty
+            ]
+        )
         result = IndoorPositioningData.decode(data)
 
         assert result.is_local_coordinates is True
@@ -186,10 +215,15 @@ class TestIndoorPositioningDecode:
         Latitude present → uncertainty expected, but payload is exactly
         4 bytes for the coordinate with no trailing uncertainty byte.
         """
-        data = bytearray([
-            0x02,                       # LATITUDE_PRESENT
-            0x40, 0x42, 0x0F, 0x00,    # latitude = 1_000_000
-        ])
+        data = bytearray(
+            [
+                0x02,  # LATITUDE_PRESENT
+                0x40,
+                0x42,
+                0x0F,
+                0x00,  # latitude = 1_000_000
+            ]
+        )
         result = IndoorPositioningData.decode(data)
 
         assert result.latitude == 1_000_000
@@ -212,11 +246,16 @@ class TestIndoorPositioningErrors:
 
     def test_decode_truncated_longitude_raises(self) -> None:
         """Longitude flag set but no bytes follow latitude."""
-        data = bytearray([
-            0x06,                       # LAT + LON present
-            0x40, 0x42, 0x0F, 0x00,    # latitude OK
-            0x01,                        # only 1 byte for longitude (need 4)
-        ])
+        data = bytearray(
+            [
+                0x06,  # LAT + LON present
+                0x40,
+                0x42,
+                0x0F,
+                0x00,  # latitude OK
+                0x01,  # only 1 byte for longitude (need 4)
+            ]
+        )
         with pytest.raises(InsufficientDataError):
             IndoorPositioningData.decode(data)
 

@@ -46,7 +46,7 @@ def scan_with_bluepy(timeout: float = 10.0) -> list[tuple[str, str, int | None]]
 
     try:
         scanner = Scanner()
-        print(f"🔍 Scanning for BLE devices with BluePy (timeout: {timeout}s)...")
+        print(f"Scanning for BLE devices with BluePy (timeout: {timeout}s)...")
         devices = scanner.scan(int(timeout))  # type: ignore[misc]
 
         results: list[tuple[str, str, int | None]] = []
@@ -64,7 +64,7 @@ def scan_with_bluepy(timeout: float = 10.0) -> list[tuple[str, str, int | None]]
 
             results.append((str(name), str(address), rssi_val))  # type: ignore[misc]
 
-        print(f"✅ Found {len(results)} devices")
+        print(f"Found {len(results)} devices")
         return results
 
     except Exception as e:
