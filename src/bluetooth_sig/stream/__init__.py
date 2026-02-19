@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from .pairing import DependencyPairingBuffer
+from .pairing import BufferStats, DependencyPairingBuffer
 
 __all__ = [
+    "BufferStats",
     "DependencyPairingBuffer",
 ]

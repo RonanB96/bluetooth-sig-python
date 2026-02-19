@@ -11,7 +11,7 @@ from bluetooth_sig.gatt.characteristics import (
     HumidityCharacteristic,
     TemperatureCharacteristic,
 )
-from bluetooth_sig.stream import DependencyPairingBuffer
+from bluetooth_sig.stream import BufferStats, DependencyPairingBuffer
 
 
 def _glucose_measurement_bytes(seq: int) -> bytes:
@@ -264,3 +264,258 @@ def test_blood_pressure_pairing_multiple_sessions() -> None:
     assert session1[icp_uuid].current_cuff_pressure == 80.0
     assert session1[icp_uuid].optional_fields.timestamp.hour == 10
     assert session1[icp_uuid].optional_fields.timestamp.minute == 0
+
+
+# ---------------------------------------------------------------------------
+# TTL eviction tests
+# ---------------------------------------------------------------------------
+
+
+def _make_ttl_buffer(
+    *,
+    max_age_seconds: float,
+    clock: Any,
+    paired: list[dict[str, Any]],
+) -> tuple[DependencyPairingBuffer, str, str]:
+    """Create a temperature+humidity buffer with injectable clock for TTL tests."""
+    translator = BluetoothSIGTranslator()
+    temp_uuid = str(TemperatureCharacteristic().uuid)
+    humid_uuid = str(HumidityCharacteristic().uuid)
+
+    buf = DependencyPairingBuffer(
+        translator=translator,
+        required_uuids={temp_uuid, humid_uuid},
+        group_key=lambda _uuid, _parsed: "room-1",
+        on_pair=lambda results: paired.append(results),
+        max_age_seconds=max_age_seconds,
+        clock=clock,
+    )
+    return buf, temp_uuid, humid_uuid
+
+
+class TestTTLEviction:
+    """TTL-based eviction of stale incomplete groups."""
+
+    def test_stale_group_evicted_before_completion(self) -> None:
+        """A group that exceeds max_age_seconds is evicted on next ingest."""
+        current_time = 0.0
+
+        def clock() -> float:
+            return current_time
+
+        paired: list[dict[str, Any]] = []
+        buf, temp_uuid, _humid_uuid = _make_ttl_buffer(
+            max_age_seconds=10.0,
+            clock=clock,
+            paired=paired,
+        )
+
+        # Ingest first half at t=0
+        buf.ingest(temp_uuid, bytes([0x0A, 0x00]))
+        assert buf.stats().pending == 1
+
+        # Advance past TTL
+        current_time = 11.0
+
+        # Ingest something — eviction runs first, removing the stale group
+        buf.ingest(temp_uuid, bytes([0x14, 0x00]))
+        assert buf.stats().pending == 1  # new group, old one evicted
+        assert buf.stats().evicted == 1
+        assert len(paired) == 0  # never completed
+
+    def test_fresh_group_not_evicted(self) -> None:
+        """Groups within max_age_seconds are preserved."""
+        current_time = 0.0
+
+        def clock() -> float:
+            return current_time
+
+        paired: list[dict[str, Any]] = []
+        buf, temp_uuid, humid_uuid = _make_ttl_buffer(
+            max_age_seconds=10.0,
+            clock=clock,
+            paired=paired,
+        )
+
+        buf.ingest(temp_uuid, bytes([0x0A, 0x00]))
+
+        # Advance but stay within TTL
+        current_time = 5.0
+        buf.ingest(humid_uuid, bytes([0x32, 0x00]))
+
+        assert len(paired) == 1
+        assert buf.stats().evicted == 0
+        assert buf.stats().completed == 1
+
+    def test_multiple_groups_selective_eviction(self) -> None:
+        """Only groups exceeding TTL are evicted; fresh groups remain."""
+        current_time = 0.0
+
+        def clock() -> float:
+            return current_time
+
+        translator = BluetoothSIGTranslator()
+        temp_uuid = str(TemperatureCharacteristic().uuid)
+        humid_uuid = str(HumidityCharacteristic().uuid)
+
+        paired: list[dict[str, Any]] = []
+
+        # Mutable group ID — set before each ingest to control grouping
+        current_group: list[str] = ["A"]
+
+        def group_key(_uuid: str, _parsed: Any) -> str:
+            return current_group[0]
+
+        buf = DependencyPairingBuffer(
+            translator=translator,
+            required_uuids={temp_uuid, humid_uuid},
+            group_key=group_key,
+            on_pair=lambda r: paired.append(r),
+            max_age_seconds=10.0,
+            clock=clock,
+        )
+
+        # Group A at t=0
+        current_group[0] = "A"
+        buf.ingest(temp_uuid, bytes([0x0A, 0x00]))
+        assert buf.stats().pending == 1
+
+        # Group B at t=8
+        current_time = 8.0
+        current_group[0] = "B"
+        buf.ingest(temp_uuid, bytes([0x14, 0x00]))
+        assert buf.stats().pending == 2
+
+        # Advance to t=11 — group A is stale (age=11), group B is fresh (age=3)
+        # Complete group B with humidity
+        current_time = 11.0
+        current_group[0] = "B"
+        buf.ingest(humid_uuid, bytes([0x32, 0x00]))
+
+        assert buf.stats().evicted == 1  # group A evicted
+        assert buf.stats().completed == 1  # group B completed
+        assert buf.stats().pending == 0
+
+    def test_exact_boundary_evicted(self) -> None:
+        """A group at exactly max_age_seconds is evicted (<=, not <)."""
+        current_time = 0.0
+
+        def clock() -> float:
+            return current_time
+
+        paired: list[dict[str, Any]] = []
+        buf, temp_uuid, _humid_uuid = _make_ttl_buffer(
+            max_age_seconds=10.0,
+            clock=clock,
+            paired=paired,
+        )
+
+        buf.ingest(temp_uuid, bytes([0x0A, 0x00]))
+
+        # Advance to exactly TTL boundary
+        current_time = 10.0
+        buf.ingest(temp_uuid, bytes([0x14, 0x00]))
+
+        assert buf.stats().evicted == 1
+
+
+class TestBufferStats:
+    """BufferStats tracking across operations."""
+
+    def test_initial_stats_all_zero(self) -> None:
+        translator = BluetoothSIGTranslator()
+        temp_uuid = str(TemperatureCharacteristic().uuid)
+        humid_uuid = str(HumidityCharacteristic().uuid)
+
+        buf = DependencyPairingBuffer(
+            translator=translator,
+            required_uuids={temp_uuid, humid_uuid},
+            group_key=lambda _u, _p: "g",
+            on_pair=lambda _r: None,
+        )
+
+        s = buf.stats()
+        assert s == BufferStats(pending=0, completed=0, evicted=0)
+
+    def test_pending_increments_on_partial(self) -> None:
+        translator = BluetoothSIGTranslator()
+        temp_uuid = str(TemperatureCharacteristic().uuid)
+        humid_uuid = str(HumidityCharacteristic().uuid)
+
+        buf = DependencyPairingBuffer(
+            translator=translator,
+            required_uuids={temp_uuid, humid_uuid},
+            group_key=lambda _u, _p: "g",
+            on_pair=lambda _r: None,
+        )
+
+        buf.ingest(temp_uuid, bytes([0x0A, 0x00]))
+        assert buf.stats().pending == 1
+        assert buf.stats().completed == 0
+
+    def test_completed_increments_on_pair(self) -> None:
+        translator = BluetoothSIGTranslator()
+        temp_uuid = str(TemperatureCharacteristic().uuid)
+        humid_uuid = str(HumidityCharacteristic().uuid)
+
+        paired: list[dict[str, Any]] = []
+        buf = DependencyPairingBuffer(
+            translator=translator,
+            required_uuids={temp_uuid, humid_uuid},
+            group_key=lambda _u, _p: "g",
+            on_pair=lambda r: paired.append(r),
+        )
+
+        buf.ingest(temp_uuid, bytes([0x0A, 0x00]))
+        buf.ingest(humid_uuid, bytes([0x32, 0x00]))
+
+        s = buf.stats()
+        assert s.pending == 0
+        assert s.completed == 1
+        assert s.evicted == 0
+
+    def test_stats_accumulate_over_multiple_pairs(self) -> None:
+        translator = BluetoothSIGTranslator()
+        temp_uuid = str(TemperatureCharacteristic().uuid)
+        humid_uuid = str(HumidityCharacteristic().uuid)
+
+        buf = DependencyPairingBuffer(
+            translator=translator,
+            required_uuids={temp_uuid, humid_uuid},
+            group_key=lambda _u, _p: "g",
+            on_pair=lambda _r: None,
+        )
+
+        for _ in range(3):
+            buf.ingest(temp_uuid, bytes([0x0A, 0x00]))
+            buf.ingest(humid_uuid, bytes([0x32, 0x00]))
+
+        assert buf.stats().completed == 3
+        assert buf.stats().pending == 0
+
+    def test_stats_frozen_struct(self) -> None:
+        """BufferStats is immutable (frozen msgspec.Struct)."""
+        s = BufferStats(pending=1, completed=2, evicted=3)
+        with pytest.raises(AttributeError):
+            s.pending = 99  # type: ignore[misc]
+
+    def test_no_ttl_means_no_eviction(self) -> None:
+        """Default (no max_age_seconds) never evicts."""
+        translator = BluetoothSIGTranslator()
+        temp_uuid = str(TemperatureCharacteristic().uuid)
+        humid_uuid = str(HumidityCharacteristic().uuid)
+
+        buf = DependencyPairingBuffer(
+            translator=translator,
+            required_uuids={temp_uuid, humid_uuid},
+            group_key=lambda _u, _p: "g",
+            on_pair=lambda _r: None,
+        )
+
+        # Ingest partial and never complete
+        buf.ingest(temp_uuid, bytes([0x0A, 0x00]))
+        buf.ingest(temp_uuid, bytes([0x14, 0x00]))
+        buf.ingest(temp_uuid, bytes([0x1E, 0x00]))
+
+        assert buf.stats().pending == 1
+        assert buf.stats().evicted == 0
