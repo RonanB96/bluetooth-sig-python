@@ -95,6 +95,37 @@ class ValueType(Enum):
     UNKNOWN = "unknown"
 
 
+class CharacteristicRole(Enum):
+    """Inferred purpose of a GATT characteristic.
+
+    Derived algorithmically from SIG spec metadata (name patterns,
+    value_type, unit presence, field structure).  No per-characteristic
+    maintenance is required — the classification is computed at
+    instantiation time from data already parsed from the SIG YAML specs.
+
+    Members:
+        MEASUREMENT — carries numeric or structured sensor data with
+                      physical units (temperature, heart rate, SpO₂, …).
+        STATUS      — reports a device state or enum value
+                      (training status, alert status, …).
+        FEATURE     — describes device capabilities as a bitfield
+                      (blood pressure feature, cycling power feature, …).
+        CONTROL     — write-only control point used to command the device
+                      (heart rate control point, fitness machine CP, …).
+        INFO        — static metadata string
+                      (device name, firmware revision, serial number, …).
+        UNKNOWN     — cannot be classified from spec metadata alone;
+                      consumers should apply their own heuristic.
+    """
+
+    MEASUREMENT = "measurement"
+    STATUS = "status"
+    FEATURE = "feature"
+    CONTROL = "control"
+    INFO = "info"
+    UNKNOWN = "unknown"
+
+
 class DataType(Enum):
     """Bluetooth SIG data types from GATT specifications."""
 

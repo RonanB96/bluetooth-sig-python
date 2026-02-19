@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 import re
 
 import msgspec
+
+logger = logging.getLogger(__name__)
 
 
 class SpecialValue(msgspec.Struct, frozen=True):
@@ -158,7 +161,7 @@ class FieldSpec(msgspec.Struct, frozen=True, kw_only=True):
                 try:
                     return float(min_val), float(max_val)
                 except ValueError:
-                    pass
+                    logger.warning("Failed to parse min/max range values: min=%s, max=%s", min_val, max_val)
 
         return None
 

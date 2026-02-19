@@ -7,7 +7,7 @@ helpers to return structured data instead of opaque tuples and dicts.
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 import msgspec
 
@@ -46,7 +46,7 @@ class DeviceInfo(msgspec.Struct):
 __all__ = ["DeviceInfo", "ReadResult"]
 
 
-ComparisonData = Union[dict[str, ReadResult], dict[str, Any]]
+ComparisonData = dict[str, ReadResult] | dict[str, Any]
 
 
 class LibraryComparisonResult(msgspec.Struct):

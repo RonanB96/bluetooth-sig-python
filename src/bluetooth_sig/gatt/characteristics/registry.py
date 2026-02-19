@@ -8,9 +8,7 @@ types.gatt_enums to avoid circular imports.
 from __future__ import annotations
 
 import re
-from typing import Any, ClassVar
-
-from typing_extensions import TypeGuard
+from typing import Any, ClassVar, TypeGuard
 
 from ...registry.base import BaseUUIDClassRegistry
 from ...types.gatt_enums import CharacteristicName

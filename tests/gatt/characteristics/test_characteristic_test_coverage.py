@@ -32,6 +32,7 @@ class TestCharacteristicTestFileCoverage:
         excluded_test_files = {
             "test_base_characteristic.py",  # Tests base class
             "test_characteristic_common.py",  # Common test utilities
+            "test_characteristic_role.py",  # Tests role classification, not a single characteristic
             "test_characteristic_test_coverage.py",  # This coverage test
             "test_custom_characteristics.py",  # Tests custom characteristic functionality
             "test_templates.py",  # Tests template classes, not characteristics

@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 import msgspec
 

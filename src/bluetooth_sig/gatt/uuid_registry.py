@@ -3,19 +3,13 @@
 from __future__ import annotations
 
 import contextlib
-
-from bluetooth_sig.types.base_types import SIGInfo
-
-__all__ = [
-    "UuidRegistry",
-    "uuid_registry",
-]
-
+import logging
 import threading
 
 from bluetooth_sig.registry.gss import GssRegistry
 from bluetooth_sig.registry.uuids.units import UnitsRegistry
 from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
+from bluetooth_sig.types.base_types import SIGInfo
 from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.registry.descriptor_types import DescriptorInfo
 from bluetooth_sig.types.registry.gss_characteristic import GssCharacteristicSpec
@@ -23,6 +17,13 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 
 from ..registry.utils import find_bluetooth_sig_path, load_yaml_uuids, normalize_uuid_string
 from ..types.registry import CharacteristicSpec, FieldInfo, UnitMetadata
+
+__all__ = [
+    "UuidRegistry",
+    "uuid_registry",
+]
+
+logger = logging.getLogger(__name__)
 
 
 class UuidRegistry:  # pylint: disable=too-many-instance-attributes
@@ -389,7 +390,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                     if canonical_key in self._services:
                         return self._services[canonical_key]
                 except ValueError:
-                    pass
+                    logger.warning("UUID normalization failed for service lookup: %s", search_key)
 
                 # Check alias index (normalized to lowercase)
                 alias_key = self._service_aliases.get(search_key.lower())
@@ -417,7 +418,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                     if canonical_key in self._characteristics:
                         return self._characteristics[canonical_key]
                 except ValueError:
-                    pass
+                    logger.warning("UUID normalization failed for characteristic lookup: %s", search_key)
 
                 # Check alias index (normalized to lowercase)
                 alias_key = self._characteristic_aliases.get(search_key.lower())
@@ -445,7 +446,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                     if canonical_key in self._descriptors:
                         return self._descriptors[canonical_key]
                 except ValueError:
-                    pass
+                    logger.warning("UUID normalization failed for descriptor lookup: %s", search_key)
 
                 # Check alias index (normalized to lowercase)
                 alias_key = self._descriptor_aliases.get(search_key.lower())

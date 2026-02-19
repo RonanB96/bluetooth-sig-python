@@ -25,7 +25,7 @@ class FormatNamespace(IntEnum):
     def _missing_(cls, value: object) -> FormatNamespace:
         """Return UNKNOWN for unrecognised namespace values."""
         if not isinstance(value, int):
-            return None  # type: ignore[return-value]
+            return None  # type: ignore[return-value]  # IntEnum._missing_ returns None to signal invalid input
         obj = int.__new__(cls, value)
         obj._name_ = f"UNKNOWN_{value}"
         obj._value_ = value
@@ -71,7 +71,7 @@ class FormatType(IntEnum):
     def _missing_(cls, value: object) -> FormatType:
         """Return dynamically created member for unrecognised format values."""
         if not isinstance(value, int):
-            return None  # type: ignore[return-value]
+            return None  # type: ignore[return-value]  # IntEnum._missing_ returns None to signal invalid input
         obj = int.__new__(cls, value)
         obj._name_ = f"UNKNOWN_{value}"
         obj._value_ = value

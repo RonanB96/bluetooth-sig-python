@@ -62,9 +62,9 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
             The UnitsRegistry singleton instance
         """
         if self._units_registry is None:
-            # Cast needed because get_instance returns base class type
-            self._units_registry = UnitsRegistry.get_instance()  # type: ignore[assignment]
-        return self._units_registry  # type: ignore[return-value]
+            # get_instance() returns BaseUUIDRegistry; narrow to concrete subclass
+            self._units_registry = cast("UnitsRegistry", UnitsRegistry.get_instance())
+        return self._units_registry
 
     def _load(self) -> None:
         """Load GSS specifications from YAML files."""

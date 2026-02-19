@@ -8,9 +8,7 @@ of keeping __init__.py files lightweight.
 
 from __future__ import annotations
 
-from typing import ClassVar
-
-from typing_extensions import TypeGuard
+from typing import ClassVar, TypeGuard
 
 from ...registry.base import BaseUUIDClassRegistry
 from ...types.gatt_enums import ServiceName

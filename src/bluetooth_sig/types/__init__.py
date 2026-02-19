@@ -50,6 +50,7 @@ from .ead import (
     EADKeyMaterial,
     EncryptedAdvertisingData,
 )
+from .gatt_enums import CharacteristicRole
 from .location import PositionStatus
 from .mesh import (
     DEVICE_UUID_LENGTH,
@@ -125,6 +126,7 @@ __all__ = [
     "CharacteristicContext",
     "CharacteristicInfo",
     "CharacteristicProtocol",
+    "CharacteristicRole",
     "ClassOfDeviceInfo",
     "CompanyIdentifier",
     "ConcentrationUnit",
