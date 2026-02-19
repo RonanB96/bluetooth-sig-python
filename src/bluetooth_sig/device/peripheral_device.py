@@ -12,6 +12,10 @@ instances that handle value encoding via ``build_value()``.
 from __future__ import annotations
 
 import logging
+
+# Any is required: BaseCharacteristic is generic over its value type (T), but
+# PeripheralDevice hosts heterogeneous characteristics with different T types
+# in a single dict, so the container must erase the type parameter to Any.
 from typing import Any
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
@@ -42,9 +46,17 @@ class HostedCharacteristic:
         characteristic: BaseCharacteristic[Any],
         initial_value: Any = None,  # noqa: ANN401
     ) -> None:
+        """Initialise a hosted characteristic record.
+
+        Args:
+            definition: The GATT characteristic definition registered on the peripheral.
+            characteristic: The SIG characteristic class instance for encoding/decoding.
+            initial_value: Optional initial Python value set on this characteristic.
+
+        """
         self.definition = definition
         self.characteristic = characteristic
-        self.last_value: Any = initial_value
+        self.last_value: Any = initial_value  # noqa: ANN401
 
 
 class PeripheralDevice:

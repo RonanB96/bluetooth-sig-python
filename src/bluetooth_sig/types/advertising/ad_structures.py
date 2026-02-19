@@ -7,9 +7,13 @@ from __future__ import annotations
 
 import msgspec
 
+from bluetooth_sig.types.advertising.channel_map_update import ChannelMapUpdateIndication
 from bluetooth_sig.types.advertising.features import LEFeatures
 from bluetooth_sig.types.advertising.flags import BLEAdvertisingFlags
+from bluetooth_sig.types.advertising.indoor_positioning import IndoorPositioningData
 from bluetooth_sig.types.advertising.pdu import BLEAdvertisingPDU
+from bluetooth_sig.types.advertising.three_d_information import ThreeDInformationData
+from bluetooth_sig.types.advertising.transport_discovery import TransportDiscoveryData
 from bluetooth_sig.types.appearance import AppearanceData
 from bluetooth_sig.types.company import ManufacturerData
 from bluetooth_sig.types.mesh import (
@@ -139,16 +143,16 @@ class LocationAndSensingData(msgspec.Struct, kw_only=True):
     """Location, positioning, and sensing related data.
 
     Attributes:
-        indoor_positioning: Indoor positioning data
-        three_d_information: 3D information data
-        transport_discovery_data: Transport Discovery Data
-        channel_map_update_indication: Channel Map Update Indication
+        indoor_positioning: Parsed Indoor Positioning AD (0x25), or ``None`` if absent.
+        three_d_information: Parsed 3D Information AD (0x3D), or ``None`` if absent.
+        transport_discovery_data: Parsed Transport Discovery AD (0x26), or ``None`` if absent.
+        channel_map_update_indication: Parsed Channel Map Update AD (0x28), or ``None`` if absent.
     """
 
-    indoor_positioning: bytes = b""
-    three_d_information: bytes = b""
-    transport_discovery_data: bytes = b""
-    channel_map_update_indication: bytes = b""
+    indoor_positioning: IndoorPositioningData | None = None
+    three_d_information: ThreeDInformationData | None = None
+    transport_discovery_data: TransportDiscoveryData | None = None
+    channel_map_update_indication: ChannelMapUpdateIndication | None = None
 
 
 class MeshAndBroadcastData(msgspec.Struct, kw_only=True):

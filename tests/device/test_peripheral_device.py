@@ -90,22 +90,27 @@ class TestPeripheralDeviceInit:
     """Constructor and basic properties."""
 
     def test_init_sets_name(self) -> None:
+        """Verify advertised name is set from the backend."""
         device, _ = _make_device("Sensor-1")
         assert device.name == "Sensor-1"
 
     def test_init_not_advertising(self) -> None:
+        """Newly created device is not advertising."""
         device, _ = _make_device()
         assert device.is_advertising is False
 
     def test_init_no_services(self) -> None:
+        """Newly created device has no services registered."""
         device, _ = _make_device()
         assert device.services == []
 
     def test_init_no_hosted_characteristics(self) -> None:
+        """Newly created device has no hosted characteristics."""
         device, _ = _make_device()
         assert device.hosted_characteristics == {}
 
     def test_repr_stopped(self) -> None:
+        """Repr includes device name and stopped state."""
         device, _ = _make_device("Demo")
         r = repr(device)
         assert "Demo" in r
@@ -116,6 +121,7 @@ class TestAddCharacteristic:
     """Registration of characteristics via the typed helper."""
 
     def test_add_characteristic_returns_definition(self) -> None:
+        """Successful registration returns a CharacteristicDefinition."""
         device, _ = _make_device()
         char = BatteryLevelCharacteristic()
         char_def = device.add_characteristic(
@@ -128,6 +134,7 @@ class TestAddCharacteristic:
         assert char_def.initial_value == bytearray(b"\x55")  # 85 decimal
 
     def test_add_characteristic_creates_hosted_entry(self) -> None:
+        """Hosted characteristics dict is populated after add."""
         device, _ = _make_device()
         char = BatteryLevelCharacteristic()
         device.add_characteristic(
@@ -142,6 +149,7 @@ class TestAddCharacteristic:
         assert hosted[BATTERY_CHAR_UUID].last_value == 50
 
     def test_add_characteristic_creates_pending_service(self) -> None:
+        """Service is pending until start(); backend has none yet."""
         device, _ = _make_device()
         char = BatteryLevelCharacteristic()
         device.add_characteristic(
@@ -179,6 +187,7 @@ class TestLifecycle:
 
     @pytest.mark.asyncio
     async def test_start_flushes_pending_services(self) -> None:
+        """Start registers pending services on the backend and begins advertising."""
         device, backend = _make_device()
         char = BatteryLevelCharacteristic()
         device.add_characteristic(
@@ -194,7 +203,16 @@ class TestLifecycle:
         assert str(backend.services[0].uuid).upper().startswith("0000180F")
 
     @pytest.mark.asyncio
+    async def test_start_with_no_services_raises(self) -> None:
+        """Start without any registered services raises RuntimeError."""
+        device, _ = _make_device()
+
+        with pytest.raises(RuntimeError, match="No services"):
+            await device.start()
+
+    @pytest.mark.asyncio
     async def test_stop_clears_advertising(self) -> None:
+        """Stop transitions the peripheral out of advertising state."""
         device, _ = _make_device()
         char = BatteryLevelCharacteristic()
         device.add_characteristic(
@@ -211,6 +229,7 @@ class TestLifecycle:
 
     @pytest.mark.asyncio
     async def test_repr_advertising(self) -> None:
+        """Repr shows advertising state when started."""
         device, _ = _make_device("Live")
         char = BatteryLevelCharacteristic()
         device.add_characteristic(
@@ -223,6 +242,13 @@ class TestLifecycle:
         r = repr(device)
         assert "advertising" in r
         assert "Live" in r
+
+    @pytest.mark.asyncio
+    async def test_stop_when_not_started(self) -> None:
+        """Stop on a non-advertising device completes without error."""
+        device, _ = _make_device()
+        await device.stop()
+        assert device.is_advertising is False
 
 
 class TestUpdateValue:

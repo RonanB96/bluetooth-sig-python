@@ -33,8 +33,12 @@ from bluetooth_sig.types.advertising.extended import (
     PHYType,
     SyncInfo,
 )
+from bluetooth_sig.types.advertising.channel_map_update import ChannelMapUpdateIndication
 from bluetooth_sig.types.advertising.features import LEFeatures
 from bluetooth_sig.types.advertising.flags import BLEAdvertisingFlags
+from bluetooth_sig.types.advertising.indoor_positioning import IndoorPositioningData
+from bluetooth_sig.types.advertising.three_d_information import ThreeDInformationData
+from bluetooth_sig.types.advertising.transport_discovery import TransportDiscoveryData
 from bluetooth_sig.types.advertising.pdu import (
     BLEAdvertisingPDU,
     BLEExtendedHeader,
@@ -729,13 +733,13 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
             True if ad_type was handled, False otherwise
         """
         if ad_type == ADType.INDOOR_POSITIONING:
-            parsed.location.indoor_positioning = ad_data
+            parsed.location.indoor_positioning = IndoorPositioningData.decode(ad_data)
         elif ad_type == ADType.TRANSPORT_DISCOVERY_DATA:
-            parsed.location.transport_discovery_data = ad_data
+            parsed.location.transport_discovery_data = TransportDiscoveryData.decode(ad_data)
         elif ad_type == ADType.THREE_D_INFORMATION_DATA:
-            parsed.location.three_d_information = ad_data
+            parsed.location.three_d_information = ThreeDInformationData.decode(ad_data)
         elif ad_type == ADType.CHANNEL_MAP_UPDATE_INDICATION:
-            parsed.location.channel_map_update_indication = ad_data
+            parsed.location.channel_map_update_indication = ChannelMapUpdateIndication.decode(ad_data)
         else:
             return False
         return True
