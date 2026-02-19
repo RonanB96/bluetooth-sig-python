@@ -72,23 +72,27 @@ access; 3.3 SDP is irrelevant to BLE) and 1 was based on a false assumption abou
 (3.2 profile YAMLs contain codec/param enums, not mandatory/optional service lists). The plan is
 revised below. Implementation order follows priority (value ÷ risk).
 
-3.1 Fix PeripheralDevice + Add Tests
+3.1 Fix PeripheralDevice + Add Tests — ✅ DONE (commit 39a53b6)
 
-peripheral_device.py was scaffolded but has a dead `translator` parameter — `SIGTranslatorProtocol`
+peripheral_device.py was scaffolded but had a dead `translator` parameter — `SIGTranslatorProtocol`
 is parse-only and encoding is already handled directly by `BaseCharacteristic.build_value()` on the
-stored characteristic instances. The `_translator` field is never referenced.
+stored characteristic instances. The `_translator` field was never referenced.
 
-Changes:
-- Remove `translator` parameter from `PeripheralDevice.__init__`; update docstrings
-- Verify `__init__.py` exports are correct (PeripheralDevice already added)
-- Write tests in tests/device/test_peripheral_device.py:
-  - Happy path: add_characteristic → start → update_value → verify encoded bytes
-  - Failure: add_characteristic after start raises RuntimeError
-  - Failure: update_value for unknown UUID raises KeyError
-  - Fluent builder delegation round-trips correctly
-  - get_current_value returns latest value
-
-Verification: python -m pytest tests/device/test_peripheral_device.py -v passes.
+Completed:
+- Removed `translator` parameter from `PeripheralDevice.__init__`; updated docstrings
+- Added `Any` import justification comment (heterogeneous characteristic dict)
+- Wrote 29 tests in tests/device/test_peripheral_device.py across 8 test classes:
+  - TestPeripheralDeviceInit (5 tests) — constructor, properties, empty state
+  - TestAddCharacteristic (4 tests) — registration, auto-service creation, duplicate service
+  - TestLifecycle (5 tests) — start flushes services, stop clears advertising, start-twice,
+    stop-when-not-started, add-after-start raises RuntimeError
+  - TestUpdateValue (5 tests) — encode + push, notify flag, unknown UUID KeyError
+  - TestUpdateRaw (1 test) — raw bytes push
+  - TestGetCurrentValue (3 tests) — initial value, latest value, unknown UUID KeyError
+  - TestFluentConfiguration (7 tests) — method chaining for manufacturer data, tx power,
+    connectable, discoverable
+  - TestAddService (1 test) — pre-built ServiceDefinition
+- All tests pass, lint clean
 
 3.2 Profile Parameter Registries (Redesigned)
 
@@ -148,28 +152,31 @@ New file: tests/static_analysis/test_yaml_implementation_coverage.py
 Verification: python -m pytest tests/static_analysis/test_yaml_implementation_coverage.py -v runs
 and produces coverage report without failing.
 
-3.5 Advertising Location Struct Parsing
+3.5 Advertising Location Struct Parsing — ✅ DONE (commit 31bf76a)
 
-The PDU parser stores Indoor Positioning, Transport Discovery Data, 3D Information, and Channel
-Map Update Indication as raw bytes. All 4 formats are well-defined in the Bluetooth Core Spec and
-can be parsed into typed structs following the existing mesh beacon pattern.
+The PDU parser stored Indoor Positioning, Transport Discovery Data, 3D Information, and Channel
+Map Update Indication as raw bytes. All 4 are now parsed into typed structs.
 
-Steps:
-- Create src/bluetooth_sig/types/advertising/location.py with 4 msgspec.Struct types:
-  - IndoorPositioningData — config flags byte + optional coordinate/floor/altitude/uncertainty
-    (CSS Part A, §1.14)
-  - TransportDiscoveryData — org ID + TDS flags + transport data blocks (CSS Part A, §1.10)
-  - ThreeDInformationData — 3D sync profile fields (CSS Part A, §1.13)
-  - ChannelMapUpdateIndication — 5-byte channel map + 2-byte instant
-    (Core Spec Vol 3, Part C, §11)
-- Update LocationAndSensingData field types from bytes to typed structs (| None = None)
-- Update _handle_location_ad_types to call struct decode methods
-- Add decode(cls, data: bytes) classmethods matching MeshMessage.decode() pattern
-- Tests: tests/advertising/test_location_parsing.py — one test per struct with constructed byte
-  sequences + one malformed-data test per struct
-
-Verification: python -m pytest tests/advertising/test_location_parsing.py -v passes. Existing PDU
-parser tests unaffected.
+Completed (one file per type, not monolithic location.py as originally planned):
+- src/bluetooth_sig/types/advertising/indoor_positioning.py
+  IndoorPositioningConfig(IntFlag) + IndoorPositioningData(msgspec.Struct)
+  Flag-driven WGS84/local coords, DataParser for all fields, optional uncertainty guard
+- src/bluetooth_sig/types/advertising/transport_discovery.py
+  TDSFlags(IntFlag) + TransportBlock + TransportDiscoveryData
+  Multi-block iteration, role/state/incomplete as properties on TransportBlock
+- src/bluetooth_sig/types/advertising/three_d_information.py
+  ThreeDInformationFlags(IntFlag) + ThreeDInformationData
+  Boolean properties for flag accessors (single source of truth — no duplicate fields)
+- src/bluetooth_sig/types/advertising/channel_map_update.py
+  ChannelMapUpdateIndication with is_channel_used(channel) method, named constants
+- ad_structures.py LocationAndSensingData fields changed from bytes to typed | None
+- pdu_parser.py _handle_location_ad_types calls .decode() instead of raw assignment
+- __init__.py exports updated for all new types
+- 58 tests across 4 test files (tests/advertising/test_{indoor_positioning,transport_discovery,
+  three_d_information,channel_map_update}.py) covering decode, errors, properties, constants
+- Patterns followed: IntFlag for all flags, DataParser for all parsing (auto InsufficientDataError),
+  msgspec.Struct frozen=True kw_only=True, one file per type
+- All 5523 tests pass, lint clean
 
 3.6 — REMOVED (Auxiliary packet parsing is physically impossible)
 
@@ -201,13 +208,13 @@ Verification: python -m pytest tests/stream/ -v passes. No breaking changes.
 
 Implementation Priority:
 
-| # | Item | Effort | Value | Risk |
-|---|------|--------|-------|------|
-| 1 | 3.1 Fix PeripheralDevice + tests | Low | Medium | Low |
-| 2 | 3.5 Location AD struct parsing | Medium | High | Low |
-| 3 | 3.7 Stream TTL + stats | Low | Medium | Low |
-| 4 | 3.4 GATT coverage gap tracking | Low | Medium | None |
-| 5 | 3.2 Profile parameter registries | Medium | Medium | Medium |
+| # | Item | Effort | Value | Risk | Status |
+|---|------|--------|-------|------|--------|
+| 1 | 3.1 Fix PeripheralDevice + tests | Low | Medium | Low | ✅ DONE |
+| 2 | 3.5 Location AD struct parsing | Medium | High | Low | ✅ DONE |
+| 3 | 3.7 Stream TTL + stats | Low | Medium | Low | Not started |
+| 4 | 3.4 GATT coverage gap tracking | Low | Medium | None | Not started |
+| 5 | 3.2 Profile parameter registries | Medium | Medium | Medium | Not started |
 
 Verification: Each feature has its own test file with success + failure cases. All quality gates pass.
 
