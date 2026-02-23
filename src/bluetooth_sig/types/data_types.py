@@ -7,7 +7,6 @@ from datetime import datetime
 import msgspec
 
 from .base_types import SIGInfo
-from .gatt_enums import ValueType
 
 
 class ParseFieldError(msgspec.Struct, frozen=True, kw_only=True):
@@ -54,7 +53,8 @@ class CharacteristicInfo(SIGInfo):
     on the BaseCharacteristic instance as they're discovered from the actual device.
     """
 
-    value_type: ValueType = ValueType.UNKNOWN
+    python_type: type | str | None = None
+    is_bitfield: bool = False
     unit: str = ""
 
 

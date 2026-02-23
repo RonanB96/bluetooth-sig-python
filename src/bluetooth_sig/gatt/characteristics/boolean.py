@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from ...types.gatt_enums import ValueType
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
@@ -15,7 +14,6 @@ class BooleanCharacteristic(BaseCharacteristic[bool]):
     The Boolean characteristic is used to represent predefined Boolean values (0 or 1).
     """
 
-    _manual_value_type = ValueType.BOOL
     expected_length = 1
 
     def _decode_value(

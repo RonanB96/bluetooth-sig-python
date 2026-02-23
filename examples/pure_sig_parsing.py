@@ -136,8 +136,8 @@ def demonstrate_dynamic_parsing() -> None:
             info = translator.get_characteristic_info_by_uuid(test_case["uuid"])
             unit_str = f" {info.unit}" if info and info.unit else ""
             print(f"   Parsed value: {result}{unit_str}")
-            if info and info.value_type:
-                print(f"   Value type: {info.value_type}")
+            if info and info.python_type:
+                print(f"   Python type: {info.python_type}")
             results[test_case["name"]] = result
         except Exception as e:
             print(f"   Parse failed: {e}")
@@ -171,7 +171,7 @@ def demonstrate_uuid_resolution() -> None:
         char_info = translator.get_characteristic_info_by_uuid(uuid)
         if char_info:
             print(f"   Name: {char_info.name}")
-            print(f"   Type: {char_info.value_type}")
+            print(f"   Type: {char_info.python_type}")
             print(f"   Unit: {char_info.unit if char_info.unit else 'N/A'}")
         else:
             print("   Not found in characteristic registry")

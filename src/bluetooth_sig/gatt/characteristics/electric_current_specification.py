@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import msgspec
 
-from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -46,7 +45,7 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic[ElectricCurr
     min_length: int = 4
 
     # Override since decode_value returns structured ElectricCurrentSpecificationData
-    _manual_value_type: ValueType | str | None = ValueType.DICT
+    _python_type: type | str | None = dict
 
     def _decode_value(
         self, data: bytearray, _ctx: CharacteristicContext | None = None, *, validate: bool = True

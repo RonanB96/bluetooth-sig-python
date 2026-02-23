@@ -50,8 +50,6 @@ class BootKeyboardInputReportCharacteristic(BaseCharacteristic[BootKeyboardInput
         USB HID Specification v1.11, Appendix B - Boot Interface Descriptors
     """
 
-    _manual_value_type = "BootKeyboardInputReportData"
-
     min_length = 1
     max_length = 8
     allow_variable_length = True

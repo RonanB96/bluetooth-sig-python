@@ -6,15 +6,13 @@ system: descriptor Valid Range > class-level attributes > YAML-derived ranges.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ....types import SpecialValueResult
 from ....types.data_types import ValidationAccumulator
+from ....types.registry import CharacteristicSpec
+from ...context import CharacteristicContext
 from ...descriptor_utils import get_valid_range_from_context as _get_valid_range
-
-if TYPE_CHECKING:
-    from ....types.registry import CharacteristicSpec
-    from ...context import CharacteristicContext
 
 
 class CharacteristicValidator:

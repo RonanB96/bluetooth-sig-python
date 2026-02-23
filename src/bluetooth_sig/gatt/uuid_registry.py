@@ -10,7 +10,6 @@ from bluetooth_sig.registry.gss import GssRegistry
 from bluetooth_sig.registry.uuids.units import UnitsRegistry
 from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
 from bluetooth_sig.types.base_types import SIGInfo
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.registry.descriptor_types import DescriptorInfo
 from bluetooth_sig.types.registry.gss_characteristic import GssCharacteristicSpec
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -164,7 +163,6 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                     name=uuid_info["name"],
                     id=uuid_info.get("id", ""),
                     unit="",  # Will be set from unit mappings if available
-                    value_type=ValueType.UNKNOWN,
                 )
                 self._store_characteristic(char_info)
 
@@ -218,7 +216,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 self._update_characteristic_with_gss_info(spec.name, spec.identifier, unit, value_type)
 
     def _update_characteristic_with_gss_info(
-        self, char_name: str, char_id: str, unit: str | None, value_type: str | None
+        self, char_name: str, char_id: str, unit: str | None, python_type: type | None
     ) -> None:
         """Update existing characteristic with GSS info."""
         with self._lock:
@@ -235,13 +233,8 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             # Get existing info and create updated version
             existing_info = self._characteristics[canonical_uuid]
 
-            # Convert value_type string to ValueType enum if provided
-            new_value_type = existing_info.value_type
-            if value_type:
-                try:
-                    new_value_type = ValueType(value_type)
-                except (ValueError, KeyError):
-                    new_value_type = existing_info.value_type
+            # Use provided python_type or keep existing
+            new_python_type = python_type if python_type is not None else existing_info.python_type
 
             # Create updated CharacteristicInfo (immutable, so create new instance)
             updated_info = CharacteristicInfo(
@@ -249,7 +242,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 name=existing_info.name,
                 id=existing_info.id,
                 unit=unit or existing_info.unit,
-                value_type=new_value_type,
+                python_type=new_python_type,
             )
 
             # Update canonical store (aliases remain the same since UUID/name/id unchanged)
@@ -280,7 +273,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         name: str,
         identifier: str | None = None,
         unit: str | None = None,
-        value_type: ValueType | None = None,
+        python_type: type | str | None = None,
         override: bool = False,
     ) -> None:
         """Register a custom characteristic at runtime.
@@ -290,7 +283,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             name: Human-readable name
             identifier: Optional identifier (auto-generated if not provided)
             unit: Optional unit of measurement
-            value_type: Optional value type
+            python_type: Optional Python type for the value
             override: If True, allow overriding existing entries
         """
         with self._lock:
@@ -318,7 +311,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 name=name,
                 id=identifier or f"runtime.characteristic.{name.lower().replace(' ', '_')}",
                 unit=unit or "",
-                value_type=value_type or ValueType.UNKNOWN,
+                python_type=python_type,
             )
 
             # Track as runtime-registered UUID

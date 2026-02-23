@@ -55,7 +55,7 @@ class TestBarometricPressureTrendCharacteristic(CommonCharacteristicTests):
         """Test Barometric Pressure Trend characteristic parsing."""
         # Test metadata
         assert characteristic.unit == ""  # Enum, no units
-        assert characteristic._manual_value_type == "BarometricPressureTrend"
+        assert characteristic.python_type is BarometricPressureTrend
 
         # Test known trend values
         test_cases = [

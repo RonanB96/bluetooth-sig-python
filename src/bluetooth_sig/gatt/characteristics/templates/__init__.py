@@ -20,6 +20,8 @@ from .composite import TimeDataTemplate, Vector2DTemplate, VectorTemplate
 from .data_structures import TimeData, Vector2DData, VectorData
 from .domain import ConcentrationTemplate, PressureTemplate, TemperatureTemplate
 from .enum import EnumTemplate
+from .epoch_date import EpochDateTemplate
+from .flag import FlagTemplate
 from .ieee_float import Float32Template, IEEE11073FloatTemplate
 from .numeric import (
     Sint8Template,
@@ -28,6 +30,7 @@ from .numeric import (
     Uint16Template,
     Uint24Template,
     Uint32Template,
+    Uint48Template,
 )
 from .scaled import (
     PercentageTemplate,
@@ -42,6 +45,7 @@ from .scaled import (
     ScaledUint32Template,
 )
 from .string import Utf8StringTemplate, Utf16StringTemplate
+from .time_duration import TimeDurationTemplate, TimeExponentialTemplate
 
 __all__ = [
     # Protocol
@@ -49,6 +53,10 @@ __all__ = [
     "ConcentrationTemplate",
     # Enum template
     "EnumTemplate",
+    # Date template
+    "EpochDateTemplate",
+    # Flag template
+    "FlagTemplate",
     "Float32Template",
     "IEEE11073FloatTemplate",
     # Domain-specific templates
@@ -69,11 +77,15 @@ __all__ = [
     "TemperatureTemplate",
     "TimeData",
     "TimeDataTemplate",
+    # Time-duration templates
+    "TimeDurationTemplate",
+    "TimeExponentialTemplate",
     # Basic integer templates
     "Uint8Template",
     "Uint16Template",
     "Uint24Template",
     "Uint32Template",
+    "Uint48Template",
     # String templates
     "Utf8StringTemplate",
     "Utf16StringTemplate",

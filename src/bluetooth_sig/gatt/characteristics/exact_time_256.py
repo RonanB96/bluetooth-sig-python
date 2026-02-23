@@ -33,7 +33,6 @@ class ExactTime256Characteristic(BaseCharacteristic[ExactTime256Data]):
     Represents exact time with 1/256 second resolution in 9-byte format.
     """
 
-    _manual_value_type = "ExactTime256Data"
     expected_length = 9
 
     def _decode_value(

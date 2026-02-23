@@ -79,27 +79,11 @@ class GattProperty(IntFlag):
     AUTH_NOTIFY = 0x8000
 
 
-class ValueType(Enum):
-    """Data types for characteristic values."""
-
-    STRING = "string"
-    INT = "int"
-    FLOAT = "float"
-    BYTES = "bytes"
-    BITFIELD = "bitfield"
-    BOOL = "bool"
-    DATETIME = "datetime"
-    UUID = "uuid"
-    DICT = "dict"
-    VARIOUS = "various"
-    UNKNOWN = "unknown"
-
-
 class CharacteristicRole(Enum):
     """Inferred purpose of a GATT characteristic.
 
     Derived algorithmically from SIG spec metadata (name patterns,
-    value_type, unit presence, field structure).  No per-characteristic
+    python_type, unit presence, field structure).  No per-characteristic
     maintenance is required — the classification is computed at
     instantiation time from data already parsed from the SIG YAML specs.
 
@@ -126,133 +110,33 @@ class CharacteristicRole(Enum):
     UNKNOWN = "unknown"
 
 
-class DataType(Enum):
-    """Bluetooth SIG data types from GATT specifications."""
-
-    BOOLEAN = "boolean"
-    UINT8 = "uint8"
-    UINT16 = "uint16"
-    UINT24 = "uint24"
-    UINT32 = "uint32"
-    UINT64 = "uint64"
-    SINT8 = "sint8"
-    SINT16 = "sint16"
-    SINT24 = "sint24"
-    SINT32 = "sint32"
-    SINT64 = "sint64"
-    FLOAT32 = "float32"
-    FLOAT64 = "float64"
-    UTF8S = "utf8s"
-    UTF16S = "utf16s"
-    STRUCT = "struct"
-    MEDFLOAT16 = "medfloat16"
-    MEDFLOAT32 = "medfloat32"
-    VARIOUS = "various"
-    UNKNOWN = "unknown"
-
-    @classmethod
-    def from_string(cls, type_str: str | None) -> DataType:
-        """Convert string representation to DataType enum.
-
-        Args:
-            type_str: String representation of data type (case-insensitive)
-
-        Returns:
-            Corresponding DataType enum, or DataType.UNKNOWN if not found
-        """
-        if not type_str:
-            return cls.UNKNOWN
-
-        # Handle common aliases
-        type_str = type_str.lower()
-        aliases = {
-            "utf16s": cls.UTF16S,  # UTF-16 string support
-            "sfloat": cls.MEDFLOAT16,  # IEEE-11073 16-bit SFLOAT
-            "float": cls.FLOAT32,  # IEEE-11073 32-bit FLOAT
-            "variable": cls.STRUCT,  # variable maps to STRUCT
-        }
-
-        if type_str in aliases:
-            return aliases[type_str]
-
-        # Try direct match
-        for member in cls:
-            if member.value == type_str:
-                return member
-
-        return cls.UNKNOWN
-
-    def to_value_type(self) -> ValueType:
-        """Convert DataType to internal ValueType enum.
-
-        Returns:
-            Corresponding ValueType for this data type
-        """
-        mapping = {
-            # Integer types
-            self.SINT8: ValueType.INT,
-            self.UINT8: ValueType.INT,
-            self.SINT16: ValueType.INT,
-            self.UINT16: ValueType.INT,
-            self.SINT24: ValueType.INT,
-            self.UINT24: ValueType.INT,
-            self.SINT32: ValueType.INT,
-            self.UINT32: ValueType.INT,
-            self.UINT64: ValueType.INT,
-            self.SINT64: ValueType.INT,
-            # Float types
-            self.FLOAT32: ValueType.FLOAT,
-            self.FLOAT64: ValueType.FLOAT,
-            self.MEDFLOAT16: ValueType.FLOAT,
-            self.MEDFLOAT32: ValueType.FLOAT,
-            # String types
-            self.UTF8S: ValueType.STRING,
-            self.UTF16S: ValueType.STRING,
-            # Boolean type
-            self.BOOLEAN: ValueType.BOOL,
-            # Struct/opaque data
-            self.STRUCT: ValueType.BYTES,
-            # Meta types
-            self.VARIOUS: ValueType.VARIOUS,
-            self.UNKNOWN: ValueType.UNKNOWN,
-        }
-        return mapping.get(self, ValueType.UNKNOWN)
-
-    def to_python_type(self) -> str:
-        """Convert DataType to Python type string.
-
-        Returns:
-            Corresponding Python type string
-        """
-        mapping = {
-            # Integer types
-            self.UINT8: "int",
-            self.UINT16: "int",
-            self.UINT24: "int",
-            self.UINT32: "int",
-            self.UINT64: "int",
-            self.SINT8: "int",
-            self.SINT16: "int",
-            self.SINT24: "int",
-            self.SINT32: "int",
-            self.SINT64: "int",
-            # Float types
-            self.FLOAT32: "float",
-            self.FLOAT64: "float",
-            self.MEDFLOAT16: "float",
-            self.MEDFLOAT32: "float",
-            # String types
-            self.UTF8S: "string",
-            self.UTF16S: "string",
-            # Boolean type
-            self.BOOLEAN: "boolean",
-            # Struct/opaque data
-            self.STRUCT: "bytes",
-            # Meta types
-            self.VARIOUS: "various",
-            self.UNKNOWN: "unknown",
-        }
-        return mapping.get(self, "bytes")
+# Wire-type lookup: maps YAML/GSS data type strings to Python types.
+WIRE_TYPE_MAP: dict[str, type] = {
+    # Integer types
+    "uint8": int,
+    "uint16": int,
+    "uint24": int,
+    "uint32": int,
+    "uint64": int,
+    "sint8": int,
+    "sint16": int,
+    "sint24": int,
+    "sint32": int,
+    "sint64": int,
+    # Boolean
+    "boolean": bool,
+    # Float types (including IEEE-11073 medical floats)
+    "float32": float,
+    "float64": float,
+    "medfloat16": float,
+    "medfloat32": float,
+    # Aliases
+    "sfloat": float,
+    "float": float,
+    # String types
+    "utf8s": str,
+    "utf16s": str,
+}
 
 
 class CharacteristicName(Enum):
@@ -260,14 +144,19 @@ class CharacteristicName(Enum):
 
     BATTERY_LEVEL = "Battery Level"
     BATTERY_LEVEL_STATUS = "Battery Level Status"
+    BATTERY_CRITICAL_STATUS = "Battery Critical Status"
     TEMPERATURE = "Temperature"
     TEMPERATURE_MEASUREMENT = "Temperature Measurement"
+    TEMPERATURE_TYPE = "Temperature Type"
+    INTERMEDIATE_TEMPERATURE = "Intermediate Temperature"
+    MEASUREMENT_INTERVAL = "Measurement Interval"
     HUMIDITY = "Humidity"
     PRESSURE = "Pressure"
     UV_INDEX = "UV Index"
     ILLUMINANCE = "Illuminance"
     POWER_SPECIFICATION = "Power Specification"
     HEART_RATE_MEASUREMENT = "Heart Rate Measurement"
+    HEART_RATE_CONTROL_POINT = "Heart Rate Control Point"
     BLOOD_PRESSURE_MEASUREMENT = "Blood Pressure Measurement"
     INTERMEDIATE_CUFF_PRESSURE = "Intermediate Cuff Pressure"
     BLOOD_PRESSURE_FEATURE = "Blood Pressure Feature"
@@ -288,6 +177,8 @@ class CharacteristicName(Enum):
     FIRMWARE_REVISION_STRING = "Firmware Revision String"
     HARDWARE_REVISION_STRING = "Hardware Revision String"
     SOFTWARE_REVISION_STRING = "Software Revision String"
+    SYSTEM_ID = "System ID"
+    PNP_ID = "PnP ID"
     DEVICE_NAME = "Device Name"
     APPEARANCE = "Appearance"
     WEIGHT_MEASUREMENT = "Weight Measurement"
@@ -296,24 +187,34 @@ class CharacteristicName(Enum):
     BODY_COMPOSITION_FEATURE = "Body Composition Feature"
     BODY_SENSOR_LOCATION = "Body Sensor Location"
     # Environmental characteristics
+    ACCELERATION = "Acceleration"
+    ACCELERATION_3D = "Acceleration 3D"
+    ACCELERATION_DETECTION_STATUS = "Acceleration Detection Status"
+    ALTITUDE = "Altitude"
     DEW_POINT = "Dew Point"
+    ELEVATION = "Elevation"
+    FORCE = "Force"
+    GUST_FACTOR = "Gust Factor"
     HEAT_INDEX = "Heat Index"
+    IRRADIANCE = "Irradiance"
+    LINEAR_POSITION = "Linear Position"
     WIND_CHILL = "Wind Chill"
     TRUE_WIND_SPEED = "True Wind Speed"
     TRUE_WIND_DIRECTION = "True Wind Direction"
     APPARENT_WIND_SPEED = "Apparent Wind Speed"
     APPARENT_WIND_DIRECTION = "Apparent Wind Direction"
     MAGNETIC_DECLINATION = "Magnetic Declination"
-    ELEVATION = "Elevation"
     MAGNETIC_FLUX_DENSITY_2D = "Magnetic Flux Density - 2D"
     MAGNETIC_FLUX_DENSITY_3D = "Magnetic Flux Density - 3D"
     BAROMETRIC_PRESSURE_TREND = "Barometric Pressure Trend"
     POLLEN_CONCENTRATION = "Pollen Concentration"
     RAINFALL = "Rainfall"
+    ROTATIONAL_SPEED = "Rotational Speed"
     TIME_ZONE = "Time Zone"
     LOCAL_TIME_INFORMATION = "Local Time Information"
     # Gas sensor characteristics
     AMMONIA_CONCENTRATION = "Ammonia Concentration"
+    CARBON_MONOXIDE_CONCENTRATION = "Carbon Monoxide Concentration"
     CO2_CONCENTRATION = r"CO\textsubscript{2} Concentration"
     METHANE_CONCENTRATION = "Methane Concentration"
     NITROGEN_DIOXIDE_CONCENTRATION = "Nitrogen Dioxide Concentration"
@@ -325,6 +226,8 @@ class CharacteristicName(Enum):
     SULFUR_DIOXIDE_CONCENTRATION = "Sulfur Dioxide Concentration"
     VOC_CONCENTRATION = "VOC Concentration"
     # Power characteristics
+    APPARENT_ENERGY_32 = "Apparent Energy 32"
+    APPARENT_POWER = "Apparent Power"
     ELECTRIC_CURRENT = "Electric Current"
     ELECTRIC_CURRENT_RANGE = "Electric Current Range"
     ELECTRIC_CURRENT_SPECIFICATION = "Electric Current Specification"
@@ -363,21 +266,40 @@ class CharacteristicName(Enum):
     ALERT_NOTIFICATION_CONTROL_POINT = "Alert Notification Control Point"
     # Time characteristics
     CURRENT_TIME = "Current Time"
+    DATE_TIME = "Date Time"
+    DAY_DATE_TIME = "Day Date Time"
+    DAY_OF_WEEK = "Day of Week"
+    DST_OFFSET = "DST Offset"
+    EXACT_TIME_256 = "Exact Time 256"
     REFERENCE_TIME_INFORMATION = "Reference Time Information"
+    TIME_ACCURACY = "Time Accuracy"
+    TIME_SOURCE = "Time Source"
     TIME_WITH_DST = "Time with DST"
     TIME_UPDATE_CONTROL_POINT = "Time Update Control Point"
     TIME_UPDATE_STATE = "Time Update State"
     # Power level
     TX_POWER_LEVEL = "Tx Power Level"
     SCAN_INTERVAL_WINDOW = "Scan Interval Window"
+    SCAN_REFRESH = "Scan Refresh"
     BOND_MANAGEMENT_FEATURE = "Bond Management Feature"
     BOND_MANAGEMENT_CONTROL_POINT = "Bond Management Control Point"
+    # GAP characteristics
+    PERIPHERAL_PREFERRED_CONNECTION_PARAMETERS = "Peripheral Preferred Connection Parameters"
+    PERIPHERAL_PRIVACY_FLAG = "Peripheral Privacy Flag"
+    RECONNECTION_ADDRESS = "Reconnection Address"
     # Indoor positioning characteristics
     INDOOR_POSITIONING_CONFIGURATION = "Indoor Positioning Configuration"
     LATITUDE = "Latitude"
+    LOCAL_EAST_COORDINATE = "Local East Coordinate"
+    LOCAL_NORTH_COORDINATE = "Local North Coordinate"
     LONGITUDE = "Longitude"
     FLOOR_NUMBER = "Floor Number"
     LOCATION_NAME = "Location Name"
+    UNCERTAINTY = "Uncertainty"
+    # HID characteristics
+    BOOT_KEYBOARD_INPUT_REPORT = "Boot Keyboard Input Report"
+    BOOT_KEYBOARD_OUTPUT_REPORT = "Boot Keyboard Output Report"
+    BOOT_MOUSE_INPUT_REPORT = "Boot Mouse Input Report"
     HID_INFORMATION = "HID Information"
     REPORT_MAP = "Report Map"
     HID_CONTROL_POINT = "HID Control Point"
@@ -397,6 +319,9 @@ class CharacteristicName(Enum):
     SUPPORTED_HEART_RATE_RANGE = "Supported Heart Rate Range"
     FITNESS_MACHINE_CONTROL_POINT = "Fitness Machine Control Point"
     FITNESS_MACHINE_STATUS = "Fitness Machine Status"
+    # Lighting characteristics
+    CHROMATICITY_COORDINATE = "Chromaticity Coordinate"
+    CORRELATED_COLOR_TEMPERATURE = "Correlated Color Temperature"
     # User Data Service characteristics
     ACTIVITY_GOAL = "Activity Goal"
     AEROBIC_HEART_RATE_LOWER_LIMIT = "Aerobic Heart Rate Lower Limit"
@@ -407,6 +332,7 @@ class CharacteristicName(Enum):
     ANAEROBIC_HEART_RATE_UPPER_LIMIT = "Anaerobic Heart Rate Upper Limit"
     ANAEROBIC_THRESHOLD = "Anaerobic Threshold"
     CALORIC_INTAKE = "Caloric Intake"
+    DATABASE_CHANGE_INCREMENT = "Database Change Increment"
     DATE_OF_BIRTH = "Date of Birth"
     DATE_OF_THRESHOLD_ASSESSMENT = "Date of Threshold Assessment"
     DEVICE_WEARING_POSITION = "Device Wearing Position"
@@ -434,9 +360,63 @@ class CharacteristicName(Enum):
     STRIDE_LENGTH = "Stride Length"
     THREE_ZONE_HEART_RATE_LIMITS = "Three Zone Heart Rate Limits"
     TWO_ZONE_HEART_RATE_LIMITS = "Two Zone Heart Rate Limits"
+    USER_INDEX = "User Index"
     VO2_MAX = "VO2 Max"
     WAIST_CIRCUMFERENCE = "Waist Circumference"
     WEIGHT = "Weight"
+    # Generic value characteristics
+    BOOLEAN = "Boolean"
+    COEFFICIENT = "Coefficient"
+    COUNT_16 = "Count 16"
+    COUNT_24 = "Count 24"
+    CHROMATICITY_TOLERANCE = "Chromaticity Tolerance"
+    CHROMATIC_DISTANCE_FROM_PLANCKIAN = "Chromatic Distance from Planckian"
+    CIE_13_3_1995_COLOR_RENDERING_INDEX = "CIE 13.3-1995 Color Rendering Index"
+    CONTACT_STATUS_8 = "Contact Status 8"
+    CONTENT_CONTROL_ID = "Content Control ID"
+    COSINE_OF_THE_ANGLE = "Cosine of the Angle"
+    COUNTRY_CODE = "Country Code"
+    DATE_UTC = "Date UTC"
+    DOOR_WINDOW_STATUS = "Door/Window Status"
+    ENERGY = "Energy"
+    ENERGY_32 = "Energy 32"
+    ESTIMATED_SERVICE_DATE = "Estimated Service Date"
+    FIXED_STRING_8 = "Fixed String 8"
+    FIXED_STRING_16 = "Fixed String 16"
+    FIXED_STRING_24 = "Fixed String 24"
+    FIXED_STRING_36 = "Fixed String 36"
+    FIXED_STRING_64 = "Fixed String 64"
+    GENERIC_LEVEL = "Generic Level"
+    GLOBAL_TRADE_ITEM_NUMBER = "Global Trade Item Number"
+    HIGH_TEMPERATURE = "High Temperature"
+    HUMIDITY_8 = "Humidity 8"
+    ILLUMINANCE_16 = "Illuminance 16"
+    LIGHT_DISTRIBUTION = "Light Distribution"
+    LIGHT_OUTPUT = "Light Output"
+    LIGHT_SOURCE_TYPE = "Light Source Type"
+    LUMINOUS_EFFICACY = "Luminous Efficacy"
+    LUMINOUS_ENERGY = "Luminous Energy"
+    LUMINOUS_EXPOSURE = "Luminous Exposure"
+    LUMINOUS_FLUX = "Luminous Flux"
+    LUMINOUS_INTENSITY = "Luminous Intensity"
+    MASS_FLOW = "Mass Flow"
+    PERCEIVED_LIGHTNESS = "Perceived Lightness"
+    PERCENTAGE_8 = "Percentage 8"
+    PERCENTAGE_8_STEPS = "Percentage 8 Steps"
+    POWER = "Power"
+    PUSHBUTTON_STATUS_8 = "Pushbutton Status 8"
+    SENSOR_LOCATION = "Sensor Location"
+    SULFUR_HEXAFLUORIDE_CONCENTRATION = "Sulfur Hexafluoride Concentration"
+    TEMPERATURE_8 = "Temperature 8"
+    TIME_DECIHOUR_8 = "Time Decihour 8"
+    TIME_EXPONENTIAL_8 = "Time Exponential 8"
+    TIME_HOUR_24 = "Time Hour 24"
+    TIME_MILLISECOND_24 = "Time Millisecond 24"
+    TIME_SECOND_8 = "Time Second 8"
+    TIME_SECOND_16 = "Time Second 16"
+    TIME_SECOND_32 = "Time Second 32"
+    TORQUE = "Torque"
+    VOLUME_FLOW = "Volume Flow"
 
     # Not implemented characteristics - listed for completeness
     ACS_CONTROL_POINT = "ACS Control Point"
@@ -446,9 +426,6 @@ class CharacteristicName(Enum):
     ACS_STATUS = "ACS Status"
     AP_SYNC_KEY_MATERIAL = "AP Sync Key Material"
     ASE_CONTROL_POINT = "ASE Control Point"
-    ACCELERATION = "Acceleration"
-    ACCELERATION_3D = "Acceleration 3D"
-    ACCELERATION_DETECTION_STATUS = "Acceleration Detection Status"
     ACTIVE_PRESET_INDEX = "Active Preset Index"
     ADVERTISING_CONSTANT_TONE_EXTENSION_INTERVAL = "Advertising Constant Tone Extension Interval"
     ADVERTISING_CONSTANT_TONE_EXTENSION_MINIMUM_LENGTH = "Advertising Constant Tone Extension Minimum Length"
@@ -458,9 +435,6 @@ class CharacteristicName(Enum):
     ADVERTISING_CONSTANT_TONE_EXTENSION_PHY = "Advertising Constant Tone Extension PHY"
     ADVERTISING_CONSTANT_TONE_EXTENSION_TRANSMIT_DURATION = "Advertising Constant Tone Extension Transmit Duration"
     AGGREGATE = "Aggregate"
-    ALTITUDE = "Altitude"
-    APPARENT_ENERGY_32 = "Apparent Energy 32"
-    APPARENT_POWER = "Apparent Power"
     AUDIO_INPUT_CONTROL_POINT = "Audio Input Control Point"
     AUDIO_INPUT_DESCRIPTION = "Audio Input Description"
     AUDIO_INPUT_STATE = "Audio Input State"
@@ -474,7 +448,6 @@ class CharacteristicName(Enum):
     BR_EDR_HANDOVER_DATA = "BR-EDR Handover Data"
     BSS_CONTROL_POINT = "BSS Control Point"
     BSS_RESPONSE = "BSS Response"
-    BATTERY_CRITICAL_STATUS = "Battery Critical Status"
     BATTERY_ENERGY_STATUS = "Battery Energy Status"
     BATTERY_HEALTH_INFORMATION = "Battery Health Information"
     BATTERY_HEALTH_STATUS = "Battery Health Status"
@@ -489,10 +462,6 @@ class CharacteristicName(Enum):
     BEARER_URI_SCHEMES_SUPPORTED_LIST = "Bearer URI Schemes Supported List"
     BLOOD_PRESSURE_RECORD = "Blood Pressure Record"
     BLUETOOTH_SIG_DATA = "Bluetooth SIG Data"
-    BOOLEAN = "Boolean"
-    BOOT_KEYBOARD_INPUT_REPORT = "Boot Keyboard Input Report"
-    BOOT_KEYBOARD_OUTPUT_REPORT = "Boot Keyboard Output Report"
-    BOOT_MOUSE_INPUT_REPORT = "Boot Mouse Input Report"
     BROADCAST_AUDIO_SCAN_CONTROL_POINT = "Broadcast Audio Scan Control Point"
     BROADCAST_RECEIVE_STATE = "Broadcast Receive State"
     CGM_FEATURE = "CGM Feature"
@@ -501,48 +470,28 @@ class CharacteristicName(Enum):
     CGM_SESSION_START_TIME = "CGM Session Start Time"
     CGM_SPECIFIC_OPS_CONTROL_POINT = "CGM Specific Ops Control Point"
     CGM_STATUS = "CGM Status"
-    CIE_13_3_1995_COLOR_RENDERING_INDEX = "CIE 13.3-1995 Color Rendering Index"
     CALL_CONTROL_POINT = "Call Control Point"
     CALL_CONTROL_POINT_OPTIONAL_OPCODES = "Call Control Point Optional Opcodes"
     CALL_FRIENDLY_NAME = "Call Friendly Name"
     CALL_STATE = "Call State"
-    CARBON_MONOXIDE_CONCENTRATION = "Carbon Monoxide Concentration"
     CARDIORESPIRATORY_ACTIVITY_INSTANTANEOUS_DATA = "CardioRespiratory Activity Instantaneous Data"
     CARDIORESPIRATORY_ACTIVITY_SUMMARY_DATA = "CardioRespiratory Activity Summary Data"
     CENTRAL_ADDRESS_RESOLUTION = "Central Address Resolution"
-    CHROMATIC_DISTANCE_FROM_PLANCKIAN = "Chromatic Distance from Planckian"
-    CHROMATICITY_COORDINATE = "Chromaticity Coordinate"
     CHROMATICITY_COORDINATES = "Chromaticity Coordinates"
-    CHROMATICITY_TOLERANCE = "Chromaticity Tolerance"
     CHROMATICITY_IN_CCT_AND_DUV_VALUES = "Chromaticity in CCT and Duv Values"
     CLIENT_SUPPORTED_FEATURES = "Client Supported Features"
-    COEFFICIENT = "Coefficient"
     CONSTANT_TONE_EXTENSION_ENABLE = "Constant Tone Extension Enable"
-    CONTACT_STATUS_8 = "Contact Status 8"
-    CONTENT_CONTROL_ID = "Content Control ID"
     COORDINATED_SET_SIZE = "Coordinated Set Size"
-    CORRELATED_COLOR_TEMPERATURE = "Correlated Color Temperature"
-    COSINE_OF_THE_ANGLE = "Cosine of the Angle"
-    COUNT_16 = "Count 16"
-    COUNT_24 = "Count 24"
-    COUNTRY_CODE = "Country Code"
     CURRENT_ELAPSED_TIME = "Current Elapsed Time"
     CURRENT_GROUP_OBJECT_ID = "Current Group Object ID"
     CURRENT_TRACK_OBJECT_ID = "Current Track Object ID"
     CURRENT_TRACK_SEGMENTS_OBJECT_ID = "Current Track Segments Object ID"
-    DST_OFFSET = "DST Offset"
-    DATABASE_CHANGE_INCREMENT = "Database Change Increment"
     DATABASE_HASH = "Database Hash"
-    DATE_TIME = "Date Time"
-    DATE_UTC = "Date UTC"
-    DAY_DATE_TIME = "Day Date Time"
-    DAY_OF_WEEK = "Day of Week"
     DESCRIPTOR_VALUE_CHANGED = "Descriptor Value Changed"
     DEVICE_TIME = "Device Time"
     DEVICE_TIME_CONTROL_POINT = "Device Time Control Point"
     DEVICE_TIME_FEATURE = "Device Time Feature"
     DEVICE_TIME_PARAMETERS = "Device Time Parameters"
-    DOOR_WINDOW_STATUS = "Door/Window Status"
     ESL_ADDRESS = "ESL Address"
     ESL_CONTROL_POINT = "ESL Control Point"
     ESL_CURRENT_ABSOLUTE_TIME = "ESL Current Absolute Time"
@@ -554,29 +503,16 @@ class CharacteristicName(Enum):
     EMERGENCY_ID = "Emergency ID"
     EMERGENCY_TEXT = "Emergency Text"
     ENCRYPTED_DATA_KEY_MATERIAL = "Encrypted Data Key Material"
-    ENERGY = "Energy"
-    ENERGY_32 = "Energy 32"
     ENERGY_IN_A_PERIOD_OF_DAY = "Energy in a Period of Day"
     ENHANCED_BLOOD_PRESSURE_MEASUREMENT = "Enhanced Blood Pressure Measurement"
     ENHANCED_INTERMEDIATE_CUFF_PRESSURE = "Enhanced Intermediate Cuff Pressure"
-    ESTIMATED_SERVICE_DATE = "Estimated Service Date"
     EVENT_STATISTICS = "Event Statistics"
-    EXACT_TIME_256 = "Exact Time 256"
     FIRST_USE_DATE = "First Use Date"
-    FIXED_STRING_16 = "Fixed String 16"
-    FIXED_STRING_24 = "Fixed String 24"
-    FIXED_STRING_36 = "Fixed String 36"
-    FIXED_STRING_64 = "Fixed String 64"
-    FIXED_STRING_8 = "Fixed String 8"
-    FORCE = "Force"
     GHS_CONTROL_POINT = "GHS Control Point"
     GMAP_ROLE = "GMAP Role"
     GAIN_SETTINGS_ATTRIBUTE = "Gain Settings Attribute"
     GENERAL_ACTIVITY_INSTANTANEOUS_DATA = "General Activity Instantaneous Data"
     GENERAL_ACTIVITY_SUMMARY_DATA = "General Activity Summary Data"
-    GENERIC_LEVEL = "Generic Level"
-    GLOBAL_TRADE_ITEM_NUMBER = "Global Trade Item Number"
-    GUST_FACTOR = "Gust Factor"
     HID_ISO_PROPERTIES = "HID ISO Properties"
     HTTP_CONTROL_POINT = "HTTP Control Point"
     HTTP_ENTITY_BODY = "HTTP Entity Body"
@@ -586,9 +522,6 @@ class CharacteristicName(Enum):
     HEALTH_SENSOR_FEATURES = "Health Sensor Features"
     HEARING_AID_FEATURES = "Hearing Aid Features"
     HEARING_AID_PRESET_CONTROL_POINT = "Hearing Aid Preset Control Point"
-    HEART_RATE_CONTROL_POINT = "Heart Rate Control Point"
-    HIGH_TEMPERATURE = "High Temperature"
-    HUMIDITY_8 = "Humidity 8"
     IDD_ANNUNCIATION_STATUS = "IDD Annunciation Status"
     IDD_COMMAND_CONTROL_POINT = "IDD Command Control Point"
     IDD_COMMAND_DATA = "IDD Command Data"
@@ -603,30 +536,14 @@ class CharacteristicName(Enum):
     IMD_HISTORICAL_DATA = "IMD Historical Data"
     IMD_STATUS = "IMD Status"
     IMDS_DESCRIPTOR_VALUE_CHANGED = "IMDS Descriptor Value Changed"
-    ILLUMINANCE_16 = "Illuminance 16"
     INCOMING_CALL = "Incoming Call"
     INCOMING_CALL_TARGET_BEARER_URI = "Incoming Call Target Bearer URI"
-    INTERMEDIATE_TEMPERATURE = "Intermediate Temperature"
-    IRRADIANCE = "Irradiance"
     LE_GATT_SECURITY_LEVELS = "LE GATT Security Levels"
     LE_HID_OPERATION_MODE = "LE HID Operation Mode"
     LENGTH = "Length"
     LIFE_CYCLE_DATA = "Life Cycle Data"
-    LIGHT_DISTRIBUTION = "Light Distribution"
-    LIGHT_OUTPUT = "Light Output"
-    LIGHT_SOURCE_TYPE = "Light Source Type"
-    LINEAR_POSITION = "Linear Position"
     LIVE_HEALTH_OBSERVATIONS = "Live Health Observations"
-    LOCAL_EAST_COORDINATE = "Local East Coordinate"
-    LOCAL_NORTH_COORDINATE = "Local North Coordinate"
-    LUMINOUS_EFFICACY = "Luminous Efficacy"
-    LUMINOUS_ENERGY = "Luminous Energy"
-    LUMINOUS_EXPOSURE = "Luminous Exposure"
-    LUMINOUS_FLUX = "Luminous Flux"
     LUMINOUS_FLUX_RANGE = "Luminous Flux Range"
-    LUMINOUS_INTENSITY = "Luminous Intensity"
-    MASS_FLOW = "Mass Flow"
-    MEASUREMENT_INTERVAL = "Measurement Interval"
     MEDIA_CONTROL_POINT = "Media Control Point"
     MEDIA_CONTROL_POINT_OPCODES_SUPPORTED = "Media Control Point Opcodes Supported"
     MEDIA_PLAYER_ICON_OBJECT_ID = "Media Player Icon Object ID"
@@ -654,11 +571,6 @@ class CharacteristicName(Enum):
     OBSERVATION_SCHEDULE_CHANGED = "Observation Schedule Changed"
     ON_DEMAND_RANGING_DATA = "On-demand Ranging Data"
     PARENT_GROUP_OBJECT_ID = "Parent Group Object ID"
-    PERCEIVED_LIGHTNESS = "Perceived Lightness"
-    PERCENTAGE_8 = "Percentage 8"
-    PERCENTAGE_8_STEPS = "Percentage 8 Steps"
-    PERIPHERAL_PREFERRED_CONNECTION_PARAMETERS = "Peripheral Preferred Connection Parameters"
-    PERIPHERAL_PRIVACY_FLAG = "Peripheral Privacy Flag"
     PHYSICAL_ACTIVITY_CURRENT_SESSION = "Physical Activity Current Session"
     PHYSICAL_ACTIVITY_MONITOR_CONTROL_POINT = "Physical Activity Monitor Control Point"
     PHYSICAL_ACTIVITY_MONITOR_FEATURES = "Physical Activity Monitor Features"
@@ -666,10 +578,7 @@ class CharacteristicName(Enum):
     PLAYBACK_SPEED = "Playback Speed"
     PLAYING_ORDER = "Playing Order"
     PLAYING_ORDERS_SUPPORTED = "Playing Orders Supported"
-    PNP_ID = "PnP ID"
-    POWER = "Power"
     PRECISE_ACCELERATION_3D = "Precise Acceleration 3D"
-    PUSHBUTTON_STATUS_8 = "Pushbutton Status 8"
     RAS_CONTROL_POINT = "RAS Control Point"
     RAS_FEATURES = "RAS Features"
     RC_FEATURE = "RC Feature"
@@ -677,7 +586,6 @@ class CharacteristicName(Enum):
     RANGING_DATA_OVERWRITTEN = "Ranging Data Overwritten"
     RANGING_DATA_READY = "Ranging Data Ready"
     REAL_TIME_RANGING_DATA = "Real-time Ranging Data"
-    RECONNECTION_ADDRESS = "Reconnection Address"
     RECONNECTION_CONFIGURATION_CONTROL_POINT = "Reconnection Configuration Control Point"
     RECORD_ACCESS_CONTROL_POINT = "Record Access Control Point"
     REGISTERED_USER = "Registered User"
@@ -691,13 +599,10 @@ class CharacteristicName(Enum):
     RELATIVE_VALUE_IN_A_VOLTAGE_RANGE = "Relative Value in a Voltage Range"
     RELATIVE_VALUE_IN_AN_ILLUMINANCE_RANGE = "Relative Value in an Illuminance Range"
     RESOLVABLE_PRIVATE_ADDRESS_ONLY = "Resolvable Private Address Only"
-    ROTATIONAL_SPEED = "Rotational Speed"
     SC_CONTROL_POINT = "SC Control Point"
-    SCAN_REFRESH = "Scan Refresh"
     SEARCH_CONTROL_POINT = "Search Control Point"
     SEARCH_RESULTS_OBJECT_ID = "Search Results Object ID"
     SEEKING_SPEED = "Seeking Speed"
-    SENSOR_LOCATION = "Sensor Location"
     SERVER_SUPPORTED_FEATURES = "Server Supported Features"
     SERVICE_CYCLE_DATA = "Service Cycle Data"
     SET_IDENTITY_RESOLVING_KEY = "Set Identity Resolving Key"
@@ -714,29 +619,15 @@ class CharacteristicName(Enum):
     STATUS_FLAGS = "Status Flags"
     STEP_COUNTER_ACTIVITY_SUMMARY_DATA = "Step Counter Activity Summary Data"
     STORED_HEALTH_OBSERVATIONS = "Stored Health Observations"
-    SULFUR_HEXAFLUORIDE_CONCENTRATION = "Sulfur Hexafluoride Concentration"
     SUPPORTED_AUDIO_CONTEXTS = "Supported Audio Contexts"
-    SYSTEM_ID = "System ID"
     TDS_CONTROL_POINT = "TDS Control Point"
     TMAP_ROLE = "TMAP Role"
-    TEMPERATURE_8 = "Temperature 8"
     TEMPERATURE_8_STATISTICS = "Temperature 8 Statistics"
     TEMPERATURE_8_IN_A_PERIOD_OF_DAY = "Temperature 8 in a Period of Day"
     TEMPERATURE_RANGE = "Temperature Range"
     TEMPERATURE_STATISTICS = "Temperature Statistics"
-    TEMPERATURE_TYPE = "Temperature Type"
     TERMINATION_REASON = "Termination Reason"
-    TIME_ACCURACY = "Time Accuracy"
     TIME_CHANGE_LOG_DATA = "Time Change Log Data"
-    TIME_DECIHOUR_8 = "Time Decihour 8"
-    TIME_EXPONENTIAL_8 = "Time Exponential 8"
-    TIME_HOUR_24 = "Time Hour 24"
-    TIME_MILLISECOND_24 = "Time Millisecond 24"
-    TIME_SECOND_16 = "Time Second 16"
-    TIME_SECOND_32 = "Time Second 32"
-    TIME_SECOND_8 = "Time Second 8"
-    TIME_SOURCE = "Time Source"
-    TORQUE = "Torque"
     TRACK_CHANGED = "Track Changed"
     TRACK_DURATION = "Track Duration"
     TRACK_POSITION = "Track Position"
@@ -745,12 +636,9 @@ class CharacteristicName(Enum):
     UGG_FEATURES = "UGG Features"
     UGT_FEATURES = "UGT Features"
     URI = "URI"
-    UNCERTAINTY = "Uncertainty"
     USER_CONTROL_POINT = "User Control Point"
-    USER_INDEX = "User Index"
     VOLUME_CONTROL_POINT = "Volume Control Point"
     VOLUME_FLAGS = "Volume Flags"
-    VOLUME_FLOW = "Volume Flow"
     VOLUME_OFFSET_CONTROL_POINT = "Volume Offset Control Point"
     VOLUME_OFFSET_STATE = "Volume Offset State"
     VOLUME_STATE = "Volume State"

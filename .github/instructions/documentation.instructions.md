@@ -7,8 +7,13 @@ applyTo: "docs/**/*.md, docs/*.md"
 ## Code Samples
 
 - Every code block must be runnable and validated
-- Use Sphinx cross-references: `:class:`CharacteristicData``, `:meth:`parse_characteristic``
+- Use Sphinx cross-references: `:class:`BluetoothSIGTranslator``, `:meth:`parse_characteristic``
 - Pair code with expected output
+
+## Architecture Diagrams
+
+- Use Mermaid for architecture and flow diagrams in Markdown docs
+- Keep diagrams close to the code they describe
 
 ## Style
 

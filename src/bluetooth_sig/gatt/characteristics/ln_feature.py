@@ -6,7 +6,6 @@ from enum import IntFlag
 
 import msgspec
 
-from ...types.gatt_enums import ValueType
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -72,7 +71,7 @@ class LNFeatureCharacteristic(BaseCharacteristic[LNFeatureData]):
     """
 
     min_length = 4
-    _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
+    _python_type: type | str | None = dict  # Override since decode_value returns dataclass
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True

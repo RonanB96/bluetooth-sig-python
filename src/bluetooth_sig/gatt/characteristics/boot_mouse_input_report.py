@@ -48,8 +48,6 @@ class BootMouseInputReportCharacteristic(BaseCharacteristic[BootMouseInputReport
         USB HID Specification v1.11, Appendix B - Boot Interface Descriptors
     """
 
-    _manual_value_type = "BootMouseInputReportData"
-
     min_length = 3
     max_length = 4
     allow_variable_length = True

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from ...types.gatt_enums import ValueType
 from ...types.units import PhysicalUnit
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -27,7 +26,7 @@ class MagneticFluxDensity3DCharacteristic(BaseCharacteristic[VectorData]):
     """
 
     _characteristic_name: str | None = "Magnetic Flux Density - 3D"
-    _manual_value_type: ValueType | str | None = ValueType.STRING  # Override since decode_value returns dict
+    _python_type: type | str | None = str  # Override since decode_value returns dict
     _manual_unit: str | None = PhysicalUnit.TESLA.value  # Override template's "units" default
 
     _vector_components: ClassVar[list[str]] = ["x_axis", "y_axis", "z_axis"]

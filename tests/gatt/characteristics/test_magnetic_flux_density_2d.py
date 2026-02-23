@@ -57,7 +57,7 @@ class TestMagneticFluxDensity2DCharacteristic(CommonCharacteristicTests):
         """Test Magnetic Flux Density 2D characteristic parsing."""
         # Test metadata
         assert characteristic.unit == "T"
-        assert characteristic.value_type.value == "string"
+        assert characteristic.python_type is str
 
         # Test normal parsing: X=1000, Y=-500 (in 10^-7 Tesla units)
         test_data = bytearray(struct.pack("<hh", 1000, -500))

@@ -42,5 +42,4 @@ class UncertaintyCharacteristic(BaseCharacteristic[float]):
 
     # Manual overrides required as Bluetooth SIG registry doesn't provide unit/value type
     _manual_unit = "m"
-    _manual_value_type = "float"
     _template = ScaledUint8Template(scale_factor=0.1)

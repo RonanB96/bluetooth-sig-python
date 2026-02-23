@@ -35,6 +35,7 @@ class TestCharacteristicTestFileCoverage:
             "test_characteristic_role.py",  # Tests role classification, not a single characteristic
             "test_characteristic_test_coverage.py",  # This coverage test
             "test_custom_characteristics.py",  # Tests custom characteristic functionality
+            "test_python_type_auto_resolution.py",  # Tests python_type auto-resolution mechanism
             "test_templates.py",  # Tests template classes, not characteristics
         }
         for test_file in test_dir.glob("test_*.py"):

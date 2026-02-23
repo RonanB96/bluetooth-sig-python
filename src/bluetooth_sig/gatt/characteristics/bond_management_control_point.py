@@ -25,6 +25,8 @@ class BondManagementControlPointCharacteristic(BaseCharacteristic[int]):
     Variable length, starting with command byte.
     """
 
+    _python_type: type | str | None = int
+
     min_length = 1
     allow_variable_length = True
     _template = EnumTemplate.uint8(BondManagementCommand)

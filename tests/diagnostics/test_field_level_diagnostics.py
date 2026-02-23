@@ -15,7 +15,6 @@ from bluetooth_sig.gatt.characteristics.utils import DebugUtils
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.exceptions import ParseFieldError as ParseFieldException
 from bluetooth_sig.types import CharacteristicInfo, ParseFieldError
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -26,7 +25,7 @@ class MultiFieldCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("AAAAAAAA-1234-1234-1234-123456789012"),
         name="Multi Field Test",
         unit="various",
-        value_type=ValueType.DICT,
+        python_type=dict,
     )
 
     def _decode_value(
@@ -291,7 +290,7 @@ class TestGenericErrorExtraction:
                 uuid=BluetoothUUID("BBBBBBBB-1234-1234-1234-123456789012"),
                 name="Generic Error Test",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             expected_type: type | None = int
@@ -382,7 +381,7 @@ class TestTraceControlPerformance:
                 uuid=BluetoothUUID("FFFFFFFF-1234-1234-1234-123456789012"),
                 name="No Trace Test",
                 unit="test",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             # Disable trace collection for performance
@@ -423,7 +422,7 @@ class TestTraceControlPerformance:
                 uuid=BluetoothUUID("EEEEEEEE-1234-1234-1234-123456789012"),
                 name="Default Trace Test",
                 unit="test",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             # Don't set _enable_parse_trace - should default to True
@@ -464,7 +463,7 @@ class TestTraceControlPerformance:
                 uuid=BluetoothUUID("EEEEEEEE-1234-1234-1234-123456789012"),
                 name="Environment Trace Test",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             min_length = 1

@@ -7,7 +7,6 @@ from enum import IntEnum, IntFlag
 
 import msgspec
 
-from ...types.gatt_enums import ValueType
 from ...types.location import PositionStatus
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -58,7 +57,7 @@ class NavigationCharacteristic(BaseCharacteristic[NavigationData]):
     Used to represent data related to a navigation sensor.
     """
 
-    _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
+    _python_type: type | str | None = dict  # Override since decode_value returns dataclass
 
     min_length = 6  # Flags(2) + Bearing(2) + Heading(2) minimum
     max_length = 19  # + RemainingDistance(3) + RemainingVerticalDistance(3) + EstimatedTimeOfArrival(7) maximum

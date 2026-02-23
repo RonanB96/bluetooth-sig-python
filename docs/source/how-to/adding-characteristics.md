@@ -52,7 +52,6 @@ from bluetooth_sig.gatt.exceptions import (
     ValueRangeError,
 )
 from bluetooth_sig.types import CharacteristicInfo
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 

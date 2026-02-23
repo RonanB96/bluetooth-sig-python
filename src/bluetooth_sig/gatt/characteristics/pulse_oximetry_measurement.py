@@ -56,6 +56,8 @@ class PulseOximetryMeasurementCharacteristic(BaseCharacteristic[PulseOximetryDat
     measurements.
     """
 
+    _python_type: type | str | None = dict
+
     _characteristic_name: str = "PLX Continuous Measurement"
 
     _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [PLXFeaturesCharacteristic]

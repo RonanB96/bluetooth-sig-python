@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
+from typing import Any, TypeVar, cast, overload
 
 from ..gatt.characteristics import CharacteristicName
 from ..gatt.characteristics.base import BaseCharacteristic
@@ -17,9 +17,7 @@ from ..gatt.context import CharacteristicContext, DeviceInfo
 from ..types.uuid import BluetoothUUID
 from .client import ClientManagerProtocol
 from .dependency_resolver import DependencyResolutionMode, DependencyResolver
-
-if TYPE_CHECKING:
-    from .protocols import SIGTranslatorProtocol
+from .protocols import SIGTranslatorProtocol
 
 logger = logging.getLogger(__name__)
 

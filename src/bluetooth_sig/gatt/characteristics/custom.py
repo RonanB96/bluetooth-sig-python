@@ -118,8 +118,8 @@ class CustomBaseCharacteristic(BaseCharacteristic[Any]):
 
         # Auto-register if requested and not already registered
         if auto_register:
-            # TODO
-            # NOTE: Import here to avoid circular import (translator imports characteristics)
+            # TODO: Refactor to eliminate circular dependency (translator ↔ characteristics).
+            #   Deferred import used as workaround — consider a registration broker pattern.
             from ...core.translator import (  # noqa: PLC0415
                 BluetoothSIGTranslator,  # pylint: disable=import-outside-toplevel
             )

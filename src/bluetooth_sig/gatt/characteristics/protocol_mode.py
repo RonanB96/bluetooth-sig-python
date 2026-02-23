@@ -23,6 +23,8 @@ class ProtocolModeCharacteristic(BaseCharacteristic[int]):
     Protocol Mode characteristic.
     """
 
+    _python_type: type | str | None = int
+
     _template = EnumTemplate.uint8(ProtocolMode)
 
     # SIG spec: uint8 enumerated mode value → fixed 1-byte payload; no GSS YAML

@@ -15,6 +15,8 @@ class LatitudeCharacteristic(BaseCharacteristic[float]):
     Encoded as sint32 with scale factor 1e-7 degrees per unit.
     """
 
+    _python_type: type | str | None = float
+
     # Geographic coordinate constants
     DEGREE_SCALING_FACTOR = 1e-7  # 10^-7 degrees per unit
 

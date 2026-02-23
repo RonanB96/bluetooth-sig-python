@@ -58,7 +58,7 @@ class TestMagneticDeclinationCharacteristic(CommonCharacteristicTests):
         """Test Magnetic Declination characteristic parsing."""
         # Test metadata
         assert characteristic.unit == "°"
-        assert characteristic.value_type.value == "float"
+        assert characteristic.python_type is float
 
         # Test normal parsing: 18000 (in 0.01 degrees) = 180.00 degrees
         test_data = bytearray([0x40, 0x46])  # 18000 in little endian uint16

@@ -26,5 +26,7 @@ class HidControlPointCharacteristic(BaseCharacteristic[int]):
     HID Control Point characteristic.
     """
 
+    _python_type: type | str | None = int
+
     _template = EnumTemplate.uint8(HidControlPointCommand)
     expected_length = HID_CONTROL_POINT_DATA_LENGTH

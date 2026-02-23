@@ -297,4 +297,4 @@ class TestIndoorPositioningConfig:
 
     def test_coordinate_system_local_is_bit_zero(self) -> None:
         """COORDINATE_SYSTEM_LOCAL is bit 0 per CSS Part A §1.14."""
-        assert IndoorPositioningConfig.COORDINATE_SYSTEM_LOCAL == 0x01
+        assert IndoorPositioningConfig.COORDINATE_SYSTEM_LOCAL.value == 0x01

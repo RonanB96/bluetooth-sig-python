@@ -13,7 +13,6 @@ from bluetooth_sig.gatt.characteristics.utils import DebugUtils
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.exceptions import ParseFieldError as ParseFieldException
 from bluetooth_sig.types import CharacteristicInfo
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -24,7 +23,7 @@ class LoggingTestCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("CCCCCCCC-1234-1234-1234-123456789012"),
         name="Logging Test Characteristic",
         unit="test",
-        value_type=ValueType.DICT,
+        python_type=dict,
     )
 
     def _decode_value(
@@ -168,7 +167,7 @@ class TestLoggingFieldErrors:
                 uuid=BluetoothUUID("DDDDDDDD-1234-1234-1234-123456789012"),
                 name="Multi Error Test",
                 unit="test",
-                value_type=ValueType.DICT,
+                python_type=dict,
             )
 
             def _decode_value(

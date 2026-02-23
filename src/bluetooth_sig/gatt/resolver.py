@@ -95,6 +95,7 @@ class NameNormalizer:
             "pm25",
             "voc",
             "rsc",
+            "cct",
             "cccd",
             "ccc",
             "2d",

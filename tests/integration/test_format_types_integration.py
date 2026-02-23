@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from bluetooth_sig.registry.core.formattypes import format_types_registry
-from bluetooth_sig.types.gatt_enums import DataType
+from bluetooth_sig.types.gatt_enums import WIRE_TYPE_MAP
 from bluetooth_sig.types.registry.formattypes import FormatTypeInfo
 
 
@@ -41,16 +41,14 @@ class TestFormatTypesIntegration:
         assert utf16s_info.value == 0x1A
         assert utf16s_info.short_name == "utf16s"
 
-    def test_datatype_enum_integration(self) -> None:
-        """Test that DataType enum integrates properly with format types."""
-        # UTF16S should exist and work
-        assert DataType.UTF16S.value == "utf16s"
-        assert DataType.from_string("utf16s") == DataType.UTF16S
-        assert DataType.UTF16S.to_value_type().value == "string"
-        assert DataType.UTF16S.to_python_type() == "string"
+    def test_wire_type_map_integration(self) -> None:
+        """Test that WIRE_TYPE_MAP integrates properly with format types."""
+        # utf16s and utf8s should both map to str
+        assert WIRE_TYPE_MAP["utf16s"] is str
+        assert WIRE_TYPE_MAP["utf8s"] is str
 
-        # Should be different from UTF8S
-        assert DataType.UTF16S != DataType.UTF8S  # type: ignore[comparison-overlap]
+        # They should share the same mapping target
+        assert WIRE_TYPE_MAP["utf16s"] is WIRE_TYPE_MAP["utf8s"]
 
     def test_registry_singleton(self) -> None:
         """Test that format_types_registry is a proper singleton."""

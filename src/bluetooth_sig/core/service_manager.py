@@ -11,7 +11,7 @@ from typing import Any
 from ..gatt.services.base import BaseGattService
 from ..gatt.services.registry import GattServiceRegistry
 from ..types import CharacteristicInfo
-from ..types.gatt_enums import ValueType
+from ..types.gatt_enums import WIRE_TYPE_MAP
 from ..types.uuid import BluetoothUUID
 
 # Type alias for characteristic data in process_services
@@ -43,17 +43,16 @@ class ServiceManager:
             for char_uuid_str, char_data in service_data.get("characteristics", {}).items():
                 char_uuid = BluetoothUUID(char_uuid_str)
                 vtype_raw = char_data.get("value_type", "bytes")
+                python_type: type | None = None
                 if isinstance(vtype_raw, str):
-                    value_type = ValueType(vtype_raw)
-                elif isinstance(vtype_raw, ValueType):
-                    value_type = vtype_raw
-                else:
-                    value_type = ValueType.BYTES
+                    python_type = WIRE_TYPE_MAP.get(vtype_raw.lower())
+                elif isinstance(vtype_raw, type):
+                    python_type = vtype_raw
                 characteristics[char_uuid] = CharacteristicInfo(
                     uuid=char_uuid,
                     name=char_data.get("name", ""),
                     unit=char_data.get("unit", ""),
-                    value_type=value_type,
+                    python_type=python_type,
                 )
             service = GattServiceRegistry.create_service(uuid, characteristics)
             if service:

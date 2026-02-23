@@ -29,8 +29,6 @@ class ServiceChangedCharacteristic(BaseCharacteristic[ServiceChangedData]):
     Service Changed characteristic.
     """
 
-    _manual_value_type = "ServiceChangedData"
-
     expected_length = 4
 
     def _decode_value(

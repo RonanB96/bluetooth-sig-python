@@ -24,7 +24,6 @@ from bluetooth_sig.gatt.characteristics.utils import DataParser
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types import CharacteristicInfo
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 # ==============================================================================
@@ -44,7 +43,7 @@ class SimpleTemperatureSensor(CustomBaseCharacteristic):
         uuid=BluetoothUUID("AA001234-0000-1000-8000-00805F9B34FB"),
         name="Simple Temperature Sensor",
         unit="°C",
-        value_type=ValueType.INT,
+        python_type=int,
     )
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
@@ -72,7 +71,7 @@ class PrecisionHumiditySensor(CustomBaseCharacteristic):
         uuid=BluetoothUUID("BB001234-0000-1000-8000-00805F9B34FB"),
         name="Precision Humidity Sensor",
         unit="%",
-        value_type=ValueType.FLOAT,
+        python_type=float,
     )
 
 
@@ -99,7 +98,7 @@ class MultiSensorCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("CC001234-0000-1000-8000-00805F9B34FB"),
         name="Multi-Sensor Environmental",
         unit="various",
-        value_type=ValueType.BYTES,
+        python_type=bytes,
     )
 
     def _decode_value(
@@ -147,7 +146,7 @@ class DeviceSerialNumberCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("DD001234-0000-1000-8000-00805F9B34FB"),
         name="Device Serial Number",
         unit="",
-        value_type=ValueType.STRING,
+        python_type=str,
     )
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> str:
@@ -174,7 +173,7 @@ class DeviceStatusFlags(CustomBaseCharacteristic):
         uuid=BluetoothUUID("EE001234-0000-1000-8000-00805F9B34FB"),
         name="Device Status Flags",
         unit="",
-        value_type=ValueType.INT,
+        python_type=int,
     )
 
     def _decode_value(
@@ -312,7 +311,7 @@ class TestCustomCharacteristicVariants:
         data = bytearray(b"SN123456789")
         result = char.parse_value(data)
         assert result == "SN123456789"
-        assert char.info.value_type == ValueType.STRING
+        assert char.info.python_type is str
 
         encoded = char.build_value("TEST12345")
         result = char.parse_value(encoded)
@@ -370,7 +369,7 @@ class TestCustomCharacteristicVariants:
                 uuid=BluetoothUUID("2A19"),  # Official SIG Battery Level UUID
                 name="Custom Battery Level",
                 unit="%",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
         char = CustomBatteryLevel()
@@ -399,7 +398,7 @@ class TestCustomCharacteristicVariants:
                 uuid=BluetoothUUID("2A19"),  # Official SIG Battery Level UUID
                 name="Custom Battery Level",
                 unit="%",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
         assert SimpleTemperatureSensor._is_custom is True
@@ -427,7 +426,7 @@ class TestCustomCharacteristicRegistration:
                 uuid=uuid,
                 name="Simple Temperature Sensor",
                 unit="°C",
-                value_type=ValueType.INT,
+                python_type=int,
             ),
         )
 
@@ -503,7 +502,7 @@ class TestCustomCharacteristicErrorHandling:
                     uuid=BluetoothUUID("2A19"),  # SIG UUID without override
                     name="Unauthorized Battery",
                     unit="%",
-                    value_type=ValueType.INT,
+                    python_type=int,
                 )
 
                 def _decode_value(  # pylint: disable=duplicate-code
@@ -611,7 +610,7 @@ class TestCustomBaseCharacteristicAPI:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789ABC"),
                 name="Auto Info Test",
                 unit="units",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(
@@ -629,7 +628,7 @@ class TestCustomBaseCharacteristicAPI:
         assert char.info.uuid == BluetoothUUID("12345678-1234-1234-1234-123456789ABC")
         assert char.info.name == "Auto Info Test"
         assert char.info.unit == "units"
-        assert char.info.value_type == ValueType.INT
+        assert char.info.python_type is int
 
         # Should work for parsing
         test_data = bytearray([0x32, 0x00])  # 50 in little-endian
@@ -647,7 +646,7 @@ class TestCustomBaseCharacteristicAPI:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789ABC"),
                 name="Original Name",
                 unit="units",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(
@@ -663,7 +662,7 @@ class TestCustomBaseCharacteristicAPI:
             uuid=BluetoothUUID("ABCDEF12-3456-7890-ABCD-EF1234567890"),
             name="Override Name",
             unit="override_units",
-            value_type=ValueType.FLOAT,
+            python_type=float,
         )
 
         char = OverridableCharacteristic(info=override_info)
@@ -672,7 +671,7 @@ class TestCustomBaseCharacteristicAPI:
         assert char.info.uuid == BluetoothUUID("ABCDEF12-3456-7890-ABCD-EF1234567890")
         assert char.info.name == "Override Name"
         assert char.info.unit == "override_units"
-        assert char.info.value_type == ValueType.FLOAT
+        assert char.info.python_type is float
 
     def test_sig_override_protection(self) -> None:
         """Test that __init_subclass__ prevents SIG UUID usage without permission."""
@@ -683,7 +682,7 @@ class TestCustomBaseCharacteristicAPI:
                     uuid=BluetoothUUID("2A19"),  # SIG Battery Level UUID
                     name="Bad Override",
                     unit="%",
-                    value_type=ValueType.INT,
+                    python_type=int,
                 )
 
                 def _decode_value(  # pylint: disable=duplicate-code
@@ -721,7 +720,7 @@ class TestCustomBaseCharacteristicAPI:
                 uuid=BluetoothUUID("2A19"),  # SIG Battery Level UUID
                 name="Allowed Override",
                 unit="%",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(  # pylint: disable=duplicate-code
@@ -774,7 +773,7 @@ class TestCustomBaseCharacteristicAPI:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789ABC"),
                 name="Custom Characteristic",
                 unit="custom",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(

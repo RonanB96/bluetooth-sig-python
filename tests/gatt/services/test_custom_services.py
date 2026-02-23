@@ -26,7 +26,6 @@ from bluetooth_sig.gatt.services.custom import CustomBaseGattService
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 from bluetooth_sig.gatt.services.unknown import UnknownService
 from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 # ==============================================================================
@@ -552,7 +551,7 @@ class TestCharacteristicIntegration:
                 uuid=BluetoothUUID("AAAA0100-0000-1000-8000-00805F9B34FB"),
                 name="Test Char",
                 unit="",
-                value_type=ValueType.BYTES,
+                python_type=bytes,
             ),
         )
 
@@ -573,7 +572,7 @@ class TestCharacteristicIntegration:
                 uuid=BluetoothUUID("AAAA0200-0000-1000-8000-00805F9B34FB"),
                 name="Char 1",
                 unit="",
-                value_type=ValueType.BYTES,
+                python_type=bytes,
             ),
         )
         char2 = UnknownCharacteristic(
@@ -581,7 +580,7 @@ class TestCharacteristicIntegration:
                 uuid=BluetoothUUID("AAAA0201-0000-1000-8000-00805F9B34FB"),
                 name="Char 2",
                 unit="",
-                value_type=ValueType.BYTES,
+                python_type=bytes,
             ),
         )
 

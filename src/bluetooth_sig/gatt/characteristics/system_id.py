@@ -28,7 +28,6 @@ class SystemIdCharacteristic(BaseCharacteristic[SystemIdData]):
     Represents a 64-bit system identifier: 40-bit manufacturer ID + 24-bit organizationally unique ID.
     """
 
-    _manual_value_type = "SystemIdData"
     expected_length = 8
 
     def _decode_value(

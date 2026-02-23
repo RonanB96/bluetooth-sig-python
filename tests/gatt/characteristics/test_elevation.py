@@ -39,7 +39,7 @@ class TestElevationCharacteristic(CommonCharacteristicTests):
         """Test Elevation characteristic parsing."""
         # Test metadata
         assert characteristic.unit == "m"
-        assert characteristic.value_type.value == "float"
+        assert characteristic.python_type is float
 
         # Test normal parsing: 50000 (in 0.01 meters) = 500.00 meters
         test_data = bytearray([0x50, 0xC3, 0x00])  # 50000 in 24-bit little endian

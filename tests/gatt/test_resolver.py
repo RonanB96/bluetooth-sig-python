@@ -15,7 +15,6 @@ from bluetooth_sig.gatt.resolver import (
     ServiceRegistrySearch,
 )
 from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
-from bluetooth_sig.types.gatt_enums import ValueType
 
 
 class TestNameNormalizer:
@@ -227,8 +226,8 @@ class TestCharacteristicRegistrySearch:
         assert hasattr(result, "uuid")
         assert hasattr(result, "name")
         assert hasattr(result, "unit")
-        assert hasattr(result, "value_type")
-        assert isinstance(result.value_type, ValueType)
+        assert hasattr(result, "python_type")
+        assert result.python_type is None or isinstance(result.python_type, type)
 
 
 class TestServiceRegistrySearch:

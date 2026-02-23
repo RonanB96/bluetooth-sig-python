@@ -37,7 +37,7 @@ class TestVOCConcentrationCharacteristic(CommonCharacteristicTests):
         """Test VOC concentration characteristic parsing."""
         # Test metadata - Updated for SIG spec compliance (uint16, ppb)
         assert characteristic.unit == "ppb"
-        assert characteristic.value_type_resolved.value == "int"  # uint16 format
+        assert characteristic.python_type is int  # uint16 format
 
         # Test normal value parsing
         test_data = bytearray([0x00, 0x04])  # 1024 ppb

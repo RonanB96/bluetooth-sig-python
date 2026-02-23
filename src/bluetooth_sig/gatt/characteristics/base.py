@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from functools import cached_property
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar, get_args
 
 from ...types import (
     CharacteristicInfo,
@@ -23,7 +23,7 @@ from ...types import (
     SpecialValueType,
     classify_special_value,
 )
-from ...types.gatt_enums import CharacteristicRole, GattProperty, ValueType
+from ...types.gatt_enums import CharacteristicRole, GattProperty
 from ...types.registry import CharacteristicSpec
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
@@ -42,15 +42,18 @@ logger = logging.getLogger(__name__)
 # Type variable for generic characteristic return types
 T = TypeVar("T")
 
+# Sentinel for per-class cache (distinguishes None from "not yet resolved")
+_SENTINEL = object()
+
 
 class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], metaclass=CharacteristicMeta):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Base class for all GATT characteristics.
 
     Generic over *T*, the return type of ``_decode_value()``.
 
-    Automatically resolves UUID, unit, and value_type from Bluetooth SIG YAML
+    Automatically resolves UUID, unit, and python_type from Bluetooth SIG YAML
     specifications.  Supports manual overrides via ``_manual_unit`` and
-    ``_manual_value_type`` attributes.
+    ``_python_type`` attributes.
 
     Validation Attributes (optional class-level declarations):
         min_value / max_value: Allowed numeric range.
@@ -62,7 +65,8 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
     # Explicit class attributes with defaults (replaces getattr usage)
     _characteristic_name: str | None = None
     _manual_unit: str | None = None
-    _manual_value_type: ValueType | str | None = None
+    _python_type: type | str | None = None
+    _is_bitfield: bool = False
     _manual_size: int | None = None
     _is_template: bool = False
 
@@ -124,8 +128,6 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
 
         # Manual overrides with proper types (using explicit class attributes)
         self._manual_unit: str | None = self.__class__._manual_unit
-        self._manual_value_type: ValueType | str | None = self.__class__._manual_value_type
-        self.value_type: ValueType = ValueType.UNKNOWN
 
         # Set validation attributes from ValidationConfig or class defaults
         if validation:
@@ -193,72 +195,57 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
         # Apply manual overrides to _info (single source of truth)
         if self._manual_unit is not None:
             self._info.unit = self._manual_unit
-        if self._manual_value_type is not None:
-            # Handle both ValueType enum and string manual overrides
-            if isinstance(self._manual_value_type, ValueType):
-                self._info.value_type = self._manual_value_type
-            else:
-                # Map string value types to ValueType enum
-                string_to_value_type_map = {
-                    "string": ValueType.STRING,
-                    "int": ValueType.INT,
-                    "float": ValueType.FLOAT,
-                    "bytes": ValueType.BYTES,
-                    "bool": ValueType.BOOL,
-                    "datetime": ValueType.DATETIME,
-                    "uuid": ValueType.UUID,
-                    "dict": ValueType.DICT,
-                    "various": ValueType.VARIOUS,
-                    "unknown": ValueType.UNKNOWN,
-                    # Custom type strings that should map to basic types
-                    "BarometricPressureTrend": ValueType.INT,  # IntEnum -> int
-                }
 
-                try:
-                    # First try direct ValueType enum construction
-                    self._info.value_type = ValueType(self._manual_value_type)
-                except ValueError:
-                    # Fall back to string mapping
-                    self._info.value_type = string_to_value_type_map.get(self._manual_value_type, ValueType.VARIOUS)
+        # Auto-resolve python_type from template generic parameter.
+        # Templates carry their decoded type (e.g. ScaledUint16Template → float),
+        # which is more accurate than the YAML wire type (uint16 → int).
+        if self._template is not None:
+            template_type = type(self._template).resolve_python_type()
+            if template_type is not None:
+                self._info.python_type = template_type
 
-        # Set value_type from resolved info
-        self.value_type = self._info.value_type
+        # Auto-resolve python_type from the class generic parameter.
+        # BaseCharacteristic[T] already declares the decoded type (e.g.
+        # BaseCharacteristic[PushbuttonStatus8Data]).  This is the most
+        # authoritative source — it overrides both YAML and template since
+        # the class signature is the contract for what _decode_value returns.
+        generic_type = self._resolve_generic_python_type()
+        if generic_type is not None:
+            self._info.python_type = generic_type
 
-        # If value_type is still UNKNOWN after resolution and no manual override,
-        # try to infer from characteristic patterns
-        if self.value_type == ValueType.UNKNOWN and self._manual_value_type is None:
-            inferred_type = self._infer_value_type_from_patterns()
-            if inferred_type != ValueType.UNKNOWN:
-                self._info.value_type = inferred_type
-                self.value_type = inferred_type
+        # Manual _python_type override wins over all auto-resolution.
+        # Use sparingly — only when no other mechanism can express the correct type.
+        if self.__class__._python_type is not None:
+            self._info.python_type = self.__class__._python_type
+        if self.__class__._is_bitfield:
+            self._info.is_bitfield = True
 
-    def _infer_value_type_from_patterns(self) -> ValueType:
-        """Infer value type from characteristic naming patterns and class structure.
+    @classmethod
+    def _resolve_generic_python_type(cls) -> type | None:
+        """Resolve python_type from the class generic parameter BaseCharacteristic[T].
 
-        This provides a fallback when SIG resolution fails to determine proper value types.
+        Walks the MRO to find the concrete type bound to ``BaseCharacteristic[T]``.
+        Returns ``None`` for unbound TypeVars, ``Any``, or forward references.
+        Caches the result per-class in ``_cached_generic_python_type``.
         """
-        class_name = self.__class__.__name__
-        char_name = self._characteristic_name or class_name
+        cached = cls.__dict__.get("_cached_generic_python_type", _SENTINEL)
+        if cached is not _SENTINEL:
+            return cached  # type: ignore[no-any-return]
 
-        # Feature characteristics are bitfields and should be BITFIELD
-        if "Feature" in class_name or "Feature" in char_name:
-            return ValueType.BITFIELD
+        resolved: type | None = None
+        for klass in cls.__mro__:
+            for base in getattr(klass, "__orig_bases__", ()):
+                origin = getattr(base, "__origin__", None)
+                if origin is BaseCharacteristic:
+                    args = get_args(base)
+                    if args and isinstance(args[0], type) and args[0] is not Any:
+                        resolved = args[0]
+                        break
+            if resolved is not None:
+                break
 
-        # Check if this is a multi-field characteristic (complex structure)
-        if self._spec and hasattr(self._spec, "structure") and len(self._spec.structure) > 1:
-            return ValueType.VARIOUS
-
-        # Common simple value characteristics
-        simple_int_patterns = ["Level", "Count", "Index", "ID", "Appearance"]
-        if any(pattern in class_name or pattern in char_name for pattern in simple_int_patterns):
-            return ValueType.INT
-
-        simple_string_patterns = ["Name", "Description", "Text", "String"]
-        if any(pattern in class_name or pattern in char_name for pattern in simple_string_patterns):
-            return ValueType.STRING
-
-        # Default fallback for complex characteristics
-        return ValueType.VARIOUS
+        cls._cached_generic_python_type = resolved  # type: ignore[attr-defined]
+        return resolved
 
     def _resolve_yaml_spec(self) -> CharacteristicSpec | None:
         """Resolve specification using YAML cross-reference system."""
@@ -303,7 +290,9 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
             if cls._manual_role is not None:
                 cls._cached_role = cls._manual_role
             else:
-                cls._cached_role = classify_role(self.name, self.value_type, self.unit, self._spec)
+                cls._cached_role = classify_role(
+                    self.name, self._info.python_type, self._info.is_bitfield, self.unit, self._spec
+                )
         return cls._cached_role
 
     @property
@@ -661,9 +650,14 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
         return None
 
     @property
-    def value_type_resolved(self) -> ValueType:
-        """Get the value type from _info."""
-        return self._info.value_type
+    def python_type(self) -> type | str | None:
+        """Get the resolved Python type for this characteristic's values."""
+        return self._info.python_type
+
+    @property
+    def is_bitfield(self) -> bool:
+        """Whether this characteristic's value is a bitfield."""
+        return self._info.is_bitfield
 
     # YAML automation helper methods
     def get_yaml_data_type(self) -> str | None:

@@ -5,7 +5,6 @@ import msgspec
 from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext, DeviceInfo
 from bluetooth_sig.types import CharacteristicInfo
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -20,7 +19,7 @@ class CalibrationCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("12345678-1234-1234-1234-123456789001"),
         name="Test Calibration",
         unit="",
-        value_type=ValueType.INT,
+        python_type=int,
     )
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
@@ -38,7 +37,7 @@ class MeasurementCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("12345678-1234-1234-1234-123456789002"),
         name="Test Measurement",
         unit="",
-        value_type=ValueType.FLOAT,
+        python_type=float,
     )
 
     def _decode_value(

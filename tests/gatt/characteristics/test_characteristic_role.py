@@ -11,7 +11,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
-from bluetooth_sig.types.gatt_enums import CharacteristicRole, ValueType
+from bluetooth_sig.types.gatt_enums import CharacteristicRole
 
 # ---------------------------------------------------------------------------
 # Helper — instantiate a registered characteristic by its SIG name
@@ -64,7 +64,8 @@ class TestMeasurementRole:
     def test_measurement_characteristics(self, sig_name: str) -> None:
         char = _get_char(sig_name)
         assert char.role == CharacteristicRole.MEASUREMENT, (
-            f"{sig_name} expected MEASUREMENT, got {char.role.value} (vtype={char.value_type.name}, unit={char.unit!r})"
+            f"{sig_name} expected MEASUREMENT, got {char.role.value}"
+            f" (python_type={char.python_type}, unit={char.unit!r})"
         )
 
     def test_measurement_interval_by_name(self) -> None:
@@ -199,7 +200,7 @@ class TestRolePriority:
         in the name.
         """
         char = _get_char("Body Composition Feature")
-        assert char.value_type == ValueType.BITFIELD
+        assert char.is_bitfield
         assert char.role == CharacteristicRole.FEATURE
 
 

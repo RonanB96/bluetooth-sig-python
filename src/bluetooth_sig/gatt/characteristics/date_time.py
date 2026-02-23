@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from ...types.gatt_enums import ValueType
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -18,7 +17,6 @@ class DateTimeCharacteristic(BaseCharacteristic[datetime]):
     Represents date and time in 7-byte format: year(2), month(1), day(1), hours(1), minutes(1), seconds(1).
     """
 
-    _manual_value_type = ValueType.DATETIME
     expected_length = 7
 
     def _decode_value(

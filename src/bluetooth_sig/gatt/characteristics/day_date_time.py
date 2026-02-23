@@ -31,7 +31,6 @@ class DayDateTimeCharacteristic(BaseCharacteristic[DayDateTimeData]):
     Represents date, time and day of week in 8-byte format.
     """
 
-    _manual_value_type = "DayDateTimeData"
     expected_length = 8
 
     def _decode_value(

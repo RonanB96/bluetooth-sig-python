@@ -10,11 +10,12 @@ and BROADCAST data for others to read.
 
 Adapters must provide async implementations of all abstract methods below.
 
-TODO: Create PeripheralDevice class (analogous to Device) that provides:
-    - High-level abstraction over PeripheralManagerProtocol
-    - SIG translator integration for encoding values
-    - Hosted service state management (like DeviceConnected for clients)
-    - See device.py for the client-side pattern to follow
+TODO: PeripheralDevice exists in peripheral_device.py with core functionality.
+    Remaining gaps to address (see ROADMAP.md Workstream F):
+    - Subscription management (on_subscribe/on_unsubscribe, subscribed_clients tracking)
+    - Client event callbacks (on_client_connected/on_client_disconnected)
+    - Read/write request handling (typed on_read_request/on_write_request)
+    - Descriptor hosting (CCCD, User Description, Presentation Format)
 """
 
 from __future__ import annotations

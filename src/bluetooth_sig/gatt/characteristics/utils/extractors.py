@@ -313,6 +313,38 @@ class Sint32Extractor(RawExtractor):
         return DataParser.encode_int32(raw, signed=True, endian=self._endian)
 
 
+class Uint48Extractor(RawExtractor):
+    """Extract/pack unsigned 48-bit integers (0 to 281474976710655)."""
+
+    __slots__ = ("_endian",)
+
+    def __init__(self, endian: Literal["little", "big"] = "little") -> None:
+        """Initialize with endianness.
+
+        Args:
+            endian: Byte order, defaults to little-endian per BLE spec.
+        """
+        self._endian: Literal["little", "big"] = endian
+
+    @property
+    def byte_size(self) -> int:
+        """Size: 6 bytes."""
+        return 6
+
+    @property
+    def signed(self) -> bool:
+        """Unsigned type."""
+        return False
+
+    def extract(self, data: bytes | bytearray, offset: int = 0) -> int:
+        """Extract uint48 from bytes."""
+        return DataParser.parse_int48(data, offset, signed=False, endian=self._endian)
+
+    def pack(self, raw: int) -> bytearray:
+        """Pack uint48 to bytes."""
+        return DataParser.encode_int48(raw, signed=False, endian=self._endian)
+
+
 class Float32Extractor(RawExtractor):
     """Extract/pack IEEE-754 32-bit floats.
 
@@ -364,6 +396,7 @@ UINT24 = Uint24Extractor()
 SINT24 = Sint24Extractor()
 UINT32 = Uint32Extractor()
 SINT32 = Sint32Extractor()
+UINT48 = Uint48Extractor()
 FLOAT32 = Float32Extractor()
 
 # Mapping from GSS type strings to extractor instances
@@ -376,6 +409,7 @@ _EXTRACTOR_MAP: dict[str, RawExtractor] = {
     "sint24": SINT24,
     "uint32": UINT32,
     "sint32": SINT32,
+    "uint48": UINT48,
     "float32": FLOAT32,
     "int16": SINT16,
 }

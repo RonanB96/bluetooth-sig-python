@@ -14,5 +14,7 @@ class LocationNameCharacteristic(BaseCharacteristic[str]):
     Location Name characteristic.
     """
 
+    _python_type: type | str | None = str
+
     _template = Utf8StringTemplate()
     min_length = 0

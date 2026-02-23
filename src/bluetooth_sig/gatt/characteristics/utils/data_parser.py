@@ -18,6 +18,7 @@ from ...constants import (
     UINT16_MAX,
     UINT24_MAX,
     UINT32_MAX,
+    UINT48_MAX,
 )
 from ...exceptions import InsufficientDataError, ValueRangeError
 
@@ -77,6 +78,18 @@ class DataParser:
         if len(data) < offset + 3:
             raise InsufficientDataError("int24", data[offset:], 3)
         return int.from_bytes(data[offset : offset + 3], byteorder=endian, signed=signed)
+
+    @staticmethod
+    def parse_int48(
+        data: bytes | bytearray,
+        offset: int = 0,
+        signed: bool = False,
+        endian: Literal["little", "big"] = "little",
+    ) -> int:
+        """Parse 48-bit integer with configurable endianness and signed interpretation."""
+        if len(data) < offset + 6:
+            raise InsufficientDataError("int48", data[offset:], 6)
+        return int.from_bytes(data[offset : offset + 6], byteorder=endian, signed=signed)
 
     @staticmethod
     def parse_float32(data: bytearray, offset: int = 0) -> float:
@@ -146,6 +159,18 @@ class DataParser:
         elif not 0 <= value <= UINT24_MAX:
             raise ValueRangeError("uint24", value, 0, UINT24_MAX)
         return bytearray(value.to_bytes(3, byteorder=endian, signed=signed))
+
+    @staticmethod
+    def encode_int48(value: int, signed: bool = False, endian: Literal["little", "big"] = "little") -> bytearray:
+        """Encode 48-bit integer with configurable endianness and signed/unsigned validation."""
+        if signed:
+            min_val = -(1 << 47)
+            max_val = (1 << 47) - 1
+            if not min_val <= value <= max_val:
+                raise ValueRangeError("sint48", value, min_val, max_val)
+        elif not 0 <= value <= UINT48_MAX:
+            raise ValueRangeError("uint48", value, 0, UINT48_MAX)
+        return bytearray(value.to_bytes(6, byteorder=endian, signed=signed))
 
     @staticmethod
     def encode_float32(value: float) -> bytearray:

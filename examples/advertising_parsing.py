@@ -110,14 +110,12 @@ def display_advertising_data(
 
     # Positioning and discovery
     if parsed_data.ad_structures.location.indoor_positioning:
-        found_fields.append(f"Indoor Positioning: {parsed_data.ad_structures.location.indoor_positioning.hex()}")
+        found_fields.append(f"Indoor Positioning: {parsed_data.ad_structures.location.indoor_positioning}")
     else:
         not_found_fields.append("Indoor Positioning")
 
     if parsed_data.ad_structures.location.transport_discovery_data:
-        found_fields.append(
-            f"Transport Discovery Data: {parsed_data.ad_structures.location.transport_discovery_data.hex()}"
-        )
+        found_fields.append(f"Transport Discovery Data: {parsed_data.ad_structures.location.transport_discovery_data}")
     else:
         not_found_fields.append("Transport Discovery Data")
 
@@ -161,7 +159,7 @@ def display_advertising_data(
         not_found_fields.append("Electronic Shelf Label")
 
     if parsed_data.ad_structures.location.three_d_information:
-        found_fields.append(f"3D Information: {parsed_data.ad_structures.location.three_d_information.hex()}")
+        found_fields.append(f"3D Information: {parsed_data.ad_structures.location.three_d_information}")
     else:
         not_found_fields.append("3D Information")
 
@@ -291,7 +289,7 @@ def display_advertising_data(
 
     if parsed_data.ad_structures.location.channel_map_update_indication:
         found_fields.append(
-            f"Channel Map Update Indication: {parsed_data.ad_structures.location.channel_map_update_indication.hex()}"
+            f"Channel Map Update Indication: {parsed_data.ad_structures.location.channel_map_update_indication}"
         )
     else:
         not_found_fields.append("Channel Map Update Indication")
