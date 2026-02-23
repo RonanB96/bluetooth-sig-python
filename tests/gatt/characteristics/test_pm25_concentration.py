@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics import PM25ConcentrationCharacteristic
@@ -26,19 +28,41 @@ class TestPM25ConcentrationCharacteristic(CommonCharacteristicTests):
         """Valid PM2.5 concentration test data."""
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x19, 0x00]), expected_value=25, description="25 µg/m³ PM2.5 concentration"
+                input_data=bytearray([0x19, 0x80]),  # 25 in IEEE 11073 SFLOAT
+                expected_value=25.0,
+                description="25.0 kg/m\u00b3 PM2.5 concentration",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x32, 0x00]), expected_value=50, description="50 µg/m³ PM2.5 concentration"
+                input_data=bytearray([0x32, 0x80]),  # 50 in IEEE 11073 SFLOAT
+                expected_value=50.0,
+                description="50.0 kg/m\u00b3 PM2.5 concentration",
             ),
         ]
 
     def test_pm25_concentration_parsing(self, characteristic: PM25ConcentrationCharacteristic) -> None:
         """Test PM2.5 concentration characteristic parsing."""
-        # Test metadata
-        assert characteristic.unit == "µg/m³"
+        assert characteristic.unit == "kg/m\u00b3"
+        assert characteristic.python_type is float
 
-        # Test normal parsing
-        test_data = bytearray([0x19, 0x00])  # 25 µg/m³ little endian
+        test_data = bytearray([0x19, 0x80])  # mantissa=25, exponent=0 → 25.0
         parsed = characteristic.parse_value(test_data)
-        assert parsed == 25
+        assert isinstance(parsed, float)
+        assert parsed == 25.0
+
+    def test_pm25_concentration_special_values(self, characteristic: PM25ConcentrationCharacteristic) -> None:
+        """Test PM2.5 concentration special values per IEEE 11073 SFLOAT."""
+        # Test NaN special value (0x07FF)
+        result = characteristic.parse_value(bytearray([0xFF, 0x07]))
+        assert math.isnan(result)
+
+        # Test NRes special value (0x0800)
+        result = characteristic.parse_value(bytearray([0x00, 0x08]))
+        assert math.isnan(result)
+
+        # Test positive infinity (0x07FE)
+        result = characteristic.parse_value(bytearray([0xFE, 0x07]))
+        assert math.isinf(result) and result > 0
+
+        # Test negative infinity (0x0802)
+        result = characteristic.parse_value(bytearray([0x02, 0x08]))
+        assert math.isinf(result) and result < 0

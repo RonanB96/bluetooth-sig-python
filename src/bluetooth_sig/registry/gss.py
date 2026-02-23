@@ -240,7 +240,7 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
                 unit_line = parts[1].strip()
         elif "Unit:" in description:
             # Inline format: "Unit: org.bluetooth.unit.xxx"
-            unit_line = description.split("Unit:")[1].split("\n")[0].strip()
+            unit_line = description.split("Unit:")[1].split("\n", maxsplit=1)[0].strip()
 
         if unit_line and "org.bluetooth.unit." in unit_line:
             # Remove all spaces (handles YAML formatting issues)

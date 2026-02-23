@@ -286,7 +286,7 @@ def _make_ttl_buffer(
         translator=translator,
         required_uuids={temp_uuid, humid_uuid},
         group_key=lambda _uuid, _parsed: "room-1",
-        on_pair=lambda results: paired.append(results),
+        on_pair=paired.append,
         max_age_seconds=max_age_seconds,
         clock=clock,
     )
@@ -370,7 +370,7 @@ class TestTTLEviction:
             translator=translator,
             required_uuids={temp_uuid, humid_uuid},
             group_key=group_key,
-            on_pair=lambda r: paired.append(r),
+            on_pair=paired.append,
             max_age_seconds=10.0,
             clock=clock,
         )
@@ -463,7 +463,7 @@ class TestBufferStats:
             translator=translator,
             required_uuids={temp_uuid, humid_uuid},
             group_key=lambda _u, _p: "g",
-            on_pair=lambda r: paired.append(r),
+            on_pair=paired.append,
         )
 
         buf.ingest(temp_uuid, bytes([0x0A, 0x00]))

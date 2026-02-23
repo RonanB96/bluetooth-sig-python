@@ -89,7 +89,9 @@ class NameNormalizer:
     def snake_case_to_camel_case(s: str) -> str:
         """Convert snake_case to CamelCase with acronym handling (for test file mapping)."""
         acronyms = {
+            "cgm",
             "co2",
+            "ieee",
             "pm1",
             "pm10",
             "pm25",
@@ -207,7 +209,7 @@ class NameVariantGenerator:
         base_name = NameNormalizer.remove_suffix(class_name, "Service")
 
         # Split on camelCase and convert to space-separated
-        words = re.findall("[A-Z][^A-Z]*", base_name)
+        words = re.findall(r"[A-Z][^A-Z]*", base_name)
         display_name = " ".join(words)
 
         # Generate org format

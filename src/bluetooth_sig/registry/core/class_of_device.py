@@ -172,7 +172,7 @@ class ClassOfDeviceRegistry(BaseGenericRegistry[ClassOfDeviceInfo]):
             minor_val = minor_item.get("value")
             minor_name = minor_item.get("name")
             if minor_val is not None and minor_name:
-                self._minor_classes[(major_val, minor_val)] = MinorDeviceClassInfo(
+                self._minor_classes[major_val, minor_val] = MinorDeviceClassInfo(
                     value=minor_val,
                     name=minor_name,
                     major_class=major_val,

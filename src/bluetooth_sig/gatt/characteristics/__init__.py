@@ -37,10 +37,16 @@ from .average_voltage import AverageVoltageCharacteristic
 from .barometric_pressure_trend import BarometricPressureTrendCharacteristic
 from .base import BaseCharacteristic
 from .battery_critical_status import BatteryCriticalStatusCharacteristic
+from .battery_energy_status import BatteryEnergyStatusCharacteristic
+from .battery_health_information import BatteryHealthInformationCharacteristic
+from .battery_health_status import BatteryHealthStatusCharacteristic
+from .battery_information import BatteryInformationCharacteristic
 from .battery_level import BatteryLevelCharacteristic
 from .battery_level_status import BatteryLevelStatusCharacteristic
+from .battery_time_status import BatteryTimeStatusCharacteristic
 from .blood_pressure_feature import BloodPressureFeatureCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
+from .blood_pressure_record import BloodPressureRecordCharacteristic, BloodPressureRecordData
 from .body_composition_feature import BodyCompositionFeatureCharacteristic
 from .body_composition_measurement import BodyCompositionMeasurementCharacteristic
 from .body_sensor_location import BodySensorLocation, BodySensorLocationCharacteristic
@@ -56,6 +62,19 @@ from .boot_keyboard_output_report import BootKeyboardOutputReportCharacteristic,
 from .boot_mouse_input_report import BootMouseInputReportCharacteristic, BootMouseInputReportData, MouseButtons
 from .caloric_intake import CaloricIntakeCharacteristic
 from .carbon_monoxide_concentration import CarbonMonoxideConcentrationCharacteristic
+from .cgm_feature import CGMFeatureCharacteristic, CGMFeatureData, CGMFeatureFlags, CGMSampleLocation, CGMType
+from .cgm_measurement import (
+    CGMCalTempOctet,
+    CGMMeasurementCharacteristic,
+    CGMMeasurementData,
+    CGMMeasurementFlags,
+    CGMMeasurementRecord,
+    CGMSensorStatusOctet,
+    CGMWarningOctet,
+)
+from .cgm_session_run_time import CGMSessionRunTimeCharacteristic, CGMSessionRunTimeData
+from .cgm_session_start_time import CGMSessionStartTimeCharacteristic, CGMSessionStartTimeData
+from .cgm_status import CGMStatusCharacteristic, CGMStatusData, CGMStatusFlags
 from .chromatic_distance_from_planckian import ChromaticDistanceFromPlanckianCharacteristic
 from .chromaticity_coordinate import ChromaticityCoordinateCharacteristic
 from .chromaticity_coordinates import ChromaticityCoordinatesCharacteristic, ChromaticityCoordinatesData
@@ -74,8 +93,15 @@ from .cosine_of_the_angle import CosineOfTheAngleCharacteristic
 from .count_16 import Count16Characteristic
 from .count_24 import Count24Characteristic
 from .country_code import CountryCodeCharacteristic
+from .cross_trainer_data import CrossTrainerData, CrossTrainerDataCharacteristic
 from .csc_feature import CSCFeatureCharacteristic
 from .csc_measurement import CSCMeasurementCharacteristic
+from .current_elapsed_time import (
+    CurrentElapsedTimeCharacteristic,
+    CurrentElapsedTimeData,
+    ElapsedTimeFlags,
+    TimeResolution,
+)
 from .current_time import CurrentTimeCharacteristic
 from .cycling_power_control_point import CyclingPowerControlPointCharacteristic
 from .cycling_power_feature import CyclingPowerFeatureCharacteristic
@@ -104,6 +130,16 @@ from .energy_32 import Energy32Characteristic
 from .energy_in_a_period_of_day import (
     EnergyInAPeriodOfDayCharacteristic,
     EnergyInAPeriodOfDayData,
+)
+from .enhanced_blood_pressure_measurement import (
+    EnhancedBloodPressureData,
+    EnhancedBloodPressureFlags,
+    EnhancedBloodPressureMeasurementCharacteristic,
+    EpochYear,
+)
+from .enhanced_intermediate_cuff_pressure import (
+    EnhancedIntermediateCuffPressureCharacteristic,
+    EnhancedIntermediateCuffPressureData,
 )
 from .estimated_service_date import EstimatedServiceDateCharacteristic
 from .event_statistics import EventStatisticsCharacteristic, EventStatisticsData
@@ -141,8 +177,13 @@ from .high_voltage import HighVoltageCharacteristic
 from .hip_circumference import HipCircumferenceCharacteristic
 from .humidity import HumidityCharacteristic
 from .humidity_8 import Humidity8Characteristic
+from .ieee_11073_20601_regulatory_certification_data_list import (
+    IEEE11073RegulatoryData,
+    IEEE1107320601RegulatoryCharacteristic,
+)
 from .illuminance import IlluminanceCharacteristic
 from .illuminance_16 import Illuminance16Characteristic
+from .indoor_bike_data import IndoorBikeData, IndoorBikeDataCharacteristic
 from .indoor_positioning_configuration import IndoorPositioningConfigurationCharacteristic
 from .intermediate_temperature import IntermediateTemperatureCharacteristic
 from .irradiance import IrradianceCharacteristic
@@ -248,6 +289,7 @@ from .relative_value_in_an_illuminance_range import (
 )
 from .resting_heart_rate import RestingHeartRateCharacteristic
 from .rotational_speed import RotationalSpeedCharacteristic
+from .rower_data import RowerData, RowerDataCharacteristic
 from .rsc_feature import RSCFeatureCharacteristic
 from .rsc_measurement import RSCMeasurementCharacteristic
 from .scan_interval_window import ScanIntervalWindowCharacteristic
@@ -261,6 +303,8 @@ from .sport_type_for_aerobic_and_anaerobic_thresholds import (
     SportType,
     SportTypeForAerobicAndAnaerobicThresholdsCharacteristic,
 )
+from .stair_climber_data import StairClimberData, StairClimberDataCharacteristic
+from .step_climber_data import StepClimberData, StepClimberDataCharacteristic
 from .stride_length import StrideLengthCharacteristic
 from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacteristic
 from .sulfur_hexafluoride_concentration import SulfurHexafluorideConcentrationCharacteristic
@@ -313,6 +357,7 @@ from .time_update_state import TimeUpdateCurrentState, TimeUpdateResult, TimeUpd
 from .time_with_dst import TimeWithDstCharacteristic
 from .time_zone import TimeZoneCharacteristic
 from .torque import TorqueCharacteristic
+from .treadmill_data import TreadmillData, TreadmillDataCharacteristic
 from .true_wind_direction import TrueWindDirectionCharacteristic
 from .true_wind_speed import TrueWindSpeedCharacteristic
 from .two_zone_heart_rate_limits import TwoZoneHeartRateLimitsCharacteristic
@@ -364,10 +409,17 @@ __all__ = [
     # Base characteristic
     "BaseCharacteristic",
     "BatteryCriticalStatusCharacteristic",
+    "BatteryEnergyStatusCharacteristic",
+    "BatteryHealthInformationCharacteristic",
+    "BatteryHealthStatusCharacteristic",
+    "BatteryInformationCharacteristic",
     "BatteryLevelCharacteristic",
     "BatteryLevelStatusCharacteristic",
+    "BatteryTimeStatusCharacteristic",
     "BloodPressureFeatureCharacteristic",
     "BloodPressureMeasurementCharacteristic",
+    "BloodPressureRecordCharacteristic",
+    "BloodPressureRecordData",
     "BodyCompositionFeatureCharacteristic",
     "BodyCompositionMeasurementCharacteristic",
     "BodySensorLocation",
@@ -380,6 +432,25 @@ __all__ = [
     "BootKeyboardOutputReportCharacteristic",
     "BootMouseInputReportCharacteristic",
     "BootMouseInputReportData",
+    "CGMFeatureCharacteristic",
+    "CGMFeatureData",
+    "CGMFeatureFlags",
+    "CGMCalTempOctet",
+    "CGMMeasurementCharacteristic",
+    "CGMMeasurementData",
+    "CGMMeasurementFlags",
+    "CGMMeasurementRecord",
+    "CGMSampleLocation",
+    "CGMSensorStatusOctet",
+    "CGMSessionRunTimeCharacteristic",
+    "CGMSessionRunTimeData",
+    "CGMSessionStartTimeCharacteristic",
+    "CGMSessionStartTimeData",
+    "CGMStatusCharacteristic",
+    "CGMStatusData",
+    "CGMStatusFlags",
+    "CGMType",
+    "CGMWarningOctet",
     "CO2ConcentrationCharacteristic",
     "CSCFeatureCharacteristic",
     "CSCMeasurementCharacteristic",
@@ -406,6 +477,10 @@ __all__ = [
     "Count16Characteristic",
     "Count24Characteristic",
     "CountryCodeCharacteristic",
+    "CrossTrainerData",
+    "CrossTrainerDataCharacteristic",
+    "CurrentElapsedTimeCharacteristic",
+    "CurrentElapsedTimeData",
     "CurrentTimeCharacteristic",
     "CyclingPowerControlPointCharacteristic",
     "CyclingPowerFeatureCharacteristic",
@@ -435,6 +510,12 @@ __all__ = [
     "Energy32Characteristic",
     "EnergyInAPeriodOfDayCharacteristic",
     "EnergyInAPeriodOfDayData",
+    "EnhancedBloodPressureData",
+    "EnhancedBloodPressureFlags",
+    "EnhancedBloodPressureMeasurementCharacteristic",
+    "EnhancedIntermediateCuffPressureCharacteristic",
+    "EnhancedIntermediateCuffPressureData",
+    "EpochYear",
     "EstimatedServiceDateCharacteristic",
     "ExactTime256Characteristic",
     "ExactTime256Data",
@@ -478,10 +559,16 @@ __all__ = [
     "HipCircumferenceCharacteristic",
     "HumidityCharacteristic",
     "Humidity8Characteristic",
+    "IEEE1107320601RegulatoryCharacteristic",
+    "IEEE11073RegulatoryData",
     "IlluminanceCharacteristic",
     "Illuminance16Characteristic",
+    "IndoorBikeData",
+    "IndoorBikeDataCharacteristic",
     "IndoorPositioningConfigurationCharacteristic",
     "IntermediateTemperatureCharacteristic",
+    "ElapsedTimeFlags",
+    "TimeResolution",
     "IrradianceCharacteristic",
     "LNControlPointCharacteristic",
     "LNFeatureCharacteristic",
@@ -573,6 +660,8 @@ __all__ = [
     "RelativeValueInAnIlluminanceRangeData",
     "RestingHeartRateCharacteristic",
     "RotationalSpeedCharacteristic",
+    "RowerData",
+    "RowerDataCharacteristic",
     "ScanIntervalWindowCharacteristic",
     "ScanRefreshCharacteristic",
     "SedentaryIntervalNotificationCharacteristic",
@@ -584,6 +673,10 @@ __all__ = [
     "SoftwareRevisionStringCharacteristic",
     "SportType",
     "SportTypeForAerobicAndAnaerobicThresholdsCharacteristic",
+    "StairClimberData",
+    "StairClimberDataCharacteristic",
+    "StepClimberData",
+    "StepClimberDataCharacteristic",
     "StrideLengthCharacteristic",
     "SulfurDioxideConcentrationCharacteristic",
     "SulfurHexafluorideConcentrationCharacteristic",
@@ -630,6 +723,8 @@ __all__ = [
     "TimeWithDstCharacteristic",
     "TimeZoneCharacteristic",
     "TorqueCharacteristic",
+    "TreadmillData",
+    "TreadmillDataCharacteristic",
     "TrueWindDirectionCharacteristic",
     "TrueWindSpeedCharacteristic",
     "TwoZoneHeartRateLimitsCharacteristic",

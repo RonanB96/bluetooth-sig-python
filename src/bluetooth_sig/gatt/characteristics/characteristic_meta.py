@@ -166,7 +166,7 @@ class CharacteristicMeta(ABCMeta):
             module_name = namespace.get("__module__", "")
             is_in_templates = "templates" in module_name
 
-            if not is_in_templates and not namespace.get("_is_template_override", False):
+            if not is_in_templates and not namespace.get("_is_template_override"):
                 has_template_parent = any(getattr(base, "_is_template", False) for base in bases)
                 if has_template_parent and "_is_template" not in namespace:
                     namespace["_is_template"] = False

@@ -62,7 +62,7 @@ class TestYAMLUnitParsing:
         # Create instance and check manual unit takes precedence
         pm25_char = PM25ConcentrationCharacteristic()
         unit = pm25_char.unit
-        assert unit == "µg/m³", f"PM25 unit should be manual (µg/m³) from class definition, got {unit}"
+        assert unit == "kg/m³", f"PM25 unit should be manual (kg/m³) from class definition, got {unit}"
 
     def test_unknown_characteristic_unit(self) -> None:
         """Test behaviour with characteristics not in YAML."""

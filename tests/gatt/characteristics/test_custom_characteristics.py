@@ -193,17 +193,17 @@ class DeviceStatusFlags(CustomBaseCharacteristic):
     def _encode_value(self, data: dict[str, bool]) -> bytearray:
         """Encode status flags dict to byte."""
         byte = 0
-        if data.get("powered_on", False):
+        if data.get("powered_on"):
             byte |= 0x01
-        if data.get("charging", False):
+        if data.get("charging"):
             byte |= 0x02
-        if data.get("low_battery", False):
+        if data.get("low_battery"):
             byte |= 0x04
-        if data.get("error", False):
+        if data.get("error"):
             byte |= 0x08
-        if data.get("bluetooth_connected", False):
+        if data.get("bluetooth_connected"):
             byte |= 0x10
-        if data.get("wifi_connected", False):
+        if data.get("wifi_connected"):
             byte |= 0x20
         return bytearray([byte])
 

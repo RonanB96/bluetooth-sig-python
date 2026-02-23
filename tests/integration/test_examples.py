@@ -223,7 +223,7 @@ def test_examples_utils_safe_import(monkeypatch: pytest.MonkeyPatch) -> None:
         fromlist: tuple[str, ...] = (),
         level: int = 0,
     ) -> object:
-        root = name.split(".")[0]
+        root = name.split(".", maxsplit=1)[0]
         # Simulate missing optional back-ends
         if root in ("bleak", "bleak_retry_connector", "simplepyble", "simpleble"):
             raise ImportError(f"Simulated missing optional backend: {root}")
@@ -248,7 +248,7 @@ def test_bleak_retry_integration_missing_backend(monkeypatch: pytest.MonkeyPatch
         fromlist: tuple[str, ...] = (),
         level: int = 0,
     ) -> object:
-        root = name.split(".")[0]
+        root = name.split(".", maxsplit=1)[0]
         if root in ("bleak", "bleak_retry_connector"):
             raise ModuleNotFoundError(f"Simulated missing optional backend: {root}")
         return real_import(name, globals_, locals_, fromlist, level)
@@ -273,7 +273,7 @@ def test_simpleble_integration_missing_backend(monkeypatch: pytest.MonkeyPatch) 
         fromlist: tuple[str, ...] = (),
         level: int = 0,
     ) -> object:
-        root = name.split(".")[0]
+        root = name.split(".", maxsplit=1)[0]
         if root == "simplepyble":
             raise ModuleNotFoundError(f"Simulated missing optional backend: {root}")
         return real_import(name, globals_, locals_, fromlist, level)
