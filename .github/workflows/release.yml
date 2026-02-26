@@ -61,16 +61,13 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Install package from ${{ matrix.artifact }}
+      - name: Install package (${{ matrix.artifact }}) with test extras
         run: |
           if [ "${{ matrix.artifact }}" = "wheel" ]; then
-            pip install dist/*.whl
+            pip install "$(ls dist/*.whl)[test-core]"
           else
-            pip install dist/*.tar.gz
+            pip install "$(ls dist/*.tar.gz)[test-core]"
           fi
-
-      - name: Install test dependencies
-        run: pip install "pytest~=8.4" "pytest-asyncio>=0.23.0,<0.24" "pytest-xdist~=3.0"
 
       - name: Verify package metadata
         run: |
@@ -83,7 +80,7 @@ jobs:
 
       - name: Run packaging smoke tests against installed ${{ matrix.artifact }}
         run: |
-          python -m pytest tests/ \
+          python -m pytest tests/gatt/ \
             --override-ini="pythonpath=" \
             -m packaging \
             -v
