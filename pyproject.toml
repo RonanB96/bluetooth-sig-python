@@ -144,9 +144,6 @@ packages = ["src/bluetooth_sig"]
 [tool.hatch.build.targets.wheel.force-include]
 "bluetooth_sig" = "bluetooth_sig/bluetooth_sig"
 
-[tool.hatch.build.targets.sdist.force-include]
-"bluetooth_sig" = "bluetooth_sig/bluetooth_sig"
-
 [tool.hatch.metadata]
 allow-direct-references = true
 
