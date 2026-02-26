@@ -118,6 +118,7 @@ markers = [
     "code_blocks: Tests that execute code blocks extracted from markdown documentation",
     "playwright: Tests using Playwright for browser automation",
     "accessibility: Tests for documentation accessibility compliance",
+    "packaging: Smoke tests that validate the installed package (data files, imports, core lookups)",
 ]
 
 [tool.hatch.build]

@@ -123,6 +123,7 @@ def test_characteristic_uuid_lookup_parametrized(
     assert info.id == char_id
 
 
+@pytest.mark.packaging
 def test_service_class_name_resolution() -> None:
     """Test that service classes correctly resolve their UUIDs from names."""
     battery = BatteryService()
@@ -135,6 +136,7 @@ def test_service_class_name_resolution() -> None:
     assert env.name == "Environmental Sensing", "Wrong Environmental Service name"
 
 
+@pytest.mark.packaging
 def test_characteristic_discovery() -> None:
     """Test discovery and creation of characteristics from device data."""
     # Use characteristic classes to get proper SIG UUIDs
@@ -186,6 +188,7 @@ def test_invalid_uuid_lookup(mock_uuid_registry: UuidRegistry) -> None:
     assert mock_uuid_registry.get_characteristic_info("0000") is None, "Should return None for invalid characteristic"
 
 
+@pytest.mark.packaging
 def test_yaml_file_presence() -> None:
     """Test that required YAML files exist."""
     base_path = ROOT_DIR / "bluetooth_sig" / "assigned_numbers" / "uuids"
@@ -212,6 +215,7 @@ def yaml_data() -> dict[str, Any]:
     return {"services": service_data, "characteristics": char_data}
 
 
+@pytest.mark.packaging
 def test_direct_yaml_loading(yaml_data: dict[str, Any]) -> None:
     """Test direct loading and parsing of YAML files.
 
@@ -332,6 +336,7 @@ class TestBluetoothUUID:
         # Test default is little-endian (BLE default)
         assert uuid_short.to_bytes() == uuid_short.to_bytes("little")
 
+    @pytest.mark.packaging
     def test_bytes_roundtrip(self) -> None:
         """Test that UUID can be reconstructed from bytes."""
         original = BluetoothUUID("2A37")  # Heart Rate Measurement

@@ -2,7 +2,7 @@
 """Tests for connection manager implementations.
 
 These tests verify actual behaviour of connection managers.
-No skips allowed - if imports fail, the test fails.
+Requires bleak, bluepy and simplepyble to be installed.
 """
 
 from __future__ import annotations
@@ -12,10 +12,12 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from examples.connection_managers.bleak_retry import BleakRetryClientManager
-from examples.connection_managers.bleak_utils import bleak_services_to_batch
-from examples.connection_managers.bluepy import BluePyClientManager
-from examples.connection_managers.simpleble import SimplePyBLEClientManager, simpleble_services_to_batch
+pytest.importorskip("bleak", reason="bleak required for connection manager tests")
+
+from examples.connection_managers.bleak_retry import BleakRetryClientManager  # noqa: E402
+from examples.connection_managers.bleak_utils import bleak_services_to_batch  # noqa: E402
+from examples.connection_managers.bluepy import BluePyClientManager  # noqa: E402
+from examples.connection_managers.simpleble import SimplePyBLEClientManager, simpleble_services_to_batch  # noqa: E402
 
 
 class TestBleakRetryClientManager:
