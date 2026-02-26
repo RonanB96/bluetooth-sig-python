@@ -41,7 +41,7 @@ jobs:
 
   publish-pypi:
     name: Publish to PyPI
-    needs: publish-testpypi
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: pypi
