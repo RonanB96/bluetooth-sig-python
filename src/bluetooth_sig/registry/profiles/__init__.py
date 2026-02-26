@@ -1,10 +1,24 @@
 """Profile-specific registries from assigned_numbers/profiles_and_services/.
 
-This module will contain registries for various Bluetooth profiles.
-
-These registries are currently not implemented but are planned for future releases.
+This module contains registries for permitted characteristics and simple
+profile parameter lookup tables loaded from the Bluetooth SIG assigned
+numbers YAML files.
 """
 
 from __future__ import annotations
 
-__all__: list[str] = []
+from .permitted_characteristics import (
+    PermittedCharacteristicsRegistry,
+    permitted_characteristics_registry,
+)
+from .profile_lookup import (
+    ProfileLookupRegistry,
+    profile_lookup_registry,
+)
+
+__all__ = [
+    "PermittedCharacteristicsRegistry",
+    "ProfileLookupRegistry",
+    "permitted_characteristics_registry",
+    "profile_lookup_registry",
+]

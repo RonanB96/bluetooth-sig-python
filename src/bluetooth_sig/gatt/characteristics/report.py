@@ -26,6 +26,8 @@ class ReportCharacteristic(BaseCharacteristic[ReportData]):
     Report characteristic.
     """
 
+    _python_type: type | str | None = "ReportData"
+
     min_length = 1
     expected_type = bytes
 

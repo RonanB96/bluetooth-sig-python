@@ -7,7 +7,7 @@ All coding templates MUST inherit from CodingTemplate defined here.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar, get_args
 
 from ....types.gatt_enums import AdjustReason, DayOfWeek  # noqa: F401  # Re-export for sub-modules
 from ...context import CharacteristicContext
@@ -25,6 +25,9 @@ T_co = TypeVar("T_co", covariant=True)
 _RESOLUTION_INTEGER = 1.0  # Integer resolution (10^0)
 _RESOLUTION_TENTH = 0.1  # 0.1 resolution (10^-1)
 _RESOLUTION_HUNDREDTH = 0.01  # 0.01 resolution (10^-2)
+
+# Sentinel for per-class cache of resolved python_type (distinguishes None from "not yet resolved")
+_SENTINEL = object()
 
 
 # =============================================================================
@@ -97,3 +100,33 @@ class CodingTemplate(ABC, Generic[T_co]):
         Returns None for complex templates where translation isn't separable.
         """
         return None
+
+    @classmethod
+    def resolve_python_type(cls) -> type | None:
+        """Resolve the decoded Python type from the template's generic parameter.
+
+        Walks the MRO to find the concrete type argument bound to
+        ``CodingTemplate[T_co]``.  Returns ``None`` when the parameter is
+        still an unbound ``TypeVar`` (e.g. ``EnumTemplate[T]`` before
+        instantiation with a concrete enum).
+
+        The result is cached per-class in ``_resolved_python_type`` to avoid
+        repeated MRO introspection.
+        """
+        cached = cls.__dict__.get("_resolved_python_type", _SENTINEL)
+        if cached is not _SENTINEL:
+            return cached  # type: ignore[no-any-return]
+
+        resolved: type | None = None
+        for klass in cls.__mro__:
+            for base in getattr(klass, "__orig_bases__", ()):
+                if getattr(base, "__origin__", None) is CodingTemplate:
+                    args = get_args(base)
+                    if args and not isinstance(args[0], TypeVar):
+                        resolved = args[0]
+                        break
+            if resolved is not None:
+                break
+
+        cls._resolved_python_type = resolved  # type: ignore[attr-defined]
+        return resolved

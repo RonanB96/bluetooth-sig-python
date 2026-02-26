@@ -14,4 +14,6 @@ class DeviceNameCharacteristic(BaseCharacteristic[str]):
     Represents the device name as a UTF-8 string.
     """
 
+    _python_type: type | str | None = str
+
     _template = Utf8StringTemplate()

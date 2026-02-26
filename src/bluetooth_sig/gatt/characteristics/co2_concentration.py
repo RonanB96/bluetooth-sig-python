@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from ...types.gatt_enums import ValueType
 from .base import BaseCharacteristic
 from .templates import ConcentrationTemplate
 
@@ -23,7 +22,7 @@ class CO2ConcentrationCharacteristic(BaseCharacteristic[float]):
 
     _template = ConcentrationTemplate()
 
-    _manual_value_type: ValueType | str | None = ValueType.INT
+    _python_type: type | str | None = int
     _manual_unit: str | None = "ppm"  # Override template's "ppm" default
 
     # Template configuration

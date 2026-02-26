@@ -17,7 +17,6 @@ class AppearanceCharacteristic(BaseCharacteristic[AppearanceData]):
     Appearance characteristic with human-readable device type information.
     """
 
-    _manual_value_type = "AppearanceData"
     expected_length = 2
 
     def _decode_value(

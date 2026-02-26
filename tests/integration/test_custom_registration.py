@@ -16,7 +16,7 @@ from bluetooth_sig.gatt.services.custom import CustomBaseGattService
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 from bluetooth_sig.gatt.uuid_registry import uuid_registry
 from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
-from bluetooth_sig.types.gatt_enums import GattProperty, ValueType
+from bluetooth_sig.types.gatt_enums import GattProperty
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -28,7 +28,7 @@ class CustomCharacteristicImpl(CustomBaseCharacteristic):
         uuid=BluetoothUUID("abcd1234-0000-1000-8000-00805f9b34fb"),
         name="CustomCharacteristicImpl",
         unit="",
-        value_type=ValueType.INT,
+        python_type=int,
     )
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
@@ -51,7 +51,7 @@ class CustomCharacteristicImpl(CustomBaseCharacteristic):
             uuid=uuid,
             name="CustomCharacteristicImpl",
             unit="",
-            value_type=ValueType.INT,
+            python_type=int,
         )
 
         return cls(info=info)
@@ -76,7 +76,7 @@ class TestRuntimeRegistration:
             uuid=BluetoothUUID("abcd1234-0000-1000-8000-00805f9b34fb"),
             name="Test Characteristic",
             unit="°C",
-            value_type=ValueType.FLOAT,
+            python_type=float,
         )
 
         # Verify registration
@@ -84,7 +84,7 @@ class TestRuntimeRegistration:
         assert info is not None
         assert info.name == "Test Characteristic"
         assert info.unit == "°C"
-        assert info.value_type == ValueType.FLOAT
+        assert info.python_type is float
 
     def test_register_custom_service_metadata(self) -> None:
         """Test registering custom service metadata."""
@@ -127,7 +127,7 @@ class TestRuntimeRegistration:
                 uuid=BluetoothUUID("abcd1234-0000-1000-8000-00805f9b34fb"),
                 name="Test Characteristic",
                 unit="°C",
-                value_type=ValueType.INT,
+                python_type=int,
             ),
         )  # Verify class registration
         cls = CharacteristicRegistry.get_characteristic_class_by_uuid("abcd1234-0000-1000-8000-00805f9b34fb")
@@ -184,7 +184,7 @@ class TestRuntimeRegistration:
                 uuid=BluetoothUUID("2A19"),  # Battery Level UUID
                 name="Custom Battery",
                 unit="%",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
     def test_override_allowed(self) -> None:
@@ -194,7 +194,7 @@ class TestRuntimeRegistration:
             uuid=BluetoothUUID("2A19"),  # Battery Level UUID
             name="Custom Battery",
             unit="%",
-            value_type=ValueType.INT,
+            python_type=int,
             override=True,
         )
 
@@ -255,7 +255,7 @@ class TestRuntimeRegistration:
                             uuid=BluetoothUUID("2A19"),  # Battery Level UUID (SIG assigned)
                             name="Unauthorized SIG Override",
                             unit="%",
-                            value_type=ValueType.INT,
+                            python_type=int,
                         ),
                     }
                 )
@@ -296,7 +296,7 @@ class TestRuntimeRegistration:
                 uuid=BluetoothUUID("2A19"),  # Battery Level UUID (SIG assigned)
                 name="Authorized SIG Override",
                 unit="%",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(  # pylint: disable=duplicate-code

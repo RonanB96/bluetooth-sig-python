@@ -15,8 +15,8 @@ class UnknownService(BaseGattService):
     basic functionality while allowing characteristic processing.
     """
 
-    # TODO
-    _is_base_class = True  # Exclude from registry validation tests (requires uuid parameter)
+    # NOTE: Exempt from registry validation — UnknownService has no fixed UUID
+    _is_base_class = True
 
     def __init__(self, uuid: BluetoothUUID, name: str | None = None) -> None:
         """Initialize an unknown service with minimal info.

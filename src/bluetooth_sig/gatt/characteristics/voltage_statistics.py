@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import msgspec
 
-from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -53,7 +52,7 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic[VoltageStatisticsData])
     """
 
     # Override since decode_value returns structured VoltageStatisticsData
-    _manual_value_type: ValueType | str | None = ValueType.DICT
+    _python_type: type | str | None = dict
     expected_length: int = 6  # Minimum(2) + Maximum(2) + Average(2)
     min_length: int = 6
 

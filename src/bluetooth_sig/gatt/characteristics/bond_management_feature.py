@@ -26,6 +26,8 @@ class BondManagementFeatureCharacteristic(BaseCharacteristic[BondManagementFeatu
     3 bytes containing boolean flags for supported operations.
     """
 
+    _python_type: type | str | None = "BondManagementFeatureData"
+
     # SIG spec: three uint8 feature flags → fixed 3-byte payload; no GSS YAML
     expected_length = 3
     min_length = 3

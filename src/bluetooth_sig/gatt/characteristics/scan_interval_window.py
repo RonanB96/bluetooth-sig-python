@@ -24,7 +24,6 @@ class ScanIntervalWindowCharacteristic(BaseCharacteristic[ScanIntervalWindowData
     """
 
     _characteristic_name = "Scan Interval Window"
-    _manual_value_type = "ScanIntervalWindowData"  # Override since decode_value returns structured data
 
     min_length = 4  # Scan Interval(2) + Scan Window(2)
     max_length = 4  # Fixed length

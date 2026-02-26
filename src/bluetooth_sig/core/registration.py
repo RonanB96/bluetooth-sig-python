@@ -54,7 +54,7 @@ class RegistrationManager:
                 name=info.name or cls.__name__,
                 identifier=info.id,
                 unit=info.unit,
-                value_type=info.value_type,
+                python_type=info.python_type,
                 override=override,
             )
 

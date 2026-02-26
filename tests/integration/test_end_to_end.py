@@ -15,7 +15,6 @@ from bluetooth_sig.core import BluetoothSIGTranslator
 from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.types import CharacteristicInfo
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.units import PressureUnit
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -32,7 +31,7 @@ class CalibrationCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("CA11B001-0000-1000-8000-00805F9B34FB"),
         name="Calibration Factor",
         unit="unitless",
-        value_type=ValueType.FLOAT,
+        python_type=float,
     )
 
     min_length = 4
@@ -71,7 +70,7 @@ class SensorReadingCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("5E450001-0000-1000-8000-00805F9B34FB"),
         name="Sensor Reading",
         unit="calibrated units",
-        value_type=ValueType.FLOAT,
+        python_type=float,
     )
 
     # Reference calibration directly (no hardcoded UUIDs)
@@ -126,7 +125,7 @@ class SequenceNumberCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("5E900001-0000-1000-8000-00805F9B34FB"),
         name="Sequence Number",
         unit="",
-        value_type=ValueType.INT,
+        python_type=int,
     )
 
     min_length = 2
@@ -153,7 +152,7 @@ class SequencedDataCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("5E9DA7A1-0000-1000-8000-00805F9B34FB"),
         name="Sequenced Data",
         unit="various",
-        value_type=ValueType.BYTES,
+        python_type=bytes,
     )
 
     # Declare dependency using direct class reference (following Django ForeignKey pattern)
@@ -438,7 +437,7 @@ class TestMultiCharacteristicDependencies:
                 uuid=BluetoothUUID("C4A1AAAA-0000-1000-8000-00805F9B34FB"),
                 name="Char A",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
             # Forward reference will be resolved after CharB is defined
             _required_dependencies: ClassVar[list[type]] = []
@@ -456,7 +455,7 @@ class TestMultiCharacteristicDependencies:
                 uuid=BluetoothUUID("C4A1BBBB-0000-1000-8000-00805F9B34FB"),
                 name="Char B",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
             # Reference CharA directly (no hardcoding)
             _required_dependencies: ClassVar[list[type]] = [CharA]
@@ -543,7 +542,7 @@ class TestRequiredOptionalDependencies:
                 uuid=BluetoothUUID("0EA50001-0000-1000-8000-00805F9B34FB"),
                 name="Measurement",
                 unit="units",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             min_length = 2
@@ -564,7 +563,7 @@ class TestRequiredOptionalDependencies:
                 uuid=BluetoothUUID("C0111E11-0000-1000-8000-00805F9B34FB"),
                 name="Context",
                 unit="various",
-                value_type=ValueType.DICT,
+                python_type=dict,
             )
 
             _required_dependencies: ClassVar[list[type]] = [MeasurementCharacteristic]
@@ -596,7 +595,7 @@ class TestRequiredOptionalDependencies:
                 uuid=BluetoothUUID("E111C401-0000-1000-8000-00805F9B34FB"),
                 name="Enrichment",
                 unit="factor",
-                value_type=ValueType.FLOAT,
+                python_type=float,
             )
 
             min_length = 4
@@ -622,7 +621,7 @@ class TestRequiredOptionalDependencies:
                 uuid=BluetoothUUID("DA1A0001-0000-1000-8000-00805F9B34FB"),
                 name="Data",
                 unit="various",
-                value_type=ValueType.DICT,
+                python_type=dict,
             )
 
             _optional_dependencies: ClassVar[list[type]] = [EnrichmentCharacteristic]
@@ -654,7 +653,7 @@ class TestRequiredOptionalDependencies:
                 uuid=BluetoothUUID("F0EADF11-0000-1000-8000-00805F9B34FB"),
                 name="Multi Dependency",
                 unit="composite",
-                value_type=ValueType.DICT,
+                python_type=dict,
             )
 
             _required_dependencies: ClassVar[list[type]] = [

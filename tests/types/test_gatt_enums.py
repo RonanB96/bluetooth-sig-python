@@ -1,65 +1,42 @@
-"""Tests for GATT enums functionality."""
+"""Tests for GATT enums and WIRE_TYPE_MAP functionality."""
 
 from __future__ import annotations
 
-from bluetooth_sig.types.gatt_enums import DataType, ValueType
+from bluetooth_sig.types.gatt_enums import WIRE_TYPE_MAP
 
 
-class TestDataType:
-    """Test the DataType enum."""
+class TestWireTypeMap:
+    """Test the WIRE_TYPE_MAP lookup table."""
 
-    def test_utf16s_enum_member(self) -> None:
-        """Test that UTF16S enum member exists."""
-        assert hasattr(DataType, "UTF16S")
-        assert DataType.UTF16S.value == "utf16s"
+    def test_utf16s_maps_to_str(self) -> None:
+        """Test that utf16s maps to str."""
+        assert WIRE_TYPE_MAP["utf16s"] is str
 
-    def test_from_string_utf16s(self) -> None:
-        """Test that from_string("utf16s") returns UTF16S, not UTF8S."""
-        result = DataType.from_string("utf16s")
-        assert result == DataType.UTF16S
-        assert result != DataType.UTF8S  # type: ignore[comparison-overlap]
+    def test_utf8s_maps_to_str(self) -> None:
+        """Test that utf8s maps to str."""
+        assert WIRE_TYPE_MAP["utf8s"] is str
 
-    def test_utf16s_to_value_type(self) -> None:
-        """Test that UTF16S.to_value_type() returns STRING."""
-        assert DataType.UTF16S.to_value_type() == ValueType.STRING
+    def test_integer_types(self) -> None:
+        """Test that unsigned and signed integer wire types map to int."""
+        for key in ("uint8", "uint16", "uint24", "uint32", "uint64", "sint8", "sint16", "sint24", "sint32", "sint64"):
+            assert WIRE_TYPE_MAP[key] is int, f"{key} should map to int"
 
-    def test_utf16s_to_python_type(self) -> None:
-        """Test that UTF16S.to_python_type() returns "string"."""
-        assert DataType.UTF16S.to_python_type() == "string"
+    def test_float_types(self) -> None:
+        """Test that float wire types map to float."""
+        for key in ("float32", "float64", "medfloat16", "medfloat32", "sfloat", "float"):
+            assert WIRE_TYPE_MAP[key] is float, f"{key} should map to float"
 
-    def test_utf8s_still_works(self) -> None:
-        """Test that UTF8S still works as before."""
-        assert DataType.UTF8S.to_value_type() == ValueType.STRING
-        assert DataType.UTF8S.to_python_type() == "string"
+    def test_boolean_type(self) -> None:
+        """Test that boolean maps to bool."""
+        assert WIRE_TYPE_MAP["boolean"] is bool
 
-    def test_from_string_case_insensitive(self) -> None:
-        """Test that from_string is case insensitive."""
-        assert DataType.from_string("UTF16S") == DataType.UTF16S
-        assert DataType.from_string("utf16s") == DataType.UTF16S
-        assert DataType.from_string("Utf16s") == DataType.UTF16S
+    def test_unknown_type_returns_none(self) -> None:
+        """Test that unknown wire type strings return None via .get()."""
+        assert WIRE_TYPE_MAP.get("unknown_type") is None
+        assert WIRE_TYPE_MAP.get("") is None
+        assert WIRE_TYPE_MAP.get("struct") is None
 
-    def test_from_string_aliases(self) -> None:
-        """Test that aliases still work."""
-        assert DataType.from_string("sfloat") == DataType.MEDFLOAT16
-        assert DataType.from_string("float") == DataType.FLOAT32
-        assert DataType.from_string("variable") == DataType.STRUCT
-
-    def test_from_string_unknown(self) -> None:
-        """Test that unknown strings return UNKNOWN."""
-        assert DataType.from_string("unknown_type") == DataType.UNKNOWN
-        assert DataType.from_string("") == DataType.UNKNOWN
-        assert DataType.from_string(None) == DataType.UNKNOWN
-
-    def test_all_members_have_value_type(self) -> None:
-        """Test that all DataType members have a valid to_value_type."""
-        for member in DataType:
-            value_type = member.to_value_type()
-            assert isinstance(value_type, ValueType)
-            assert value_type != ValueType.UNKNOWN or member == DataType.UNKNOWN
-
-    def test_all_members_have_python_type(self) -> None:
-        """Test that all DataType members have a valid to_python_type."""
-        for member in DataType:
-            python_type = member.to_python_type()
-            assert isinstance(python_type, str)
-            assert len(python_type) > 0
+    def test_all_values_are_types(self) -> None:
+        """Test that every value in the map is a Python type."""
+        for key, val in WIRE_TYPE_MAP.items():
+            assert isinstance(val, type), f"WIRE_TYPE_MAP[{key!r}] = {val!r} is not a type"

@@ -22,7 +22,6 @@ from ..gatt.exceptions import (
 from ..types import (
     ValidationResult,
 )
-from ..types.gatt_enums import ValueType
 from ..types.uuid import BluetoothUUID
 from .parser import CharacteristicParser
 
@@ -166,11 +165,11 @@ class CharacteristicEncoder:
                 ):
                     return return_annotation  # type: ignore[no-any-return]  # Dynamic introspection fallback via inspect.signature
 
-        # Try to get from _manual_value_type attribute
-        if hasattr(characteristic, "_manual_value_type"):
-            manual_type = characteristic._manual_value_type  # pylint: disable=protected-access
-            if manual_type and isinstance(manual_type, str) and hasattr(templates, manual_type):
-                return getattr(templates, manual_type)  # type: ignore[no-any-return]  # Runtime template lookup by string name
+        manual_type = characteristic._python_type  # pylint: disable=protected-access
+        if manual_type and isinstance(manual_type, type):
+            return manual_type
+        if manual_type and isinstance(manual_type, str) and hasattr(templates, manual_type):
+            return getattr(templates, manual_type)  # type: ignore[no-any-return]  # Runtime template lookup by string name
 
         # Try to get from template
         if hasattr(characteristic, "_template") and characteristic._template:  # pylint: disable=protected-access
@@ -180,18 +179,10 @@ class CharacteristicEncoder:
                 if args:
                     return args[0]  # type: ignore[no-any-return]  # Generic type arg extraction from __orig_class__
 
-        # For simple types, check info.value_type
+        # For simple types, check info.python_type
         info = characteristic.info
-        if info.value_type == ValueType.INT:
-            return int
-        if info.value_type == ValueType.FLOAT:
-            return float
-        if info.value_type == ValueType.STRING:
-            return str
-        if info.value_type == ValueType.BOOL:
-            return bool
-        if info.value_type == ValueType.BYTES:
-            return bytes
+        if isinstance(info.python_type, type) and info.python_type in (int, float, str, bool, bytes):
+            return info.python_type
 
         return None
 

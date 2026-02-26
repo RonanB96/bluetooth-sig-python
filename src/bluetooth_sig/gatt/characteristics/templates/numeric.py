@@ -1,6 +1,6 @@
 """Basic integer templates for unsigned and signed integer parsing.
 
-Covers Uint8, Sint8, Uint16, Sint16, Uint24, Uint32 templates.
+Covers Uint8, Sint8, Uint16, Sint16, Uint24, Uint32, Uint48 templates.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from ...constants import (
     UINT16_MAX,
     UINT24_MAX,
     UINT32_MAX,
+    UINT48_MAX,
 )
 from ...context import CharacteristicContext
 from ...exceptions import InsufficientDataError
@@ -24,6 +25,7 @@ from ..utils.extractors import (
     UINT16,
     UINT24,
     UINT32,
+    UINT48,
     RawExtractor,
 )
 from ..utils.translators import (
@@ -228,4 +230,37 @@ class Uint32Template(CodingTemplate[int]):
         """Encode uint32 value to bytes."""
         if validate and not 0 <= value <= UINT32_MAX:
             raise ValueError(f"Value {value} out of range for uint32 (0-{UINT32_MAX})")
+        return self.extractor.pack(value)
+
+
+class Uint48Template(CodingTemplate[int]):
+    """Template for 48-bit unsigned integer parsing (0-281474976710655)."""
+
+    @property
+    def data_size(self) -> int:
+        """Size: 6 bytes."""
+        return 6
+
+    @property
+    def extractor(self) -> RawExtractor:
+        """Get uint48 extractor."""
+        return UINT48
+
+    @property
+    def translator(self) -> ValueTranslator[int]:
+        """Return identity translator for no scaling."""
+        return IDENTITY
+
+    def decode_value(
+        self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> int:
+        """Parse 48-bit unsigned integer."""
+        if validate and len(data) < offset + 6:
+            raise InsufficientDataError("uint48", data[offset:], 6)
+        return self.extractor.extract(data, offset)
+
+    def encode_value(self, value: int, *, validate: bool = True) -> bytearray:
+        """Encode uint48 value to bytes."""
+        if validate and not 0 <= value <= UINT48_MAX:
+            raise ValueError(f"Value {value} out of range for uint48 (0-{UINT48_MAX})")
         return self.extractor.pack(value)

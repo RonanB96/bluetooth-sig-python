@@ -41,4 +41,4 @@ class TestAmmoniaConcentrationCharacteristic(CommonCharacteristicTests):
         """Test ammonia concentration characteristic parsing."""
         # Test metadata - Updated for SIG spec compliance (medfloat16, kg/m³)
         assert characteristic.unit == "kg/m³"
-        assert characteristic.value_type_resolved.value == "float"  # YAML specifies medfloat16 format
+        assert characteristic.python_type is float  # YAML specifies medfloat16 format

@@ -6,7 +6,6 @@ from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.descriptors import CCCDDescriptor
 from bluetooth_sig.types import CharacteristicInfo
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -22,7 +21,7 @@ class TestDescriptorIntegration:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789012"),
                 name="Test Characteristic",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(
@@ -56,7 +55,7 @@ class TestDescriptorIntegration:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789013"),
                 name="Test Characteristic 2",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(

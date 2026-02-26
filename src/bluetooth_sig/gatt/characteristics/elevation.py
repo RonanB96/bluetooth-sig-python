@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from ...types.gatt_enums import ValueType
 from ...types.units import LengthUnit
 from .base import BaseCharacteristic
 from .templates import ScaledSint24Template
@@ -23,6 +22,6 @@ class ElevationCharacteristic(BaseCharacteristic[float]):
 
     _template = ScaledSint24Template(scale_factor=0.01)
 
-    _manual_value_type: ValueType | str | None = "float"  # Override YAML int type since decode_value returns float
+    _python_type: type | str | None = float  # Override YAML int type since decode_value returns float
     _manual_unit: str | None = LengthUnit.METERS.value  # Override template's "units" default
     resolution: float = 0.01

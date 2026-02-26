@@ -390,7 +390,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
                         uuid=uuid_obj,
                         name=char_info.name or f"Unknown Characteristic ({uuid_obj})",
                         unit=char_info.unit or "",
-                        value_type=char_info.value_type,
+                        python_type=char_info.python_type,
                     ),
                     properties=[],
                 )

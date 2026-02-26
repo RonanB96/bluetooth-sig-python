@@ -136,8 +136,9 @@ for char in client.services.characteristics:
     uuid_str = str(char.uuid)
     if translator.supports(uuid_str):
         raw_data = await client.read_gatt_char(uuid_str)  # SKIP: async
-        result = translator.parse_characteristic(uuid_str, raw_data)
-        print(f"{result.info.name}: {result.value}")  # Returns Any
+        parsed = translator.parse_characteristic(uuid_str, raw_data)
+        info = translator.get_characteristic_info_by_uuid(uuid_str)
+        print(f"{info.name}: {parsed}")  # parsed is the value directly (Any)
     else:
         print(f"Unknown characteristic UUID: {uuid_str}")
 ```
@@ -215,8 +216,8 @@ battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BAT
 async with BleakClient(address) as client:
     # Read: bleak handles connection, bluetooth-sig handles parsing
     raw_data = await client.read_gatt_char(str(battery_uuid))
-    result = translator.parse_characteristic(str(battery_uuid), raw_data)
-    print(f"Battery: {result.value}%")
+    level = translator.parse_characteristic(str(battery_uuid), raw_data)
+    print(f"Battery: {level}%")
 
     # Write: bluetooth-sig handles encoding, bleak handles transmission
     data = translator.encode_characteristic(str(battery_uuid), 85)

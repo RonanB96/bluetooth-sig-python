@@ -13,7 +13,6 @@ from bluetooth_sig.gatt.characteristics.body_composition_feature import (
 from bluetooth_sig.gatt.characteristics.body_composition_measurement import BodyCompositionMeasurementCharacteristic
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.gatt.services.body_composition import BodyCompositionService
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
 
 from .test_service_common import CommonServiceTests
@@ -26,8 +25,10 @@ class TestBodyCompositionMeasurementCharacteristic:
         """Test characteristic name resolution."""
         char = BodyCompositionMeasurementCharacteristic()
         assert char.name == "Body Composition Measurement"
-        # Value type for multi-field characteristic is VARIOUS
-        assert char.value_type == ValueType.VARIOUS
+        # Auto-resolved from BaseCharacteristic[BodyCompositionMeasurementData]
+        from bluetooth_sig.gatt.characteristics.body_composition_measurement import BodyCompositionMeasurementData
+
+        assert char.python_type is BodyCompositionMeasurementData
 
     def test_parse_basic_body_fat_metric(self) -> None:
         """Test parsing basic body fat percentage in metric units."""
@@ -114,7 +115,9 @@ class TestBodyCompositionFeatureCharacteristic:
         """Test characteristic name resolution."""
         char = BodyCompositionFeatureCharacteristic()
         assert char.name == "Body Composition Feature"
-        assert char.value_type == ValueType.BITFIELD
+        from bluetooth_sig.gatt.characteristics.body_composition_feature import BodyCompositionFeatureData
+
+        assert char.python_type is BodyCompositionFeatureData
 
     def test_parse_basic_features(self) -> None:
         """Test parsing basic feature flags."""

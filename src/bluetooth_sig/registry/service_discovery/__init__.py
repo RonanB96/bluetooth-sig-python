@@ -1,10 +1,18 @@
 """Service discovery registries from assigned_numbers/service_discovery/.
 
-This module will contain registries for SDP (Service Discovery Protocol) attributes.
-
-These registries are currently not implemented but are planned for future releases.
+This module contains registries for SDP (Service Discovery Protocol) attribute
+identifiers and protocol parameters loaded from the Bluetooth SIG assigned
+numbers YAML files.
 """
 
 from __future__ import annotations
 
-__all__: list[str] = []
+from .attribute_ids import (
+    ServiceDiscoveryAttributeRegistry,
+    service_discovery_attribute_registry,
+)
+
+__all__ = [
+    "ServiceDiscoveryAttributeRegistry",
+    "service_discovery_attribute_registry",
+]

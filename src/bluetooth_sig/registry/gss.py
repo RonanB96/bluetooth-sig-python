@@ -15,7 +15,7 @@ import msgspec
 
 from bluetooth_sig.registry.base import BaseGenericRegistry
 from bluetooth_sig.registry.uuids.units import UnitsRegistry
-from bluetooth_sig.types.gatt_enums import DataType
+from bluetooth_sig.types.gatt_enums import WIRE_TYPE_MAP
 from bluetooth_sig.types.registry.gss_characteristic import (
     FieldSpec,
     GssCharacteristicSpec,
@@ -159,14 +159,14 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
         with self._lock:
             return dict(self._specs)
 
-    def extract_info_from_gss(self, char_data: dict[str, Any]) -> tuple[str | None, str | None]:
-        """Extract unit and value_type from GSS characteristic structure.
+    def extract_info_from_gss(self, char_data: dict[str, Any]) -> tuple[str | None, type | None]:
+        """Extract unit and python_type from GSS characteristic structure.
 
         Args:
             char_data: Raw characteristic data from YAML
 
         Returns:
-            Tuple of (unit_symbol, value_type) or (None, None) if not found
+            Tuple of (unit_symbol, python_type) or (None, None) if not found
         """
         structure = char_data.get("structure", [])
         if not isinstance(structure, list) or not structure:
@@ -181,14 +181,14 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
             return None, None
 
         unit = None
-        value_type = None
+        python_type: type | None = None
 
         for field in typed_structure:
             field_dict: dict[str, Any] = field
 
-            if not value_type and isinstance(field_dict.get("type"), str):
+            if not python_type and isinstance(field_dict.get("type"), str):
                 yaml_type_value = cast("str", field_dict["type"])
-                value_type = self._convert_yaml_type_to_python_type(yaml_type_value)
+                python_type = self._convert_yaml_type_to_python_type(yaml_type_value)
 
             description_value = field_dict.get("description", "")
             if not isinstance(description_value, str):
@@ -198,7 +198,7 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
             if not unit and ("Base Unit:" in description_value or "Unit:" in description_value):
                 unit = self._extract_unit_from_description(description_value)
 
-        return unit, value_type
+        return unit, python_type
 
     def _extract_unit_from_description(self, description: str) -> str | None:
         """Extract unit symbol from GSS field description.
@@ -240,7 +240,7 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
                 unit_line = parts[1].strip()
         elif "Unit:" in description:
             # Inline format: "Unit: org.bluetooth.unit.xxx"
-            unit_line = description.split("Unit:")[1].split("\n")[0].strip()
+            unit_line = description.split("Unit:")[1].split("\n", maxsplit=1)[0].strip()
 
         if unit_line and "org.bluetooth.unit." in unit_line:
             # Remove all spaces (handles YAML formatting issues)
@@ -250,9 +250,9 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
 
         return None, None
 
-    def _convert_yaml_type_to_python_type(self, yaml_type: str) -> str:
-        """Convert YAML type to Python type string."""
-        return DataType.from_string(yaml_type).to_python_type()
+    def _convert_yaml_type_to_python_type(self, yaml_type: str) -> type | None:
+        """Convert YAML wire type string to a Python type."""
+        return WIRE_TYPE_MAP.get(yaml_type.lower())
 
     def _convert_bluetooth_unit_to_readable(self, unit_spec: str) -> str:
         """Convert Bluetooth SIG unit specification to human-readable symbol.

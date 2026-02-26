@@ -8,7 +8,6 @@ from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types import CharacteristicInfo
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -25,7 +24,7 @@ class ValidationHelperCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("12345678-1234-1234-1234-123456789012"),
         name="Test Validation",
         unit="",
-        value_type=ValueType.INT,
+        python_type=int,
     )
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
@@ -46,7 +45,7 @@ class NoValidationCharacteristic(CustomBaseCharacteristic):
         uuid=BluetoothUUID("12345678-1234-1234-1234-123456789013"),
         name="No Validation",
         unit="",
-        value_type=ValueType.INT,
+        python_type=int,
     )
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
@@ -106,7 +105,7 @@ class TestBaseCharacteristicValidation:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789014"),
                 name="Min Value Test",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(
@@ -135,7 +134,7 @@ class TestBaseCharacteristicValidation:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789015"),
                 name="Type Test",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(
@@ -173,7 +172,7 @@ class TestBaseCharacteristicValidation:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789016"),
                 name="Min Length Test",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(
@@ -205,7 +204,7 @@ class TestBaseCharacteristicValidation:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789017"),
                 name="Max Length Test",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(
@@ -235,7 +234,7 @@ class TestBaseCharacteristicValidation:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789018"),
                 name="Exception Test",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(
@@ -263,7 +262,7 @@ class TestBaseCharacteristicValidation:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789019"),
                 name="Struct Error Test",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(
@@ -348,7 +347,7 @@ class TestValidationControl:
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789020"),
                 name="Type Mismatch",
                 unit="",
-                value_type=ValueType.INT,
+                python_type=int,
             )
 
             def _decode_value(

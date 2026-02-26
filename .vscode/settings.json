@@ -1,0 +1,6 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "bluetoothctl": true,
+        "hciconfig": true
+    }
+}

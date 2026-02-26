@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-from ...types.gatt_enums import ValueType
 from .base import BaseCharacteristic
 from .templates import ConcentrationTemplate
 
@@ -17,7 +16,7 @@ class OzoneConcentrationCharacteristic(BaseCharacteristic[float]):
 
     _template = ConcentrationTemplate()
 
-    _manual_value_type: ValueType | str | None = ValueType.INT  # Manual override needed as no YAML available
+    _python_type: type | str | None = int  # Manual override needed as no YAML available
     _manual_unit: str = "ppb"  # Override template's "ppm" default
 
     # Template configuration

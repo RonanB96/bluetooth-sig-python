@@ -14,7 +14,7 @@ import msgspec
 
 from ...registry.uuids.units import units_registry
 from ...types import CharacteristicInfo
-from ...types.gatt_enums import DataType
+from ...types.gatt_enums import WIRE_TYPE_MAP
 from ...types.registry import CharacteristicSpec
 from ..exceptions import UUIDResolutionError
 from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
@@ -96,7 +96,25 @@ class SIGCharacteristicResolver:
     @staticmethod
     def _create_info_from_yaml(yaml_spec: CharacteristicSpec, char_class: type) -> CharacteristicInfo:
         """Create CharacteristicInfo from YAML spec, resolving metadata via registry classes."""
-        value_type = DataType.from_string(yaml_spec.data_type).to_value_type()
+        python_type: type | None = None
+        is_bitfield = False
+
+        if yaml_spec.data_type:
+            raw_dt = yaml_spec.data_type.lower().strip()
+
+            # boolean[N] (N > 1) → bitfield stored as int
+            if raw_dt.startswith("boolean["):
+                python_type = int
+                is_bitfield = True
+            elif raw_dt == "struct":
+                python_type = dict
+            else:
+                # Strip range/array qualifiers: "uint16 [1-256]" → "uint16"
+                base_dt = raw_dt.split("[")[0].split(" ")[0]
+                python_type = WIRE_TYPE_MAP.get(base_dt)
+        elif yaml_spec.structure and len(yaml_spec.structure) > 1:
+            # Multi-field characteristics decode to dict
+            python_type = dict
 
         unit_info = None
         unit_name = getattr(yaml_spec, "unit_symbol", None) or getattr(yaml_spec, "unit", None)
@@ -111,7 +129,8 @@ class SIGCharacteristicResolver:
             uuid=yaml_spec.uuid,
             name=yaml_spec.name or char_class.__name__,
             unit=unit_symbol,
-            value_type=value_type,
+            python_type=python_type,
+            is_bitfield=is_bitfield,
         )
 
     @staticmethod
@@ -147,7 +166,7 @@ class CharacteristicMeta(ABCMeta):
             module_name = namespace.get("__module__", "")
             is_in_templates = "templates" in module_name
 
-            if not is_in_templates and not namespace.get("_is_template_override", False):
+            if not is_in_templates and not namespace.get("_is_template_override"):
                 has_template_parent = any(getattr(base, "_is_template", False) for base in bases)
                 if has_template_parent and "_is_template" not in namespace:
                     namespace["_is_template"] = False

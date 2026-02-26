@@ -40,7 +40,7 @@ class TestUncertaintyCharacteristic(CommonCharacteristicTests):
         """Test Uncertainty characteristic parsing."""
         # Test metadata
         assert characteristic.unit == "m"
-        assert characteristic.value_type.value == "float"
+        assert characteristic.python_type is float
 
         # Test normal parsing
         test_data = bytearray([0x69])  # 105 = 10.5m

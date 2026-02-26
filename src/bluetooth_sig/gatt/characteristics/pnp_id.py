@@ -46,7 +46,6 @@ class PnpIdCharacteristic(BaseCharacteristic[PnpIdData]):
     Contains PnP ID information (7 bytes).
     """
 
-    _manual_value_type = "PnpIdData"
     expected_length = 7
 
     def _decode_value(

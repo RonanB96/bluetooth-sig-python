@@ -17,7 +17,6 @@ from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.services.base import BaseGattService
 from bluetooth_sig.gatt.uuid_registry import uuid_registry
 from bluetooth_sig.types import CharacteristicInfo
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -168,27 +167,16 @@ class TestCharacteristicRegistryValidation:
             # Use Progressive API Level 1 - SIG characteristics with no parameters
             char = char_class()
 
-            # Verify value_type is set
-            assert hasattr(char, "value_type"), f"Characteristic {char_class.__name__} should have value_type attribute"
-            assert char.value_type, f"Characteristic {char_class.__name__} value_type should not be empty"
+            # Verify python_type is set
+            assert hasattr(char, "python_type"), (
+                f"Characteristic {char_class.__name__} should have python_type attribute"
+            )
+            assert char.python_type is not None, f"Characteristic {char_class.__name__} python_type should not be None"
 
-            # Verify value_type is one of the expected types
-            valid_types = {
-                "string",
-                "int",
-                "float",
-                "bool",
-                "boolean",
-                "bytes",
-                "dict",
-                "various",
-                "datetime",
-                "uuid",
-                "bitfield",
-            }
-            assert char.value_type.value in valid_types, (
-                f"Characteristic {char_class.__name__} value_type '{char.value_type.value}' "
-                f"should be one of {valid_types}"
+            # Verify python_type is a sensible type or string template name
+            assert isinstance(char.python_type, (type, str)), (
+                f"Characteristic {char_class.__name__} python_type '{char.python_type}' "
+                f"should be a type or string template name"
             )
 
             # Verify decode_value method exists
@@ -361,7 +349,7 @@ class TestNameResolutionFallback:
                 uuid=BluetoothUUID("AA112A6E-0000-1000-8000-00805F9B34FB"),
                 name="Temperature",
                 unit="°C",
-                value_type=ValueType.FLOAT,
+                python_type=float,
             )
 
             def _decode_value(
@@ -450,7 +438,7 @@ class TestNameResolutionFallback:
                 uuid=BluetoothUUID("AA112A24-0000-1000-8000-00805F9B34FB"),
                 name="Model Number String",
                 unit="",
-                value_type=ValueType.STRING,
+                python_type=str,
             )
 
             def _decode_value(
@@ -490,7 +478,7 @@ class TestNameResolutionFallback:
                 uuid=BluetoothUUID("1234"),
                 name="Test Unknown Characteristic",
                 unit="",
-                value_type=ValueType.STRING,
+                python_type=str,
             )
 
             def _decode_value(

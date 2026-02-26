@@ -49,11 +49,11 @@ dev = [
     "pytest-cov>=6.2,<8",
     "nest-asyncio>=1.5.0",
     "pytest-benchmark~=5.1",
-    "ruff~=0.13",
+    "ruff~=0.15",
     "pydocstyle~=6.3",
     "types-PyYAML~=6.0",
     "types-requests~=2.32",
-    "mypy>=1.13.0",
+    "mypy>=1.19.0",
     "ipdb~=0.13",
     "coverage~=7.0"]
 test = [
@@ -335,6 +335,9 @@ convention = "google"
 # Prevent inheriting a parent pydocstyle config which could change the
 # effective set of checked codes; keep the repository config deterministic.
 inherit = false
+# D202: No blank lines allowed after function docstring - conflicts with Black
+# formatter when there are nested functions (Black requires blank line)
+add-ignore = ["D202"]
 
 [tool.git-cliff.changelog]
 # Auto-generated changelog from conventional commits

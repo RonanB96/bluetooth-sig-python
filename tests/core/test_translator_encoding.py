@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.types.gatt_enums import ValueType
 
 
 class TestEncodeCharacteristic:
@@ -84,21 +83,24 @@ class TestGetValueType:
         translator = BluetoothSIGTranslator()
 
         value_type = translator.get_value_type("2A19")  # Battery Level
-        assert value_type == ValueType.INT
+        assert value_type is int
 
     def test_get_value_type_string(self) -> None:
         """Test getting value type for string characteristic."""
         translator = BluetoothSIGTranslator()
 
         value_type = translator.get_value_type("2A00")  # Device Name
-        assert value_type == ValueType.STRING
+        assert value_type is str
 
     def test_get_value_type_various(self) -> None:
         """Test getting value type for complex characteristic."""
         translator = BluetoothSIGTranslator()
 
         value_type = translator.get_value_type("2A37")  # Heart Rate Measurement
-        assert value_type == ValueType.VARIOUS
+        # HeartRateData is auto-resolved from the generic parameter BaseCharacteristic[HeartRateData]
+        from bluetooth_sig.gatt.characteristics.heart_rate_measurement import HeartRateData
+
+        assert value_type is HeartRateData
 
     def test_get_value_type_invalid_uuid(self) -> None:
         """Test getting value type with invalid UUID."""

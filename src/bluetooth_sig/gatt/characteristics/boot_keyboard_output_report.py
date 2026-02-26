@@ -30,8 +30,6 @@ class BootKeyboardOutputReportCharacteristic(BaseCharacteristic[KeyboardLEDs]):
         USB HID Specification v1.11, Appendix B - Boot Interface Descriptors
     """
 
-    _manual_value_type = "KeyboardLEDs"
-
     min_length = 1
     max_length = 1
     allow_variable_length = False

@@ -26,7 +26,6 @@ class PeripheralPreferredConnectionParametersCharacteristic(BaseCharacteristic[C
     Contains the preferred connection parameters (8 bytes).
     """
 
-    _manual_value_type = "ConnectionParametersData"
     expected_length = 8
 
     def _decode_value(

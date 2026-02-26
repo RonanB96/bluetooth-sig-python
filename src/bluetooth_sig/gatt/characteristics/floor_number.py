@@ -14,6 +14,8 @@ class FloorNumberCharacteristic(BaseCharacteristic[int]):
     Floor Number characteristic.
     """
 
+    _python_type: type | str | None = int
+
     # SIG spec: sint8 floor index → fixed 1-byte payload; no GSS YAML
     expected_length = 1
     min_length = 1

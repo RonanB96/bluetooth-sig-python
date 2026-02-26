@@ -8,75 +8,183 @@ The tests are organized into logical directories that map directly to the source
 
 ```text
 tests/
-├── conftest.py                         # Pytest configuration and fixtures
+├── conftest.py                          # Pytest configuration and fixtures
+├── test_browse_groups_registry.py       # Browse group registry validation
+├── test_declarations_registry.py        # Declarations registry validation
+├── test_members_registry.py             # Members registry validation
+├── test_mesh_profiles_registry.py       # Mesh profiles registry validation
+├── test_object_types_registry.py        # Object types registry validation
+├── test_sdo_uuids_registry.py           # SDO UUIDs registry validation
+├── test_service_classes_registry.py     # Service classes registry validation
+├── test_units_registry.py               # Units registry validation
 │
-├── core/                              # Core framework functionality
-│   └── test_translator.py            # BluetoothSIGTranslator tests
+├── advertising/                         # BLE advertising data tests
+│   ├── test_advertisement_builder.py
+│   ├── test_advertising_framework.py
+│   ├── test_channel_map_update.py
+│   ├── test_ead_decryption.py
+│   ├── test_ead_decryptor_class.py
+│   ├── test_encryption_provider.py
+│   ├── test_exceptions.py
+│   ├── test_indoor_positioning.py
+│   ├── test_payload_interpreter.py
+│   ├── test_pdu_parser_32bit_uuids.py
+│   ├── test_pdu_parser_solicited.py
+│   ├── test_service_data_parser.py
+│   ├── test_service_resolver.py
+│   ├── test_sig_characteristic_interpreter.py
+│   ├── test_state.py
+│   ├── test_three_d_information.py
+│   └── test_transport_discovery.py
 │
-├── gatt/                              # GATT layer tests
-│   ├── characteristics/               # Individual characteristic implementations
-│   │   ├── test_base_characteristic.py
-│   │   ├── test_battery_power_state.py
-│   │   ├── test_custom_characteristics.py
-│   │   ├── test_cycling_power.py
-│   │   ├── test_environmental_sensors.py
-│   │   ├── test_gas_sensors.py
-│   │   ├── test_glucose_monitoring.py
-│   │   └── test_new_sensors.py
-│   ├── services/                      # Service implementations
-│   │   ├── test_body_composition_service.py
-│   │   ├── test_custom_services.py
-│   │   └── test_weight_scale_service.py
-│   ├── test_context.py               # GATT context parsing
+├── benchmarks/                          # Performance benchmarks (--benchmark-only)
+│   ├── conftest.py
+│   ├── test_comparison.py              # Library vs manual parsing
+│   └── test_performance.py             # UUID resolution, parsing throughput
+│
+├── core/                                # Core framework functionality
+│   ├── test_async_translator.py        # Async translator tests
+│   ├── test_translator.py             # BluetoothSIGTranslator tests
+│   └── test_translator_encoding.py    # Encoding round-trip tests
+│
+├── descriptors/                         # GATT descriptor implementations
+│   ├── conftest.py
+│   ├── test_aggregate_format.py
+│   ├── test_base.py
+│   ├── test_cccd.py
+│   ├── test_complete_br_edr_transport_block.py
+│   ├── test_environmental_sensing.py
+│   ├── test_extended_properties.py
+│   ├── test_external_report_reference.py
+│   ├── test_imd_trigger_setting.py
+│   ├── test_integration.py
+│   ├── test_manufacturer_limits.py
+│   ├── test_measurement_description.py
+│   ├── test_number_of_digitals.py
+│   ├── test_observation_schedule.py
+│   ├── test_presentation_format.py
+│   ├── test_process_tolerances.py
+│   ├── test_registry.py
+│   ├── test_report_reference.py
+│   ├── test_sccd.py
+│   ├── test_time_trigger_setting.py
+│   ├── test_user_description.py
+│   ├── test_valid_range.py
+│   ├── test_valid_range_and_accuracy.py
+│   ├── test_value_trigger_setting.py
+│   └── test_writability.py
+│
+├── device/                              # Device management and advertising
+│   ├── test_advertising_appearance.py  # Appearance parsing
+│   ├── test_advertising_cod_integration.py  # Class of Device integration
+│   ├── test_advertising_parser.py      # BLE advertising data parsing
+│   ├── test_device.py                  # Device class functionality
+│   ├── test_device_advertising.py      # Device advertising features
+│   ├── test_device_async_methods.py    # Async device methods
+│   ├── test_device_batch_ops.py        # Batch operations
+│   ├── test_device_types.py            # Device type definitions
+│   ├── test_peripheral_device.py       # Peripheral device (GATT server)
+│   └── test_peripheral_types.py        # Peripheral type definitions
+│
+├── diagnostics/                         # Logging and diagnostics
+│   ├── test_field_errors.py            # Field-level error handling
+│   ├── test_field_level_diagnostics.py
+│   └── test_logging.py                # General logging functionality
+│
+├── docs/                                # Documentation tests
+│   ├── conftest.py                    # Shared fixtures for docs tests
+│   ├── test_docs_code_blocks.py       # Code block validation
+│   ├── test_generate_diagrams.py      # Diagram generation tests
+│   ├── test_readme_badges.py          # README badge validation
+│   ├── test_sidebar_structure.py      # Sidebar structure validation
+│   ├── test_source_content.py         # Markdown source validation
+│   ├── html/                          # Static HTML validation (BeautifulSoup)
+│   │   ├── conftest.py
+│   │   ├── test_accessibility_static.py
+│   │   ├── test_content_quality_static.py
+│   │   └── test_structure_static.py
+│   └── playwright_tests/             # Interactive browser tests (Chromium)
+│       ├── conftest.py
+│       ├── test_accessibility.py
+│       ├── test_diataxis_structure.py
+│       ├── test_documentation_quality.py
+│       ├── test_navigation.py
+│       └── test_sidebar_content.py
+│
+├── gatt/                                # GATT layer tests
+│   ├── test_context.py                # GATT context parsing
 │   ├── test_exceptions.py            # GATT exceptions
 │   ├── test_resolver.py              # UUID resolution
 │   ├── test_service_validation.py    # Service validation
 │   ├── test_service_validation_extended.py
+│   ├── test_special_values_resolver.py       # Special values handling
+│   ├── test_special_values_resolver_priority.py
 │   ├── test_uuid_registry.py         # UUID registry functionality
-│   └── test_validation.py            # General GATT validation
+│   ├── test_validation.py            # General GATT validation
+│   ├── characteristics/               # Individual characteristic tests (194 files)
+│   │   ├── conftest.py
+│   │   ├── test_base_characteristic.py
+│   │   ├── test_characteristic_common.py
+│   │   ├── test_characteristic_role.py
+│   │   ├── test_characteristic_test_coverage.py
+│   │   ├── test_custom_characteristics.py
+│   │   ├── test_templates.py
+│   │   ├── test_<name>.py            # One file per implemented characteristic
+│   │   └── utils/                    # Characteristic utility tests
+│   │       ├── test_bit_field_utils.py
+│   │       ├── test_data_parser.py
+│   │       ├── test_data_validator.py
+│   │       └── test_ieee11073_parser.py
+│   └── services/                      # Service implementation tests (30 files)
+│       ├── test_service_common.py
+│       ├── test_service_coverage.py
+│       ├── test_custom_services.py
+│       └── test_<name>_service.py    # One file per implemented service
 │
-├── device/                            # Device management and advertising
-│   ├── test_advertising_parser.py    # BLE advertising data parsing
-│   ├── test_device.py                # Device class functionality
-│   └── test_device_types.py          # Device type definitions
+├── integration/                         # End-to-end and comprehensive scenarios
+│   ├── test_auto_registration.py      # Auto-registration tests
+│   ├── test_basic_scenarios.py        # Basic integration scenarios
+│   ├── test_connection_managers.py    # Connection manager tests
+│   ├── test_custom_registration.py    # Custom characteristic/service registration
+│   ├── test_end_to_end.py            # Multi-characteristic parsing
+│   ├── test_examples.py              # Example usage scenarios
+│   └── test_format_types_integration.py  # Format type integration
 │
-├── registry/                          # YAML registry and UUID resolution
+├── registry/                            # YAML registry and UUID resolution
+│   ├── core/                          # Core registry type tests
+│   │   ├── test_coding_format.py
+│   │   ├── test_formattypes.py
+│   │   ├── test_namespace_description.py
+│   │   └── test_uri_schemes.py
+│   ├── test_ad_types.py              # AD type registry
+│   ├── test_appearance_values.py     # Appearance value lookups
+│   ├── test_class_of_device.py       # Class of Device parsing
+│   ├── test_company_identifiers.py   # Company identifier lookups
+│   ├── test_permitted_characteristics.py
+│   ├── test_profile_lookup.py        # Profile lookups
+│   ├── test_protocol_identifiers.py  # Protocol identifier lookups
+│   ├── test_registry_accessors.py    # Registry accessor patterns
 │   ├── test_registry_validation.py   # Registry validation
+│   ├── test_service_discovery_attributes.py
+│   ├── test_uri_schemes.py           # URI scheme lookups
+│   ├── test_utils.py                 # Registry utilities
 │   ├── test_yaml_cross_reference.py  # YAML cross-reference functionality
 │   └── test_yaml_units.py            # YAML unit definitions
 │
-├── utils/                             # Utility functions and helpers
-│   ├── test_bit_field_utils.py       # Bit field manipulation utilities
-│   ├── test_performance_tracking.py  # Performance monitoring
-│   └── test_profiling.py             # Profiling utilities
+├── static_analysis/                     # Static analysis and completeness checks
+│   ├── test_characteristic_registry_completeness.py
+│   ├── test_service_registry_completeness.py
+│   └── test_yaml_implementation_coverage.py
 │
-├── integration/                       # End-to-end and comprehensive scenarios
-│   ├── test_basic_scenarios.py       # Basic integration scenarios
-│   ├── test_custom_registration.py   # Custom characteristic/service registration
-│   ├── test_end_to_end.py            # Multi-characteristic parsing
-│   ├── test_examples.py              # Example usage scenarios
-│   └── test_round_trip.py            # Round-trip encoding/decoding
+├── stream/                              # Stream processing tests
+│   └── test_pairing.py
 │
-├── diagnostics/                       # Logging and diagnostics
-│   ├── test_field_errors.py          # Field-level error handling
-│   ├── test_field_level_diagnostics.py
-│   └── test_logging.py               # General logging functionality
+├── types/                               # Type system tests
+│   ├── test_company.py               # Company identifier types
+│   └── test_gatt_enums.py            # GATT enum validation
 │
-└── docs/                              # Documentation tests
-    ├── conftest.py                   # Shared fixtures for docs tests
-    ├── test_source_content.py        # Markdown source validation
-    ├── test_generate_diagrams.py     # Diagram generation tests
-    ├── test_sidebar_structure.py     # Sidebar structure validation
-    ├── html/                         # Static HTML validation (BeautifulSoup)
-    │   ├── test_accessibility_static.py
-    │   ├── test_structure_static.py
-    │   └── test_content_quality_static.py
-    └── playwright_tests/             # Interactive browser tests
-        ├── test_accessibility.py
-        ├── test_navigation.py
-        ├── test_diataxis_structure.py
-        ├── test_sidebar_content.py
-        └── test_documentation_quality.py
+└── utils/                               # Utility functions and helpers
+    └── test_profiling.py              # Profiling utilities
 ```
 
 ## Getting Started
@@ -116,13 +224,19 @@ python -m pytest tests/docs/playwright_tests/ -v -n auto -m "built_docs and play
 
 ### 1. Clear Separation of Concerns
 
-- **Core**: Framework-level functionality (translator)
-- **GATT**: GATT-specific functionality split between characteristics and services
-- **Device**: Device management and advertising functionality
-- **Registry**: YAML/UUID registry functionality
+- **Core**: Framework-level functionality (translator, async translator, encoding)
+- **GATT**: GATT-specific functionality split between characteristics, services, and utilities
+- **Advertising**: BLE advertising data parsing, EAD decryption, PDU parsing
+- **Descriptors**: GATT descriptor implementations (CCCD, presentation format, valid range, etc.)
+- **Device**: Device management, advertising, and peripheral device functionality
+- **Registry**: YAML/UUID registry functionality and core registry types
+- **Types**: Type system validation (company identifiers, GATT enums)
+- **Stream**: Stream processing and pairing tests
 - **Utils**: Utility functions that don't fit elsewhere
 - **Integration**: End-to-end scenarios and comprehensive tests
 - **Diagnostics**: Logging and error handling tests
+- **Static Analysis**: Registry completeness and YAML implementation coverage checks
+- **Benchmarks**: Performance and comparison benchmarks (run with `--benchmark-only`)
 - **Docs**: Documentation validation (Markdown source, HTML parsing, and Playwright browser tests)
 
 ### 2. Hierarchical Organization

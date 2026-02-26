@@ -36,9 +36,9 @@ async def handle_notifications_generic(
 
     try:
         await connection_manager.start_notify(uuid_obj, _cb)
-        print("   🔔 Notifications enabled")
+        print("   Notifications enabled")
         await asyncio.sleep(duration)
         await connection_manager.stop_notify(uuid_obj)
-        print("\n✅ Notification session completed")
+        print("\nNotification session completed")
     finally:
         await connection_manager.disconnect()

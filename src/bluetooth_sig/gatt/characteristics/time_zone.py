@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from ...types.gatt_enums import ValueType
 from ..constants import SINT8_MIN
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -25,7 +24,7 @@ class TimeZoneCharacteristic(BaseCharacteristic[str]):
     """
 
     # Manual override: YAML indicates sint8->int but we return descriptive strings
-    _manual_value_type: ValueType | str | None = ValueType.STRING
+    _python_type: type | str | None = str
     min_length: int = 1
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> str:

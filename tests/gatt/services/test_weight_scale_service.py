@@ -12,7 +12,6 @@ from bluetooth_sig.gatt.characteristics.weight_scale_feature import (
 )
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.gatt.services.weight_scale import WeightScaleService
-from bluetooth_sig.types.gatt_enums import ValueType
 from bluetooth_sig.types.units import MeasurementSystem, WeightUnit
 
 
@@ -23,8 +22,10 @@ class TestWeightMeasurementCharacteristic:
         """Test characteristic name resolution."""
         char = WeightMeasurementCharacteristic()
         assert char._characteristic_name == "Weight Measurement"
-        # Value type for multi-field characteristic is VARIOUS
-        assert char.value_type == ValueType.VARIOUS
+        # Auto-resolved from BaseCharacteristic[WeightMeasurementData]
+        from bluetooth_sig.gatt.characteristics.weight_measurement import WeightMeasurementData
+
+        assert char.python_type is WeightMeasurementData
 
     def test_parse_basic_weight_metric(self) -> None:
         """Test parsing basic weight in metric units."""
@@ -86,7 +87,9 @@ class TestWeightScaleFeatureCharacteristic:
         """Test characteristic name resolution."""
         char = WeightScaleFeatureCharacteristic()
         assert char._characteristic_name == "Weight Scale Feature"
-        assert char.value_type == ValueType.BITFIELD
+        from bluetooth_sig.gatt.characteristics.weight_scale_feature import WeightScaleFeatureData
+
+        assert char.python_type is WeightScaleFeatureData
 
     def test_parse_basic_features(self) -> None:
         """Test parsing basic feature flags."""

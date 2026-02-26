@@ -296,10 +296,10 @@ def main() -> None:
     )
 
     if log_level <= logging.INFO:
-        print(f"\n⚠️  Logging enabled at {args.log_level.upper()} level")
+        print(f"\nLogging enabled at {args.log_level.upper()} level")
         print("    Note: Logging adds overhead and will affect benchmark results")
 
-    print("\n🚀 Bluetooth SIG Library Performance Benchmark")
+    print("\nBluetooth SIG Library Performance Benchmark")
     print("=" * 80)
 
     session = ProfilingSession(name="Parsing Performance Benchmark")
@@ -314,13 +314,13 @@ def main() -> None:
         # Print summary
         print_summary(session)
 
-        print("\n✅ Benchmark complete!")
+        print("\nBenchmark complete!")
 
     except KeyboardInterrupt:
-        print("\n\n⚠️  Benchmark interrupted by user")
+        print("\n\nBenchmark interrupted by user")
         sys.exit(1)
     except Exception as e:  # pylint: disable=broad-except
-        print(f"\n\n❌ Benchmark failed ({type(e).__name__}): {e}")
+        print(f"\n\nBenchmark failed ({type(e).__name__}): {e}")
         import traceback
 
         traceback.print_exc()

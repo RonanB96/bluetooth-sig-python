@@ -18,8 +18,8 @@ class UnknownCharacteristic(BaseCharacteristic[bytes]):
     attempting to parse it into structured types.
     """
 
-    # TODO handle better
-    _is_base_class = True  # Exclude from registry validation tests (requires info parameter)
+    # NOTE: Exempt from registry validation — UnknownCharacteristic has no fixed UUID
+    _is_base_class = True
 
     def __init__(
         self,
@@ -29,7 +29,7 @@ class UnknownCharacteristic(BaseCharacteristic[bytes]):
         """Initialize an unknown characteristic.
 
         Args:
-            info: CharacteristicInfo object with UUID, name, unit, value_type
+            info: CharacteristicInfo object with UUID, name, unit, python_type
             properties: Runtime BLE properties discovered from device (optional)
 
         Raises:
@@ -42,7 +42,7 @@ class UnknownCharacteristic(BaseCharacteristic[bytes]):
                 uuid=info.uuid,
                 name=f"Unknown Characteristic ({info.uuid})",
                 unit=info.unit or "",
-                value_type=info.value_type,
+                python_type=info.python_type,
             )
 
         super().__init__(info=info, properties=properties)

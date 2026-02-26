@@ -90,7 +90,7 @@ class TestAdvertisingParsing:
         await self._run_main_with_args(mock=True)
 
         captured = capsys.readouterr()
-        assert "📝 USING MOCK LEGACY ADVERTISING DATA FOR DEMONSTRATION" in captured.out
+        assert "USING MOCK LEGACY ADVERTISING DATA FOR DEMONSTRATION" in captured.out
         assert "Mock BLE Device Results with SIG Parsing:" in captured.out
         assert "Local Name: Test Device" in captured.out
         assert "Service UUIDs:" in captured.out
@@ -223,7 +223,7 @@ def test_examples_utils_safe_import(monkeypatch: pytest.MonkeyPatch) -> None:
         fromlist: tuple[str, ...] = (),
         level: int = 0,
     ) -> object:
-        root = name.split(".")[0]
+        root = name.split(".", maxsplit=1)[0]
         # Simulate missing optional back-ends
         if root in ("bleak", "bleak_retry_connector", "simplepyble", "simpleble"):
             raise ImportError(f"Simulated missing optional backend: {root}")
@@ -248,7 +248,7 @@ def test_bleak_retry_integration_missing_backend(monkeypatch: pytest.MonkeyPatch
         fromlist: tuple[str, ...] = (),
         level: int = 0,
     ) -> object:
-        root = name.split(".")[0]
+        root = name.split(".", maxsplit=1)[0]
         if root in ("bleak", "bleak_retry_connector"):
             raise ModuleNotFoundError(f"Simulated missing optional backend: {root}")
         return real_import(name, globals_, locals_, fromlist, level)
@@ -273,7 +273,7 @@ def test_simpleble_integration_missing_backend(monkeypatch: pytest.MonkeyPatch) 
         fromlist: tuple[str, ...] = (),
         level: int = 0,
     ) -> object:
-        root = name.split(".")[0]
+        root = name.split(".", maxsplit=1)[0]
         if root == "simplepyble":
             raise ModuleNotFoundError(f"Simulated missing optional backend: {root}")
         return real_import(name, globals_, locals_, fromlist, level)
@@ -365,17 +365,6 @@ class TestCanonicalShapes:
                 # Should handle connection errors gracefully
                 with pytest.raises(ConnectionError):  # Connection failure should propagate
                     await robust_device_reading("00:11:22:33:44:55", retries=1)
-
-    @pytest.mark.asyncio
-    async def test_robust_service_discovery_canonical_shape(self) -> None:
-        """Test that robust_service_discovery returns dict of parsed values."""
-        from examples.with_bleak_retry import robust_service_discovery
-
-        # Currently returns empty dict, but should maintain canonical shape
-        result = await robust_service_discovery("00:11:22:33:44:55")
-
-        assert isinstance(result, dict)
-        # Values are now parsed values directly (not CharacteristicData wrappers)
 
     def test_canonical_shape_imports(self) -> None:
         """Test that canonical parse exception types are properly imported."""

@@ -59,6 +59,3 @@ class BarometricPressureTrendCharacteristic(BaseCharacteristic[BarometricPressur
     """
 
     _template = EnumTemplate.uint8(BarometricPressureTrend)
-
-    # Manual override: YAML indicates uint8->int but we return enum
-    _manual_value_type = "BarometricPressureTrend"

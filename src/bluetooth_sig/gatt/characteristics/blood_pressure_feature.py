@@ -6,7 +6,6 @@ from enum import IntFlag
 
 import msgspec
 
-from ...types.gatt_enums import ValueType
 from ..constants import UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -44,7 +43,7 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic[BloodPressureFeature
     available.
     """
 
-    _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
+    _python_type: type | str | None = dict  # Override since decode_value returns dataclass
 
     # YAML has no range constraint; enforce full uint16 bitmap range.
     min_value: int = 0

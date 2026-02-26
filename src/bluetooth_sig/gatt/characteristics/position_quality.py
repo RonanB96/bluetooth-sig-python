@@ -6,7 +6,6 @@ from enum import IntFlag
 
 import msgspec
 
-from ...types.gatt_enums import ValueType
 from ...types.location import PositionStatus
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -45,7 +44,7 @@ class PositionQualityCharacteristic(BaseCharacteristic[PositionQualityData]):
     Used to represent data related to the quality of a position measurement.
     """
 
-    _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
+    _python_type: type | str | None = dict  # Override since decode_value returns dataclass
 
     min_length = 2  # Flags(2) minimum
     max_length = 16  # Flags(2) + NumberOfBeaconsInSolution(1) + NumberOfBeaconsInView(1) +

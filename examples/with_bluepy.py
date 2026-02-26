@@ -60,11 +60,11 @@ def scan_for_devices(timeout: float = 10.0) -> list[DeviceInfo]:
         return devices
 
     except ImportError as e:
-        print(f"❌ BluePy not available: {e}")
+        print(f"BluePy not available: {e}")
         print("Install with: pip install bluepy")
         return []
     except Exception as e:
-        print(f"❌ Scan failed: {e}")
+        print(f"Scan failed: {e}")
         return []
 
 
@@ -82,7 +82,7 @@ async def demonstrate_bluepy_device_reading(address: str) -> dict[str, Any]:
         from examples.connection_managers.bluepy import BluePyClientManager
         from examples.utils.connection_helpers import read_characteristics_with_manager
 
-        print(f"🔍 Connecting to {address} using BluePy...")
+        print(f"Connecting to {address} using BluePy...")
 
         # Create BluePy connection manager
         connection_manager = BluePyClientManager(address)
@@ -93,7 +93,7 @@ async def demonstrate_bluepy_device_reading(address: str) -> dict[str, Any]:
         # Parse and display results
         parsed_results_map = parse_results(raw_results)
 
-        print(f"\n📊 Successfully read {len(parsed_results_map)} characteristics")
+        print(f"\nSuccessfully read {len(parsed_results_map)} characteristics")
 
         # Extract parsed values from ReadResult
         final_results: dict[str, Any] = {}
@@ -104,11 +104,11 @@ async def demonstrate_bluepy_device_reading(address: str) -> dict[str, Any]:
         return final_results
 
     except ImportError as e:
-        print(f"❌ BluePy not available: {e}")
+        print(f"BluePy not available: {e}")
         print("Install with: pip install bluepy")
         return {}
     except Exception as e:
-        print(f"❌ BluePy operation failed: {e}")
+        print(f"BluePy operation failed: {e}")
         return {}
 
 
@@ -122,7 +122,7 @@ async def demonstrate_bluepy_service_discovery(address: str) -> None:
     try:
         from examples.connection_managers.bluepy import BluePyClientManager
 
-        print(f"🔍 Discovering services on {address} using BluePy...")
+        print(f"Discovering services on {address} using BluePy...")
 
         connection_manager = BluePyClientManager(address)
         await connection_manager.connect()
@@ -130,7 +130,7 @@ async def demonstrate_bluepy_service_discovery(address: str) -> None:
         # Get services using the connection manager
         services = await connection_manager.get_services()
 
-        print(f"✅ Found {len(services)} services:")
+        print(f"Found {len(services)} services:")
         for i, service in enumerate(services, 1):
             service_name = getattr(service.service, "name", "Unknown Service")
             service_uuid = getattr(service.service, "uuid", "Unknown UUID")
@@ -139,10 +139,10 @@ async def demonstrate_bluepy_service_discovery(address: str) -> None:
         await connection_manager.disconnect()
 
     except ImportError as e:
-        print(f"❌ BluePy not available: {e}")
+        print(f"BluePy not available: {e}")
         print("Install with: pip install bluepy")
     except Exception as e:
-        print(f"❌ Service discovery failed: {e}")
+        print(f"Service discovery failed: {e}")
 
 
 def display_device_list(devices: list[DeviceInfo]) -> None:
@@ -153,10 +153,10 @@ def display_device_list(devices: list[DeviceInfo]) -> None:
 
     """
     if not devices:
-        print("❌ No devices found")
+        print("No devices found")
         return
 
-    print(f"\n📱 Found {len(devices)} BLE devices:")
+    print(f"\nFound {len(devices)} BLE devices:")
     print("-" * 60)
     for i, device in enumerate(devices, 1):
         rssi_str = f"{device.rssi} dBm" if device.rssi is not None else "Unknown"
@@ -181,25 +181,25 @@ async def main() -> None:
 
         del bluepy  # Clean up the import check
     except ImportError:
-        print("❌ BluePy not available!")
+        print("BluePy not available!")
         print("Install with: pip install bluepy")
         print("Note: BluePy only works on Linux")
         return
 
-    print("🔵 BluePy BLE Integration Example")
+    print("BluePy BLE Integration Example")
     print("=" * 40)
 
     if args.scan:
-        print(f"🔍 Scanning for devices (timeout: {args.timeout}s)...")
+        print(f"Scanning for devices (timeout: {args.timeout}s)...")
         devices = scan_for_devices(args.timeout)
         display_device_list(devices)
 
         if devices:
-            print("\n💡 To connect to a device, run:")
+            print("\nTo connect to a device, run:")
             print(f"   python {__file__} --address <ADDRESS>")
 
     elif args.address:
-        print(f"🔗 Connecting to device: {args.address}")
+        print(f"Connecting to device: {args.address}")
 
         # First try service discovery
         await demonstrate_bluepy_service_discovery(args.address)
@@ -212,6 +212,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n⚠️ Interrupted by user")
+        print("\nInterrupted by user")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")

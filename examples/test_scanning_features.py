@@ -162,10 +162,10 @@ async def test_find_by_address(
     elapsed = (datetime.now() - start).total_seconds()
 
     if device:
-        print(f"\n✅ Found device in {elapsed:.2f}s:")
+        print(f"\nFound device in {elapsed:.2f}s:")
         print(format_device(device))
     else:
-        print(f"\n❌ Device not found within {timeout}s")
+        print(f"\nDevice not found within {timeout}s")
 
     return device
 
@@ -187,10 +187,10 @@ async def test_find_by_name(
     elapsed = (datetime.now() - start).total_seconds()
 
     if device:
-        print(f"\n✅ Found device in {elapsed:.2f}s:")
+        print(f"\nFound device in {elapsed:.2f}s:")
         print(format_device(device))
     else:
-        print(f"\n❌ Device not found within {timeout}s")
+        print(f"\nDevice not found within {timeout}s")
 
     return device
 
@@ -216,10 +216,10 @@ async def test_find_by_filter(
     elapsed = (datetime.now() - start).total_seconds()
 
     if device:
-        print(f"\n✅ Found Apple device in {elapsed:.2f}s:")
+        print(f"\nFound Apple device in {elapsed:.2f}s:")
         print(format_device(device))
     else:
-        print(f"\n❌ No Apple device found within {timeout}s")
+        print(f"\nNo Apple device found within {timeout}s")
 
     return device
 
@@ -304,7 +304,7 @@ async def test_passive_scan(
             timeout=timeout,
             scanning_mode="passive",
         )
-        print(f"\n✅ Found {len(devices)} devices in passive mode")
+        print(f"\nFound {len(devices)} devices in passive mode")
         for device in devices[:_MAX_SERVICES_TO_DISPLAY]:
             print(f"  - {device.name or device.address}")
 
@@ -313,7 +313,7 @@ async def test_passive_scan(
         return devices
     except Exception as e:
         # Catch any unexpected errors
-        print(f"\n⚠️  Passive scanning error: {e}")
+        print(f"\nPassive scanning error: {e}")
         return []
 
 
@@ -335,7 +335,7 @@ async def run_all_tests(
 
     # Check if the manager supports scanning
     if not manager.supports_scanning:
-        print(f"\n❌ {manager.__name__} does not support scanning")
+        print(f"\n{manager.__name__} does not support scanning")
         return
 
     # Test 1: Basic scan
@@ -388,7 +388,7 @@ def main() -> None:
     # Get available connection managers
     available_managers = list(AVAILABLE_LIBRARIES.keys())
     if not available_managers:
-        print("\n❌ No BLE libraries available. Install with: pip install .[examples]")
+        print("\nNo BLE libraries available. Install with: pip install .[examples]")
         sys.exit(1)
 
     default_manager = available_managers[0]
@@ -443,7 +443,7 @@ Examples:
     try:
         manager_class = get_connection_manager_class(args.connection_manager)
     except (ValueError, ImportError) as e:
-        print(f"\n❌ Failed to load connection manager: {e}")
+        print(f"\nFailed to load connection manager: {e}")
         sys.exit(1)
 
     try:

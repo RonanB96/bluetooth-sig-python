@@ -7,7 +7,6 @@ from enum import IntEnum, IntFlag
 
 import msgspec
 
-from ...types.gatt_enums import ValueType
 from ...types.location import PositionStatus
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -74,7 +73,7 @@ class LocationAndSpeedCharacteristic(BaseCharacteristic[LocationAndSpeedData]):
     Note that it is possible for this characteristic to exceed the default LE ATT_MTU size.
     """
 
-    _manual_value_type: ValueType | str | None = ValueType.DICT  # Override since decode_value returns dataclass
+    _python_type: type | str | None = dict  # Override since decode_value returns dataclass
 
     min_length = 2  # Flags(2) minimum
     max_length = 28  # Flags(2) + InstantaneousSpeed(2) + TotalDistance(3) + Location(8) +

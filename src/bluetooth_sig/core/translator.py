@@ -28,7 +28,7 @@ from ..types import (
     SIGInfo,
     ValidationResult,
 )
-from ..types.gatt_enums import CharacteristicName, ValueType
+from ..types.gatt_enums import CharacteristicName
 from ..types.uuid import BluetoothUUID
 from .encoder import CharacteristicEncoder
 from .parser import CharacteristicParser
@@ -301,14 +301,14 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
     # Query / Info
     # -------------------------------------------------------------------------
 
-    def get_value_type(self, uuid: str) -> ValueType | None:
-        """Get the expected value type for a characteristic.
+    def get_value_type(self, uuid: str) -> type | str | None:
+        """Get the expected Python type for a characteristic.
 
         Args:
             uuid: The characteristic UUID (16-bit short form or full 128-bit)
 
         Returns:
-            ValueType enum if characteristic is found, None otherwise
+            Python type if characteristic is found, None otherwise
 
         """
         return self._query.get_value_type(uuid)
@@ -518,7 +518,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         Args:
             uuid_or_name: The characteristic UUID or name
             cls: The characteristic class to register
-            info: Optional CharacteristicInfo with metadata (name, unit, value_type)
+            info: Optional CharacteristicInfo with metadata (name, unit, python_type)
             override: Whether to override existing registrations
 
         Raises:
@@ -527,7 +527,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
 
         Example::
 
-            from bluetooth_sig import BluetoothSIGTranslator, CharacteristicInfo, ValueType
+            from bluetooth_sig import BluetoothSIGTranslator, CharacteristicInfo
             from bluetooth_sig.types import BluetoothUUID
 
             translator = BluetoothSIGTranslator()
@@ -535,7 +535,7 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
                 uuid=BluetoothUUID("12345678-1234-1234-1234-123456789abc"),
                 name="Custom Temperature",
                 unit="°C",
-                value_type=ValueType.FLOAT,
+                python_type=float,
             )
             translator.register_custom_characteristic_class(str(info.uuid), MyCustomChar, info=info)
 

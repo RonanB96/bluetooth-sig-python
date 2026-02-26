@@ -123,20 +123,20 @@ def show_library_availability() -> bool:
 
     Returns True if one or more libraries are available, False otherwise.
     """
-    print("📚 BLE Library Availability Check")
+    print("BLE Library Availability Check")
     print("=" * 40)
 
     if not AVAILABLE_LIBRARIES:
-        print("❌ No BLE libraries found. Install one or more:")
+        print("No BLE libraries found. Install one or more:")
         print("   pip install .[examples]  # Install example back-ends and demo utilities")
         return False
 
-    print("✅ Available BLE libraries:")
+    print("Available BLE libraries:")
     for lib_name, info in AVAILABLE_LIBRARIES.items():
         async_str = "Async" if info["async"] else "Sync"
         print(f"   {lib_name}: {info['description']} ({async_str})")
 
-    print(f"\n🎯 Will demonstrate bluetooth_sig parsing with {len(AVAILABLE_LIBRARIES)} libraries")
+    print(f"\nWill demonstrate bluetooth_sig parsing with {len(AVAILABLE_LIBRARIES)} libraries")
     return True
 
 

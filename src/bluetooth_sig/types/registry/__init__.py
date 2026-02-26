@@ -4,6 +4,7 @@ from __future__ import annotations
 
 __all__ = [
     "AdTypeInfo",
+    "AttributeIdEntry",
     "BaseUuidInfo",
     "CharacteristicSpec",
     "FieldInfo",
@@ -11,6 +12,9 @@ __all__ = [
     "NameOpcodeTypeInfo",
     "NameUuidTypeInfo",
     "NameValueInfo",
+    "PermittedCharacteristicEntry",
+    "ProfileLookupEntry",
+    "ProtocolParameterEntry",
     "UnitMetadata",
     "UuidIdInfo",
     "ValueNameInfo",
@@ -32,4 +36,10 @@ from .common import (
     ValueNameInfo,
     ValueNameReferenceInfo,
     generate_basic_aliases,
+)
+from .profile_types import (
+    AttributeIdEntry,
+    PermittedCharacteristicEntry,
+    ProfileLookupEntry,
+    ProtocolParameterEntry,
 )

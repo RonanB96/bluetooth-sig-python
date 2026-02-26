@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Protocol
 
 from ...types import DescriptorData, DescriptorInfo
 from ...types.uuid import BluetoothUUID
@@ -138,8 +138,27 @@ class BaseDescriptor(ABC):
         raise NotImplementedError(f"{self.__class__.__name__} must implement _parse_descriptor_value()")
 
 
-class RangeDescriptorMixin:
-    """Mixin for descriptors that provide min/max value validation."""
+class _RangeValue(Protocol):
+    """Protocol for parsed descriptor values with min/max fields."""
+
+    @property
+    def min_value(self) -> int | float: ...
+
+    @property
+    def max_value(self) -> int | float: ...
+
+
+class RangeDescriptorMixin(ABC):
+    """Mixin for descriptors that provide min/max value validation.
+
+    Concrete subclasses must also inherit from BaseDescriptor (which provides
+    ``_parse_descriptor_value``).  The abstract stub below declares the
+    dependency so that mypy recognises it without ``type: ignore[attr-defined]``.
+    """
+
+    @abstractmethod
+    def _parse_descriptor_value(self, data: bytes) -> _RangeValue:
+        """Parse the descriptor value — implemented by BaseDescriptor."""
 
     def get_min_value(self, data: bytes) -> int | float:
         """Get the minimum valid value.
@@ -150,8 +169,8 @@ class RangeDescriptorMixin:
         Returns:
             Minimum valid value for the characteristic
         """
-        parsed = self._parse_descriptor_value(data)  # type: ignore[attr-defined]  # Mixin: concrete subclass provides _parse_descriptor_value
-        return parsed.min_value  # type: ignore[no-any-return]  # Parsed struct has typed fields
+        parsed = self._parse_descriptor_value(data)
+        return parsed.min_value
 
     def get_max_value(self, data: bytes) -> int | float:
         """Get the maximum valid value.
@@ -162,8 +181,8 @@ class RangeDescriptorMixin:
         Returns:
             Maximum valid value for the characteristic
         """
-        parsed = self._parse_descriptor_value(data)  # type: ignore[attr-defined]  # Mixin: concrete subclass provides _parse_descriptor_value
-        return parsed.max_value  # type: ignore[no-any-return]  # Parsed struct has typed fields
+        parsed = self._parse_descriptor_value(data)
+        return parsed.max_value
 
     def is_value_in_range(self, data: bytes, value: float) -> bool:
         """Check if a value is within the valid range.
@@ -175,7 +194,7 @@ class RangeDescriptorMixin:
         Returns:
             True if value is within [min_value, max_value] range
         """
-        parsed = self._parse_descriptor_value(data)  # type: ignore[attr-defined]
+        parsed = self._parse_descriptor_value(data)
         min_val = parsed.min_value
         max_val = parsed.max_value
         return bool(min_val <= value <= max_val)

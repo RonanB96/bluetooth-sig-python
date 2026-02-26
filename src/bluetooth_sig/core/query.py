@@ -17,7 +17,7 @@ from ..types import (
     ServiceInfo,
     SIGInfo,
 )
-from ..types.gatt_enums import CharacteristicName, ValueType
+from ..types.gatt_enums import CharacteristicName
 from ..types.uuid import BluetoothUUID
 
 logger = logging.getLogger(__name__)
@@ -48,18 +48,18 @@ class CharacteristicQueryEngine:
         else:
             return char_class is not None
 
-    def get_value_type(self, uuid: str) -> ValueType | None:
-        """Get the expected value type for a characteristic.
+    def get_value_type(self, uuid: str) -> type | str | None:
+        """Get the expected Python type for a characteristic.
 
         Args:
             uuid: The characteristic UUID (16-bit short form or full 128-bit)
 
         Returns:
-            ValueType enum if characteristic is found, None otherwise
+            Python type if characteristic is found, None otherwise
 
         """
         info = self.get_characteristic_info_by_uuid(uuid)
-        return info.value_type if info else None
+        return info.python_type if info else None
 
     def get_characteristic_info_by_uuid(self, uuid: str) -> CharacteristicInfo | None:
         """Get information about a characteristic by UUID.
@@ -156,7 +156,7 @@ class CharacteristicQueryEngine:
             if uuid_info:
                 return ServiceInfo(uuid=uuid_info.uuid, name=uuid_info.name, characteristics=[])
         except Exception:  # pylint: disable=broad-exception-caught
-            pass
+            logger.warning("Failed to look up service info for name=%s", name_str, exc_info=True)
 
         return None
 
@@ -268,16 +268,10 @@ class CharacteristicQueryEngine:
         try:
             char_info = uuid_registry.get_characteristic_info(name)
             if char_info:
-                value_type = ValueType.UNKNOWN
-                if char_info.value_type:
-                    try:
-                        value_type = ValueType(char_info.value_type)
-                    except (ValueError, KeyError):
-                        value_type = ValueType.UNKNOWN
                 return CharacteristicInfo(
                     uuid=char_info.uuid,
                     name=char_info.name,
-                    value_type=value_type,
+                    python_type=char_info.python_type,
                     unit=char_info.unit or "",
                 )
         except (KeyError, ValueError, AttributeError):

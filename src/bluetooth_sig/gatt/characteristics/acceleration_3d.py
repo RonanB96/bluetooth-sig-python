@@ -18,7 +18,6 @@ class Acceleration3DCharacteristic(BaseCharacteristic[VectorData]):
 
     _characteristic_name: str | None = "Acceleration 3D"
     resolution: float = 0.01
-    _manual_value_type = "VectorData"
 
     # BaseCharacteristic handles validation
     expected_length = 3

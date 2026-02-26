@@ -42,7 +42,7 @@ class TestLocalNorthCoordinateCharacteristic(CommonCharacteristicTests):
         """Test Local North Coordinate characteristic parsing."""
         # Test metadata
         assert characteristic.unit == "m"
-        assert characteristic.value_type.value == "float"
+        assert characteristic.python_type is float
 
         # Test normal parsing
         test_data = bytearray([0xED, 0x03, 0x00])  # 1005 = 100.5m

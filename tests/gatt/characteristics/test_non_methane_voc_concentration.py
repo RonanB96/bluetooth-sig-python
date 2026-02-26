@@ -43,7 +43,7 @@ class TestNonMethaneVOCConcentrationCharacteristic(CommonCharacteristicTests):
         """Test TVOC concentration characteristic parsing."""
         # Test metadata - Updated for SIG spec compliance (medfloat16, kg/m³)
         assert characteristic.unit == "kg/m³"
-        assert characteristic.value_type_resolved.value == "float"  # IEEE 11073 SFLOAT format
+        assert characteristic.python_type is float  # IEEE 11073 SFLOAT format
 
         # Test normal parsing - IEEE 11073 SFLOAT format
         # Example: 0x1234 = exponent=1, mantissa=564 = 564 * 10^1 = 5640

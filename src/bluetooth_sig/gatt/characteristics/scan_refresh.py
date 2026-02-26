@@ -14,4 +14,6 @@ class ScanRefreshCharacteristic(BaseCharacteristic[int]):
     Requests the server to refresh the scan.
     """
 
+    _python_type: type | str | None = int
+
     _template = Uint8Template()

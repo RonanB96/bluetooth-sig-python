@@ -17,7 +17,6 @@ class AltitudeCharacteristic(BaseCharacteristic[float]):
     # Validation attributes
     # Manual overrides required as Bluetooth SIG registry doesn't provide unit/value type
     _manual_unit = "m"
-    _manual_value_type = "float"
     # SIG spec: sint16, resolution 0.1 m → fixed 2-byte payload
     # No GSS YAML available, so set explicit length from spec
     expected_length = 2

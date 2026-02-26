@@ -66,10 +66,10 @@ async def scan_devices(timeout: float = 10.0) -> None:
         from bleak import BleakScanner
         from bleak.backends.scanner import AdvertisementData as BleakAdvertisementData
     except ImportError:
-        print("❌ Bleak not installed. Install with: pip install bleak")
+        print("Bleak not installed. Install with: pip install bleak")
         return
 
-    print(f"\n📡 Scanning for BLE devices ({timeout:.0f} seconds)...\n")
+    print(f"\nScanning for BLE devices ({timeout:.0f} seconds)...\n")
 
     # Collect all advertisements (keeps latest per address)
     devices_seen: dict[str, tuple[str | None, BleakAdvertisementData]] = {}
@@ -106,7 +106,7 @@ async def scan_devices(timeout: float = 10.0) -> None:
     # Process each device
     for address, (name, adv) in sorted(devices_seen.items()):
         display_name = name or "Unknown"
-        print(f"\n📱 {display_name} [{address}]")
+        print(f"\n{display_name} [{address}]")
         print(f"   RSSI: {adv.rssi} dBm")
 
         # Show local name if different from device name
@@ -120,7 +120,7 @@ async def scan_devices(timeout: float = 10.0) -> None:
         # Service UUIDs (advertised services)
         if adv.service_uuids:
             stats["with_service_uuids"] += 1
-            print(f"   📋 Service UUIDs ({len(adv.service_uuids)}):")
+            print(f"   Service UUIDs ({len(adv.service_uuids)}):")
             for uuid_str in adv.service_uuids:
                 try:
                     uuid = BluetoothUUID(uuid_str)
@@ -135,7 +135,7 @@ async def scan_devices(timeout: float = 10.0) -> None:
         # Manufacturer Data
         if adv.manufacturer_data:
             stats["with_manufacturer_data"] += 1
-            print(f"   🏭 Manufacturer Data ({len(adv.manufacturer_data)} entries):")
+            print(f"   Manufacturer Data ({len(adv.manufacturer_data)} entries):")
             for company_id, payload in adv.manufacturer_data.items():
                 mfr_data = ManufacturerData.from_id_and_payload(company_id, payload)
                 print(f"      • {mfr_data.company.name}: {format_bytes(mfr_data.payload)}")
@@ -144,7 +144,7 @@ async def scan_devices(timeout: float = 10.0) -> None:
         service_data_uuids: dict[BluetoothUUID, bytes] = {}
         if adv.service_data:
             stats["with_service_data"] += 1
-            print(f"   📊 Service Data ({len(adv.service_data)} entries):")
+            print(f"   Service Data ({len(adv.service_data)} entries):")
             for uuid_str, payload in adv.service_data.items():
                 try:
                     uuid = BluetoothUUID(uuid_str)
@@ -177,9 +177,9 @@ async def scan_devices(timeout: float = 10.0) -> None:
             if results:
                 successful = [r for r in results if r.is_success]
                 if successful:
-                    print(f"   🔍 Auto-Parsed ({len(successful)} results):")
+                    print(f"   Auto-Parsed ({len(successful)} results):")
                     for result in successful:
-                        print(f"      ✅ {result.data}")
+                        print(f"      {result.data}")
                         parsed_results.append((address, name, result.data))
                         stats["parsed_payloads"] += 1
 
@@ -195,7 +195,7 @@ async def scan_devices(timeout: float = 10.0) -> None:
     print(f"Auto-parsed payloads:     {stats['parsed_payloads']}")
 
     if parsed_results:
-        print("\n🎯 Successfully Parsed Payloads:")
+        print("\nSuccessfully Parsed Payloads:")
         for address, name, data in parsed_results:
             display = name or address
             print(f"   • {display}: {data}")

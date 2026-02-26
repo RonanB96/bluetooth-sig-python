@@ -252,5 +252,5 @@ class TestYAMLCrossReference:
         assert humidity_char.unit in ["%", ""], "Humidity unit should work"
 
         # Test that value types are still accessible
-        assert hasattr(temp_char, "value_type"), "Should have value_type"
-        assert hasattr(humidity_char, "value_type"), "Should have value_type"
+        assert hasattr(temp_char, "python_type"), "Should have python_type"
+        assert hasattr(humidity_char, "python_type"), "Should have python_type"

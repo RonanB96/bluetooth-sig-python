@@ -53,6 +53,8 @@ class HidInformationCharacteristic(BaseCharacteristic[HidInformationData]):
     HID Information characteristic.
     """
 
+    _python_type: type | str | None = "HidInformationData"
+
     expected_length: int = 4  # bcdHID(2) + bCountryCode(1) + Flags(1)
     min_length: int = 4
     max_length: int = 4
