@@ -80,7 +80,8 @@ jobs:
 
       - name: Run packaging smoke tests against installed ${{ matrix.artifact }}
         run: |
-          python -m pytest tests/gatt/test_uuid_registry.py \
+          cd /tmp
+          python -m pytest "$GITHUB_WORKSPACE/tests/gatt/test_uuid_registry.py" \
             --override-ini="pythonpath=" \
             -m packaging \
             -v
