@@ -51,6 +51,11 @@ jobs:
         artifact: [wheel, sdist]
     steps:
       - uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            tests/
+            pyproject.toml
+            .gitignore
 
       - uses: actions/setup-python@v6
         with:
@@ -80,10 +85,10 @@ jobs:
 
       - name: Run packaging smoke tests against installed ${{ matrix.artifact }}
         run: |
-          cd /tmp
-          python -m pytest "$GITHUB_WORKSPACE/tests/gatt/test_uuid_registry.py" \
-            --override-ini="pythonpath=" \
+          python -m pytest tests/ \
             -m packaging \
+            --ignore=tests/docs \
+            --override-ini="pythonpath=" \
             -v
 
   publish-pypi:

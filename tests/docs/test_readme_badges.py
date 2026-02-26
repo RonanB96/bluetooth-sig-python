@@ -7,7 +7,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import pytest
-import requests
+
+# Skip this entire module if requests is not installed
+try:
+    import requests
+except ModuleNotFoundError:
+    pytest.skip("requests not installed", allow_module_level=True)
 
 
 def _is_trusted_domain(url: str, trusted_domains: list[str]) -> bool:

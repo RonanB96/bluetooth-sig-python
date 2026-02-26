@@ -15,9 +15,9 @@ from bluetooth_sig.gatt.characteristics.temperature import TemperatureCharacteri
 from bluetooth_sig.gatt.services.battery_service import BatteryService
 from bluetooth_sig.gatt.services.environmental_sensing import EnvironmentalSensingService
 from bluetooth_sig.gatt.uuid_registry import UuidRegistry
+from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.gatt_services import ServiceDiscoveryData
 from bluetooth_sig.types.uuid import BluetoothUUID
-from tests.conftest import ROOT_DIR
 
 
 @pytest.fixture(scope="session")
@@ -191,7 +191,8 @@ def test_invalid_uuid_lookup(mock_uuid_registry: UuidRegistry) -> None:
 @pytest.mark.packaging
 def test_yaml_file_presence() -> None:
     """Test that required YAML files exist."""
-    base_path = ROOT_DIR / "bluetooth_sig" / "assigned_numbers" / "uuids"
+    base_path = find_bluetooth_sig_path()
+    assert base_path is not None, "Cannot locate bluetooth_sig data path (submodule or installed package)"
 
     assert (base_path / "service_uuids.yaml").exists(), "Service UUIDs YAML file missing"
     assert (base_path / "characteristic_uuids.yaml").exists(), "Characteristic UUIDs YAML file missing"
@@ -200,7 +201,8 @@ def test_yaml_file_presence() -> None:
 @pytest.fixture(scope="session")
 def yaml_data() -> dict[str, Any]:
     """Load YAML data once per session for performance."""
-    base_path = ROOT_DIR / "bluetooth_sig" / "assigned_numbers" / "uuids"
+    base_path = find_bluetooth_sig_path()
+    assert base_path is not None, "Cannot locate bluetooth_sig data path"
 
     # Load service data
     service_file = base_path / "service_uuids.yaml"
