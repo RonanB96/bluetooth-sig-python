@@ -14,10 +14,10 @@ import pytest
 
 pytest.importorskip("bleak", reason="bleak required for connection manager tests")
 
-from examples.connection_managers.bleak_retry import BleakRetryClientManager  # noqa: E402
-from examples.connection_managers.bleak_utils import bleak_services_to_batch  # noqa: E402
-from examples.connection_managers.bluepy import BluePyClientManager  # noqa: E402
-from examples.connection_managers.simpleble import SimplePyBLEClientManager, simpleble_services_to_batch  # noqa: E402
+from examples.connection_managers.bleak_retry import BleakRetryClientManager
+from examples.connection_managers.bleak_utils import bleak_services_to_batch
+from examples.connection_managers.bluepy import BluePyClientManager
+from examples.connection_managers.simpleble import SimplePyBLEClientManager, simpleble_services_to_batch
 
 
 class TestBleakRetryClientManager:

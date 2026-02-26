@@ -383,7 +383,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                     if canonical_key in self._services:
                         return self._services[canonical_key]
                 except ValueError:
-                    logger.warning("UUID normalization failed for service lookup: %s", search_key)
+                    pass  # UUID normalization failed, continue to alias lookup
 
                 # Check alias index (normalized to lowercase)
                 alias_key = self._service_aliases.get(search_key.lower())
@@ -411,7 +411,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                     if canonical_key in self._characteristics:
                         return self._characteristics[canonical_key]
                 except ValueError:
-                    logger.warning("UUID normalization failed for characteristic lookup: %s", search_key)
+                    pass  # UUID normalization failed, continue to alias lookup
 
                 # Check alias index (normalized to lowercase)
                 alias_key = self._characteristic_aliases.get(search_key.lower())
@@ -439,7 +439,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                     if canonical_key in self._descriptors:
                         return self._descriptors[canonical_key]
                 except ValueError:
-                    logger.warning("UUID normalization failed for descriptor lookup: %s", search_key)
+                    pass  # UUID normalization failed, continue to alias lookup
 
                 # Check alias index (normalized to lowercase)
                 alias_key = self._descriptor_aliases.get(search_key.lower())

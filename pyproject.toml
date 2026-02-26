@@ -106,7 +106,7 @@ docs = [
 [tool.pytest.ini_options]
 asyncio_mode = "strict"
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 addopts = "-m 'not benchmark and not built_docs and not playwright'"
 norecursedirs = ["tests/benchmarks"]
 markers = [
