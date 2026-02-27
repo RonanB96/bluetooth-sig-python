@@ -90,7 +90,7 @@ docs = [
     "myst-parser>=2.0.0",
     "sphinx-design>=0.5.0",
     "furo>=2024.1.29",
-    "git-cliff~=2.7",
+    "git-changelog~=2.7",
     "sphinxcontrib-mermaid>=0.9.0",
     "sphinx-copybutton>=0.5.0",
     "linkify-it-py>=2.0.0",
@@ -338,51 +338,14 @@ inherit = false
 # formatter when there are nested functions (Black requires blank line)
 add-ignore = ["D202"]
 
-[tool.git-cliff.changelog]
+[tool.git-changelog]
 # Auto-generated changelog from conventional commits
-# https://git-cliff.org/docs/configuration
-header = "# Changelog\n\nAll notable changes to this project are documented here.\nGenerated automatically from commit history.\n"
-body = """
-{%- macro remote_url() -%}
-  https://github.com/RonanB96/bluetooth-sig-python
-{%- endmacro -%}
-
-{% if version %}\
-## [{{ version | trim_start_matches(pat="v") }}]({{ remote_url() }}/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
-{% else %}\
-## Unreleased
-{% endif %}\
-{% for group, commits in commits | group_by(attribute="group") %}
-### {{ group | striptags | trim | upper_first }}
-{% for commit in commits %}
-- {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }}\
-{% if commit.breaking %} (**BREAKING**){% endif %}\
-{% if commit.body %}\
-\n  {{ commit.body | indent(prefix="  ") }}\
-{% endif %}
-{%- endfor %}
-{% endfor %}
-"""
-trim = true
-
-[tool.git-cliff.git]
-conventional_commits = true
-filter_unconventional = false
-commit_parsers = [
-    { message = "^feat", group = "Features" },
-    { message = "^fix", group = "Bug Fixes" },
-    { message = "^doc|^docs", group = "Documentation" },
-    { message = "^perf", group = "Performance" },
-    { message = "^refactor", group = "Refactoring" },
-    { message = "^test", group = "Testing" },
-    { message = "^ci", group = "CI/CD" },
-    { message = "^build", group = "Build" },
-    { message = "^chore", group = "Miscellaneous" },
-    { body = ".*security", group = "Security" },
-]
-filter_commits = false
-tag_pattern = "v[0-9].*"
-sort_commits = "newest"
-# D202: No blank lines allowed after function docstring - conflicts with Black
-# formatter when there are nested functions (Black requires blank line)
-add-ignore = ["D202"]
+# https://pawamoy.github.io/git-changelog/usage/
+convention = "conventional"
+output = "docs/source/community/changelog.md"
+provider = "github"
+template = "keepachangelog"
+sections = "feat,fix,doc,docs,perf,refactor,test,ci,build,chore,revert,deps,style"
+include-all = true
+versioning = "semver"
+zerover = true
