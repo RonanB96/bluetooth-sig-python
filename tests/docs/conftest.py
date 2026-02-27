@@ -28,8 +28,6 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-from tests.conftest import ROOT_DIR
-
 # Skip playwright_tests folder during collection if playwright is not installed
 # This prevents collection errors from breaking non-playwright tests
 # Must use collect_ignore (not collect_ignore_glob) to ignore directories entirely
@@ -43,6 +41,11 @@ except ImportError:
     collect_ignore = [str(Path(__file__).parent / "playwright_tests")]
 
 import pytest
+
+# Compute ROOT_DIR relative to this file (tests/docs/conftest.py → project root)
+# Avoids importing from the `tests` package, which is not on sys.path in all
+# environments (e.g. CI runners where only `pythonpath = ["src"]` is set).
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 
 # ============================================================================
 # Shared Test Constants

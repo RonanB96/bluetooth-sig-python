@@ -40,7 +40,7 @@ jobs:
           cache-dependency-path: 'pyproject.toml'
 
       - name: Cache system dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /var/cache/apt
           key: ${{ runner.os }}-apt-copilot-${{ hashFiles('scripts/install-deps.sh') }}
@@ -58,6 +58,8 @@ jobs:
           python -m pip install --upgrade pip
           # Install dev, test and examples extras so local setup has BLE example libraries
           pip install -e .[dev,test,examples]
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: "0.0.0.dev0"
 
       - name: Verify environment
         run: |
@@ -66,5 +68,4 @@ jobs:
       - name: Read the instructions
         run: |
           cat .github/copilot-instructions.md
-          cat .github/copilot-code-review.md
 

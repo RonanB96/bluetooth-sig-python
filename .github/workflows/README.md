@@ -1,6 +1,6 @@
 # GitHub Actions Workflows
 
-This directory contains GitHub Actions workflows for automated testing and code quality checks.
+This directory contains GitHub Actions workflows for automated testing, code quality checks, and releases.
 
 ## Workflows
 
@@ -10,8 +10,8 @@ This directory contains GitHub Actions workflows for automated testing and code 
 - **Matrix**: Python 3.10, 3.12
 - **Purpose**: Run comprehensive test suite with coverage reporting
 - **Features**:
-  - Automatic git submodule initialization for `bluetooth_sig` dependency
-  - Test execution with pytest and coverage reporting (76% coverage)
+  - Automatic git submodule initialisation for `bluetooth_sig` dependency
+  - Test execution with pytest and coverage reporting (85% threshold)
   - Coverage upload to Codecov for Python 3.12 runs
   - Uses project configuration from `pyproject.toml`
 
@@ -23,8 +23,17 @@ This directory contains GitHub Actions workflows for automated testing and code 
 - **Tools**:
   - **ruff**: Formatting and linting
   - **mypy**: strict for production code, lenient for tests/examples
-
 - **Environment Setup**: All tools run via `python -m` to ensure proper configuration loading
+
+### Release (`release.yml`)
+
+- **Trigger**: Push of a `v*.*.*` tag (e.g. `v0.1.0`)
+- **Purpose**: Build, publish to PyPI, and create a GitHub Release
+- **Jobs**:
+  1. **build** — builds sdist + wheel using `hatchling`, verifies with `twine check`
+  2. **publish-pypi** — publishes to PyPI via trusted publisher (OIDC). Requires the `pypi` GitHub environment.
+  3. **github-release** — generates release notes with `git-cliff` and creates a GitHub Release with the distribution artefacts.
+- **Prerequisites**: The repository must have a `pypi` environment configured with PyPI trusted publisher credentials.
 
 ## Local Development
 
@@ -34,17 +43,18 @@ To run the same checks locally:
 # Install development dependencies
 pip install -e ".[dev]"
 
-# Initialize git submodules (required for UUID registry)
+# Initialise git submodules (required for UUID registry)
 git submodule update --init --recursive
 
 # Run tests with coverage
-python -m pytest tests/ --cov=src/ble_gatt_device --cov-report=term-missing
+python -m pytest tests/ --cov=src/bluetooth_sig --cov-report=term-missing
 
-# Run linting tools (use python -m for proper configuration loading)
-python -m flake8 src/ tests/ --count --statistics
-python -m black --check --diff src/ tests/
-python -m isort --check-only --diff src/ tests/
-python -m pylint src/ble_gatt_device/ --exit-zero --score y
+# Run linting
+python -m ruff check src/ tests/
+python -m ruff format --check src/ tests/
+
+# Run type checking
+python -m mypy src/bluetooth_sig/
 ```
 
 ## Environment Setup Requirements
@@ -54,21 +64,18 @@ python -m pylint src/ble_gatt_device/ --exit-zero --score y
 When testing locally or in agent environments, ensure:
 
 1. **Python 3.11+** is available
-1. **Git submodules** are initialized: `git submodule update --init --recursive`
+1. **Git submodules** are initialised: `git submodule update --init --recursive`
 1. **Package installation** in development mode: `pip install -e ".[dev]"`
 1. **Tool execution** via Python modules: Use `python -m tool_name` instead of direct commands
-1. **Configuration loading**: flake8-pyproject allows flake8 to read from `pyproject.toml`
 
 ### Key Environment Dependencies
 
 - Git submodule `bluetooth_sig` must be present for UUID registry functionality
-- All linting tools should be run via `python -m` to ensure proper configuration loading
-- Black handles most formatting that would trigger flake8 style errors
+- All linting/formatting is handled by `ruff` — configured in `pyproject.toml`
 
 ## Notes
 
-- All tool configurations are defined in `pyproject.toml` (no separate `.flake8` file)
-- Workflows use `--exit-zero` for pylint to prevent CI failures on minor issues
-- Coverage reporting is optional and won't fail the build
-- Git submodules are automatically initialized for the Bluetooth SIG UUID registry dependency
+- All tool configurations are defined in `pyproject.toml`
+- Coverage threshold is 85% (`--cov-fail-under=85`)
+- Git submodules are automatically initialised for the Bluetooth SIG UUID registry dependency
 - Use `python -m` prefix for all tools to ensure proper package and configuration loading

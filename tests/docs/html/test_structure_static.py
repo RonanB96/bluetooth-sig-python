@@ -10,7 +10,12 @@ import re
 from pathlib import Path
 
 import pytest
-from bs4 import BeautifulSoup
+
+# Skip this entire module if beautifulsoup4 is not installed
+try:
+    from bs4 import BeautifulSoup
+except ModuleNotFoundError:
+    pytest.skip("beautifulsoup4 not installed", allow_module_level=True)
 
 
 @pytest.mark.built_docs

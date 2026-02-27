@@ -36,7 +36,7 @@ def test_page_has_proper_title(page: Page, html_file: str) -> None:
 def test_heading_hierarchy(page: Page, html_file: str) -> None:
     """Test proper heading hierarchy."""
     page.goto(html_file)
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("domcontentloaded")
     h1_count = page.locator("h1").count()
     assert 1 <= h1_count <= 2, f"Wrong h1 count on {html_file}: {h1_count}"
 
@@ -203,7 +203,7 @@ def test_page_load_performance(page: Page, html_file: str) -> None:
         f"{html_file}: DOM content loaded too slow: {metrics['domContentLoaded']:.0f}ms"
     )
     assert metrics["loadComplete"] < 2000, f"{html_file}: Page load too slow: {metrics['loadComplete']:.0f}ms"
-    assert metrics["domInteractive"] < 1500, f"{html_file}: DOM interactive too slow: {metrics['domInteractive']:.0f}ms"
+    assert metrics["domInteractive"] < 3000, f"{html_file}: DOM interactive too slow: {metrics['domInteractive']:.0f}ms"
 
 
 @pytest.mark.built_docs

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import threading
 from abc import ABC, abstractmethod
 from collections.abc import Callable
@@ -17,8 +16,6 @@ from bluetooth_sig.registry.utils import (
 )
 from bluetooth_sig.types.registry import BaseUuidInfo, generate_basic_aliases
 from bluetooth_sig.types.uuid import BluetoothUUID
-
-logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 E = TypeVar("E", bound=Enum)  # For enum-keyed registries
@@ -213,8 +210,7 @@ class BaseUUIDRegistry(RegistryMixin, ABC, Generic[U]):
                 if canonical_key in self._canonical_store:
                     return self._canonical_store[canonical_key]
             except ValueError:
-                logger.warning("UUID normalization failed for registry lookup: %s", search_key)
-
+                pass  # UUID normalization failed, continue to alias lookup
             # Check alias index (normalized to lowercase)
             alias_key = self._alias_index.get(search_key.lower())
             if alias_key and alias_key in self._canonical_store:

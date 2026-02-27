@@ -11,10 +11,13 @@ from typing import Any
 
 import pytest
 
-from examples.utils.data_parsing import parse_and_display_results
-from examples.utils.library_detection import AVAILABLE_LIBRARIES, show_library_availability
-from examples.utils.mock_data import mock_ble_data
-from examples.utils.models import ReadResult
+try:
+    from examples.utils.data_parsing import parse_and_display_results
+    from examples.utils.library_detection import AVAILABLE_LIBRARIES, show_library_availability
+    from examples.utils.mock_data import mock_ble_data
+    from examples.utils.models import ReadResult
+except ModuleNotFoundError:
+    pytest.skip("examples module not available", allow_module_level=True)
 
 
 class TestUtilityFunctions:
