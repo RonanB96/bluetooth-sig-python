@@ -13,7 +13,10 @@ Based on Bluetooth SIG GATT Specification:
 
 from __future__ import annotations
 
+from ...types import CharacteristicInfo
+from ...types.gatt_enums import GattProperty
 from .base import BaseCharacteristic
+from .characteristic_meta import ValidationConfig
 from .templates import TimeData, TimeDataTemplate
 
 
@@ -34,7 +37,12 @@ class TimeWithDstCharacteristic(BaseCharacteristic[TimeData]):
     - Adjust Reason: uint8 bitfield
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        info: CharacteristicInfo | None = None,
+        validation: ValidationConfig | None = None,
+        properties: list[GattProperty] | None = None,
+    ) -> None:
         """Initialize the Time with DST characteristic."""
-        super().__init__()
+        super().__init__(info=info, validation=validation, properties=properties)
         self._template = TimeDataTemplate()

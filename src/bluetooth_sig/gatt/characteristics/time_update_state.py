@@ -6,9 +6,11 @@ from enum import IntEnum
 
 import msgspec
 
-from bluetooth_sig.types.context import CharacteristicContext
-
+from ...types import CharacteristicInfo
+from ...types.context import CharacteristicContext
+from ...types.gatt_enums import GattProperty
 from .base import BaseCharacteristic
+from .characteristic_meta import ValidationConfig
 
 
 class TimeUpdateState(msgspec.Struct, kw_only=True):
@@ -50,9 +52,14 @@ class TimeUpdateStateCharacteristic(BaseCharacteristic[TimeUpdateState]):
     min_length: int = 2
     max_length: int = 2
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        info: CharacteristicInfo | None = None,
+        validation: ValidationConfig | None = None,
+        properties: list[GattProperty] | None = None,
+    ) -> None:
         """Initialize the Time Update State characteristic."""
-        super().__init__()
+        super().__init__(info=info, validation=validation, properties=properties)
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True

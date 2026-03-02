@@ -13,7 +13,10 @@ Based on Bluetooth SIG GATT Specification:
 
 from __future__ import annotations
 
+from ...types import CharacteristicInfo
+from ...types.gatt_enums import GattProperty
 from .base import BaseCharacteristic
+from .characteristic_meta import ValidationConfig
 from .templates import TimeData, TimeDataTemplate
 
 
@@ -38,7 +41,12 @@ class CurrentTimeCharacteristic(BaseCharacteristic[TimeData]):
     # Validation attributes
     _python_type: type | str | None = dict
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        info: CharacteristicInfo | None = None,
+        validation: ValidationConfig | None = None,
+        properties: list[GattProperty] | None = None,
+    ) -> None:
         """Initialize the Current Time characteristic."""
-        super().__init__()
+        super().__init__(info=info, validation=validation, properties=properties)
         self._template = TimeDataTemplate()
