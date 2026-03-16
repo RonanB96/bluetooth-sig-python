@@ -70,7 +70,7 @@ class TestAlertLevelCharacteristic(CommonCharacteristicTests):
     )
     def test_alert_level_encoding_int(self, characteristic: AlertLevelCharacteristic, alert_int: int) -> None:
         """Test encoding alert levels from integer values."""
-        encoded = characteristic.build_value(alert_int)
+        encoded = characteristic.build_value(AlertLevel(alert_int))
         assert len(encoded) == 1
         assert encoded[0] == alert_int
 

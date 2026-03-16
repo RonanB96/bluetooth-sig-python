@@ -26,7 +26,7 @@ class TestPollenConcentrationCharacteristic(CommonCharacteristicTests):
         return "2A75"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid pollen concentration test data."""
         return [
             CharacteristicTestData(

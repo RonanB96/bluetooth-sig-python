@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import AccelerationDetectionStatusCharacteristic
+from bluetooth_sig.gatt.characteristics.acceleration_detection_status import AccelerationDetectionStatus
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -25,18 +26,26 @@ class TestAccelerationDetectionStatusCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         """Return valid test data for acceleration detection status."""
         return [
-            CharacteristicTestData(input_data=bytearray([0]), expected_value=0, description="No acceleration detected"),
-            CharacteristicTestData(input_data=bytearray([1]), expected_value=1, description="Acceleration detected"),
+            CharacteristicTestData(
+                input_data=bytearray([0]),
+                expected_value=AccelerationDetectionStatus.NO_CHANGE,
+                description="No acceleration detected",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([1]),
+                expected_value=AccelerationDetectionStatus.CHANGE_DETECTED,
+                description="Acceleration detected",
+            ),
         ]
 
     def test_no_acceleration(self) -> None:
         """Test no acceleration detected."""
         char = AccelerationDetectionStatusCharacteristic()
         result = char.parse_value(bytearray([0]))
-        assert result == 0
+        assert result == AccelerationDetectionStatus.NO_CHANGE
 
     def test_acceleration_detected(self) -> None:
         """Test acceleration detected."""
         char = AccelerationDetectionStatusCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result == 1
+        assert result == AccelerationDetectionStatus.CHANGE_DETECTED

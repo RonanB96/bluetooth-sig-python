@@ -106,11 +106,11 @@ class TestLocationNameCharacteristic(CommonCharacteristicTests):
     def test_round_trip(
         self,
         characteristic: BaseCharacteristic[Any],
-        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
+        valid_test_data: list[CharacteristicTestData],
     ) -> None:
         """Override round trip test to exclude null-terminated strings with extra data."""
         # Use only the first 3 test cases that can round trip exactly
-        round_trip_data = valid_test_data[:3] if isinstance(valid_test_data, list) else [valid_test_data]
+        round_trip_data = valid_test_data[:3]
 
         for i, test_case in enumerate(round_trip_data):
             case_desc = f"Test case {i + 1} ({test_case.description})"

@@ -18,7 +18,7 @@ class TestAppearanceCharacteristic(CommonCharacteristicTests):
         return "2A01"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         # Create AppearanceData objects directly with raw values to avoid registry dependency
         # This makes tests deterministic and independent of registry state
         from bluetooth_sig.types.registry.appearance_info import AppearanceInfo, AppearanceSubcategoryInfo

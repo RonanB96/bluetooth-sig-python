@@ -54,8 +54,8 @@ def to_primitive(value: Any) -> int | float | str | bool:  # noqa: ANN401
         return value
     if isinstance(value, enum.IntFlag):
         return int(value)
-    if (name := getattr(value, "name", None)) is not None:
-        return str(name)
+    if isinstance(value, enum.Enum):
+        return str(value.name)
     if isinstance(value, int):
         return int(value)
     if isinstance(value, float):

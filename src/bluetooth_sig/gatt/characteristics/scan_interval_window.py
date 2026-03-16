@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ...types.gatt_enums import CharacteristicRole
 from ...types.scan_interval_window import ScanIntervalWindowData
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -23,6 +24,7 @@ class ScanIntervalWindowCharacteristic(BaseCharacteristic[ScanIntervalWindowData
     The scan window must be less than or equal to the scan interval.
     """
 
+    _manual_role = CharacteristicRole.INFO
     _characteristic_name = "Scan Interval Window"
 
     min_length = 4  # Scan Interval(2) + Scan Window(2)

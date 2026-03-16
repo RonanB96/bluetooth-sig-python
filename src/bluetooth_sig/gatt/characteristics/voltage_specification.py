@@ -45,8 +45,6 @@ class VoltageSpecificationCharacteristic(BaseCharacteristic[VoltageSpecification
     """
 
     min_length = 4
-    # Override since decode_value returns structured VoltageSpecificationData
-    _python_type: type | str | None = dict
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True

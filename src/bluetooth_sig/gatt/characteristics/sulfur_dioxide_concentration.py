@@ -19,7 +19,6 @@ class SulfurDioxideConcentrationCharacteristic(BaseCharacteristic[float]):
 
     _template = ConcentrationTemplate()
 
-    _python_type: type | str | None = int
     _manual_unit: str = "ppb"  # Override template's "ppm" default
 
     # Template configuration

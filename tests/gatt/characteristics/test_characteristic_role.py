@@ -15,8 +15,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.role_classifier import (
-    _spec_has_unit_fields,
-    _spec_is_multi_field_measurement,
+    _spec_has_physical_field_units,
     classify_role,
 )
 from bluetooth_sig.types.gatt_enums import CharacteristicRole
@@ -71,9 +70,6 @@ class TestMeasurementRole:
             "Activity Goal",
             # Rule 6: compound type
             "Acceleration 3D",
-            "Appearance",
-            "PnP ID",
-            "System ID",
         ],
     )
     def test_measurement_characteristics(self, sig_name: str) -> None:
@@ -154,11 +150,13 @@ class TestStatusRole:
     @pytest.mark.parametrize(
         "sig_name",
         [
+            "Alert Level",
             "Alert Status",
             "Unread Alert Status",
             "Battery Level Status",
             "Battery Critical Status",
             "Acceleration Detection Status",
+            "Boolean",
         ],
     )
     def test_status_characteristics(self, sig_name: str) -> None:
@@ -187,6 +185,10 @@ class TestInfoRole:
             "Email Address",
             "First Name",
             "Last Name",
+            # Compound info: struct type with _manual_role=INFO
+            "Appearance",
+            "PnP ID",
+            "System ID",
         ],
     )
     def test_info_characteristics(self, sig_name: str) -> None:
@@ -217,26 +219,6 @@ class TestRolePriority:
         char = _get_char("Body Composition Feature")
         assert char.is_bitfield
         assert char.role == CharacteristicRole.FEATURE
-
-
-# ---------------------------------------------------------------------------
-# UNKNOWN — characteristics that cannot be classified from metadata alone
-# ---------------------------------------------------------------------------
-
-
-class TestUnknownRole:
-    """Characteristics with insufficient metadata remain UNKNOWN."""
-
-    @pytest.mark.parametrize(
-        "sig_name",
-        [
-            "Alert Level",  # INT, no unit, no matching name pattern
-            "Boolean",  # BOOL, no unit
-        ],
-    )
-    def test_unknown_characteristics(self, sig_name: str) -> None:
-        char = _get_char(sig_name)
-        assert char.role == CharacteristicRole.UNKNOWN
 
 
 # ---------------------------------------------------------------------------
@@ -308,10 +290,12 @@ class TestClassifyRoleMultiField:
         """A multi-field spec with per-field units → MEASUREMENT,
         even with python_type=None and unit=''.
         """
-        spec = _make_spec([
-            _make_field("Heart Rate", description="Unit: org.bluetooth.unit.period.beats_per_minute"),
-            _make_field("Energy Expended", description="Unit: org.bluetooth.unit.energy.joule"),
-        ])
+        spec = _make_spec(
+            [
+                _make_field("Heart Rate", description="Unit: org.bluetooth.unit.period.beats_per_minute"),
+                _make_field("Energy Expended", description="Unit: org.bluetooth.unit.energy.joule"),
+            ]
+        )
         result = classify_role("Some Sensor", None, False, "", spec)
         assert result == CharacteristicRole.MEASUREMENT
 
@@ -319,43 +303,51 @@ class TestClassifyRoleMultiField:
         """A multi-field spec where NO field has a unit_id should not
         trigger the multi-field measurement rule.
         """
-        spec = _make_spec([
-            _make_field("Flags", description="Flags field"),
-            _make_field("Opcode", description="Control opcode"),
-        ])
+        spec = _make_spec(
+            [
+                _make_field("Flags", description="Flags field"),
+                _make_field("Opcode", description="Control opcode"),
+            ]
+        )
         result = classify_role("Some Thing", None, False, "", spec)
         assert result == CharacteristicRole.UNKNOWN
 
-    def test_single_field_with_unit_does_not_trigger_multi_field_rule(self) -> None:
-        """A single-field spec should not be matched by the multi-field rule;
-        it falls through to other heuristics.
+    def test_single_field_with_unit_is_measurement(self) -> None:
+        """A single-field spec with a physical unit triggers rule 3
+        (_spec_has_physical_field_units) → MEASUREMENT.
         """
-        spec = _make_spec([
-            _make_field("Temperature", description="Unit: org.bluetooth.unit.thermodynamic_temperature.degree_celsius"),
-        ])
-        # With python_type=None and unit='', rule 4 doesn't fire,
-        # rule 5 requires >1 field → falls to UNKNOWN
+        spec = _make_spec(
+            [
+                _make_field(
+                    "Temperature", description="Unit: org.bluetooth.unit.thermodynamic_temperature.degree_celsius"
+                ),
+            ]
+        )
         result = classify_role("Custom Temp", None, False, "", spec)
-        assert result == CharacteristicRole.UNKNOWN
+        assert result == CharacteristicRole.MEASUREMENT
 
     def test_multi_field_with_python_type_none(self) -> None:
         """After the python_type pollution fix, multi-field chars arrive
         with python_type=None. Should still be MEASUREMENT via rule 5.
         """
-        spec = _make_spec([
-            _make_field("Speed", description="Unit: org.bluetooth.unit.velocity.metres_per_second"),
-            _make_field("Distance", description="Unit: org.bluetooth.unit.length.metre"),
-            _make_field("Position Status", description="Status flags"),
-        ])
+        spec = _make_spec(
+            [
+                _make_field("Speed", description="Unit: org.bluetooth.unit.velocity.metres_per_second"),
+                _make_field("Distance", description="Unit: org.bluetooth.unit.length.metre"),
+                _make_field("Position Status", description="Status flags"),
+            ]
+        )
         result = classify_role("Location and Speed", None, False, "", spec)
         assert result == CharacteristicRole.MEASUREMENT
 
     def test_name_based_rule_takes_priority_over_multi_field(self) -> None:
         """Rule 3 ('Measurement' in name) fires before rule 5."""
-        spec = _make_spec([
-            _make_field("Systolic", description="Unit: org.bluetooth.unit.pressure.pascal"),
-            _make_field("Diastolic", description="Unit: org.bluetooth.unit.pressure.pascal"),
-        ])
+        spec = _make_spec(
+            [
+                _make_field("Systolic", description="Unit: org.bluetooth.unit.pressure.pascal"),
+                _make_field("Diastolic", description="Unit: org.bluetooth.unit.pressure.pascal"),
+            ]
+        )
         result = classify_role("Blood Pressure Measurement", None, False, "", spec)
         assert result == CharacteristicRole.MEASUREMENT
 
@@ -366,46 +358,45 @@ class TestClassifyRoleMultiField:
 
 
 class TestSpecHelpers:
-    """Tests for _spec_is_multi_field_measurement and _spec_has_unit_fields."""
+    """Tests for _spec_has_physical_field_units."""
 
-    def test_spec_is_multi_field_none_spec(self) -> None:
-        assert _spec_is_multi_field_measurement(None) is False
+    def test_spec_has_physical_field_units_none_spec(self) -> None:
+        assert _spec_has_physical_field_units(None) is False
 
-    def test_spec_is_multi_field_empty_structure(self) -> None:
+    def test_spec_has_physical_field_units_empty_structure(self) -> None:
         spec = _make_spec([])
-        assert _spec_is_multi_field_measurement(spec) is False
+        assert _spec_has_physical_field_units(spec) is False
 
-    def test_spec_is_multi_field_single_field(self) -> None:
-        spec = _make_spec([
-            _make_field("Temp", description="Unit: org.bluetooth.unit.thermodynamic_temperature.degree_celsius"),
-        ])
-        assert _spec_is_multi_field_measurement(spec) is False
+    def test_spec_has_physical_field_units_with_unit(self) -> None:
+        spec = _make_spec(
+            [
+                _make_field("Temp", description="Unit: org.bluetooth.unit.thermodynamic_temperature.degree_celsius"),
+            ]
+        )
+        assert _spec_has_physical_field_units(spec) is True
 
-    def test_spec_is_multi_field_two_fields_with_units(self) -> None:
-        spec = _make_spec([
-            _make_field("HR", description="Unit: org.bluetooth.unit.period.beats_per_minute"),
-            _make_field("Energy", description="Unit: org.bluetooth.unit.energy.joule"),
-        ])
-        assert _spec_is_multi_field_measurement(spec) is True
+    def test_spec_has_physical_field_units_without_unit(self) -> None:
+        spec = _make_spec(
+            [
+                _make_field("Flags", description="Control flags"),
+            ]
+        )
+        assert _spec_has_physical_field_units(spec) is False
 
-    def test_spec_is_multi_field_two_fields_no_units(self) -> None:
-        spec = _make_spec([
-            _make_field("Flags", description="Flags field"),
-            _make_field("Value", description="Some value"),
-        ])
-        assert _spec_is_multi_field_measurement(spec) is False
+    def test_spec_has_physical_field_units_two_fields_with_units(self) -> None:
+        spec = _make_spec(
+            [
+                _make_field("HR", description="Unit: org.bluetooth.unit.period.beats_per_minute"),
+                _make_field("Energy", description="Unit: org.bluetooth.unit.energy.joule"),
+            ]
+        )
+        assert _spec_has_physical_field_units(spec) is True
 
-    def test_spec_has_unit_fields_none_spec(self) -> None:
-        assert _spec_has_unit_fields(None) is False
-
-    def test_spec_has_unit_fields_with_unit(self) -> None:
-        spec = _make_spec([
-            _make_field("Temp", description="Unit: org.bluetooth.unit.thermodynamic_temperature.degree_celsius"),
-        ])
-        assert _spec_has_unit_fields(spec) is True
-
-    def test_spec_has_unit_fields_without_unit(self) -> None:
-        spec = _make_spec([
-            _make_field("Flags", description="Control flags"),
-        ])
-        assert _spec_has_unit_fields(spec) is False
+    def test_spec_has_physical_field_units_two_fields_no_units(self) -> None:
+        spec = _make_spec(
+            [
+                _make_field("Flags", description="Flags field"),
+                _make_field("Value", description="Some value"),
+            ]
+        )
+        assert _spec_has_physical_field_units(spec) is False

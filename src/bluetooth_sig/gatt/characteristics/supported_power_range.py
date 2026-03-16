@@ -41,8 +41,6 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic[SupportedPowerRangeDa
 
     min_length = 4
     _characteristic_name: str = "Supported Power Range"
-    # Override since decode_value returns structured SupportedPowerRangeData
-    _python_type: type | str | None = dict
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True

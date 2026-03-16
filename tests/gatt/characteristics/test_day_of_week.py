@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import DayOfWeekCharacteristic
+from bluetooth_sig.types.gatt_enums import DayOfWeek
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -25,27 +26,29 @@ class TestDayOfWeekCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         """Return valid test data for day of week."""
         return [
-            CharacteristicTestData(input_data=bytearray([1]), expected_value=1, description="Monday"),
-            CharacteristicTestData(input_data=bytearray([5]), expected_value=5, description="Friday"),
-            CharacteristicTestData(input_data=bytearray([7]), expected_value=7, description="Sunday"),
+            CharacteristicTestData(input_data=bytearray([1]), expected_value=DayOfWeek.MONDAY, description="Monday"),
+            CharacteristicTestData(input_data=bytearray([5]), expected_value=DayOfWeek.FRIDAY, description="Friday"),
+            CharacteristicTestData(input_data=bytearray([7]), expected_value=DayOfWeek.SUNDAY, description="Sunday"),
         ]
 
     def test_monday(self) -> None:
         """Test Monday (day 1)."""
         char = DayOfWeekCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result == 1
+        assert result == DayOfWeek.MONDAY
 
     def test_sunday(self) -> None:
         """Test Sunday (day 7)."""
         char = DayOfWeekCharacteristic()
         result = char.parse_value(bytearray([7]))
-        assert result == 7
+        assert result == DayOfWeek.SUNDAY
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = DayOfWeekCharacteristic()
-        for day in range(1, 8):  # Days 1-7
+        for day in DayOfWeek:
+            if day is DayOfWeek.UNKNOWN:
+                continue
             encoded = char.build_value(day)
             decoded = char.parse_value(encoded)
             assert decoded == day

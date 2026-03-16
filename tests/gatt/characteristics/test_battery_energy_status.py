@@ -40,7 +40,7 @@ class TestBatteryEnergyStatusCharacteristic(CommonCharacteristicTests):
         return "2BF0"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid battery energy status test data."""
         return [
             CharacteristicTestData(

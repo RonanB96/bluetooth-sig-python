@@ -15,15 +15,13 @@ class ProtocolMode(IntEnum):
     REPORT_PROTOCOL = 1
 
 
-class ProtocolModeCharacteristic(BaseCharacteristic[int]):
+class ProtocolModeCharacteristic(BaseCharacteristic[ProtocolMode]):
     """Protocol Mode characteristic (0x2A4E).
 
     org.bluetooth.characteristic.protocol_mode
 
     Protocol Mode characteristic.
     """
-
-    _python_type: type | str | None = int
 
     _template = EnumTemplate.uint8(ProtocolMode)
 

@@ -22,7 +22,7 @@ class TestPulseOximetryMeasurementCharacteristic(CommonCharacteristicTests):
         return "2A5F"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         from datetime import datetime
 
         return [

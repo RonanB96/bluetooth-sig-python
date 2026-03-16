@@ -111,8 +111,6 @@ class LNControlPointCharacteristic(BaseCharacteristic[LNControlPointData]):
     Used to enable device-specific procedures related to the exchange of location and navigation information.
     """
 
-    _python_type: type | str | None = dict  # Override since decode_value returns dataclass
-
     min_length = 1  # Op Code(1) minimum
     max_length = 18  # Op Code(1) + Parameter(max 17) maximum
     allow_variable_length: bool = True  # Variable parameter length

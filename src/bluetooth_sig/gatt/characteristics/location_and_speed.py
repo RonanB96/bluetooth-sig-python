@@ -73,8 +73,6 @@ class LocationAndSpeedCharacteristic(BaseCharacteristic[LocationAndSpeedData]):
     Note that it is possible for this characteristic to exceed the default LE ATT_MTU size.
     """
 
-    _python_type: type | str | None = dict  # Override since decode_value returns dataclass
-
     min_length = 2  # Flags(2) minimum
     max_length = 28  # Flags(2) + InstantaneousSpeed(2) + TotalDistance(3) + Location(8) +
     # Elevation(3) + Heading(2) + RollingTime(1) + UTCTime(7) maximum

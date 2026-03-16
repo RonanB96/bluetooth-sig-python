@@ -17,7 +17,7 @@ class Handedness(IntEnum):
     UNSPECIFIED = 0x03
 
 
-class HandednessCharacteristic(BaseCharacteristic[int]):
+class HandednessCharacteristic(BaseCharacteristic[Handedness]):
     """Handedness characteristic (0x2B4A).
 
     org.bluetooth.characteristic.handedness

@@ -16,7 +16,6 @@ class OzoneConcentrationCharacteristic(BaseCharacteristic[float]):
 
     _template = ConcentrationTemplate()
 
-    _python_type: type | str | None = int  # Manual override needed as no YAML available
     _manual_unit: str = "ppb"  # Override template's "ppm" default
 
     # Template configuration

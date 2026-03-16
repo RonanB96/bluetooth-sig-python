@@ -88,18 +88,19 @@ class CharacteristicRole(Enum):
     instantiation time from data already parsed from the SIG YAML specs.
 
     Members:
-        MEASUREMENT — carries numeric or structured sensor data with
-                      physical units (temperature, heart rate, SpO₂, …).
-        STATUS      — reports a device state or enum value
-                      (training status, alert status, …).
-        FEATURE     — describes device capabilities as a bitfield
-                      (blood pressure feature, cycling power feature, …).
-        CONTROL     — write-only control point used to command the device
-                      (heart rate control point, fitness machine CP, …).
-        INFO        — static metadata string
-                      (device name, firmware revision, serial number, …).
-        UNKNOWN     — cannot be classified from spec metadata alone;
-                      consumers should apply their own heuristic.
+        MEASUREMENT — value represents something measured or observed from
+                      a device or environment (temperature, heart rate, SpO2,
+                      acceleration, concentration, range statistics, etc.).
+        STATUS      — discrete operational state (mode, trend, boolean flag,
+                      categorical state snapshot).
+        FEATURE     — capability declaration or supported option bitmask,
+                      not a live measured value.
+        CONTROL     — command/control endpoint used to change behaviour.
+        INFO        — contextual metadata or identifiers that are not
+                      measured values (device identity, names, indices,
+                      topology/location context such as floor number).
+        UNKNOWN     — cannot be classified from available spec metadata alone;
+                      use per-characteristic manual overrides where required.
     """
 
     MEASUREMENT = "measurement"
