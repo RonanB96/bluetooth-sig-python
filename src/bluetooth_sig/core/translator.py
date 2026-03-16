@@ -427,14 +427,18 @@ class BluetoothSIGTranslator:  # pylint: disable=too-many-public-methods
         """
         return self._query.get_characteristics_info_by_uuids(uuids)
 
-    def get_service_characteristics(self, service_uuid: str) -> list[str]:
-        """Get the characteristic UUIDs associated with a service.
+    def get_service_characteristics(self, service_uuid: str) -> list[BaseCharacteristic[Any]]:
+        """Get the characteristic instances associated with a service.
+
+        Instantiates each required characteristic class from the service
+        definition and returns the live objects.
 
         Args:
             service_uuid: The service UUID
 
         Returns:
-            List of characteristic UUIDs for this service
+            List of BaseCharacteristic instances for this service's
+            required characteristics.
 
         """
         return self._query.get_service_characteristics(service_uuid)

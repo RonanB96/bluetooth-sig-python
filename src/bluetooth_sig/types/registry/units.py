@@ -18,3 +18,19 @@ class UnitInfo(UuidIdInfo, frozen=True, kw_only=True):
     """
 
     symbol: str = ""
+
+    @property
+    def readable_name(self) -> str:
+        """Human-readable unit name extracted from the descriptive name.
+
+        Extracts the parenthetical content from YAML-style names:
+        - ``"thermodynamic temperature (degree celsius)"`` → ``"degree celsius"``
+        - ``"period (beats per minute)"`` → ``"beats per minute"``
+        - ``"percentage"`` → ``"percentage"`` (no parenthetical → returns full name)
+        """
+        if "(" in self.name and ")" in self.name:
+            start = self.name.find("(") + 1
+            end = self.name.find(")", start)
+            if 0 < start < end:
+                return self.name[start:end].strip()
+        return self.name

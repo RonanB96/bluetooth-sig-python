@@ -26,12 +26,12 @@ def classify_role(
            ``is_bitfield`` is True                  → FEATURE
         3. Name contains *Measurement*              → MEASUREMENT
         4. Numeric type (int / float) with a unit   → MEASUREMENT
-        5. Compound type (struct, dict, etc.) with a
-           unit or field-level ``unit_id``          → MEASUREMENT
+        5. Multi-field struct with per-field units   → MEASUREMENT
         6. Name ends with *Data*                    → MEASUREMENT
         7. Name contains *Status*                   → STATUS
         8. ``python_type`` is str                    → INFO
-        9. Otherwise                                → UNKNOWN
+        9. Compound type (struct, dict, etc.)        → MEASUREMENT
+       10. Otherwise                                → UNKNOWN
 
     Args:
         char_name: Display name of the characteristic.
@@ -61,10 +61,11 @@ def classify_role(
     if python_type in (int, float) and unit:
         return CharacteristicRole.MEASUREMENT
 
-    # 5. Compound type with unit metadata (char-level or per-field)
-    scalar_types = (int, float, str, bool, bytes)
-    is_compound = isinstance(python_type, type) and python_type not in scalar_types
-    if is_compound and (unit or _spec_has_unit_fields(spec)):
+    # 5. Multi-field struct with per-field measurement units.
+    #    The GSS structure is the authoritative source — python_type may be
+    #    None for multi-field structs whose registry entry was not updated
+    #    with a scalar wire type.
+    if _spec_is_multi_field_measurement(spec):
         return CharacteristicRole.MEASUREMENT
 
     # 6. SIG *Data* characteristics (Treadmill Data, Indoor Bike Data, …)
@@ -79,7 +80,30 @@ def classify_role(
     if python_type is str:
         return CharacteristicRole.INFO
 
+    # 9. Compound type (struct, dict, etc.) — by this point we've excluded
+    #    control points, features, status, info, and name-matched characteristics.
+    #    A compound type at this stage is almost certainly a measurement
+    #    struct (e.g. VectorData, datetime, range structs).
+    scalar_types = (int, float, str, bool, bytes)
+    is_compound = isinstance(python_type, type) and python_type not in scalar_types
+    if is_compound:
+        return CharacteristicRole.MEASUREMENT
+
     return CharacteristicRole.UNKNOWN
+
+
+def _spec_is_multi_field_measurement(spec: CharacteristicSpec | None) -> bool:
+    """Check whether the spec describes a multi-field struct with measurement units.
+
+    Returns ``True`` when the GSS specification has more than one field
+    **and** at least one of those fields carries a ``unit_id``.
+    """
+    if not spec:
+        return False
+    structure = getattr(spec, "structure", None)
+    if not structure or len(structure) < 2:
+        return False
+    return any(getattr(f, "unit_id", None) for f in structure)
 
 
 def _spec_has_unit_fields(spec: CharacteristicSpec | None) -> bool:

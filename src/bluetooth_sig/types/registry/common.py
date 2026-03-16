@@ -22,10 +22,19 @@ class UnitMetadata(msgspec.Struct, frozen=True, kw_only=True):
 
     This is embedded metadata within characteristic specs, distinct from
     the Units registry which uses UUID-based entries.
+
+    Attributes:
+        unit_id: Full SIG unit identifier (e.g. ``org.bluetooth.unit.period.beats_per_minute``).
+        unit_symbol: Short SI symbol (e.g. ``'bpm'``, ``'°C'``).
+        unit_name: Human-readable long-form name (e.g. ``'beats per minute'``).
+        base_unit: Base unit identifier.
+        resolution_text: Resolution description from the GSS spec.
+
     """
 
     unit_id: str | None = None
     unit_symbol: str | None = None
+    unit_name: str | None = None
     base_unit: str | None = None
     resolution_text: str | None = None
 
@@ -59,6 +68,11 @@ class CharacteristicSpec(msgspec.Struct, kw_only=True):
     def unit_symbol(self) -> str | None:
         """Get unit symbol from unit info."""
         return self.unit_info.unit_symbol if self.unit_info else None
+
+    @property
+    def unit_name(self) -> str | None:
+        """Get human-readable unit name from unit info."""
+        return self.unit_info.unit_name if self.unit_info else None
 
     @property
     def base_unit(self) -> str | None:
