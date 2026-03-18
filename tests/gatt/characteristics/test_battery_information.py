@@ -46,7 +46,7 @@ class TestBatteryInformationCharacteristic(CommonCharacteristicTests):
         return "2BEC"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid battery information test data."""
         # 19724 days since epoch = 2024-01-01 (approx)
         # 21550 days since epoch = 2029-01-01 (approx)

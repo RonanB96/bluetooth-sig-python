@@ -26,7 +26,7 @@ class TestBodySensorLocationCharacteristic(CommonCharacteristicTests):
         return "2A38"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00]),

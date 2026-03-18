@@ -56,6 +56,26 @@ _UNIT_NAME_TO_SYMBOL: dict[str, str] = {
     "radian": "rad",
     "steradian": "sr",
     "mole": "mol",
+    "beats per minute": "bpm",
+    "kilometre per hour": "km/h",
+    "kilowatt hour": "kWh",
+    "watt per square metre": "W/m²",
+    "newton metre": "N·m",
+    "lumen per watt": "lm/W",
+    "lux hour": "lx·h",
+    "gram per second": "g/s",
+    "litre per second": "L/s",
+    "kilogram calorie": "kcal",
+    "minute": "min",
+    "hour": "h",
+    "day": "d",
+    "month": "mo",
+    "year": "yr",
+    "decibel": "dB",
+    "count per second": "cps",
+    "revolution per minute": "rpm",
+    "step per minute": "steps/min",
+    "stroke per minute": "strokes/min",
 }
 
 _SPECIAL_UNIT_NAMES: dict[str, str] = {
@@ -180,3 +200,26 @@ class UnitsRegistry(BaseUUIDRegistry[UnitInfo]):
 
 # Global instance
 units_registry = UnitsRegistry()
+
+_UNIT_ID_PREFIX = "org.bluetooth.unit."
+
+
+def resolve_unit_symbol(unit_id: str) -> str:
+    """Resolve a SIG unit identifier to its canonical symbol.
+
+    Accepts both short-form (``thermodynamic_temperature.degree_celsius``)
+    and full-form (``org.bluetooth.unit.thermodynamic_temperature.degree_celsius``)
+    identifiers, normalises to full-form, and looks up the symbol via
+    :data:`units_registry`.
+
+    Args:
+        unit_id: Unit identifier (short or full form).
+
+    Returns:
+        SI symbol string (e.g. ``'°C'``, ``'bpm'``), or empty string
+        if the identifier cannot be resolved.
+
+    """
+    full_id = unit_id if unit_id.startswith(_UNIT_ID_PREFIX) else f"{_UNIT_ID_PREFIX}{unit_id}"
+    info = units_registry.get_unit_info_by_id(full_id)
+    return info.symbol if info and info.symbol else ""

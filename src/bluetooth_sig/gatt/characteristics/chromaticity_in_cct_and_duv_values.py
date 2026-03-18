@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import msgspec
 
+from ...types.gatt_enums import CharacteristicRole
 from ..constants import SINT16_MAX, SINT16_MIN, UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -46,6 +47,8 @@ class ChromaticityInCCTAndDuvValuesCharacteristic(BaseCharacteristic[Chromaticit
     Field 1: CCT — uint16, raw Kelvin (references Correlated Color Temperature).
     Field 2: Duv — sint16, M=1 d=-5 b=0 (references Chromatic Distance From Planckian).
     """
+
+    _manual_role = CharacteristicRole.MEASUREMENT
 
     # Validation attributes
     expected_length: int = 4  # uint16 + sint16

@@ -18,7 +18,7 @@ class TestElectricCurrentStatisticsCharacteristic(CommonCharacteristicTests):
         return "2AF1"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),  # 0.00 A, 0.00 A, 0.00 A

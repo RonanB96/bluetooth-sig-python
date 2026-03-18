@@ -28,7 +28,7 @@ class TestMagneticFluxDensity2DCharacteristic(CommonCharacteristicTests):
         return "2AA0"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid magnetic flux density 2D test data."""
         return [
             CharacteristicTestData(
@@ -57,7 +57,7 @@ class TestMagneticFluxDensity2DCharacteristic(CommonCharacteristicTests):
         """Test Magnetic Flux Density 2D characteristic parsing."""
         # Test metadata
         assert characteristic.unit == "T"
-        assert characteristic.python_type is str
+        assert characteristic.python_type is Vector2DData
 
         # Test normal parsing: X=1000, Y=-500 (in 10^-7 Tesla units)
         test_data = bytearray(struct.pack("<hh", 1000, -500))

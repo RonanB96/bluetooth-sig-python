@@ -33,7 +33,7 @@ class TestBatteryTimeStatusCharacteristic(CommonCharacteristicTests):
         return "2BEE"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid battery time status test data."""
         return [
             CharacteristicTestData(

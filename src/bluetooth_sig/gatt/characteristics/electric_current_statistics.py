@@ -55,9 +55,6 @@ class ElectricCurrentStatisticsCharacteristic(BaseCharacteristic[ElectricCurrent
     expected_length: int = 6  # 3x uint16
     min_length: int = 6
 
-    # Override since decode_value returns structured ElectricCurrentStatisticsData
-    _python_type: type | str | None = dict
-
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> ElectricCurrentStatisticsData:

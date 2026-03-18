@@ -15,7 +15,6 @@ class PollenConcentrationCharacteristic(BaseCharacteristic[float]):
 
     _template = ScaledUint24Template(scale_factor=1.0)
 
-    _python_type: type | str | None = float  # Override YAML spec since decode_value returns float
     _manual_unit: str = "grains/m³"  # Override template's "units" default
 
     # SIG specification configuration

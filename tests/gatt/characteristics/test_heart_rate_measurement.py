@@ -27,7 +27,7 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
         return "2A37"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x50]),  # Flags=0, HR=80 BPM (8-bit)

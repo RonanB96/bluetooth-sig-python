@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ...types.gatt_enums import CharacteristicRole
 from .base import BaseCharacteristic
 from .templates import Uint16Template
 
@@ -14,4 +15,5 @@ class Count16Characteristic(BaseCharacteristic[int]):
     Represents a count value using 16-bit unsigned integer.
     """
 
+    _manual_role = CharacteristicRole.MEASUREMENT
     _template = Uint16Template()

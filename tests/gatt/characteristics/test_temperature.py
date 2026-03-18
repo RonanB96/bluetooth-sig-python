@@ -26,7 +26,7 @@ class TestTemperatureCharacteristic(CommonCharacteristicTests):
         return "2A6E"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid temperature test data covering various temperatures and edge cases."""
         return [
             CharacteristicTestData(

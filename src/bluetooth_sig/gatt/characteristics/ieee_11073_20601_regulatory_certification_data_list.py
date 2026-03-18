@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import msgspec
 
+from ...types.gatt_enums import CharacteristicRole
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
@@ -48,6 +49,7 @@ class IEEE1107320601RegulatoryCharacteristic(
     bytes by this library.
     """
 
+    _manual_role = CharacteristicRole.INFO
     _characteristic_name = "IEEE 11073-20601 Regulatory Certification Data List"
     expected_type = IEEE11073RegulatoryData
     min_length: int = 1

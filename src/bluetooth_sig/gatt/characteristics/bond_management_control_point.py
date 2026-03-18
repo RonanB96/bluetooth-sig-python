@@ -16,7 +16,7 @@ class BondManagementCommand(IntEnum):
     DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER = 0x03
 
 
-class BondManagementControlPointCharacteristic(BaseCharacteristic[int]):
+class BondManagementControlPointCharacteristic(BaseCharacteristic[BondManagementCommand]):
     """Bond Management Control Point characteristic (0x2AA4).
 
     org.bluetooth.characteristic.bond_management_control_point
@@ -24,8 +24,6 @@ class BondManagementControlPointCharacteristic(BaseCharacteristic[int]):
     Write-only characteristic for sending bond management commands.
     Variable length, starting with command byte.
     """
-
-    _python_type: type | str | None = int
 
     min_length = 1
     allow_variable_length = True

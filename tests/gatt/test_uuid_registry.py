@@ -159,8 +159,6 @@ def test_characteristic_discovery() -> None:
     assert len(battery.characteristics) == 1, "Incorrect battery char count"
     char = next(iter(battery.characteristics.values()))
     assert char.name == "Battery Level"
-    # Properties come from YAML or class definition, not from discovery data
-    assert char.properties is not None
     # Test Environmental Service characteristic discovery
     env = EnvironmentalSensingService()
     env.process_characteristics(mock_env_data)

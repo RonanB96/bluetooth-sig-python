@@ -54,12 +54,10 @@ class TestCarbonMonoxideConcentrationCharacteristic(CommonCharacteristicTests):
     def test_round_trip(
         self,
         characteristic: BaseCharacteristic[Any],
-        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
+        valid_test_data: list[CharacteristicTestData],
     ) -> None:
         """Test round trip with value comparison (SFLOAT has precision limits)."""
-        test_cases = valid_test_data if isinstance(valid_test_data, list) else [valid_test_data]
-
-        for i, test_case in enumerate(test_cases):
+        for i, test_case in enumerate(valid_test_data):
             case_desc = f"Test case {i + 1} ({test_case.description})"
             # Decode the input
             parsed = characteristic.parse_value(test_case.input_data)

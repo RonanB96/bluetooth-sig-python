@@ -19,7 +19,7 @@ class TestBloodPressureFeatureCharacteristic(CommonCharacteristicTests):
         return "2A49"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         # 0x0000: all features off; 0x003F: all features on; 0x0001: only body movement detection
         return [
             CharacteristicTestData(

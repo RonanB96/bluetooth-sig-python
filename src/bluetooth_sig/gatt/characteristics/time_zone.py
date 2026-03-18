@@ -23,8 +23,6 @@ class TimeZoneCharacteristic(BaseCharacteristic[str]):
     standard time and UTC.
     """
 
-    # Manual override: YAML indicates sint8->int but we return descriptive strings
-    _python_type: type | str | None = str
     min_length: int = 1
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> str:

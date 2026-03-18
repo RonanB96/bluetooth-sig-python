@@ -23,7 +23,7 @@ from ...types import (
     SpecialValueType,
     classify_special_value,
 )
-from ...types.gatt_enums import CharacteristicRole, GattProperty
+from ...types.gatt_enums import CharacteristicRole
 from ...types.registry import CharacteristicSpec
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
@@ -106,14 +106,12 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
         self,
         info: CharacteristicInfo | None = None,
         validation: ValidationConfig | None = None,
-        properties: list[GattProperty] | None = None,
     ) -> None:
         """Initialize characteristic with structured configuration.
 
         Args:
             info: Complete characteristic information (optional for SIG characteristics)
             validation: Validation constraints configuration (optional)
-            properties: Runtime BLE properties discovered from device (optional)
 
         """
         # Store provided info or None (will be resolved in __post_init__)
@@ -122,9 +120,6 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
         # Instance variables (will be set in __post_init__)
         self._info: CharacteristicInfo
         self._spec: CharacteristicSpec | None = None
-
-        # Runtime properties (from actual device, not YAML)
-        self.properties: list[GattProperty] = properties if properties is not None else []
 
         # Manual overrides with proper types (using explicit class attributes)
         self._manual_unit: str | None = self.__class__._manual_unit
@@ -626,6 +621,54 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
         Returns empty string for characteristics without units (e.g., bitfields).
         """
         return self._info.unit or ""
+
+    @cached_property
+    def unit_symbol(self) -> str:
+        """Get the canonical SIG unit symbol for this characteristic.
+
+        Resolves via the ``UnitsRegistry`` using the YAML ``unit_id``
+        (e.g. ``org.bluetooth.unit.thermodynamic_temperature.degree_celsius``
+        → ``°C``).  Falls back to :attr:`unit` when no symbol is available.
+
+        Returns:
+            SI symbol string (e.g. ``'°C'``, ``'%'``, ``'bpm'``),
+            or empty string if the characteristic has no unit.
+
+        """
+        from ...registry.uuids.units import resolve_unit_symbol  # noqa: PLC0415
+
+        unit_id = self.get_yaml_unit_id()
+        if unit_id:
+            symbol = resolve_unit_symbol(unit_id)
+            if symbol:
+                return symbol
+
+        return self._info.unit or ""
+
+    def get_field_unit(self, field_name: str) -> str:
+        """Get the resolved unit symbol for a specific struct field.
+
+        For struct-valued characteristics with per-field units (e.g.
+        Heart Rate Measurement: ``bpm`` for heart rate, ``J`` for
+        energy expended), this resolves the unit for a single field
+        via ``FieldSpec.unit_id`` → ``UnitsRegistry`` → ``.symbol``.
+
+        Args:
+            field_name: The Python-style field name (e.g. ``'heart_rate'``)
+                or raw GSS field name (e.g. ``'Heart Rate Measurement Value'``).
+
+        Returns:
+            Resolved unit symbol, or empty string if not found.
+
+        """
+        if not self._spec or not self._spec.structure:
+            return ""
+
+        for field in self._spec.structure:
+            if field_name in (field.python_name, field.field):
+                return field.unit_symbol
+
+        return ""
 
     @property
     def size(self) -> int | None:

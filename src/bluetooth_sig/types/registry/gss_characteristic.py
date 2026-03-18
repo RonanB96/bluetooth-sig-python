@@ -2,12 +2,51 @@
 
 from __future__ import annotations
 
+import functools
 import logging
 import re
 
 import msgspec
 
 logger = logging.getLogger(__name__)
+
+
+# Module-level caches for FieldSpec computed properties.
+# msgspec frozen Structs cannot have per-instance cached_property, so we
+# cache here keyed on the (field, description) pair which uniquely
+# identifies a FieldSpec for these purposes.
+
+
+@functools.lru_cache(maxsize=512)
+def _compute_python_name(field: str) -> str:
+    """Convert raw field name to Python snake_case (cached)."""
+    name = field.lower()
+    name = re.sub(r"[\s\-]+", "_", name)
+    name = re.sub(r"\([^)]*\)", "", name)
+    name = re.sub(r"[^\w]", "", name)
+    name = re.sub(r"_+", "_", name)
+    return name.strip("_")
+
+
+@functools.lru_cache(maxsize=512)
+def _compute_unit_id(description: str) -> str | None:
+    """Extract org.bluetooth.unit.* identifier from description (cached)."""
+    normalized = re.sub(r"org\.bluetooth\.unit\.\s*", "org.bluetooth.unit.", description)
+    match = re.search(r"org\.bluetooth\.unit\.([a-z0-9_.]+)", normalized, re.IGNORECASE)
+    if match:
+        return match.group(1).rstrip(".")
+    return None
+
+
+@functools.lru_cache(maxsize=512)
+def _resolve_field_unit_symbol(description: str) -> str:
+    """Resolve unit symbol from a FieldSpec description string (cached)."""
+    uid = _compute_unit_id(description)
+    if not uid:
+        return ""
+    from ...registry.uuids.units import resolve_unit_symbol  # noqa: PLC0415
+
+    return resolve_unit_symbol(uid)
 
 
 class SpecialValue(msgspec.Struct, frozen=True):
@@ -42,22 +81,13 @@ class FieldSpec(msgspec.Struct, frozen=True, kw_only=True):
 
     @property
     def python_name(self) -> str:
-        """Convert field name to Python snake_case identifier.
+        """Convert field name to Python snake_case identifier (cached).
 
         Examples:
             "Instantaneous Speed" -> "instantaneous_speed"
             "Location - Latitude" -> "location_latitude"
         """
-        name = self.field.lower()
-        # Replace separators with underscores
-        name = re.sub(r"[\s\-]+", "_", name)
-        # Remove parentheses and their contents
-        name = re.sub(r"\([^)]*\)", "", name)
-        # Remove non-alphanumeric characters except underscores
-        name = re.sub(r"[^\w]", "", name)
-        # Collapse multiple underscores
-        name = re.sub(r"_+", "_", name)
-        return name.strip("_")
+        return _compute_python_name(self.field)
 
     @property
     def is_optional(self) -> bool:
@@ -81,7 +111,7 @@ class FieldSpec(msgspec.Struct, frozen=True, kw_only=True):
 
     @property
     def unit_id(self) -> str | None:
-        """Extract org.bluetooth.unit.* identifier from description.
+        """Extract org.bluetooth.unit.* identifier from description (cached).
 
         Handles various formats:
         - "Base Unit:" or "Base unit:" (case-insensitive)
@@ -92,15 +122,21 @@ class FieldSpec(msgspec.Struct, frozen=True, kw_only=True):
         Returns:
             Unit ID string (e.g., "thermodynamic_temperature.degree_celsius"), or None.
         """
-        # Remove spaces around dots to handle "org.bluetooth.unit. foo" -> "org.bluetooth.unit.foo"
-        normalized = re.sub(r"org\.bluetooth\.unit\.\s*", "org.bluetooth.unit.", self.description)
+        return _compute_unit_id(self.description)
 
-        # Extract org.bluetooth.unit.* pattern
-        match = re.search(r"org\.bluetooth\.unit\.([a-z0-9_.]+)", normalized, re.IGNORECASE)
-        if match:
-            return match.group(1).rstrip(".")
+    @property
+    def unit_symbol(self) -> str:
+        """Get the resolved SIG unit symbol for this field.
 
-        return None
+        Resolves ``unit_id`` → ``UnitsRegistry`` → ``.symbol``
+        (e.g. ``'thermodynamic_temperature.degree_celsius'`` → ``'°C'``).
+        Result is LRU-cached by description text.
+
+        Returns:
+            SI symbol string, or empty string if no unit is available.
+
+        """
+        return _resolve_field_unit_symbol(self.description)
 
     @property
     def resolution(self) -> float | None:

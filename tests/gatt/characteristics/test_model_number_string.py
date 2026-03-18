@@ -22,7 +22,7 @@ class TestModelNumberStringCharacteristic(CommonCharacteristicTests):
         return "2A24"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray(b"iPhone 15 Pro"),

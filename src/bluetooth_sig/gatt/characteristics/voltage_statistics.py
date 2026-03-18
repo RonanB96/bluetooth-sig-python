@@ -51,8 +51,6 @@ class VoltageStatisticsCharacteristic(BaseCharacteristic[VoltageStatisticsData])
     Provides statistical voltage data over time.
     """
 
-    # Override since decode_value returns structured VoltageStatisticsData
-    _python_type: type | str | None = dict
     expected_length: int = 6  # Minimum(2) + Maximum(2) + Average(2)
     min_length: int = 6
 

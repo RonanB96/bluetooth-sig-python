@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import HeartRateControlPointCharacteristic
+from bluetooth_sig.gatt.characteristics.heart_rate_control_point import HeartRateControlCommand
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -25,25 +26,33 @@ class TestHeartRateControlPointCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         """Return valid test data for heart rate control point."""
         return [
-            CharacteristicTestData(input_data=bytearray([1]), expected_value=1, description="Reset Energy Expended"),
-            CharacteristicTestData(input_data=bytearray([0]), expected_value=0, description="Reserved value"),
+            CharacteristicTestData(
+                input_data=bytearray([1]),
+                expected_value=HeartRateControlCommand.RESET_ENERGY_EXPENDED,
+                description="Reset Energy Expended",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0]),
+                expected_value=HeartRateControlCommand.RESERVED,
+                description="Reserved value",
+            ),
         ]
 
     def test_reset_energy_expended(self) -> None:
         """Test reset energy expended command."""
         char = HeartRateControlPointCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result == 1
+        assert result == HeartRateControlCommand.RESET_ENERGY_EXPENDED
 
     def test_encode_reset_command(self) -> None:
         """Test encoding reset command."""
         char = HeartRateControlPointCharacteristic()
-        encoded = char.build_value(1)
+        encoded = char.build_value(HeartRateControlCommand.RESET_ENERGY_EXPENDED)
         assert encoded == bytearray([1])
 
     def test_custom_round_trip(self) -> None:
         """Test encoding and decoding preserve values."""
         char = HeartRateControlPointCharacteristic()
-        encoded = char.build_value(1)
+        encoded = char.build_value(HeartRateControlCommand.RESET_ENERGY_EXPENDED)
         decoded = char.parse_value(encoded)
-        assert decoded == 1
+        assert decoded == HeartRateControlCommand.RESET_ENERGY_EXPENDED

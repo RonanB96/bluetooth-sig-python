@@ -18,7 +18,7 @@ class TestAverageCurrentCharacteristic(CommonCharacteristicTests):
         return "2AE0"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         # 0x2710 = 10000 * 0.01A = 100A
         return [
             CharacteristicTestData(input_data=bytearray([0x00, 0x00]), expected_value=0.0, description="0A (min)"),

@@ -28,7 +28,7 @@ class TestBatteryCriticalStatusCharacteristic(CommonCharacteristicTests):
         return "2BE9"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid battery critical status test data covering various bit combinations."""
         return [
             CharacteristicTestData(

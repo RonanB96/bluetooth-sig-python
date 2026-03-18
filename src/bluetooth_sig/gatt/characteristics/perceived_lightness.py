@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ...types.gatt_enums import CharacteristicRole
 from .base import BaseCharacteristic
 from .templates import Uint16Template
 
@@ -14,4 +15,5 @@ class PerceivedLightnessCharacteristic(BaseCharacteristic[int]):
     Unitless perceived lightness value (0-65535).
     """
 
+    _manual_role = CharacteristicRole.MEASUREMENT
     _template = Uint16Template()

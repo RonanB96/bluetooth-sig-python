@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ...types.gatt_enums import CharacteristicRole
 from .base import BaseCharacteristic
 from .templates import Sint8Template
 
@@ -14,7 +15,7 @@ class FloorNumberCharacteristic(BaseCharacteristic[int]):
     Floor Number characteristic.
     """
 
-    _python_type: type | str | None = int
+    _manual_role = CharacteristicRole.INFO
 
     # SIG spec: sint8 floor index → fixed 1-byte payload; no GSS YAML
     expected_length = 1

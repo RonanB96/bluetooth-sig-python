@@ -43,8 +43,6 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic[BloodPressureFeature
     available.
     """
 
-    _python_type: type | str | None = dict  # Override since decode_value returns dataclass
-
     # YAML has no range constraint; enforce full uint16 bitmap range.
     min_value: int = 0
     max_value: int = UINT16_MAX

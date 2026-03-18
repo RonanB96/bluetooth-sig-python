@@ -18,7 +18,7 @@ class TestAverageVoltageCharacteristic(CommonCharacteristicTests):
         return "2AE1"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         # Resolution: 1/64 V per unit
         return [
             CharacteristicTestData(input_data=bytearray([0x00, 0x00]), expected_value=0.0, description="0V (min)"),

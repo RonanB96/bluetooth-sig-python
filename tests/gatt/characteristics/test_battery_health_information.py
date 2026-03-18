@@ -33,7 +33,7 @@ class TestBatteryHealthInformationCharacteristic(CommonCharacteristicTests):
         return "2BEB"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid battery health information test data."""
         return [
             CharacteristicTestData(

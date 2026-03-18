@@ -58,8 +58,11 @@ class CommonCharacteristicTests:
                 return "2A19"
 
             @pytest.fixture
-            def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
-                return bytearray([75])  # 75% battery
+            def valid_test_data(self) -> list[CharacteristicTestData]:
+                return [
+                    CharacteristicTestData(bytearray([75]), 75, "75% battery"),
+                    CharacteristicTestData(bytearray([100]), 100, "100% battery"),
+                ]
     """
 
     @pytest.fixture
@@ -109,7 +112,6 @@ class CommonCharacteristicTests:
         self, characteristic: BaseCharacteristic[Any], valid_test_data: list[CharacteristicTestData]
     ) -> None:
         """Test parsing valid data succeeds and returns meaningful result."""
-        # Handle both single and multiple test cases
         if len(valid_test_data) < 2:
             raise ValueError("valid_test_data should be a list with at least two test cases for this test to work")
         for i, test_case in enumerate(valid_test_data):
@@ -132,13 +134,10 @@ class CommonCharacteristicTests:
     def test_decode_valid_data_returns_expected_value(
         self,
         characteristic: BaseCharacteristic[Any],
-        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
+        valid_test_data: list[CharacteristicTestData],
     ) -> None:
         """Test raw decoding returns the exact expected value."""
-        # Handle both single and multiple test cases
-        test_cases = valid_test_data if isinstance(valid_test_data, list) else [valid_test_data]
-
-        for i, test_case in enumerate(test_cases):
+        for i, test_case in enumerate(valid_test_data):
             input_data = test_case.input_data
 
             result = characteristic.parse_value(input_data)
@@ -185,11 +184,10 @@ class CommonCharacteristicTests:
     def test_oversized_data_validation(
         self,
         characteristic: BaseCharacteristic[Any],
-        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
+        valid_test_data: list[CharacteristicTestData],
     ) -> None:
         """Test that excessively large data is properly validated."""
-        # Use first test case if list, otherwise use single test case
-        test_case = valid_test_data[0] if isinstance(valid_test_data, list) else valid_test_data
+        test_case = valid_test_data[0]
         input_data = test_case.input_data
 
         # Create data that's much larger than reasonable
@@ -222,11 +220,10 @@ class CommonCharacteristicTests:
     def test_range_validation_behaviour(
         self,
         characteristic: BaseCharacteristic[Any],
-        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
+        valid_test_data: list[CharacteristicTestData],
     ) -> None:
         """Test that characteristics handle malformed data appropriately."""
-        # Use first test case if list, otherwise use single test case
-        test_case = valid_test_data[0] if isinstance(valid_test_data, list) else valid_test_data
+        test_case = valid_test_data[0]
 
         # Test with clearly invalid data patterns that should fail parsing
         invalid_patterns = [
@@ -280,11 +277,10 @@ class CommonCharacteristicTests:
     def test_undersized_data_handling(
         self,
         characteristic: BaseCharacteristic[Any],
-        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
+        valid_test_data: list[CharacteristicTestData],
     ) -> None:
         """Test handling of data that's too short."""
-        # Use first test case if list, otherwise use single test case
-        test_case = valid_test_data[0] if isinstance(valid_test_data, list) else valid_test_data
+        test_case = valid_test_data[0]
 
         if len(test_case.input_data) > 1:
             short_data = test_case.input_data[:-1]  # Remove last byte
@@ -297,11 +293,10 @@ class CommonCharacteristicTests:
     def test_parse_decode_consistency(
         self,
         characteristic: BaseCharacteristic[Any],
-        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
+        valid_test_data: list[CharacteristicTestData],
     ) -> None:
         """Test that parse_value and decode_value return consistent results."""
-        # Use first test case if list, otherwise use single test case
-        test_case = valid_test_data[0] if isinstance(valid_test_data, list) else valid_test_data
+        test_case = valid_test_data[0]
         input_data = test_case.input_data
 
         parse_result = characteristic.parse_value(input_data)
@@ -313,10 +308,10 @@ class CommonCharacteristicTests:
     def test_round_trip(
         self,
         characteristic: BaseCharacteristic[Any],
-        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
+        valid_test_data: list[CharacteristicTestData],
     ) -> None:
         """Test that encoding and decoding preserve data (round trip)."""
-        test_cases = valid_test_data if isinstance(valid_test_data, list) else [valid_test_data]
+        test_cases = valid_test_data
 
         for i, test_case in enumerate(test_cases):
             case_desc = f"Test case {i + 1} ({test_case.description})"
