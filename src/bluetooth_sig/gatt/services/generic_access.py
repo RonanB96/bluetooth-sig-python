@@ -20,5 +20,5 @@ class GenericAccessService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.DEVICE_NAME: True,
-        CharacteristicName.APPEARANCE: False,
+        CharacteristicName.APPEARANCE: True,
     }

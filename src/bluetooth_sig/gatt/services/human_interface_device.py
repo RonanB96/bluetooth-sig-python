@@ -26,5 +26,5 @@ class HumanInterfaceDeviceService(BaseGattService):
         CharacteristicName.REPORT_MAP: True,
         CharacteristicName.REPORT: True,
         CharacteristicName.PROTOCOL_MODE: True,
-        # CharacteristicName.PNP_ID: False, - not implemented yet
+        CharacteristicName.PNP_ID: False,
     }

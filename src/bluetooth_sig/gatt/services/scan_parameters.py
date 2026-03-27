@@ -17,4 +17,5 @@ class ScanParametersService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.SCAN_INTERVAL_WINDOW: True,
+        CharacteristicName.SCAN_REFRESH: False,
     }
