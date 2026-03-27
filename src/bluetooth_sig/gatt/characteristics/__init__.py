@@ -10,7 +10,24 @@ from __future__ import annotations
 from .acceleration import AccelerationCharacteristic
 from .acceleration_3d import Acceleration3DCharacteristic
 from .acceleration_detection_status import AccelerationDetectionStatusCharacteristic
+from .active_preset_index import ActivePresetIndexCharacteristic
 from .activity_goal import ActivityGoalCharacteristic
+from .advertising_constant_tone_extension_interval import (
+    AdvertisingConstantToneExtensionIntervalCharacteristic,
+)
+from .advertising_constant_tone_extension_minimum_length import (
+    AdvertisingConstantToneExtensionMinimumLengthCharacteristic,
+)
+from .advertising_constant_tone_extension_minimum_transmit_count import (
+    AdvertisingConstantToneExtensionMinimumTransmitCountCharacteristic,
+)
+from .advertising_constant_tone_extension_phy import (
+    CTEPHY,
+    AdvertisingConstantToneExtensionPhyCharacteristic,
+)
+from .advertising_constant_tone_extension_transmit_duration import (
+    AdvertisingConstantToneExtensionTransmitDurationCharacteristic,
+)
 from .aerobic_heart_rate_lower_limit import AerobicHeartRateLowerLimitCharacteristic
 from .aerobic_heart_rate_upper_limit import AerobicHeartRateUpperLimitCharacteristic
 from .aerobic_threshold import AerobicThresholdCharacteristic
@@ -32,6 +49,11 @@ from .apparent_power import ApparentPowerCharacteristic
 from .apparent_wind_direction import ApparentWindDirectionCharacteristic
 from .apparent_wind_speed import ApparentWindSpeedCharacteristic
 from .appearance import AppearanceCharacteristic
+from .audio_input_description import AudioInputDescriptionCharacteristic
+from .audio_input_status import AudioInputStatus, AudioInputStatusCharacteristic
+from .audio_input_type import AudioInputType, AudioInputTypeCharacteristic
+from .audio_location import AudioLocation, AudioLocationCharacteristic
+from .audio_output_description import AudioOutputDescriptionCharacteristic
 from .average_current import AverageCurrentCharacteristic
 from .average_voltage import AverageVoltageCharacteristic
 from .barometric_pressure_trend import BarometricPressureTrendCharacteristic
@@ -44,6 +66,14 @@ from .battery_information import BatteryInformationCharacteristic
 from .battery_level import BatteryLevelCharacteristic
 from .battery_level_status import BatteryLevelStatusCharacteristic
 from .battery_time_status import BatteryTimeStatusCharacteristic
+from .bearer_provider_name import BearerProviderNameCharacteristic
+from .bearer_signal_strength import BearerSignalStrengthCharacteristic
+from .bearer_signal_strength_reporting_interval import BearerSignalStrengthReportingIntervalCharacteristic
+from .bearer_technology import BearerTechnology, BearerTechnologyCharacteristic
+from .bearer_uci import BearerUCICharacteristic
+from .bearer_uri_schemes_supported_list import BearerURISchemesCharacteristic
+from .bgr_features import BGRFeatures, BGRFeaturesCharacteristic
+from .bgs_features import BGSFeatures, BGSFeaturesCharacteristic
 from .blood_pressure_feature import BloodPressureFeatureCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .blood_pressure_record import BloodPressureRecordCharacteristic, BloodPressureRecordData
@@ -60,8 +90,10 @@ from .boot_keyboard_input_report import (
 )
 from .boot_keyboard_output_report import BootKeyboardOutputReportCharacteristic, KeyboardLEDs
 from .boot_mouse_input_report import BootMouseInputReportCharacteristic, BootMouseInputReportData, MouseButtons
+from .call_friendly_name import CallFriendlyNameCharacteristic
 from .caloric_intake import CaloricIntakeCharacteristic
 from .carbon_monoxide_concentration import CarbonMonoxideConcentrationCharacteristic
+from .central_address_resolution import CentralAddressResolutionCharacteristic, CentralAddressResolutionSupport
 from .cgm_feature import CGMFeatureCharacteristic, CGMFeatureData, CGMFeatureFlags, CGMSampleLocation, CGMType
 from .cgm_measurement import (
     CGMCalTempOctet,
@@ -84,10 +116,13 @@ from .chromaticity_in_cct_and_duv_values import (
 )
 from .chromaticity_tolerance import ChromaticityToleranceCharacteristic
 from .cie_13_3_1995_color_rendering_index import CIE133ColorRenderingIndexCharacteristic
+from .client_supported_features import ClientFeatures, ClientSupportedFeaturesCharacteristic
 from .co2_concentration import CO2ConcentrationCharacteristic
 from .coefficient import CoefficientCharacteristic
+from .constant_tone_extension_enable import ConstantToneExtensionEnableCharacteristic, CTEEnableState
 from .contact_status_8 import ContactStatus, ContactStatus8Characteristic
 from .content_control_id import ContentControlIdCharacteristic
+from .coordinated_set_size import CoordinatedSetSizeCharacteristic
 from .correlated_color_temperature import CorrelatedColorTemperatureCharacteristic
 from .cosine_of_the_angle import CosineOfTheAngleCharacteristic
 from .count_16 import Count16Characteristic
@@ -108,6 +143,7 @@ from .cycling_power_feature import CyclingPowerFeatureCharacteristic
 from .cycling_power_measurement import CyclingPowerMeasurementCharacteristic
 from .cycling_power_vector import CyclingPowerVectorCharacteristic
 from .database_change_increment import DatabaseChangeIncrementCharacteristic
+from .database_hash import DatabaseHashCharacteristic
 from .date_of_birth import DateOfBirthCharacteristic
 from .date_of_threshold_assessment import DateOfThresholdAssessmentCharacteristic
 from .date_time import DateTimeCharacteristic
@@ -125,6 +161,8 @@ from .electric_current_specification import ElectricCurrentSpecificationCharacte
 from .electric_current_statistics import ElectricCurrentStatisticsCharacteristic
 from .elevation import ElevationCharacteristic
 from .email_address import EmailAddressCharacteristic
+from .emergency_id import EmergencyIdCharacteristic
+from .emergency_text import EmergencyTextCharacteristic
 from .energy import EnergyCharacteristic
 from .energy_32 import Energy32Characteristic
 from .energy_in_a_period_of_day import (
@@ -148,6 +186,7 @@ from .fat_burn_heart_rate_lower_limit import FatBurnHeartRateLowerLimitCharacter
 from .fat_burn_heart_rate_upper_limit import FatBurnHeartRateUpperLimitCharacteristic
 from .firmware_revision_string import FirmwareRevisionStringCharacteristic
 from .first_name import FirstNameCharacteristic
+from .first_use_date import FirstUseDateCharacteristic
 from .five_zone_heart_rate_limits import FiveZoneHeartRateLimitsCharacteristic
 from .fixed_string_8 import FixedString8Characteristic
 from .fixed_string_16 import FixedString16Characteristic
@@ -162,9 +201,12 @@ from .global_trade_item_number import GlobalTradeItemNumberCharacteristic
 from .glucose_feature import GlucoseFeatureCharacteristic, GlucoseFeatures
 from .glucose_measurement import GlucoseMeasurementCharacteristic, GlucoseMeasurementFlags
 from .glucose_measurement_context import GlucoseMeasurementContextCharacteristic, GlucoseMeasurementContextFlags
+from .gmap_role import GMAPRole, GMAPRoleCharacteristic
 from .gust_factor import GustFactorCharacteristic
 from .handedness import Handedness, HandednessCharacteristic
 from .hardware_revision_string import HardwareRevisionStringCharacteristic
+from .health_sensor_features import HealthSensorFeatures, HealthSensorFeaturesCharacteristic
+from .hearing_aid_features import HearingAidFeatures, HearingAidFeaturesCharacteristic
 from .heart_rate_control_point import HeartRateControlPointCharacteristic
 from .heart_rate_max import HeartRateMaxCharacteristic
 from .heart_rate_measurement import HeartRateMeasurementCharacteristic
@@ -175,6 +217,7 @@ from .high_resolution_height import HighResolutionHeightCharacteristic
 from .high_temperature import HighTemperatureCharacteristic
 from .high_voltage import HighVoltageCharacteristic
 from .hip_circumference import HipCircumferenceCharacteristic
+from .https_security import HttpsSecurityCharacteristic, HttpsSecurityState
 from .humidity import HumidityCharacteristic
 from .humidity_8 import Humidity8Characteristic
 from .ieee_11073_20601_regulatory_certification_data_list import (
@@ -190,6 +233,13 @@ from .irradiance import IrradianceCharacteristic
 from .language import LanguageCharacteristic
 from .last_name import LastNameCharacteristic
 from .latitude import LatitudeCharacteristic
+from .le_gatt_security_levels import (
+    LEGATTSecurityLevelsCharacteristic,
+    LESecurityMode,
+    LESecurityModeLevel,
+    SecurityLevelRequirement,
+)
+from .length import LengthCharacteristic
 from .light_distribution import LightDistributionCharacteristic, LightDistributionType
 from .light_output import LightOutputCharacteristic
 from .light_source_type import LightSourceTypeCharacteristic, LightSourceTypeValue
@@ -215,9 +265,17 @@ from .manufacturer_name_string import ManufacturerNameStringCharacteristic
 from .mass_flow import MassFlowCharacteristic
 from .maximum_recommended_heart_rate import MaximumRecommendedHeartRateCharacteristic
 from .measurement_interval import MeasurementIntervalCharacteristic
+from .media_control_point_opcodes_supported import (
+    MediaControlPointOpcodes,
+    MediaControlPointOpcodesSupportedCharacteristic,
+)
+from .media_player_icon_url import MediaPlayerIconURLCharacteristic
+from .media_player_name import MediaPlayerNameCharacteristic
+from .media_state import MediaState, MediaStateCharacteristic
 from .methane_concentration import MethaneConcentrationCharacteristic
 from .middle_name import MiddleNameCharacteristic
 from .model_number_string import ModelNumberStringCharacteristic
+from .mute import MuteCharacteristic, MuteState
 from .navigation import NavigationCharacteristic
 from .new_alert import NewAlertCharacteristic
 from .nitrogen_dioxide_concentration import NitrogenDioxideConcentrationCharacteristic
@@ -228,6 +286,7 @@ from .object_id import ObjectIdCharacteristic
 from .object_last_modified import ObjectLastModifiedCharacteristic
 from .object_name import ObjectNameCharacteristic
 from .object_type import ObjectTypeCharacteristic
+from .ots_feature import OACPFeatures, OLCPFeatures, OTSFeatureCharacteristic, OTSFeatureData
 from .ozone_concentration import OzoneConcentrationCharacteristic
 from .perceived_lightness import PerceivedLightnessCharacteristic
 from .percentage_8 import Percentage8Characteristic
@@ -236,7 +295,10 @@ from .peripheral_preferred_connection_parameters import (
     ConnectionParametersData,
     PeripheralPreferredConnectionParametersCharacteristic,
 )
-from .peripheral_privacy_flag import PeripheralPrivacyFlagCharacteristic
+from .peripheral_privacy_flag import PeripheralPrivacyFlagCharacteristic, PeripheralPrivacyState
+from .playback_speed import PlaybackSpeedCharacteristic
+from .playing_order import PlayingOrder, PlayingOrderCharacteristic
+from .playing_orders_supported import PlayingOrdersSupported, PlayingOrdersSupportedCharacteristic
 from .plx_features import PLXFeatureFlags, PLXFeaturesCharacteristic
 from .pm1_concentration import PM1ConcentrationCharacteristic
 from .pm10_concentration import PM10ConcentrationCharacteristic
@@ -256,6 +318,7 @@ from .pushbutton_status_8 import (
     PushbuttonStatus8Data,
 )
 from .rainfall import RainfallCharacteristic
+from .rc_feature import RCFeature, RCFeatureCharacteristic
 from .reconnection_address import ReconnectionAddressCharacteristic
 from .reference_time_information import ReferenceTimeInformationCharacteristic
 from .registry import CharacteristicName, CharacteristicRegistry, get_characteristic_class_map
@@ -287,6 +350,7 @@ from .relative_value_in_an_illuminance_range import (
     RelativeValueInAnIlluminanceRangeCharacteristic,
     RelativeValueInAnIlluminanceRangeData,
 )
+from .resolvable_private_address_only import ResolvablePrivateAddressOnlyCharacteristic
 from .resting_heart_rate import RestingHeartRateCharacteristic
 from .rotational_speed import RotationalSpeedCharacteristic
 from .rower_data import RowerData, RowerDataCharacteristic
@@ -295,15 +359,20 @@ from .rsc_measurement import RSCMeasurementCharacteristic
 from .scan_interval_window import ScanIntervalWindowCharacteristic
 from .scan_refresh import ScanRefreshCharacteristic
 from .sedentary_interval_notification import SedentaryIntervalNotificationCharacteristic
+from .seeking_speed import SeekingSpeedCharacteristic
 from .sensor_location import SensorLocationCharacteristic, SensorLocationValue
 from .serial_number_string import SerialNumberStringCharacteristic
+from .server_supported_features import ServerFeatures, ServerSupportedFeaturesCharacteristic
 from .service_changed import ServiceChangedCharacteristic, ServiceChangedData
+from .set_member_lock import SetMemberLockCharacteristic, SetMemberLockState
+from .set_member_rank import SetMemberRankCharacteristic
 from .software_revision_string import SoftwareRevisionStringCharacteristic
 from .sport_type_for_aerobic_and_anaerobic_thresholds import (
     SportType,
     SportTypeForAerobicAndAnaerobicThresholdsCharacteristic,
 )
 from .stair_climber_data import StairClimberData, StairClimberDataCharacteristic
+from .status_flags import StatusFlags, StatusFlagsCharacteristic
 from .step_climber_data import StepClimberData, StepClimberDataCharacteristic
 from .stride_length import StrideLengthCharacteristic
 from .sulfur_dioxide_concentration import SulfurDioxideConcentrationCharacteristic
@@ -342,6 +411,7 @@ from .temperature_statistics import (
     TemperatureStatisticsData,
 )
 from .temperature_type import TemperatureTypeCharacteristic
+from .termination_reason import TerminationReason, TerminationReasonCharacteristic
 from .three_zone_heart_rate_limits import ThreeZoneHeartRateLimitsCharacteristic
 from .time_accuracy import TimeAccuracyCharacteristic
 from .time_decihour_8 import TimeDecihour8Characteristic
@@ -356,14 +426,22 @@ from .time_update_control_point import TimeUpdateControlPointCharacteristic
 from .time_update_state import TimeUpdateCurrentState, TimeUpdateResult, TimeUpdateState, TimeUpdateStateCharacteristic
 from .time_with_dst import TimeWithDstCharacteristic
 from .time_zone import TimeZoneCharacteristic
+from .tmap_role import TMAPRole, TMAPRoleCharacteristic
 from .torque import TorqueCharacteristic
+from .track_changed import TrackChangedCharacteristic
+from .track_duration import TrackDurationCharacteristic
+from .track_position import TrackPositionCharacteristic
+from .track_title import TrackTitleCharacteristic
 from .treadmill_data import TreadmillData, TreadmillDataCharacteristic
 from .true_wind_direction import TrueWindDirectionCharacteristic
 from .true_wind_speed import TrueWindSpeedCharacteristic
 from .two_zone_heart_rate_limits import TwoZoneHeartRateLimitsCharacteristic
 from .tx_power_level import TxPowerLevelCharacteristic
+from .ugg_features import UGGFeatures, UGGFeaturesCharacteristic
+from .ugt_features import UGTFeatures, UGTFeaturesCharacteristic
 from .uncertainty import UncertaintyCharacteristic
 from .unread_alert_status import UnreadAlertStatusCharacteristic
+from .uri import URICharacteristic
 from .user_index import UserIndexCharacteristic
 from .uv_index import UVIndexCharacteristic
 from .vo2_max import VO2MaxCharacteristic
@@ -372,6 +450,7 @@ from .voltage import VoltageCharacteristic
 from .voltage_frequency import VoltageFrequencyCharacteristic
 from .voltage_specification import VoltageSpecificationCharacteristic
 from .voltage_statistics import VoltageStatisticsCharacteristic
+from .volume_flags import VolumeFlags, VolumeFlagsCharacteristic
 from .volume_flow import VolumeFlowCharacteristic
 from .waist_circumference import WaistCircumferenceCharacteristic
 from .weight import WeightCharacteristic
@@ -384,10 +463,16 @@ __all__ = [
     # Individual characteristic classes (for backward compatibility)
     "AccelerationCharacteristic",
     "AccelerationDetectionStatusCharacteristic",
+    "ActivePresetIndexCharacteristic",
     "ActivityGoalCharacteristic",
     "AerobicHeartRateLowerLimitCharacteristic",
     "AerobicHeartRateUpperLimitCharacteristic",
     "AerobicThresholdCharacteristic",
+    "AdvertisingConstantToneExtensionIntervalCharacteristic",
+    "AdvertisingConstantToneExtensionMinimumLengthCharacteristic",
+    "AdvertisingConstantToneExtensionMinimumTransmitCountCharacteristic",
+    "AdvertisingConstantToneExtensionPhyCharacteristic",
+    "AdvertisingConstantToneExtensionTransmitDurationCharacteristic",
     "AgeCharacteristic",
     "AlertCategoryIdBitMaskCharacteristic",
     "AlertCategoryIdCharacteristic",
@@ -403,6 +488,14 @@ __all__ = [
     "ApparentWindDirectionCharacteristic",
     "ApparentWindSpeedCharacteristic",
     "AppearanceCharacteristic",
+    "AudioInputDescriptionCharacteristic",
+    "AudioInputStatus",
+    "AudioInputStatusCharacteristic",
+    "AudioInputType",
+    "AudioInputTypeCharacteristic",
+    "AudioLocation",
+    "AudioLocationCharacteristic",
+    "AudioOutputDescriptionCharacteristic",
     "AverageCurrentCharacteristic",
     "AverageVoltageCharacteristic",
     "BarometricPressureTrendCharacteristic",
@@ -416,6 +509,17 @@ __all__ = [
     "BatteryLevelCharacteristic",
     "BatteryLevelStatusCharacteristic",
     "BatteryTimeStatusCharacteristic",
+    "BearerProviderNameCharacteristic",
+    "BearerSignalStrengthCharacteristic",
+    "BearerSignalStrengthReportingIntervalCharacteristic",
+    "BearerTechnology",
+    "BearerTechnologyCharacteristic",
+    "BearerUCICharacteristic",
+    "BearerURISchemesCharacteristic",
+    "BGRFeatures",
+    "BGRFeaturesCharacteristic",
+    "BGSFeatures",
+    "BGSFeaturesCharacteristic",
     "BloodPressureFeatureCharacteristic",
     "BloodPressureMeasurementCharacteristic",
     "BloodPressureRecordCharacteristic",
@@ -454,11 +558,16 @@ __all__ = [
     "CO2ConcentrationCharacteristic",
     "CSCFeatureCharacteristic",
     "CSCMeasurementCharacteristic",
+    "CallFriendlyNameCharacteristic",
     "CaloricIntakeCharacteristic",
     "CarbonMonoxideConcentrationCharacteristic",
+    "CentralAddressResolutionCharacteristic",
+    "CentralAddressResolutionSupport",
     # Registry components
     "CharacteristicName",
     "CharacteristicRegistry",
+    "ClientFeatures",
+    "ClientSupportedFeaturesCharacteristic",
     "ChromaticityCoordinateCharacteristic",
     "ChromaticityCoordinatesCharacteristic",
     "ChromaticityCoordinatesData",
@@ -472,10 +581,14 @@ __all__ = [
     "ContactStatus",
     "ContactStatus8Characteristic",
     "ContentControlIdCharacteristic",
+    "CoordinatedSetSizeCharacteristic",
     "CorrelatedColorTemperatureCharacteristic",
     "CosineOfTheAngleCharacteristic",
     "Count16Characteristic",
     "Count24Characteristic",
+    "CTEPHY",
+    "CTEEnableState",
+    "ConstantToneExtensionEnableCharacteristic",
     "CountryCodeCharacteristic",
     "CrossTrainerData",
     "CrossTrainerDataCharacteristic",
@@ -487,6 +600,7 @@ __all__ = [
     "CyclingPowerMeasurementCharacteristic",
     "CyclingPowerVectorCharacteristic",
     "DatabaseChangeIncrementCharacteristic",
+    "DatabaseHashCharacteristic",
     "DateOfBirthCharacteristic",
     "DateOfThresholdAssessmentCharacteristic",
     "DateTimeCharacteristic",
@@ -506,6 +620,8 @@ __all__ = [
     "ElectricCurrentStatisticsCharacteristic",
     "ElevationCharacteristic",
     "EmailAddressCharacteristic",
+    "EmergencyIdCharacteristic",
+    "EmergencyTextCharacteristic",
     "EnergyCharacteristic",
     "Energy32Characteristic",
     "EnergyInAPeriodOfDayCharacteristic",
@@ -525,6 +641,7 @@ __all__ = [
     "FatBurnHeartRateUpperLimitCharacteristic",
     "FirmwareRevisionStringCharacteristic",
     "FirstNameCharacteristic",
+    "FirstUseDateCharacteristic",
     "FiveZoneHeartRateLimitsCharacteristic",
     "FixedString8Characteristic",
     "FixedString16Characteristic",
@@ -543,10 +660,16 @@ __all__ = [
     "GlucoseMeasurementContextCharacteristic",
     "GlucoseMeasurementContextFlags",
     "GlucoseMeasurementFlags",
+    "GMAPRole",
+    "GMAPRoleCharacteristic",
     "GustFactorCharacteristic",
     "Handedness",
     "HandednessCharacteristic",
     "HardwareRevisionStringCharacteristic",
+    "HealthSensorFeatures",
+    "HealthSensorFeaturesCharacteristic",
+    "HearingAidFeatures",
+    "HearingAidFeaturesCharacteristic",
     "HeartRateControlPointCharacteristic",
     "HeartRateMaxCharacteristic",
     "HeartRateMeasurementCharacteristic",
@@ -559,6 +682,8 @@ __all__ = [
     "HipCircumferenceCharacteristic",
     "HumidityCharacteristic",
     "Humidity8Characteristic",
+    "HttpsSecurityCharacteristic",
+    "HttpsSecurityState",
     "IEEE1107320601RegulatoryCharacteristic",
     "IEEE11073RegulatoryData",
     "IlluminanceCharacteristic",
@@ -575,6 +700,11 @@ __all__ = [
     "LanguageCharacteristic",
     "LastNameCharacteristic",
     "LatitudeCharacteristic",
+    "SecurityLevelRequirement",
+    "LEGATTSecurityLevelsCharacteristic",
+    "LESecurityMode",
+    "LESecurityModeLevel",
+    "LengthCharacteristic",
     "LightDistributionCharacteristic",
     "LightDistributionType",
     "LightOutputCharacteristic",
@@ -601,9 +731,17 @@ __all__ = [
     "MassFlowCharacteristic",
     "MaximumRecommendedHeartRateCharacteristic",
     "MeasurementIntervalCharacteristic",
+    "MediaControlPointOpcodes",
+    "MediaControlPointOpcodesSupportedCharacteristic",
+    "MediaPlayerIconURLCharacteristic",
+    "MediaPlayerNameCharacteristic",
+    "MediaState",
+    "MediaStateCharacteristic",
     "MethaneConcentrationCharacteristic",
     "MiddleNameCharacteristic",
     "ModelNumberStringCharacteristic",
+    "MuteCharacteristic",
+    "MuteState",
     "NavigationCharacteristic",
     "NewAlertCharacteristic",
     "NitrogenDioxideConcentrationCharacteristic",
@@ -614,6 +752,10 @@ __all__ = [
     "ObjectLastModifiedCharacteristic",
     "ObjectNameCharacteristic",
     "ObjectTypeCharacteristic",
+    "OACPFeatures",
+    "OLCPFeatures",
+    "OTSFeatureCharacteristic",
+    "OTSFeatureData",
     "OzoneConcentrationCharacteristic",
     "PLXFeatureFlags",
     "PLXFeaturesCharacteristic",
@@ -622,9 +764,15 @@ __all__ = [
     "PM25ConcentrationCharacteristic",
     "PeripheralPreferredConnectionParametersCharacteristic",
     "PeripheralPrivacyFlagCharacteristic",
+    "PeripheralPrivacyState",
     "PerceivedLightnessCharacteristic",
     "Percentage8Characteristic",
     "Percentage8StepsCharacteristic",
+    "PlaybackSpeedCharacteristic",
+    "PlayingOrder",
+    "PlayingOrderCharacteristic",
+    "PlayingOrdersSupported",
+    "PlayingOrdersSupportedCharacteristic",
     "PnpIdCharacteristic",
     "PnpIdData",
     "PollenConcentrationCharacteristic",
@@ -642,6 +790,8 @@ __all__ = [
     "RSCFeatureCharacteristic",
     "RSCMeasurementCharacteristic",
     "RainfallCharacteristic",
+    "RCFeature",
+    "RCFeatureCharacteristic",
     "ReconnectionAddressCharacteristic",
     "ReferenceTimeInformationCharacteristic",
     "RelativeRuntimeInACCTRangeData",
@@ -658,18 +808,25 @@ __all__ = [
     "RelativeValueInAVoltageRangeData",
     "RelativeValueInAnIlluminanceRangeCharacteristic",
     "RelativeValueInAnIlluminanceRangeData",
+    "ResolvablePrivateAddressOnlyCharacteristic",
     "RestingHeartRateCharacteristic",
     "RotationalSpeedCharacteristic",
     "RowerData",
     "RowerDataCharacteristic",
     "ScanIntervalWindowCharacteristic",
     "ScanRefreshCharacteristic",
+    "SeekingSpeedCharacteristic",
     "SedentaryIntervalNotificationCharacteristic",
     "SensorLocationCharacteristic",
     "SensorLocationValue",
     "SerialNumberStringCharacteristic",
+    "ServerFeatures",
+    "ServerSupportedFeaturesCharacteristic",
     "ServiceChangedCharacteristic",
     "ServiceChangedData",
+    "SetMemberLockCharacteristic",
+    "SetMemberLockState",
+    "SetMemberRankCharacteristic",
     "SoftwareRevisionStringCharacteristic",
     "SportType",
     "SportTypeForAerobicAndAnaerobicThresholdsCharacteristic",
@@ -705,6 +862,8 @@ __all__ = [
     "TemperatureStatisticsData",
     "TemperatureMeasurementCharacteristic",
     "TemperatureTypeCharacteristic",
+    "TerminationReason",
+    "TerminationReasonCharacteristic",
     "ThreeZoneHeartRateLimitsCharacteristic",
     "TimeAccuracyCharacteristic",
     "TimeDecihour8Characteristic",
@@ -722,7 +881,12 @@ __all__ = [
     "TimeUpdateStateCharacteristic",
     "TimeWithDstCharacteristic",
     "TimeZoneCharacteristic",
+    "TMAPRole",
+    "TMAPRoleCharacteristic",
     "TorqueCharacteristic",
+    "TrackDurationCharacteristic",
+    "TrackPositionCharacteristic",
+    "TrackTitleCharacteristic",
     "TreadmillData",
     "TreadmillDataCharacteristic",
     "TrueWindDirectionCharacteristic",
@@ -732,6 +896,7 @@ __all__ = [
     "UVIndexCharacteristic",
     "UncertaintyCharacteristic",
     "UnreadAlertStatusCharacteristic",
+    "URICharacteristic",
     "UserIndexCharacteristic",
     "VO2MaxCharacteristic",
     "VOCConcentrationCharacteristic",
@@ -739,6 +904,8 @@ __all__ = [
     "VoltageFrequencyCharacteristic",
     "VoltageSpecificationCharacteristic",
     "VoltageStatisticsCharacteristic",
+    "VolumeFlags",
+    "VolumeFlagsCharacteristic",
     "VolumeFlowCharacteristic",
     "WaistCircumferenceCharacteristic",
     "WeightCharacteristic",

@@ -93,7 +93,7 @@ Path-specific instructions (python-implementation, testing, bluetooth-gatt) load
 
 Must consult and cite when adding non-trivial logic:
 - Bluetooth SIG Assigned Numbers: https://www.bluetooth.com/specifications/assigned-numbers/
-- Python Standard Library: https://docs.python.org/
+- Bluetooth SIG Specifications (HTML): https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/{spec-name}/out/en/index-en.html
 - Project guides: `docs/AGENT_GUIDE.md`, `docs/BLUETOOTH_SIG_ARCHITECTURE.md`
 
 If spec unavailable: state explicitly, note verification needed.

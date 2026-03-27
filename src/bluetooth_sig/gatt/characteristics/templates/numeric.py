@@ -1,6 +1,6 @@
 """Basic integer templates for unsigned and signed integer parsing.
 
-Covers Uint8, Sint8, Uint16, Sint16, Uint24, Uint32, Uint48 templates.
+Covers Uint8, Sint8, Uint16, Sint16, Uint24, Uint32, Sint32, Uint48 templates.
 """
 
 from __future__ import annotations
@@ -10,6 +10,8 @@ from ...constants import (
     SINT8_MIN,
     SINT16_MAX,
     SINT16_MIN,
+    SINT32_MAX,
+    SINT32_MIN,
     UINT8_MAX,
     UINT16_MAX,
     UINT24_MAX,
@@ -21,6 +23,7 @@ from ...exceptions import InsufficientDataError
 from ..utils.extractors import (
     SINT8,
     SINT16,
+    SINT32,
     UINT8,
     UINT16,
     UINT24,
@@ -230,6 +233,39 @@ class Uint32Template(CodingTemplate[int]):
         """Encode uint32 value to bytes."""
         if validate and not 0 <= value <= UINT32_MAX:
             raise ValueError(f"Value {value} out of range for uint32 (0-{UINT32_MAX})")
+        return self.extractor.pack(value)
+
+
+class Sint32Template(CodingTemplate[int]):
+    """Template for 32-bit signed integer parsing."""
+
+    @property
+    def data_size(self) -> int:
+        """Size: 4 bytes."""
+        return 4
+
+    @property
+    def extractor(self) -> RawExtractor:
+        """Get sint32 extractor."""
+        return SINT32
+
+    @property
+    def translator(self) -> ValueTranslator[int]:
+        """Return identity translator for no scaling."""
+        return IDENTITY
+
+    def decode_value(
+        self, data: bytearray, offset: int = 0, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> int:
+        """Parse 32-bit signed integer."""
+        if validate and len(data) < offset + 4:
+            raise InsufficientDataError("sint32", data[offset:], 4)
+        return self.extractor.extract(data, offset)
+
+    def encode_value(self, value: int, *, validate: bool = True) -> bytearray:
+        """Encode sint32 value to bytes."""
+        if validate and not SINT32_MIN <= value <= SINT32_MAX:
+            raise ValueError(f"Value {value} out of range for sint32 ({SINT32_MIN} to {SINT32_MAX})")
         return self.extractor.pack(value)
 
 

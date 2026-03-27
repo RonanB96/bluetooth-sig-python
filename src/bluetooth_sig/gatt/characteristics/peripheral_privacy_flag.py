@@ -2,26 +2,26 @@
 
 from __future__ import annotations
 
-from ..context import CharacteristicContext
+from enum import IntEnum
+
 from .base import BaseCharacteristic
-from .utils.data_parser import DataParser
+from .templates import EnumTemplate
 
 
-class PeripheralPrivacyFlagCharacteristic(BaseCharacteristic[bool]):
+class PeripheralPrivacyState(IntEnum):
+    """Peripheral privacy state."""
+
+    DISABLED = 0
+    ENABLED = 1
+
+
+class PeripheralPrivacyFlagCharacteristic(BaseCharacteristic[PeripheralPrivacyState]):
     """Peripheral Privacy Flag characteristic (0x2A02).
 
     org.bluetooth.characteristic.gap.peripheral_privacy_flag
 
-    Indicates whether privacy is enabled (True) or disabled (False).
+    Indicates whether privacy is enabled (1) or disabled (0).
     """
 
-    def _decode_value(
-        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
-    ) -> bool:
-        """Decode the privacy flag value."""
-        value = DataParser.parse_int8(data, 0, signed=False)
-        return bool(value)
-
-    def _encode_value(self, data: bool) -> bytearray:
-        """Encode the privacy flag value."""
-        return DataParser.encode_int8(1 if data else 0, signed=False)
+    expected_length: int = 1
+    _template = EnumTemplate.uint8(PeripheralPrivacyState)
