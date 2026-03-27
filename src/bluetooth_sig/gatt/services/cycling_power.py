@@ -17,8 +17,8 @@ class CyclingPowerService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.CYCLING_POWER_MEASUREMENT: True,  # required
-        CharacteristicName.CYCLING_POWER_FEATURE: True,  # required
-        CharacteristicName.CYCLING_POWER_VECTOR: False,  # optional
-        CharacteristicName.CYCLING_POWER_CONTROL_POINT: False,  # optional
+        CharacteristicName.CYCLING_POWER_MEASUREMENT: True,
+        CharacteristicName.CYCLING_POWER_FEATURE: True,
+        CharacteristicName.CYCLING_POWER_VECTOR: False,
+        CharacteristicName.CYCLING_POWER_CONTROL_POINT: False,
     }

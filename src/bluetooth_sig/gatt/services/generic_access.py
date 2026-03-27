@@ -19,6 +19,6 @@ class GenericAccessService(BaseGattService):
     _service_name: str = "GAP"
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.DEVICE_NAME: True,  # required
-        CharacteristicName.APPEARANCE: False,  # optional
+        CharacteristicName.DEVICE_NAME: True,
+        CharacteristicName.APPEARANCE: False,
     }

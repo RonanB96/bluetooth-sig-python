@@ -31,18 +31,18 @@ class FitnessMachineService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.FITNESS_MACHINE_FEATURE: True,  # mandatory
-        CharacteristicName.TREADMILL_DATA: False,  # optional
-        CharacteristicName.CROSS_TRAINER_DATA: False,  # optional
-        CharacteristicName.STEP_CLIMBER_DATA: False,  # optional
-        CharacteristicName.STAIR_CLIMBER_DATA: False,  # optional
-        CharacteristicName.ROWER_DATA: False,  # optional
-        CharacteristicName.INDOOR_BIKE_DATA: False,  # optional
-        CharacteristicName.TRAINING_STATUS: False,  # optional
-        CharacteristicName.SUPPORTED_SPEED_RANGE: False,  # optional
-        CharacteristicName.SUPPORTED_INCLINATION_RANGE: False,  # optional
-        CharacteristicName.SUPPORTED_RESISTANCE_LEVEL_RANGE: False,  # optional
-        CharacteristicName.SUPPORTED_HEART_RATE_RANGE: False,  # optional
-        CharacteristicName.SUPPORTED_POWER_RANGE: False,  # optional
-        CharacteristicName.FITNESS_MACHINE_CONTROL_POINT: False,  # optional
-        CharacteristicName.FITNESS_MACHINE_STATUS: False,  # optional
+        CharacteristicName.TREADMILL_DATA: False,
+        CharacteristicName.CROSS_TRAINER_DATA: False,
+        CharacteristicName.STEP_CLIMBER_DATA: False,
+        CharacteristicName.STAIR_CLIMBER_DATA: False,
+        CharacteristicName.ROWER_DATA: False,
+        CharacteristicName.INDOOR_BIKE_DATA: False,
+        CharacteristicName.TRAINING_STATUS: False,
+        CharacteristicName.SUPPORTED_SPEED_RANGE: False,
+        CharacteristicName.SUPPORTED_INCLINATION_RANGE: False,
+        CharacteristicName.SUPPORTED_RESISTANCE_LEVEL_RANGE: False,
+        CharacteristicName.SUPPORTED_HEART_RATE_RANGE: False,
+        CharacteristicName.SUPPORTED_POWER_RANGE: False,
+        CharacteristicName.FITNESS_MACHINE_CONTROL_POINT: False,
+        CharacteristicName.FITNESS_MACHINE_STATUS: False,
     }

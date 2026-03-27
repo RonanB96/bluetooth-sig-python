@@ -21,10 +21,10 @@ class HumanInterfaceDeviceService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.HID_INFORMATION: True,  # required
-        CharacteristicName.HID_CONTROL_POINT: True,  # required
-        CharacteristicName.REPORT_MAP: True,  # required
-        CharacteristicName.REPORT: True,  # required
-        CharacteristicName.PROTOCOL_MODE: True,  # required
-        # CharacteristicName.PNP_ID: False,  # optional - not implemented yet
+        CharacteristicName.HID_INFORMATION: True,
+        CharacteristicName.HID_CONTROL_POINT: True,
+        CharacteristicName.REPORT_MAP: True,
+        CharacteristicName.REPORT: True,
+        CharacteristicName.PROTOCOL_MODE: True,
+        # CharacteristicName.PNP_ID: False, - not implemented yet
     }

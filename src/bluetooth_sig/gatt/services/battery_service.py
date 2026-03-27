@@ -17,6 +17,6 @@ class BatteryService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.BATTERY_LEVEL: True,  # required
-        CharacteristicName.BATTERY_LEVEL_STATUS: False,  # optional
+        CharacteristicName.BATTERY_LEVEL: True,
+        CharacteristicName.BATTERY_LEVEL_STATUS: False,
     }

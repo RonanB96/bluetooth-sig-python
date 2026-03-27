@@ -16,5 +16,5 @@ class CyclingSpeedAndCadenceService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.CSC_MEASUREMENT: True,  # required
+        CharacteristicName.CSC_MEASUREMENT: True,
     }
