@@ -26,11 +26,11 @@ class IndoorPositioningService(BaseGattService):
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.LATITUDE: True,  # mandatory
         CharacteristicName.LONGITUDE: True,  # mandatory
-        CharacteristicName.FLOOR_NUMBER: False,  # optional
-        CharacteristicName.LOCATION_NAME: False,  # optional
-        CharacteristicName.INDOOR_POSITIONING_CONFIGURATION: False,  # optional
-        CharacteristicName.LOCAL_NORTH_COORDINATE: False,  # optional
-        CharacteristicName.LOCAL_EAST_COORDINATE: False,  # optional
-        CharacteristicName.ALTITUDE: False,  # optional
-        CharacteristicName.UNCERTAINTY: False,  # optional
+        CharacteristicName.FLOOR_NUMBER: False,
+        CharacteristicName.LOCATION_NAME: False,
+        CharacteristicName.INDOOR_POSITIONING_CONFIGURATION: False,
+        CharacteristicName.LOCAL_NORTH_COORDINATE: False,
+        CharacteristicName.LOCAL_EAST_COORDINATE: False,
+        CharacteristicName.ALTITUDE: False,
+        CharacteristicName.UNCERTAINTY: False,
     }

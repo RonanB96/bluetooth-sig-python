@@ -21,10 +21,10 @@ class DeviceInformationService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.MANUFACTURER_NAME_STRING: True,  # required
-        CharacteristicName.MODEL_NUMBER_STRING: False,  # optional
-        CharacteristicName.SERIAL_NUMBER_STRING: False,  # optional
-        CharacteristicName.HARDWARE_REVISION_STRING: False,  # optional
-        CharacteristicName.FIRMWARE_REVISION_STRING: False,  # optional
-        CharacteristicName.SOFTWARE_REVISION_STRING: False,  # optional
+        CharacteristicName.MANUFACTURER_NAME_STRING: True,
+        CharacteristicName.MODEL_NUMBER_STRING: False,
+        CharacteristicName.SERIAL_NUMBER_STRING: False,
+        CharacteristicName.HARDWARE_REVISION_STRING: False,
+        CharacteristicName.FIRMWARE_REVISION_STRING: False,
+        CharacteristicName.SOFTWARE_REVISION_STRING: False,
     }
