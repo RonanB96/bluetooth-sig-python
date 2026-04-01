@@ -35,7 +35,8 @@ class TestBearerListCurrentCallsCharacteristic(CommonCharacteristicTests):
                 description="Empty call list",
             ),
             CharacteristicTestData(
-                # length=7, call_index=1, state=ACTIVE(3), flags=INCOMING(1), uri="tel:1"
+                # length=7, call_index=1, state=ACTIVE(3), flags=OUTGOING(1), uri="tel:1"
+                # bit 0 = 1 means outgoing per TBS v1.0 spec Table 3.7
                 input_data=bytearray(
                     [
                         0x08,
@@ -54,12 +55,12 @@ class TestBearerListCurrentCallsCharacteristic(CommonCharacteristicTests):
                         CallListItem(
                             call_index=1,
                             state=CallState.ACTIVE,
-                            call_flags=CallFlags.INCOMING,
+                            call_flags=CallFlags.OUTGOING,
                             uri="tel:1",
                         ),
                     ),
                 ),
-                description="Single active incoming call",
+                description="Single active outgoing call",
             ),
             CharacteristicTestData(
                 # Two calls: first=length 3 no uri, second=length 6 with uri "ab"
@@ -105,7 +106,7 @@ class TestBearerListCurrentCallsCharacteristic(CommonCharacteristicTests):
                 CallListItem(
                     call_index=5,
                     state=CallState.LOCALLY_HELD,
-                    call_flags=CallFlags.INCOMING | CallFlags.WITHHELD,
+                    call_flags=CallFlags.OUTGOING | CallFlags.WITHHELD,
                     uri="tel:+123",
                 ),
             ),

@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 from .base import BaseCharacteristic
-from .templates import Uint16Template
+from .templates import ScaledUint16Template
 
 
-class IrradianceCharacteristic(BaseCharacteristic[int]):
+class IrradianceCharacteristic(BaseCharacteristic[float]):
     """Irradiance characteristic (0x2A77).
 
     org.bluetooth.characteristic.irradiance
 
-    Represents irradiance as an unsigned 16-bit integer.
+    Represents irradiance in W/m² with 0.1 resolution (M=1, d=-1, b=0).
     """
 
-    _template = Uint16Template()
+    _template = ScaledUint16Template(scale_factor=0.1)

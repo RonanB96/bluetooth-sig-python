@@ -23,15 +23,19 @@ class TestSupportedPowerRangeCharacteristic(CommonCharacteristicTests):
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
+        """Valid supported power range test data.
+
+        FTMS: min(sint16) + max(sint16) + min_increment(uint16) = 6 bytes.
+        """
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x00, 0x00, 0x00, 0x00]),  # Min=0W, Max=0W
-                expected_value=SupportedPowerRangeData(minimum=0, maximum=0),
-                description="Zero power range",
+                input_data=bytearray([0x00, 0x00, 0x00, 0x00, 0x01, 0x00]),  # Min=0W, Max=0W, Inc=1W
+                expected_value=SupportedPowerRangeData(minimum=0, maximum=0, minimum_increment=1),
+                description="Zero power range with 1W increment",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x01, 0x00, 0xE8, 0x03]),  # Min=1W, Max=1000W (0x03E8 = 1000)
-                expected_value=SupportedPowerRangeData(minimum=1, maximum=1000),
-                description="1W to 1000W power range",
+                input_data=bytearray([0x01, 0x00, 0xE8, 0x03, 0x05, 0x00]),  # Min=1W, Max=1000W, Inc=5W
+                expected_value=SupportedPowerRangeData(minimum=1, maximum=1000, minimum_increment=5),
+                description="1W to 1000W with 5W increment",
             ),
         ]

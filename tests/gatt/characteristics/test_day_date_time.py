@@ -6,7 +6,8 @@ from datetime import datetime
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import DayDateTimeCharacteristic, DayDateTimeData
+from bluetooth_sig.gatt.characteristics import DayDateTimeCharacteristic
+from bluetooth_sig.gatt.characteristics.day_date_time import DayDateTimeData
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 

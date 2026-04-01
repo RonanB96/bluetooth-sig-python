@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
-    RelativeRuntimeInAGenericLevelRangeCharacteristic,
-)
 from bluetooth_sig.gatt.characteristics.relative_runtime_in_a_generic_level_range import (
+    RelativeRuntimeInAGenericLevelRangeCharacteristic,
     RelativeRuntimeInAGenericLevelRangeData,
 )
 

@@ -1,6 +1,6 @@
-"""Current Elapsed Time characteristic implementation.
+"""Elapsed Time characteristic implementation.
 
-Implements the Current Elapsed Time characteristic (0x2BF2).
+Implements the Elapsed Time characteristic (0x2BF2).
 
 Structure (from GSS YAML - org.bluetooth.characteristic.elapsed_time):
     Flags (uint8, 1 byte) -- interpretation flags
@@ -58,7 +58,7 @@ class TimeResolution(IntEnum):
     HUNDRED_MICROSECONDS = 3
 
 
-class CurrentElapsedTimeData(msgspec.Struct, frozen=True, kw_only=True):
+class ElapsedTimeData(msgspec.Struct, frozen=True, kw_only=True):
     """Parsed data from Current Elapsed Time characteristic.
 
     Attributes:
@@ -85,14 +85,14 @@ class CurrentElapsedTimeData(msgspec.Struct, frozen=True, kw_only=True):
     tz_dst_offset: int
 
 
-class CurrentElapsedTimeCharacteristic(BaseCharacteristic[CurrentElapsedTimeData]):
-    """Current Elapsed Time characteristic (0x2BF2).
+class ElapsedTimeCharacteristic(BaseCharacteristic[ElapsedTimeData]):
+    """Elapsed Time characteristic (0x2BF2).
 
     Reports the current time of a clock or tick counter.
     Fixed 9-byte structure.
     """
 
-    expected_type = CurrentElapsedTimeData
+    expected_type = ElapsedTimeData
     min_length: int = 9
 
     def _decode_value(
@@ -101,7 +101,7 @@ class CurrentElapsedTimeCharacteristic(BaseCharacteristic[CurrentElapsedTimeData
         ctx: CharacteristicContext | None = None,
         *,
         validate: bool = True,
-    ) -> CurrentElapsedTimeData:
+    ) -> ElapsedTimeData:
         """Parse Current Elapsed Time from raw BLE bytes.
 
         Args:
@@ -110,7 +110,7 @@ class CurrentElapsedTimeCharacteristic(BaseCharacteristic[CurrentElapsedTimeData
             validate: Whether to validate ranges.
 
         Returns:
-            CurrentElapsedTimeData with parsed time information.
+            ElapsedTimeData with parsed time information.
 
         """
         flags_raw = data[0]
@@ -122,7 +122,7 @@ class CurrentElapsedTimeCharacteristic(BaseCharacteristic[CurrentElapsedTimeData
         sync_source_type = TimeSource(data[7])
         tz_dst_offset = DataParser.parse_int8(data, 8, signed=True)
 
-        return CurrentElapsedTimeData(
+        return ElapsedTimeData(
             flags=flags,
             time_value=time_value,
             time_resolution=time_resolution,
@@ -134,11 +134,11 @@ class CurrentElapsedTimeCharacteristic(BaseCharacteristic[CurrentElapsedTimeData
             tz_dst_offset=tz_dst_offset,
         )
 
-    def _encode_value(self, data: CurrentElapsedTimeData) -> bytearray:
-        """Encode CurrentElapsedTimeData back to BLE bytes.
+    def _encode_value(self, data: ElapsedTimeData) -> bytearray:
+        """Encode ElapsedTimeData back to BLE bytes.
 
         Args:
-            data: CurrentElapsedTimeData instance.
+            data: ElapsedTimeData instance.
 
         Returns:
             Encoded bytearray (9 bytes).

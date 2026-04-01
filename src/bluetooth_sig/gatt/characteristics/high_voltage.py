@@ -17,7 +17,7 @@ class HighVoltageCharacteristic(BaseCharacteristic[float]):
     Measures high voltage systems using uint24 (3 bytes) format.
     """
 
-    _template = ScaledUint24Template(scale_factor=1.0)
+    _template = ScaledUint24Template(scale_factor=1 / 64)
 
     _manual_unit: str = ElectricalUnit.VOLTS.value  # Override template's "units" default
-    resolution: float = 1.0
+    resolution: float = 1 / 64  # 1/64 V per raw unit (M=1, d=0, b=6)

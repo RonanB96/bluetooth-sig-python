@@ -418,8 +418,6 @@ class CharacteristicName(Enum):
     TIME_SECOND_32 = "Time Second 32"
     TORQUE = "Torque"
     VOLUME_FLOW = "Volume Flow"
-
-    # Not implemented characteristics - listed for completeness
     ACS_CONTROL_POINT = "ACS Control Point"
     ACS_DATA_IN = "ACS Data In"
     ACS_DATA_OUT_INDICATE = "ACS Data Out Indicate"

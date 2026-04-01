@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
-    Temperature8InAPeriodOfDayCharacteristic,
-)
 from bluetooth_sig.gatt.characteristics.temperature_8_in_a_period_of_day import (
+    Temperature8InAPeriodOfDayCharacteristic,
     Temperature8InAPeriodOfDayData,
 )
 

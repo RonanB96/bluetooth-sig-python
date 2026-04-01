@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
-    RelativeValueInAnIlluminanceRangeCharacteristic,
-)
 from bluetooth_sig.gatt.characteristics.relative_value_in_an_illuminance_range import (
+    RelativeValueInAnIlluminanceRangeCharacteristic,
     RelativeValueInAnIlluminanceRangeData,
 )
 

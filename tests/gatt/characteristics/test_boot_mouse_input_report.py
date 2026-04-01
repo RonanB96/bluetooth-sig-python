@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import BootMouseInputReportCharacteristic, BootMouseInputReportData
-from bluetooth_sig.gatt.characteristics.boot_mouse_input_report import MouseButtons
+from bluetooth_sig.gatt.characteristics import BootMouseInputReportCharacteristic
+from bluetooth_sig.gatt.characteristics.boot_mouse_input_report import BootMouseInputReportData, MouseButtons
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 

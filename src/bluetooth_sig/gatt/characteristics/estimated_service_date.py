@@ -1,4 +1,4 @@
-"""Estimated Service Date characteristic (0x2A86)."""
+"""Estimated Service Date characteristic (0x2BEF)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from .templates import EpochDateTemplate
 
 
 class EstimatedServiceDateCharacteristic(BaseCharacteristic[date]):
-    """Estimated Service Date characteristic (0x2A86).
+    """Estimated Service Date characteristic (0x2BEF).
 
     org.bluetooth.characteristic.estimated_service_date
 

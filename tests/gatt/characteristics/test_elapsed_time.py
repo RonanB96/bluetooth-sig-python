@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.current_elapsed_time import (
-    CurrentElapsedTimeCharacteristic,
-    CurrentElapsedTimeData,
+from bluetooth_sig.gatt.characteristics.elapsed_time import (
+    ElapsedTimeCharacteristic,
+    ElapsedTimeData,
     ElapsedTimeFlags,
     TimeResolution,
 )
@@ -14,15 +14,15 @@ from bluetooth_sig.gatt.characteristics.reference_time_information import TimeSo
 
 
 @pytest.fixture
-def characteristic() -> CurrentElapsedTimeCharacteristic:
-    """Create a CurrentElapsedTimeCharacteristic instance."""
-    return CurrentElapsedTimeCharacteristic()
+def characteristic() -> ElapsedTimeCharacteristic:
+    """Create a ElapsedTimeCharacteristic instance."""
+    return ElapsedTimeCharacteristic()
 
 
 class TestCurrentElapsedTimeDecode:
     """Tests for Current Elapsed Time decoding."""
 
-    def test_basic_utc_time(self, characteristic: CurrentElapsedTimeCharacteristic) -> None:
+    def test_basic_utc_time(self, characteristic: ElapsedTimeCharacteristic) -> None:
         """Test decoding a UTC time-of-day value (1 second resolution)."""
         # Flags: UTC (bit 1) = 0x02, resolution 1s (bits 2-3 = 00)
         # Time: 1000000 = 0x0F4240 (as uint48 little-endian: 40 42 0F 00 00 00)
@@ -30,7 +30,7 @@ class TestCurrentElapsedTimeDecode:
         # TZ/DST offset: 0 (sint8)
         data = bytearray(b"\x02\x40\x42\x0f\x00\x00\x00\x01\x00")
         result = characteristic.parse_value(data)
-        assert isinstance(result, CurrentElapsedTimeData)
+        assert isinstance(result, ElapsedTimeData)
         assert result.is_utc is True
         assert result.is_tick_counter is False
         assert result.time_resolution == TimeResolution.ONE_SECOND
@@ -38,7 +38,7 @@ class TestCurrentElapsedTimeDecode:
         assert result.sync_source_type == 1
         assert result.tz_dst_offset == 0
 
-    def test_tick_counter_100ms(self, characteristic: CurrentElapsedTimeCharacteristic) -> None:
+    def test_tick_counter_100ms(self, characteristic: ElapsedTimeCharacteristic) -> None:
         """Test decoding a tick counter with 100ms resolution."""
         # Flags: tick_counter (bit 0) + resolution 100ms (bits 2-3 = 01)
         #   = 0x01 | (0x01 << 2) = 0x01 | 0x04 = 0x05
@@ -52,7 +52,7 @@ class TestCurrentElapsedTimeDecode:
         assert result.time_value == 500
         assert result.tz_dst_used is False
 
-    def test_local_time_with_tz(self, characteristic: CurrentElapsedTimeCharacteristic) -> None:
+    def test_local_time_with_tz(self, characteristic: ElapsedTimeCharacteristic) -> None:
         """Test decoding local time with TZ/DST offset."""
         # Flags: tz_dst_used (bit 4) + current_timeline (bit 5) = 0x30
         # Time: 86400 = 0x015180 (one day in seconds)
@@ -67,7 +67,7 @@ class TestCurrentElapsedTimeDecode:
         assert result.time_value == 86400
         assert result.tz_dst_offset == 8
 
-    def test_negative_tz_offset(self, characteristic: CurrentElapsedTimeCharacteristic) -> None:
+    def test_negative_tz_offset(self, characteristic: ElapsedTimeCharacteristic) -> None:
         """Test decoding with negative TZ/DST offset."""
         # Flags: UTC + tz_dst_used = 0x02 | 0x10 = 0x12
         # Time value: zero, Sync source: 0x00
@@ -78,7 +78,7 @@ class TestCurrentElapsedTimeDecode:
         assert result.tz_dst_used is True
         assert result.tz_dst_offset == -20
 
-    def test_1ms_resolution(self, characteristic: CurrentElapsedTimeCharacteristic) -> None:
+    def test_1ms_resolution(self, characteristic: ElapsedTimeCharacteristic) -> None:
         """Test decoding with 1 millisecond resolution."""
         # Flags: resolution 1ms (bits 2-3 = 10) = 0x08
         # Time: 3600000 = 0x36EE80 (one hour in ms)
@@ -88,7 +88,7 @@ class TestCurrentElapsedTimeDecode:
         assert result.time_resolution == TimeResolution.ONE_MILLISECOND
         assert result.time_value == 3600000
 
-    def test_100us_resolution(self, characteristic: CurrentElapsedTimeCharacteristic) -> None:
+    def test_100us_resolution(self, characteristic: ElapsedTimeCharacteristic) -> None:
         """Test decoding with 100 microsecond resolution."""
         # Flags: resolution 100µs (bits 2-3 = 11) = 0x0C
         data = bytearray(b"\x0c\x01\x00\x00\x00\x00\x00\x00\x00")
@@ -100,9 +100,9 @@ class TestCurrentElapsedTimeDecode:
 class TestCurrentElapsedTimeEncode:
     """Tests for Current Elapsed Time encoding."""
 
-    def test_encode_utc_time(self, characteristic: CurrentElapsedTimeCharacteristic) -> None:
+    def test_encode_utc_time(self, characteristic: ElapsedTimeCharacteristic) -> None:
         """Test encoding a UTC time value."""
-        data = CurrentElapsedTimeData(
+        data = ElapsedTimeData(
             flags=ElapsedTimeFlags.UTC,
             time_value=1000000,
             time_resolution=TimeResolution.ONE_SECOND,
@@ -116,9 +116,9 @@ class TestCurrentElapsedTimeEncode:
         result = characteristic.build_value(data)
         assert result == bytearray(b"\x02\x40\x42\x0f\x00\x00\x00\x01\x00")
 
-    def test_encode_tick_counter(self, characteristic: CurrentElapsedTimeCharacteristic) -> None:
+    def test_encode_tick_counter(self, characteristic: ElapsedTimeCharacteristic) -> None:
         """Test encoding a tick counter with 100ms resolution."""
-        data = CurrentElapsedTimeData(
+        data = ElapsedTimeData(
             flags=ElapsedTimeFlags.TICK_COUNTER,
             time_value=500,
             time_resolution=TimeResolution.HUNDRED_MILLISECONDS,
@@ -159,7 +159,7 @@ class TestCurrentElapsedTimeRoundTrip:
     )
     def test_round_trip(
         self,
-        characteristic: CurrentElapsedTimeCharacteristic,
+        characteristic: ElapsedTimeCharacteristic,
         flags: ElapsedTimeFlags,
         resolution: TimeResolution,
         time_val: int,
@@ -167,7 +167,7 @@ class TestCurrentElapsedTimeRoundTrip:
         tz_dst: int,
     ) -> None:
         """Test encode -> decode round-trip."""
-        original = CurrentElapsedTimeData(
+        original = ElapsedTimeData(
             flags=flags,
             time_value=time_val,
             time_resolution=resolution,

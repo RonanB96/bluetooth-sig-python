@@ -34,18 +34,19 @@ class TestCallStateCharacteristic(CommonCharacteristicTests):
                 description="No active calls",
             ),
             CharacteristicTestData(
-                # call_index=1, state=ACTIVE(3), flags=INCOMING(1)
+                # call_index=1, state=ACTIVE(3), flags=OUTGOING(1)
+                # bit 0=1 means outgoing per TBS v1.0 spec Table 3.7
                 input_data=bytearray([0x01, 0x03, 0x01]),
                 expected_value=CallStateData(
                     entries=(
                         CallStateEntry(
                             call_index=1,
                             state=CallState.ACTIVE,
-                            call_flags=CallFlags.INCOMING,
+                            call_flags=CallFlags.OUTGOING,
                         ),
                     ),
                 ),
-                description="Single active incoming call",
+                description="Single active outgoing call",
             ),
             CharacteristicTestData(
                 # Two entries
@@ -69,7 +70,7 @@ class TestCallStateCharacteristic(CommonCharacteristicTests):
                         CallStateEntry(
                             call_index=2,
                             state=CallState.LOCALLY_HELD,
-                            call_flags=CallFlags.INCOMING,
+                            call_flags=CallFlags.OUTGOING,
                         ),
                     ),
                 ),

@@ -1,4 +1,4 @@
-"""General Activity Summary Data characteristic (0x2B3E).
+"""General Activity Summary Data characteristic (0x2B3D).
 
 Reports summary statistics for a general activity period.
 
@@ -18,45 +18,65 @@ from .utils import DataParser
 
 
 class GeneralActivitySummaryFlags(IntFlag):
-    """General Activity Summary Data flags."""
+    """General Activity Summary Data flags (32-bit, 4 octets)."""
 
-    STEPS_PRESENT = 0x01
-    DISTANCE_PRESENT = 0x02
-    DURATION_PRESENT = 0x04
-    INTENSITY_PRESENT = 0x08
-    CALORIES_PRESENT = 0x10
+    NORMAL_WALKING_EE_PRESENT = 0x00000001
+    INTENSITY_EE_PRESENT = 0x00000002
+    TOTAL_EE_PRESENT = 0x00000004
+    FAT_BURNED_PRESENT = 0x00000008
+    MIN_METABOLIC_EQUIVALENT_PRESENT = 0x00000010
+    MAX_METABOLIC_EQUIVALENT_PRESENT = 0x00000020
+    AVG_METABOLIC_EQUIVALENT_PRESENT = 0x00000040
+    DISTANCE_PRESENT = 0x00000080
+    MIN_SPEED_PRESENT = 0x00000100
+    MAX_SPEED_PRESENT = 0x00000200
+    AVG_SPEED_PRESENT = 0x00000400
+    DURATION_NORMAL_WALKING_PRESENT = 0x00000800
+    DURATION_INTENSITY_WALKING_PRESENT = 0x00001000
+    MIN_MOTION_CADENCE_PRESENT = 0x00002000
+    MAX_MOTION_CADENCE_PRESENT = 0x00004000
+    AVG_MOTION_CADENCE_PRESENT = 0x00008000
+    FLOORS_PRESENT = 0x00010000
+    POSITIVE_ELEVATION_GAIN_PRESENT = 0x00020000
+    NEGATIVE_ELEVATION_GAIN_PRESENT = 0x00040000
+    ACTIVITY_COUNT_PRESENT = 0x00080000
+    MIN_ACTIVITY_LEVEL_PRESENT = 0x00100000
+    MAX_ACTIVITY_LEVEL_PRESENT = 0x00200000
+    AVG_ACTIVITY_LEVEL_PRESENT = 0x00400000
+    AVG_ACTIVITY_TYPE_PRESENT = 0x00800000
+    WORN_DURATION_PRESENT = 0x01000000
 
 
 class GeneralActivitySummaryData(msgspec.Struct, frozen=True, kw_only=True):
     """Parsed data from General Activity Summary Data characteristic.
 
     Attributes:
-        flags: Presence flags for optional fields.
-        steps: Total step count for the period. None if not present.
-        distance: Total distance in metres (uint24). None if not present.
-        duration: Total duration in seconds (uint24). None if not present.
-        intensity: Average intensity (uint8, percentage). None if not present.
-        calories: Energy expenditure in kilocalories (uint16). None if not present.
+        header: Segmentation header byte.
+        flags: Presence flags for optional fields (32-bit).
+        session_id: Session identifier (uint16).
+        sub_session_id: Sub-session identifier (uint16).
+        relative_timestamp: Relative timestamp in seconds (uint32).
+        sequence_number: Sequence number (uint32).
 
     """
 
+    header: int
     flags: GeneralActivitySummaryFlags
-    steps: int | None = None
-    distance: int | None = None
-    duration: int | None = None
-    intensity: int | None = None
-    calories: int | None = None
+    session_id: int
+    sub_session_id: int
+    relative_timestamp: int
+    sequence_number: int
 
 
 class GeneralActivitySummaryDataCharacteristic(BaseCharacteristic[GeneralActivitySummaryData]):
-    """General Activity Summary Data characteristic (0x2B3E).
+    """General Activity Summary Data characteristic (0x2B3D).
 
     org.bluetooth.characteristic.general_activity_summary_data
 
     Reports summary statistics for a general activity period.
     """
 
-    min_length = 1  # flags only
+    min_length = 17  # header(1) + flags(4) + session(2) + subsession(2) + timestamp(4) + sequence(4)
     allow_variable_length = True
 
     def _decode_value(
@@ -64,60 +84,34 @@ class GeneralActivitySummaryDataCharacteristic(BaseCharacteristic[GeneralActivit
     ) -> GeneralActivitySummaryData:
         """Parse General Activity Summary Data.
 
-        Format: Flags (uint8) + [Steps (uint16)] + [Distance (uint24)]
-                + [Duration (uint24)] + [Intensity (uint8)] + [Calories (uint16)].
+        Format: Header (uint8) + Flags (uint32) + SessionID (uint16)
+                + SubSessionID (uint16) + RelativeTimestamp (uint32)
+                + SequenceNumber (uint32) + [optional fields].
         """
-        flags = GeneralActivitySummaryFlags(DataParser.parse_int8(data, 0, signed=False))
-        offset = 1
-
-        steps: int | None = None
-        if flags & GeneralActivitySummaryFlags.STEPS_PRESENT and len(data) >= offset + 2:
-            steps = DataParser.parse_int16(data, offset, signed=False)
-            offset += 2
-
-        distance: int | None = None
-        if flags & GeneralActivitySummaryFlags.DISTANCE_PRESENT and len(data) >= offset + 3:
-            distance = DataParser.parse_int24(data, offset, signed=False)
-            offset += 3
-
-        duration: int | None = None
-        if flags & GeneralActivitySummaryFlags.DURATION_PRESENT and len(data) >= offset + 3:
-            duration = DataParser.parse_int24(data, offset, signed=False)
-            offset += 3
-
-        intensity: int | None = None
-        if flags & GeneralActivitySummaryFlags.INTENSITY_PRESENT and len(data) >= offset + 1:
-            intensity = DataParser.parse_int8(data, offset, signed=False)
-            offset += 1
-
-        calories: int | None = None
-        if flags & GeneralActivitySummaryFlags.CALORIES_PRESENT and len(data) >= offset + 2:
-            calories = DataParser.parse_int16(data, offset, signed=False)
-            offset += 2
+        header = DataParser.parse_int8(data, 0, signed=False)
+        flags_raw = DataParser.parse_int32(data, 1, signed=False)
+        flags = GeneralActivitySummaryFlags(flags_raw)
+        session_id = DataParser.parse_int16(data, 5, signed=False)
+        sub_session_id = DataParser.parse_int16(data, 7, signed=False)
+        relative_timestamp = DataParser.parse_int32(data, 9, signed=False)
+        sequence_number = DataParser.parse_int32(data, 13, signed=False)
 
         return GeneralActivitySummaryData(
+            header=header,
             flags=flags,
-            steps=steps,
-            distance=distance,
-            duration=duration,
-            intensity=intensity,
-            calories=calories,
+            session_id=session_id,
+            sub_session_id=sub_session_id,
+            relative_timestamp=relative_timestamp,
+            sequence_number=sequence_number,
         )
 
     def _encode_value(self, data: GeneralActivitySummaryData) -> bytearray:
         """Encode General Activity Summary data."""
         result = bytearray()
-        result.extend(DataParser.encode_int8(int(data.flags), signed=False))
-
-        if data.steps is not None:
-            result.extend(DataParser.encode_int16(data.steps, signed=False))
-        if data.distance is not None:
-            result.extend(DataParser.encode_int24(data.distance, signed=False))
-        if data.duration is not None:
-            result.extend(DataParser.encode_int24(data.duration, signed=False))
-        if data.intensity is not None:
-            result.extend(DataParser.encode_int8(data.intensity, signed=False))
-        if data.calories is not None:
-            result.extend(DataParser.encode_int16(data.calories, signed=False))
-
+        result.extend(DataParser.encode_int8(data.header, signed=False))
+        result.extend(DataParser.encode_int32(int(data.flags), signed=False))
+        result.extend(DataParser.encode_int16(data.session_id, signed=False))
+        result.extend(DataParser.encode_int16(data.sub_session_id, signed=False))
+        result.extend(DataParser.encode_int32(data.relative_timestamp, signed=False))
+        result.extend(DataParser.encode_int32(data.sequence_number, signed=False))
         return result

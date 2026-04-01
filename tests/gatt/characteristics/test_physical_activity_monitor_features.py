@@ -29,16 +29,18 @@ class TestPhysicalActivityMonitorFeaturesCharacteristic(CommonCharacteristicTest
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x01, 0x00, 0x00, 0x00]),
-                expected_value=PhysicalActivityMonitorFeatures.GENERAL_ACTIVITY_INSTANTANEOUS_DATA_SUPPORTED,
-                description="General activity instantaneous data supported",
+                input_data=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                expected_value=PhysicalActivityMonitorFeatures(0),
+                description="No features supported",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x05, 0x00, 0x00, 0x00]),
-                expected_value=(
-                    PhysicalActivityMonitorFeatures.GENERAL_ACTIVITY_INSTANTANEOUS_DATA_SUPPORTED
-                    | PhysicalActivityMonitorFeatures.GENERAL_ACTIVITY_STEPS_SUPPORTED
-                ),
-                description="Instantaneous data and steps supported",
+                input_data=bytearray([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                expected_value=PhysicalActivityMonitorFeatures.MULTIPLE_USERS_SUPPORTED,
+                description="Multiple users supported",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]),
+                expected_value=PhysicalActivityMonitorFeatures.HEART_RATE_SUPPORTED,
+                description="Heart rate supported (bit 32)",
             ),
         ]

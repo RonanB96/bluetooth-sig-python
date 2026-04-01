@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import PnpIdCharacteristic, PnpIdData
-from bluetooth_sig.gatt.characteristics.pnp_id import VendorIdSource
+from bluetooth_sig.gatt.characteristics import PnpIdCharacteristic
+from bluetooth_sig.gatt.characteristics.pnp_id import PnpIdData, VendorIdSource
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 

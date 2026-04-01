@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
-    RelativeRuntimeInACorrelatedColorTemperatureRangeCharacteristic,
-)
 from bluetooth_sig.gatt.characteristics.relative_runtime_in_a_correlated_color_temperature_range import (
     RelativeRuntimeInACCTRangeData,
+    RelativeRuntimeInACorrelatedColorTemperatureRangeCharacteristic,
 )
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests

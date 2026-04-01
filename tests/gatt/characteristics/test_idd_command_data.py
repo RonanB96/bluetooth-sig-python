@@ -30,21 +30,19 @@ class TestIDDCommandDataCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                # opcode=RESPONSE_CODE (0x0F00 LE = [0x00, 0x0F]), no command data
-                input_data=bytearray([0x00, 0x0F]),
+                input_data=bytearray([0x55, 0x0F]),
                 expected_value=IDDCommandDataPayload(
                     opcode=IDDCommandOpCode.RESPONSE_CODE,
                     command_data=b"",
                 ),
-                description="Response code opcode, no command data",
+                description="Response code only",
             ),
             CharacteristicTestData(
-                # opcode=SET_BOLUS (0x0400 LE = [0x00, 0x04]), command_data=some payload
-                input_data=bytearray([0x00, 0x04, 0x10, 0x20, 0x30]),
+                input_data=bytearray([0x5A, 0x0F, 0x01, 0x02]),
                 expected_value=IDDCommandDataPayload(
-                    opcode=IDDCommandOpCode.SET_BOLUS,
-                    command_data=b"\x10\x20\x30",
+                    opcode=IDDCommandOpCode.SET_THERAPY_CONTROL_STATE,
+                    command_data=b"\x01\x02",
                 ),
-                description="Set bolus with command data payload",
+                description="Command data with payload",
             ),
         ]

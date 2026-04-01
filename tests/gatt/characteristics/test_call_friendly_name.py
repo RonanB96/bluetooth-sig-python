@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.call_friendly_name import CallFriendlyNameCharacteristic
+from bluetooth_sig.gatt.characteristics.call_friendly_name import (
+    CallFriendlyNameCharacteristic,
+    CallFriendlyNameData,
+)
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -22,19 +25,21 @@ class TestCallFriendlyName(CommonCharacteristicTests):
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
-            CharacteristicTestData(bytearray(b"John Doe"), "John Doe", "Caller name"),
-            CharacteristicTestData(bytearray(b""), "", "Empty string"),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x01John Doe"),
+                expected_value=CallFriendlyNameData(call_index=1, friendly_name="John Doe"),
+                description="Call index 1, name John Doe",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x00"),
+                expected_value=CallFriendlyNameData(call_index=0, friendly_name=""),
+                description="Call index 0, empty name",
+            ),
         ]
 
     def test_roundtrip(self, characteristic: CallFriendlyNameCharacteristic) -> None:
         """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray(b"John Doe"), "John Doe", "Caller name"),
-            CharacteristicTestData(bytearray(b""), "", "Empty string"),
-        ]
+        original = CallFriendlyNameData(call_index=5, friendly_name="Alice")
+        encoded = characteristic.build_value(original)
+        result = characteristic.parse_value(encoded)
+        assert result == original

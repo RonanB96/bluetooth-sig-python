@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
+from bluetooth_sig.gatt.characteristics.peripheral_preferred_connection_parameters import (
     ConnectionParametersData,
     PeripheralPreferredConnectionParametersCharacteristic,
 )

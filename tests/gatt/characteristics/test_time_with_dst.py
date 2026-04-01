@@ -6,19 +6,13 @@ from datetime import datetime
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.templates import TimeData
-from bluetooth_sig.gatt.characteristics.time_with_dst import TimeWithDstCharacteristic
-from bluetooth_sig.gatt.exceptions import CharacteristicParseError
-from bluetooth_sig.types.gatt_enums import AdjustReason, DayOfWeek
+from bluetooth_sig.gatt.characteristics.dst_offset import DSTOffset
+from bluetooth_sig.gatt.characteristics.time_with_dst import TimeWithDstCharacteristic, TimeWithDstData
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
-    """Test suite for Time with DST characteristic.
-
-    Inherits behavioural tests from CommonCharacteristicTests.
-    Adds time with DST-specific validation and edge cases.
-    """
+    """Test suite for Time with DST characteristic."""
 
     @pytest.fixture
     def characteristic(self) -> TimeWithDstCharacteristic:
@@ -33,119 +27,52 @@ class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
         """Return valid test data for time with DST."""
-        # March 10, 2024 02:00:00 Sunday (DST change in US)
-        data = bytearray(
-            [
-                0xE8,
-                0x07,  # Year: 2024 (little-endian)
-                0x03,  # Month: March
-                0x0A,  # Day: 10
-                0x02,  # Hours: 2
-                0x00,  # Minutes: 0
-                0x00,  # Seconds: 0
-                0x07,  # Day of Week: Sunday
-                0x00,  # Fractions256: 0
-                0x08,  # Adjust Reason: DST change
-            ]
-        )
-        expected = TimeData(
-            date_time=datetime(2024, 3, 10, 2, 0, 0),
-            day_of_week=DayOfWeek.SUNDAY,
-            fractions256=0,
-            adjust_reason=AdjustReason.CHANGE_OF_DST,  # DST change
+        # 2020-01-01 00:00:00, DST=STANDARD_TIME
+        data1 = bytearray([0xE4, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00])
+        expected1 = TimeWithDstData(
+            dt=datetime(2020, 1, 1, 0, 0, 0),
+            dst_offset=DSTOffset.STANDARD_TIME,
         )
 
-        # November 3, 2024 02:00:00 Sunday (DST change in US)
-        data_fall = bytearray([0xE8, 0x07, 0x0B, 0x03, 0x02, 0x00, 0x00, 0x07, 0x80, 0x08])
-        expected_fall = TimeData(
-            date_time=datetime(2024, 11, 3, 2, 0, 0),
-            day_of_week=DayOfWeek.SUNDAY,
-            fractions256=128,  # ~0.5 seconds
-            adjust_reason=AdjustReason.CHANGE_OF_DST,  # DST change
-        )
-
-        # Unknown date/time (all zeros for date)
-        data_unknown = bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-        expected_unknown = TimeData(
-            date_time=None,
-            day_of_week=DayOfWeek.UNKNOWN,
-            fractions256=0,
-            adjust_reason=AdjustReason.from_raw(0),
+        # 2022-06-15 12:30:00, DST=DAYLIGHT_TIME
+        data2 = bytearray([0xE6, 0x07, 0x06, 0x0F, 0x0C, 0x1E, 0x00, 0x04])
+        expected2 = TimeWithDstData(
+            dt=datetime(2022, 6, 15, 12, 30, 0),
+            dst_offset=DSTOffset.DAYLIGHT_TIME,
         )
 
         return [
             CharacteristicTestData(
-                input_data=data, expected_value=expected, description="2024-03-10 02:00:00 Sunday DST change"
+                input_data=data1,
+                expected_value=expected1,
+                description="2020-01-01 00:00:00 Standard Time",
             ),
             CharacteristicTestData(
-                input_data=data_fall, expected_value=expected_fall, description="2024-11-03 02:00:00 Sunday DST change"
-            ),
-            CharacteristicTestData(
-                input_data=data_unknown, expected_value=expected_unknown, description="Unknown date/time"
+                input_data=data2,
+                expected_value=expected2,
+                description="2022-06-15 12:30:00 Daylight Time",
             ),
         ]
 
-    # === Time with DST-Specific Tests ===
-    def test_time_with_dst_boundary_values(self, characteristic: TimeWithDstCharacteristic) -> None:
-        """Test boundary values for time with DST fields."""
-        # Maximum fractions256 (255)
-        data_max_fractions = bytearray([0xE8, 0x07, 0x03, 0x0A, 0x02, 0x00, 0x00, 0x07, 0xFF, 0x08])
-        result_fractions = characteristic.parse_value(data_max_fractions)
-        assert result_fractions is not None
-        assert result_fractions.fractions256 == 255
-
-        # Maximum adjust reason (255, but reserved bits are masked to 15)
-        data_max_adjust = bytearray([0xE8, 0x07, 0x03, 0x0A, 0x02, 0x00, 0x00, 0x07, 0x00, 0xFF])
-        result_adjust = characteristic.parse_value(data_max_adjust)
-        assert result_adjust is not None
-        # Reserved bits (4-7) are masked out, so 255 becomes 15 (all defined flags)
-        assert result_adjust.adjust_reason == AdjustReason(15)
-
-    def test_time_with_dst_invalid_day_of_week(self, characteristic: TimeWithDstCharacteristic) -> None:
-        """Test that invalid day of week values are rejected."""
-        # Day of week = 8 (invalid, max is 7)
-        data = bytearray([0xE8, 0x07, 0x03, 0x0A, 0x02, 0x00, 0x00, 0x08, 0x00, 0x00])
-        with pytest.raises(CharacteristicParseError) as exc_info:
-            characteristic.parse_value(data)
-        assert "day_of_week" in str(exc_info.value).lower()
-
-    def test_time_with_dst_invalid_fractions256(self, characteristic: TimeWithDstCharacteristic) -> None:
-        """Test that invalid fractions256 values are rejected during encoding."""
-        from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError
-
-        data = TimeData(
-            date_time=datetime(2024, 3, 10, 2, 0, 0),
-            day_of_week=DayOfWeek.SUNDAY,
-            fractions256=256,  # Invalid (max is 255)
-            adjust_reason=AdjustReason.from_raw(0),
-        )
-        with pytest.raises(CharacteristicEncodeError):
-            characteristic.build_value(data)
-
-    def test_time_with_dst_invalid_adjust_reason(self, characteristic: TimeWithDstCharacteristic) -> None:
-        """Test that invalid adjust reason values are rejected during encoding."""
-        from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError
-
-        data = TimeData(
-            date_time=datetime(2024, 3, 10, 2, 0, 0),
-            day_of_week=DayOfWeek.SUNDAY,
-            fractions256=0,
-            adjust_reason=AdjustReason(256),  # Invalid (max is 255)
-        )
-        with pytest.raises(CharacteristicEncodeError):
-            characteristic.build_value(data)
-
-    def test_time_with_dst_roundtrip(self, characteristic: TimeWithDstCharacteristic) -> None:
+    def test_roundtrip(self, characteristic: TimeWithDstCharacteristic) -> None:
         """Test encode/decode roundtrip consistency."""
-        original = TimeData(
-            date_time=datetime(2024, 3, 10, 2, 0, 0),
-            day_of_week=DayOfWeek.SUNDAY,
-            fractions256=128,
-            adjust_reason=AdjustReason.CHANGE_OF_DST,
+        original = TimeWithDstData(
+            dt=datetime(2024, 3, 10, 2, 0, 0),
+            dst_offset=DSTOffset.DAYLIGHT_TIME,
         )
-
         encoded = characteristic.build_value(original)
         result = characteristic.parse_value(encoded)
-
-        assert result is not None
         assert result == original
+
+    def test_half_hour_daylight(self, characteristic: TimeWithDstCharacteristic) -> None:
+        """Test half-hour daylight DST offset."""
+        data = bytearray([0xE8, 0x07, 0x09, 0x1E, 0x02, 0x00, 0x00, 0x02])
+        result = characteristic.parse_value(data)
+        assert result.dst_offset == DSTOffset.HALF_HOUR_DAYLIGHT
+        assert result.dt == datetime(2024, 9, 30, 2, 0, 0)
+
+    def test_double_daylight(self, characteristic: TimeWithDstCharacteristic) -> None:
+        """Test double daylight DST offset."""
+        data = bytearray([0xE8, 0x07, 0x06, 0x01, 0x0C, 0x00, 0x00, 0x08])
+        result = characteristic.parse_value(data)
+        assert result.dst_offset == DSTOffset.DOUBLE_DAYLIGHT

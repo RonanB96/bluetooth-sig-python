@@ -31,34 +31,39 @@ class TestIDDRecordAccessControlPointCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                # opcode=REPORT_STORED_RECORDS (0x01), operator=ALL_RECORDS (0x01)
-                input_data=bytearray([0x01, 0x01]),
+                input_data=bytearray([0x33, 0x0F]),
                 expected_value=IDDRecordAccessControlPointData(
                     opcode=IDDRACPOpCode.REPORT_STORED_RECORDS,
+                    operator=IDDRACPOperator.NULL,
+                    operand=b"",
+                ),
+                description="Report stored records",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x0F, 0x0F, 0x0F]),
+                expected_value=IDDRecordAccessControlPointData(
+                    opcode=IDDRACPOpCode.RESPONSE_CODE,
+                    operator=IDDRACPOperator.NULL,
+                    operand=b"\x0f",
+                ),
+                description="Response code",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x3C, 0x33]),
+                expected_value=IDDRecordAccessControlPointData(
+                    opcode=IDDRACPOpCode.DELETE_STORED_RECORDS,
                     operator=IDDRACPOperator.ALL_RECORDS,
                     operand=b"",
                 ),
-                description="Report all stored records",
+                description="Delete all stored records",
             ),
             CharacteristicTestData(
-                # opcode=DELETE_STORED_RECORDS (0x02), operator=LESS_THAN_OR_EQUAL_TO (0x02),
-                # operand filter value
-                input_data=bytearray([0x02, 0x02, 0x0A, 0x00]),
-                expected_value=IDDRecordAccessControlPointData(
-                    opcode=IDDRACPOpCode.DELETE_STORED_RECORDS,
-                    operator=IDDRACPOperator.LESS_THAN_OR_EQUAL_TO,
-                    operand=b"\x0a\x00",
-                ),
-                description="Delete records less than or equal to filter",
-            ),
-            CharacteristicTestData(
-                # opcode=ABORT_OPERATION (0x03), operator=NULL (0x00)
-                input_data=bytearray([0x03, 0x00]),
+                input_data=bytearray([0x55, 0x0F]),
                 expected_value=IDDRecordAccessControlPointData(
                     opcode=IDDRACPOpCode.ABORT_OPERATION,
                     operator=IDDRACPOperator.NULL,
                     operand=b"",
                 ),
-                description="Abort operation with null operator",
+                description="Abort operation",
             ),
         ]

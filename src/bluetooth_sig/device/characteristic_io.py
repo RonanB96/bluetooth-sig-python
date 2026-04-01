@@ -10,9 +10,8 @@ import logging
 from collections.abc import Callable
 from typing import Any, TypeVar, cast, overload
 
-from ..gatt.characteristics import CharacteristicName
 from ..gatt.characteristics.base import BaseCharacteristic
-from ..gatt.characteristics.registry import CharacteristicRegistry
+from ..gatt.characteristics.registry import CharacteristicName, CharacteristicRegistry
 from ..gatt.context import CharacteristicContext, DeviceInfo
 from ..types.uuid import BluetoothUUID
 from .client import ClientManagerProtocol

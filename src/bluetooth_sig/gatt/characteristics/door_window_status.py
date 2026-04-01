@@ -1,4 +1,4 @@
-"""Door Window Status characteristic (0x2C12)."""
+"""Door Window Status characteristic (0x2C20)."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ class DoorWindowOpenStatus(IntEnum):
 
 
 class DoorWindowStatusCharacteristic(BaseCharacteristic[DoorWindowOpenStatus]):
-    """Door Window Status characteristic (0x2C12).
+    """Door Window Status characteristic (0x2C20).
 
     org.bluetooth.characteristic.door_window_status
 

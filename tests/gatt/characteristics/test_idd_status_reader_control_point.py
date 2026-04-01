@@ -30,30 +30,27 @@ class TestIDDStatusReaderControlPointCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                # opcode=READ_ACTIVE_BASAL_RATE (0x01), no parameter
-                input_data=bytearray([0x01]),
+                input_data=bytearray([0x0C, 0x03]),
                 expected_value=IDDStatusReaderControlPointData(
-                    opcode=IDDStatusReaderOpCode.READ_ACTIVE_BASAL_RATE,
+                    opcode=IDDStatusReaderOpCode.RESET_STATUS,
                     parameter=b"",
                 ),
-                description="Read active basal rate, no parameter",
+                description="Reset status opcode",
             ),
             CharacteristicTestData(
-                # opcode=READ_TOTAL_DAILY_INSULIN_STATUS (0x05), parameter bytes
-                input_data=bytearray([0x05, 0xFF, 0x01]),
-                expected_value=IDDStatusReaderControlPointData(
-                    opcode=IDDStatusReaderOpCode.READ_TOTAL_DAILY_INSULIN_STATUS,
-                    parameter=b"\xff\x01",
-                ),
-                description="Read total daily insulin status with parameter",
-            ),
-            CharacteristicTestData(
-                # opcode=RESPONSE_CODE (0x10), parameter=success + echoed opcode
-                input_data=bytearray([0x10, 0x01, 0x01]),
+                input_data=bytearray([0x03, 0x03, 0x0F]),
                 expected_value=IDDStatusReaderControlPointData(
                     opcode=IDDStatusReaderOpCode.RESPONSE_CODE,
-                    parameter=b"\x01\x01",
+                    parameter=b"\x0f",
                 ),
-                description="Response code with success and echoed opcode",
+                description="Response code with success",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x30, 0x03]),
+                expected_value=IDDStatusReaderControlPointData(
+                    opcode=IDDStatusReaderOpCode.GET_ACTIVE_BOLUS_IDS,
+                    parameter=b"",
+                ),
+                description="Get active bolus IDs",
             ),
         ]

@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics import AverageCurrentCharacteristic
+from bluetooth_sig.gatt.characteristics.average_current import AverageCurrentData
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -19,13 +20,22 @@ class TestAverageCurrentCharacteristic(CommonCharacteristicTests):
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
-        # 0x2710 = 10000 * 0.01A = 100A
+        # Format: uint16 current (0.01 A/unit) + uint8 sensing duration (Time Exponential 8)
+        # sensing duration raw=0x00 => 0.0 seconds
         return [
-            CharacteristicTestData(input_data=bytearray([0x00, 0x00]), expected_value=0.0, description="0A (min)"),
             CharacteristicTestData(
-                input_data=bytearray([0x10, 0x27]), expected_value=100.0, description="100A (typical)"
+                input_data=bytearray([0x00, 0x00, 0x00]),
+                expected_value=AverageCurrentData(current=0.0, sensing_duration=0.0),
+                description="0A, no sensing duration",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0xFF, 0xFF]), expected_value=655.35, description="655.35A (max)"
+                input_data=bytearray([0x10, 0x27, 0x00]),
+                expected_value=AverageCurrentData(current=100.0, sensing_duration=0.0),
+                description="100A (typical), no sensing duration",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0xFF, 0xFF, 0x00]),
+                expected_value=AverageCurrentData(current=655.35, sensing_duration=0.0),
+                description="655.35A (max), no sensing duration",
             ),
         ]

@@ -6,7 +6,8 @@ from datetime import datetime
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import ExactTime256Characteristic, ExactTime256Data
+from bluetooth_sig.gatt.characteristics import ExactTime256Characteristic
+from bluetooth_sig.gatt.characteristics.exact_time_256 import ExactTime256Data
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import ServiceChangedCharacteristic, ServiceChangedData
+from bluetooth_sig.gatt.characteristics import ServiceChangedCharacteristic
+from bluetooth_sig.gatt.characteristics.service_changed import ServiceChangedData
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 

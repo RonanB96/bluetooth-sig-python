@@ -19,25 +19,25 @@ class TestElectricCurrentStatisticsCharacteristic(CommonCharacteristicTests):
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
+        """Valid electric current statistics test data.
+
+        GSS: avg(uint16) + std_dev(uint16) + min(uint16) + max(uint16) + sensing_dur(uint8)
+        = 9 bytes. All current fields at 0.01 A resolution.
+        """
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),  # 0.00 A, 0.00 A, 0.00 A
-                expected_value=ElectricCurrentStatisticsData(minimum=0.0, maximum=0.0, average=0.0),
+                input_data=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                expected_value=ElectricCurrentStatisticsData(
+                    average=0.0, standard_deviation=0.0, minimum=0.0, maximum=0.0, sensing_duration=0.0
+                ),
                 description="Zero current statistics",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x64, 0x00, 0xC8, 0x00, 0x96, 0x00]),  # 1.00 A, 2.00 A, 1.50 A
-                expected_value=ElectricCurrentStatisticsData(minimum=1.0, maximum=2.0, average=1.5),
-                description="Normal current statistics (1.0-2.0 A, avg 1.5 A)",
-            ),
-            CharacteristicTestData(
-                input_data=bytearray([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),  # 655.35 A, 655.35 A, 655.35 A
-                expected_value=ElectricCurrentStatisticsData(minimum=655.35, maximum=655.35, average=655.35),
-                description="Maximum current statistics",
-            ),
-            CharacteristicTestData(
-                input_data=bytearray([0x32, 0x00, 0x64, 0x00, 0x4B, 0x00]),  # 0.50 A, 1.00 A, 0.75 A
-                expected_value=ElectricCurrentStatisticsData(minimum=0.5, maximum=1.0, average=0.75),
-                description="Current statistics with different values",
+                # avg=150(1.5A), std=10(0.1A), min=100(1.0A), max=200(2.0A), dur=64(1.0s)
+                input_data=bytearray([0x96, 0x00, 0x0A, 0x00, 0x64, 0x00, 0xC8, 0x00, 0x40]),
+                expected_value=ElectricCurrentStatisticsData(
+                    average=1.5, standard_deviation=0.1, minimum=1.0, maximum=2.0, sensing_duration=1.0
+                ),
+                description="Normal current statistics",
             ),
         ]

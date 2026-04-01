@@ -70,14 +70,17 @@ class MassValue(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=t
 
 
 class BodyCompositionFlags(IntFlag):
-    """Body Composition Measurement flags as per Bluetooth SIG specification."""
+    """Body Composition Measurement flags as per Bluetooth SIG specification.
+
+    FIX (2026-03-30): Corrected bits 4 and 5 to match BCS v1.0 specification.
+    """
 
     IMPERIAL_UNITS = 0x001
     TIMESTAMP_PRESENT = 0x002
     USER_ID_PRESENT = 0x004
     BASAL_METABOLISM_PRESENT = 0x008
-    MUSCLE_MASS_PRESENT = 0x010
-    MUSCLE_PERCENTAGE_PRESENT = 0x020
+    MUSCLE_PERCENTAGE_PRESENT = 0x010  # FIX: Was 0x020, now correctly 0x010 (bit 4)
+    MUSCLE_MASS_PRESENT = 0x020  # FIX: Was 0x010, now correctly 0x020 (bit 5)
     FAT_FREE_MASS_PRESENT = 0x040
     SOFT_LEAN_MASS_PRESENT = 0x080
     BODY_WATER_MASS_PRESENT = 0x100

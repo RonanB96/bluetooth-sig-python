@@ -4,9 +4,10 @@ from typing import Any
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import BodySensorLocation, HeartRateMeasurementCharacteristic
+from bluetooth_sig.gatt.characteristics import HeartRateMeasurementCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.heart_rate_measurement import (
+    BodySensorLocation,
     HeartRateData,
     HeartRateMeasurementFlags,
     SensorContactState,

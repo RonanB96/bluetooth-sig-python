@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import BootKeyboardInputReportCharacteristic, BootKeyboardInputReportData
-from bluetooth_sig.gatt.characteristics.boot_keyboard_input_report import KeyboardModifiers
+from bluetooth_sig.gatt.characteristics import BootKeyboardInputReportCharacteristic
+from bluetooth_sig.gatt.characteristics.boot_keyboard_input_report import BootKeyboardInputReportData, KeyboardModifiers
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 

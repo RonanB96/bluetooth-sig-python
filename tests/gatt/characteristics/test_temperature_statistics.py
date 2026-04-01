@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
-    TemperatureStatisticsCharacteristic,
-)
 from bluetooth_sig.gatt.characteristics.temperature_statistics import (
+    TemperatureStatisticsCharacteristic,
     TemperatureStatisticsData,
 )
 

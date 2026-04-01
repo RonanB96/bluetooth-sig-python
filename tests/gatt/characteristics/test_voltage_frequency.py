@@ -22,20 +22,24 @@ class TestVoltageFrequencyCharacteristic(CommonCharacteristicTests):
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
+        """Valid voltage frequency test data.
+
+        GSS: uint16, M=1 d=0 b=0 (resolution 1 Hz).
+        """
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x00, 0x00]),  # 0 Hz
-                expected_value=0.0,
+                input_data=bytearray([0x00, 0x00]),
+                expected_value=0,
                 description="Zero frequency",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x00, 0x32]),  # 50 Hz (50 * 256 = 12800 = 0x3200, but little endian so 0x0032)
-                expected_value=50.0,
+                input_data=bytearray([0x32, 0x00]),  # 50 LE
+                expected_value=50,
                 description="50 Hz (typical mains frequency)",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x00, 0x3C]),  # 60 Hz (60 * 256 = 15360 = 0x3C00, little endian so 0x003C)
-                expected_value=60.0,
+                input_data=bytearray([0x3C, 0x00]),  # 60 LE
+                expected_value=60,
                 description="60 Hz (typical mains frequency)",
             ),
         ]

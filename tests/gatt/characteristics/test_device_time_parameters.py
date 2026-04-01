@@ -7,8 +7,6 @@ import pytest
 from bluetooth_sig.gatt.characteristics.device_time_parameters import (
     DeviceTimeParametersCharacteristic,
     DeviceTimeParametersData,
-    TimeProperties,
-    TimeUpdateFlags,
 )
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -26,32 +24,33 @@ class TestDeviceTimeParametersCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x00, 0x00, 0x00]),
+                # RTC_Resolution=0 (unknown) [0x00,0x00]
+                input_data=bytearray([0x00, 0x00]),
                 expected_value=DeviceTimeParametersData(
-                    time_update_flags=TimeUpdateFlags(0),
-                    time_accuracy=0,
-                    time_properties=TimeProperties(0),
+                    rtc_resolution=0,
                 ),
-                description="All zeroes - no flags, no accuracy, no properties",
+                description="RTC resolution unknown (0), no optional fields",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x03, 0x64, 0x07]),
+                # RTC_Resolution=328 (~5ms, as per spec example) [0x48,0x01]
+                input_data=bytearray([0x48, 0x01]),
                 expected_value=DeviceTimeParametersData(
-                    time_update_flags=TimeUpdateFlags.TIME_UPDATE_PENDING | TimeUpdateFlags.TIME_UPDATE_IN_PROGRESS,
-                    time_accuracy=100,
-                    time_properties=TimeProperties.TIME_SOURCE_SET
-                    | TimeProperties.TIME_ACCURACY_KNOWN
-                    | TimeProperties.UTC_ALIGNED,
+                    rtc_resolution=328,
                 ),
-                description="Update pending+in progress, accuracy 100, all time properties",
+                description="RTC resolution 328/65536 s (~5 ms), no optional fields",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x0C, 0x0A, 0x02]),
+                # RTC_Resolution=65535 (~1s) [0xFF,0xFF]
+                # Max_RTC_Drift_Limit=300s [0x2C,0x01]
+                # Max_Days_Until_Sync_Loss=73 days [0x49,0x00]
+                # Non_Logged_Time_Adjustment_Limit=10s [0x0A,0x00]
+                input_data=bytearray([0xFF, 0xFF, 0x2C, 0x01, 0x49, 0x00, 0x0A, 0x00]),
                 expected_value=DeviceTimeParametersData(
-                    time_update_flags=TimeUpdateFlags.TIME_ZONE_UPDATE_PENDING | TimeUpdateFlags.DST_UPDATE_PENDING,
-                    time_accuracy=10,
-                    time_properties=TimeProperties.TIME_ACCURACY_KNOWN,
+                    rtc_resolution=65535,
+                    max_rtc_drift_limit=300,
+                    max_days_until_sync_loss=73,
+                    non_logged_time_adjustment_limit=10,
                 ),
-                description="Timezone+DST update pending, accuracy 10, accuracy known",
+                description="All RTC drift fields present; 1s resolution, 5-min drift limit, 73-day sync loss, 10s non-logged limit",
             ),
         ]

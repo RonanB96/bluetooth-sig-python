@@ -10,8 +10,8 @@ import msgspec
 from ...types import CharacteristicInfo, ServiceInfo
 from ...types.gatt_services import CharacteristicCollection, CharacteristicSpec, ServiceDiscoveryData
 from ...types.uuid import BluetoothUUID
-from ..characteristics import BaseCharacteristic, CharacteristicRegistry
-from ..characteristics.registry import CharacteristicName
+from ..characteristics.base import BaseCharacteristic
+from ..characteristics.registry import CharacteristicName, CharacteristicRegistry
 from ..characteristics.unknown import UnknownCharacteristic
 from ..exceptions import UUIDResolutionError
 from ..resolver import ServiceRegistrySearch

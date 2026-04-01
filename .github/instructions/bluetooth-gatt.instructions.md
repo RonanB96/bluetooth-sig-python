@@ -12,9 +12,9 @@ applyTo: "src/bluetooth_sig/gatt/**/*.py,src/bluetooth_sig/registry/**/*.py"
 
 ## UUID Policy (ABSOLUTE)
 
-**NEVER hardcode UUID strings.**
+**NEVER hardcode UUID strings in implementation code.**
 
-UUIDs only in: YAML submodule, test fixtures, custom `_info` definitions.
+Use registry lookups. YAML files are read-only SIG data. UUIDs appear in test fixtures and `_info` definitions for custom characteristics.
 
 ## API Consistency
 

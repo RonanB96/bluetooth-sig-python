@@ -4,13 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.bss_control_point import (
-    BSSControlPointCharacteristic,
-    BSSControlPointData,
-    BSSControlPointOpCode,
-)
-
-from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
+from bluetooth_sig.gatt.characteristics import BSSControlPointCharacteristic
+from bluetooth_sig.gatt.characteristics.bss_control_point import BSSControlPointData
+from bluetooth_sig.types.bss import SplitHeader
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestBSSControlPointCharacteristic(CommonCharacteristicTests):
@@ -28,36 +25,45 @@ class TestBSSControlPointCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x00]),
+                input_data=bytearray([0x01]),
                 expected_value=BSSControlPointData(
-                    opcode=BSSControlPointOpCode.REMOTE_SCAN_STOPPED,
+                    split_header=SplitHeader(execute_flag=True, sequence_number=0, source_flag=False),
+                    payload=b"",
                 ),
-                description="Remote scan stopped, no params",
+                description="Execute flag set, no payload",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x02, 0xAA, 0xBB]),
+                input_data=bytearray([0x81, 0xAA, 0xBB]),
                 expected_value=BSSControlPointData(
-                    opcode=BSSControlPointOpCode.ADD_SOURCE,
-                    parameter=b"\xaa\xbb",
+                    split_header=SplitHeader(execute_flag=True, sequence_number=0, source_flag=True),
+                    payload=b"\xaa\xbb",
                 ),
-                description="Add source with parameters",
+                description="Execute + source flags, 2-byte payload",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x05]),
+                input_data=bytearray([0x06]),
                 expected_value=BSSControlPointData(
-                    opcode=BSSControlPointOpCode.REMOVE_SOURCE,
+                    split_header=SplitHeader(execute_flag=False, sequence_number=3, source_flag=False),
+                    payload=b"",
                 ),
-                description="Remove source, no params",
+                description="Split packet with sequence number 3",
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = BSSControlPointCharacteristic()
+    def test_roundtrip(self, characteristic: BSSControlPointCharacteristic) -> None:
+        """Test encode/decode roundtrip."""
         original = BSSControlPointData(
-            opcode=BSSControlPointOpCode.SET_BROADCAST_CODE,
-            parameter=b"\x01\x02\x03",
+            split_header=SplitHeader(execute_flag=True, sequence_number=5, source_flag=False),
+            payload=b"\x01\x02\x03",
         )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
+        encoded = characteristic.build_value(original)
+        decoded = characteristic.parse_value(encoded)
         assert decoded == original
+
+    def test_split_header_sequence_number_range(self, characteristic: BSSControlPointCharacteristic) -> None:
+        """Test sequence numbers across valid range (0-31)."""
+        for seq in (0, 15, 31):
+            header_byte = (seq << SplitHeader._SEQUENCE_NUMBER_SHIFT) | SplitHeader._EXECUTE_FLAG_MASK
+            data = bytearray([header_byte])
+            result = characteristic.parse_value(data)
+            assert result.split_header.sequence_number == seq

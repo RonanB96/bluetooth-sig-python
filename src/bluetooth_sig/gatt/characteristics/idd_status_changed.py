@@ -1,9 +1,9 @@
 """IDD Status Changed characteristic (0x2B20).
 
-32-bit bitfield indicating which IDD status fields have changed.
+16-bit bitfield indicating which IDD status fields have changed.
 
 References:
-    Bluetooth SIG Insulin Delivery Service 1.0
+    Bluetooth SIG Insulin Delivery Service 1.0.1, Table 4.1
 """
 
 from __future__ import annotations
@@ -15,17 +15,19 @@ from .templates import FlagTemplate
 
 
 class IDDStatusChangedFlags(IntFlag):
-    """IDD Status Changed flags (uint32)."""
+    """IDD Status Changed flags (uint16).
 
-    THERAPY_CONTROL_STATE_CHANGED = 0x00000001
-    OPERATIONAL_STATE_CHANGED = 0x00000002
-    RESERVOIR_STATUS_CHANGED = 0x00000004
-    ANNUNCIATION_STATUS_CHANGED = 0x00000008
-    TOTAL_DAILY_INSULIN_STATUS_CHANGED = 0x00000010
-    ACTIVE_BASAL_RATE_CHANGED = 0x00000020
-    ACTIVE_TBR_CHANGED = 0x00000040
-    ACTIVE_BOLUS_IDS_CHANGED = 0x00000080
-    HISTORY_EVENT_RECORDED = 0x00000100
+    Bits 0-7 defined, bits 8-15 RFU.
+    """
+
+    THERAPY_CONTROL_STATE_CHANGED = 0x0001
+    OPERATIONAL_STATE_CHANGED = 0x0002
+    RESERVOIR_STATUS_CHANGED = 0x0004
+    ANNUNCIATION_STATUS_CHANGED = 0x0008
+    TOTAL_DAILY_INSULIN_STATUS_CHANGED = 0x0010
+    ACTIVE_BASAL_RATE_STATUS_CHANGED = 0x0020
+    ACTIVE_BOLUS_STATUS_CHANGED = 0x0040
+    HISTORY_EVENT_RECORDED = 0x0080
 
 
 class IDDStatusChangedCharacteristic(BaseCharacteristic[IDDStatusChangedFlags]):
@@ -36,4 +38,4 @@ class IDDStatusChangedCharacteristic(BaseCharacteristic[IDDStatusChangedFlags]):
     Bitfield indicating which IDD status fields have changed.
     """
 
-    _template = FlagTemplate.uint32(IDDStatusChangedFlags)
+    _template = FlagTemplate.uint16(IDDStatusChangedFlags)

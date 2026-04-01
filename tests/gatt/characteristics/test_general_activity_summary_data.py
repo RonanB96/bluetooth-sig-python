@@ -28,44 +28,70 @@ class TestGeneralActivitySummaryDataCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x01, 0x88, 0x13]),
-                expected_value=GeneralActivitySummaryData(
-                    flags=GeneralActivitySummaryFlags.STEPS_PRESENT,
-                    steps=5000,
+                input_data=bytearray(
+                    [
+                        0xC0,  # header: first+last segment
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,  # flags: none set
+                        0x01,
+                        0x00,  # session_id: 1
+                        0x02,
+                        0x00,  # sub_session_id: 2
+                        0x0A,
+                        0x00,
+                        0x00,
+                        0x00,  # relative_timestamp: 10
+                        0x01,
+                        0x00,
+                        0x00,
+                        0x00,  # sequence_number: 1
+                    ]
                 ),
-                description="Steps only, 5000 steps",
+                expected_value=GeneralActivitySummaryData(
+                    header=0xC0,
+                    flags=GeneralActivitySummaryFlags(0),
+                    session_id=1,
+                    sub_session_id=2,
+                    relative_timestamp=10,
+                    sequence_number=1,
+                ),
+                description="Minimal data, no optional fields",
             ),
             CharacteristicTestData(
                 input_data=bytearray(
                     [
-                        0x1F,
-                        0x10,
-                        0x27,
-                        0x40,
-                        0x1F,
+                        0xC0,  # header
+                        0x81,
                         0x00,
-                        0x20,
-                        0x1C,
                         0x00,
-                        0x3C,
-                        0x5E,
-                        0x01,
+                        0x00,  # flags: bits 0 + 7 (EE + distance)
+                        0x00,
+                        0x00,  # session_id: 0
+                        0x00,
+                        0x00,  # sub_session_id: 0
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,  # relative_timestamp: 0
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,  # sequence_number: 0
                     ]
                 ),
                 expected_value=GeneralActivitySummaryData(
+                    header=0xC0,
                     flags=(
-                        GeneralActivitySummaryFlags.STEPS_PRESENT
+                        GeneralActivitySummaryFlags.NORMAL_WALKING_EE_PRESENT
                         | GeneralActivitySummaryFlags.DISTANCE_PRESENT
-                        | GeneralActivitySummaryFlags.DURATION_PRESENT
-                        | GeneralActivitySummaryFlags.INTENSITY_PRESENT
-                        | GeneralActivitySummaryFlags.CALORIES_PRESENT
                     ),
-                    steps=10000,
-                    distance=8000,
-                    duration=7200,
-                    intensity=60,
-                    calories=350,
+                    session_id=0,
+                    sub_session_id=0,
+                    relative_timestamp=0,
+                    sequence_number=0,
                 ),
-                description="All fields present",
+                description="Flags with EE and distance present",
             ),
         ]

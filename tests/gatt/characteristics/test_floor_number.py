@@ -22,15 +22,21 @@ class TestFloorNumberCharacteristic(CommonCharacteristicTests):
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
+        """Valid FloorNumber test data.
+
+        IPS spec §3.6: raw uint8 X = N + 20; decoded floor N = X − 20.
+        """
         return [
+            # X=25: N = 25−20 = 5  (floor 5)
             CharacteristicTestData(
-                input_data=bytearray([0x05]),
+                input_data=bytearray([0x19]),
                 expected_value=5,
-                description="Floor 5 (positive)",
+                description="Floor 5",
             ),
+            # X=18: N = 18−20 = −2  (basement level −2)
             CharacteristicTestData(
-                input_data=bytearray([0xFE]),
+                input_data=bytearray([0x12]),
                 expected_value=-2,
-                description="Basement level -2 (signed)",
+                description="Basement level -2",
             ),
         ]

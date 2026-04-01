@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import GlucoseFeatureCharacteristic, GlucoseFeatures
-from bluetooth_sig.gatt.characteristics.glucose_feature import GlucoseFeatureData
+from bluetooth_sig.gatt.characteristics import GlucoseFeatureCharacteristic
+from bluetooth_sig.gatt.characteristics.glucose_feature import GlucoseFeatureData, GlucoseFeatures
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests

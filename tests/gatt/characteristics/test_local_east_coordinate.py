@@ -28,14 +28,12 @@ class TestLocalEastCoordinateCharacteristic(CommonCharacteristicTests):
         """Valid Local East Coordinate test data."""
         return [
             CharacteristicTestData(
-                input_data=bytearray([0xED, 0x03, 0x00]), expected_value=100.5, description="100.5 m east"
+                input_data=bytearray([0xED, 0x03]), expected_value=100.5, description="100.5 m east"
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x00, 0x00, 0x00]), expected_value=0.0, description="Origin (0.0 m)"
+                input_data=bytearray([0x00, 0x00]), expected_value=0.0, description="Origin (0.0 m)"
             ),
-            CharacteristicTestData(
-                input_data=bytearray([0xFF, 0xFF, 0xFF]), expected_value=-0.1, description="-0.1 m west"
-            ),
+            CharacteristicTestData(input_data=bytearray([0xFF, 0xFF]), expected_value=-0.1, description="-0.1 m west"),
         ]
 
     def test_local_east_coordinate_parsing(self, characteristic: LocalEastCoordinateCharacteristic) -> None:
@@ -45,7 +43,7 @@ class TestLocalEastCoordinateCharacteristic(CommonCharacteristicTests):
         assert characteristic.python_type is float
 
         # Test normal parsing
-        test_data = bytearray([0xED, 0x03, 0x00])  # 1005 = 100.5m
+        test_data = bytearray([0xED, 0x03])  # 1005 = 100.5m
         parsed = characteristic.parse_value(test_data)
         assert parsed == 100.5
 
@@ -53,20 +51,20 @@ class TestLocalEastCoordinateCharacteristic(CommonCharacteristicTests):
         """Test Local East Coordinate error handling."""
         # Test insufficient data
         with pytest.raises(CharacteristicParseError) as exc_info:
-            characteristic.parse_value(bytearray([0x12, 0x34]))
-        assert "3 bytes, got 2" in str(exc_info.value)
+            characteristic.parse_value(bytearray([0x12]))
+        assert "2 bytes, got 1" in str(exc_info.value)
 
     def test_local_east_coordinate_boundary_values(self, characteristic: LocalEastCoordinateCharacteristic) -> None:
-        """Test Local East Coordinate boundary values."""
-        # Maximum positive (8388607 * 0.1 = 838860.7m)
-        data_max = bytearray([0xFF, 0xFF, 0x7F])
+        """Test Local East Coordinate boundary values per IPS v1.0 spec Section 3.5."""
+        # Maximum positive sint16: 32767 decimeters = 3276.7 m
+        data_max = bytearray([0xFF, 0x7F])
         result = characteristic.parse_value(data_max)
-        assert abs(result - 838860.7) < 0.1
+        assert abs(result - 3276.7) < 0.01
 
-        # Maximum negative (-8388608 * 0.1 = -838860.8m)
-        data_min = bytearray([0x00, 0x00, 0x80])
+        # Maximum negative sint16: -32767 decimeters = -3276.7 m (0x8001)
+        data_min = bytearray([0x01, 0x80])
         result = characteristic.parse_value(data_min)
-        assert abs(result - (-838860.8)) < 0.1
+        assert abs(result - (-3276.7)) < 0.01
 
     def test_local_east_coordinate_round_trip(self, characteristic: LocalEastCoordinateCharacteristic) -> None:
         """Test encode/decode round trip."""
