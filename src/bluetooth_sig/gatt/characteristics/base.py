@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from functools import cached_property
-from typing import Any, ClassVar, Generic, TypeVar, get_args, get_origin
+from typing import Any, ClassVar, Generic, TypeVar, cast, get_args, get_origin
 
 from ...types import (
     CharacteristicInfo,
@@ -502,12 +502,15 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
     def _resolve_class_uuid(cls) -> BluetoothUUID | None:
         """Resolve the characteristic UUID for this class without creating an instance."""
         # Check for _info attribute first (custom characteristics)
-        info: CharacteristicInfo | None = getattr(cls, "_info", None)
+        try:
+            info = cast(Any, cls)._info
+        except AttributeError:
+            info = None
+
         if info is not None:
-            try:
+            if isinstance(info, CharacteristicInfo):
                 return info.uuid
-            except AttributeError:
-                logger.warning("_info attribute has no uuid for class %s", cls.__name__)
+            logger.warning("_info attribute is not CharacteristicInfo for class %s", cls.__name__)
 
         # Try cross-file resolution for SIG characteristics
         yaml_spec = cls._resolve_yaml_spec_class()

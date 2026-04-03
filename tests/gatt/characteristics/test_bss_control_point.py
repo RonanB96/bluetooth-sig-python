@@ -53,7 +53,12 @@ class TestBSSControlPointCharacteristic(CommonCharacteristicTests):
     def test_split_header_sequence_number_range(self, characteristic: BSSControlPointCharacteristic) -> None:
         """Test sequence numbers across valid range (0-31)."""
         for seq in (0, 15, 31):
-            header_byte = (seq << SplitHeader._SEQUENCE_NUMBER_SHIFT) | SplitHeader._EXECUTE_FLAG_MASK
+            header_byte = SplitHeader(execute_flag=True, sequence_number=seq, source_flag=False).to_byte()
             data = bytearray([header_byte])
             result = characteristic.parse_value(data)
             assert result.split_header.sequence_number == seq
+
+    def test_split_header_sequence_number_out_of_range(self) -> None:
+        """Test out-of-range sequence number is rejected."""
+        with pytest.raises(ValueError, match="sequence_number"):
+            SplitHeader(execute_flag=True, sequence_number=32, source_flag=False).to_byte()

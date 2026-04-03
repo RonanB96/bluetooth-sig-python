@@ -15,8 +15,8 @@ class HumanInterfaceDeviceService(BaseGattService):
     - HID Information - Required
     - HID Control Point - Required
     - Report Map - Required
-    - Report - Required
-    - Protocol Mode - Required
+    - Report - Conditional/Optional (device profile dependent)
+    - Protocol Mode - Conditional/Optional (required for boot protocol support)
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {

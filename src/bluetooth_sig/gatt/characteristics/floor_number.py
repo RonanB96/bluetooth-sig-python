@@ -8,7 +8,8 @@ from .base import BaseCharacteristic
 
 # IPS spec §3.6: encoded value X = floor_number N + 20.
 _FLOOR_OFFSET = 20
-_FLOOR_MAX_RAW = 255
+_FLOOR_NOT_CONFIGURED_RAW = 255
+_FLOOR_MAX_ENCODED_RAW = 254
 
 
 class FloorNumberCharacteristic(BaseCharacteristic[int]):
@@ -29,11 +30,14 @@ class FloorNumberCharacteristic(BaseCharacteristic[int]):
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> int:
         """Decode floor number: N = raw_uint8 - 20 (IPS spec §3.6)."""
-        return data[0] - _FLOOR_OFFSET
+        raw = data[0]
+        if raw == _FLOOR_NOT_CONFIGURED_RAW:
+            raise ValueError("Floor number is not configured (raw value 255)")
+        return raw - _FLOOR_OFFSET
 
-    def _encode_value(self, value: int) -> bytearray:
+    def _encode_value(self, data: int) -> bytearray:
         """Encode floor number: raw = N + 20 (IPS spec §3.6)."""
-        raw = value + _FLOOR_OFFSET
-        if not 0 <= raw <= _FLOOR_MAX_RAW:
-            raise ValueError(f"Floor number {value} is outside encodable range [-20, 235]")
+        raw = data + _FLOOR_OFFSET
+        if not 0 <= raw <= _FLOOR_MAX_ENCODED_RAW:
+            raise ValueError(f"Floor number {data} is outside encodable range [-20, 234]")
         return bytearray([raw])

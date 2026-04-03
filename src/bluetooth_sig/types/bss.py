@@ -58,8 +58,13 @@ class SplitHeader(msgspec.Struct, frozen=True, kw_only=True):
 
     def to_byte(self) -> int:
         """Encode the Split Header to a raw uint8."""
+        if not 0 <= self.sequence_number <= self._SEQUENCE_NUMBER_MASK:
+            raise ValueError(
+                f"sequence_number must be in range 0-{self._SEQUENCE_NUMBER_MASK}, got {self.sequence_number}"
+            )
+
         return (
             (int(self.execute_flag) & self._EXECUTE_FLAG_MASK)
             | ((self.sequence_number & self._SEQUENCE_NUMBER_MASK) << self._SEQUENCE_NUMBER_SHIFT)
-            | ((int(self.source_flag) & self._EXECUTE_FLAG_MASK) << self._SOURCE_FLAG_SHIFT)
+            | (int(self.source_flag) << self._SOURCE_FLAG_SHIFT)
         )

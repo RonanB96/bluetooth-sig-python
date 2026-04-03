@@ -49,7 +49,16 @@ class ValidationRule(msgspec.Struct, kw_only=True):
             min_val = self.min_value if self.min_value is not None else float("-inf")
             max_val = self.max_value if self.max_value is not None else float("inf")
             numeric_value = cast(int | float, value)
-            if not min_val <= numeric_value <= max_val:
+            try:
+                in_range = min_val <= numeric_value <= max_val
+            except TypeError as exc:
+                raise DataValidationError(
+                    self.field_name,
+                    value,
+                    "Value cannot be ordered for range validation",
+                ) from exc
+
+            if not in_range:
                 raise ValueRangeError(self.field_name, value, min_val, max_val)
 
         # Custom validation

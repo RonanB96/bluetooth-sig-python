@@ -7,7 +7,7 @@ from enum import IntEnum
 from ...types import CharacteristicInfo
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
-from .base import BaseCharacteristic, ValidationConfig
+from .base import BaseCharacteristic
 
 
 class DigitalSignalState(IntEnum):
@@ -47,32 +47,17 @@ class DigitalCharacteristic(BaseCharacteristic[tuple[DigitalSignalState, ...]]):
     """
 
     # Help the registry resolver find this characteristic by name
-    _characteristic_name: str = "Digital"
+    _characteristic_name = "Digital"
 
     min_length = 0
     allow_variable_length = True
-
-    def __init__(
-        self,
-        info: CharacteristicInfo | None = None,
-        validation: ValidationConfig | None = None,
-    ) -> None:
-        """Initialize with hardcoded info since this UUID is absent from the YAML submodule.
-
-        Args:
-            info: Override characteristic information.
-            validation: Validation constraints configuration.
-
-        """
-        if info is None:
-            info = CharacteristicInfo(
-                uuid=BluetoothUUID("2A56"),
-                name="Digital",
-                id="org.bluetooth.characteristic.digital",
-                unit="",
-                python_type=tuple[DigitalSignalState, ...],
-            )
-        super().__init__(info=info, validation=validation)
+    # TODO Remove once uuid is added to yaml files
+    _info = CharacteristicInfo(
+        uuid=BluetoothUUID(0x2A56),
+        name="Digital",
+        id="org.bluetooth.characteristic.digital",
+        unit="",
+    )
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True

@@ -187,12 +187,11 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         # TODO: Remove when bluetooth_sig submodule includes these UUIDs.
         # Analog (0x2A58) and Digital (0x2A56) are present in service specs
         # (Automation IO) but absent from the assigned-number YAML files.
-        _yaml_absent: list[tuple[str, str, str]] = [
-            ("2A56", "Digital", "org.bluetooth.characteristic.digital"),
-            ("2A58", "Analog", "org.bluetooth.characteristic.analog"),
+        _yaml_absent: list[tuple[BluetoothUUID, str, str]] = [
+            (BluetoothUUID(0x2A56), "Digital", "org.bluetooth.characteristic.digital"),
+            (BluetoothUUID(0x2A58), "Analog", "org.bluetooth.characteristic.analog"),
         ]
-        for _uuid_short, _name, _identifier in _yaml_absent:
-            _bt_uuid = BluetoothUUID(_uuid_short)
+        for _bt_uuid, _name, _identifier in _yaml_absent:
             if _bt_uuid.normalized not in self._characteristics:
                 self._store_characteristic(
                     CharacteristicInfo(
