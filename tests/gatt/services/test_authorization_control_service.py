@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.services.authorization_control import AuthorizationControlService
+from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 from .test_service_common import CommonServiceTests
 
@@ -26,3 +27,9 @@ class TestAuthorizationControlService(CommonServiceTests):
         """Test that service defines expected characteristics."""
         expected = service.get_expected_characteristics()
         assert len(expected) == 5
+
+    def test_required_characteristics(self, service: AuthorizationControlService) -> None:
+        """Test that mandatory ACS characteristics are required."""
+        required = service.get_required_characteristics()
+        assert CharacteristicName.ACS_STATUS in required
+        assert CharacteristicName.ACS_CONTROL_POINT in required

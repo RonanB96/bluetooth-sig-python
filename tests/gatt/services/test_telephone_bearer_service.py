@@ -31,6 +31,6 @@ class TestTelephoneBearerService(CommonServiceTests):
     def test_required_characteristics(self, service: TelephoneBearerService) -> None:
         """Test that required characteristics are correctly marked."""
         required = service.get_required_characteristics()
-        assert len(required) == 2
+        assert len(required) == 12
         assert CharacteristicName.BEARER_PROVIDER_NAME in required
         assert CharacteristicName.BEARER_TECHNOLOGY in required

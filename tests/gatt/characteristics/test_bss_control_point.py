@@ -50,16 +50,6 @@ class TestBSSControlPointCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_roundtrip(self, characteristic: BSSControlPointCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = BSSControlPointData(
-            split_header=SplitHeader(execute_flag=True, sequence_number=5, source_flag=False),
-            payload=b"\x01\x02\x03",
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
-
     def test_split_header_sequence_number_range(self, characteristic: BSSControlPointCharacteristic) -> None:
         """Test sequence numbers across valid range (0-31)."""
         for seq in (0, 15, 31):

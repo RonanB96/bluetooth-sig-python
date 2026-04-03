@@ -57,15 +57,3 @@ class TestSearchControlPointCharacteristic(CommonCharacteristicTests):
                 description="Genre search with parameter 'Pop'",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = SearchControlPointCharacteristic()
-        original = SearchControlPointData(
-            length=8,
-            search_type=SearchControlPointType.ARTIST_NAME,
-            parameter="Bach",
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

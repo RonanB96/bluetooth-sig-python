@@ -89,18 +89,3 @@ class TestStepCounterActivitySummaryDataCharacteristic(CommonCharacteristicTests
                 description="Flags with walking and floor steps present",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = StepCounterActivitySummaryDataCharacteristic()
-        original = StepCounterActivitySummaryData(
-            header=0xC0,
-            flags=StepCounterActivitySummaryFlags.NORMAL_WALKING_STEPS_PRESENT,
-            session_id=5,
-            sub_session_id=1,
-            relative_timestamp=100,
-            sequence_number=42,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

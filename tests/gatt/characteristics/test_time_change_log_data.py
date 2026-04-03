@@ -36,11 +36,3 @@ class TestTimeChangeLogDataCharacteristic(CommonCharacteristicTests):
                 description="Multi-byte log records",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = TimeChangeLogDataCharacteristic()
-        original = b"\x01\x02\x03\x04\x05\x06\x07\x08"
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

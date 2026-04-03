@@ -34,16 +34,16 @@ class TestIntermediateTemperatureCharacteristic(CommonCharacteristicTests):
         temp_bytes_celsius = IEEE11073Parser.encode_float32(36.5)
         celsius_data = bytearray([0x00]) + temp_bytes_celsius
         celsius_expected = IntermediateTemperatureData(
-            temperature=pytest.approx(36.5, abs=0.1),
+            temperature=36.5,
             unit=TemperatureUnit.CELSIUS,
             flags=IntermediateTemperatureFlags(0x00),
         )
 
-        # Fahrenheit (flags=0x01)
+        # Fahrenheit encoding: flags=0x01
         temp_bytes_fahr = IEEE11073Parser.encode_float32(98.6)
         fahr_data = bytearray([0x01]) + temp_bytes_fahr
         fahr_expected = IntermediateTemperatureData(
-            temperature=pytest.approx(98.6, abs=0.1),
+            temperature=98.6,
             unit=TemperatureUnit.FAHRENHEIT,
             flags=IntermediateTemperatureFlags.FAHRENHEIT_UNIT,
         )
@@ -90,16 +90,3 @@ class TestIntermediateTemperatureCharacteristic(CommonCharacteristicTests):
         result = char.parse_value(data)
         assert result.temperature == pytest.approx(37.0, abs=0.1)
         assert result.timestamp == datetime(2024, 3, 10, 14, 30, 0)
-
-    def test_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = IntermediateTemperatureCharacteristic()
-        original = IntermediateTemperatureData(
-            temperature=36.5,
-            unit=TemperatureUnit.CELSIUS,
-            flags=IntermediateTemperatureFlags(0x00),
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded.temperature == pytest.approx(36.5, abs=0.1)
-        assert decoded.unit == TemperatureUnit.CELSIUS

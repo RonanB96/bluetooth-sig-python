@@ -87,14 +87,3 @@ class TestServiceChangedCharacteristic(CommonCharacteristicTests):
         with pytest.raises(CharacteristicParseError) as exc_info:
             char.parse_value(bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
         assert "expected exactly 4 bytes, got 6" in str(exc_info.value)
-
-    def test_round_trip_encoding(self) -> None:
-        """Test that encoding and decoding preserve data."""
-        char = ServiceChangedCharacteristic()
-        original = ServiceChangedData(start_handle=0xABCD, end_handle=0xEF01)
-
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-
-        assert decoded == original
-        assert encoded == bytearray([0xCD, 0xAB, 0x01, 0xEF])  # Little endian

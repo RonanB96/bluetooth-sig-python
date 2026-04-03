@@ -31,5 +31,10 @@ class TestObjectTransferService(CommonServiceTests):
     def test_required_characteristics(self, service: ObjectTransferService) -> None:
         """Test that required characteristics are correctly marked."""
         required = service.get_required_characteristics()
-        assert len(required) == 1
+        assert len(required) == 6
         assert CharacteristicName.OTS_FEATURE in required
+        assert CharacteristicName.OBJECT_NAME in required
+        assert CharacteristicName.OBJECT_TYPE in required
+        assert CharacteristicName.OBJECT_SIZE in required
+        assert CharacteristicName.OBJECT_PROPERTIES in required
+        assert CharacteristicName.OBJECT_ACTION_CONTROL_POINT in required

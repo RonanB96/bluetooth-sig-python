@@ -28,8 +28,3 @@ class TestCentralAddressResolution(CommonCharacteristicTests):
             CharacteristicTestData(bytearray([0x00]), CentralAddressResolutionSupport.NOT_SUPPORTED, "Not supported"),
             CharacteristicTestData(bytearray([0x01]), CentralAddressResolutionSupport.SUPPORTED, "Supported"),
         ]
-
-    def test_roundtrip(self, characteristic: CentralAddressResolutionCharacteristic) -> None:
-        for val in CentralAddressResolutionSupport:
-            encoded = characteristic.build_value(val)
-            assert characteristic.parse_value(encoded) == val

@@ -46,18 +46,6 @@ class TestRelativeRuntimeInACCTRangeCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = RelativeRuntimeInACorrelatedColorTemperatureRangeCharacteristic()
-        original = RelativeRuntimeInACCTRangeData(
-            relative_runtime=50.0,
-            minimum_cct=2700,
-            maximum_cct=6500,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum CCT must not exceed maximum."""
         with pytest.raises(ValueError, match="cannot exceed"):

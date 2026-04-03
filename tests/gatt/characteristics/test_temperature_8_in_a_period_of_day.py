@@ -46,18 +46,6 @@ class TestTemperature8InAPeriodOfDayCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = Temperature8InAPeriodOfDayCharacteristic()
-        original = Temperature8InAPeriodOfDayData(
-            temperature=10.0,
-            start_time=8.0,
-            end_time=20.0,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
     def test_negative_temperature(self) -> None:
         """Verify negative temperature decodes correctly."""
         char = Temperature8InAPeriodOfDayCharacteristic()

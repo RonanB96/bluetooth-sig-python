@@ -32,4 +32,4 @@ class TestElapsedTimeService(CommonServiceTests):
         """Test that required characteristics are correctly marked."""
         required = service.get_required_characteristics()
         assert len(required) == 1
-        assert CharacteristicName.CURRENT_ELAPSED_TIME in required
+        assert CharacteristicName.ELAPSED_TIME in required

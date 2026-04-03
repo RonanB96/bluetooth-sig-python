@@ -56,10 +56,3 @@ class TestESLAddressCharacteristic(CommonCharacteristicTests):
         result = characteristic.parse_value(bytearray([0x05, 0x80]))
         assert result.esl_id == 5
         assert result.group_id == 0
-
-    def test_roundtrip(self, characteristic: ESLAddressCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = ESLAddressData(esl_id=0xAB, group_id=0x55)
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

@@ -36,10 +36,3 @@ class TestCallFriendlyName(CommonCharacteristicTests):
                 description="Call index 0, empty name",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: CallFriendlyNameCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = CallFriendlyNameData(call_index=5, friendly_name="Alice")
-        encoded = characteristic.build_value(original)
-        result = characteristic.parse_value(encoded)
-        assert result == original

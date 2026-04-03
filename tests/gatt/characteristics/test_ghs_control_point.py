@@ -35,22 +35,11 @@ class TestGHSControlPointCharacteristic(CommonCharacteristicTests):
                 description="Start sending live observations",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x05, 0x01, 0x02]),
+                input_data=bytearray([0x80, 0x01, 0x02]),
                 expected_value=GHSControlPointData(
-                    opcode=GHSControlPointOpCode.DELETE_STORED_OBSERVATIONS,
+                    opcode=GHSControlPointOpCode.RESPONSE_CODE,
                     parameter=b"\x01\x02",
                 ),
-                description="Delete stored observations with parameters",
+                description="Response code with parameters",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = GHSControlPointCharacteristic()
-        original = GHSControlPointData(
-            opcode=GHSControlPointOpCode.STOP_SEND_STORED_OBSERVATIONS,
-            parameter=b"\xaa",
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

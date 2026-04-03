@@ -1,17 +1,24 @@
 # Bluetooth SIG Standards Library
 
-Pure Python library for Bluetooth SIG standards interpretation. Core lives in `src/bluetooth_sig/` (framework-agnostic).
+Pure Python library for Bluetooth SIG standards interpretation (GATT characteristics, services, advertisements).
 
-**Working directory:** repository root. **Python version:** 3.10+.
+**Working directory:** repository root.
 
-## Build & Test
+## Quick Start
 
 ```bash
-./scripts/format.sh --fix && ./scripts/format.sh --check
-./scripts/lint.sh --all
-python -m pytest tests/ -v
+./scripts/format.sh --fix # Format
+./scripts/lint.sh --all                                     # Lint
+python -m pytest tests/ -v                                  # Test
+python -m pytest -k "battery" -v                            # Single test
 ```
 
-For complete rules and patterns, see `.github/copilot-instructions.md` and `.github/instructions/` sub-files (loaded based on file type).
+## Canonical Guidance
 
-Architecture guides: `docs/AGENT_GUIDE.md`, `docs/BLUETOOTH_SIG_ARCHITECTURE.md`
+Use `.github/copilot-instructions.md` as the single source of truth for project-wide rules.
+
+Use focused files in `.github/instructions/` for file-type and domain-specific rules:
+- `bluetooth-gatt.instructions.md`
+- `python-implementation.instructions.md`
+- `testing.instructions.md`
+- `documentation.instructions.md`

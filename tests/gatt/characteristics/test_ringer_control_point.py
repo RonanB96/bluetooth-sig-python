@@ -36,21 +36,31 @@ class TestRingerControlPointCharacteristic:
         """Test encoding MUTE_ONCE command."""
         data = RingerControlPointData(command=RingerControlCommand.MUTE_ONCE)
         encoded = characteristic._encode_value(data)
-        assert encoded == bytearray([0x02])
+        assert encoded == bytearray([0x03])
 
     def test_encode_cancel_silent_mode(self, characteristic: RingerControlPointCharacteristic) -> None:
         """Test encoding CANCEL_SILENT_MODE command."""
         data = RingerControlPointData(command=RingerControlCommand.CANCEL_SILENT_MODE)
         encoded = characteristic._encode_value(data)
-        assert encoded == bytearray([0x03])
+        assert encoded == bytearray([0x02])
 
     def test_all_commands_encode_correctly(self, characteristic: RingerControlPointCharacteristic) -> None:
         """Test that all defined commands encode to their expected byte values."""
         expected = {
             RingerControlCommand.SILENT_MODE: bytearray([0x01]),
-            RingerControlCommand.MUTE_ONCE: bytearray([0x02]),
-            RingerControlCommand.CANCEL_SILENT_MODE: bytearray([0x03]),
+            RingerControlCommand.CANCEL_SILENT_MODE: bytearray([0x02]),
+            RingerControlCommand.MUTE_ONCE: bytearray([0x03]),
         }
         for command, expected_bytes in expected.items():
             data = RingerControlPointData(command=command)
             assert characteristic._encode_value(data) == expected_bytes
+
+    def test_invalid_command_value_rejected(self) -> None:
+        """Test that reserved command values (0, 4-255) cannot be created."""
+        with pytest.raises(ValueError):
+            RingerControlCommand(0x00)
+
+    def test_invalid_high_command_value_rejected(self) -> None:
+        """Test that high reserved command values are rejected."""
+        with pytest.raises(ValueError):
+            RingerControlCommand(0x04)

@@ -44,15 +44,3 @@ class TestRegisteredUserCharacteristic(CommonCharacteristicTests):
                 description="Segment 2, user index 5, body='Alice'",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = RegisteredUserCharacteristic()
-        original = RegisteredUserData(
-            segment_index=1,
-            user_index=3,
-            body=b"\x01\x02\x03",
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

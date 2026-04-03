@@ -26,17 +26,3 @@ class TestSeekingSpeed(CommonCharacteristicTests):
             CharacteristicTestData(bytearray([0x01]), 1, "Seek forward"),
             CharacteristicTestData(bytearray([0xFF]), -1, "Seek backward"),
         ]
-
-    def test_roundtrip(self, characteristic: SeekingSpeedCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray([0x00]), 0, "Not seeking"),
-            CharacteristicTestData(bytearray([0x01]), 1, "Seek forward"),
-            CharacteristicTestData(bytearray([0xFF]), -1, "Seek backward"),
-        ]

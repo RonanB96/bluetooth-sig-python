@@ -29,6 +29,8 @@ class TestGustFactorCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 input_data=bytearray([100]), expected_value=10.0, description="Moderate gust (10.0)"
             ),
+            CharacteristicTestData(input_data=bytearray([50]), expected_value=5.0, description="Light gust (5.0)"),
+            CharacteristicTestData(input_data=bytearray([150]), expected_value=15.0, description="Strong gust (15.0)"),
             CharacteristicTestData(input_data=bytearray([255]), expected_value=25.5, description="Maximum gust (25.5)"),
         ]
 
@@ -43,11 +45,3 @@ class TestGustFactorCharacteristic(CommonCharacteristicTests):
         char = GustFactorCharacteristic()
         result = char.parse_value(bytearray([100]))
         assert result == 10.0
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = GustFactorCharacteristic()
-        for value in [0.0, 5.0, 15.0, 25.5]:
-            encoded = char.build_value(value)
-            decoded = char.parse_value(encoded)
-            assert decoded == value

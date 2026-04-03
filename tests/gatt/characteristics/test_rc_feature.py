@@ -6,6 +6,7 @@ import pytest
 
 from bluetooth_sig.gatt.characteristics import RCFeatureCharacteristic
 from bluetooth_sig.gatt.characteristics.rc_feature import RCFeatureData, RCFeatureFlags
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -51,22 +52,8 @@ class TestRCFeatureCharacteristic(CommonCharacteristicTests):
 
     def test_minimum_length_enforced(self, characteristic: RCFeatureCharacteristic) -> None:
         """Test that data shorter than 5 bytes raises."""
-        with pytest.raises(Exception):
+        with pytest.raises(CharacteristicParseError):
             characteristic.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
-
-    def test_roundtrip(self, characteristic: RCFeatureCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = RCFeatureData(
-            e2e_crc=0xABCD,
-            features=(
-                RCFeatureFlags.E2E_CRC_SUPPORTED
-                | RCFeatureFlags.PROPOSE_RECONNECTION_TIMEOUT_SUPPORTED
-                | RCFeatureFlags.LIMITED_ACCESS_SUPPORTED
-            ),
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
 
     def test_extra_feature_bytes(self, characteristic: RCFeatureCharacteristic) -> None:
         """Test that extra bytes beyond 3 are accepted (variable length)."""

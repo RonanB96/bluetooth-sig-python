@@ -64,12 +64,3 @@ class TestUnreadAlertStatusCharacteristic(CommonCharacteristicTests):
         with pytest.raises(CharacteristicParseError) as exc_info:
             characteristic.parse_value(data)
         assert "alertcategoryid" in str(exc_info.value).lower()
-
-    def test_roundtrip(self, characteristic: UnreadAlertStatusCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = UnreadAlertStatusData(category_id=AlertCategoryID.VOICE_MAIL, unread_count=3)
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded is not None
-        assert decoded.category_id == original.category_id
-        assert decoded.unread_count == original.unread_count

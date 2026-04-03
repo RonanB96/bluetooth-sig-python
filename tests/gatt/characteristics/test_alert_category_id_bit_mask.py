@@ -53,7 +53,24 @@ class TestAlertCategoryIdBitMaskCharacteristic(CommonCharacteristicTests):
                 description="All categories enabled",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x01, 0x00]),  # Only Simple Alert
+                input_data=bytearray([0x0A, 0x00]),
+                expected_value=AlertCategoryBitMask.EMAIL | AlertCategoryBitMask.CALL,
+                description="Email + Call",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x07, 0x00]),
+                expected_value=AlertCategoryBitMask.SIMPLE_ALERT
+                | AlertCategoryBitMask.EMAIL
+                | AlertCategoryBitMask.NEWS,
+                description="Simple Alert + Email + News",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0xFF, 0xFF]),
+                expected_value=AlertCategoryBitMask(0xFFFF),
+                description="All bits set",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x01, 0x00]),
                 expected_value=AlertCategoryBitMask.SIMPLE_ALERT,
                 description="Simple Alert only",
             ),
@@ -108,17 +125,3 @@ class TestAlertCategoryIdBitMaskCharacteristic(CommonCharacteristicTests):
 
         decoded = characteristic.parse_value(encoded)
         assert decoded == single_category
-
-    def test_roundtrip(self, characteristic: AlertCategoryIdBitMaskCharacteristic) -> None:
-        """Test round-trip encoding/decoding for various combinations."""
-        test_masks = [
-            AlertCategoryBitMask.SIMPLE_ALERT,
-            AlertCategoryBitMask.EMAIL | AlertCategoryBitMask.CALL,
-            AlertCategoryBitMask.SIMPLE_ALERT | AlertCategoryBitMask.EMAIL | AlertCategoryBitMask.NEWS,
-            AlertCategoryBitMask(0xFFFF),  # All bits set (including reserved)
-        ]
-
-        for mask in test_masks:
-            encoded = characteristic.build_value(mask)
-            decoded = characteristic.parse_value(encoded)
-            assert decoded == mask

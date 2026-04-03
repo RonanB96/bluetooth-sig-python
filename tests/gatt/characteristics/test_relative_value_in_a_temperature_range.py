@@ -46,18 +46,6 @@ class TestRelativeValueInATemperatureRangeCharacteristic(CommonCharacteristicTes
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = RelativeValueInATemperatureRangeCharacteristic()
-        original = RelativeValueInATemperatureRangeData(
-            relative_value=50.0,
-            minimum_temperature=15.0,
-            maximum_temperature=25.0,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum temperature must not exceed maximum."""
         with pytest.raises(ValueError, match="cannot exceed"):

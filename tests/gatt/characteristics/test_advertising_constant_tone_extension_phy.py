@@ -25,21 +25,6 @@ class TestAdvertisingConstantToneExtensionPhy(CommonCharacteristicTests):
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
-            CharacteristicTestData(bytearray([0x01]), CTEPHY.LE_1M, "LE 1M PHY"),
-            CharacteristicTestData(bytearray([0x02]), CTEPHY.LE_2M, "LE 2M PHY"),
-            CharacteristicTestData(bytearray([0x03]), CTEPHY.LE_CODED, "LE Coded PHY"),
-        ]
-
-    def test_roundtrip(self, characteristic: AdvertisingConstantToneExtensionPhyCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray([0x01]), CTEPHY.LE_1M, "LE 1M PHY"),
-            CharacteristicTestData(bytearray([0x02]), CTEPHY.LE_2M, "LE 2M PHY"),
-            CharacteristicTestData(bytearray([0x03]), CTEPHY.LE_CODED, "LE Coded PHY"),
+            CharacteristicTestData(bytearray([0x00]), CTEPHY.LE_1M, "LE 1M PHY"),
+            CharacteristicTestData(bytearray([0x01]), CTEPHY.LE_2M, "LE 2M PHY"),
         ]

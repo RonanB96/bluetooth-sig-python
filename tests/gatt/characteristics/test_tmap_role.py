@@ -35,26 +35,3 @@ class TestTMAPRole(CommonCharacteristicTests):
                 "All roles",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: TMAPRoleCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray([0x00, 0x00]), TMAPRole(0), "No roles"),
-            CharacteristicTestData(bytearray([0x01, 0x00]), TMAPRole.CALL_GATEWAY, "Call gateway"),
-            CharacteristicTestData(
-                bytearray([0x3F, 0x00]),
-                TMAPRole.CALL_GATEWAY
-                | TMAPRole.CALL_TERMINAL
-                | TMAPRole.UNICAST_MEDIA_SENDER
-                | TMAPRole.UNICAST_MEDIA_RECEIVER
-                | TMAPRole.BROADCAST_MEDIA_SENDER
-                | TMAPRole.BROADCAST_MEDIA_RECEIVER,
-                "All roles",
-            ),
-        ]

@@ -36,11 +36,3 @@ class TestBluetoothSIGDataCharacteristic(CommonCharacteristicTests):
                 description="Multi-byte SIG data",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = BluetoothSIGDataCharacteristic()
-        original = b"\xaa\xbb\xcc"
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

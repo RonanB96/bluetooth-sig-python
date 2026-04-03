@@ -82,34 +82,3 @@ class TestCGMSessionStartTimeCharacteristic(CommonCharacteristicTests):
                 description="Session start with CRC",
             ),
         ]
-
-    def test_round_trip_without_crc(self) -> None:
-        """Test encode/decode round-trip without CRC."""
-        char = CGMSessionStartTimeCharacteristic()
-        original = CGMSessionStartTimeData(
-            start_time=datetime(2025, 12, 25, 14, 30, 45),
-            time_zone=8,
-            dst_offset=DSTOffset.STANDARD_TIME,
-        )
-        encoded = char.build_value(original)
-        assert len(encoded) == 9
-        decoded = char.parse_value(encoded)
-        assert decoded.start_time == original.start_time
-        assert decoded.time_zone == original.time_zone
-        assert decoded.dst_offset == original.dst_offset
-        assert decoded.e2e_crc is None
-
-    def test_round_trip_with_crc(self) -> None:
-        """Test encode/decode round-trip with CRC."""
-        char = CGMSessionStartTimeCharacteristic()
-        original = CGMSessionStartTimeData(
-            start_time=datetime(2020, 1, 1, 0, 0, 0),
-            time_zone=0,
-            dst_offset=DSTOffset.STANDARD_TIME,
-            e2e_crc=0x1234,
-        )
-        encoded = char.build_value(original)
-        assert len(encoded) == 11
-        decoded = char.parse_value(encoded)
-        assert decoded.start_time == original.start_time
-        assert decoded.e2e_crc == 0x1234

@@ -35,7 +35,7 @@ class TestIDDFeaturesCharacteristic(CommonCharacteristicTests):
         return [
             CharacteristicTestData(
                 # No features, no E2E: CRC=0xFFFF, counter=0, conc=100.0, flags=0
-                input_data=bytearray([0xFF, 0xFF, 0x00] + list(_SFLOAT_100) + [0x00, 0x00, 0x00]),
+                input_data=bytearray([0xFF, 0xFF, 0x00, *list(_SFLOAT_100), 0x00, 0x00, 0x00]),
                 expected_value=IDDFeaturesData(
                     e2e_crc=0xFFFF,
                     e2e_counter=0,
@@ -46,7 +46,7 @@ class TestIDDFeaturesCharacteristic(CommonCharacteristicTests):
             ),
             CharacteristicTestData(
                 # E2E + basal rate: CRC=0x1234, counter=5, conc=100.0, flags=0x03
-                input_data=bytearray([0x34, 0x12, 0x05] + list(_SFLOAT_100) + [0x03, 0x00, 0x00]),
+                input_data=bytearray([0x34, 0x12, 0x05, *list(_SFLOAT_100), 0x03, 0x00, 0x00]),
                 expected_value=IDDFeaturesData(
                     e2e_crc=0x1234,
                     e2e_counter=5,
@@ -57,7 +57,7 @@ class TestIDDFeaturesCharacteristic(CommonCharacteristicTests):
             ),
             CharacteristicTestData(
                 # Feature extension bit set: CRC=0xFFFF, counter=0, conc=100.0, flags=0x800000
-                input_data=bytearray([0xFF, 0xFF, 0x00] + list(_SFLOAT_100) + [0x00, 0x00, 0x80]),
+                input_data=bytearray([0xFF, 0xFF, 0x00, *list(_SFLOAT_100), 0x00, 0x00, 0x80]),
                 expected_value=IDDFeaturesData(
                     e2e_crc=0xFFFF,
                     e2e_counter=0,

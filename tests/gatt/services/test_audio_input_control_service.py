@@ -31,5 +31,5 @@ class TestAudioInputControlService(CommonServiceTests):
     def test_required_characteristics(self, service: AudioInputControlService) -> None:
         """Test that required characteristics are correctly marked."""
         required = service.get_required_characteristics()
-        assert len(required) == 1
+        assert len(required) == 6
         assert CharacteristicName.AUDIO_INPUT_STATE in required

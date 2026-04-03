@@ -46,13 +46,3 @@ class TestIMDSDescriptorValueChangedCharacteristic(CommonCharacteristicTests):
                 description="Value and descriptor changed, Alert Level UUID",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: IMDSDescriptorValueChangedCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = IMDSDescriptorValueChangedData(
-            flags=IMDSDescriptorChangeFlags.ADDITIONAL_DESCRIPTORS_CHANGED,
-            characteristic_uuid=0x2A37,
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

@@ -40,11 +40,3 @@ class TestSetIdentityResolvingKeyCharacteristic(CommonCharacteristicTests):
                 description="Plain text SIRK, sequential bytes",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = SetIdentityResolvingKeyCharacteristic()
-        original = SetIdentityResolvingKeyData(sirk_type=SIRKType.ENCRYPTED, value=b"\xaa\xbb\xcc\xdd" * 4)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

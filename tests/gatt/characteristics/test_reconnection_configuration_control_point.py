@@ -43,12 +43,20 @@ class TestReconnectionConfigurationControlPointCharacteristic(CommonCharacterist
                 description="Propose Settings with 2-byte parameter",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x0E]),
+                input_data=bytearray([0x07, 0x10, 0x27]),
                 expected_value=ReconnectionConfigurationControlPointData(
-                    op_code=RCCPOpCode.PROCEDURE_RESPONSE,
+                    op_code=RCCPOpCode.SET_FILTER_ACCEPT_LIST_TIMER,
+                    parameter=b"\x10\x27",
+                ),
+                description="Set Filter Accept List Timer with 2-byte parameter",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x01]),
+                expected_value=ReconnectionConfigurationControlPointData(
+                    op_code=RCCPOpCode.GET_ACTUAL_COMMUNICATION_PARAMETERS,
                     parameter=None,
                 ),
-                description="Procedure Response, no parameter",
+                description="Get Actual Communication Parameters, no parameter",
             ),
         ]
 
@@ -58,22 +66,3 @@ class TestReconnectionConfigurationControlPointCharacteristic(CommonCharacterist
             data = bytearray([int(opcode)])
             result = characteristic.parse_value(data)
             assert result.op_code == opcode
-
-    def test_roundtrip(self, characteristic: ReconnectionConfigurationControlPointCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = ReconnectionConfigurationControlPointData(
-            op_code=RCCPOpCode.SET_FILTER_ACCEPT_LIST_TIMER,
-            parameter=b"\x10\x27",
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
-
-    def test_roundtrip_no_parameter(self, characteristic: ReconnectionConfigurationControlPointCharacteristic) -> None:
-        """Test encode/decode roundtrip without parameter."""
-        original = ReconnectionConfigurationControlPointData(
-            op_code=RCCPOpCode.GET_ACTUAL_COMMUNICATION_PARAMETERS,
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

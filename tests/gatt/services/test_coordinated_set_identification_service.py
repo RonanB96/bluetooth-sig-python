@@ -26,7 +26,7 @@ class TestCoordinatedSetIdentificationService(CommonServiceTests):
     def test_characteristics_defined(self, service: CoordinatedSetIdentificationService) -> None:
         """Test that service defines expected characteristics."""
         expected = service.get_expected_characteristics()
-        assert len(expected) == 4
+        assert len(expected) == 5
 
     def test_required_characteristics(self, service: CoordinatedSetIdentificationService) -> None:
         """Test that required characteristics are correctly marked."""

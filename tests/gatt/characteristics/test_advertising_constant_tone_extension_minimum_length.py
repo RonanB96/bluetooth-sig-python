@@ -28,17 +28,3 @@ class TestAdvertisingConstantToneExtensionMinimumLength(CommonCharacteristicTest
             CharacteristicTestData(bytearray([0x14]), 20, "Min length 20"),
             CharacteristicTestData(bytearray([0xFF]), 255, "Max min length"),
         ]
-
-    def test_roundtrip(self, characteristic: AdvertisingConstantToneExtensionMinimumLengthCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray([0x00]), 0, "Min length 0"),
-            CharacteristicTestData(bytearray([0x14]), 20, "Min length 20"),
-            CharacteristicTestData(bytearray([0xFF]), 255, "Max min length"),
-        ]

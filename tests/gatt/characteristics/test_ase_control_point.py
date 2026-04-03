@@ -43,12 +43,12 @@ class TestASEControlPointCharacteristic(CommonCharacteristicTests):
                 description="ENABLE with 1 ASE and parameter data",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0xFF, 0x00]),
+                input_data=bytearray([0x08, 0x01, 0x05]),
                 expected_value=ASEControlPointData(
-                    op_code=ASEControlPointOpCode.RESPONSE,
-                    number_of_ases=0,
-                    parameter_data=b"",
+                    op_code=ASEControlPointOpCode.RELEASE,
+                    number_of_ases=1,
+                    parameter_data=b"\x05",
                 ),
-                description="RESPONSE with 0 ASEs",
+                description="RELEASE with 1 ASE and ASE_ID parameter",
             ),
         ]

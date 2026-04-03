@@ -93,7 +93,7 @@ class TestEnumTemplateBasics:
         assert template.encode_value(1) == bytearray([0x01])
         assert template.encode_value(2) == bytearray([0x02])
 
-    def test_round_trip(self) -> None:
+    def test_roundtrip(self) -> None:
         """Test encode -> decode returns original value."""
         template = EnumTemplate.uint8(SimpleStatus)
 
@@ -518,7 +518,7 @@ class TestUtf16StringTemplate:
         with pytest.raises(ValueError, match="Invalid UTF-16LE string data"):
             template.decode_value(data)
 
-    def test_round_trip_encoding(self) -> None:
+    def test_roundtrip_encoding(self) -> None:
         """Test that encode/decode round trip works."""
         template = Utf16StringTemplate()
         test_strings = ["Hello", "你好", "مرحبا", "😀🚀"]

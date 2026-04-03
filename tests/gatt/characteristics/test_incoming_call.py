@@ -38,11 +38,3 @@ class TestIncomingCallCharacteristic(CommonCharacteristicTests):
                 description="Call index 2 with URI",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = IncomingCallCharacteristic()
-        original = IncomingCallData(call_index=3, uri="tel:+44")
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

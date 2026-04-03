@@ -151,17 +151,3 @@ class TestGlucoseFeatureCharacteristic(CommonCharacteristicTests):
         # Should produce the correct bytes
         assert len(encoded) == 2
         assert encoded == bytearray([0x03, 0x04])  # Little endian 0x0403
-
-    def test_glucose_feature_round_trip(self, characteristic: GlucoseFeatureCharacteristic) -> None:
-        """Test that parsing and encoding preserve data."""
-        # Test with basic features
-        original_data = bytearray([0x03, 0x04])  # Low Battery + Sensor Malfunction + Multiple Bond
-
-        # Parse the data
-        parsed = characteristic.parse_value(original_data)
-
-        # Encode it back
-        encoded = characteristic.build_value(parsed)
-
-        # Should match the original
-        assert encoded == original_data

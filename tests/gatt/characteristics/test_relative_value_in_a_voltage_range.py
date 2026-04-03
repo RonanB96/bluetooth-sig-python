@@ -46,18 +46,6 @@ class TestRelativeValueInAVoltageRangeCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = RelativeValueInAVoltageRangeCharacteristic()
-        original = RelativeValueInAVoltageRangeData(
-            relative_value=50.0,
-            minimum_voltage=3.5,
-            maximum_voltage=5.0,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum voltage must not exceed maximum."""
         with pytest.raises(ValueError, match="cannot exceed"):

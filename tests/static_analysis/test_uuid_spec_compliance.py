@@ -19,7 +19,7 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 logger = logging.getLogger(__name__)
 
 
-def load_uuid_spec() -> dict[str, str]:
+def load_uuid_spec() -> dict[str, tuple[str, str]]:
     """Load canonical UUID ↔ name mapping from characteristic_uuids.yaml.
 
     Returns:
@@ -88,6 +88,10 @@ class TestUuidSpecCompliance:
         self, char_registry: CharacteristicRegistry, uuid_spec: dict[str, tuple[str, str]]
     ) -> None:
         """Verify each characteristic's UUID matches characteristic_uuids.yaml."""
+        # These characteristics have valid BT SIG UUIDs but are absent from the
+        # assigned-numbers YAML in the current submodule revision.
+        yaml_absent_uuids: frozenset[str] = frozenset(BluetoothUUID(u).normalized.lower() for u in ("2A56", "2A58"))
+
         enum_map = char_registry._get_enum_map()  # pylint: disable=protected-access
         all_chars = list(enum_map.values())
         mismatches: list[dict[str, Any]] = []
@@ -103,6 +107,8 @@ class TestUuidSpecCompliance:
             normalized_uuid = class_uuid.normalized.lower()
 
             if normalized_uuid not in uuid_spec:
+                if normalized_uuid in yaml_absent_uuids:
+                    continue
                 mismatches.append(
                     {
                         "class": char_class.__name__,
@@ -112,7 +118,7 @@ class TestUuidSpecCompliance:
                 )
                 continue
 
-            spec_name, spec_id = uuid_spec[normalized_uuid]
+            spec_name, _ = uuid_spec[normalized_uuid]
             logger.debug(f"✓ {char_class.__name__:50s} → {normalized_uuid:8s} ({spec_name})")
 
         if mismatches:

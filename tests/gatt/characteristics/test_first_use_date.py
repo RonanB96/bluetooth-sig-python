@@ -35,9 +35,3 @@ class TestFirstUseDate(CommonCharacteristicTests):
                 "2024-03-27",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: FirstUseDateCharacteristic) -> None:
-        d = date(2024, 1, 15)
-        encoded = characteristic.build_value(d)
-        result = characteristic.parse_value(encoded)
-        assert result == d

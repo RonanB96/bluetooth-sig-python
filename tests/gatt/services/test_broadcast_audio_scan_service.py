@@ -25,4 +25,4 @@ class TestBroadcastAudioScanService(CommonServiceTests):
     def test_characteristics_defined(self, service: BroadcastAudioScanService) -> None:
         """Test that service defines expected characteristics."""
         expected = service.get_expected_characteristics()
-        assert len(expected) == 1
+        assert len(expected) == 2

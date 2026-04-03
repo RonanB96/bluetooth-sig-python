@@ -51,3 +51,21 @@ class TestAlertStatusCharacteristic(CommonCharacteristicTests):
                 description="Ringer and display active, vibrate inactive",
             ),
         ]
+
+    def test_reserved_bits_ignored(self, characteristic: AlertStatusCharacteristic) -> None:
+        """Test that reserved bits (3-7) are ignored during decoding."""
+        data = bytearray([0xFF])  # All bits set including reserved
+        result = characteristic.parse_value(data)
+        assert result is not None
+        assert result.ringer_state is True
+        assert result.vibrate_state is True
+        assert result.display_alert_status is True
+
+    def test_only_reserved_bits_set(self, characteristic: AlertStatusCharacteristic) -> None:
+        """Test data where only reserved bits are set (bits 3-7), defined bits are 0."""
+        data = bytearray([0xF8])  # Bits 3-7 set, bits 0-2 clear
+        result = characteristic.parse_value(data)
+        assert result is not None
+        assert result.ringer_state is False
+        assert result.vibrate_state is False
+        assert result.display_alert_status is False

@@ -28,6 +28,8 @@ class TestUserIndexCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(input_data=bytearray([0]), expected_value=0, description="Unknown user"),
             CharacteristicTestData(input_data=bytearray([1]), expected_value=1, description="User 1"),
             CharacteristicTestData(input_data=bytearray([5]), expected_value=5, description="User 5"),
+            CharacteristicTestData(input_data=bytearray([10]), expected_value=10, description="User 10"),
+            CharacteristicTestData(input_data=bytearray([100]), expected_value=100, description="User 100"),
             CharacteristicTestData(input_data=bytearray([255]), expected_value=255, description="User 255"),
         ]
 
@@ -42,11 +44,3 @@ class TestUserIndexCharacteristic(CommonCharacteristicTests):
         char = UserIndexCharacteristic()
         result = char.parse_value(bytearray([1]))
         assert result == 1
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = UserIndexCharacteristic()
-        for user_index in [0, 1, 10, 100, 255]:
-            encoded = char.build_value(user_index)
-            decoded = char.parse_value(encoded)
-            assert decoded == user_index

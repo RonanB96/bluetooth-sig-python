@@ -23,18 +23,5 @@ class TestVolumeFlags(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(bytearray([0x00]), VolumeFlags(0), "No flags"),
-            CharacteristicTestData(bytearray([0x01]), VolumeFlags.RESET_VOLUME_SETTING, "Reset volume setting"),
-        ]
-
-    def test_roundtrip(self, characteristic: VolumeFlagsCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray([0x00]), VolumeFlags(0), "No flags"),
-            CharacteristicTestData(bytearray([0x01]), VolumeFlags.RESET_VOLUME_SETTING, "Reset volume setting"),
+            CharacteristicTestData(bytearray([0x01]), VolumeFlags.USER_SET_VOLUME_SETTING, "User set volume setting"),
         ]

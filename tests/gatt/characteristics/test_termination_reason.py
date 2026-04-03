@@ -27,12 +27,12 @@ class TestTerminationReason(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x01, 0x00]),
+                input_data=bytearray([0x01, 0x02]),
                 expected_value=TerminationReasonData(call_index=1, reason=TerminationReason.REMOTE_PARTY_ENDED),
                 description="Call 1, remote party ended",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x03, 0x04]),
+                input_data=bytearray([0x03, 0x06]),
                 expected_value=TerminationReasonData(call_index=3, reason=TerminationReason.CLIENT_ENDED),
                 description="Call 3, client ended",
             ),
@@ -45,10 +45,3 @@ class TestTerminationReason(CommonCharacteristicTests):
             result = characteristic.parse_value(data)
             assert result.call_index == 0
             assert result.reason == reason
-
-    def test_roundtrip(self, characteristic: TerminationReasonCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = TerminationReasonData(call_index=2, reason=TerminationReason.LINE_BUSY)
-        encoded = characteristic.build_value(original)
-        result = characteristic.parse_value(encoded)
-        assert result == original

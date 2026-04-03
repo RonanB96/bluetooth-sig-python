@@ -24,7 +24,6 @@ class TestDeviceTimeParametersCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                # RTC_Resolution=0 (unknown) [0x00,0x00]
                 input_data=bytearray([0x00, 0x00]),
                 expected_value=DeviceTimeParametersData(
                     rtc_resolution=0,
@@ -51,6 +50,9 @@ class TestDeviceTimeParametersCharacteristic(CommonCharacteristicTests):
                     max_days_until_sync_loss=73,
                     non_logged_time_adjustment_limit=10,
                 ),
-                description="All RTC drift fields present; 1s resolution, 5-min drift limit, 73-day sync loss, 10s non-logged limit",
+                description=(
+                    "All RTC drift fields present; 1s resolution, 5-min drift limit,"
+                    " 73-day sync loss, 10s non-logged limit"
+                ),
             ),
         ]

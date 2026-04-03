@@ -31,6 +31,17 @@ class TestCoefficientCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x00, 0x80, 0x3F]), expected_value=1.0, description="One coefficient"
             ),
+            CharacteristicTestData(
+                input_data=bytearray([0x00, 0x00, 0x20, 0x40]),
+                expected_value=2.5,
+                description="Positive fractional coefficient",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x00, 0x00, 0xC0, 0xBF]), expected_value=-1.5, description="Negative coefficient"
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x00, 0x00, 0xC8, 0x42]), expected_value=100.0, description="Large coefficient"
+            ),
         ]
 
     def test_zero_coefficient(self) -> None:
@@ -44,11 +55,3 @@ class TestCoefficientCharacteristic(CommonCharacteristicTests):
         char = CoefficientCharacteristic()
         result = char.parse_value(bytearray([0xFF, 0xFF, 0x7F, 0x7F]))
         assert result == pytest.approx(3.4028234663852886e38, rel=1e-5)
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = CoefficientCharacteristic()
-        for value in [0.0, 1.0, 2.5, -1.5, 100.0]:
-            encoded = char.build_value(value)
-            decoded = char.parse_value(encoded)
-            assert decoded == pytest.approx(value)

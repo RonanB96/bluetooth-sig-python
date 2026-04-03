@@ -38,14 +38,6 @@ class TestLuminousFluxRangeCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = LuminousFluxRangeCharacteristic()
-        original = LuminousFluxRangeData(minimum=200, maximum=1600)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum > maximum is invalid."""
         with pytest.raises(ValueError, match="cannot be greater"):

@@ -58,18 +58,6 @@ class TestSupportedInclinationRangeCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = SupportedInclinationRangeCharacteristic()
-        original = SupportedInclinationRangeData(
-            minimum=-10.0,
-            maximum=15.0,
-            minimum_increment=0.5,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum > maximum is invalid."""
         with pytest.raises(ValueError, match="cannot be greater"):

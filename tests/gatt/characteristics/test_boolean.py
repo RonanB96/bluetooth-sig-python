@@ -58,11 +58,3 @@ class TestBooleanCharacteristic(CommonCharacteristicTests):
         char = BooleanCharacteristic()
         encoded = char.build_value(True)
         assert encoded == bytearray([1])
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = BooleanCharacteristic()
-        for value in [False, True]:
-            encoded = char.build_value(value)
-            decoded = char.parse_value(encoded)
-            assert decoded == value

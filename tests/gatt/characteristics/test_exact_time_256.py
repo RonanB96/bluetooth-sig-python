@@ -47,11 +47,3 @@ class TestExactTime256Characteristic(CommonCharacteristicTests):
         assert result.dt == datetime(2019, 12, 25, 10, 30, 45)
         assert result.day_of_week == 3
         assert result.fractions256 == 128  # 128/256 = 0.5 seconds
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve data."""
-        char = ExactTime256Characteristic()
-        original = ExactTime256Data(dt=datetime(2023, 6, 15, 14, 30, 0), day_of_week=4, fractions256=64)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

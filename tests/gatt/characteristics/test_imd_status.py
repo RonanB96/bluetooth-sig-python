@@ -40,13 +40,3 @@ class TestIMDStatusCharacteristic(CommonCharacteristicTests):
                 description="Multiple flags with additional data",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: IMDStatusCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = IMDStatusData(
-            flags=IMDStatusFlags.WARNING_ACTIVE | IMDStatusFlags.MAINTENANCE_REQUIRED,
-            additional_data=b"\x01\x02\x03",
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

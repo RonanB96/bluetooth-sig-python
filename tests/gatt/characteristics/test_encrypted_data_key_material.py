@@ -45,14 +45,3 @@ class TestEncryptedDataKeyMaterialCharacteristic(CommonCharacteristicTests):
                 description="Sequential session key with distinct IV",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = EncryptedDataKeyMaterialCharacteristic()
-        original = EncryptedDataKeyMaterialData(
-            session_key=b"\xff" * 16,
-            iv=b"\xaa" * 8,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

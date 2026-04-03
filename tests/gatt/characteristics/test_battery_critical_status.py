@@ -128,15 +128,6 @@ class TestBatteryCriticalStatusCharacteristic(CommonCharacteristicTests):
         encoded = characteristic.build_value(status)
         assert encoded == bytearray([0x02])
 
-    def test_battery_critical_status_round_trip(self, characteristic: BatteryCriticalStatusCharacteristic) -> None:
-        """Test round-trip encoding/decoding preserves values."""
-        test_values = [0x00, 0x01, 0x02, 0x03]
-
-        for value in test_values:
-            decoded = characteristic.parse_value(bytearray([value]))
-            encoded = characteristic.build_value(decoded)
-            assert encoded == bytearray([value]), f"Round-trip failed for value {value:02X}"
-
     def test_characteristic_metadata(self, characteristic: BatteryCriticalStatusCharacteristic) -> None:
         """Test characteristic metadata."""
         assert characteristic.name == "Battery Critical Status"

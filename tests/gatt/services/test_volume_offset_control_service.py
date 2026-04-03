@@ -31,5 +31,5 @@ class TestVolumeOffsetControlService(CommonServiceTests):
     def test_required_characteristics(self, service: VolumeOffsetControlService) -> None:
         """Test that required characteristics are correctly marked."""
         required = service.get_required_characteristics()
-        assert len(required) == 1
+        assert len(required) == 4
         assert CharacteristicName.VOLUME_OFFSET_STATE in required

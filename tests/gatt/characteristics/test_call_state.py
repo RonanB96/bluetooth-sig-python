@@ -77,19 +77,3 @@ class TestCallStateCharacteristic(CommonCharacteristicTests):
                 description="Two calls: incoming + locally held",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = CallStateCharacteristic()
-        original = CallStateData(
-            entries=(
-                CallStateEntry(
-                    call_index=3,
-                    state=CallState.DIALING,
-                    call_flags=CallFlags.WITHHELD,
-                ),
-            ),
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

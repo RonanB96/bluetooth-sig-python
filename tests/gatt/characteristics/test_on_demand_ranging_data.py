@@ -33,10 +33,3 @@ class TestOnDemandRangingDataCharacteristic(CommonCharacteristicTests):
                 description="Multi-byte on-demand ranging data",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: OnDemandRangingDataCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = b"\x11\x22\x33"
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

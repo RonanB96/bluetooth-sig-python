@@ -27,8 +27,6 @@ class TestDeviceTimeCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                # Base_Time=0 [0x00,0x00,0x00,0x00], Time_Zone=0 [0x00],
-                # DST_Offset=0 [0x00], DT_Status=0 [0x00,0x00]
                 input_data=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
                 expected_value=DeviceTimeData(
                     base_time=0,
@@ -51,9 +49,6 @@ class TestDeviceTimeCharacteristic(CommonCharacteristicTests):
                 description="1 day since epoch, UTC+2h, DST+1h, UTC aligned",
             ),
             CharacteristicTestData(
-                # Base_Time=670791488 [0x40,0x77,0xFB,0x27], Time_Zone=-20 (UTC-5h) [0xEC],
-                # DST_Offset=255 (unknown) [0xFF],
-                # DT_Status=TIME_FAULT|EPOCH_YEAR_2000 [0x11,0x00]
                 input_data=bytearray([0x40, 0x77, 0xFB, 0x27, 0xEC, 0xFF, 0x11, 0x00]),
                 expected_value=DeviceTimeData(
                     base_time=670791488,

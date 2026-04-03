@@ -27,6 +27,12 @@ class TestCount16Characteristic(CommonCharacteristicTests):
         return [
             CharacteristicTestData(input_data=bytearray([0, 0]), expected_value=0, description="Zero count"),
             CharacteristicTestData(input_data=bytearray([1, 0]), expected_value=1, description="Count of 1"),
+            CharacteristicTestData(input_data=bytearray([100, 0]), expected_value=100, description="Count of 100"),
+            CharacteristicTestData(
+                input_data=bytearray([0, 128]),
+                expected_value=32768,
+                description="Mid-range count value",
+            ),
             CharacteristicTestData(
                 input_data=bytearray([254, 255]), expected_value=65534, description="High count value"
             ),
@@ -49,11 +55,3 @@ class TestCount16Characteristic(CommonCharacteristicTests):
 
         assert exc_info.value.raw_int == 65535
         assert "not known" in exc_info.value.special_value.meaning.lower()
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = Count16Characteristic()
-        for value in [0, 1, 100, 32768, 65534]:
-            encoded = char.build_value(value)
-            decoded = char.parse_value(encoded)
-            assert decoded == value

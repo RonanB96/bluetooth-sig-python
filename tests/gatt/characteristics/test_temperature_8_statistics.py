@@ -50,20 +50,6 @@ class TestTemperature8StatisticsCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = Temperature8StatisticsCharacteristic()
-        original = Temperature8StatisticsData(
-            average=10.0,
-            standard_deviation=2.0,
-            minimum=5.0,
-            maximum=15.0,
-            sensing_duration=0.0,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
     def test_validation_rejects_negative_duration(self) -> None:
         """Negative sensing duration is invalid."""
         with pytest.raises(ValueError, match="cannot be negative"):

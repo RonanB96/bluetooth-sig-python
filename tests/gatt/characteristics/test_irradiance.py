@@ -39,6 +39,16 @@ class TestIrradianceCharacteristic(CommonCharacteristicTests):
                 expected_value=100.0,
                 description="100.0 W/m²",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([0xF4, 0x01]),  # 500 * 0.1 = 50.0 W/m²
+                expected_value=50.0,
+                description="50.0 W/m²",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0xFF, 0xFF]),  # 65535 * 0.1 = 6553.5 W/m²
+                expected_value=6553.5,
+                description="Maximum irradiance (6553.5 W/m²)",
+            ),
         ]
 
     def test_zero_irradiance(self) -> None:
@@ -52,11 +62,3 @@ class TestIrradianceCharacteristic(CommonCharacteristicTests):
         char = IrradianceCharacteristic()
         result = char.parse_value(bytearray([0xE8, 0x03]))  # 1000 * 0.1 = 100.0 W/m²
         assert result == 100.0
-
-    def test_irradiance_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = IrradianceCharacteristic()
-        for value in [0.0, 50.0, 100.0, 6553.5]:
-            encoded = char.build_value(value)
-            decoded = char.parse_value(encoded)
-            assert abs(decoded - value) < 1e-9

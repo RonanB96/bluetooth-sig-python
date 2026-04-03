@@ -26,17 +26,3 @@ class TestBearerSignalStrength(CommonCharacteristicTests):
             CharacteristicTestData(bytearray([0x64]), 100, "Signal 100"),
             CharacteristicTestData(bytearray([0xFF]), 255, "Max signal"),
         ]
-
-    def test_roundtrip(self, characteristic: BearerSignalStrengthCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray([0x00]), 0, "No signal"),
-            CharacteristicTestData(bytearray([0x64]), 100, "Signal 100"),
-            CharacteristicTestData(bytearray([0xFF]), 255, "Max signal"),
-        ]

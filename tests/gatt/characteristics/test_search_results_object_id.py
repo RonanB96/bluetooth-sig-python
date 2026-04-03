@@ -41,11 +41,3 @@ class TestSearchResultsObjectIdCharacteristic(CommonCharacteristicTests):
                 description="Maximum uint48",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = SearchResultsObjectIdCharacteristic()
-        original = 777888999
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

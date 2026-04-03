@@ -52,15 +52,3 @@ class TestCGMSpecificOpsControlPointCharacteristic(CommonCharacteristicTests):
                 description="Response code: success for Set Communication Interval",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = CGMSpecificOpsControlPointCharacteristic()
-        original = CGMSpecificOpsControlPointData(
-            opcode=CGMSpecificOpsOpCode.SET_HYPO_ALERT_LEVEL,
-            operand=b"\x00\x46",
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded.opcode == original.opcode
-        assert decoded.operand == original.operand

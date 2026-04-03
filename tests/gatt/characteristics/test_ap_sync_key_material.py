@@ -36,11 +36,3 @@ class TestAPSyncKeyMaterialCharacteristic(CommonCharacteristicTests):
                 description="Descending byte key material",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = APSyncKeyMaterialCharacteristic()
-        original = b"\xab\xcd\xef\x01" * 4
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

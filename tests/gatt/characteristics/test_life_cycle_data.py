@@ -33,10 +33,3 @@ class TestLifeCycleDataCharacteristic(CommonCharacteristicTests):
                 description="Multi-byte lifecycle record",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: LifeCycleDataCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = b"\xde\xad\xbe\xef"
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

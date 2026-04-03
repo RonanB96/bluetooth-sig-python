@@ -40,6 +40,15 @@ class TestBootKeyboardInputReportCharacteristic(CommonCharacteristicTests):
                 ),
                 description="Left Shift + 'a' key",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([0x02, 0, 4, 5, 6, 0, 0, 0]),
+                expected_value=BootKeyboardInputReportData(
+                    modifiers=KeyboardModifiers.LEFT_SHIFT,
+                    reserved=0,
+                    keycodes=(4, 5, 6, 0, 0, 0),
+                ),
+                description="Left Shift with three pressed keys",
+            ),
         ]
 
     def test_no_keys_pressed(self) -> None:
@@ -56,13 +65,3 @@ class TestBootKeyboardInputReportCharacteristic(CommonCharacteristicTests):
         result = char.parse_value(bytearray([0x02, 0, 4, 0, 0, 0, 0, 0]))
         assert result.modifiers == KeyboardModifiers.LEFT_SHIFT
         assert result.keycodes[0] == 4  # 'a' key
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve data."""
-        char = BootKeyboardInputReportCharacteristic()
-        original = BootKeyboardInputReportData(
-            modifiers=KeyboardModifiers.LEFT_SHIFT, reserved=0, keycodes=(4, 5, 6, 0, 0, 0)
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

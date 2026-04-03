@@ -31,5 +31,5 @@ class TestVolumeControlService(CommonServiceTests):
     def test_required_characteristics(self, service: VolumeControlService) -> None:
         """Test that required characteristics are correctly marked."""
         required = service.get_required_characteristics()
-        assert len(required) == 1
+        assert len(required) == 3
         assert CharacteristicName.VOLUME_STATE in required

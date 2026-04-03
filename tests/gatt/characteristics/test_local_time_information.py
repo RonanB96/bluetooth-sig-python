@@ -49,6 +49,15 @@ class TestLocalTimeInformationCharacteristic(CommonCharacteristicTests):
                 ),
                 description="UTC-1 with standard time (no DST) = total offset -1 hour",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([8, 4]),  # timezone=+2h (8*15min), dst=+1h (value 4)
+                expected_value=LocalTimeInformationData(
+                    timezone=TimezoneInfo(description="UTC+02:00", offset_hours=2.0, raw_value=8),
+                    dst_offset=DSTOffsetInfo(description="Daylight Time", offset_hours=1.0, raw_value=4),
+                    total_offset_hours=3.0,
+                ),
+                description="UTC+2 with DST (+1 hour) = total offset 3 hours",
+            ),
         ]
 
     def test_local_time_information_parsing(self, characteristic: LocalTimeInformationCharacteristic) -> None:
@@ -103,17 +112,3 @@ class TestLocalTimeInformationCharacteristic(CommonCharacteristicTests):
         # Should produce the correct bytes
         assert len(encoded) == 2
         assert encoded == bytearray([8, 4])
-
-    def test_local_time_information_round_trip(self, characteristic: LocalTimeInformationCharacteristic) -> None:
-        """Test that parsing and encoding preserve data."""
-        # Test with UTC+2 and DST
-        original_data = bytearray([8, 4])
-
-        # Parse the data
-        parsed = characteristic.parse_value(original_data)
-
-        # Encode it back
-        encoded = characteristic.build_value(parsed)
-
-        # Should match the original
-        assert encoded == original_data

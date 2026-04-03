@@ -37,7 +37,7 @@ class TestIDDStatusCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 # therapy=RUN (0x55), operational=PREPARING (0x55),
                 # reservoir=SFLOAT(100.0), flags=RESERVOIR_ATTACHED (0x01)
-                input_data=bytearray([0x55, 0x55] + sfloat_100 + [0x01]),
+                input_data=bytearray([0x55, 0x55, *sfloat_100, 0x01]),
                 expected_value=IDDStatusData(
                     therapy_control_state=TherapyControlState.RUN,
                     operational_state=IDDOperationalState.PREPARING,
@@ -49,7 +49,7 @@ class TestIDDStatusCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 # therapy=STOP (0x33), operational=WAITING (0x66),
                 # reservoir=SFLOAT(0.0), flags=0x00
-                input_data=bytearray([0x33, 0x66] + sfloat_0 + [0x00]),
+                input_data=bytearray([0x33, 0x66, *sfloat_0, 0x00]),
                 expected_value=IDDStatusData(
                     therapy_control_state=TherapyControlState.STOP,
                     operational_state=IDDOperationalState.WAITING,
@@ -61,7 +61,7 @@ class TestIDDStatusCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 # therapy=PAUSE (0x3C), operational=PRIMING (0x5A),
                 # reservoir=SFLOAT(100.0), flags=0x00
-                input_data=bytearray([0x3C, 0x5A] + sfloat_100 + [0x00]),
+                input_data=bytearray([0x3C, 0x5A, *sfloat_100, 0x00]),
                 expected_value=IDDStatusData(
                     therapy_control_state=TherapyControlState.PAUSE,
                     operational_state=IDDOperationalState.PRIMING,

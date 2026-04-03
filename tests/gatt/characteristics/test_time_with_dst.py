@@ -54,16 +54,6 @@ class TestTimeWithDstCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_roundtrip(self, characteristic: TimeWithDstCharacteristic) -> None:
-        """Test encode/decode roundtrip consistency."""
-        original = TimeWithDstData(
-            dt=datetime(2024, 3, 10, 2, 0, 0),
-            dst_offset=DSTOffset.DAYLIGHT_TIME,
-        )
-        encoded = characteristic.build_value(original)
-        result = characteristic.parse_value(encoded)
-        assert result == original
-
     def test_half_hour_daylight(self, characteristic: TimeWithDstCharacteristic) -> None:
         """Test half-hour daylight DST offset."""
         data = bytearray([0xE8, 0x07, 0x09, 0x1E, 0x02, 0x00, 0x00, 0x02])

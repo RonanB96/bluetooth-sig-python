@@ -57,24 +57,3 @@ class TestFitnessMachineStatusCharacteristic(CommonCharacteristicTests):
                 description="Control permission lost",
             ),
         ]
-
-    def test_encode_round_trip_reset(self) -> None:
-        """Verify encode/decode round-trip for reset."""
-        char = FitnessMachineStatusCharacteristic()
-        original = FitnessMachineStatusData(
-            op_code=FitnessMachineStatusOpCode.RESET,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
-    def test_encode_round_trip_with_parameter(self) -> None:
-        """Verify encode/decode round-trip for status with parameter."""
-        char = FitnessMachineStatusCharacteristic()
-        original = FitnessMachineStatusData(
-            op_code=FitnessMachineStatusOpCode.FITNESS_MACHINE_STOPPED_OR_PAUSED_BY_USER,
-            parameter=b"\x02",
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

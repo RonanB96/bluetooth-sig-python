@@ -64,13 +64,3 @@ class TestTemperatureTypeCharacteristic(CommonCharacteristicTests):
         char = TemperatureTypeCharacteristic()
         result = char.parse_value(bytearray([6]))
         assert result == TemperatureType.MOUTH
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = TemperatureTypeCharacteristic()
-        for temp_type in TemperatureType:
-            if temp_type is TemperatureType.RESERVED_0:
-                continue
-            encoded = char.build_value(temp_type)
-            decoded = char.parse_value(encoded)
-            assert decoded == temp_type

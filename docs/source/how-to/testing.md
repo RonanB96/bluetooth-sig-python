@@ -28,8 +28,7 @@ entry in `valid_test_data`.
 import pytest
 
 from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
-
-from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
+from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestBatteryLevelCharacteristic(CommonCharacteristicTests):

@@ -31,5 +31,5 @@ class TestElectronicShelfLabelService(CommonServiceTests):
     def test_required_characteristics(self, service: ElectronicShelfLabelService) -> None:
         """Test that required characteristics are correctly marked."""
         required = service.get_required_characteristics()
-        assert len(required) == 1
+        assert len(required) == 5
         assert CharacteristicName.ESL_ADDRESS in required

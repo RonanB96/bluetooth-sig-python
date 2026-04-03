@@ -104,18 +104,6 @@ class TestBatteryHealthInformationCharacteristic(CommonCharacteristicTests):
         assert result.min_designed_operating_temperature == -128
         assert result.max_designed_operating_temperature == 127
 
-    def test_roundtrip_all_fields(self, characteristic: BaseCharacteristic[Any]) -> None:
-        """Verify encode/decode roundtrip with all fields."""
-        original = BatteryHealthInformation(
-            flags=BatteryHealthInformationFlags(0x03),
-            cycle_count_designed_lifetime=500,
-            min_designed_operating_temperature=-10,
-            max_designed_operating_temperature=45,
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
-
     def test_validation_cycle_count(self) -> None:
         """Verify cycle count range validation."""
         with pytest.raises(ValueError, match="Cycle count designed lifetime"):

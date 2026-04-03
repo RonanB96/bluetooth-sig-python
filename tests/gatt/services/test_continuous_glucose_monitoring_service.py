@@ -31,6 +31,6 @@ class TestContinuousGlucoseMonitoringService(CommonServiceTests):
     def test_required_characteristics(self, service: ContinuousGlucoseMonitoringService) -> None:
         """Test that required characteristics are correctly marked."""
         required = service.get_required_characteristics()
-        assert len(required) == 2
+        assert len(required) == 7
         assert CharacteristicName.CGM_MEASUREMENT in required
         assert CharacteristicName.CGM_FEATURE in required

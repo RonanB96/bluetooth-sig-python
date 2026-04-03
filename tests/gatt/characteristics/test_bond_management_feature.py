@@ -42,9 +42,13 @@ class TestBondManagementFeatureCharacteristic(CommonCharacteristicTests):
                 description="Flags spanning two octets",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x00, 0x00, 0x02]),
-                expected_value=BondManagementFeatureFlags.DELETE_ALL_EXCEPT_REQUESTING_LE_AUTH,
-                description="High bit in third octet",
+                input_data=bytearray([0x41, 0x00, 0x02]),
+                expected_value=(
+                    BondManagementFeatureFlags.DELETE_REQUESTING_BR_EDR_LE
+                    | BondManagementFeatureFlags.DELETE_ALL_BR_EDR_LE
+                    | BondManagementFeatureFlags.DELETE_ALL_EXCEPT_REQUESTING_LE_AUTH
+                ),
+                description="Three-flag combination across three octets",
             ),
         ]
 
@@ -64,14 +68,3 @@ class TestBondManagementFeatureCharacteristic(CommonCharacteristicTests):
         data = characteristic.build_value(BondManagementFeatureFlags.DELETE_ALL_EXCEPT_REQUESTING_LE)
         assert len(data) == 3
         assert data == bytearray([0x00, 0x00, 0x01])
-
-    def test_roundtrip(self, characteristic: BondManagementFeatureCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        flags = (
-            BondManagementFeatureFlags.DELETE_REQUESTING_BR_EDR_LE
-            | BondManagementFeatureFlags.DELETE_ALL_BR_EDR_LE
-            | BondManagementFeatureFlags.DELETE_ALL_EXCEPT_REQUESTING_LE_AUTH
-        )
-        encoded = characteristic.build_value(flags)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == flags

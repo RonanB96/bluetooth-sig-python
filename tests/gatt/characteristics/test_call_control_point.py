@@ -61,14 +61,3 @@ class TestCallControlPointCharacteristic(CommonCharacteristicTests):
         result = char.parse_value(data)
         assert result.op_code == CallControlPointOpCode.JOIN
         assert result.call_indexes == (1, 2, 3)
-
-    def test_encode_round_trip_accept(self) -> None:
-        """Verify encode/decode round-trip for accept."""
-        char = CallControlPointCharacteristic()
-        original = CallControlPointData(
-            op_code=CallControlPointOpCode.ACCEPT,
-            call_index=2,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

@@ -97,20 +97,3 @@ class TestBearerListCurrentCallsCharacteristic(CommonCharacteristicTests):
                 description="Two calls: incoming no URI + dialing with URI",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = BearerListCurrentCallsCharacteristic()
-        original = BearerListCurrentCallsData(
-            calls=(
-                CallListItem(
-                    call_index=5,
-                    state=CallState.LOCALLY_HELD,
-                    call_flags=CallFlags.OUTGOING | CallFlags.WITHHELD,
-                    uri="tel:+123",
-                ),
-            ),
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

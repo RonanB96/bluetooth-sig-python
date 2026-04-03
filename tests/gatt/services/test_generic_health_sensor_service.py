@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.services.generic_health_sensor import GenericHealthSensorService
-from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 from .test_service_common import CommonServiceTests
 
@@ -31,5 +30,4 @@ class TestGenericHealthSensorService(CommonServiceTests):
     def test_required_characteristics(self, service: GenericHealthSensorService) -> None:
         """Test that required characteristics are correctly marked."""
         required = service.get_required_characteristics()
-        assert len(required) == 1
-        assert CharacteristicName.HEALTH_SENSOR_FEATURES in required
+        assert len(required) == 0

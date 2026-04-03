@@ -34,6 +34,9 @@ class TestLocalNorthCoordinateCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray([0x00, 0x00]), expected_value=0.0, description="Origin (0.0 m)"
             ),
             CharacteristicTestData(input_data=bytearray([0xFF, 0xFF]), expected_value=-0.1, description="-0.1 m south"),
+            CharacteristicTestData(
+                input_data=bytearray([0xD2, 0x04]), expected_value=123.4, description="123.4 m north"
+            ),
         ]
 
     def test_local_north_coordinate_parsing(self, characteristic: LocalNorthCoordinateCharacteristic) -> None:
@@ -65,10 +68,3 @@ class TestLocalNorthCoordinateCharacteristic(CommonCharacteristicTests):
         data_min = bytearray([0x01, 0x80])
         result = characteristic.parse_value(data_min)
         assert abs(result - (-3276.7)) < 0.01
-
-    def test_local_north_coordinate_round_trip(self, characteristic: LocalNorthCoordinateCharacteristic) -> None:
-        """Test encode/decode round trip."""
-        test_value = 123.4
-        encoded = characteristic.build_value(test_value)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == test_value

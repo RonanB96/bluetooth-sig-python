@@ -61,16 +61,3 @@ class TestHearingAidFeatures(CommonCharacteristicTests):
                 description="Banded, all features",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: HearingAidFeaturesCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = HearingAidFeaturesData(
-            hearing_aid_type=HearingAidType.MONAURAL,
-            preset_synchronization_support=True,
-            independent_presets=False,
-            dynamic_presets=True,
-            writable_presets=False,
-        )
-        encoded = characteristic.build_value(original)
-        result = characteristic.parse_value(encoded)
-        assert result == original

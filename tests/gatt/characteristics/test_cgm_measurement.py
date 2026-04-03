@@ -93,6 +93,77 @@ class TestCGMMeasurementCharacteristic(CommonCharacteristicTests):
                 ),
                 description="Single record with trend and quality",
             ),
+            CharacteristicTestData(
+                input_data=bytearray(
+                    [
+                        0x06,
+                        0x00,
+                        *_sfloat_bytes(100.0),
+                        0x0A,
+                        0x00,
+                        0x09,
+                        0xE0,
+                        *_sfloat_bytes(90.0),
+                        0x05,
+                        0x00,
+                        0x01,
+                        0x02,
+                        0x04,
+                    ]
+                ),
+                expected_value=CGMMeasurementData(
+                    records=(
+                        CGMMeasurementRecord(
+                            size=6,
+                            flags=CGMMeasurementFlags(0x00),
+                            glucose_concentration=100.0,
+                            time_offset=10,
+                        ),
+                        CGMMeasurementRecord(
+                            size=9,
+                            flags=CGMMeasurementFlags(0xE0),
+                            glucose_concentration=90.0,
+                            time_offset=5,
+                            status_octet=CGMSensorStatusOctet(0x01),
+                            cal_temp_octet=CGMCalTempOctet(0x02),
+                            warning_octet=CGMWarningOctet(0x04),
+                        ),
+                    ),
+                ),
+                description="Two records: minimal and with annunciation octets",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(
+                    [
+                        0x0D,
+                        0xE3,
+                        *_sfloat_bytes(150.0),
+                        0x3C,
+                        0x00,
+                        0x0F,
+                        0x03,
+                        0x01,
+                        *_sfloat_bytes(1.0),
+                        *_sfloat_bytes(98.0),
+                    ]
+                ),
+                expected_value=CGMMeasurementData(
+                    records=(
+                        CGMMeasurementRecord(
+                            size=13,
+                            flags=CGMMeasurementFlags(0xE3),
+                            glucose_concentration=150.0,
+                            time_offset=60,
+                            status_octet=CGMSensorStatusOctet(0x0F),
+                            cal_temp_octet=CGMCalTempOctet(0x03),
+                            warning_octet=CGMWarningOctet(0x01),
+                            trend_information=1.0,
+                            quality=98.0,
+                        ),
+                    ),
+                ),
+                description="Single record with all optional fields",
+            ),
         ]
 
     def test_annunciation_octets(self) -> None:
@@ -144,84 +215,3 @@ class TestCGMMeasurementCharacteristic(CommonCharacteristicTests):
         assert result.records[0].time_offset == 10
         assert result.records[1].glucose_concentration == 110.0
         assert result.records[1].time_offset == 20
-
-    def test_round_trip_single_record(self) -> None:
-        """Test encode/decode round-trip for a single record."""
-        char = CGMMeasurementCharacteristic()
-        original = CGMMeasurementData(
-            records=(
-                CGMMeasurementRecord(
-                    size=10,
-                    flags=CGMMeasurementFlags(0x03),
-                    glucose_concentration=120.0,
-                    time_offset=30,
-                    trend_information=2.0,
-                    quality=95.0,
-                ),
-            ),
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert len(decoded.records) == 1
-        rec = decoded.records[0]
-        assert rec.glucose_concentration == 120.0
-        assert rec.time_offset == 30
-        assert rec.trend_information == 2.0
-        assert rec.quality == 95.0
-
-    def test_round_trip_multiple_records(self) -> None:
-        """Test encode/decode round-trip with multiple records."""
-        char = CGMMeasurementCharacteristic()
-        original = CGMMeasurementData(
-            records=(
-                CGMMeasurementRecord(
-                    size=6,
-                    flags=CGMMeasurementFlags(0x00),
-                    glucose_concentration=100.0,
-                    time_offset=10,
-                ),
-                CGMMeasurementRecord(
-                    size=9,
-                    flags=CGMMeasurementFlags(0xE0),
-                    glucose_concentration=90.0,
-                    time_offset=5,
-                    status_octet=CGMSensorStatusOctet(0x01),
-                    cal_temp_octet=CGMCalTempOctet(0x02),
-                    warning_octet=CGMWarningOctet(0x04),
-                ),
-            ),
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert len(decoded.records) == 2
-        assert decoded.records[0].glucose_concentration == 100.0
-        assert decoded.records[1].status_octet == CGMSensorStatusOctet(0x01)
-        assert decoded.records[1].warning_octet == CGMWarningOctet(0x04)
-
-    def test_round_trip_with_all_fields(self) -> None:
-        """Test round-trip with all optional fields present."""
-        char = CGMMeasurementCharacteristic()
-        original = CGMMeasurementData(
-            records=(
-                CGMMeasurementRecord(
-                    size=13,
-                    flags=CGMMeasurementFlags(0xE3),
-                    glucose_concentration=150.0,
-                    time_offset=60,
-                    status_octet=CGMSensorStatusOctet(0x0F),
-                    cal_temp_octet=CGMCalTempOctet(0x03),
-                    warning_octet=CGMWarningOctet(0x01),
-                    trend_information=1.0,
-                    quality=98.0,
-                ),
-            ),
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        rec = decoded.records[0]
-        assert rec.glucose_concentration == 150.0
-        assert rec.status_octet == CGMSensorStatusOctet(0x0F)
-        assert rec.cal_temp_octet == CGMCalTempOctet(0x03)
-        assert rec.warning_octet == CGMWarningOctet(0x01)
-        assert rec.trend_information == 1.0
-        assert rec.quality == 98.0

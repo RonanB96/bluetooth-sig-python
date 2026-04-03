@@ -75,6 +75,18 @@ class TestCGMFeatureCharacteristic(CommonCharacteristicTests):
                 ),
                 description="Many features, finger, capillary whole blood",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([0x01, 0x90, 0x00, 0x59, 0xCD, 0xAB]),
+                expected_value=CGMFeatureData(
+                    features=CGMFeatureFlags.CALIBRATION_SUPPORTED
+                    | CGMFeatureFlags.E2E_CRC_SUPPORTED
+                    | CGMFeatureFlags.CGM_TREND_INFORMATION_SUPPORTED,
+                    cgm_type=CGMType.INTERSTITIAL_FLUID,
+                    sample_location=CGMSampleLocation.SUBCUTANEOUS_TISSUE,
+                    e2e_crc=0xABCD,
+                ),
+                description="Calibration, E2E CRC, and trend information supported",
+            ),
         ]
 
     def test_all_features_enabled(self) -> None:
@@ -104,24 +116,6 @@ class TestCGMFeatureCharacteristic(CommonCharacteristicTests):
         assert int(result.features) == 0
         assert result.cgm_type == CGMType.CAPILLARY_WHOLE_BLOOD
         assert result.sample_location == CGMSampleLocation.FINGER
-
-    def test_round_trip_feature(self) -> None:
-        """Test encode/decode round-trip."""
-        char = CGMFeatureCharacteristic()
-        original = CGMFeatureData(
-            features=CGMFeatureFlags.CALIBRATION_SUPPORTED
-            | CGMFeatureFlags.E2E_CRC_SUPPORTED
-            | CGMFeatureFlags.CGM_TREND_INFORMATION_SUPPORTED,
-            cgm_type=CGMType.INTERSTITIAL_FLUID,
-            sample_location=CGMSampleLocation.SUBCUTANEOUS_TISSUE,
-            e2e_crc=0xABCD,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded.features == original.features
-        assert decoded.cgm_type == original.cgm_type
-        assert decoded.sample_location == original.sample_location
-        assert decoded.e2e_crc == original.e2e_crc
 
     def test_nibble_packing(self) -> None:
         """Test that type and sample location nibbles are packed correctly."""

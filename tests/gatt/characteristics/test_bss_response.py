@@ -49,13 +49,3 @@ class TestBSSResponseCharacteristic(CommonCharacteristicTests):
                 description="Split packet, sequence 2, client direction",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: BSSResponseCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = BSSResponseData(
-            split_header=SplitHeader(execute_flag=True, sequence_number=10, source_flag=True),
-            payload=b"\xff\xfe",
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

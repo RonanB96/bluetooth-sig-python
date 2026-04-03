@@ -12,172 +12,210 @@ from bluetooth_sig.gatt.characteristics.elapsed_time import (
 )
 from bluetooth_sig.gatt.characteristics.reference_time_information import TimeSource
 
-
-@pytest.fixture
-def characteristic() -> ElapsedTimeCharacteristic:
-    """Create a ElapsedTimeCharacteristic instance."""
-    return ElapsedTimeCharacteristic()
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
-class TestCurrentElapsedTimeDecode:
-    """Tests for Current Elapsed Time decoding."""
+class TestElapsedTimeCharacteristic(CommonCharacteristicTests):
+    """Test suite for ElapsedTimeCharacteristic."""
 
-    def test_basic_utc_time(self, characteristic: ElapsedTimeCharacteristic) -> None:
-        """Test decoding a UTC time-of-day value (1 second resolution)."""
-        # Flags: UTC (bit 1) = 0x02, resolution 1s (bits 2-3 = 00)
-        # Time: 1000000 = 0x0F4240 (as uint48 little-endian: 40 42 0F 00 00 00)
-        # Sync source: 0x01
-        # TZ/DST offset: 0 (sint8)
-        data = bytearray(b"\x02\x40\x42\x0f\x00\x00\x00\x01\x00")
-        result = characteristic.parse_value(data)
-        assert isinstance(result, ElapsedTimeData)
-        assert result.is_utc is True
-        assert result.is_tick_counter is False
-        assert result.time_resolution == TimeResolution.ONE_SECOND
-        assert result.time_value == 1000000
-        assert result.sync_source_type == 1
-        assert result.tz_dst_offset == 0
+    @pytest.fixture
+    def characteristic(self) -> ElapsedTimeCharacteristic:
+        return ElapsedTimeCharacteristic()
 
-    def test_tick_counter_100ms(self, characteristic: ElapsedTimeCharacteristic) -> None:
-        """Test decoding a tick counter with 100ms resolution."""
-        # Flags: tick_counter (bit 0) + resolution 100ms (bits 2-3 = 01)
-        #   = 0x01 | (0x01 << 2) = 0x01 | 0x04 = 0x05
-        # Time: 500 = 0x01F4 (as uint48 LE: F4 01 00 00 00 00)
-        # Sync source: 0x00
-        # TZ/DST offset: 0
-        data = bytearray(b"\x05\xf4\x01\x00\x00\x00\x00\x00\x00")
-        result = characteristic.parse_value(data)
-        assert result.is_tick_counter is True
-        assert result.time_resolution == TimeResolution.HUNDRED_MILLISECONDS
-        assert result.time_value == 500
-        assert result.tz_dst_used is False
+    @pytest.fixture
+    def expected_uuid(self) -> str:
+        return "2BF2"
 
-    def test_local_time_with_tz(self, characteristic: ElapsedTimeCharacteristic) -> None:
-        """Test decoding local time with TZ/DST offset."""
-        # Flags: tz_dst_used (bit 4) + current_timeline (bit 5) = 0x30
-        # Time: 86400 = 0x015180 (one day in seconds)
-        #   LE: 80 51 01 00 00 00
-        # Sync source: 0x04
-        # TZ/DST offset: 8 (= 2 hours ahead, sint8)
-        data = bytearray(b"\x30\x80\x51\x01\x00\x00\x00\x04\x08")
-        result = characteristic.parse_value(data)
-        assert result.is_utc is False
-        assert result.tz_dst_used is True
-        assert result.is_current_timeline is True
-        assert result.time_value == 86400
-        assert result.tz_dst_offset == 8
-
-    def test_negative_tz_offset(self, characteristic: ElapsedTimeCharacteristic) -> None:
-        """Test decoding with negative TZ/DST offset."""
-        # Flags: UTC + tz_dst_used = 0x02 | 0x10 = 0x12
-        # Time value: zero, Sync source: 0x00
-        # TZ/DST offset: -20 (= -5 hours, sint8 = 0xEC)
-        data = bytearray(b"\x12\x00\x00\x00\x00\x00\x00\x00\xec")
-        result = characteristic.parse_value(data)
-        assert result.is_utc is True
-        assert result.tz_dst_used is True
-        assert result.tz_dst_offset == -20
-
-    def test_1ms_resolution(self, characteristic: ElapsedTimeCharacteristic) -> None:
-        """Test decoding with 1 millisecond resolution."""
-        # Flags: resolution 1ms (bits 2-3 = 10) = 0x08
-        # Time: 3600000 = 0x36EE80 (one hour in ms)
-        #   LE: 80 EE 36 00 00 00
-        data = bytearray(b"\x08\x80\xee\x36\x00\x00\x00\x00\x00")
-        result = characteristic.parse_value(data)
-        assert result.time_resolution == TimeResolution.ONE_MILLISECOND
-        assert result.time_value == 3600000
-
-    def test_100us_resolution(self, characteristic: ElapsedTimeCharacteristic) -> None:
-        """Test decoding with 100 microsecond resolution."""
-        # Flags: resolution 100µs (bits 2-3 = 11) = 0x0C
-        data = bytearray(b"\x0c\x01\x00\x00\x00\x00\x00\x00\x00")
-        result = characteristic.parse_value(data)
-        assert result.time_resolution == TimeResolution.HUNDRED_MICROSECONDS
-        assert result.time_value == 1
-
-
-class TestCurrentElapsedTimeEncode:
-    """Tests for Current Elapsed Time encoding."""
-
-    def test_encode_utc_time(self, characteristic: ElapsedTimeCharacteristic) -> None:
-        """Test encoding a UTC time value."""
-        data = ElapsedTimeData(
-            flags=ElapsedTimeFlags.UTC,
-            time_value=1000000,
-            time_resolution=TimeResolution.ONE_SECOND,
-            is_tick_counter=False,
-            is_utc=True,
-            tz_dst_used=False,
-            is_current_timeline=False,
-            sync_source_type=TimeSource.NETWORK_TIME_PROTOCOL,
-            tz_dst_offset=0,
-        )
-        result = characteristic.build_value(data)
-        assert result == bytearray(b"\x02\x40\x42\x0f\x00\x00\x00\x01\x00")
-
-    def test_encode_tick_counter(self, characteristic: ElapsedTimeCharacteristic) -> None:
-        """Test encoding a tick counter with 100ms resolution."""
-        data = ElapsedTimeData(
-            flags=ElapsedTimeFlags.TICK_COUNTER,
-            time_value=500,
-            time_resolution=TimeResolution.HUNDRED_MILLISECONDS,
-            is_tick_counter=True,
-            is_utc=False,
-            tz_dst_used=False,
-            is_current_timeline=False,
-            sync_source_type=TimeSource.UNKNOWN,
-            tz_dst_offset=0,
-        )
-        result = characteristic.build_value(data)
-        assert result == bytearray(b"\x05\xf4\x01\x00\x00\x00\x00\x00\x00")
-
-
-class TestCurrentElapsedTimeRoundTrip:
-    """Round-trip tests for Current Elapsed Time."""
-
-    @pytest.mark.parametrize(
-        ("flags", "resolution", "time_val", "sync", "tz_dst"),
-        [
-            (ElapsedTimeFlags.UTC, TimeResolution.ONE_SECOND, 0, TimeSource.UNKNOWN, 0),
-            (ElapsedTimeFlags.TICK_COUNTER, TimeResolution.HUNDRED_MILLISECONDS, 500, TimeSource.UNKNOWN, 0),
-            (
-                ElapsedTimeFlags.UTC | ElapsedTimeFlags.TZ_DST_USED | ElapsedTimeFlags.CURRENT_TIMELINE,
-                TimeResolution.ONE_SECOND,
-                86400,
-                TimeSource.MANUAL,
-                8,
+    @pytest.fixture
+    def valid_test_data(self) -> list[CharacteristicTestData]:
+        return [
+            CharacteristicTestData(
+                input_data=bytearray(b"\x02\x40\x42\x0f\x00\x00\x00\x01\x00\x00\x00"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags.UTC,
+                    time_value=1000000,
+                    time_resolution=TimeResolution.ONE_SECOND,
+                    is_tick_counter=False,
+                    is_utc=True,
+                    tz_dst_used=False,
+                    is_current_timeline=False,
+                    sync_source_type=TimeSource.NETWORK_TIME_PROTOCOL,
+                    tz_dst_offset=0,
+                ),
+                description="UTC time, 1s resolution, NTP sync",
             ),
-            (
-                ElapsedTimeFlags.UTC | ElapsedTimeFlags.TZ_DST_USED,
-                TimeResolution.ONE_SECOND,
-                0,
-                TimeSource.UNKNOWN,
-                -20,
+            CharacteristicTestData(
+                input_data=bytearray(b"\x05\xf4\x01\x00\x00\x00\x00\x00\x00\x00\x00"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags.TICK_COUNTER,
+                    time_value=500,
+                    time_resolution=TimeResolution.HUNDRED_MILLISECONDS,
+                    is_tick_counter=True,
+                    is_utc=False,
+                    tz_dst_used=False,
+                    is_current_timeline=False,
+                    sync_source_type=TimeSource.UNKNOWN,
+                    tz_dst_offset=0,
+                ),
+                description="tick counter, 100ms resolution",
             ),
-        ],
-    )
-    def test_round_trip(
-        self,
-        characteristic: ElapsedTimeCharacteristic,
-        flags: ElapsedTimeFlags,
-        resolution: TimeResolution,
-        time_val: int,
-        sync: TimeSource,
-        tz_dst: int,
-    ) -> None:
-        """Test encode -> decode round-trip."""
-        original = ElapsedTimeData(
-            flags=flags,
-            time_value=time_val,
-            time_resolution=resolution,
-            is_tick_counter=bool(flags & ElapsedTimeFlags.TICK_COUNTER),
-            is_utc=bool(flags & ElapsedTimeFlags.UTC),
-            tz_dst_used=bool(flags & ElapsedTimeFlags.TZ_DST_USED),
-            is_current_timeline=bool(flags & ElapsedTimeFlags.CURRENT_TIMELINE),
-            sync_source_type=sync,
-            tz_dst_offset=tz_dst,
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
+            CharacteristicTestData(
+                input_data=bytearray(b"\x30\x80\x51\x01\x00\x00\x00\x04\x08\x00\x00"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags.TZ_DST_USED | ElapsedTimeFlags.CURRENT_TIMELINE,
+                    time_value=86400,
+                    time_resolution=TimeResolution.ONE_SECOND,
+                    is_tick_counter=False,
+                    is_utc=False,
+                    tz_dst_used=True,
+                    is_current_timeline=True,
+                    sync_source_type=TimeSource.MANUAL,
+                    tz_dst_offset=8,
+                ),
+                description="local time with TZ/DST offset +2h",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x12\x00\x00\x00\x00\x00\x00\x00\xec\x00\x00"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags.UTC | ElapsedTimeFlags.TZ_DST_USED,
+                    time_value=0,
+                    time_resolution=TimeResolution.ONE_SECOND,
+                    is_tick_counter=False,
+                    is_utc=True,
+                    tz_dst_used=True,
+                    is_current_timeline=False,
+                    sync_source_type=TimeSource.UNKNOWN,
+                    tz_dst_offset=-20,
+                ),
+                description="UTC with negative TZ/DST offset -5h",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x08\x80\xee\x36\x00\x00\x00\x00\x00\x00\x00"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags(0),
+                    time_value=3600000,
+                    time_resolution=TimeResolution.ONE_MILLISECOND,
+                    is_tick_counter=False,
+                    is_utc=False,
+                    tz_dst_used=False,
+                    is_current_timeline=False,
+                    sync_source_type=TimeSource.UNKNOWN,
+                    tz_dst_offset=0,
+                ),
+                description="1ms resolution, one hour in ms",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags(0),
+                    time_value=1,
+                    time_resolution=TimeResolution.HUNDRED_MICROSECONDS,
+                    is_tick_counter=False,
+                    is_utc=False,
+                    tz_dst_used=False,
+                    is_current_timeline=False,
+                    sync_source_type=TimeSource.UNKNOWN,
+                    tz_dst_offset=0,
+                ),
+                description="100µs resolution",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x02\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags.UTC,
+                    time_value=0,
+                    time_resolution=TimeResolution.ONE_SECOND,
+                    is_tick_counter=False,
+                    is_utc=True,
+                    tz_dst_used=False,
+                    is_current_timeline=False,
+                    sync_source_type=TimeSource.UNKNOWN,
+                    tz_dst_offset=0,
+                    clock_needs_set=True,
+                ),
+                description="clock needs set",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags.UTC,
+                    time_value=0,
+                    time_resolution=TimeResolution.ONE_SECOND,
+                    is_tick_counter=False,
+                    is_utc=True,
+                    tz_dst_used=False,
+                    is_current_timeline=False,
+                    sync_source_type=TimeSource.UNKNOWN,
+                    tz_dst_offset=0,
+                    clock_applies_dst=True,
+                    clock_manages_tz=True,
+                ),
+                description="clock applies DST and manages TZ",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags.UTC,
+                    time_value=0,
+                    time_resolution=TimeResolution.ONE_SECOND,
+                    is_tick_counter=False,
+                    is_utc=True,
+                    tz_dst_used=False,
+                    is_current_timeline=False,
+                    sync_source_type=TimeSource.UNKNOWN,
+                    tz_dst_offset=0,
+                ),
+                description="UTC zero time",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x02\x00\x00\x00\x00\x00\x00\x00\x00\x01\x03"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags.UTC,
+                    time_value=0,
+                    time_resolution=TimeResolution.ONE_SECOND,
+                    is_tick_counter=False,
+                    is_utc=True,
+                    tz_dst_used=False,
+                    is_current_timeline=False,
+                    sync_source_type=TimeSource.UNKNOWN,
+                    tz_dst_offset=0,
+                    clock_needs_set=True,
+                    clock_applies_dst=True,
+                    clock_manages_tz=True,
+                ),
+                description="all clock flags set",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x32\x80\x51\x01\x00\x00\x00\x04\x08\x01\x01"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags.UTC | ElapsedTimeFlags.TZ_DST_USED | ElapsedTimeFlags.CURRENT_TIMELINE,
+                    time_value=86400,
+                    time_resolution=TimeResolution.ONE_SECOND,
+                    is_tick_counter=False,
+                    is_utc=True,
+                    tz_dst_used=True,
+                    is_current_timeline=True,
+                    sync_source_type=TimeSource.MANUAL,
+                    tz_dst_offset=8,
+                    clock_needs_set=True,
+                    clock_applies_dst=True,
+                ),
+                description="UTC + TZ/DST + current timeline, clock needs set + applies DST",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x12\x00\x00\x00\x00\x00\x00\x00\xec\x00\x02"),
+                expected_value=ElapsedTimeData(
+                    flags=ElapsedTimeFlags.UTC | ElapsedTimeFlags.TZ_DST_USED,
+                    time_value=0,
+                    time_resolution=TimeResolution.ONE_SECOND,
+                    is_tick_counter=False,
+                    is_utc=True,
+                    tz_dst_used=True,
+                    is_current_timeline=False,
+                    sync_source_type=TimeSource.UNKNOWN,
+                    tz_dst_offset=-20,
+                    clock_manages_tz=True,
+                ),
+                description="UTC + TZ/DST offset -5h, clock manages TZ",
+            ),
+        ]

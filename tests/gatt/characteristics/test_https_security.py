@@ -28,8 +28,3 @@ class TestHttpsSecurity(CommonCharacteristicTests):
             CharacteristicTestData(bytearray([0x00]), HttpsSecurityState.HTTP, "HTTP"),
             CharacteristicTestData(bytearray([0x01]), HttpsSecurityState.HTTPS, "HTTPS"),
         ]
-
-    def test_roundtrip(self, characteristic: HttpsSecurityCharacteristic) -> None:
-        for val in HttpsSecurityState:
-            encoded = characteristic.build_value(val)
-            assert characteristic.parse_value(encoded) == val

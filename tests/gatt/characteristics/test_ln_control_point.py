@@ -37,7 +37,7 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
         """Return valid test data for LN control point (set cumulative value request)."""
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x01, 0xE8, 0x03, 0x00, 0x00]),  # SET_CUMULATIVE_VALUE, value=1000
+                input_data=bytearray([0x01, 0xE8, 0x03, 0x00]),  # SET_CUMULATIVE_VALUE, value=1000 (uint24)
                 expected_value=LNControlPointData(
                     op_code=LNControlPointOpCode.SET_CUMULATIVE_VALUE,
                     cumulative_value=1000,
@@ -78,7 +78,7 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
         [
             # Set cumulative value
             (
-                bytearray([0x01, 0x00, 0x00, 0x00, 0x00]),  # SET_CUMULATIVE_VALUE, value=0
+                bytearray([0x01, 0x00, 0x00, 0x00]),  # SET_CUMULATIVE_VALUE, value=0 (uint24)
                 {
                     "op_code": "SET_CUMULATIVE_VALUE",
                     "cumulative_value": 0,
@@ -163,7 +163,7 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
             ),
             # Request name of route
             (
-                bytearray([0x05, 0x01]),  # REQUEST_NAME_OF_ROUTE, route_number=1
+                bytearray([0x05, 0x01, 0x00]),  # REQUEST_NAME_OF_ROUTE, route_number=1 (uint16)
                 {
                     "op_code": "REQUEST_NAME_OF_ROUTE",
                     "cumulative_value": None,
@@ -180,7 +180,7 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
             ),
             # Select route
             (
-                bytearray([0x06, 0x02]),  # SELECT_ROUTE, route_number=2
+                bytearray([0x06, 0x02, 0x00]),  # SELECT_ROUTE, route_number=2 (uint16)
                 {
                     "op_code": "SELECT_ROUTE",
                     "cumulative_value": None,
@@ -214,7 +214,7 @@ class TestLNControlPointCharacteristic(CommonCharacteristicTests):
             ),
             # Set elevation
             (
-                bytearray([0x08, 0x00, 0x00, 0x00, 0x00]),  # SET_ELEVATION, elevation=0
+                bytearray([0x08, 0x00, 0x00, 0x00]),  # SET_ELEVATION, elevation=0 (sint24)
                 {
                     "op_code": "SET_ELEVATION",
                     "cumulative_value": None,

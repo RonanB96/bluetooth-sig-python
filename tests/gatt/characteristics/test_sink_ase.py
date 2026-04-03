@@ -55,15 +55,3 @@ class TestSinkASECharacteristic(CommonCharacteristicTests):
                 description="ASE ID 5, Releasing state",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = SinkASECharacteristic()
-        original = SinkASEData(
-            ase_id=2,
-            ase_state=ASEState.CODEC_CONFIGURED,
-            additional_data=b"\x01\x02\x03",
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

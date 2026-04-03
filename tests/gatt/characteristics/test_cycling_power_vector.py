@@ -103,7 +103,7 @@ class TestCyclingPowerVectorCharacteristic(CommonCharacteristicTests):
     def test_cycling_power_vector_with_torque_array(self) -> None:
         """Test cycling power vector with torque magnitude array."""
         char = CyclingPowerVectorCharacteristic()
-        # flags: CRANK(0x01) + ANGLE(0x02) + TORQUE(0x08)
+        # flags byte 0x0B: CRANK bit, ANGLE bit, TORQUE bit set
         data = bytearray(
             [
                 0x0B,

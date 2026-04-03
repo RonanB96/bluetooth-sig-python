@@ -44,4 +44,24 @@ class TestLightSourceTypeCharacteristic(CommonCharacteristicTests):
                 expected_value=LightSourceTypeValue.LED,
                 description="LED",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([0x06]),
+                expected_value=LightSourceTypeValue.OLED,
+                description="OLED",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0xFD]),
+                expected_value=LightSourceTypeValue.OTHER,
+                description="other",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0xFE]),
+                expected_value=LightSourceTypeValue.NO_LIGHT_SOURCE,
+                description="no light source",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0xFF]),
+                expected_value=LightSourceTypeValue.MULTIPLE,
+                description="multiple light source types",
+            ),
         ]

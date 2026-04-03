@@ -45,15 +45,3 @@ class TestRelativeValueInAPeriodOfDayCharacteristic(CommonCharacteristicTests):
                 description="100% from 06:00 to 18:00",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = RelativeValueInAPeriodOfDayCharacteristic()
-        original = RelativeValueInAPeriodOfDayData(
-            relative_value=50.0,
-            start_time=8.0,
-            end_time=17.0,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

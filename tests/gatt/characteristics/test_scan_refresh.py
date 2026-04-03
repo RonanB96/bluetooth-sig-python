@@ -40,11 +40,3 @@ class TestScanRefreshCharacteristic(CommonCharacteristicTests):
         char = ScanRefreshCharacteristic()
         result = char.parse_value(bytearray([1]))
         assert result == 1
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = ScanRefreshCharacteristic()
-        for value in [0, 1]:
-            encoded = char.build_value(value)
-            decoded = char.parse_value(encoded)
-            assert decoded == value
