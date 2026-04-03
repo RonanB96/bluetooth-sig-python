@@ -38,3 +38,7 @@ updates:
     commit-message:
       prefix: "ci"
       include: "scope"
+    ignore:
+      # actions/cache@v5 breaks the copilot-setup-steps job; pin to v4 until fixed
+      - dependency-name: "actions/cache"
+        versions: ["5.x"]
