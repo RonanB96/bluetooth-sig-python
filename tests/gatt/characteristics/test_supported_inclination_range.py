@@ -22,7 +22,7 @@ class TestSupportedInclinationRangeCharacteristic(CommonCharacteristicTests):
         return "2AD5"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
@@ -57,18 +57,6 @@ class TestSupportedInclinationRangeCharacteristic(CommonCharacteristicTests):
                 description="Full range (sint16 min/max, uint16 max increment)",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = SupportedInclinationRangeCharacteristic()
-        original = SupportedInclinationRangeData(
-            minimum=-10.0,
-            maximum=15.0,
-            minimum_increment=0.5,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
 
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum > maximum is invalid."""

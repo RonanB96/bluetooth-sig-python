@@ -20,7 +20,7 @@ class CurrentTimeService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.CURRENT_TIME: True,  # required
-        CharacteristicName.LOCAL_TIME_INFORMATION: False,  # optional
-        CharacteristicName.REFERENCE_TIME_INFORMATION: False,  # optional
+        CharacteristicName.CURRENT_TIME: True,
+        CharacteristicName.LOCAL_TIME_INFORMATION: False,
+        CharacteristicName.REFERENCE_TIME_INFORMATION: False,
     }

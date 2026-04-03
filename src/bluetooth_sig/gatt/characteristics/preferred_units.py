@@ -5,6 +5,7 @@ from __future__ import annotations
 import msgspec
 
 from ...registry.uuids.units import units_registry
+from ...types.gatt_enums import CharacteristicRole
 from ...types.registry.units import UnitInfo
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
@@ -28,6 +29,7 @@ class PreferredUnitsCharacteristic(BaseCharacteristic[PreferredUnitsData]):
     Each unit is represented by a 16-bit Bluetooth UUID from the Bluetooth SIG units registry.
     """
 
+    _manual_role = CharacteristicRole.INFO
     # Variable length: minimum 0 bytes (empty list), multiples of 2 bytes (16-bit UUIDs)
     min_length = 0
     allow_variable_length = True

@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
-    Temperature8InAPeriodOfDayCharacteristic,
-)
 from bluetooth_sig.gatt.characteristics.temperature_8_in_a_period_of_day import (
+    Temperature8InAPeriodOfDayCharacteristic,
     Temperature8InAPeriodOfDayData,
 )
 
@@ -47,18 +45,6 @@ class TestTemperature8InAPeriodOfDayCharacteristic(CommonCharacteristicTests):
                 description="22 C from 06:00 to 18:00",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = Temperature8InAPeriodOfDayCharacteristic()
-        original = Temperature8InAPeriodOfDayData(
-            temperature=10.0,
-            start_time=8.0,
-            end_time=20.0,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
 
     def test_negative_temperature(self) -> None:
         """Verify negative temperature decodes correctly."""

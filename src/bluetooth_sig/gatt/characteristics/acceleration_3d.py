@@ -16,7 +16,7 @@ class Acceleration3DCharacteristic(BaseCharacteristic[VectorData]):
     The Acceleration - 3D characteristic represents a measure of acceleration with a limited range.
     """
 
-    _characteristic_name: str | None = "Acceleration 3D"
+    _characteristic_name: str | None = "Acceleration - 3D"
     resolution: float = 0.01
 
     # BaseCharacteristic handles validation

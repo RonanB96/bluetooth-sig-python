@@ -18,6 +18,10 @@ from .device.device import Device
 from .types.base_types import SIGInfo
 from .types.data_types import CharacteristicInfo, ServiceInfo, ValidationResult
 
+# Consumer utilities
+from .utils.prewarm import prewarm_registries
+from .utils.values import is_struct_value, to_primitive
+
 try:
     from ._version import __version__
 except ImportError:
@@ -40,6 +44,10 @@ __all__ = [
     "SIGInfo",
     "ServiceInfo",
     "ValidationResult",
+    # Consumer utilities
+    "is_struct_value",
+    "prewarm_registries",
+    "to_primitive",
     # Version
     "__version__",
 ]

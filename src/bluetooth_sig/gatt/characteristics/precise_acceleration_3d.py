@@ -19,7 +19,7 @@ class PreciseAcceleration3DCharacteristic(BaseCharacteristic[VectorData]):
     Three fields: x, y, z (sint16 each, 0.001 gn resolution).
     """
 
-    _characteristic_name: str | None = "Precise Acceleration 3D"
+    _characteristic_name: str | None = "Precise Acceleration - 3D"
     resolution: float = _RESOLUTION
     expected_length: int = 6  # 3 x sint16
     min_length: int = 6

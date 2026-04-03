@@ -6,12 +6,17 @@ import struct
 
 import pytest
 
+from bluetooth_sig.gatt.characteristics.cycling_power_feature import CyclingPowerFeatureCharacteristic
 from bluetooth_sig.gatt.characteristics.cycling_power_measurement import (
     CyclingPowerMeasurementCharacteristic,
     CyclingPowerMeasurementData,
     CyclingPowerMeasurementFlags,
 )
-from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
+from tests.gatt.characteristics.test_characteristic_common import (
+    CharacteristicTestData,
+    CommonCharacteristicTests,
+    DependencyTestData,
+)
 
 
 class TestCyclingPowerMeasurementCharacteristic(CommonCharacteristicTests):
@@ -26,6 +31,34 @@ class TestCyclingPowerMeasurementCharacteristic(CommonCharacteristicTests):
     def expected_uuid(self) -> str:
         """Expected UUID for Cycling Power Measurement characteristic."""
         return "2A63"
+
+    @pytest.fixture
+    def dependency_test_data(self) -> list[DependencyTestData]:
+        """Test data for optional Cycling Power Feature dependency."""
+        # Basic measurement: no optional fields, 250W
+        measurement_data = bytearray([0x00, 0x00, 0xFA, 0x00])
+        expected = CyclingPowerMeasurementData(
+            flags=CyclingPowerMeasurementFlags(0),
+            instantaneous_power=250,
+            pedal_power_balance=None,
+            accumulated_energy=None,
+            cumulative_wheel_revolutions=None,
+            last_wheel_event_time=None,
+            cumulative_crank_revolutions=None,
+            last_crank_event_time=None,
+        )
+        return [
+            DependencyTestData(
+                with_dependency_data={
+                    str(CyclingPowerMeasurementCharacteristic.get_class_uuid()): measurement_data,
+                    str(CyclingPowerFeatureCharacteristic.get_class_uuid()): bytearray([0x00, 0x00, 0x00, 0x00]),
+                },
+                without_dependency_data=measurement_data,
+                expected_with=expected,
+                expected_without=expected,
+                description="Cycling power measurement with optional feature characteristic present",
+            ),
+        ]
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
@@ -63,7 +96,9 @@ class TestCyclingPowerMeasurementCharacteristic(CommonCharacteristicTests):
             ),
             # Test 3: With accumulated energy
             CharacteristicTestData(
-                input_data=bytearray([0x08, 0x00, 0x40, 0x01, 0x0A, 0x00]),  # flags=8, power=320W, energy=10kJ
+                input_data=bytearray(
+                    [0x00, 0x08, 0x40, 0x01, 0x0A, 0x00]
+                ),  # flags=0x0800 (ACCUMULATED_ENERGY_PRESENT), power=320W, energy=10kJ
                 expected_value=CyclingPowerMeasurementData(
                     flags=CyclingPowerMeasurementFlags.ACCUMULATED_ENERGY_PRESENT,
                     instantaneous_power=320,
@@ -114,25 +149,25 @@ class TestCyclingPowerMeasurementCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 input_data=bytearray(
                     [
-                        0x39,
-                        0x00,
-                        0x94,
-                        0x01,
-                        0x6E,
-                        0x15,
-                        0x00,
-                        0x39,
-                        0x30,
-                        0x00,
-                        0x00,
-                        0x00,
-                        0x10,
-                        0x90,
-                        0x01,
-                        0x00,
-                        0x08,
+                        0x31,  # flags low byte: PEDAL_POWER_BALANCE_PRESENT(0x01) | WHEEL(0x10) | CRANK(0x20)
+                        0x08,  # flags high byte: ACCUMULATED_ENERGY_PRESENT(0x0800)
+                        0x94,  # power low byte (404W signed int16 LE)
+                        0x01,  # power high byte
+                        0x6E,  # pedal power balance = 110 → 55.0%
+                        0x39,  # wheel revs byte 0 (12345 = 0x00003039)
+                        0x30,  # wheel revs byte 1
+                        0x00,  # wheel revs byte 2
+                        0x00,  # wheel revs byte 3
+                        0x00,  # last wheel event time low (4096 = 0x1000)
+                        0x10,  # last wheel event time high
+                        0x90,  # crank revs low (400 = 0x0190)
+                        0x01,  # crank revs high
+                        0x00,  # last crank event time low (2048 = 0x0800)
+                        0x08,  # last crank event time high
+                        0x15,  # accumulated energy low (21 = 0x0015)
+                        0x00,  # accumulated energy high
                     ]
-                ),  # multiple flags
+                ),  # flags=0x0831
                 expected_value=CyclingPowerMeasurementData(
                     flags=(
                         CyclingPowerMeasurementFlags.PEDAL_POWER_BALANCE_PRESENT

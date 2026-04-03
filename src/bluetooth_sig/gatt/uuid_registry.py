@@ -184,6 +184,25 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         self._gss_registry = GssRegistry.get_instance()
         self._load_gss_characteristic_info()
 
+        # TODO: Remove when bluetooth_sig submodule includes these UUIDs.
+        # Analog (0x2A58) and Digital (0x2A56) are present in service specs
+        # (Automation IO) but absent from the assigned-number YAML files.
+        _yaml_absent: list[tuple[BluetoothUUID, str, str]] = [
+            (BluetoothUUID(0x2A56), "Digital", "org.bluetooth.characteristic.digital"),
+            (BluetoothUUID(0x2A58), "Analog", "org.bluetooth.characteristic.analog"),
+        ]
+        for _bt_uuid, _name, _identifier in _yaml_absent:
+            if _bt_uuid.normalized not in self._characteristics:
+                self._store_characteristic(
+                    CharacteristicInfo(
+                        uuid=_bt_uuid,
+                        name=_name,
+                        id=_identifier,
+                        unit="",
+                        python_type=None,
+                    )
+                )
+
     def _load_gss_characteristic_info(self) -> None:
         """Load GSS specs and update characteristics with extracted info."""
         if self._gss_registry is None:
@@ -211,6 +230,13 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 ]
             }
             unit, value_type = self._gss_registry.extract_info_from_gss(char_data)
+
+            # Multi-field structs have per-field units; no single representative
+            # unit, and the first field's scalar wire type (e.g. int) is not
+            # representative of the struct-valued characteristic.
+            if len(spec.structure) > 1:
+                unit = None
+                value_type = None
 
             if unit or value_type:
                 self._update_characteristic_with_gss_info(spec.name, spec.identifier, unit, value_type)
@@ -528,6 +554,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             field_size = None
             unit_id = None
             unit_symbol = None
+            unit_readable_name = None
             base_unit = None
             resolution_text = None
             description = None
@@ -548,14 +575,20 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                         if primary.unit_id:
                             unit_id = f"org.bluetooth.unit.{primary.unit_id}"
                             unit_symbol = self._convert_bluetooth_unit_to_readable(primary.unit_id)
+                            # Preserve the human-readable long-form name
+                            unit_info_obj = UnitsRegistry.get_instance().get_info(unit_id)
+                            if unit_info_obj:
+                                unit_readable_name = unit_info_obj.readable_name
                             base_unit = unit_id
 
                         # Get resolution from FieldSpec
                         if primary.resolution is not None:
                             resolution_text = f"Resolution: {primary.resolution}"
 
-            # 4. Use existing unit/value_type from CharacteristicInfo if GSS didn't provide them
-            if not unit_symbol and char_info.unit:
+            # 4. Use existing unit from CharacteristicInfo if GSS didn't provide one.
+            # Multi-field structs have per-field units; don't promote one to top-level.
+            is_multi_field = gss_spec is not None and len(gss_spec.structure) > 1
+            if not unit_symbol and char_info.unit and not is_multi_field:
                 unit_symbol = char_info.unit
 
             return CharacteristicSpec(
@@ -565,6 +598,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                 unit_info=UnitMetadata(
                     unit_id=unit_id,
                     unit_symbol=unit_symbol,
+                    unit_name=unit_readable_name,
                     base_unit=base_unit,
                     resolution_text=resolution_text,
                 ),

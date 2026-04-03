@@ -1,4 +1,4 @@
-"""Fixed String 36 characteristic (0x2AF5)."""
+"""Fixed String 36 characteristic (0x2AF7)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from .templates import Utf8StringTemplate
 
 
 class FixedString36Characteristic(BaseCharacteristic[str]):
-    """Fixed String 36 characteristic (0x2AF5).
+    """Fixed String 36 characteristic (0x2AF7).
 
     org.bluetooth.characteristic.fixed_string_36
 

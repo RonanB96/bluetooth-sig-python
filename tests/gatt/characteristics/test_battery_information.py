@@ -46,7 +46,7 @@ class TestBatteryInformationCharacteristic(CommonCharacteristicTests):
         return "2BEC"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid battery information test data."""
         # 19724 days since epoch = 2024-01-01 (approx)
         # 21550 days since epoch = 2029-01-01 (approx)
@@ -145,34 +145,6 @@ class TestBatteryInformationCharacteristic(CommonCharacteristicTests):
         data = bytearray([0x80, 0x00, 0x00, 0x05])
         result = characteristic.parse_value(data)
         assert result.battery_aggregation_group == 5
-
-    def test_roundtrip_all_fields(self, characteristic: BaseCharacteristic[Any]) -> None:
-        """Verify encode/decode roundtrip with all fields."""
-        original = BatteryInformation(
-            flags=BatteryInformationFlags(0x00FF),
-            battery_features=BatteryFeatures(0x03),
-            battery_manufacture_date=19724,
-            battery_expiration_date=21550,
-            battery_designed_capacity=10.0,
-            battery_low_energy=2.0,
-            battery_critical_energy=1.0,
-            battery_chemistry=BatteryChemistry.LITHIUM_ION,
-            nominal_voltage=4.0,
-            battery_aggregation_group=1,
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
-
-    def test_roundtrip_minimal(self, characteristic: BaseCharacteristic[Any]) -> None:
-        """Verify encode/decode roundtrip with minimal fields."""
-        original = BatteryInformation(
-            flags=BatteryInformationFlags(0x0000),
-            battery_features=BatteryFeatures(0x01),
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
 
     def test_too_short_data(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Verify that data shorter than min_length raises error."""

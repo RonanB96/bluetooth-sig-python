@@ -1,4 +1,4 @@
-"""Contact Status 8 characteristic (0x2C10)."""
+"""Contact Status 8 characteristic (0x2C22)."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ class ContactStatus(IntFlag):
 
 
 class ContactStatus8Characteristic(BaseCharacteristic[ContactStatus]):
-    """Contact Status 8 characteristic (0x2C10).
+    """Contact Status 8 characteristic (0x2C22).
 
     org.bluetooth.characteristic.contact_status_8
 

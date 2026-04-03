@@ -47,12 +47,14 @@ class TestGlucoseService(CommonServiceTests):
         assert CharacteristicName.GLUCOSE_MEASUREMENT in expected_chars
         assert CharacteristicName.GLUCOSE_MEASUREMENT_CONTEXT in expected_chars
         assert CharacteristicName.GLUCOSE_FEATURE in expected_chars
-        assert len(expected_chars) == 3
+        assert CharacteristicName.RECORD_ACCESS_CONTROL_POINT in expected_chars
+        assert len(expected_chars) == 4
 
         # Check required characteristics
         assert CharacteristicName.GLUCOSE_MEASUREMENT in required_chars
         assert CharacteristicName.GLUCOSE_FEATURE in required_chars
-        assert len(required_chars) == 2
+        assert CharacteristicName.RECORD_ACCESS_CONTROL_POINT in required_chars
+        assert len(required_chars) == 3
 
     def test_glucose_service_registration(self) -> None:
         """Test that glucose service is properly registered."""

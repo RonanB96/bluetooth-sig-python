@@ -33,7 +33,7 @@ class TestBatteryHealthInformationCharacteristic(CommonCharacteristicTests):
         return "2BEB"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid battery health information test data."""
         return [
             CharacteristicTestData(
@@ -103,18 +103,6 @@ class TestBatteryHealthInformationCharacteristic(CommonCharacteristicTests):
         result = characteristic.parse_value(data)
         assert result.min_designed_operating_temperature == -128
         assert result.max_designed_operating_temperature == 127
-
-    def test_roundtrip_all_fields(self, characteristic: BaseCharacteristic[Any]) -> None:
-        """Verify encode/decode roundtrip with all fields."""
-        original = BatteryHealthInformation(
-            flags=BatteryHealthInformationFlags(0x03),
-            cycle_count_designed_lifetime=500,
-            min_designed_operating_temperature=-10,
-            max_designed_operating_temperature=45,
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
 
     def test_validation_cycle_count(self) -> None:
         """Verify cycle count range validation."""

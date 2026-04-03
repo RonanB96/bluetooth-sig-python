@@ -54,43 +54,48 @@ class UserDataService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.FIRST_NAME: False,  # optional
-        CharacteristicName.LAST_NAME: False,  # optional
-        CharacteristicName.EMAIL_ADDRESS: False,  # optional
-        CharacteristicName.AGE: False,  # optional
-        CharacteristicName.DATE_OF_BIRTH: False,  # optional
-        CharacteristicName.GENDER: False,  # optional
-        CharacteristicName.WEIGHT: False,  # optional
-        CharacteristicName.HEIGHT: False,  # optional
-        CharacteristicName.VO2_MAX: False,  # optional
-        CharacteristicName.HEART_RATE_MAX: False,  # optional
-        CharacteristicName.RESTING_HEART_RATE: False,  # optional
-        CharacteristicName.MAXIMUM_RECOMMENDED_HEART_RATE: False,  # optional
-        CharacteristicName.AEROBIC_THRESHOLD: False,  # optional
-        CharacteristicName.ANAEROBIC_THRESHOLD: False,  # optional
-        CharacteristicName.SPORT_TYPE_FOR_AEROBIC_AND_ANAEROBIC_THRESHOLDS: False,  # optional
-        CharacteristicName.DATE_OF_THRESHOLD_ASSESSMENT: False,  # optional
-        CharacteristicName.WAIST_CIRCUMFERENCE: False,  # optional
-        CharacteristicName.HIP_CIRCUMFERENCE: False,  # optional
-        CharacteristicName.FAT_BURN_HEART_RATE_LOWER_LIMIT: False,  # optional
-        CharacteristicName.FAT_BURN_HEART_RATE_UPPER_LIMIT: False,  # optional
-        CharacteristicName.AEROBIC_HEART_RATE_LOWER_LIMIT: False,  # optional
-        CharacteristicName.AEROBIC_HEART_RATE_UPPER_LIMIT: False,  # optional
-        CharacteristicName.ANAEROBIC_HEART_RATE_LOWER_LIMIT: False,  # optional
-        CharacteristicName.ANAEROBIC_HEART_RATE_UPPER_LIMIT: False,  # optional
-        CharacteristicName.TWO_ZONE_HEART_RATE_LIMITS: False,  # optional
-        CharacteristicName.THREE_ZONE_HEART_RATE_LIMITS: False,  # optional
-        CharacteristicName.FOUR_ZONE_HEART_RATE_LIMITS: False,  # optional
-        CharacteristicName.FIVE_ZONE_HEART_RATE_LIMITS: False,  # optional
-        CharacteristicName.HIGH_INTENSITY_EXERCISE_THRESHOLD: False,  # optional
-        CharacteristicName.ACTIVITY_GOAL: False,  # optional
-        CharacteristicName.SEDENTARY_INTERVAL_NOTIFICATION: False,  # optional
-        CharacteristicName.CALORIC_INTAKE: False,  # optional
-        CharacteristicName.STRIDE_LENGTH: False,  # optional
-        CharacteristicName.PREFERRED_UNITS: False,  # optional
-        CharacteristicName.LANGUAGE: False,  # optional
-        CharacteristicName.HANDEDNESS: False,  # optional
-        CharacteristicName.DEVICE_WEARING_POSITION: False,  # optional
-        CharacteristicName.MIDDLE_NAME: False,  # optional
-        CharacteristicName.HIGH_RESOLUTION_HEIGHT: False,  # optional
+        CharacteristicName.DATABASE_CHANGE_INCREMENT: True,
+        CharacteristicName.USER_INDEX: True,
+        CharacteristicName.USER_CONTROL_POINT: True,
+        CharacteristicName.REGISTERED_USER: False,
+        # UDS permitted characteristics (at least one required if service is present)
+        CharacteristicName.FIRST_NAME: False,
+        CharacteristicName.LAST_NAME: False,
+        CharacteristicName.EMAIL_ADDRESS: False,
+        CharacteristicName.AGE: False,
+        CharacteristicName.DATE_OF_BIRTH: False,
+        CharacteristicName.GENDER: False,
+        CharacteristicName.WEIGHT: False,
+        CharacteristicName.HEIGHT: False,
+        CharacteristicName.VO2_MAX: False,
+        CharacteristicName.HEART_RATE_MAX: False,
+        CharacteristicName.RESTING_HEART_RATE: False,
+        CharacteristicName.MAXIMUM_RECOMMENDED_HEART_RATE: False,
+        CharacteristicName.AEROBIC_THRESHOLD: False,
+        CharacteristicName.ANAEROBIC_THRESHOLD: False,
+        CharacteristicName.SPORT_TYPE_FOR_AEROBIC_AND_ANAEROBIC_THRESHOLDS: False,
+        CharacteristicName.DATE_OF_THRESHOLD_ASSESSMENT: False,
+        CharacteristicName.WAIST_CIRCUMFERENCE: False,
+        CharacteristicName.HIP_CIRCUMFERENCE: False,
+        CharacteristicName.FAT_BURN_HEART_RATE_LOWER_LIMIT: False,
+        CharacteristicName.FAT_BURN_HEART_RATE_UPPER_LIMIT: False,
+        CharacteristicName.AEROBIC_HEART_RATE_LOWER_LIMIT: False,
+        CharacteristicName.AEROBIC_HEART_RATE_UPPER_LIMIT: False,
+        CharacteristicName.ANAEROBIC_HEART_RATE_LOWER_LIMIT: False,
+        CharacteristicName.ANAEROBIC_HEART_RATE_UPPER_LIMIT: False,
+        CharacteristicName.TWO_ZONE_HEART_RATE_LIMITS: False,
+        CharacteristicName.THREE_ZONE_HEART_RATE_LIMITS: False,
+        CharacteristicName.FOUR_ZONE_HEART_RATE_LIMITS: False,
+        CharacteristicName.FIVE_ZONE_HEART_RATE_LIMITS: False,
+        CharacteristicName.HIGH_INTENSITY_EXERCISE_THRESHOLD: False,
+        CharacteristicName.ACTIVITY_GOAL: False,
+        CharacteristicName.SEDENTARY_INTERVAL_NOTIFICATION: False,
+        CharacteristicName.CALORIC_INTAKE: False,
+        CharacteristicName.STRIDE_LENGTH: False,
+        CharacteristicName.PREFERRED_UNITS: False,
+        CharacteristicName.LANGUAGE: False,
+        CharacteristicName.HANDEDNESS: False,
+        CharacteristicName.DEVICE_WEARING_POSITION: False,
+        CharacteristicName.MIDDLE_NAME: False,
+        CharacteristicName.HIGH_RESOLUTION_HEIGHT: False,
     }

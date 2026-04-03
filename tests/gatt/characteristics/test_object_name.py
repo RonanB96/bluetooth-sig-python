@@ -34,19 +34,3 @@ class TestObjectNameCharacteristic(CommonCharacteristicTests):
                 description="Empty name",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = ObjectNameCharacteristic()
-        original = "My Photo.jpg"
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
-    def test_utf8_round_trip(self) -> None:
-        """Verify UTF-8 encoding round-trip."""
-        char = ObjectNameCharacteristic()
-        original = "caf\u00e9"
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

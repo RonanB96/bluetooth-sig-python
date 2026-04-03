@@ -26,7 +26,6 @@ class MagneticFluxDensity3DCharacteristic(BaseCharacteristic[VectorData]):
     """
 
     _characteristic_name: str | None = "Magnetic Flux Density - 3D"
-    _python_type: type | str | None = str  # Override since decode_value returns dict
     _manual_unit: str | None = PhysicalUnit.TESLA.value  # Override template's "units" default
 
     _vector_components: ClassVar[list[str]] = ["x_axis", "y_axis", "z_axis"]

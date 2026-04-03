@@ -34,19 +34,3 @@ class TestObjectTypeCharacteristic(CommonCharacteristicTests):
                 description="16-bit UUID 0x2ABE (Object Name)",
             ),
         ]
-
-    def test_encode_round_trip_16bit(self) -> None:
-        """Verify 16-bit UUID encode/decode round-trip."""
-        char = ObjectTypeCharacteristic()
-        original = "2AC3"
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
-    def test_128bit_uuid_round_trip(self) -> None:
-        """Verify 128-bit UUID encode/decode round-trip."""
-        char = ObjectTypeCharacteristic()
-        original = "12345678-1234-5678-9ABC-DEF012345678"
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

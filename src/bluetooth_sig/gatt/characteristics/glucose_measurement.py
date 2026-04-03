@@ -20,11 +20,12 @@ class GlucoseMeasurementBits:
 
     # pylint: disable=missing-class-docstring,too-few-public-methods
 
-    # Glucose Measurement bit field constants
+    # Type-Sample Location nibble packing per GSS YAML:
+    # Type = low nibble (bits 0-3), Sample Location = high nibble (bits 4-7)
     GLUCOSE_TYPE_SAMPLE_MASK = 0x0F  # 4-bit mask for type and sample location
-    GLUCOSE_TYPE_START_BIT = 4  # Glucose type in high 4 bits
+    GLUCOSE_TYPE_START_BIT = 0  # Glucose type in low 4 bits
     GLUCOSE_TYPE_BIT_WIDTH = 4
-    GLUCOSE_SAMPLE_LOCATION_START_BIT = 0  # Sample location in low 4 bits
+    GLUCOSE_SAMPLE_LOCATION_START_BIT = 4  # Sample location in high 4 bits
     GLUCOSE_SAMPLE_LOCATION_BIT_WIDTH = 4
 
 
@@ -84,12 +85,20 @@ class SampleLocation(IntEnum):
 
 
 class GlucoseMeasurementFlags(IntFlag):
-    """Glucose Measurement flags as per Bluetooth SIG specification."""
+    """Glucose Measurement flags as per Bluetooth SIG GSS YAML.
+
+    Bit 0: Time Offset present
+    Bit 1: Glucose Concentration and Type-Sample Location present
+    Bit 2: Glucose Concentration units (0=mg/dL, 1=mmol/L)
+    Bit 3: Sensor Status Annunciation present
+    Bit 4: Context Information Follows
+    """
 
     TIME_OFFSET_PRESENT = 0x01
-    GLUCOSE_CONCENTRATION_UNITS_MMOL_L = 0x02
-    TYPE_SAMPLE_LOCATION_PRESENT = 0x04
+    CONCENTRATION_TYPE_SAMPLE_PRESENT = 0x02
+    GLUCOSE_CONCENTRATION_UNITS_MMOL_L = 0x04
     SENSOR_STATUS_ANNUNCIATION_PRESENT = 0x08
+    CONTEXT_INFORMATION_FOLLOWS = 0x10
 
 
 class GlucoseMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
@@ -97,29 +106,23 @@ class GlucoseMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pyli
 
     sequence_number: int
     base_time: datetime
-    glucose_concentration: float
-    unit: str
     flags: GlucoseMeasurementFlags
+    glucose_concentration: float | None = None
+    unit: str | None = None
     time_offset_minutes: int | None = None
     glucose_type: GlucoseType | None = None
     sample_location: SampleLocation | None = None
     sensor_status: int | None = None
 
-    min_length: int = 12  # Aligned with GlucoseMeasurementCharacteristic
-    max_length: int = 17  # Aligned with GlucoseMeasurementCharacteristic
+    min_length: int = 10  # flags(1) + seq(2) + base_time(7)
+    max_length: int = 17  # + time_offset(2) + concentration(2) + type_sample(1) + sensor_status(2)
 
     def __post_init__(self) -> None:
         """Validate glucose measurement data."""
-        if self.unit not in ("mg/dL", "mmol/L"):
+        if self.unit is not None and self.unit not in ("mg/dL", "mmol/L"):
             raise ValueError(f"Glucose unit must be 'mg/dL' or 'mmol/L', got {self.unit}")
 
-        # Validate concentration range based on unit
-        if self.unit == "mg/dL":
-            # Allow any non-negative value (no SIG-specified range)
-            if self.glucose_concentration < 0:
-                raise ValueError(f"Glucose concentration must be non-negative, got {self.glucose_concentration}")
-        # Allow any non-negative value (no SIG-specified range)
-        elif self.glucose_concentration < 0:
+        if self.glucose_concentration is not None and self.glucose_concentration < 0:
             raise ValueError(f"Glucose concentration must be non-negative, got {self.glucose_concentration}")
 
     @staticmethod
@@ -139,8 +142,8 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
 
     _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [GlucoseFeatureCharacteristic]
 
-    min_length: int = 12  # Ensured consistency with GlucoseMeasurementData
-    max_length: int = 17  # Ensured consistency with GlucoseMeasurementData
+    min_length: int = 10  # flags(1) + seq(2) + base_time(7)
+    max_length: int = 17  # + time_offset(2) + concentration(2) + type_sample(1) + sensor_status(2)
     allow_variable_length: bool = True  # Variable optional fields
 
     def _decode_value(  # pylint: disable=too-many-locals  # Glucose spec with many optional fields
@@ -149,7 +152,8 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
         """Parse glucose measurement data according to Bluetooth specification.
 
         Format: Flags(1) + Sequence Number(2) + Base Time(7) + [Time Offset(2)] +
-                Glucose Concentration(2) + [Type-Sample Location(1)] + [Sensor Status(2)].
+                [Glucose Concentration(2) + Type-Sample Location(1)] + [Sensor Status(2)].
+        Concentration and Type-Sample Location are present together when bit 1 is set.
 
         Args:
             data: Raw bytearray from BLE characteristic.
@@ -180,19 +184,16 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
             time_offset_minutes = DataParser.parse_int16(data, offset, signed=True)  # signed
             offset += 2
 
-        # Parse glucose concentration (2 bytes) - IEEE-11073 SFLOAT
-        glucose_concentration = 0.0
-        unit = "mg/dL"
-        if len(data) >= offset + 2:
+        # Parse glucose concentration + type-sample location (conditional on bit 1)
+        glucose_concentration: float | None = None
+        unit: str | None = None
+        glucose_type = None
+        sample_location = None
+        if GlucoseMeasurementFlags.CONCENTRATION_TYPE_SAMPLE_PRESENT in flags and len(data) >= offset + 3:
             glucose_concentration = IEEE11073Parser.parse_sfloat(data, offset)
-            # Determine unit based on flags
             unit = "mmol/L" if GlucoseMeasurementFlags.GLUCOSE_CONCENTRATION_UNITS_MMOL_L in flags else "mg/dL"
             offset += 2
 
-        # Parse optional type and sample location (1 byte) if present
-        glucose_type = None
-        sample_location = None
-        if GlucoseMeasurementFlags.TYPE_SAMPLE_LOCATION_PRESENT in flags and len(data) >= offset + 1:
             type_sample = data[offset]
             glucose_type_val = BitFieldUtils.extract_bit_field(
                 type_sample,
@@ -207,7 +208,6 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
 
             glucose_type = GlucoseType(glucose_type_val)
             sample_location = SampleLocation(sample_location_val)
-
             offset += 1
 
         # Parse optional sensor status annotation (2 bytes) if present
@@ -225,9 +225,9 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
         return GlucoseMeasurementData(
             sequence_number=sequence_number,
             base_time=base_time,
+            flags=flags,
             glucose_concentration=glucose_concentration,
             unit=unit,
-            flags=flags,
             time_offset_minutes=time_offset_minutes,
             glucose_type=glucose_type,
             sample_location=sample_location,
@@ -248,10 +248,10 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
         flags = GlucoseMeasurementFlags(0)
         if data.time_offset_minutes is not None:
             flags |= GlucoseMeasurementFlags.TIME_OFFSET_PRESENT
+        if data.glucose_concentration is not None:
+            flags |= GlucoseMeasurementFlags.CONCENTRATION_TYPE_SAMPLE_PRESENT
         if data.unit == "mmol/L":
             flags |= GlucoseMeasurementFlags.GLUCOSE_CONCENTRATION_UNITS_MMOL_L
-        if data.glucose_type is not None or data.sample_location is not None:
-            flags |= GlucoseMeasurementFlags.TYPE_SAMPLE_LOCATION_PRESENT
         if data.sensor_status is not None:
             flags |= GlucoseMeasurementFlags.SENSOR_STATUS_ANNUNCIATION_PRESENT
 
@@ -270,11 +270,9 @@ class GlucoseMeasurementCharacteristic(BaseCharacteristic[GlucoseMeasurementData
                 raise ValueError(f"Time offset {data.time_offset_minutes} exceeds sint16 range")
             result.extend(DataParser.encode_int16(data.time_offset_minutes, signed=True))
 
-        # Add glucose concentration using IEEE-11073 SFLOAT
-        result.extend(IEEE11073Parser.encode_sfloat(data.glucose_concentration))
-
-        # Add optional type and sample location
-        if data.glucose_type is not None or data.sample_location is not None:
+        # Add glucose concentration + type-sample location (bit 1 controls both)
+        if data.glucose_concentration is not None:
+            result.extend(IEEE11073Parser.encode_sfloat(data.glucose_concentration))
             glucose_type = data.glucose_type or 0
             sample_location = data.sample_location or 0
             type_sample = BitFieldUtils.merge_bit_fields(

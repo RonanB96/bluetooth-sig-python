@@ -106,38 +106,16 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                 ),
                 description="Weight measurement with timestamp",
             ),
-            # Test 4: Weight with user ID and BMI
+            # Test 4: Weight with user ID and BMI+Height
             CharacteristicTestData(
                 input_data=bytearray(
                     [
-                        0x0C,  # flags: user ID + BMI present (0x04 | 0x08)
+                        0x0C,  # flags: user ID + BMI and Height present (0x04 | 0x08)
                         0xB0,
                         0x36,  # weight = 70.0 kg (14000 * 0.005)
                         0x05,  # user ID = 5
                         0xF5,
                         0x00,  # BMI = 24.5 (245 * 0.1)
-                    ]
-                ),
-                expected_value=WeightMeasurementData(
-                    weight=70.0,
-                    weight_unit=WeightUnit.KG,
-                    measurement_units=MeasurementSystem.METRIC,
-                    flags=WeightMeasurementFlags.USER_ID_PRESENT | WeightMeasurementFlags.BMI_PRESENT,
-                    timestamp=None,
-                    user_id=5,
-                    bmi=24.5,
-                    height=None,
-                    height_unit=None,
-                ),
-                description="Weight measurement with user ID and BMI",
-            ),
-            # Test 5: Weight with height (metric)
-            CharacteristicTestData(
-                input_data=bytearray(
-                    [
-                        0x10,  # flags: height present
-                        0xB0,
-                        0x36,  # weight = 70.0 kg (14000 * 0.005)
                         0xD6,
                         0x06,  # height = 1.750 m (1750 * 0.001)
                     ]
@@ -146,20 +124,46 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                     weight=70.0,
                     weight_unit=WeightUnit.KG,
                     measurement_units=MeasurementSystem.METRIC,
-                    flags=WeightMeasurementFlags.HEIGHT_PRESENT,
+                    flags=WeightMeasurementFlags.USER_ID_PRESENT | WeightMeasurementFlags.BMI_AND_HEIGHT_PRESENT,
                     timestamp=None,
-                    user_id=None,
-                    bmi=None,
+                    user_id=5,
+                    bmi=24.5,
                     height=1.750,
                     height_unit=HeightUnit.METERS,
                 ),
-                description="Weight measurement with height (metric)",
+                description="Weight measurement with user ID, BMI and height",
+            ),
+            # Test 5: Weight with BMI and Height (metric, no user ID)
+            CharacteristicTestData(
+                input_data=bytearray(
+                    [
+                        0x08,  # flags: BMI and Height present (bit 3)
+                        0xB0,
+                        0x36,  # weight = 70.0 kg (14000 * 0.005)
+                        0xF5,
+                        0x00,  # BMI = 24.5 (245 * 0.1)
+                        0xD6,
+                        0x06,  # height = 1.750 m (1750 * 0.001)
+                    ]
+                ),
+                expected_value=WeightMeasurementData(
+                    weight=70.0,
+                    weight_unit=WeightUnit.KG,
+                    measurement_units=MeasurementSystem.METRIC,
+                    flags=WeightMeasurementFlags.BMI_AND_HEIGHT_PRESENT,
+                    timestamp=None,
+                    user_id=None,
+                    bmi=24.5,
+                    height=1.750,
+                    height_unit=HeightUnit.METERS,
+                ),
+                description="Weight measurement with BMI and height (metric)",
             ),
             # Test 6: Full imperial measurement with all optional fields
             CharacteristicTestData(
                 input_data=bytearray(
                     [
-                        0x1F,  # flags: all optional fields + imperial (0x01 | 0x02 | 0x04 | 0x08 | 0x10)
+                        0x0F,  # flags: all optional fields + imperial (0x01 | 0x02 | 0x04 | 0x08)
                         0x54,
                         0x3D,  # weight = 157.00 lb (15700 * 0.01)
                         0xE7,
@@ -184,8 +188,7 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
                         WeightMeasurementFlags.IMPERIAL_UNITS
                         | WeightMeasurementFlags.TIMESTAMP_PRESENT
                         | WeightMeasurementFlags.USER_ID_PRESENT
-                        | WeightMeasurementFlags.BMI_PRESENT
-                        | WeightMeasurementFlags.HEIGHT_PRESENT
+                        | WeightMeasurementFlags.BMI_AND_HEIGHT_PRESENT
                     ),
                     timestamp=datetime.datetime(2023, 12, 25, 14, 30, 45),
                     user_id=3,

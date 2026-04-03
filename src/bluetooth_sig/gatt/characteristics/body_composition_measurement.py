@@ -76,8 +76,8 @@ class BodyCompositionFlags(IntFlag):
     TIMESTAMP_PRESENT = 0x002
     USER_ID_PRESENT = 0x004
     BASAL_METABOLISM_PRESENT = 0x008
-    MUSCLE_MASS_PRESENT = 0x010
-    MUSCLE_PERCENTAGE_PRESENT = 0x020
+    MUSCLE_PERCENTAGE_PRESENT = 0x010
+    MUSCLE_MASS_PRESENT = 0x020
     FAT_FREE_MASS_PRESENT = 0x040
     SOFT_LEAN_MASS_PRESENT = 0x080
     BODY_WATER_MASS_PRESENT = 0x100
@@ -288,19 +288,19 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic[BodyCompositio
 
     def _encode_mass_fields(self, result: bytearray, data: BodyCompositionMeasurementData) -> None:
         """Encode mass-related optional fields."""
-        # Encode optional muscle mass if present
-        if data.muscle_mass is not None:
-            mass_raw = round(data.muscle_mass / MASS_RESOLUTION_KG)
-            if not 0 <= mass_raw <= UINT16_MAX:
-                raise ValueError(f"Muscle mass raw value {mass_raw} exceeds uint16 range")
-            result.extend(DataParser.encode_int16(mass_raw, signed=False))
-
         # Encode optional muscle percentage if present
         if data.muscle_percentage is not None:
             muscle_pct_raw = round(data.muscle_percentage / MUSCLE_PERCENTAGE_RESOLUTION)
             if not 0 <= muscle_pct_raw <= UINT16_MAX:
                 raise ValueError(f"Muscle percentage raw value {muscle_pct_raw} exceeds uint16 range")
             result.extend(DataParser.encode_int16(muscle_pct_raw, signed=False))
+
+        # Encode optional muscle mass if present
+        if data.muscle_mass is not None:
+            mass_raw = round(data.muscle_mass / MASS_RESOLUTION_KG)
+            if not 0 <= mass_raw <= UINT16_MAX:
+                raise ValueError(f"Muscle mass raw value {mass_raw} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(mass_raw, signed=False))
 
         # Encode optional fat free mass if present
         if data.fat_free_mass is not None:
@@ -485,17 +485,17 @@ class BodyCompositionMeasurementCharacteristic(BaseCharacteristic[BodyCompositio
         soft_lean_mass: float | None = None
         body_water_mass: float | None = None
 
+        # Parse optional muscle percentage
+        if BodyCompositionFlags.MUSCLE_PERCENTAGE_PRESENT in flags and len(data) >= offset + 2:
+            muscle_percentage_raw = DataParser.parse_int16(data, offset, signed=False)
+            muscle_percentage = muscle_percentage_raw * MUSCLE_PERCENTAGE_RESOLUTION
+            offset += 2
+
         # Parse optional muscle mass
         if BodyCompositionFlags.MUSCLE_MASS_PRESENT in flags and len(data) >= offset + 2:
             mass_value = self._parse_mass_field(data, flags, offset)
             muscle_mass = mass_value.value
             muscle_mass_unit = mass_value.unit
-            offset += 2
-
-        # Parse optional muscle percentage
-        if BodyCompositionFlags.MUSCLE_PERCENTAGE_PRESENT in flags and len(data) >= offset + 2:
-            muscle_percentage_raw = DataParser.parse_int16(data, offset, signed=False)
-            muscle_percentage = muscle_percentage_raw * MUSCLE_PERCENTAGE_RESOLUTION
             offset += 2
 
         # Parse optional fat free mass

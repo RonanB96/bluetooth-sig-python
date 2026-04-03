@@ -19,11 +19,10 @@ class TimeUpdateState(msgspec.Struct, kw_only=True):
 
 
 class TimeUpdateCurrentState(IntEnum):
-    """Time Update Current State values."""
+    """Time Update Current State values (RTUS v1.0, Section 3.2)."""
 
     IDLE = 0x00
-    PENDING = 0x01
-    UPDATING = 0x02
+    UPDATE_PENDING = 0x01
 
 
 class TimeUpdateResult(IntEnum):

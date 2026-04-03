@@ -18,6 +18,6 @@ class BodyCompositionService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.BODY_COMPOSITION_MEASUREMENT: True,  # required
-        CharacteristicName.BODY_COMPOSITION_FEATURE: False,  # optional
+        CharacteristicName.BODY_COMPOSITION_MEASUREMENT: True,
+        CharacteristicName.BODY_COMPOSITION_FEATURE: True,
     }

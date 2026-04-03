@@ -55,9 +55,17 @@ class TestSupportedUnreadAlertCategoryCharacteristic(CommonCharacteristicTests):
         assert result & AlertCategoryBitMask.NEWS
         assert result & AlertCategoryBitMask.SCHEDULE
 
-    def test_roundtrip(self, characteristic: SupportedUnreadAlertCategoryCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = AlertCategoryBitMask.MISSED_CALL | AlertCategoryBitMask.SMS_MMS
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
+    def test_single_byte_data(self, characteristic: SupportedUnreadAlertCategoryCharacteristic) -> None:
+        """Test decoding 1-byte data (only lower 8 category bits)."""
+        data = bytearray([0x02])  # Bit 1 (Email)
+        result = characteristic.parse_value(data)
+        assert result is not None
+        assert result == AlertCategoryBitMask.EMAIL
+
+    def test_single_byte_multiple_categories(self, characteristic: SupportedUnreadAlertCategoryCharacteristic) -> None:
+        """Test 1-byte data with multiple categories."""
+        data = bytearray([0xC1])  # Bits 0, 6, 7 (Simple Alert, Voice Mail, Schedule)
+        result = characteristic.parse_value(data)
+        assert result is not None
+        expected = AlertCategoryBitMask.SIMPLE_ALERT | AlertCategoryBitMask.VOICE_MAIL | AlertCategoryBitMask.SCHEDULE
+        assert result == expected

@@ -22,8 +22,6 @@ class MagneticDeclinationCharacteristic(BaseCharacteristic[float]):
     _template = ScaledUint16Template.from_letter_method(M=1, d=-2, b=0)
 
     _characteristic_name: str = "Magnetic Declination"
-    # Override YAML int type since decode_value returns float
-    _python_type: type | str | None = float
     _manual_unit: str = AngleUnit.DEGREES.value  # Override template's "units" default
 
     # Template configuration

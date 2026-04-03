@@ -2,73 +2,102 @@
 
 from __future__ import annotations
 
+import importlib.util
 import inspect
 from pathlib import Path
 
-import bluetooth_sig.gatt.characteristics as char_module
 from bluetooth_sig.gatt.characteristics import BaseCharacteristic
-from bluetooth_sig.gatt.resolver import NameNormalizer
+
+# Modules that contain utility/base code, not individual characteristics.
+_EXCLUDED_MODULES = frozenset(
+    {
+        "base",
+        "blood_pressure_common",
+        "characteristic_meta",
+        "context_lookup",
+        "custom",
+        "descriptor_mixin",
+        "device_info",
+        "fitness_machine_common",
+        "role_classifier",
+        "unknown",
+        "utils",
+    }
+)
+
+# Test files that don't correspond to individual characteristics.
+_EXCLUDED_TEST_FILES = frozenset(
+    {
+        "test_base_characteristic.py",
+        "test_characteristic_common.py",
+        "test_characteristic_role.py",
+        "test_characteristic_test_coverage.py",
+        "test_custom_characteristics.py",
+        "test_python_type_auto_resolution.py",
+        "test_templates.py",
+    }
+)
+
+
+def _discover_all_characteristic_classes() -> dict[str, str]:
+    """Discover all characteristic classes by scanning module files.
+
+    Returns a dict of module_stem → class name. This avoids relying on
+    ``__init__.py`` re-exports, which may lag behind new modules.
+    """
+    char_pkg_dir = (
+        Path(importlib.util.find_spec("bluetooth_sig.gatt.characteristics").origin).parent  # type: ignore[union-attr, arg-type]
+    )
+    class_by_module: dict[str, str] = {}
+    for py_file in sorted(char_pkg_dir.glob("*.py")):
+        stem = py_file.stem
+        if stem.startswith("_") or stem in _EXCLUDED_MODULES:
+            continue
+        module_name = f"bluetooth_sig.gatt.characteristics.{stem}"
+        try:
+            mod = importlib.import_module(module_name)
+        except Exception:
+            continue
+        for _name, obj in inspect.getmembers(mod, inspect.isclass):
+            if issubclass(obj, BaseCharacteristic) and obj is not BaseCharacteristic and obj.__module__ == module_name:
+                class_by_module[stem] = obj.__name__
+    return class_by_module
 
 
 class TestCharacteristicTestFileCoverage:
     """Test that all characteristics have individual test files."""
 
     def test_characteristic_test_coverage(self) -> None:
-        """Test that every characteristic class has a corresponding test file and vice versa.
+        """Test that every characteristic class has a corresponding test file and vice versa."""
+        class_by_module = _discover_all_characteristic_classes()
 
-        This ensures that each characteristic implementation has dedicated
-        tests for its specific functionality, and that we don't have orphaned test files.
-        """
-        # Get all characteristic classes
-        all_characteristic_classes = set()
-        for _name, obj in inspect.getmembers(char_module):
-            if inspect.isclass(obj) and issubclass(obj, BaseCharacteristic) and obj is not BaseCharacteristic:
-                all_characteristic_classes.add(obj)
-
-        # Get all test files in this directory
+        # Collect test file stems → module stem (test_foo.py → foo)
         test_dir = Path(__file__).parent
-        test_files = set()
-        # Test files that don't correspond to individual characteristics
-        excluded_test_files = {
-            "test_base_characteristic.py",  # Tests base class
-            "test_characteristic_common.py",  # Common test utilities
-            "test_characteristic_role.py",  # Tests role classification, not a single characteristic
-            "test_characteristic_test_coverage.py",  # This coverage test
-            "test_custom_characteristics.py",  # Tests custom characteristic functionality
-            "test_python_type_auto_resolution.py",  # Tests python_type auto-resolution mechanism
-            "test_templates.py",  # Tests template classes, not characteristics
-        }
+        test_modules: dict[str, str] = {}
         for test_file in test_dir.glob("test_*.py"):
-            if test_file.name not in excluded_test_files:
-                test_name = test_file.stem.replace("test_", "")
-                camel_case = NameNormalizer.snake_case_to_camel_case(test_name)
-                test_files.add(camel_case + "Characteristic")
+            if test_file.name not in _EXCLUDED_TEST_FILES:
+                stem = test_file.stem.removeprefix("test_")
+                test_modules[stem] = test_file.name
 
-        # Check for missing test files
-        missing_tests = []
-        for cls in all_characteristic_classes:
-            expected_test_name = cls.__name__
-            if expected_test_name not in test_files:
-                missing_tests.append(expected_test_name)
+        # Compare using module stems directly
+        missing_modules = set(class_by_module) - set(test_modules)
+        extra_modules = set(test_modules) - set(class_by_module)
 
-        # Check for extra test files
-        characteristic_names = {cls.__name__ for cls in all_characteristic_classes}
-        extra_tests = test_files - characteristic_names
+        missing_tests = sorted(class_by_module[k] for k in missing_modules)
+        extra_tests = sorted(test_modules[k] for k in extra_modules)
 
-        # Report issues
-        issues = []
+        issues: list[str] = []
         if missing_tests:
             issues.append(
                 f"Missing individual test files for {len(missing_tests)} characteristics: "
-                f"{sorted(missing_tests)}. Each characteristic should have a dedicated "
+                f"{missing_tests}. Each characteristic should have a dedicated "
                 f"test file (e.g., test_battery_level.py for BatteryLevelCharacteristic)."
             )
         if extra_tests:
             issues.append(
                 f"Found {len(extra_tests)} test files that don't correspond to existing "
-                f"characteristics: {sorted(extra_tests)}. These test files should be removed "
+                f"characteristics: {extra_tests}. These test files should be removed "
                 f"or the corresponding characteristics should be added."
             )
 
-        # Assert no issues
         assert not issues, "\n\n".join(issues)

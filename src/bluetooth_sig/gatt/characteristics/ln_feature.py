@@ -71,7 +71,6 @@ class LNFeatureCharacteristic(BaseCharacteristic[LNFeatureData]):
     """
 
     min_length = 4
-    _python_type: type | str | None = dict  # Override since decode_value returns dataclass
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True

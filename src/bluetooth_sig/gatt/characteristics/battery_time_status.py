@@ -145,7 +145,6 @@ class BatteryTimeStatusCharacteristic(BaseCharacteristic[BatteryTimeStatus]):
         flags = BatteryTimeStatusFlags(DataParser.parse_int8(data, 0, signed=False))
         offset = 1
 
-        # Mandatory: Time until Discharged (uint24, minutes)
         time_until_discharged, offset = _decode_time_minutes(data, offset)
 
         # Bit 0 -- Time until Discharged on Standby
@@ -184,7 +183,6 @@ class BatteryTimeStatusCharacteristic(BaseCharacteristic[BatteryTimeStatus]):
 
         result = DataParser.encode_int8(int(flags), signed=False)
 
-        # Mandatory: Time until Discharged
         result.extend(_encode_time_minutes(data.time_until_discharged))
 
         if data.time_until_discharged_on_standby is not None:

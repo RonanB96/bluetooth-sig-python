@@ -22,7 +22,6 @@ class CO2ConcentrationCharacteristic(BaseCharacteristic[float]):
 
     _template = ConcentrationTemplate()
 
-    _python_type: type | str | None = int
     _manual_unit: str | None = "ppm"  # Override template's "ppm" default
 
     # Template configuration

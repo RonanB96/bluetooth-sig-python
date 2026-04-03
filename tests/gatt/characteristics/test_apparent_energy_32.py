@@ -25,7 +25,7 @@ class TestApparentEnergy32Characteristic(CommonCharacteristicTests):
         return "2B89"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid apparent energy 32 test data covering various energies and edge cases."""
         return [
             CharacteristicTestData(

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ...types.gatt_enums import CharacteristicRole
 from .base import BaseCharacteristic
 from .templates import Uint8Template
 
@@ -14,6 +15,6 @@ class ScanRefreshCharacteristic(BaseCharacteristic[int]):
     Requests the server to refresh the scan.
     """
 
-    _python_type: type | str | None = int
+    _manual_role = CharacteristicRole.STATUS
 
     _template = Uint8Template()

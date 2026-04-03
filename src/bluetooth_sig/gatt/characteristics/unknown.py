@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from ...types import CharacteristicInfo
-from ...types.gatt_enums import GattProperty
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
@@ -21,31 +20,39 @@ class UnknownCharacteristic(BaseCharacteristic[bytes]):
     # NOTE: Exempt from registry validation — UnknownCharacteristic has no fixed UUID
     _is_base_class = True
 
+    _UNKNOWN_PREFIX = "Unknown: "
+
     def __init__(
         self,
         info: CharacteristicInfo,
-        properties: list[GattProperty] | None = None,
     ) -> None:
         """Initialize an unknown characteristic.
 
+        The name is normalised to ``"Unknown: <description>"`` format.
+        If no name is provided, the UUID short form is used as the
+        description.
+
         Args:
             info: CharacteristicInfo object with UUID, name, unit, python_type
-            properties: Runtime BLE properties discovered from device (optional)
 
         Raises:
             ValueError: If UUID is invalid
 
         """
-        # If no name provided, generate one from UUID
-        if not info.name:
-            info = CharacteristicInfo(
-                uuid=info.uuid,
-                name=f"Unknown Characteristic ({info.uuid})",
-                unit=info.unit or "",
-                python_type=info.python_type,
-            )
+        name = info.name.strip() if info.name else ""
+        if not name:
+            name = f"{self._UNKNOWN_PREFIX}{info.uuid.short_form}"
+        elif not name.startswith(self._UNKNOWN_PREFIX):
+            name = f"{self._UNKNOWN_PREFIX}{name}"
 
-        super().__init__(info=info, properties=properties)
+        info = CharacteristicInfo(
+            uuid=info.uuid,
+            name=name,
+            unit=info.unit or "",
+            python_type=info.python_type,
+        )
+
+        super().__init__(info=info)
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True

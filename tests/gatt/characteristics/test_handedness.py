@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import Handedness, HandednessCharacteristic
+from bluetooth_sig.gatt.characteristics import HandednessCharacteristic
+from bluetooth_sig.gatt.characteristics.handedness import Handedness
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 

@@ -22,7 +22,7 @@ class TestFirmwareRevisionStringCharacteristic(CommonCharacteristicTests):
         return "2A26"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray(b"1.2.3"), expected_value="1.2.3", description="Standard version format"

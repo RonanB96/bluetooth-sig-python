@@ -25,7 +25,7 @@ class TestApparentPowerCharacteristic(CommonCharacteristicTests):
         return "2B8A"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid apparent power test data covering various powers and edge cases."""
         return [
             CharacteristicTestData(

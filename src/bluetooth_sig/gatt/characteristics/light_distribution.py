@@ -1,4 +1,4 @@
-"""Light Distribution characteristic (0x2BE3)."""
+"""Light Distribution characteristic (0x2BE1)."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ class LightDistributionType(IntEnum):
 
 
 class LightDistributionCharacteristic(BaseCharacteristic[LightDistributionType]):
-    """Light Distribution characteristic (0x2BE3).
+    """Light Distribution characteristic (0x2BE1).
 
     org.bluetooth.characteristic.light_distribution
 

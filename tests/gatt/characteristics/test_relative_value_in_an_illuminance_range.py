@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
-    RelativeValueInAnIlluminanceRangeCharacteristic,
-)
 from bluetooth_sig.gatt.characteristics.relative_value_in_an_illuminance_range import (
+    RelativeValueInAnIlluminanceRangeCharacteristic,
     RelativeValueInAnIlluminanceRangeData,
 )
 
@@ -47,18 +45,6 @@ class TestRelativeValueInAnIlluminanceRangeCharacteristic(CommonCharacteristicTe
                 description="50% at 100-500 lux",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = RelativeValueInAnIlluminanceRangeCharacteristic()
-        original = RelativeValueInAnIlluminanceRangeData(
-            relative_value=75.0,
-            minimum_illuminance=100.0,
-            maximum_illuminance=500.0,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
 
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum illuminance must not exceed maximum."""

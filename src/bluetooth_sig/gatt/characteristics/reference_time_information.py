@@ -149,12 +149,12 @@ def _validate_time_source(time_source_raw: int) -> TimeSource:
         TimeSource enum value
 
     Raises:
-        ValueError: If time source is in reserved range (8-254)
+        ValueError: If time source is in reserved range (8-255)
 
     """
-    if TIME_SOURCE_MAX < time_source_raw < HOURS_SINCE_UPDATE_OUT_OF_RANGE:
+    if time_source_raw > TIME_SOURCE_MAX:
         raise ValueError(f"Invalid time source: {time_source_raw} (valid range: 0-{TIME_SOURCE_MAX})")
-    return TimeSource(time_source_raw) if time_source_raw <= TIME_SOURCE_MAX else TimeSource.UNKNOWN
+    return TimeSource(time_source_raw)
 
 
 def _validate_hours_since_update(hours: int) -> None:

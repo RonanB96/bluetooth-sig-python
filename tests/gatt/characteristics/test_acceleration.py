@@ -26,7 +26,7 @@ class TestAccelerationCharacteristic(CommonCharacteristicTests):
         return "2C06"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid acceleration test data covering various accelerations and edge cases."""
         return [
             CharacteristicTestData(

@@ -76,15 +76,3 @@ class TestNewAlertCharacteristic(CommonCharacteristicTests):
         with pytest.raises(CharacteristicParseError) as exc_info:
             characteristic.parse_value(data)
         assert "alertcategoryid" in str(exc_info.value).lower()
-
-    def test_roundtrip(self, characteristic: NewAlertCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = NewAlertData(
-            category_id=AlertCategoryID.SMS_MMS, number_of_new_alert=5, text_string_information="Alice"
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded is not None
-        assert decoded.category_id == original.category_id
-        assert decoded.number_of_new_alert == original.number_of_new_alert
-        assert decoded.text_string_information == original.text_string_information

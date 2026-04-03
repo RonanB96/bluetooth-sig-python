@@ -4,8 +4,9 @@ from typing import Any
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import BodySensorLocation, HeartRateMeasurementCharacteristic
+from bluetooth_sig.gatt.characteristics import HeartRateMeasurementCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.body_sensor_location import BodySensorLocation
 from bluetooth_sig.gatt.characteristics.heart_rate_measurement import (
     HeartRateData,
     HeartRateMeasurementFlags,
@@ -27,7 +28,7 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
         return "2A37"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x50]),  # Flags=0, HR=80 BPM (8-bit)
@@ -89,6 +90,22 @@ class TestHeartRateMeasurementCharacteristic(CommonCharacteristicTests):
         assert isinstance(result, HeartRateData)
         assert result.heart_rate == 60
         assert result.sensor_location is None  # No context available
+
+    def test_sensor_contact_supported_but_not_detected(self, characteristic: BaseCharacteristic[Any]) -> None:
+        """Test sensor contact supported (bit2=1) but not detected (bit1=0)."""
+        hr_data = bytearray([0x04, 0x50])  # Flags=0x04 (bit2 set), HR=80
+        result = characteristic.parse_value(hr_data, ctx=None)
+
+        assert result.heart_rate == 80
+        assert result.sensor_contact == SensorContactState.NOT_DETECTED
+
+    def test_sensor_contact_not_supported_with_spurious_bit1(self, characteristic: BaseCharacteristic[Any]) -> None:
+        """Test bit1 set but bit2 (supported) not set — feature not supported per spec."""
+        hr_data = bytearray([0x02, 0x50])  # Flags=0x02 (bit1 only), HR=80
+        result = characteristic.parse_value(hr_data, ctx=None)
+
+        assert result.heart_rate == 80
+        assert result.sensor_contact == SensorContactState.NOT_SUPPORTED
 
     def test_heart_rate_with_sensor_location_context(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test heart rate parsing with sensor location from context."""

@@ -3,20 +3,16 @@
 from __future__ import annotations
 
 from .base import BaseCharacteristic
-from .templates import ConcentrationTemplate
+from .templates import IEEE11073FloatTemplate
 
 
 class MethaneConcentrationCharacteristic(BaseCharacteristic[float]):
     """Methane concentration measurement characteristic (0x2BD1).
 
-    Represents methane concentration in parts per million (ppm) with a
-    resolution of 1 ppm.
+    Represents methane concentration using IEEE 11073 SFLOAT (medfloat16) format.
+    Unit: parts per billion (ppb) per GSS YAML.
     """
 
-    _template = ConcentrationTemplate()
+    _template = IEEE11073FloatTemplate()
 
-    _python_type: type | str | None = int
-    _manual_unit: str = "ppm"  # Override template's "ppm" default
-
-    # Template configuration
-    resolution: float = 1.0
+    _manual_unit: str = "ppb"

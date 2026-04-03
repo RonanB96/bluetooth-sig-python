@@ -18,7 +18,7 @@ class TestTemperatureRangeCharacteristic(CommonCharacteristicTests):
         return "2B10"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x00, 0x00, 0x00]),
@@ -38,15 +38,6 @@ class TestTemperatureRangeCharacteristic(CommonCharacteristicTests):
                 description="Wide range with negative minimum",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = TemperatureRangeCharacteristic()
-        original = TemperatureRangeData(minimum=-5.5, maximum=35.75)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert abs(decoded.minimum - original.minimum) < 0.01
-        assert abs(decoded.maximum - original.maximum) < 0.01
 
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum > maximum is invalid."""

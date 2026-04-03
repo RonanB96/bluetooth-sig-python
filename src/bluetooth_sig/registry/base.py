@@ -61,6 +61,14 @@ class RegistryMixin:
         """
         self._lazy_load(lambda: self._loaded, self._load)
 
+    def ensure_loaded(self) -> None:
+        """Public API to eagerly load the registry.
+
+        Equivalent to :meth:`_ensure_loaded` but intended for consumers
+        that need to pre-warm registries (e.g. during application startup).
+        """
+        self._ensure_loaded()
+
     @abstractmethod
     def _load(self) -> None:
         """Perform the actual loading of registry data."""

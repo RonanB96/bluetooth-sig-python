@@ -74,8 +74,8 @@ class BodyCompositionFeatures(IntFlag):
     TIMESTAMP_SUPPORTED = 0x01
     MULTIPLE_USERS_SUPPORTED = 0x02
     BASAL_METABOLISM_SUPPORTED = 0x04
-    MUSCLE_MASS_SUPPORTED = 0x08
-    MUSCLE_PERCENTAGE_SUPPORTED = 0x10
+    MUSCLE_PERCENTAGE_SUPPORTED = 0x08
+    MUSCLE_MASS_SUPPORTED = 0x10
     FAT_FREE_MASS_SUPPORTED = 0x20
     SOFT_LEAN_MASS_SUPPORTED = 0x40
     BODY_WATER_MASS_SUPPORTED = 0x80
@@ -91,8 +91,8 @@ class BodyCompositionFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # 
     timestamp_supported: bool
     multiple_users_supported: bool
     basal_metabolism_supported: bool
-    muscle_mass_supported: bool
     muscle_percentage_supported: bool
+    muscle_mass_supported: bool
     fat_free_mass_supported: bool
     soft_lean_mass_supported: bool
     body_water_mass_supported: bool

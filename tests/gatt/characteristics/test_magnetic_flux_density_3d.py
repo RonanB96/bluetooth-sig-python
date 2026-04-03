@@ -45,7 +45,7 @@ class TestMagneticFluxDensity3DCharacteristic(CommonCharacteristicTests):
         """Test Magnetic Flux Density 3D characteristic parsing."""
         # Test metadata
         assert characteristic.unit == "T"
-        assert characteristic.python_type is str
+        assert characteristic.python_type is VectorData
 
         # Test normal parsing: X=1000, Y=-500, Z=2000
         test_data = bytearray(struct.pack("<hhh", 1000, -500, 2000))

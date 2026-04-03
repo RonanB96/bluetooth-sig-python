@@ -6,8 +6,9 @@ from typing import Any
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import BodySensorLocation, BodySensorLocationCharacteristic
+from bluetooth_sig.gatt.characteristics import BodySensorLocationCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.body_sensor_location import BodySensorLocation
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -26,7 +27,7 @@ class TestBodySensorLocationCharacteristic(CommonCharacteristicTests):
         return "2A38"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00]),

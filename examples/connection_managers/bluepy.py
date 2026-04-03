@@ -279,16 +279,15 @@ class BluePyClientManager(ClientManagerProtocol):
                         char_class = CharacteristicRegistry.get_characteristic_class_by_uuid(char_uuid)
 
                         if char_class:
-                            # Create characteristic instance with runtime properties from device
-                            char_instance = char_class(properties=properties)
+                            char_instance = char_class()
                             characteristics[str(char_uuid)] = char_instance
                         else:
                             # Fallback: Create UnknownCharacteristic for unrecognized UUIDs
                             char_info = CharacteristicInfo(
                                 uuid=char_uuid,
-                                name=f"Unknown Characteristic ({char_uuid.short_form}...)",
+                                name=char_uuid.short_form,
                             )
-                            char_instance = UnknownCharacteristic(info=char_info, properties=properties)
+                            char_instance = UnknownCharacteristic(info=char_info)
                             characteristics[str(char_uuid)] = char_instance
 
                     # Type ignore needed due to dict invariance with union types
