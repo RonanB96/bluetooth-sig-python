@@ -10,16 +10,16 @@ This module contains registries for:
 
 from __future__ import annotations
 
-from .ad_types import ad_types_registry
-from .coding_format import coding_format_registry
-from .formattypes import format_types_registry
-from .namespace_description import namespace_description_registry
-from .uri_schemes import uri_schemes_registry
+from .ad_types import get_ad_types_registry
+from .coding_format import get_coding_format_registry
+from .formattypes import get_format_types_registry
+from .namespace_description import get_namespace_description_registry
+from .uri_schemes import get_uri_schemes_registry
 
 __all__ = [
-    "ad_types_registry",
-    "coding_format_registry",
-    "format_types_registry",
-    "namespace_description_registry",
-    "uri_schemes_registry",
+    "get_ad_types_registry",
+    "get_coding_format_registry",
+    "get_format_types_registry",
+    "get_namespace_description_registry",
+    "get_uri_schemes_registry",
 ]

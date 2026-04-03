@@ -28,8 +28,8 @@ class UriSchemesRegistry(BaseGenericRegistry[UriSchemeInfo]):
     advertising data, reducing packet size for common schemes like http://.
 
     Examples:
-        >>> from bluetooth_sig.registry.core.uri_schemes import uri_schemes_registry
-        >>> info = uri_schemes_registry.get_uri_scheme_info(0x16)
+        >>> from bluetooth_sig.registry.core.uri_schemes import get_uri_schemes_registry
+        >>> info = get_uri_schemes_registry().get_uri_scheme_info(0x16)
         >>> info.name
         'http:'
     """
@@ -160,4 +160,6 @@ class UriSchemesRegistry(BaseGenericRegistry[UriSchemeInfo]):
 
 
 # Global singleton instance
-uri_schemes_registry = UriSchemesRegistry()
+def get_uri_schemes_registry() -> UriSchemesRegistry:
+    """Return the process-wide get_uri_schemes_registry singleton instance."""
+    return UriSchemesRegistry.get_instance()

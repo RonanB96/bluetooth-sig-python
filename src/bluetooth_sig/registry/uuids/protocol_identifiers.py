@@ -6,7 +6,7 @@ from bluetooth_sig.registry.base import BaseUUIDRegistry
 from bluetooth_sig.types.registry.protocol_identifiers import ProtocolInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
-__all__ = ["ProtocolIdentifiersRegistry", "ProtocolInfo", "protocol_identifiers_registry"]
+__all__ = ["ProtocolIdentifiersRegistry", "ProtocolInfo", "get_protocol_identifiers_registry"]
 
 
 class ProtocolIdentifiersRegistry(BaseUUIDRegistry[ProtocolInfo]):
@@ -89,4 +89,6 @@ class ProtocolIdentifiersRegistry(BaseUUIDRegistry[ProtocolInfo]):
 
 
 # Global instance for convenience
-protocol_identifiers_registry = ProtocolIdentifiersRegistry.get_instance()
+def get_protocol_identifiers_registry() -> ProtocolIdentifiersRegistry:
+    """Return the process-wide protocol_identifiers_registry singleton instance."""
+    return ProtocolIdentifiersRegistry.get_instance()

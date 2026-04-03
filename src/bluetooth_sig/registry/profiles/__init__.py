@@ -9,16 +9,16 @@ from __future__ import annotations
 
 from .permitted_characteristics import (
     PermittedCharacteristicsRegistry,
-    permitted_characteristics_registry,
+    get_permitted_characteristics_registry,
 )
 from .profile_lookup import (
     ProfileLookupRegistry,
-    profile_lookup_registry,
+    get_profile_lookup_registry,
 )
 
 __all__ = [
     "PermittedCharacteristicsRegistry",
     "ProfileLookupRegistry",
-    "permitted_characteristics_registry",
-    "profile_lookup_registry",
+    "get_permitted_characteristics_registry",
+    "get_profile_lookup_registry",
 ]

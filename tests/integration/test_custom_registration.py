@@ -14,7 +14,7 @@ from bluetooth_sig.gatt.characteristics.utils import DataParser
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.services.custom import CustomBaseGattService
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
-from bluetooth_sig.gatt.uuid_registry import uuid_registry
+from bluetooth_sig.gatt.uuid_registry import get_uuid_registry
 from bluetooth_sig.types import CharacteristicInfo, ServiceInfo
 from bluetooth_sig.types.gatt_enums import GattProperty
 from bluetooth_sig.types.uuid import BluetoothUUID
@@ -72,7 +72,7 @@ class TestRuntimeRegistration:
 
     def test_register_custom_characteristic_metadata(self) -> None:
         """Test registering custom characteristic metadata."""
-        uuid_registry.register_characteristic(
+        get_uuid_registry().register_characteristic(
             uuid=BluetoothUUID("abcd1234-0000-1000-8000-00805f9b34fb"),
             name="Test Characteristic",
             unit="°C",
@@ -80,7 +80,7 @@ class TestRuntimeRegistration:
         )
 
         # Verify registration
-        info = uuid_registry.get_characteristic_info("abcd1234-0000-1000-8000-00805f9b34fb")
+        info = get_uuid_registry().get_characteristic_info("abcd1234-0000-1000-8000-00805f9b34fb")
         assert info is not None
         assert info.name == "Test Characteristic"
         assert info.unit == "°C"
@@ -88,13 +88,13 @@ class TestRuntimeRegistration:
 
     def test_register_custom_service_metadata(self) -> None:
         """Test registering custom service metadata."""
-        uuid_registry.register_service(
+        get_uuid_registry().register_service(
             uuid=BluetoothUUID("12345678-1234-1234-1234-123456789abc"),
             name="Test Service",
         )
 
         # Verify registration
-        info = uuid_registry.get_service_info("12345678-1234-1234-1234-123456789abc")
+        info = get_uuid_registry().get_service_info("12345678-1234-1234-1234-123456789abc")
         assert info is not None
         assert info.name == "Test Service"
 
@@ -134,7 +134,7 @@ class TestRuntimeRegistration:
         assert cls == CustomCharacteristicImpl
 
         # Verify metadata registration
-        info = uuid_registry.get_characteristic_info("abcd1234-0000-1000-8000-00805f9b34fb")
+        info = get_uuid_registry().get_characteristic_info("abcd1234-0000-1000-8000-00805f9b34fb")
         assert info is not None
         assert info.name == "Test Characteristic"
         assert info.unit == "°C"
@@ -157,7 +157,7 @@ class TestRuntimeRegistration:
         assert cls == CustomServiceImpl
 
         # Verify metadata registration
-        info = uuid_registry.get_service_info("12345678-1234-1234-1234-123456789abc")
+        info = get_uuid_registry().get_service_info("12345678-1234-1234-1234-123456789abc")
         assert info is not None
         assert info.name == "Test Service"
 
@@ -180,7 +180,7 @@ class TestRuntimeRegistration:
         """Test that conflicts with SIG entries are detected."""
         # Try to register a known SIG UUID without override
         with pytest.raises(ValueError, match="conflicts with existing SIG"):
-            uuid_registry.register_characteristic(
+            get_uuid_registry().register_characteristic(
                 uuid=BluetoothUUID("2A19"),  # Battery Level UUID
                 name="Custom Battery",
                 unit="%",
@@ -190,7 +190,7 @@ class TestRuntimeRegistration:
     def test_override_allowed(self) -> None:
         """Test that override=True allows replacing SIG entries."""
         # Should not raise with override=True
-        uuid_registry.register_characteristic(
+        get_uuid_registry().register_characteristic(
             uuid=BluetoothUUID("2A19"),  # Battery Level UUID
             name="Custom Battery",
             unit="%",
@@ -199,7 +199,7 @@ class TestRuntimeRegistration:
         )
 
         # Verify override worked
-        info = uuid_registry.get_characteristic_info("2A19")
+        info = get_uuid_registry().get_characteristic_info("2A19")
         assert info is not None
         assert info.name == "Custom Battery"
 

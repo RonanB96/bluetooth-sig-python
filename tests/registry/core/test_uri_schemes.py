@@ -8,7 +8,7 @@ import pytest
 
 from bluetooth_sig.registry.core.uri_schemes import (
     UriSchemesRegistry,
-    uri_schemes_registry,
+    get_uri_schemes_registry,
 )
 from bluetooth_sig.types.registry.uri_schemes import UriSchemeInfo
 
@@ -16,7 +16,7 @@ from bluetooth_sig.types.registry.uri_schemes import UriSchemeInfo
 @pytest.fixture(scope="session")
 def registry() -> UriSchemesRegistry:
     """Create a URI schemes registry once per test session."""
-    return uri_schemes_registry
+    return get_uri_schemes_registry()
 
 
 class TestUriSchemesRegistry:

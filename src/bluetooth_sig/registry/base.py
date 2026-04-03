@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
-from typing import Any, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar, cast
 
 from bluetooth_sig.registry.utils import (
     find_bluetooth_sig_path,
@@ -20,6 +20,9 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 T = TypeVar("T")
 E = TypeVar("E", bound=Enum)  # For enum-keyed registries
 C = TypeVar("C")  # For class types
+BG = TypeVar("BG", bound="BaseGenericRegistry[Any]")
+BU = TypeVar("BU", bound="BaseUUIDRegistry[Any]")
+BC = TypeVar("BC", bound="BaseUUIDClassRegistry[Any, Any]")
 
 
 class RegistryMixin:
@@ -80,8 +83,8 @@ class BaseGenericRegistry(RegistryMixin, ABC, Generic[T]):
     For registries that are not UUID-based.
     """
 
-    _instance: BaseGenericRegistry[T] | None = None
-    _lock = threading.RLock()
+    _instance: ClassVar[BaseGenericRegistry[Any] | None] = None
+    _instance_lock: ClassVar[threading.RLock] = threading.RLock()
 
     def __init__(self) -> None:
         """Initialize the registry."""
@@ -89,13 +92,13 @@ class BaseGenericRegistry(RegistryMixin, ABC, Generic[T]):
         self._loaded: bool = False
 
     @classmethod
-    def get_instance(cls) -> BaseGenericRegistry[T]:
+    def get_instance(cls: type[BG]) -> BG:
         """Get the singleton instance of the registry."""
         if cls._instance is None:
-            with cls._lock:
+            with cls._instance_lock:
                 if cls._instance is None:
                     cls._instance = cls()
-        return cls._instance
+        return cast("BG", cls._instance)
 
 
 U = TypeVar("U", bound=BaseUuidInfo)
@@ -115,8 +118,8 @@ class BaseUUIDRegistry(RegistryMixin, ABC, Generic[U]):
     6. Call _ensure_loaded() before accessing data (provided by base class)
     """
 
-    _instance: BaseUUIDRegistry[U] | None = None
-    _lock = threading.RLock()
+    _instance: ClassVar[BaseUUIDRegistry[Any] | None] = None
+    _instance_lock: ClassVar[threading.RLock] = threading.RLock()
 
     def __init__(self) -> None:
         """Initialize the registry."""
@@ -288,13 +291,13 @@ class BaseUUIDRegistry(RegistryMixin, ABC, Generic[U]):
             return [alias for alias, key in self._alias_index.items() if key == uuid.normalized]
 
     @classmethod
-    def get_instance(cls) -> BaseUUIDRegistry[U]:
+    def get_instance(cls: type[BU]) -> BU:
         """Get the singleton instance of the registry."""
         if cls._instance is None:
-            with cls._lock:
+            with cls._instance_lock:
                 if cls._instance is None:
                     cls._instance = cls()
-        return cls._instance
+        return cast("BU", cls._instance)
 
 
 class BaseUUIDClassRegistry(RegistryMixin, ABC, Generic[E, C]):
@@ -317,8 +320,8 @@ class BaseUUIDClassRegistry(RegistryMixin, ABC, Generic[E, C]):
     5. Optionally override _allows_sig_override() for custom override rules
     """
 
-    _instance: BaseUUIDClassRegistry[E, C] | None = None
-    _lock = threading.RLock()
+    _instance: ClassVar[BaseUUIDClassRegistry[Any, Any] | None] = None
+    _instance_lock: ClassVar[threading.RLock] = threading.RLock()
 
     def __init__(self) -> None:
         """Initialize the class registry."""
@@ -503,10 +506,10 @@ class BaseUUIDClassRegistry(RegistryMixin, ABC, Generic[E, C]):
         self._sig_class_cache = None
 
     @classmethod
-    def get_instance(cls) -> BaseUUIDClassRegistry[E, C]:
+    def get_instance(cls: type[BC]) -> BC:
         """Get the singleton instance of the registry."""
         if cls._instance is None:
-            with cls._lock:
+            with cls._instance_lock:
                 if cls._instance is None:
                     cls._instance = cls()
-        return cls._instance
+        return cast("BC", cls._instance)

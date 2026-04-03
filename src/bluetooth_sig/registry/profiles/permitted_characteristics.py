@@ -131,4 +131,6 @@ class PermittedCharacteristicsRegistry(
 
 
 # Singleton instance for global use
-permitted_characteristics_registry = PermittedCharacteristicsRegistry()
+def get_permitted_characteristics_registry() -> PermittedCharacteristicsRegistry:
+    """Return the process-wide permitted_characteristics_registry singleton instance."""
+    return PermittedCharacteristicsRegistry.get_instance()

@@ -9,7 +9,7 @@ from __future__ import annotations
 import msgspec
 
 from bluetooth_sig.gatt.constants import SIZE_UINT16
-from bluetooth_sig.registry.company_identifiers import company_identifiers_registry
+from bluetooth_sig.registry.company_identifiers import get_company_identifiers_registry
 
 
 class CompanyIdentifier(msgspec.Struct, kw_only=True, frozen=True):
@@ -61,7 +61,7 @@ class CompanyIdentifier(msgspec.Struct, kw_only=True, frozen=True):
             'Apple, Inc.'
 
         """
-        name = company_identifiers_registry.get_company_name(company_id)
+        name = get_company_identifiers_registry().get_company_name(company_id)
         if not name:
             name = f"Unknown (0x{company_id:04X})"
         return cls(id=company_id, name=name)

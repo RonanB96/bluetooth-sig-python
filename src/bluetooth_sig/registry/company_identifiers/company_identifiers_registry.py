@@ -111,4 +111,6 @@ class CompanyIdentifiersRegistry(BaseGenericRegistry[CompanyIdentifierInfo]):
 
 
 # Singleton instance for global use
-company_identifiers_registry = CompanyIdentifiersRegistry()
+def get_company_identifiers_registry() -> CompanyIdentifiersRegistry:
+    """Return the process-wide company_identifiers_registry singleton instance."""
+    return CompanyIdentifiersRegistry.get_instance()

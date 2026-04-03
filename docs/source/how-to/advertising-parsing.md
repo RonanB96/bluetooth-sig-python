@@ -331,7 +331,7 @@ Interpreters are automatically registered when defined (via `__init_subclass__`)
 from bluetooth_sig.advertising import (
     AdvertisingPDUParser,
     DeviceAdvertisingState,
-    payload_interpreter_registry,
+    get_payload_interpreter_registry,
 )
 from bluetooth_sig.advertising.base import AdvertisingData
 
@@ -367,7 +367,7 @@ advertising_data = AdvertisingData(
 )
 
 # Find interpreter for this advertisement
-interpreter_class = payload_interpreter_registry.find_interpreter_class(advertising_data)
+interpreter_class = get_payload_interpreter_registry().find_interpreter_class(advertising_data)
 
 if interpreter_class:
     # Create interpreter instance for this device
@@ -435,10 +435,10 @@ class StatefulInterpreter(PayloadInterpreter[MySensorData]):
 
 ```python
 # SKIP: Depends on MySensorInterpreter class defined in previous examples
-from bluetooth_sig.advertising import payload_interpreter_registry
+from bluetooth_sig.advertising import get_payload_interpreter_registry
 
 # Remove a specific interpreter
-payload_interpreter_registry.unregister(MySensorInterpreter)
+get_payload_interpreter_registry().unregister(MySensorInterpreter)
 ```
 
 ## See Also

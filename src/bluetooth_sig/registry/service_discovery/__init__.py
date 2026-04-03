@@ -9,10 +9,10 @@ from __future__ import annotations
 
 from .attribute_ids import (
     ServiceDiscoveryAttributeRegistry,
-    service_discovery_attribute_registry,
+    get_service_discovery_attribute_registry,
 )
 
 __all__ = [
     "ServiceDiscoveryAttributeRegistry",
-    "service_discovery_attribute_registry",
+    "get_service_discovery_attribute_registry",
 ]

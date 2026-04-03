@@ -76,4 +76,6 @@ class MeshProfilesRegistry(BaseUUIDRegistry[MeshProfileInfo]):
 
 
 # Global instance for convenience
-mesh_profiles_registry = MeshProfilesRegistry.get_instance()
+def get_mesh_profiles_registry() -> MeshProfilesRegistry:
+    """Return the process-wide mesh_profiles_registry singleton instance."""
+    return MeshProfilesRegistry.get_instance()

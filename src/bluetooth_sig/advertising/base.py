@@ -163,9 +163,9 @@ class PayloadInterpreter(ABC, Generic[T]):
             return
 
         # Lazy import to avoid circular dependency at module load time
-        from bluetooth_sig.advertising.registry import payload_interpreter_registry  # noqa: PLC0415
+        from bluetooth_sig.advertising.registry import get_payload_interpreter_registry  # noqa: PLC0415
 
-        payload_interpreter_registry.register(cls)
+        get_payload_interpreter_registry().register(cls)
 
     @classmethod
     @abstractmethod

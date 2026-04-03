@@ -6,14 +6,14 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from bluetooth_sig.registry.core.ad_types import ADTypesRegistry, ad_types_registry
+from bluetooth_sig.registry.core.ad_types import ADTypesRegistry, get_ad_types_registry
 from bluetooth_sig.types.registry.ad_types import AdTypeInfo
 
 
 @pytest.fixture(scope="session")
 def registry() -> ADTypesRegistry:
     """Create an AD types registry once per test session."""
-    return ad_types_registry
+    return get_ad_types_registry()
 
 
 class TestADTypesRegistry:
@@ -148,11 +148,11 @@ class TestADTypesRegistry:
         assert all(r == results[0] for r in results)
 
     def test_singleton_instance(self) -> None:
-        """Test that ad_types_registry is a singleton."""
-        from bluetooth_sig.registry.core.ad_types import ad_types_registry as imported_registry
+        """Test that get_ad_types_registry is a singleton."""
+        from bluetooth_sig.registry.core.ad_types import get_ad_types_registry as imported_registry
 
         # Should be the same instance
-        assert ad_types_registry is imported_registry
+        assert get_ad_types_registry is imported_registry
 
     def test_standard_ad_types_present(self, registry: ADTypesRegistry) -> None:
         """Test that standard AD types are present if YAML is loaded."""

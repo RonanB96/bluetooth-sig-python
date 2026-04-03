@@ -94,4 +94,6 @@ class BrowseGroupsRegistry(BaseUUIDRegistry[BrowseGroupInfo]):
 
 
 # Global instance for convenience
-browse_groups_registry = BrowseGroupsRegistry.get_instance()
+def get_browse_groups_registry() -> BrowseGroupsRegistry:
+    """Return the process-wide browse_groups_registry singleton instance."""
+    return BrowseGroupsRegistry.get_instance()

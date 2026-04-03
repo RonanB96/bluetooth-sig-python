@@ -38,22 +38,11 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
 
     """
 
-    _instance: GssRegistry | None = None
-
     def __init__(self) -> None:
         """Initialize the GSS registry."""
         super().__init__()
         self._specs: dict[str, GssCharacteristicSpec] = {}
         self._units_registry: UnitsRegistry | None = None
-
-    @classmethod
-    def get_instance(cls) -> GssRegistry:
-        """Get the singleton instance of the GSS registry."""
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = cls()
-        return cls._instance
 
     def _get_units_registry(self) -> UnitsRegistry:
         """Get or lazily initialize the units registry.
@@ -62,8 +51,7 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
             The UnitsRegistry singleton instance
         """
         if self._units_registry is None:
-            # get_instance() returns BaseUUIDRegistry; narrow to concrete subclass
-            self._units_registry = cast("UnitsRegistry", UnitsRegistry.get_instance())
+            self._units_registry = UnitsRegistry.get_instance()
         return self._units_registry
 
     def _load(self) -> None:
@@ -276,4 +264,6 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
 
 
 # Singleton instance for convenient access
-gss_registry = GssRegistry.get_instance()
+def get_gss_registry() -> GssRegistry:
+    """Return the process-wide gss_registry singleton instance."""
+    return GssRegistry.get_instance()

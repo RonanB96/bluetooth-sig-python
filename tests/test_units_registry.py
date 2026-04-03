@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.uuids.units import UnitsRegistry
+from bluetooth_sig.registry.uuids.units import UnitsRegistry, get_units_registry
 from bluetooth_sig.types.registry import UuidIdInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -22,7 +22,7 @@ class TestUnitsRegistry:
         """Test that the registry initializes properly."""
         assert isinstance(units_registry, UnitsRegistry)
         # Should have loaded some units if YAML exists
-        units = units_registry.get_all_units()
+        units = get_units_registry().get_all_units()
         assert isinstance(units, list)
         # If submodule is initialized, should have units
         if units:
@@ -31,7 +31,7 @@ class TestUnitsRegistry:
     def test_get_unit_info(self, units_registry: UnitsRegistry) -> None:
         """Test lookup by UUID string."""
         # Test with a known unit UUID (unitless)
-        info = units_registry.get_unit_info("0x2700")
+        info = get_units_registry().get_unit_info("0x2700")
         if info:  # Only if YAML loaded
             assert isinstance(info, UuidIdInfo)
             assert info.name == "unitless"
@@ -40,64 +40,64 @@ class TestUnitsRegistry:
     def test_get_unit_info_by_name(self, units_registry: UnitsRegistry) -> None:
         """Test lookup by unit name."""
         # Test with known unit name (unitless)
-        info = units_registry.get_unit_info_by_name("unitless")
+        info = get_units_registry().get_unit_info_by_name("unitless")
         if info:  # Only if YAML loaded
             assert isinstance(info, UuidIdInfo)
             assert info.name == "unitless"
             assert info.uuid.short_form.upper() == "2700"
 
         # Test case insensitive
-        info_lower = units_registry.get_unit_info_by_name("Unitless")
+        info_lower = get_units_registry().get_unit_info_by_name("Unitless")
         assert info_lower == info
 
         # Test not found
-        info_none = units_registry.get_unit_info_by_name("Nonexistent Unit")
+        info_none = get_units_registry().get_unit_info_by_name("Nonexistent Unit")
         assert info_none is None
 
     def test_get_unit_info_by_id(self, units_registry: UnitsRegistry) -> None:
         """Test lookup by unit ID."""
         # Test with known unit ID
-        info = units_registry.get_unit_info_by_id("org.bluetooth.unit.unitless")
+        info = get_units_registry().get_unit_info_by_id("org.bluetooth.unit.unitless")
         if info:  # Only if YAML loaded
             assert isinstance(info, UuidIdInfo)
             assert info.name == "unitless"
             assert info.uuid.short_form.upper() == "2700"
 
         # Test not found
-        info_none = units_registry.get_unit_info_by_id("org.bluetooth.unit.nonexistent")
+        info_none = get_units_registry().get_unit_info_by_id("org.bluetooth.unit.nonexistent")
         assert info_none is None
 
     def test_get_unit_info_by_bluetooth_uuid(self, units_registry: UnitsRegistry) -> None:
         """Test lookup by BluetoothUUID object."""
         # Create a BluetoothUUID for a known unit
         bt_uuid = BluetoothUUID("2700")
-        info = units_registry.get_unit_info(bt_uuid)
+        info = get_units_registry().get_unit_info(bt_uuid)
         if info:  # Only if YAML loaded
             assert isinstance(info, UuidIdInfo)
             assert info.name == "unitless"
 
     def test_get_unit_info_not_found(self, units_registry: UnitsRegistry) -> None:
         """Test lookup for non-existent unit."""
-        info = units_registry.get_unit_info("nonexistent")
+        info = get_units_registry().get_unit_info("nonexistent")
         assert info is None
 
-        info = units_registry.get_unit_info("0x0000")  # Not a unit UUID
+        info = get_units_registry().get_unit_info("0x0000")  # Not a unit UUID
         assert info is None
 
     def test_is_unit_uuid(self, units_registry: UnitsRegistry) -> None:
         """Test unit UUID validation."""
         # Known unit UUID
-        assert units_registry.is_unit_uuid("0x2700") or not units_registry.get_all_units()
+        assert get_units_registry().is_unit_uuid("0x2700") or not get_units_registry().get_all_units()
 
         # Non-unit UUID
-        assert not units_registry.is_unit_uuid("0x0000")
+        assert not get_units_registry().is_unit_uuid("0x0000")
 
         # Invalid UUID
-        assert not units_registry.is_unit_uuid("invalid")
+        assert not get_units_registry().is_unit_uuid("invalid")
 
     def test_get_all_units(self, units_registry: UnitsRegistry) -> None:
         """Test getting all units."""
-        units = units_registry.get_all_units()
+        units = get_units_registry().get_all_units()
         assert isinstance(units, list)
 
         if units:
@@ -112,7 +112,7 @@ class TestUnitsRegistry:
 
     def test_unit_info_structure(self, units_registry: UnitsRegistry) -> None:
         """Test UuidIdInfo dataclass structure."""
-        units = units_registry.get_all_units()
+        units = get_units_registry().get_all_units()
         if units:
             unit = units[0]
             assert hasattr(unit, "uuid")
@@ -126,6 +126,6 @@ class TestUnitsRegistry:
         """Test various UUID input formats."""
         formats: list[str] = ["2700", "0x2700", "0X2700"]
         for fmt in formats:
-            info = units_registry.get_unit_info(fmt)
+            info = get_units_registry().get_unit_info(fmt)
             assert info is not None
             assert info.name == "unitless"

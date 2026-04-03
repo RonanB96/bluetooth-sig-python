@@ -11,7 +11,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
-from bluetooth_sig.gatt.uuid_registry import uuid_registry
+from bluetooth_sig.gatt.uuid_registry import get_uuid_registry
 from bluetooth_sig.types.gatt_enums import ServiceName
 
 
@@ -35,7 +35,7 @@ class TestServiceEnumCompleteness:
         enum_uuids = set()
         for enum_member in ServiceName:
             # Try to resolve UUID for this enum member
-            info = uuid_registry.get_service_info(enum_member.value)
+            info = get_uuid_registry().get_service_info(enum_member.value)
             if info:
                 enum_uuids.add(info.uuid.normalized)
 
@@ -52,7 +52,7 @@ class TestServiceEnumCompleteness:
             if uuid_obj.normalized not in enum_uuids:
                 service_name = service_cls.__name__
                 # Try to get the name from YAML
-                yaml_info = uuid_registry.get_service_info(str(uuid_obj))
+                yaml_info = get_uuid_registry().get_service_info(str(uuid_obj))
                 yaml_name = yaml_info.name if yaml_info else "Unknown"
 
                 missing_from_enum.append(
@@ -92,7 +92,7 @@ class TestServiceEnumCompleteness:
 
         for enum_member in ServiceName:
             # Try to resolve this enum value in YAML
-            info = uuid_registry.get_service_info(enum_member.value)
+            info = get_uuid_registry().get_service_info(enum_member.value)
 
             if info is None:
                 mismatches.append(

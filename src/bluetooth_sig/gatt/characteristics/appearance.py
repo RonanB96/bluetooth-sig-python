@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ...registry.core.appearance_values import appearance_values_registry
+from ...registry.core.appearance_values import get_appearance_values_registry
 from ...types.appearance import AppearanceData
 from ...types.gatt_enums import CharacteristicRole
 from ..context import CharacteristicContext
@@ -35,7 +35,7 @@ class AppearanceCharacteristic(BaseCharacteristic[AppearanceData]):
             AppearanceData with raw value and optional human-readable info.
         """
         raw_value = DataParser.parse_int16(data, 0, signed=False)
-        appearance_info = appearance_values_registry.get_appearance_info(raw_value)
+        appearance_info = get_appearance_values_registry().get_appearance_info(raw_value)
 
         return AppearanceData(
             raw_value=raw_value,

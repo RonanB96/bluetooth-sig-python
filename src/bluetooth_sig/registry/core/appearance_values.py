@@ -8,7 +8,6 @@ characteristics.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import cast
 
 import msgspec
 
@@ -188,4 +187,6 @@ class AppearanceValuesRegistry(BaseGenericRegistry[AppearanceInfo]):
 
 
 # Singleton instance for global use
-appearance_values_registry = cast("AppearanceValuesRegistry", AppearanceValuesRegistry.get_instance())
+def get_appearance_values_registry() -> AppearanceValuesRegistry:
+    """Return the process-wide appearance_values_registry singleton instance."""
+    return AppearanceValuesRegistry.get_instance()

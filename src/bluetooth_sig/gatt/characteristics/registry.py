@@ -15,7 +15,7 @@ from ...types.gatt_enums import CharacteristicName
 from ...types.uuid import BluetoothUUID
 from ..registry_utils import ModuleDiscovery, TypeValidator
 from ..resolver import NameVariantGenerator
-from ..uuid_registry import uuid_registry
+from ..uuid_registry import get_uuid_registry
 from .base import BaseCharacteristic
 
 # Export for other modules to import
@@ -66,14 +66,14 @@ class _RegistryKeyBuilder:
 
         for enum_member in CharacteristicName:
             for candidate in cls.generate_candidate_keys(enum_member):
-                info = uuid_registry.get_characteristic_info(candidate)
+                info = get_uuid_registry().get_characteristic_info(candidate)
                 if info is None:
                     continue
                 uuid_to_enum[info.uuid.normalized] = enum_member
                 break
 
         for info_name, enum_member in cls._SPECIAL_INFO_NAME_TO_ENUM.items():
-            info = uuid_registry.get_characteristic_info(info_name)
+            info = get_uuid_registry().get_characteristic_info(info_name)
             if info is None:
                 continue
             uuid_to_enum.setdefault(info.uuid.normalized, enum_member)
@@ -119,7 +119,7 @@ class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseChara
 
         for enum_member in CharacteristicName:
             for candidate in _RegistryKeyBuilder.generate_candidate_keys(enum_member):
-                info = uuid_registry.get_characteristic_info(candidate)
+                info = get_uuid_registry().get_characteristic_info(candidate)
                 if info is None:
                     continue
                 uuid_to_enum[info.uuid.normalized] = enum_member
@@ -130,7 +130,7 @@ class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseChara
             "CO\\textsubscript{2} Concentration": CharacteristicName.CO2_CONCENTRATION,
         }
         for info_name, enum_member in special_cases.items():
-            info = uuid_registry.get_characteristic_info(info_name)
+            info = get_uuid_registry().get_characteristic_info(info_name)
             if info is None:
                 continue
             uuid_to_enum.setdefault(info.uuid.normalized, enum_member)

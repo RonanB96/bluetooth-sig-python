@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import msgspec
 
-from bluetooth_sig.registry.core.appearance_values import appearance_values_registry
+from bluetooth_sig.registry.core.appearance_values import get_appearance_values_registry
 from bluetooth_sig.types.registry.appearance_info import AppearanceInfo
 
 
@@ -43,7 +43,7 @@ class AppearanceData(msgspec.Struct, frozen=True, kw_only=True):
             833
         """
         # Use public method to find appearance info
-        info = appearance_values_registry.find_by_category_subcategory(category, subcategory)
+        info = get_appearance_values_registry().find_by_category_subcategory(category, subcategory)
 
         if info is None:
             # If not found, raise error

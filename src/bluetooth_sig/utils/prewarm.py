@@ -9,12 +9,7 @@ from __future__ import annotations
 
 import logging
 
-from ..gatt.characteristics.registry import CharacteristicRegistry
-from ..gatt.services.registry import GattServiceRegistry
-from ..registry.company_identifiers import company_identifiers_registry
-from ..registry.core.ad_types import ad_types_registry
-from ..registry.uuids.units import units_registry
-from ..types.uuid import BluetoothUUID
+from .prewarm_catalog import get_prewarm_loaders
 
 logger = logging.getLogger(__name__)
 
@@ -33,16 +28,27 @@ def prewarm_registries() -> None:
     - Units registry (unit UUID → symbol mapping)
     - Company identifiers registry (manufacturer ID → name)
     - AD types registry (advertising data type codes)
+    - Appearance values registry (appearance code → device type)
+    - Class of device registry (CoD bitfield → device type)
+    - Coding format registry (LE Audio codec identifiers)
+    - Format types registry (characteristic data format codes)
+    - Namespace description registry (CPF description field values)
+    - URI schemes registry (beacon URI scheme codes)
+    - Permitted characteristics registry (profile characteristic constraints)
+    - Profile lookup registry (profile parameter tables)
+    - Service discovery attribute registry (SDP attribute identifiers)
+    - Browse groups registry (SDP browse group UUIDs)
+    - Declarations registry (GATT declaration UUIDs)
+    - Members registry (Bluetooth member organisation UUIDs)
+    - Mesh profiles registry (mesh profile UUIDs)
+    - Object types registry (OTS object type UUIDs)
+    - Protocol identifiers registry (protocol UUID identifiers)
+    - SDO UUIDs registry (standards body UUIDs)
+    - Service classes registry (service class UUIDs)
+    - UUID registry (service/characteristic/descriptor metadata hub)
     """
-    CharacteristicRegistry.get_all_characteristics()
-    GattServiceRegistry.get_all_services()
-
-    # Trigger UUID-keyed lookups to populate reverse maps.
-    GattServiceRegistry.get_service_class_by_uuid(BluetoothUUID("0000"))
-    CharacteristicRegistry.get_characteristic_class_by_uuid(BluetoothUUID("0000"))
-
-    units_registry.ensure_loaded()
-    company_identifiers_registry.ensure_loaded()
-    ad_types_registry.ensure_loaded()
+    for loader_name, loader in get_prewarm_loaders():
+        loader()
+        logger.debug("pre-warmed %s", loader_name)
 
     logger.debug("bluetooth-sig registries pre-warmed")

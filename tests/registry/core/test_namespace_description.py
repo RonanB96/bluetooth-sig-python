@@ -8,7 +8,7 @@ import pytest
 
 from bluetooth_sig.registry.core.namespace_description import (
     NamespaceDescriptionRegistry,
-    namespace_description_registry,
+    get_namespace_description_registry,
 )
 from bluetooth_sig.types.registry.namespace import NamespaceDescriptionInfo
 
@@ -16,7 +16,7 @@ from bluetooth_sig.types.registry.namespace import NamespaceDescriptionInfo
 @pytest.fixture(scope="session")
 def registry() -> NamespaceDescriptionRegistry:
     """Create a namespace description registry once per test session."""
-    return namespace_description_registry
+    return get_namespace_description_registry()
 
 
 class TestNamespaceDescriptionRegistry:

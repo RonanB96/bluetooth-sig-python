@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from bluetooth_sig.core.translator import BluetoothSIGTranslator
+from bluetooth_sig.gatt.uuid_registry import UuidRegistry
 
 
 @pytest.mark.benchmark
@@ -155,3 +156,26 @@ class TestThroughput:
         results = benchmark(batch_loop)
         assert len(results) == 100
         assert all(len(r) == 3 for r in results)
+
+
+@pytest.mark.benchmark
+class TestRegistryLifecyclePerformance:
+    """Benchmark registry lifecycle paths explicitly."""
+
+    def test_uuid_registry_cold_load(self, benchmark: Any) -> None:
+        """Benchmark cold UUID registry load from a fresh instance."""
+
+        def cold_load() -> object:
+            registry = UuidRegistry()
+            return registry.get_characteristic_info("2A19")
+
+        result = benchmark(cold_load)
+        assert result is not None
+
+    def test_uuid_registry_warm_lookup(self, benchmark: Any) -> None:
+        """Benchmark warm UUID registry lookup after explicit preload."""
+        registry = UuidRegistry()
+        registry.ensure_loaded()
+
+        result = benchmark(registry.get_characteristic_info, "2A19")
+        assert result is not None

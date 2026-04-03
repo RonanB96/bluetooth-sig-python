@@ -77,4 +77,6 @@ class MembersRegistry(BaseUUIDRegistry[MemberInfo]):
 
 
 # Global instance
-members_registry = MembersRegistry.get_instance()
+def get_members_registry() -> MembersRegistry:
+    """Return the process-wide members_registry singleton instance."""
+    return MembersRegistry.get_instance()

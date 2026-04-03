@@ -102,4 +102,6 @@ class SdoUuidsRegistry(BaseUUIDRegistry[SdoInfo]):
 
 
 # Global instance for convenience
-sdo_uuids_registry = SdoUuidsRegistry.get_instance()
+def get_sdo_uuids_registry() -> SdoUuidsRegistry:
+    """Return the process-wide sdo_uuids_registry singleton instance."""
+    return SdoUuidsRegistry.get_instance()

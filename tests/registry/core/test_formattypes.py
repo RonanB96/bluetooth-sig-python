@@ -6,14 +6,14 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from bluetooth_sig.registry.core.formattypes import FormatTypesRegistry, format_types_registry
+from bluetooth_sig.registry.core.formattypes import FormatTypesRegistry, get_format_types_registry
 from bluetooth_sig.types.registry.formattypes import FormatTypeInfo
 
 
 @pytest.fixture(scope="session")
 def registry() -> FormatTypesRegistry:
     """Create a format types registry once per test session."""
-    return format_types_registry
+    return get_format_types_registry()
 
 
 class TestFormatTypesRegistry:
@@ -167,11 +167,11 @@ class TestFormatTypesRegistry:
         assert all(r == results[0] for r in results)  # All results should be identical
 
     def test_singleton_instance(self) -> None:
-        """Test that format_types_registry is a singleton."""
-        from bluetooth_sig.registry.core.formattypes import format_types_registry as imported_registry
+        """Test that get_format_types_registry is a singleton."""
+        from bluetooth_sig.registry.core.formattypes import get_format_types_registry as imported_registry
 
         # Should be the same instance
-        assert format_types_registry is imported_registry
+        assert get_format_types_registry is imported_registry
 
     def test_standard_format_types_present(self, registry: FormatTypesRegistry) -> None:
         """Test that standard format types are present."""

@@ -12,7 +12,7 @@ from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
 from ..gatt.services.base import BaseGattService
 from ..gatt.services.registry import GattServiceRegistry
-from ..gatt.uuid_registry import uuid_registry
+from ..gatt.uuid_registry import get_uuid_registry
 from ..types import (
     CharacteristicInfo,
     ServiceInfo,
@@ -49,7 +49,7 @@ class RegistrationManager:
         CharacteristicRegistry.register_characteristic_class(uuid_or_name, cls, override)
 
         if info:
-            uuid_registry.register_characteristic(
+            get_uuid_registry().register_characteristic(
                 uuid=info.uuid,
                 name=info.name or cls.__name__,
                 identifier=info.id,
@@ -81,7 +81,7 @@ class RegistrationManager:
         GattServiceRegistry.register_service_class(uuid_or_name, cls, override)
 
         if info:
-            uuid_registry.register_service(
+            get_uuid_registry().register_service(
                 uuid=info.uuid,
                 name=info.name or cls.__name__,
                 identifier=info.id,

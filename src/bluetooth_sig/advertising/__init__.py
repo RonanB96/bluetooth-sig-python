@@ -49,8 +49,8 @@ from bluetooth_sig.advertising.pdu_parser import AdvertisingPDUParser
 from bluetooth_sig.advertising.registry import (
     PayloadContext,
     PayloadInterpreterRegistry,
+    get_payload_interpreter_registry,
     parse_advertising_payloads,
-    payload_interpreter_registry,
 )
 from bluetooth_sig.advertising.service_data_parser import ServiceDataParser
 from bluetooth_sig.advertising.service_resolver import (
@@ -98,11 +98,11 @@ __all__ = [
     "SIGCharacteristicInterpreter",
     "ServiceDataParser",
     "UnsupportedVersionError",
+    "get_payload_interpreter_registry",
     "build_ead_nonce",
     "bytes_to_mac_address",
     "decrypt_ead",
     "decrypt_ead_from_raw",
     "mac_address_to_bytes",
     "parse_advertising_payloads",
-    "payload_interpreter_registry",
 ]

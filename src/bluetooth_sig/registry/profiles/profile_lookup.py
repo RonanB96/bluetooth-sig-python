@@ -219,4 +219,6 @@ class ProfileLookupRegistry(BaseGenericRegistry["ProfileLookupRegistry"]):
 
 
 # Singleton instance for global use
-profile_lookup_registry = ProfileLookupRegistry()
+def get_profile_lookup_registry() -> ProfileLookupRegistry:
+    """Return the process-wide profile_lookup_registry singleton instance."""
+    return ProfileLookupRegistry.get_instance()

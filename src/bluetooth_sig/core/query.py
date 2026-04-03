@@ -13,7 +13,7 @@ from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
 from ..gatt.services import ServiceName
 from ..gatt.services.registry import GattServiceRegistry
-from ..gatt.uuid_registry import uuid_registry
+from ..gatt.uuid_registry import get_uuid_registry
 from ..types import (
     CharacteristicInfo,
     ServiceInfo,
@@ -154,7 +154,7 @@ class CharacteristicQueryEngine:
         name_str = name.value if isinstance(name, ServiceName) else name
 
         try:
-            uuid_info = uuid_registry.get_service_info(name_str)
+            uuid_info = get_uuid_registry().get_service_info(name_str)
             if uuid_info:
                 return ServiceInfo(uuid=uuid_info.uuid, name=uuid_info.name, characteristics=[])
         except Exception:  # pylint: disable=broad-exception-caught
@@ -279,7 +279,7 @@ class CharacteristicQueryEngine:
 
         """
         try:
-            char_info = uuid_registry.get_characteristic_info(name)
+            char_info = get_uuid_registry().get_characteristic_info(name)
             if char_info:
                 return CharacteristicInfo(
                     uuid=char_info.uuid,

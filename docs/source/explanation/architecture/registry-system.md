@@ -227,7 +227,11 @@ The registry loading process follows these steps:
 5. **Store canonically**: Index by normalized UUID in main dictionaries
 6. **Generate aliases**: Create name-based lookup mappings
 
-The loading is performed only once per application lifetime, with graceful degradation if YAML files are missing. See {py:class}`~bluetooth_sig.gatt.uuid_registry.UuidRegistry` for the complete implementation.
+The loading is performed only once per application lifetime. Load failures are
+surfaced deterministically (sticky failure state) rather than silently
+continuing with partial empty data. See
+{py:class}`~bluetooth_sig.gatt.uuid_registry.UuidRegistry` for the complete
+implementation.
 
 ## Alias System
 

@@ -93,4 +93,6 @@ class DeclarationsRegistry(BaseUUIDRegistry[DeclarationInfo]):
 
 
 # Global instance for convenience
-declarations_registry = DeclarationsRegistry.get_instance()
+def get_declarations_registry() -> DeclarationsRegistry:
+    """Return the process-wide declarations_registry singleton instance."""
+    return DeclarationsRegistry.get_instance()
