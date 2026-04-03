@@ -90,14 +90,3 @@ class TestAlertNotificationControlPointCharacteristic(CommonCharacteristicTests)
         assert result is not None
         assert result.command_id == AlertNotificationCommandID.NOTIFY_NEW_ALERT_IMMEDIATELY
         assert result.category_id == AlertCategoryID.CALL
-
-    def test_roundtrip(self, characteristic: AlertNotificationControlPointCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = AlertNotificationControlPointData(
-            command_id=AlertNotificationCommandID.DISABLE_UNREAD_STATUS, category_id=AlertCategoryID.SMS_MMS
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded is not None
-        assert decoded.command_id == original.command_id
-        assert decoded.category_id == original.category_id

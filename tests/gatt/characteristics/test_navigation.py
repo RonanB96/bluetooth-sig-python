@@ -122,7 +122,7 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
                     remaining_distance=None,
                     remaining_vertical_distance=0.0,
                     estimated_time_of_arrival=None,
-                    position_status=PositionStatus.POSITION_OK,  # Bits 1-2 = 0b01 = 1
+                    position_status=PositionStatus.NO_POSITION,  # Bits 3-4 = 0b00 = 0
                     heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
                     navigation_indicator_type=NavigationIndicatorType.TO_WAYPOINT,
                     waypoint_reached=False,
@@ -139,19 +139,19 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
                     remaining_distance=None,
                     remaining_vertical_distance=None,
                     estimated_time_of_arrival=datetime(2023, 1, 1, 0, 0, 0),
-                    position_status=PositionStatus.ESTIMATED_POSITION,  # Bits 1-2 = 0b10 = 2
+                    position_status=PositionStatus.NO_POSITION,  # Bits 3-4 = 0b00 = 0
                     heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
                     navigation_indicator_type=NavigationIndicatorType.TO_WAYPOINT,
                     waypoint_reached=False,
                     destination_reached=False,
                 ),
             ),
-            # All optional fields
+            # All optional fields + position status at bits 3-4
             (
                 bytearray(
                     [
-                        0x07,
-                        0x00,  # flags
+                        0x0F,
+                        0x00,  # flags: bits 0-2 presence + bits 3-4 = 01 (POSITION_OK)
                         0x5A,
                         0x00,  # bearing
                         0x2D,
@@ -172,13 +172,13 @@ class TestNavigationCharacteristic(CommonCharacteristicTests):
                     ]
                 ),
                 NavigationData(
-                    flags=NavigationFlags(0x0007),
+                    flags=NavigationFlags(0x000F),
                     bearing=0.9,
                     heading=3.01,
                     remaining_distance=0.0,
                     remaining_vertical_distance=0.0,
                     estimated_time_of_arrival=datetime(2023, 1, 1, 0, 0, 0),
-                    position_status=PositionStatus.LAST_KNOWN_POSITION,  # Bits 1-2 = 0b11 = 3
+                    position_status=PositionStatus.POSITION_OK,  # Bits 3-4 = 0b01 = 1
                     heading_source=HeadingSource.HEADING_BASED_ON_MOVEMENT,
                     navigation_indicator_type=NavigationIndicatorType.TO_WAYPOINT,
                     waypoint_reached=False,

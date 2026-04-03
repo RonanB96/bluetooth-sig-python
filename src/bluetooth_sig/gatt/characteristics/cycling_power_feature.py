@@ -12,22 +12,36 @@ from .utils import DataParser
 
 
 class CyclingPowerFeatures(IntFlag):
-    """Cycling Power Feature flags as per Bluetooth SIG specification."""
+    """Cycling Power Feature flags as per CPS v1.1 (bits 0-21)."""
 
-    PEDAL_POWER_BALANCE_SUPPORTED = 0x01
-    ACCUMULATED_ENERGY_SUPPORTED = 0x02
-    WHEEL_REVOLUTION_DATA_SUPPORTED = 0x04
-    CRANK_REVOLUTION_DATA_SUPPORTED = 0x08
+    PEDAL_POWER_BALANCE_SUPPORTED = 0x00000001
+    ACCUMULATED_TORQUE_SUPPORTED = 0x00000002
+    WHEEL_REVOLUTION_DATA_SUPPORTED = 0x00000004
+    CRANK_REVOLUTION_DATA_SUPPORTED = 0x00000008
+    EXTREME_MAGNITUDES_SUPPORTED = 0x00000010
+    EXTREME_ANGLES_SUPPORTED = 0x00000020
+    TOP_AND_BOTTOM_DEAD_SPOT_ANGLES_SUPPORTED = 0x00000040
+    ACCUMULATED_ENERGY_SUPPORTED = 0x00000080
+    OFFSET_COMPENSATION_INDICATOR_SUPPORTED = 0x00000100
+    OFFSET_COMPENSATION_SUPPORTED = 0x00000200
+    CONTENT_MASKING_SUPPORTED = 0x00000400
+    MULTIPLE_SENSOR_LOCATIONS_SUPPORTED = 0x00000800
+    CRANK_LENGTH_ADJUSTMENT_SUPPORTED = 0x00001000
+    CHAIN_LENGTH_ADJUSTMENT_SUPPORTED = 0x00002000
+    CHAIN_WEIGHT_ADJUSTMENT_SUPPORTED = 0x00004000
+    SPAN_LENGTH_ADJUSTMENT_SUPPORTED = 0x00008000
+    SENSOR_MEASUREMENT_CONTEXT = 0x00010000
+    INSTANTANEOUS_MEASUREMENT_DIRECTION_SUPPORTED = 0x00020000
+    FACTORY_CALIBRATION_DATE_SUPPORTED = 0x00040000
+    ENHANCED_OFFSET_COMPENSATION_SUPPORTED = 0x00080000
+    DISTRIBUTED_SYSTEM_SUPPORT_BIT0 = 0x00100000
+    DISTRIBUTED_SYSTEM_SUPPORT_BIT1 = 0x00200000
 
 
 class CyclingPowerFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed data from Cycling Power Feature characteristic."""
 
     features: CyclingPowerFeatures
-    pedal_power_balance_supported: bool
-    accumulated_energy_supported: bool
-    wheel_revolution_data_supported: bool
-    crank_revolution_data_supported: bool
 
 
 class CyclingPowerFeatureCharacteristic(BaseCharacteristic[CyclingPowerFeatureData]):
@@ -35,7 +49,7 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic[CyclingPowerFeatureDa
 
     Used to expose the supported features of a cycling power sensor.
     Contains a 32-bit bitmask indicating supported measurement
-    capabilities.
+    capabilities (bits 0-21 per CPS v1.1).
     """
 
     expected_length: int = 4
@@ -60,16 +74,10 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic[CyclingPowerFeatureDa
             ValueError: If data format is invalid.
 
         """
-        # Parse 32-bit unsigned integer (little endian)
         feature_mask: int = DataParser.parse_int32(data, 0, signed=False)
 
-        # Parse feature flags according to specification
         return CyclingPowerFeatureData(
             features=CyclingPowerFeatures(feature_mask),
-            pedal_power_balance_supported=bool(feature_mask & CyclingPowerFeatures.PEDAL_POWER_BALANCE_SUPPORTED),
-            accumulated_energy_supported=bool(feature_mask & CyclingPowerFeatures.ACCUMULATED_ENERGY_SUPPORTED),
-            wheel_revolution_data_supported=bool(feature_mask & CyclingPowerFeatures.WHEEL_REVOLUTION_DATA_SUPPORTED),
-            crank_revolution_data_supported=bool(feature_mask & CyclingPowerFeatures.CRANK_REVOLUTION_DATA_SUPPORTED),
         )
 
     def _encode_value(self, data: CyclingPowerFeatureData) -> bytearray:
@@ -82,15 +90,4 @@ class CyclingPowerFeatureCharacteristic(BaseCharacteristic[CyclingPowerFeatureDa
             Encoded bytes representing the cycling power features (uint32)
 
         """
-        # Reconstruct the features bitmap from individual flags
-        features_bitmap = 0
-        if data.pedal_power_balance_supported:
-            features_bitmap |= CyclingPowerFeatures.PEDAL_POWER_BALANCE_SUPPORTED
-        if data.accumulated_energy_supported:
-            features_bitmap |= CyclingPowerFeatures.ACCUMULATED_ENERGY_SUPPORTED
-        if data.wheel_revolution_data_supported:
-            features_bitmap |= CyclingPowerFeatures.WHEEL_REVOLUTION_DATA_SUPPORTED
-        if data.crank_revolution_data_supported:
-            features_bitmap |= CyclingPowerFeatures.CRANK_REVOLUTION_DATA_SUPPORTED
-
-        return DataParser.encode_int32(features_bitmap, signed=False)
+        return DataParser.encode_int32(int(data.features), signed=False)

@@ -8,7 +8,7 @@ checks.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 import msgspec
 
@@ -48,7 +48,17 @@ class ValidationRule(msgspec.Struct, kw_only=True):
         if self.min_value is not None or self.max_value is not None:
             min_val = self.min_value if self.min_value is not None else float("-inf")
             max_val = self.max_value if self.max_value is not None else float("inf")
-            if not min_val <= value <= max_val:
+            numeric_value = cast(int | float, value)
+            try:
+                in_range = min_val <= numeric_value <= max_val
+            except TypeError as exc:
+                raise DataValidationError(
+                    self.field_name,
+                    value,
+                    "Value cannot be ordered for range validation",
+                ) from exc
+
+            if not in_range:
                 raise ValueRangeError(self.field_name, value, min_val, max_val)
 
         # Custom validation

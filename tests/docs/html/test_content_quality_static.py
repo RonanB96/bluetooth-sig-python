@@ -12,7 +12,7 @@ import pytest
 
 # Skip this entire module if beautifulsoup4 is not installed
 try:
-    from bs4 import BeautifulSoup
+    from bs4 import BeautifulSoup  # type: ignore[import-not-found]
 except ModuleNotFoundError:
     pytest.skip("beautifulsoup4 not installed", allow_module_level=True)
 

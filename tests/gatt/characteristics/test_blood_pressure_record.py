@@ -115,26 +115,6 @@ class TestBloodPressureRecordCharacteristic(CommonCharacteristicTests):
         assert result.first_segment is False
         assert result.last_segment is False
 
-    def test_round_trip_record(self) -> None:
-        """Test encode/decode round-trip."""
-        char = BloodPressureRecordCharacteristic()
-        original = BloodPressureRecordData(
-            first_segment=True,
-            last_segment=True,
-            segment_counter=10,
-            sequence_number=42,
-            uuid=BluetoothUUID(0x2B34),
-            recorded_data=b"\xde\xad\xbe\xef",
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded.first_segment == original.first_segment
-        assert decoded.last_segment == original.last_segment
-        assert decoded.segment_counter == original.segment_counter
-        assert decoded.sequence_number == original.sequence_number
-        assert decoded.uuid == original.uuid
-        assert decoded.recorded_data == original.recorded_data
-
     def test_encode_with_e2e_crc(self) -> None:
         """Test encoding with E2E-CRC appended."""
         char = BloodPressureRecordCharacteristic()

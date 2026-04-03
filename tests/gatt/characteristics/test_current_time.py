@@ -215,21 +215,3 @@ class TestCurrentTimeCharacteristic(CommonCharacteristicTests):
         assert result.adjust_reason & AdjustReason.EXTERNAL_REFERENCE_TIME_UPDATE
         assert result.adjust_reason & AdjustReason.CHANGE_OF_TIME_ZONE
         assert result.adjust_reason & AdjustReason.CHANGE_OF_DST
-
-    def test_current_time_roundtrip(self, characteristic: CurrentTimeCharacteristic) -> None:
-        """Test that encode/decode are inverse operations."""
-        original = TimeData(
-            date_time=datetime(2025, 11, 1, 14, 30, 45),
-            day_of_week=DayOfWeek.SATURDAY,
-            fractions256=128,
-            adjust_reason=AdjustReason.EXTERNAL_REFERENCE_TIME_UPDATE,
-        )
-
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded is not None
-
-        assert decoded.date_time == original.date_time
-        assert decoded.day_of_week == original.day_of_week
-        assert decoded.fractions256 == original.fractions256
-        assert decoded.adjust_reason == original.adjust_reason

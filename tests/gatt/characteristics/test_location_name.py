@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 
-from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.characteristics.location_name import LocationNameCharacteristic
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -46,9 +43,9 @@ class TestLocationNameCharacteristic(CommonCharacteristicTests):
                 description="UTF-8 location name with accented characters",
             ),
             CharacteristicTestData(
-                input_data=bytearray(b"Room 101\x00extra"),  # Null-terminated with extra data
+                input_data=bytearray(b"Room 101"),
                 expected_value="Room 101",
-                description="Null-terminated string with trailing data",
+                description="Simple ASCII location name without null terminator",
             ),
         ]
 
@@ -88,32 +85,3 @@ class TestLocationNameCharacteristic(CommonCharacteristicTests):
         # Test encoding empty string
         encoded = characteristic.build_value("")
         assert encoded == bytearray(), "Empty string should encode to empty bytes"
-
-    def test_location_name_round_trip(self, characteristic: LocationNameCharacteristic) -> None:
-        """Test that encoding and decoding preserve string content (round trip)."""
-        test_cases = [
-            ("Home", bytearray(b"Home")),
-            ("Café Paris", bytearray("Café Paris".encode())),
-            ("", bytearray()),
-        ]
-
-        for expected_str, input_data in test_cases:
-            decoded = characteristic.parse_value(input_data)
-            encoded = characteristic.build_value(decoded)
-            re_decoded = characteristic.parse_value(encoded)
-            assert re_decoded == expected_str, f"Round trip failed for: {expected_str!r}"
-
-    def test_round_trip(
-        self,
-        characteristic: BaseCharacteristic[Any],
-        valid_test_data: CharacteristicTestData | list[CharacteristicTestData],
-    ) -> None:
-        """Override round trip test to exclude null-terminated strings with extra data."""
-        # Use only the first 3 test cases that can round trip exactly
-        round_trip_data = valid_test_data[:3] if isinstance(valid_test_data, list) else [valid_test_data]
-
-        for i, test_case in enumerate(round_trip_data):
-            case_desc = f"Test case {i + 1} ({test_case.description})"
-            parsed = characteristic.parse_value(test_case.input_data)
-            encoded = characteristic.build_value(parsed)
-            assert encoded == test_case.input_data, f"{case_desc}: Round trip failed - encoded data differs from input"

@@ -26,7 +26,7 @@ class TestRotationalSpeedCharacteristic(CommonCharacteristicTests):
         return "2C09"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid rotational speed test data covering various speeds and edge cases."""
         return [
             CharacteristicTestData(

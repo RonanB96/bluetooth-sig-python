@@ -234,3 +234,54 @@ class AdvertisingDataStructures(msgspec.Struct, kw_only=True):
     location: LocationAndSensingData = msgspec.field(default_factory=LocationAndSensingData)
     mesh: MeshAndBroadcastData = msgspec.field(default_factory=MeshAndBroadcastData)
     security: SecurityData = msgspec.field(default_factory=SecurityData)
+
+    @classmethod
+    def from_common_fields(
+        cls,
+        *,
+        manufacturer_data: dict[int, ManufacturerData] | None = None,
+        service_data: dict[BluetoothUUID, bytes] | None = None,
+        service_uuids: list[BluetoothUUID] | None = None,
+        local_name: str = "",
+        tx_power: int = 0,
+        address: str = "",
+        connectable: bool = False,
+    ) -> AdvertisingDataStructures:
+        """Create from common platform advertisement fields.
+
+        Builds an ``AdvertisingDataStructures`` with sensible defaults for
+        fields that are typically unavailable from BLE platform APIs
+        (OOB security, mesh, location, etc.).
+
+        Args:
+            manufacturer_data: Manufacturer-specific data keyed by company ID.
+            service_data: Service data keyed by service UUID.
+            service_uuids: Advertised service UUIDs.
+            local_name: Device local name.
+            tx_power: Transmission power level in dBm.
+            address: BLE device address (MAC).
+            connectable: Whether the device is connectable.
+
+        Returns:
+            Populated ``AdvertisingDataStructures`` instance.
+
+        """
+        flags = BLEAdvertisingFlags.BR_EDR_NOT_SUPPORTED
+        if connectable:
+            flags |= BLEAdvertisingFlags.LE_GENERAL_DISCOVERABLE_MODE
+
+        return cls(
+            core=CoreAdvertisingData(
+                manufacturer_data=manufacturer_data or {},
+                service_data=service_data or {},
+                service_uuids=service_uuids or [],
+                local_name=local_name,
+            ),
+            properties=DeviceProperties(
+                flags=flags,
+                tx_power=tx_power,
+            ),
+            directed=DirectedAdvertisingData(
+                le_bluetooth_device_address=address,
+            ),
+        )

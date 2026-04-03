@@ -6,6 +6,7 @@ from enum import IntFlag
 
 import msgspec
 
+from ...types.gatt_enums import CharacteristicRole
 from ..constants import SIZE_UINT16
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -50,6 +51,7 @@ class BootKeyboardInputReportCharacteristic(BaseCharacteristic[BootKeyboardInput
         USB HID Specification v1.11, Appendix B - Boot Interface Descriptors
     """
 
+    _manual_role = CharacteristicRole.INFO
     min_length = 1
     max_length = 8
     allow_variable_length = True

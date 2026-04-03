@@ -43,9 +43,6 @@ class ElectricCurrentRangeCharacteristic(BaseCharacteristic[ElectricCurrentRange
     expected_length: int = 4  # 2x uint16
     min_length: int = 4
 
-    # Override since decode_value returns structured ElectricCurrentRangeData
-    _python_type: type | str | None = dict
-
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> ElectricCurrentRangeData:

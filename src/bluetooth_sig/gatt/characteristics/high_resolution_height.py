@@ -14,4 +14,4 @@ class HighResolutionHeightCharacteristic(BaseCharacteristic[float]):
     High Resolution Height characteristic.
     """
 
-    _template = ScaledUint16Template(scale_factor=0.01)  # 1cm resolution
+    _template = ScaledUint16Template(scale_factor=0.0001)  # 0.1mm resolution (M=1, d=-4, b=0)

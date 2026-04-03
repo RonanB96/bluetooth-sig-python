@@ -111,8 +111,8 @@ class TestYAMLUnitParsing:
         # Create instance and check manual unit takes precedence
         ozone_char = OzoneConcentrationCharacteristic()
         unit_with_manual = ozone_char.unit
-        assert unit_with_manual == "ppb", (
-            f"Ozone unit should be manual (ppb) from class definition, got {unit_with_manual}"
+        assert unit_with_manual == "kg/m³", (
+            f"Ozone unit should be manual (kg/m³) from class definition, got {unit_with_manual}"
         )
 
     def test_characteristic_creation_with_yaml_units(self) -> None:

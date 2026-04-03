@@ -14,7 +14,6 @@ class IndoorPositioningConfigurationCharacteristic(BaseCharacteristic[int]):
     Indoor Positioning Configuration characteristic.
     """
 
-    _python_type: type | str | None = int
     _is_bitfield = True
 
     _template = Uint8Template()

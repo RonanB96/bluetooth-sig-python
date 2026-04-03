@@ -18,5 +18,5 @@ class NextDstChangeService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.TIME_WITH_DST: True,  # required
+        CharacteristicName.TIME_WITH_DST: True,
     }

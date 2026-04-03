@@ -26,7 +26,7 @@ class TestLinearPositionCharacteristic(CommonCharacteristicTests):
         return "2C08"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid linear position test data covering various positions and edge cases."""
         return [
             CharacteristicTestData(

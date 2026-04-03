@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import PnpIdCharacteristic, PnpIdData
-from bluetooth_sig.gatt.characteristics.pnp_id import VendorIdSource
+from bluetooth_sig.gatt.characteristics import PnpIdCharacteristic
+from bluetooth_sig.gatt.characteristics.pnp_id import PnpIdData, VendorIdSource
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -43,6 +43,16 @@ class TestPnpIdCharacteristic(CommonCharacteristicTests):
                 ),
                 description="USB vendor device",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([2, 0x34, 0x12, 0x78, 0x56, 0x00, 0x01]),
+                expected_value=PnpIdData(
+                    vendor_id_source=VendorIdSource.USB_IF,
+                    vendor_id=0x1234,
+                    product_id=0x5678,
+                    product_version=0x0100,
+                ),
+                description="Custom USB vendor values",
+            ),
         ]
 
     def test_bluetooth_sig_vendor(self) -> None:
@@ -53,13 +63,3 @@ class TestPnpIdCharacteristic(CommonCharacteristicTests):
         assert result.vendor_id == 0x000A
         assert result.product_id == 0x000B
         assert result.product_version == 0x0001
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve data."""
-        char = PnpIdCharacteristic()
-        original = PnpIdData(
-            vendor_id_source=VendorIdSource.USB_IF, vendor_id=0x1234, product_id=0x5678, product_version=0x0100
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

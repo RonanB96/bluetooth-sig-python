@@ -17,6 +17,6 @@ class BondManagementService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.BOND_MANAGEMENT_FEATURE: True,  # required
-        CharacteristicName.BOND_MANAGEMENT_CONTROL_POINT: True,  # required
+        CharacteristicName.BOND_MANAGEMENT_FEATURE: True,
+        CharacteristicName.BOND_MANAGEMENT_CONTROL_POINT: True,
     }

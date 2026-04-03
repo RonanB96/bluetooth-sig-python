@@ -7,7 +7,9 @@ using the SIG registries. Stateless — no mutable state.
 from __future__ import annotations
 
 import logging
+from typing import Any
 
+from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
 from ..gatt.services import ServiceName
 from ..gatt.services.registry import GattServiceRegistry
@@ -234,14 +236,18 @@ class CharacteristicQueryEngine:
             results[uuid] = self.get_characteristic_info_by_uuid(uuid)
         return results
 
-    def get_service_characteristics(self, service_uuid: str) -> list[str]:
-        """Get the characteristic UUIDs associated with a service.
+    def get_service_characteristics(self, service_uuid: str) -> list[BaseCharacteristic[Any]]:
+        """Get the characteristic instances associated with a service.
+
+        Instantiates each required characteristic class from the service
+        definition and returns the live objects.
 
         Args:
             service_uuid: The service UUID
 
         Returns:
-            List of characteristic UUIDs for this service
+            List of BaseCharacteristic instances for this service's
+            required characteristics.
 
         """
         service_class = GattServiceRegistry.get_service_class_by_uuid(BluetoothUUID(service_uuid))
@@ -251,9 +257,16 @@ class CharacteristicQueryEngine:
         try:
             temp_service = service_class()
             required_chars = temp_service.get_required_characteristics()
-            return [str(k) for k in required_chars]
+            result: list[BaseCharacteristic[Any]] = []
+            for spec in required_chars.values():
+                try:
+                    result.append(spec.char_class())
+                except (TypeError, ValueError, AttributeError):
+                    logger.debug("Could not instantiate %s", spec.char_class.__name__)
         except Exception:  # pylint: disable=broad-exception-caught
             return []
+        else:
+            return result
 
     def get_sig_info_by_name(self, name: str) -> SIGInfo | None:
         """Get Bluetooth SIG information for a characteristic or service by name.

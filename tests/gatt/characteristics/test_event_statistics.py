@@ -46,19 +46,6 @@ class TestEventStatisticsCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = EventStatisticsCharacteristic()
-        original = EventStatisticsData(
-            number_of_events=100,
-            average_event_duration=60,
-            time_elapsed_since_last_event=0.0,
-            sensing_duration=0.0,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
     def test_validation_rejects_negative_count(self) -> None:
         """Negative event count is invalid."""
         with pytest.raises(ValueError, match="outside valid range"):

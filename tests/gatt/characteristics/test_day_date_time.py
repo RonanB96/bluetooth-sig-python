@@ -6,7 +6,8 @@ from datetime import datetime
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import DayDateTimeCharacteristic, DayDateTimeData
+from bluetooth_sig.gatt.characteristics import DayDateTimeCharacteristic
+from bluetooth_sig.gatt.characteristics.day_date_time import DayDateTimeData
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -45,11 +46,3 @@ class TestDayDateTimeCharacteristic(CommonCharacteristicTests):
         result = char.parse_value(bytearray([0xE3, 0x07, 12, 25, 10, 30, 45, 3]))
         assert result.dt == datetime(2019, 12, 25, 10, 30, 45)
         assert result.day_of_week == 3  # Wednesday
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve data."""
-        char = DayDateTimeCharacteristic()
-        original = DayDateTimeData(dt=datetime(2023, 6, 15, 14, 30, 0), day_of_week=4)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

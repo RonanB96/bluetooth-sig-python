@@ -38,6 +38,11 @@ class TestBootKeyboardOutputReportCharacteristic(CommonCharacteristicTests):
                 expected_value=KeyboardLEDs.SCROLL_LOCK,
                 description="Scroll Lock on",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([7]),
+                expected_value=KeyboardLEDs.NUM_LOCK | KeyboardLEDs.CAPS_LOCK | KeyboardLEDs.SCROLL_LOCK,
+                description="Num Lock + Caps Lock + Scroll Lock on",
+            ),
         ]
 
     def test_no_leds(self) -> None:
@@ -51,17 +56,3 @@ class TestBootKeyboardOutputReportCharacteristic(CommonCharacteristicTests):
         char = BootKeyboardOutputReportCharacteristic()
         result = char.parse_value(bytearray([1]))
         assert result == KeyboardLEDs.NUM_LOCK
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = BootKeyboardOutputReportCharacteristic()
-        for value in [
-            KeyboardLEDs(0),
-            KeyboardLEDs.NUM_LOCK,
-            KeyboardLEDs.CAPS_LOCK,
-            KeyboardLEDs.SCROLL_LOCK,
-            KeyboardLEDs.NUM_LOCK | KeyboardLEDs.CAPS_LOCK | KeyboardLEDs.SCROLL_LOCK,
-        ]:
-            encoded = char.build_value(value)
-            decoded = char.parse_value(encoded)
-            assert decoded == value

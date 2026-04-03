@@ -19,6 +19,7 @@ class RSCMeasurementFlags(IntFlag):
 
     INSTANTANEOUS_STRIDE_LENGTH_PRESENT = 0x01
     TOTAL_DISTANCE_PRESENT = 0x02
+    WALKING_OR_RUNNING_STATUS = 0x04
 
 
 class RSCMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
@@ -27,6 +28,7 @@ class RSCMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: 
     instantaneous_speed: float  # m/s
     instantaneous_cadence: int  # steps per minute
     flags: RSCMeasurementFlags
+    is_running: bool = False
     instantaneous_stride_length: float | None = None  # meters
     total_distance: float | None = None  # meters
 
@@ -98,6 +100,9 @@ class RSCMeasurementCharacteristic(BaseCharacteristic[RSCMeasurementData]):
         """
         flags = RSCMeasurementFlags(data[0])
 
+        # Parse walking or running status (bit 2: 0=Walking, 1=Running)
+        is_running = bool(flags & RSCMeasurementFlags.WALKING_OR_RUNNING_STATUS)
+
         # Parse instantaneous speed (uint16, 1/256 m/s units)
         speed_raw = DataParser.parse_int16(data, 1, signed=False)
         speed_ms = speed_raw / 256.0  # m/s
@@ -126,6 +131,7 @@ class RSCMeasurementCharacteristic(BaseCharacteristic[RSCMeasurementData]):
             instantaneous_speed=speed_ms,
             instantaneous_cadence=cadence,
             flags=flags,
+            is_running=is_running,
             instantaneous_stride_length=instantaneous_stride_length,
             total_distance=total_distance,
         )

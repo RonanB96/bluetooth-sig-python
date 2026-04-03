@@ -35,9 +35,6 @@ class CurrentTimeCharacteristic(BaseCharacteristic[TimeData]):
     - Adjust Reason: uint8 bitfield
     """
 
-    # Validation attributes
-    _python_type: type | str | None = dict
-
     def __init__(self) -> None:
         """Initialize the Current Time characteristic."""
         super().__init__()

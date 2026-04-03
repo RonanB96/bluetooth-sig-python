@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ...types.gatt_enums import CharacteristicRole
 from .base import BaseCharacteristic
 from .templates import Uint48Template
 
@@ -19,4 +20,5 @@ class GlobalTradeItemNumberCharacteristic(BaseCharacteristic[int]):
         SpecialValueDetectedError: If raw value is a sentinel (e.g. 0x000000000000).
     """
 
+    _manual_role = CharacteristicRole.INFO
     _template = Uint48Template()

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ...registry.core.appearance_values import appearance_values_registry
 from ...types.appearance import AppearanceData
+from ...types.gatt_enums import CharacteristicRole
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -17,6 +18,7 @@ class AppearanceCharacteristic(BaseCharacteristic[AppearanceData]):
     Appearance characteristic with human-readable device type information.
     """
 
+    _manual_role = CharacteristicRole.INFO
     expected_length = 2
 
     def _decode_value(

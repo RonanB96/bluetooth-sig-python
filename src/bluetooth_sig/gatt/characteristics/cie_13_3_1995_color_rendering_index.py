@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ...types.gatt_enums import CharacteristicRole
 from .base import BaseCharacteristic
 from .templates import Sint8Template
 
@@ -20,5 +21,6 @@ class CIE133ColorRenderingIndexCharacteristic(BaseCharacteristic[int]):
         SpecialValueDetectedError: If raw value is a sentinel (e.g. 127).
     """
 
+    _manual_role = CharacteristicRole.MEASUREMENT
     _characteristic_name = "CIE 13.3-1995 Color Rendering Index"
     _template = Sint8Template()

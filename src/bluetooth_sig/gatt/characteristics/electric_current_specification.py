@@ -9,11 +9,18 @@ from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
+_CURRENT_RESOLUTION = 0.01  # 0.01 A per raw unit
+_MAX_CURRENT = UINT16_MAX * _CURRENT_RESOLUTION  # 655.35 A
+
 
 class ElectricCurrentSpecificationData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
-    """Data class for electric current specification."""
+    """Data class for electric current specification.
+
+    Three current values (0.01 A resolution): Minimum, Typical, Maximum.
+    """
 
     minimum: float  # Minimum current in Amperes
+    typical: float  # Typical current in Amperes
     maximum: float  # Maximum current in Amperes
 
     def __post_init__(self) -> None:
@@ -21,12 +28,15 @@ class ElectricCurrentSpecificationData(msgspec.Struct, frozen=True, kw_only=True
         if self.minimum > self.maximum:
             raise ValueError(f"Minimum current {self.minimum} A cannot be greater than maximum {self.maximum} A")
 
-        # Validate range for uint16 with 0.01 A resolution (0 to 655.35 A)
-        max_current_value = UINT16_MAX * 0.01
-        if not 0.0 <= self.minimum <= max_current_value:
-            raise ValueError(f"Minimum current {self.minimum} A is outside valid range (0.0 to {max_current_value} A)")
-        if not 0.0 <= self.maximum <= max_current_value:
-            raise ValueError(f"Maximum current {self.maximum} A is outside valid range (0.0 to {max_current_value} A)")
+        for name, current in [
+            ("minimum", self.minimum),
+            ("typical", self.typical),
+            ("maximum", self.maximum),
+        ]:
+            if not 0.0 <= current <= _MAX_CURRENT:
+                raise ValueError(
+                    f"{name.capitalize()} current {current} A is outside valid range (0.0 to {_MAX_CURRENT} A)"
+                )
 
 
 class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic[ElectricCurrentSpecificationData]):
@@ -34,58 +44,43 @@ class ElectricCurrentSpecificationCharacteristic(BaseCharacteristic[ElectricCurr
 
     org.bluetooth.characteristic.electric_current_specification
 
-    Electric Current Specification characteristic.
-
-    Specifies minimum and maximum current values for electrical
-    specifications.
+    Specifies minimum, typical, and maximum current values (uint16, 0.01 A resolution).
     """
 
-    # Validation attributes
-    expected_length: int = 4  # 2x uint16
-    min_length: int = 4
-
-    # Override since decode_value returns structured ElectricCurrentSpecificationData
-    _python_type: type | str | None = dict
+    expected_length: int = 6  # 3x uint16
+    min_length: int = 6
 
     def _decode_value(
         self, data: bytearray, _ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> ElectricCurrentSpecificationData:
-        """Parse current specification data (2x uint16 in units of 0.01 A).
-
-        Args:
-            data: Raw bytes from the characteristic read
-            validate: Whether to validate ranges (default True)
-
-        Returns:
-            ElectricCurrentSpecificationData with 'minimum' and 'maximum' current specification values in Amperes
-
-        Raises:
-            ValueError: If data is insufficient
-
-        """
-        # Convert 2x uint16 (little endian) to current specification in Amperes
+        """Parse current specification data (3x uint16 in units of 0.01 A)."""
         min_current_raw = DataParser.parse_int16(data, 0, signed=False)
-        max_current_raw = DataParser.parse_int16(data, 2, signed=False)
+        typical_current_raw = DataParser.parse_int16(data, 2, signed=False)
+        max_current_raw = DataParser.parse_int16(data, 4, signed=False)
 
-        return ElectricCurrentSpecificationData(minimum=min_current_raw * 0.01, maximum=max_current_raw * 0.01)
+        return ElectricCurrentSpecificationData(
+            minimum=min_current_raw * _CURRENT_RESOLUTION,
+            typical=typical_current_raw * _CURRENT_RESOLUTION,
+            maximum=max_current_raw * _CURRENT_RESOLUTION,
+        )
 
     def _encode_value(self, data: ElectricCurrentSpecificationData) -> bytearray:
-        """Encode electric current specification value back to bytes.
-
-        Args:
-            data: ElectricCurrentSpecificationData instance
-
-        Returns:
-            Encoded bytes representing the current specification (2x uint16, 0.01 A resolution)
-
-        """
-        # Convert Amperes to raw values (multiply by 100 for 0.01 A resolution)
+        """Encode electric current specification value back to bytes."""
         min_current_raw = round(data.minimum * 100)
+        typical_current_raw = round(data.typical * 100)
         max_current_raw = round(data.maximum * 100)
 
-        # Encode as 2 uint16 values (little endian)
+        for name, value in [
+            ("minimum", min_current_raw),
+            ("typical", typical_current_raw),
+            ("maximum", max_current_raw),
+        ]:
+            if not 0 <= value <= UINT16_MAX:
+                raise ValueError(f"Current {name} value {value} exceeds uint16 range")
+
         result = bytearray()
         result.extend(DataParser.encode_int16(min_current_raw, signed=False))
+        result.extend(DataParser.encode_int16(typical_current_raw, signed=False))
         result.extend(DataParser.encode_int16(max_current_raw, signed=False))
 
         return result

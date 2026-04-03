@@ -1,114 +1,76 @@
-﻿# Bluetooth SIG Standards Library - AI Agent Guidelines
+﻿# Bluetooth SIG Standards Library
 
-**TL;DR**: Check docs → Run tests → Fix → Lint → Done
+Pure Python library for Bluetooth SIG standards interpretation (GATT characteristics, services, advertisements).
 
----
+## Project Layout
 
-## ABSOLUTE PROHIBITIONS (Read This First)
+```
+bluetooth_sig/          ← READ-ONLY submodule (SIG YAML data). Never modify.
+  gss/                  ← Characteristic YAML definitions (source of truth)
+  assigned_numbers/     ← Company IDs, UUIDs, service discovery data
+  dp/                   ← Device properties
+src/bluetooth_sig/      ← Implementation code (framework-agnostic, no BLE backend imports)
+  core/                 ← Public API facade and engines
+  gatt/characteristics/ ← Characteristic modules
+    base.py             ← BaseCharacteristic[T] — uses composition via _template, NOT inheritance
+    templates/          ← Reusable coding templates (numeric, scaled, string, composite, etc.)
+    pipeline/           ← Parse/encode pipelines + validation
+  registry/             ← Thread-safe singleton registries (lazy-load from YAML)
+  advertising/          ← BLE advertising packet parsing
+  device/               ← Device abstraction layer
+  stream/               ← Stream parsing
+  types/                ← Type definitions & enums
+tests/                  ← Mirrors src/ structure; primary location: gatt/characteristics/
+```
 
-**The following practices are FORBIDDEN. No exceptions. Violating these breaks the architecture:**
+## Non-Negotiable Rules
 
-### ❌ NEVER Use:
-- `TYPE_CHECKING` blocks or lazy imports in core logic
-- Hardcoded UUID strings (use the lib to resolve from registry)
-- `from typing import Optional` (use `Type | None`)
-- Bare `except:` or silent `pass`
-- Raw `dict`/`tuple` returns (use `msgspec.Struct`)
-- Untyped public function signatures
+1. **YAML is read-only.** If Python and YAML disagree, fix the Python.
+2. **No framework imports** (`homeassistant`, `bleak`, `simplepyble`) in `src/bluetooth_sig/`.
+3. **No hardcoded UUIDs** in implementation — use registry resolution.
+4. **No `Optional`** — use `Type | None`.
+5. **No `TYPE_CHECKING` blocks** or lazy imports in core logic.
+6. **No raw `dict`/`tuple` returns** — use `msgspec.Struct`.
+7. **No bare `except:`** or silent `pass`.
+8. **No `hasattr`/`getattr`** when direct access works.
+9. **All public functions fully typed.** `Any` requires inline justification.
+10. **Never set `_python_type`** on new characteristics — `BaseCharacteristic[T]` auto-resolves it.
 
-**If you catch yourself typing any of the above, STOP. They are architectural violations.**
+## Workflow
 
----
+1. **Research** — Cite official Bluetooth SIG specs (see "Fetching SIG Specs" below)
+2. **Test** — Success + 2 failure cases minimum per function
+3. **Implement** — Use templates from `gatt/characteristics/templates/`. Override `_decode_value()` for composites.
+4. **Validate** — Run quality gates (no exceptions)
+5. **Document** — Google-style docstrings. Update `docs/` if code changes break examples.
 
-## Core Principles (Non-Negotiable)
-
-### 1. Research First (MANDATORY)
-Consult official Bluetooth SIG specs and Python stdlib docs before implementing. State source explicitly: "Per [X documentation]..." or note if unavailable.
-
-### 2. Think Before Acting
-Use available thinking tools before making changes—plan approach, edge cases, and implications.
-
-### 3. Architecture Boundaries (ABSOLUTE)
-`src/bluetooth_sig/` must remain framework-agnostic. NO imports from `homeassistant`, `bleak`, `simplepyble`, or any backend. Translation layer supports multiple backends.
-
-### 4. No Untested Code
-Every new function needs tests: success + 2 failure cases minimum. Run `python -m pytest tests/ -v` before claiming completion.
-
-### 5. Quality Gates Must Pass
-Run `./scripts/lint.sh --all` before completion (pipe to file, don't grep output). Fix issues, don't suppress them. For iteration, rerun only failing linter (`./scripts/lint.sh --mypy`), then rerun all at end.
-
-### 6. Documentation Policy
-- Updating documentation (./docs/) will be asked directly if needed.
-- If making code changes that will break the code blocks in the docs, update those code blocks too.
-- Inline comments and docstrings (mandatory for new code)
-
----
-
-## Workflow (Every Change)
-
-1. **Research** → Consult specs, verify requirements, cite sources
-2. **Think** → Plan approach, edge cases, implications
-3. **Implement** → Pure functions/dataclasses following patterns (see path-specific instructions)
-4. **Test** → Success + 2 failure cases minimum
-5. **Validate** → Run quality gates (below)
-
----
-
-## Quality Gates (Must ALL Pass)
+## Quality Gates
 
 ```bash
-./scripts/format.sh --fix
-./scripts/format.sh --check
+./scripts/format.sh --fix && ./scripts/format.sh --check
 ./scripts/lint.sh --all
 python -m pytest tests/ -v
 ```
 
-ALL must pass with zero errors. No exceptions.
+## Fetching SIG Specs
 
----
+- Assigned Numbers: https://www.bluetooth.com/specifications/assigned-numbers/
+- Specifications: https://www.bluetooth.com/specifications/specs/
 
-## Architecture Overview
+To get a spec's HTML URL (**one spec at a time**):
+1. `curl https://www.bluetooth.com/specifications/specs/` — find the service slug from href links
+2. `curl https://www.bluetooth.com/specifications/specs/{slug}/` — extract public HTML link: `grep -o 'href="[^"]*out/en[^"]*"'`
+3. Extract the full `?src=` value (including any `prefix_timestamp/` portion)
+4. Build URL: `https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/{full_src_value}`
+5. `fetch_webpage` that URL
 
-**Two-Tier API Design:**
+**Never** `fetch_webpage` the listing page (strips hrefs). **Never** guess URL patterns. Use the first (no-lock-icon) HTML link, not the "HTML with cross-spec linking" (requires membership).
 
-1. **Direct Classes** (Type-Safe, Recommended):
-   ```python
-   from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
-   char = BatteryLevelCharacteristic()
-   level: int = char.parse_value(bytearray([85]))  # IDE knows return type
-   ```
+## Sub-Instructions
 
-2. **Translator** (Dynamic, For Unknown UUIDs):
-   ```python
-   from bluetooth_sig import BluetoothSIGTranslator
-   translator = BluetoothSIGTranslator()
-   result = translator.parse_characteristic("2A19", bytearray([85]))  # Returns Any
-   ```
-
-Path-specific instructions (python-implementation, testing, bluetooth-gatt) load automatically based on file type.
-
----
-
-## Authoritative References
-
-Must consult and cite when adding non-trivial logic:
-- Bluetooth SIG Assigned Numbers: https://www.bluetooth.com/specifications/assigned-numbers/
-- Python Standard Library: https://docs.python.org/
-- Project guides: `docs/AGENT_GUIDE.md`, `docs/BLUETOOTH_SIG_ARCHITECTURE.md`
-
-If spec unavailable: state explicitly, note verification needed.
-
----
-
-## Completion Checklist
-
-Task complete when ALL true:
-□ Submodule initialized, documentation cited
-□ Tests pass (success + 2 failures), quality gates pass
-□ No ABSOLUTE PROHIBITIONS violated (TYPE_CHECKING, lazy imports, hardcoded UUIDs, framework imports)
-□ Type hints complete on all public functions
-
----
-
-Following these rules is mandatory. Deviations require explicit justification.
+Detailed rules are in `.github/instructions/`:
+- `bluetooth-gatt.instructions.md` — GATT layer, templates, pipeline, characteristic patterns
+- `python-implementation.instructions.md` — Python coding standards, type safety, data modelling
+- `testing.instructions.md` — Test structure, fixtures, edge cases, commands
+- `documentation.instructions.md` — Doc style, code samples, diagrams
 

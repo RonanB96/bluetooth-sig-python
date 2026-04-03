@@ -23,7 +23,7 @@ class TestManufacturerNameStringCharacteristic(CommonCharacteristicTests):
         return "2A29"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray(b"Apple Inc."), expected_value="Apple Inc.", description="Apple manufacturer name"

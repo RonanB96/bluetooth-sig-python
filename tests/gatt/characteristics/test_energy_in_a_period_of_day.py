@@ -46,18 +46,6 @@ class TestEnergyInAPeriodOfDayCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = EnergyInAPeriodOfDayCharacteristic()
-        original = EnergyInAPeriodOfDayData(
-            energy=500,
-            start_time=8.0,
-            end_time=17.0,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
     def test_validation_rejects_negative_energy(self) -> None:
         """Negative energy is invalid for uint24."""
         with pytest.raises(ValueError, match="outside valid range"):

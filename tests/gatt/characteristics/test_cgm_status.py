@@ -104,30 +104,3 @@ class TestCGMStatusCharacteristic(CommonCharacteristicTests):
         assert result.status & CGMStatusFlags.SESSION_STOPPED
         assert result.status & CGMStatusFlags.CALIBRATION_RECOMMENDED
         assert result.status & CGMStatusFlags.RATE_OF_DECREASE_EXCEEDED
-
-    def test_round_trip_with_crc(self) -> None:
-        """Test encode/decode round-trip with CRC."""
-        char = CGMStatusCharacteristic()
-        original = CGMStatusData(
-            time_offset=45,
-            status=CGMStatusFlags.SENSOR_MALFUNCTION | CGMStatusFlags.CALIBRATION_REQUIRED,
-            e2e_crc=0xBEEF,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded.time_offset == original.time_offset
-        assert decoded.status == original.status
-        assert decoded.e2e_crc == original.e2e_crc
-
-    def test_round_trip_without_crc(self) -> None:
-        """Test encode/decode round-trip without CRC."""
-        char = CGMStatusCharacteristic()
-        original = CGMStatusData(
-            time_offset=10,
-            status=CGMStatusFlags(0),
-        )
-        encoded = char.build_value(original)
-        assert len(encoded) == 5
-        decoded = char.parse_value(encoded)
-        assert decoded.time_offset == 10
-        assert decoded.e2e_crc is None

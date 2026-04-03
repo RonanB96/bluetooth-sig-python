@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import BootMouseInputReportCharacteristic, BootMouseInputReportData
-from bluetooth_sig.gatt.characteristics.boot_mouse_input_report import MouseButtons
+from bluetooth_sig.gatt.characteristics import BootMouseInputReportCharacteristic
+from bluetooth_sig.gatt.characteristics.boot_mouse_input_report import BootMouseInputReportData, MouseButtons
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -38,6 +38,15 @@ class TestBootMouseInputReportCharacteristic(CommonCharacteristicTests):
                 ),
                 description="Left button + movement",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([3, 251, 15]),
+                expected_value=BootMouseInputReportData(
+                    buttons=MouseButtons.LEFT | MouseButtons.RIGHT,
+                    x_displacement=-5,
+                    y_displacement=15,
+                ),
+                description="Left+right buttons with mixed movement",
+            ),
         ]
 
     def test_no_input(self) -> None:
@@ -55,13 +64,3 @@ class TestBootMouseInputReportCharacteristic(CommonCharacteristicTests):
         assert result.buttons == 1
         assert result.x_displacement == 10
         assert result.y_displacement == 20
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve data."""
-        char = BootMouseInputReportCharacteristic()
-        original = BootMouseInputReportData(
-            buttons=MouseButtons.LEFT | MouseButtons.RIGHT, x_displacement=-5, y_displacement=15
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

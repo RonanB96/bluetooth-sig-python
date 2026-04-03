@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import Gender, GenderCharacteristic
+from bluetooth_sig.gatt.characteristics import GenderCharacteristic
+from bluetooth_sig.gatt.characteristics.gender import Gender
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 

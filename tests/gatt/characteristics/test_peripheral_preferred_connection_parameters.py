@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
+from bluetooth_sig.gatt.characteristics.peripheral_preferred_connection_parameters import (
     ConnectionParametersData,
     PeripheralPreferredConnectionParametersCharacteristic,
 )
@@ -40,6 +40,11 @@ class TestPeripheralPreferredConnectionParametersCharacteristic(CommonCharacteri
                 ),
                 description="Standard connection",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([64, 0, 80, 0, 0, 0, 20, 0]),
+                expected_value=ConnectionParametersData(min_interval=80.0, max_interval=100.0, latency=0, timeout=200),
+                description="Custom connection profile",
+            ),
         ]
 
     def test_fast_connection_parameters(self) -> None:
@@ -50,11 +55,3 @@ class TestPeripheralPreferredConnectionParametersCharacteristic(CommonCharacteri
         assert result.max_interval == 7.5  # 6 * 1.25
         assert result.latency == 0
         assert result.timeout == 1000  # 100 * 10
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve data."""
-        char = PeripheralPreferredConnectionParametersCharacteristic()
-        original = ConnectionParametersData(min_interval=80, max_interval=100, latency=0, timeout=200)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

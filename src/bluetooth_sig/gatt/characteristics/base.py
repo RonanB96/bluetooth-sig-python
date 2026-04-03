@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from functools import cached_property
-from typing import Any, ClassVar, Generic, TypeVar, get_args
+from typing import Any, ClassVar, Generic, TypeVar, cast, get_args, get_origin
 
 from ...types import (
     CharacteristicInfo,
@@ -23,7 +23,7 @@ from ...types import (
     SpecialValueType,
     classify_special_value,
 )
-from ...types.gatt_enums import CharacteristicRole, GattProperty
+from ...types.gatt_enums import CharacteristicRole
 from ...types.registry import CharacteristicSpec
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
@@ -106,14 +106,12 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
         self,
         info: CharacteristicInfo | None = None,
         validation: ValidationConfig | None = None,
-        properties: list[GattProperty] | None = None,
     ) -> None:
         """Initialize characteristic with structured configuration.
 
         Args:
             info: Complete characteristic information (optional for SIG characteristics)
             validation: Validation constraints configuration (optional)
-            properties: Runtime BLE properties discovered from device (optional)
 
         """
         # Store provided info or None (will be resolved in __post_init__)
@@ -122,9 +120,6 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
         # Instance variables (will be set in __post_init__)
         self._info: CharacteristicInfo
         self._spec: CharacteristicSpec | None = None
-
-        # Runtime properties (from actual device, not YAML)
-        self.properties: list[GattProperty] = properties if properties is not None else []
 
         # Manual overrides with proper types (using explicit class attributes)
         self._manual_unit: str | None = self.__class__._manual_unit
@@ -238,8 +233,21 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
                 origin = getattr(base, "__origin__", None)
                 if origin is BaseCharacteristic:
                     args = get_args(base)
-                    if args and isinstance(args[0], type) and args[0] is not Any:
-                        resolved = args[0]
+                    if not args:
+                        continue
+
+                    arg = args[0]
+                    if arg is Any:
+                        continue
+
+                    if isinstance(arg, type):
+                        resolved = arg
+                        break
+
+                    # Support PEP 585/typing aliases like list[Foo] or tuple[Bar, ...].
+                    generic_origin = get_origin(arg)
+                    if isinstance(generic_origin, type):
+                        resolved = generic_origin
                         break
             if resolved is not None:
                 break
@@ -494,12 +502,15 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
     def _resolve_class_uuid(cls) -> BluetoothUUID | None:
         """Resolve the characteristic UUID for this class without creating an instance."""
         # Check for _info attribute first (custom characteristics)
-        if hasattr(cls, "_info"):
-            info: CharacteristicInfo = cls._info  # Custom characteristics may have _info
-            try:
+        try:
+            info = cast(Any, cls)._info
+        except AttributeError:
+            info = None
+
+        if info is not None:
+            if isinstance(info, CharacteristicInfo):
                 return info.uuid
-            except AttributeError:
-                logger.warning("_info attribute has no uuid for class %s", cls.__name__)
+            logger.warning("_info attribute is not CharacteristicInfo for class %s", cls.__name__)
 
         # Try cross-file resolution for SIG characteristics
         yaml_spec = cls._resolve_yaml_spec_class()
@@ -626,6 +637,54 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
         Returns empty string for characteristics without units (e.g., bitfields).
         """
         return self._info.unit or ""
+
+    @cached_property
+    def unit_symbol(self) -> str:
+        """Get the canonical SIG unit symbol for this characteristic.
+
+        Resolves via the ``UnitsRegistry`` using the YAML ``unit_id``
+        (e.g. ``org.bluetooth.unit.thermodynamic_temperature.degree_celsius``
+        → ``°C``).  Falls back to :attr:`unit` when no symbol is available.
+
+        Returns:
+            SI symbol string (e.g. ``'°C'``, ``'%'``, ``'bpm'``),
+            or empty string if the characteristic has no unit.
+
+        """
+        from ...registry.uuids.units import resolve_unit_symbol  # noqa: PLC0415
+
+        unit_id = self.get_yaml_unit_id()
+        if unit_id:
+            symbol = resolve_unit_symbol(unit_id)
+            if symbol:
+                return symbol
+
+        return self._info.unit or ""
+
+    def get_field_unit(self, field_name: str) -> str:
+        """Get the resolved unit symbol for a specific struct field.
+
+        For struct-valued characteristics with per-field units (e.g.
+        Heart Rate Measurement: ``bpm`` for heart rate, ``J`` for
+        energy expended), this resolves the unit for a single field
+        via ``FieldSpec.unit_id`` → ``UnitsRegistry`` → ``.symbol``.
+
+        Args:
+            field_name: The Python-style field name (e.g. ``'heart_rate'``)
+                or raw GSS field name (e.g. ``'Heart Rate Measurement Value'``).
+
+        Returns:
+            Resolved unit symbol, or empty string if not found.
+
+        """
+        if not self._spec or not self._spec.structure:
+            return ""
+
+        for field in self._spec.structure:
+            if field_name in (field.python_name, field.field):
+                return field.unit_symbol
+
+        return ""
 
     @property
     def size(self) -> int | None:

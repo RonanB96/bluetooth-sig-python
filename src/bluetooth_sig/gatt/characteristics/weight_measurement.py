@@ -21,8 +21,7 @@ class WeightMeasurementFlags(IntFlag):
     IMPERIAL_UNITS = 0x01
     TIMESTAMP_PRESENT = 0x02
     USER_ID_PRESENT = 0x04
-    BMI_PRESENT = 0x08
-    HEIGHT_PRESENT = 0x10
+    BMI_AND_HEIGHT_PRESENT = 0x08
 
 
 class WeightMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
@@ -144,25 +143,25 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
             user_id = int(data[offset])
             offset += 1
 
-        # Parse optional BMI (uint16 with 0.1 resolution) if present
+        # Parse optional BMI (uint16 with 0.1 resolution) and Height if present (bit 3 — paired)
         bmi = None
-        if WeightMeasurementFlags.BMI_PRESENT in flags and len(data) >= offset + 2:
+        height = None
+        height_unit = None
+        if WeightMeasurementFlags.BMI_AND_HEIGHT_PRESENT in flags and len(data) >= offset + 2:
             bmi_raw = DataParser.parse_int16(data, offset, signed=False)
             bmi = bmi_raw * 0.1
             offset += 2
 
-        # Parse optional height (uint16 with 0.001m resolution) if present
-        height = None
-        height_unit = None
-        if WeightMeasurementFlags.HEIGHT_PRESENT in flags and len(data) >= offset + 2:
-            height_raw = DataParser.parse_int16(data, offset, signed=False)
-            if WeightMeasurementFlags.IMPERIAL_UNITS in flags:  # Imperial units (inches)
-                height = height_raw * 0.1  # 0.1 inch resolution
-                height_unit = HeightUnit.INCHES
-            else:  # SI units (meters)
-                height = height_raw * 0.001  # 0.001 m resolution
-                height_unit = HeightUnit.METERS
-            offset += 2
+            # Height always paired with BMI per spec
+            if len(data) >= offset + 2:
+                height_raw = DataParser.parse_int16(data, offset, signed=False)
+                if WeightMeasurementFlags.IMPERIAL_UNITS in flags:
+                    height = height_raw * 0.1
+                    height_unit = HeightUnit.INCHES
+                else:
+                    height = height_raw * 0.001
+                    height_unit = HeightUnit.METERS
+                offset += 2
 
         # Create result with all parsed values
         return WeightMeasurementData(
@@ -195,10 +194,8 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
             flags |= WeightMeasurementFlags.TIMESTAMP_PRESENT
         if data.user_id is not None:
             flags |= WeightMeasurementFlags.USER_ID_PRESENT
-        if data.bmi is not None:
-            flags |= WeightMeasurementFlags.BMI_PRESENT
-        if data.height is not None:
-            flags |= WeightMeasurementFlags.HEIGHT_PRESENT
+        if data.bmi is not None or data.height is not None:
+            flags |= WeightMeasurementFlags.BMI_AND_HEIGHT_PRESENT
 
         # Convert weight to raw value based on units
         if WeightMeasurementFlags.IMPERIAL_UNITS in flags:  # Imperial units (pounds)
@@ -228,14 +225,15 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
                 raise ValueError(f"BMI value {bmi_raw} exceeds uint16 range")
             result.extend(DataParser.encode_int16(bmi_raw, signed=False))
 
-        if data.height is not None:
-            if WeightMeasurementFlags.IMPERIAL_UNITS in flags:  # Imperial units (inches)
-                height_raw = round(data.height / 0.1)  # 0.1 inch resolution
-            else:  # SI units (meters)
-                height_raw = round(data.height / 0.001)  # 0.001 m resolution
+            # Height always paired with BMI per spec
+            if data.height is not None:
+                if WeightMeasurementFlags.IMPERIAL_UNITS in flags:
+                    height_raw = round(data.height / 0.1)
+                else:
+                    height_raw = round(data.height / 0.001)
 
-            if not 0 <= height_raw <= UINT16_MAX:
-                raise ValueError(f"Height value {height_raw} exceeds uint16 range")
-            result.extend(DataParser.encode_int16(height_raw, signed=False))
+                if not 0 <= height_raw <= UINT16_MAX:
+                    raise ValueError(f"Height value {height_raw} exceeds uint16 range")
+                result.extend(DataParser.encode_int16(height_raw, signed=False))
 
         return result

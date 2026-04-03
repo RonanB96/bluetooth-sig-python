@@ -6,6 +6,7 @@ from enum import IntFlag
 
 import msgspec
 
+from ...types.gatt_enums import CharacteristicRole
 from ..constants import SIZE_UINT32
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -48,6 +49,7 @@ class BootMouseInputReportCharacteristic(BaseCharacteristic[BootMouseInputReport
         USB HID Specification v1.11, Appendix B - Boot Interface Descriptors
     """
 
+    _manual_role = CharacteristicRole.INFO
     min_length = 3
     max_length = 4
     allow_variable_length = True

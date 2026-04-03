@@ -123,9 +123,7 @@ async def debug_ble_device(target_address: str) -> None:
                                     try:
                                         if len(value) == 1:
                                             int_val = value[0]
-                                        elif len(value) == 2:
-                                            int_val = int.from_bytes(value, byteorder="little")
-                                        elif len(value) == 4:
+                                        elif len(value) == 2 or len(value) == 4:
                                             int_val = int.from_bytes(value, byteorder="little")
                                         else:
                                             int_val = None

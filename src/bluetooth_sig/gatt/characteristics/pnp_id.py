@@ -6,6 +6,7 @@ from enum import IntEnum
 
 import msgspec
 
+from ...types.gatt_enums import CharacteristicRole
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -46,6 +47,7 @@ class PnpIdCharacteristic(BaseCharacteristic[PnpIdData]):
     Contains PnP ID information (7 bytes).
     """
 
+    _manual_role = CharacteristicRole.INFO
     expected_length = 7
 
     def _decode_value(

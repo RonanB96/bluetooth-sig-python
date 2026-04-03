@@ -18,5 +18,5 @@ class TxPowerService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.TX_POWER_LEVEL: True,  # required
+        CharacteristicName.TX_POWER_LEVEL: True,
     }

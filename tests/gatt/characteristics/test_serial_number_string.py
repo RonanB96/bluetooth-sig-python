@@ -22,7 +22,7 @@ class TestSerialNumberStringCharacteristic(CommonCharacteristicTests):
         return "2A25"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray(b"F8L123456789"),
@@ -43,7 +43,7 @@ class TestSerialNumberStringCharacteristic(CommonCharacteristicTests):
         ]
 
     @pytest.fixture
-    def invalid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def invalid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray(b"\xff\xfe\xfd"),  # Invalid UTF-8 sequence

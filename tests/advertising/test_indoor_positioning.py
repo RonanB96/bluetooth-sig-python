@@ -275,7 +275,7 @@ class TestIndoorPositioningErrors:
 class TestIndoorPositioningConfig:
     """Tests for the IndoorPositioningConfig IntFlag."""
 
-    def test_config_round_trip(self) -> None:
+    def test_config_int_conversion(self) -> None:
         """IntFlag value round-trips through int conversion."""
         flags = (
             IndoorPositioningConfig.LATITUDE_PRESENT

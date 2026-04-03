@@ -44,8 +44,6 @@ class PositionQualityCharacteristic(BaseCharacteristic[PositionQualityData]):
     Used to represent data related to the quality of a position measurement.
     """
 
-    _python_type: type | str | None = dict  # Override since decode_value returns dataclass
-
     min_length = 2  # Flags(2) minimum
     max_length = 16  # Flags(2) + NumberOfBeaconsInSolution(1) + NumberOfBeaconsInView(1) +
     # TimeToFirstFix(2) + EHPE(4) + EVPE(4) + HDOP(1) + VDOP(1) maximum

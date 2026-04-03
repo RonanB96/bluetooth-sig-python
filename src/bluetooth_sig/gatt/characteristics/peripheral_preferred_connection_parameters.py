@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import msgspec
 
+from ...types.gatt_enums import CharacteristicRole
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -26,6 +27,7 @@ class PeripheralPreferredConnectionParametersCharacteristic(BaseCharacteristic[C
     Contains the preferred connection parameters (8 bytes).
     """
 
+    _manual_role = CharacteristicRole.INFO
     expected_length = 8
 
     def _decode_value(

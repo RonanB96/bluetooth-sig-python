@@ -34,7 +34,7 @@ class TestIndoorPositioningService(CommonServiceTests):
         assert CharacteristicName.ALTITUDE in expected_characteristics
         assert CharacteristicName.UNCERTAINTY in expected_characteristics
 
-        # Verify they are marked as optional (required=False)
+        # Verify these remain optional (required=False)
         assert expected_characteristics[CharacteristicName.LOCAL_NORTH_COORDINATE].required is False
         assert expected_characteristics[CharacteristicName.LOCAL_EAST_COORDINATE].required is False
         assert expected_characteristics[CharacteristicName.ALTITUDE].required is False
@@ -44,7 +44,9 @@ class TestIndoorPositioningService(CommonServiceTests):
         """Test that mandatory characteristics remain unchanged."""
         expected_characteristics = service.get_expected_characteristics()
 
-        assert CharacteristicName.LATITUDE in expected_characteristics
-        assert CharacteristicName.LONGITUDE in expected_characteristics
+        assert CharacteristicName.INDOOR_POSITIONING_CONFIGURATION in expected_characteristics
+        assert CharacteristicName.UNCERTAINTY in expected_characteristics
+        assert expected_characteristics[CharacteristicName.INDOOR_POSITIONING_CONFIGURATION].required is True
+        assert expected_characteristics[CharacteristicName.UNCERTAINTY].required is False
         assert expected_characteristics[CharacteristicName.LATITUDE].required is True
         assert expected_characteristics[CharacteristicName.LONGITUDE].required is True
