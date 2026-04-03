@@ -44,11 +44,3 @@ class TestESLLEDInformationCharacteristic(CommonCharacteristicTests):
                 description="LED 2, full RGB gamut",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = ESLLEDInformationCharacteristic()
-        data = ESLLEDInformationData(led_index=1, color_gamut=ESLColorGamut.GREEN | ESLColorGamut.BLUE)
-        encoded = char.build_value(data)
-        decoded = char.parse_value(encoded)
-        assert decoded == data

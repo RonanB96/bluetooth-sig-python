@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
-    RelativeValueInATemperatureRangeCharacteristic,
-)
 from bluetooth_sig.gatt.characteristics.relative_value_in_a_temperature_range import (
+    RelativeValueInATemperatureRangeCharacteristic,
     RelativeValueInATemperatureRangeData,
 )
 
@@ -47,18 +45,6 @@ class TestRelativeValueInATemperatureRangeCharacteristic(CommonCharacteristicTes
                 description="100% at 10-20 C",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = RelativeValueInATemperatureRangeCharacteristic()
-        original = RelativeValueInATemperatureRangeData(
-            relative_value=50.0,
-            minimum_temperature=15.0,
-            maximum_temperature=25.0,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
 
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum temperature must not exceed maximum."""

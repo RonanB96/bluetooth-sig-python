@@ -11,6 +11,7 @@ Advertising types are now in the bluetooth_sig.types.advertising subpackage:
 
 from __future__ import annotations
 
+from .acs import MAX_ROLLING_SEGMENT_COUNTER, ACSControlPointData, ACSDataPacket, ACSSegmentationHeader
 from .alert import (
     ALERT_CATEGORY_DEFINED_MAX,
     ALERT_CATEGORY_RESERVED_MAX,
@@ -97,6 +98,9 @@ from .uri import URIData
 # Import them directly: from bluetooth_sig.types.device_types import DeviceService, DeviceEncryption
 
 __all__ = [
+    "ACSControlPointData",
+    "ACSDataPacket",
+    "ACSSegmentationHeader",
     "ALERT_CATEGORY_DEFINED_MAX",
     "ALERT_CATEGORY_RESERVED_MAX",
     "ALERT_CATEGORY_RESERVED_MIN",
@@ -113,6 +117,7 @@ __all__ = [
     "UNREAD_COUNT_MAX",
     "UNREAD_COUNT_MORE_THAN_MAX",
     "AdTypeInfo",
+    "MAX_ROLLING_SEGMENT_COUNTER",
     "AlertCategoryBitMask",
     "AlertCategoryID",
     "AlertNotificationCommandID",

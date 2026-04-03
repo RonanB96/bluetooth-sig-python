@@ -1,52 +1,35 @@
 """BSS Response characteristic (0x2B2C).
 
-Response characteristic for the Broadcast Scan Service.
+Response characteristic for the Binary Sensor Service.
+
+The BSS protocol uses Split Header + Payload format. Responses and
+unsolicited events are indicated via this characteristic.
 
 References:
-    Bluetooth SIG Broadcast Audio Scan Service 1.0
+    Bluetooth SIG Binary Sensor Service 1.0, Sections 3.2 and 4
 """
 
 from __future__ import annotations
 
-from enum import IntEnum
-
 import msgspec
 
+from ...types.bss import SplitHeader
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
-
-
-class BSSResponseOpCode(IntEnum):
-    """BSS Response Op Codes (mirrors control point opcodes)."""
-
-    REMOTE_SCAN_STOPPED = 0x00
-    REMOTE_SCAN_STARTED = 0x01
-    ADD_SOURCE = 0x02
-    MODIFY_SOURCE = 0x03
-    SET_BROADCAST_CODE = 0x04
-    REMOVE_SOURCE = 0x05
-
-
-class BSSResponseResult(IntEnum):
-    """BSS Response result codes."""
-
-    SUCCESS = 0x00
-    OPCODE_NOT_SUPPORTED = 0x01
-    INVALID_SOURCE_ID = 0x02
 
 
 class BSSResponseData(msgspec.Struct, frozen=True, kw_only=True):
     """Parsed data from BSS Response.
 
     Attributes:
-        opcode: The operation code being responded to.
-        result: The result code.
+        split_header: Parsed Split Header fields.
+        payload: Raw payload bytes (message content). Empty if none.
 
     """
 
-    opcode: BSSResponseOpCode
-    result: BSSResponseResult
+    split_header: SplitHeader
+    payload: bytes = b""
 
 
 class BSSResponseCharacteristic(BaseCharacteristic[BSSResponseData]):
@@ -54,29 +37,37 @@ class BSSResponseCharacteristic(BaseCharacteristic[BSSResponseData]):
 
     org.bluetooth.characteristic.bss_response
 
-    Response characteristic for the Broadcast Scan Service control point.
+    Sends responses and unsolicited events from the Binary Sensor
+    Service using Split Header + Payload format.
+
+    Response message IDs are defined in ``BSSMessageID``:
+    ``GET_SENSOR_STATUS_RESPONSE``, ``SETTING_SENSOR_RESPONSE``,
+    and ``SENSOR_STATUS_EVENT``.
     """
 
-    min_length = 2
+    min_length = 1
+    max_length = 20
+    allow_variable_length = True
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> BSSResponseData:
         """Parse BSS Response data.
 
-        Format: OpCode (uint8) + Result (uint8).
+        Format: Split Header (uint8) + Payload (1-19 octets).
         """
-        opcode = BSSResponseOpCode(DataParser.parse_int8(data, 0, signed=False))
-        result = BSSResponseResult(DataParser.parse_int8(data, 1, signed=False))
+        raw_header = DataParser.parse_int8(data, 0, signed=False)
+        split_header = SplitHeader.from_byte(raw_header)
+        payload = bytes(data[1:])
 
         return BSSResponseData(
-            opcode=opcode,
-            result=result,
+            split_header=split_header,
+            payload=payload,
         )
 
     def _encode_value(self, data: BSSResponseData) -> bytearray:
         """Encode BSS Response data."""
         result = bytearray()
-        result.extend(DataParser.encode_int8(int(data.opcode), signed=False))
-        result.extend(DataParser.encode_int8(int(data.result), signed=False))
+        result.extend(DataParser.encode_int8(data.split_header.to_byte(), signed=False))
+        result.extend(data.payload)
         return result

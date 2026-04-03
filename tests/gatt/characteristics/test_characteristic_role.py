@@ -69,7 +69,7 @@ class TestMeasurementRole:
             "Navigation",
             "Activity Goal",
             # Rule 6: compound type
-            "Acceleration 3D",
+            "Acceleration - 3D",
         ],
     )
     def test_measurement_characteristics(self, sig_name: str) -> None:

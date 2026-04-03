@@ -6,8 +6,9 @@ from typing import Any
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import PLXFeatureFlags, PLXFeaturesCharacteristic
+from bluetooth_sig.gatt.characteristics import PLXFeaturesCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.plx_features import PLXFeatureFlags
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests

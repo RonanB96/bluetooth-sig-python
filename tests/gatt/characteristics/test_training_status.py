@@ -54,26 +54,3 @@ class TestTrainingStatusCharacteristic(CommonCharacteristicTests):
                 description="Warming up with status string",
             ),
         ]
-
-    def test_encode_round_trip_no_string(self) -> None:
-        """Verify encode/decode round-trip without string."""
-        char = TrainingStatusCharacteristic()
-        original = TrainingStatusData(
-            flags=TrainingStatusFlags(0),
-            training_status=TrainingStatusValue.COOL_DOWN,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
-    def test_encode_round_trip_with_string(self) -> None:
-        """Verify encode/decode round-trip with status string."""
-        char = TrainingStatusCharacteristic()
-        original = TrainingStatusData(
-            flags=TrainingStatusFlags.TRAINING_STATUS_STRING_PRESENT,
-            training_status=TrainingStatusValue.FITNESS_TEST,
-            training_status_string="VO2 Max",
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

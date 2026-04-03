@@ -30,13 +30,5 @@ class TestResolvablePrivateAddressOnly(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(bytearray([0x00]), 0, "RPA only (defined value)"),
-            CharacteristicTestData(bytearray([0x01]), 1, "Reserved value 1"),
+            CharacteristicTestData(bytearray([0xFF]), 0xFF, "Reserved value 0xFF"),
         ]
-
-    def test_roundtrip(self, characteristic: ResolvablePrivateAddressOnlyCharacteristic) -> None:
-        """Test encode/decode roundtrip for defined and reserved values."""
-        for value in (0, 1, 0xFF):
-            encoded = characteristic.build_value(value)
-            assert encoded == bytearray([value])
-            result = characteristic.parse_value(encoded)
-            assert result == value

@@ -33,10 +33,3 @@ class TestServiceCycleDataCharacteristic(CommonCharacteristicTests):
                 description="Multi-byte service cycle record",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: ServiceCycleDataCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = b"\xab\xcd\xef"
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

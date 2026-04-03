@@ -25,27 +25,29 @@ class TestDeviceTimeControlPointCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x01]),
+                input_data=bytearray([0x02]),
                 expected_value=DeviceTimeControlPointData(
-                    op_code=DeviceTimeControlPointOpCode.GET_DEVICE_TIME,
+                    op_code=DeviceTimeControlPointOpCode.PROPOSE_TIME_UPDATE,
                     parameter=None,
                 ),
-                description="Get device time, no parameter",
+                description="Propose Time Update opcode, no parameter bytes",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x02, 0xAA, 0xBB, 0xCC, 0xDD]),
+                # DTCP Response opcode (0x09), parameter = request_opcode(0x02) +
+                # response_value(0x01=Success)
+                input_data=bytearray([0x09, 0x02, 0x01]),
                 expected_value=DeviceTimeControlPointData(
-                    op_code=DeviceTimeControlPointOpCode.SET_DEVICE_TIME,
+                    op_code=DeviceTimeControlPointOpCode.DTCP_RESPONSE,
+                    parameter=b"\x02\x01",
+                ),
+                description="DTCP Response: Propose Time Update succeeded",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x03, 0xAA, 0xBB, 0xCC, 0xDD]),
+                expected_value=DeviceTimeControlPointData(
+                    op_code=DeviceTimeControlPointOpCode.FORCE_TIME_UPDATE,
                     parameter=b"\xaa\xbb\xcc\xdd",
                 ),
-                description="Set device time with parameter bytes",
-            ),
-            CharacteristicTestData(
-                input_data=bytearray([0x03]),
-                expected_value=DeviceTimeControlPointData(
-                    op_code=DeviceTimeControlPointOpCode.CANCEL_OPERATION,
-                    parameter=None,
-                ),
-                description="Cancel operation, no parameter",
+                description="Force Time Update with Time Update operand bytes",
             ),
         ]

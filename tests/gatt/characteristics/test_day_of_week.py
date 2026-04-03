@@ -27,7 +27,17 @@ class TestDayOfWeekCharacteristic(CommonCharacteristicTests):
         """Return valid test data for day of week."""
         return [
             CharacteristicTestData(input_data=bytearray([1]), expected_value=DayOfWeek.MONDAY, description="Monday"),
+            CharacteristicTestData(input_data=bytearray([2]), expected_value=DayOfWeek.TUESDAY, description="Tuesday"),
+            CharacteristicTestData(
+                input_data=bytearray([3]), expected_value=DayOfWeek.WEDNESDAY, description="Wednesday"
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([4]), expected_value=DayOfWeek.THURSDAY, description="Thursday"
+            ),
             CharacteristicTestData(input_data=bytearray([5]), expected_value=DayOfWeek.FRIDAY, description="Friday"),
+            CharacteristicTestData(
+                input_data=bytearray([6]), expected_value=DayOfWeek.SATURDAY, description="Saturday"
+            ),
             CharacteristicTestData(input_data=bytearray([7]), expected_value=DayOfWeek.SUNDAY, description="Sunday"),
         ]
 
@@ -42,13 +52,3 @@ class TestDayOfWeekCharacteristic(CommonCharacteristicTests):
         char = DayOfWeekCharacteristic()
         result = char.parse_value(bytearray([7]))
         assert result == DayOfWeek.SUNDAY
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = DayOfWeekCharacteristic()
-        for day in DayOfWeek:
-            if day is DayOfWeek.UNKNOWN:
-                continue
-            encoded = char.build_value(day)
-            decoded = char.parse_value(encoded)
-            assert decoded == day

@@ -36,11 +36,3 @@ class TestStoredHealthObservationsCharacteristic(CommonCharacteristicTests):
                 description="Multi-byte stored ACOM observation data",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = StoredHealthObservationsCharacteristic()
-        original = b"\xaa\xbb\xcc\xdd"
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

@@ -40,10 +40,10 @@ class TestAudioInputStateCharacteristic(CommonCharacteristicTests):
                 expected_value=AudioInputStateData(
                     gain_setting=-20,
                     mute=AudioInputMuteState.MUTED,
-                    gain_mode=AudioInputGainMode.MANUAL_AUTOMATIC,
+                    gain_mode=AudioInputGainMode.MANUAL,
                     change_counter=255,
                 ),
-                description="gain=-20, muted, manual+auto mode, counter=255",
+                description="gain=-20, muted, manual mode, counter=255",
             ),
             CharacteristicTestData(
                 input_data=bytearray([0x32, 0x02, 0x01, 0x0A]),

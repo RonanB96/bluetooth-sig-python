@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from enum import IntEnum
-
 import msgspec
 
 from ..context import CharacteristicContext
@@ -11,20 +9,13 @@ from .base import BaseCharacteristic
 from .utils import DataParser
 
 
-class GainSettingsUnits(IntEnum):
-    """Gain settings units."""
-
-    UNITLESS = 0
-    DECIBELS = 1
-
-
 class GainSettingsAttributeData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
     """Parsed data from Gain Settings Attribute characteristic.
 
-    Contains gain settings units, minimum, and maximum values.
+    Contains gain settings units (step size in 0.1 dB), minimum, and maximum values.
     """
 
-    gain_setting_units: GainSettingsUnits
+    gain_setting_units: int
     gain_setting_minimum: int
     gain_setting_maximum: int
 
@@ -47,7 +38,7 @@ class GainSettingsAttributeCharacteristic(BaseCharacteristic[GainSettingsAttribu
 
         Format: units (uint8) + minimum (sint8) + maximum (sint8).
         """
-        units = GainSettingsUnits(DataParser.parse_int8(data, 0, signed=False))
+        units = DataParser.parse_int8(data, 0, signed=False)
         minimum = DataParser.parse_int8(data, 1, signed=True)
         maximum = DataParser.parse_int8(data, 2, signed=True)
         return GainSettingsAttributeData(
@@ -59,7 +50,7 @@ class GainSettingsAttributeCharacteristic(BaseCharacteristic[GainSettingsAttribu
     def _encode_value(self, data: GainSettingsAttributeData) -> bytearray:
         """Encode Gain Settings Attribute data to bytes."""
         result = bytearray()
-        result += DataParser.encode_int8(int(data.gain_setting_units))
+        result += DataParser.encode_int8(data.gain_setting_units)
         result += DataParser.encode_int8(data.gain_setting_minimum, signed=True)
         result += DataParser.encode_int8(data.gain_setting_maximum, signed=True)
         return result

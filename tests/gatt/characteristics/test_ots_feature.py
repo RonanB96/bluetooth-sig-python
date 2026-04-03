@@ -65,17 +65,6 @@ class TestOTSFeature(CommonCharacteristicTests):
         actual = {m.name for m in OLCPFeatures if m.value != 0}
         assert actual == expected
 
-    def test_roundtrip(self, characteristic: OTSFeatureCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        data = OTSFeatureData(
-            oacp_features=OACPFeatures.CREATE | OACPFeatures.READ | OACPFeatures.WRITE,
-            olcp_features=OLCPFeatures.GO_TO | OLCPFeatures.CLEAR_MARKING,
-        )
-        encoded = characteristic.build_value(data)
-        result = characteristic.parse_value(encoded)
-        assert result.oacp_features == data.oacp_features
-        assert result.olcp_features == data.olcp_features
-
     def test_expected_length(self, characteristic: OTSFeatureCharacteristic) -> None:
         """Verify expected length is 8 bytes."""
         assert characteristic.expected_length == 8

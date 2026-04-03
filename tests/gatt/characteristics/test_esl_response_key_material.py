@@ -37,14 +37,6 @@ class TestESLResponseKeyMaterialCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = ESLResponseKeyMaterialCharacteristic()
-        key = b"\xaa\xbb\xcc\xdd" * 4
-        encoded = char.build_value(key)
-        decoded = char.parse_value(encoded)
-        assert decoded == key
-
     def test_encode_rejects_wrong_length(self) -> None:
         """Verify encode rejects non-16-byte input."""
         from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError

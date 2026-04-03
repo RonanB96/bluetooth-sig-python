@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics.hearing_aid_features import HearingAidFeatures, HearingAidFeaturesCharacteristic
+from bluetooth_sig.gatt.characteristics.hearing_aid_features import (
+    HearingAidFeaturesCharacteristic,
+    HearingAidFeaturesData,
+    HearingAidType,
+)
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
@@ -22,35 +26,38 @@ class TestHearingAidFeatures(CommonCharacteristicTests):
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
-            CharacteristicTestData(bytearray([0x00]), HearingAidFeatures(0), "No features"),
-            CharacteristicTestData(bytearray([0x01]), HearingAidFeatures.PRESET_SYNCHRONIZATION_SUPPORT, "Preset sync"),
             CharacteristicTestData(
-                bytearray([0x0F]),
-                HearingAidFeatures.PRESET_SYNCHRONIZATION_SUPPORT
-                | HearingAidFeatures.INDEPENDENT_PRESETS
-                | HearingAidFeatures.DYNAMIC_PRESETS
-                | HearingAidFeatures.WRITABLE_PRESETS,
-                "All features",
+                input_data=bytearray([0x00]),
+                expected_value=HearingAidFeaturesData(
+                    hearing_aid_type=HearingAidType.BINAURAL,
+                    preset_synchronization_support=False,
+                    independent_presets=False,
+                    dynamic_presets=False,
+                    writable_presets=False,
+                ),
+                description="Binaural, no features",
             ),
-        ]
-
-    def test_roundtrip(self, characteristic: HearingAidFeaturesCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray([0x00]), HearingAidFeatures(0), "No features"),
-            CharacteristicTestData(bytearray([0x01]), HearingAidFeatures.PRESET_SYNCHRONIZATION_SUPPORT, "Preset sync"),
             CharacteristicTestData(
-                bytearray([0x0F]),
-                HearingAidFeatures.PRESET_SYNCHRONIZATION_SUPPORT
-                | HearingAidFeatures.INDEPENDENT_PRESETS
-                | HearingAidFeatures.DYNAMIC_PRESETS
-                | HearingAidFeatures.WRITABLE_PRESETS,
-                "All features",
+                input_data=bytearray([0x01]),
+                expected_value=HearingAidFeaturesData(
+                    hearing_aid_type=HearingAidType.MONAURAL,
+                    preset_synchronization_support=False,
+                    independent_presets=False,
+                    dynamic_presets=False,
+                    writable_presets=False,
+                ),
+                description="Monaural, no features",
+            ),
+            CharacteristicTestData(
+                # 0x3E = 0b00111110 -> type=BANDED(0x02), preset_sync=1, indep=1, dynamic=1, writable=1
+                input_data=bytearray([0x3E]),
+                expected_value=HearingAidFeaturesData(
+                    hearing_aid_type=HearingAidType.BANDED,
+                    preset_synchronization_support=True,
+                    independent_presets=True,
+                    dynamic_presets=True,
+                    writable_presets=True,
+                ),
+                description="Banded, all features",
             ),
         ]

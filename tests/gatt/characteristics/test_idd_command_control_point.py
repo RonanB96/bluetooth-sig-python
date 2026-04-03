@@ -30,30 +30,27 @@ class TestIDDCommandControlPointCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                # opcode=SNOOZE_ANNUNCIATION (0x0100 LE = [0x00, 0x01]), no operand
-                input_data=bytearray([0x00, 0x01]),
+                input_data=bytearray([0x5A, 0x0F]),
                 expected_value=IDDCommandControlPointData(
-                    opcode=IDDCommandOpCode.SNOOZE_ANNUNCIATION,
+                    opcode=IDDCommandOpCode.SET_THERAPY_CONTROL_STATE,
                     operand=b"",
                 ),
-                description="Snooze annunciation, no operand",
+                description="Set therapy control state",
             ),
             CharacteristicTestData(
-                # opcode=CONFIRM_ANNUNCIATION (0x0101 LE = [0x01, 0x01]), operand=0xABCD
-                input_data=bytearray([0x01, 0x01, 0xAB, 0xCD]),
+                input_data=bytearray([0x55, 0x0F, 0x0F]),
                 expected_value=IDDCommandControlPointData(
-                    opcode=IDDCommandOpCode.CONFIRM_ANNUNCIATION,
-                    operand=b"\xab\xcd",
+                    opcode=IDDCommandOpCode.RESPONSE_CODE,
+                    operand=b"\x0f",
                 ),
-                description="Confirm annunciation with operand",
+                description="Response code with success",
             ),
             CharacteristicTestData(
-                # opcode=CANCEL_BOLUS (0x0401 LE = [0x01, 0x04])
-                input_data=bytearray([0x01, 0x04, 0x01]),
+                input_data=bytearray([0xFF, 0x0F, 0x01, 0x02]),
                 expected_value=IDDCommandControlPointData(
-                    opcode=IDDCommandOpCode.CANCEL_BOLUS,
-                    operand=b"\x01",
+                    opcode=IDDCommandOpCode.SET_TBR_ADJUSTMENT,
+                    operand=b"\x01\x02",
                 ),
-                description="Cancel bolus with operand byte",
+                description="Set TBR adjustment with operand",
             ),
         ]

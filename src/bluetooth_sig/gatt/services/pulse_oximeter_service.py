@@ -18,7 +18,8 @@ class PulseOximeterService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.PLX_SPOT_CHECK_MEASUREMENT: False,  # optional
-        CharacteristicName.PLX_CONTINUOUS_MEASUREMENT: False,  # optional
-        CharacteristicName.PLX_FEATURES: True,  # mandatory
+        CharacteristicName.PLX_SPOT_CHECK_MEASUREMENT: False,
+        CharacteristicName.PLX_CONTINUOUS_MEASUREMENT: False,
+        CharacteristicName.PLX_FEATURES: True,
+        CharacteristicName.RECORD_ACCESS_CONTROL_POINT: False,
     }

@@ -28,67 +28,64 @@ class TestStepCounterActivitySummaryDataCharacteristic(CommonCharacteristicTests
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x00, 0x00]),
-                expected_value=StepCounterActivitySummaryData(
-                    flags=StepCounterActivitySummaryFlags(0),
-                ),
-                description="Flags only, no optional fields",
-            ),
-            CharacteristicTestData(
                 input_data=bytearray(
                     [
-                        0x07,
-                        0x00,  # flags: all present
-                        0xE8,
-                        0x03,
-                        0x00,  # step_count: 1000 (uint24 LE)
-                        0xD0,
-                        0x07,
-                        0x00,  # distance: 2000 (uint24 LE)
-                        0xF4,
-                        0x01,  # calories: 500 (uint16 LE)
-                    ]
-                ),
-                expected_value=StepCounterActivitySummaryData(
-                    flags=(
-                        StepCounterActivitySummaryFlags.STEP_COUNT_PRESENT
-                        | StepCounterActivitySummaryFlags.DISTANCE_PRESENT
-                        | StepCounterActivitySummaryFlags.CALORIES_PRESENT
-                    ),
-                    step_count=1000,
-                    distance=2000,
-                    calories=500,
-                ),
-                description="All fields present",
-            ),
-            CharacteristicTestData(
-                input_data=bytearray(
-                    [
+                        0xC0,  # header: first+last segment
+                        0x00,  # flags: none set
                         0x01,
-                        0x00,  # flags: step_count only
-                        0x64,
+                        0x00,  # session_id: 1
+                        0x02,
+                        0x00,  # sub_session_id: 2
+                        0x0A,
                         0x00,
-                        0x00,  # step_count: 100 (uint24 LE)
+                        0x00,
+                        0x00,  # relative_timestamp: 10
+                        0x01,
+                        0x00,
+                        0x00,
+                        0x00,  # sequence_number: 1
                     ]
                 ),
                 expected_value=StepCounterActivitySummaryData(
-                    flags=StepCounterActivitySummaryFlags.STEP_COUNT_PRESENT,
-                    step_count=100,
+                    header=0xC0,
+                    flags=StepCounterActivitySummaryFlags(0),
+                    session_id=1,
+                    sub_session_id=2,
+                    relative_timestamp=10,
+                    sequence_number=1,
                 ),
-                description="Step count only",
+                description="Minimal data, no optional fields",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(
+                    [
+                        0xC0,  # header
+                        0x05,  # flags: NORMAL_WALKING_STEPS + FLOOR_STEPS (bits 0+2)
+                        0x00,
+                        0x00,  # session_id: 0
+                        0x00,
+                        0x00,  # sub_session_id: 0
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,  # relative_timestamp: 0
+                        0x00,
+                        0x00,
+                        0x00,
+                        0x00,  # sequence_number: 0
+                    ]
+                ),
+                expected_value=StepCounterActivitySummaryData(
+                    header=0xC0,
+                    flags=(
+                        StepCounterActivitySummaryFlags.NORMAL_WALKING_STEPS_PRESENT
+                        | StepCounterActivitySummaryFlags.FLOOR_STEPS_PRESENT
+                    ),
+                    session_id=0,
+                    sub_session_id=0,
+                    relative_timestamp=0,
+                    sequence_number=0,
+                ),
+                description="Flags with walking and floor steps present",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = StepCounterActivitySummaryDataCharacteristic()
-        original = StepCounterActivitySummaryData(
-            flags=(
-                StepCounterActivitySummaryFlags.STEP_COUNT_PRESENT | StepCounterActivitySummaryFlags.CALORIES_PRESENT
-            ),
-            step_count=5000,
-            calories=250,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

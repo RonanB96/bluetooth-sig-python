@@ -33,10 +33,3 @@ class TestRealTimeRangingDataCharacteristic(CommonCharacteristicTests):
                 description="Multi-byte ranging data",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: RealTimeRangingDataCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = b"\xaa\xbb\xcc"
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

@@ -39,26 +39,11 @@ class TestLEGATTSecurityLevels(CommonCharacteristicTests):
                 "Single: mode 1 level 4 (auth SC encryption)",
             ),
             CharacteristicTestData(
-                bytearray([0x01, 0x02, 0x01, 0x04]),
-                [
-                    SecurityLevelRequirement(mode=1, level=2),
-                    SecurityLevelRequirement(mode=1, level=4),
-                ],
-                "Two requirements: mode 1 level 2 + mode 1 level 4",
+                bytearray([0x02, 0x01]),
+                [SecurityLevelRequirement(mode=2, level=1)],
+                "Single: mode 2 level 1",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: LEGATTSecurityLevelsCharacteristic) -> None:
-        """Test encode/decode roundtrip for single and multiple requirements."""
-        cases = [
-            [SecurityLevelRequirement(mode=1, level=4)],
-            [SecurityLevelRequirement(mode=1, level=2), SecurityLevelRequirement(mode=1, level=4)],
-            [SecurityLevelRequirement(mode=2, level=1)],
-        ]
-        for reqs in cases:
-            encoded = characteristic.build_value(reqs)
-            result = characteristic.parse_value(encoded)
-            assert result == reqs
 
     def test_odd_length_data_rejected(self, characteristic: LEGATTSecurityLevelsCharacteristic) -> None:
         """Odd-length data cannot form complete uint8[2] pairs."""

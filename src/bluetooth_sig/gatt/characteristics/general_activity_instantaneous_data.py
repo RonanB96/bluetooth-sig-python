@@ -1,6 +1,6 @@
-"""General Activity Instantaneous Data characteristic (0x2B3D).
+"""General Activity Instantaneous Data characteristic (0x2B3C).
 
-Reports instantaneous general activity data: steps, distance, duration, intensity.
+Reports instantaneous general activity data with segmented header.
 
 References:
     Bluetooth SIG Physical Activity Monitor Service 1.0
@@ -18,42 +18,52 @@ from .utils import DataParser
 
 
 class GeneralActivityInstFlags(IntFlag):
-    """General Activity Instantaneous Data flags."""
+    """General Activity Instantaneous Data flags (24-bit, 3 octets)."""
 
-    STEPS_PRESENT = 0x01
-    DISTANCE_PRESENT = 0x02
-    DURATION_PRESENT = 0x04
-    INTENSITY_PRESENT = 0x08
+    NORMAL_WALKING_EE_PER_HOUR_PRESENT = 0x000001
+    INTENSITY_EE_PER_HOUR_PRESENT = 0x000002
+    TOTAL_EE_PER_HOUR_PRESENT = 0x000004
+    FAT_BURNED_PER_HOUR_PRESENT = 0x000008
+    METABOLIC_EQUIVALENT_PRESENT = 0x000010
+    SPEED_PRESENT = 0x000020
+    MOTION_CADENCE_PRESENT = 0x000040
+    ELEVATION_PRESENT = 0x000080
+    ACTIVITY_COUNT_PER_MINUTE_PRESENT = 0x000100
+    ACTIVITY_LEVEL_PRESENT = 0x000200
+    ACTIVITY_TYPE_PRESENT = 0x000400
+    DEVICE_WORN = 0x800000
 
 
 class GeneralActivityInstantaneousData(msgspec.Struct, frozen=True, kw_only=True):
     """Parsed data from General Activity Instantaneous Data characteristic.
 
     Attributes:
-        flags: Presence flags for optional fields.
-        steps: Step count. None if not present.
-        distance: Distance in metres (uint24). None if not present.
-        duration: Duration in seconds (uint24). None if not present.
-        intensity: Activity intensity (uint8, percentage). None if not present.
+        header: Segmentation header byte.
+        flags: Presence flags for optional fields (24-bit).
+        session_id: Session identifier (uint16).
+        sub_session_id: Sub-session identifier (uint16).
+        relative_timestamp: Relative timestamp in seconds (uint32).
+        sequence_number: Sequence number (uint32).
 
     """
 
+    header: int
     flags: GeneralActivityInstFlags
-    steps: int | None = None
-    distance: int | None = None
-    duration: int | None = None
-    intensity: int | None = None
+    session_id: int
+    sub_session_id: int
+    relative_timestamp: int
+    sequence_number: int
 
 
 class GeneralActivityInstantaneousDataCharacteristic(BaseCharacteristic[GeneralActivityInstantaneousData]):
-    """General Activity Instantaneous Data characteristic (0x2B3D).
+    """General Activity Instantaneous Data characteristic (0x2B3C).
 
     org.bluetooth.characteristic.general_activity_instantaneous_data
 
     Reports instantaneous general activity data.
     """
 
-    min_length = 1  # flags only
+    min_length = 16  # header(1) + flags(3) + session(2) + subsession(2) + timestamp(4) + sequence(4)
     allow_variable_length = True
 
     def _decode_value(
@@ -61,52 +71,34 @@ class GeneralActivityInstantaneousDataCharacteristic(BaseCharacteristic[GeneralA
     ) -> GeneralActivityInstantaneousData:
         """Parse General Activity Instantaneous Data.
 
-        Format: Flags (uint8) + [Steps (uint16)] + [Distance (uint24)]
-                + [Duration (uint24)] + [Intensity (uint8)].
+        Format: Header (uint8) + Flags (uint24) + SessionID (uint16)
+                + SubSessionID (uint16) + RelativeTimestamp (uint32)
+                + SequenceNumber (uint32) + [optional fields].
         """
-        flags = GeneralActivityInstFlags(DataParser.parse_int8(data, 0, signed=False))
-        offset = 1
-
-        steps: int | None = None
-        if flags & GeneralActivityInstFlags.STEPS_PRESENT and len(data) >= offset + 2:
-            steps = DataParser.parse_int16(data, offset, signed=False)
-            offset += 2
-
-        distance: int | None = None
-        if flags & GeneralActivityInstFlags.DISTANCE_PRESENT and len(data) >= offset + 3:
-            distance = DataParser.parse_int24(data, offset, signed=False)
-            offset += 3
-
-        duration: int | None = None
-        if flags & GeneralActivityInstFlags.DURATION_PRESENT and len(data) >= offset + 3:
-            duration = DataParser.parse_int24(data, offset, signed=False)
-            offset += 3
-
-        intensity: int | None = None
-        if flags & GeneralActivityInstFlags.INTENSITY_PRESENT and len(data) >= offset + 1:
-            intensity = DataParser.parse_int8(data, offset, signed=False)
-            offset += 1
+        header = DataParser.parse_int8(data, 0, signed=False)
+        flags_raw = DataParser.parse_int24(data, 1, signed=False)
+        flags = GeneralActivityInstFlags(flags_raw)
+        session_id = DataParser.parse_int16(data, 4, signed=False)
+        sub_session_id = DataParser.parse_int16(data, 6, signed=False)
+        relative_timestamp = DataParser.parse_int32(data, 8, signed=False)
+        sequence_number = DataParser.parse_int32(data, 12, signed=False)
 
         return GeneralActivityInstantaneousData(
+            header=header,
             flags=flags,
-            steps=steps,
-            distance=distance,
-            duration=duration,
-            intensity=intensity,
+            session_id=session_id,
+            sub_session_id=sub_session_id,
+            relative_timestamp=relative_timestamp,
+            sequence_number=sequence_number,
         )
 
     def _encode_value(self, data: GeneralActivityInstantaneousData) -> bytearray:
         """Encode General Activity Instantaneous data."""
         result = bytearray()
-        result.extend(DataParser.encode_int8(int(data.flags), signed=False))
-
-        if data.steps is not None:
-            result.extend(DataParser.encode_int16(data.steps, signed=False))
-        if data.distance is not None:
-            result.extend(DataParser.encode_int24(data.distance, signed=False))
-        if data.duration is not None:
-            result.extend(DataParser.encode_int24(data.duration, signed=False))
-        if data.intensity is not None:
-            result.extend(DataParser.encode_int8(data.intensity, signed=False))
-
+        result.extend(DataParser.encode_int8(data.header, signed=False))
+        result.extend(DataParser.encode_int24(int(data.flags), signed=False))
+        result.extend(DataParser.encode_int16(data.session_id, signed=False))
+        result.extend(DataParser.encode_int16(data.sub_session_id, signed=False))
+        result.extend(DataParser.encode_int32(data.relative_timestamp, signed=False))
+        result.extend(DataParser.encode_int32(data.sequence_number, signed=False))
         return result

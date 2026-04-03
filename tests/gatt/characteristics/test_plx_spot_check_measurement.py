@@ -52,8 +52,8 @@ class TestPLXSpotCheckMeasurementCharacteristic(CommonCharacteristicTests):
                         0x80,  # SpO2 95.0
                         0x3C,
                         0x80,  # Pulse rate 60.0
-                        0x04,
-                        0x00,  # Measurement status: VALIDATED_DATA
+                        0x80,
+                        0x00,  # Measurement status: VALIDATED_DATA (bit 7 = 0x0080)
                     ]
                 ),
                 expected_value=PLXSpotCheckData(

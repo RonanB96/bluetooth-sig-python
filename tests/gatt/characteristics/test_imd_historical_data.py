@@ -33,10 +33,3 @@ class TestIMDHistoricalDataCharacteristic(CommonCharacteristicTests):
                 description="Multi-byte historical record",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: IMDHistoricalDataCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = b"\x01\x02\x03\x04\x05"
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

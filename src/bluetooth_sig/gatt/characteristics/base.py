@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from functools import cached_property
-from typing import Any, ClassVar, Generic, TypeVar, get_args
+from typing import Any, ClassVar, Generic, TypeVar, cast, get_args, get_origin
 
 from ...types import (
     CharacteristicInfo,
@@ -233,8 +233,21 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
                 origin = getattr(base, "__origin__", None)
                 if origin is BaseCharacteristic:
                     args = get_args(base)
-                    if args and isinstance(args[0], type) and args[0] is not Any:
-                        resolved = args[0]
+                    if not args:
+                        continue
+
+                    arg = args[0]
+                    if arg is Any:
+                        continue
+
+                    if isinstance(arg, type):
+                        resolved = arg
+                        break
+
+                    # Support PEP 585/typing aliases like list[Foo] or tuple[Bar, ...].
+                    generic_origin = get_origin(arg)
+                    if isinstance(generic_origin, type):
+                        resolved = generic_origin
                         break
             if resolved is not None:
                 break
@@ -489,12 +502,15 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
     def _resolve_class_uuid(cls) -> BluetoothUUID | None:
         """Resolve the characteristic UUID for this class without creating an instance."""
         # Check for _info attribute first (custom characteristics)
-        if hasattr(cls, "_info"):
-            info: CharacteristicInfo = cls._info  # Custom characteristics may have _info
-            try:
+        try:
+            info = cast(Any, cls)._info
+        except AttributeError:
+            info = None
+
+        if info is not None:
+            if isinstance(info, CharacteristicInfo):
                 return info.uuid
-            except AttributeError:
-                logger.warning("_info attribute has no uuid for class %s", cls.__name__)
+            logger.warning("_info attribute is not CharacteristicInfo for class %s", cls.__name__)
 
         # Try cross-file resolution for SIG characteristics
         yaml_spec = cls._resolve_yaml_spec_class()

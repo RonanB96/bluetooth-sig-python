@@ -79,14 +79,14 @@ class LocationAndSpeedCharacteristic(BaseCharacteristic[LocationAndSpeedData]):
     allow_variable_length: bool = True  # Variable optional fields
 
     # Bit masks and shifts for status information in flags
-    POSITION_STATUS_MASK = 0x0300
-    POSITION_STATUS_SHIFT = 8
-    SPEED_DISTANCE_FORMAT_MASK = 0x0400
-    SPEED_DISTANCE_FORMAT_SHIFT = 10
-    ELEVATION_SOURCE_MASK = 0x1800
-    ELEVATION_SOURCE_SHIFT = 11
-    HEADING_SOURCE_MASK = 0x2000
-    HEADING_SOURCE_SHIFT = 13
+    POSITION_STATUS_MASK = 0x0180
+    POSITION_STATUS_SHIFT = 7
+    SPEED_DISTANCE_FORMAT_MASK = 0x0200
+    SPEED_DISTANCE_FORMAT_SHIFT = 9
+    ELEVATION_SOURCE_MASK = 0x0C00
+    ELEVATION_SOURCE_SHIFT = 10
+    HEADING_SOURCE_MASK = 0x1000
+    HEADING_SOURCE_SHIFT = 12
 
     # Maximum valid enum values
     _MAX_POSITION_STATUS_VALUE = 3

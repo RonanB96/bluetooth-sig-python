@@ -1,4 +1,4 @@
-"""High Temperature characteristic (0x2A45)."""
+"""High Temperature characteristic (0x2BDF)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from .templates import ScaledSint16Template
 
 
 class HighTemperatureCharacteristic(BaseCharacteristic[float]):
-    """High Temperature characteristic (0x2A45).
+    """High Temperature characteristic (0x2BDF).
 
     org.bluetooth.characteristic.high_temperature
 

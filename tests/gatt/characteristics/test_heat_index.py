@@ -5,13 +5,15 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics.heat_index import HeatIndexCharacteristic
-from bluetooth_sig.gatt.constants import UINT8_MAX
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
 class TestHeatIndexCharacteristic(CommonCharacteristicTests):
-    """Test Heat Index characteristic implementation."""
+    """Test Heat Index characteristic implementation.
+
+    GSS: sint8, unit °C, M=1 d=0 b=0 (no scaling).
+    """
 
     @pytest.fixture
     def characteristic(self) -> HeatIndexCharacteristic:
@@ -25,55 +27,29 @@ class TestHeatIndexCharacteristic(CommonCharacteristicTests):
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
-        """Valid heat index test data."""
+        """Valid heat index test data (sint8)."""
         return [
-            CharacteristicTestData(input_data=bytearray([27]), expected_value=27.0, description="27°C (caution level)"),
+            CharacteristicTestData(input_data=bytearray([27]), expected_value=27, description="27°C (caution level)"),
+            CharacteristicTestData(input_data=bytearray([35]), expected_value=35, description="35°C (danger level)"),
             CharacteristicTestData(
-                input_data=bytearray([32]), expected_value=32.0, description="32°C (extreme caution)"
-            ),
-            CharacteristicTestData(input_data=bytearray([35]), expected_value=35.0, description="35°C (danger level)"),
-            CharacteristicTestData(
-                input_data=bytearray([41]), expected_value=41.0, description="41°C (extreme danger)"
-            ),
-            CharacteristicTestData(
-                input_data=bytearray([UINT8_MAX]), expected_value=255.0, description="255°C (maximum)"
+                input_data=bytearray([0xE5]), expected_value=-27, description="-27°C (negative, sint8)"
             ),
         ]
 
     def test_heat_index_parsing(self, characteristic: HeatIndexCharacteristic) -> None:
         """Test heat index characteristic parsing."""
-        # Test normal temperature
-        data = bytearray([35])  # 35°C
-        assert characteristic.parse_value(data) == 35.0
+        assert characteristic.parse_value(bytearray([35])) == 35
+        assert characteristic.parse_value(bytearray([0])) == 0
 
-        # Test max uint8
-        data = bytearray([UINT8_MAX])  # UINT8_MAX°C
-        assert characteristic.parse_value(data) == UINT8_MAX
-
-    def test_heat_index_boundary_values(self, characteristic: HeatIndexCharacteristic) -> None:
-        """Test heat index boundary values."""
-        # Minimum (0°C)
-        data_min = bytearray([0])
-        assert characteristic.parse_value(data_min) == 0.0
-
-        # Maximum (255°C)
-        data_max = bytearray([UINT8_MAX])
-        assert characteristic.parse_value(data_max) == 255.0
+    def test_heat_index_negative_values(self, characteristic: HeatIndexCharacteristic) -> None:
+        """Test heat index negative values (sint8 range -128..127)."""
+        assert characteristic.parse_value(bytearray([0xFF])) == -1
+        assert characteristic.parse_value(bytearray([0x80])) == -128
+        assert characteristic.parse_value(bytearray([0x7F])) == 127
 
     def test_heat_index_danger_levels(self, characteristic: HeatIndexCharacteristic) -> None:
         """Test heat index danger levels based on typical thresholds."""
-        # Caution (27°C)
-        data_caution = bytearray([27])
-        assert characteristic.parse_value(data_caution) == 27.0
-
-        # Extreme caution (32°C)
-        data_extreme_caution = bytearray([32])
-        assert characteristic.parse_value(data_extreme_caution) == 32.0
-
-        # Danger (41°C)
-        data_danger = bytearray([41])
-        assert characteristic.parse_value(data_danger) == 41.0
-
-        # Extreme danger (54°C)
-        data_extreme_danger = bytearray([54])
-        assert characteristic.parse_value(data_extreme_danger) == 54.0
+        assert characteristic.parse_value(bytearray([27])) == 27
+        assert characteristic.parse_value(bytearray([32])) == 32
+        assert characteristic.parse_value(bytearray([41])) == 41
+        assert characteristic.parse_value(bytearray([54])) == 54

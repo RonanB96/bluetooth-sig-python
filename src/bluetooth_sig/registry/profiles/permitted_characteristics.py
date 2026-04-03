@@ -12,7 +12,7 @@ from bluetooth_sig.registry.utils import find_bluetooth_sig_path
 from bluetooth_sig.types.registry.profile_types import PermittedCharacteristicEntry
 
 # Profile subdirectories that contain ``*_permitted_characteristics.yaml``.
-_PROFILE_DIRS: tuple[str, ...] = ("ess", "uds", "imds")
+_PROFILE_DIRS: tuple[str, ...] = ("cws", "ess", "imds", "uds")
 
 
 class PermittedCharacteristicsRegistry(

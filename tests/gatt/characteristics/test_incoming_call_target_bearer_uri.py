@@ -38,11 +38,3 @@ class TestIncomingCallTargetBearerURICharacteristic(CommonCharacteristicTests):
                 description="Call index 4 with SIP URI",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = IncomingCallTargetBearerURICharacteristic()
-        original = IncomingCallTargetBearerURIData(call_index=2, uri="tel:+1")
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

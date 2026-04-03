@@ -22,25 +22,25 @@ class TestVoltageStatisticsCharacteristic(CommonCharacteristicTests):
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
+        """Valid voltage statistics test data.
+
+        GSS: avg(uint16) + std_dev(uint16) + min(uint16) + max(uint16) + sensing_dur(uint8)
+        = 9 bytes. All voltage fields at 1/64 V resolution.
+        """
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),  # All zeros
-                expected_value=VoltageStatisticsData(minimum=0.0, maximum=0.0, average=0.0),
+                input_data=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+                expected_value=VoltageStatisticsData(
+                    average=0.0, standard_deviation=0.0, minimum=0.0, maximum=0.0, sensing_duration=0.0
+                ),
                 description="Zero voltage statistics",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x80, 0x0C, 0x00, 0x0F, 0x40, 0x0D]),  # 3200, 3840, 3392 -> 50V, 60V, 53V
-                expected_value=VoltageStatisticsData(minimum=50.0, maximum=60.0, average=53.0),
-                description="Typical voltage range (50V-60V)",
-            ),
-            CharacteristicTestData(
-                input_data=bytearray([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]),  # Max values
-                expected_value=VoltageStatisticsData(minimum=1023.984375, maximum=1023.984375, average=1023.984375),
-                description="Maximum voltage values",
-            ),
-            CharacteristicTestData(
-                input_data=bytearray([0x01, 0x00, 0x02, 0x00, 0x01, 0x00]),  # 1, 2, 1 -> 0.015625V, 0.03125V, 0.015625V
-                expected_value=VoltageStatisticsData(minimum=0.015625, maximum=0.03125, average=0.015625),
-                description="Low voltage values with precision",
+                # avg=3392(53V), std=64(1V), min=3200(50V), max=3840(60V), dur=64(1.0s)
+                input_data=bytearray([0x40, 0x0D, 0x40, 0x00, 0x80, 0x0C, 0x00, 0x0F, 0x40]),
+                expected_value=VoltageStatisticsData(
+                    average=53.0, standard_deviation=1.0, minimum=50.0, maximum=60.0, sensing_duration=1.0
+                ),
+                description="Typical voltage statistics",
             ),
         ]

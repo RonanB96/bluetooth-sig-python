@@ -15,14 +15,12 @@ from .templates import FlagTemplate
 
 
 class RASFeatures(IntFlag):
-    """Ranging Service feature flags (uint16)."""
+    """Ranging Service feature flags (uint32, per RAS v1.0 Table 3.3)."""
 
-    REAL_TIME_RANGING_DATA_SUPPORTED = 0x0001
-    RETRIEVE_LOST_RANGING_DATA_SUPPORTED = 0x0002
-    ABORT_OPERATION_SUPPORTED = 0x0004
-    FILTER_RANGING_DATA_SUPPORTED = 0x0008
-    RANGING_DATA_READY_SUPPORTED = 0x0010
-    RANGING_DATA_OVERWRITTEN_SUPPORTED = 0x0020
+    REAL_TIME_RANGING_DATA_SUPPORTED = 0x00000001
+    RETRIEVE_LOST_RANGING_DATA_SEGMENTS_SUPPORTED = 0x00000002
+    ABORT_OPERATION_SUPPORTED = 0x00000004
+    FILTER_RANGING_DATA_SUPPORTED = 0x00000008
 
 
 class RASFeaturesCharacteristic(BaseCharacteristic[RASFeatures]):
@@ -31,6 +29,7 @@ class RASFeaturesCharacteristic(BaseCharacteristic[RASFeatures]):
     org.bluetooth.characteristic.ras_features
 
     Bitfield indicating the supported Ranging Service features.
+    Per RAS v1.0 Table 3.2: Boolean[32] = uint32 (4 bytes).
     """
 
-    _template = FlagTemplate.uint16(RASFeatures)
+    _template = FlagTemplate.uint32(RASFeatures)

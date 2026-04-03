@@ -19,15 +19,21 @@ from .utils import DataParser
 
 
 class RASControlPointOpCode(IntEnum):
-    """RAS Control Point operation codes."""
+    """RAS Control Point operation codes (RAS v1.0 Table 3.10)."""
 
-    GET_RANGING_DATA = 0x01
-    ACK_RANGING_DATA = 0x02
-    RETRIEVE_LOST_RANGING_DATA_COUNTERS = 0x03
-    RETRIEVE_LOST_RANGING_DATA = 0x04
-    ABORT_OPERATION = 0x05
-    FILTER_RANGING_DATA = 0x06
-    RESPONSE = 0xFF
+    GET_RANGING_DATA = 0x00
+    ACK_RANGING_DATA = 0x01
+    RETRIEVE_LOST_SEGMENTS = 0x02
+    ABORT_OPERATION = 0x03
+    SET_FILTER = 0x04
+
+
+class RASControlPointResponseOpCode(IntEnum):
+    """RAS Control Point response operation codes (RAS v1.0 Table 3.11)."""
+
+    COMPLETE_RANGING_DATA_RESPONSE = 0x00
+    COMPLETE_LOST_SEGMENT_RESPONSE = 0x01
+    RESPONSE_CODE = 0x02
 
 
 class RASControlPointData(msgspec.Struct, frozen=True, kw_only=True):

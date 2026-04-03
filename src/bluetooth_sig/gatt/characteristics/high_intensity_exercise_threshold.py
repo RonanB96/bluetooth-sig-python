@@ -12,6 +12,7 @@ from .utils import DataParser
 _FIELD_SELECTOR_ENERGY = 1
 _FIELD_SELECTOR_MET = 2
 _FIELD_SELECTOR_HR_PERCENTAGE = 3
+_FIELD_SELECTOR_HR = 4
 
 # Minimum data lengths for each field selector
 _MIN_LENGTH_ENERGY = 3  # 1 byte selector + 2 bytes uint16
@@ -33,6 +34,7 @@ class HighIntensityExerciseThresholdData(msgspec.Struct):
     threshold_energy_expenditure: int | None = None
     threshold_metabolic_equivalent: float | None = None
     threshold_percentage_max_heart_rate: int | None = None
+    threshold_heart_rate: int | None = None
 
 
 class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic[HighIntensityExerciseThresholdData]):
@@ -44,9 +46,11 @@ class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic[HighIntens
 
     Structure (variable length):
     - Field Selector (uint8): 1 byte - determines which threshold field follows
-      - 1 = Threshold as Energy Expenditure per Hour (uint16, 0 or 2 bytes)
-      - 2 = Threshold as Metabolic Equivalent (uint8, 0 or 1 byte)
-      - 3 = Threshold as Percentage of Maximum Heart Rate (uint8, 0 or 1 byte)
+      - 0 = No field selected
+      - 1 = Threshold as Energy Expenditure per Hour (uint16, 2 bytes)
+      - 2 = Threshold as Metabolic Equivalent (uint8, 1 byte)
+      - 3 = Threshold as Percentage of Maximum Heart Rate (uint8, 1 byte)
+      - 4 = Threshold as Heart Rate (uint8, 1 byte)
 
     Total payload: 1-3 bytes
     """
@@ -71,6 +75,7 @@ class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic[HighIntens
         field_selector = int(data[0])
         threshold_energy = None
         threshold_met = None
+        threshold_hr_pct = None
         threshold_hr = None
 
         # Parse optional threshold field based on selector
@@ -84,14 +89,17 @@ class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic[HighIntens
             threshold_met = threshold * 0.1
         elif field_selector == _FIELD_SELECTOR_HR_PERCENTAGE and len(data) >= _MIN_LENGTH_HR:
             # Percentage of Maximum Heart Rate (uint8)
-            threshold = int(data[1])
-            threshold_hr = threshold
+            threshold_hr_pct = int(data[1])
+        elif field_selector == _FIELD_SELECTOR_HR and len(data) >= _MIN_LENGTH_HR:
+            # Heart Rate (uint8, BPM)
+            threshold_hr = int(data[1])
 
         return HighIntensityExerciseThresholdData(
             field_selector=field_selector,
             threshold_energy_expenditure=threshold_energy,
             threshold_metabolic_equivalent=threshold_met,
-            threshold_percentage_max_heart_rate=threshold_hr,
+            threshold_percentage_max_heart_rate=threshold_hr_pct,
+            threshold_heart_rate=threshold_hr,
         )
 
     def _encode_value(self, data: HighIntensityExerciseThresholdData) -> bytearray:
@@ -117,7 +125,8 @@ class HighIntensityExerciseThresholdCharacteristic(BaseCharacteristic[HighIntens
             data.field_selector == _FIELD_SELECTOR_HR_PERCENTAGE
             and data.threshold_percentage_max_heart_rate is not None
         ):
-            hr_value = int(data.threshold_percentage_max_heart_rate)
-            result.append(hr_value)
+            result.append(int(data.threshold_percentage_max_heart_rate))
+        elif data.field_selector == _FIELD_SELECTOR_HR and data.threshold_heart_rate is not None:
+            result.append(int(data.threshold_heart_rate))
 
         return result

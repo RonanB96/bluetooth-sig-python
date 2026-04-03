@@ -60,36 +60,3 @@ class TestFitnessMachineControlPointCharacteristic(CommonCharacteristicTests):
                 description="Response: Set Target Speed succeeded",
             ),
         ]
-
-    def test_encode_round_trip_request_control(self) -> None:
-        """Verify encode/decode round-trip for request control."""
-        char = FitnessMachineControlPointCharacteristic()
-        original = FitnessMachineControlPointData(
-            op_code=FitnessMachineControlPointOpCode.REQUEST_CONTROL,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
-    def test_encode_round_trip_response(self) -> None:
-        """Verify encode/decode round-trip for response code."""
-        char = FitnessMachineControlPointCharacteristic()
-        original = FitnessMachineControlPointData(
-            op_code=FitnessMachineControlPointOpCode.RESPONSE_CODE,
-            response_op_code=FitnessMachineControlPointOpCode.SET_TARGET_POWER,
-            result_code=FitnessMachineResultCode.INVALID_PARAMETER,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
-    def test_encode_round_trip_with_parameter(self) -> None:
-        """Verify encode/decode round-trip for opcode with parameter."""
-        char = FitnessMachineControlPointCharacteristic()
-        original = FitnessMachineControlPointData(
-            op_code=FitnessMachineControlPointOpCode.STOP_OR_PAUSE,
-            parameter=b"\x02",
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

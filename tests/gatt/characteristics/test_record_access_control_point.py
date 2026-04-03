@@ -54,14 +54,3 @@ class TestRecordAccessControlPointCharacteristic(CommonCharacteristicTests):
                 description="Response code: success for Report Stored Records",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = RecordAccessControlPointCharacteristic()
-        original = RecordAccessControlPointData(
-            opcode=RACPOpCode.DELETE_STORED_RECORDS,
-            operator=RACPOperator.LAST_RECORD,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

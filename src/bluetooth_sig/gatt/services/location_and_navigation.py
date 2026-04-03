@@ -23,7 +23,7 @@ class LocationAndNavigationService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.LN_FEATURE: True,
-        CharacteristicName.LOCATION_AND_SPEED: False,
+        CharacteristicName.LOCATION_AND_SPEED: True,
         CharacteristicName.NAVIGATION: False,
         CharacteristicName.POSITION_QUALITY: False,
         CharacteristicName.LN_CONTROL_POINT: False,

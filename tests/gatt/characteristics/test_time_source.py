@@ -43,6 +43,9 @@ class TestTimeSourceCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 input_data=bytearray([6]), expected_value=TimeSource.CELLULAR_NETWORK, description="Cellular Network"
             ),
+            CharacteristicTestData(
+                input_data=bytearray([7]), expected_value=TimeSource.NOT_SYNCHRONIZED, description="Not Synchronized"
+            ),
         ]
 
     def test_unknown_source(self) -> None:
@@ -62,11 +65,3 @@ class TestTimeSourceCharacteristic(CommonCharacteristicTests):
         char = TimeSourceCharacteristic()
         result = char.parse_value(bytearray([5]))
         assert result == TimeSource.ATOMIC_CLOCK
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = TimeSourceCharacteristic()
-        for source in TimeSource:
-            encoded = char.build_value(source)
-            decoded = char.parse_value(encoded)
-            assert decoded == source

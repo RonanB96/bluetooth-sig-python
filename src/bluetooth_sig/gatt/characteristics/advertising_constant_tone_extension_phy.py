@@ -11,9 +11,8 @@ from .templates import EnumTemplate
 class CTEPHY(IntEnum):
     """Constant Tone Extension PHY type."""
 
-    LE_1M = 1
-    LE_2M = 2
-    LE_CODED = 3
+    LE_1M = 0
+    LE_2M = 1
 
 
 class AdvertisingConstantToneExtensionPhyCharacteristic(BaseCharacteristic[CTEPHY]):

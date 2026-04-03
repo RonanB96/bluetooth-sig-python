@@ -5,13 +5,18 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics.idd_features import (
-    IDDFeatures,
+    IDDFeatureFlags,
     IDDFeaturesCharacteristic,
+    IDDFeaturesData,
 )
+from bluetooth_sig.gatt.characteristics.utils import IEEE11073Parser
 from tests.gatt.characteristics.test_characteristic_common import (
     CharacteristicTestData,
     CommonCharacteristicTests,
 )
+
+# Pre-compute SFLOAT encoding for 100.0 (exponent=0, mantissa=100 → 0x0064 LE → [0x64, 0x00])
+_SFLOAT_100 = IEEE11073Parser.encode_sfloat(100.0)
 
 
 class TestIDDFeaturesCharacteristic(CommonCharacteristicTests):
@@ -29,25 +34,36 @@ class TestIDDFeaturesCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                # flags=0x00000003 LE → E2E_PROTECTION_SUPPORTED | BASAL_RATE_DELIVERY_SUPPORTED
-                input_data=bytearray([0x03, 0x00, 0x00, 0x00]),
-                expected_value=(IDDFeatures.E2E_PROTECTION_SUPPORTED | IDDFeatures.BASAL_RATE_DELIVERY_SUPPORTED),
-                description="E2E protection and basal rate delivery supported",
-            ),
-            CharacteristicTestData(
-                # flags=0x00002030 LE → PROFILE_TEMPLATE_SUPPORTED | HISTORY_EVENTS_SUPPORTED
-                input_data=bytearray([0x30, 0x20, 0x00, 0x00]),
-                expected_value=(
-                    IDDFeatures.TMR_DELIVERY_SUPPORTED
-                    | IDDFeatures.PROFILE_TEMPLATE_SUPPORTED
-                    | IDDFeatures.HISTORY_EVENTS_SUPPORTED
+                # No features, no E2E: CRC=0xFFFF, counter=0, conc=100.0, flags=0
+                input_data=bytearray([0xFF, 0xFF, 0x00, *list(_SFLOAT_100), 0x00, 0x00, 0x00]),
+                expected_value=IDDFeaturesData(
+                    e2e_crc=0xFFFF,
+                    e2e_counter=0,
+                    insulin_concentration=100.0,
+                    flags=IDDFeatureFlags(0),
                 ),
-                description="TMR delivery, profile template, and history events supported",
+                description="No features, E2E not supported",
             ),
             CharacteristicTestData(
-                # flags=0x00000000 → no features
-                input_data=bytearray([0x00, 0x00, 0x00, 0x00]),
-                expected_value=IDDFeatures(0),
-                description="No features supported",
+                # E2E + basal rate: CRC=0x1234, counter=5, conc=100.0, flags=0x03
+                input_data=bytearray([0x34, 0x12, 0x05, *list(_SFLOAT_100), 0x03, 0x00, 0x00]),
+                expected_value=IDDFeaturesData(
+                    e2e_crc=0x1234,
+                    e2e_counter=5,
+                    insulin_concentration=100.0,
+                    flags=(IDDFeatureFlags.E2E_PROTECTION_SUPPORTED | IDDFeatureFlags.BASAL_RATE_SUPPORTED),
+                ),
+                description="E2E protection and basal rate supported",
+            ),
+            CharacteristicTestData(
+                # Feature extension bit set: CRC=0xFFFF, counter=0, conc=100.0, flags=0x800000
+                input_data=bytearray([0xFF, 0xFF, 0x00, *list(_SFLOAT_100), 0x00, 0x00, 0x80]),
+                expected_value=IDDFeaturesData(
+                    e2e_crc=0xFFFF,
+                    e2e_counter=0,
+                    insulin_concentration=100.0,
+                    flags=IDDFeatureFlags.FEATURE_EXTENSION,
+                ),
+                description="Feature extension bit set",
             ),
         ]

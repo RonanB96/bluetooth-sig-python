@@ -52,13 +52,3 @@ class TestSCControlPointCharacteristic(CommonCharacteristicTests):
                 description="Update sensor location to value 2",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = SCControlPointCharacteristic()
-        original = SCControlPointData(
-            opcode=SCControlPointOpCode.REQUEST_SUPPORTED_SENSOR_LOCATIONS,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

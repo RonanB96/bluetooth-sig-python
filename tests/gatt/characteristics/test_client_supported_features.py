@@ -40,12 +40,6 @@ class TestClientSupportedFeatures(CommonCharacteristicTests):
             ),
         ]
 
-    def test_roundtrip(self, characteristic: ClientSupportedFeaturesCharacteristic) -> None:
-        for val in [ClientFeatures(0), ClientFeatures.ROBUST_CACHING, ClientFeatures.EATT]:
-            encoded = characteristic.build_value(val)
-            result = characteristic.parse_value(encoded)
-            assert result == val
-
     def test_variable_length(self, characteristic: ClientSupportedFeaturesCharacteristic) -> None:
         """Test that multi-byte data is accepted."""
         result = characteristic.parse_value(bytearray([0x07, 0x00]))

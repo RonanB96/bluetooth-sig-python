@@ -40,6 +40,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
                     threshold_energy_expenditure=None,
                     threshold_metabolic_equivalent=None,
                     threshold_percentage_max_heart_rate=None,
+                    threshold_heart_rate=None,
                 ),
                 description="0% threshold",
             ),
@@ -50,6 +51,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
                     threshold_energy_expenditure=None,
                     threshold_metabolic_equivalent=None,
                     threshold_percentage_max_heart_rate=None,
+                    threshold_heart_rate=None,
                 ),
                 description="50% threshold",
             ),
@@ -60,6 +62,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
                     threshold_energy_expenditure=None,
                     threshold_metabolic_equivalent=None,
                     threshold_percentage_max_heart_rate=None,
+                    threshold_heart_rate=None,
                 ),
                 description="100% threshold",
             ),
@@ -80,6 +83,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         assert result.threshold_energy_expenditure is None
         assert result.threshold_metabolic_equivalent is None
         assert result.threshold_percentage_max_heart_rate is None
+        assert result.threshold_heart_rate is None
 
     def test_field_selector_1_with_energy_expenditure(
         self, characteristic: HighIntensityExerciseThresholdCharacteristic
@@ -97,6 +101,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         assert result.threshold_energy_expenditure == 5000
         assert result.threshold_metabolic_equivalent is None
         assert result.threshold_percentage_max_heart_rate is None
+        assert result.threshold_heart_rate is None
 
     def test_field_selector_2_with_metabolic_equivalent(
         self, characteristic: HighIntensityExerciseThresholdCharacteristic
@@ -114,6 +119,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         assert result.threshold_energy_expenditure is None
         assert result.threshold_metabolic_equivalent == 1.5
         assert result.threshold_percentage_max_heart_rate is None
+        assert result.threshold_heart_rate is None
 
     def test_field_selector_3_with_heart_rate_percentage(
         self, characteristic: HighIntensityExerciseThresholdCharacteristic
@@ -131,6 +137,24 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         assert result.threshold_energy_expenditure is None
         assert result.threshold_metabolic_equivalent is None
         assert result.threshold_percentage_max_heart_rate == 75
+
+    def test_field_selector_4_with_heart_rate(
+        self, characteristic: HighIntensityExerciseThresholdCharacteristic
+    ) -> None:
+        """Test field_selector=4 with heart rate threshold (2 bytes)."""
+        from bluetooth_sig.gatt.characteristics.high_intensity_exercise_threshold import (
+            HighIntensityExerciseThresholdData,
+        )
+
+        # field_selector=4, heart_rate=150 BPM
+        data = bytearray([4, 150])
+        result = characteristic.parse_value(data)
+        assert isinstance(result, HighIntensityExerciseThresholdData)
+        assert result.field_selector == 4
+        assert result.threshold_energy_expenditure is None
+        assert result.threshold_metabolic_equivalent is None
+        assert result.threshold_percentage_max_heart_rate is None
+        assert result.threshold_heart_rate == 150
 
     @pytest.mark.parametrize(
         "threshold_value",
@@ -158,6 +182,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         assert result.threshold_energy_expenditure is None
         assert result.threshold_metabolic_equivalent is None
         assert result.threshold_percentage_max_heart_rate is None
+        assert result.threshold_heart_rate is None
 
     def test_high_intensity_exercise_threshold_boundary_values(
         self, characteristic: HighIntensityExerciseThresholdCharacteristic
@@ -174,6 +199,7 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         assert result.threshold_energy_expenditure is None
         assert result.threshold_metabolic_equivalent is None
         assert result.threshold_percentage_max_heart_rate is None
+        assert result.threshold_heart_rate is None
 
         # Test maximum value (255%)
         result = characteristic.parse_value(bytearray([255]))
@@ -182,3 +208,4 @@ class TestHighIntensityExerciseThresholdCharacteristic(CommonCharacteristicTests
         assert result.threshold_energy_expenditure is None
         assert result.threshold_metabolic_equivalent is None
         assert result.threshold_percentage_max_heart_rate is None
+        assert result.threshold_heart_rate is None

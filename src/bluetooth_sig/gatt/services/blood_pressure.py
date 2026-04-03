@@ -22,5 +22,9 @@ class BloodPressureService(BaseGattService):
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.BLOOD_PRESSURE_MEASUREMENT: True,
         CharacteristicName.INTERMEDIATE_CUFF_PRESSURE: False,
-        CharacteristicName.BLOOD_PRESSURE_FEATURE: False,
+        CharacteristicName.BLOOD_PRESSURE_FEATURE: True,
+        CharacteristicName.BLOOD_PRESSURE_RECORD: False,
+        CharacteristicName.RECORD_ACCESS_CONTROL_POINT: False,
+        CharacteristicName.ENHANCED_BLOOD_PRESSURE_MEASUREMENT: False,
+        CharacteristicName.ENHANCED_INTERMEDIATE_CUFF_PRESSURE: False,
     }

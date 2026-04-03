@@ -27,18 +27,3 @@ class TestPlayingOrder(CommonCharacteristicTests):
             CharacteristicTestData(bytearray([0x09]), PlayingOrder.SHUFFLE_ONCE, "Shuffle once"),
             CharacteristicTestData(bytearray([0x0A]), PlayingOrder.SHUFFLE_REPEAT, "Shuffle repeat"),
         ]
-
-    def test_roundtrip(self, characteristic: PlayingOrderCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray([0x01]), PlayingOrder.SINGLE_ONCE, "Single once"),
-            CharacteristicTestData(bytearray([0x02]), PlayingOrder.SINGLE_REPEAT, "Single repeat"),
-            CharacteristicTestData(bytearray([0x09]), PlayingOrder.SHUFFLE_ONCE, "Shuffle once"),
-            CharacteristicTestData(bytearray([0x0A]), PlayingOrder.SHUFFLE_REPEAT, "Shuffle repeat"),
-        ]

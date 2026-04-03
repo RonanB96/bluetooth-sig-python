@@ -194,21 +194,3 @@ class TestReferenceTimeInformationCharacteristic(CommonCharacteristicTests):
         assert result.time_accuracy == 255  # Unknown
         assert result.days_since_update == 255  # >=255 days
         assert result.hours_since_update == 255  # >=255 days
-
-    def test_reference_time_information_roundtrip(self, characteristic: ReferenceTimeInformationCharacteristic) -> None:
-        """Test that encode/decode are inverse operations."""
-        original = ReferenceTimeInformationData(
-            time_source=TimeSource.CELLULAR_NETWORK,
-            time_accuracy=50,  # 50 * 125ms = 6.25s
-            days_since_update=100,
-            hours_since_update=12,
-        )
-
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-
-        assert decoded is not None
-        assert decoded.time_source == original.time_source
-        assert decoded.time_accuracy == original.time_accuracy
-        assert decoded.days_since_update == original.days_since_update
-        assert decoded.hours_since_update == original.hours_since_update

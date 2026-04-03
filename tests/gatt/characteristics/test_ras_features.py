@@ -23,29 +23,18 @@ class TestRASFeaturesCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x00, 0x00]),
+                input_data=bytearray([0x00, 0x00, 0x00, 0x00]),
                 expected_value=RASFeatures(0),
                 description="No features supported",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x15, 0x00]),
-                expected_value=(
-                    RASFeatures.REAL_TIME_RANGING_DATA_SUPPORTED
-                    | RASFeatures.ABORT_OPERATION_SUPPORTED
-                    | RASFeatures.RANGING_DATA_READY_SUPPORTED
-                ),
-                description="Real-time, abort, and data ready features",
+                input_data=bytearray([0x05, 0x00, 0x00, 0x00]),
+                expected_value=(RASFeatures.REAL_TIME_RANGING_DATA_SUPPORTED | RASFeatures.ABORT_OPERATION_SUPPORTED),
+                description="Real-time and abort features",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x3F, 0x00]),
-                expected_value=RASFeatures(0x3F),
-                description="All features supported",
+                input_data=bytearray([0x08, 0x00, 0x00, 0x00]),
+                expected_value=RASFeatures.FILTER_RANGING_DATA_SUPPORTED,
+                description="Filter ranging data supported only",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: RASFeaturesCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for flags in [RASFeatures(0), RASFeatures.FILTER_RANGING_DATA_SUPPORTED, RASFeatures(0x3F)]:
-            encoded = characteristic.build_value(flags)
-            decoded = characteristic.parse_value(encoded)
-            assert decoded == flags

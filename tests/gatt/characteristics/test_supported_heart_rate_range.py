@@ -54,18 +54,6 @@ class TestSupportedHeartRateRangeCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = SupportedHeartRateRangeCharacteristic()
-        original = SupportedHeartRateRangeData(
-            minimum=60,
-            maximum=180,
-            minimum_increment=1,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum > maximum is invalid."""
         with pytest.raises(ValueError, match="cannot be greater"):

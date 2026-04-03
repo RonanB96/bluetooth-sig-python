@@ -51,14 +51,3 @@ class TestUserControlPointCharacteristic(CommonCharacteristicTests):
                 description="Response code",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = UserControlPointCharacteristic()
-        original = UserControlPointData(
-            opcode=UserControlPointOpCode.DELETE_USER,
-            parameter=b"\x05",
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

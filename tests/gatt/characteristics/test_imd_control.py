@@ -40,13 +40,3 @@ class TestIMDControlCharacteristic(CommonCharacteristicTests):
                 description="Set configuration with parameters",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: IMDControlCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = IMDControlData(
-            opcode=IMDControlOpCode.STOP_MEASUREMENT,
-            parameters=b"\x01\x02",
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

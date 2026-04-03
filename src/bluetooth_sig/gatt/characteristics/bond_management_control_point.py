@@ -9,11 +9,17 @@ from .templates import EnumTemplate
 
 
 class BondManagementCommand(IntEnum):
-    """Bond Management Control Point commands."""
+    """Bond Management Control Point commands as per BMS v1.0 Table 3.3."""
 
-    DELETE_BOND_OF_REQUESTING_DEVICE = 0x01
-    DELETE_ALL_BONDS_ON_SERVER = 0x02
-    DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER = 0x03
+    DELETE_BOND_OF_REQUESTING_DEVICE_BR_EDR_LE = 0x01
+    DELETE_BOND_OF_REQUESTING_DEVICE_BR_EDR = 0x02
+    DELETE_BOND_OF_REQUESTING_DEVICE_LE = 0x03
+    DELETE_ALL_BONDS_ON_SERVER_BR_EDR_LE = 0x04
+    DELETE_ALL_BONDS_ON_SERVER_BR_EDR = 0x05
+    DELETE_ALL_BONDS_ON_SERVER_LE = 0x06
+    DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER_BR_EDR_LE = 0x07
+    DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER_BR_EDR = 0x08
+    DELETE_ALL_BUT_ACTIVE_BOND_ON_SERVER_LE = 0x09
 
 
 class BondManagementControlPointCharacteristic(BaseCharacteristic[BondManagementCommand]):

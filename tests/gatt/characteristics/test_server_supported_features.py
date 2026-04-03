@@ -29,12 +29,6 @@ class TestServerSupportedFeatures(CommonCharacteristicTests):
             CharacteristicTestData(bytearray([0x01]), ServerFeatures.EATT, "EATT supported"),
         ]
 
-    def test_roundtrip(self, characteristic: ServerSupportedFeaturesCharacteristic) -> None:
-        for val in [ServerFeatures(0), ServerFeatures.EATT]:
-            encoded = characteristic.build_value(val)
-            result = characteristic.parse_value(encoded)
-            assert result == val
-
     def test_variable_length(self, characteristic: ServerSupportedFeaturesCharacteristic) -> None:
         """Test that multi-byte data is accepted."""
         result = characteristic.parse_value(bytearray([0x01, 0x00]))

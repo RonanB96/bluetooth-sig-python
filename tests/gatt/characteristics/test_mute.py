@@ -24,9 +24,5 @@ class TestMute(CommonCharacteristicTests):
         return [
             CharacteristicTestData(bytearray([0x00]), MuteState.NOT_MUTED, "Not muted"),
             CharacteristicTestData(bytearray([0x01]), MuteState.MUTED, "Muted"),
+            CharacteristicTestData(bytearray([0x02]), MuteState.DISABLED, "Disabled"),
         ]
-
-    def test_roundtrip(self, characteristic: MuteCharacteristic) -> None:
-        for val in MuteState:
-            encoded = characteristic.build_value(val)
-            assert characteristic.parse_value(encoded) == val

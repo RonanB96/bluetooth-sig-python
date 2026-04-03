@@ -11,8 +11,8 @@ from collections.abc import Callable
 from typing import Any, TypeVar, overload
 
 from ..advertising.registry import PayloadInterpreterRegistry
-from ..gatt.characteristics import CharacteristicName
 from ..gatt.characteristics.base import BaseCharacteristic
+from ..gatt.characteristics.registry import CharacteristicName
 from ..gatt.context import DeviceInfo
 from ..gatt.descriptors.base import BaseDescriptor
 from ..gatt.descriptors.registry import DescriptorRegistry

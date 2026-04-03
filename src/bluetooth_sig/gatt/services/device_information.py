@@ -21,10 +21,14 @@ class DeviceInformationService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.MANUFACTURER_NAME_STRING: True,  # required
-        CharacteristicName.MODEL_NUMBER_STRING: False,  # optional
-        CharacteristicName.SERIAL_NUMBER_STRING: False,  # optional
-        CharacteristicName.HARDWARE_REVISION_STRING: False,  # optional
-        CharacteristicName.FIRMWARE_REVISION_STRING: False,  # optional
-        CharacteristicName.SOFTWARE_REVISION_STRING: False,  # optional
+        CharacteristicName.MANUFACTURER_NAME_STRING: False,
+        CharacteristicName.MODEL_NUMBER_STRING: False,
+        CharacteristicName.SERIAL_NUMBER_STRING: False,
+        CharacteristicName.HARDWARE_REVISION_STRING: False,
+        CharacteristicName.FIRMWARE_REVISION_STRING: False,
+        CharacteristicName.SOFTWARE_REVISION_STRING: False,
+        CharacteristicName.SYSTEM_ID: False,
+        CharacteristicName.IEEE_11073_20601_REGULATORY_CERTIFICATION_DATA_LIST: False,
+        CharacteristicName.PNP_ID: False,
+        CharacteristicName.UDI_FOR_MEDICAL_DEVICES: False,
     }

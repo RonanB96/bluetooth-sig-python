@@ -18,25 +18,21 @@ from .utils import DataParser
 
 
 class PAMControlPointOpCode(IntEnum):
-    """Physical Activity Monitor Control Point Op Codes."""
+    """Physical Activity Monitor Control Point Op Codes (Table 3.22)."""
 
-    START_SESSION = 0x01
-    STOP_SESSION = 0x02
-    SET_ACTIVITY_TYPE = 0x03
-    GET_ACTIVITY_TYPE = 0x04
-    SET_SESSION_DESCRIPTOR = 0x05
-    GET_SESSION_DESCRIPTOR = 0x06
-    RESPONSE_CODE = 0x10
-
-
-class PAMControlPointResponseCode(IntEnum):
-    """Physical Activity Monitor Control Point response codes."""
-
-    SUCCESS = 0x01
-    OP_CODE_NOT_SUPPORTED = 0x02
-    INVALID_PARAMETER = 0x03
-    OPERATION_FAILED = 0x04
-    PARAMETER_NOT_ALLOWED = 0x05
+    ENQUIRE_SESSIONS = 0x01
+    ENQUIRE_SUB_SESSIONS = 0x02
+    GET_ENDED_SESSION_DATA = 0x03
+    START_SESSION_SUB_SESSION = 0x04
+    STOP_SESSION = 0x05
+    DELETE_ENDED_SESSION = 0x06
+    SET_AVERAGE_ACTIVITY_TYPE = 0x07
+    GET_ENDED_SESSION_DATA_SUCCESS_RESPONSE = 0xFA
+    ENQUIRE_SUB_SESSIONS_SUCCESS_RESPONSE = 0xFB
+    ENQUIRE_SESSIONS_SUCCESS_RESPONSE = 0xFC
+    GET_ENDED_SESSION_DATA_ERROR_RESPONSE = 0xFD
+    ENQUIRE_SUB_SESSIONS_ERROR_RESPONSE = 0xFE
+    ENQUIRE_SESSIONS_ERROR_RESPONSE = 0xFF
 
 
 class PhysicalActivityMonitorControlPointData(msgspec.Struct, frozen=True, kw_only=True):

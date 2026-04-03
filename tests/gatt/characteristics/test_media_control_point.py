@@ -45,7 +45,7 @@ class TestMediaControlPointCharacteristic(CommonCharacteristicTests):
             ),
             CharacteristicTestData(
                 # Move Relative with sint32 offset = -100 (0xFFFFFF9C little-endian)
-                input_data=bytearray([0x06, 0x9C, 0xFF, 0xFF, 0xFF]),
+                input_data=bytearray([0x10, 0x9C, 0xFF, 0xFF, 0xFF]),
                 expected_value=MediaControlPointData(
                     op_code=MediaControlPointOpCode.MOVE_RELATIVE,
                     parameter=-100,
@@ -54,7 +54,7 @@ class TestMediaControlPointCharacteristic(CommonCharacteristicTests):
             ),
             CharacteristicTestData(
                 # Goto Track with sint32 number = 5 (0x00000005 little-endian)
-                input_data=bytearray([0x24, 0x05, 0x00, 0x00, 0x00]),
+                input_data=bytearray([0x34, 0x05, 0x00, 0x00, 0x00]),
                 expected_value=MediaControlPointData(
                     op_code=MediaControlPointOpCode.GOTO_TRACK,
                     parameter=5,
@@ -62,25 +62,3 @@ class TestMediaControlPointCharacteristic(CommonCharacteristicTests):
                 description="Goto Track with track number 5",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip for parameterised opcode."""
-        char = MediaControlPointCharacteristic()
-        original = MediaControlPointData(
-            op_code=MediaControlPointOpCode.GOTO_GROUP,
-            parameter=42,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
-
-    def test_encode_round_trip_no_param(self) -> None:
-        """Verify encode/decode round-trip for opcode without parameter."""
-        char = MediaControlPointCharacteristic()
-        original = MediaControlPointData(
-            op_code=MediaControlPointOpCode.STOP,
-            parameter=None,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

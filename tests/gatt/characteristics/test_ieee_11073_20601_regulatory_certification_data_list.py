@@ -9,71 +9,46 @@ from bluetooth_sig.gatt.characteristics.ieee_11073_20601_regulatory_certificatio
     IEEE1107320601RegulatoryCharacteristic,
 )
 
-
-@pytest.fixture
-def characteristic() -> IEEE1107320601RegulatoryCharacteristic:
-    """Create an IEEE1107320601RegulatoryCharacteristic instance."""
-    return IEEE1107320601RegulatoryCharacteristic()
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
-class TestIEEE11073Decode:
-    """Tests for IEEE 11073-20601 regulatory data decoding."""
+class TestIEEE1107320601RegulatoryCharacteristic(CommonCharacteristicTests):
+    """Test suite for IEEE1107320601RegulatoryCharacteristic."""
 
-    def test_single_byte(self, characteristic: IEEE1107320601RegulatoryCharacteristic) -> None:
-        """Test decoding a single byte of certification data."""
-        data = bytearray(b"\x42")
-        result = characteristic.parse_value(data)
-        assert isinstance(result, IEEE11073RegulatoryData)
-        assert result.certification_data == b"\x42"
+    @pytest.fixture
+    def characteristic(self) -> IEEE1107320601RegulatoryCharacteristic:
+        return IEEE1107320601RegulatoryCharacteristic()
 
-    def test_multi_byte(self, characteristic: IEEE1107320601RegulatoryCharacteristic) -> None:
-        """Test decoding multi-byte certification data."""
-        raw = bytearray(b"\x01\x02\x03\x04\x05\x06\x07\x08")
-        result = characteristic.parse_value(raw)
-        assert result.certification_data == b"\x01\x02\x03\x04\x05\x06\x07\x08"
+    @pytest.fixture
+    def expected_uuid(self) -> str:
+        return "2A2A"
 
-    def test_preserves_all_bytes(self, characteristic: IEEE1107320601RegulatoryCharacteristic) -> None:
-        """Test that all bytes are preserved including embedded nulls."""
-        raw = bytearray(b"\x00\xff\x00\xff\x00")
-        result = characteristic.parse_value(raw)
-        assert result.certification_data == b"\x00\xff\x00\xff\x00"
-
-
-class TestIEEE11073Encode:
-    """Tests for IEEE 11073-20601 regulatory data encoding."""
-
-    def test_encode_single_byte(self, characteristic: IEEE1107320601RegulatoryCharacteristic) -> None:
-        """Test encoding a single byte."""
-        data = IEEE11073RegulatoryData(certification_data=b"\x42")
-        result = characteristic.build_value(data)
-        assert result == bytearray(b"\x42")
-
-    def test_encode_multi_byte(self, characteristic: IEEE1107320601RegulatoryCharacteristic) -> None:
-        """Test encoding multi-byte data."""
-        data = IEEE11073RegulatoryData(certification_data=b"\x01\x02\x03\x04")
-        result = characteristic.build_value(data)
-        assert result == bytearray(b"\x01\x02\x03\x04")
-
-
-class TestIEEE11073RoundTrip:
-    """Round-trip tests for IEEE 11073-20601 regulatory data."""
-
-    @pytest.mark.parametrize(
-        "cert_data",
-        [
-            b"\x01",
-            b"\x00\xff\x00\xff",
-            b"\xde\xad\xbe\xef\xca\xfe\xba\xbe",
-            bytes(range(256)),
-        ],
-    )
-    def test_round_trip(
-        self,
-        characteristic: IEEE1107320601RegulatoryCharacteristic,
-        cert_data: bytes,
-    ) -> None:
-        """Test encode -> decode round-trip."""
-        original = IEEE11073RegulatoryData(certification_data=cert_data)
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
+    @pytest.fixture
+    def valid_test_data(self) -> list[CharacteristicTestData]:
+        return [
+            CharacteristicTestData(
+                input_data=bytearray(b"\x42"),
+                expected_value=IEEE11073RegulatoryData(certification_data=b"\x42"),
+                description="single byte",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x01\x02\x03\x04\x05\x06\x07\x08"),
+                expected_value=IEEE11073RegulatoryData(certification_data=b"\x01\x02\x03\x04\x05\x06\x07\x08"),
+                description="multi-byte certification data",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x00\xff\x00\xff\x00"),
+                expected_value=IEEE11073RegulatoryData(certification_data=b"\x00\xff\x00\xff\x00"),
+                description="embedded nulls preserved",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\xde\xad\xbe\xef\xca\xfe\xba\xbe"),
+                expected_value=IEEE11073RegulatoryData(certification_data=b"\xde\xad\xbe\xef\xca\xfe\xba\xbe"),
+                description="arbitrary byte pattern",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(range(256)),
+                expected_value=IEEE11073RegulatoryData(certification_data=bytes(range(256))),
+                description="all 256 byte values",
+            ),
+        ]

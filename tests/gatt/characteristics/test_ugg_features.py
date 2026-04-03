@@ -30,21 +30,3 @@ class TestUGGFeatures(CommonCharacteristicTests):
                 "All features",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: UGGFeaturesCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray([0x00]), UGGFeatures(0), "No features"),
-            CharacteristicTestData(bytearray([0x01]), UGGFeatures.UGG_MULTIPLEX, "Multiplex"),
-            CharacteristicTestData(
-                bytearray([0x07]),
-                UGGFeatures.UGG_MULTIPLEX | UGGFeatures.UGG_96_KBPS | UGGFeatures.UGG_MULTISINK,
-                "All features",
-            ),
-        ]

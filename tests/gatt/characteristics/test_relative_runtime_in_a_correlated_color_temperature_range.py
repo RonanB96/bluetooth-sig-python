@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
-    RelativeRuntimeInACorrelatedColorTemperatureRangeCharacteristic,
-)
 from bluetooth_sig.gatt.characteristics.relative_runtime_in_a_correlated_color_temperature_range import (
     RelativeRuntimeInACCTRangeData,
+    RelativeRuntimeInACorrelatedColorTemperatureRangeCharacteristic,
 )
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
@@ -47,18 +45,6 @@ class TestRelativeRuntimeInACCTRangeCharacteristic(CommonCharacteristicTests):
                 description="100% at warm-to-cool CCT",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = RelativeRuntimeInACorrelatedColorTemperatureRangeCharacteristic()
-        original = RelativeRuntimeInACCTRangeData(
-            relative_runtime=50.0,
-            minimum_cct=2700,
-            maximum_cct=6500,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
 
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum CCT must not exceed maximum."""

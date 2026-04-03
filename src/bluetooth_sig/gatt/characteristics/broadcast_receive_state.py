@@ -56,8 +56,9 @@ class BroadcastReceiveStateCharacteristic(BaseCharacteristic[BroadcastReceiveSta
     being received.
     """
 
-    # Minimum 13 bytes for mandatory fields, but allow variable length for optional data
-    min_length = 13
+    # Minimum 14 bytes: source_id 1B, addr_type 1B, addr 6B,
+    # adv_sid 1B, broadcast_id 3B, pa_sync 1B, big_enc 1B.
+    min_length = 14
     allow_variable_length = True
 
     def _decode_value(

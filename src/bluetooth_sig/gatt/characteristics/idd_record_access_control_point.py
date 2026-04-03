@@ -4,7 +4,7 @@ IDD-specific record access control point for managing insulin delivery
 history records. Same pattern as generic RACP (0x2A52) but IDD-specific.
 
 References:
-    Bluetooth SIG Insulin Delivery Service 1.0
+    Bluetooth SIG Insulin Delivery Service 1.0.1, Table 3.21, 3.25
 """
 
 from __future__ import annotations
@@ -19,40 +19,40 @@ from .utils import DataParser
 
 
 class IDDRACPOpCode(IntEnum):
-    """IDD Record Access Control Point Op Codes."""
+    """IDD Record Access Control Point Op Codes (Table 3.25, Hamming codes)."""
 
-    REPORT_STORED_RECORDS = 0x01
-    DELETE_STORED_RECORDS = 0x02
-    ABORT_OPERATION = 0x03
-    REPORT_NUMBER_OF_STORED_RECORDS = 0x04
-    NUMBER_OF_STORED_RECORDS_RESPONSE = 0x05
-    RESPONSE_CODE = 0x06
+    RESPONSE_CODE = 0x0F
+    REPORT_STORED_RECORDS = 0x33
+    DELETE_STORED_RECORDS = 0x3C
+    ABORT_OPERATION = 0x55
+    REPORT_NUMBER_OF_STORED_RECORDS = 0x5A
+    NUMBER_OF_STORED_RECORDS_RESPONSE = 0x66
 
 
 class IDDRACPOperator(IntEnum):
-    """IDD Record Access Control Point Operators."""
+    """IDD Record Access Control Point Operators (Table 3.26, Hamming codes)."""
 
-    NULL = 0x00
-    ALL_RECORDS = 0x01
-    LESS_THAN_OR_EQUAL_TO = 0x02
-    GREATER_THAN_OR_EQUAL_TO = 0x03
-    WITHIN_RANGE_OF = 0x04
-    FIRST_RECORD = 0x05
-    LAST_RECORD = 0x06
+    NULL = 0x0F
+    ALL_RECORDS = 0x33
+    LESS_THAN_OR_EQUAL = 0x3C
+    GREATER_THAN_OR_EQUAL = 0x55
+    RANGE_INCLUSIVE = 0x5A
+    FIRST_RECORD = 0x66
+    LAST_RECORD = 0x69
 
 
 class IDDRACPResponseCode(IntEnum):
-    """IDD RACP response codes."""
+    """IDD RACP response codes (Table 3.27)."""
 
-    SUCCESS = 0x01
-    OP_CODE_NOT_SUPPORTED = 0x02
+    # Error codes 0x02-0x09 range (from generic RACP)
+    UNSUPPORTED_OPERATOR = 0x02
     INVALID_OPERATOR = 0x03
-    OPERATOR_NOT_SUPPORTED = 0x04
+    UNSUPPORTED_OPERAND = 0x04
     INVALID_OPERAND = 0x05
-    NO_RECORDS_FOUND = 0x06
-    ABORT_UNSUCCESSFUL = 0x07
-    PROCEDURE_NOT_COMPLETED = 0x08
-    OPERAND_NOT_SUPPORTED = 0x09
+    UNCLEAR_OPERATOR = 0x06
+    # IDD-specific codes
+    PROCEDURE_NOT_APPLICABLE = 0x0A
+    SUCCESS = 0xF0
 
 
 class IDDRecordAccessControlPointData(msgspec.Struct, frozen=True, kw_only=True):

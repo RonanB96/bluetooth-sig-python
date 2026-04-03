@@ -1,6 +1,6 @@
 """Step Counter Activity Summary Data characteristic (0x2B40).
 
-Flags-based summary of step counter activity data.
+Summary of step counter activity data with segmented header.
 
 References:
     Bluetooth SIG Physical Activity Monitor Service 1.0
@@ -18,28 +18,34 @@ from .utils import DataParser
 
 
 class StepCounterActivitySummaryFlags(IntFlag):
-    """Step Counter Activity Summary Data flags."""
+    """Step Counter Activity Summary Data flags (8-bit, 1 octet)."""
 
-    STEP_COUNT_PRESENT = 0x0001
-    DISTANCE_PRESENT = 0x0002
-    CALORIES_PRESENT = 0x0004
+    NORMAL_WALKING_STEPS_PRESENT = 0x01
+    INTENSITY_STEPS_PRESENT = 0x02
+    FLOOR_STEPS_PRESENT = 0x04
+    DISTANCE_PRESENT = 0x08
+    WORN_DURATION_PRESENT = 0x10
 
 
 class StepCounterActivitySummaryData(msgspec.Struct, frozen=True, kw_only=True):
     """Parsed data from Step Counter Activity Summary Data.
 
     Attributes:
-        flags: Presence flags for optional fields.
-        step_count: Step count (uint24). None if not present.
-        distance: Distance in metres (uint24). None if not present.
-        calories: Calories burned (uint16). None if not present.
+        header: Segmentation header byte.
+        flags: Presence flags for optional fields (8-bit).
+        session_id: Session identifier (uint16).
+        sub_session_id: Sub-session identifier (uint16).
+        relative_timestamp: Relative timestamp in seconds (uint32).
+        sequence_number: Sequence number (uint32).
 
     """
 
+    header: int
     flags: StepCounterActivitySummaryFlags
-    step_count: int | None = None
-    distance: int | None = None
-    calories: int | None = None
+    session_id: int
+    sub_session_id: int
+    relative_timestamp: int
+    sequence_number: int
 
 
 class StepCounterActivitySummaryDataCharacteristic(
@@ -53,7 +59,7 @@ class StepCounterActivitySummaryDataCharacteristic(
     by a flags field.
     """
 
-    min_length = 2  # flags only (uint16)
+    min_length = 14  # header(1) + flags(1) + session(2) + subsession(2) + timestamp(4) + sequence(4)
     allow_variable_length = True
 
     def _decode_value(
@@ -61,44 +67,33 @@ class StepCounterActivitySummaryDataCharacteristic(
     ) -> StepCounterActivitySummaryData:
         """Parse Step Counter Activity Summary Data.
 
-        Format: Flags (uint16) + [Step Count (uint24)] + [Distance (uint24)]
-                + [Calories (uint16)].
+        Format: Header (uint8) + Flags (uint8) + SessionID (uint16)
+                + SubSessionID (uint16) + RelativeTimestamp (uint32)
+                + SequenceNumber (uint32) + [optional fields].
         """
-        flags = StepCounterActivitySummaryFlags(DataParser.parse_int16(data, 0, signed=False))
-        offset = 2
-
-        step_count: int | None = None
-        if flags & StepCounterActivitySummaryFlags.STEP_COUNT_PRESENT and len(data) >= offset + 3:
-            step_count = DataParser.parse_int24(data, offset, signed=False)
-            offset += 3
-
-        distance: int | None = None
-        if flags & StepCounterActivitySummaryFlags.DISTANCE_PRESENT and len(data) >= offset + 3:
-            distance = DataParser.parse_int24(data, offset, signed=False)
-            offset += 3
-
-        calories: int | None = None
-        if flags & StepCounterActivitySummaryFlags.CALORIES_PRESENT and len(data) >= offset + 2:
-            calories = DataParser.parse_int16(data, offset, signed=False)
-            offset += 2
+        header = DataParser.parse_int8(data, 0, signed=False)
+        flags = StepCounterActivitySummaryFlags(DataParser.parse_int8(data, 1, signed=False))
+        session_id = DataParser.parse_int16(data, 2, signed=False)
+        sub_session_id = DataParser.parse_int16(data, 4, signed=False)
+        relative_timestamp = DataParser.parse_int32(data, 6, signed=False)
+        sequence_number = DataParser.parse_int32(data, 10, signed=False)
 
         return StepCounterActivitySummaryData(
+            header=header,
             flags=flags,
-            step_count=step_count,
-            distance=distance,
-            calories=calories,
+            session_id=session_id,
+            sub_session_id=sub_session_id,
+            relative_timestamp=relative_timestamp,
+            sequence_number=sequence_number,
         )
 
     def _encode_value(self, data: StepCounterActivitySummaryData) -> bytearray:
         """Encode Step Counter Activity Summary Data."""
         result = bytearray()
-        result.extend(DataParser.encode_int16(int(data.flags), signed=False))
-
-        if data.step_count is not None:
-            result.extend(DataParser.encode_int24(data.step_count, signed=False))
-        if data.distance is not None:
-            result.extend(DataParser.encode_int24(data.distance, signed=False))
-        if data.calories is not None:
-            result.extend(DataParser.encode_int16(data.calories, signed=False))
-
+        result.extend(DataParser.encode_int8(data.header, signed=False))
+        result.extend(DataParser.encode_int8(int(data.flags), signed=False))
+        result.extend(DataParser.encode_int16(data.session_id, signed=False))
+        result.extend(DataParser.encode_int16(data.sub_session_id, signed=False))
+        result.extend(DataParser.encode_int32(data.relative_timestamp, signed=False))
+        result.extend(DataParser.encode_int32(data.sequence_number, signed=False))
         return result

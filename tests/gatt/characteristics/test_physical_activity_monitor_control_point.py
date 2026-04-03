@@ -32,17 +32,25 @@ class TestPhysicalActivityMonitorControlPointCharacteristic(CommonCharacteristic
             CharacteristicTestData(
                 input_data=bytearray([0x01]),
                 expected_value=PhysicalActivityMonitorControlPointData(
-                    opcode=PAMControlPointOpCode.START_SESSION,
+                    opcode=PAMControlPointOpCode.ENQUIRE_SESSIONS,
                     parameter=b"",
                 ),
-                description="Start session, no parameter",
+                description="Enquire sessions, no parameter",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x03, 0x02]),
+                input_data=bytearray([0x04, 0x01, 0x00]),
                 expected_value=PhysicalActivityMonitorControlPointData(
-                    opcode=PAMControlPointOpCode.SET_ACTIVITY_TYPE,
-                    parameter=b"\x02",
+                    opcode=PAMControlPointOpCode.START_SESSION_SUB_SESSION,
+                    parameter=b"\x01\x00",
                 ),
-                description="Set activity type with parameter",
+                description="Start session/sub-session with parameter",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x05]),
+                expected_value=PhysicalActivityMonitorControlPointData(
+                    opcode=PAMControlPointOpCode.STOP_SESSION,
+                    parameter=b"",
+                ),
+                description="Stop session, no parameter",
             ),
         ]

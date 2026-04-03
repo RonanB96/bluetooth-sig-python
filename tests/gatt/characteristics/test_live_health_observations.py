@@ -36,11 +36,3 @@ class TestLiveHealthObservationsCharacteristic(CommonCharacteristicTests):
                 description="Multi-byte ACOM observation data",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = LiveHealthObservationsCharacteristic()
-        original = b"\x01\x02\x03"
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

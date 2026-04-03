@@ -62,8 +62,8 @@ class NavigationCharacteristic(BaseCharacteristic[NavigationData]):
     allow_variable_length: bool = True  # Variable optional fields
 
     # Bit masks and shifts for status information in flags
-    POSITION_STATUS_MASK = 0x0006
-    POSITION_STATUS_SHIFT = 1
+    POSITION_STATUS_MASK = 0x0018
+    POSITION_STATUS_SHIFT = 3
     HEADING_SOURCE_MASK = 0x0020
     HEADING_SOURCE_SHIFT = 5
     NAVIGATION_INDICATOR_TYPE_MASK = 0x0040

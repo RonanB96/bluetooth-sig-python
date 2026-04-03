@@ -6,8 +6,9 @@ from typing import Any
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import BodySensorLocation, BodySensorLocationCharacteristic
+from bluetooth_sig.gatt.characteristics import BodySensorLocationCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.body_sensor_location import BodySensorLocation
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 

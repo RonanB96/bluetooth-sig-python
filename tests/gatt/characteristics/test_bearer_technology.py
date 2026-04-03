@@ -28,19 +28,3 @@ class TestBearerTechnology(CommonCharacteristicTests):
             CharacteristicTestData(bytearray([0x04]), BearerTechnology.WIFI, "Wi-Fi"),
             CharacteristicTestData(bytearray([0x05]), BearerTechnology.FIVEG, "5G"),
         ]
-
-    def test_roundtrip(self, characteristic: BearerTechnologyCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray([0x01]), BearerTechnology.THREEG, "3G"),
-            CharacteristicTestData(bytearray([0x02]), BearerTechnology.FOURGEE, "4G"),
-            CharacteristicTestData(bytearray([0x03]), BearerTechnology.LTE, "LTE"),
-            CharacteristicTestData(bytearray([0x04]), BearerTechnology.WIFI, "Wi-Fi"),
-            CharacteristicTestData(bytearray([0x05]), BearerTechnology.FIVEG, "5G"),
-        ]

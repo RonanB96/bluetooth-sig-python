@@ -24,7 +24,8 @@ class AudioInputGainMode(IntEnum):
 
     MANUAL_ONLY = 0
     AUTOMATIC_ONLY = 1
-    MANUAL_AUTOMATIC = 2
+    MANUAL = 2
+    AUTOMATIC = 3
 
 
 class AudioInputStateData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods

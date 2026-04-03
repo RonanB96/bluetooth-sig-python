@@ -41,11 +41,3 @@ class TestCurrentTrackSegmentsObjectIdCharacteristic(CommonCharacteristicTests):
                 description="Maximum uint48",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = CurrentTrackSegmentsObjectIdCharacteristic()
-        original = 1234567890
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

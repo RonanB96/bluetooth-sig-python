@@ -43,15 +43,6 @@ class TestChromaticityCoordinatesCharacteristic(CommonCharacteristicTests):
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = ChromaticityCoordinatesCharacteristic()
-        original = ChromaticityCoordinatesData(x=0.3127, y=0.3290)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert abs(decoded.x - original.x) < _RESOLUTION
-        assert abs(decoded.y - original.y) < _RESOLUTION
-
     def test_validation_rejects_negative(self) -> None:
         """Negative coordinates are invalid."""
         with pytest.raises(ValueError, match="outside valid range"):

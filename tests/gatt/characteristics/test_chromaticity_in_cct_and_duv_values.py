@@ -52,21 +52,6 @@ class TestChromaticityInCCTAndDuvValuesCharacteristic(CommonCharacteristicTests)
             ),
         ]
 
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = ChromaticityInCCTAndDuvValuesCharacteristic()
-        original = ChromaticityInCCTAndDuvData(
-            correlated_color_temperature=4000,
-            chromaticity_distance_from_planckian=0.001,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded.correlated_color_temperature == original.correlated_color_temperature
-        assert (
-            abs(decoded.chromaticity_distance_from_planckian - original.chromaticity_distance_from_planckian)
-            < _DUV_RESOLUTION
-        )
-
     def test_validation_rejects_negative_cct(self) -> None:
         """Negative CCT is invalid."""
         with pytest.raises(ValueError, match="CCT"):

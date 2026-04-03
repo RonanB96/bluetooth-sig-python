@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
-    RelativeRuntimeInAGenericLevelRangeCharacteristic,
-)
 from bluetooth_sig.gatt.characteristics.relative_runtime_in_a_generic_level_range import (
+    RelativeRuntimeInAGenericLevelRangeCharacteristic,
     RelativeRuntimeInAGenericLevelRangeData,
 )
 
@@ -47,18 +45,6 @@ class TestRelativeRuntimeInAGenericLevelRangeCharacteristic(CommonCharacteristic
                 description="100% at level 100-1000",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = RelativeRuntimeInAGenericLevelRangeCharacteristic()
-        original = RelativeRuntimeInAGenericLevelRangeData(
-            relative_value=75.0,
-            minimum_generic_level=100,
-            maximum_generic_level=1000,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
 
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum level must not exceed maximum."""

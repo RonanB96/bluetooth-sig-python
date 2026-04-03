@@ -13,12 +13,12 @@ from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
 
 # Minimum data lengths for each operation
-_MIN_LEN_CUMULATIVE_VALUE = 5  # 1 byte op code + 4 bytes uint32
+_MIN_LEN_CUMULATIVE_VALUE = 4  # 1 byte op code + 3 bytes uint24
 _MIN_LEN_MASK_CONTENT = 3  # 1 byte op code + 2 bytes uint16
 _MIN_LEN_NAV_CONTROL = 2  # 1 byte op code + 1 byte value
-_MIN_LEN_ROUTE_NUMBER = 2  # 1 byte op code + 1 byte route number
+_MIN_LEN_ROUTE_NUMBER = 3  # 1 byte op code + 2 bytes uint16 route number
 _MIN_LEN_FIX_RATE = 2  # 1 byte op code + 1 byte fix rate
-_MIN_LEN_ELEVATION = 5  # 1 byte op code + 4 bytes int32
+_MIN_LEN_ELEVATION = 4  # 1 byte op code + 3 bytes sint24
 _MIN_LEN_RESPONSE = 3  # 1 byte op code + 1 byte request + 1 byte response
 
 # Response parameter lengths
@@ -147,7 +147,7 @@ class LNControlPointCharacteristic(BaseCharacteristic[LNControlPointData]):
 
         if op_code == LNControlPointOpCode.SET_CUMULATIVE_VALUE:
             if len(data) >= _MIN_LEN_CUMULATIVE_VALUE:
-                cumulative_value = DataParser.parse_int32(data, 1, signed=False)
+                cumulative_value = DataParser.parse_int24(data, 1, signed=False)
         elif op_code == LNControlPointOpCode.MASK_LOCATION_AND_SPEED_CHARACTERISTIC_CONTENT:
             if len(data) >= _MIN_LEN_MASK_CONTENT:
                 content_mask = DataParser.parse_int16(data, 1, signed=False)
@@ -156,14 +156,13 @@ class LNControlPointCharacteristic(BaseCharacteristic[LNControlPointData]):
                 navigation_control_value = data[1]
         elif op_code in (LNControlPointOpCode.REQUEST_NAME_OF_ROUTE, LNControlPointOpCode.SELECT_ROUTE):
             if len(data) >= _MIN_LEN_ROUTE_NUMBER:
-                route_number = data[1]
+                route_number = DataParser.parse_int16(data, 1, signed=False)
         elif op_code == LNControlPointOpCode.SET_FIX_RATE:
             if len(data) >= _MIN_LEN_FIX_RATE:
                 fix_rate = data[1]
         elif op_code == LNControlPointOpCode.SET_ELEVATION:
             if len(data) >= _MIN_LEN_ELEVATION:
-                # Unit is 1/100 m
-                elevation = DataParser.parse_int32(data, 1, signed=True) / 100.0
+                elevation = DataParser.parse_int24(data, 1, signed=True) / 100.0
         elif op_code == LNControlPointOpCode.RESPONSE_CODE and len(data) >= _MIN_LEN_RESPONSE:
             request_op_code = LNControlPointOpCode(data[1])
             response_value = LNControlPointResponseValue(data[2])
@@ -217,7 +216,7 @@ class LNControlPointCharacteristic(BaseCharacteristic[LNControlPointData]):
         # Handle parameter encoding based on op code
         op_code_handlers = {
             LNControlPointOpCode.SET_CUMULATIVE_VALUE: lambda: (
-                result.extend(DataParser.encode_int32(data.cumulative_value, signed=False))
+                result.extend(DataParser.encode_int24(data.cumulative_value, signed=False))
                 if data.cumulative_value is not None
                 else None
             ),
@@ -230,16 +229,20 @@ class LNControlPointCharacteristic(BaseCharacteristic[LNControlPointData]):
                 result.append(data.navigation_control_value) if data.navigation_control_value is not None else None
             ),
             LNControlPointOpCode.REQUEST_NAME_OF_ROUTE: lambda: (
-                result.append(data.route_number) if data.route_number is not None else None
+                result.extend(DataParser.encode_int16(data.route_number, signed=False))
+                if data.route_number is not None
+                else None
             ),
             LNControlPointOpCode.SELECT_ROUTE: lambda: (
-                result.append(data.route_number) if data.route_number is not None else None
+                result.extend(DataParser.encode_int16(data.route_number, signed=False))
+                if data.route_number is not None
+                else None
             ),
             LNControlPointOpCode.SET_FIX_RATE: lambda: (
                 result.append(data.fix_rate) if data.fix_rate is not None else None
             ),
             LNControlPointOpCode.SET_ELEVATION: lambda: (
-                result.extend(DataParser.encode_int32(int(data.elevation * 100), signed=True))
+                result.extend(DataParser.encode_int24(int(data.elevation * 100), signed=True))
                 if data.elevation is not None
                 else None
             ),

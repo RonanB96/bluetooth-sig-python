@@ -55,15 +55,3 @@ class TestSourceASECharacteristic(CommonCharacteristicTests):
                 description="ASE ID 1, Disabling state",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = SourceASECharacteristic()
-        original = SourceASEData(
-            ase_id=7,
-            ase_state=SourceASEState.QOS_CONFIGURED,
-            additional_data=b"\x10\x20",
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

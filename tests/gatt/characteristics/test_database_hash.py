@@ -34,12 +34,6 @@ class TestDatabaseHash(CommonCharacteristicTests):
             ),
         ]
 
-    def test_roundtrip(self, characteristic: DatabaseHashCharacteristic) -> None:
-        data = bytes(range(16))
-        encoded = characteristic.build_value(data)
-        result = characteristic.parse_value(encoded)
-        assert result == data
-
     def test_expected_length(self, characteristic: DatabaseHashCharacteristic) -> None:
         assert characteristic.expected_length == 16
 

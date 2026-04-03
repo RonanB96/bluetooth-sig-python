@@ -4,28 +4,36 @@ from __future__ import annotations
 
 import msgspec
 
-from ..constants import SINT16_MAX, SINT16_MIN
+from ..constants import SINT16_MAX, SINT16_MIN, UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
 
 
 class SupportedPowerRangeData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
-    """Data class for supported power range."""
+    """Data class for supported power range.
+
+    Per FTMS v1.0: Minimum Power (sint16) + Maximum Power (sint16) +
+    Minimum Increment (uint16), all in Watts.
+    """
 
     minimum: int  # Minimum power in Watts
     maximum: int  # Maximum power in Watts
+    minimum_increment: int  # Minimum power increment in Watts
 
     def __post_init__(self) -> None:
         """Validate power range data."""
         if self.minimum > self.maximum:
             raise ValueError(f"Minimum power {self.minimum} W cannot be greater than maximum {self.maximum} W")
 
-        # Validate range for sint16 (SINT16_MIN to SINT16_MAX)
         if not SINT16_MIN <= self.minimum <= SINT16_MAX:
-            raise ValueError(f"Minimum power {self.minimum} W is outside valid range (SINT16_MIN to SINT16_MAX W)")
+            raise ValueError(f"Minimum power {self.minimum} W is outside valid range ({SINT16_MIN} to {SINT16_MAX} W)")
         if not SINT16_MIN <= self.maximum <= SINT16_MAX:
-            raise ValueError(f"Maximum power {self.maximum} W is outside valid range (SINT16_MIN to SINT16_MAX W)")
+            raise ValueError(f"Maximum power {self.maximum} W is outside valid range ({SINT16_MIN} to {SINT16_MAX} W)")
+        if not 0 <= self.minimum_increment <= UINT16_MAX:
+            raise ValueError(
+                f"Minimum increment {self.minimum_increment} W is outside valid range (0 to {UINT16_MAX} W)"
+            )
 
 
 class SupportedPowerRangeCharacteristic(BaseCharacteristic[SupportedPowerRangeData]):
@@ -33,59 +41,46 @@ class SupportedPowerRangeCharacteristic(BaseCharacteristic[SupportedPowerRangeDa
 
     org.bluetooth.characteristic.supported_power_range
 
-    Supported Power Range characteristic.
-
-    Specifies minimum and maximum power values for power capability
-    specification.
+    Specifies minimum power, maximum power, and minimum power increment
+    supported by a fitness machine (FTMS v1.0).
     """
 
-    min_length = 4
-    _characteristic_name: str = "Supported Power Range"
+    expected_length: int = 6  # 2x sint16 + 1x uint16
+    min_length: int = 6
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> SupportedPowerRangeData:
-        """Parse supported power range data (2x sint16 in watts).
+        """Parse supported power range data.
 
-        Args:
-            data: Raw bytes from the characteristic read.
-            ctx: Optional CharacteristicContext providing surrounding context (may be None).
-            validate: Whether to validate ranges (default True)
-
-        Returns:
-            SupportedPowerRangeData with minimum and maximum power values in Watts.
-
-        Raises:
-            ValueError: If data is insufficient.
-
+        Layout: Minimum Power (sint16) + Maximum Power (sint16) +
+        Minimum Increment (uint16) = 6 bytes.
         """
-        # Convert 2x sint16 (little endian) to power range in Watts
         min_power_raw = DataParser.parse_int16(data, 0, signed=True)
         max_power_raw = DataParser.parse_int16(data, 2, signed=True)
+        min_increment_raw = DataParser.parse_int16(data, 4, signed=False)
 
-        return SupportedPowerRangeData(minimum=min_power_raw, maximum=max_power_raw)
+        return SupportedPowerRangeData(
+            minimum=min_power_raw,
+            maximum=max_power_raw,
+            minimum_increment=min_increment_raw,
+        )
 
     def _encode_value(self, data: SupportedPowerRangeData) -> bytearray:
-        """Encode supported power range value back to bytes.
-
-        Args:
-            data: SupportedPowerRangeData instance with 'minimum' and 'maximum' power values in Watts
-
-        Returns:
-            Encoded bytes representing the power range (2x sint16)
-
-        """
+        """Encode supported power range value back to bytes."""
         if not isinstance(data, SupportedPowerRangeData):
             raise TypeError(f"Supported power range data must be a SupportedPowerRangeData, got {type(data).__name__}")
 
-        # Validate range for sint16 (SINT16_MIN to SINT16_MAX)
         if not SINT16_MIN <= data.minimum <= SINT16_MAX:
             raise ValueError(f"Minimum power {data.minimum} exceeds sint16 range")
         if not SINT16_MIN <= data.maximum <= SINT16_MAX:
             raise ValueError(f"Maximum power {data.maximum} exceeds sint16 range")
-        # Encode as 2 sint16 values (little endian)
+        if not 0 <= data.minimum_increment <= UINT16_MAX:
+            raise ValueError(f"Minimum increment {data.minimum_increment} exceeds uint16 range")
+
         result = bytearray()
         result.extend(DataParser.encode_int16(data.minimum, signed=True))
         result.extend(DataParser.encode_int16(data.maximum, signed=True))
+        result.extend(DataParser.encode_int16(data.minimum_increment, signed=False))
 
         return result

@@ -27,7 +27,7 @@ class TestRASControlPointCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x05]),
+                input_data=bytearray([0x03]),
                 expected_value=RASControlPointData(
                     opcode=RASControlPointOpCode.ABORT_OPERATION,
                     parameters=b"",
@@ -35,21 +35,11 @@ class TestRASControlPointCharacteristic(CommonCharacteristicTests):
                 description="Abort operation with no parameters",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x06, 0x01, 0x02]),
+                input_data=bytearray([0x04, 0x01, 0x02]),
                 expected_value=RASControlPointData(
-                    opcode=RASControlPointOpCode.FILTER_RANGING_DATA,
+                    opcode=RASControlPointOpCode.SET_FILTER,
                     parameters=b"\x01\x02",
                 ),
-                description="Filter ranging data with parameters",
+                description="Set filter with parameters",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: RASControlPointCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = RASControlPointData(
-            opcode=RASControlPointOpCode.GET_RANGING_DATA,
-            parameters=b"\xaa\xbb",
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

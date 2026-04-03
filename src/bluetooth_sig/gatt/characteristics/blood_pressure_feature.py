@@ -21,6 +21,10 @@ class BloodPressureFeatures(IntFlag):
     PULSE_RATE_RANGE_DETECTION = 0x08
     MEASUREMENT_POSITION_DETECTION = 0x10
     MULTIPLE_BOND_SUPPORT = 0x20
+    # BLS v1.1.1 additions (sections 3.3.1.7-3.3.1.9)
+    E2E_CRC_SUPPORT = 0x40
+    USER_DATA_SERVICE_SUPPORT = 0x80
+    USER_FACING_TIME_SUPPORT = 0x0100
 
 
 class BloodPressureFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
@@ -33,6 +37,9 @@ class BloodPressureFeatureData(msgspec.Struct, frozen=True, kw_only=True):  # py
     pulse_rate_range_detection_support: bool
     measurement_position_detection_support: bool
     multiple_bond_support: bool
+    e2e_crc_support: bool
+    user_data_service_support: bool
+    user_facing_time_support: bool
 
 
 class BloodPressureFeatureCharacteristic(BaseCharacteristic[BloodPressureFeatureData]):
@@ -71,6 +78,9 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic[BloodPressureFeature
         pulse_rate_range_detection = bool(features_bitmap & BloodPressureFeatures.PULSE_RATE_RANGE_DETECTION)
         measurement_position_detection = bool(features_bitmap & BloodPressureFeatures.MEASUREMENT_POSITION_DETECTION)
         multiple_bond_support = bool(features_bitmap & BloodPressureFeatures.MULTIPLE_BOND_SUPPORT)
+        e2e_crc_support = bool(features_bitmap & BloodPressureFeatures.E2E_CRC_SUPPORT)
+        user_data_service_support = bool(features_bitmap & BloodPressureFeatures.USER_DATA_SERVICE_SUPPORT)
+        user_facing_time_support = bool(features_bitmap & BloodPressureFeatures.USER_FACING_TIME_SUPPORT)
 
         return BloodPressureFeatureData(
             features_bitmap=features_bitmap,
@@ -80,6 +90,9 @@ class BloodPressureFeatureCharacteristic(BaseCharacteristic[BloodPressureFeature
             pulse_rate_range_detection_support=pulse_rate_range_detection,
             measurement_position_detection_support=measurement_position_detection,
             multiple_bond_support=multiple_bond_support,
+            e2e_crc_support=e2e_crc_support,
+            user_data_service_support=user_data_service_support,
+            user_facing_time_support=user_facing_time_support,
         )
 
     def _encode_value(self, data: BloodPressureFeatureData) -> bytearray:

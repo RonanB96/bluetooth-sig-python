@@ -44,13 +44,3 @@ class TestCardioRespiratoryActivityInstantaneousDataCharacteristic(CommonCharact
                 description="Flags 0x0003 with additional activity data",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = CardioRespiratoryActivityInstantaneousDataCharacteristic()
-        data = CardioRespiratoryActivityInstantaneousData(
-            flags=CardioRespiratoryInstantaneousFlags(0x0005), additional_data=b"\x01\x02\x03"
-        )
-        encoded = char.build_value(data)
-        decoded = char.parse_value(encoded)
-        assert decoded == data

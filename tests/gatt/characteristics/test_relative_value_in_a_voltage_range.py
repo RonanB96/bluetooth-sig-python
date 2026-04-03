@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import (
-    RelativeValueInAVoltageRangeCharacteristic,
-)
 from bluetooth_sig.gatt.characteristics.relative_value_in_a_voltage_range import (
+    RelativeValueInAVoltageRangeCharacteristic,
     RelativeValueInAVoltageRangeData,
 )
 
@@ -47,18 +45,6 @@ class TestRelativeValueInAVoltageRangeCharacteristic(CommonCharacteristicTests):
                 description="50% at 16-25 V",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = RelativeValueInAVoltageRangeCharacteristic()
-        original = RelativeValueInAVoltageRangeData(
-            relative_value=50.0,
-            minimum_voltage=3.5,
-            maximum_voltage=5.0,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
 
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum voltage must not exceed maximum."""

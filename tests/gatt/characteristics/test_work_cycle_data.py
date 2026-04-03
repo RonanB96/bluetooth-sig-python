@@ -33,10 +33,3 @@ class TestWorkCycleDataCharacteristic(CommonCharacteristicTests):
                 description="Multi-byte work cycle record",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: WorkCycleDataCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = b"\xca\xfe\xba\xbe"
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

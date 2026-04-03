@@ -30,32 +30,23 @@ class TestIDDHistoryDataCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                # sequence_number=1 (0x0001 LE), event_type=BOLUS_PROGRAMMED (0x02), no event data
-                input_data=bytearray([0x01, 0x00, 0x02]),
+                input_data=bytearray([0x03, 0x03, 0x01, 0x00, 0x00, 0x00, 0x3C, 0x00]),
                 expected_value=IDDHistoryDataPayload(
-                    sequence_number=1,
-                    event_type=IDDHistoryEventType.BOLUS_PROGRAMMED,
-                    event_data=b"",
-                ),
-                description="Bolus programmed event, no event data",
-            ),
-            CharacteristicTestData(
-                input_data=bytearray([0xE8, 0x03, 0x0A, 0x03]),
-                expected_value=IDDHistoryDataPayload(
-                    sequence_number=1000,
                     event_type=IDDHistoryEventType.THERAPY_CONTROL_STATE_CHANGED,
-                    event_data=b"\x03",
-                ),
-                description="Therapy control state changed with event data",
-            ),
-            CharacteristicTestData(
-                # sequence_number=0 (0x0000 LE), event_type=REFERENCE_TIME_BASE_CHANGED (0x01)
-                input_data=bytearray([0x00, 0x00, 0x01]),
-                expected_value=IDDHistoryDataPayload(
-                    sequence_number=0,
-                    event_type=IDDHistoryEventType.REFERENCE_TIME_BASE_CHANGED,
+                    sequence_number=1,
+                    relative_offset=60,
                     event_data=b"",
                 ),
-                description="Reference time base changed, sequence 0",
+                description="Therapy control state changed, seq=1, offset=60s",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0xCC, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF]),
+                expected_value=IDDHistoryDataPayload(
+                    event_type=IDDHistoryEventType.PROFILE_TEMPLATE_ACTIVATED,
+                    sequence_number=10,
+                    relative_offset=0,
+                    event_data=b"\xff",
+                ),
+                description="Profile template activated with event data",
             ),
         ]

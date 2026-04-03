@@ -94,7 +94,6 @@ class EnhancedIntermediateCuffPressureCharacteristic(
         flags = EnhancedBloodPressureFlags(data[0])
         unit = PressureUnit.KPA if flags & EnhancedBloodPressureFlags.UNITS_KPA else PressureUnit.MMHG
 
-        # Mandatory single cuff pressure value (medfloat16)
         cuff_pressure = IEEE11073Parser.parse_sfloat(data, 1)
         offset = 3
 

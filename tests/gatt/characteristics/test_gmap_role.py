@@ -33,24 +33,3 @@ class TestGMAPRole(CommonCharacteristicTests):
                 "All roles",
             ),
         ]
-
-    def test_roundtrip(self, characteristic: GMAPRoleCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        for td in self.valid_test_data_list():
-            encoded = characteristic.build_value(td.expected_value)
-            result = characteristic.parse_value(encoded)
-            assert result == td.expected_value
-
-    def valid_test_data_list(self) -> list[CharacteristicTestData]:
-        return [
-            CharacteristicTestData(bytearray([0x00]), GMAPRole(0), "No roles"),
-            CharacteristicTestData(bytearray([0x01]), GMAPRole.UNICAST_GAME_GATEWAY, "UGG"),
-            CharacteristicTestData(
-                bytearray([0x0F]),
-                GMAPRole.UNICAST_GAME_GATEWAY
-                | GMAPRole.UNICAST_GAME_TERMINAL
-                | GMAPRole.BROADCAST_GAME_SENDER
-                | GMAPRole.BROADCAST_GAME_RECEIVER,
-                "All roles",
-            ),
-        ]

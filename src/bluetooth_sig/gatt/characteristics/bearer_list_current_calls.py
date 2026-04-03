@@ -24,9 +24,12 @@ class CallState(IntEnum):
 
 
 class CallFlags(IntFlag):
-    """Call flags per TBS specification."""
+    """Call flags per TBS specification.
 
-    INCOMING = 0x01
+    Bit 0: Incoming/Outgoing — 0 = incoming call, 1 = outgoing call (Table 3.7).
+    """
+
+    OUTGOING = 0x01
     WITHHELD = 0x02
     WITHHELD_BY_NETWORK = 0x04
 

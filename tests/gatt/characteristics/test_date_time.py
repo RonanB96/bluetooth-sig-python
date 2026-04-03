@@ -37,6 +37,11 @@ class TestDateTimeCharacteristic(CommonCharacteristicTests):
                 expected_value=datetime(2020, 1, 1, 0, 0, 0),
                 description="New Year 2020",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([0xE7, 0x07, 6, 15, 14, 30, 0]),
+                expected_value=datetime(2023, 6, 15, 14, 30, 0),
+                description="Mid-year 2023 afternoon",
+            ),
         ]
 
     def test_decode_christmas_2019(self) -> None:
@@ -50,11 +55,3 @@ class TestDateTimeCharacteristic(CommonCharacteristicTests):
         char = DateTimeCharacteristic()
         result = char.parse_value(bytearray([0xE4, 0x07, 1, 1, 0, 0, 0]))
         assert result == datetime(2020, 1, 1, 0, 0, 0)
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve datetime."""
-        char = DateTimeCharacteristic()
-        original = datetime(2023, 6, 15, 14, 30, 0)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

@@ -1,44 +1,11 @@
-"""ACS Control Point characteristic (0x2B33).
-
-Control point for Audio Control Service operations.
-
-References:
-    Bluetooth SIG Audio Control Service
-"""
+"""ACS Control Point characteristic (0x2B33)."""
 
 from __future__ import annotations
 
-from enum import IntEnum
-
-import msgspec
-
-from ...types.gatt_enums import CharacteristicRole
+from ...types import MAX_ROLLING_SEGMENT_COUNTER, ACSControlPointData, ACSSegmentationHeader
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
-
-
-class ACSControlPointOpCode(IntEnum):
-    """ACS Control Point operation codes."""
-
-    SET_ACTIVE_PRESET = 0x01
-    READ_PRESET_RECORD = 0x02
-    WRITE_PRESET_NAME = 0x03
-    SET_NEXT_PRESET = 0x04
-    SET_PREVIOUS_PRESET = 0x05
-    RESPONSE = 0xFF
-
-
-class ACSControlPointData(msgspec.Struct, frozen=True, kw_only=True):
-    """Parsed data from ACS Control Point characteristic.
-
-    Attributes:
-        opcode: ACS Control Point operation code.
-        parameters: Raw parameter bytes.
-    """
-
-    opcode: ACSControlPointOpCode
-    parameters: bytes = b""
 
 
 class ACSControlPointCharacteristic(BaseCharacteristic[ACSControlPointData]):
@@ -46,11 +13,10 @@ class ACSControlPointCharacteristic(BaseCharacteristic[ACSControlPointData]):
 
     org.bluetooth.characteristic.acs_control_point
 
-    Control point for Audio Control Service operations.
+    Segmented control point for Authorization Control Service operations.
     """
 
-    _manual_role = CharacteristicRole.CONTROL
-    min_length = 1
+    min_length = 2
     allow_variable_length = True
 
     def _decode_value(
@@ -58,19 +24,38 @@ class ACSControlPointCharacteristic(BaseCharacteristic[ACSControlPointData]):
     ) -> ACSControlPointData:
         """Parse ACS Control Point data.
 
-        Format: OpCode (uint8) + Parameters (variable).
+        Format: Segmentation Header (uint8) + OpCode (uint8) + Operand (variable).
         """
-        opcode = ACSControlPointOpCode(DataParser.parse_int8(data, 0, signed=False))
-        parameters = bytes(data[1:])
+        header = DataParser.parse_int8(data, 0, signed=False)
+        opcode = DataParser.parse_int8(data, 1, signed=False)
+        operand = bytes(data[2:])
 
         return ACSControlPointData(
+            header=ACSSegmentationHeader(
+                first_segment=bool(header & 0x01),
+                last_segment=bool(header & 0x02),
+                rolling_segment_counter=(header >> 2) & 0x3F,
+            ),
             opcode=opcode,
-            parameters=parameters,
+            operand=operand,
         )
 
     def _encode_value(self, data: ACSControlPointData) -> bytearray:
         """Encode ACS Control Point data."""
+        counter = data.header.rolling_segment_counter
+        if not 0 <= counter <= MAX_ROLLING_SEGMENT_COUNTER:
+            raise ValueError(f"rolling_segment_counter must be in range 0-63, got {counter}")
+
+        header = 0
+        if data.header.first_segment:
+            header |= 0x01
+        if data.header.last_segment:
+            header |= 0x02
+
+        header |= counter << 2
+
         result = bytearray()
+        result.extend(DataParser.encode_int8(header, signed=False))
         result.extend(DataParser.encode_int8(int(data.opcode), signed=False))
-        result.extend(data.parameters)
+        result.extend(data.operand)
         return result

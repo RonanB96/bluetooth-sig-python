@@ -9,51 +9,56 @@ from bluetooth_sig.gatt.characteristics.cgm_session_run_time import (
     CGMSessionRunTimeData,
 )
 
-
-@pytest.fixture
-def characteristic() -> CGMSessionRunTimeCharacteristic:
-    """Create a CGMSessionRunTimeCharacteristic instance."""
-    return CGMSessionRunTimeCharacteristic()
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
 
-class TestCGMSessionRunTimeDecode:
-    """Tests for CGM Session Run Time decoding."""
+class TestCGMSessionRunTimeCharacteristic(CommonCharacteristicTests):
+    """Test suite for CGMSessionRunTimeCharacteristic."""
 
-    def test_basic_run_time(self, characteristic: CGMSessionRunTimeCharacteristic) -> None:
-        """Test decoding a basic run time without CRC."""
-        # 168 hours = 0x00A8
-        data = bytearray(b"\xa8\x00")
-        result = characteristic.parse_value(data)
-        assert isinstance(result, CGMSessionRunTimeData)
-        assert result.run_time_hours == 168
-        assert result.e2e_crc is None
+    @pytest.fixture
+    def characteristic(self) -> CGMSessionRunTimeCharacteristic:
+        return CGMSessionRunTimeCharacteristic()
 
-    def test_run_time_with_crc(self, characteristic: CGMSessionRunTimeCharacteristic) -> None:
-        """Test decoding run time with E2E-CRC."""
-        # 336 hours = 0x0150, CRC = 0xABCD
-        data = bytearray(b"\x50\x01\xcd\xab")
-        result = characteristic.parse_value(data)
-        assert isinstance(result, CGMSessionRunTimeData)
-        assert result.run_time_hours == 336
-        assert result.e2e_crc == 0xABCD
+    @pytest.fixture
+    def expected_uuid(self) -> str:
+        return "2AAB"
 
-    def test_zero_run_time(self, characteristic: CGMSessionRunTimeCharacteristic) -> None:
-        """Test decoding zero run time."""
-        data = bytearray(b"\x00\x00")
-        result = characteristic.parse_value(data)
-        assert result.run_time_hours == 0
-        assert result.e2e_crc is None
+    @pytest.fixture
+    def valid_test_data(self) -> list[CharacteristicTestData]:
+        return [
+            CharacteristicTestData(
+                input_data=bytearray(b"\xa8\x00"),
+                expected_value=CGMSessionRunTimeData(run_time_hours=168),
+                description="168 hours, no CRC",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x50\x01\xcd\xab"),
+                expected_value=CGMSessionRunTimeData(run_time_hours=336, e2e_crc=0xABCD),
+                description="336 hours with E2E-CRC",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x00\x00"),
+                expected_value=CGMSessionRunTimeData(run_time_hours=0),
+                description="zero run time",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\xff\xff"),
+                expected_value=CGMSessionRunTimeData(run_time_hours=65535),
+                description="maximum run time",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\x50\x01\x34\x12"),
+                expected_value=CGMSessionRunTimeData(run_time_hours=336, e2e_crc=0x1234),
+                description="336 hours with E2E-CRC 0x1234",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray(b"\xff\xff\xff\xff"),
+                expected_value=CGMSessionRunTimeData(run_time_hours=65535, e2e_crc=0xFFFF),
+                description="maximum run time with maximum CRC",
+            ),
+        ]
 
-    def test_max_run_time(self, characteristic: CGMSessionRunTimeCharacteristic) -> None:
-        """Test decoding maximum run time (65535 hours)."""
-        data = bytearray(b"\xff\xff")
-        result = characteristic.parse_value(data)
-        assert result.run_time_hours == 65535
-        assert result.e2e_crc is None
-
-
-class TestCGMSessionRunTimeEncode:
-    """Tests for CGM Session Run Time encoding."""
+    # === Encode tests (not covered by base class) ===
 
     def test_encode_basic(self, characteristic: CGMSessionRunTimeCharacteristic) -> None:
         """Test encoding run time without CRC."""
@@ -66,28 +71,3 @@ class TestCGMSessionRunTimeEncode:
         data = CGMSessionRunTimeData(run_time_hours=336, e2e_crc=0xABCD)
         result = characteristic.build_value(data)
         assert result == bytearray(b"\x50\x01\xcd\xab")
-
-
-class TestCGMSessionRunTimeRoundTrip:
-    """Round-trip tests for CGM Session Run Time."""
-
-    @pytest.mark.parametrize(
-        ("run_time", "crc"),
-        [
-            (0, None),
-            (168, None),
-            (336, 0x1234),
-            (65535, 0xFFFF),
-        ],
-    )
-    def test_round_trip(
-        self,
-        characteristic: CGMSessionRunTimeCharacteristic,
-        run_time: int,
-        crc: int | None,
-    ) -> None:
-        """Test encode → decode round-trip."""
-        original = CGMSessionRunTimeData(run_time_hours=run_time, e2e_crc=crc)
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original

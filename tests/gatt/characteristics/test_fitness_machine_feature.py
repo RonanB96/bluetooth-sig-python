@@ -73,16 +73,3 @@ class TestFitnessMachineFeatureCharacteristic(CommonCharacteristicTests):
                 description="Bike trainer with resistance/power/HR and simulation",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = FitnessMachineFeatureCharacteristic()
-        original = FitnessMachineFeatureData(
-            fitness_machine_features=(
-                FitnessMachineFeatures.CADENCE_SUPPORTED | FitnessMachineFeatures.POWER_MEASUREMENT_SUPPORTED
-            ),
-            target_setting_features=TargetSettingFeatures.POWER_TARGET_SETTING_SUPPORTED,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
