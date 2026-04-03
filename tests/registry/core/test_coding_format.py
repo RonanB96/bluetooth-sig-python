@@ -8,7 +8,7 @@ import pytest
 
 from bluetooth_sig.registry.core.coding_format import (
     CodingFormatRegistry,
-    coding_format_registry,
+    get_coding_format_registry,
 )
 from bluetooth_sig.types.registry.coding_format import CodingFormatInfo
 
@@ -16,7 +16,7 @@ from bluetooth_sig.types.registry.coding_format import CodingFormatInfo
 @pytest.fixture(scope="session")
 def registry() -> CodingFormatRegistry:
     """Create a coding format registry once per test session."""
-    return coding_format_registry
+    return get_coding_format_registry()
 
 
 class TestCodingFormatRegistry:

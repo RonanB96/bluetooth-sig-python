@@ -23,7 +23,7 @@ from .exceptions import (
     ValueRangeError,
 )
 from .services.base import BaseGattService
-from .uuid_registry import UuidRegistry, uuid_registry
+from .uuid_registry import UuidRegistry, get_uuid_registry
 
 __all__ = [
     # Constants
@@ -48,5 +48,5 @@ __all__ = [
     "UnitMetadata",
     "UuidRegistry",
     "ValueRangeError",
-    "uuid_registry",
+    "get_uuid_registry",
 ]

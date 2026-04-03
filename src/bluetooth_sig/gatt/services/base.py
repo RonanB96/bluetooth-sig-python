@@ -15,7 +15,7 @@ from ..characteristics.registry import CharacteristicName, CharacteristicRegistr
 from ..characteristics.unknown import UnknownCharacteristic
 from ..exceptions import UUIDResolutionError
 from ..resolver import ServiceRegistrySearch
-from ..uuid_registry import uuid_registry
+from ..uuid_registry import get_uuid_registry
 
 # Type aliases
 GattCharacteristic = BaseCharacteristic
@@ -262,7 +262,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
 
         # For SIG services, resolve from registry
         uuid = cls.get_class_uuid()
-        service_info = uuid_registry.get_service_info(uuid)
+        service_info = get_uuid_registry().get_service_info(uuid)
         if service_info:
             return service_info.name
 
@@ -355,7 +355,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
                 lookup_name = char_name.value
             except AttributeError:
                 lookup_name = str(char_name)
-            char_info = uuid_registry.get_characteristic_info(lookup_name)
+            char_info = get_uuid_registry().get_characteristic_info(lookup_name)
             if char_info:
                 expected_uuids.add(char_info.uuid)
         return expected_uuids
@@ -368,7 +368,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
                 lookup_name = char_name.value
             except AttributeError:
                 lookup_name = str(char_name)
-            char_info = uuid_registry.get_characteristic_info(lookup_name)
+            char_info = get_uuid_registry().get_characteristic_info(lookup_name)
             if char_info:
                 required_uuids.add(char_info.uuid)
         return required_uuids
@@ -452,7 +452,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         # Check if all expected characteristics are valid
         expected = cls.get_expected_characteristics()
         for char_name, _char_spec in expected.items():
-            char_info = uuid_registry.get_characteristic_info(char_name.value)
+            char_info = get_uuid_registry().get_characteristic_info(char_name.value)
             if not char_info:
                 issues.append(f"Characteristic '{char_name.value}' not found in UUID registry")
 
@@ -468,7 +468,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         """Validate a group of characteristics (required/optional/conditional)."""
         for char_name, char_spec in char_dict.items():
             lookup_name = char_name.value if hasattr(char_name, "value") else str(char_name)
-            char_info = uuid_registry.get_characteristic_info(lookup_name)
+            char_info = get_uuid_registry().get_characteristic_info(lookup_name)
 
             if not char_info:
                 if is_required:
@@ -493,7 +493,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         """Validate conditional characteristics."""
         for char_name, conditional_spec in conditional_chars.items():
             lookup_name = char_name.value if hasattr(char_name, "value") else str(char_name)
-            char_info = uuid_registry.get_characteristic_info(lookup_name)
+            char_info = get_uuid_registry().get_characteristic_info(lookup_name)
 
             if not char_info:
                 result.warnings.append(f"Unknown conditional characteristic: {lookup_name}")
@@ -560,7 +560,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         conditional_chars = self.get_conditional_characteristics()
 
         for char_name, _char_spec in expected_chars.items():
-            char_info = uuid_registry.get_characteristic_info(char_name.value)
+            char_info = get_uuid_registry().get_characteristic_info(char_name.value)
             if not char_info:
                 continue
 
@@ -662,7 +662,7 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
         if char_enum not in expected_chars:
             return None
 
-        char_info = uuid_registry.get_characteristic_info(char_enum.value)
+        char_info = get_uuid_registry().get_characteristic_info(char_enum.value)
         if not char_info:
             return None
 

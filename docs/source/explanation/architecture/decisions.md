@@ -241,6 +241,13 @@ User's BLE Library → bytes → bluetooth-sig → structured data
 - ✅ Consistent state across application
 - ⚠️ Global state (acceptable for read-only registry data)
 
+**Implementation note**:
+
+- Access singleton registries via explicit getter/class methods (for example
+    ``get_uuid_registry()`` and ``get_instance()``) instead of relying on
+    import-time module globals.
+- Importing registry modules must be side-effect free with respect to YAML I/O.
+
 ## Summary
 
 These architectural decisions prioritize:

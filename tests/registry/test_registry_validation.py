@@ -15,7 +15,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
 from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.services.base import BaseGattService
-from bluetooth_sig.gatt.uuid_registry import uuid_registry
+from bluetooth_sig.gatt.uuid_registry import get_uuid_registry
 from bluetooth_sig.types import CharacteristicInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -138,7 +138,7 @@ class TestCharacteristicRegistryValidation:
             name = char.name
 
             # Check if UUID exists in registry
-            char_info = uuid_registry.get_characteristic_info(uuid)
+            char_info = get_uuid_registry().get_characteristic_info(uuid)
             assert char_info is not None, (
                 f"Characteristic UUID '{uuid}' for {char_class.__name__} not found in YAML registry"
             )
@@ -203,7 +203,7 @@ class TestCharacteristicRegistryValidation:
             assert name, f"Characteristic {char_class.__name__} has empty name"
 
             # Try to look up by name in registry
-            char_info = uuid_registry.get_characteristic_info(name)
+            char_info = get_uuid_registry().get_characteristic_info(name)
             assert char_info is not None, (
                 f"Characteristic name '{name}' for {char_class.__name__} not found in YAML registry"
             )
@@ -277,7 +277,7 @@ class TestRegistryConsistency:
             try:
                 service = service_class()
                 service_uuid = service.uuid
-                service_info = uuid_registry.get_service_info(service_uuid)
+                service_info = get_uuid_registry().get_service_info(service_uuid)
                 if service_info is None:
                     missing_services.append(f"{service_class.__name__} (UUID: {service_uuid})")
             except Exception:
@@ -292,7 +292,7 @@ class TestRegistryConsistency:
                     missing_characteristics.append(f"{char_class.__name__} (failed to resolve UUID)")
                     continue
                 # char_uuid is now narrowed to BluetoothUUID (non-None)
-                char_info = uuid_registry.get_characteristic_info(char_uuid)
+                char_info = get_uuid_registry().get_characteristic_info(char_uuid)
                 if char_info is None:
                     missing_characteristics.append(f"{char_class.__name__} (UUID: {char_uuid})")
             except Exception:

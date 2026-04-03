@@ -86,4 +86,6 @@ class ServiceClassesRegistry(BaseUUIDRegistry[ServiceClassInfo]):
 
 
 # Global instance for convenience
-service_classes_registry = ServiceClassesRegistry.get_instance()
+def get_service_classes_registry() -> ServiceClassesRegistry:
+    """Return the process-wide service_classes_registry singleton instance."""
+    return ServiceClassesRegistry.get_instance()

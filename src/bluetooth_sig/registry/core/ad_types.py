@@ -134,4 +134,6 @@ class ADTypesRegistry(BaseGenericRegistry[AdTypeInfo]):
 
 
 # Global singleton instance
-ad_types_registry = ADTypesRegistry()
+def get_ad_types_registry() -> ADTypesRegistry:
+    """Return the process-wide ad_types_registry singleton instance."""
+    return ADTypesRegistry.get_instance()

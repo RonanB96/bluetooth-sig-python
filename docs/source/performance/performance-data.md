@@ -26,6 +26,17 @@ The library is optimized for typical BLE use cases: periodic sensor reads, on-de
 
 **Note**: UUID resolution dominates parsing overhead. Once registries are loaded, lookups are consistently fast (~190 μs).
 
+### Registry Lifecycle Paths
+
+| Operation | Mean | StdDev | Description |
+|-----------|------|--------|-------------|
+| UUID registry cold load | environment-dependent | n/a | First lookup from a fresh `UuidRegistry()` instance triggers YAML load |
+| UUID registry warm lookup | ~190 μs | ±10 μs | Lookup after explicit `ensure_loaded()` |
+
+Cold-load numbers vary based on filesystem and environment. Track regression
+by comparing trends on the same CI runner class rather than hard-coding one
+absolute number.
+
 ### Characteristic Parsing
 
 | Characteristic Type | Mean | StdDev | Description |

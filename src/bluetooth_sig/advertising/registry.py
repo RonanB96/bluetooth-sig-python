@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 from typing import Any
 
 import msgspec
@@ -40,6 +41,18 @@ class PayloadInterpreterRegistry:
         _fallback: Interpreters that match by custom logic only.
 
     """
+
+    _instance: PayloadInterpreterRegistry | None = None
+    _instance_lock = threading.RLock()
+
+    @classmethod
+    def get_instance(cls) -> PayloadInterpreterRegistry:
+        """Return the process-wide PayloadInterpreterRegistry singleton instance."""
+        if cls._instance is None:
+            with cls._instance_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
+        return cls._instance
 
     def __init__(self) -> None:
         """Initialise empty registry."""
@@ -186,8 +199,9 @@ class PayloadInterpreterRegistry:
         self._fallback.clear()
 
 
-# Global singleton for PayloadInterpreter registration
-payload_interpreter_registry = PayloadInterpreterRegistry()
+def get_payload_interpreter_registry() -> PayloadInterpreterRegistry:
+    """Return the process-wide payload interpreter registry singleton instance."""
+    return PayloadInterpreterRegistry.get_instance()
 
 
 def parse_advertising_payloads(
@@ -208,7 +222,7 @@ def parse_advertising_payloads(
         service_data: Service UUID → payload bytes mapping.
         context: Advertisement context (MAC address, RSSI, timestamp).
         state: Current device advertising state (optional, created if None).
-        registry: Interpreter registry to use (defaults to global registry).
+        registry: Interpreter registry to use (defaults to process-wide registry).
 
     Returns:
         List of parsed data from all matching interpreters.
@@ -230,9 +244,9 @@ def parse_advertising_payloads(
     """
     results: list[Any] = []
 
-    # Use global registry if none provided
+    # Use process-wide registry if none provided
     if registry is None:
-        registry = payload_interpreter_registry
+        registry = get_payload_interpreter_registry()
 
     # Create state if not provided
     if state is None:

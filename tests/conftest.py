@@ -61,12 +61,12 @@ def clear_module_level_registrations() -> None:
     """
     from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
     from bluetooth_sig.gatt.services.registry import GattServiceRegistry
-    from bluetooth_sig.gatt.uuid_registry import uuid_registry
+    from bluetooth_sig.gatt.uuid_registry import get_uuid_registry
 
     # Clear all custom registrations that happened during module imports
     CharacteristicRegistry.clear_custom_registrations()
     GattServiceRegistry.clear_custom_registrations()
-    uuid_registry.clear_custom_registrations()
+    get_uuid_registry().clear_custom_registrations()
 
 
 @pytest.fixture(autouse=True)
@@ -95,16 +95,16 @@ def reset_registries() -> Generator[None, None, None]:
     """
     from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
     from bluetooth_sig.gatt.services.registry import GattServiceRegistry
-    from bluetooth_sig.gatt.uuid_registry import uuid_registry
+    from bluetooth_sig.gatt.uuid_registry import get_uuid_registry
 
     # Clear custom registrations BEFORE test
     CharacteristicRegistry.clear_custom_registrations()
     GattServiceRegistry.clear_custom_registrations()
-    uuid_registry.clear_custom_registrations()
+    get_uuid_registry().clear_custom_registrations()
 
     yield
 
     # Clear custom registrations AFTER test
     CharacteristicRegistry.clear_custom_registrations()
     GattServiceRegistry.clear_custom_registrations()
-    uuid_registry.clear_custom_registrations()
+    get_uuid_registry().clear_custom_registrations()

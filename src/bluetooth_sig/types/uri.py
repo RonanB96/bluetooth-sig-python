@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import msgspec
 
-from bluetooth_sig.registry.core.uri_schemes import uri_schemes_registry
+from bluetooth_sig.registry.core.uri_schemes import get_uri_schemes_registry
 from bluetooth_sig.types.registry.uri_schemes import UriSchemeInfo
 
 
@@ -81,7 +81,7 @@ class URIData(msgspec.Struct, frozen=True, kw_only=True):
             return cls(scheme_code=0, raw_data=data)
 
         scheme_code = data[0]
-        scheme_info = uri_schemes_registry.get_uri_scheme_info(scheme_code)
+        scheme_info = get_uri_schemes_registry().get_uri_scheme_info(scheme_code)
 
         # Decode the URI suffix (remaining bytes after scheme code)
         try:

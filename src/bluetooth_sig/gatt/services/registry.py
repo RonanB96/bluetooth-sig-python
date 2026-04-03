@@ -16,7 +16,7 @@ from ...types.gatt_services import ServiceDiscoveryData
 from ...types.uuid import BluetoothUUID
 from ..exceptions import UUIDResolutionError
 from ..registry_utils import ModuleDiscovery, TypeValidator
-from ..uuid_registry import uuid_registry
+from ..uuid_registry import get_uuid_registry
 from .base import BaseGattService
 
 __all__ = [
@@ -81,7 +81,7 @@ class GattServiceRegistry(BaseUUIDClassRegistry[ServiceName, BaseGattService]):
             # Find the corresponding enum member by UUID
             enum_member = None
             for candidate_enum in ServiceName:
-                candidate_info = uuid_registry.get_service_info(candidate_enum.value)
+                candidate_info = get_uuid_registry().get_service_info(candidate_enum.value)
                 if candidate_info and candidate_info.uuid == uuid_obj:
                     enum_member = candidate_enum
                     break

@@ -11,7 +11,7 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
-from bluetooth_sig.gatt.uuid_registry import uuid_registry
+from bluetooth_sig.gatt.uuid_registry import get_uuid_registry
 from bluetooth_sig.types.gatt_enums import CharacteristicName
 
 
@@ -39,7 +39,7 @@ class TestCharacteristicEnumCompleteness:
         enum_uuids = set()
         for enum_member in CharacteristicName:
             # Try to resolve UUID for this enum member
-            info = uuid_registry.get_characteristic_info(enum_member.value)
+            info = get_uuid_registry().get_characteristic_info(enum_member.value)
             if info:
                 enum_uuids.add(info.uuid.normalized)
 
@@ -58,7 +58,7 @@ class TestCharacteristicEnumCompleteness:
             if uuid_obj.normalized not in enum_uuids:
                 char_name = char_cls.__name__
                 # Try to get the name from YAML
-                yaml_info = uuid_registry.get_characteristic_info(str(uuid_obj))
+                yaml_info = get_uuid_registry().get_characteristic_info(str(uuid_obj))
                 yaml_name = yaml_info.name if yaml_info else "Unknown"
 
                 missing_from_enum.append(
@@ -98,7 +98,7 @@ class TestCharacteristicEnumCompleteness:
 
         for enum_member in CharacteristicName:
             # Try to resolve this enum value in YAML
-            info = uuid_registry.get_characteristic_info(enum_member.value)
+            info = get_uuid_registry().get_characteristic_info(enum_member.value)
 
             if info is None:
                 mismatches.append(

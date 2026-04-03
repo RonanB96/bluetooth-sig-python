@@ -97,4 +97,6 @@ class ObjectTypesRegistry(BaseUUIDRegistry[ObjectTypeInfo]):
 
 
 # Global instance
-object_types_registry = ObjectTypesRegistry.get_instance()
+def get_object_types_registry() -> ObjectTypesRegistry:
+    """Return the process-wide object_types_registry singleton instance."""
+    return ObjectTypesRegistry.get_instance()

@@ -15,9 +15,9 @@ import logging
 
 from bluetooth_sig.gatt.characteristics.utils import DataParser
 from bluetooth_sig.gatt.constants import SIZE_UINT16, SIZE_UINT24, SIZE_UINT32, SIZE_UINT48, SIZE_UUID128
-from bluetooth_sig.registry.core.ad_types import ad_types_registry
-from bluetooth_sig.registry.core.appearance_values import appearance_values_registry
-from bluetooth_sig.registry.core.class_of_device import class_of_device_registry
+from bluetooth_sig.registry.core.ad_types import get_ad_types_registry
+from bluetooth_sig.registry.core.appearance_values import get_appearance_values_registry
+from bluetooth_sig.registry.core.class_of_device import get_class_of_device_registry
 from bluetooth_sig.types import ManufacturerData
 from bluetooth_sig.types.ad_types_constants import ADType
 from bluetooth_sig.types.advertising.ad_structures import (
@@ -609,7 +609,7 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
             parsed.properties.tx_power = int.from_bytes(ad_data[:1], byteorder="little", signed=True)
         elif ad_type == ADType.APPEARANCE and len(ad_data) >= SIZE_UINT16:
             raw_value = DataParser.parse_int16(ad_data, 0, signed=False)
-            appearance_info = appearance_values_registry.get_appearance_info(raw_value)
+            appearance_info = get_appearance_values_registry().get_appearance_info(raw_value)
             parsed.properties.appearance = AppearanceData(raw_value=raw_value, info=appearance_info)
         elif ad_type == ADType.LE_SUPPORTED_FEATURES:
             parsed.properties.le_supported_features = LEFeatures(raw_value=ad_data)
@@ -617,7 +617,7 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
             parsed.properties.le_role = ad_data[0]
         elif ad_type == ADType.CLASS_OF_DEVICE and len(ad_data) >= SIZE_UINT24:
             raw_cod = int.from_bytes(ad_data[:3], byteorder="little", signed=False)
-            parsed.properties.class_of_device = class_of_device_registry.decode_class_of_device(raw_cod)
+            parsed.properties.class_of_device = get_class_of_device_registry().decode_class_of_device(raw_cod)
         elif ad_type == ADType.MANUFACTURER_SPECIFIC_DATA and len(ad_data) >= SIZE_UINT16:
             self._parse_manufacturer_data(ad_data, parsed)
         else:
@@ -768,7 +768,7 @@ class AdvertisingPDUParser:  # pylint: disable=too-few-public-methods
             ad_type = data[i + 1]
             ad_data = data[i + 2 : i + length + 1]
 
-            if not ad_types_registry.is_known_ad_type(ad_type):
+            if not get_ad_types_registry().is_known_ad_type(ad_type):
                 logger.warning("Unknown AD type encountered: 0x%02X", ad_type)
 
             # Dispatch to category handlers

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.uuids.service_classes import ServiceClassesRegistry
+from bluetooth_sig.registry.uuids.service_classes import ServiceClassesRegistry, get_service_classes_registry
 from bluetooth_sig.types.registry.service_class import ServiceClassInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -22,7 +22,7 @@ class TestServiceClassesRegistry:
         """Test that the registry initializes properly."""
         assert isinstance(service_classes_registry, ServiceClassesRegistry)
         # Should have loaded some service classes if YAML exists
-        service_classes = service_classes_registry.get_all_service_classes()
+        service_classes = get_service_classes_registry().get_all_service_classes()
         assert isinstance(service_classes, list)
         # If submodule is initialized, should have service classes
         if service_classes:
@@ -31,7 +31,7 @@ class TestServiceClassesRegistry:
     def test_get_service_class_info(self, service_classes_registry: ServiceClassesRegistry) -> None:
         """Test lookup by UUID string."""
         # Test with a known service class UUID (Generic Access)
-        info = service_classes_registry.get_service_class_info("0x1800")
+        info = get_service_classes_registry().get_service_class_info("0x1800")
         if info:  # Only if YAML loaded
             assert isinstance(info, ServiceClassInfo)
             assert info.name == "Generic Access"
@@ -40,65 +40,65 @@ class TestServiceClassesRegistry:
     def test_get_service_class_info_by_name(self, service_classes_registry: ServiceClassesRegistry) -> None:
         """Test lookup by service class name."""
         # Test with known service class name (Generic Access)
-        info = service_classes_registry.get_service_class_info_by_name("Generic Access")
+        info = get_service_classes_registry().get_service_class_info_by_name("Generic Access")
         if info:  # Only if YAML loaded
             assert isinstance(info, ServiceClassInfo)
             assert info.name == "Generic Access"
             assert info.uuid.short_form.upper() == "1800"
 
         # Test case insensitive
-        info_lower = service_classes_registry.get_service_class_info_by_name("generic access")
+        info_lower = get_service_classes_registry().get_service_class_info_by_name("generic access")
         assert info_lower == info
 
         # Test not found
-        info_none = service_classes_registry.get_service_class_info_by_name("Nonexistent Service Class")
+        info_none = get_service_classes_registry().get_service_class_info_by_name("Nonexistent Service Class")
         assert info_none is None
 
     def test_get_service_class_info_by_id(self, service_classes_registry: ServiceClassesRegistry) -> None:
         """Test lookup by service class ID."""
         # Test with known service class ID
-        info = service_classes_registry.get_service_class_info_by_id("org.bluetooth.service.generic_access")
+        info = get_service_classes_registry().get_service_class_info_by_id("org.bluetooth.service.generic_access")
         if info:  # Only if YAML loaded
             assert isinstance(info, ServiceClassInfo)
             assert info.name == "Generic Access"
             assert info.uuid.short_form.upper() == "1800"
 
         # Test not found
-        info_none = service_classes_registry.get_service_class_info_by_id("org.bluetooth.service.nonexistent")
+        info_none = get_service_classes_registry().get_service_class_info_by_id("org.bluetooth.service.nonexistent")
         assert info_none is None
 
     def test_get_service_class_info_by_bluetooth_uuid(self, service_classes_registry: ServiceClassesRegistry) -> None:
         """Test lookup by BluetoothUUID object."""
         # Create a BluetoothUUID for a known service class
         bt_uuid = BluetoothUUID("1800")
-        info = service_classes_registry.get_service_class_info(bt_uuid)
+        info = get_service_classes_registry().get_service_class_info(bt_uuid)
         if info:  # Only if YAML loaded
             assert isinstance(info, ServiceClassInfo)
             assert info.name == "Generic Access"
 
     def test_get_service_class_info_not_found(self, service_classes_registry: ServiceClassesRegistry) -> None:
         """Test lookup for non-existent service class."""
-        info = service_classes_registry.get_service_class_info("nonexistent")
+        info = get_service_classes_registry().get_service_class_info("nonexistent")
         assert info is None
 
-        info = service_classes_registry.get_service_class_info("0x0000")  # Not a service class UUID
+        info = get_service_classes_registry().get_service_class_info("0x0000")  # Not a service class UUID
         assert info is None
 
     def test_is_service_class_uuid(self, service_classes_registry: ServiceClassesRegistry) -> None:
         """Test service class UUID validation."""
         # Known service class UUID
-        has_service_classes = bool(service_classes_registry.get_all_service_classes())
-        assert service_classes_registry.is_service_class_uuid("0x1800") or not has_service_classes
+        has_service_classes = bool(get_service_classes_registry().get_all_service_classes())
+        assert get_service_classes_registry().is_service_class_uuid("0x1800") or not has_service_classes
 
         # Non-service class UUID
-        assert not service_classes_registry.is_service_class_uuid("0x0000")
+        assert not get_service_classes_registry().is_service_class_uuid("0x0000")
 
         # Invalid UUID
-        assert not service_classes_registry.is_service_class_uuid("invalid")
+        assert not get_service_classes_registry().is_service_class_uuid("invalid")
 
     def test_get_all_service_classes(self, service_classes_registry: ServiceClassesRegistry) -> None:
         """Test getting all service classes."""
-        service_classes = service_classes_registry.get_all_service_classes()
+        service_classes = get_service_classes_registry().get_all_service_classes()
         assert isinstance(service_classes, list)
 
         if service_classes:
@@ -113,7 +113,7 @@ class TestServiceClassesRegistry:
 
     def test_service_class_info_structure(self, service_classes_registry: ServiceClassesRegistry) -> None:
         """Test ServiceClassInfo dataclass structure."""
-        service_classes = service_classes_registry.get_all_service_classes()
+        service_classes = get_service_classes_registry().get_all_service_classes()
         if service_classes:
             service_class = service_classes[0]
             assert hasattr(service_class, "uuid")
@@ -127,7 +127,7 @@ class TestServiceClassesRegistry:
         """Test various UUID input formats."""
         formats: list[str | BluetoothUUID] = ["1800", "0x1800", "0X1800", BluetoothUUID("1800")]
         for fmt in formats:
-            info = service_classes_registry.get_service_class_info(fmt)
-            if service_classes_registry.is_service_class_uuid("1800"):
+            info = get_service_classes_registry().get_service_class_info(fmt)
+            if get_service_classes_registry().is_service_class_uuid("1800"):
                 assert info is not None
                 assert info.name == "Generic Access"

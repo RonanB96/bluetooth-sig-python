@@ -10,7 +10,7 @@ from ...types import DescriptorData, DescriptorInfo
 from ...types.uuid import BluetoothUUID
 from ..exceptions import UUIDResolutionError
 from ..resolver import NameVariantGenerator
-from ..uuid_registry import uuid_registry
+from ..uuid_registry import get_uuid_registry
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class BaseDescriptor(ABC):
 
         # Try each variant
         for variant in variants:
-            info = uuid_registry.get_descriptor_info(variant)
+            info = get_uuid_registry().get_descriptor_info(variant)
             if info:
                 return info
 

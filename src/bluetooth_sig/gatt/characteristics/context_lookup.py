@@ -15,7 +15,7 @@ from ...types import CharacteristicInfo
 from ...types.gatt_enums import CharacteristicName
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
-from ..uuid_registry import uuid_registry
+from ..uuid_registry import get_uuid_registry
 
 
 class ContextLookupMixin:
@@ -35,7 +35,7 @@ class ContextLookupMixin:
         name_str = (
             characteristic_name.value if isinstance(characteristic_name, CharacteristicName) else characteristic_name
         )
-        char_info = uuid_registry.get_characteristic_info(name_str)
+        char_info = get_uuid_registry().get_characteristic_info(name_str)
         return char_info.uuid if char_info else None
 
     def get_context_characteristic(

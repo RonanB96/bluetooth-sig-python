@@ -25,8 +25,8 @@ class CodingFormatRegistry(BaseGenericRegistry[CodingFormatInfo]):
     and Classic Audio profiles.
 
     Examples:
-        >>> from bluetooth_sig.registry.core.coding_format import coding_format_registry
-        >>> info = coding_format_registry.get_coding_format_info(0x06)
+        >>> from bluetooth_sig.registry.core.coding_format import get_coding_format_registry
+        >>> info = get_coding_format_registry().get_coding_format_info(0x06)
         >>> info.name
         'LC3'
     """
@@ -142,4 +142,6 @@ class CodingFormatRegistry(BaseGenericRegistry[CodingFormatInfo]):
 
 
 # Global singleton instance
-coding_format_registry = CodingFormatRegistry()
+def get_coding_format_registry() -> CodingFormatRegistry:
+    """Return the process-wide get_coding_format_registry singleton instance."""
+    return CodingFormatRegistry.get_instance()

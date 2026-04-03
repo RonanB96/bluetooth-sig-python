@@ -184,4 +184,6 @@ class ServiceDiscoveryAttributeRegistry(
 
 
 # Singleton instance for global use
-service_discovery_attribute_registry = ServiceDiscoveryAttributeRegistry()
+def get_service_discovery_attribute_registry() -> ServiceDiscoveryAttributeRegistry:
+    """Return the process-wide service_discovery_attribute_registry singleton instance."""
+    return ServiceDiscoveryAttributeRegistry.get_instance()

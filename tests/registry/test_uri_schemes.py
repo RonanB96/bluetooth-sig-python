@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.core.uri_schemes import uri_schemes_registry
+from bluetooth_sig.registry.core.uri_schemes import get_uri_schemes_registry
 from bluetooth_sig.types.uri import URIData
 
 
@@ -13,52 +13,52 @@ class TestUriSchemesRegistry:
 
     def test_registry_loads(self) -> None:
         """Test that URI schemes registry loads successfully."""
-        schemes = uri_schemes_registry.get_all_uri_schemes()
+        schemes = get_uri_schemes_registry().get_all_uri_schemes()
         assert len(schemes) > 0, "No URI schemes loaded"
         # Should have common schemes like http, https
         assert len(schemes) >= 50, f"Expected at least 50 schemes, got {len(schemes)}"
 
     def test_get_http_scheme(self) -> None:
         """Test getting http scheme info."""
-        info = uri_schemes_registry.get_uri_scheme_info(0x16)
+        info = get_uri_schemes_registry().get_uri_scheme_info(0x16)
         assert info is not None
         assert info.name == "http:"
         assert info.value == 0x16
 
     def test_get_https_scheme(self) -> None:
         """Test getting https scheme info."""
-        info = uri_schemes_registry.get_uri_scheme_info(0x17)
+        info = get_uri_schemes_registry().get_uri_scheme_info(0x17)
         assert info is not None
         assert info.name == "https:"
         assert info.value == 0x17
 
     def test_get_scheme_by_name(self) -> None:
         """Test getting scheme info by name."""
-        info = uri_schemes_registry.get_uri_scheme_by_name("http:")
+        info = get_uri_schemes_registry().get_uri_scheme_by_name("http:")
         assert info is not None
         assert info.value == 0x16
 
     def test_get_scheme_by_name_case_insensitive(self) -> None:
         """Test case insensitive name lookup."""
-        info = uri_schemes_registry.get_uri_scheme_by_name("HTTP:")
+        info = get_uri_schemes_registry().get_uri_scheme_by_name("HTTP:")
         assert info is not None
         assert info.value == 0x16
 
     def test_unknown_scheme(self) -> None:
         """Test unknown scheme returns None."""
-        info = uri_schemes_registry.get_uri_scheme_info(0xFFFF)
+        info = get_uri_schemes_registry().get_uri_scheme_info(0xFFFF)
         assert info is None
 
     def test_is_known_scheme(self) -> None:
         """Test is_known_uri_scheme method."""
-        assert uri_schemes_registry.is_known_uri_scheme(0x16) is True
-        assert uri_schemes_registry.is_known_uri_scheme(0xFFFF) is False
+        assert get_uri_schemes_registry().is_known_uri_scheme(0x16) is True
+        assert get_uri_schemes_registry().is_known_uri_scheme(0xFFFF) is False
 
     def test_decode_uri_prefix(self) -> None:
         """Test decode_uri_prefix convenience method."""
-        assert uri_schemes_registry.decode_uri_prefix(0x16) == "http:"
-        assert uri_schemes_registry.decode_uri_prefix(0x17) == "https:"
-        assert uri_schemes_registry.decode_uri_prefix(0xFFFF) == ""
+        assert get_uri_schemes_registry().decode_uri_prefix(0x16) == "http:"
+        assert get_uri_schemes_registry().decode_uri_prefix(0x17) == "https:"
+        assert get_uri_schemes_registry().decode_uri_prefix(0xFFFF) == ""
 
 
 class TestURIData:
@@ -135,7 +135,7 @@ class TestURIData:
 
     def test_ftp_scheme(self) -> None:
         """Test FTP scheme parsing."""
-        info = uri_schemes_registry.get_uri_scheme_info(0x11)
+        info = get_uri_schemes_registry().get_uri_scheme_info(0x11)
         assert info is not None
         assert info.name == "ftp:"
 
@@ -147,7 +147,7 @@ class TestURIData:
     def test_tel_scheme(self) -> None:
         """Test tel: scheme for phone numbers."""
         # Find tel: scheme value
-        info = uri_schemes_registry.get_uri_scheme_by_name("tel:")
+        info = get_uri_schemes_registry().get_uri_scheme_by_name("tel:")
         if info:
             raw_data = bytes([info.value]) + b"+1-555-123-4567"
             uri_data = URIData.from_raw_data(raw_data)
@@ -181,6 +181,6 @@ class TestURIDataIntegration:
     )
     def test_common_schemes(self, scheme_code: int, expected_scheme: str) -> None:
         """Test common URI schemes are correctly resolved."""
-        info = uri_schemes_registry.get_uri_scheme_info(scheme_code)
+        info = get_uri_schemes_registry().get_uri_scheme_info(scheme_code)
         assert info is not None
         assert info.name == expected_scheme

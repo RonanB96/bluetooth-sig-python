@@ -16,7 +16,7 @@ import pytest
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.descriptors import DescriptorRegistry
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry
-from bluetooth_sig.gatt.uuid_registry import uuid_registry
+from bluetooth_sig.gatt.uuid_registry import get_uuid_registry
 from bluetooth_sig.types.uuid import BluetoothUUID
 
 
@@ -30,7 +30,7 @@ class TestOrphanCharacteristics:
         can never be resolved by UUID lookup, so it is invisible to the
         registry and will fail in batch parsing scenarios.
         """
-        yaml_uuids = set(uuid_registry._characteristics.keys())
+        yaml_uuids = set(get_uuid_registry()._characteristics.keys())
         registry = CharacteristicRegistry.get_instance()
         impl_uuids = {u.normalized for u in registry._get_sig_classes_map()}
 
@@ -52,7 +52,7 @@ class TestOrphanServices:
 
     def test_all_implemented_services_exist_in_yaml(self) -> None:
         """Every implemented service UUID must have a YAML entry."""
-        yaml_uuids = set(uuid_registry._services.keys())
+        yaml_uuids = set(get_uuid_registry()._services.keys())
         registry = GattServiceRegistry.get_instance()
         impl_uuids = {u.normalized for u in registry._get_sig_classes_map()}
 
@@ -74,7 +74,7 @@ class TestOrphanDescriptors:
 
     def test_all_implemented_descriptors_exist_in_yaml(self) -> None:
         """Every implemented descriptor UUID must have a YAML entry."""
-        yaml_uuids = set(uuid_registry._descriptors.keys())
+        yaml_uuids = set(get_uuid_registry()._descriptors.keys())
         impl_uuids = {BluetoothUUID(uuid_str).normalized for uuid_str in DescriptorRegistry._registry}
 
         orphans = impl_uuids - yaml_uuids

@@ -138,4 +138,6 @@ class FormatTypesRegistry(BaseGenericRegistry[FormatTypeInfo]):
 
 
 # Global singleton instance
-format_types_registry = FormatTypesRegistry()
+def get_format_types_registry() -> FormatTypesRegistry:
+    """Return the process-wide format_types_registry singleton instance."""
+    return FormatTypesRegistry.get_instance()

@@ -35,8 +35,8 @@ class NamespaceDescriptionRegistry(BaseGenericRegistry[NamespaceDescriptionInfo]
     - 0x0102 → "top"
 
     Examples:
-        >>> from bluetooth_sig.registry.core.namespace_description import namespace_description_registry
-        >>> info = namespace_description_registry.get_description_info(0x010D)
+        >>> from bluetooth_sig.registry.core.namespace_description import get_namespace_description_registry
+        >>> info = get_namespace_description_registry().get_description_info(0x010D)
         >>> info.name
         'left'
     """
@@ -167,4 +167,6 @@ class NamespaceDescriptionRegistry(BaseGenericRegistry[NamespaceDescriptionInfo]
 
 
 # Global singleton instance
-namespace_description_registry = NamespaceDescriptionRegistry()
+def get_namespace_description_registry() -> NamespaceDescriptionRegistry:
+    """Return the process-wide get_namespace_description_registry singleton instance."""
+    return NamespaceDescriptionRegistry.get_instance()

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.registry.uuids.browse_groups import BrowseGroupsRegistry
+from bluetooth_sig.registry.uuids.browse_groups import BrowseGroupsRegistry, get_browse_groups_registry
 from bluetooth_sig.types.registry.browse_group_identifiers import BrowseGroupInfo
 from bluetooth_sig.types.uuid import BluetoothUUID
 
@@ -22,7 +22,7 @@ class TestBrowseGroupsRegistry:
         """Test that the registry initializes properly."""
         assert isinstance(browse_groups_registry, BrowseGroupsRegistry)
         # Should have loaded some browse groups if YAML exists
-        browse_groups = browse_groups_registry.get_all_browse_groups()
+        browse_groups = get_browse_groups_registry().get_all_browse_groups()
         assert isinstance(browse_groups, list)
         # If submodule is initialized, should have browse groups
         if browse_groups:
@@ -31,7 +31,7 @@ class TestBrowseGroupsRegistry:
     def test_get_browse_group_info(self, browse_groups_registry: BrowseGroupsRegistry) -> None:
         """Test lookup by UUID string."""
         # Test with a known browse group UUID (PublicBrowseRoot)
-        info = browse_groups_registry.get_browse_group_info("0x1002")
+        info = get_browse_groups_registry().get_browse_group_info("0x1002")
         if info:  # Only if YAML loaded
             assert isinstance(info, BrowseGroupInfo)
             assert info.name == "PublicBrowseRoot"
@@ -40,65 +40,65 @@ class TestBrowseGroupsRegistry:
     def test_get_browse_group_info_by_name(self, browse_groups_registry: BrowseGroupsRegistry) -> None:
         """Test lookup by browse group name."""
         # Test with known browse group name (PublicBrowseRoot)
-        info = browse_groups_registry.get_browse_group_info_by_name("PublicBrowseRoot")
+        info = get_browse_groups_registry().get_browse_group_info_by_name("PublicBrowseRoot")
         if info:  # Only if YAML loaded
             assert isinstance(info, BrowseGroupInfo)
             assert info.name == "PublicBrowseRoot"
             assert info.uuid.short_form.upper() == "1002"
 
         # Test case insensitive
-        info_lower = browse_groups_registry.get_browse_group_info_by_name("publicbrowseroot")
+        info_lower = get_browse_groups_registry().get_browse_group_info_by_name("publicbrowseroot")
         assert info_lower == info
 
         # Test not found
-        info_none = browse_groups_registry.get_browse_group_info_by_name("Nonexistent Browse Group")
+        info_none = get_browse_groups_registry().get_browse_group_info_by_name("Nonexistent Browse Group")
         assert info_none is None
 
     def test_get_browse_group_info_by_id(self, browse_groups_registry: BrowseGroupsRegistry) -> None:
         """Test lookup by browse group ID."""
         # Test with known browse group ID
-        info = browse_groups_registry.get_browse_group_info_by_id("org.bluetooth.browse_group.public_browse_root")
+        info = get_browse_groups_registry().get_browse_group_info_by_id("org.bluetooth.browse_group.public_browse_root")
         if info:  # Only if YAML loaded
             assert isinstance(info, BrowseGroupInfo)
             assert info.name == "PublicBrowseRoot"
             assert info.uuid.short_form.upper() == "1002"
 
         # Test not found
-        info_none = browse_groups_registry.get_browse_group_info_by_id("org.bluetooth.browse_group.nonexistent")
+        info_none = get_browse_groups_registry().get_browse_group_info_by_id("org.bluetooth.browse_group.nonexistent")
         assert info_none is None
 
     def test_get_browse_group_info_by_bluetooth_uuid(self, browse_groups_registry: BrowseGroupsRegistry) -> None:
         """Test lookup by BluetoothUUID object."""
         # Create a BluetoothUUID for a known browse group
         bt_uuid = BluetoothUUID("1002")
-        info = browse_groups_registry.get_browse_group_info(bt_uuid)
+        info = get_browse_groups_registry().get_browse_group_info(bt_uuid)
         if info:  # Only if YAML loaded
             assert isinstance(info, BrowseGroupInfo)
             assert info.name == "PublicBrowseRoot"
 
     def test_get_browse_group_info_not_found(self, browse_groups_registry: BrowseGroupsRegistry) -> None:
         """Test lookup for non-existent browse group."""
-        info = browse_groups_registry.get_browse_group_info("nonexistent")
+        info = get_browse_groups_registry().get_browse_group_info("nonexistent")
         assert info is None
 
-        info = browse_groups_registry.get_browse_group_info("0x0000")  # Not a browse group UUID
+        info = get_browse_groups_registry().get_browse_group_info("0x0000")  # Not a browse group UUID
         assert info is None
 
     def test_is_browse_group_uuid(self, browse_groups_registry: BrowseGroupsRegistry) -> None:
         """Test browse group UUID validation."""
         # Known browse group UUID
-        has_groups = bool(browse_groups_registry.get_all_browse_groups())
-        assert browse_groups_registry.is_browse_group_uuid("0x1002") or not has_groups
+        has_groups = bool(get_browse_groups_registry().get_all_browse_groups())
+        assert get_browse_groups_registry().is_browse_group_uuid("0x1002") or not has_groups
 
         # Non-browse group UUID
-        assert not browse_groups_registry.is_browse_group_uuid("0x0000")
+        assert not get_browse_groups_registry().is_browse_group_uuid("0x0000")
 
         # Invalid UUID
-        assert not browse_groups_registry.is_browse_group_uuid("invalid")
+        assert not get_browse_groups_registry().is_browse_group_uuid("invalid")
 
     def test_get_all_browse_groups(self, browse_groups_registry: BrowseGroupsRegistry) -> None:
         """Test getting all browse groups."""
-        browse_groups = browse_groups_registry.get_all_browse_groups()
+        browse_groups = get_browse_groups_registry().get_all_browse_groups()
         assert isinstance(browse_groups, list)
 
         if browse_groups:
@@ -113,7 +113,7 @@ class TestBrowseGroupsRegistry:
 
     def test_browse_group_info_structure(self, browse_groups_registry: BrowseGroupsRegistry) -> None:
         """Test BrowseGroupInfo dataclass structure."""
-        browse_groups = browse_groups_registry.get_all_browse_groups()
+        browse_groups = get_browse_groups_registry().get_all_browse_groups()
         if browse_groups:
             browse_group = browse_groups[0]
             assert hasattr(browse_group, "uuid")
@@ -127,7 +127,7 @@ class TestBrowseGroupsRegistry:
         """Test various UUID input formats."""
         formats: list[str | BluetoothUUID] = ["1002", "0x1002", "0X1002", BluetoothUUID("1002")]
         for fmt in formats:
-            info = browse_groups_registry.get_browse_group_info(fmt)
-            if browse_groups_registry.is_browse_group_uuid("1002"):
+            info = get_browse_groups_registry().get_browse_group_info(fmt)
+            if get_browse_groups_registry().is_browse_group_uuid("1002"):
                 assert info is not None
                 assert info.name == "PublicBrowseRoot"

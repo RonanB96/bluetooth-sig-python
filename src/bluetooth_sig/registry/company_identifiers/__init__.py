@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from .company_identifiers_registry import (
     CompanyIdentifiersRegistry,
-    company_identifiers_registry,
+    get_company_identifiers_registry,
 )
 
 __all__ = [
     "CompanyIdentifiersRegistry",
-    "company_identifiers_registry",
+    "get_company_identifiers_registry",
 ]

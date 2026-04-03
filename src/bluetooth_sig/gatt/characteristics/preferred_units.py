@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import msgspec
 
-from ...registry.uuids.units import units_registry
+from ...registry.uuids.units import get_units_registry
 from ...types.gatt_enums import CharacteristicRole
 from ...types.registry.units import UnitInfo
 from ...types.uuid import BluetoothUUID
@@ -88,7 +88,7 @@ class PreferredUnitsCharacteristic(BaseCharacteristic[PreferredUnitsData]):
         """
         units: list[UnitInfo] = []
         for unit_uuid in data.units:
-            unit_info = units_registry.get_unit_info(unit_uuid)
+            unit_info = get_units_registry().get_unit_info(unit_uuid)
             if unit_info:
                 units.append(unit_info)
             else:
@@ -113,6 +113,6 @@ class PreferredUnitsCharacteristic(BaseCharacteristic[PreferredUnitsData]):
         """
         errors: list[str] = []
         for i, unit_uuid in enumerate(data.units):
-            if not units_registry.is_unit_uuid(unit_uuid):
+            if not get_units_registry().is_unit_uuid(unit_uuid):
                 errors.append(f"Unit at index {i} ({unit_uuid.short_form}) is not a recognized Bluetooth SIG unit")
         return errors

@@ -8,7 +8,7 @@ from bluetooth_sig.gatt.characteristics import CharacteristicRegistry
 from bluetooth_sig.gatt.characteristics.battery_level import BatteryLevelCharacteristic
 from bluetooth_sig.gatt.characteristics.humidity import HumidityCharacteristic
 from bluetooth_sig.gatt.characteristics.temperature import TemperatureCharacteristic
-from bluetooth_sig.gatt.uuid_registry import uuid_registry
+from bluetooth_sig.gatt.uuid_registry import get_uuid_registry
 
 
 class TestYAMLUnitParsing:
@@ -19,20 +19,20 @@ class TestYAMLUnitParsing:
         characteristics.
         """
         # Test Temperature characteristic - should get "°C" from YAML
-        temp_info = uuid_registry.get_characteristic_info("Temperature")
+        temp_info = get_uuid_registry().get_characteristic_info("Temperature")
         assert temp_info is not None, "Temperature characteristic should be found in registry"
         # Units may come from YAML or be None if YAML loading failed
         if temp_info.unit:
             assert temp_info.unit == "°C", f"Temperature unit should be °C, got {temp_info.unit}"
 
         # Test Battery Level characteristic - should get "%" from YAML
-        battery_info = uuid_registry.get_characteristic_info("Battery Level")
+        battery_info = get_uuid_registry().get_characteristic_info("Battery Level")
         assert battery_info is not None, "Battery Level characteristic should be found in registry"
         if battery_info.unit:
             assert battery_info.unit == "%", f"Battery Level unit should be %, got {battery_info.unit}"
 
         # Test Humidity characteristic - should get "%" from YAML
-        humidity_info = uuid_registry.get_characteristic_info("Humidity")
+        humidity_info = get_uuid_registry().get_characteristic_info("Humidity")
         assert humidity_info is not None, "Humidity characteristic should be found in registry"
         if humidity_info.unit:
             assert humidity_info.unit == "%", f"Humidity unit should be %, got {humidity_info.unit}"
@@ -67,7 +67,7 @@ class TestYAMLUnitParsing:
     def test_unknown_characteristic_unit(self) -> None:
         """Test behaviour with characteristics not in YAML."""
         # Try to get info for a characteristic that doesn't exist
-        unknown_info = uuid_registry.get_characteristic_info("NonExistentCharacteristic")
+        unknown_info = get_uuid_registry().get_characteristic_info("NonExistentCharacteristic")
         assert unknown_info is None, "Unknown characteristic should return None"
 
     def test_unit_conversion_mappings(self) -> None:
@@ -75,7 +75,7 @@ class TestYAMLUnitParsing:
         correctly.
         """
         # Test the conversion function directly (if accessible)
-        registry_instance = uuid_registry
+        registry_instance = get_uuid_registry()
 
         # Test common unit conversions
         test_mappings = [

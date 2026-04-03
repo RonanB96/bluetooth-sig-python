@@ -12,13 +12,13 @@ from typing import Any
 
 import msgspec
 
-from ...registry.uuids.units import units_registry
+from ...registry.uuids.units import get_units_registry
 from ...types import CharacteristicInfo
 from ...types.gatt_enums import WIRE_TYPE_MAP
 from ...types.registry import CharacteristicSpec
 from ..exceptions import UUIDResolutionError
 from ..resolver import CharacteristicRegistrySearch, NameNormalizer, NameVariantGenerator
-from ..uuid_registry import uuid_registry
+from ..uuid_registry import get_uuid_registry
 
 # ---------------------------------------------------------------------------
 # Validation configuration
@@ -87,7 +87,7 @@ class SIGCharacteristicResolver:
         names_to_try = NameVariantGenerator.generate_characteristic_variants(char_class.__name__, characteristic_name)
 
         for try_name in names_to_try:
-            spec = uuid_registry.resolve_characteristic_spec(try_name)
+            spec = get_uuid_registry().resolve_characteristic_spec(try_name)
             if spec:
                 return spec
 
@@ -119,7 +119,7 @@ class SIGCharacteristicResolver:
         unit_info = None
         unit_name = getattr(yaml_spec, "unit_symbol", None) or getattr(yaml_spec, "unit", None)
         if unit_name:
-            unit_info = units_registry.get_unit_info_by_name(unit_name)
+            unit_info = get_units_registry().get_unit_info_by_name(unit_name)
         if unit_info:
             unit_symbol = str(getattr(unit_info, "symbol", getattr(unit_info, "name", unit_name)))
         else:

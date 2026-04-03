@@ -6,9 +6,9 @@ from enum import IntEnum
 
 import msgspec
 
-from ...registry.core.formattypes import format_types_registry
-from ...registry.core.namespace_description import namespace_description_registry
-from ...registry.uuids.units import units_registry
+from ...registry.core.formattypes import get_format_types_registry
+from ...registry.core.namespace_description import get_namespace_description_registry
+from ...registry.uuids.units import get_units_registry
 from ...types.uuid import BluetoothUUID
 from ..characteristics.utils import DataParser
 from .base import BaseDescriptor
@@ -144,18 +144,18 @@ class CharacteristicPresentationFormatDescriptor(BaseDescriptor):
         description_val = DataParser.parse_int16(data, offset=5, endian="little")
 
         # Resolve format type name from registry
-        format_info = format_types_registry.get_format_type_info(format_val)
+        format_info = get_format_types_registry().get_format_type_info(format_val)
         format_name = format_info.short_name if format_info else None
 
         # Resolve unit name from registry (unit is stored as 16-bit UUID)
         unit_uuid = BluetoothUUID(unit_val)
-        unit_info = units_registry.get_unit_info(unit_uuid)
+        unit_info = get_units_registry().get_unit_info(unit_uuid)
         unit_name = unit_info.name if unit_info else None
 
         # Resolve description name from registry (only for Bluetooth SIG namespace)
         description_name: str | None = None
         if namespace_val == FormatNamespace.BLUETOOTH_SIG_ASSIGNED_NUMBERS:
-            description_name = namespace_description_registry.resolve_description_name(description_val)
+            description_name = get_namespace_description_registry().resolve_description_name(description_val)
 
         return CharacteristicPresentationFormatData(
             format=FormatType(format_val),

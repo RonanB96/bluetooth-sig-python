@@ -57,11 +57,11 @@ def batch_characteristics_medium() -> dict[str, bytearray]:
         "2A19": bytearray([85]),  # Battery Level
         "2A6E": bytearray([0x64, 0x09]),  # Temperature
         "2A6F": bytearray([0x3A, 0x13]),  # Humidity
-        "2A1C": bytearray([0x64, 0x09]),  # Temperature Measurement
-        "2A1E": bytearray([0x00]),  # Intermediate Temperature
+        "2A1C": bytearray([0x00, 0xE4, 0x00, 0x00, 0x00]),  # Temperature Measurement (flags + float32)
+        "2A1E": bytearray([0x00, 0xE4, 0x00, 0x00, 0x00]),  # Intermediate Temperature (flags + float32)
         "2A21": bytearray([0x3A, 0x13]),  # Measurement Interval
         "2A23": bytearray([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]),  # System ID
-        "2A25": bytearray([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]),  # Serial Number String
-        "2A27": bytearray([0x01, 0x02, 0x03, 0x04]),  # Hardware Revision
-        "2A28": bytearray([0x01, 0x02, 0x03, 0x04]),  # Software Revision
+        "2A25": bytearray(b"SN1234"),  # Serial Number String
+        "2A27": bytearray(b"HW1"),  # Hardware Revision
+        "2A28": bytearray(b"SW1"),  # Software Revision
     }

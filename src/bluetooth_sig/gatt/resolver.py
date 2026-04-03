@@ -11,7 +11,7 @@ from abc import abstractmethod
 from typing import Generic, TypeVar
 
 from ..types import CharacteristicInfo, DescriptorInfo, ServiceInfo
-from .uuid_registry import uuid_registry
+from .uuid_registry import get_uuid_registry
 
 # Generic type variables for resolver return types
 TInfo = TypeVar("TInfo", CharacteristicInfo, ServiceInfo, DescriptorInfo)
@@ -335,7 +335,7 @@ class CharacteristicRegistrySearch(RegistrySearchStrategy[CharacteristicInfo]): 
         return NameVariantGenerator.generate_characteristic_variants(class_name, explicit_name)
 
     def _lookup_in_registry(self, name: str) -> CharacteristicInfo | None:
-        return uuid_registry.get_characteristic_info(name)
+        return get_uuid_registry().get_characteristic_info(name)
 
 
 class ServiceRegistrySearch(RegistrySearchStrategy[ServiceInfo]):  # pylint: disable=too-few-public-methods
@@ -345,7 +345,7 @@ class ServiceRegistrySearch(RegistrySearchStrategy[ServiceInfo]):  # pylint: dis
         return NameVariantGenerator.generate_service_variants(class_name, explicit_name)
 
     def _lookup_in_registry(self, name: str) -> ServiceInfo | None:
-        return uuid_registry.get_service_info(name)
+        return get_uuid_registry().get_service_info(name)
 
 
 class DescriptorRegistrySearch(RegistrySearchStrategy[DescriptorInfo]):  # pylint: disable=too-few-public-methods
@@ -355,4 +355,4 @@ class DescriptorRegistrySearch(RegistrySearchStrategy[DescriptorInfo]):  # pylin
         return NameVariantGenerator.generate_descriptor_variants(class_name, explicit_name)
 
     def _lookup_in_registry(self, name: str) -> DescriptorInfo | None:
-        return uuid_registry.get_descriptor_info(name)
+        return get_uuid_registry().get_descriptor_info(name)

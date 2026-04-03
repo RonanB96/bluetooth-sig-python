@@ -199,7 +199,10 @@ class UnitsRegistry(BaseUUIDRegistry[UnitInfo]):
 
 
 # Global instance
-units_registry = UnitsRegistry()
+def get_units_registry() -> UnitsRegistry:
+    """Return the process-wide units_registry singleton instance."""
+    return UnitsRegistry.get_instance()
+
 
 _UNIT_ID_PREFIX = "org.bluetooth.unit."
 
@@ -221,5 +224,5 @@ def resolve_unit_symbol(unit_id: str) -> str:
 
     """
     full_id = unit_id if unit_id.startswith(_UNIT_ID_PREFIX) else f"{_UNIT_ID_PREFIX}{unit_id}"
-    info = units_registry.get_unit_info_by_id(full_id)
+    info = get_units_registry().get_unit_info_by_id(full_id)
     return info.symbol if info and info.symbol else ""

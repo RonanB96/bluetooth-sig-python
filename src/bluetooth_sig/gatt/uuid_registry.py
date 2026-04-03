@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import logging
 import threading
 
@@ -19,7 +18,7 @@ from ..types.registry import CharacteristicSpec, FieldInfo, UnitMetadata
 
 __all__ = [
     "UuidRegistry",
-    "uuid_registry",
+    "get_uuid_registry",
 ]
 
 logger = logging.getLogger(__name__)
@@ -34,9 +33,23 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
     avoid noisy global configuration changes.
     """
 
+    _instance: UuidRegistry | None = None
+    _class_lock = threading.RLock()
+
+    @classmethod
+    def get_instance(cls) -> UuidRegistry:
+        """Return the process-wide UuidRegistry singleton instance."""
+        if cls._instance is None:
+            with cls._class_lock:
+                if cls._instance is None:
+                    cls._instance = cls()
+        return cls._instance
+
     def __init__(self) -> None:
         """Initialize the UUID registry."""
         self._lock = threading.RLock()
+        self._loaded = False
+        self._load_error: Exception | None = None
 
         # Canonical storage: normalized_uuid -> domain types (single source of truth)
         self._services: dict[str, ServiceInfo] = {}
@@ -58,9 +71,23 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
         self._gss_registry: GssRegistry | None = None
 
-        with contextlib.suppress(FileNotFoundError, Exception):
-            # If YAML loading fails, continue with empty registry
-            self._load_uuids()
+    def _ensure_loaded(self) -> None:
+        """Ensure the registry has loaded its YAML data exactly once."""
+        with self._lock:
+            if self._loaded:
+                return
+            if self._load_error is not None:
+                raise RuntimeError("UUID registry failed to load SIG data") from self._load_error
+            try:
+                self._load_uuids()
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                self._load_error = exc
+                raise RuntimeError("UUID registry failed to load SIG data") from exc
+            self._loaded = True
+
+    def ensure_loaded(self) -> None:
+        """Public API to eagerly load UUID registry data."""
+        self._ensure_loaded()
 
     def _store_service(self, info: ServiceInfo) -> None:
         """Store service info with canonical storage + aliases."""
@@ -312,6 +339,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             python_type: Optional Python type for the value
             override: If True, allow overriding existing entries
         """
+        self._ensure_loaded()
         with self._lock:
             canonical_key = uuid.normalized
 
@@ -360,6 +388,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             identifier: Optional identifier (auto-generated if not provided)
             override: If True, allow overriding existing entries
         """
+        self._ensure_loaded()
         with self._lock:
             canonical_key = uuid.normalized
 
@@ -392,6 +421,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
     def get_service_info(self, key: str | BluetoothUUID) -> ServiceInfo | None:
         """Get information about a service by UUID, name, or ID."""
+        self._ensure_loaded()
         with self._lock:
             # Convert BluetoothUUID to canonical key
             if isinstance(key, BluetoothUUID):
@@ -420,6 +450,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
     def get_characteristic_info(self, identifier: str | BluetoothUUID) -> CharacteristicInfo | None:
         """Get information about a characteristic by UUID, name, or ID."""
+        self._ensure_loaded()
         with self._lock:
             # Convert BluetoothUUID to canonical key
             if isinstance(identifier, BluetoothUUID):
@@ -448,6 +479,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
 
     def get_descriptor_info(self, identifier: str | BluetoothUUID) -> DescriptorInfo | None:
         """Get information about a descriptor by UUID, name, or ID."""
+        self._ensure_loaded()
         with self._lock:
             # Convert BluetoothUUID to canonical key
             if isinstance(identifier, BluetoothUUID):
@@ -487,12 +519,13 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             GssCharacteristicSpec with full field structure, or None if not found
 
         Example::
-            gss = uuid_registry.get_gss_spec("Location and Speed")
+            gss = get_uuid_registry().get_gss_spec("Location and Speed")
             if gss:
                 for field in gss.structure:
                     print(f"{field.python_name}: unit={field.unit_id}, resolution={field.resolution}")
 
         """
+        self._ensure_loaded()
         if self._gss_registry is None:
             return None
 
@@ -509,7 +542,7 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
                     spec = self._gss_registry.get_spec(char_info.id)
                     if spec:
                         return spec
-            elif isinstance(identifier, BluetoothUUID):
+            else:
                 # Look up by UUID
                 char_info = self.get_characteristic_info(identifier)
                 if char_info:
@@ -535,11 +568,12 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             CharacteristicSpec with full metadata, or None if not found
 
         Example::
-            spec = uuid_registry.resolve_characteristic_spec("Temperature")
+            spec = get_uuid_registry().resolve_characteristic_spec("Temperature")
             if spec:
                 print(f"UUID: {spec.uuid}, Unit: {spec.unit_symbol}, Type: {spec.data_type}")
 
         """
+        self._ensure_loaded()
         with self._lock:
             # 1. Get UUID from characteristic registry
             char_info = self.get_characteristic_info(characteristic_name)
@@ -678,5 +712,6 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
             self._runtime_uuids.clear()
 
 
-# Global instance
-uuid_registry = UuidRegistry()
+def get_uuid_registry() -> UuidRegistry:
+    """Return the process-wide UUID registry singleton instance."""
+    return UuidRegistry.get_instance()

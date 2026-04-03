@@ -252,4 +252,6 @@ class ClassOfDeviceRegistry(BaseGenericRegistry[ClassOfDeviceInfo]):
 
 
 # Module-level singleton instance
-class_of_device_registry = ClassOfDeviceRegistry()
+def get_class_of_device_registry() -> ClassOfDeviceRegistry:
+    """Return the process-wide class_of_device_registry singleton instance."""
+    return ClassOfDeviceRegistry.get_instance()
