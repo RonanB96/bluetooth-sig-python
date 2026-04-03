@@ -28,6 +28,7 @@ class TestMeasurementIntervalCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(input_data=bytearray([0, 0]), expected_value=0, description="Disabled"),
             CharacteristicTestData(input_data=bytearray([1, 0]), expected_value=1, description="1 second"),
             CharacteristicTestData(input_data=bytearray([60, 0]), expected_value=60, description="1 minute"),
+            CharacteristicTestData(input_data=bytearray([16, 14]), expected_value=3600, description="1 hour"),
             CharacteristicTestData(
                 input_data=bytearray([255, 255]), expected_value=65535, description="Maximum interval"
             ),
@@ -44,11 +45,3 @@ class TestMeasurementIntervalCharacteristic(CommonCharacteristicTests):
         char = MeasurementIntervalCharacteristic()
         result = char.parse_value(bytearray([60, 0]))
         assert result == 60
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = MeasurementIntervalCharacteristic()
-        for value in [0, 1, 60, 3600, 65535]:
-            encoded = char.build_value(value)
-            decoded = char.parse_value(encoded)
-            assert decoded == value

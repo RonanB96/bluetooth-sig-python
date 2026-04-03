@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import PreferredUnitsCharacteristic, PreferredUnitsData
+from bluetooth_sig.gatt.characteristics import PreferredUnitsCharacteristic
+from bluetooth_sig.gatt.characteristics.preferred_units import PreferredUnitsData
 from bluetooth_sig.types.uuid import BluetoothUUID
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 

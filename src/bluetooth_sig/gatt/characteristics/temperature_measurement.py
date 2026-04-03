@@ -11,6 +11,7 @@ from bluetooth_sig.types.units import TemperatureUnit
 
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .temperature_type import TemperatureType
 from .utils import IEEE11073Parser
 
 
@@ -30,7 +31,7 @@ class TemperatureMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  # 
     unit: TemperatureUnit
     flags: TemperatureMeasurementFlags
     timestamp: datetime | None = None
-    temperature_type: int | None = None
+    temperature_type: TemperatureType | None = None
 
     def __post_init__(self) -> None:
         """Validate temperature measurement data."""
@@ -81,7 +82,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic[TemperatureMeasure
 
         # Parse optional fields
         timestamp: datetime | None = None
-        temperature_type: int | None = None
+        temperature_type: TemperatureType | None = None
         offset = 5
 
         if TemperatureMeasurementFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
@@ -89,7 +90,7 @@ class TemperatureMeasurementCharacteristic(BaseCharacteristic[TemperatureMeasure
             offset += 7
 
         if TemperatureMeasurementFlags.TEMPERATURE_TYPE_PRESENT in flags and len(data) >= offset + 1:
-            temperature_type = data[offset]
+            temperature_type = TemperatureType(data[offset])
 
         # Create immutable struct with all values
         return TemperatureMeasurementData(

@@ -26,7 +26,7 @@ class TestForceCharacteristic(CommonCharacteristicTests):
         return "2C07"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid force test data covering various forces and edge cases."""
         return [
             CharacteristicTestData(

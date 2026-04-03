@@ -47,19 +47,18 @@ import argparse
 import importlib
 import inspect
 import json
-import tempfile
-from pathlib import Path
-from typing import Any
 
 # Add src to path
 import sys
+import tempfile
+from pathlib import Path
+from typing import Any
 
 src_path = Path(__file__).parent.parent / "src"
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
-from bluetooth_sig.types.gatt_enums import ValueType
 
 
 def get_all_characteristic_classes() -> list[type[BaseCharacteristic]]:
@@ -349,7 +348,7 @@ def main() -> None:
     # Generate report
     try:
         generate_validation_report(output_file)
-        print(f"\n📊 Report summary:")
+        print("\n📊 Report summary:")
         print(f"   Output file: {output_file}")
 
         # Show stats
@@ -362,14 +361,14 @@ def main() -> None:
             if with_errors:
                 print(f"   With errors: {with_errors}")
 
-        print(f"\n📋 Output format:")
-        print(f"   Each value includes a 'source' field indicating origin:")
-        print(f"   - resolved_sig_info: From Bluetooth SIG registry")
-        print(f"   - yaml_spec: From Bluetooth SIG YAML specifications")
-        print(f"   - class_level_or_yaml: From characteristic class or YAML defaults")
-        print(f"   - manual_override: Explicit manual override")
-        print(f"   - runtime_descriptor_check: Discovered at runtime")
-        print(f"   - (see script header for full source legend)")
+        print("\n📋 Output format:")
+        print("   Each value includes a 'source' field indicating origin:")
+        print("   - resolved_sig_info: From Bluetooth SIG registry")
+        print("   - yaml_spec: From Bluetooth SIG YAML specifications")
+        print("   - class_level_or_yaml: From characteristic class or YAML defaults")
+        print("   - manual_override: Explicit manual override")
+        print("   - runtime_descriptor_check: Discovered at runtime")
+        print("   - (see script header for full source legend)")
 
     except Exception as e:
         print(f"❌ Error: {e}", file=sys.stderr)

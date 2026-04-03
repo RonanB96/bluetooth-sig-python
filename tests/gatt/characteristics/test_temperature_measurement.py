@@ -11,6 +11,7 @@ from bluetooth_sig.gatt.characteristics.temperature_measurement import (
     TemperatureMeasurementData,
     TemperatureMeasurementFlags,
 )
+from bluetooth_sig.gatt.characteristics.temperature_type import TemperatureType
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.units import TemperatureUnit
 
@@ -110,7 +111,7 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                         0x75,
                         0x38,
                         0x7B,  # temperature = 37.0°C (medfloat32)
-                        0x01,  # temperature type = 1 (body)
+                        0x01,  # temperature type = 1 (armpit)
                     ]
                 ),
                 expected_value=TemperatureMeasurementData(
@@ -118,7 +119,7 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                     unit=TemperatureUnit.CELSIUS,
                     flags=TemperatureMeasurementFlags.TEMPERATURE_TYPE_PRESENT,
                     timestamp=None,
-                    temperature_type=1,
+                    temperature_type=TemperatureType.ARMPIT,
                 ),
                 description="Temperature measurement with type",
             ),
@@ -138,7 +139,7 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                         0x0E,  # hour = 14
                         0x1E,  # minute = 30
                         0x2D,  # second = 45
-                        0x02,  # temperature type = 2 (ear)
+                        0x02,  # temperature type = 2 (body general)
                     ]
                 ),
                 expected_value=TemperatureMeasurementData(
@@ -148,7 +149,7 @@ class TestTemperatureMeasurementCharacteristic(CommonCharacteristicTests):
                     | TemperatureMeasurementFlags.TIMESTAMP_PRESENT
                     | TemperatureMeasurementFlags.TEMPERATURE_TYPE_PRESENT,
                     timestamp=datetime.datetime(2023, 12, 25, 14, 30, 45),
-                    temperature_type=2,
+                    temperature_type=TemperatureType.BODY_GENERAL,
                 ),
                 description="Full Fahrenheit measurement with all optional fields",
             ),

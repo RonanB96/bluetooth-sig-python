@@ -53,13 +53,3 @@ class TestAcceleration3DCharacteristic(CommonCharacteristicTests):
         assert result.x_axis == pytest.approx(0.1)
         assert result.y_axis == pytest.approx(0.2)
         assert result.z_axis == pytest.approx(0.3)
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = Acceleration3DCharacteristic()
-        original = VectorData(x_axis=0.5, y_axis=-0.3, z_axis=1.0)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded.x_axis == pytest.approx(original.x_axis, abs=0.02)
-        assert decoded.y_axis == pytest.approx(original.y_axis, abs=0.02)
-        assert decoded.z_axis == pytest.approx(original.z_axis, abs=0.02)

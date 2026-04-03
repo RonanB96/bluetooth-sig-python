@@ -109,13 +109,6 @@ class TestAlertCategoryIdCharacteristic(CommonCharacteristicTests):
         assert len(encoded) == 1
         assert encoded[0] == int_value
 
-    def test_alert_category_id_roundtrip(self, characteristic: AlertCategoryIdCharacteristic) -> None:
-        """Test round-trip encoding/decoding."""
-        for category in AlertCategoryID:
-            encoded = characteristic.build_value(category)
-            decoded = characteristic.parse_value(encoded)
-            assert decoded == category
-
     def test_alert_category_id_enum_values(self, characteristic: AlertCategoryIdCharacteristic) -> None:
         """Test that all enum values are properly handled."""
         for category in AlertCategoryID:

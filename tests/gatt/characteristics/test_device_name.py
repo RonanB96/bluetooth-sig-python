@@ -22,7 +22,7 @@ class TestDeviceNameCharacteristic(CommonCharacteristicTests):
         return "2A00"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray(b"My Device"), expected_value="My Device", description="Simple ASCII device name"

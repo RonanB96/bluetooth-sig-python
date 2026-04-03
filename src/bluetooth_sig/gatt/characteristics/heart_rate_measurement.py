@@ -25,8 +25,8 @@ class HeartRateMeasurementFlags(IntFlag):
     """Heart Rate Measurement flags as per Bluetooth SIG specification."""
 
     HEART_RATE_VALUE_FORMAT_UINT16 = 0x01
-    SENSOR_CONTACT_SUPPORTED = 0x02
-    SENSOR_CONTACT_DETECTED = 0x04
+    SENSOR_CONTACT_DETECTED = 0x02
+    SENSOR_CONTACT_SUPPORTED = 0x04
     ENERGY_EXPENDED_PRESENT = 0x08
     RR_INTERVAL_PRESENT = 0x10
 

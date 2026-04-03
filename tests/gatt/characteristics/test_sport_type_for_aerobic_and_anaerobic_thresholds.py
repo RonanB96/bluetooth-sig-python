@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import SportType, SportTypeForAerobicAndAnaerobicThresholdsCharacteristic
+from bluetooth_sig.gatt.characteristics import SportTypeForAerobicAndAnaerobicThresholdsCharacteristic
+from bluetooth_sig.gatt.characteristics.sport_type_for_aerobic_and_anaerobic_thresholds import SportType
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 

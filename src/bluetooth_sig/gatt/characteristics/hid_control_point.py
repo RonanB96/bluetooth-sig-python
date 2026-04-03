@@ -18,15 +18,13 @@ class HidControlPointCommand(IntEnum):
     EXIT_SUSPEND = 1
 
 
-class HidControlPointCharacteristic(BaseCharacteristic[int]):
+class HidControlPointCharacteristic(BaseCharacteristic[HidControlPointCommand]):
     """HID Control Point characteristic (0x2A4C).
 
     org.bluetooth.characteristic.hid_control_point
 
     HID Control Point characteristic.
     """
-
-    _python_type: type | str | None = int
 
     _template = EnumTemplate.uint8(HidControlPointCommand)
     expected_length = HID_CONTROL_POINT_DATA_LENGTH

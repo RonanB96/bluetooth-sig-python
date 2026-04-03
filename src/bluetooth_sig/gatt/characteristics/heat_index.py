@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .base import BaseCharacteristic
-from .templates import Uint8Template
+from .templates import Sint8Template
 
 
 class HeatIndexCharacteristic(BaseCharacteristic[int]):
@@ -14,4 +14,4 @@ class HeatIndexCharacteristic(BaseCharacteristic[int]):
     Heat Index measurement characteristic.
     """
 
-    _template = Uint8Template()
+    _template = Sint8Template()

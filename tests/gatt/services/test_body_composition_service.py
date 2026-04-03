@@ -70,9 +70,9 @@ class TestBodyCompositionMeasurementCharacteristic:
         """Test parsing with muscle mass in metric units."""
         char = BodyCompositionMeasurementCharacteristic()
 
-        # Flags: 0x0010 (muscle mass present), Body Fat: 250,
+        # Flags: 0x0020 (muscle mass present, bit 5), Body Fat: 250,
         # Muscle Mass: 10000 (50.0 kg)
-        data = bytearray([0x10, 0x00, 0xFA, 0x00, 0x10, 0x27])  # 0x2710 = 10000
+        data = bytearray([0x20, 0x00, 0xFA, 0x00, 0x10, 0x27])  # 0x2710 = 10000
         result = char.parse_value(data)
 
         assert hasattr(result, "body_fat_percentage")
@@ -84,9 +84,9 @@ class TestBodyCompositionMeasurementCharacteristic:
         """Test parsing with muscle mass in imperial units."""
         char = BodyCompositionMeasurementCharacteristic()
 
-        # Flags: 0x0011 (imperial + muscle mass), Body Fat: 250,
+        # Flags: 0x0021 (imperial + muscle mass, bit 0 + bit 5), Body Fat: 250,
         # Muscle Mass: 11000 (110.0 lb)
-        data = bytearray([0x11, 0x00, 0xFA, 0x00, 0xF8, 0x2A])  # 0x2AF8 = 11000
+        data = bytearray([0x21, 0x00, 0xFA, 0x00, 0xF8, 0x2A])  # 0x2AF8 = 11000
         result = char.parse_value(data)
 
         assert hasattr(result, "body_fat_percentage")
@@ -192,7 +192,7 @@ class TestBodyCompositionFeatureCharacteristic:
         assert len(encoded) == 4
         assert encoded == bytearray([0x1F, 0x00, 0x00, 0x00])
 
-    def test_round_trip_basic(self) -> None:
+    def test_roundtrip_basic(self) -> None:
         """Test that parsing and encoding preserve basic feature data."""
         char = BodyCompositionFeatureCharacteristic()
 

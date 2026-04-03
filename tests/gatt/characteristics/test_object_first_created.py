@@ -35,12 +35,9 @@ class TestObjectFirstCreatedCharacteristic(CommonCharacteristicTests):
                 expected_value=datetime(2020, 1, 1, 0, 0, 0),
                 description="New Year 2020 midnight",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([0xE9, 0x07, 6, 15, 14, 30, 0]),
+                expected_value=datetime(2025, 6, 15, 14, 30, 0),
+                description="Mid-year 2025 afternoon",
+            ),
         ]
-
-    def test_custom_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = ObjectFirstCreatedCharacteristic()
-        original = datetime(2025, 6, 15, 14, 30, 0)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

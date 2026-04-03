@@ -139,7 +139,7 @@ class DependencyResolver:
                 if char_class_or_none:
                     char_instance = char_class_or_none()
                 else:
-                    char_info = CharacteristicInfo(uuid=dep_uuid, name=f"Unknown-{dep_uuid_str}")
+                    char_info = CharacteristicInfo(uuid=dep_uuid, name=dep_uuid_str)
                     char_instance = UnknownCharacteristic(info=char_info)
 
                 self._connected.cache_characteristic(dep_uuid, char_instance)

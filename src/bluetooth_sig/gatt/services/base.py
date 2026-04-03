@@ -10,8 +10,8 @@ import msgspec
 from ...types import CharacteristicInfo, ServiceInfo
 from ...types.gatt_services import CharacteristicCollection, CharacteristicSpec, ServiceDiscoveryData
 from ...types.uuid import BluetoothUUID
-from ..characteristics import BaseCharacteristic, CharacteristicRegistry
-from ..characteristics.registry import CharacteristicName
+from ..characteristics.base import BaseCharacteristic
+from ..characteristics.registry import CharacteristicName, CharacteristicRegistry
 from ..characteristics.unknown import UnknownCharacteristic
 from ..exceptions import UUIDResolutionError
 from ..resolver import ServiceRegistrySearch
@@ -388,11 +388,10 @@ class BaseGattService:  # pylint: disable=too-many-public-methods
                 char_instance = UnknownCharacteristic(
                     info=CharacteristicInfo(
                         uuid=uuid_obj,
-                        name=char_info.name or f"Unknown Characteristic ({uuid_obj})",
+                        name=char_info.name or "",
                         unit=char_info.unit or "",
                         python_type=char_info.python_type,
                     ),
-                    properties=[],
                 )
 
             self.characteristics[uuid_obj] = char_instance

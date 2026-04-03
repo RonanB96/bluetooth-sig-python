@@ -6,8 +6,9 @@ from typing import Any
 
 import pytest
 
-from bluetooth_sig.gatt.characteristics import PLXFeatureFlags, PLXFeaturesCharacteristic
+from bluetooth_sig.gatt.characteristics import PLXFeaturesCharacteristic
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.plx_features import PLXFeatureFlags
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
@@ -27,7 +28,7 @@ class TestPLXFeaturesCharacteristic(CommonCharacteristicTests):
         return "2A60"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x00]),

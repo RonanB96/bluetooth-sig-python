@@ -33,7 +33,7 @@ class TestBatteryTimeStatusCharacteristic(CommonCharacteristicTests):
         return "2BEE"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid battery time status test data."""
         return [
             CharacteristicTestData(
@@ -161,30 +161,6 @@ class TestBatteryTimeStatusCharacteristic(CommonCharacteristicTests):
         assert result.time_until_discharged == 5
         assert result.time_until_discharged_on_standby is None
         assert result.time_until_recharged == 45
-
-    def test_roundtrip_all_fields(self, characteristic: BaseCharacteristic[Any]) -> None:
-        """Verify encode/decode roundtrip with all fields."""
-        original = BatteryTimeStatus(
-            flags=BatteryTimeStatusFlags(0x03),
-            time_until_discharged=120,
-            time_until_discharged_on_standby=480,
-            time_until_recharged=60,
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
-
-    def test_roundtrip_unknown_sentinel(self, characteristic: BaseCharacteristic[Any]) -> None:
-        """Verify encode/decode roundtrip with None (unknown sentinel)."""
-        original = BatteryTimeStatus(
-            flags=BatteryTimeStatusFlags(0x00),
-            time_until_discharged=None,
-        )
-        encoded = characteristic.build_value(original)
-        # Unknown sentinel should produce 0xFF 0xFF 0xFF
-        assert encoded[1:4] == bytearray([0xFF, 0xFF, 0xFF])
-        decoded = characteristic.parse_value(encoded)
-        assert decoded.time_until_discharged is None
 
     def test_zero_time(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Verify zero minutes value is valid."""

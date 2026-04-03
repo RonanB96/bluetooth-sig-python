@@ -22,7 +22,7 @@ class TestSupportedHeartRateRangeCharacteristic(CommonCharacteristicTests):
         return "2AD7"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x00, 0x00]),
@@ -53,18 +53,6 @@ class TestSupportedHeartRateRangeCharacteristic(CommonCharacteristicTests):
                 description="Maximum heart rate range",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = SupportedHeartRateRangeCharacteristic()
-        original = SupportedHeartRateRangeData(
-            minimum=60,
-            maximum=180,
-            minimum_increment=1,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
 
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum > maximum is invalid."""

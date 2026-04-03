@@ -25,28 +25,27 @@ class TestTimeAccuracyCharacteristic(CommonCharacteristicTests):
     def valid_test_data(self) -> list[CharacteristicTestData]:
         """Return valid test data for time accuracy."""
         return [
-            CharacteristicTestData(input_data=bytearray([0]), expected_value=0, description="Unknown accuracy"),
-            CharacteristicTestData(input_data=bytearray([1]), expected_value=1, description="±1/8 second"),
-            CharacteristicTestData(input_data=bytearray([128]), expected_value=128, description="±16 seconds"),
-            CharacteristicTestData(input_data=bytearray([254]), expected_value=254, description="Out of range"),
+            CharacteristicTestData(input_data=bytearray([0]), expected_value=0.0, description="Zero accuracy"),
+            CharacteristicTestData(input_data=bytearray([1]), expected_value=0.125, description="±1/8 second"),
+            CharacteristicTestData(input_data=bytearray([8]), expected_value=1.0, description="±1 second"),
+            CharacteristicTestData(input_data=bytearray([128]), expected_value=16.0, description="±16 seconds"),
+            CharacteristicTestData(input_data=bytearray([253]), expected_value=31.625, description="Max valid range"),
         ]
 
-    def test_unknown_accuracy(self) -> None:
-        """Test unknown time accuracy."""
+    def test_zero_accuracy(self) -> None:
+        """Test zero time accuracy (0 seconds drift)."""
         char = TimeAccuracyCharacteristic()
         result = char.parse_value(bytearray([0]))
-        assert result == 0
+        assert result == 0.0
 
     def test_precise_accuracy(self) -> None:
-        """Test precise time accuracy (±1/8 second)."""
+        """Test precise time accuracy (±1/8 second = 0.125s)."""
         char = TimeAccuracyCharacteristic()
         result = char.parse_value(bytearray([1]))
-        assert result == 1
+        assert result == 0.125
 
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
+    def test_max_valid_accuracy(self) -> None:
+        """Test maximum valid time accuracy (253 * 0.125 = 31.625s)."""
         char = TimeAccuracyCharacteristic()
-        for value in [0, 1, 64, 128, 254]:
-            encoded = char.build_value(value)
-            decoded = char.parse_value(encoded)
-            assert decoded == value
+        result = char.parse_value(bytearray([253]))
+        assert result == 31.625

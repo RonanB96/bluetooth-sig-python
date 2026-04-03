@@ -18,5 +18,5 @@ class LinkLossService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.ALERT_LEVEL: True,  # required
+        CharacteristicName.ALERT_LEVEL: True,
     }

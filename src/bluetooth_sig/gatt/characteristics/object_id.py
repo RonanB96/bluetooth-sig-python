@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ...types.gatt_enums import CharacteristicRole
 from ..constants import UINT48_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
@@ -17,6 +18,7 @@ class ObjectIdCharacteristic(BaseCharacteristic[int]):
     Transfer Service (OTS).
     """
 
+    _manual_role = CharacteristicRole.INFO
     expected_length: int = 6  # uint48
     min_length: int = 6
     min_value = 0

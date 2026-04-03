@@ -49,7 +49,7 @@ class SupportedUnreadAlertCategoryCharacteristic(BaseCharacteristic[AlertCategor
             ValueError: If data is insufficient
 
         """
-        mask_value = DataParser.parse_int16(data, 0, signed=False)
+        mask_value = data[0] if len(data) == 1 else DataParser.parse_int16(data, 0, signed=False)
         return AlertCategoryBitMask(mask_value)
 
     def _encode_value(self, data: AlertCategoryBitMask | int) -> bytearray:

@@ -63,7 +63,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                     exercise_duration_seconds=None,
                     exercise_intensity_percent=None,
                     medication_id=None,
-                    medication_kg=None,
+                    medication_value=None,
+                    medication_unit=None,
                     hba1c_percent=None,
                 ),
                 expected_without=GlucoseMeasurementContextData(
@@ -78,7 +79,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                     exercise_duration_seconds=None,
                     exercise_intensity_percent=None,
                     medication_id=None,
-                    medication_kg=None,
+                    medication_value=None,
+                    medication_unit=None,
                     hba1c_percent=None,
                 ),
                 description="Glucose context with required measurement dependency present",
@@ -110,7 +112,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                     exercise_duration_seconds=None,
                     exercise_intensity_percent=None,
                     medication_id=None,
-                    medication_kg=None,
+                    medication_value=None,
+                    medication_unit=None,
                     hba1c_percent=None,
                 ),
                 description="Basic glucose context with sequence 42",
@@ -119,7 +122,7 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 input_data=bytearray(
                     [
-                        0x02,  # flags: carbohydrate present
+                        0x01,  # flags: carbohydrate present (bit 0)
                         0x15,
                         0x00,  # sequence number = 21
                         0x01,  # carbohydrate ID = 1 (Breakfast)
@@ -139,7 +142,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                     exercise_duration_seconds=None,
                     exercise_intensity_percent=None,
                     medication_id=None,
-                    medication_kg=None,
+                    medication_value=None,
+                    medication_unit=None,
                     hba1c_percent=None,
                 ),
                 description="Context with breakfast carbohydrate data",
@@ -148,7 +152,7 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 input_data=bytearray(
                     [
-                        0x04,  # flags: meal present
+                        0x02,  # flags: meal present (bit 1)
                         0x07,
                         0x00,  # sequence number = 7
                         0x02,  # meal = 2 (Postprandial)
@@ -166,7 +170,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                     exercise_duration_seconds=None,
                     exercise_intensity_percent=None,
                     medication_id=None,
-                    medication_kg=None,
+                    medication_value=None,
+                    medication_unit=None,
                     hba1c_percent=None,
                 ),
                 description="Context with postprandial meal info",
@@ -175,7 +180,7 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 input_data=bytearray(
                     [
-                        0x10,  # flags: exercise present
+                        0x08,  # flags: exercise present (bit 3)
                         0x64,
                         0x00,  # sequence number = 100
                         0x84,
@@ -195,7 +200,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                     exercise_duration_seconds=900,
                     exercise_intensity_percent=80,
                     medication_id=None,
-                    medication_kg=None,
+                    medication_value=None,
+                    medication_unit=None,
                     hba1c_percent=None,
                 ),
                 description="Context with exercise data",
@@ -223,7 +229,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                     exercise_duration_seconds=None,
                     exercise_intensity_percent=None,
                     medication_id=None,
-                    medication_kg=None,
+                    medication_value=None,
+                    medication_unit=None,
                     hba1c_percent=7.0,
                 ),
                 description="Context with HbA1c data",
@@ -232,7 +239,7 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(
                 input_data=bytearray(
                     [
-                        0x16,  # flags: carbohydrate + meal + exercise present (0x02 + 0x04 + 0x10)
+                        0x0B,  # flags: carbohydrate + meal + exercise present (0x01 + 0x02 + 0x08)
                         0x2A,
                         0x01,  # sequence number = 298
                         0x02,  # carbohydrate ID = 2 (Lunch)
@@ -260,7 +267,8 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
                     exercise_duration_seconds=600,
                     exercise_intensity_percent=60,
                     medication_id=None,
-                    medication_kg=None,
+                    medication_value=None,
+                    medication_unit=None,
                     hba1c_percent=None,
                 ),
                 description="Complex context with carb, meal, exercise",
@@ -281,10 +289,10 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
 
     def test_glucose_context_with_carbohydrate(self, characteristic: GlucoseMeasurementContextCharacteristic) -> None:
         """Test glucose context with carbohydrate data."""
-        # Flags: 0x02 (carbohydrate present)
+        # Flags: 0x01 (carbohydrate present)
         test_data = bytearray(
             [
-                0x02,  # flags: carbohydrate present
+                0x01,  # flags: carbohydrate present (bit 0)
                 0x01,
                 0x00,  # sequence number = 1
                 0x01,  # carbohydrate ID = 1 (Breakfast)
@@ -301,10 +309,10 @@ class TestGlucoseMeasurementContextCharacteristic(CommonCharacteristicTests):
 
     def test_glucose_context_with_meal(self, characteristic: GlucoseMeasurementContextCharacteristic) -> None:
         """Test glucose context with meal information."""
-        # Flags: 0x04 (meal present)
+        # Flags: 0x02 (meal present)
         test_data = bytearray(
             [
-                0x04,  # flags: meal present
+                0x02,  # flags: meal present (bit 1)
                 0x01,
                 0x00,  # sequence number = 1
                 0x02,  # meal = 2 (Postprandial)

@@ -192,7 +192,8 @@ class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
     def test_location_and_speed_with_all_fields(self, characteristic: LocationAndSpeedCharacteristic) -> None:
         """Test location and speed with all optional fields present."""
         # Flags indicating all fields present + position status OK
-        flags = 0xFF | (1 << 8)  # All flags set + position status = POSITION_OK
+        # Bits 0-6: presence flags, Bits 7-8: position status (1=POSITION_OK)
+        flags = 0xFF  # All presence flags + position_status=1 at bits 7-8
         data = bytearray(
             [
                 flags & 0xFF,

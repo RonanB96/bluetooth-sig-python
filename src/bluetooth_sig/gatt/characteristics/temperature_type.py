@@ -26,7 +26,7 @@ class TemperatureType(IntEnum):
     TYMPANUM = 9  # Ear drum
 
 
-class TemperatureTypeCharacteristic(BaseCharacteristic[int]):
+class TemperatureTypeCharacteristic(BaseCharacteristic[TemperatureType]):
     """Temperature Type characteristic (0x2A1D).
 
     org.bluetooth.characteristic.temperature_type

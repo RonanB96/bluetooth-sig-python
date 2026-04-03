@@ -57,15 +57,13 @@ class NavigationCharacteristic(BaseCharacteristic[NavigationData]):
     Used to represent data related to a navigation sensor.
     """
 
-    _python_type: type | str | None = dict  # Override since decode_value returns dataclass
-
     min_length = 6  # Flags(2) + Bearing(2) + Heading(2) minimum
     max_length = 19  # + RemainingDistance(3) + RemainingVerticalDistance(3) + EstimatedTimeOfArrival(7) maximum
     allow_variable_length: bool = True  # Variable optional fields
 
     # Bit masks and shifts for status information in flags
-    POSITION_STATUS_MASK = 0x0006
-    POSITION_STATUS_SHIFT = 1
+    POSITION_STATUS_MASK = 0x0018
+    POSITION_STATUS_SHIFT = 3
     HEADING_SOURCE_MASK = 0x0020
     HEADING_SOURCE_SHIFT = 5
     NAVIGATION_INDICATOR_TYPE_MASK = 0x0040

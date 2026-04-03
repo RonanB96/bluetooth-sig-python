@@ -15,8 +15,6 @@ class ReconnectionAddressCharacteristic(BaseCharacteristic[str]):
     Contains a 48-bit Bluetooth device address for reconnection.
     """
 
-    _python_type: type | str | None = str
-
     expected_length = 6
 
     def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True) -> str:

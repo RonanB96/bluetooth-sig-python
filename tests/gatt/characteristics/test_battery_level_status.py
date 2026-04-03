@@ -37,7 +37,7 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
         return "2BED"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid battery level status test data."""
         return [
             CharacteristicTestData(
@@ -89,6 +89,27 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
                     battery_fault=None,  # Not present when additional status flag is 0
                 ),
                 description="Minimal fields",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0x05, 0xCA, 0x28, 0xCD, 0xAB, 0x04]),
+                expected_value=BatteryLevelStatus(
+                    flags=BatteryLevelStatusFlags.IDENTIFIER_PRESENT
+                    | BatteryLevelStatusFlags.ADDITIONAL_STATUS_PRESENT,
+                    battery_present=False,
+                    wired_external_power_connected=PowerConnectionState.YES,
+                    wireless_external_power_connected=PowerConnectionState.YES,
+                    battery_charge_state=BatteryChargeState.DISCHARGING,
+                    battery_charge_level=BatteryChargeLevel.GOOD,
+                    charging_type=BatteryChargingType.FLOAT,
+                    charging_fault_battery=False,
+                    charging_fault_external_power=True,
+                    charging_fault_other=False,
+                    identifier=0xABCD,
+                    battery_level=None,
+                    service_required=ServiceRequiredState.FALSE,
+                    battery_fault=True,
+                ),
+                description="Identifier and additional status present, no battery level",
             ),
         ]
 
@@ -192,28 +213,6 @@ class TestBatteryLevelStatusCharacteristic(CommonCharacteristicTests):
             ]
         )
         assert encoded == expected
-
-    def test_battery_level_status_round_trip(self, characteristic: BatteryLevelStatusCharacteristic) -> None:
-        """Test round-trip encoding/decoding preserves values."""
-        original = BatteryLevelStatus(
-            flags=BatteryLevelStatusFlags.IDENTIFIER_PRESENT | BatteryLevelStatusFlags.ADDITIONAL_STATUS_PRESENT,
-            battery_present=False,
-            wired_external_power_connected=PowerConnectionState.YES,
-            wireless_external_power_connected=PowerConnectionState.YES,
-            battery_charge_state=BatteryChargeState.DISCHARGING,
-            battery_charge_level=BatteryChargeLevel.GOOD,
-            charging_type=BatteryChargingType.FLOAT,
-            charging_fault_battery=False,
-            charging_fault_external_power=True,
-            charging_fault_other=False,
-            identifier=0xABCD,
-            battery_level=None,
-            service_required=ServiceRequiredState.FALSE,
-            battery_fault=True,
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
 
     def test_insufficient_data_error(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Test that insufficient data results in parse failure."""

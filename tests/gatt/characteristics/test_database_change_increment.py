@@ -28,6 +28,11 @@ class TestDatabaseChangeIncrementCharacteristic(CommonCharacteristicTests):
             CharacteristicTestData(input_data=bytearray([0, 0, 0, 0]), expected_value=0, description="No changes"),
             CharacteristicTestData(input_data=bytearray([1, 0, 0, 0]), expected_value=1, description="One change"),
             CharacteristicTestData(
+                input_data=bytearray([232, 3, 0, 0]),
+                expected_value=1000,
+                description="Many changes",
+            ),
+            CharacteristicTestData(
                 input_data=bytearray([255, 255, 255, 255]),
                 expected_value=4294967295,
                 description="Maximum changes",
@@ -45,11 +50,3 @@ class TestDatabaseChangeIncrementCharacteristic(CommonCharacteristicTests):
         char = DatabaseChangeIncrementCharacteristic()
         result = char.parse_value(bytearray([1, 0, 0, 0]))
         assert result == 1
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = DatabaseChangeIncrementCharacteristic()
-        for value in [0, 1, 1000, 4294967295]:
-            encoded = char.build_value(value)
-            decoded = char.parse_value(encoded)
-            assert decoded == value

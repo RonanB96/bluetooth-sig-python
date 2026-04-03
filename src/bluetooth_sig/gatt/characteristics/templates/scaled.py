@@ -120,17 +120,19 @@ class ScaledTemplate(CodingTemplate[float]):
     def from_letter_method(cls, M: int, d: int, b: int) -> ScaledTemplate:  # noqa: N803
         """Create instance using Bluetooth SIG M, d, b parameters.
 
+        The GSS representation formula is: value = raw * M * 10^d * 2^b
+
         Args:
             M: Multiplier factor
             d: Decimal exponent (10^d)
-            b: Offset to add to raw value before scaling
+            b: Binary exponent (2^b)
 
         Returns:
             ScaledTemplate instance
 
         """
-        scale_factor = M * (10**d)
-        return cls(scale_factor=scale_factor, offset=b)
+        scale_factor = M * (10**d) * (2**b)
+        return cls(scale_factor=scale_factor, offset=0)
 
 
 class ScaledUint16Template(ScaledTemplate):

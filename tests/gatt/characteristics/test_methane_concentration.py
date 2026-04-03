@@ -23,42 +23,35 @@ class TestMethaneConcentrationCharacteristic(CommonCharacteristicTests):
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
-        """Valid methane concentration test data."""
+        """Valid methane concentration test data.
+
+        GSS: medfloat16 (IEEE 11073 SFLOAT), unit ppb.
+        SFLOAT byte pattern: [mantissa_lo, (exp_nibble<<4)|mantissa_hi].
+        Exponent bias=8, so exp=0 → raw nibble=8 → high byte 0x80.
+        """
         return [
             CharacteristicTestData(
-                input_data=bytearray([0x02, 0x00]), expected_value=2, description="2 ppm (typical atmosphere)"
+                input_data=bytearray([0x02, 0x80]),  # SFLOAT mantissa=2, exp=0 → 2.0 ppb
+                expected_value=2.0,
+                description="2 ppb (typical atmosphere)",
             ),
             CharacteristicTestData(
-                input_data=bytearray([0x32, 0x00]), expected_value=50, description="50 ppm (elevated)"
+                input_data=bytearray([0x32, 0x80]),  # SFLOAT mantissa=50, exp=0 → 50.0 ppb
+                expected_value=50.0,
+                description="50 ppb (elevated)",
             ),
         ]
 
     def test_methane_concentration_parsing(self, characteristic: MethaneConcentrationCharacteristic) -> None:
         """Test methane concentration characteristic parsing."""
-        # Test metadata
-        assert characteristic.unit == "ppm"
-
-        # Test normal parsing
-        test_data = bytearray([0x64, 0x00])  # 100 ppm little endian
-        parsed = characteristic.parse_value(test_data)
-        assert parsed == 100
+        assert characteristic.unit == "ppb"
+        assert characteristic.parse_value(bytearray([0x64, 0x80])) == 100.0  # 100 ppb
 
     def test_methane_concentration_boundary_values(self, characteristic: MethaneConcentrationCharacteristic) -> None:
         """Test boundary methane concentration values."""
-        # No methane
-        data_min = bytearray([0x00, 0x00])
-        assert characteristic.parse_value(data_min) == 0
-
-        # Maximum
-        data_max = bytearray([0xFF, 0xFF])
-        assert characteristic.parse_value(data_max) == 65535
+        assert characteristic.parse_value(bytearray([0x00, 0x80])) == 0.0
 
     def test_methane_concentration_typical_levels(self, characteristic: MethaneConcentrationCharacteristic) -> None:
         """Test typical methane concentration levels."""
-        # Atmospheric level (2 ppm)
-        data_atm = bytearray([0x02, 0x00])
-        assert characteristic.parse_value(data_atm) == 2
-
-        # Elevated (50 ppm)
-        data_elevated = bytearray([0x32, 0x00])
-        assert characteristic.parse_value(data_elevated) == 50
+        assert characteristic.parse_value(bytearray([0x02, 0x80])) == 2.0
+        assert characteristic.parse_value(bytearray([0x32, 0x80])) == 50.0

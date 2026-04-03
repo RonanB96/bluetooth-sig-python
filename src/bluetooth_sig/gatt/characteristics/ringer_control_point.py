@@ -13,8 +13,8 @@ class RingerControlCommand(IntEnum):
     """Ringer Control Point command values."""
 
     SILENT_MODE = 1
-    MUTE_ONCE = 2
-    CANCEL_SILENT_MODE = 3
+    CANCEL_SILENT_MODE = 2
+    MUTE_ONCE = 3
 
 
 class RingerControlPointData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods
@@ -33,8 +33,8 @@ class RingerControlPointCharacteristic(BaseCharacteristic[RingerControlPointData
 
     Commands:
     - 1: Silent Mode (sets ringer to silent)
-    - 2: Mute Once (silences ringer once)
-    - 3: Cancel Silent Mode (sets ringer to normal)
+    - 2: Cancel Silent Mode (sets ringer to normal)
+    - 3: Mute Once (silences ringer once)
     - 0, 4-255: Reserved for future use
     """
 

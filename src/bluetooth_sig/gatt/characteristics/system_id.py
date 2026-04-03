@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import msgspec
 
+from ...types.gatt_enums import CharacteristicRole
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
@@ -28,6 +29,7 @@ class SystemIdCharacteristic(BaseCharacteristic[SystemIdData]):
     Represents a 64-bit system identifier: 40-bit manufacturer ID + 24-bit organizationally unique ID.
     """
 
+    _manual_role = CharacteristicRole.INFO
     expected_length = 8
 
     def _decode_value(

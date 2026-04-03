@@ -22,7 +22,7 @@ class TestChromaticityInCCTAndDuvValuesCharacteristic(CommonCharacteristicTests)
         return "2AE5"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x00, 0x00, 0x00]),
@@ -51,21 +51,6 @@ class TestChromaticityInCCTAndDuvValuesCharacteristic(CommonCharacteristicTests)
                 description="Warm white CCT with negative Duv",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = ChromaticityInCCTAndDuvValuesCharacteristic()
-        original = ChromaticityInCCTAndDuvData(
-            correlated_color_temperature=4000,
-            chromaticity_distance_from_planckian=0.001,
-        )
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded.correlated_color_temperature == original.correlated_color_temperature
-        assert (
-            abs(decoded.chromaticity_distance_from_planckian - original.chromaticity_distance_from_planckian)
-            < _DUV_RESOLUTION
-        )
 
     def test_validation_rejects_negative_cct(self) -> None:
         """Negative CCT is invalid."""

@@ -18,7 +18,7 @@ class TestLuminousFluxRangeCharacteristic(CommonCharacteristicTests):
         return "2B00"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
                 input_data=bytearray([0x00, 0x00, 0x00, 0x00]),
@@ -37,14 +37,6 @@ class TestLuminousFluxRangeCharacteristic(CommonCharacteristicTests):
                 description="Maximum flux range",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = LuminousFluxRangeCharacteristic()
-        original = LuminousFluxRangeData(minimum=200, maximum=1600)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original
 
     def test_validation_rejects_inverted_range(self) -> None:
         """Minimum > maximum is invalid."""

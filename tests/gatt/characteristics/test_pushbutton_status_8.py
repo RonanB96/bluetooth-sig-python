@@ -115,6 +115,26 @@ class TestPushbuttonStatus8Characteristic(CommonCharacteristicTests):
                 ),
                 description="Button 0 pressed, button 1 released",
             ),
+            CharacteristicTestData(
+                input_data=bytearray([0x86]),
+                expected_value=PushbuttonStatus8Data(
+                    button_0=ButtonStatus.RELEASED,
+                    button_1=ButtonStatus.PRESSED,
+                    button_2=ButtonStatus.NOT_ACTUATED,
+                    button_3=ButtonStatus.RELEASED,
+                ),
+                description="Mixed: button 0 released, button 1 pressed, button 3 released",
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([0xFF]),
+                expected_value=PushbuttonStatus8Data(
+                    button_0=ButtonStatus.RESERVED,
+                    button_1=ButtonStatus.RESERVED,
+                    button_2=ButtonStatus.RESERVED,
+                    button_3=ButtonStatus.RESERVED,
+                ),
+                description="All buttons in reserved state",
+            ),
         ]
 
     # === Pushbutton-Specific Tests ===
@@ -170,15 +190,6 @@ class TestPushbuttonStatus8Characteristic(CommonCharacteristicTests):
         )
         # 0b10_00_01_10 = 0x86
         assert characteristic.build_value(data) == bytearray([0x86])
-
-    def test_round_trip(self, characteristic: PushbuttonStatus8Characteristic) -> None:  # type: ignore[override]
-        """Test round-trip encoding/decoding preserves values."""
-        test_bytes = [0x00, 0x01, 0x55, 0xAA, 0x09, 0x86, 0xFF]
-
-        for raw in test_bytes:
-            decoded = characteristic.parse_value(bytearray([raw]))
-            encoded = characteristic.build_value(decoded)
-            assert encoded == bytearray([raw]), f"Round-trip failed for 0x{raw:02X}"
 
     def test_characteristic_metadata(self, characteristic: PushbuttonStatus8Characteristic) -> None:
         """Test characteristic metadata."""

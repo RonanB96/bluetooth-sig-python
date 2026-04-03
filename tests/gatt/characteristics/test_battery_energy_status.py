@@ -40,7 +40,7 @@ class TestBatteryEnergyStatusCharacteristic(CommonCharacteristicTests):
         return "2BF0"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid battery energy status test data."""
         return [
             CharacteristicTestData(
@@ -98,32 +98,6 @@ class TestBatteryEnergyStatusCharacteristic(CommonCharacteristicTests):
         data = bytearray([0x10, *_sfloat_bytes(-2.0)])
         result = characteristic.parse_value(data)
         assert result.charge_rate == -2.0
-
-    def test_roundtrip_all_fields(self, characteristic: BaseCharacteristic[Any]) -> None:
-        """Verify encode/decode roundtrip with all fields."""
-        original = BatteryEnergyStatus(
-            flags=BatteryEnergyStatusFlags(0x3F),
-            external_source_power=5.0,
-            present_voltage=4.0,
-            available_energy=10.0,
-            available_battery_capacity=20.0,
-            charge_rate=3.0,
-            available_energy_at_last_charge=8.0,
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
-
-    def test_roundtrip_partial_fields(self, characteristic: BaseCharacteristic[Any]) -> None:
-        """Verify encode/decode roundtrip with subset of fields."""
-        original = BatteryEnergyStatus(
-            flags=BatteryEnergyStatusFlags(0x0A),
-            present_voltage=4.0,
-            available_battery_capacity=20.0,
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
 
     def test_nan_sfloat(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Verify NaN SFLOAT value is handled."""

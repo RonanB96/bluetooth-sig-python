@@ -128,10 +128,11 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
             )
 
             # Store by both ID and name for lookup flexibility
+            # Normalise keys to lowercase for case-insensitive lookup
             if char_id:
-                self._specs[char_id] = gss_spec
+                self._specs[char_id.lower()] = gss_spec
             if char_name:
-                self._specs[char_name] = gss_spec
+                self._specs[char_name.lower()] = gss_spec
 
         except (msgspec.DecodeError, OSError, KeyError) as e:
             logging.warning("Failed to parse GSS YAML file %s: %s", yaml_file, e)
@@ -140,14 +141,14 @@ class GssRegistry(BaseGenericRegistry[GssCharacteristicSpec]):
         """Get a GSS specification by name or ID.
 
         Args:
-            identifier: Characteristic name or ID
+            identifier: Characteristic name or ID (case-insensitive)
 
         Returns:
             GssCharacteristicSpec if found, None otherwise
         """
         self._ensure_loaded()
         with self._lock:
-            return self._specs.get(identifier)
+            return self._specs.get(identifier.lower())
 
     def get_all_specs(self) -> dict[str, GssCharacteristicSpec]:
         """Get all loaded GSS specifications.

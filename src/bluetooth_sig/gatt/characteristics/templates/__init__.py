@@ -26,6 +26,7 @@ from .ieee_float import Float32Template, IEEE11073FloatTemplate
 from .numeric import (
     Sint8Template,
     Sint16Template,
+    Sint32Template,
     Uint8Template,
     Uint16Template,
     Uint24Template,
@@ -74,6 +75,7 @@ __all__ = [
     "ScaledUint32Template",
     "Sint8Template",
     "Sint16Template",
+    "Sint32Template",
     "TemperatureTemplate",
     "TimeData",
     "TimeDataTemplate",

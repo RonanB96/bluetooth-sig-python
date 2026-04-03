@@ -32,6 +32,12 @@ class TestCorrelatedColorTemperatureCharacteristic(CommonCharacteristicTests):
                 input_data=bytearray([168, 19]), expected_value=5032, description="Warm white (~5000K)"
             ),
             CharacteristicTestData(
+                input_data=bytearray([140, 10]), expected_value=2700, description="Warm incandescent (2700K)"
+            ),
+            CharacteristicTestData(
+                input_data=bytearray([100, 25]), expected_value=6500, description="Cool daylight (6500K)"
+            ),
+            CharacteristicTestData(
                 input_data=bytearray([254, 255]), expected_value=65534, description="Maximum temperature (65534K)"
             ),
         ]
@@ -49,11 +55,3 @@ class TestCorrelatedColorTemperatureCharacteristic(CommonCharacteristicTests):
         encoded = char.build_value(6500)
         decoded = char.parse_value(encoded)
         assert decoded == 6500
-
-    def test_custom_round_trip(self) -> None:
-        """Test encoding and decoding preserve values."""
-        char = CorrelatedColorTemperatureCharacteristic()
-        for value in [800, 2700, 5000, 6500, 65534]:
-            encoded = char.build_value(value)
-            decoded = char.parse_value(encoded)
-            assert decoded == value

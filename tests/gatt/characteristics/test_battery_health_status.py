@@ -33,7 +33,7 @@ class TestBatteryHealthStatusCharacteristic(CommonCharacteristicTests):
         return "2BEA"
 
     @pytest.fixture
-    def valid_test_data(self) -> CharacteristicTestData | list[CharacteristicTestData]:
+    def valid_test_data(self) -> list[CharacteristicTestData]:
         """Valid battery health status test data."""
         return [
             CharacteristicTestData(
@@ -146,19 +146,6 @@ class TestBatteryHealthStatusCharacteristic(CommonCharacteristicTests):
                 flags=BatteryHealthStatusFlags(0x01),
                 battery_health_summary=101,
             )
-
-    def test_roundtrip_all_fields(self, characteristic: BaseCharacteristic[Any]) -> None:
-        """Verify encode/decode roundtrip with all fields."""
-        original = BatteryHealthStatus(
-            flags=BatteryHealthStatusFlags(0x0F),
-            battery_health_summary=75,
-            cycle_count=500,
-            current_temperature=-5,
-            deep_discharge_count=3,
-        )
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
 
     def test_too_short_data(self, characteristic: BaseCharacteristic[Any]) -> None:
         """Verify that empty data raises error."""

@@ -1,40 +1,66 @@
-"""Time with DST characteristic (0x2A11) implementation.
+"""Time with DST characteristic (0x2A11).
 
-Represents the date and time of the next Daylight Saving Time change.
-Used by Next DST Change Service (0x1807).
+Represents the date and time with DST offset information.
+Structure: DateTime(7 bytes) + DST Offset(1 byte) = 8 bytes total.
 
-Based on Bluetooth SIG GATT Specification:
-- Time with DST: 10 bytes (same structure as Current Time)
-- Date Time: Year (uint16) + Month + Day + Hours + Minutes + Seconds (7 bytes)
-- Day of Week: uint8 (1=Monday to 7=Sunday, 0=Unknown)
-- Fractions256: uint8 (0-255, representing 1/256 fractions of a second)
-- Adjust Reason: uint8 bitfield (Manual Update, External Reference, Time Zone, DST)
+References:
+    Bluetooth SIG Assigned Numbers / GATT Service Specifications
 """
 
 from __future__ import annotations
 
+import struct
+from datetime import datetime
+
+import msgspec
+
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .templates import TimeData, TimeDataTemplate
+from .dst_offset import DSTOffset
 
 
-class TimeWithDstCharacteristic(BaseCharacteristic[TimeData]):
+class TimeWithDstData(msgspec.Struct, frozen=True, kw_only=True):
+    """Parsed Time with DST data."""
+
+    dt: datetime
+    dst_offset: DSTOffset
+
+
+class TimeWithDstCharacteristic(BaseCharacteristic[TimeWithDstData]):
     """Time with DST characteristic (0x2A11).
 
-    Represents the date and time when the next Daylight Saving Time change occurs.
-
-    Structure (10 bytes):
-    - Year: uint16 (1582-9999, 0=unknown)
-    - Month: uint8 (1-12, 0=unknown)
-    - Day: uint8 (1-31, 0=unknown)
-    - Hours: uint8 (0-23)
-    - Minutes: uint8 (0-59)
-    - Seconds: uint8 (0-59)
-    - Day of Week: uint8 (0=unknown, 1=Monday...7=Sunday)
-    - Fractions256: uint8 (0-255, representing 1/256 fractions of a second)
-    - Adjust Reason: uint8 bitfield
+    Structure (8 bytes):
+    - DateTime: Year(uint16) + Month(uint8) + Day(uint8) + Hours(uint8) + Minutes(uint8) + Seconds(uint8) = 7 bytes
+    - DST Offset: uint8 = 1 byte
     """
 
-    def __init__(self) -> None:
-        """Initialize the Time with DST characteristic."""
-        super().__init__()
-        self._template = TimeDataTemplate()
+    min_length: int | None = 8
+    max_length: int | None = 8
+
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> TimeWithDstData:
+        """Parse Time with DST data.
+
+        Format: DateTime(7) + DSTOffset(1).
+        """
+        year, month, day, hours, minutes, seconds = struct.unpack("<HBBBBB", data[0:7])
+        dt = datetime(year, month, day, hours, minutes, seconds)
+        dst_offset = DSTOffset(data[7])
+        return TimeWithDstData(dt=dt, dst_offset=dst_offset)
+
+    def _encode_value(self, data: TimeWithDstData) -> bytearray:
+        """Encode Time with DST value back to bytes."""
+        result = bytearray(
+            struct.pack(
+                "<HBBBBB",
+                data.dt.year,
+                data.dt.month,
+                data.dt.day,
+                data.dt.hour,
+                data.dt.minute,
+                data.dt.second,
+            )
+        )
+        result.append(int(data.dst_offset))
+        return result

@@ -70,16 +70,9 @@ class TestAlertLevelCharacteristic(CommonCharacteristicTests):
     )
     def test_alert_level_encoding_int(self, characteristic: AlertLevelCharacteristic, alert_int: int) -> None:
         """Test encoding alert levels from integer values."""
-        encoded = characteristic.build_value(alert_int)
+        encoded = characteristic.build_value(AlertLevel(alert_int))
         assert len(encoded) == 1
         assert encoded[0] == alert_int
-
-    def test_alert_level_roundtrip(self, characteristic: AlertLevelCharacteristic) -> None:
-        """Test that encode/decode are inverse operations."""
-        for level in [AlertLevel.NO_ALERT, AlertLevel.MILD_ALERT, AlertLevel.HIGH_ALERT]:
-            encoded = characteristic.build_value(level)
-            result = characteristic.parse_value(encoded)
-            assert result == level
 
     def test_alert_level_enum_values(self) -> None:
         """Test AlertLevel enum has correct values per spec."""

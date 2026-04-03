@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ...types.gatt_enums import CharacteristicRole
 from .base import BaseCharacteristic
 from .templates import Uint8Template
 
@@ -14,4 +15,5 @@ class ContentControlIdCharacteristic(BaseCharacteristic[int]):
     The ID of the content control service instance.
     """
 
+    _manual_role = CharacteristicRole.STATUS
     _template = Uint8Template()

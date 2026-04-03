@@ -59,7 +59,8 @@ class MedicationResult(msgspec.Struct, frozen=True, kw_only=True):  # pylint: di
     """Medication information parsing result."""
 
     medication_id: MedicationType | None
-    medication_kg: float | None
+    medication_value: float | None
+    medication_unit: str | None
     offset: int
 
 
@@ -68,9 +69,9 @@ class GlucoseMeasurementContextBits:
 
     # pylint: disable=too-few-public-methods
 
-    TESTER_START_BIT = 4  # Tester value starts at bit 4
+    TESTER_START_BIT = 0  # Tester value starts at bit 0 (LOW nibble)
     TESTER_BIT_WIDTH = 4  # Tester value uses 4 bits
-    HEALTH_START_BIT = 0  # Health value starts at bit 0
+    HEALTH_START_BIT = 4  # Health value starts at bit 4 (HIGH nibble)
     HEALTH_BIT_WIDTH = 4  # Health value uses 4 bits
 
 
@@ -227,14 +228,14 @@ class GlucoseMeasurementContextExtendedFlags(IntEnum):
 class GlucoseMeasurementContextFlags(IntFlag):
     """Glucose Measurement Context flags as per Bluetooth SIG specification."""
 
-    EXTENDED_FLAGS_PRESENT = 0x01
-    CARBOHYDRATE_PRESENT = 0x02
-    MEAL_PRESENT = 0x04
-    TESTER_HEALTH_PRESENT = 0x08
-    EXERCISE_PRESENT = 0x10
-    MEDICATION_PRESENT = 0x20
-    HBA1C_PRESENT = 0x40
-    RESERVED = 0x80
+    CARBOHYDRATE_PRESENT = 0x01  # Bit 0
+    MEAL_PRESENT = 0x02  # Bit 1
+    TESTER_HEALTH_PRESENT = 0x04  # Bit 2
+    EXERCISE_PRESENT = 0x08  # Bit 3
+    MEDICATION_PRESENT = 0x10  # Bit 4
+    MEDICATION_UNITS = 0x20  # Bit 5: 0=kg, 1=litres
+    HBA1C_PRESENT = 0x40  # Bit 6
+    EXTENDED_FLAGS_PRESENT = 0x80  # Bit 7
 
 
 class GlucoseMeasurementContextData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods,too-many-instance-attributes
@@ -255,7 +256,8 @@ class GlucoseMeasurementContextData(msgspec.Struct, frozen=True, kw_only=True): 
     exercise_duration_seconds: int | None = None
     exercise_intensity_percent: int | None = None
     medication_id: MedicationType | None = None
-    medication_kg: float | None = None
+    medication_value: float | None = None
+    medication_unit: str | None = None
     hba1c_percent: float | None = None
 
     def __post_init__(self) -> None:
@@ -363,7 +365,8 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic[GlucoseMeasurem
             exercise_duration_seconds=exercise.exercise_duration_seconds,
             exercise_intensity_percent=exercise.exercise_intensity_percent,
             medication_id=medication.medication_id,
-            medication_kg=medication.medication_kg,
+            medication_value=medication.medication_value,
+            medication_unit=medication.medication_unit,
             hba1c_percent=hba1c_percent,
         )
 
@@ -413,9 +416,9 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic[GlucoseMeasurem
             result.append(data.exercise_intensity_percent)
 
         # Encode optional medication information
-        if data.medication_id is not None and data.medication_kg is not None:
+        if data.medication_id is not None and data.medication_value is not None:
             result.append(int(data.medication_id))
-            result.extend(IEEE11073Parser.encode_sfloat(data.medication_kg))
+            result.extend(IEEE11073Parser.encode_sfloat(data.medication_value))
 
         # Encode optional HbA1c information
         if data.hba1c_percent is not None:
@@ -519,12 +522,19 @@ class GlucoseMeasurementContextCharacteristic(BaseCharacteristic[GlucoseMeasurem
     ) -> MedicationResult:
         """Parse optional medication information field."""
         medication_id: MedicationType | None = None
-        medication_kg: float | None = None
+        medication_value: float | None = None
+        medication_unit: str | None = None
         if GlucoseMeasurementContextFlags.MEDICATION_PRESENT in flags and len(data) >= offset + 3:
             medication_id = MedicationType(data[offset])
-            medication_kg = IEEE11073Parser.parse_sfloat(data, offset + 1)
+            medication_value = IEEE11073Parser.parse_sfloat(data, offset + 1)
+            medication_unit = "litres" if GlucoseMeasurementContextFlags.MEDICATION_UNITS in flags else "kg"
             offset += 3
-        return MedicationResult(medication_id=medication_id, medication_kg=medication_kg, offset=offset)
+        return MedicationResult(
+            medication_id=medication_id,
+            medication_value=medication_value,
+            medication_unit=medication_unit,
+            offset=offset,
+        )
 
     def _parse_hba1c_info(
         self,

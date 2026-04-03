@@ -17,5 +17,8 @@ class HealthThermometerService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.TEMPERATURE_MEASUREMENT: True,  # required
+        CharacteristicName.TEMPERATURE_MEASUREMENT: True,
+        CharacteristicName.TEMPERATURE_TYPE: False,
+        CharacteristicName.INTERMEDIATE_TEMPERATURE: False,
+        CharacteristicName.MEASUREMENT_INTERVAL: False,
     }

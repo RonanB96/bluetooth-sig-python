@@ -51,8 +51,6 @@ class BaseBloodPressureCharacteristic(BaseCharacteristic[Any]):
 
     _is_base_class = True  # Exclude from characteristic discovery
 
-    _python_type = str  # Override since decode_value returns dataclass
-
     # Declare optional dependency on Blood Pressure Feature for status interpretation
     _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [BloodPressureFeatureCharacteristic]
 

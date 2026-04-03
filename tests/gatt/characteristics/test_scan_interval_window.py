@@ -141,14 +141,3 @@ class TestScanIntervalWindowCharacteristic(CommonCharacteristicTests):
 
         assert data.scan_interval_ms == 0x0008 * ScanIntervalWindowData.UNITS_TO_MS_FACTOR
         assert data.scan_window_ms == 0x0004 * ScanIntervalWindowData.UNITS_TO_MS_FACTOR
-
-    def test_scan_interval_window_encode_decode_round_trip(
-        self, characteristic: ScanIntervalWindowCharacteristic
-    ) -> None:
-        """Test that encoding and decoding preserve data."""
-        original = ScanIntervalWindowData(scan_interval=0x0020, scan_window=0x0010)
-
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-
-        assert decoded == original

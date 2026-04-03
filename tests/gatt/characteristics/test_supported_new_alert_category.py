@@ -70,9 +70,16 @@ class TestSupportedNewAlertCategoryCharacteristic(CommonCharacteristicTests):
         assert result is not None
         assert result == 0
 
-    def test_roundtrip(self, characteristic: SupportedNewAlertCategoryCharacteristic) -> None:
-        """Test encode/decode roundtrip."""
-        original = AlertCategoryBitMask.EMAIL | AlertCategoryBitMask.HIGH_PRIORITIZED_ALERT
-        encoded = characteristic.build_value(original)
-        decoded = characteristic.parse_value(encoded)
-        assert decoded == original
+    def test_single_byte_data(self, characteristic: SupportedNewAlertCategoryCharacteristic) -> None:
+        """Test decoding 1-byte data (only lower 8 category bits)."""
+        data = bytearray([0x2A])  # Bits 1, 3, 5 (Email, Call, SMS)
+        result = characteristic.parse_value(data)
+        assert result is not None
+        assert result == AlertCategoryBitMask.EMAIL | AlertCategoryBitMask.CALL | AlertCategoryBitMask.SMS_MMS
+
+    def test_single_byte_simple_alert_only(self, characteristic: SupportedNewAlertCategoryCharacteristic) -> None:
+        """Test 1-byte data with only Simple Alert."""
+        data = bytearray([0x01])
+        result = characteristic.parse_value(data)
+        assert result is not None
+        assert result == AlertCategoryBitMask.SIMPLE_ALERT

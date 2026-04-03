@@ -18,7 +18,8 @@ class GlucoseService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.GLUCOSE_MEASUREMENT: True,  # required
-        CharacteristicName.GLUCOSE_FEATURE: True,  # required
-        CharacteristicName.GLUCOSE_MEASUREMENT_CONTEXT: False,  # optional
+        CharacteristicName.GLUCOSE_MEASUREMENT: True,
+        CharacteristicName.GLUCOSE_FEATURE: True,
+        CharacteristicName.GLUCOSE_MEASUREMENT_CONTEXT: False,
+        CharacteristicName.RECORD_ACCESS_CONTROL_POINT: True,
     }

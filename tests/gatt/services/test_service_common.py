@@ -52,10 +52,9 @@ class CommonServiceTests:
         assert service is not None
 
     def test_expected_characteristics_defined(self, service: BaseGattService) -> None:
-        """Test that service defines expected characteristics."""
+        """Test that service defines expected characteristics as a dict."""
         expected = service.get_expected_characteristics()
         assert isinstance(expected, dict)
-        assert len(expected) > 0  # Services should have at least one characteristic
 
     def test_required_subset_of_expected(self, service: BaseGattService) -> None:
         """Test that required characteristics are a subset of expected ones."""

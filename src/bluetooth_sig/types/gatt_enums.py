@@ -88,18 +88,19 @@ class CharacteristicRole(Enum):
     instantiation time from data already parsed from the SIG YAML specs.
 
     Members:
-        MEASUREMENT — carries numeric or structured sensor data with
-                      physical units (temperature, heart rate, SpO₂, …).
-        STATUS      — reports a device state or enum value
-                      (training status, alert status, …).
-        FEATURE     — describes device capabilities as a bitfield
-                      (blood pressure feature, cycling power feature, …).
-        CONTROL     — write-only control point used to command the device
-                      (heart rate control point, fitness machine CP, …).
-        INFO        — static metadata string
-                      (device name, firmware revision, serial number, …).
-        UNKNOWN     — cannot be classified from spec metadata alone;
-                      consumers should apply their own heuristic.
+        MEASUREMENT — value represents something measured or observed from
+                      a device or environment (temperature, heart rate, SpO2,
+                      acceleration, concentration, range statistics, etc.).
+        STATUS      — discrete operational state (mode, trend, boolean flag,
+                      categorical state snapshot).
+        FEATURE     — capability declaration or supported option bitmask,
+                      not a live measured value.
+        CONTROL     — command/control endpoint used to change behaviour.
+        INFO        — contextual metadata or identifiers that are not
+                      measured values (device identity, names, indices,
+                      topology/location context such as floor number).
+        UNKNOWN     — cannot be classified from available spec metadata alone;
+                      use per-characteristic manual overrides where required.
     """
 
     MEASUREMENT = "measurement"
@@ -188,7 +189,7 @@ class CharacteristicName(Enum):
     BODY_SENSOR_LOCATION = "Body Sensor Location"
     # Environmental characteristics
     ACCELERATION = "Acceleration"
-    ACCELERATION_3D = "Acceleration 3D"
+    ACCELERATION_3D = "Acceleration - 3D"
     ACCELERATION_DETECTION_STATUS = "Acceleration Detection Status"
     ALTITUDE = "Altitude"
     DEW_POINT = "Dew Point"
@@ -374,12 +375,22 @@ class CharacteristicName(Enum):
     CIE_13_3_1995_COLOR_RENDERING_INDEX = "CIE 13.3-1995 Color Rendering Index"
     CONTACT_STATUS_8 = "Contact Status 8"
     CONTENT_CONTROL_ID = "Content Control ID"
+    COOKWARE_DESCRIPTION = "Cookware Description"
+    RECIPE_CONTROL = "Recipe Control"
+    RECIPE_PARAMETERS = "Recipe Parameters"
+    COOKING_STEP_STATUS = "Cooking Step Status"
+    COOKING_ZONE_CAPABILITIES = "Cooking Zone Capabilities"
+    COOKING_ZONE_DESIRED_COOKING_CONDITIONS = "Cooking Zone Desired Cooking Conditions"
+    COOKING_ZONE_ACTUAL_COOKING_CONDITIONS = "Cooking Zone Actual Cooking Conditions"
+    COOKWARE_SENSOR_DATA = "Cookware Sensor Data"
+    COOKWARE_SENSOR_AGGREGATE = "Cookware Sensor Aggregate"
     COSINE_OF_THE_ANGLE = "Cosine of the Angle"
     COUNTRY_CODE = "Country Code"
     DATE_UTC = "Date UTC"
     DOOR_WINDOW_STATUS = "Door/Window Status"
     ENERGY = "Energy"
     ENERGY_32 = "Energy 32"
+    ELAPSED_TIME = "Elapsed Time"
     ESTIMATED_SERVICE_DATE = "Estimated Service Date"
     FIXED_STRING_8 = "Fixed String 8"
     FIXED_STRING_16 = "Fixed String 16"
@@ -391,6 +402,7 @@ class CharacteristicName(Enum):
     HIGH_TEMPERATURE = "High Temperature"
     HUMIDITY_8 = "Humidity 8"
     ILLUMINANCE_16 = "Illuminance 16"
+    INSTALLED_LOCATION = "Installed Location"
     LIGHT_DISTRIBUTION = "Light Distribution"
     LIGHT_OUTPUT = "Light Output"
     LIGHT_SOURCE_TYPE = "Light Source Type"
@@ -417,8 +429,6 @@ class CharacteristicName(Enum):
     TIME_SECOND_32 = "Time Second 32"
     TORQUE = "Torque"
     VOLUME_FLOW = "Volume Flow"
-
-    # Not implemented characteristics - listed for completeness
     ACS_CONTROL_POINT = "ACS Control Point"
     ACS_DATA_IN = "ACS Data In"
     ACS_DATA_OUT_INDICATE = "ACS Data Out Indicate"
@@ -435,6 +445,7 @@ class CharacteristicName(Enum):
     ADVERTISING_CONSTANT_TONE_EXTENSION_PHY = "Advertising Constant Tone Extension PHY"
     ADVERTISING_CONSTANT_TONE_EXTENSION_TRANSMIT_DURATION = "Advertising Constant Tone Extension Transmit Duration"
     AGGREGATE = "Aggregate"
+    ANALOG = "Analog"
     AUDIO_INPUT_CONTROL_POINT = "Audio Input Control Point"
     AUDIO_INPUT_DESCRIPTION = "Audio Input Description"
     AUDIO_INPUT_STATE = "Audio Input State"
@@ -481,13 +492,14 @@ class CharacteristicName(Enum):
     CHROMATICITY_IN_CCT_AND_DUV_VALUES = "Chromaticity in CCT and Duv Values"
     CLIENT_SUPPORTED_FEATURES = "Client Supported Features"
     CONSTANT_TONE_EXTENSION_ENABLE = "Constant Tone Extension Enable"
+    COORDINATED_SET_NAME = "Coordinated Set Name"
     COORDINATED_SET_SIZE = "Coordinated Set Size"
-    CURRENT_ELAPSED_TIME = "Current Elapsed Time"
     CURRENT_GROUP_OBJECT_ID = "Current Group Object ID"
     CURRENT_TRACK_OBJECT_ID = "Current Track Object ID"
     CURRENT_TRACK_SEGMENTS_OBJECT_ID = "Current Track Segments Object ID"
     DATABASE_HASH = "Database Hash"
     DESCRIPTOR_VALUE_CHANGED = "Descriptor Value Changed"
+    DIGITAL = "Digital"
     DEVICE_TIME = "Device Time"
     DEVICE_TIME_CONTROL_POINT = "Device Time Control Point"
     DEVICE_TIME_FEATURE = "Device Time Feature"
@@ -578,7 +590,7 @@ class CharacteristicName(Enum):
     PLAYBACK_SPEED = "Playback Speed"
     PLAYING_ORDER = "Playing Order"
     PLAYING_ORDERS_SUPPORTED = "Playing Orders Supported"
-    PRECISE_ACCELERATION_3D = "Precise Acceleration 3D"
+    PRECISE_ACCELERATION_3D = "Precise Acceleration - 3D"
     RAS_CONTROL_POINT = "RAS Control Point"
     RAS_FEATURES = "RAS Features"
     RC_FEATURE = "RC Feature"
@@ -637,6 +649,13 @@ class CharacteristicName(Enum):
     UGT_FEATURES = "UGT Features"
     URI = "URI"
     USER_CONTROL_POINT = "User Control Point"
+    VOICE_ASSISTANT_NAME = "Voice Assistant Name"
+    VOICE_ASSISTANT_UUID = "Voice Assistant UUID"
+    VOICE_ASSISTANT_SERVICE_CONTROL_POINT = "Voice Assistant Service Control Point"
+    VOICE_ASSISTANT_SESSION_STATE = "Voice Assistant Session State"
+    VOICE_ASSISTANT_SESSION_FLAG = "Voice Assistant Session Flag"
+    VOICE_ASSISTANT_SUPPORTED_LANGUAGES = "Voice Assistant Supported Languages"
+    VOICE_ASSISTANT_SUPPORTED_FEATURES = "Voice Assistant Supported Features"
     VOLUME_CONTROL_POINT = "Volume Control Point"
     VOLUME_FLAGS = "Volume Flags"
     VOLUME_OFFSET_CONTROL_POINT = "Volume Offset Control Point"
@@ -679,3 +698,47 @@ class ServiceName(Enum):
     HUMAN_INTERFACE_DEVICE = "Human Interface Device"
     PULSE_OXIMETER = "Pulse Oximeter"
     FITNESS_MACHINE = "Fitness Machine"
+    CONTINUOUS_GLUCOSE_MONITORING = "Continuous Glucose Monitoring"
+    INSULIN_DELIVERY = "Insulin Delivery"
+    PHYSICAL_ACTIVITY_MONITOR = "Physical Activity Monitor"
+    GENERIC_HEALTH_SENSOR = "Generic Health Sensor"
+    INDUSTRIAL_MEASUREMENT_DEVICE = "Industrial Measurement Device"
+    AUDIO_STREAM_CONTROL = "Audio Stream Control"
+    AUDIO_INPUT_CONTROL = "Audio Input Control"
+    VOLUME_CONTROL = "Volume Control"
+    VOLUME_OFFSET_CONTROL = "Volume Offset Control"
+    MEDIA_CONTROL = "Media Control"
+    GENERIC_MEDIA_CONTROL = "Generic Media Control"
+    PUBLISHED_AUDIO_CAPABILITIES = "Published Audio Capabilities"
+    BASIC_AUDIO_ANNOUNCEMENT = "Basic Audio Announcement"
+    BROADCAST_AUDIO_ANNOUNCEMENT = "Broadcast Audio Announcement"
+    COMMON_AUDIO = "Common Audio"
+    BROADCAST_AUDIO_SCAN = "Broadcast Audio Scan"
+    HEARING_ACCESS = "Hearing Access"
+    GAMING_AUDIO = "Gaming Audio"
+    TELEPHONY_AND_MEDIA_AUDIO = "Telephony and Media Audio"
+    PUBLIC_BROADCAST_ANNOUNCEMENT = "Public Broadcast Announcement"
+    MICROPHONE_CONTROL = "Microphone Control"
+    TELEPHONE_BEARER = "Telephone Bearer"
+    GENERIC_TELEPHONE_BEARER = "Generic Telephone Bearer"
+    INTERNET_PROTOCOL_SUPPORT = "Internet Protocol Support"
+    HTTP_PROXY = "HTTP Proxy"
+    TRANSPORT_DISCOVERY = "Transport Discovery"
+    OBJECT_TRANSFER = "Object Transfer"
+    RECONNECTION_CONFIGURATION = "Reconnection Configuration"
+    BINARY_SENSOR = "Binary Sensor"
+    EMERGENCY_CONFIGURATION = "Emergency Configuration"
+    AUTHORIZATION_CONTROL = "Authorization Control"
+    ELAPSED_TIME = "Elapsed Time"
+    DEVICE_TIME = "Device Time"
+    COORDINATED_SET_IDENTIFICATION = "Coordinated Set Identification"
+    CONSTANT_TONE_EXTENSION = "Constant Tone Extension"
+    MESH_PROVISIONING = "Mesh Provisioning"
+    MESH_PROXY = "Mesh Proxy"
+    MESH_PROXY_SOLICITATION = "Mesh Proxy Solicitation"
+    ELECTRONIC_SHELF_LABEL = "Electronic Shelf Label"
+    RANGING = "Ranging"
+    HID_ISO = "HID ISO"
+    COOKWARE = "Cookware"
+    VOICE_ASSISTANT = "Voice Assistant"
+    GENERIC_VOICE_ASSISTANT = "Generic Voice Assistant"

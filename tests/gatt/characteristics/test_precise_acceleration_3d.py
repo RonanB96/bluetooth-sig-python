@@ -35,11 +35,3 @@ class TestPreciseAcceleration3DCharacteristic(CommonCharacteristicTests):
                 description="1.0 gn on x-axis (raw 1000 * 0.001)",
             ),
         ]
-
-    def test_encode_round_trip(self) -> None:
-        """Verify encode/decode round-trip."""
-        char = PreciseAcceleration3DCharacteristic()
-        original = VectorData(x_axis=0.5, y_axis=-0.25, z_axis=1.0)
-        encoded = char.build_value(original)
-        decoded = char.parse_value(encoded)
-        assert decoded == original

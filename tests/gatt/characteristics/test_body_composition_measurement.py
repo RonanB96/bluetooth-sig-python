@@ -131,23 +131,23 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
                 ),
                 description="12.0% body fat with user ID and metabolism",
             ),
-            # Test 4: With muscle mass and percentage
+            # Test 4: With muscle percentage and mass
             CharacteristicTestData(
                 input_data=bytearray(
                     [
                         0x30,
-                        0x00,  # flags: muscle mass + muscle percentage present
+                        0x00,  # flags: muscle percentage (bit 4) + muscle mass (bit 5)
                         0x64,
                         0x00,  # body fat percentage = 10.0% (100 * 0.1)
-                        0xB8,
-                        0x0B,  # muscle mass = 15.0 kg (3000 * 0.005) metric
                         0xC8,
-                        0x00,  # muscle percentage = 20.0% (200 * 0.1)
+                        0x00,  # muscle percentage = 20.0% (200 * 0.1) — bit 4 field first
+                        0xB8,
+                        0x0B,  # muscle mass = 15.0 kg (3000 * 0.005) — bit 5 field second
                     ]
                 ),
                 expected_value=BodyCompositionMeasurementData(
                     body_fat_percentage=10.0,
-                    flags=BodyCompositionFlags.MUSCLE_MASS_PRESENT | BodyCompositionFlags.MUSCLE_PERCENTAGE_PRESENT,
+                    flags=BodyCompositionFlags.MUSCLE_PERCENTAGE_PRESENT | BodyCompositionFlags.MUSCLE_MASS_PRESENT,
                     measurement_units=MeasurementSystem.METRIC,
                     timestamp=None,
                     user_id=None,
@@ -162,7 +162,7 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
                     weight=None,
                     height=None,
                 ),
-                description="10.0% body fat with muscle mass and percentage",
+                description="10.0% body fat with muscle percentage and mass",
             ),
             # Test 5: Complex measurement with multiple mass fields
             CharacteristicTestData(
@@ -259,18 +259,18 @@ class TestBodyCompositionMeasurementCharacteristic(CommonCharacteristicTests):
         assert result.impedance is None
 
     def test_body_composition_with_muscle_data(self, characteristic: BodyCompositionMeasurementCharacteristic) -> None:
-        """Test body composition with muscle mass and percentage."""
-        # Flags: muscle mass + muscle percentage present
+        """Test body composition with muscle percentage and mass."""
+        # Flags: muscle percentage (bit 4) + muscle mass (bit 5) present
         test_data = bytearray(
             [
                 0x30,
-                0x00,  # flags: muscle mass + muscle percentage
+                0x00,  # flags: muscle percentage (bit 4) + muscle mass (bit 5)
                 0x64,
                 0x00,  # body fat percentage = 10.0%
-                0x70,
-                0x17,  # muscle mass = 30.0 kg (6000 * 0.005)
                 0x96,
-                0x00,  # muscle percentage = 15.0%
+                0x00,  # muscle percentage = 15.0% (150 * 0.1) — bit 4 field first
+                0x70,
+                0x17,  # muscle mass = 30.0 kg (6000 * 0.005) — bit 5 field second
             ]
         )
 

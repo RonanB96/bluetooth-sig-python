@@ -9,7 +9,6 @@ import asyncio
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Configure path for imports
 script_dir = Path(__file__).parent
@@ -32,7 +31,7 @@ except ImportError as e:
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-async def test_device_connection(mac_address: str) -> Optional[bool]:
+async def test_device_connection(mac_address: str) -> bool | None:
     """Test connection to a real device using Bleak."""
     print(f"\n🔍 Testing connection to device: {mac_address}")
     print("=" * 60)

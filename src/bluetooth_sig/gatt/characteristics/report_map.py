@@ -26,10 +26,7 @@ class ReportMapCharacteristic(BaseCharacteristic[ReportMapData]):
     Report Map characteristic.
     """
 
-    _python_type: type | str | None = "ReportMapData"
-
     min_length = 1
-    expected_type = bytes
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
