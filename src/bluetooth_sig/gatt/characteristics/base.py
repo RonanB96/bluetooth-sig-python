@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from functools import cached_property
-from typing import Any, ClassVar, Generic, TypeVar, get_args
+from typing import Any, ClassVar, Generic, TypeVar, get_args, get_origin
 
 from ...types import (
     CharacteristicInfo,
@@ -233,8 +233,21 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
                 origin = getattr(base, "__origin__", None)
                 if origin is BaseCharacteristic:
                     args = get_args(base)
-                    if args and isinstance(args[0], type) and args[0] is not Any:
-                        resolved = args[0]
+                    if not args:
+                        continue
+
+                    arg = args[0]
+                    if arg is Any:
+                        continue
+
+                    if isinstance(arg, type):
+                        resolved = arg
+                        break
+
+                    # Support PEP 585/typing aliases like list[Foo] or tuple[Bar, ...].
+                    generic_origin = get_origin(arg)
+                    if isinstance(generic_origin, type):
+                        resolved = generic_origin
                         break
             if resolved is not None:
                 break
