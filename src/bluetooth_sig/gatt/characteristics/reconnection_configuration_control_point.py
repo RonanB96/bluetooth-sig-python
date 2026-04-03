@@ -74,7 +74,7 @@ class ReconnectionConfigurationControlPointCharacteristic(
 
     org.bluetooth.characteristic.reconnection_configuration_control_point
 
-    Structure: Opcode (uint8) + Operand (0–17 octets) + [E2E-CRC (uint16)].
+    Structure: Opcode (uint8) + Operand (0-17 octets) + [E2E-CRC (uint16)].
     E2E-CRC is conditionally present when E2E-CRC Supported is set in RC Feature.
     """
 

@@ -23,7 +23,6 @@ class ASEControlPointOpCode(IntEnum):
     RECEIVER_STOP_READY = 0x06
     UPDATE_METADATA = 0x07
     RELEASE = 0x08
-    RESPONSE = 0xFF
 
 
 class ASEControlPointData(msgspec.Struct, frozen=True, kw_only=True):  # pylint: disable=too-few-public-methods

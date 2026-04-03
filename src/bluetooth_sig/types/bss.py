@@ -26,13 +26,13 @@ class SplitHeader(msgspec.Struct, frozen=True, kw_only=True):
 
     Bit layout (uint8):
         Bit 0: Execute Flag (1 = final/non-split, 0 = split packet)
-        Bits 1–5: Sequence Number (0–31)
+        Bits 1-5: Sequence Number (0-31)
         Bit 6: RFU
         Bit 7: Source Flag (0 = client→server, 1 = server→client)
 
     Attributes:
         execute_flag: True if this is the final (or only) packet.
-        sequence_number: Sequence order of split packets (0–31).
+        sequence_number: Sequence order of split packets (0-31).
         source_flag: True if direction is server→client.
 
     """

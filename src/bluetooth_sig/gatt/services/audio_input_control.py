@@ -17,9 +17,9 @@ class AudioInputControlService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.AUDIO_INPUT_STATE: True,
-        CharacteristicName.AUDIO_INPUT_CONTROL_POINT: False,
-        CharacteristicName.AUDIO_INPUT_DESCRIPTION: False,
-        CharacteristicName.AUDIO_INPUT_STATUS: False,
-        CharacteristicName.AUDIO_INPUT_TYPE: False,
-        CharacteristicName.GAIN_SETTINGS_ATTRIBUTE: False,
+        CharacteristicName.AUDIO_INPUT_CONTROL_POINT: True,
+        CharacteristicName.AUDIO_INPUT_DESCRIPTION: True,
+        CharacteristicName.AUDIO_INPUT_STATUS: True,
+        CharacteristicName.AUDIO_INPUT_TYPE: True,
+        CharacteristicName.GAIN_SETTINGS_ATTRIBUTE: True,
     }

@@ -11,7 +11,7 @@ from .templates import FlagTemplate
 class VolumeFlags(IntFlag):
     """Volume flags."""
 
-    RESET_VOLUME_SETTING = 0x01
+    USER_SET_VOLUME_SETTING = 0x01
 
 
 class VolumeFlagsCharacteristic(BaseCharacteristic[VolumeFlags]):

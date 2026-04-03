@@ -20,4 +20,5 @@ class CoordinatedSetIdentificationService(BaseGattService):
         CharacteristicName.COORDINATED_SET_SIZE: False,
         CharacteristicName.SET_MEMBER_LOCK: False,
         CharacteristicName.SET_MEMBER_RANK: False,
+        CharacteristicName.COORDINATED_SET_NAME: False,
     }

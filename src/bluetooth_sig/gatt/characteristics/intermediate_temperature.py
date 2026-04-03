@@ -17,6 +17,7 @@ from bluetooth_sig.types.units import TemperatureUnit
 
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .temperature_type import TemperatureType
 from .utils import IEEE11073Parser
 
 
@@ -36,7 +37,7 @@ class IntermediateTemperatureData(msgspec.Struct, frozen=True, kw_only=True):
     unit: TemperatureUnit
     flags: IntermediateTemperatureFlags
     timestamp: datetime | None = None
-    temperature_type: int | None = None
+    temperature_type: TemperatureType | None = None
 
 
 class IntermediateTemperatureCharacteristic(BaseCharacteristic[IntermediateTemperatureData]):
@@ -67,7 +68,7 @@ class IntermediateTemperatureCharacteristic(BaseCharacteristic[IntermediateTempe
         )
 
         timestamp: datetime | None = None
-        temperature_type: int | None = None
+        temperature_type: TemperatureType | None = None
         offset = 5
 
         if IntermediateTemperatureFlags.TIMESTAMP_PRESENT in flags and len(data) >= offset + 7:
@@ -75,7 +76,7 @@ class IntermediateTemperatureCharacteristic(BaseCharacteristic[IntermediateTempe
             offset += 7
 
         if IntermediateTemperatureFlags.TEMPERATURE_TYPE_PRESENT in flags and len(data) >= offset + 1:
-            temperature_type = data[offset]
+            temperature_type = TemperatureType(data[offset])
 
         return IntermediateTemperatureData(
             temperature=temp_value,

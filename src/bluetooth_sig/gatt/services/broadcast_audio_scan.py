@@ -16,5 +16,6 @@ class BroadcastAudioScanService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.BROADCAST_AUDIO_SCAN_CONTROL_POINT: False,
+        CharacteristicName.BROADCAST_AUDIO_SCAN_CONTROL_POINT: True,
+        CharacteristicName.BROADCAST_RECEIVE_STATE: True,
     }

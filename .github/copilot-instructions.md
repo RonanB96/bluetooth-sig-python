@@ -1,29 +1,48 @@
 ﻿# Bluetooth SIG Standards Library
 
-A pure Python library for Bluetooth SIG standards interpretation (GATT characteristics, services, advertisements). Core lives in `src/bluetooth_sig/` must remain framework-agnostic.
+Pure Python library for Bluetooth SIG standards interpretation (GATT characteristics, services, advertisements).
 
-## Architectural Prohibitions
+## Project Layout
 
-Never use:
-- `TYPE_CHECKING` blocks or lazy imports in core logic
-- Hardcoded UUID strings in implementation code (use registry resolution)
-- `from typing import Optional` (use `Type | None`)
-- Bare `except:` or silent `pass`
-- Raw `dict`/`tuple` returns (use `msgspec.Struct`)
-- Untyped public functions
-- Framework imports (`homeassistant`, `bleak`, `simplepyble`) in `src/bluetooth_sig/`
-- `hasattr`/`getattr` when direct access works
+```
+bluetooth_sig/          ← READ-ONLY submodule (SIG YAML data). Never modify.
+  gss/                  ← Characteristic YAML definitions (source of truth)
+  assigned_numbers/     ← Company IDs, UUIDs, service discovery data
+  dp/                   ← Device properties
+src/bluetooth_sig/      ← Implementation code (framework-agnostic, no BLE backend imports)
+  core/                 ← Public API facade and engines
+  gatt/characteristics/ ← Characteristic modules
+    base.py             ← BaseCharacteristic[T] — uses composition via _template, NOT inheritance
+    templates/          ← Reusable coding templates (numeric, scaled, string, composite, etc.)
+    pipeline/           ← Parse/encode pipelines + validation
+  registry/             ← Thread-safe singleton registries (lazy-load from YAML)
+  advertising/          ← BLE advertising packet parsing
+  device/               ← Device abstraction layer
+  stream/               ← Stream parsing
+  types/                ← Type definitions & enums
+tests/                  ← Mirrors src/ structure; primary location: gatt/characteristics/
+```
 
-These are non-negotiable. Violations require explicit justification.
+## Non-Negotiable Rules
 
-## Mandatory Workflow
+1. **YAML is read-only.** If Python and YAML disagree, fix the Python.
+2. **No framework imports** (`homeassistant`, `bleak`, `simplepyble`) in `src/bluetooth_sig/`.
+3. **No hardcoded UUIDs** in implementation — use registry resolution.
+4. **No `Optional`** — use `Type | None`.
+5. **No `TYPE_CHECKING` blocks** or lazy imports in core logic.
+6. **No raw `dict`/`tuple` returns** — use `msgspec.Struct`.
+7. **No bare `except:`** or silent `pass`.
+8. **No `hasattr`/`getattr`** when direct access works.
+9. **All public functions fully typed.** `Any` requires inline justification.
+10. **Never set `_python_type`** on new characteristics — `BaseCharacteristic[T]` auto-resolves it.
 
-1. **Research** — Cite official: Bluetooth SIG Assigned Numbers, SIG Specs (HTML), or `docs/AGENT_GUIDE.md`
-2. **Test** — Every function: success + 2 failure cases minimum
+## Workflow
+
+1. **Research** — Cite official Bluetooth SIG specs (see "Fetching SIG Specs" below)
+2. **Test** — Success + 2 failure cases minimum per function
 3. **Implement** — Use templates from `gatt/characteristics/templates/`. Override `_decode_value()` for composites.
-4. **Type** — All public functions must be fully typed. Generic `BaseCharacteristic[T]` auto-resolves `_python_type`.
-5. **Validate** — Run full quality gates before completion
-6. **Documentation** — If code changes break code blocks in `./docs/`, update those blocks. Add docstrings to all new public functions (Google style).
+4. **Validate** — Run quality gates (no exceptions)
+5. **Document** — Google-style docstrings. Update `docs/` if code changes break examples.
 
 ## Quality Gates
 
@@ -33,25 +52,25 @@ These are non-negotiable. Violations require explicit justification.
 python -m pytest tests/ -v
 ```
 
-No exceptions. Pipe output to file; fix issues, don't suppress.
+## Fetching SIG Specs
 
-## Reference
+- Assigned Numbers: https://www.bluetooth.com/specifications/assigned-numbers/
+- Specifications: https://www.bluetooth.com/specifications/specs/
 
-**Official Specs:**
-- Bluetooth SIG Assigned Numbers: https://www.bluetooth.com/specifications/assigned-numbers/
-- Bluetooth SIG Specifications (search): https://www.bluetooth.com/specifications/specs/ — to get the actual HTML spec URL, do the following **one spec at a time**:
-  1. Find the service slug from the base page: `curl https://www.bluetooth.com/specifications/specs/` | grep -o 'href="[^"]*specifications/specs/[^"]*"'`
-  2. `curl https://www.bluetooth.com/specifications/specs/{slug}/` and extract the public HTML link: `grep -o 'href="[^"]*out/en[^"]*"'` — this returns something like `href="...?src=prefix_timestamp/SPEC_v1.0/out/en/index-en.html"`
-  3. Extract the FULL `?src=` value (everything after `?src=`, including any `prefix_timestamp/` portion)
-  4. Build full URL: `https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/{full_src_value}`
-  5. `fetch_webpage` that full URL to get the spec content
-  - **Never** use `fetch_webpage` directly on the listing page — it strips hrefs
-  - **Never** guess URL patterns — always curl the slug page first
-  - The public (no-login) HTML link is the first entry in the Documents table on the service page (no lock icon); `HTML with cross-spec linking` requires membership — do not use it
+To get a spec's HTML URL (**one spec at a time**):
+1. `curl https://www.bluetooth.com/specifications/specs/` — find the service slug from href links
+2. `curl https://www.bluetooth.com/specifications/specs/{slug}/` — extract public HTML link: `grep -o 'href="[^"]*out/en[^"]*"'`
+3. Extract the full `?src=` value (including any `prefix_timestamp/` portion)
+4. Build URL: `https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/{full_src_value}`
+5. `fetch_webpage` that URL
 
-**Entry points:** `src/bluetooth_sig/core/translator.py` (public API), `src/bluetooth_sig/gatt/` (characteristics), `src/bluetooth_sig/registry/` (UUID lookup)
+**Never** `fetch_webpage` the listing page (strips hrefs). **Never** guess URL patterns. Use the first (no-lock-icon) HTML link, not the "HTML with cross-spec linking" (requires membership).
 
-**Sub-instructions:** `python-implementation.instructions.md`, `bluetooth-gatt.instructions.md`, `testing.instructions.md`, `documentation.instructions.md`
+## Sub-Instructions
 
-Trust these instructions. Search codebase only if missing or wrong.
+Detailed rules are in `.github/instructions/`:
+- `bluetooth-gatt.instructions.md` — GATT layer, templates, pipeline, characteristic patterns
+- `python-implementation.instructions.md` — Python coding standards, type safety, data modelling
+- `testing.instructions.md` — Test structure, fixtures, edge cases, commands
+- `documentation.instructions.md` — Doc style, code samples, diagrams
 

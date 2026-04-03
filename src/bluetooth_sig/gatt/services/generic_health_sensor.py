@@ -16,7 +16,7 @@ class GenericHealthSensorService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.HEALTH_SENSOR_FEATURES: True,
+        CharacteristicName.HEALTH_SENSOR_FEATURES: False,
         CharacteristicName.LIVE_HEALTH_OBSERVATIONS: False,
         CharacteristicName.STORED_HEALTH_OBSERVATIONS: False,
         CharacteristicName.RECORD_ACCESS_CONTROL_POINT: False,

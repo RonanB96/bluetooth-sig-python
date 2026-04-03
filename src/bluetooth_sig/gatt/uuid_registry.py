@@ -184,6 +184,26 @@ class UuidRegistry:  # pylint: disable=too-many-instance-attributes
         self._gss_registry = GssRegistry.get_instance()
         self._load_gss_characteristic_info()
 
+        # TODO: Remove when bluetooth_sig submodule includes these UUIDs.
+        # Analog (0x2A58) and Digital (0x2A56) are present in service specs
+        # (Automation IO) but absent from the assigned-number YAML files.
+        _yaml_absent: list[tuple[str, str, str]] = [
+            ("2A56", "Digital", "org.bluetooth.characteristic.digital"),
+            ("2A58", "Analog", "org.bluetooth.characteristic.analog"),
+        ]
+        for _uuid_short, _name, _identifier in _yaml_absent:
+            _bt_uuid = BluetoothUUID(_uuid_short)
+            if _bt_uuid.normalized not in self._characteristics:
+                self._store_characteristic(
+                    CharacteristicInfo(
+                        uuid=_bt_uuid,
+                        name=_name,
+                        id=_identifier,
+                        unit="",
+                        python_type=None,
+                    )
+                )
+
     def _load_gss_characteristic_info(self) -> None:
         """Load GSS specs and update characteristics with extracted info."""
         if self._gss_registry is None:

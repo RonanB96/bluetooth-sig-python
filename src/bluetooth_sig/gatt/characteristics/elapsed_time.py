@@ -38,6 +38,7 @@ from .utils import DataParser
 
 _TIME_RESOLUTION_MASK = 0x0C
 _TIME_RESOLUTION_SHIFT = 2
+_READ_LENGTH = 11  # 9 (Elapsed Time struct) + 1 (Clock Status) + 1 (Clock Capabilities)
 
 
 class ElapsedTimeFlags(IntFlag):
@@ -71,6 +72,9 @@ class ElapsedTimeData(msgspec.Struct, frozen=True, kw_only=True):
         is_current_timeline: True if time stamp is from the current timeline.
         sync_source_type: Time synchronisation source type.
         tz_dst_offset: Combined TZ/DST offset from UTC in 15-minute units.
+        clock_needs_set: Server requests client to set the clock (Clock Status bit 0).
+        clock_applies_dst: Clock autonomously updates DST offset (Clock Capabilities bit 0).
+        clock_manages_tz: Clock autonomously updates TZ offset (Clock Capabilities bit 1).
 
     """
 
@@ -83,17 +87,23 @@ class ElapsedTimeData(msgspec.Struct, frozen=True, kw_only=True):
     is_current_timeline: bool
     sync_source_type: TimeSource
     tz_dst_offset: int
+    clock_needs_set: bool = False
+    clock_applies_dst: bool = False
+    clock_manages_tz: bool = False
 
 
 class ElapsedTimeCharacteristic(BaseCharacteristic[ElapsedTimeData]):
     """Elapsed Time characteristic (0x2BF2).
 
     Reports the current time of a clock or tick counter.
-    Fixed 9-byte structure.
+
+    Read/indicate format: 11 bytes (9-byte Elapsed Time struct + Clock Status
+    + Clock Capabilities).  Write format: 9 bytes (Elapsed Time struct only).
     """
 
     expected_type = ElapsedTimeData
     min_length: int = 9
+    max_length: int = 11
 
     def _decode_value(
         self,
@@ -105,7 +115,7 @@ class ElapsedTimeCharacteristic(BaseCharacteristic[ElapsedTimeData]):
         """Parse Current Elapsed Time from raw BLE bytes.
 
         Args:
-            data: Raw bytearray from BLE characteristic (9 bytes).
+            data: Raw bytearray (9 bytes for write echo, 11 bytes for read/indicate).
             ctx: Optional context (unused).
             validate: Whether to validate ranges.
 
@@ -122,6 +132,16 @@ class ElapsedTimeCharacteristic(BaseCharacteristic[ElapsedTimeData]):
         sync_source_type = TimeSource(data[7])
         tz_dst_offset = DataParser.parse_int8(data, 8, signed=True)
 
+        clock_needs_set = False
+        clock_applies_dst = False
+        clock_manages_tz = False
+        if len(data) >= _READ_LENGTH:
+            clock_status = data[9]
+            clock_needs_set = bool(clock_status & 0x01)
+            clock_caps = data[10]
+            clock_applies_dst = bool(clock_caps & 0x01)
+            clock_manages_tz = bool(clock_caps & 0x02)
+
         return ElapsedTimeData(
             flags=flags,
             time_value=time_value,
@@ -132,16 +152,22 @@ class ElapsedTimeCharacteristic(BaseCharacteristic[ElapsedTimeData]):
             is_current_timeline=bool(flags & ElapsedTimeFlags.CURRENT_TIMELINE),
             sync_source_type=sync_source_type,
             tz_dst_offset=tz_dst_offset,
+            clock_needs_set=clock_needs_set,
+            clock_applies_dst=clock_applies_dst,
+            clock_manages_tz=clock_manages_tz,
         )
 
     def _encode_value(self, data: ElapsedTimeData) -> bytearray:
         """Encode ElapsedTimeData back to BLE bytes.
 
+        Produces the full 11-byte read/indicate format including Clock Status
+        and Clock Capabilities.
+
         Args:
             data: ElapsedTimeData instance.
 
         Returns:
-            Encoded bytearray (9 bytes).
+            Encoded bytearray (11 bytes).
 
         """
         flags_raw = int(data.flags) | (data.time_resolution << _TIME_RESOLUTION_SHIFT)
@@ -149,4 +175,11 @@ class ElapsedTimeCharacteristic(BaseCharacteristic[ElapsedTimeData]):
         result.extend(DataParser.encode_int48(data.time_value, signed=False))
         result.append(int(data.sync_source_type))
         result.extend(DataParser.encode_int8(data.tz_dst_offset, signed=True))
+
+        clock_status = int(data.clock_needs_set)
+        result.append(clock_status)
+
+        clock_caps = int(data.clock_applies_dst) | (int(data.clock_manages_tz) << 1)
+        result.append(clock_caps)
+
         return result

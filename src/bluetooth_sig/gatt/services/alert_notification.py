@@ -23,8 +23,8 @@ class AlertNotificationService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.SUPPORTED_NEW_ALERT_CATEGORY: True,
-        CharacteristicName.NEW_ALERT: False,
+        CharacteristicName.NEW_ALERT: True,
         CharacteristicName.SUPPORTED_UNREAD_ALERT_CATEGORY: True,
-        CharacteristicName.UNREAD_ALERT_STATUS: False,
+        CharacteristicName.UNREAD_ALERT_STATUS: True,
         CharacteristicName.ALERT_NOTIFICATION_CONTROL_POINT: True,
     }

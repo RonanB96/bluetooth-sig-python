@@ -12,18 +12,18 @@ from .utils import DataParser
 
 
 class TerminationReason(IntEnum):
-    """Call termination reason as per TBS 1.0, Section 3.16."""
+    """Call termination reason as per TBS 1.0, Table 3.14."""
 
-    REMOTE_PARTY_ENDED = 0x00
-    SERVER_ENDED = 0x01
-    LINE_BUSY = 0x02
-    NETWORK_CONGESTION = 0x03
-    CLIENT_ENDED = 0x04
-    NO_SERVICE = 0x05
-    NO_ANSWER = 0x06
-    UNSPECIFIED = 0x07
-    INVALID_URI = 0x08
-    CALL_FAILED = 0x09
+    INVALID_URI = 0x00
+    CALL_FAILED = 0x01
+    REMOTE_PARTY_ENDED = 0x02
+    SERVER_ENDED = 0x03
+    LINE_BUSY = 0x04
+    NETWORK_CONGESTION = 0x05
+    CLIENT_ENDED = 0x06
+    NO_SERVICE = 0x07
+    NO_ANSWER = 0x08
+    UNSPECIFIED = 0x09
 
 
 class TerminationReasonData(msgspec.Struct, frozen=True, kw_only=True):

@@ -44,6 +44,14 @@ class CyclingPowerMeasurementData(msgspec.Struct, frozen=True, kw_only=True):  #
     last_wheel_event_time: float | None = None  # seconds
     cumulative_crank_revolutions: int | None = None
     last_crank_event_time: float | None = None  # seconds
+    maximum_force_magnitude: int | None = None  # Newtons (sint16)
+    minimum_force_magnitude: int | None = None  # Newtons (sint16)
+    maximum_torque_magnitude: float | None = None  # Nm (sint16, 1/32 resolution)
+    minimum_torque_magnitude: float | None = None  # Nm (sint16, 1/32 resolution)
+    maximum_angle: int | None = None  # degrees (uint16)
+    minimum_angle: int | None = None  # degrees (uint16)
+    top_dead_spot_angle: int | None = None  # degrees (uint16)
+    bottom_dead_spot_angle: int | None = None  # degrees (uint16)
 
     def __post_init__(self) -> None:
         """Validate cycling power measurement data."""
@@ -115,6 +123,14 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasu
         last_wheel_event_time = None
         cumulative_crank_revolutions = None
         last_crank_event_time = None
+        maximum_force_magnitude = None
+        minimum_force_magnitude = None
+        maximum_torque_magnitude = None
+        minimum_torque_magnitude = None
+        maximum_angle = None
+        minimum_angle = None
+        top_dead_spot_angle = None
+        bottom_dead_spot_angle = None
 
         # Parse optional pedal power balance (1 byte) if present (bit 0)
         if (flags & CyclingPowerMeasurementFlags.PEDAL_POWER_BALANCE_PRESENT) and len(data) >= offset + 1:
@@ -145,6 +161,36 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasu
             # Crank event time is in 1/CRANK_TIME_RESOLUTION second units
             last_crank_event_time = crank_event_time_raw / self.CRANK_TIME_RESOLUTION
             offset += 4
+
+        # Parse optional extreme force magnitudes (4 bytes: max sint16 + min sint16) if present (bit 6)
+        if (flags & CyclingPowerMeasurementFlags.EXTREME_FORCE_MAGNITUDES_PRESENT) and len(data) >= offset + 4:
+            maximum_force_magnitude = DataParser.parse_int16(data, offset, signed=True)
+            minimum_force_magnitude = DataParser.parse_int16(data, offset + 2, signed=True)
+            offset += 4
+
+        # Parse optional extreme torque magnitudes (4 bytes: max sint16 + min sint16, 1/32 Nm) if present (bit 7)
+        if (flags & CyclingPowerMeasurementFlags.EXTREME_TORQUE_MAGNITUDES_PRESENT) and len(data) >= offset + 4:
+            maximum_torque_magnitude = DataParser.parse_int16(data, offset, signed=True) / 32.0
+            minimum_torque_magnitude = DataParser.parse_int16(data, offset + 2, signed=True) / 32.0
+            offset += 4
+
+        # Parse optional extreme angles (3 bytes packed: max uint12 + min uint12) if present (bit 8)
+        if (flags & CyclingPowerMeasurementFlags.EXTREME_ANGLES_PRESENT) and len(data) >= offset + 3:
+            raw_bytes = data[offset : offset + 3]
+            combined = raw_bytes[0] | (raw_bytes[1] << 8) | (raw_bytes[2] << 16)
+            maximum_angle = combined & 0x0FFF
+            minimum_angle = (combined >> 12) & 0x0FFF
+            offset += 3
+
+        # Parse optional top dead spot angle (2 bytes, uint16 degrees) if present (bit 9)
+        if (flags & CyclingPowerMeasurementFlags.TOP_DEAD_SPOT_ANGLE_PRESENT) and len(data) >= offset + 2:
+            top_dead_spot_angle = DataParser.parse_int16(data, offset, signed=False)
+            offset += 2
+
+        # Parse optional bottom dead spot angle (2 bytes, uint16 degrees) if present (bit 10)
+        if (flags & CyclingPowerMeasurementFlags.BOTTOM_DEAD_SPOT_ANGLE_PRESENT) and len(data) >= offset + 2:
+            bottom_dead_spot_angle = DataParser.parse_int16(data, offset, signed=False)
+            offset += 2
 
         # Parse optional accumulated energy (2 bytes, uint16, kJ) if present (bit 11)
         if (flags & CyclingPowerMeasurementFlags.ACCUMULATED_ENERGY_PRESENT) and len(data) >= offset + 2:
@@ -186,9 +232,17 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasu
             last_wheel_event_time=last_wheel_event_time,
             cumulative_crank_revolutions=cumulative_crank_revolutions,
             last_crank_event_time=last_crank_event_time,
+            maximum_force_magnitude=maximum_force_magnitude,
+            minimum_force_magnitude=minimum_force_magnitude,
+            maximum_torque_magnitude=maximum_torque_magnitude,
+            minimum_torque_magnitude=minimum_torque_magnitude,
+            maximum_angle=maximum_angle,
+            minimum_angle=minimum_angle,
+            top_dead_spot_angle=top_dead_spot_angle,
+            bottom_dead_spot_angle=bottom_dead_spot_angle,
         )
 
-    def _encode_value(self, data: CyclingPowerMeasurementData) -> bytearray:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements # Complex cycling power measurement with numerous optional fields
+    def _encode_value(self, data: CyclingPowerMeasurementData) -> bytearray:  # noqa: PLR0912  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         """Encode cycling power measurement value back to bytes.
 
         Args:
@@ -217,6 +271,16 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasu
             flags |= CyclingPowerMeasurementFlags.WHEEL_REVOLUTION_DATA_PRESENT
         if crank_revolutions is not None and crank_event_time is not None:
             flags |= CyclingPowerMeasurementFlags.CRANK_REVOLUTION_DATA_PRESENT
+        if data.maximum_force_magnitude is not None and data.minimum_force_magnitude is not None:
+            flags |= CyclingPowerMeasurementFlags.EXTREME_FORCE_MAGNITUDES_PRESENT
+        if data.maximum_torque_magnitude is not None and data.minimum_torque_magnitude is not None:
+            flags |= CyclingPowerMeasurementFlags.EXTREME_TORQUE_MAGNITUDES_PRESENT
+        if data.maximum_angle is not None and data.minimum_angle is not None:
+            flags |= CyclingPowerMeasurementFlags.EXTREME_ANGLES_PRESENT
+        if data.top_dead_spot_angle is not None:
+            flags |= CyclingPowerMeasurementFlags.TOP_DEAD_SPOT_ANGLE_PRESENT
+        if data.bottom_dead_spot_angle is not None:
+            flags |= CyclingPowerMeasurementFlags.BOTTOM_DEAD_SPOT_ANGLE_PRESENT
         if accumulated_energy is not None:
             flags |= CyclingPowerMeasurementFlags.ACCUMULATED_ENERGY_PRESENT
 
@@ -261,6 +325,47 @@ class CyclingPowerMeasurementCharacteristic(BaseCharacteristic[CyclingPowerMeasu
                 raise ValueError(f"Crank event time {crank_time} exceeds uint16 range")
             result.extend(DataParser.encode_int16(crank_rev, signed=False))
             result.extend(DataParser.encode_int16(crank_time, signed=False))
+
+        # Encode extreme force magnitudes (bit 6): max sint16 + min sint16
+        if data.maximum_force_magnitude is not None and data.minimum_force_magnitude is not None:
+            if not SINT16_MIN <= data.maximum_force_magnitude <= SINT16_MAX:
+                raise ValueError(f"Maximum force magnitude {data.maximum_force_magnitude} exceeds sint16 range")
+            if not SINT16_MIN <= data.minimum_force_magnitude <= SINT16_MAX:
+                raise ValueError(f"Minimum force magnitude {data.minimum_force_magnitude} exceeds sint16 range")
+            result.extend(DataParser.encode_int16(data.maximum_force_magnitude, signed=True))
+            result.extend(DataParser.encode_int16(data.minimum_force_magnitude, signed=True))
+
+        # Encode extreme torque magnitudes (bit 7): max sint16 + min sint16, 1/32 Nm resolution
+        if data.maximum_torque_magnitude is not None and data.minimum_torque_magnitude is not None:
+            max_torque_raw = round(data.maximum_torque_magnitude * 32)
+            min_torque_raw = round(data.minimum_torque_magnitude * 32)
+            if not SINT16_MIN <= max_torque_raw <= SINT16_MAX:
+                raise ValueError(f"Maximum torque magnitude raw {max_torque_raw} exceeds sint16 range")
+            if not SINT16_MIN <= min_torque_raw <= SINT16_MAX:
+                raise ValueError(f"Minimum torque magnitude raw {min_torque_raw} exceeds sint16 range")
+            result.extend(DataParser.encode_int16(max_torque_raw, signed=True))
+            result.extend(DataParser.encode_int16(min_torque_raw, signed=True))
+
+        # Encode extreme angles (bit 8): two uint12 packed in 3 bytes
+        if data.maximum_angle is not None and data.minimum_angle is not None:
+            max_ang = data.maximum_angle & 0x0FFF
+            min_ang = data.minimum_angle & 0x0FFF
+            combined = max_ang | (min_ang << 12)
+            result.append(combined & 0xFF)
+            result.append((combined >> 8) & 0xFF)
+            result.append((combined >> 16) & 0xFF)
+
+        # Encode top dead spot angle (bit 9): uint16 degrees
+        if data.top_dead_spot_angle is not None:
+            if not 0 <= data.top_dead_spot_angle <= UINT16_MAX:
+                raise ValueError(f"Top dead spot angle {data.top_dead_spot_angle} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(data.top_dead_spot_angle, signed=False))
+
+        # Encode bottom dead spot angle (bit 10): uint16 degrees
+        if data.bottom_dead_spot_angle is not None:
+            if not 0 <= data.bottom_dead_spot_angle <= UINT16_MAX:
+                raise ValueError(f"Bottom dead spot angle {data.bottom_dead_spot_angle} exceeds uint16 range")
+            result.extend(DataParser.encode_int16(data.bottom_dead_spot_angle, signed=False))
 
         if accumulated_energy is not None:
             energy = int(accumulated_energy)

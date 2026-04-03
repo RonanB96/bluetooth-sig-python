@@ -56,7 +56,8 @@ class BroadcastReceiveStateCharacteristic(BaseCharacteristic[BroadcastReceiveSta
     being received.
     """
 
-    # Minimum 14 bytes for mandatory fields: source_id(1)+addr_type(1)+addr(6)+adv_sid(1)+broadcast_id(3)+pa_sync(1)+big_enc(1)
+    # Minimum 14 bytes: source_id 1B, addr_type 1B, addr 6B,
+    # adv_sid 1B, broadcast_id 3B, pa_sync 1B, big_enc 1B.
     min_length = 14
     allow_variable_length = True
 

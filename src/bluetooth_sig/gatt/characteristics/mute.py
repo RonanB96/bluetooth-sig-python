@@ -9,10 +9,11 @@ from .templates import EnumTemplate
 
 
 class MuteState(IntEnum):
-    """Mute state."""
+    """Mute state (MICS v1.0, Section 3.1)."""
 
-    NOT_MUTED = 0
-    MUTED = 1
+    NOT_MUTED = 0x00
+    MUTED = 0x01
+    DISABLED = 0x02
 
 
 class MuteCharacteristic(BaseCharacteristic[MuteState]):

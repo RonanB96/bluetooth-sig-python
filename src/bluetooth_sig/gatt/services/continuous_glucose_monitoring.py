@@ -19,9 +19,9 @@ class ContinuousGlucoseMonitoringService(BaseGattService):
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.CGM_MEASUREMENT: True,
         CharacteristicName.CGM_FEATURE: True,
-        CharacteristicName.CGM_STATUS: False,
-        CharacteristicName.CGM_SESSION_START_TIME: False,
-        CharacteristicName.CGM_SESSION_RUN_TIME: False,
-        CharacteristicName.CGM_SPECIFIC_OPS_CONTROL_POINT: False,
-        CharacteristicName.RECORD_ACCESS_CONTROL_POINT: False,
+        CharacteristicName.CGM_STATUS: True,
+        CharacteristicName.CGM_SESSION_START_TIME: True,
+        CharacteristicName.CGM_SESSION_RUN_TIME: True,
+        CharacteristicName.CGM_SPECIFIC_OPS_CONTROL_POINT: True,
+        CharacteristicName.RECORD_ACCESS_CONTROL_POINT: True,
     }

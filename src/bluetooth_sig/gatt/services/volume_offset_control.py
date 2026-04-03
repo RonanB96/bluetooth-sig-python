@@ -16,7 +16,7 @@ class VolumeOffsetControlService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.VOLUME_OFFSET_STATE: True,
-        CharacteristicName.AUDIO_LOCATION: False,
-        CharacteristicName.VOLUME_OFFSET_CONTROL_POINT: False,
-        CharacteristicName.AUDIO_OUTPUT_DESCRIPTION: False,
+        CharacteristicName.AUDIO_LOCATION: True,
+        CharacteristicName.VOLUME_OFFSET_CONTROL_POINT: True,
+        CharacteristicName.AUDIO_OUTPUT_DESCRIPTION: True,
     }

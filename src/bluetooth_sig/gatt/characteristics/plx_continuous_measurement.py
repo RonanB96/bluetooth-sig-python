@@ -16,6 +16,8 @@ from .utils import DataParser, IEEE11073Parser
 
 logger = logging.getLogger(__name__)
 
+_PLX_CONTINUOUS_MIN_BYTES = 5  # Flags(1) + SpO2(2) + PulseRate(2)
+
 
 class PLXContinuousFlags(IntFlag):
     """PLX Continuous measurement flags (Table 3.7 PLXS v1.0.1)."""
@@ -99,7 +101,7 @@ class PLXContinuousMeasurementCharacteristic(BaseCharacteristic[PLXContinuousDat
     _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [PLXFeaturesCharacteristic]
 
     # Declarative validation
-    min_length: int | None = 5  # Flags(1) + SpO2(2) + PulseRate(2) minimum
+    min_length: int | None = _PLX_CONTINUOUS_MIN_BYTES  # Flags(1) + SpO2(2) + PulseRate(2) minimum
     max_length: int | None = 20  # + Fast(4) + Slow(4) + MeasStatus(2) + DevSensStatus(3) + PAI(2)
     allow_variable_length: bool = True
 
@@ -113,8 +115,10 @@ class PLXContinuousMeasurementCharacteristic(BaseCharacteristic[PLXContinuousDat
         [Pulse Amplitude Index(2)]
         All SpO2/PR fields are IEEE-11073 16-bit SFLOAT.
         """
-        if validate and len(data) < 5:
-            raise ValueError(f"Insufficient data for PLX continuous measurement: {len(data)} < 5")
+        if validate and len(data) < _PLX_CONTINUOUS_MIN_BYTES:
+            raise ValueError(
+                f"Insufficient data for PLX continuous measurement: {len(data)} < {_PLX_CONTINUOUS_MIN_BYTES}"
+            )
 
         offset = 0
 

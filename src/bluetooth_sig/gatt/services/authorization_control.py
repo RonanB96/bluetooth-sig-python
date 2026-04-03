@@ -16,9 +16,9 @@ class AuthorizationControlService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.ACS_CONTROL_POINT: False,
+        CharacteristicName.ACS_CONTROL_POINT: True,
         CharacteristicName.ACS_DATA_IN: False,
         CharacteristicName.ACS_DATA_OUT_INDICATE: False,
         CharacteristicName.ACS_DATA_OUT_NOTIFY: False,
-        CharacteristicName.ACS_STATUS: False,
+        CharacteristicName.ACS_STATUS: True,
     }

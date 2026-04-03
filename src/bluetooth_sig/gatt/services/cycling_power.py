@@ -21,4 +21,5 @@ class CyclingPowerService(BaseGattService):
         CharacteristicName.CYCLING_POWER_FEATURE: True,
         CharacteristicName.CYCLING_POWER_VECTOR: False,
         CharacteristicName.CYCLING_POWER_CONTROL_POINT: False,
+        CharacteristicName.SENSOR_LOCATION: True,
     }

@@ -18,5 +18,7 @@ class RunningSpeedAndCadenceService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.RSC_MEASUREMENT: True,
-        CharacteristicName.RSC_FEATURE: False,
+        CharacteristicName.RSC_FEATURE: True,
+        CharacteristicName.SENSOR_LOCATION: False,
+        CharacteristicName.SC_CONTROL_POINT: False,
     }

@@ -21,4 +21,5 @@ class GlucoseService(BaseGattService):
         CharacteristicName.GLUCOSE_MEASUREMENT: True,
         CharacteristicName.GLUCOSE_FEATURE: True,
         CharacteristicName.GLUCOSE_MEASUREMENT_CONTEXT: False,
+        CharacteristicName.RECORD_ACCESS_CONTROL_POINT: True,
     }

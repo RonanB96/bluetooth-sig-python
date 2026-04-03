@@ -20,5 +20,5 @@ class ReferenceTimeUpdateService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.TIME_UPDATE_CONTROL_POINT: True,
-        CharacteristicName.TIME_UPDATE_STATE: False,
+        CharacteristicName.TIME_UPDATE_STATE: True,
     }

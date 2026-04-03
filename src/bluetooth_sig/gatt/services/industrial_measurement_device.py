@@ -16,12 +16,21 @@ class IndustrialMeasurementDeviceService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.IMD_STATUS: True,
-        CharacteristicName.IMD_CONTROL: False,
-        CharacteristicName.IMD_HISTORICAL_DATA: False,
+        CharacteristicName.IMD_STATUS: False,
         CharacteristicName.IMDS_DESCRIPTOR_VALUE_CHANGED: False,
         CharacteristicName.FIRST_USE_DATE: False,
         CharacteristicName.LIFE_CYCLE_DATA: False,
-        CharacteristicName.SERVICE_CYCLE_DATA: False,
         CharacteristicName.WORK_CYCLE_DATA: False,
+        CharacteristicName.SERVICE_CYCLE_DATA: False,
+        CharacteristicName.IMD_CONTROL: False,
+        CharacteristicName.IMD_HISTORICAL_DATA: False,
+        CharacteristicName.RECORD_ACCESS_CONTROL_POINT: False,
+        # IMD Measurement permitted characteristics (at least one required if service is present)
+        CharacteristicName.ACCELERATION: False,
+        CharacteristicName.FORCE: False,
+        CharacteristicName.LINEAR_POSITION: False,
+        CharacteristicName.ROTATIONAL_SPEED: False,
+        CharacteristicName.LENGTH: False,
+        CharacteristicName.TORQUE: False,
+        CharacteristicName.TEMPERATURE: False,
     }

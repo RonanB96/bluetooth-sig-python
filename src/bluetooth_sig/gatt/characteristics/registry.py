@@ -135,6 +135,12 @@ class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseChara
                 continue
             uuid_to_enum.setdefault(info.uuid.normalized, enum_member)
 
+        # TODO Remove when submodule is fixed
+        # Characteristics present in service specs but not yet available in the
+        # assigned-number YAML registry data.
+        uuid_to_enum.setdefault(BluetoothUUID("2A56").normalized, CharacteristicName.DIGITAL)
+        uuid_to_enum.setdefault(BluetoothUUID("2A58").normalized, CharacteristicName.ANALOG)
+
         return uuid_to_enum
 
     def _build_enum_map(self) -> dict[CharacteristicName, type[BaseCharacteristic[Any]]]:

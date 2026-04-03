@@ -16,7 +16,7 @@ class ConstantToneExtensionService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.CONSTANT_TONE_EXTENSION_ENABLE: False,
+        CharacteristicName.CONSTANT_TONE_EXTENSION_ENABLE: True,
         CharacteristicName.ADVERTISING_CONSTANT_TONE_EXTENSION_MINIMUM_LENGTH: False,
         CharacteristicName.ADVERTISING_CONSTANT_TONE_EXTENSION_MINIMUM_TRANSMIT_COUNT: False,
         CharacteristicName.ADVERTISING_CONSTANT_TONE_EXTENSION_TRANSMIT_DURATION: False,

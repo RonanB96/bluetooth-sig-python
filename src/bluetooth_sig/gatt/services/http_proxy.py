@@ -15,13 +15,13 @@ class HttpProxyService(BaseGattService):
     constrained devices to make HTTP requests via a gateway.
     """
 
-    _service_name: str = "HTTP Proxy"
+    _service_name: str | None = "HTTP Proxy"
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.URI: False,
-        CharacteristicName.HTTP_HEADERS: False,
-        CharacteristicName.HTTP_ENTITY_BODY: False,
-        CharacteristicName.HTTP_CONTROL_POINT: False,
-        CharacteristicName.HTTP_STATUS_CODE: False,
-        CharacteristicName.HTTPS_SECURITY: False,
+        CharacteristicName.URI: True,
+        CharacteristicName.HTTP_HEADERS: True,
+        CharacteristicName.HTTP_ENTITY_BODY: True,
+        CharacteristicName.HTTP_CONTROL_POINT: True,
+        CharacteristicName.HTTP_STATUS_CODE: True,
+        CharacteristicName.HTTPS_SECURITY: True,
     }

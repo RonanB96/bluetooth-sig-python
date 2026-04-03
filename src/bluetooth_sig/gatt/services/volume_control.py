@@ -16,6 +16,6 @@ class VolumeControlService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.VOLUME_STATE: True,
-        CharacteristicName.VOLUME_CONTROL_POINT: False,
-        CharacteristicName.VOLUME_FLAGS: False,
+        CharacteristicName.VOLUME_CONTROL_POINT: True,
+        CharacteristicName.VOLUME_FLAGS: True,
     }

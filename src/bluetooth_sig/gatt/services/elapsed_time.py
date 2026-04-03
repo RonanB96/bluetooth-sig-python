@@ -16,5 +16,5 @@ class ElapsedTimeService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.CURRENT_ELAPSED_TIME: True,
+        CharacteristicName.ELAPSED_TIME: True,
     }

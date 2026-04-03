@@ -12,10 +12,10 @@ class LuminousEnergyCharacteristic(BaseCharacteristic[int]):
     org.bluetooth.characteristic.luminous_energy
 
     Luminous energy in lumen hours with a resolution of 1000.
-    A value of 0xFFFFFE represents 'value is not valid'.
+    A value of 0xFFFFFF represents 'value is not known'.
 
     Raises:
-        SpecialValueDetectedError: If raw value is a sentinel (e.g. 0xFFFFFE).
+        SpecialValueDetectedError: If raw value is a sentinel (e.g. 0xFFFFFF).
     """
 
     _template = Uint24Template()

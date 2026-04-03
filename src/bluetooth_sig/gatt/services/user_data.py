@@ -54,6 +54,11 @@ class UserDataService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
+        CharacteristicName.DATABASE_CHANGE_INCREMENT: True,
+        CharacteristicName.USER_INDEX: True,
+        CharacteristicName.USER_CONTROL_POINT: True,
+        CharacteristicName.REGISTERED_USER: False,
+        # UDS permitted characteristics (at least one required if service is present)
         CharacteristicName.FIRST_NAME: False,
         CharacteristicName.LAST_NAME: False,
         CharacteristicName.EMAIL_ADDRESS: False,

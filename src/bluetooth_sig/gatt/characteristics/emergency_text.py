@@ -11,8 +11,11 @@ class EmergencyTextCharacteristic(BaseCharacteristic[str]):
 
     org.bluetooth.characteristic.emergency_text
 
-    Emergency Text characteristic.
+    1-20 octets of UTF-8 encoded text (no null terminator). Intended to
+    carry human-readable information such as a name or phone number.
+    Encryption required.
     """
 
     _template = Utf8StringTemplate()
-    min_length = 0
+    min_length: int = 1
+    max_length: int = 20

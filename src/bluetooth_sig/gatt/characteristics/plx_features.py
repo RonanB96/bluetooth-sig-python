@@ -38,7 +38,11 @@ class PLXFeaturesCharacteristic(BaseCharacteristic[PLXFeatureFlags]):
 
     _is_bitfield = True
 
-    expected_length: int | None = 2
+    # PLXS v1.0.1 Table 3.8: 2-byte features + optional 2-byte Measurement Status
+    # Support (if bit 0 set) + optional 3-byte Device/Sensor Status Support (if bit 1 set)
+    min_length: int | None = 2
+    max_length: int | None = 7
+    allow_variable_length: bool = True
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True

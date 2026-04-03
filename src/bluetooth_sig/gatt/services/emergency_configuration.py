@@ -16,6 +16,6 @@ class EmergencyConfigurationService(BaseGattService):
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.EMERGENCY_ID: False,
+        CharacteristicName.EMERGENCY_ID: True,
         CharacteristicName.EMERGENCY_TEXT: False,
     }

@@ -18,7 +18,7 @@ class AltitudeCharacteristic(BaseCharacteristic[float]):
     # Manual overrides required as Bluetooth SIG registry doesn't provide unit/value type
     _manual_unit = "m"
     # IPS spec §3.7: uint16; x = h_dm + 1000 where h_dm is altitude in decimetres.
-    # Decoded value (metres) = (x − 1000) × 0.1 → scale_factor=0.1, offset=−1000.
+    # Decoded value (metres) = (x - 1000) x 0.1 -> scale_factor=0.1, offset=-1000.
     # 0xFFFF (65535) means "not configured".
     expected_length = 2
     min_length = 2

@@ -18,4 +18,6 @@ class HeartRateService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.HEART_RATE_MEASUREMENT: True,
+        CharacteristicName.BODY_SENSOR_LOCATION: False,
+        CharacteristicName.HEART_RATE_CONTROL_POINT: False,
     }

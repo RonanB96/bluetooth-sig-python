@@ -17,9 +17,9 @@ class RangingService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.RAS_FEATURES: True,
-        CharacteristicName.RAS_CONTROL_POINT: False,
-        CharacteristicName.ON_DEMAND_RANGING_DATA: False,
+        CharacteristicName.RAS_CONTROL_POINT: True,
+        CharacteristicName.ON_DEMAND_RANGING_DATA: True,
         CharacteristicName.REAL_TIME_RANGING_DATA: False,
-        CharacteristicName.RANGING_DATA_READY: False,
-        CharacteristicName.RANGING_DATA_OVERWRITTEN: False,
+        CharacteristicName.RANGING_DATA_READY: True,
+        CharacteristicName.RANGING_DATA_OVERWRITTEN: True,
     }

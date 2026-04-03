@@ -19,4 +19,14 @@ class BatteryService(BaseGattService):
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.BATTERY_LEVEL: True,
         CharacteristicName.BATTERY_LEVEL_STATUS: False,
+        CharacteristicName.ESTIMATED_SERVICE_DATE: False,
+        CharacteristicName.BATTERY_CRITICAL_STATUS: False,
+        CharacteristicName.BATTERY_ENERGY_STATUS: False,
+        CharacteristicName.BATTERY_TIME_STATUS: False,
+        CharacteristicName.BATTERY_HEALTH_STATUS: False,
+        CharacteristicName.BATTERY_HEALTH_INFORMATION: False,
+        CharacteristicName.BATTERY_INFORMATION: False,
+        CharacteristicName.MANUFACTURER_NAME_STRING: False,
+        CharacteristicName.MODEL_NUMBER_STRING: False,
+        CharacteristicName.SERIAL_NUMBER_STRING: False,
     }

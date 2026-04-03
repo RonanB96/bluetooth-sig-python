@@ -17,14 +17,15 @@ class HumanInterfaceDeviceService(BaseGattService):
     - Report Map - Required
     - Report - Required
     - Protocol Mode - Required
-    - PnP ID - Optional
     """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.HID_INFORMATION: True,
         CharacteristicName.HID_CONTROL_POINT: True,
         CharacteristicName.REPORT_MAP: True,
-        CharacteristicName.REPORT: True,
-        CharacteristicName.PROTOCOL_MODE: True,
-        CharacteristicName.PNP_ID: False,
+        CharacteristicName.REPORT: False,
+        CharacteristicName.PROTOCOL_MODE: False,
+        CharacteristicName.BOOT_KEYBOARD_INPUT_REPORT: False,
+        CharacteristicName.BOOT_KEYBOARD_OUTPUT_REPORT: False,
+        CharacteristicName.BOOT_MOUSE_INPUT_REPORT: False,
     }

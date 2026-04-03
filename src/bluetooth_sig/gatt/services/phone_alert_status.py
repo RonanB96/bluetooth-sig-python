@@ -21,6 +21,6 @@ class PhoneAlertStatusService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.ALERT_STATUS: True,
-        CharacteristicName.RINGER_CONTROL_POINT: True,
-        CharacteristicName.RINGER_SETTING: False,
+        CharacteristicName.RINGER_CONTROL_POINT: False,
+        CharacteristicName.RINGER_SETTING: True,
     }

@@ -18,5 +18,5 @@ class WeightScaleService(BaseGattService):
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.WEIGHT_MEASUREMENT: True,
-        CharacteristicName.WEIGHT_SCALE_FEATURE: False,
+        CharacteristicName.WEIGHT_SCALE_FEATURE: True,
     }

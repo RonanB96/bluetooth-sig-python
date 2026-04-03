@@ -1,37 +1,52 @@
-"""ACS Status characteristic (0x2B2F).
-
-Reports the presence status of hearing aids.
-
-References:
-    Bluetooth SIG Audio Control Service
-"""
+"""ACS Status characteristic (0x2B2F)."""
 
 from __future__ import annotations
 
-from enum import IntEnum
+import msgspec
 
+from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .templates import EnumTemplate
+from .utils import DataParser
 
 
-class ACSHearingAidPresence(IntEnum):
-    """ACS hearing aid presence status values."""
+class ACSStatusData(msgspec.Struct, frozen=True, kw_only=True):
+    """Parsed data from ACS Status characteristic."""
 
-    NO_HEARING_AID_PRESENT = 0x00
-    LEFT_PRESENT = 0x01
-    RIGHT_PRESENT = 0x02
-    BOTH_PRESENT = 0x03
+    security_controls_switch: bool
+    security_established: bool
+    current_restriction_map_id: int
 
 
-class ACSStatusCharacteristic(BaseCharacteristic[ACSHearingAidPresence]):
+class ACSStatusCharacteristic(BaseCharacteristic[ACSStatusData]):
     """ACS Status characteristic (0x2B2F).
 
     org.bluetooth.characteristic.acs_status
 
-    Reports the presence status of hearing aids.
+    Contains ACS status flags and the current restriction map ID.
     """
 
-    _template = EnumTemplate.uint8(ACSHearingAidPresence)
+    expected_length: int | None = 3
 
-    min_value: int = ACSHearingAidPresence.NO_HEARING_AID_PRESENT  # 0
-    max_value: int = ACSHearingAidPresence.BOTH_PRESENT  # 3
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
+    ) -> ACSStatusData:
+        status_flags = DataParser.parse_int8(data, 0, signed=False)
+        restriction_map_id = DataParser.parse_int16(data, 1, signed=False)
+
+        return ACSStatusData(
+            security_controls_switch=bool(status_flags & 0x01),
+            security_established=bool(status_flags & 0x02),
+            current_restriction_map_id=restriction_map_id,
+        )
+
+    def _encode_value(self, data: ACSStatusData) -> bytearray:
+        status_flags = 0
+        if data.security_controls_switch:
+            status_flags |= 0x01
+        if data.security_established:
+            status_flags |= 0x02
+
+        result = bytearray()
+        result.extend(DataParser.encode_int8(status_flags, signed=False))
+        result.extend(DataParser.encode_int16(data.current_restriction_map_id, signed=False))
+        return result

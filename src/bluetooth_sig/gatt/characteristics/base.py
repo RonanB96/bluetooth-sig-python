@@ -489,8 +489,8 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
     def _resolve_class_uuid(cls) -> BluetoothUUID | None:
         """Resolve the characteristic UUID for this class without creating an instance."""
         # Check for _info attribute first (custom characteristics)
-        if hasattr(cls, "_info"):
-            info: CharacteristicInfo = cls._info  # Custom characteristics may have _info
+        info: CharacteristicInfo | None = getattr(cls, "_info", None)
+        if info is not None:
             try:
                 return info.uuid
             except AttributeError:

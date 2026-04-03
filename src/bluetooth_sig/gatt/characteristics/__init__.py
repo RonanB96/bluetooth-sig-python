@@ -43,6 +43,7 @@ from .ammonia_concentration import AmmoniaConcentrationCharacteristic
 from .anaerobic_heart_rate_lower_limit import AnaerobicHeartRateLowerLimitCharacteristic
 from .anaerobic_heart_rate_upper_limit import AnaerobicHeartRateUpperLimitCharacteristic
 from .anaerobic_threshold import AnaerobicThresholdCharacteristic
+from .analog import AnalogCharacteristic
 from .ap_sync_key_material import APSyncKeyMaterialCharacteristic
 from .apparent_energy_32 import ApparentEnergy32Characteristic
 from .apparent_power import ApparentPowerCharacteristic
@@ -125,6 +126,7 @@ from .coefficient import CoefficientCharacteristic
 from .constant_tone_extension_enable import ConstantToneExtensionEnableCharacteristic
 from .contact_status_8 import ContactStatus8Characteristic
 from .content_control_id import ContentControlIdCharacteristic
+from .coordinated_set_name import CoordinatedSetNameCharacteristic
 from .coordinated_set_size import CoordinatedSetSizeCharacteristic
 from .correlated_color_temperature import CorrelatedColorTemperatureCharacteristic
 from .cosine_of_the_angle import CosineOfTheAngleCharacteristic
@@ -158,6 +160,7 @@ from .device_time_feature import DeviceTimeFeatureCharacteristic
 from .device_time_parameters import DeviceTimeParametersCharacteristic
 from .device_wearing_position import DeviceWearingPositionCharacteristic
 from .dew_point import DewPointCharacteristic
+from .digital import DigitalCharacteristic
 from .door_window_status import DoorWindowStatusCharacteristic
 from .dst_offset import DstOffsetCharacteristic
 from .elapsed_time import ElapsedTimeCharacteristic
@@ -474,7 +477,7 @@ from .tx_power_level import TxPowerLevelCharacteristic
 from .udi_for_medical_devices import UDIForMedicalDevicesCharacteristic
 from .ugg_features import UGGFeaturesCharacteristic
 from .ugt_features import UGTFeaturesCharacteristic
-from .uncertainty import UncertaintyCharacteristic
+from .uncertainty import UncertaintyCharacteristic, UncertaintyData
 from .unknown import UnknownCharacteristic
 from .unread_alert_status import UnreadAlertStatusCharacteristic
 from .uri import URICharacteristic
@@ -535,6 +538,7 @@ __all__ = [
     "AnaerobicHeartRateLowerLimitCharacteristic",
     "AnaerobicHeartRateUpperLimitCharacteristic",
     "AnaerobicThresholdCharacteristic",
+    "AnalogCharacteristic",
     "APSyncKeyMaterialCharacteristic",
     "ApparentEnergy32Characteristic",
     "ApparentPowerCharacteristic",
@@ -616,6 +620,7 @@ __all__ = [
     "ConstantToneExtensionEnableCharacteristic",
     "ContactStatus8Characteristic",
     "ContentControlIdCharacteristic",
+    "CoordinatedSetNameCharacteristic",
     "CoordinatedSetSizeCharacteristic",
     "CorrelatedColorTemperatureCharacteristic",
     "CosineOfTheAngleCharacteristic",
@@ -651,6 +656,7 @@ __all__ = [
     "DeviceWearingPositionCharacteristic",
     "DewPointCharacteristic",
     "DoorWindowStatusCharacteristic",
+    "DigitalCharacteristic",
     "DstOffsetCharacteristic",
     "ElectricCurrentCharacteristic",
     "ElectricCurrentRangeCharacteristic",
@@ -963,6 +969,7 @@ __all__ = [
     "UGGFeaturesCharacteristic",
     "UGTFeaturesCharacteristic",
     "UncertaintyCharacteristic",
+    "UncertaintyData",
     "UnknownCharacteristic",
     "UnreadAlertStatusCharacteristic",
     "URICharacteristic",
