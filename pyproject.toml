@@ -204,7 +204,7 @@ ignore = [
     "TRY300", "TRY301",  # Allow various exception patterns
     "SIM105", "SIM118",  # Allow various code simplifications
     "RUF001", "RUF006", "RUF015",  # Allow various patterns
-    "N806", "ARG001",  # Allow naming and unused args
+    "N806", "ARG001", "ARG002",  # Allow naming and unused args (interface compliance)
     "D100", "D101", "D102", "D103", "D104", "D105", "D107", "D205", "D401", "D417",  # Docstrings
 ]
 "src/bluetooth_sig/gatt/characteristics/**" = [

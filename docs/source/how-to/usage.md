@@ -385,6 +385,116 @@ print(f"Battery: {result}%")  # Battery: 50%
 
 Use `validate=False` for testing with synthetic data or debugging firmware. Keep validation enabled (default) for production code.
 
+## Vendor / Proprietary Parser Extensions
+
+Many BLE devices expose characteristics under vendor-specific (non-SIG) UUIDs that the standard registry cannot recognise.
+You can register parsers for these UUIDs at runtime so that `BluetoothSIGTranslator` handles them transparently alongside SIG characteristics.
+
+### Step 1 — Define a custom characteristic class
+
+Subclass `CustomBaseCharacteristic`, declare `_info` with your proprietary UUID, and implement `_decode_value` / `_encode_value`.
+
+```python
+import struct
+
+import msgspec
+
+from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
+from bluetooth_sig.gatt.context import CharacteristicContext
+from bluetooth_sig.types import CharacteristicInfo
+from bluetooth_sig.types.uuid import BluetoothUUID
+
+
+# Govee-style thermometer: 4-byte payload, sint16 LE temperature (÷100 °C) + uint16 LE humidity (÷100 %)
+GOVEE_THERMO_UUID = "494e5445-4c4c-494e-5445-4c4c49000001"
+
+
+class GoveeThermometerReading(msgspec.Struct, frozen=True, kw_only=True):
+    temperature: float  # °C
+    humidity: float     # %
+
+
+class GoveeThermometerCharacteristic(CustomBaseCharacteristic):
+    """Govee-style thermometer: 4-byte payload."""
+
+    expected_length: int = 4
+
+    _info = CharacteristicInfo(
+        uuid=BluetoothUUID(GOVEE_THERMO_UUID),
+        name="Govee Thermometer Reading",
+        unit="°C / %",
+        python_type=float,
+    )
+
+    def _decode_value(
+        self,
+        data: bytearray,
+        ctx: CharacteristicContext | None = None,
+        *,
+        validate: bool = True,
+    ) -> GoveeThermometerReading:
+        temp_raw, hum_raw = struct.unpack_from("<hH", data, 0)
+        return GoveeThermometerReading(
+            temperature=round(temp_raw / 100.0, 2),
+            humidity=round(hum_raw / 100.0, 2),
+        )
+
+    def _encode_value(self, data: GoveeThermometerReading) -> bytearray:
+        return bytearray(struct.pack("<hH", round(data.temperature * 100), round(data.humidity * 100)))
+```
+
+**Key rules:**
+
+- Use a vendor-specific 128-bit UUID — SIG short UUIDs are reserved for the standard registry.
+- Return a `msgspec.Struct` (not a `dict`) for multi-field results.
+- `_info` must be set as a class attribute; the UUID is resolved from it automatically.
+
+### Step 2 — Register with the translator
+
+Call `register_custom_characteristic_class` with `override=True` to make registration idempotent:
+
+```python
+# SKIP: Requires GoveeThermometerCharacteristic defined in Step 1
+from bluetooth_sig import BluetoothSIGTranslator
+
+GOVEE_THERMO_UUID = "494e5445-4c4c-494e-5445-4c4c49000001"
+
+translator = BluetoothSIGTranslator.get_instance()
+
+translator.register_custom_characteristic_class(
+    GOVEE_THERMO_UUID,
+    GoveeThermometerCharacteristic,
+    override=True,
+)
+```
+
+Repeat this once at application start-up — for example in an `__init__.py` or a dedicated `setup_parsers()` function.
+
+### Step 3 — Parse payloads via the translator
+
+After registration, `parse_characteristic` dispatches by UUID just like SIG characteristics:
+
+```python
+# SKIP: Requires registration from Steps 1 and 2
+import struct
+
+# Simulated payload: 22.50 °C, 65.10 %
+payload = bytearray(struct.pack("<hH", 2250, 6510))
+
+result = translator.parse_characteristic(GOVEE_THERMO_UUID, payload)
+print(result.temperature)  # 22.5
+print(result.humidity)     # 65.1
+```
+
+### Complete working example
+
+See [`examples/vendor_parsers/register_parsers.py`](https://github.com/RonanB96/bluetooth-sig-python/blob/main/examples/vendor_parsers/register_parsers.py) for a full script demonstrating:
+
+- **Nordic LED Button Service** — 1-byte LED and button state characteristics using proprietary Nordic Semiconductor UUIDs.
+- **Govee-style thermometer** — 4-byte compound payload with temperature and humidity.
+
+Both parsers are covered by tests in [`tests/gatt/characteristics/test_vendor_parsers.py`](https://github.com/RonanB96/bluetooth-sig-python/blob/main/tests/gatt/characteristics/test_vendor_parsers.py).
+
 ## Next Steps
 
 - [Quick Start Guide](../tutorials/quickstart.md) - Basic getting started

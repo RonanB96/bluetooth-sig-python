@@ -35,6 +35,7 @@ _EXCLUDED_TEST_FILES = frozenset(
         "test_custom_characteristics.py",
         "test_python_type_auto_resolution.py",
         "test_templates.py",
+        "test_vendor_parsers.py",
     }
 )
 
