@@ -55,6 +55,19 @@ class NameNormalizer:
         # Insert space before trailing numbers
         return re.sub(r"([a-z])(\d+)", r"\1 \2", result)
 
+    @classmethod
+    def sanitize_display_markup(cls, name: str) -> str:
+        """Convert SIG LaTeX-style display markup into plain-text output.
+
+        Args:
+            name: Raw SIG/YAML name or description fragment.
+
+        Returns:
+            Plain-text display string with supported LaTeX markup removed.
+
+        """
+        return re.sub(r"\\textsubscript\{([^}]+)\}", r"\1", name)
+
     @staticmethod
     def remove_suffix(name: str, suffix: str) -> str:
         """Remove suffix from name if present.

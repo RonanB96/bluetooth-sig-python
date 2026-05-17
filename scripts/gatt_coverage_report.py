@@ -23,7 +23,7 @@ sys.path.insert(0, str(_project_root / "src"))
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry  # noqa: E402
 from bluetooth_sig.gatt.descriptors import DescriptorRegistry  # noqa: E402
 from bluetooth_sig.gatt.services.registry import GattServiceRegistry  # noqa: E402
-from bluetooth_sig.gatt.uuid_registry import uuid_registry  # noqa: E402
+from bluetooth_sig.gatt.uuid_registry import get_uuid_registry  # noqa: E402
 from bluetooth_sig.types.uuid import BluetoothUUID  # noqa: E402
 
 
@@ -35,6 +35,9 @@ def _format_line(category: str, yaml_count: int, impl_count: int) -> str:
 
 def main(*, verbose: bool = False) -> None:
     """Print GATT coverage report."""
+    uuid_registry = get_uuid_registry()
+    uuid_registry.ensure_loaded()
+
     # --- Characteristics ---
     char_yaml = uuid_registry._characteristics
     char_yaml_uuids = set(char_yaml.keys())

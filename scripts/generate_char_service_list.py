@@ -8,6 +8,8 @@ of all supported GATT characteristics and services.
 from __future__ import annotations
 
 import inspect
+import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -18,7 +20,7 @@ sys.path.insert(0, str(repo_root / "src"))
 from bluetooth_sig.gatt.characteristics import get_characteristic_class_map  # noqa: E402
 from bluetooth_sig.gatt.resolver import NameNormalizer  # noqa: E402
 from bluetooth_sig.gatt.services import get_service_class_map  # noqa: E402
-from bluetooth_sig.gatt.uuid_registry import uuid_registry  # noqa: E402
+from bluetooth_sig.gatt.uuid_registry import get_uuid_registry  # noqa: E402
 
 
 def clean_description(description: str) -> str:
@@ -33,28 +35,15 @@ def clean_description(description: str) -> str:
     if not description:
         return ""
 
-    # Replace LaTeX formatting with Unicode/HTML equivalents
-    replacements = {
-        r"\textsubscript{2}": "₂",
-        r"\textsubscript{3}": "₃",
-        r"\textsubscript{1}": "₁",
-        r"\textsubscript{0}": "₀",
-        r"\textsubscript{": "<sub>",
-        r"}": "</sub>",  # Only for subscripts
-        r"\autoref{": "",  # Remove LaTeX reference commands
-    }
-
-    cleaned = description
-    for pattern, replacement in replacements.items():
-        cleaned = cleaned.replace(pattern, replacement)
+    cleaned = NameNormalizer.sanitize_display_markup(description)
+    cleaned = cleaned.replace(r"\autoref{", "")
+    cleaned = cleaned.replace("}", "")
 
     # Remove newlines and extra whitespace
     cleaned = " ".join(cleaned.split())
 
     # Get first sentence only (up to first period followed by space or end)
     # But avoid matching decimals like "PM2.5" or "0.1"
-    import re
-
     match = re.search(r"^(.*?)\.\s", cleaned)  # Period followed by space
     if match:
         cleaned = match.group(1).strip() + "."
@@ -77,21 +66,7 @@ def clean_name(name: str) -> str:
     if not name:
         return ""
 
-    # Replace LaTeX formatting with Unicode/HTML equivalents
-    replacements = {
-        r"\textsubscript{2}": "₂",
-        r"\textsubscript{3}": "₃",
-        r"\textsubscript{1}": "₁",
-        r"\textsubscript{0}": "₀",
-        r"\textsubscript{": "<sub>",
-        r"}": "</sub>",
-    }
-
-    cleaned = name
-    for pattern, replacement in replacements.items():
-        cleaned = cleaned.replace(pattern, replacement)
-
-    return cleaned
+    return NameNormalizer.sanitize_display_markup(name)
 
 
 def get_characteristic_info(char_class: type) -> tuple[str, str, str]:
@@ -105,6 +80,7 @@ def get_characteristic_info(char_class: type) -> tuple[str, str, str]:
 
     """
     try:
+        uuid_registry = get_uuid_registry()
         # Get UUID from the class method
         uuid_obj = char_class.get_class_uuid()
         uuid = str(uuid_obj).upper() if uuid_obj else "N/A"
@@ -140,6 +116,7 @@ def get_service_info(service_class: type) -> tuple[str, str, str]:
 
     """
     try:
+        uuid_registry = get_uuid_registry()
         # Get UUID from the class method
         uuid_obj = service_class.get_class_uuid()
         uuid = str(uuid_obj).upper() if uuid_obj else "N/A"
@@ -209,24 +186,110 @@ def discover_services() -> list[tuple[str, str, str, str]]:
     return services
 
 
+def get_coverage_summary() -> tuple[int, int, list[str], int, int, list[str]]:
+    """Return implementation coverage against the pinned SIG YAML registry.
+
+    Returns:
+        Tuple of implemented characteristic count, total characteristic count,
+        missing characteristic names, implemented service count, total service
+        count, and missing service names.
+    """
+    uuid_registry = get_uuid_registry()
+    uuid_registry.ensure_loaded()
+
+    characteristic_registry = uuid_registry._characteristics
+    service_registry = uuid_registry._services
+
+    implemented_characteristics = {
+        uuid_obj.normalized
+        for char_class in get_characteristic_class_map().values()
+        if (uuid_obj := char_class.get_class_uuid()) is not None
+    }
+    implemented_services = {
+        uuid_obj.normalized
+        for service_class in get_service_class_map().values()
+        if (uuid_obj := service_class.get_class_uuid()) is not None
+    }
+
+    missing_characteristics = sorted(
+        characteristic_registry[uuid].name
+        for uuid in characteristic_registry
+        if uuid not in implemented_characteristics
+    )
+    missing_services = sorted(
+        service_registry[uuid].name for uuid in service_registry if uuid not in implemented_services
+    )
+
+    return (
+        len(implemented_characteristics),
+        len(characteristic_registry),
+        missing_characteristics,
+        len(implemented_services),
+        len(service_registry),
+        missing_services,
+    )
+
+
+def get_sig_submodule_context() -> tuple[str, str]:
+    """Return the pinned SIG submodule SHA and commit URL.
+
+    Returns:
+        Tuple of the full pinned commit SHA and a link to that upstream commit.
+
+    Raises:
+        subprocess.CalledProcessError: If git cannot resolve the submodule status.
+    """
+    result = subprocess.run(
+        ["git", "submodule", "status", "--", "bluetooth_sig"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    sha = result.stdout.strip().split()[0].lstrip("-+")
+    commit_url = f"https://bitbucket.org/bluetooth-SIG/public/commits/{sha}"
+    return sha, commit_url
+
+
 def generate_markdown() -> str:
     """Generate markdown documentation for characteristics and services."""
     characteristics = discover_characteristics()
     services = discover_services()
+    (
+        implemented_characteristic_count,
+        total_characteristic_count,
+        missing_characteristics,
+        implemented_service_count,
+        total_service_count,
+        missing_services,
+    ) = get_coverage_summary()
+    sig_sha, sig_commit_url = get_sig_submodule_context()
+    short_sig_sha = sig_sha[:7]
 
     md = f"""# Supported Characteristics and Services
 
-This page lists all GATT characteristics and services currently supported by the library.
+This page lists the GATT characteristics and services currently implemented by the library.
 
 !!! note "Auto-Generated"
-    This page is automatically generated from the codebase by `scripts/generate_char_service_list.py`.
+    This page is automatically generated from the runtime registries and the pinned
+    Bluetooth SIG YAML data by `scripts/generate_char_service_list.py`.
     The list is updated when new characteristics or services are added. See
     [Adding Characteristics](../how-to/adding-characteristics.md) to learn how to contribute
     new characteristics.
 
-## Characteristics
+## Coverage Summary
 
-The library currently supports **{len(characteristics)}** GATT characteristics:
+The pinned Bluetooth SIG registry currently defines **{total_characteristic_count}** GATT characteristics and
+**{total_service_count}** GATT services.
+
+Pinned SIG data commit: [`{short_sig_sha}`]({sig_commit_url})
+
+The library currently implements **{implemented_characteristic_count} of {total_characteristic_count}**
+characteristics and **{implemented_service_count} of {total_service_count}** services.
+
+## Implemented Characteristics
+
+The library currently supports **{len(characteristics)}** implemented GATT characteristics:
 """
 
     # Build a mapping of characteristic names to the services they belong to
@@ -303,6 +366,24 @@ The library currently supports **{len(characteristics)}** GATT characteristics:
 
     for _class_name, uuid, name, description in services:
         md += f"| **{name}** | `{uuid}` | {description} |\n"
+
+    if missing_characteristics:
+        md += "\n## Not Yet Implemented Characteristics\n\n"
+        md += (
+            "The following Bluetooth SIG characteristics exist in the pinned registry but do not yet have "
+            "runtime implementations in this repository:\n\n"
+        )
+        for name in missing_characteristics:
+            md += f"- {name}\n"
+
+    if missing_services:
+        md += "\n## Not Yet Implemented Services\n\n"
+        md += (
+            "The following Bluetooth SIG services exist in the pinned registry but do not yet have "
+            "runtime implementations:\n\n"
+        )
+        for name in missing_services:
+            md += f"- {name}\n"
 
     md += """
 ## Adding Support for New Characteristics

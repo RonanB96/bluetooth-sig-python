@@ -34,6 +34,7 @@ from .characteristic_meta import ValidationConfig as ValidationConfig  # noqa: P
 from .context_lookup import ContextLookupMixin
 from .descriptor_mixin import DescriptorMixin
 from .pipeline import CharacteristicValidator, EncodePipeline, ParsePipeline
+from ..resolver import NameNormalizer
 from .role_classifier import classify_role
 from .templates import CodingTemplate
 
@@ -307,10 +308,11 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
     def display_name(self) -> str:
         """Get the display name for this characteristic.
 
-        Uses explicit _characteristic_name if set, otherwise falls back
-        to class name.
+        Uses the canonical SIG/YAML name for lookup fidelity, then strips
+        supported display markup for human-readable output.
         """
-        return self._characteristic_name or self.__class__.__name__
+        raw_name = self._characteristic_name or self.__class__.__name__
+        return NameNormalizer.sanitize_display_markup(raw_name)
 
     @cached_property
     def gss_special_values(self) -> dict[int, str]:
