@@ -25,30 +25,33 @@ from bluetooth_sig.advertising import AdvertisingPDUParser
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 ```
 
-## Import Tiers and Startup Cost
+## Choosing an Import Path
 
-The library defers loading of individual characteristic and service implementations until
-they are first used. Import cost depends on which entry point you choose:
+You pay for what you import. The library loads individual characteristic and service
+implementations on first use, so you can keep startup lean when you only need parsing.
 
-| Tier | Import | Typical cost | Use when |
-|------|--------|--------------|----------|
-| **Light** | `from bluetooth_sig.core.translator import BluetoothSIGTranslator` | Infrastructure only | Scripts, metadata lookup, unknown UUID parsing |
-| **Standard** | `from bluetooth_sig import BluetoothSIGTranslator` | Standard + `Device` / advertising | Typical application integration |
-| **Typed** | `from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic` | + one characteristic module on first access | Type-safe characteristic work |
+Start with the top-level API unless you have a reason not to:
 
-`import bluetooth_sig` loads registry infrastructure and YAML metadata paths, but does
-**not** import all ~500 characteristic modules. First access to a named class (for example
-`BatteryLevelCharacteristic`) imports only that module.
-
-For production hosts inside an event loop (for example Home Assistant), call
-`prewarm_registries()` from a worker thread during setup to front-load YAML I/O before
-handling notifications.
-
-Regenerate lazy export maps after adding characteristics or services:
-
-```bash
-PYTHONPATH=src python scripts/generate_lazy_exports.py
+```python
+from bluetooth_sig import BluetoothSIGTranslator
 ```
+
+Use a submodule import when you need a specific feature (advertising, a named
+characteristic class, or the device layer):
+
+```python
+from bluetooth_sig.advertising import AdvertisingPDUParser
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+from bluetooth_sig import Device
+```
+
+If you integrate inside an async host (for example Home Assistant) and want to avoid
+blocking I/O on the first parse, see [Performance Tuning](performance-tuning.md) for
+how to call :func:`~bluetooth_sig.utils.prewarm.prewarm_registries` during setup.
+
+Named characteristic imports still work as before. Accessing
+`BatteryLevelCharacteristic` for the first time loads only that module, not the full
+characteristic catalogue.
 
 ## How to Import for Common Tasks
 
@@ -217,7 +220,8 @@ class MyCustomCharacteristic(BaseCharacteristic):
 
 ### Top level (`from bluetooth_sig import X`)
 
-Only the primary API and essential types:
+The primary API and essential types. Importing here loads the translator and shared
+infrastructure, but not every characteristic implementation:
 
 - `BluetoothSIGTranslator` - Main parsing API
 - `AsyncParsingSession` - Async context manager
@@ -227,6 +231,7 @@ Only the primary API and essential types:
 - `ServiceInfo` - Service metadata
 - `ValidationResult` - Validation results
 - `SIGInfo` - SIG standard info
+- `prewarm_registries` - Optional eager registry loading for production hosts
 - `__version__` - Package version
 
 ### Submodules (explicit imports)
@@ -241,7 +246,7 @@ Import from specific modules as needed:
 
 **Characteristics**: `bluetooth_sig.gatt.characteristics`
 
-- All characteristic classes (e.g., `BatteryLevelCharacteristic`)
+- All characteristic classes (for example `BatteryLevelCharacteristic`) — loaded on first access
 
 **Services**: `bluetooth_sig.gatt.services`
 

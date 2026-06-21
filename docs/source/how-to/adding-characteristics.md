@@ -214,6 +214,7 @@ consider contributing it back:
 1. Ensure your implementation follows the official specification
 1. Add comprehensive tests
 1. Add proper docstrings
+1. Regenerate lazy export maps: `PYTHONPATH=src python scripts/generate_lazy_exports.py`
 1. Open a pull request
 
 See [Contributing Guide](contributing.md) for details.

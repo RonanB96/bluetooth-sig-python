@@ -143,12 +143,11 @@ battery_level = data[0]  # uint8, range 0-100
 
 **Trade-off**: Lose automatic validation, UUID resolution, and structured data.
 
-### 6. Pre-warm Registries in Production Hosts
+### 6. Pre-warm Registries in Async Hosts
 
-`import bluetooth_sig` is fast because YAML registries and characteristic class maps load
-on first use. In async frameworks, that I/O can block the event loop on the first parse.
-
-Call `prewarm_registries()` from a thread pool during application setup:
+When you run inside an event loop, the first parse can trigger YAML loading and block
+your loop. Call :func:`~bluetooth_sig.utils.prewarm.prewarm_registries` from a worker
+thread during application setup:
 
 ```python
 import asyncio
@@ -162,18 +161,10 @@ async def setup() -> BluetoothSIGTranslator:
     return BluetoothSIGTranslator()
 ```
 
-Startup timeline:
-
-1. **Import** (~100–200 ms): core infrastructure, no full characteristic graph
-2. **First parse / lookup** (~10–30 ms): cold YAML for the requested registry
-3. **Prewarm** (~100 ms–1 s): optional; loads all catalogued registries up front
-
-Measure import and prewarm locally:
-
-```bash
-python -m pytest tests/benchmarks/test_import_startup.py -m benchmark --benchmark-only
-python -m pytest tests/utils/test_prewarm.py -v
-```
+Import stays fast because registries load on first access. Prewarm moves that work to
+startup so notifications and reads stay responsive. See [ADR-009](../explanation/architecture/decisions.md)
+for the lazy-loading model and [Running Benchmarks Locally](#running-benchmarks-locally)
+to measure import and parse times on your machine.
 
 <a id="running-benchmarks-locally"></a>
 
@@ -184,6 +175,9 @@ Profile your changes against the baseline:
 ```bash
 # Run all benchmarks
 python -m pytest tests/benchmarks/ --benchmark-only
+
+# Import startup benchmarks only
+python -m pytest tests/benchmarks/test_import_startup.py -m benchmark --benchmark-only
 
 # Run with detailed output
 python -m pytest tests/benchmarks/ --benchmark-only -v
