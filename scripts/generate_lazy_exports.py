@@ -5,14 +5,15 @@ from __future__ import annotations
 
 import inspect
 import sys
+from importlib import import_module
 from pathlib import Path
 
 repo_root = Path(__file__).parent.parent
 sys.path.insert(0, str(repo_root / "src"))
 
-from importlib import import_module
-
+# ruff: noqa: E402
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.descriptors.base import BaseDescriptor
 from bluetooth_sig.gatt.registry_utils import ModuleDiscovery
 from bluetooth_sig.gatt.services.base import BaseGattService
 
@@ -92,8 +93,6 @@ def _discover_class_exports(
 
 
 def _discover_descriptor_exports() -> dict[str, str]:
-    from bluetooth_sig.gatt.descriptors.base import BaseDescriptor
-
     module_names = ModuleDiscovery.iter_module_names(DESC_PACKAGE, DESC_EXCLUSIONS)
     export_map: dict[str, str] = {}
     for module_name in module_names:
@@ -162,6 +161,7 @@ def _write_package_artifacts(
 
 
 def main() -> None:
+    """Discover GATT exports and write lazy export maps plus type stubs."""
     char_map = _discover_class_exports(
         CHAR_PACKAGE,
         CHAR_EXCLUSIONS,

@@ -93,3 +93,6 @@ jobs:
 
     - name: 'Run Linting Checks'
       run: ./scripts/lint.sh --all
+
+    - name: 'Check lazy export artifacts are up to date'
+      run: python scripts/check_lazy_exports.py

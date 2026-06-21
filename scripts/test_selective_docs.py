@@ -63,17 +63,11 @@ def test_path_mapping() -> None:
     assert map_source_to_html("docs/source/api/index.rst") == ["api/index.html"]
 
     # Test Python source files (AutoAPI)
-    assert map_source_to_html("src/bluetooth_sig/core/translator.py") == [
-        "api/bluetooth_sig/core/translator.html"
-    ]
+    assert map_source_to_html("src/bluetooth_sig/core/translator.py") == ["api/bluetooth_sig/core/translator.html"]
 
     # Test __init__.py files (critical - map to index.html)
-    assert map_source_to_html("src/bluetooth_sig/__init__.py") == [
-        "api/bluetooth_sig/index.html"
-    ]
-    assert map_source_to_html("src/bluetooth_sig/core/__init__.py") == [
-        "api/bluetooth_sig/core/index.html"
-    ]
+    assert map_source_to_html("src/bluetooth_sig/__init__.py") == ["api/bluetooth_sig/index.html"]
+    assert map_source_to_html("src/bluetooth_sig/core/__init__.py") == ["api/bluetooth_sig/core/index.html"]
 
     # Test non-documentation files
     assert map_source_to_html("README.md") == []

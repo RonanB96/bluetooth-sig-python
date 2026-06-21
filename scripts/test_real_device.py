@@ -130,7 +130,7 @@ async def test_device_connection(mac_address: str) -> bool | None:
             if parsed_count > 0:
                 print(f"\n✅ Successfully parsed {parsed_count} characteristics using framework")
             else:
-                print("\nℹ️  No characteristics were parsed (may need raw data re-reading)")
+                print("\nNote: No characteristics were parsed (may need raw data re-reading)")
 
             # Enhanced SIG translator analysis
             print("\n🔍 Enhanced SIG Analysis...")
@@ -267,7 +267,7 @@ def print_error_analysis() -> None:
     print("     • Check characteristic properties")
 
     print("\n🚫 Framework Recognition:")
-    print("ℹ️  'No services recognized by GATT framework'")
+    print("Note: 'No services recognized by GATT framework'")
     print("   → Expected for proprietary devices")
     print("   → Our framework targets standard Bluetooth SIG services")
     print("   → Focus on Environmental Sensing Service (181A) devices")

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
+import traceback
 from pathlib import Path
 
 # pylint: disable=duplicate-code
@@ -142,8 +143,6 @@ async def debug_ble_device(target_address: str) -> None:
 
     except Exception as e:
         print(f"❌ Connection error: {e}")
-        import traceback
-
         traceback.print_exc()
 
 

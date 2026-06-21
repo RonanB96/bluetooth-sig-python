@@ -47,8 +47,7 @@ def _guess_service_name(text: str, stem: str) -> str:
     for line in lines[:_SERVICE_NAME_SCAN_LINES]:
         match = re.search(r"^[-*]?\s*Full\s+name\s*:\s*(.+)$", line.strip(), re.IGNORECASE)
         if match:
-            value = re.sub(r"\s+Service$", "", match.group(1).strip(), flags=re.IGNORECASE)
-            return value
+            return re.sub(r"\s+Service$", "", match.group(1).strip(), flags=re.IGNORECASE)
 
     header = lines[0].strip() if lines else stem
     header = re.sub(r"\s*v\d[\w.\-]*$", "", header, flags=re.IGNORECASE)
@@ -59,8 +58,7 @@ def _guess_service_name(text: str, stem: str) -> str:
     if header:
         return header
 
-    prefix = stem.split("_", maxsplit=1)[0]
-    return prefix
+    return stem.split("_", maxsplit=1)[0]
 
 
 def _extract_rows_from_tables(text: str) -> list[NormalizedRow]:
