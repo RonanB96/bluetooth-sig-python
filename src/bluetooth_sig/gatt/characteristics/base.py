@@ -28,6 +28,7 @@ from ...types.registry import CharacteristicSpec
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
 from ..descriptors import BaseDescriptor
+from ..resolver import NameNormalizer
 from ..special_values_resolver import SpecialValueResolver
 from .characteristic_meta import CharacteristicMeta, SIGCharacteristicResolver
 from .characteristic_meta import ValidationConfig as ValidationConfig  # noqa: PLC0414  # explicit re-export
@@ -307,10 +308,11 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
     def display_name(self) -> str:
         """Get the display name for this characteristic.
 
-        Uses explicit _characteristic_name if set, otherwise falls back
-        to class name.
+        Uses the canonical SIG/YAML name for lookup fidelity, then strips
+        supported display markup for human-readable output.
         """
-        return self._characteristic_name or self.__class__.__name__
+        raw_name = self._characteristic_name or self._info.name
+        return NameNormalizer.sanitize_display_markup(raw_name)
 
     @cached_property
     def gss_special_values(self) -> dict[int, str]:

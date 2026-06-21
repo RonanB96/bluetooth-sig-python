@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -46,7 +47,7 @@ def test_pages_have_navigation_structure(html_files: list[Path]) -> None:
                 if not attrs and soup.find(tag):
                     found_nav = True
                     break
-            elif attrs and soup.find(attrs=attrs):  # type: ignore[arg-type]
+            elif attrs and soup.find(name=None, attrs=cast(dict[str, Any], attrs)):
                 found_nav = True
                 break
 
@@ -67,7 +68,7 @@ def test_pages_have_footer(html_files: list[Path]) -> None:
             soup = BeautifulSoup(f.read(), "html.parser")
 
         # Check for footer element or role="contentinfo"
-        has_footer = soup.find("footer") is not None or soup.find(attrs={"role": "contentinfo"}) is not None
+        has_footer = soup.find("footer") is not None or soup.find(name=None, attrs={"role": "contentinfo"}) is not None
 
         if not has_footer:
             issues.append(f"{html_file.name}: No footer found")
@@ -141,7 +142,7 @@ def test_sidebar_exists(html_files: list[Path]) -> None:
                 else:
                     element = soup.find(tag)
             elif attrs:
-                element = soup.find(attrs=attrs)  # type: ignore[arg-type]
+                element = soup.find(name=None, attrs=cast(dict[str, Any], attrs))
 
             if element:
                 # Verify sidebar has links
@@ -172,7 +173,6 @@ def test_breadcrumbs_exist_on_nested_pages(html_files: list[Path]) -> None:
             soup = BeautifulSoup(f.read(), "html.parser")
 
         # Check for breadcrumb elements
-        from typing import Any
 
         breadcrumb_selectors: list[tuple[str | None, dict[str, Any] | None]] = [
             ("nav", {"aria-label": re.compile(r"breadcrumb", re.I)}),
@@ -187,8 +187,8 @@ def test_breadcrumbs_exist_on_nested_pages(html_files: list[Path]) -> None:
                 if soup.find(tag, attrs=attrs):
                     found_breadcrumbs = True
                     break
-            else:
-                nav = soup.find(attrs=attrs)
+            elif attrs is not None:
+                nav = soup.find(name=None, attrs=attrs)
                 if nav and ("breadcrumb" in str(nav).lower()):
                     found_breadcrumbs = True
                     break

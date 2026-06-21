@@ -237,12 +237,8 @@ class TestRegistryConsistency:
                 service = service_class()
                 expected_chars = service.get_expected_characteristics()
 
-                for char_name, char_value in expected_chars.items():
-                    # Extract characteristic class from either CharacteristicSpec or direct class reference
-                    if hasattr(char_value, "char_class"):  # CharacteristicSpec
-                        char_cls = char_value.char_class  # type: ignore[assignment]
-                    else:  # Legacy direct class reference
-                        char_cls = char_value  # type: ignore[assignment]
+                for char_name, char_spec in expected_chars.items():
+                    char_cls = char_spec.char_class
 
                     # Verify the characteristic class exists in our discovered classes
                     assert char_cls in char_classes, (

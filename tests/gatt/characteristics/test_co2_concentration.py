@@ -63,3 +63,11 @@ class TestCO2ConcentrationCharacteristic(CommonCharacteristicTests):
             characteristic.parse_value(unknown_data)
         assert exc_info.value.special_value.raw_value == 65535
         assert "not known" in exc_info.value.special_value.meaning.lower()
+
+    def test_co2_concentration_display_name_uses_plain_text(
+        self, characteristic: CO2ConcentrationCharacteristic
+    ) -> None:
+        """Test plain-text display name while preserving YAML lookup name."""
+        assert characteristic.display_name == "CO2 Concentration"
+        assert characteristic._characteristic_name == "CO\\textsubscript{2} Concentration"
+        assert characteristic.uuid == "2B8C"

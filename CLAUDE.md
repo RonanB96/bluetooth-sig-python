@@ -17,7 +17,7 @@ python -m pytest -k "battery" -v                            # Single test
 
 Use `.github/copilot-instructions.md` as the single source of truth for project-wide rules.
 
-Use focused files in `.github/instructions/` for file-type and domain-specific rules:
+Use focused files in `.github/instructions/` for file-type and domain-specific rules (symlinked from `.cursor/rules/`):
 - `bluetooth-gatt.instructions.md`
 - `python-implementation.instructions.md`
 - `testing.instructions.md`

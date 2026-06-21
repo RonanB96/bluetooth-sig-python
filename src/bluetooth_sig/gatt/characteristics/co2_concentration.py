@@ -17,7 +17,7 @@ class CO2ConcentrationCharacteristic(BaseCharacteristic[float]):
     with a resolution of 1 ppm.
     """
 
-    # Explicit YAML/registry name (contains LaTeX markup not derivable heuristically)
+    # Exact YAML/registry name (contains LaTeX markup not derivable heuristically)
     _characteristic_name = "CO\\textsubscript{2} Concentration"
 
     _template = ConcentrationTemplate()

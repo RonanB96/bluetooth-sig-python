@@ -44,6 +44,15 @@ class TestNameNormalizer:
         assert NameNormalizer.camel_case_to_display_name("ABC") == "ABC"
         assert NameNormalizer.camel_case_to_display_name("") == ""
 
+    def test_sanitize_display_markup_subscripts(self) -> None:
+        """Test LaTeX subscript markup is converted to plain text."""
+        assert NameNormalizer.sanitize_display_markup(r"CO\textsubscript{2} Concentration") == "CO2 Concentration"
+        assert NameNormalizer.sanitize_display_markup(r"Gravity (g\textsubscript{n})") == "Gravity (gn)"
+
+    def test_sanitize_display_markup_leaves_plain_text_unchanged(self) -> None:
+        """Test display markup sanitisation is a no-op for plain text."""
+        assert NameNormalizer.sanitize_display_markup("Battery Level") == "Battery Level"
+
     def test_remove_suffix_characteristic(self) -> None:
         """Test removing 'Characteristic' suffix."""
         assert NameNormalizer.remove_suffix("BatteryLevelCharacteristic", "Characteristic") == "BatteryLevel"

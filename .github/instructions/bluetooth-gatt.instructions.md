@@ -1,4 +1,7 @@
 ---
+description: GATT layer, templates, pipeline, and characteristic implementation patterns
+globs: src/bluetooth_sig/gatt/**/*.py,src/bluetooth_sig/registry/**/*.py
+alwaysApply: false
 applyTo: "src/bluetooth_sig/gatt/**/*.py,src/bluetooth_sig/registry/**/*.py"
 ---
 

@@ -1,4 +1,7 @@
 ---
+description: Test structure, fixtures, edge cases, and pytest commands
+globs: "**/tests/**/*.py,**/test_*.py,**/*_test.py"
+alwaysApply: false
 applyTo: "**/tests/**/*.py,**/test_*.py,**/*_test.py"
 ---
 

@@ -1,4 +1,7 @@
 ---
+description: Python coding standards, type safety, and data modelling
+globs: "**/*.py,**/pyproject.toml,**/requirements*.txt"
+alwaysApply: false
 applyTo: "**/*.py,**/pyproject.toml,**/requirements*.txt"
 ---
 

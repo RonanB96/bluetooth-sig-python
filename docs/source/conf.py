@@ -20,9 +20,14 @@ from pathlib import Path
 
 from sphinx.application import Sphinx
 
-# Add source directory to path for imports (not for AutoAPI scanning)
+_REPO_ROOT = Path(__file__).parent.parent.parent
+
+# Add source and repo root to path for imports (not for AutoAPI scanning)
 # AutoAPI scans from autoapi_dirs, this is just for import resolution
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+sys.path.insert(0, str(_REPO_ROOT / "src"))
+sys.path.insert(0, str(_REPO_ROOT))
+
+from scripts.docs_html_postprocess import apply_external_link_security  # noqa: E402
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -585,61 +590,6 @@ def add_external_link_security(app: Sphinx, exception: Exception | None) -> None
     if exception:
         return
 
-    build_dir = Path(app.outdir)
-    html_files = list(build_dir.rglob("*.html"))
-
-    fixed_count = 0
-    total_links = 0
-
-    for html_file in html_files:
-        try:
-            content = html_file.read_text(encoding="utf-8")
-            original_content = content
-
-            # Find all external links (http/https) that don't already have security attributes
-            def add_security_attrs(match: re.Match[str]) -> str:
-                nonlocal total_links
-                total_links += 1
-
-                full_tag = match.group(0)
-                href = match.group(1)
-
-                # Skip localhost links
-                if "localhost" in href or "127.0.0.1" in href:
-                    return full_tag
-
-                # Check if rel attribute already exists with security values
-                if re.search(r'\brel=["\'][^"\']*\b(noopener|noreferrer)\b', full_tag):
-                    return full_tag
-
-                # Find where to insert rel attribute (right after href)
-                # Match the full opening tag structure
-                href_pattern = r'href=["\']' + re.escape(href) + r'["\']'
-
-                # Check if rel already exists
-                rel_match = re.search(r'\brel=["\']([^"\']*)["\']', full_tag)
-
-                if rel_match:
-                    # Update existing rel
-                    old_rel = rel_match.group(0)
-                    rel_value = rel_match.group(1)
-                    new_rel_value = f"{rel_value} noopener noreferrer" if rel_value else "noopener noreferrer"
-                    new_rel = f'rel="{new_rel_value}"'
-                    return full_tag.replace(old_rel, new_rel, 1)
-                # Insert rel after href
-                return re.sub(href_pattern, f'{href_pattern} rel="noopener noreferrer"', full_tag, count=1)
-
-            # Match opening anchor tags with external links
-            # Captures the full opening tag and the href value
-            pattern = r'<a\s+[^>]*href=["\'](https?://[^"\']*)["\'][^>]*>'
-            content = re.sub(pattern, add_security_attrs, content)
-
-            if content != original_content:
-                html_file.write_text(content, encoding="utf-8")
-                fixed_count += 1
-
-        except Exception as e:
-            print(f"Warning: Failed to add security attributes to {html_file}: {e}")
-
+    fixed_count, total_links = apply_external_link_security(Path(app.outdir), warn=print)
     if fixed_count > 0:
         print(f"✓ Added security attributes to {total_links} external links in {fixed_count} HTML files")
