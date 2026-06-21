@@ -65,7 +65,7 @@ graph TB
 
     subgraph Char["Characteristic Parsing"]
         B[BaseCharacteristic<br/>Abstract base]
-        S[70+ SIG Characteristics]
+        S[500+ SIG Characteristics<br/>~96% parsers]
         C[Custom Characteristics]
     end
 

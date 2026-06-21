@@ -15,7 +15,7 @@ A pure Python library for Bluetooth SIG standards interpretation, providing comp
 - ✅ **Standards-Based**: Official Bluetooth SIG YAML registry with automatic UUID resolution
 - ✅ **Type-Safe**: Characteristic classes provide compile-time type checking; UUID strings return dynamic types
 - ✅ **Modern Python**: msgspec-based design with Python 3.10+ compatibility
-- ✅ **Comprehensive**: Support for 200+ GATT characteristics across multiple service categories
+- ✅ **Comprehensive**: 500+ assigned SIG characteristic UUIDs with ~96% Python parser coverage (see `scripts/gatt_coverage_report.py`)
 - ✅ **Flexible Validation**: Enable/disable validation per-characteristic for testing or debugging
 - ✅ **Framework Agnostic**: Works with any BLE library (bleak, simplepyble, etc.)
 
@@ -73,7 +73,7 @@ for uuid in discovered_uuids:
 
 | Feature | Description |
 | --- | --- |
-| **Characteristic Parsing** | Decode/encode 200+ GATT characteristics with type safety |
+| **Characteristic Parsing** | Decode/encode 500+ assigned SIG characteristics (~96% parser coverage) with type safety |
 | **Service Validation** | Check device compliance against SIG service specifications |
 | **Advertising Parsing** | Extract device name, service UUIDs, manufacturer data from PDUs |
 | **Device Abstraction** | High-level API combining connection management, parsing, and caching |
@@ -188,7 +188,7 @@ Enables high-level Bluetooth applications without low-level expertise:
 - ✅ **Automatic encoding/decoding** - Converts between raw bytes and typed Python objects using standards-compliant parsing
 - ✅ **Type-safe data structures** - Returns structured data objects instead of raw byte arrays (e.g., `VectorData`, `TemperatureMeasurement`)
 - ✅ **Framework-agnostic design** - Works with any BLE library (bleak, simplepyble, etc.) using a common connection manager interface
-- ✅ **Standards-based parsing** - 200+ GATT characteristics according to official Bluetooth SIG specifications
+- ✅ **Standards-based parsing** - 500+ assigned SIG characteristics with parsers for ~96% of UUIDs per coverage report
 - ✅ **Extensible** - Supports custom characteristics and services with the same type-safe patterns
 
 ## What This Library Does NOT Do
@@ -230,7 +230,7 @@ async with BleakClient(address) as client:
 
 ## Supported Characteristics
 
-200+ GATT characteristics across multiple categories:
+500+ assigned SIG characteristic UUIDs (~96% with Python parsers) across multiple categories:
 
 - **Battery Service**: Level, Power State
 - **Environmental Sensing**: Temperature, Humidity, Pressure, Air Quality
