@@ -83,7 +83,7 @@ def test_pages_have_main_landmark(html_files: list[Path]) -> None:
             soup = BeautifulSoup(f.read(), "html.parser")
 
         # Check for <main> element or role="main"
-        has_main = soup.find("main") is not None or soup.find(attrs={"role": "main"}) is not None
+        has_main = soup.find("main") is not None or soup.find(name=None, attrs={"role": "main"}) is not None
 
         if not has_main:
             issues.append(f"{html_file.name}: No <main> landmark found")
@@ -108,7 +108,7 @@ def test_tables_have_headers(html_files: list[Path]) -> None:
 
         for idx, table in enumerate(tables):
             th_cells = table.find_all("th")
-            header_roles = table.find_all(attrs={"role": "columnheader"})
+            header_roles = table.find_all(name=None, attrs={"role": "columnheader"})
 
             if not th_cells and not header_roles:
                 issues.append(f"{html_file.name}: Table {idx + 1} has no header cells (<th> or role='columnheader')")

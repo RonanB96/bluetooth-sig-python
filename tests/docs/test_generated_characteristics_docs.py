@@ -6,6 +6,8 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
+import pytest
+
 from scripts import generate_char_service_list
 
 _BLUETOOTH_SIG_ASSIGNED_NUMBERS_URL = "https://www.bluetooth.com/specifications/assigned-numbers/"
@@ -13,6 +15,7 @@ _BLUETOOTH_SIG_ASSIGNED_NUMBERS_URL = "https://www.bluetooth.com/specifications/
 
 def _load_docs_conf_module() -> ModuleType:
     """Load the Sphinx conf module without requiring package installation."""
+    pytest.importorskip("sphinx")
     conf_path = Path(__file__).parent.parent.parent / "docs" / "source" / "conf.py"
     spec = spec_from_file_location("docs_source_conf", conf_path)
     if spec is None or spec.loader is None:
