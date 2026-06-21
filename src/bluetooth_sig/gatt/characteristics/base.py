@@ -27,7 +27,7 @@ from ...types.gatt_enums import CharacteristicRole
 from ...types.registry import CharacteristicSpec
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
-from ..descriptors import BaseDescriptor
+from ..descriptors.base import BaseDescriptor
 from ..resolver import NameNormalizer
 from ..special_values_resolver import SpecialValueResolver
 from .characteristic_meta import CharacteristicMeta, SIGCharacteristicResolver

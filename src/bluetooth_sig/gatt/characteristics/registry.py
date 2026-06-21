@@ -95,7 +95,14 @@ def get_characteristic_class_map() -> dict[CharacteristicName, type[BaseCharacte
 class CharacteristicRegistry(BaseUUIDClassRegistry[CharacteristicName, BaseCharacteristic[Any]]):
     """Encapsulates all GATT characteristic registry operations."""
 
-    _MODULE_EXCLUSIONS: ClassVar[set[str]] = {"__main__", "__init__", "base", "registry", "templates"}
+    _MODULE_EXCLUSIONS: ClassVar[set[str]] = {
+        "__main__",
+        "__init__",
+        "_export_map",
+        "base",
+        "registry",
+        "templates",
+    }
     _NON_ALPHANUMERIC_RE: ClassVar[re.Pattern[str]] = re.compile(r"[^a-z0-9]+")
 
     def _get_base_class(self) -> type[BaseCharacteristic[Any]]:

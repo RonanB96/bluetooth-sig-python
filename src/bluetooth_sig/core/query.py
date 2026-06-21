@@ -11,7 +11,6 @@ from typing import Any
 
 from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicRegistry
-from ..gatt.services import ServiceName
 from ..gatt.services.registry import GattServiceRegistry
 from ..gatt.uuid_registry import get_uuid_registry
 from ..types import (
@@ -19,7 +18,7 @@ from ..types import (
     ServiceInfo,
     SIGInfo,
 )
-from ..types.gatt_enums import CharacteristicName
+from ..types.gatt_enums import CharacteristicName, ServiceName
 from ..types.uuid import BluetoothUUID
 
 logger = logging.getLogger(__name__)

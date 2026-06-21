@@ -50,7 +50,7 @@ def get_service_class_map() -> dict[ServiceName, type[BaseGattService]]:
 class GattServiceRegistry(BaseUUIDClassRegistry[ServiceName, BaseGattService]):
     """Registry for all supported GATT services."""
 
-    _MODULE_EXCLUSIONS: ClassVar[set[str]] = {"__main__", "__init__", "base", "registry"}
+    _MODULE_EXCLUSIONS: ClassVar[set[str]] = {"__main__", "__init__", "_export_map", "base", "registry"}
 
     def _get_base_class(self) -> type[BaseGattService]:
         """Return the base class for service validation."""

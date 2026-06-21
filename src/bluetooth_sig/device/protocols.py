@@ -7,7 +7,7 @@ from typing import Any, Protocol
 
 from ..gatt.characteristics.registry import CharacteristicName
 from ..gatt.context import CharacteristicContext
-from ..gatt.services import ServiceName
+from ..types.gatt_enums import ServiceName
 from ..types.uuid import BluetoothUUID
 
 
