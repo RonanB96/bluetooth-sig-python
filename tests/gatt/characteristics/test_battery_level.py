@@ -25,6 +25,10 @@ class TestBatteryLevelCharacteristic(CommonCharacteristicTests):
         """Return the expected UUID for Battery Level characteristic."""
         return "2A19"
 
+    def test_battery_level_display_name_uses_registry_name(self, characteristic: BatteryLevelCharacteristic) -> None:
+        """Display name should come from the resolved SIG registry name."""
+        assert characteristic.display_name == "Battery Level"
+
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
         """Return valid test data for battery level."""

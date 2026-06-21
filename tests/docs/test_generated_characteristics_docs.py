@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
-from types import ModuleType
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 
 from scripts import generate_char_service_list
+
+_BLUETOOTH_SIG_ASSIGNED_NUMBERS_URL = "https://www.bluetooth.com/specifications/assigned-numbers/"
 
 
 def _load_docs_conf_module() -> ModuleType:
@@ -37,11 +38,14 @@ def test_generated_characteristics_docs_include_registry_coverage() -> None:
 
     assert f"**{implemented_characteristics} of {total_characteristics}**" in markdown
     assert f"**{implemented_services} of {total_services}**" in markdown
-    assert f"[`{sig_sha[:7]}`]({sig_commit_url})" in markdown
+    if sig_sha != "unknown":
+        assert f"[`{sig_sha[:7]}`]({sig_commit_url})" in markdown
     assert "## Not Yet Implemented Characteristics" in markdown
     assert "## Not Yet Implemented Services" in markdown
-    assert missing_characteristics[0] in markdown
-    assert missing_services[0] in markdown
+    if missing_characteristics:
+        assert missing_characteristics[0] in markdown
+    if missing_services:
+        assert missing_services[0] in markdown
 
 
 def test_add_external_link_security_preserves_external_href(tmp_path: Path) -> None:
@@ -49,7 +53,10 @@ def test_add_external_link_security_preserves_external_href(tmp_path: Path) -> N
     conf = _load_docs_conf_module()
     html_file = tmp_path / "index.html"
     html_file.write_text(
-        '<html><body><a class="reference external" href="https://www.bluetooth.com/specifications/assigned-numbers/">Bluetooth SIG</a></body></html>',
+        (
+            '<html><body><a class="reference external" '
+            f'href="{_BLUETOOTH_SIG_ASSIGNED_NUMBERS_URL}">Bluetooth SIG</a></body></html>'
+        ),
         encoding="utf-8",
     )
 
@@ -57,6 +64,6 @@ def test_add_external_link_security_preserves_external_href(tmp_path: Path) -> N
     conf.add_external_link_security(app, None)
 
     content = html_file.read_text(encoding="utf-8")
-    assert 'href="https://www.bluetooth.com/specifications/assigned-numbers/"' in content
+    assert f'href="{_BLUETOOTH_SIG_ASSIGNED_NUMBERS_URL}"' in content
     assert 'rel="noopener noreferrer"' in content
     assert "[%22" not in content

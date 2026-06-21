@@ -55,8 +55,8 @@ class NameNormalizer:
         # Insert space before trailing numbers
         return re.sub(r"([a-z])(\d+)", r"\1 \2", result)
 
-    @classmethod
-    def sanitize_display_markup(cls, name: str) -> str:
+    @staticmethod
+    def sanitize_display_markup(name: str) -> str:
         """Convert SIG LaTeX-style display markup into plain-text output.
 
         Args:

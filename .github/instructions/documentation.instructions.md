@@ -1,5 +1,8 @@
 ---
-applyTo: "docs/**/*.md, docs/*.md"
+description: Documentation style, code samples, and diagrams
+globs: docs/**/*.md
+alwaysApply: false
+applyTo: "docs/**/*.md,docs/*.md"
 ---
 
 # Documentation Guidelines

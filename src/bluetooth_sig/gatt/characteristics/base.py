@@ -28,13 +28,13 @@ from ...types.registry import CharacteristicSpec
 from ...types.uuid import BluetoothUUID
 from ..context import CharacteristicContext
 from ..descriptors import BaseDescriptor
+from ..resolver import NameNormalizer
 from ..special_values_resolver import SpecialValueResolver
 from .characteristic_meta import CharacteristicMeta, SIGCharacteristicResolver
 from .characteristic_meta import ValidationConfig as ValidationConfig  # noqa: PLC0414  # explicit re-export
 from .context_lookup import ContextLookupMixin
 from .descriptor_mixin import DescriptorMixin
 from .pipeline import CharacteristicValidator, EncodePipeline, ParsePipeline
-from ..resolver import NameNormalizer
 from .role_classifier import classify_role
 from .templates import CodingTemplate
 
@@ -311,7 +311,7 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
         Uses the canonical SIG/YAML name for lookup fidelity, then strips
         supported display markup for human-readable output.
         """
-        raw_name = self._characteristic_name or self.__class__.__name__
+        raw_name = self._characteristic_name or self._info.name
         return NameNormalizer.sanitize_display_markup(raw_name)
 
     @cached_property

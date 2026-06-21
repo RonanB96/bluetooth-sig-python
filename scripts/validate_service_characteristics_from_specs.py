@@ -11,8 +11,8 @@ Expected spec file format:
   characteristic name and requirement columns
 
 Exit codes:
-- 0: All matched services are aligned
-- 1: At least one matched service has mismatches
+- 0: All matched services are aligned and every parsed spec mapped to a service
+- 1: At least one matched service has mismatches or a parsed spec could not be matched
 """
 
 from __future__ import annotations
@@ -20,15 +20,18 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
+
+import msgspec
 
 # Ensure src is importable when running as a script
 _project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_project_root / "src"))
 
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic  # noqa: E402
 from bluetooth_sig.gatt.characteristics.registry import get_characteristic_class_map  # noqa: E402
+from bluetooth_sig.gatt.services.base import BaseGattService  # noqa: E402
 from bluetooth_sig.gatt.services.registry import get_service_class_map  # noqa: E402
 from bluetooth_sig.types.gatt_enums import CharacteristicName, ServiceName  # noqa: E402
 
@@ -65,10 +68,10 @@ MIN_EMPTY_STREAK_TO_END_BLOCK = 3
 MIN_TABLE_COLUMN_COUNT = 2
 MIN_FALLBACK_OVERLAP = 2
 MIN_FALLBACK_RATIO = 0.4
+_SERVICE_NAME_SCAN_LINES = 80
 
 
-@dataclass(frozen=True)
-class SpecCharacteristic:
+class SpecCharacteristic(msgspec.Struct, kw_only=True, frozen=True):
     """A characteristic row parsed from a spec table."""
 
     name: str
@@ -80,8 +83,7 @@ class SpecCharacteristic:
         return bool(_REQ_MANDATORY_RE.match(self.requirement.strip()))
 
 
-@dataclass(frozen=True)
-class SpecTable:
+class SpecTable(msgspec.Struct, kw_only=True, frozen=True):
     """Parsed characteristics table for one spec file."""
 
     file_path: Path
@@ -89,8 +91,7 @@ class SpecTable:
     characteristics: tuple[SpecCharacteristic, ...]
 
 
-@dataclass(frozen=True)
-class ServiceComparison:
+class ServiceComparison(msgspec.Struct, kw_only=True, frozen=True):
     """Comparison result for one mapped spec-to-service pair."""
 
     spec_table: SpecTable
@@ -131,7 +132,7 @@ def _to_title_words(value: str) -> str:
 
 
 def _guess_service_name(lines: list[str], file_stem: str) -> str:
-    for line in lines[:80]:
+    for line in lines[:_SERVICE_NAME_SCAN_LINES]:
         stripped = line.strip()
         if not stripped:
             continue
@@ -298,11 +299,9 @@ def _parse_spec_table(file_path: Path) -> SpecTable | None:
 
 def _build_service_characteristics_map() -> dict[ServiceName, dict[CharacteristicName, bool]]:
     service_map: dict[ServiceName, dict[CharacteristicName, bool]] = {}
-    service_classes = cast(dict[ServiceName, Any], get_service_class_map())
+    service_classes: dict[ServiceName, type[BaseGattService]] = get_service_class_map()
     for service_name, service_cls in service_classes.items():
-        service_characteristics = cast(
-            dict[CharacteristicName, bool], service_cls.__dict__.get("service_characteristics", {})
-        )
+        service_characteristics = service_cls.__dict__.get("service_characteristics", {})
         service_map[service_name] = dict(service_characteristics)
     return service_map
 
@@ -353,7 +352,7 @@ def _compare_service(
     spec_table: SpecTable,
     service_name: ServiceName,
     impl_chars: dict[CharacteristicName, bool],
-    char_class_map: dict[CharacteristicName, object],
+    char_class_map: dict[CharacteristicName, type[BaseCharacteristic[Any]]],
 ) -> ServiceComparison:
     spec_by_norm = {_normalize_name(row.name): row for row in spec_table.characteristics}
     impl_by_norm = {
@@ -442,7 +441,7 @@ def main(spec_dir: Path, pattern: str, verbose: bool) -> int:
                 spec_table=spec_table,
                 service_name=matched_service,
                 impl_chars=service_chars[matched_service],
-                char_class_map=cast(dict[CharacteristicName, object], char_class_map),
+                char_class_map=char_class_map,
             )
         )
 
@@ -493,7 +492,7 @@ def main(spec_dir: Path, pattern: str, verbose: bool) -> int:
     elif comparisons:
         print("\nAll matched services are aligned with parsed spec characteristic tables.")
 
-    return 1 if failures else 0
+    return 1 if failures or unmatched_specs else 0
 
 
 if __name__ == "__main__":

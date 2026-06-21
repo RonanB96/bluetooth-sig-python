@@ -1,4 +1,9 @@
-﻿# Bluetooth SIG Standards Library
+﻿---
+description: Core project layout, non-negotiable rules, workflow, and quality gates
+alwaysApply: true
+---
+
+# Bluetooth SIG Standards Library
 
 Pure Python library for Bluetooth SIG standards interpretation (GATT characteristics, services, advertisements).
 
@@ -68,9 +73,8 @@ To get a spec's HTML URL (**one spec at a time**):
 
 ## Sub-Instructions
 
-Detailed rules are in `.github/instructions/`:
+Detailed rules are in `.github/instructions/` (symlinked from `.cursor/rules/`):
 - `bluetooth-gatt.instructions.md` — GATT layer, templates, pipeline, characteristic patterns
 - `python-implementation.instructions.md` — Python coding standards, type safety, data modelling
 - `testing.instructions.md` — Test structure, fixtures, edge cases, commands
 - `documentation.instructions.md` — Doc style, code samples, diagrams
-

@@ -13,22 +13,22 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from dataclasses import dataclass
 from pathlib import Path
+
+import msgspec
 
 _project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_project_root / "src"))
 
-from bluetooth_sig.gatt.services.registry import get_service_class_map  # noqa: E402
-from bluetooth_sig.types.gatt_enums import ServiceName  # noqa: E402
-
-_REQ_RE = re.compile(r"^(M|O|X|N/A|N\\A|C\\.\d+)$", re.IGNORECASE)
+_REQ_RE = re.compile(r"^(M|O|X|N/A|N\\A|C\.\d+)$", re.IGNORECASE)
 _NON_ALNUM_RE = re.compile(r"[^a-z0-9]+")
 _PARENS_RE = re.compile(r"\([^)]*\)")
 
+_SERVICE_NAME_SCAN_LINES = 120
+_NOTE_SCAN_LINES = 60
 
-@dataclass(frozen=True)
-class NormalizedRow:
+
+class NormalizedRow(msgspec.Struct, kw_only=True, frozen=True):
     """Normalized characteristic row for canonical table."""
 
     characteristic: str
@@ -42,16 +42,9 @@ def _normalize_name(value: str) -> str:
     return _NON_ALNUM_RE.sub("", cleaned)
 
 
-def _service_mapping() -> dict[str, ServiceName]:
-    mapping: dict[str, ServiceName] = {}
-    for service_name in get_service_class_map():
-        mapping[_normalize_name(service_name.value)] = service_name
-    return mapping
-
-
 def _guess_service_name(text: str, stem: str) -> str:
     lines = text.splitlines()
-    for line in lines[:120]:
+    for line in lines[:_SERVICE_NAME_SCAN_LINES]:
         match = re.search(r"^[-*]?\s*Full\s+name\s*:\s*(.+)$", line.strip(), re.IGNORECASE)
         if match:
             value = re.sub(r"\s+Service$", "", match.group(1).strip(), flags=re.IGNORECASE)
@@ -122,7 +115,7 @@ def _extract_rows_from_tables(text: str) -> list[NormalizedRow]:
 
 
 def _extract_from_note_list(text: str) -> list[NormalizedRow]:
-    for line in text.splitlines()[:60]:
+    for line in text.splitlines()[:_NOTE_SCAN_LINES]:
         note_match = re.search(r"NOTE:\s*Characteristics\s+(.+?)\s+defined\s+here", line, re.IGNORECASE)
         if not note_match:
             continue
@@ -143,21 +136,6 @@ def _extract_from_note_list(text: str) -> list[NormalizedRow]:
             return rows
 
     return []
-
-
-def _rows_from_implementation(service_name: ServiceName) -> list[NormalizedRow]:
-    service_cls = get_service_class_map()[service_name]
-    rows: list[NormalizedRow] = []
-    for char_name, is_required in service_cls.service_characteristics.items():
-        rows.append(
-            NormalizedRow(
-                characteristic=char_name.value,
-                req="M" if is_required else "O",
-                properties="N/A",
-                security="N/A",
-            )
-        )
-    return rows
 
 
 def _canonical_block(service_name: str, rows: list[NormalizedRow], source: str) -> str:
@@ -181,7 +159,6 @@ def normalize_specs(spec_dir: Path, pattern: str, dry_run: bool) -> tuple[int, i
         Tuple of (total_files, changed_files, unresolved_files)
     """
     files = sorted(path for path in spec_dir.glob(pattern) if path.is_file())
-    mapping = _service_mapping()
 
     changed = 0
     unresolved = 0
@@ -198,13 +175,6 @@ def normalize_specs(spec_dir: Path, pattern: str, dry_run: bool) -> tuple[int, i
         if not rows:
             rows = _extract_from_note_list(content)
             source = "NOTE characteristics list"
-
-        if not rows:
-            guessed_name = _guess_service_name(content, file_path.stem)
-            mapped_service = mapping.get(_normalize_name(guessed_name))
-            if mapped_service is not None:
-                rows = _rows_from_implementation(mapped_service)
-                source = "implementation service_characteristics fallback"
 
         if not rows:
             unresolved += 1

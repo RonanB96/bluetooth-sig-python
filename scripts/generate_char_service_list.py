@@ -12,14 +12,17 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 # Add src to path
 repo_root = Path(__file__).parent.parent
 sys.path.insert(0, str(repo_root / "src"))
 
 from bluetooth_sig.gatt.characteristics import get_characteristic_class_map  # noqa: E402
+from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic  # noqa: E402
 from bluetooth_sig.gatt.resolver import NameNormalizer  # noqa: E402
 from bluetooth_sig.gatt.services import get_service_class_map  # noqa: E402
+from bluetooth_sig.gatt.services.base import BaseGattService  # noqa: E402
 from bluetooth_sig.gatt.uuid_registry import get_uuid_registry  # noqa: E402
 
 
@@ -69,7 +72,7 @@ def clean_name(name: str) -> str:
     return NameNormalizer.sanitize_display_markup(name)
 
 
-def get_characteristic_info(char_class: type) -> tuple[str, str, str]:
+def get_characteristic_info(char_class: type[BaseCharacteristic[Any]]) -> tuple[str, str, str]:
     """Get UUID, name, and description for a characteristic class.
 
     Args:
@@ -105,7 +108,7 @@ def get_characteristic_info(char_class: type) -> tuple[str, str, str]:
         return "N/A", char_class.__name__, ""
 
 
-def get_service_info(service_class: type) -> tuple[str, str, str]:
+def get_service_info(service_class: type[BaseGattService]) -> tuple[str, str, str]:
     """Get UUID, name, and description for a service class.
 
     Args:
@@ -235,18 +238,25 @@ def get_sig_submodule_context() -> tuple[str, str]:
 
     Returns:
         Tuple of the full pinned commit SHA and a link to that upstream commit.
-
-    Raises:
-        subprocess.CalledProcessError: If git cannot resolve the submodule status.
+        When git metadata is unavailable, returns placeholder values instead of failing.
     """
-    result = subprocess.run(
-        ["git", "submodule", "status", "--", "bluetooth_sig"],
-        cwd=repo_root,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    sha = result.stdout.strip().split()[0].lstrip("-+")
+    fallback_sha = "unknown"
+    fallback_url = "https://bitbucket.org/bluetooth-SIG/public"
+    try:
+        result = subprocess.run(
+            ["git", "submodule", "status", "--", "bluetooth_sig"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        status_line = result.stdout.strip()
+        if not status_line:
+            return fallback_sha, fallback_url
+        sha = status_line.split()[0].lstrip("-+")
+    except (FileNotFoundError, IndexError, subprocess.CalledProcessError):
+        return fallback_sha, fallback_url
+
     commit_url = f"https://bitbucket.org/bluetooth-SIG/public/commits/{sha}"
     return sha, commit_url
 
@@ -299,13 +309,11 @@ The library currently supports **{len(characteristics)}** implemented GATT chara
     for service_class_name, service_uuid, service_name, _service_description in services:
         # Get the actual service class to access its service_characteristics
         try:
-            service_class = get_service_class_map().get(service_name.replace(" ", "").upper())
-            if service_class is None:
-                # Try alternative lookup
-                for _key, cls in get_service_class_map().items():
-                    if cls.__name__ == service_class_name:
-                        service_class = cls
-                        break
+            service_class: type[BaseGattService] | None = None
+            for cls in get_service_class_map().values():
+                if cls.__name__ == service_class_name:
+                    service_class = cls
+                    break
 
             if service_class and hasattr(service_class, "service_characteristics"):
                 # Get the characteristics defined in this service
