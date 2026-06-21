@@ -24,6 +24,18 @@ applyTo: "src/bluetooth_sig/gatt/**/*.py,src/bluetooth_sig/registry/**/*.py"
 
 **SIG vs custom:** SIG characteristics auto-resolve UUID from registry. Custom characteristics require `_info = CharacteristicInfo(...)`.
 
+## Lazy export maps (ADR-011)
+
+GATT barrels (`characteristics`, `services`, `descriptors`) use PEP 562 via
+`gatt/lazy_exports.py`. Do not add eager re-exports to `__init__.py`. After adding a
+module, regenerate:
+
+```bash
+python scripts/generate_lazy_exports.py
+```
+
+Do not import sibling characteristic modules from `base.py` or templates.
+
 ## Decision-Critical Rules
 
 - **Multi-byte values: little-endian.** SIG spec mandates this universally.

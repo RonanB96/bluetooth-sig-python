@@ -16,8 +16,30 @@ applyTo: "**/*.py,**/pyproject.toml,**/requirements*.txt"
 
 ## Imports
 
-- No `TYPE_CHECKING` blocks in core logic
-- No lazy/conditional imports except cycle-breaking with a `# NOTE:` comment
+**Default: top-of-module imports.** Put `import` / `from … import` at module scope so
+dependencies are visible, import errors fail early, and static analysis works.
+
+**Avoid ad-hoc deferred imports** — do not hide imports inside functions, methods, or
+`if` blocks in business logic. That pattern obscures dependencies, makes failures
+runtime-only, and is hard to audit. Prefer restructuring modules or breaking import cycles
+instead.
+
+**Approved exceptions** (narrow, documented, centralized — not scattered):
+
+1. **Import-cycle breaking** — defer one side of a cycle with a local import and a
+   `# NOTE: deferred import breaks cycle with …` comment. Use only when module layout
+   cannot remove the cycle.
+2. **PEP 562 GATT package barrels** — see `bluetooth-gatt.instructions.md` (Lazy export
+   maps). Do not add manual lazy imports elsewhere.
+
+**Not allowed in core logic:**
+
+- `TYPE_CHECKING` blocks (use `from __future__ import annotations` and direct imports)
+- New barrel files that eagerly re-export large module trees
+- Function-scoped imports for convenience or micro-optimisation
+
+## Constants
+
 - No magic numbers without named constants
 
 ## Docstrings

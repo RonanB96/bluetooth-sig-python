@@ -364,9 +364,7 @@ def _compare_service(
 
     extra = tuple(
         sorted(
-            enum_member.value
-            for key, (enum_member, _is_required) in impl_by_norm.items()
-            if key not in spec_by_norm
+            enum_member.value for key, (enum_member, _is_required) in impl_by_norm.items() if key not in spec_by_norm
         )
     )
 

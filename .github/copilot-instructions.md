@@ -34,7 +34,7 @@ tests/                  ← Mirrors src/ structure; primary location: gatt/chara
 2. **No framework imports** (`homeassistant`, `bleak`, `simplepyble`) in `src/bluetooth_sig/`.
 3. **No hardcoded UUIDs** in implementation — use registry resolution.
 4. **No `Optional`** — use `Type | None`.
-5. **No `TYPE_CHECKING` blocks** or lazy imports in core logic.
+5. **Top-of-module imports** — see `python-implementation.instructions.md` (Imports).
 6. **No raw `dict`/`tuple` returns** — use `msgspec.Struct`.
 7. **No bare `except:`** or silent `pass`.
 8. **No `hasattr`/`getattr`** when direct access works.

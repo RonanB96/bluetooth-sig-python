@@ -180,6 +180,11 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"] # Ignore unused imports in __init__.py files
+"src/bluetooth_sig/gatt/**/__init__.pyi" = ["F401", "PLE0604"] # Generated stubs re-export for mypy only
+"src/bluetooth_sig/gatt/**/_export_map.py" = ["E501"] # Generated lazy export maps with long module paths
+"src/bluetooth_sig/gatt/characteristics/__init__.py" = ["F401", "PLE0604"]
+"src/bluetooth_sig/gatt/services/__init__.py" = ["F401", "PLE0604"]
+"src/bluetooth_sig/gatt/descriptors/__init__.py" = ["F401", "PLE0604"]
 # Tests and examples intentionally omit exhaustive Google-style docstrings in
 # many places (fixtures, local test helpers, and example scripts). Ignore
 # docstring-related (D...) codes in those paths so we can focus fixes on

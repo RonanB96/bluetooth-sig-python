@@ -19,7 +19,6 @@ from __future__ import annotations
 from typing import Any, TypeVar, overload
 
 from ..gatt.characteristics.base import BaseCharacteristic
-from ..gatt.services import ServiceName
 from ..gatt.services.base import BaseGattService
 from ..types import (
     CharacteristicContext,
@@ -28,7 +27,7 @@ from ..types import (
     SIGInfo,
     ValidationResult,
 )
-from ..types.gatt_enums import CharacteristicName
+from ..types.gatt_enums import CharacteristicName, ServiceName
 from ..types.uuid import BluetoothUUID
 from .encoder import CharacteristicEncoder
 from .parser import CharacteristicParser

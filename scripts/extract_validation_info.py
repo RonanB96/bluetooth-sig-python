@@ -58,18 +58,17 @@ src_path = Path(__file__).parent.parent / "src"
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
+# ruff: noqa: E402
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+
+_CHAR_PATH = src_path / "bluetooth_sig" / "gatt" / "characteristics"
 
 
 def get_all_characteristic_classes() -> list[type[BaseCharacteristic]]:
     """Discover all characteristic classes by scanning the characteristics module."""
-    from bluetooth_sig.gatt import characteristics as char_module
-
-    char_path = Path(char_module.__file__).parent
     characteristic_classes: list[type[BaseCharacteristic]] = []
 
-    # Scan all Python files in characteristics directory
-    for py_file in char_path.glob("*.py"):
+    for py_file in _CHAR_PATH.glob("*.py"):
         if py_file.name.startswith("_"):
             continue
 
@@ -307,8 +306,7 @@ def generate_validation_report(output_file: str | Path) -> None:
     output_path = Path(output_file)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, "w") as f:
-        json.dump(validation_data, f, indent=2, default=str)
+    output_path.write_text(json.dumps(validation_data, indent=2, default=str), encoding="utf-8")
 
     print(f"\n✅ Validation info written to: {output_path}", file=sys.stderr)
 
@@ -337,11 +335,10 @@ def main() -> None:
 
     # Generate output filename
     if args.output is None:
-        tmp_file = tempfile.NamedTemporaryFile(
+        with tempfile.NamedTemporaryFile(
             mode="w", prefix="validation_info_", suffix=".json", delete=False, dir="/tmp"
-        )
-        output_file = tmp_file.name
-        tmp_file.close()
+        ) as tmp_file:
+            output_file = tmp_file.name
     else:
         output_file = args.output
 
@@ -352,14 +349,13 @@ def main() -> None:
         print(f"   Output file: {output_file}")
 
         # Show stats
-        with open(output_file) as f:
-            data = json.load(f)
-            total = data["metadata"]["total_characteristics"]
-            with_errors = sum(1 for v in data["characteristics"].values() if "error" in v)
-            print(f"   Total characteristics: {total}")
-            print(f"   Successfully processed: {total - with_errors}")
-            if with_errors:
-                print(f"   With errors: {with_errors}")
+        data = json.loads(Path(output_file).read_text(encoding="utf-8"))
+        total = data["metadata"]["total_characteristics"]
+        with_errors = sum(1 for v in data["characteristics"].values() if "error" in v)
+        print(f"   Total characteristics: {total}")
+        print(f"   Successfully processed: {total - with_errors}")
+        if with_errors:
+            print(f"   With errors: {with_errors}")
 
         print("\n📋 Output format:")
         print("   Each value includes a 'source' field indicating origin:")

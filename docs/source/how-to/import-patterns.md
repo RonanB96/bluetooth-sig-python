@@ -25,6 +25,34 @@ from bluetooth_sig.advertising import AdvertisingPDUParser
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 ```
 
+## Choosing an Import Path
+
+You pay for what you import. The library loads individual characteristic and service
+implementations on first use, so you can keep startup lean when you only need parsing.
+
+Start with the top-level API unless you have a reason not to:
+
+```python
+from bluetooth_sig import BluetoothSIGTranslator
+```
+
+Use a submodule import when you need a specific feature (advertising, a named
+characteristic class, or the device layer):
+
+```python
+from bluetooth_sig.advertising import AdvertisingPDUParser
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+from bluetooth_sig import Device
+```
+
+If you integrate inside an async host (for example Home Assistant) and want to avoid
+blocking I/O on the first parse, see [Performance Tuning](performance-tuning.md) for
+how to call :func:`~bluetooth_sig.utils.prewarm.prewarm_registries` during setup.
+
+Named characteristic imports still work as before. Accessing
+`BatteryLevelCharacteristic` for the first time loads only that module, not the full
+characteristic catalogue.
+
 ## How to Import for Common Tasks
 
 ### Task: Parse characteristic data (type-safe)
@@ -192,7 +220,8 @@ class MyCustomCharacteristic(BaseCharacteristic):
 
 ### Top level (`from bluetooth_sig import X`)
 
-Only the primary API and essential types:
+The primary API and essential types. Importing here loads the translator and shared
+infrastructure, but not every characteristic implementation:
 
 - `BluetoothSIGTranslator` - Main parsing API
 - `AsyncParsingSession` - Async context manager
@@ -202,6 +231,7 @@ Only the primary API and essential types:
 - `ServiceInfo` - Service metadata
 - `ValidationResult` - Validation results
 - `SIGInfo` - SIG standard info
+- `prewarm_registries` - Optional eager registry loading for production hosts
 - `__version__` - Package version
 
 ### Submodules (explicit imports)
@@ -216,7 +246,7 @@ Import from specific modules as needed:
 
 **Characteristics**: `bluetooth_sig.gatt.characteristics`
 
-- All characteristic classes (e.g., `BatteryLevelCharacteristic`)
+- All characteristic classes (for example `BatteryLevelCharacteristic`) — loaded on first access
 
 **Services**: `bluetooth_sig.gatt.services`
 

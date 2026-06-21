@@ -15,7 +15,7 @@ from ..descriptor_utils import get_presentation_format_from_context as _get_pres
 from ..descriptor_utils import get_user_description_from_context as _get_user_description
 from ..descriptor_utils import get_valid_range_from_context as _get_valid_range
 from ..descriptor_utils import validate_value_against_descriptor_range as _validate_value_range
-from ..descriptors import BaseDescriptor
+from ..descriptors.base import BaseDescriptor
 from ..descriptors.cccd import CCCDDescriptor
 from ..descriptors.characteristic_presentation_format import CharacteristicPresentationFormatData
 

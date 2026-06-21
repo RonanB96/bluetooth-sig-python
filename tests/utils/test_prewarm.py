@@ -44,3 +44,26 @@ class TestPrewarmRegistries:
         prewarm_registries()
         info = get_uuid_registry().get_characteristic_info("2A19")
         assert info is not None
+
+    def test_prewarm_sets_loaded_on_all_catalog_registries(self) -> None:
+        """Every loader in the prewarm catalogue must populate its registry."""
+        from bluetooth_sig.registry.base import (
+            BaseGenericRegistry,
+            BaseUUIDClassRegistry,
+            BaseUUIDRegistry,
+        )
+        from bluetooth_sig.utils.prewarm_catalog import _import_registry_modules, _iter_subclasses
+
+        prewarm_registries()
+
+        _import_registry_modules()
+        registry_classes: list[type[object]] = []
+        registry_classes.extend(_iter_subclasses(BaseGenericRegistry))
+        registry_classes.extend(_iter_subclasses(BaseUUIDRegistry))
+        registry_classes.extend(_iter_subclasses(BaseUUIDClassRegistry))
+
+        for registry_cls in sorted(registry_classes, key=lambda cls: cls.__name__):
+            instance = registry_cls.get_instance()  # type: ignore[attr-defined]
+            assert instance._loaded, registry_cls.__name__
+
+        assert get_uuid_registry()._loaded

@@ -41,7 +41,8 @@ graph TB
 
 ### Lazy Loading with Thread Safety
 
-- Registry data loads on first access
+- Registry YAML loads on first access
+- Characteristic and service classes load on first import of that name
 - Double-checked locking for concurrent safety
 - Minimal startup overhead
 

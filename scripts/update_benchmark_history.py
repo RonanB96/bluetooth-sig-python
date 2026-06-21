@@ -25,7 +25,7 @@ def extract_summary(benchmark_data: dict[str, Any]) -> dict[str, Any]:
     summary = {
         "timestamp": timestamp,
         "commit": benchmark_data.get("commit_info", {}).get("id", "unknown")[:8],
-        "results": {}
+        "results": {},
     }
 
     for bench in benchmarks:
@@ -49,8 +49,7 @@ def update_history(current_json_path: Path, history_json_path: Path) -> None:
         print(f"❌ Current benchmark file not found: {current_json_path}")
         sys.exit(1)
 
-    with open(current_json_path, encoding="utf-8") as f:
-        current_data = json.load(f)
+    current_data = json.loads(current_json_path.read_text(encoding="utf-8"))
 
     # Extract summary from current results
     summary = extract_summary(current_data)
@@ -58,8 +57,7 @@ def update_history(current_json_path: Path, history_json_path: Path) -> None:
     # Read existing history or create new
     history = []
     if history_json_path.exists():
-        with open(history_json_path, encoding="utf-8") as f:
-            history = json.load(f)
+        history = json.loads(history_json_path.read_text(encoding="utf-8"))
 
     # Append new summary
     history.append(summary)
@@ -70,8 +68,7 @@ def update_history(current_json_path: Path, history_json_path: Path) -> None:
 
     # Write updated history
     history_json_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(history_json_path, "w", encoding="utf-8") as f:
-        json.dump(history, f, indent=2)
+    history_json_path.write_text(json.dumps(history, indent=2), encoding="utf-8")
 
     print(f"✅ Updated benchmark history: {len(history)} entries")
     print(f"   Latest: {summary['timestamp'][:19]} (commit {summary['commit']})")

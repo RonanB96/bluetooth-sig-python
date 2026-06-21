@@ -143,6 +143,29 @@ battery_level = data[0]  # uint8, range 0-100
 
 **Trade-off**: Lose automatic validation, UUID resolution, and structured data.
 
+### 6. Pre-warm Registries in Async Hosts
+
+When you run inside an event loop, the first parse can trigger YAML loading and block
+your loop. Call :func:`~bluetooth_sig.utils.prewarm.prewarm_registries` from a worker
+thread during application setup:
+
+```python
+import asyncio
+
+from bluetooth_sig import BluetoothSIGTranslator, prewarm_registries
+
+
+async def setup() -> BluetoothSIGTranslator:
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, prewarm_registries)
+    return BluetoothSIGTranslator()
+```
+
+Import stays fast because registries load on first access. Prewarm moves that work to
+startup so notifications and reads stay responsive. See [ADR-009](../explanation/architecture/decisions.md)
+for the lazy-loading model and [Running Benchmarks Locally](#running-benchmarks-locally)
+to measure import and parse times on your machine.
+
 <a id="running-benchmarks-locally"></a>
 
 ## Running Benchmarks Locally
@@ -152,6 +175,9 @@ Profile your changes against the baseline:
 ```bash
 # Run all benchmarks
 python -m pytest tests/benchmarks/ --benchmark-only
+
+# Import startup benchmarks only
+python -m pytest tests/benchmarks/test_import_startup.py -m benchmark --benchmark-only
 
 # Run with detailed output
 python -m pytest tests/benchmarks/ --benchmark-only -v

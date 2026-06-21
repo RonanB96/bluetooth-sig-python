@@ -8,12 +8,15 @@ a JSON file compatible with shields.io endpoint badges for GitHub Pages deployme
 from __future__ import annotations
 
 import json
-import os
 import sys
 import xml.etree.ElementTree as ET
+from pathlib import Path
+
+_COVERAGE_GOOD_THRESHOLD = 80.0
+_COVERAGE_OK_THRESHOLD = 60.0
 
 
-def extract_coverage_percentage(coverage_xml_path: str) -> float:
+def extract_coverage_percentage(coverage_xml_path: Path) -> float:
     """Extract coverage percentage from coverage.xml file.
 
     Args:
@@ -25,8 +28,9 @@ def extract_coverage_percentage(coverage_xml_path: str) -> float:
         ET.ParseError: If coverage.xml file is malformed
 
     """
-    if not os.path.exists(coverage_xml_path):
-        raise FileNotFoundError(f"Coverage file not found: {coverage_xml_path}")
+    if not coverage_xml_path.exists():
+        msg = f"Coverage file not found: {coverage_xml_path}"
+        raise FileNotFoundError(msg)
 
     tree = ET.parse(coverage_xml_path)
     root = tree.getroot()
@@ -34,7 +38,6 @@ def extract_coverage_percentage(coverage_xml_path: str) -> float:
     # Get line coverage percentage from the root element
     line_rate = float(root.attrib["line-rate"])
     return round(line_rate * 100, 1)
-
 
 
 def get_coverage_color(coverage_pct: float) -> str:
@@ -46,14 +49,14 @@ def get_coverage_color(coverage_pct: float) -> str:
         Color string for shields.io badge
 
     """
-    if coverage_pct >= 80:
+    if coverage_pct >= _COVERAGE_GOOD_THRESHOLD:
         return "brightgreen"
-    if coverage_pct >= 60:
+    if coverage_pct >= _COVERAGE_OK_THRESHOLD:
         return "yellow"
     return "red"
 
 
-def create_coverage_badge_json(coverage_pct: float, output_dir: str) -> str:
+def create_coverage_badge_json(coverage_pct: float, output_dir: Path) -> Path:
     """Create coverage badge JSON file for shields.io endpoint.
 
     Args:
@@ -72,37 +75,26 @@ def create_coverage_badge_json(coverage_pct: float, output_dir: str) -> str:
         "color": color,
     }
 
-    # Ensure output directory exists
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Write badge JSON file
-    badge_path = os.path.join(output_dir, "coverage-badge.json")
-    with open(badge_path, "w") as f:
-        json.dump(badge_data, f, indent=2)
-
+    output_dir.mkdir(parents=True, exist_ok=True)
+    badge_path = output_dir / "coverage-badge.json"
+    badge_path.write_text(json.dumps(badge_data, indent=2), encoding="utf-8")
     return badge_path
 
 
 def main() -> None:
     """Main function to extract coverage and create badge JSON."""
-    # Default paths
-    coverage_xml_path = "coverage.xml"
-    output_dir = "htmlcov"
+    coverage_xml_path = Path("coverage.xml")
+    output_dir = Path("htmlcov")
 
-    # Allow override of paths via command line arguments
     if len(sys.argv) > 1:
-        coverage_xml_path = sys.argv[1]
+        coverage_xml_path = Path(sys.argv[1])
     if len(sys.argv) > 2:
-        output_dir = sys.argv[2]
+        output_dir = Path(sys.argv[2])
 
     try:
-        # Extract coverage percentage
         coverage_pct = extract_coverage_percentage(coverage_xml_path)
-
-        # Create badge JSON file
         badge_path = create_coverage_badge_json(coverage_pct, output_dir)
 
-        # Print results
         color = get_coverage_color(coverage_pct)
         print(f"Coverage: {coverage_pct}% (color: {color})")
         print(f"Badge JSON created: {badge_path}")
