@@ -3,9 +3,9 @@
 
 from __future__ import annotations
 
-import inspect
+import subprocess
 import sys
-from importlib import import_module
+from dataclasses import dataclass
 from pathlib import Path
 
 repo_root = Path(__file__).parent.parent
@@ -13,97 +13,85 @@ sys.path.insert(0, str(repo_root / "src"))
 
 # ruff: noqa: E402
 from bluetooth_sig.gatt.characteristics.base import BaseCharacteristic
+from bluetooth_sig.gatt.characteristics.registry import CharacteristicRegistry
 from bluetooth_sig.gatt.descriptors.base import BaseDescriptor
+from bluetooth_sig.gatt.descriptors.registry import DescriptorRegistry
 from bluetooth_sig.gatt.registry_utils import ModuleDiscovery
 from bluetooth_sig.gatt.services.base import BaseGattService
-
-CHAR_PACKAGE = "bluetooth_sig.gatt.characteristics"
-SVC_PACKAGE = "bluetooth_sig.gatt.services"
-DESC_PACKAGE = "bluetooth_sig.gatt.descriptors"
-
-CHAR_EXCLUSIONS = {
-    "__init__",
-    "__main__",
-    "_export_map",
-    "base",
-    "registry",
-    "templates",
-    "pipeline",
-    "characteristic_meta",
-    "context_lookup",
-    "descriptor_mixin",
-    "role_classifier",
-    "custom",
-    "utils",
-    "blood_pressure_common",
-    "device_info",
-    "fitness_machine_common",
-}
-
-SVC_EXCLUSIONS = {
-    "__init__",
-    "__main__",
-    "_export_map",
-    "base",
-    "registry",
-}
-
-DESC_EXCLUSIONS = {
-    "__init__",
-    "__main__",
-    "_export_map",
-    "base",
-    "registry",
-}
-
-CHAR_EXTRA_EXPORTS: dict[str, str] = {
-    "UncertaintyData": f"{CHAR_PACKAGE}.uncertainty",
-}
+from bluetooth_sig.gatt.services.registry import GattServiceRegistry
 
 
-def _is_exportable_class(obj: object, module_name: str, base: type[object]) -> bool:
-    if not inspect.isclass(obj):
-        return False
-    if obj.__module__ != module_name:
-        return False
-    if obj is base:
-        return False
-    if getattr(obj, "_is_template", False):
-        return False
-    if getattr(obj, "_is_base_class", False):
-        return False
-    return issubclass(obj, base)
+@dataclass(frozen=True, slots=True)
+class LazyPackageConfig:
+    """Configuration for one lazy-export GATT package."""
+
+    relative_dir: str
+    label: str
+    package_name: str
+    module_exclusions: frozenset[str]
+    base_class: type[object]
+    eager_stub_imports: dict[str, tuple[str, ...]]
+    eager_export_names: tuple[str, ...]
 
 
-def _discover_class_exports(
-    package_name: str,
-    exclusions: set[str],
-    base: type[object],
-    extra_exports: dict[str, str],
-) -> dict[str, str]:
-    module_names = ModuleDiscovery.iter_module_names(package_name, exclusions)
-    export_map: dict[str, str] = dict(extra_exports)
-    for module_name in module_names:
-        module = import_module(module_name)
-        for _, obj in inspect.getmembers(module, inspect.isclass):
-            if not _is_exportable_class(obj, module.__name__, base):
-                continue
-            export_map[obj.__name__] = module_name
-    return dict(sorted(export_map.items()))
-
-
-def _discover_descriptor_exports() -> dict[str, str]:
-    module_names = ModuleDiscovery.iter_module_names(DESC_PACKAGE, DESC_EXCLUSIONS)
-    export_map: dict[str, str] = {}
-    for module_name in module_names:
-        module = import_module(module_name)
-        for name, obj in inspect.getmembers(module):
-            if name.startswith("_") or not inspect.isclass(obj):
-                continue
-            if obj.__module__ != module.__name__ or obj is BaseDescriptor:
-                continue
-            export_map[name] = module_name
-    return dict(sorted(export_map.items()))
+PACKAGES: tuple[LazyPackageConfig, ...] = (
+    LazyPackageConfig(
+        relative_dir="src/bluetooth_sig/gatt/characteristics",
+        label="GATT characteristics",
+        package_name="bluetooth_sig.gatt.characteristics",
+        module_exclusions=frozenset(CharacteristicRegistry._MODULE_EXCLUSIONS),
+        base_class=BaseCharacteristic,
+        eager_stub_imports={
+            "base": ("BaseCharacteristic",),
+            "registry": ("CharacteristicName", "CharacteristicRegistry", "get_characteristic_class_map"),
+        },
+        eager_export_names=(
+            "BaseCharacteristic",
+            "CharacteristicName",
+            "CharacteristicRegistry",
+            "get_characteristic_class_map",
+        ),
+    ),
+    LazyPackageConfig(
+        relative_dir="src/bluetooth_sig/gatt/services",
+        label="GATT services",
+        package_name="bluetooth_sig.gatt.services",
+        module_exclusions=frozenset(GattServiceRegistry._MODULE_EXCLUSIONS),
+        base_class=BaseGattService,
+        eager_stub_imports={
+            "base": (
+                "CharacteristicStatus",
+                "ServiceCharacteristicInfo",
+                "ServiceCompletenessReport",
+                "ServiceHealthStatus",
+                "ServiceValidationResult",
+            ),
+            "registry": ("GattServiceRegistry", "ServiceName", "get_service_class_map"),
+        },
+        eager_export_names=(
+            "CharacteristicStatus",
+            "GattServiceRegistry",
+            "ServiceCharacteristicInfo",
+            "ServiceCompletenessReport",
+            "ServiceHealthStatus",
+            "ServiceName",
+            "ServiceValidationResult",
+            "get_service_class_map",
+        ),
+    ),
+    LazyPackageConfig(
+        relative_dir="src/bluetooth_sig/gatt/descriptors",
+        label="GATT descriptors",
+        package_name="bluetooth_sig.gatt.descriptors",
+        module_exclusions=frozenset(DescriptorRegistry._MODULE_EXCLUSIONS),
+        base_class=BaseDescriptor,
+        eager_stub_imports={
+            "base": ("BaseDescriptor",),
+            "registry": ("DescriptorRegistry",),
+        },
+        eager_export_names=("BaseDescriptor", "DescriptorRegistry"),
+    ),
+)
 
 
 def _render_export_map(package_label: str, export_map: dict[str, str]) -> str:
@@ -116,28 +104,35 @@ def _render_export_map(package_label: str, export_map: dict[str, str]) -> str:
     ]
     for name, module_path in export_map.items():
         lines.append(f'    "{name}": "{module_path}",')
-    lines.extend(
-        [
-            "}",
-            "",
-            "LAZY_EXPORT_NAMES: tuple[str, ...] = (",
-        ]
-    )
-    for name in export_map:
-        lines.append(f'    "{name}",')
-    lines.extend([")", ""])
+    lines.extend(["}", ""])
     return "\n".join(lines)
 
 
-def _render_stub(export_map: dict[str, str], eager_imports: list[str], eager_names: list[str]) -> str:
-    lines = ['"""Generated type stubs for lazy package exports. Do not edit by hand."""', ""]
-    lines.extend(eager_imports)
+def _build_stub_imports(
+    export_map: dict[str, str],
+    eager_stub_imports: dict[str, tuple[str, ...]],
+) -> dict[str, list[str]]:
+    imports: dict[str, list[str]] = {module: list(names) for module, names in eager_stub_imports.items()}
     for name, module_path in export_map.items():
         relative = module_path.rsplit(".", 1)[-1]
-        lines.append(f"from .{relative} import {name}")
+        bucket = imports.setdefault(relative, [])
+        if name not in bucket:
+            bucket.append(name)
+    return imports
+
+
+def _render_stub(
+    export_map: dict[str, str],
+    config: LazyPackageConfig,
+) -> str:
+    lines = ['"""Generated type stubs for lazy package exports. Do not edit by hand."""', ""]
+    imports_by_module = _build_stub_imports(export_map, config.eager_stub_imports)
+    for module, names in imports_by_module.items():
+        joined = ", ".join(names)
+        lines.append(f"from .{module} import {joined}")
     lines.append("")
     lines.append("__all__ = [")
-    for name in eager_names:
+    for name in config.eager_export_names:
         lines.append(f'    "{name}",')
     for name in export_map:
         lines.append(f'    "{name}",')
@@ -146,86 +141,42 @@ def _render_stub(export_map: dict[str, str], eager_imports: list[str], eager_nam
     return "\n".join(lines)
 
 
-def _write_package_artifacts(
-    package_dir: Path,
-    package_label: str,
-    export_map: dict[str, str],
-    eager_stub_imports: list[str],
-    eager_names: list[str],
-) -> None:
+def _apply_ruff_format(paths: list[Path]) -> None:
+    """Format generated artifacts to match project ruff/isort settings."""
+    if not paths:
+        return
+    path_args = [str(path) for path in paths]
+    subprocess.run(
+        [sys.executable, "-m", "ruff", "check", "--fix", "-q", *path_args],
+        cwd=repo_root,
+        check=True,
+    )
+    subprocess.run(
+        [sys.executable, "-m", "ruff", "format", "-q", *path_args],
+        cwd=repo_root,
+        check=True,
+    )
+
+
+def _write_package_artifacts(config: LazyPackageConfig) -> None:
+    package_dir = repo_root / config.relative_dir
+    export_map = ModuleDiscovery.build_lazy_export_map(
+        config.package_name,
+        set(config.module_exclusions),
+        config.base_class,
+    )
     export_path = package_dir / "_export_map.py"
     stub_path = package_dir / "__init__.pyi"
-    export_path.write_text(_render_export_map(package_label, export_map), encoding="utf-8")
-    stub_path.write_text(_render_stub(export_map, eager_stub_imports, eager_names), encoding="utf-8")
+    export_path.write_text(_render_export_map(config.label, export_map), encoding="utf-8")
+    stub_path.write_text(_render_stub(export_map, config), encoding="utf-8")
+    _apply_ruff_format([export_path, stub_path])
     print(f"Wrote {len(export_map)} exports to {export_path.relative_to(repo_root)}")
 
 
 def main() -> None:
     """Discover GATT exports and write lazy export maps plus type stubs."""
-    char_map = _discover_class_exports(
-        CHAR_PACKAGE,
-        CHAR_EXCLUSIONS,
-        BaseCharacteristic,
-        CHAR_EXTRA_EXPORTS,
-    )
-    svc_map = _discover_class_exports(
-        SVC_PACKAGE,
-        SVC_EXCLUSIONS,
-        BaseGattService,
-        {},
-    )
-    desc_map = _discover_descriptor_exports()
-
-    _write_package_artifacts(
-        repo_root / "src/bluetooth_sig/gatt/characteristics",
-        "GATT characteristics",
-        char_map,
-        [
-            "from .base import BaseCharacteristic",
-            "from .registry import CharacteristicName, CharacteristicRegistry, get_characteristic_class_map",
-        ],
-        [
-            "BaseCharacteristic",
-            "CharacteristicName",
-            "CharacteristicRegistry",
-            "get_characteristic_class_map",
-        ],
-    )
-    _write_package_artifacts(
-        repo_root / "src/bluetooth_sig/gatt/services",
-        "GATT services",
-        svc_map,
-        [
-            "from .base import (",
-            "    CharacteristicStatus,",
-            "    ServiceCharacteristicInfo,",
-            "    ServiceCompletenessReport,",
-            "    ServiceHealthStatus,",
-            "    ServiceValidationResult,",
-            ")",
-            "from .registry import GattServiceRegistry, ServiceName, get_service_class_map",
-        ],
-        [
-            "CharacteristicStatus",
-            "GattServiceRegistry",
-            "ServiceCharacteristicInfo",
-            "ServiceCompletenessReport",
-            "ServiceHealthStatus",
-            "ServiceName",
-            "ServiceValidationResult",
-            "get_service_class_map",
-        ],
-    )
-    _write_package_artifacts(
-        repo_root / "src/bluetooth_sig/gatt/descriptors",
-        "GATT descriptors",
-        desc_map,
-        [
-            "from .base import BaseDescriptor",
-            "from .registry import DescriptorRegistry",
-        ],
-        ["BaseDescriptor", "DescriptorRegistry"],
-    )
+    for config in PACKAGES:
+        _write_package_artifacts(config)
 
 
 if __name__ == "__main__":

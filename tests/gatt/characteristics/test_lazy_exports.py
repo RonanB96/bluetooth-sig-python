@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import importlib
-import inspect
-
 import pytest
 
 import bluetooth_sig.gatt.characteristics as characteristics_pkg
@@ -52,20 +49,9 @@ class TestLazyCharacteristicExports:
 
     def test_export_map_matches_discovery(self) -> None:
         """Generated lazy export map must stay in sync with package modules."""
-        exclusions = CharacteristicRegistry._MODULE_EXCLUSIONS
-        module_names = ModuleDiscovery.iter_module_names(
+        discovered = ModuleDiscovery.build_lazy_export_map(
             "bluetooth_sig.gatt.characteristics",
-            exclusions,
+            CharacteristicRegistry._MODULE_EXCLUSIONS,
+            BaseCharacteristic,
         )
-        discovered: dict[str, str] = {"UncertaintyData": "bluetooth_sig.gatt.characteristics.uncertainty"}
-        for module_name in module_names:
-            module = importlib.import_module(module_name)
-            for _, obj in inspect.getmembers(module, inspect.isclass):
-                if obj.__module__ != module.__name__:
-                    continue
-                if not issubclass(obj, BaseCharacteristic):
-                    continue
-                if getattr(obj, "_is_template", False) or getattr(obj, "_is_base_class", False):
-                    continue
-                discovered[obj.__name__] = module_name
-        assert dict(sorted(discovered.items())) == LAZY_EXPORT_MAP
+        assert discovered == LAZY_EXPORT_MAP

@@ -31,7 +31,7 @@ GATT barrels (`characteristics`, `services`, `descriptors`) use PEP 562 via
 module, regenerate:
 
 ```bash
-PYTHONPATH=src python scripts/generate_lazy_exports.py
+python scripts/generate_lazy_exports.py
 ```
 
 Do not import sibling characteristic modules from `base.py` or templates.

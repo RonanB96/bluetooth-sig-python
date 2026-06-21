@@ -1,31 +1,33 @@
 """Generated type stubs for lazy package exports. Do not edit by hand."""
 
-from .base import BaseCharacteristic
-from .registry import CharacteristicName, CharacteristicRegistry, get_characteristic_class_map
+from .acceleration import AccelerationCharacteristic
+from .acceleration_3d import Acceleration3DCharacteristic
+from .acceleration_detection_status import AccelerationDetectionStatusCharacteristic
 from .acs_control_point import ACSControlPointCharacteristic
 from .acs_data_in import ACSDataInCharacteristic
 from .acs_data_out_indicate import ACSDataOutIndicateCharacteristic
 from .acs_data_out_notify import ACSDataOutNotifyCharacteristic
 from .acs_status import ACSStatusCharacteristic
-from .ap_sync_key_material import APSyncKeyMaterialCharacteristic
-from .ase_control_point import ASEControlPointCharacteristic
-from .acceleration_3d import Acceleration3DCharacteristic
-from .acceleration import AccelerationCharacteristic
-from .acceleration_detection_status import AccelerationDetectionStatusCharacteristic
 from .active_preset_index import ActivePresetIndexCharacteristic
 from .activity_goal import ActivityGoalCharacteristic
 from .advertising_constant_tone_extension_interval import AdvertisingConstantToneExtensionIntervalCharacteristic
-from .advertising_constant_tone_extension_minimum_length import AdvertisingConstantToneExtensionMinimumLengthCharacteristic
-from .advertising_constant_tone_extension_minimum_transmit_count import AdvertisingConstantToneExtensionMinimumTransmitCountCharacteristic
+from .advertising_constant_tone_extension_minimum_length import (
+    AdvertisingConstantToneExtensionMinimumLengthCharacteristic,
+)
+from .advertising_constant_tone_extension_minimum_transmit_count import (
+    AdvertisingConstantToneExtensionMinimumTransmitCountCharacteristic,
+)
 from .advertising_constant_tone_extension_phy import AdvertisingConstantToneExtensionPhyCharacteristic
-from .advertising_constant_tone_extension_transmit_duration import AdvertisingConstantToneExtensionTransmitDurationCharacteristic
+from .advertising_constant_tone_extension_transmit_duration import (
+    AdvertisingConstantToneExtensionTransmitDurationCharacteristic,
+)
 from .aerobic_heart_rate_lower_limit import AerobicHeartRateLowerLimitCharacteristic
 from .aerobic_heart_rate_upper_limit import AerobicHeartRateUpperLimitCharacteristic
 from .aerobic_threshold import AerobicThresholdCharacteristic
 from .age import AgeCharacteristic
 from .aggregate import AggregateCharacteristic
-from .alert_category_id_bit_mask import AlertCategoryIdBitMaskCharacteristic
 from .alert_category_id import AlertCategoryIdCharacteristic
+from .alert_category_id_bit_mask import AlertCategoryIdBitMaskCharacteristic
 from .alert_level import AlertLevelCharacteristic
 from .alert_notification_control_point import AlertNotificationControlPointCharacteristic
 from .alert_status import AlertStatusCharacteristic
@@ -35,11 +37,13 @@ from .anaerobic_heart_rate_lower_limit import AnaerobicHeartRateLowerLimitCharac
 from .anaerobic_heart_rate_upper_limit import AnaerobicHeartRateUpperLimitCharacteristic
 from .anaerobic_threshold import AnaerobicThresholdCharacteristic
 from .analog import AnalogCharacteristic
+from .ap_sync_key_material import APSyncKeyMaterialCharacteristic
 from .apparent_energy_32 import ApparentEnergy32Characteristic
 from .apparent_power import ApparentPowerCharacteristic
 from .apparent_wind_direction import ApparentWindDirectionCharacteristic
 from .apparent_wind_speed import ApparentWindSpeedCharacteristic
 from .appearance import AppearanceCharacteristic
+from .ase_control_point import ASEControlPointCharacteristic
 from .audio_input_control_point import AudioInputControlPointCharacteristic
 from .audio_input_description import AudioInputDescriptionCharacteristic
 from .audio_input_state import AudioInputStateCharacteristic
@@ -50,12 +54,8 @@ from .audio_output_description import AudioOutputDescriptionCharacteristic
 from .available_audio_contexts import AvailableAudioContextsCharacteristic
 from .average_current import AverageCurrentCharacteristic
 from .average_voltage import AverageVoltageCharacteristic
-from .bgr_features import BGRFeaturesCharacteristic
-from .bgs_features import BGSFeaturesCharacteristic
-from .br_edr_handover_data import BREDRHandoverDataCharacteristic
-from .bss_control_point import BSSControlPointCharacteristic
-from .bss_response import BSSResponseCharacteristic
 from .barometric_pressure_trend import BarometricPressureTrendCharacteristic
+from .base import BaseCharacteristic
 from .battery_critical_status import BatteryCriticalStatusCharacteristic
 from .battery_energy_status import BatteryEnergyStatusCharacteristic
 from .battery_health_information import BatteryHealthInformationCharacteristic
@@ -71,6 +71,8 @@ from .bearer_signal_strength_reporting_interval import BearerSignalStrengthRepor
 from .bearer_technology import BearerTechnologyCharacteristic
 from .bearer_uci import BearerUCICharacteristic
 from .bearer_uri_schemes_supported_list import BearerURISchemesCharacteristic
+from .bgr_features import BGRFeaturesCharacteristic
+from .bgs_features import BGSFeaturesCharacteristic
 from .blood_pressure_feature import BloodPressureFeatureCharacteristic
 from .blood_pressure_measurement import BloodPressureMeasurementCharacteristic
 from .blood_pressure_record import BloodPressureRecordCharacteristic
@@ -84,18 +86,11 @@ from .boolean import BooleanCharacteristic
 from .boot_keyboard_input_report import BootKeyboardInputReportCharacteristic
 from .boot_keyboard_output_report import BootKeyboardOutputReportCharacteristic
 from .boot_mouse_input_report import BootMouseInputReportCharacteristic
+from .br_edr_handover_data import BREDRHandoverDataCharacteristic
 from .broadcast_audio_scan_control_point import BroadcastAudioScanControlPointCharacteristic
 from .broadcast_receive_state import BroadcastReceiveStateCharacteristic
-from .cgm_feature import CGMFeatureCharacteristic
-from .cgm_measurement import CGMMeasurementCharacteristic
-from .cgm_session_run_time import CGMSessionRunTimeCharacteristic
-from .cgm_session_start_time import CGMSessionStartTimeCharacteristic
-from .cgm_specific_ops_control_point import CGMSpecificOpsControlPointCharacteristic
-from .cgm_status import CGMStatusCharacteristic
-from .cie_13_3_1995_color_rendering_index import CIE133ColorRenderingIndexCharacteristic
-from .co2_concentration import CO2ConcentrationCharacteristic
-from .csc_feature import CSCFeatureCharacteristic
-from .csc_measurement import CSCMeasurementCharacteristic
+from .bss_control_point import BSSControlPointCharacteristic
+from .bss_response import BSSResponseCharacteristic
 from .call_control_point import CallControlPointCharacteristic
 from .call_control_point_optional_opcodes import CallControlPointOptionalOpcodesCharacteristic
 from .call_friendly_name import CallFriendlyNameCharacteristic
@@ -105,12 +100,20 @@ from .carbon_monoxide_concentration import CarbonMonoxideConcentrationCharacteri
 from .cardiorespiratory_activity_instantaneous_data import CardioRespiratoryActivityInstantaneousDataCharacteristic
 from .cardiorespiratory_activity_summary_data import CardioRespiratoryActivitySummaryDataCharacteristic
 from .central_address_resolution import CentralAddressResolutionCharacteristic
+from .cgm_feature import CGMFeatureCharacteristic
+from .cgm_measurement import CGMMeasurementCharacteristic
+from .cgm_session_run_time import CGMSessionRunTimeCharacteristic
+from .cgm_session_start_time import CGMSessionStartTimeCharacteristic
+from .cgm_specific_ops_control_point import CGMSpecificOpsControlPointCharacteristic
+from .cgm_status import CGMStatusCharacteristic
 from .chromatic_distance_from_planckian import ChromaticDistanceFromPlanckianCharacteristic
 from .chromaticity_coordinate import ChromaticityCoordinateCharacteristic
 from .chromaticity_coordinates import ChromaticityCoordinatesCharacteristic
 from .chromaticity_in_cct_and_duv_values import ChromaticityInCCTAndDuvValuesCharacteristic
 from .chromaticity_tolerance import ChromaticityToleranceCharacteristic
+from .cie_13_3_1995_color_rendering_index import CIE133ColorRenderingIndexCharacteristic
 from .client_supported_features import ClientSupportedFeaturesCharacteristic
+from .co2_concentration import CO2ConcentrationCharacteristic
 from .coefficient import CoefficientCharacteristic
 from .constant_tone_extension_enable import ConstantToneExtensionEnableCharacteristic
 from .contact_status_8 import ContactStatus8Characteristic
@@ -123,6 +126,8 @@ from .count_16 import Count16Characteristic
 from .count_24 import Count24Characteristic
 from .country_code import CountryCodeCharacteristic
 from .cross_trainer_data import CrossTrainerDataCharacteristic
+from .csc_feature import CSCFeatureCharacteristic
+from .csc_measurement import CSCMeasurementCharacteristic
 from .current_group_object_id import CurrentGroupObjectIdCharacteristic
 from .current_time import CurrentTimeCharacteristic
 from .current_track_object_id import CurrentTrackObjectIdCharacteristic
@@ -150,14 +155,6 @@ from .dew_point import DewPointCharacteristic
 from .digital import DigitalCharacteristic
 from .door_window_status import DoorWindowStatusCharacteristic
 from .dst_offset import DstOffsetCharacteristic
-from .esl_address import ESLAddressCharacteristic
-from .esl_control_point import ESLControlPointCharacteristic
-from .esl_current_absolute_time import ESLCurrentAbsoluteTimeCharacteristic
-from .esl_display_information import ESLDisplayInformationCharacteristic
-from .esl_image_information import ESLImageInformationCharacteristic
-from .esl_led_information import ESLLEDInformationCharacteristic
-from .esl_response_key_material import ESLResponseKeyMaterialCharacteristic
-from .esl_sensor_information import ESLSensorInformationCharacteristic
 from .elapsed_time import ElapsedTimeCharacteristic
 from .electric_current import ElectricCurrentCharacteristic
 from .electric_current_range import ElectricCurrentRangeCharacteristic
@@ -168,11 +165,19 @@ from .email_address import EmailAddressCharacteristic
 from .emergency_id import EmergencyIdCharacteristic
 from .emergency_text import EmergencyTextCharacteristic
 from .encrypted_data_key_material import EncryptedDataKeyMaterialCharacteristic
-from .energy_32 import Energy32Characteristic
 from .energy import EnergyCharacteristic
+from .energy_32 import Energy32Characteristic
 from .energy_in_a_period_of_day import EnergyInAPeriodOfDayCharacteristic
 from .enhanced_blood_pressure_measurement import EnhancedBloodPressureMeasurementCharacteristic
 from .enhanced_intermediate_cuff_pressure import EnhancedIntermediateCuffPressureCharacteristic
+from .esl_address import ESLAddressCharacteristic
+from .esl_control_point import ESLControlPointCharacteristic
+from .esl_current_absolute_time import ESLCurrentAbsoluteTimeCharacteristic
+from .esl_display_information import ESLDisplayInformationCharacteristic
+from .esl_image_information import ESLImageInformationCharacteristic
+from .esl_led_information import ESLLEDInformationCharacteristic
+from .esl_response_key_material import ESLResponseKeyMaterialCharacteristic
+from .esl_sensor_information import ESLSensorInformationCharacteristic
 from .estimated_service_date import EstimatedServiceDateCharacteristic
 from .event_statistics import EventStatisticsCharacteristic
 from .exact_time_256 import ExactTime256Characteristic
@@ -185,31 +190,26 @@ from .fitness_machine_control_point import FitnessMachineControlPointCharacteris
 from .fitness_machine_feature import FitnessMachineFeatureCharacteristic
 from .fitness_machine_status import FitnessMachineStatusCharacteristic
 from .five_zone_heart_rate_limits import FiveZoneHeartRateLimitsCharacteristic
+from .fixed_string_8 import FixedString8Characteristic
 from .fixed_string_16 import FixedString16Characteristic
 from .fixed_string_24 import FixedString24Characteristic
 from .fixed_string_36 import FixedString36Characteristic
 from .fixed_string_64 import FixedString64Characteristic
-from .fixed_string_8 import FixedString8Characteristic
 from .floor_number import FloorNumberCharacteristic
 from .force import ForceCharacteristic
 from .four_zone_heart_rate_limits import FourZoneHeartRateLimitsCharacteristic
-from .ghs_control_point import GHSControlPointCharacteristic
-from .gmap_role import GMAPRoleCharacteristic
 from .gain_settings_attribute import GainSettingsAttributeCharacteristic
 from .gender import GenderCharacteristic
 from .general_activity_instantaneous_data import GeneralActivityInstantaneousDataCharacteristic
 from .general_activity_summary_data import GeneralActivitySummaryDataCharacteristic
 from .generic_level import GenericLevelCharacteristic
+from .ghs_control_point import GHSControlPointCharacteristic
 from .global_trade_item_number import GlobalTradeItemNumberCharacteristic
 from .glucose_feature import GlucoseFeatureCharacteristic
 from .glucose_measurement import GlucoseMeasurementCharacteristic
 from .glucose_measurement_context import GlucoseMeasurementContextCharacteristic
+from .gmap_role import GMAPRoleCharacteristic
 from .gust_factor import GustFactorCharacteristic
-from .hid_iso_properties import HIDISOPropertiesCharacteristic
-from .http_control_point import HTTPControlPointCharacteristic
-from .http_entity_body import HTTPEntityBodyCharacteristic
-from .http_headers import HTTPHeadersCharacteristic
-from .http_status_code import HTTPStatusCodeCharacteristic
 from .handedness import HandednessCharacteristic
 from .hardware_revision_string import HardwareRevisionStringCharacteristic
 from .health_sensor_features import HealthSensorFeaturesCharacteristic
@@ -222,30 +222,35 @@ from .heat_index import HeatIndexCharacteristic
 from .height import HeightCharacteristic
 from .hid_control_point import HidControlPointCharacteristic
 from .hid_information import HidInformationCharacteristic
+from .hid_iso_properties import HIDISOPropertiesCharacteristic
 from .high_intensity_exercise_threshold import HighIntensityExerciseThresholdCharacteristic
 from .high_resolution_height import HighResolutionHeightCharacteristic
 from .high_temperature import HighTemperatureCharacteristic
 from .high_voltage import HighVoltageCharacteristic
 from .hip_circumference import HipCircumferenceCharacteristic
+from .http_control_point import HTTPControlPointCharacteristic
+from .http_entity_body import HTTPEntityBodyCharacteristic
+from .http_headers import HTTPHeadersCharacteristic
+from .http_status_code import HTTPStatusCodeCharacteristic
 from .https_security import HttpsSecurityCharacteristic
-from .humidity_8 import Humidity8Characteristic
 from .humidity import HumidityCharacteristic
+from .humidity_8 import Humidity8Characteristic
 from .idd_annunciation_status import IDDAnnunciationStatusCharacteristic
 from .idd_command_control_point import IDDCommandControlPointCharacteristic
 from .idd_command_data import IDDCommandDataCharacteristic
 from .idd_features import IDDFeaturesCharacteristic
 from .idd_history_data import IDDHistoryDataCharacteristic
 from .idd_record_access_control_point import IDDRecordAccessControlPointCharacteristic
-from .idd_status_changed import IDDStatusChangedCharacteristic
 from .idd_status import IDDStatusCharacteristic
+from .idd_status_changed import IDDStatusChangedCharacteristic
 from .idd_status_reader_control_point import IDDStatusReaderControlPointCharacteristic
 from .ieee_11073_20601_regulatory_certification_data_list import IEEE1107320601RegulatoryCharacteristic
+from .illuminance import IlluminanceCharacteristic
+from .illuminance_16 import Illuminance16Characteristic
 from .imd_control import IMDControlCharacteristic
 from .imd_historical_data import IMDHistoricalDataCharacteristic
-from .imds_descriptor_value_changed import IMDSDescriptorValueChangedCharacteristic
 from .imd_status import IMDStatusCharacteristic
-from .illuminance_16 import Illuminance16Characteristic
-from .illuminance import IlluminanceCharacteristic
+from .imds_descriptor_value_changed import IMDSDescriptorValueChangedCharacteristic
 from .incoming_call import IncomingCallCharacteristic
 from .incoming_call_target_bearer_uri import IncomingCallTargetBearerURICharacteristic
 from .indoor_bike_data import IndoorBikeDataCharacteristic
@@ -253,13 +258,11 @@ from .indoor_positioning_configuration import IndoorPositioningConfigurationChar
 from .intermediate_cuff_pressure import IntermediateCuffPressureCharacteristic
 from .intermediate_temperature import IntermediateTemperatureCharacteristic
 from .irradiance import IrradianceCharacteristic
-from .le_gatt_security_levels import LEGATTSecurityLevelsCharacteristic
-from .le_hid_operation_mode import LEHIDOperationModeCharacteristic
-from .ln_control_point import LNControlPointCharacteristic
-from .ln_feature import LNFeatureCharacteristic
 from .language import LanguageCharacteristic
 from .last_name import LastNameCharacteristic
 from .latitude import LatitudeCharacteristic
+from .le_gatt_security_levels import LEGATTSecurityLevelsCharacteristic
+from .le_hid_operation_mode import LEHIDOperationModeCharacteristic
 from .length import LengthCharacteristic
 from .life_cycle_data import LifeCycleDataCharacteristic
 from .light_distribution import LightDistributionCharacteristic
@@ -267,6 +270,8 @@ from .light_output import LightOutputCharacteristic
 from .light_source_type import LightSourceTypeCharacteristic
 from .linear_position import LinearPositionCharacteristic
 from .live_health_observations import LiveHealthObservationsCharacteristic
+from .ln_control_point import LNControlPointCharacteristic
+from .ln_feature import LNFeatureCharacteristic
 from .local_east_coordinate import LocalEastCoordinateCharacteristic
 from .local_north_coordinate import LocalNorthCoordinateCharacteristic
 from .local_time_information import LocalTimeInformationCharacteristic
@@ -306,7 +311,6 @@ from .next_track_object_id import NextTrackObjectIdCharacteristic
 from .nitrogen_dioxide_concentration import NitrogenDioxideConcentrationCharacteristic
 from .noise import NoiseCharacteristic
 from .non_methane_voc_concentration import NonMethaneVOCConcentrationCharacteristic
-from .ots_feature import OTSFeatureCharacteristic
 from .object_action_control_point import ObjectActionControlPointCharacteristic
 from .object_changed import ObjectChangedCharacteristic
 from .object_first_created import ObjectFirstCreatedCharacteristic
@@ -320,13 +324,8 @@ from .object_size import ObjectSizeCharacteristic
 from .object_type import ObjectTypeCharacteristic
 from .observation_schedule_changed import ObservationScheduleChangedCharacteristic
 from .on_demand_ranging_data import OnDemandRangingDataCharacteristic
+from .ots_feature import OTSFeatureCharacteristic
 from .ozone_concentration import OzoneConcentrationCharacteristic
-from .plx_continuous_measurement import PLXContinuousMeasurementCharacteristic
-from .plx_features import PLXFeaturesCharacteristic
-from .plx_spot_check_measurement import PLXSpotCheckMeasurementCharacteristic
-from .pm10_concentration import PM10ConcentrationCharacteristic
-from .pm1_concentration import PM1ConcentrationCharacteristic
-from .pm25_concentration import PM25ConcentrationCharacteristic
 from .parent_group_object_id import ParentGroupObjectIdCharacteristic
 from .perceived_lightness import PerceivedLightnessCharacteristic
 from .percentage_8 import Percentage8Characteristic
@@ -340,6 +339,12 @@ from .physical_activity_session_descriptor import PhysicalActivitySessionDescrip
 from .playback_speed import PlaybackSpeedCharacteristic
 from .playing_order import PlayingOrderCharacteristic
 from .playing_orders_supported import PlayingOrdersSupportedCharacteristic
+from .plx_continuous_measurement import PLXContinuousMeasurementCharacteristic
+from .plx_features import PLXFeaturesCharacteristic
+from .plx_spot_check_measurement import PLXSpotCheckMeasurementCharacteristic
+from .pm1_concentration import PM1ConcentrationCharacteristic
+from .pm10_concentration import PM10ConcentrationCharacteristic
+from .pm25_concentration import PM25ConcentrationCharacteristic
 from .pnp_id import PnpIdCharacteristic
 from .pollen_concentration import PollenConcentrationCharacteristic
 from .position_quality import PositionQualityCharacteristic
@@ -350,22 +355,23 @@ from .preferred_units import PreferredUnitsCharacteristic
 from .pressure import PressureCharacteristic
 from .protocol_mode import ProtocolModeCharacteristic
 from .pushbutton_status_8 import PushbuttonStatus8Characteristic
+from .rainfall import RainfallCharacteristic
+from .ranging_data_overwritten import RangingDataOverwrittenCharacteristic
+from .ranging_data_ready import RangingDataReadyCharacteristic
 from .ras_control_point import RASControlPointCharacteristic
 from .ras_features import RASFeaturesCharacteristic
 from .rc_feature import RCFeatureCharacteristic
 from .rc_settings import RCSettingsCharacteristic
-from .rsc_feature import RSCFeatureCharacteristic
-from .rsc_measurement import RSCMeasurementCharacteristic
-from .rainfall import RainfallCharacteristic
-from .ranging_data_overwritten import RangingDataOverwrittenCharacteristic
-from .ranging_data_ready import RangingDataReadyCharacteristic
 from .real_time_ranging_data import RealTimeRangingDataCharacteristic
 from .reconnection_address import ReconnectionAddressCharacteristic
 from .reconnection_configuration_control_point import ReconnectionConfigurationControlPointCharacteristic
 from .record_access_control_point import RecordAccessControlPointCharacteristic
 from .reference_time_information import ReferenceTimeInformationCharacteristic
 from .registered_user import RegisteredUserCharacteristic
-from .relative_runtime_in_a_correlated_color_temperature_range import RelativeRuntimeInACorrelatedColorTemperatureRangeCharacteristic
+from .registry import CharacteristicName, CharacteristicRegistry, get_characteristic_class_map
+from .relative_runtime_in_a_correlated_color_temperature_range import (
+    RelativeRuntimeInACorrelatedColorTemperatureRangeCharacteristic,
+)
 from .relative_runtime_in_a_current_range import RelativeRuntimeInACurrentRangeCharacteristic
 from .relative_runtime_in_a_generic_level_range import RelativeRuntimeInAGenericLevelRangeCharacteristic
 from .relative_value_in_a_period_of_day import RelativeValueInAPeriodOfDayCharacteristic
@@ -380,6 +386,8 @@ from .ringer_control_point import RingerControlPointCharacteristic
 from .ringer_setting import RingerSettingCharacteristic
 from .rotational_speed import RotationalSpeedCharacteristic
 from .rower_data import RowerDataCharacteristic
+from .rsc_feature import RSCFeatureCharacteristic
+from .rsc_measurement import RSCMeasurementCharacteristic
 from .sc_control_point import SCControlPointCharacteristic
 from .scan_interval_window import ScanIntervalWindowCharacteristic
 from .scan_refresh import ScanRefreshCharacteristic
@@ -423,11 +431,10 @@ from .supported_speed_range import SupportedSpeedRangeCharacteristic
 from .supported_unread_alert_category import SupportedUnreadAlertCategoryCharacteristic
 from .system_id import SystemIdCharacteristic
 from .tds_control_point import TDSControlPointCharacteristic
-from .tmap_role import TMAPRoleCharacteristic
+from .temperature import TemperatureCharacteristic
 from .temperature_8 import Temperature8Characteristic
 from .temperature_8_in_a_period_of_day import Temperature8InAPeriodOfDayCharacteristic
 from .temperature_8_statistics import Temperature8StatisticsCharacteristic
-from .temperature import TemperatureCharacteristic
 from .temperature_measurement import TemperatureMeasurementCharacteristic
 from .temperature_range import TemperatureRangeCharacteristic
 from .temperature_statistics import TemperatureStatisticsCharacteristic
@@ -440,14 +447,15 @@ from .time_decihour_8 import TimeDecihour8Characteristic
 from .time_exponential_8 import TimeExponential8Characteristic
 from .time_hour_24 import TimeHour24Characteristic
 from .time_millisecond_24 import TimeMillisecond24Characteristic
+from .time_second_8 import TimeSecond8Characteristic
 from .time_second_16 import TimeSecond16Characteristic
 from .time_second_32 import TimeSecond32Characteristic
-from .time_second_8 import TimeSecond8Characteristic
 from .time_source import TimeSourceCharacteristic
 from .time_update_control_point import TimeUpdateControlPointCharacteristic
 from .time_update_state import TimeUpdateStateCharacteristic
 from .time_with_dst import TimeWithDstCharacteristic
 from .time_zone import TimeZoneCharacteristic
+from .tmap_role import TMAPRoleCharacteristic
 from .torque import TorqueCharacteristic
 from .track_changed import TrackChangedCharacteristic
 from .track_duration import TrackDurationCharacteristic
@@ -462,13 +470,12 @@ from .tx_power_level import TxPowerLevelCharacteristic
 from .udi_for_medical_devices import UDIForMedicalDevicesCharacteristic
 from .ugg_features import UGGFeaturesCharacteristic
 from .ugt_features import UGTFeaturesCharacteristic
-from .uri import URICharacteristic
-from .uv_index import UVIndexCharacteristic
 from .uncertainty import UncertaintyCharacteristic
-from .uncertainty import UncertaintyData
 from .unread_alert_status import UnreadAlertStatusCharacteristic
+from .uri import URICharacteristic
 from .user_control_point import UserControlPointCharacteristic
 from .user_index import UserIndexCharacteristic
+from .uv_index import UVIndexCharacteristic
 from .vo2_max import VO2MaxCharacteristic
 from .voc_concentration import VOCConcentrationCharacteristic
 from .voltage import VoltageCharacteristic
@@ -956,7 +963,6 @@ __all__ = [
     "URICharacteristic",
     "UVIndexCharacteristic",
     "UncertaintyCharacteristic",
-    "UncertaintyData",
     "UnreadAlertStatusCharacteristic",
     "UserControlPointCharacteristic",
     "UserIndexCharacteristic",

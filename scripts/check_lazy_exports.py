@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -18,7 +17,7 @@ _ARTIFACTS = (
     _REPO_ROOT / "src/bluetooth_sig/gatt/descriptors/_export_map.py",
     _REPO_ROOT / "src/bluetooth_sig/gatt/descriptors/__init__.pyi",
 )
-_REGENERATE_CMD = "PYTHONPATH=src python scripts/generate_lazy_exports.py"
+_REGENERATE_CMD = "python scripts/generate_lazy_exports.py"
 
 
 def check_lazy_exports() -> list[Path]:
@@ -29,14 +28,10 @@ def check_lazy_exports() -> list[Path]:
     """
     before = {path: path.read_bytes() for path in _ARTIFACTS}
 
-    env = os.environ.copy()
-    env["PYTHONPATH"] = str(_REPO_ROOT / "src")
-
     subprocess.run(
         [sys.executable, str(_GENERATOR)],
         cwd=_REPO_ROOT,
         check=True,
-        env=env,
     )
 
     stale = [path for path in _ARTIFACTS if path.read_bytes() != before[path]]

@@ -1,5 +1,10 @@
 """Generated type stubs for lazy package exports. Do not edit by hand."""
 
+from .alert_notification import AlertNotificationService
+from .audio_input_control import AudioInputControlService
+from .audio_stream_control import AudioStreamControlService
+from .authorization_control import AuthorizationControlService
+from .automation_io import AutomationIOService
 from .base import (
     CharacteristicStatus,
     ServiceCharacteristicInfo,
@@ -7,12 +12,6 @@ from .base import (
     ServiceHealthStatus,
     ServiceValidationResult,
 )
-from .registry import GattServiceRegistry, ServiceName, get_service_class_map
-from .alert_notification import AlertNotificationService
-from .audio_input_control import AudioInputControlService
-from .audio_stream_control import AudioStreamControlService
-from .authorization_control import AuthorizationControlService
-from .automation_io import AutomationIOService
 from .basic_audio_announcement import BasicAudioAnnouncementService
 from .battery_service import BatteryService
 from .binary_sensor import BinarySensorService
@@ -70,6 +69,7 @@ from .pulse_oximeter_service import PulseOximeterService
 from .ranging import RangingService
 from .reconnection_configuration import ReconnectionConfigurationService
 from .reference_time_update import ReferenceTimeUpdateService
+from .registry import GattServiceRegistry, ServiceName, get_service_class_map
 from .running_speed_and_cadence import RunningSpeedAndCadenceService
 from .scan_parameters import ScanParametersService
 from .telephone_bearer import TelephoneBearerService

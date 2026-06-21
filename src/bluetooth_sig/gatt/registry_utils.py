@@ -113,3 +113,36 @@ class ModuleDiscovery:
             candidates.sort(key=lambda cls: cls.__name__)
             discovered.extend(candidates)
         return discovered
+
+    @staticmethod
+    def build_lazy_export_map(
+        package_name: str,
+        module_exclusions: set[str],
+        base_class: type[object],
+    ) -> dict[str, str]:
+        """Build a PEP 562 lazy export map for concrete classes in *package_name*.
+
+        Args:
+            package_name: Fully qualified package name.
+            module_exclusions: Module basenames to skip during discovery.
+            base_class: Base class that exportable types must subclass.
+
+        Returns:
+            Mapping of public class name to defining module path, sorted by name.
+        """
+        export_map: dict[str, str] = {}
+        for module_name in ModuleDiscovery.iter_module_names(package_name, module_exclusions):
+            module = import_module(module_name)
+            for _, obj in inspect.getmembers(module, inspect.isclass):
+                if obj.__module__ != module.__name__:
+                    continue
+                if obj is base_class:
+                    continue
+                if getattr(obj, "_is_template", False):
+                    continue
+                if getattr(obj, "_is_base_class", False):
+                    continue
+                if not isinstance(obj, type) or not issubclass(obj, base_class):
+                    continue
+                export_map[obj.__name__] = module_name
+        return dict(sorted(export_map.items()))

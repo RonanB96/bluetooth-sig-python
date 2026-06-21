@@ -12,10 +12,9 @@ from .base import BaseCharacteristic
 from .registry import CharacteristicName, CharacteristicRegistry, get_characteristic_class_map
 
 try:
-    from ._export_map import LAZY_EXPORT_MAP, LAZY_EXPORT_NAMES
+    from ._export_map import LAZY_EXPORT_MAP
 except ImportError:
     LAZY_EXPORT_MAP = {}
-    LAZY_EXPORT_NAMES = ()
 
 _EAGER_EXPORTS = (
     "BaseCharacteristic",
@@ -26,7 +25,7 @@ _EAGER_EXPORTS = (
 
 __all__ = [
     *_EAGER_EXPORTS,
-    *LAZY_EXPORT_NAMES,
+    *LAZY_EXPORT_MAP,
 ]
 
 
