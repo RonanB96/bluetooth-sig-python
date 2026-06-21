@@ -25,6 +25,31 @@ from bluetooth_sig.advertising import AdvertisingPDUParser
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 ```
 
+## Import Tiers and Startup Cost
+
+The library defers loading of individual characteristic and service implementations until
+they are first used. Import cost depends on which entry point you choose:
+
+| Tier | Import | Typical cost | Use when |
+|------|--------|--------------|----------|
+| **Light** | `from bluetooth_sig.core.translator import BluetoothSIGTranslator` | Infrastructure only | Scripts, metadata lookup, unknown UUID parsing |
+| **Standard** | `from bluetooth_sig import BluetoothSIGTranslator` | Standard + `Device` / advertising | Typical application integration |
+| **Typed** | `from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic` | + one characteristic module on first access | Type-safe characteristic work |
+
+`import bluetooth_sig` loads registry infrastructure and YAML metadata paths, but does
+**not** import all ~500 characteristic modules. First access to a named class (for example
+`BatteryLevelCharacteristic`) imports only that module.
+
+For production hosts inside an event loop (for example Home Assistant), call
+`prewarm_registries()` from a worker thread during setup to front-load YAML I/O before
+handling notifications.
+
+Regenerate lazy export maps after adding characteristics or services:
+
+```bash
+PYTHONPATH=src python scripts/generate_lazy_exports.py
+```
+
 ## How to Import for Common Tasks
 
 ### Task: Parse characteristic data (type-safe)

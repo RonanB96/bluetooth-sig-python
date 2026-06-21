@@ -248,6 +248,35 @@ User's BLE Library → bytes → bluetooth-sig → structured data
     import-time module globals.
 - Importing registry modules must be side-effect free with respect to YAML I/O.
 
+## ADR-011: Lazy Python Module Loading (GATT barrels)
+
+**Context**: Eager re-exports in `gatt/characteristics/__init__.py` and
+`gatt/services/__init__.py` imported ~550 Python modules on every
+`import bluetooth_sig`, despite ADR-009 lazy YAML loading.
+
+**Decision**: Replace eager GATT barrels with PEP 562 lazy exports backed by
+generated `_export_map.py` and `__init__.pyi` stubs. Keep `BaseCharacteristic`,
+registry accessors, and shared infrastructure eager; load named classes on first
+attribute access.
+
+**Rationale**:
+
+- Python import cost dominated startup, not YAML parsing
+- Registry-driven discovery (`CharacteristicRegistry`) already supported lazy class maps
+- Backward-compatible import paths (`from bluetooth_sig.gatt.characteristics import X`) must continue to work
+
+**Consequences**:
+
+- ✅ Root import reduced from ~570 ms to ~120 ms (typical dev machine)
+- ✅ Characteristic module count at import drops from ~500 to ~35
+- ✅ Named class imports unchanged for consumers
+- ⚠️ Generated maps must be regenerated when adding characteristics (`scripts/generate_lazy_exports.py`)
+- ⚠️ First access to a named class imports that module (expected trade-off)
+
+**Phase 2 note**: Lazy-exporting `Device` from the root package was not adopted;
+benchmarks showed root import and translator-only import differ by less than ~10 ms
+after this change.
+
 ## Summary
 
 These architectural decisions prioritize:

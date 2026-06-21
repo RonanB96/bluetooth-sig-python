@@ -49,6 +49,26 @@ print(len(mods))
     return int(result.stdout.strip())
 
 
+def _subprocess_lazy_characteristic_import_ms() -> float:
+    script = """
+import bluetooth_sig  # noqa: F401
+import time
+t0 = time.perf_counter()
+from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic  # noqa: F401
+elapsed_ms = (time.perf_counter() - t0) * 1000
+print(f"{elapsed_ms:.3f}")
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        check=True,
+        capture_output=True,
+        text=True,
+        cwd=REPO_ROOT,
+        env={**dict(**__import__("os").environ), "PYTHONPATH": str(REPO_ROOT / "src")},
+    )
+    return float(result.stdout.strip())
+
+
 @pytest.mark.benchmark
 class TestImportStartupPerformance:
     """Cold import benchmarks (fresh interpreter per iteration)."""
@@ -70,3 +90,19 @@ class TestImportStartupPerformance:
         """Benchmark characteristic module count after root import."""
         count = benchmark(_subprocess_char_module_count, "import bluetooth_sig")
         assert count <= 45
+
+
+@pytest.mark.benchmark
+class TestPrewarmStartupPerformance:
+    """Benchmark registry prewarm after lazy import startup."""
+
+    def test_prewarm_registries_wall_time(self, benchmark: Any) -> None:
+        """Benchmark full prewarm_registries() wall time."""
+        from bluetooth_sig.utils.prewarm import prewarm_registries
+
+        benchmark(prewarm_registries)
+
+    def test_lazy_characteristic_import_after_root(self, benchmark: Any) -> None:
+        """Benchmark first lazy characteristic class resolution after root import."""
+        elapsed_ms = benchmark(_subprocess_lazy_characteristic_import_ms)
+        assert elapsed_ms < 2000.0

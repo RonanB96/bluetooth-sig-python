@@ -143,6 +143,38 @@ battery_level = data[0]  # uint8, range 0-100
 
 **Trade-off**: Lose automatic validation, UUID resolution, and structured data.
 
+### 6. Pre-warm Registries in Production Hosts
+
+`import bluetooth_sig` is fast because YAML registries and characteristic class maps load
+on first use. In async frameworks, that I/O can block the event loop on the first parse.
+
+Call `prewarm_registries()` from a thread pool during application setup:
+
+```python
+import asyncio
+
+from bluetooth_sig import BluetoothSIGTranslator, prewarm_registries
+
+
+async def setup() -> BluetoothSIGTranslator:
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, prewarm_registries)
+    return BluetoothSIGTranslator()
+```
+
+Startup timeline:
+
+1. **Import** (~100–200 ms): core infrastructure, no full characteristic graph
+2. **First parse / lookup** (~10–30 ms): cold YAML for the requested registry
+3. **Prewarm** (~100 ms–1 s): optional; loads all catalogued registries up front
+
+Measure import and prewarm locally:
+
+```bash
+python -m pytest tests/benchmarks/test_import_startup.py -m benchmark --benchmark-only
+python -m pytest tests/utils/test_prewarm.py -v
+```
+
 <a id="running-benchmarks-locally"></a>
 
 ## Running Benchmarks Locally
