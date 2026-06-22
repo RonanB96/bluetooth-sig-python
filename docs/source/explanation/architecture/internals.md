@@ -668,13 +668,13 @@ description_desc = CharacteristicUserDescriptionDescriptor()
 
 ### Descriptor Access Pattern
 
-Characteristics can access descriptor data through the `CharacteristicContext`:
+Characteristics can access descriptor data through the `CharacteristicContext` when you supply descriptor bytes to :meth:`~bluetooth_sig.gatt.characteristics.base.BaseCharacteristic.parse_value`:
 
 1. **Check for descriptor**: Query context for Valid Range, Presentation Format, etc.
 2. **Use if available**: Apply descriptor-based validation/formatting
 3. **Fall back to declarative**: Use class attributes if no descriptor present
 
-This enables runtime validation that adapts to actual device capabilities. See the [BLE Integration Guide](../../how-to/ble-integration.md) for usage patterns.
+Batch :meth:`~bluetooth_sig.core.translator.BluetoothSIGTranslator.parse_characteristics` does not populate context descriptors automatically — read descriptors separately and attach them when single-value parsing requires them.
 
 ## Exception Hierarchy
 

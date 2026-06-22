@@ -281,7 +281,7 @@ If you prefer typed containers before calling the translator, use these types:
 
 - `bluetooth_sig.types.io.RawCharacteristicRead` — holds a single read (`uuid`, `raw_data`, optional `descriptors`, optional `properties`).
 - `bluetooth_sig.types.io.RawCharacteristicBatch` — a batch of reads.
-- `bluetooth_sig.types.io.to_parse_inputs(batch)` — converts a batch to the exact `(char_data, descriptor_data)` shapes accepted by `parse_characteristics`.
+- `bluetooth_sig.types.io.to_parse_inputs(batch)` — converts a batch to `(char_data, descriptor_data)` tuples for staging; pass `char_data` to `parse_characteristics` (descriptor bytes are not yet consumed by batch parse — see below).
 
 Example:
 
@@ -319,6 +319,9 @@ batch = RawCharacteristicBatch(
 
 char_data, descriptor_data = to_parse_inputs(batch)
 results = BluetoothSIGTranslator().parse_characteristics(char_data)
+# descriptor_data is available if you read descriptors separately; batch parse does not
+# accept descriptor_data yet — attach via CharacteristicContext when calling parse_value.
+_ = descriptor_data
 ```
 
 For BLE library integration patterns (bleak, simplepyble, etc.), see the [BLE Integration Guide](ble-integration.md) and [Migration Guide](migration.md).

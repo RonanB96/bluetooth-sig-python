@@ -47,13 +47,17 @@ class RawCharacteristicBatch(msgspec.Struct, kw_only=True):
 def to_parse_inputs(
     batch: RawCharacteristicBatch,
 ) -> tuple[dict[str, bytes], dict[str, dict[str, bytes]]]:
-    """Convert a :class:`RawCharacteristicBatch` to translator inputs.
+    """Convert a :class:`RawCharacteristicBatch` to staging inputs.
 
-    Returns a tuple of `(char_data, descriptor_data)` suitable for
-    `BluetoothSIGTranslator.parse_characteristics(char_data, descriptor_data=...)`.
+    Returns a tuple of `(char_data, descriptor_data)`:
 
-    - `char_data` is a mapping of UUID -> raw bytes
-    - `descriptor_data` is a nested mapping of char UUID -> (descriptor UUID -> raw bytes)
+    - `char_data` — mapping of characteristic UUID -> raw bytes; pass this to
+      :meth:`~bluetooth_sig.core.translator.BluetoothSIGTranslator.parse_characteristics`.
+    - `descriptor_data` — nested mapping of char UUID -> (descriptor UUID -> raw bytes).
+      Collected from :attr:`RawCharacteristicRead.descriptors` when present. Batch
+      parsing does not accept this mapping yet; use it when building a
+      :class:`~bluetooth_sig.gatt.context.CharacteristicContext` for single-value
+      :meth:`~bluetooth_sig.gatt.characteristics.base.BaseCharacteristic.parse_value` calls.
     """
     char_data: dict[str, bytes] = {}
     descriptor_data: dict[str, dict[str, bytes]] = {}
