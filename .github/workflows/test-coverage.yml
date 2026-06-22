@@ -134,7 +134,7 @@ jobs:
 
       - name: Store benchmark baseline (push)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: benchmark-action/github-action-benchmark@v1.20.7
+        uses: benchmark-action/github-action-benchmark@v1.22.1
         with:
           name: "Python Benchmarks"
           tool: "pytest"
@@ -208,7 +208,7 @@ jobs:
 
       - name: Compare with baseline
         if: github.event_name == 'pull_request' && steps.baseline_check.outputs.found == 'true'
-        uses: benchmark-action/github-action-benchmark@v1.20.7
+        uses: benchmark-action/github-action-benchmark@v1.22.1
         with:
           name: "Python Benchmarks"
           tool: "pytest"
