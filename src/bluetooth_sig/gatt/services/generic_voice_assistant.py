@@ -9,9 +9,20 @@ from .base import BaseGattService
 
 
 class GenericVoiceAssistantService(BaseGattService):
-    """Generic Voice Assistant Service implementation (0x185F)."""
+    """Generic Voice Assistant Service implementation (0x185F).
+
+    Per VAS spec Section 2.6: GVAS uses the same characteristic requirements
+    as VAS (Table 3.1) for the device's default voice assistant instance.
+    """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
-        CharacteristicName.VOICE_ASSISTANT_SUPPORTED_LANGUAGES: True,
+        CharacteristicName.VOICE_ASSISTANT_NAME: True,
+        CharacteristicName.VOICE_ASSISTANT_UUID: True,
+        CharacteristicName.VOICE_ASSISTANT_SERVICE_CONTROL_POINT: True,
+        CharacteristicName.CONTENT_CONTROL_ID: True,
+        CharacteristicName.VOICE_ASSISTANT_SESSION_STATE: True,
         CharacteristicName.VOICE_ASSISTANT_SUPPORTED_FEATURES: True,
+        CharacteristicName.INSTALLED_LOCATION: False,
+        CharacteristicName.VOICE_ASSISTANT_SESSION_FLAG: False,
+        CharacteristicName.VOICE_ASSISTANT_SUPPORTED_LANGUAGES: False,
     }

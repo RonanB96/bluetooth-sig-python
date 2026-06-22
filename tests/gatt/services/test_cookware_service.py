@@ -20,8 +20,10 @@ class TestCookwareService(CommonServiceTests):
         return "185D"
 
     def test_expected_characteristics_count(self, service: CookwareService) -> None:
-        assert len(service.get_expected_characteristics()) == 12
+        assert len(service.get_expected_characteristics()) == 9
 
-    def test_required_characteristics_include_recipe_control(self, service: CookwareService) -> None:
+    def test_required_characteristics_match_spec(self, service: CookwareService) -> None:
         required = service.get_required_characteristics()
-        assert CharacteristicName.RECIPE_CONTROL in required
+        assert CharacteristicName.COOKWARE_DESCRIPTION in required
+        assert CharacteristicName.COOKWARE_SENSOR_DATA in required
+        assert CharacteristicName.RECIPE_CONTROL not in required

@@ -57,3 +57,30 @@ class TestRecipeParametersCharacteristic(CommonCharacteristicTests):
                     cooking_process_type=0,
                 )
             )
+
+    def test_gradient_not_encoded_without_temperature_flag(
+        self, characteristic: RecipeParametersCharacteristic
+    ) -> None:
+        """Encode must not emit gradient without TEMPERATURE_PRESENT (spec symmetry)."""
+        data = RecipeParametersData(
+            flags=RecipeParametersFlags.TEMPERATURE_GRADIENT_PRESENT,
+            cooking_step_index=1,
+            cooking_process_type=0,
+            temperature_gradient=1.0,
+        )
+        encoded = characteristic.build_value(data)
+        assert len(encoded) == 5
+
+    def test_temperature_and_gradient_round_trip(self, characteristic: RecipeParametersCharacteristic) -> None:
+        """Temperature gradient encodes only when temperature is also present."""
+        data = RecipeParametersData(
+            flags=RecipeParametersFlags.TEMPERATURE_PRESENT | RecipeParametersFlags.TEMPERATURE_GRADIENT_PRESENT,
+            cooking_step_index=1,
+            cooking_process_type=0,
+            temperature=20.0,
+            temperature_gradient=0.5,
+        )
+        encoded = characteristic.build_value(data)
+        parsed = characteristic.parse_value(encoded)
+        assert parsed.temperature == 20.0
+        assert parsed.temperature_gradient == 0.5

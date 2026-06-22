@@ -9,19 +9,22 @@ from .base import BaseGattService
 
 
 class CookwareService(BaseGattService):
-    """Cookware Service implementation (0x185D)."""
+    """Cookware Service implementation (0x185D).
+
+    Per Cookware Service spec Table 3.1:
+    - Mandatory: Cookware Description, Cookware Sensor Data
+    - Conditional (C.1/C.2): recipe/zone characteristics when control loop or
+      multiple sensors apply — modeled as optional for discovery validation
+    """
 
     service_characteristics: ClassVar[dict[CharacteristicName, bool]] = {
         CharacteristicName.COOKWARE_DESCRIPTION: True,
-        CharacteristicName.RECIPE_CONTROL: True,
-        CharacteristicName.RECIPE_PARAMETERS: True,
-        CharacteristicName.COOKING_STEP_STATUS: True,
-        CharacteristicName.COOKING_ZONE_CAPABILITIES: True,
-        CharacteristicName.COOKING_ZONE_DESIRED_COOKING_CONDITIONS: True,
-        CharacteristicName.COOKING_ZONE_ACTUAL_COOKING_CONDITIONS: True,
         CharacteristicName.COOKWARE_SENSOR_DATA: True,
-        CharacteristicName.COOKWARE_SENSOR_AGGREGATE: True,
-        CharacteristicName.COOKING_TEMPERATURE: True,
-        CharacteristicName.COOKING_ZONE_PERCEIVED_POWER: True,
-        CharacteristicName.KITCHEN_APPLIANCE_AIRFLOW: True,
+        CharacteristicName.RECIPE_PARAMETERS: False,
+        CharacteristicName.RECIPE_CONTROL: False,
+        CharacteristicName.COOKING_STEP_STATUS: False,
+        CharacteristicName.COOKING_ZONE_CAPABILITIES: False,
+        CharacteristicName.COOKING_ZONE_DESIRED_COOKING_CONDITIONS: False,
+        CharacteristicName.COOKING_ZONE_ACTUAL_COOKING_CONDITIONS: False,
+        CharacteristicName.COOKWARE_SENSOR_AGGREGATE: False,
     }

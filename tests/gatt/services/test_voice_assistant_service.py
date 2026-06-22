@@ -20,8 +20,11 @@ class TestVoiceAssistantService(CommonServiceTests):
         return "185E"
 
     def test_expected_characteristics_count(self, service: VoiceAssistantService) -> None:
-        assert len(service.get_expected_characteristics()) == 8
+        assert len(service.get_expected_characteristics()) == 9
 
-    def test_required_characteristics_include_control_point(self, service: VoiceAssistantService) -> None:
+    def test_required_characteristics_match_spec(self, service: VoiceAssistantService) -> None:
         required = service.get_required_characteristics()
         assert CharacteristicName.VOICE_ASSISTANT_SERVICE_CONTROL_POINT in required
+        assert CharacteristicName.CONTENT_CONTROL_ID in required
+        assert CharacteristicName.VOICE_ASSISTANT_SUPPORTED_FEATURES in required
+        assert CharacteristicName.INSTALLED_LOCATION not in required

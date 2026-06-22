@@ -22,9 +22,11 @@ class TestGenericVoiceAssistantService(CommonServiceTests):
         return "185F"
 
     def test_expected_characteristics_count(self, service: GenericVoiceAssistantService) -> None:
-        assert len(service.get_expected_characteristics()) == 2
+        assert len(service.get_expected_characteristics()) == 9
 
-    def test_required_characteristics(self, service: GenericVoiceAssistantService) -> None:
+    def test_required_characteristics_match_vas_table(self, service: GenericVoiceAssistantService) -> None:
         required = service.get_required_characteristics()
-        assert CharacteristicName.VOICE_ASSISTANT_SUPPORTED_LANGUAGES in required
+        assert CharacteristicName.VOICE_ASSISTANT_NAME in required
+        assert CharacteristicName.CONTENT_CONTROL_ID in required
         assert CharacteristicName.VOICE_ASSISTANT_SUPPORTED_FEATURES in required
+        assert CharacteristicName.VOICE_ASSISTANT_SUPPORTED_LANGUAGES not in required

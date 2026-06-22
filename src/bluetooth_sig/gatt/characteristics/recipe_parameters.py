@@ -114,7 +114,10 @@ class RecipeParametersCharacteristic(BaseCharacteristic[RecipeParametersData]):
                 raise ValueError("temperature is required when TEMPERATURE_PRESENT is set")
             result.extend(DataParser.encode_int16(encode_cooking_temperature(data.temperature), signed=True))
 
-        if data.flags & RecipeParametersFlags.TEMPERATURE_GRADIENT_PRESENT:
+        if (
+            data.flags & RecipeParametersFlags.TEMPERATURE_PRESENT
+            and data.flags & RecipeParametersFlags.TEMPERATURE_GRADIENT_PRESENT
+        ):
             if data.temperature_gradient is None:
                 raise ValueError("temperature_gradient is required when TEMPERATURE_GRADIENT_PRESENT is set")
             result.extend(DataParser.encode_int8(round(data.temperature_gradient * 10.0), signed=True))
