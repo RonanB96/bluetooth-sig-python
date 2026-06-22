@@ -154,6 +154,9 @@ class BaseCharacteristic(ContextLookupMixin, DescriptorMixin, ABC, Generic[T], m
         # Last parsed value for caching/debugging
         self.last_parsed: T | None = None
 
+        # Optional User Description (0x2901) label from device discovery
+        self.user_description: str | None = None
+
         # Pipeline composition — validator is shared by parse and encode pipelines
         self._validator = CharacteristicValidator(self)
         self._parse_pipeline = ParsePipeline(self, self._validator)
