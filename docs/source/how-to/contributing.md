@@ -94,6 +94,10 @@ Before you submit a pull request, check that it meets these guidelines:
 1. If the pull request adds functionality, the docs should be updated. Put your new functionality into a function with a docstring, and add the feature to the list in README.md.
 1. The pull request should work for Python 3.10+. Tests run in GitHub Actions on every pull request to the main branch, make sure that the tests pass for all supported Python versions.
 
+## Maintainer checks
+
+When auditing GATT service implementations against SIG specification tables, see [SIG Implementation Checks](sig-implementation-checks.md).
+
 ## Tips
 
 To run a subset of tests:
