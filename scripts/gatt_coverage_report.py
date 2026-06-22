@@ -55,7 +55,8 @@ def main(*, verbose: bool = False) -> None:
     # --- Descriptors ---
     desc_yaml = uuid_registry._descriptors
     desc_yaml_uuids = set(desc_yaml.keys())
-    desc_impl = {BluetoothUUID(u).normalized for u in DescriptorRegistry._registry}
+    DescriptorRegistry._ensure_loaded()
+    desc_impl = {BluetoothUUID(u).normalized for u in DescriptorRegistry.list_registered_descriptors()}
     desc_gaps = desc_yaml_uuids - desc_impl
 
     # --- Report ---
