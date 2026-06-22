@@ -167,6 +167,16 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
                     height_unit = HeightUnit.METERS
                 offset += 2
 
+        if ctx is not None:
+            feature_data = self.get_context_characteristic(ctx, WeightScaleFeatureCharacteristic)
+            if feature_data is not None:
+                if (flags & WeightMeasurementFlags.TIMESTAMP_PRESENT) and not feature_data.timestamp_supported:
+                    raise ValueError("Timestamp reported but not supported by Weight Scale Feature")
+                if (flags & WeightMeasurementFlags.USER_ID_PRESENT) and not feature_data.multiple_users_supported:
+                    raise ValueError("User ID reported but not supported by Weight Scale Feature")
+                if (flags & WeightMeasurementFlags.BMI_AND_HEIGHT_PRESENT) and not feature_data.bmi_supported:
+                    raise ValueError("BMI and height reported but not supported by Weight Scale Feature")
+
         # Create result with all parsed values
         return WeightMeasurementData(
             weight=weight,

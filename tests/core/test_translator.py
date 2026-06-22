@@ -5,6 +5,8 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig import BluetoothSIGTranslator
+from bluetooth_sig.gatt.characteristics.weight_scale_feature import WeightScaleFeatureCharacteristic
+from bluetooth_sig.gatt.context import CharacteristicContext
 from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types import ValidationResult
 from bluetooth_sig.types.gatt_enums import CharacteristicName, ServiceName
@@ -180,6 +182,20 @@ class TestBluetoothSIGTranslator:
         assert results["2A19"] == 100  # Battery level parsed
         # Temperature should be parsed (400 * 0.01 = 4.0)
         assert isinstance(results["2A6E"], float)
+
+    def test_parse_characteristics_batch_uses_existing_context_dependencies(self) -> None:
+        """Batch parsing validates optional dependencies already present in context."""
+        translator = BluetoothSIGTranslator()
+        feature_char = WeightScaleFeatureCharacteristic()
+        feature_data = feature_char.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
+        ctx = CharacteristicContext(
+            other_characteristics={str(WeightScaleFeatureCharacteristic.get_class_uuid()): feature_data}
+        )
+
+        with pytest.raises(
+            CharacteristicParseError, match="User ID reported but not supported by Weight Scale Feature"
+        ):
+            translator.parse_characteristics({"2A9D": b"\x04\x88\x13\x02"}, ctx=ctx)
 
     def test_get_characteristics_info_batch(self) -> None:
         """Test getting info for multiple characteristics."""

@@ -8,10 +8,11 @@ from typing import Any, ClassVar
 
 import msgspec
 
+from ...types.gatt_enums import CharacteristicName
 from ...types.location import PositionStatus
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .ln_feature import LNFeatureCharacteristic
+from .ln_feature import LNFeatureCharacteristic, LNFeatureData
 from .utils import DataParser, IEEE11073Parser
 
 
@@ -178,6 +179,11 @@ class LocationAndSpeedCharacteristic(BaseCharacteristic[LocationAndSpeedData]):
         if (flags & LocationAndSpeedFlags.UTC_TIME_PRESENT) and len(data) >= offset + 7:
             utc_time = IEEE11073Parser.parse_timestamp(data, offset)
 
+        if ctx is not None:
+            feature_data = self.get_context_characteristic(ctx, CharacteristicName.LN_FEATURE)
+            if feature_data is not None:
+                self._validate_flags_against_ln_feature(flags, feature_data)
+
         return LocationAndSpeedData(
             flags=flags,
             instantaneous_speed=instantaneous_speed,
@@ -252,3 +258,40 @@ class LocationAndSpeedCharacteristic(BaseCharacteristic[LocationAndSpeedData]):
             result.extend(IEEE11073Parser.encode_timestamp(data.utc_time))
 
         return result
+
+    @staticmethod
+    def _validate_flags_against_ln_feature(flags: LocationAndSpeedFlags, feature_data: LNFeatureData) -> None:
+        """Validate measurement flags against LN Feature capability bits."""
+        if (
+            flags & LocationAndSpeedFlags.INSTANTANEOUS_SPEED_PRESENT
+        ) and not feature_data.instantaneous_speed_supported:
+            raise ValueError("Instantaneous speed reported but not supported by LN Feature")
+        if (flags & LocationAndSpeedFlags.TOTAL_DISTANCE_PRESENT) and not feature_data.total_distance_supported:
+            raise ValueError("Total distance reported but not supported by LN Feature")
+        if (flags & LocationAndSpeedFlags.LOCATION_PRESENT) and not feature_data.location_supported:
+            raise ValueError("Location reported but not supported by LN Feature")
+        if (flags & LocationAndSpeedFlags.ELEVATION_PRESENT) and not feature_data.elevation_supported:
+            raise ValueError("Elevation reported but not supported by LN Feature")
+        if (flags & LocationAndSpeedFlags.HEADING_PRESENT) and not feature_data.heading_supported:
+            raise ValueError("Heading reported but not supported by LN Feature")
+        if (flags & LocationAndSpeedFlags.ROLLING_TIME_PRESENT) and not feature_data.rolling_time_supported:
+            raise ValueError("Rolling time reported but not supported by LN Feature")
+        if (flags & LocationAndSpeedFlags.UTC_TIME_PRESENT) and not feature_data.utc_time_supported:
+            raise ValueError("UTC time reported but not supported by LN Feature")
+
+        position_status_flags = flags & LocationAndSpeedCharacteristic.POSITION_STATUS_MASK
+        if position_status_flags and not feature_data.position_status_supported:
+            raise ValueError("Position status reported but not supported by LN Feature")
+
+        speed_distance_format_flag = flags & LocationAndSpeedCharacteristic.SPEED_DISTANCE_FORMAT_MASK
+        speed_distance_supported = feature_data.instantaneous_speed_supported and feature_data.total_distance_supported
+        if speed_distance_format_flag and not speed_distance_supported:
+            raise ValueError("Speed and distance format reported but not supported by LN Feature")
+
+        elevation_source_flags = flags & LocationAndSpeedCharacteristic.ELEVATION_SOURCE_MASK
+        if elevation_source_flags and not feature_data.elevation_supported:
+            raise ValueError("Elevation source reported but not supported by LN Feature")
+
+        heading_source_flag = flags & LocationAndSpeedCharacteristic.HEADING_SOURCE_MASK
+        if heading_source_flag and not feature_data.heading_supported:
+            raise ValueError("Heading source reported but not supported by LN Feature")

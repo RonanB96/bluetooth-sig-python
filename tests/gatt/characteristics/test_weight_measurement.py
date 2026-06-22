@@ -12,6 +12,8 @@ from bluetooth_sig.gatt.characteristics.weight_measurement import (
     WeightMeasurementFlags,
 )
 from bluetooth_sig.gatt.characteristics.weight_scale_feature import WeightScaleFeatureCharacteristic
+from bluetooth_sig.gatt.context import CharacteristicContext
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types.units import HeightUnit, MeasurementSystem, WeightUnit
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
@@ -32,20 +34,21 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
 
     @pytest.fixture
     def dependency_test_data(self) -> list[DependencyTestData]:
-        """Optional Weight Scale Feature dependency — parse succeeds without feature."""
-        measurement_data = bytearray([0x00, 0x88, 0x13])
+        """Optional Weight Scale Feature dependency validates optional fields when present."""
+        measurement_data = bytearray([0x04, 0x88, 0x13, 0x02])  # user ID present
+        feature_data = bytearray([0x02, 0x00, 0x00, 0x00])  # multiple users supported
         char = WeightMeasurementCharacteristic()
         expected = char.parse_value(measurement_data)
         return [
             DependencyTestData(
                 with_dependency_data={
                     str(WeightMeasurementCharacteristic.get_class_uuid()): measurement_data,
-                    str(WeightScaleFeatureCharacteristic.get_class_uuid()): bytearray([0x00, 0x00, 0x00, 0x00]),
+                    str(WeightScaleFeatureCharacteristic.get_class_uuid()): feature_data,
                 },
                 without_dependency_data=measurement_data,
                 expected_with=expected,
                 expected_without=expected,
-                description="Weight Measurement parses without Weight Scale Feature context",
+                description="Weight Measurement parses with matching Weight Scale Feature support",
             ),
         ]
 
@@ -237,3 +240,59 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
         assert "Length validation failed for Weight Measurement: expected at least 3 bytes, got 1" in str(
             exc_info.value
         )
+
+    def test_weight_measurement_rejects_user_id_without_feature_support(
+        self, characteristic: WeightMeasurementCharacteristic
+    ) -> None:
+        """Weight Scale Feature context rejects user ID when capability bit is clear."""
+        measurement_data = bytearray([0x04, 0x88, 0x13, 0x02])
+        feature_char = WeightScaleFeatureCharacteristic()
+        feature_parsed = feature_char.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
+        ctx = CharacteristicContext(
+            other_characteristics={str(WeightScaleFeatureCharacteristic.get_class_uuid()): feature_parsed}
+        )
+
+        with pytest.raises(
+            CharacteristicParseError, match="User ID reported but not supported by Weight Scale Feature"
+        ):
+            characteristic.parse_value(measurement_data, ctx=ctx)
+
+    def test_weight_measurement_rejects_timestamp_without_feature_support(
+        self, characteristic: WeightMeasurementCharacteristic
+    ) -> None:
+        """Weight Scale Feature context rejects timestamp when capability bit is clear."""
+        measurement_data = bytearray([0x02, 0x88, 0x13, 0xE7, 0x07, 0x01, 0x01, 0x00, 0x00, 0x00])
+        feature_char = WeightScaleFeatureCharacteristic()
+        feature_parsed = feature_char.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
+        ctx = CharacteristicContext(
+            other_characteristics={str(WeightScaleFeatureCharacteristic.get_class_uuid()): feature_parsed}
+        )
+
+        with pytest.raises(
+            CharacteristicParseError, match="Timestamp reported but not supported by Weight Scale Feature"
+        ):
+            characteristic.parse_value(measurement_data, ctx=ctx)
+
+    def test_weight_measurement_rejects_bmi_without_feature_support(
+        self, characteristic: WeightMeasurementCharacteristic
+    ) -> None:
+        """Weight Scale Feature context rejects BMI and height when capability bit is clear."""
+        measurement_data = bytearray([0x08, 0x88, 0x13, 0xF5, 0x00, 0xD6, 0x06])
+        feature_char = WeightScaleFeatureCharacteristic()
+        feature_parsed = feature_char.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
+        ctx = CharacteristicContext(
+            other_characteristics={str(WeightScaleFeatureCharacteristic.get_class_uuid()): feature_parsed}
+        )
+
+        with pytest.raises(
+            CharacteristicParseError, match="BMI and height reported but not supported by Weight Scale Feature"
+        ):
+            characteristic.parse_value(measurement_data, ctx=ctx)
+
+    def test_weight_measurement_parses_without_feature_context(
+        self, characteristic: WeightMeasurementCharacteristic
+    ) -> None:
+        """Optional Weight Scale Feature absence does not block measurement parse."""
+        measurement_data = bytearray([0x04, 0x88, 0x13, 0x02])
+        result = characteristic.parse_value(measurement_data, ctx=None)
+        assert result.user_id == 2
