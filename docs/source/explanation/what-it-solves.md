@@ -1,6 +1,6 @@
 # What Problems It Solves
 
-This library addresses specific pain points when working with Bluetooth Low Energy (BLE) devices and Bluetooth SIG specifications.
+This library addresses specific pain points when working with Bluetooth Low Energy (BLE) devices and Bluetooth SIG specifications. Its core mission is **SIG payload parse and encode without deep UUID knowledge**—turn raw GATT bytes into typed, validated values (and back) using the official registry, not hand-maintained mappings. Downstream integrators can add vendor-specific parsers via the extension model ([issue #198](https://github.com/RonanB96/bluetooth-sig-python/issues/198)).
 
 ## Problem 1: Standards Interpretation Complexity
 
@@ -56,7 +56,7 @@ print(f"Temperature: {result}°C")  # Temperature: 2.6°C
 
 ### ✅ What We Solve (Standards Interpretation)
 
-- **Automatic standards compliance** - All 70+ characteristics follow official specs
+- **Automatic standards compliance** - 500+ assigned characteristic UUIDs with ~96% Python parser coverage (run `scripts/gatt_coverage_report.py` for current counts)
 - **Unit conversion handling** - Correct scaling factors applied automatically
 - **Edge case management** - Special values and sentinels handled correctly
 - **Validation** - Input data validated before parsing
@@ -348,7 +348,7 @@ ______________________________________________________________________
 | Type safety | Raw bytes/dicts | Typed msgspec structs |
 | Framework lock-in | Library-specific APIs | Works with any BLE library |
 | Maintenance | You maintain | Community maintained |
-| Complex parsing | Custom logic for each | Built-in for 70+ characteristics |
+| Complex parsing | Custom logic for each | Built-in parsers for ~96% of assigned SIG characteristics |
 | Validation | Manual checks | Automatic validation |
 | Documentation | Write your own | Comprehensive docs |
 

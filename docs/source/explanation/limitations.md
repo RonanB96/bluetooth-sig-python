@@ -63,7 +63,7 @@ ______________________________________________________________________
 - Resource-constrained environments
 - Server/peripheral role
 
-Requires Python 3.9+ runtime with standard library.
+Requires Python 3.10+ runtime with standard library.
 
 ______________________________________________________________________
 
