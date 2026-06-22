@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
+from ...core.registration import RegistrationManager
 from ...types import CharacteristicInfo
 from .base import BaseCharacteristic, ValidationConfig
 
@@ -118,28 +119,16 @@ class CustomBaseCharacteristic(BaseCharacteristic[Any]):
 
         # Auto-register if requested and not already registered
         if auto_register:
-            # TODO: Refactor to eliminate circular dependency (translator ↔ characteristics).
-            #   Deferred import used as workaround — consider a registration broker pattern.
-            from ...core.translator import (  # noqa: PLC0415
-                BluetoothSIGTranslator,  # pylint: disable=import-outside-toplevel
-            )
-
-            # Get the singleton translator instance
-            translator = BluetoothSIGTranslator.get_instance()
-
-            # Track registration to avoid duplicate registrations
             uuid_str = str(final_info.uuid)
-            registry_key = f"{id(translator)}:{uuid_str}"
 
-            if registry_key not in CustomBaseCharacteristic._registry_tracker:
-                # Register this characteristic class with the translator
-                # Use override=True to allow re-registration (idempotent behaviour)
-                translator.register_custom_characteristic_class(
+            if uuid_str not in CustomBaseCharacteristic._registry_tracker:
+                RegistrationManager.register_custom_characteristic_class(
                     uuid_str,
                     self.__class__,
-                    override=True,  # Allow override for idempotent registration
+                    info=final_info,
+                    override=True,
                 )
-                CustomBaseCharacteristic._registry_tracker.add(registry_key)
+                CustomBaseCharacteristic._registry_tracker.add(uuid_str)
 
         # Call parent constructor with our info to maintain consistency
         super().__init__(info=final_info, validation=validation)
