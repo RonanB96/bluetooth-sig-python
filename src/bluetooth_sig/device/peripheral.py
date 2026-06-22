@@ -1,10 +1,5 @@
 """Peripheral manager protocol for BLE GATT server adapters.
 
-.. deprecated:: 0.5.0
-    Peripheral/server APIs are out of scope for this library. Prefer client-side
-    :class:`~bluetooth_sig.device.device.Device` with parse/encode. These types
-    will be removed in a future release.
-
 Defines an async abstract base class that peripheral adapter implementations
 (bless, bluez_peripheral, etc.) must inherit from to create BLE GATT servers
 that broadcast services and characteristics.
@@ -29,8 +24,7 @@ class PeripheralManagerProtocol(ABC):
     """Abstract base class for BLE peripheral/GATT server implementations.
 
     .. deprecated:: 0.5.0
-        GATT server/peripheral role is out of scope. Use client-side parsing APIs.
-        Scheduled for removal in a future release.
+        Scheduled for removal; see ``docs/source/explanation/limitations.md``.
 
     This protocol defines the interface for creating BLE peripherals that
     broadcast services and characteristics. Implementations wrap backend

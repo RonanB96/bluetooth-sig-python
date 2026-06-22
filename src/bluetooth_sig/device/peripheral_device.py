@@ -1,10 +1,5 @@
 """High-level peripheral (GATT server) abstraction.
 
-.. deprecated:: 0.5.0
-    ``PeripheralDevice`` is out of scope for this library. Use
-    :class:`~bluetooth_sig.device.device.Device` (client/central) with SIG
-    parse/encode instead. Scheduled for removal in a future release.
-
 Provides :class:`PeripheralDevice`, a server-side helper that hosts GATT
 services and encodes values for remote centrals to read.
 """
@@ -64,9 +59,7 @@ class PeripheralDevice:
     """High-level BLE peripheral abstraction using composition pattern.
 
     .. deprecated:: 0.5.0
-        GATT server/peripheral role is out of scope. Use
-        :class:`~bluetooth_sig.device.device.Device` for client-side workflows.
-        Scheduled for removal in a future release.
+        Scheduled for removal; see ``docs/source/explanation/limitations.md``.
 
     Coordinates between :class:`PeripheralManagerProtocol` (backend) and
     ``BaseCharacteristic`` instances (encoding) so callers work with typed

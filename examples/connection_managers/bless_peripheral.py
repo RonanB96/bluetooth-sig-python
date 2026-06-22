@@ -1,9 +1,5 @@
 """Bless-based peripheral manager for bluetooth-sig-python.
 
-.. deprecated:: 0.5.0
-    GATT server/peripheral examples are deprecated. This library focuses on
-    client-side SIG parse/encode; server role APIs are scheduled for removal.
-
 This module provides a bless backend implementation for creating BLE GATT
 servers that broadcast user-defined services and characteristics.
 

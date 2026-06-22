@@ -5,10 +5,6 @@ Additional composition-based subsystems are available for focused use cases:
 
 - DeviceAdvertising: Advertising packet interpretation
 - DeviceConnected: GATT connection operations (client/central role)
-
-.. deprecated:: 0.5.0
-    ``PeripheralDevice`` and ``PeripheralManagerProtocol`` are deprecated
-    (GATT server role out of scope) and scheduled for removal.
 """
 
 from __future__ import annotations
