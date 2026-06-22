@@ -7,8 +7,21 @@ Learn how to extend the library with custom or newly standardized characteristic
 You might need to add a characteristic when:
 
 1. A new Bluetooth SIG standard characteristic is released
-1. You're working with a vendor-specific characteristic
-1. You need custom parsing for a specific use case
+1. You need custom parsing for a proprietary UUID in **your own package** (see [Building a companion package](#building-a-companion-package))
+1. You need custom parsing for a specific use case in downstream code
+
+## Building a companion package
+
+**This repository does not host device-specific vendor parsers.** Proprietary UUID implementations belong in **separate downstream packages** that depend on `bluetooth-sig`.
+
+1. Create your python application with `bluetooth-sig` as a dependency.
+2. Implement `CustomBaseCharacteristic` subclasses using the [Custom Characteristics — runtime registration](characteristics.md#runtime-registration) pattern (`VendorSensorCharacteristic` decode, encode, and registry usage).
+3. Register each class at application startup with `BluetoothSIGTranslator.register_custom_characteristic_class()` — see [`CustomCharacteristicImpl`](https://github.com/RonanB96/bluetooth-sig-python/blob/main/tests/integration/test_custom_registration.py) and `test_translator_register_custom_characteristic` in that file.
+4. Use the translator or `Device` API as usual.
+
+For dependent characteristics (calibration, sequence matching), see [`tests/integration/test_end_to_end.py`](https://github.com/RonanB96/bluetooth-sig-python/blob/main/tests/integration/test_end_to_end.py) (`CalibrationCharacteristic`, `SensorReadingCharacteristic`).
+
+Contribute **SIG-standard** characteristics back to this repo; keep vendor-specific parsers in companion packages.
 
 ## Basic Structure
 
@@ -43,7 +56,7 @@ class MyCharacteristic(BaseCharacteristic):
 
 ## Custom Characteristics
 
-For vendor-specific characteristics, extend :class:`~bluetooth_sig.gatt.characteristics.custom.CustomBaseCharacteristic`:
+For vendor-specific characteristics in a **companion package**, extend :class:`~bluetooth_sig.gatt.characteristics.custom.CustomBaseCharacteristic`:
 
 ```python
 from bluetooth_sig.gatt.characteristics.custom import CustomBaseCharacteristic
@@ -222,6 +235,7 @@ See [Contributing Guide](contributing.md) for details.
 
 ## See Also
 
+- [Limitations](../explanation/limitations.md) — scope boundaries (vendor parsers live outside this repo)
 - [Architecture](../explanation/architecture/overview.md) - Understand the design
 - [Testing Guide](testing.md) - Testing best practices
 - [API Reference](../api/index.md) - GATT layer details
