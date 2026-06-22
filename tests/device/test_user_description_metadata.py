@@ -51,6 +51,18 @@ class TestUserDescriptionMetadata:
 
         assert device_with_battery.get_user_description_for_characteristic(battery_uuid) == "Outdoor sensor"
 
+    @pytest.mark.asyncio
+    async def test_read_descriptor_without_characteristic_uuid_does_not_attach(
+        self, device_with_battery: Device
+    ) -> None:
+        """read_descriptor without parent UUID must not mutate characteristic metadata."""
+        battery_uuid = str(BatteryLevelCharacteristic.get_class_uuid())
+        user_desc = CharacteristicUserDescriptionDescriptor()
+
+        await device_with_battery.read_descriptor(user_desc)
+
+        assert device_with_battery.get_user_description_for_characteristic(battery_uuid) is None
+
     def test_attach_user_description_from_raw_bytes(self, device_with_battery: Device) -> None:
         """attach_user_description parses UTF-8 without a live descriptor read."""
         battery_uuid = str(BatteryLevelCharacteristic.get_class_uuid())
