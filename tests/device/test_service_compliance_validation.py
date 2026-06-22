@@ -9,6 +9,8 @@ import pytest
 from bluetooth_sig import BluetoothSIGTranslator
 from bluetooth_sig.device import Device
 from bluetooth_sig.device.client import ClientManagerProtocol
+from bluetooth_sig.device.connected import DeviceService
+from bluetooth_sig.device.validation import validate_device_services
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
 from bluetooth_sig.gatt.services import BatteryService, ServiceHealthStatus
 from bluetooth_sig.gatt.services.base import ServiceValidationResult
@@ -156,11 +158,18 @@ class TestValidateDiscoveredServices:
 
         assert results == []
 
+    def test_unknown_vendor_service_skipped(self) -> None:
+        """Services without a registered SIG class are omitted from results."""
+        unknown = DeviceService(
+            uuid=BluetoothUUID("FF00"),
+            service_class=None,
+            characteristics={},
+        )
+        results = validate_device_services({str(unknown.uuid): unknown})
+        assert results == []
+
     def test_validate_device_services_unit(self) -> None:
         """validate_device_services helper validates without a Device instance."""
-        from bluetooth_sig.device.connected import DeviceService
-        from bluetooth_sig.device.validation import validate_device_services
-
         battery_char = BatteryLevelCharacteristic()
         device_service = DeviceService(
             uuid=BatteryService.get_class_uuid(),

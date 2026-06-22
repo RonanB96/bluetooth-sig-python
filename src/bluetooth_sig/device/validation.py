@@ -52,7 +52,8 @@ def validate_device_services(
 def _build_service_instance(device_service: DeviceService) -> BaseGattService:
     """Instantiate a SIG service and attach discovered characteristics."""
     service_class = device_service.service_class
-    assert service_class is not None
+    if service_class is None:
+        raise ValueError("device_service.service_class must be set for SIG validation")
     service = service_class()
     for characteristic in device_service.characteristics.values():
         service.characteristics[characteristic.uuid] = characteristic
