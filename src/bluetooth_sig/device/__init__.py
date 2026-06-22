@@ -1,4 +1,4 @@
-"""Device abstraction with advertising, connection, and peripheral subsystems.
+"""Device abstraction with advertising, connection, and client subsystems.
 
 The Device class provides a unified interface for BLE device operations.
 Additional composition-based subsystems are available for focused use cases:
@@ -6,7 +6,9 @@ Additional composition-based subsystems are available for focused use cases:
 - DeviceAdvertising: Advertising packet interpretation
 - DeviceConnected: GATT connection operations (client/central role)
 
-For server/peripheral role, see PeripheralManagerProtocol.
+.. deprecated:: 0.5.0
+    ``PeripheralDevice`` and ``PeripheralManagerProtocol`` are deprecated
+    (GATT server role out of scope) and scheduled for removal.
 """
 
 from __future__ import annotations

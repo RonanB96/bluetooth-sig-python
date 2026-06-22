@@ -24,6 +24,12 @@ ______________________________________________________________________
 - Link layer implementation
 - GATT server/peripheral role
 
+:::{deprecated} 0.5.0
+``PeripheralDevice``, ``PeripheralManagerProtocol``, and related types in
+``bluetooth_sig.types.peripheral_types`` are deprecated and scheduled for removal.
+Use client-side :class:`~bluetooth_sig.device.device.Device` with SIG parse/encode.
+:::
+
 The library works at the application layer. Lower-level protocols are handled by your BLE backend (bleak, simplepyble, etc.) and OS.
 
 ______________________________________________________________________

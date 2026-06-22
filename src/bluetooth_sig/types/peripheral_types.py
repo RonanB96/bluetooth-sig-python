@@ -1,10 +1,11 @@
 """Data structures for BLE peripheral/GATT server definitions.
 
+.. deprecated:: 0.5.0
+    Peripheral/server APIs are out of scope and scheduled for removal.
+
 This module provides the data structures used to define GATT services
 and characteristics for peripheral devices. These are used by
-PeripheralManagerProtocol implementations.
-
-Analogous to device_types.py and connected.py structures on the client side.
+:class:`~bluetooth_sig.device.peripheral.PeripheralManagerProtocol` implementations.
 """
 
 from __future__ import annotations
