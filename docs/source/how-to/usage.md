@@ -349,6 +349,9 @@ device = Device(connection_manager, BluetoothSIGTranslator())
 await device.connect()
 await device.discover_services()
 
+# Optional: validate discovered services — see [Service validation](services.md#service-validation)
+device.validate_discovered_services()
+
 # Type-safe read
 battery = await device.read(BatteryLevelCharacteristic)
 print(f"Battery: {battery}%")

@@ -30,6 +30,7 @@ from .client import ClientManagerProtocol
 from .connected import DeviceConnected, DeviceEncryption, DeviceService
 from .dependency_resolver import DependencyResolutionMode, DependencyResolver
 from .protocols import SIGTranslatorProtocol
+from .validation import DiscoveredServiceValidation, validate_device_services
 
 # Type variable for generic characteristic return types
 T = TypeVar("T")
@@ -520,6 +521,23 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         # Return as dict for backward compatibility
         return {str(svc.uuid): svc for svc in services_list}
+
+    def validate_discovered_services(self, *, strict: bool = False) -> list[DiscoveredServiceValidation]:
+        """Validate discovered services against SIG service definitions.
+
+        Opt-in compliance check using the discovered service/characteristic UUID
+        set from the last :meth:`discover_services` call. No additional BLE
+        reads are performed.
+
+        Args:
+            strict: When ``True``, missing optional characteristics produce warnings.
+
+        Returns:
+            Validation results for each discovered service with a known SIG
+            implementation. Unknown vendor services are omitted.
+
+        """
+        return validate_device_services(self.connected.services, strict=strict)
 
     async def get_characteristic_info(self, char_uuid: str) -> Any | None:  # noqa: ANN401  # Adapter-specific characteristic metadata
         """Get information about a characteristic from the connection manager.
