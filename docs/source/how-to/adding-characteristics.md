@@ -12,33 +12,14 @@ You might need to add a characteristic when:
 
 ## Building a companion package
 
-**This repository does not host device-specific vendor parsers.** Nordic, Govee, and other proprietary UUID implementations belong in **separate downstream packages** that depend on `bluetooth-sig`.
+**This repository does not host device-specific vendor parsers.** Proprietary UUID implementations belong in **separate downstream packages** that depend on `bluetooth-sig`.
 
-Typical companion-package workflow:
+1. Create your python application with `bluetooth-sig` as a dependency.
+2. Implement `CustomBaseCharacteristic` subclasses using the [Custom Characteristics — runtime registration](characteristics.md#runtime-registration) pattern (`VendorSensorCharacteristic` decode, encode, and registry usage).
+3. Register each class at application startup with `BluetoothSIGTranslator.register_custom_characteristic_class()` — see [`CustomCharacteristicImpl`](https://github.com/RonanB96/bluetooth-sig-python/blob/main/tests/integration/test_custom_registration.py) and `test_translator_register_custom_characteristic` in that file.
+4. Use the translator or `Device` API as usual.
 
-1. Create a PyPI package (e.g. `my-device-parsers`) with `bluetooth-sig` as a dependency.
-2. Define `CustomBaseCharacteristic` subclasses with your proprietary UUIDs and decode/encode logic.
-3. At application startup, register each class:
-
-```python
-# SKIP: Companion package example — my_device_parsers is an external package
-from bluetooth_sig import BluetoothSIGTranslator
-from my_device_parsers import VendorSensorCharacteristic
-
-translator = BluetoothSIGTranslator()
-translator.register_custom_characteristic_class(
-    str(VendorSensorCharacteristic._info.uuid),
-    VendorSensorCharacteristic,
-    override=True,
-)
-```
-
-4. Use the translator or `Device` API as usual — registered classes participate in UUID lookup and batch parsing.
-
-Reference implementations:
-
-- `tests/integration/test_custom_registration.py` — registration and parse round-trip
-- `tests/gatt/characteristics/test_custom_characteristics.py` — custom characteristic patterns
+For dependent characteristics (calibration, sequence matching), see [`tests/integration/test_end_to_end.py`](https://github.com/RonanB96/bluetooth-sig-python/blob/main/tests/integration/test_end_to_end.py) (`CalibrationCharacteristic`, `SensorReadingCharacteristic`).
 
 Contribute **SIG-standard** characteristics back to this repo; keep vendor-specific parsers in companion packages.
 
