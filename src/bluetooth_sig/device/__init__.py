@@ -27,6 +27,7 @@ from bluetooth_sig.device.peripheral import (
 )
 from bluetooth_sig.device.peripheral_device import PeripheralDevice
 from bluetooth_sig.device.protocols import SIGTranslatorProtocol
+from bluetooth_sig.device.validation import DiscoveredServiceValidation
 
 __all__ = [
     "CharacteristicDefinition",
@@ -37,6 +38,7 @@ __all__ = [
     "DeviceConnected",
     "DeviceEncryption",
     "DeviceService",
+    "DiscoveredServiceValidation",
     "PeripheralDevice",
     "PeripheralManagerProtocol",
     "ServiceDefinition",
