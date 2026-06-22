@@ -10,9 +10,7 @@ What is implemented, planned, and out of scope is documented in [Registry Covera
 
 `scripts/validate_service_characteristics_from_specs.py` compares characteristics tables from extracted spec text to classes under `src/bluetooth_sig/gatt/services/`.
 
-1. Fetch spec HTML and prepare text extracts using **Fetching SIG Specs** in [`.github/copilot-instructions.md`](https://github.com/RonanB96/bluetooth-sig-python/blob/main/.github/copilot-instructions.md#fetching-sig-specs).
-1. Save extracts under `.tmp/` as `*_spec.txt` (gitignored).
-1. Run the script; see its module docstring and `python scripts/validate_service_characteristics_from_specs.py --help` for file layout, options, and exit codes.
+Fetch spec HTML using **Fetching SIG Specs** in [`.github/copilot-instructions.md`](https://github.com/RonanB96/bluetooth-sig-python/blob/main/.github/copilot-instructions.md#fetching-sig-specs). Prepare text extracts and run the script; see its module docstring and `python scripts/validate_service_characteristics_from_specs.py --help` for file layout, `--spec-dir`, `--pattern`, and exit codes.
 
 ## YAML coverage report
 
