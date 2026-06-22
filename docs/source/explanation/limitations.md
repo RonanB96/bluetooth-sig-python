@@ -26,6 +26,8 @@ ______________________________________________________________________
 
 The library works at the application layer. Lower-level protocols are handled by your BLE backend (bleak, simplepyble, etc.) and OS.
 
+Vendor-specific characteristic parsers belong in [companion packages](../how-to/adding-characteristics.md#building-a-companion-package), not in this repository.
+
 ______________________________________________________________________
 
 ## ❌ Hardware Abstraction
