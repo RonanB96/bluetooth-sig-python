@@ -323,26 +323,6 @@ results = BluetoothSIGTranslator().parse_characteristics(char_data)
 
 For BLE library integration patterns (bleak, simplepyble, etc.), see the [BLE Integration Guide](ble-integration.md) and [Migration Guide](migration.md).
 
-### User Description labels (optional enrichment)
-
-When you read the **User Description** descriptor (`0x2901`) for a characteristic, pass the parent characteristic UUID to `read_descriptor` so the parsed UTF-8 label is stored on the cached characteristic instance:
-
-```python
-# SKIP: Requires BLE connection and Device instance
-from bluetooth_sig.gatt.descriptors.characteristic_user_description import (
-    CharacteristicUserDescriptionDescriptor,
-)
-
-battery_uuid = "2A19"
-await device.read_descriptor(
-    CharacteristicUserDescriptionDescriptor(),
-    characteristic_uuid=battery_uuid,
-)
-label = device.get_user_description_for_characteristic(battery_uuid)
-```
-
-You can also attach bytes from an adapter without a separate read via `device.attach_user_description(uuid, raw_bytes)`. This is metadata only — it does not change characteristic parse/encode behaviour.
-
 ______________________________________________________________________
 
 ## Troubleshooting
@@ -362,12 +342,19 @@ The `Device` class provides high-level device abstraction with service discovery
 # SKIP: Requires BLE hardware and ConnectionManagerProtocol implementation
 from bluetooth_sig import BluetoothSIGTranslator, Device
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+from bluetooth_sig.gatt.descriptors.characteristic_user_description import (
+    CharacteristicUserDescriptionDescriptor,
+)
 
 # connection_manager implements ConnectionManagerProtocol
 device = Device(connection_manager, BluetoothSIGTranslator())
 
 await device.connect()
 await device.discover_services()
+
+battery_uuid = str(BatteryLevelCharacteristic.get_class_uuid())
+await device.read_descriptor(CharacteristicUserDescriptionDescriptor(), characteristic_uuid=battery_uuid)
+label = device.get_user_description_for_characteristic(battery_uuid)  # metadata only
 
 # Type-safe read
 battery = await device.read(BatteryLevelCharacteristic)
