@@ -9,6 +9,8 @@ LAZY_EXPORT_MAP: dict[str, str] = {
     "CharacteristicPresentationFormatDescriptor": "bluetooth_sig.gatt.descriptors.characteristic_presentation_format",
     "CharacteristicUserDescriptionDescriptor": "bluetooth_sig.gatt.descriptors.characteristic_user_description",
     "CompleteBREDRTransportBlockDataDescriptor": "bluetooth_sig.gatt.descriptors.complete_br_edr_transport_block_data",
+    "CookingSensorInfoDescriptor": "bluetooth_sig.gatt.descriptors.cooking_sensor_info",
+    "CookingTriggerSettingDescriptor": "bluetooth_sig.gatt.descriptors.cooking_trigger_setting",
     "EnvironmentalSensingConfigurationDescriptor": "bluetooth_sig.gatt.descriptors.environmental_sensing_configuration",
     "EnvironmentalSensingMeasurementDescriptor": "bluetooth_sig.gatt.descriptors.environmental_sensing_measurement",
     "EnvironmentalSensingTriggerSettingDescriptor": "bluetooth_sig.gatt.descriptors.environmental_sensing_trigger_setting",

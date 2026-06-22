@@ -118,6 +118,15 @@ from .coefficient import CoefficientCharacteristic
 from .constant_tone_extension_enable import ConstantToneExtensionEnableCharacteristic
 from .contact_status_8 import ContactStatus8Characteristic
 from .content_control_id import ContentControlIdCharacteristic
+from .cooking_step_status import CookingStepStatusCharacteristic
+from .cooking_temperature import CookingTemperatureCharacteristic
+from .cooking_zone_actual_cooking_conditions import CookingZoneActualCookingConditionsCharacteristic
+from .cooking_zone_capabilities import CookingZoneCapabilitiesCharacteristic
+from .cooking_zone_desired_cooking_conditions import CookingZoneDesiredCookingConditionsCharacteristic
+from .cooking_zone_perceived_power import CookingZonePerceivedPowerCharacteristic
+from .cookware_description import CookwareDescriptionCharacteristic
+from .cookware_sensor_aggregate import CookwareSensorAggregateCharacteristic
+from .cookware_sensor_data import CookwareSensorDataCharacteristic
 from .coordinated_set_name import CoordinatedSetNameCharacteristic
 from .coordinated_set_size import CoordinatedSetSizeCharacteristic
 from .correlated_color_temperature import CorrelatedColorTemperatureCharacteristic
@@ -255,9 +264,11 @@ from .incoming_call import IncomingCallCharacteristic
 from .incoming_call_target_bearer_uri import IncomingCallTargetBearerURICharacteristic
 from .indoor_bike_data import IndoorBikeDataCharacteristic
 from .indoor_positioning_configuration import IndoorPositioningConfigurationCharacteristic
+from .installed_location import InstalledLocationCharacteristic
 from .intermediate_cuff_pressure import IntermediateCuffPressureCharacteristic
 from .intermediate_temperature import IntermediateTemperatureCharacteristic
 from .irradiance import IrradianceCharacteristic
+from .kitchen_appliance_airflow import KitchenApplianceAirflowCharacteristic
 from .language import LanguageCharacteristic
 from .last_name import LastNameCharacteristic
 from .latitude import LatitudeCharacteristic
@@ -363,6 +374,8 @@ from .ras_features import RASFeaturesCharacteristic
 from .rc_feature import RCFeatureCharacteristic
 from .rc_settings import RCSettingsCharacteristic
 from .real_time_ranging_data import RealTimeRangingDataCharacteristic
+from .recipe_control import RecipeControlCharacteristic
+from .recipe_parameters import RecipeParametersCharacteristic
 from .reconnection_address import ReconnectionAddressCharacteristic
 from .reconnection_configuration_control_point import ReconnectionConfigurationControlPointCharacteristic
 from .record_access_control_point import RecordAccessControlPointCharacteristic
@@ -478,6 +491,13 @@ from .user_index import UserIndexCharacteristic
 from .uv_index import UVIndexCharacteristic
 from .vo2_max import VO2MaxCharacteristic
 from .voc_concentration import VOCConcentrationCharacteristic
+from .voice_assistant_name import VoiceAssistantNameCharacteristic
+from .voice_assistant_service_control_point import VoiceAssistantServiceControlPointCharacteristic
+from .voice_assistant_session_flag import VoiceAssistantSessionFlagCharacteristic
+from .voice_assistant_session_state import VoiceAssistantSessionStateCharacteristic
+from .voice_assistant_supported_features import VoiceAssistantSupportedFeaturesCharacteristic
+from .voice_assistant_supported_languages import VoiceAssistantSupportedLanguagesCharacteristic
+from .voice_assistant_uuid import VoiceAssistantUUIDCharacteristic
 from .voltage import VoltageCharacteristic
 from .voltage_frequency import VoltageFrequencyCharacteristic
 from .voltage_specification import VoltageSpecificationCharacteristic
@@ -613,6 +633,15 @@ __all__ = [
     "ConstantToneExtensionEnableCharacteristic",
     "ContactStatus8Characteristic",
     "ContentControlIdCharacteristic",
+    "CookingStepStatusCharacteristic",
+    "CookingTemperatureCharacteristic",
+    "CookingZoneActualCookingConditionsCharacteristic",
+    "CookingZoneCapabilitiesCharacteristic",
+    "CookingZoneDesiredCookingConditionsCharacteristic",
+    "CookingZonePerceivedPowerCharacteristic",
+    "CookwareDescriptionCharacteristic",
+    "CookwareSensorAggregateCharacteristic",
+    "CookwareSensorDataCharacteristic",
     "CoordinatedSetNameCharacteristic",
     "CoordinatedSetSizeCharacteristic",
     "CorrelatedColorTemperatureCharacteristic",
@@ -748,9 +777,11 @@ __all__ = [
     "IncomingCallTargetBearerURICharacteristic",
     "IndoorBikeDataCharacteristic",
     "IndoorPositioningConfigurationCharacteristic",
+    "InstalledLocationCharacteristic",
     "IntermediateCuffPressureCharacteristic",
     "IntermediateTemperatureCharacteristic",
     "IrradianceCharacteristic",
+    "KitchenApplianceAirflowCharacteristic",
     "LEGATTSecurityLevelsCharacteristic",
     "LEHIDOperationModeCharacteristic",
     "LNControlPointCharacteristic",
@@ -858,6 +889,8 @@ __all__ = [
     "RangingDataOverwrittenCharacteristic",
     "RangingDataReadyCharacteristic",
     "RealTimeRangingDataCharacteristic",
+    "RecipeControlCharacteristic",
+    "RecipeParametersCharacteristic",
     "ReconnectionAddressCharacteristic",
     "ReconnectionConfigurationControlPointCharacteristic",
     "RecordAccessControlPointCharacteristic",
@@ -968,6 +1001,13 @@ __all__ = [
     "UserIndexCharacteristic",
     "VO2MaxCharacteristic",
     "VOCConcentrationCharacteristic",
+    "VoiceAssistantNameCharacteristic",
+    "VoiceAssistantServiceControlPointCharacteristic",
+    "VoiceAssistantSessionFlagCharacteristic",
+    "VoiceAssistantSessionStateCharacteristic",
+    "VoiceAssistantSupportedFeaturesCharacteristic",
+    "VoiceAssistantSupportedLanguagesCharacteristic",
+    "VoiceAssistantUUIDCharacteristic",
     "VoltageCharacteristic",
     "VoltageFrequencyCharacteristic",
     "VoltageSpecificationCharacteristic",

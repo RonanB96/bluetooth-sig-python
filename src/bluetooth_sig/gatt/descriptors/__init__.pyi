@@ -7,6 +7,8 @@ from .characteristic_extended_properties import CharacteristicExtendedProperties
 from .characteristic_presentation_format import CharacteristicPresentationFormatDescriptor
 from .characteristic_user_description import CharacteristicUserDescriptionDescriptor
 from .complete_br_edr_transport_block_data import CompleteBREDRTransportBlockDataDescriptor
+from .cooking_sensor_info import CookingSensorInfoDescriptor
+from .cooking_trigger_setting import CookingTriggerSettingDescriptor
 from .environmental_sensing_configuration import EnvironmentalSensingConfigurationDescriptor
 from .environmental_sensing_measurement import EnvironmentalSensingMeasurementDescriptor
 from .environmental_sensing_trigger_setting import EnvironmentalSensingTriggerSettingDescriptor
@@ -34,6 +36,8 @@ __all__ = [
     "CharacteristicPresentationFormatDescriptor",
     "CharacteristicUserDescriptionDescriptor",
     "CompleteBREDRTransportBlockDataDescriptor",
+    "CookingSensorInfoDescriptor",
+    "CookingTriggerSettingDescriptor",
     "EnvironmentalSensingConfigurationDescriptor",
     "EnvironmentalSensingMeasurementDescriptor",
     "EnvironmentalSensingTriggerSettingDescriptor",

@@ -22,9 +22,14 @@ def test_generated_characteristics_docs_include_registry_coverage() -> None:
     assert f"**{implemented_services} of {total_services}**" in markdown
     if sig_sha != "unknown":
         assert f"[`{sig_sha[:7]}`]({sig_commit_url})" in markdown
-    assert "## Not Yet Implemented Characteristics" in markdown
-    assert "## Not Yet Implemented Services" in markdown
     if missing_characteristics:
+        assert "## Not Yet Implemented Characteristics" in markdown
         assert missing_characteristics[0] in markdown
+    else:
+        assert "## Not Yet Implemented Characteristics" not in markdown
+
     if missing_services:
+        assert "## Not Yet Implemented Services" in markdown
         assert missing_services[0] in markdown
+    else:
+        assert "## Not Yet Implemented Services" not in markdown
