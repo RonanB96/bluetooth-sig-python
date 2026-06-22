@@ -8,10 +8,8 @@ Characteristics updated in this PR (optional dependencies):
 from __future__ import annotations
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.gatt.characteristics.location_and_speed import (
-    LNFeatureCharacteristic,
-    LocationAndSpeedCharacteristic,
-)
+from bluetooth_sig.gatt.characteristics.ln_feature import LNFeatureCharacteristic
+from bluetooth_sig.gatt.characteristics.location_and_speed import LocationAndSpeedCharacteristic
 from bluetooth_sig.gatt.characteristics.weight_measurement import (
     WeightMeasurementCharacteristic,
     WeightMeasurementData,
@@ -27,8 +25,8 @@ class TestDependencyDeclarationBatchParse:
         translator = BluetoothSIGTranslator()
         las_uuid = str(LocationAndSpeedCharacteristic.get_class_uuid())
         ln_uuid = str(LNFeatureCharacteristic.get_class_uuid())
-        measurement_data = bytearray([0x00, 0x00])
-        ln_feature_data = bytearray([0x01, 0x00, 0x00, 0x00])
+        measurement_data = bytes([0x00, 0x00])
+        ln_feature_data = bytes([0x01, 0x00, 0x00, 0x00])
 
         results = translator.parse_characteristics(
             {
@@ -44,7 +42,7 @@ class TestDependencyDeclarationBatchParse:
         """Optional LN Feature absence does not block Location and Speed parse."""
         translator = BluetoothSIGTranslator()
         las_uuid = str(LocationAndSpeedCharacteristic.get_class_uuid())
-        measurement_data = bytearray([0x00, 0x00])
+        measurement_data = bytes([0x00, 0x00])
 
         results = translator.parse_characteristics({las_uuid: measurement_data})
 
@@ -55,8 +53,8 @@ class TestDependencyDeclarationBatchParse:
         translator = BluetoothSIGTranslator()
         wm_uuid = str(WeightMeasurementCharacteristic.get_class_uuid())
         feature_uuid = str(WeightScaleFeatureCharacteristic.get_class_uuid())
-        measurement_data = bytearray([0x00, 0x88, 0x13])
-        feature_data = bytearray([0x00, 0x00, 0x00, 0x00])
+        measurement_data = bytes([0x00, 0x88, 0x13])
+        feature_data = bytes([0x00, 0x00, 0x00, 0x00])
 
         results = translator.parse_characteristics(
             {
@@ -73,7 +71,7 @@ class TestDependencyDeclarationBatchParse:
         """Optional Weight Scale Feature absence does not block measurement parse."""
         translator = BluetoothSIGTranslator()
         wm_uuid = str(WeightMeasurementCharacteristic.get_class_uuid())
-        measurement_data = bytearray([0x00, 0x88, 0x13])
+        measurement_data = bytes([0x00, 0x88, 0x13])
 
         results = translator.parse_characteristics({wm_uuid: measurement_data})
 
