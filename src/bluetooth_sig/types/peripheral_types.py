@@ -2,7 +2,7 @@
 
 This module provides the data structures used to define GATT services
 and characteristics for peripheral devices. These are used by
-PeripheralManagerProtocol implementations.
+:class:`~bluetooth_sig.device.peripheral.PeripheralManagerProtocol` implementations.
 
 Analogous to device_types.py and connected.py structures on the client side.
 """

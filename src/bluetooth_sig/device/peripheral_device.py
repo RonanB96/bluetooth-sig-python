@@ -1,17 +1,13 @@
 """High-level peripheral (GATT server) abstraction.
 
-Provides :class:`PeripheralDevice`, the server-side counterpart to
-:class:`Device`. Where ``Device`` connects TO remote peripherals and reads
-GATT data, ``PeripheralDevice`` **hosts** GATT services and encodes values
-for remote centrals to read.
-
-Composes :class:`PeripheralManagerProtocol` with ``BaseCharacteristic``
-instances that handle value encoding via ``build_value()``.
+Provides :class:`PeripheralDevice`, a server-side helper that hosts GATT
+services and encodes values for remote centrals to read.
 """
 
 from __future__ import annotations
 
 import logging
+import warnings
 
 # Any is required: BaseCharacteristic is generic over its value type (T), but
 # PeripheralDevice hosts heterogeneous characteristics with different T types
@@ -62,6 +58,9 @@ class HostedCharacteristic:
 class PeripheralDevice:
     """High-level BLE peripheral abstraction using composition pattern.
 
+    .. deprecated:: 0.5.0
+        Scheduled for removal; see ``docs/source/explanation/limitations.md``.
+
     Coordinates between :class:`PeripheralManagerProtocol` (backend) and
     ``BaseCharacteristic`` instances (encoding) so callers work with typed
     Python values.
@@ -104,6 +103,12 @@ class PeripheralDevice:
             peripheral_manager: Backend implementing PeripheralManagerProtocol.
 
         """
+        warnings.warn(
+            "PeripheralDevice is deprecated and scheduled for removal; "
+            "use client-side Device + parse/encode APIs instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._manager = peripheral_manager
 
         # UUID (normalised upper-case) → HostedCharacteristic

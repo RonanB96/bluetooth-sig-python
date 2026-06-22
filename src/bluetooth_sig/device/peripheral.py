@@ -4,18 +4,7 @@ Defines an async abstract base class that peripheral adapter implementations
 (bless, bluez_peripheral, etc.) must inherit from to create BLE GATT servers
 that broadcast services and characteristics.
 
-This is the server-side counterpart to ClientManagerProtocol. Where clients
-connect TO devices and READ/PARSE data, peripherals ARE devices that ENCODE
-and BROADCAST data for others to read.
-
 Adapters must provide async implementations of all abstract methods below.
-
-TODO: PeripheralDevice exists in peripheral_device.py with core functionality.
-    Remaining gaps to address (see ROADMAP.md Workstream F):
-    - Subscription management (on_subscribe/on_unsubscribe, subscribed_clients tracking)
-    - Client event callbacks (on_client_connected/on_client_disconnected)
-    - Read/write request handling (typed on_read_request/on_write_request)
-    - Descriptor hosting (CCCD, User Description, Presentation Format)
 """
 
 from __future__ import annotations
@@ -33,6 +22,9 @@ from bluetooth_sig.types.uuid import BluetoothUUID
 
 class PeripheralManagerProtocol(ABC):
     """Abstract base class for BLE peripheral/GATT server implementations.
+
+    .. deprecated:: 0.5.0
+        Scheduled for removal; see ``docs/source/explanation/limitations.md``.
 
     This protocol defines the interface for creating BLE peripherals that
     broadcast services and characteristics. Implementations wrap backend
