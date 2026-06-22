@@ -8,7 +8,10 @@ Characteristics updated in this PR (optional dependencies):
 from __future__ import annotations
 
 from bluetooth_sig import BluetoothSIGTranslator
-from bluetooth_sig.gatt.characteristics.location_and_speed import LNFeatureCharacteristic, LocationAndSpeedCharacteristic
+from bluetooth_sig.gatt.characteristics.location_and_speed import (
+    LNFeatureCharacteristic,
+    LocationAndSpeedCharacteristic,
+)
 from bluetooth_sig.gatt.characteristics.weight_measurement import (
     WeightMeasurementCharacteristic,
     WeightMeasurementData,
