@@ -17,9 +17,9 @@ class CustomBaseCharacteristic(BaseCharacteristic[Any]):
     and automatic class-level _info binding via __init_subclass__.
 
     Auto-Registration:
-        Custom characteristics automatically register themselves with the global
-        BluetoothSIGTranslator singleton when first instantiated. No manual
-        registration needed!
+        Custom characteristics automatically register with the global
+        characteristic registry via :class:`~bluetooth_sig.core.registration.RegistrationManager`
+        when first instantiated. No manual registration needed!
 
     Examples:
         >>> from bluetooth_sig.types.data_types import CharacteristicInfo
@@ -95,14 +95,14 @@ class CustomBaseCharacteristic(BaseCharacteristic[Any]):
 
         Args:
             info: Optional override for class-configured _info
-            auto_register: If True (default), automatically register with global translator singleton
+            auto_register: If True (default), register via RegistrationManager on first init
             validation: Validation constraints configuration (optional)
 
         Raises:
             ValueError: If no valid info available from class or parameter
 
         Examples:
-            >>> # Simple usage - auto-registers with global translator
+            >>> # Simple usage - auto-registers with global registry
             >>> char = MyCharacteristic()  # Auto-registered!
             >>> # Opt-out of auto-registration if needed
             >>> char = MyCharacteristic(auto_register=False)
