@@ -15,6 +15,10 @@ from ..gatt.characteristics.base import BaseCharacteristic
 from ..gatt.characteristics.registry import CharacteristicName
 from ..gatt.context import DeviceInfo
 from ..gatt.descriptors.base import BaseDescriptor
+from ..gatt.descriptors.characteristic_user_description import (
+    CharacteristicUserDescriptionData,
+    CharacteristicUserDescriptionDescriptor,
+)
 from ..gatt.descriptors.registry import DescriptorRegistry
 from ..types import (
     DescriptorData,
@@ -314,11 +318,19 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         await self._char_io.stop_notify(char_name)
 
-    async def read_descriptor(self, desc_uuid: BluetoothUUID | BaseDescriptor) -> DescriptorData:
+    async def read_descriptor(
+        self,
+        desc_uuid: BluetoothUUID | BaseDescriptor,
+        *,
+        characteristic_uuid: BluetoothUUID | str | None = None,
+    ) -> DescriptorData:
         """Read a descriptor value from the device.
 
         Args:
             desc_uuid: UUID of the descriptor to read or BaseDescriptor instance
+            characteristic_uuid: When reading a characteristic-scoped descriptor
+                (e.g. User Description 0x2901), pass the parent characteristic
+                UUID to store the parsed label on that characteristic instance.
 
         Returns:
             Parsed descriptor data with metadata
@@ -335,16 +347,73 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         # Try to create a descriptor instance and parse the data
         descriptor = DescriptorRegistry.create_descriptor(str(uuid))
         if descriptor:
-            return descriptor.parse_value(raw_data)
+            parsed = descriptor.parse_value(raw_data)
+            if characteristic_uuid is not None:
+                self._attach_user_description_from_descriptor(characteristic_uuid, uuid, parsed)
+            return parsed
 
         # If no registered descriptor found, return unparsed DescriptorData
-        return DescriptorData(
+        unparsed = DescriptorData(
             info=DescriptorInfo(uuid=uuid, name="Unknown Descriptor"),
             value=raw_data,
             raw_data=raw_data,
             parse_success=False,
             error_message="Unknown descriptor UUID - no parser available",
         )
+        if characteristic_uuid is not None:
+            self._attach_user_description_from_descriptor(characteristic_uuid, uuid, unparsed)
+        return unparsed
+
+    def attach_user_description(self, characteristic_uuid: BluetoothUUID | str, raw_bytes: bytes) -> str | None:
+        """Parse and store User Description bytes on a cached characteristic.
+
+        Args:
+            characteristic_uuid: Parent characteristic UUID
+            raw_bytes: Raw User Description descriptor bytes (UTF-8)
+
+        Returns:
+            Parsed description string, or None if characteristic not cached
+        """
+        char = self.connected.get_cached_characteristic(BluetoothUUID(characteristic_uuid))
+        if char is None:
+            return None
+        descriptor = CharacteristicUserDescriptionDescriptor()
+        parsed = descriptor.parse_value(raw_bytes)
+        if isinstance(parsed.value, CharacteristicUserDescriptionData):
+            char.user_description = parsed.value.description
+            return char.user_description
+        return None
+
+    def get_user_description_for_characteristic(self, characteristic_uuid: BluetoothUUID | str) -> str | None:
+        """Return cached User Description label for a characteristic, if set.
+
+        Args:
+            characteristic_uuid: Characteristic UUID from discovered services
+
+        Returns:
+            User Description string when previously read or attached, else None
+        """
+        char = self.connected.get_cached_characteristic(BluetoothUUID(characteristic_uuid))
+        return char.user_description if char is not None else None
+
+    def _attach_user_description_from_descriptor(
+        self,
+        characteristic_uuid: BluetoothUUID | str,
+        descriptor_uuid: BluetoothUUID,
+        descriptor_data: DescriptorData,
+    ) -> None:
+        """Store User Description text on the parent characteristic when applicable."""
+        user_desc_uuid = CharacteristicUserDescriptionDescriptor().uuid
+        if BluetoothUUID(descriptor_uuid).normalized != user_desc_uuid.normalized:
+            return
+        char = self.connected.get_cached_characteristic(BluetoothUUID(characteristic_uuid))
+        if char is None:
+            return
+        value = descriptor_data.value
+        if isinstance(value, CharacteristicUserDescriptionData):
+            char.user_description = value.description
+        elif isinstance(value, str):
+            char.user_description = value
 
     async def write_descriptor(self, desc_uuid: BluetoothUUID | BaseDescriptor, data: bytes | DescriptorData) -> None:
         """Write data to a descriptor on the device.

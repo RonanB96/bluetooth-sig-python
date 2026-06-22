@@ -342,12 +342,19 @@ The `Device` class provides high-level device abstraction with service discovery
 # SKIP: Requires BLE hardware and ConnectionManagerProtocol implementation
 from bluetooth_sig import BluetoothSIGTranslator, Device
 from bluetooth_sig.gatt.characteristics import BatteryLevelCharacteristic
+from bluetooth_sig.gatt.descriptors.characteristic_user_description import (
+    CharacteristicUserDescriptionDescriptor,
+)
 
 # connection_manager implements ConnectionManagerProtocol
 device = Device(connection_manager, BluetoothSIGTranslator())
 
 await device.connect()
 await device.discover_services()
+
+battery_uuid = str(BatteryLevelCharacteristic.get_class_uuid())
+await device.read_descriptor(CharacteristicUserDescriptionDescriptor(), characteristic_uuid=battery_uuid)
+label = device.get_user_description_for_characteristic(battery_uuid)  # metadata only
 
 # Type-safe read
 battery = await device.read(BatteryLevelCharacteristic)
