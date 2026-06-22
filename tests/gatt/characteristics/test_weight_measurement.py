@@ -11,9 +11,10 @@ from bluetooth_sig.gatt.characteristics.weight_measurement import (
     WeightMeasurementData,
     WeightMeasurementFlags,
 )
+from bluetooth_sig.gatt.characteristics.weight_scale_feature import WeightScaleFeatureCharacteristic
 from bluetooth_sig.types.units import HeightUnit, MeasurementSystem, WeightUnit
 
-from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests, DependencyTestData
 
 
 class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
@@ -28,6 +29,25 @@ class TestWeightMeasurementCharacteristic(CommonCharacteristicTests):
     def expected_uuid(self) -> str:
         """Expected UUID for weight measurement characteristic."""
         return "2A9D"
+
+    @pytest.fixture
+    def dependency_test_data(self) -> list[DependencyTestData]:
+        """Optional Weight Scale Feature dependency — parse succeeds without feature."""
+        measurement_data = bytearray([0x00, 0x88, 0x13])
+        char = WeightMeasurementCharacteristic()
+        expected = char.parse_value(measurement_data)
+        return [
+            DependencyTestData(
+                with_dependency_data={
+                    str(WeightMeasurementCharacteristic.get_class_uuid()): measurement_data,
+                    str(WeightScaleFeatureCharacteristic.get_class_uuid()): bytearray([0x00, 0x00, 0x00, 0x00]),
+                },
+                without_dependency_data=measurement_data,
+                expected_with=expected,
+                expected_without=expected,
+                description="Weight Measurement parses without Weight Scale Feature context",
+            ),
+        ]
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:

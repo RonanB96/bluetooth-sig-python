@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import IntFlag
+from typing import Any, ClassVar
 
 import msgspec
 
@@ -13,6 +14,7 @@ from ..constants import UINT8_MAX, UINT16_MAX
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser, IEEE11073Parser
+from .weight_scale_feature import WeightScaleFeatureCharacteristic
 
 
 class WeightMeasurementFlags(IntFlag):
@@ -86,6 +88,8 @@ class WeightMeasurementCharacteristic(BaseCharacteristic[WeightMeasurementData])
     Supports metric/imperial units, timestamps, user ID, BMI, and
     height.
     """
+
+    _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [WeightScaleFeatureCharacteristic]
 
     _characteristic_name: str = "Weight Measurement"
     _manual_unit: str = "kg"  # Primary unit for weight measurement

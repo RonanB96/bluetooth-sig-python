@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import IntEnum, IntFlag
+from typing import Any, ClassVar
 
 import msgspec
 
 from ...types.location import PositionStatus
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
+from .ln_feature import LNFeatureCharacteristic
 from .utils import DataParser, IEEE11073Parser
 
 
@@ -77,6 +79,8 @@ class LocationAndSpeedCharacteristic(BaseCharacteristic[LocationAndSpeedData]):
     max_length = 28  # Flags(2) + InstantaneousSpeed(2) + TotalDistance(3) + Location(8) +
     # Elevation(3) + Heading(2) + RollingTime(1) + UTCTime(7) maximum
     allow_variable_length: bool = True  # Variable optional fields
+
+    _optional_dependencies: ClassVar[list[type[BaseCharacteristic[Any]]]] = [LNFeatureCharacteristic]
 
     # Bit masks and shifts for status information in flags
     POSITION_STATUS_MASK = 0x0180

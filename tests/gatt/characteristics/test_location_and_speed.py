@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from bluetooth_sig.gatt.characteristics import LocationAndSpeedCharacteristic
+from bluetooth_sig.gatt.characteristics.ln_feature import LNFeatureCharacteristic
 from bluetooth_sig.gatt.characteristics.location_and_speed import (
     ElevationSource,
     HeadingSource,
@@ -15,7 +16,11 @@ from bluetooth_sig.gatt.characteristics.location_and_speed import (
     SpeedAndDistanceFormat,
 )
 from bluetooth_sig.types import PositionStatus
-from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
+from tests.gatt.characteristics.test_characteristic_common import (
+    CharacteristicTestData,
+    CommonCharacteristicTests,
+    DependencyTestData,
+)
 
 
 class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
@@ -34,6 +39,25 @@ class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
     def expected_uuid(self) -> str:
         """Return the expected UUID for Location and Speed characteristic."""
         return "2A67"
+
+    @pytest.fixture
+    def dependency_test_data(self) -> list[DependencyTestData]:
+        """Optional LN Feature dependency — parse succeeds with or without feature."""
+        measurement_data = bytearray([0x00, 0x00])
+        char = LocationAndSpeedCharacteristic()
+        expected = char.parse_value(measurement_data)
+        return [
+            DependencyTestData(
+                with_dependency_data={
+                    str(LocationAndSpeedCharacteristic.get_class_uuid()): measurement_data,
+                    str(LNFeatureCharacteristic.get_class_uuid()): bytearray([0x01, 0x00, 0x00, 0x00]),
+                },
+                without_dependency_data=measurement_data,
+                expected_with=expected,
+                expected_without=expected,
+                description="Location and Speed parses without LN Feature context",
+            ),
+        ]
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
