@@ -212,6 +212,7 @@ If you've added a standard Bluetooth SIG characteristic,
 consider contributing it back:
 
 1. Ensure your implementation follows the official specification
+1. For service-level SIG table checks, see [SIG Implementation Checks](sig-implementation-checks.md)
 1. Add comprehensive tests
 1. Add proper docstrings
 1. Regenerate lazy export maps: `python scripts/generate_lazy_exports.py`

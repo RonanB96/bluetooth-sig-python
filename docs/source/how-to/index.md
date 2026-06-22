@@ -18,6 +18,7 @@ Practical guides to solve specific problems and accomplish goals with the Blueto
 ## Extending the Library
 
 - **[Adding Characteristics](adding-characteristics.md)** — Add new SIG-defined characteristics
+- **[SIG Implementation Checks](sig-implementation-checks.md)** — Maintainer scripts for spec tables and registry backlog
 - **[Testing](testing.md)** — Test your BLE applications without hardware
 - **[Contributing](contributing.md)** — Contribute code, docs, or bug reports
 
@@ -52,6 +53,7 @@ characteristics
 services
 advertising-parsing
 adding-characteristics
+sig-implementation-checks
 performance-tuning
 testing
 migration

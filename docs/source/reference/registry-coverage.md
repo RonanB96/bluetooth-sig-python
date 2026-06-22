@@ -136,3 +136,4 @@ Profile registries added when corresponding characteristics are implemented. No 
 - [Registry System Architecture](../explanation/architecture/registry-system.md) — Implementation details
 - [Supported Characteristics](characteristics.md) — Full characteristic list
 - [Limitations](../explanation/limitations.md) — Scope boundaries
+- [SIG Implementation Checks](../how-to/sig-implementation-checks.md) — Maintainer scripts for spec tables and YAML backlog

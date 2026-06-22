@@ -94,63 +94,9 @@ Before you submit a pull request, check that it meets these guidelines:
 1. If the pull request adds functionality, the docs should be updated. Put your new functionality into a function with a docstring, and add the feature to the list in README.md.
 1. The pull request should work for Python 3.10+. Tests run in GitHub Actions on every pull request to the main branch, make sure that the tests pass for all supported Python versions.
 
-## Maintainer Workflow: SIG Spec Validation
+## Maintainer checks
 
-These steps are for **maintainers** validating that Python service implementations match Bluetooth SIG specification tables. They are **not** CI gates—SIG HTML fetch requires manual steps and local spec extracts.
-
-### Prerequisites
-
-- Development environment installed (`pip install -e ".[dev]"`)
-- Familiarity with [Fetching SIG Specs](https://github.com/RonanB96/bluetooth-sig-python/blob/main/.github/copilot-instructions.md#fetching-sig-specs) in `.github/copilot-instructions.md`
-
-### 1. Extract spec text into `.tmp/`
-
-1. Find the service spec slug on [Bluetooth SIG Specifications](https://www.bluetooth.com/specifications/specs/).
-2. Follow the copilot instructions to resolve the public HTML URL (one spec at a time; do not guess URL patterns).
-3. Save plain-text extracts of the characteristics table section as `.tmp/{service-name}_spec.txt` (filename must end with `_spec.txt`).
-
-The `.tmp/` directory is gitignored—spec extracts stay local.
-
-### 2. Run the validation script
-
-```bash
-python scripts/validate_service_characteristics_from_specs.py
-python scripts/validate_service_characteristics_from_specs.py --verbose
-python scripts/validate_service_characteristics_from_specs.py --spec-dir .tmp --pattern '*_spec.txt'
-```
-
-The script compares parsed spec tables to `src/bluetooth_sig/gatt/services/` implementations. Exit code **0** means all matched services align; **1** means mismatches or unmatched spec files.
-
-Interpret the summary:
-
-- **Service mismatches** — mandatory characteristics missing from Python, extra characteristics, or requirement-flag differences
-- **Unmatched specs** — spec file could not be mapped to a service class (often naming or out-of-scope domains)
-- **Parse skips** — file had no parseable characteristics table
-
-### 3. Run the coverage companion
-
-```bash
-python scripts/gatt_coverage_report.py
-python scripts/gatt_coverage_report.py --verbose
-```
-
-This reports YAML → Python gaps for characteristics, services, and descriptors. Use it to prioritize implementation backlog.
-
-### 4. When to file issues vs mark out-of-scope
-
-File implementation issues when a **BLE GATT** service or characteristic is in scope but missing or wrong. Mark out-of-scope (do not block on validation) for:
-
-- **Mesh networking** — different protocol stack ([registry coverage](../reference/registry-coverage.md))
-- **Classic Bluetooth / SDP** — `service_discovery/` registries
-- **LE Audio / profile-triggered registries** — loaded as corresponding GATT services are implemented
-
-Run ``python scripts/gatt_coverage_report.py --verbose`` for the current characteristic/service backlog.
-
-See [Registry Coverage](../reference/registry-coverage.md) for the full out-of-scope list and priority roadmap.
-
-### Downstream custom parsers
-
-Integrators can register vendor-specific parsers outside this repo; see [Adding Characteristics — companion packages](adding-characteristics.md) (extension model).
+When auditing GATT service implementations against SIG specification tables, see [SIG Implementation Checks](sig-implementation-checks.md).
 
 ## Tips
 
