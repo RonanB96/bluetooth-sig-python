@@ -674,7 +674,7 @@ Characteristics can access descriptor data through the `CharacteristicContext` w
 2. **Use if available**: Apply descriptor-based validation/formatting
 3. **Fall back to declarative**: Use class attributes if no descriptor present
 
-Batch :meth:`~bluetooth_sig.core.translator.BluetoothSIGTranslator.parse_characteristics` does not populate context descriptors automatically — read descriptors separately and attach them when single-value parsing requires them.
+This enables runtime validation that adapts to actual device capabilities. See the [BLE Integration Guide](../../how-to/ble-integration.md) for usage patterns.
 
 ## Exception Hierarchy
 

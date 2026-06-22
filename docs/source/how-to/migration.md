@@ -452,7 +452,7 @@ await device.disconnect()
 - ✅ Keep your BLE client code (Bleak/SimplePyBLE) unchanged
 - ✅ After each read or in notification callbacks, call `parse_characteristic(uuid, bytes)`
 - ✅ For multiple related characteristics, call `parse_characteristics({uuid: bytes})`
-- ✅ Include descriptors when needed by building a :class:`~bluetooth_sig.gatt.context.CharacteristicContext` for single-value parsing (batch parse does not accept descriptor maps yet)
+- ✅ Include descriptors when needed (via adapters or `descriptor_data` mapping)
 - ✅ For larger apps, adopt a `ConnectionManagerProtocol` + `Device` pattern
 
 ## Where are the example adapters?
@@ -524,7 +524,7 @@ for service in peripheral.services():
 
 - **Unknown UUID**: Ensure you're using the correct SIG UUID (short or full).
 - **Parse failed**: Check spec constraints (length, range); `result.error_message` explains the issue.
-- **Descriptor-dependent parsing**: Read descriptor bytes separately and pass them via :class:`~bluetooth_sig.gatt.context.CharacteristicContext` to :meth:`~bluetooth_sig.gatt.characteristics.base.BaseCharacteristic.parse_value`. Batch :meth:`~bluetooth_sig.core.translator.BluetoothSIGTranslator.parse_characteristics` does not accept a descriptor map yet.
+- **Descriptor-dependent parsing**: Pass descriptor bytes via `descriptor_data` or use the example adapters.
 - **Advertising data**: Use `AdvertisingPDUParser` for parsing advertising packets—see [Advertising Parsing Guide](advertising-parsing.md).
 - **Type hints not working**: Ensure you're using Python 3.10+ for best type checking support.
 
