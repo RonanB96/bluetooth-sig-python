@@ -414,7 +414,6 @@ char_data, desc_data = to_parse_inputs(batch)
 results = translator.parse_characteristics(char_data)
 # desc_data holds descriptor bytes if the adapter read them; wire manually via
 # CharacteristicContext when calling parse_value — batch parse ignores desc_data today.
-_ = desc_data
 ```
 
 **Note**: Example adapters are provided as references; update them as needed for your project/backend versions.

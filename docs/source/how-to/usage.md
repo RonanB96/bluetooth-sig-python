@@ -321,7 +321,6 @@ char_data, descriptor_data = to_parse_inputs(batch)
 results = BluetoothSIGTranslator().parse_characteristics(char_data)
 # descriptor_data is available if you read descriptors separately; batch parse does not
 # accept descriptor_data yet — attach via CharacteristicContext when calling parse_value.
-_ = descriptor_data
 ```
 
 For BLE library integration patterns (bleak, simplepyble, etc.), see the [BLE Integration Guide](ble-integration.md) and [Migration Guide](migration.md).
