@@ -142,14 +142,15 @@ File implementation issues when a **BLE GATT** service or characteristic is in s
 
 - **Mesh networking** — different protocol stack ([registry coverage](../reference/registry-coverage.md))
 - **Classic Bluetooth / SDP** — `service_discovery/` registries
-- **Profile backlog** — e.g. Voice Assistant, Cookware characteristics not yet targeted by device scope
 - **LE Audio / profile-triggered registries** — loaded as corresponding GATT services are implemented
+
+Run ``python scripts/gatt_coverage_report.py --verbose`` for the current characteristic/service backlog.
 
 See [Registry Coverage](../reference/registry-coverage.md) for the full out-of-scope list and priority roadmap.
 
 ### Downstream custom parsers
 
-Integrators can register vendor-specific parsers outside this repo; see issue [#198](https://github.com/RonanB96/bluetooth-sig-python/issues/198) for the extension model (documentation in progress).
+Integrators can register vendor-specific parsers outside this repo; see [Adding Characteristics — companion packages](adding-characteristics.md) (extension model).
 
 ## Tips
 
