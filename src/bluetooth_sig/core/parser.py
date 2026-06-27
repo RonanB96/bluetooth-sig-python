@@ -289,11 +289,15 @@ class CharacteristicParser:
     ) -> CharacteristicContext:
         """Construct the context passed to per-characteristic parsers."""
         if base_context is not None:
+            other_characteristics = dict(base_context.other_characteristics or {})
+            other_characteristics.update(results)
             return CharacteristicContext(
                 device_info=base_context.device_info,
                 advertisement=base_context.advertisement,
-                other_characteristics=results,
+                other_characteristics=other_characteristics,
+                descriptors=base_context.descriptors,
                 raw_service=base_context.raw_service,
+                validate=base_context.validate,
             )
 
         return CharacteristicContext(other_characteristics=results)

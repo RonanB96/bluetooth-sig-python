@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from bluetooth_sig.gatt.characteristics import LocationAndSpeedCharacteristic
+from bluetooth_sig.gatt.characteristics.ln_feature import LNFeatureCharacteristic
 from bluetooth_sig.gatt.characteristics.location_and_speed import (
     ElevationSource,
     HeadingSource,
@@ -14,8 +15,14 @@ from bluetooth_sig.gatt.characteristics.location_and_speed import (
     LocationAndSpeedFlags,
     SpeedAndDistanceFormat,
 )
+from bluetooth_sig.gatt.context import CharacteristicContext
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError
 from bluetooth_sig.types import PositionStatus
-from tests.gatt.characteristics.test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
+from tests.gatt.characteristics.test_characteristic_common import (
+    CharacteristicTestData,
+    CommonCharacteristicTests,
+    DependencyTestData,
+)
 
 
 class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
@@ -34,6 +41,26 @@ class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
     def expected_uuid(self) -> str:
         """Return the expected UUID for Location and Speed characteristic."""
         return "2A67"
+
+    @pytest.fixture
+    def dependency_test_data(self) -> list[DependencyTestData]:
+        """Optional LN Feature dependency validates optional fields when present."""
+        measurement_data = bytearray([0x01, 0x00, 0x64, 0x00])  # speed present, 1.0 m/s
+        ln_feature_data = bytearray([0x01, 0x00, 0x00, 0x00])  # instantaneous speed supported
+        char = LocationAndSpeedCharacteristic()
+        expected = char.parse_value(measurement_data)
+        return [
+            DependencyTestData(
+                with_dependency_data={
+                    str(LocationAndSpeedCharacteristic.get_class_uuid()): measurement_data,
+                    str(LNFeatureCharacteristic.get_class_uuid()): ln_feature_data,
+                },
+                without_dependency_data=measurement_data,
+                expected_with=expected,
+                expected_without=expected,
+                description="Location and Speed parses with matching LN Feature support",
+            ),
+        ]
 
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
@@ -253,3 +280,57 @@ class TestLocationAndSpeedCharacteristic(CommonCharacteristicTests):
         assert result.rolling_time is None
         assert result.utc_time is None
         assert result.position_status == PositionStatus.NO_POSITION
+
+    def test_location_and_speed_rejects_unsupported_speed_with_ln_feature(
+        self, characteristic: LocationAndSpeedCharacteristic
+    ) -> None:
+        """LN Feature context rejects speed field when capability bit is clear."""
+        measurement_data = bytearray([0x01, 0x00, 0x64, 0x00])
+        ln_feature = LNFeatureCharacteristic()
+        feature_parsed = ln_feature.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
+        ctx = CharacteristicContext(
+            other_characteristics={str(LNFeatureCharacteristic.get_class_uuid()): feature_parsed}
+        )
+
+        with pytest.raises(
+            CharacteristicParseError, match="Instantaneous speed reported but not supported by LN Feature"
+        ):
+            characteristic.parse_value(measurement_data, ctx=ctx)
+
+    def test_location_and_speed_rejects_position_status_without_ln_feature_support(
+        self, characteristic: LocationAndSpeedCharacteristic
+    ) -> None:
+        """LN Feature context rejects position status flags when capability bit is clear."""
+        measurement_data = bytearray([0x80, 0x00])
+        ln_feature = LNFeatureCharacteristic()
+        feature_parsed = ln_feature.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
+        ctx = CharacteristicContext(
+            other_characteristics={str(LNFeatureCharacteristic.get_class_uuid()): feature_parsed}
+        )
+
+        with pytest.raises(CharacteristicParseError, match="Position status reported but not supported by LN Feature"):
+            characteristic.parse_value(measurement_data, ctx=ctx)
+
+    def test_location_and_speed_rejects_source_flags_without_ln_feature_support(
+        self, characteristic: LocationAndSpeedCharacteristic
+    ) -> None:
+        """LN Feature context rejects source flags when their features are unsupported."""
+        ln_feature = LNFeatureCharacteristic()
+        feature_parsed = ln_feature.parse_value(bytearray([0x00, 0x00, 0x00, 0x00]))
+        ctx = CharacteristicContext(
+            other_characteristics={str(LNFeatureCharacteristic.get_class_uuid()): feature_parsed}
+        )
+
+        with pytest.raises(CharacteristicParseError, match="Elevation source reported but not supported by LN Feature"):
+            characteristic.parse_value(bytearray([0x00, 0x04]), ctx=ctx)
+
+        with pytest.raises(CharacteristicParseError, match="Heading source reported but not supported by LN Feature"):
+            characteristic.parse_value(bytearray([0x00, 0x10]), ctx=ctx)
+
+    def test_location_and_speed_parses_without_ln_feature_context(
+        self, characteristic: LocationAndSpeedCharacteristic
+    ) -> None:
+        """Optional LN Feature absence does not block measurement parse."""
+        measurement_data = bytearray([0x01, 0x00, 0x64, 0x00])
+        result = characteristic.parse_value(measurement_data, ctx=None)
+        assert result.instantaneous_speed == 1.0
