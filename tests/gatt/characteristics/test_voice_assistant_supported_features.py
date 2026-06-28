@@ -1,0 +1,48 @@
+from __future__ import annotations
+
+import pytest
+
+from bluetooth_sig.gatt.characteristics.voice_assistant_supported_features import (  # type: ignore[import-untyped]
+    VoiceAssistantSupportedFeatures,
+    VoiceAssistantSupportedFeaturesCharacteristic,
+)
+from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError, CharacteristicParseError
+
+from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
+
+
+class TestVoiceAssistantSupportedFeaturesCharacteristic(CommonCharacteristicTests):
+    @pytest.fixture
+    def characteristic(self) -> VoiceAssistantSupportedFeaturesCharacteristic:
+        return VoiceAssistantSupportedFeaturesCharacteristic()
+
+    @pytest.fixture
+    def expected_uuid(self) -> str:
+        return "2C38"
+
+    @pytest.fixture
+    def valid_test_data(self) -> list[CharacteristicTestData]:
+        return [
+            CharacteristicTestData(
+                bytearray([VoiceAssistantSupportedFeatures(0)]),
+                VoiceAssistantSupportedFeatures(0),
+                "session flags disabled",
+            ),
+            CharacteristicTestData(
+                bytearray([VoiceAssistantSupportedFeatures.SESSION_FLAGS_ENABLED]),
+                VoiceAssistantSupportedFeatures.SESSION_FLAGS_ENABLED,
+                "session flags enabled",
+            ),
+        ]
+
+    def test_empty_payload_fails(self, characteristic: VoiceAssistantSupportedFeaturesCharacteristic) -> None:
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray())
+
+    def test_rfu_bits_fail(self, characteristic: VoiceAssistantSupportedFeaturesCharacteristic) -> None:
+        with pytest.raises(CharacteristicEncodeError):
+            characteristic.build_value(VoiceAssistantSupportedFeatures(0x02))
+
+    def test_multi_octet_payload_fails(self, characteristic: VoiceAssistantSupportedFeaturesCharacteristic) -> None:
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([0x01, 0x00]))

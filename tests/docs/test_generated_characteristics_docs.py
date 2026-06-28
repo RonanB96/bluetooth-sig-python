@@ -7,6 +7,9 @@ from scripts import generate_char_service_list
 
 def test_generated_characteristics_docs_include_registry_coverage() -> None:
     """Generated reference docs should describe implementation coverage accurately."""
+    # docs/source/reference/characteristics.md is auto-generated at docs-build time
+    # and intentionally gitignored, so the freshly generated markdown is the source
+    # of truth here rather than a committed artifact.
     markdown = generate_char_service_list.generate_markdown()
     (
         implemented_characteristics,
@@ -22,9 +25,16 @@ def test_generated_characteristics_docs_include_registry_coverage() -> None:
     assert f"**{implemented_services} of {total_services}**" in markdown
     if sig_sha != "unknown":
         assert f"[`{sig_sha[:7]}`]({sig_commit_url})" in markdown
-    assert "## Not Yet Implemented Characteristics" in markdown
-    assert "## Not Yet Implemented Services" in markdown
     if missing_characteristics:
-        assert missing_characteristics[0] in markdown
+        assert "## Not Yet Implemented Characteristics" in markdown
+        for characteristic in missing_characteristics:
+            assert characteristic in markdown
+    else:
+        assert "## Not Yet Implemented Characteristics" not in markdown
+
     if missing_services:
-        assert missing_services[0] in markdown
+        assert "## Not Yet Implemented Services" in markdown
+        for service in missing_services:
+            assert service in markdown
+    else:
+        assert "## Not Yet Implemented Services" not in markdown

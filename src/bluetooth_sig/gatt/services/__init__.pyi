@@ -23,6 +23,7 @@ from .broadcast_audio_scan import BroadcastAudioScanService
 from .common_audio import CommonAudioService
 from .constant_tone_extension import ConstantToneExtensionService
 from .continuous_glucose_monitoring import ContinuousGlucoseMonitoringService
+from .cookware import CookwareService
 from .coordinated_set_identification import CoordinatedSetIdentificationService
 from .current_time_service import CurrentTimeService
 from .cycling_power import CyclingPowerService
@@ -40,6 +41,7 @@ from .generic_attribute import GenericAttributeService
 from .generic_health_sensor import GenericHealthSensorService
 from .generic_media_control import GenericMediaControlService
 from .generic_telephone_bearer import GenericTelephoneBearerService
+from .generic_voice_assistant import GenericVoiceAssistantService
 from .glucose import GlucoseService
 from .health_thermometer import HealthThermometerService
 from .hearing_access import HearingAccessService
@@ -77,6 +79,7 @@ from .telephony_and_media_audio import TelephonyAndMediaAudioService
 from .transport_discovery import TransportDiscoveryService
 from .tx_power import TxPowerService
 from .user_data import UserDataService
+from .voice_assistant import VoiceAssistantService
 from .volume_control import VolumeControlService
 from .volume_offset_control import VolumeOffsetControlService
 from .weight_scale import WeightScaleService
@@ -106,6 +109,7 @@ __all__ = [
     "CommonAudioService",
     "ConstantToneExtensionService",
     "ContinuousGlucoseMonitoringService",
+    "CookwareService",
     "CoordinatedSetIdentificationService",
     "CurrentTimeService",
     "CyclingPowerService",
@@ -123,6 +127,7 @@ __all__ = [
     "GenericHealthSensorService",
     "GenericMediaControlService",
     "GenericTelephoneBearerService",
+    "GenericVoiceAssistantService",
     "GlucoseService",
     "HealthThermometerService",
     "HearingAccessService",
@@ -159,6 +164,7 @@ __all__ = [
     "TransportDiscoveryService",
     "TxPowerService",
     "UserDataService",
+    "VoiceAssistantService",
     "VolumeControlService",
     "VolumeOffsetControlService",
     "WeightScaleService",

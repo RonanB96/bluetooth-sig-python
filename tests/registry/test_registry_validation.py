@@ -364,8 +364,10 @@ class TestNameResolutionFallback:
             f"TemperatureCharacteristic should resolve to UUID 2A6E, got {resolved_uuid.short_form}"
         )
 
-        # Now test instance
-        char = TemperatureCharacteristic()
+        # Now test instance. auto_register=False avoids writing the SIG-colliding
+        # name "Temperature" into the global uuid_registry, which would shadow and
+        # (on teardown) drop the real SIG alias. Workaround for issue #217.
+        char = TemperatureCharacteristic(auto_register=False)
 
         # Should have _characteristic_name attribute (all characteristics have this)
         # but it should be None (not explicitly set in class definition)
@@ -455,8 +457,10 @@ class TestNameResolutionFallback:
             f"ModelNumberStringCharacteristic should resolve to UUID 2A24, got {resolved_uuid}"
         )
 
-        # Now test instance
-        char = ModelNumberStringCharacteristic()
+        # Now test instance. auto_register=False avoids writing the SIG-colliding
+        # name "Model Number String" into the global uuid_registry, which would
+        # shadow and (on teardown) drop the real SIG alias. Workaround for issue #217.
+        char = ModelNumberStringCharacteristic(auto_register=False)
 
         name = char.name
         assert name == "Model Number String", f"Expected 'Model Number String', got '{name}'"
