@@ -6,6 +6,7 @@ from enum import IntEnum
 
 import msgspec
 
+from ..constants import SIZE_UINT8
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .utils import DataParser
@@ -33,7 +34,7 @@ class RecipeControlCharacteristic(BaseCharacteristic[RecipeControlData]):
     org.bluetooth.characteristic.recipe_control
     """
 
-    min_length = 1
+    min_length = SIZE_UINT8
     max_length = 3
     allow_variable_length = True
     _FULL_PAYLOAD_LENGTH = 3
@@ -41,12 +42,12 @@ class RecipeControlCharacteristic(BaseCharacteristic[RecipeControlData]):
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> RecipeControlData:
-        if len(data) not in {1, 3}:
+        if len(data) not in {SIZE_UINT8, self._FULL_PAYLOAD_LENGTH}:
             raise ValueError("Recipe Control payload must be 1 or 3 bytes")
 
         op_code = RecipeControlOpCode(DataParser.parse_int8(data, 0, signed=False))
         cooking_step_index = (
-            DataParser.parse_int16(data, 1, signed=False) if len(data) == self._FULL_PAYLOAD_LENGTH else None
+            DataParser.parse_int16(data, SIZE_UINT8, signed=False) if len(data) == self._FULL_PAYLOAD_LENGTH else None
         )
         return RecipeControlData(op_code=op_code, cooking_step_index=cooking_step_index)
 

@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 from .base import BaseCharacteristic
-from .templates import Uint8Template
+from .templates import Utf8StringTemplate
 
 
-class InstalledLocationCharacteristic(BaseCharacteristic[int]):
+class InstalledLocationCharacteristic(BaseCharacteristic[str]):
     """Installed Location characteristic (0x2C34).
 
     org.bluetooth.characteristic.installed_location
 
-    Bluetooth Assigned Numbers defines this characteristic as a
-    one-octet location code.
+    VAS defines this characteristic as a variable-length UTF-8 string.
     """
 
-    _template = Uint8Template()
+    _template = Utf8StringTemplate()

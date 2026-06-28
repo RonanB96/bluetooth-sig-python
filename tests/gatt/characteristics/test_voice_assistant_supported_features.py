@@ -24,14 +24,14 @@ class TestVoiceAssistantSupportedFeaturesCharacteristic(CommonCharacteristicTest
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                bytearray([0x03]),
-                VoiceAssistantSupportedFeatures.TEXT_QUERY | VoiceAssistantSupportedFeatures.VOICE_QUERY,
-                "2 bits",
+                bytearray([VoiceAssistantSupportedFeatures(0)]),
+                VoiceAssistantSupportedFeatures(0),
+                "session flags disabled",
             ),
             CharacteristicTestData(
-                bytearray([0x11]),
-                VoiceAssistantSupportedFeatures.TEXT_QUERY | VoiceAssistantSupportedFeatures.CONTEXT_AWARE_RESPONSES,
-                "32-bit form",
+                bytearray([VoiceAssistantSupportedFeatures.SESSION_FLAGS_ENABLED]),
+                VoiceAssistantSupportedFeatures.SESSION_FLAGS_ENABLED,
+                "session flags enabled",
             ),
         ]
 
@@ -39,6 +39,10 @@ class TestVoiceAssistantSupportedFeaturesCharacteristic(CommonCharacteristicTest
         with pytest.raises(CharacteristicParseError):
             characteristic.parse_value(bytearray())
 
-    def test_build_value_too_large_fails(self, characteristic: VoiceAssistantSupportedFeaturesCharacteristic) -> None:
+    def test_rfu_bits_fail(self, characteristic: VoiceAssistantSupportedFeaturesCharacteristic) -> None:
         with pytest.raises(CharacteristicEncodeError):
-            characteristic.build_value(VoiceAssistantSupportedFeatures(0x1_0000_0000))
+            characteristic.build_value(VoiceAssistantSupportedFeatures(0x02))
+
+    def test_multi_octet_payload_fails(self, characteristic: VoiceAssistantSupportedFeaturesCharacteristic) -> None:
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([0x01, 0x00]))

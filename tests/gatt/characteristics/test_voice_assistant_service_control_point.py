@@ -3,6 +3,9 @@ from __future__ import annotations
 import pytest
 
 from bluetooth_sig.gatt.characteristics.voice_assistant_service_control_point import (  # type: ignore[import-untyped]
+    VoiceAssistantControlPointOpcode,
+    VoiceAssistantControlPointResponseCode,
+    VoiceAssistantControlPointResponseOpcode,
     VoiceAssistantServiceControlPointCharacteristic,
     VoiceAssistantServiceControlPointData,
 )
@@ -24,14 +27,24 @@ class TestVoiceAssistantServiceControlPointCharacteristic(CommonCharacteristicTe
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
             CharacteristicTestData(
-                bytearray([0x01]),
-                VoiceAssistantServiceControlPointData(opcode=1, parameter=b""),
-                "opcode only",
+                bytearray([VoiceAssistantControlPointOpcode.START_SESSION]),
+                VoiceAssistantServiceControlPointData(
+                    opcode=VoiceAssistantControlPointOpcode.START_SESSION,
+                ),
+                "start session command",
             ),
             CharacteristicTestData(
-                bytearray([0x02, 0x10, 0x20]),
-                VoiceAssistantServiceControlPointData(opcode=2, parameter=b"\x10\x20"),
-                "opcode + params",
+                bytearray(
+                    [
+                        VoiceAssistantControlPointResponseOpcode.RESPONSE_CODE,
+                        VoiceAssistantControlPointResponseCode.SUCCESS,
+                    ]
+                ),
+                VoiceAssistantServiceControlPointData(
+                    opcode=VoiceAssistantControlPointResponseOpcode.RESPONSE_CODE,
+                    response_code=VoiceAssistantControlPointResponseCode.SUCCESS,
+                ),
+                "response code",
             ),
         ]
 
@@ -41,4 +54,19 @@ class TestVoiceAssistantServiceControlPointCharacteristic(CommonCharacteristicTe
 
     def test_invalid_opcode_build_fails(self, characteristic: VoiceAssistantServiceControlPointCharacteristic) -> None:
         with pytest.raises(CharacteristicEncodeError):
-            characteristic.build_value(VoiceAssistantServiceControlPointData(opcode=300, parameter=b""))
+            characteristic.build_value(VoiceAssistantServiceControlPointData(opcode=300))  # type: ignore[arg-type]
+
+    def test_command_parameters_fail(self, characteristic: VoiceAssistantServiceControlPointCharacteristic) -> None:
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([VoiceAssistantControlPointOpcode.STOP_SESSION, 0x01]))
+
+    def test_command_response_code_build_fails(
+        self, characteristic: VoiceAssistantServiceControlPointCharacteristic
+    ) -> None:
+        with pytest.raises(CharacteristicEncodeError):
+            characteristic.build_value(
+                VoiceAssistantServiceControlPointData(
+                    opcode=VoiceAssistantControlPointOpcode.START_SESSION,
+                    response_code=VoiceAssistantControlPointResponseCode.SUCCESS,
+                )
+            )

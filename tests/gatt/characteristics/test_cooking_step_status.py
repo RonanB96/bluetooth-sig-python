@@ -7,7 +7,8 @@ from bluetooth_sig.gatt.characteristics.cooking_step_status import (  # type: ig
     CookingStepStatusData,
     CookingStepStatusFlags,
 )
-from bluetooth_sig.gatt.exceptions import CharacteristicParseError
+from bluetooth_sig.gatt.exceptions import CharacteristicParseError, SpecialValueDetectedError
+from bluetooth_sig.types import SpecialValueType
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -38,7 +39,7 @@ class TestCookingStepStatusCharacteristic(CommonCharacteristicTests):
                     cooking_step_index=2,
                     remaining_time_seconds=0,
                 ),
-                "started and active",
+                "started and complete",
             ),
         ]
 
@@ -49,3 +50,16 @@ class TestCookingStepStatusCharacteristic(CommonCharacteristicTests):
     def test_oversized_payload_fails(self, characteristic: CookingStepStatusCharacteristic) -> None:
         with pytest.raises(CharacteristicParseError):
             characteristic.parse_value(bytearray([0x00, 0x01, 0x00, 0x2C, 0x01, 0x00]))
+
+    def test_rfu_remaining_time_fails(self, characteristic: CookingStepStatusCharacteristic) -> None:
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([0x00, 0x01, 0x00, 0x01, 0xFF]))
+
+    def test_unknown_remaining_time_raises_special_value(self, characteristic: CookingStepStatusCharacteristic) -> None:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
+            characteristic.parse_value(bytearray([0x04, 0x02, 0x00, 0xFF, 0xFF]))
+        assert exc_info.value.special_value.value_type == SpecialValueType.UNKNOWN
+
+    def test_rfu_flags_fail(self, characteristic: CookingStepStatusCharacteristic) -> None:
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([0x08, 0x01, 0x00, 0x00, 0x00]))

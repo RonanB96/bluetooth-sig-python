@@ -9,7 +9,8 @@ from bluetooth_sig.gatt.characteristics.cooking_common import (  # type: ignore[
 from bluetooth_sig.gatt.characteristics.cooking_zone_actual_cooking_conditions import (  # type: ignore[import-untyped]
     CookingZoneActualCookingConditionsCharacteristic,
 )
-from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError, CharacteristicParseError
+from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError, CharacteristicParseError, SpecialValueDetectedError
+from bluetooth_sig.types import SpecialValueType
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -54,3 +55,27 @@ class TestCookingZoneActualCookingConditionsCharacteristic(CommonCharacteristicT
     ) -> None:
         with pytest.raises(CharacteristicEncodeError):
             characteristic.build_value(CookingConditionsData(flags=CookingConditionsFlags.POWER_LEVEL_PRESENT))
+
+    def test_missing_manufacturer_data_when_flag_set_fails(
+        self, characteristic: CookingZoneActualCookingConditionsCharacteristic
+    ) -> None:
+        with pytest.raises(CharacteristicEncodeError):
+            characteristic.build_value(CookingConditionsData(flags=CookingConditionsFlags.MANUFACTURER_DATA_PRESENT))
+
+    def test_temperature_unknown_sentinel_raises_special_value(
+        self, characteristic: CookingZoneActualCookingConditionsCharacteristic
+    ) -> None:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
+            characteristic.parse_value(bytearray([0x02, 0x00, 0x00, 0x80]))
+        assert exc_info.value.special_value.value_type == SpecialValueType.UNKNOWN
+
+    def test_humidity_unknown_sentinel_raises_special_value(
+        self, characteristic: CookingZoneActualCookingConditionsCharacteristic
+    ) -> None:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
+            characteristic.parse_value(bytearray([0x04, 0x00, 0xFF, 0xFF]))
+        assert exc_info.value.special_value.value_type == SpecialValueType.UNKNOWN
+
+    def test_rfu_flags_fail(self, characteristic: CookingZoneActualCookingConditionsCharacteristic) -> None:
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([0x20, 0x00]))

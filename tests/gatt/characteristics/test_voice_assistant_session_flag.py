@@ -23,10 +23,14 @@ class TestVoiceAssistantSessionFlagCharacteristic(CommonCharacteristicTests):
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
-            CharacteristicTestData(bytearray([0x01]), VoiceAssistantSessionFlags.SESSION_ACTIVE, "active flag"),
             CharacteristicTestData(
-                bytearray([0x05]),
-                VoiceAssistantSessionFlags.SESSION_ACTIVE | VoiceAssistantSessionFlags.PRIVACY_MODE_ENABLED,
+                bytearray([VoiceAssistantSessionFlags.LISTENING_NOW]),
+                VoiceAssistantSessionFlags.LISTENING_NOW,
+                "listening",
+            ),
+            CharacteristicTestData(
+                bytearray([VoiceAssistantSessionFlags.LISTENING_NOW | VoiceAssistantSessionFlags.PLAYBACK_NOW]),
+                VoiceAssistantSessionFlags.LISTENING_NOW | VoiceAssistantSessionFlags.PLAYBACK_NOW,
                 "two flags",
             ),
         ]
@@ -35,6 +39,10 @@ class TestVoiceAssistantSessionFlagCharacteristic(CommonCharacteristicTests):
         with pytest.raises(CharacteristicParseError):
             characteristic.parse_value(bytearray())
 
-    def test_build_value_too_large_fails(self, characteristic: VoiceAssistantSessionFlagCharacteristic) -> None:
+    def test_rfu_bits_fail(self, characteristic: VoiceAssistantSessionFlagCharacteristic) -> None:
         with pytest.raises(CharacteristicEncodeError):
-            characteristic.build_value(VoiceAssistantSessionFlags(0x1_0000))
+            characteristic.build_value(VoiceAssistantSessionFlags(0x08))
+
+    def test_two_octet_payload_fails(self, characteristic: VoiceAssistantSessionFlagCharacteristic) -> None:
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray([0x01, 0x00]))

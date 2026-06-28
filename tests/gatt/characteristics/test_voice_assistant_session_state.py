@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from typing import cast
+
 import pytest
 
 from bluetooth_sig.gatt.characteristics.voice_assistant_session_state import (  # type: ignore[import-untyped]
+    VoiceAssistantSessionState,
     VoiceAssistantSessionStateCharacteristic,
 )
 from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError, CharacteristicParseError
@@ -22,8 +25,16 @@ class TestVoiceAssistantSessionStateCharacteristic(CommonCharacteristicTests):
     @pytest.fixture
     def valid_test_data(self) -> list[CharacteristicTestData]:
         return [
-            CharacteristicTestData(bytearray([0x00]), 0, "idle"),
-            CharacteristicTestData(bytearray([0x02]), 2, "active"),
+            CharacteristicTestData(
+                bytearray([VoiceAssistantSessionState.SESSION_RESET]),
+                VoiceAssistantSessionState.SESSION_RESET,
+                "reset",
+            ),
+            CharacteristicTestData(
+                bytearray([VoiceAssistantSessionState.SESSION_ACTIVE]),
+                VoiceAssistantSessionState.SESSION_ACTIVE,
+                "active",
+            ),
         ]
 
     def test_empty_payload_fails(self, characteristic: VoiceAssistantSessionStateCharacteristic) -> None:
@@ -32,4 +43,4 @@ class TestVoiceAssistantSessionStateCharacteristic(CommonCharacteristicTests):
 
     def test_build_out_of_range_fails(self, characteristic: VoiceAssistantSessionStateCharacteristic) -> None:
         with pytest.raises(CharacteristicEncodeError):
-            characteristic.build_value(999)
+            characteristic.build_value(cast(VoiceAssistantSessionState, 999))

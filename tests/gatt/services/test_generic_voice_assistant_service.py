@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from bluetooth_sig.gatt.services import GattServiceRegistry
 from bluetooth_sig.gatt.services.generic_voice_assistant import (  # type: ignore[import-untyped]
     GenericVoiceAssistantService,
 )
@@ -22,11 +23,27 @@ class TestGenericVoiceAssistantService(CommonServiceTests):
         return "185F"
 
     def test_expected_characteristics_count(self, service: GenericVoiceAssistantService) -> None:
-        assert len(service.get_expected_characteristics()) == 9
+        assert set(service.get_expected_characteristics()) == {
+            CharacteristicName.VOICE_ASSISTANT_NAME,
+            CharacteristicName.VOICE_ASSISTANT_UUID,
+            CharacteristicName.VOICE_ASSISTANT_SERVICE_CONTROL_POINT,
+            CharacteristicName.CONTENT_CONTROL_ID,
+            CharacteristicName.VOICE_ASSISTANT_SESSION_STATE,
+            CharacteristicName.VOICE_ASSISTANT_SUPPORTED_FEATURES,
+            CharacteristicName.INSTALLED_LOCATION,
+            CharacteristicName.VOICE_ASSISTANT_SESSION_FLAG,
+            CharacteristicName.VOICE_ASSISTANT_SUPPORTED_LANGUAGES,
+        }
 
     def test_required_characteristics_match_vas_table(self, service: GenericVoiceAssistantService) -> None:
-        required = service.get_required_characteristics()
-        assert CharacteristicName.VOICE_ASSISTANT_NAME in required
-        assert CharacteristicName.CONTENT_CONTROL_ID in required
-        assert CharacteristicName.VOICE_ASSISTANT_SUPPORTED_FEATURES in required
-        assert CharacteristicName.VOICE_ASSISTANT_SUPPORTED_LANGUAGES not in required
+        assert set(service.get_required_characteristics()) == {
+            CharacteristicName.VOICE_ASSISTANT_NAME,
+            CharacteristicName.VOICE_ASSISTANT_UUID,
+            CharacteristicName.VOICE_ASSISTANT_SERVICE_CONTROL_POINT,
+            CharacteristicName.CONTENT_CONTROL_ID,
+            CharacteristicName.VOICE_ASSISTANT_SESSION_STATE,
+            CharacteristicName.VOICE_ASSISTANT_SUPPORTED_FEATURES,
+        }
+
+    def test_service_registration(self) -> None:
+        assert GattServiceRegistry.get_service_class("185F") == GenericVoiceAssistantService

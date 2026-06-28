@@ -30,6 +30,10 @@ class TestVoiceAssistantNameCharacteristic(CommonCharacteristicTests):
         with pytest.raises(CharacteristicParseError):
             characteristic.parse_value(bytearray([0xFF]))
 
+    def test_empty_name_fails(self, characteristic: VoiceAssistantNameCharacteristic) -> None:
+        with pytest.raises(CharacteristicParseError):
+            characteristic.parse_value(bytearray())
+
     def test_build_too_long_string_fails(self, characteristic: VoiceAssistantNameCharacteristic) -> None:
         with pytest.raises(CharacteristicEncodeError):
             characteristic.build_value("y" * 300)

@@ -6,19 +6,17 @@ import msgspec
 
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
-from .utils import DataParser
 
 
 class CookwareSensorAggregateValue(msgspec.Struct, frozen=True, kw_only=True):
     """Decoded Cookware Sensor Aggregate payload.
 
-    Bluetooth Assigned Numbers define this characteristic ID but do not publish
-    a GSS schema yet. The parser preserves the mandatory flags field and
-    variable-length aggregate payload for higher-layer interpretation.
+    CWS defines this value as the concatenation of participating Cookware
+    Sensor Data characteristic values. Segment boundaries are described by the
+    Cooking Sensor Info descriptor Aggregate Offset fields.
     """
 
-    flags: int
-    aggregate_payload: bytes = b""
+    aggregate_data: bytes = b""
 
 
 class CookwareSensorAggregateCharacteristic(BaseCharacteristic[CookwareSensorAggregateValue]):
@@ -27,18 +25,12 @@ class CookwareSensorAggregateCharacteristic(BaseCharacteristic[CookwareSensorAgg
     org.bluetooth.characteristic.cookware_sensor_aggregate
     """
 
-    min_length = 2
     allow_variable_length = True
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> CookwareSensorAggregateValue:
-        flags = DataParser.parse_int16(data, 0, signed=False)
-        payload = bytes(data[2:])
-        return CookwareSensorAggregateValue(flags=flags, aggregate_payload=payload)
+        return CookwareSensorAggregateValue(aggregate_data=bytes(data))
 
     def _encode_value(self, data: CookwareSensorAggregateValue) -> bytearray:
-        result = bytearray()
-        result.extend(DataParser.encode_int16(data.flags, signed=False))
-        result.extend(data.aggregate_payload)
-        return result
+        return bytearray(data.aggregate_data)

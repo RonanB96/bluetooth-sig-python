@@ -114,6 +114,8 @@ class ParsePipeline:
 
         try:
             decoded_value = self._decode_and_validate(data_bytes, enable_trace, parse_trace, ctx, validation, validate)
+        except SpecialValueDetectedError:
+            raise
         except Exception as e:
             if enable_trace:
                 parse_trace.append(f"Parse failed: {type(e).__name__}: {e}")

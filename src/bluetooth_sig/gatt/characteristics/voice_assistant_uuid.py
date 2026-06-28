@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ..constants import SIZE_UUID128
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 
@@ -15,8 +16,7 @@ class VoiceAssistantUUIDCharacteristic(BaseCharacteristic[bytes]):
     the voice assistant instance.
     """
 
-    expected_length = 16
-    _UUID_LENGTH = 16
+    expected_length = SIZE_UUID128
 
     def _decode_value(
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
@@ -24,6 +24,4 @@ class VoiceAssistantUUIDCharacteristic(BaseCharacteristic[bytes]):
         return bytes(data)
 
     def _encode_value(self, data: bytes) -> bytearray:
-        if len(data) != self._UUID_LENGTH:
-            raise ValueError("voice assistant UUID must be exactly 16 bytes")
         return bytearray(data)

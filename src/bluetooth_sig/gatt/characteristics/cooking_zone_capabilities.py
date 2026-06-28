@@ -6,15 +6,15 @@ from enum import IntEnum, IntFlag
 
 import msgspec
 
+from ..constants import SIZE_UINT8, SIZE_UINT16, SIZE_UINT24
 from ..context import CharacteristicContext
 from .base import BaseCharacteristic
 from .cooking_common import (
-    decode_cooking_temperature,
-    decode_kitchen_airflow,
-    decode_perceived_power,
-    encode_cooking_temperature,
-    encode_kitchen_airflow,
-    encode_perceived_power,
+    COOKING_TEMPERATURE,
+    COOKING_ZONE_PERCEIVED_POWER,
+    KITCHEN_APPLIANCE_AIRFLOW,
+    POWER,
+    validate_flags,
 )
 from .utils import DataParser
 
@@ -46,9 +46,9 @@ class CookingZoneCapabilitiesData(msgspec.Struct, frozen=True, kw_only=True):
     """Decoded Cooking Zone Capabilities payload."""
 
     flags: CookingZoneCapabilitiesFlags
-    power_technology: int
+    power_technology: PowerTechnology
     number_of_cooking_steps: int
-    nominal_power_raw: int | None = None
+    nominal_power: float | None = None
     boost_level_percent: int | None = None
     minimum_available_power: float | None = None
     maximum_temperature: float | None = None
@@ -69,38 +69,43 @@ class CookingZoneCapabilitiesCharacteristic(BaseCharacteristic[CookingZoneCapabi
         self, data: bytearray, ctx: CharacteristicContext | None = None, *, validate: bool = True
     ) -> CookingZoneCapabilitiesData:
         flags = CookingZoneCapabilitiesFlags(DataParser.parse_int16(data, 0, signed=False))
-        power_technology = DataParser.parse_int8(data, 2, signed=False)
+        validate_flags(flags, CookingZoneCapabilitiesFlags, "Cooking Zone Capabilities Flags")
+        power_technology = PowerTechnology(DataParser.parse_int8(data, 2, signed=False))
         number_of_cooking_steps = DataParser.parse_int16(data, 3, signed=False)
 
         offset = 5
-        nominal_power_raw = None
+        nominal_power = None
         boost_level_percent = None
         minimum_available_power = None
         if flags & CookingZoneCapabilitiesFlags.POWER_CONTROL_SUPPORTED:
-            nominal_power_raw = DataParser.parse_int24(data, offset, signed=False)
-            offset += 3
+            nominal_power = POWER.parse_value(bytearray(data[offset : offset + SIZE_UINT24]))
+            offset += SIZE_UINT24
             boost_level_percent = DataParser.parse_int8(data, offset, signed=False)
-            offset += 1
-            minimum_available_power = decode_perceived_power(DataParser.parse_int16(data, offset, signed=False))
-            offset += 2
+            offset += SIZE_UINT8
+            minimum_available_power = COOKING_ZONE_PERCEIVED_POWER.parse_value(
+                bytearray(data[offset : offset + SIZE_UINT16])
+            )
+            offset += SIZE_UINT16
 
         maximum_temperature = None
         minimum_temperature = None
         if flags & CookingZoneCapabilitiesFlags.TEMPERATURE_CONTROL_SUPPORTED:
-            maximum_temperature = decode_cooking_temperature(DataParser.parse_int16(data, offset, signed=True))
-            offset += 2
-            minimum_temperature = decode_cooking_temperature(DataParser.parse_int16(data, offset, signed=True))
-            offset += 2
+            maximum_temperature = COOKING_TEMPERATURE.parse_value(bytearray(data[offset : offset + SIZE_UINT16]))
+            offset += SIZE_UINT16
+            minimum_temperature = COOKING_TEMPERATURE.parse_value(bytearray(data[offset : offset + SIZE_UINT16]))
+            offset += SIZE_UINT16
 
         maximum_blower_fan_airflow = None
         if flags & CookingZoneCapabilitiesFlags.BLOWER_FAN_AIRFLOW_SUPPORTED:
-            maximum_blower_fan_airflow = decode_kitchen_airflow(DataParser.parse_int16(data, offset, signed=False))
+            maximum_blower_fan_airflow = KITCHEN_APPLIANCE_AIRFLOW.parse_value(
+                bytearray(data[offset : offset + SIZE_UINT16])
+            )
 
         return CookingZoneCapabilitiesData(
             flags=flags,
             power_technology=power_technology,
             number_of_cooking_steps=number_of_cooking_steps,
-            nominal_power_raw=nominal_power_raw,
+            nominal_power=nominal_power,
             boost_level_percent=boost_level_percent,
             minimum_available_power=minimum_available_power,
             maximum_temperature=maximum_temperature,
@@ -109,33 +114,28 @@ class CookingZoneCapabilitiesCharacteristic(BaseCharacteristic[CookingZoneCapabi
         )
 
     def _encode_value(self, data: CookingZoneCapabilitiesData) -> bytearray:
+        validate_flags(data.flags, CookingZoneCapabilitiesFlags, "Cooking Zone Capabilities Flags")
         result = bytearray()
         result.extend(DataParser.encode_int16(int(data.flags), signed=False))
         result.extend(DataParser.encode_int8(data.power_technology, signed=False))
         result.extend(DataParser.encode_int16(data.number_of_cooking_steps, signed=False))
 
         if data.flags & CookingZoneCapabilitiesFlags.POWER_CONTROL_SUPPORTED:
-            if (
-                data.nominal_power_raw is None
-                or data.boost_level_percent is None
-                or data.minimum_available_power is None
-            ):
+            if data.nominal_power is None or data.boost_level_percent is None or data.minimum_available_power is None:
                 raise ValueError("power control fields are required when POWER_CONTROL_SUPPORTED is set")
-            result.extend(DataParser.encode_int24(data.nominal_power_raw, signed=False))
+            result.extend(POWER.build_value(data.nominal_power))
             result.extend(DataParser.encode_int8(data.boost_level_percent, signed=False))
-            result.extend(DataParser.encode_int16(encode_perceived_power(data.minimum_available_power), signed=False))
+            result.extend(COOKING_ZONE_PERCEIVED_POWER.build_value(data.minimum_available_power))
 
         if data.flags & CookingZoneCapabilitiesFlags.TEMPERATURE_CONTROL_SUPPORTED:
             if data.maximum_temperature is None or data.minimum_temperature is None:
                 raise ValueError("temperature fields are required when TEMPERATURE_CONTROL_SUPPORTED is set")
-            result.extend(DataParser.encode_int16(encode_cooking_temperature(data.maximum_temperature), signed=True))
-            result.extend(DataParser.encode_int16(encode_cooking_temperature(data.minimum_temperature), signed=True))
+            result.extend(COOKING_TEMPERATURE.build_value(data.maximum_temperature))
+            result.extend(COOKING_TEMPERATURE.build_value(data.minimum_temperature))
 
         if data.flags & CookingZoneCapabilitiesFlags.BLOWER_FAN_AIRFLOW_SUPPORTED:
             if data.maximum_blower_fan_airflow is None:
                 raise ValueError("maximum_blower_fan_airflow is required when BLOWER_FAN_AIRFLOW_SUPPORTED is set")
-            result.extend(
-                DataParser.encode_int16(encode_kitchen_airflow(data.maximum_blower_fan_airflow), signed=False)
-            )
+            result.extend(KITCHEN_APPLIANCE_AIRFLOW.build_value(data.maximum_blower_fan_airflow))
 
         return result

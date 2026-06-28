@@ -5,7 +5,8 @@ import pytest
 from bluetooth_sig.gatt.characteristics.cooking_temperature import (  # type: ignore[import-untyped]
     CookingTemperatureCharacteristic,
 )
-from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError, CharacteristicParseError
+from bluetooth_sig.gatt.exceptions import CharacteristicEncodeError, CharacteristicParseError, SpecialValueDetectedError
+from bluetooth_sig.types import SpecialValueType
 
 from .test_characteristic_common import CharacteristicTestData, CommonCharacteristicTests
 
@@ -33,3 +34,8 @@ class TestCookingTemperatureCharacteristic(CommonCharacteristicTests):
     def test_out_of_range_build_fails(self, characteristic: CookingTemperatureCharacteristic) -> None:
         with pytest.raises(CharacteristicEncodeError):
             characteristic.build_value(5000.0)
+
+    def test_unknown_sentinel_raises_special_value(self, characteristic: CookingTemperatureCharacteristic) -> None:
+        with pytest.raises(SpecialValueDetectedError) as exc_info:
+            characteristic.parse_value(bytearray([0x00, 0x80]))
+        assert exc_info.value.special_value.value_type == SpecialValueType.UNKNOWN
