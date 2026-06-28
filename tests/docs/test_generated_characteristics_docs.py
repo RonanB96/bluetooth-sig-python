@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from scripts import generate_char_service_list
 
 
 def test_generated_characteristics_docs_include_registry_coverage() -> None:
     """Generated reference docs should describe implementation coverage accurately."""
+    # docs/source/reference/characteristics.md is auto-generated at docs-build time
+    # and intentionally gitignored, so the freshly generated markdown is the source
+    # of truth here rather than a committed artifact.
     markdown = generate_char_service_list.generate_markdown()
-    committed_markdown = Path("docs/source/reference/characteristics.md").read_text(encoding="utf-8")
     (
         implemented_characteristics,
         total_characteristics,
@@ -21,7 +21,6 @@ def test_generated_characteristics_docs_include_registry_coverage() -> None:
     ) = generate_char_service_list.get_coverage_summary()
     sig_sha, sig_commit_url = generate_char_service_list.get_sig_submodule_context()
 
-    assert committed_markdown == markdown
     assert f"**{implemented_characteristics} of {total_characteristics}**" in markdown
     assert f"**{implemented_services} of {total_services}**" in markdown
     if sig_sha != "unknown":
