@@ -253,7 +253,6 @@ native/compile_commands.json
 # Generator and emitter output. Distribution is separate from this repository.
 /generated/
 /native/generated/
-/native/previous/temperature_range/generated/
 
 # Local architecture and planning notes.
 /docs/adr/
@@ -262,17 +261,3 @@ native/compile_commands.json
 
 # Local migration inventory. Not used by the characteristic pipeline.
 /scripts/generate_characteristic_inventory.py
-
-# Local experiments and the previous native port.
-# Lasting native source is native/.clang-format and native/modules/.
-/examples/codec_scale/
-/native/previous/
-/native/include/
-/native/src/
-/native/spec/
-/native/tests/
-/native/tools/
-/native/CMakeLists.txt
-/native/CMakePresets.json
-/native/README.md
-/native/vcpkg.json
