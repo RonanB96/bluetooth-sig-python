@@ -209,6 +209,9 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+# Local symlinks to the user rules and skills directories (~/.cursor/rules, ~/.cursor/skills).
+.cursor/rules
+.cursor/skills
 
 # Marimo
 marimo/_static/
@@ -241,3 +244,35 @@ docs/benchmarks/*.json.cache/gen_ref/
 src/bluetooth_sig/_version.py
 
 .tmp/
+
+# Native C/C++ core build artifacts
+native/build/
+native/.cache/
+native/compile_commands.json
+
+# Generator and emitter output. Distribution is separate from this repository.
+/generated/
+/native/generated/
+/native/previous/temperature_range/generated/
+
+# Local architecture and planning notes.
+/docs/adr/
+/plan/
+/bluetooth-sig-plan-handoff.zip
+
+# Local migration inventory. Not used by the characteristic pipeline.
+/scripts/generate_characteristic_inventory.py
+
+# Local experiments and the previous native port.
+# Lasting native source is native/.clang-format and native/modules/.
+/examples/codec_scale/
+/native/previous/
+/native/include/
+/native/src/
+/native/spec/
+/native/tests/
+/native/tools/
+/native/CMakeLists.txt
+/native/CMakePresets.json
+/native/README.md
+/native/vcpkg.json
