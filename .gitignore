@@ -245,14 +245,14 @@ src/bluetooth_sig/_version.py
 
 .tmp/
 
-# Native C/C++ core build artifacts
-native/build/
-native/.cache/
-native/compile_commands.json
+# C/C++ library build artifacts
+btsig/build/
+btsig/.cache/
+btsig/compile_commands.json
 
 # Generator and emitter output. Distribution is separate from this repository.
 /generated/
-/native/generated/
+/btsig/generated/
 
 # Local architecture and planning notes.
 /docs/adr/

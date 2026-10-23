@@ -44,9 +44,9 @@ def test_emitted_code_calls_the_handwritten_codec(tmp_path: Path) -> None:
         assert "virtual " not in text
         assert all(len(line) <= 120 for line in text.splitlines())
 
-    source = emitted["native/generated/temperature/src/temperature.cpp"].decode()
-    header = emitted["native/generated/temperature/include/btsig/temperature.h"].decode()
-    range_header = emitted["native/generated/temperature_range/include/btsig/temperature_range.h"].decode()
+    source = emitted["btsig/generated/temperature/src/temperature.cpp"].decode()
+    header = emitted["btsig/generated/temperature/include/btsig/temperature.h"].decode()
+    range_header = emitted["btsig/generated/temperature_range/include/btsig/temperature_range.h"].decode()
 
     assert "btsig::decode(" in source
     assert "btsig::encode(" in source

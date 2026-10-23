@@ -452,7 +452,7 @@ def emit_characteristics(
     Args:
         characteristics_path: JSON array of characteristic identifiers.
         root: Repository root used to form the generator command.
-        output_root: Directory that contains ``generated/ir`` and receives ``native/generated``.
+        output_root: Directory that contains ``generated/ir`` and receives ``btsig/generated``.
 
     Returns:
         Output path relative to ``output_root`` mapped to file bytes.
@@ -474,7 +474,7 @@ def emit_characteristics(
     command = f"python -m tools.gss_ir.emit_cpp {relative_list}"
     files: dict[str, str] = {}
     for item in layouts:
-        root_dir = f"native/generated/{item.name}"
+        root_dir = f"btsig/generated/{item.name}"
         files[f"{root_dir}/include/btsig/{item.name}.h"] = _c_header(item, command)
         files[f"{root_dir}/include/btsig/{item.name}.hpp"] = _hpp(item, command)
         files[f"{root_dir}/src/{item.name}.cpp"] = _translation_unit(item, command)

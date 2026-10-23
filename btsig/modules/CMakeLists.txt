@@ -28,7 +28,7 @@ file(GLOB btsig_characteristic_sources CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/../generated/*/src/*.cpp")
 if(NOT btsig_characteristic_sources)
     message(FATAL_ERROR
-        "No generated characteristics in native/generated. "
+        "No generated characteristics in btsig/generated. "
         "Run `python -m tools.gss_ir.generate tools/gss_ir/characteristics.json` "
         "and `python -m tools.gss_ir.emit_cpp tools/gss_ir/characteristics.json`.")
 endif()
