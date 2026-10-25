@@ -31,18 +31,18 @@ struct Sentinel {
 
 struct FieldDescriptor {
     const char* name;
-    btsig_value_kind value_kind;
     const char* unit;
-    std::uint16_t unit_uuid;
     std::size_t offset;
-    wire_type wire;
-    std::int8_t coefficient;
-    std::int8_t decimal_exponent;
-    std::int8_t binary_exponent;
     std::int64_t raw_minimum;
     std::int64_t raw_maximum;
     const Sentinel* sentinels;
     std::size_t sentinel_count;
+    btsig_value_kind value_kind;
+    std::uint16_t unit_uuid;
+    wire_type wire;
+    std::int8_t coefficient;
+    std::int8_t decimal_exponent;
+    std::int8_t binary_exponent;
 };
 
 struct CharacteristicDescriptor {
