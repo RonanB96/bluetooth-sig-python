@@ -59,17 +59,16 @@ python -m pytest tests/ -v
 
 ## Fetching SIG Specs
 
-- Assigned Numbers: https://www.bluetooth.com/specifications/assigned-numbers/
-- Specifications: https://www.bluetooth.com/specifications/specs/
+Adopted specification text is already in `.tmp/sig-specs/` (245 kept documents). Search that. Do not download the catalogue again.
 
-To get a spec's HTML URL (**one spec at a time**):
-1. `curl https://www.bluetooth.com/specifications/specs/` — find the service slug from href links
-2. `curl https://www.bluetooth.com/specifications/specs/{slug}/` — extract public HTML link: `grep -o 'href="[^"]*out/en[^"]*"'`
-3. Extract the full `?src=` value (including any `prefix_timestamp/` portion)
-4. Build URL: `https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/{full_src_value}`
-5. `fetch_webpage` that URL
+- Index: `.tmp/sig-specs/manifest.json`. Use `disposition: kept`.
+- Text: `.tmp/sig-specs/txt/<slug>_spec.txt`.
+- For one title, open the kept entry with the highest numeric version (`1.10` is newer than `1.9`). Skip `not_needed`.
+- Current Core text: `core-specification-6-3`. Supplement data types: `core-specification-supplement-15`. Do not search `core-specification-amended-*` unless that version was requested.
+- Search the chosen file with `rg`. Read a short window around the hit. Do not load a Core or Mesh file whole.
+- HTML text splits headings (`3.1`, then `.`, then the title) and uses pipe tables. PDF text keeps a heading on one line and uses spaced columns. Lines with long dot leaders are the contents list.
 
-**Never** `fetch_webpage` the listing page (strips hrefs). **Never** guess URL patterns. Use the first (no-lock-icon) HTML link, not the "HTML with cross-spec linking" (requires membership).
+Assigned Numbers remain https://www.bluetooth.com/specifications/assigned-numbers/. Fetch a specification from https://www.bluetooth.com/specifications/specs/ only when that slug has no kept text file. Use the first public HTML link (`out/en`), not the locked cross-spec link, and do not guess the URL. Never `fetch_webpage` the listing page.
 
 ## Sub-Instructions
 
