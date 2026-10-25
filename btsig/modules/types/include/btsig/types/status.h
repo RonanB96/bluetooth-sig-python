@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BTSIG_TYPES_STATUS_H
+#define BTSIG_TYPES_STATUS_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -40,3 +41,5 @@ typedef struct btsig_error {
     const char* field;
     btsig_bytes bytes;
 } btsig_error;
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BTSIG_WIRE_WORD_HPP
+#define BTSIG_WIRE_WORD_HPP
 
 #include "btsig/schema/descriptor.hpp"
 
@@ -26,3 +27,5 @@ void write(std::uint8_t* out, std::size_t octets, std::int64_t raw);
 [[nodiscard]] bool encode_real(wire_type type, double value, std::int64_t* raw);
 
 } // namespace btsig::wire
+
+#endif

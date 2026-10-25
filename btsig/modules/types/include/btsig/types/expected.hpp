@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BTSIG_TYPES_EXPECTED_HPP
+#define BTSIG_TYPES_EXPECTED_HPP
 
 #include "btsig/types/status.h"
 
@@ -41,3 +42,5 @@ template <typename T> class expected {
 };
 
 } // namespace btsig
+
+#endif

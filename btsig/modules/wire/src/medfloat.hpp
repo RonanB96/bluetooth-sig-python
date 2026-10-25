@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BTSIG_WIRE_DETAIL_MEDFLOAT_HPP
+#define BTSIG_WIRE_DETAIL_MEDFLOAT_HPP
 
 #include <cstdint>
 
@@ -11,3 +12,5 @@ namespace btsig::wire::detail {
 [[nodiscard]] bool encode_medfloat32(double value, std::int64_t* raw);
 
 } // namespace btsig::wire::detail
+
+#endif

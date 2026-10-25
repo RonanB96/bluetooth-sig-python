@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BTSIG_TYPES_SPAN_HPP
+#define BTSIG_TYPES_SPAN_HPP
 
 #include <cstddef>
 
@@ -22,3 +23,5 @@ template <typename T> class span {
 };
 
 } // namespace btsig
+
+#endif

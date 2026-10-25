@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BTSIG_SCHEMA_DESCRIPTOR_HPP
+#define BTSIG_SCHEMA_DESCRIPTOR_HPP
 
 #include "btsig/types/status.h"
 
@@ -64,3 +65,5 @@ struct CharacteristicDescriptor {
 };
 
 } // namespace btsig
+
+#endif

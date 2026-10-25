@@ -102,17 +102,21 @@ bool in_range(std::int64_t raw, const FieldDescriptor& field) {
 std::size_t member_size(btsig_value_kind kind) {
     switch (kind) {
     case BTSIG_VALUE_UINT8:
+        return sizeof(std::uint8_t);
     case BTSIG_VALUE_SINT8:
-        return 1;
+        return sizeof(std::int8_t);
     case BTSIG_VALUE_UINT16:
+        return sizeof(std::uint16_t);
     case BTSIG_VALUE_SINT16:
-        return 2;
+        return sizeof(std::int16_t);
     case BTSIG_VALUE_UINT32:
+        return sizeof(std::uint32_t);
     case BTSIG_VALUE_SINT32:
-        return 4;
+        return sizeof(std::int32_t);
     case BTSIG_VALUE_UINT64:
+        return sizeof(std::uint64_t);
     case BTSIG_VALUE_DOUBLE:
-        return 8;
+        return sizeof(double);
     }
     return 0;
 }
