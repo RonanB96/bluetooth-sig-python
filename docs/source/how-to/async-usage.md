@@ -56,7 +56,9 @@ async def production_example(address: str):
             hr_data = hr.parse_value(data)
             print(f"Heart Rate: {hr_data.heart_rate} bpm")
 
-        await device.start_notify(HeartRateMeasurementCharacteristic, on_heart_rate)
+        await device.start_notify(
+            HeartRateMeasurementCharacteristic, on_heart_rate
+        )
         await asyncio.sleep(30)  # Monitor for 30 seconds
         await device.stop_notify(HeartRateMeasurementCharacteristic)
 
@@ -112,11 +114,15 @@ async def main():
     translator = BluetoothSIGTranslator()
 
     # Type-safe: IDE knows level is int
-    level: int = await translator.parse_characteristic_async(BatteryLevelCharacteristic, SIMULATED_BATTERY_DATA)
+    level: int = await translator.parse_characteristic_async(
+        BatteryLevelCharacteristic, SIMULATED_BATTERY_DATA
+    )
     print(f"Battery: {level}%")  # Battery: 75%
 
     # Type-safe: IDE knows hr_data is HeartRateMeasurement
-    hr_data = await translator.parse_characteristic_async(HeartRateMeasurementCharacteristic, SIMULATED_HR_DATA)
+    hr_data = await translator.parse_characteristic_async(
+        HeartRateMeasurementCharacteristic, SIMULATED_HR_DATA
+    )
     print(f"Heart Rate: {hr_data.heart_rate} bpm")  # Heart Rate: 72 bpm
 
 
@@ -216,7 +222,9 @@ async def encode_alert():
     translator = BluetoothSIGTranslator()
 
     # Type-safe: value type is checked against characteristic
-    encoded: bytes = await translator.encode_characteristic_async(AlertLevelCharacteristic, AlertLevel.HIGH_ALERT)
+    encoded: bytes = await translator.encode_characteristic_async(
+        AlertLevelCharacteristic, AlertLevel.HIGH_ALERT
+    )
     print(f"Encoded bytes: {encoded.hex()}")  # Encoded bytes: 02
     return encoded
 
@@ -272,8 +280,12 @@ async def read_and_parse(address: str):
         temp_data = await client.read_gatt_char(str(temp.uuid))
 
         # Parse with type-safe async methods
-        level: int = await translator.parse_characteristic_async(BatteryLevelCharacteristic, battery_data)
-        temp_value: float = await translator.parse_characteristic_async(TemperatureCharacteristic, temp_data)
+        level: int = await translator.parse_characteristic_async(
+            BatteryLevelCharacteristic, battery_data
+        )
+        temp_value: float = await translator.parse_characteristic_async(
+            TemperatureCharacteristic, temp_data
+        )
 
         print(f"Battery: {level}%")
         print(f"Temperature: {temp_value}°C")
@@ -313,7 +325,9 @@ async def batch_read_and_parse(address: str):
         char_data = {
             str(battery.uuid): await client.read_gatt_char(str(battery.uuid)),
             str(temp.uuid): await client.read_gatt_char(str(temp.uuid)),
-            str(humidity.uuid): await client.read_gatt_char(str(humidity.uuid)),
+            str(humidity.uuid): await client.read_gatt_char(
+                str(humidity.uuid)
+            ),
         }
 
         # Batch parse asynchronously
@@ -349,7 +363,9 @@ async def write_alert(address: str, level: AlertLevel):
 
     async with BleakClient(address) as client:
         # Encode with type-safety
-        encoded = await translator.encode_characteristic_async(AlertLevelCharacteristic, level)
+        encoded = await translator.encode_characteristic_async(
+            AlertLevelCharacteristic, level
+        )
 
         # Write to device
         await client.write_gatt_char(str(alert.uuid), encoded)
@@ -390,8 +406,12 @@ async def parsing_session_example():
 
     async with AsyncParsingSession(translator) as session:
         # Parse multiple characteristics with shared context
-        battery = await session.parse(BatteryLevelCharacteristic, SIMULATED_BATTERY_DATA)
-        hr_data = await session.parse(HeartRateMeasurementCharacteristic, SIMULATED_HR_DATA)
+        battery = await session.parse(
+            BatteryLevelCharacteristic, SIMULATED_BATTERY_DATA
+        )
+        hr_data = await session.parse(
+            HeartRateMeasurementCharacteristic, SIMULATED_HR_DATA
+        )
 
         print(f"Battery: {battery}%")
         print(f"Heart Rate: {hr_data.heart_rate} bpm")
@@ -417,7 +437,9 @@ data = bytearray([85])
 level = translator.parse_characteristic(BatteryLevelCharacteristic, data)
 
 # Async (after) - same API, just awaited
-level = await translator.parse_characteristic_async(BatteryLevelCharacteristic, data)
+level = await translator.parse_characteristic_async(
+    BatteryLevelCharacteristic, data
+)
 ```
 
 Both sync and async methods are available on `BluetoothSIGTranslator`, so you can mix them:
@@ -439,7 +461,9 @@ async def mixed_usage():
     print(f"Characteristic: {info.name}")
 
     # Async method for parsing
-    level = await translator.parse_characteristic_async(BatteryLevelCharacteristic, SIMULATED_BATTERY_DATA)
+    level = await translator.parse_characteristic_async(
+        BatteryLevelCharacteristic, SIMULATED_BATTERY_DATA
+    )
     print(f"Battery: {level}%")
 
 

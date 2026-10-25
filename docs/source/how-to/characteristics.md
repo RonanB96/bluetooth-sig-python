@@ -29,7 +29,9 @@ print(f"Battery: {level}%")
 
 # Complex characteristic: returns structured data
 heart_rate = HeartRateMeasurementCharacteristic()
-hr_data = heart_rate.parse_value(bytearray([0x00, 72]))  # IDE knows: HeartRateData
+hr_data = heart_rate.parse_value(
+    bytearray([0x00, 72])
+)  # IDE knows: HeartRateData
 print(f"Heart rate: {hr_data.heart_rate} bpm")
 print(f"Sensor contact: {hr_data.sensor_contact}")  # Full autocomplete
 ```
@@ -102,7 +104,9 @@ if instance:
 # Get by name
 from bluetooth_sig.gatt.characteristics.registry import CharacteristicName
 
-char_class = CharacteristicRegistry.get_characteristic_class(CharacteristicName.BATTERY_LEVEL)
+char_class = CharacteristicRegistry.get_characteristic_class(
+    CharacteristicName.BATTERY_LEVEL
+)
 ```
 
 ## Custom Characteristics
@@ -202,7 +206,9 @@ sensor = VendorSensorCharacteristic()
 # Decode: raw bytes → structured data
 raw_data = bytearray([0xC4, 0x09, 0xDC, 0x0D, 0x5A, 0x00])  # 25°C, 35.5%, 90%
 reading = sensor.parse_value(raw_data)
-print(f"Temp: {reading.temperature}°C, Humidity: {reading.humidity}%, Battery: {reading.battery}%")
+print(
+    f"Temp: {reading.temperature}°C, Humidity: {reading.humidity}%, Battery: {reading.battery}%"
+)
 
 # Encode: structured data → raw bytes
 new_reading = SensorReading(temperature=22.5, humidity=45.0, battery=85)
@@ -216,7 +222,9 @@ print(f"Encoded: {encoded.hex()}")
 from bluetooth_sig.gatt.characteristics import CharacteristicRegistry
 
 # Remove specific registration (if it was registered)
-CharacteristicRegistry.unregister_characteristic_class("12345678-1234-1234-1234-123456789ABC")
+CharacteristicRegistry.unregister_characteristic_class(
+    "12345678-1234-1234-1234-123456789ABC"
+)
 
 # Clear all custom registrations (useful for testing)
 CharacteristicRegistry.clear_custom_registrations()

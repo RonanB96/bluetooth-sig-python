@@ -408,7 +408,9 @@ char = CharacteristicRegistry.get_characteristic("2A19")
 CharClass = CharacteristicRegistry.get_characteristic_class_by_uuid("2A19")
 
 # Get characteristic class from enum
-CharClass = CharacteristicRegistry.get_characteristic_class(CharacteristicName.BATTERY_LEVEL)
+CharClass = CharacteristicRegistry.get_characteristic_class(
+    CharacteristicName.BATTERY_LEVEL
+)
 
 # Get all registered characteristics
 all_chars = CharacteristicRegistry.get_all_characteristics()
@@ -626,7 +628,9 @@ from bluetooth_sig.gatt.context import CharacteristicContext
 class DependentCharacteristic(BaseCharacteristic):
     _required_dependencies = [ContextInfoCharacteristic]
 
-    def _decode_value(self, data: bytearray, ctx: CharacteristicContext) -> int:
+    def _decode_value(
+        self, data: bytearray, ctx: CharacteristicContext
+    ) -> int:
         # Access dependency from context
         context_info = ctx.dependencies.get("context_info")
         # Use dependency to enrich parsing

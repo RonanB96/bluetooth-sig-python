@@ -131,9 +131,15 @@ async def main():
     SIMULATED_HUMIDITY_DATA = bytearray([0x3A, 0x13])  # Simulates 49.22%
 
     # Parse each characteristic - returns values directly
-    battery = translator.parse_characteristic("2A19", SIMULATED_BATTERY_DATA)  # int
-    temp = translator.parse_characteristic("2A6E", SIMULATED_TEMP_DATA)  # float
-    humidity = translator.parse_characteristic("2A6F", SIMULATED_HUMIDITY_DATA)  # float
+    battery = translator.parse_characteristic(
+        "2A19", SIMULATED_BATTERY_DATA
+    )  # int
+    temp = translator.parse_characteristic(
+        "2A6E", SIMULATED_TEMP_DATA
+    )  # float
+    humidity = translator.parse_characteristic(
+        "2A6F", SIMULATED_HUMIDITY_DATA
+    )  # float
 
     print(f"Battery: {battery}%")
     print(f"Temp: {temp}°C")
@@ -175,14 +181,18 @@ async with BleakClient(device_address) as client:
         carbs = data[3]
         contexts[seq] = carbs
 
-    await client.start_notify("2A18", measurement_handler)  # Glucose Measurement
+    await client.start_notify(
+        "2A18", measurement_handler
+    )  # Glucose Measurement
     await client.start_notify("2A34", context_handler)  # Glucose Context
 
     # Manual pairing logic
     await asyncio.sleep(5)
     for seq in measurements:
         if seq in contexts:
-            print(f"Seq {seq}: {measurements[seq]} mg/dL, Carbs: {contexts[seq]}g")
+            print(
+                f"Seq {seq}: {measurements[seq]} mg/dL, Carbs: {contexts[seq]}g"
+            )
 ```
 
 **After** (with automatic dependency resolution):
@@ -217,7 +227,9 @@ async def main():
             contexts_cache[seq] = data
 
         # Parse pairs when we have matching sequence numbers
-        matching_seqs = set(measurements_cache.keys()) & set(contexts_cache.keys())
+        matching_seqs = set(measurements_cache.keys()) & set(
+            contexts_cache.keys()
+        )
         for seq in matching_seqs:
             results = translator.parse_characteristics(
                 {
@@ -235,8 +247,12 @@ async def main():
             del measurements_cache[seq]
             del contexts_cache[seq]
 
-    await client.start_notify(gm_uuid, lambda s, d: combined_handler(gm_uuid, d))
-    await client.start_notify(gmc_uuid, lambda s, d: combined_handler(gmc_uuid, d))
+    await client.start_notify(
+        gm_uuid, lambda s, d: combined_handler(gm_uuid, d)
+    )
+    await client.start_notify(
+        gmc_uuid, lambda s, d: combined_handler(gmc_uuid, d)
+    )
 ```
 
 **What improved**:
@@ -332,7 +348,9 @@ If characteristics depend on each other (e.g., Glucose Measurement + Context), p
 from bluetooth_sig import BluetoothSIGTranslator
 
 # Example data (replace with actual BLE reads)
-bpm_bytes = bytearray([0x00, 0x78, 0x00, 0x50, 0x00, 0x46, 0x00])  # Blood Pressure
+bpm_bytes = bytearray(
+    [0x00, 0x78, 0x00, 0x50, 0x00, 0x46, 0x00]
+)  # Blood Pressure
 battery_bytes = bytearray([85])  # Battery Level
 
 translator = BluetoothSIGTranslator()
@@ -393,7 +411,9 @@ values = {gm_uuid: gm_bytes, gmc_uuid: gmc_bytes}
 
 batch = bleak_services_to_batch(services, values_by_uuid=values)
 char_data, desc_data = to_parse_inputs(batch)
-results = translator.parse_characteristics(char_data, descriptor_data=desc_data)
+results = translator.parse_characteristics(
+    char_data, descriptor_data=desc_data
+)
 ```
 
 **Note**: Example adapters are provided as references; update them as needed for your project/backend versions.
@@ -458,7 +478,9 @@ class MySensorEntity(SensorEntity):
         super().__init__(*args, **kwargs)
         self._temp = TemperatureCharacteristic()
 
-    def _async_handle_bluetooth_event(self, service_info: BluetoothServiceInfoBleak, change: BluetoothChange) -> None:
+    def _async_handle_bluetooth_event(
+        self, service_info: BluetoothServiceInfoBleak, change: BluetoothChange
+    ) -> None:
         """Handle bluetooth callback."""
         # Your existing connection/read logic
         char_data = self._read_characteristic(str(self._temp.uuid))
@@ -486,8 +508,12 @@ for service in peripheral.services():
     for characteristic in service.characteristics():
         try:
             data = peripheral.read(service.uuid(), characteristic.uuid())
-            value = translator.parse_characteristic(characteristic.uuid(), data)
-            info = translator.get_characteristic_info_by_uuid(characteristic.uuid())
+            value = translator.parse_characteristic(
+                characteristic.uuid(), data
+            )
+            info = translator.get_characteristic_info_by_uuid(
+                characteristic.uuid()
+            )
             if info:
                 print(f"{info.name}: {value} {info.unit or ''}")
         except Exception as e:
@@ -568,8 +594,12 @@ buffer = DependencyPairingBuffer(
 
 # In your notification handlers (notifications arrive in any order)
 async with BleakClient(device_address) as client:
-    await client.start_notify(bpm_uuid, lambda s, d: buffer.ingest(bpm_uuid, d))
-    await client.start_notify(icp_uuid, lambda s, d: buffer.ingest(icp_uuid, d))
+    await client.start_notify(
+        bpm_uuid, lambda s, d: buffer.ingest(bpm_uuid, d)
+    )
+    await client.start_notify(
+        icp_uuid, lambda s, d: buffer.ingest(icp_uuid, d)
+    )
 
     # Buffer automatically pairs when both arrive with matching timestamps
     await asyncio.sleep(30)  # Wait for measurements

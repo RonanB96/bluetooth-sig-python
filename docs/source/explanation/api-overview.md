@@ -162,7 +162,9 @@ advertising_data = parser.parse_advertising_data(raw_bytes)
 if advertising_data.ad_structures.core.local_name:
     print(f"Device name: {advertising_data.ad_structures.core.local_name}")
 if advertising_data.ad_structures.properties.tx_power is not None:
-    print(f"TX Power: {advertising_data.ad_structures.properties.tx_power} dBm")
+    print(
+        f"TX Power: {advertising_data.ad_structures.properties.tx_power} dBm"
+    )
 
 # Service UUIDs advertised by the device
 for uuid in advertising_data.ad_structures.core.service_uuids:
@@ -214,7 +216,9 @@ advertising_data = parser.parse_advertising_data(extended_pdu_bytes)
 if advertising_data.extended:
     print("Extended advertising detected")
     if advertising_data.extended.extended_payload:
-        print(f"Extended payload: {advertising_data.extended.extended_payload.hex()}")
+        print(
+            f"Extended payload: {advertising_data.extended.extended_payload.hex()}"
+        )
 ```
 
 See [Advertising Parsing Guide](../how-to/advertising-parsing.md) for custom interpreters and filtering.
