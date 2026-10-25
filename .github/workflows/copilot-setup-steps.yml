@@ -68,4 +68,3 @@ jobs:
       - name: Read the instructions
         run: |
           cat .github/copilot-instructions.md
-

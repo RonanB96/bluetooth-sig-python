@@ -1,4 +1,4 @@
-﻿---
+---
 description: Core project layout, non-negotiable rules, workflow, and quality gates
 alwaysApply: true
 ---
