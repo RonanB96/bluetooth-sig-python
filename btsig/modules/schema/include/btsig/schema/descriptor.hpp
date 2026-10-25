@@ -7,9 +7,9 @@
 
 namespace btsig {
 
-constexpr int kSchemaVersion = 1;
+constexpr std::uint8_t kSchemaVersion = 1;
 
-enum class wire_type {
+enum class wire_type : std::uint8_t {
     uint8,
     uint16,
     uint24,
@@ -22,7 +22,7 @@ enum class wire_type {
     sint32,
 };
 
-enum class sentinel_meaning { not_known, not_valid };
+enum class sentinel_meaning : std::uint8_t { not_known, not_valid };
 
 struct Sentinel {
     std::int64_t raw_value;
@@ -36,9 +36,9 @@ struct FieldDescriptor {
     std::uint16_t unit_uuid;
     std::size_t offset;
     wire_type wire;
-    int coefficient;
-    int decimal_exponent;
-    int binary_exponent;
+    std::int8_t coefficient;
+    std::int8_t decimal_exponent;
+    std::int8_t binary_exponent;
     std::int64_t raw_minimum;
     std::int64_t raw_maximum;
     const Sentinel* sentinels;
