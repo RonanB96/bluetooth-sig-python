@@ -175,6 +175,7 @@ print(f"Humidity: {humidity}%")
 
 # Dynamic: returns Any when using enum/string
 from bluetooth_sig.types.gatt_enums import CharacteristicName
+
 result = await device.read(CharacteristicName.TEMPERATURE)
 ```
 

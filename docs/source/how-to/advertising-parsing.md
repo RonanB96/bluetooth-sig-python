@@ -151,10 +151,7 @@ APPLE_COMPANY_ID = 0x004C
 
 
 def is_apple_device(advertising_data):
-    return (
-        APPLE_COMPANY_ID
-        in advertising_data.ad_structures.core.manufacturer_data
-    )
+    return APPLE_COMPANY_ID in advertising_data.ad_structures.core.manufacturer_data
 ```
 
 ### By Name Pattern

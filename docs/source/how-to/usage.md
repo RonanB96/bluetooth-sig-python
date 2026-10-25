@@ -98,9 +98,7 @@ SIMULATED_HEART_RATE_DATA = bytearray([72])
 UNKNOWN_UUID = "2A37"  # UUID from device discovery
 
 # Parse: translator identifies and parses automatically
-value = translator.parse_characteristic(
-    UNKNOWN_UUID, SIMULATED_HEART_RATE_DATA
-)
+value = translator.parse_characteristic(UNKNOWN_UUID, SIMULATED_HEART_RATE_DATA)
 
 # value is the parsed result directly (type is Any at runtime)
 info = translator.get_characteristic_info_by_uuid(UNKNOWN_UUID)
@@ -138,9 +136,7 @@ SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery level
 
 translator = BluetoothSIGTranslator()
 
-found_uuid = translator.get_characteristic_uuid_by_name(
-    CharacteristicName.BATTERY_LEVEL
-)
+found_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
 # These all work - the library normalizes them internally
 formats = [
     str(found_uuid),  # uuid found from Enum name
@@ -150,9 +146,7 @@ formats = [
 ]
 
 for uuid_format in formats:
-    result = translator.parse_characteristic(
-        str(uuid_format), SIMULATED_BATTERY_DATA
-    )
+    result = translator.parse_characteristic(str(uuid_format), SIMULATED_BATTERY_DATA)
     info = translator.get_characteristic_info_by_uuid(uuid_format)
     print(f"{uuid_format:45} → {info.name}")
 
@@ -248,12 +242,8 @@ bpm_uuid = "2A35"
 icp_uuid = "2A36"
 
 # Example data (replace with actual BLE reads)
-blood_pressure_measurement_bytes = bytearray(
-    [0x00, 0x78, 0x00, 0x50, 0x00, 0x46, 0x00]
-)
-intermediate_cuff_pressure_bytes = bytearray(
-    [0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00]
-)
+blood_pressure_measurement_bytes = bytearray([0x00, 0x78, 0x00, 0x50, 0x00, 0x46, 0x00])
+intermediate_cuff_pressure_bytes = bytearray([0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00])
 
 char_data = {
     bpm_uuid: blood_pressure_measurement_bytes,
@@ -265,12 +255,8 @@ results = translator.parse_characteristics(char_data)
 bpm_value = results[bpm_uuid]
 icp_value = results[icp_uuid]
 
-print(
-    f"Blood Pressure: {bpm_value.systolic}/{bpm_value.diastolic} {bpm_value.unit.value}"
-)
-print(
-    f"Cuff Pressure: {icp_value.current_cuff_pressure} {icp_value.unit.value}"
-)
+print(f"Blood Pressure: {bpm_value.systolic}/{bpm_value.diastolic} {bpm_value.unit.value}")
+print(f"Cuff Pressure: {icp_value.current_cuff_pressure} {icp_value.unit.value}")
 ```
 
 This batch API is the most user-friendly path: you provide UUIDs and raw bytes; the library parses each characteristic according to its specification.
@@ -295,25 +281,17 @@ from bluetooth_sig.types.io import (
 )
 
 # Blood pressure measurement requires at least 7 bytes
-blood_pressure_measurement_bytes = bytearray(
-    [0x00, 0x78, 0x00, 0x50, 0x00, 0x46, 0x00]
-)
+blood_pressure_measurement_bytes = bytearray([0x00, 0x78, 0x00, 0x50, 0x00, 0x46, 0x00])
 # Intermediate cuff pressure also requires at least 7 bytes
-intermediate_cuff_pressure_bytes = bytearray(
-    [0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00]
-)
+intermediate_cuff_pressure_bytes = bytearray([0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00])
 
 bpm_uuid = "2A35"
 icp_uuid = "2A36"
 
 batch = RawCharacteristicBatch(
     items=[
-        RawCharacteristicRead(
-            uuid=bpm_uuid, raw_data=blood_pressure_measurement_bytes
-        ),
-        RawCharacteristicRead(
-            uuid=icp_uuid, raw_data=intermediate_cuff_pressure_bytes
-        ),
+        RawCharacteristicRead(uuid=bpm_uuid, raw_data=blood_pressure_measurement_bytes),
+        RawCharacteristicRead(uuid=icp_uuid, raw_data=intermediate_cuff_pressure_bytes),
     ]
 )
 

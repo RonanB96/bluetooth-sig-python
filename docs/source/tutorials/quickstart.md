@@ -103,9 +103,7 @@ from bluetooth_sig.types.gatt_enums import CharacteristicName, ServiceName
 translator = BluetoothSIGTranslator()
 
 # Look up by enum (recommended - autocomplete and typo prevention)
-char_info = translator.get_sig_info_by_name(
-    CharacteristicName.BATTERY_LEVEL.value
-)
+char_info = translator.get_sig_info_by_name(CharacteristicName.BATTERY_LEVEL.value)
 print(f"Characteristic: {char_info.name}")  # "Battery Level"
 print(f"UUID: {char_info.uuid}")  # "00002A19-0000-1000-8000-00805F9B34FB"
 

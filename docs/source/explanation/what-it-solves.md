@@ -120,9 +120,7 @@ translator = BluetoothSIGTranslator()
 
 # Automatic UUID resolution (short or long form)
 info = translator.get_sig_info_by_uuid("180F")
-info = translator.get_sig_info_by_uuid(
-    "0000180f-0000-1000-8000-00805f9b34fb"
-)  # Same result
+info = translator.get_sig_info_by_uuid("0000180f-0000-1000-8000-00805f9b34fb")  # Same result
 
 # Reverse lookup
 battery_service = translator.get_sig_info_by_name("Battery Service")
@@ -177,12 +175,8 @@ from bluetooth_sig.types.gatt_enums import CharacteristicName
 SIMULATED_BATTERY_DATA = bytearray([85])  # Simulates 85% battery
 
 translator = BluetoothSIGTranslator()
-battery_uuid = translator.get_characteristic_uuid_by_name(
-    CharacteristicName.BATTERY_LEVEL
-)
-result = translator.parse_characteristic(
-    str(battery_uuid), SIMULATED_BATTERY_DATA
-)
+battery_uuid = translator.get_characteristic_uuid_by_name(CharacteristicName.BATTERY_LEVEL)
+result = translator.parse_characteristic(str(battery_uuid), SIMULATED_BATTERY_DATA)
 
 # For simple characteristics, result is the value directly
 print(result)  # 85

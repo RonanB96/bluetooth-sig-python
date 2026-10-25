@@ -36,9 +36,7 @@ from examples.connection_managers.bleak_retry import (
 
 async def main():
     translator = BluetoothSIGTranslator()
-    device = Device(
-        BleakRetryClientManager("AA:BB:CC:DD:EE:FF"), translator
-    )
+    device = Device(BleakRetryClientManager("AA:BB:CC:DD:EE:FF"), translator)
 
     await device.connect()
     battery = await device.read(BatteryLevelCharacteristic)  # IDE knows: int

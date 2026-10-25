@@ -32,7 +32,6 @@ from tests.gatt.characteristics.test_characteristic_common import Characteristic
 
 
 class TestBatteryLevelCharacteristic(CommonCharacteristicTests):
-
     @pytest.fixture
     def characteristic(self) -> BatteryLevelCharacteristic:
         return BatteryLevelCharacteristic()

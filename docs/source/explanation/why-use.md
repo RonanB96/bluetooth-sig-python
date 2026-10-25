@@ -68,9 +68,7 @@ BATTERY_LEVEL_UUID = "2A19"  # UUID from your BLE library
 from bluetooth_sig import BluetoothSIGTranslator
 
 translator = BluetoothSIGTranslator()
-battery_level = translator.parse_characteristic(
-    BATTERY_LEVEL_UUID, SIMULATED_BATTERY_DATA
-)
+battery_level = translator.parse_characteristic(BATTERY_LEVEL_UUID, SIMULATED_BATTERY_DATA)
 
 # For simple characteristics, result is the value directly
 print(f"Battery: {battery_level}%")  # Battery: 85%
@@ -96,14 +94,10 @@ TEMPERATURE_UUID = "2A6E"  # Official SIG UUID for Temperature
 # raw_bytes = await your_ble_client.read_gatt_char(TEMPERATURE_UUID)
 
 # Step 2: Simulate real BLE data for this example
-raw_temperature_bytes = bytearray(
-    [0x0A, 0x01]
-)  # 266 = 0x010A in little-endian = 2.66°C
+raw_temperature_bytes = bytearray([0x0A, 0x01])  # 266 = 0x010A in little-endian = 2.66°C
 
 # Step 3: Parse with bluetooth-sig (handles all complexity)
-temperature = translator.parse_characteristic(
-    TEMPERATURE_UUID, raw_temperature_bytes
-)
+temperature = translator.parse_characteristic(TEMPERATURE_UUID, raw_temperature_bytes)
 
 # For Temperature (2A6E), result is a float in Celsius
 # The characteristic spec defines resolution as 0.01°C

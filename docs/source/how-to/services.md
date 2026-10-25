@@ -26,9 +26,7 @@ service_info = translator.get_service_info_by_uuid("180F")
 print(f"Service: {service_info.name}")  # "Battery Service"
 
 # Full 128-bit UUID also works
-service_info = translator.get_service_info_by_uuid(
-    "0000180F-0000-1000-8000-00805F9B34FB"
-)
+service_info = translator.get_service_info_by_uuid("0000180F-0000-1000-8000-00805F9B34FB")
 ```
 
 ### By Enum Name
@@ -128,9 +126,7 @@ if service:
     # Validate the service
     result = service.validate_service()
 
-    print(
-        f"Status: {result.status.value}"
-    )  # complete, functional, partial, incomplete
+    print(f"Status: {result.status.value}")  # complete, functional, partial, incomplete
     print(f"Is healthy: {result.is_healthy}")
     print(f"Has errors: {result.has_errors}")
 
@@ -315,9 +311,7 @@ GattServiceRegistry.register_service_class(
 )
 
 # Now discoverable via the registry
-service_class = GattServiceRegistry.get_service_class(
-    "12345678-1234-1234-1234-123456789ABC"
-)
+service_class = GattServiceRegistry.get_service_class("12345678-1234-1234-1234-123456789ABC")
 print(f"Found: {service_class.__name__}")  # MyCustomService
 ```
 
@@ -327,9 +321,7 @@ print(f"Found: {service_class.__name__}")  # MyCustomService
 from bluetooth_sig.gatt.services import GattServiceRegistry
 
 # Remove specific registration (if it was registered)
-GattServiceRegistry.unregister_service_class(
-    "12345678-1234-1234-1234-123456789ABC"
-)
+GattServiceRegistry.unregister_service_class("12345678-1234-1234-1234-123456789ABC")
 
 # Clear all custom registrations (useful for testing)
 GattServiceRegistry.clear_custom_registrations()

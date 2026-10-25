@@ -397,12 +397,8 @@ ad_type_info = ad_types_registry.get_ad_type_info(0x01)  # Flags
 
 # Appearance Values
 appearance_registry = AppearanceValuesRegistry.get_instance()
-heart_rate_sensor_appearance = (
-    832  # Simulated appearance value for Heart Rate Sensor
-)
-appearance_info = appearance_registry.get_appearance_info(
-    heart_rate_sensor_appearance
-)
+heart_rate_sensor_appearance = 832  # Simulated appearance value for Heart Rate Sensor
+appearance_info = appearance_registry.get_appearance_info(heart_rate_sensor_appearance)
 
 # Class of Device
 cod_registry = ClassOfDeviceRegistry.get_instance()
@@ -521,9 +517,7 @@ translator.register_custom_characteristic(
 )
 
 # Register custom service
-translator.register_custom_service(
-    uuid="ABCD5678", service_cls=MyCustomService, override=False
-)
+translator.register_custom_service(uuid="ABCD5678", service_cls=MyCustomService, override=False)
 ```
 
 ### Internal Storage

@@ -44,9 +44,7 @@ class MyCharacteristic(BaseCharacteristic):
     max_value: float = 100.0
     expected_type: type = float
 
-    def _decode_value(
-        self, data: bytearray, ctx: CharacteristicContext | None = None
-    ) -> float:
+    def _decode_value(self, data: bytearray, ctx: CharacteristicContext | None = None) -> float:
         raw = DataParser.parse_int16(data, 0, signed=False)
         return raw * 0.01
 
@@ -96,9 +94,7 @@ class LightLevelCharacteristic(CustomBaseCharacteristic):
         """
         # Validate length
         if len(data) != 1:
-            raise InsufficientDataError(
-                f"Light Level requires exactly 1 byte, got {len(data)}"
-            )
+            raise InsufficientDataError(f"Light Level requires exactly 1 byte, got {len(data)}")
 
         # Parse
         value = int(data[0])
@@ -150,9 +146,7 @@ class MultiSensorCharacteristic(CustomBaseCharacteristic):
         """
         # Validate length
         if len(data) != 16:
-            raise InsufficientDataError(
-                f"Multi Sensor requires 16 bytes, got {len(data)}"
-            )
+            raise InsufficientDataError(f"Multi Sensor requires 16 bytes, got {len(data)}")
 
         # Parse temperature
         temp_raw = int.from_bytes(data[0:2], byteorder="little", signed=True)

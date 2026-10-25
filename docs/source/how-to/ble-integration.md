@@ -103,9 +103,7 @@ async def read_known_device(address: str):
         print(f"Temperature: {temp_value}°C")
 
         humidity_data = await client.read_gatt_char(str(humidity.uuid))
-        humidity_value = humidity.parse_value(
-            humidity_data
-        )  # IDE knows: float
+        humidity_value = humidity.parse_value(humidity_data)  # IDE knows: float
         print(f"Humidity: {humidity_value}%")
 
 
@@ -137,13 +135,9 @@ async def scan_unknown_device(address: str):
                 if translator.supports(uuid_str):
                     try:
                         raw_data = await client.read_gatt_char(char.uuid)
-                        value = translator.parse_characteristic(
-                            uuid_str, raw_data
-                        )
+                        value = translator.parse_characteristic(uuid_str, raw_data)
                         # Get info separately for name/unit
-                        info = translator.get_characteristic_info_by_uuid(
-                            uuid_str
-                        )
+                        info = translator.get_characteristic_info_by_uuid(uuid_str)
                         print(f"Found: {info.name} = {value}")
                     except Exception:
                         pass  # Characteristic may not be readable
@@ -494,9 +488,7 @@ class SensorReader:
         async with BleakClient(self.address) as client:
             for name, char in characteristics:
                 try:
-                    raw_data = await asyncio.wait_for(
-                        client.read_gatt_char(str(char.uuid)), timeout=5.0
-                    )
+                    raw_data = await asyncio.wait_for(client.read_gatt_char(str(char.uuid)), timeout=5.0)
                     results[name] = char.parse_value(raw_data)
                 except CharacteristicParseError as e:
                     print(f"Parse error for {name}: {e}")
