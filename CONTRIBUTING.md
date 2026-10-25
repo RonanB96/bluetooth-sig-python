@@ -58,7 +58,10 @@ Ready to contribute? Here's how to set up `bluetooth_sig_python` for local devel
    source .venv/bin/activate  # On Linux/Mac
    # Windows: .venv\Scripts\activate
    pip install -e ".[dev]"
+   pre-commit install
    ```
+
+   The commit hook runs the standard `pre-commit-hooks` checks, then Ruff, `clang-format-18`, ShellCheck, pydocstyle, and mypy. There is no path filter on those hooks.
 
 1. Create a branch for local development:
 

@@ -32,7 +32,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Folders to lint/format
-RUFF_FOLDERS="src/ tests/ examples/ tools/"
+RUFF_FOLDERS="."
 EXAMPLES_FOLDERS="examples"
 TEST_FOLDERS="tests"
 TOOLS_FOLDERS="tools"
@@ -320,7 +320,7 @@ run_shellcheck() {
 
     # Find all shell scripts in the project
     local shell_scripts
-    shell_scripts=$(find . -name "*.sh" -type f | grep -v ".venv" | head -20)
+    shell_scripts=$(find . -name "*.sh" -type f | grep -v ".venv")
 
     if [ -z "$shell_scripts" ]; then
         if [ "$is_parallel" != "true" ]; then
@@ -415,7 +415,7 @@ run_pydocstyle() {
     # Run pydocstyle only on source code (tests are excluded
     # because they intentionally contain many informal helpers
     # scripts that don't require exhaustive Google-style docstrings).
-    local PYDOCSTYLE_FOLDERS="src examples tools"
+    local PYDOCSTYLE_FOLDERS="src examples tools scripts docs hatch_build.py tests"
     local PYDOCSTYLE_OUTPUT
     # shellcheck disable=SC2086  # PYDOCSTYLE_FOLDERS is intentionally space-separated
     # D202 ignored: Black formatter requires blank line before nested functions

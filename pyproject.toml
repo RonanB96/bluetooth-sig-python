@@ -60,6 +60,7 @@ ble = [
 dev = [
     "bluetooth-sig[test-core]",
     "ruff~=0.15",
+    "pre-commit~=4.6",
     "pydocstyle~=6.3",
     "types-PyYAML~=6.0",
     "types-requests~=2.32",
