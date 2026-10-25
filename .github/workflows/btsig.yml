@@ -1,0 +1,122 @@
+name: btsig
+
+on:
+  push:
+    branches: [main, v2_dev]
+  pull_request:
+    branches: [main, v2_dev]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-18
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Generate characteristic sources
+        run: |
+          python -m tools.gss_ir.generate tools/gss_ir/characteristics.json
+          python -m tools.gss_ir.emit_cpp tools/gss_ir/characteristics.json
+
+      - name: Check btsig formatting
+        run: |
+          mapfile -t files < <(find btsig/modules examples/characteristic_api -type f \( -name '*.c' -o -name '*.h' -o -name '*.hpp' -o -name '*.cpp' \))
+          mapfile -t generated < <(find btsig/generated -type f \( -path 'btsig/generated/*/src/*' -o -path 'btsig/generated/*/include/btsig/*' \))
+          files+=("${generated[@]}")
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No btsig sources found"
+            exit 1
+          fi
+          clang-format-18 --style=file:btsig/.clang-format --dry-run --Werror "${files[@]}"
+
+  build:
+    name: Build and clang-tidy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build clang-format-18 clang-tidy-18
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Generate characteristic sources
+        run: |
+          python -m tools.gss_ir.generate tools/gss_ir/characteristics.json
+          python -m tools.gss_ir.emit_cpp tools/gss_ir/characteristics.json
+
+      - name: Configure and build
+        run: |
+          cmake -S btsig/modules -B btsig/build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_C_FLAGS="-Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef" \
+            -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Werror -Wshadow -Wundef"
+          cmake --build btsig/build
+
+      - name: Run sample programs
+        run: |
+          ./btsig/build/characteristic_api_c
+          ./btsig/build/characteristic_api_cpp
+
+      - name: Run clang-tidy
+        run: |
+          gcc_major="$(g++ -dumpversion | cut -d. -f1)"
+          mapfile -t files < <(find btsig/modules examples/characteristic_api -type f \( -name '*.c' -o -name '*.cpp' \))
+          mapfile -t generated < <(find btsig/generated -type f -path 'btsig/generated/*/src/*.cpp')
+          files+=("${generated[@]}")
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No btsig translation units found"
+            exit 1
+          fi
+          clang-tidy-18 -p btsig/build \
+            --extra-arg="-I/usr/include/c++/${gcc_major}" \
+            --extra-arg="-I/usr/include/x86_64-linux-gnu/c++/${gcc_major}" \
+            "${files[@]}"

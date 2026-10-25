@@ -7,22 +7,26 @@ This directory contains GitHub Actions workflows for automated testing, code qua
 ### Test and Coverage (`test-coverage.yml`)
 
 - **Triggers**: Push to `main`, Pull Requests to `main`
-- **Matrix**: Python 3.10, 3.12
-- **Purpose**: Run comprehensive test suite with coverage reporting
-- **Features**:
-  - Automatic git submodule initialisation for `bluetooth_sig` dependency
-  - Test execution with pytest and coverage reporting (85% threshold)
-  - Coverage upload to Codecov for Python 3.12 runs
-  - Uses project configuration from `pyproject.toml`
+- **Purpose**: Benchmarks, documentation build, and GitHub Pages deploy
+- The Python library pytest job is disabled. `btsig.yml` checks the C/C++ library.
+
+### btsig (`btsig.yml`)
+
+- **Triggers**: Push and pull requests to `main` and `v2_dev`
+- **Purpose**: Format, build, and clang-tidy the `btsig` library
+- **Checks**:
+  - `clang-format-18` with `btsig/.clang-format` on `btsig/modules`, `examples/characteristic_api`, and generated `btsig/generated`
+  - CMake build of the codec, generated characteristics, and sample programs, with `-Werror`
+  - `clang-tidy-18` using `btsig/.clang-tidy` on the handwritten, generated, and sample translation units
 
 ### Lint and Code Quality (`lint-check.yml`)
 
-- **Triggers**: Push to `main`, Pull Requests to `main`
+- **Triggers**: Push and pull requests to `main` and `v2_dev`
 - **Python**: 3.12 (latest supported)
 - **Purpose**: Ensure code quality and consistent formatting
 - **Tools**:
-  - **ruff**: Formatting and linting
-  - **mypy**: strict for production code, lenient for tests/examples
+  - **ruff**: Formatting and linting of `src/`, `tests/`, `examples/`, and `tools/`
+  - **mypy**: strict for production code and `tools/`, lenient for tests/examples
 - **Environment Setup**: All tools run via `python -m` to ensure proper configuration loading
 
 ### Release (`release.yml`)
@@ -76,6 +80,6 @@ When testing locally or in agent environments, ensure:
 ## Notes
 
 - All tool configurations are defined in `pyproject.toml`
-- Coverage threshold is 85% (`--cov-fail-under=85`)
+- The Python library coverage job is disabled. `btsig/.clang-tidy` is the C/C++ lint config.
 - Git submodules are automatically initialised for the Bluetooth SIG UUID registry dependency
 - Use `python -m` prefix for all tools to ensure proper package and configuration loading
