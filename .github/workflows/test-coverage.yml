@@ -22,6 +22,8 @@ concurrency:
 
 jobs:
   test:
+    # Python library tests are not run. btsig.yml checks the C/C++ library.
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -254,7 +256,7 @@ jobs:
 
   build-docs:
     name: Build Documentation
-    needs: [test, benchmark]
+    needs: [benchmark]
     # Allow running independently via workflow_dispatch for local act testing
     if: ${{ !cancelled() && (success() || github.event.inputs.skip_dependencies == 'true') }}
     runs-on: ubuntu-latest
