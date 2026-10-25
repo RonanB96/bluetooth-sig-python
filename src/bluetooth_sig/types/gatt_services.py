@@ -58,13 +58,13 @@ def characteristic(name: CharacteristicName, required: bool = False) -> Characte
 
 
 # Strong type definitions - using enums instead of strings for type safety
+# Maps characteristic names (enums) to their specifications.
 CharacteristicCollection = dict[CharacteristicName, CharacteristicSpec[BaseCharacteristic[Any]]]
-"""Maps characteristic names (enums) to their specifications - STRONG TYPING ONLY."""
 
 # Network/protocol data structures - these are inherently dynamic from BLE
 # Type aliases for service and characteristic discovery data
+# Service discovery data: Service UUID -> characteristic discovery information.
 ServiceDiscoveryData = dict[BluetoothUUID, CharacteristicInfo]
-"""Service discovery data: Service UUID -> characteristic discovery information."""
 
 # Export helper function
 __all__ = [

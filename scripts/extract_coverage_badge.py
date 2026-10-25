@@ -14,6 +14,7 @@ from pathlib import Path
 
 _COVERAGE_GOOD_THRESHOLD = 80.0
 _COVERAGE_OK_THRESHOLD = 60.0
+_OUTPUT_DIR_ARGC = 3
 
 
 def extract_coverage_percentage(coverage_xml_path: Path) -> float:
@@ -88,7 +89,7 @@ def main() -> None:
 
     if len(sys.argv) > 1:
         coverage_xml_path = Path(sys.argv[1])
-    if len(sys.argv) > 2:
+    if len(sys.argv) >= _OUTPUT_DIR_ARGC:
         output_dir = Path(sys.argv[2])
 
     try:

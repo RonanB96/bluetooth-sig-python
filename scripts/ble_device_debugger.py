@@ -30,6 +30,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from bleak import BleakClient, BleakScanner
 
+_REQUIRED_ARGC = 2
+_MAC_ADDRESS_LENGTH = 17
+_MAC_SEPARATOR_COUNT = 5
+_UINT16_OCTETS = 2
+_UINT32_OCTETS = 4
+_MAX_INTEGER_OCTETS = 4
+
 
 async def debug_ble_device(target_address: str) -> None:
     """Debug a BLE device by discovering services and characteristics.
@@ -120,11 +127,11 @@ async def debug_ble_device(target_address: str) -> None:
                                     pass
 
                                 # Show as integer if small
-                                if len(value) <= 4:
+                                if len(value) <= _MAX_INTEGER_OCTETS:
                                     try:
                                         if len(value) == 1:
                                             int_val = value[0]
-                                        elif len(value) == 2 or len(value) == 4:
+                                        elif len(value) in {_UINT16_OCTETS, _UINT32_OCTETS}:
                                             int_val = int.from_bytes(value, byteorder="little")
                                         else:
                                             int_val = None
@@ -148,7 +155,7 @@ async def debug_ble_device(target_address: str) -> None:
 
 def main() -> None:
     """Main entry point for the debugger."""
-    if len(sys.argv) != 2:
+    if len(sys.argv) != _REQUIRED_ARGC:
         print("Usage: python ble_device_debugger.py <MAC_ADDRESS>")
         print("Example: python ble_device_debugger.py 50:FD:D5:58:21:79")
         sys.exit(1)
@@ -156,7 +163,7 @@ def main() -> None:
     target_address = sys.argv[1]
 
     # Validate MAC address format
-    if len(target_address) != 17 or target_address.count(":") != 5:
+    if len(target_address) != _MAC_ADDRESS_LENGTH or target_address.count(":") != _MAC_SEPARATOR_COUNT:
         print("❌ Invalid MAC address format")
         print("Expected format: AA:BB:CC:DD:EE:FF")
         sys.exit(1)

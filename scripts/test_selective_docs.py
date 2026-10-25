@@ -12,6 +12,10 @@ from pathlib import Path
 SCRIPTS_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
+from detect_changed_docs import map_source_to_html, should_test_all  # noqa: E402
+
+_SAMPLE_PATH_COUNT = 2
+
 
 def test_change_detection_no_changes() -> None:
     """Test change detection with no changes."""
@@ -47,7 +51,7 @@ def test_env_var_parsing() -> None:
     try:
         parsed = json.loads(test_json)
         assert isinstance(parsed, list)
-        assert len(parsed) == 2
+        assert len(parsed) == _SAMPLE_PATH_COUNT
         print("✅ Environment variable parsing works")
     except json.JSONDecodeError as e:
         print(f"❌ JSON parsing failed: {e}")
@@ -56,8 +60,6 @@ def test_env_var_parsing() -> None:
 
 def test_path_mapping() -> None:
     """Test source to HTML path mapping logic."""
-    from detect_changed_docs import map_source_to_html  # type: ignore[import-not-found]
-
     # Test markdown files
     assert map_source_to_html("docs/source/tutorials/index.md") == ["tutorials/index.html"]
     assert map_source_to_html("docs/source/api/index.rst") == ["api/index.html"]
@@ -79,8 +81,6 @@ def test_path_mapping() -> None:
 
 def test_comprehensive_trigger() -> None:
     """Test that conf.py changes trigger comprehensive testing."""
-    from detect_changed_docs import should_test_all  # type: ignore[import-not-found]
-
     # conf.py should trigger ALL
     assert should_test_all(["docs/source/conf.py"])
 

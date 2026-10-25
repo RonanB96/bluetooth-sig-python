@@ -9,6 +9,7 @@ from typing import Any
 
 # Maximum number of historical data points to retain
 MAX_HISTORY_ENTRIES = 100
+_REQUIRED_ARGC = 3
 
 
 def extract_summary(benchmark_data: dict[str, Any]) -> dict[str, Any]:
@@ -77,7 +78,7 @@ def update_history(current_json_path: Path, history_json_path: Path) -> None:
 
 def main() -> None:
     """Main entry point."""
-    if len(sys.argv) != 3:
+    if len(sys.argv) != _REQUIRED_ARGC:
         print("Usage: update_benchmark_history.py <current_benchmark.json> <history.json>")
         sys.exit(1)
 
