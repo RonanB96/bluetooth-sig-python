@@ -240,4 +240,26 @@ def encode_json_schema() -> bytes:
         UTF-8 JSON Schema bytes, indented, with one trailing newline.
     """
     schema = msgspec.json.schema(IrDocument)
+    _order_nullable_unions(schema)
     return msgspec.json.format(msgspec.json.encode(schema), indent=2) + b"\n"
+
+
+def _order_nullable_unions(node: object) -> None:
+    """Put a null schema first inside each ``anyOf``.
+
+    msgspec 0.19 emits ``null`` then ``$ref``. msgspec 0.22 emits ``$ref`` then ``null``.
+    The checked-in schema keeps the null-first order.
+    """
+    if isinstance(node, dict):
+        for value in node.values():
+            _order_nullable_unions(value)
+        options = node.get("anyOf")
+        if isinstance(options, list):
+            options.sort(key=_nullable_union_rank)
+    elif isinstance(node, list):
+        for item in node:
+            _order_nullable_unions(item)
+
+
+def _nullable_union_rank(option: object) -> int:
+    return 0 if isinstance(option, dict) and len(option) == 1 and option.get("type") == "null" else 1
