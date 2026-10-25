@@ -14,7 +14,9 @@ The handwritten headers this output includes, which this task does not create:
 - ``btsig/types/span.hpp``: ``btsig::span<T>`` with ``data()`` and ``size()``.
 - ``btsig/schema/descriptor.hpp``: ``kSchemaVersion``, ``wire_type``, ``sentinel_meaning``,
   ``Sentinel``, ``FieldDescriptor``, and ``CharacteristicDescriptor``.
-- ``btsig/codec/codec.hpp``: ``btsig::decode`` and ``btsig::encode``.
+- ``btsig/wire/word.hpp``: little-endian words, IEEE 11073 medfloat, and IEEE-754 binary32.
+- ``btsig/codec/codec.hpp``: ``btsig::decode`` and ``btsig::encode``. The scalar ``M``, ``d``, ``b``
+  transform stays in the codec.
 
 ``btsig_value_kind`` enumerators used here are ``BTSIG_VALUE_UINT8``, ``BTSIG_VALUE_UINT16``,
 ``BTSIG_VALUE_UINT32``, ``BTSIG_VALUE_UINT64``, ``BTSIG_VALUE_SINT8``, ``BTSIG_VALUE_SINT16``,
@@ -44,7 +46,12 @@ _INTEGER_LAYOUT: dict[WireType, tuple[str, int, int, str]] = {
     WireType.SINT16: ("int16_t", 2, 2, "BTSIG_VALUE_SINT16"),
     WireType.SINT24: ("int32_t", 4, 4, "BTSIG_VALUE_SINT32"),
     WireType.SINT32: ("int32_t", 4, 4, "BTSIG_VALUE_SINT32"),
+    WireType.BOOLEAN8: ("uint8_t", 1, 1, "BTSIG_VALUE_UINT8"),
+    WireType.BOOLEAN16: ("uint16_t", 2, 2, "BTSIG_VALUE_UINT16"),
+    WireType.BOOLEAN24: ("uint32_t", 4, 4, "BTSIG_VALUE_UINT32"),
+    WireType.BOOLEAN32: ("uint32_t", 4, 4, "BTSIG_VALUE_UINT32"),
 }
+_REAL_WIRE = frozenset({WireType.MEDFLOAT16, WireType.MEDFLOAT32, WireType.FLOAT32})
 _SCALED_LAYOUT = ("double", 8, 8, "BTSIG_VALUE_DOUBLE")
 
 
@@ -146,8 +153,9 @@ def _layout(document: IrDocument) -> _Characteristic:
     members: list[_Member] = []
     for field in document.fields:
         transform = field.transform
-        scaled = transform is not None and not (
-            transform.coefficient == 1 and transform.decimal_exponent == 0 and transform.binary_exponent == 0
+        scaled = field.wire_type in _REAL_WIRE or (
+            transform is not None
+            and not (transform.coefficient == 1 and transform.decimal_exponent == 0 and transform.binary_exponent == 0)
         )
         c_type, size, align, kind = _SCALED_LAYOUT if scaled else _INTEGER_LAYOUT[field.wire_type]
         offset = (offset + align - 1) // align * align

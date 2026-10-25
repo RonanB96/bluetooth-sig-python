@@ -23,7 +23,7 @@ from .struct_ref import copied_field_name, parse_struct_reference
 from .transform import parse_transform
 from .unit import parse_unit
 from .value_range import parse_range
-from .wire_type import parse_wire_type
+from .wire_type import implicit_raw_domain, parse_wire_type
 
 _GSS_DIRECTORY = Path("bluetooth_sig/gss")
 _CHARACTERISTIC_UUIDS = Path("bluetooth_sig/assigned_numbers/uuids/characteristic_uuids.yaml")
@@ -96,6 +96,10 @@ def _scalar(raw: GssField, units: dict[str, int]) -> ScalarField | Unsupported:
         decimal_exponent=decimal_exponent,
         binary_exponent=binary_exponent,
     )
+    if isinstance(endpoints, Unsupported) and endpoints.detail == "range is absent":
+        domain = implicit_raw_domain(wire)
+        if domain is not None:
+            endpoints = domain
     if isinstance(endpoints, Unsupported):
         return endpoints
     sentinels = parse_sentinels(raw.description, wire)
